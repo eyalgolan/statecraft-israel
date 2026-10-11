@@ -11,7 +11,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - A portrait of Chaim Weizmann: a crop of a Bain News Service photo, ca. 1915-1920, from the Library of Congress
   (US public domain, PD-Bain; an earlier likeness than his presidency; #6).
 - A portrait of Yaakov Dori: a crop of Willem van de Poll's 1949 Nationaal Archief photo (CC0; #6).
-- The Third Knesset and the 26 July 1955 election results (seats by list), with the National Religious Front and the Religious Torah Front as parties; the Second Knesset now ends on 15 August 1955 (issue #26).
+- The Third Knesset and the 26 July 1955 election results (seats by list), with the National Religious Front and the
+  Religious Torah Front as parties; the Second Knesset now ends on 15 August 1955 (refs #26).
 - Hebrew UI translation data with key and format-token checks; not yet enabled in the game (#12).
 - A local multi-size favicon for the WebGL page.
 - A portrait of Zalman Shazar: a crop of Yoichi Okamoto's 1966 White House photo (US public domain, PD-USGov; #6).
