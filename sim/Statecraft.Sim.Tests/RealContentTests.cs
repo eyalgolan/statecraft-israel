@@ -143,7 +143,7 @@ public class RealContentTests
     public void OpenQuestionsAreExactlyTheKnownOnes()
     {
         var open = C.Legislatures.SelectMany(l => l.OpenQuestions.Select(q => $"{l.Id}.{q}")).OrderBy(x => x).ToArray();
-        Assert.Equal(new[] { "first_knesset.budget_approval", "provisional_state_council.budget_approval", "second_knesset.budget_approval" }, open);
+        Assert.Equal(new[] { "first_knesset.budget_approval", "provisional_state_council.budget_approval", "second_knesset.budget_approval", "third_knesset.budget_approval" }, open);
     }
 
     [Fact]

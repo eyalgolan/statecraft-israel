@@ -62,6 +62,9 @@ legislatures:
     elected: 1951-07-30
     # Convening date from he.wiki only (single source; not confirmed elsewhere).
     from: 1951-08-20
+    # Sat until the Third Knesset convened on 15 August 1955 (Open Knesset lists Efrati's Second Knesset service to
+    # 15/08/1955 and his Third Knesset service from 15/08/1955).
+    to: 1955-08-15
     size: 120
     budget_approval: true
     open_questions: [budget_approval]
@@ -88,4 +91,33 @@ legislatures:
       - { url: "https://en.idi.org.il/israeli-elections-and-parties/elections/1951/", checked: 2026-10-10 }
       - { url: "https://www.jewishvirtuallibrary.org/elections-to-the-2nd-knesset-july-1951", checked: 2026-10-10 }
       - { url: "https://he.wikipedia.org/wiki/הכנסת_השנייה", checked: 2026-10-10 }
+    status: fact-checked
+  - id: third_knesset
+    body: Third Knesset
+    elected: 1955-07-26
+    # Convening date from Open Knesset's member records (Efrati: Third Knesset from 15/08/1955); the Knesset's own
+    # pages could not be opened. Ahdut HaAvoda and Mapam are the two parts of the 1951 Mapam list, which split.
+    from: 1955-08-15
+    size: 120
+    budget_approval: true
+    open_questions: [budget_approval]
+    # Election results, identical in the IDI table and the Jewish Virtual Library table (which cites the Knesset).
+    # IDI and JVL name the lists "National Religious Front" and "United Religious Front"; it is the same list.
+    seats:
+      mapai: 40
+      herut: 15
+      general_zionists: 13
+      national_religious_front: 11
+      ahdut_haavoda_poalei_tzion: 10
+      mapam: 9
+      religious_torah_front: 6
+      maki: 6
+      progressive: 5
+      democratic_list_israeli_arabs: 2
+      progress_and_work: 2
+      agriculture_and_development: 1
+    sources:
+      - { url: "https://en.idi.org.il/israeli-elections-and-parties/elections/1955/", checked: 2026-10-11 }
+      - { url: "https://www.jewishvirtuallibrary.org/elections-to-the-3rd-knesset-july-1955", checked: 2026-10-11 }
+      - { url: "https://oknesset.org/members/268.html", checked: 2026-10-11 }
     status: fact-checked
