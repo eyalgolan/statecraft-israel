@@ -16,6 +16,7 @@ namespace Statecraft.Sim
         sealed class PartiesFile { public List<Party> Parties { get; set; } = new List<Party>(); }
         sealed class PeopleFile { public List<Person> People { get; set; } = new List<Person>(); }
         sealed class LegislaturesFile { public List<Legislature> Legislatures { get; set; } = new List<Legislature>(); }
+        sealed class ErasFile { public List<Era> Eras { get; set; } = new List<Era>(); }
         sealed class GovernmentsFile { public List<Government> Governments { get; set; } = new List<Government>(); }
         sealed class ModelFile
         {
@@ -158,6 +159,7 @@ namespace Statecraft.Sim
             c.People = Read<PeopleFile>(readFile, "people.yaml").People;
             c.Legislatures = Read<LegislaturesFile>(readFile, "legislatures.yaml").Legislatures;
             c.Governments = Read<GovernmentsFile>(readFile, "governments.yaml").Governments;
+            c.Eras = Read<ErasFile>(readFile, "eras.yaml").Eras;
             var m = Read<ModelFile>(readFile, "model.yaml");
             c.Indicators = m.Indicators; c.Policies = m.Policies; c.Effects = m.Effects;
             c.Situations = m.Situations; c.VoterGroups = m.VoterGroups; c.Actors = m.Actors; c.Money = m.Money;
@@ -297,6 +299,8 @@ namespace Statecraft.Sim
             Unique("people.yaml", "people", c.People.Select(p => p.Id));
             Unique("legislatures.yaml", "legislatures", c.Legislatures.Select(l => l.Id));
             Unique("governments.yaml", "governments", c.Governments.Select(g => g.Id));
+            Unique("eras.yaml", "eras", c.Eras.Select(e => e.Id));
+            ValidateEras(c);
             Unique("model.yaml", "indicators", c.Indicators.Select(i => i.Id));
             Unique("model.yaml", "policies", c.Policies.Select(p => p.Id));
             Unique("model.yaml", "effects", c.Effects.Select(e => e.Id));
@@ -542,6 +546,31 @@ namespace Statecraft.Sim
             }
             ValidateMap(c, settlementIds);
             EventRules.Validate(c, offices, indicators);
+        }
+
+        /// <summary>One or more eras, each with a name and a non-empty range; the first starts on rules.yaml start and
+        /// each starts where the one before ended, so every date in range is in exactly one era.</summary>
+        static void ValidateEras(Content c)
+        {
+            if (c.Eras.Count == 0) throw new ContentException("eras.yaml", "eras", "at least one era is required");
+            for (int i = 0; i < c.Eras.Count; i++)
+            {
+                var e = c.Eras[i];
+                var at = $"eras[{e.Id}]";
+                Named("eras.yaml", at + ".name", e.Name);
+                Period("eras.yaml", at, e.From, e.To);
+                if (i == 0)
+                {
+                    if (c.Rules.Start != default && e.From != c.Rules.Start)   // a missing start is rules.yaml's own error
+                        throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"must equal start in rules.yaml ({c.Rules.Start:yyyy-MM-dd})"));
+                    continue;
+                }
+                var prev = c.Eras[i - 1];
+                if (e.From < prev.To)
+                    throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"overlaps {prev.Id} (ends {prev.To:yyyy-MM-dd})"));
+                if (e.From > prev.To)
+                    throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"leaves a gap after {prev.Id}: must equal its end ({prev.To:yyyy-MM-dd})"));
+            }
         }
 
         static void ValidateMap(Content c, List<string> settlementIds)

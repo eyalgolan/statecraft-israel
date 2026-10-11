@@ -14,6 +14,15 @@ namespace Statecraft.Sim
         /// <summary>The money the sim tracks; model.yaml money names each one.</summary>
         public static readonly string[] MoneyIds = { "treasury", "debt", "fx_reserves" };
 
+        /// <summary>The player-facing reason for a <see cref="GameState.GameOver"/> code (see <see cref="GameOverCodes"/>):
+        /// tests and goldens compare the code, the player reads this.</summary>
+        public static string GameOver(string code) => code switch
+        {
+            GameOverCodes.EraEnded => "The chapter has ended",
+            GameOverCodes.CoalitionCollapse => "The coalition collapsed",
+            _ => throw Unknown("game over reason", code),
+        };
+
         /// <summary>"15 May 1948".</summary>
         public static string Date(DateTime d) => d.ToString("d MMMM yyyy", CultureInfo.InvariantCulture);
 

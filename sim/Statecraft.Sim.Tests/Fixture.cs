@@ -16,6 +16,13 @@ offices:
   - id: finance_minister
     title: Minister of Finance
 ",
+        ["eras.yaml"] = @"
+eras:
+  - id: founding
+    name: The Founding
+    from: 1948-05-15
+    to: 1957-01-01
+",
         ["parties.yaml"] = @"
 parties:
   - id: alpha

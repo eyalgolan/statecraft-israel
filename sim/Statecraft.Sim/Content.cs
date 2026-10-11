@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Statecraft.Sim
@@ -20,6 +21,16 @@ namespace Statecraft.Sim
         public DateTime? Until { get; set; }
         /// <summary>True when the office exists on <paramref name="date"/>: on or after From and before Until.</summary>
         public bool ExistsOn(DateTime date) => (!From.HasValue || date >= From.Value) && (!Until.HasValue || date < Until.Value);
+    }
+
+    /// <summary>A chapter of the game: the half-open range [From, To). Eras are contiguous; the last era's To ends the game.</summary>
+    public sealed class Era
+    {
+        public string Id { get; set; } = "";
+        /// <summary>The chapter name the player sees.</summary>
+        public string Name { get; set; } = "";
+        public DateTime From { get; set; }
+        public DateTime To { get; set; }
     }
 
     public sealed class Party { public string Id { get; set; } = ""; public string Name { get; set; } = ""; }
@@ -287,6 +298,10 @@ namespace Statecraft.Sim
         public List<Person> People = new List<Person>();
         public List<Legislature> Legislatures = new List<Legislature>();
         public List<Government> Governments = new List<Government>();
+        /// <summary>The eras in order (eras.yaml).</summary>
+        public List<Era> Eras = new List<Era>();
+        /// <summary>The era that contains <paramref name="date"/> (From inclusive, To exclusive), or null outside every era.</summary>
+        public Era? EraAt(DateTime date) => Eras.FirstOrDefault(e => date >= e.From && date < e.To);
         public List<Indicator> Indicators = new List<Indicator>();
         public List<Policy> Policies = new List<Policy>();
         public List<Effect> Effects = new List<Effect>();

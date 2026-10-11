@@ -8,6 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- `content/eras.yaml` with the `founding` era (15 May 1948 to 1 January 1957), a `Content.EraAt(date)` lookup, and the end
+  of the last era: the turn that reaches it ends on it (a turn that would leave under 14 days is lengthened to it), the
+  game ends with the stable code `era_ended` and the text "The chapter has ended", and later orders are refused. The
+  rejection text for a finished game now shows the reason, not its code. The golden hashes do not change (#56).
 - Region borders in the promo look (promo-borders): two-tone outlines along hex edges (a blue band with a white inner
   stripe, a red-orange band with a cream one), drawn inside each region by the terrain shader from one texel per hex, with
   a "borders" visual toggle. Visual only. No invented boundaries: the first real data is the 1948 sub-districts (below);

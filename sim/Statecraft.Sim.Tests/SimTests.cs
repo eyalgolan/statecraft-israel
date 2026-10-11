@@ -73,7 +73,7 @@ public class SimTests
     {
         var s0 = Simulation.NewGame(C, 42, Mode.Historical); s0.GameOver = "coalition_collapse";
         var r = Simulation.Step(C, s0, new Command[] { new SecurityOrder(-1) });
-        Assert.Equal("The game is over: coalition_collapse", r.Rejected[0].Reason);
+        Assert.Equal("The game is over: The coalition collapsed", r.Rejected[0].Reason);
         Assert.Equal(s0.Hash(), r.State.Hash());
     }
 

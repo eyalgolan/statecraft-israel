@@ -38,7 +38,7 @@ namespace Statecraft.Sim
             var rejected = new List<Rejection>();
             if (s.GameOver != null)
             {
-                foreach (var cmd in commands) rejected.Add(new Rejection(cmd, $"The game is over: {s.GameOver}"));
+                foreach (var cmd in commands) rejected.Add(new Rejection(cmd, $"The game is over: {PlayerText.GameOver(s.GameOver)}"));
                 return new StepResult(s, why, rejected);
             }
 
@@ -53,17 +53,27 @@ namespace Statecraft.Sim
             EventSystem.Delegate(c, s, why);
 
             var len = SecuritySystem.TurnLengthFor(s.Rung);
-            var next = SimTime.Advance(s.Date, len);
-            var yf = SimTime.YearFraction(len);
+            // The last era's end is a boundary: the turn that reaches it ends on it, with that turn's real days (spec 4.1, 4.5).
+            var end = c.Eras[c.Eras.Count - 1].To;
+            var next = SimTime.AdvanceTo(s.Date, len, end);
+            var adjusted = next != SimTime.Advance(s.Date, len);
+            var days = (next - s.Date).Days;
+            var yf = adjusted ? days / 365.0 : SimTime.YearFraction(len);
             EffectsSystem.Apply(c, s, why);
             PopulationSystem.Apply(c, s, next, yf, why);
             EconomySystem.Apply(c, s, yf, why);
             PoliticsSystem.UpdateStability(c, s, yf, why);
-            SecuritySystem.Apply(c, s, len, why);
+            if (adjusted) SecuritySystem.Apply(c, s, days / 7, why);   // whole weeks of the adjusted turn
+            else SecuritySystem.Apply(c, s, len, why);
             PoliticsSystem.ReportChanges(c, s.Date, next, why);
             var turnStart = s.Date;
             s.Date = next;
             s.Turn++;
+            if (s.GameOver == null && s.Date >= end)
+            {
+                s.GameOver = GameOverCodes.EraEnded;   // the legacy report (#19) will come before this once it exists
+                why.Add(new Cause("era", "era_ended", 0, PlayerText.GameOver(s.GameOver)));
+            }
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             AttentionSystem.Refill(c, s);
             if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events

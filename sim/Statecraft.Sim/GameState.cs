@@ -7,6 +7,14 @@ using System.Text;
 
 namespace Statecraft.Sim
 {
+    /// <summary>The stable codes <see cref="GameState.GameOver"/> can hold (they are in the state hash).</summary>
+    public static class GameOverCodes
+    {
+        /// <summary>The last era's end was reached (eras.yaml).</summary>
+        public const string EraEnded = "era_ended";
+        public const string CoalitionCollapse = "coalition_collapse";
+    }
+
     public enum Mode { Historical, Open }
 
     /// <summary>All mutable game data. Systems never share references between states: Step works on Clone().</summary>
@@ -45,6 +53,7 @@ namespace Statecraft.Sim
         /// acceptance, so replacing a camp with housing cannot reopen the per-turn cap; a new date starts from zero.</summary>
         public DateTime MapActionsTurnDate;
         public int MapActionsThisTurn;
+        /// <summary>Why the game ended, as one of the <see cref="GameOverCodes"/>; null while it is on. Never display it: use PlayerText.GameOver.</summary>
         public string? GameOver;
 
         public double TotalPopulation => Population.Values.Sum();
