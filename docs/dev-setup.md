@@ -24,7 +24,7 @@
 - Page flags: `?golden` (golden check), `?smoke=N` (play N turns through the UI; bare `?smoke` = 5, `?smoke=0` = off),
   `?profile` (terrain profile), `?camlog` (log the camera distance), `?bootlog` (each boot phase's timing) and `?navlog`
   (every UI pointer and submit event, screen toggle and map click, with its frame), `?vprofile` (the visual frame-time
-  profile per feature) and `?shot` (screenshots at the promo poses as `SHOT` console lines). Desktop players take `-golden`,
+  profile per feature), `?shot` (screenshots at the promo poses as `SHOT` console lines) and `?kitscale=N`, `?housescale=N`, `?treescale=N` (the settlement kits' symbolic scale for city blocks, houses and trees, clamped to 5–200; defaults 60, 100, 100). In the editor, `MapCapture.Kits` takes `-kitScale`, `-houseScale` and `-treeScale`. Desktop players take `-golden`,
   `-smoke N`, `-profile`, `-camlog`, `-bootlog`, `-navlog`, `-vprofile` and `-shot`. The console also shows `GAME OK <date> turn <n> hash <h>` at start and `TURN <n> <date> hash <h>` per turn.
 - Visual checks (docs/visual-v1.md): measure only under the machine lock, which also waits for any open Unity editor:
   `uv run tools/machine_lock.py --exclusive --wait-unity -- uv run tools/web_check.py <build> --query vprofile --expect "PROFILE visual done" --timeout 1800 --stall 120`

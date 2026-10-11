@@ -59,6 +59,7 @@ public class GameInputsTests
         CollectionAssert.AreEqual(disk.Map.HeightmapR16z, fetched.Map.HeightmapR16z);
         Assert.AreEqual(disk.Map.HeightmapJson, fetched.Map.HeightmapJson);
         Assert.AreEqual(disk.Map.SettlementsYaml, fetched.Map.SettlementsYaml);
+        Assert.AreEqual(disk.Map.RoutesYaml, fetched.Map.RoutesYaml);
         Assert.AreEqual(disk.Map.HexesJson, fetched.Map.HexesJson);
         Assert.AreEqual(disk.Content.Events.Count, fetched.Content.Events.Count);
         Assert.AreEqual(Simulation.NewGame(disk.Content, 7, Mode.Historical).Hash(), Simulation.NewGame(fetched.Content, 7, Mode.Historical).Hash());

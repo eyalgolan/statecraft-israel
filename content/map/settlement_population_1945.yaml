@@ -1,0 +1,183 @@
+# Population of each place in settlements_1948.yaml in the Mandate government's Village Statistics, 1945 (figures as of
+# 1 April 1945). Presentation only: it sizes the settlement kits' footprints (owner ruling: towns spread over hexes in
+# proportion to population; unity/Assets/Scripts/Map/Kits/KitPopulation.cs). The sim never reads it: ContentLoader reads
+# named files only, so this file is outside the content hash and saves and goldens do not depend on it.
+# Primary source: Government of Palestine, Village Statistics, April 1945 (Office of Statistics and Department of Lands;
+# reprinted in S. Hadawi, Village Statistics of 1945, PLO Research Center, 1970). No scan of its town totals was reachable
+# on 2026-10-11, so every figure was read from the Wikipedia table of the publication and stays owner-verify until it is
+# checked against a scan. The page itself warns that locality figures are rough.
+settlements:
+- id: jerusalem
+  population: 157080
+  listed_as: "Jerusalem (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: tel_aviv
+  population: 166660
+  listed_as: "Tel Aviv (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: jaffa
+  population: 94310
+  listed_as: "Jaffa (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: haifa
+  population: 138300
+  listed_as: "Haifa (includes Ahuzzat Sir Herbert Samuel)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: acre
+  population: 12360
+  listed_as: "Acre (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: tiberias
+  population: 11310
+  listed_as: "Tiberias (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: safed
+  population: 11930
+  listed_as: "Safad (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: nazareth
+  population: 14200
+  listed_as: "Nazareth (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: lod
+  population: 16780
+  listed_as: "Lydda (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: ramla
+  population: 15160
+  listed_as: "Ramle (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: gaza
+  population: 34250
+  listed_as: "Gaza (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: beersheba
+  population: 5570
+  listed_as: "Beersheba"
+  note: "The page's Beersheba row is garbled; 5,570 is its most likely reading. Check against the scan."
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: petah_tikva
+  population: 17250
+  listed_as: "Petah Tiqva (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: rishon_lezion
+  population: 8100
+  listed_as: "Rishon le Zion (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: zikhron_yaakov
+  population: 1740
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: rosh_pinna
+  population: 340
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: rehovot
+  population: 10020
+  listed_as: "Rehovot (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: hadera
+  population: 7830
+  listed_as: "Hadera (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: netanya
+  population: 5070
+  listed_as: "Natanya (Urban)"
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: degania_alef
+  population: 290
+  listed_as: "Deganiya 'A'"
+  note: "Deganiya 'A' only (Deganiya 'B', 380, is a separate settlement)."
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: ein_harod
+  population: 1060
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: nahalal
+  population: 1090
+  listed_as: "Nahalal and Shimron"
+  note: "Listed together with Shimron; the combined figure is used."
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: hanita
+  population: 240
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: revivim
+  population: null
+  note: "Not listed (founded 1943); the kit takes the smallest footprint."
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'
+- id: yad_mordechai
+  population: null
+  note: "Not listed (founded 1943); the kit takes the smallest footprint."
+  status: owner-verify
+  sources:
+  - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
+    checked: '2026-10-11'

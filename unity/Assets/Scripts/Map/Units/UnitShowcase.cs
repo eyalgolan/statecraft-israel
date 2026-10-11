@@ -1,0 +1,245 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Statecraft.Game.Boot;
+using UnityEngine;
+
+namespace Statecraft.Game.Map.Units
+{
+    /// <summary>The unit art slice (owner, 2026-10-11: "make sure the units are like in the promo video"): a 1948 rifle
+    /// trio with a selection ring, a Spitfire flying a loop with its shadow on the ground, and a corvette at sea, all at
+    /// <see cref="PromoPose.Gameplay03"/>. A showcase only: it reads nothing from the sim and places no unit the game state
+    /// knows about (where real units stand, move and fight is war mode's job, issue #104). It appears only when asked
+    /// for ("units" in the WebGL page URL or -units on desktop), in the art checkpoint's screenshots ("shot") and in the
+    /// editor's promo renders; normal play never shows it. Registers the "units" visual toggle, so the frame profile can
+    /// price it (?vprofile&amp;units).</summary>
+    public static class UnitShowcase
+    {
+        public const string RootName = "UnitShowcase", ToggleName = "units";
+
+        /// <summary>Symbolic scale, measured on the promo against the art checkpoint (docs/units.md): at 1920 px wide the
+        /// promo's riflemen stand about 87 px tall inside a ring about 190 px across; the first checkpoint, at 2600x, drew
+        /// them 113 px tall. So a man is drawn <see cref="FigureScale"/> times his real size (about 3.6 km at 2000x), and
+        /// the aircraft and the ship are sized against him, as Civ draws them, not against each other.</summary>
+        public const float FigureScale = 2000f;
+        public const float AircraftScale = 420f;        // span 11.2 m x 420 = 4.7 km: wider than a man is tall
+        public const float ShipScale = 95f;             // 63.4 m x 95 = 6.0 km: about a hex, like the promo's boats
+        /// <summary>Trio spacing and the ring, as fractions of the hex circumradius.</summary>
+        public const float TrioSpread = 0.40f, RingRadius = 0.66f, RingWidth = 0.035f, RingClearanceM = 25f;
+        /// <summary>The flight: a circle of <see cref="LoopRadiusM"/> about <see cref="LoopCentre"/>, at
+        /// <see cref="AltitudeM"/> above the highest ground under it, once every <see cref="LoopSeconds"/>, banked inwards.</summary>
+        public const float LoopRadiusM = 16000f, AltitudeM = 4200f, LoopSeconds = 48f, BankDegrees = 28f;
+        /// <summary>The loop's phase (0..1) used for still images (screenshots, editor renders), so they are repeatable: the
+        /// aircraft over the coast off Tel Aviv, inside the tilt-shift's sharp band, its shadow on the coastal plain (chosen
+        /// from renders at 0.40-0.74, docs/units.md).</summary>
+        public const float StillPhase = 0.52f;
+
+        /// <summary>Where the slice stands, inside the gameplay03 frame: the trio on the coastal plain east of Tel Aviv, in
+        /// the frame's sharp band and clear of every settlement label (at 31.93 N it stood on Ramla's label), the loop over
+        /// Tel Aviv and the coast, the corvette off Jaffa.</summary>
+        public static readonly (double lon, double lat) TrioAt = (34.88, 32.01), LoopCentre = (34.86, 32.03), ShipAt = (34.63, 32.02);
+        public const float ShipHeadingDegrees = 200f;
+
+        public static bool Requested() =>
+            Requested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
+
+        /// <summary>Only "units" (WebGL URL) or -units (desktop) asks for it. A plain "shot" does not (controller ruling,
+        /// 2026-10-11): every track's checkpoint metrics stay comparable, and the units' checkpoint adds the flag
+        /// (tools/art_checkpoint.sh --units).</summary>
+        public static bool Requested(string? url, string[] args, bool webgl) =>
+            webgl ? UrlFlags.Has(url, "units") : args.Contains("-units");
+
+        /// <summary>True when the flight should hold its still phase (screenshots: the same image every run).</summary>
+        public static bool StillRequested(string? url, string[] args, bool webgl) =>
+            webgl ? UrlFlags.Has(url, "shot") : args.Contains("-shot");
+
+        /// <summary>The art hook (owner ruling, 2026-10-11): promo-quality close-zoom models come from a separate AI-3D track,
+        /// and the code-built models stay as the far-zoom and fallback version. A prefab at
+        /// Resources/<see cref="AuthoredFolder"/>&lt;unit type&gt; replaces the code-built model of that type. It follows the
+        /// same convention: real metres, facing +Z, origin on the ground (an aircraft: its centre of gravity), with its own
+        /// materials; an authored aircraft brings its own propeller. Without one, the code-built mesh is used. Unit types:
+        /// the <c>*Type</c> constants below.</summary>
+        public const string AuthoredFolder = "Units/Authored/";
+        public const string RiflemanSlouchHatType = "rifleman-1948-slouch-hat", RiflemanHelmetType = "rifleman-1948-steel-helmet",
+            RiflemanWoolCapType = "rifleman-1948-wool-cap", SpitfireType = "spitfire-mk9e-101sqn-1948", CorvetteType = "corvette-k20-1948";
+
+        /// <summary>Finds an authored model for a unit type, or null (a seam: tests replace it).</summary>
+        internal static Func<string, GameObject?> AuthoredModel = type => Resources.Load<GameObject>(AuthoredFolder + type);
+
+        /// <summary>Builds the showcase under the map's terrain (so a map rebuild destroys it). Its meshes, palette and
+        /// material are owned by the showcase root's own MapRuntimeAssets, so destroying the root (a re-spawn or a map
+        /// rebuild) frees them, and the "units" toggle is registered through that teardown. The trio stands on the centre of
+        /// the hex nearest <see cref="TrioAt"/>. <paramref name="still"/> freezes the flight at <see cref="StillPhase"/>.
+        /// Returns the root.</summary>
+        public static GameObject Spawn(MapScene map, bool still)
+        {
+            if (map == null || map.Terrain == null || map.Hexes == null) throw new InvalidOperationException("UnitShowcase needs a built map");
+            var terrain = map.Terrain;
+            var old = terrain.transform.Find(RootName);
+            if (old != null)
+            {
+                foreach (var a in old.GetComponentsInChildren<MapRuntimeAssets>(true)) a.RunTeardown();
+                old.SetParent(null);
+                if (Application.isPlaying) UnityEngine.Object.Destroy(old.gameObject); else UnityEngine.Object.DestroyImmediate(old.gameObject);
+            }
+
+            var template = Resources.Load<Material>(UnitMaterials.MiniatureResource)
+                ?? throw new InvalidOperationException($"Resources/{UnitMaterials.MiniatureResource}.mat is missing (run UnitMaterialAssets.Create)");
+            var ringTemplate = Resources.Load<Material>(UnitMaterials.RingResource)
+                ?? throw new InvalidOperationException($"Resources/{UnitMaterials.RingResource}.mat is missing (run UnitMaterialAssets.Create)");
+
+            var root = new GameObject(RootName);
+            root.transform.SetParent(terrain.transform, false);
+            root.transform.position = Vector3.zero;   // children are placed in world space
+            var assets = root.AddComponent<MapRuntimeAssets>();
+            var palette = assets.Own(UnitPalette.MakeTexture(readable: false));
+            var paint = assets.Own(new Material(template) { name = "UnitMiniature (palette)" });
+            paint.SetTexture("_BaseMap", palette);
+            Mesh Built(Mesh m) { assets.Own(m); m.UploadMeshData(true); return m; }   // no CPU copy kept in players
+            float hex = map.Hexes.hex_size_km * 1000f;
+
+            // The trio: three riflemen in a loose triangle facing the camera's side of south-west, around the hex's centre.
+            var centre = HexCentreNear(map, TrioAt.lon, TrioAt.lat);
+            var looks = new[]
+            {
+                (RiflemanSlouchHatType, UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, new Vector2(-0.62f, -0.30f), 200f),
+                (RiflemanHelmetType, UnitModels.Headgear.SteelHelmet, UnitModels.RiflePose.Grounded, true, new Vector2(0.05f, 0.05f), 185f),
+                (RiflemanWoolCapType, UnitModels.Headgear.WoolCap, UnitModels.RiflePose.Slung, false, new Vector2(0.66f, -0.40f), 170f),
+            };
+            for (int i = 0; i < looks.Length; i++)
+            {
+                var (type, hat, pose, faded, offset, heading) = looks[i];
+                var p = Ground(map, centre + new Vector3(offset.x, 0, offset.y) * TrioSpread * hex);
+                Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
+                    paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
+            }
+            Ring(map, assets, ringTemplate, root.transform, centre, RingRadius * hex);
+
+            // The aircraft and, when code-built, its propeller.
+            var plane = new GameObject("Spitfire1948");
+            plane.transform.SetParent(root.transform, false);
+            Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), paint,
+                Vector3.zero, Quaternion.identity, 1f, out bool authoredAircraft);
+            Transform? prop = null;
+            if (!authoredAircraft)
+            {
+                prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), paint, Vector3.zero, Quaternion.identity, 1f).transform;
+                prop.localPosition = UnitModels.SpitfirePropellerHub;
+            }
+            plane.transform.localScale = Vector3.one * AircraftScale;
+            var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);
+            var flight = plane.AddComponent<ShowcaseFlight>();
+            flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null);
+
+            // The corvette, at the sea surface.
+            var ship = Ground(map, map.Frame.ToWorld(ShipAt.lon, ShipAt.lat, 0));
+            Piece(root.transform, "Corvette1948", CorvetteType, () => Built(UnitModels.Corvette("CorvetteK20")), paint, ship,
+                Quaternion.Euler(0, ShipHeadingDegrees, 0), ShipScale);
+
+            assets.OnTeardown(VisualToggles.Register(ToggleName, on => { if (root != null) root.SetActive(on); }));
+            return root;
+        }
+
+        /// <summary>One unit model: the authored prefab for <paramref name="type"/> when there is one (the art hook),
+        /// otherwise the code-built mesh.</summary>
+        static GameObject Piece(Transform parent, string name, string type, Func<Mesh> codeBuilt, Material paint, Vector3 position,
+            Quaternion rotation, float scale) => Piece(parent, name, type, codeBuilt, paint, position, rotation, scale, out _);
+
+        static GameObject Piece(Transform parent, string name, string type, Func<Mesh> codeBuilt, Material paint, Vector3 position,
+            Quaternion rotation, float scale, out bool authored)
+        {
+            var prefab = AuthoredModel(type);
+            authored = prefab != null;
+            if (prefab == null) return Piece(parent, name, codeBuilt(), paint, position, rotation, scale);
+            var go = UnityEngine.Object.Instantiate(prefab, parent, false);
+            go.name = name;
+            go.transform.SetPositionAndRotation(position, rotation);
+            go.transform.localScale = Vector3.one * scale;
+            return go;
+        }
+
+        static GameObject Piece(Transform parent, string name, Mesh mesh, Material mat, Vector3 position, Quaternion rotation, float scale)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(position, rotation);
+            go.transform.localScale = Vector3.one * scale;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            return go;
+        }
+
+        /// <summary>The ground point at the centre of the map hex nearest (<paramref name="lon"/>, <paramref name="lat"/>),
+        /// from hexes.json (as MapScene.Select places its outline), so a unit stands in one hex.</summary>
+        public static Vector3 HexCentreNear(MapScene map, double lon, double lat)
+        {
+            var want = map.Frame.ToWorld(lon, lat, 0);
+            Vector3 best = want; float bestD = float.MaxValue;
+            foreach (var h in map.Hexes.hexes)
+            {
+                var c = map.Frame.ToWorld(h.lon, h.lat, 0);
+                float d = (c.x - want.x) * (c.x - want.x) + (c.z - want.z) * (c.z - want.z);
+                if (d < bestD) { bestD = d; best = c; }
+            }
+            return Ground(map, best);
+        }
+
+        /// <summary>The point on the terrain under <paramref name="p"/> (world x, z).</summary>
+        public static Vector3 Ground(MapScene map, Vector3 p)
+        {
+            p.y = map.Terrain.SampleHeight(p) + map.Terrain.transform.position.y;
+            return p;
+        }
+
+        /// <summary>The highest ground under the loop (sampled every 5 degrees and at its centre), so the aircraft never
+        /// dips into a ridge; its altitude is constant, so its shadow keeps one offset.</summary>
+        public static float LoopFloor(MapScene map, Vector3 centre, float radius)
+        {
+            float top = Ground(map, centre).y;
+            for (int a = 0; a < 360; a += 5)
+            {
+                var p = centre + new Vector3(Mathf.Cos(a * Mathf.Deg2Rad), 0, Mathf.Sin(a * Mathf.Deg2Rad)) * radius;
+                top = Mathf.Max(top, Ground(map, p).y);
+            }
+            return top;
+        }
+
+        /// <summary>The selection ring: a thin flat band on the ground around the trio, drawn with the hex selection's
+        /// unlit ivory and depth offset (the promo's white ring). Each vertex sits <see cref="RingClearanceM"/> above the
+        /// highest ground sampled across the band at its own angle and halfway to each neighbour, so a ridge between two
+        /// vertices cannot rise through the straight edge between them (MapBuilder.DrapedRing's rule).</summary>
+        static void Ring(MapScene map, MapRuntimeAssets assets, Material ringTemplate, Transform parent, Vector3 centre, float radius)
+        {
+            const int n = 96;
+            var verts = new List<Vector3>(2 * n); var tris = new List<int>(6 * n);
+            float w = RingWidth * radius / RingRadius;
+            float Across(float step)
+            {
+                float a = 2f * Mathf.PI * step / n; var d = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
+                return Mathf.Max(Ground(map, centre + d * (radius + w / 2)).y, Ground(map, centre + d * (radius - w / 2)).y);
+            }
+            for (int i = 0; i < n; i++)
+            {
+                float a = 2f * Mathf.PI * i / n; var d = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
+                float y = Mathf.Max(Across(i), Mathf.Max(Across(i - 0.5f), Across(i + 0.5f))) + RingClearanceM;
+                var outer = centre + d * (radius + w / 2); var inner = centre + d * (radius - w / 2);
+                outer.y = y; inner.y = y;
+                verts.Add(outer); verts.Add(inner);
+            }
+            for (int i = 0; i < n; i++)
+            {
+                int a = 2 * i, b = 2 * ((i + 1) % n);
+                tris.AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });   // the ring shader draws both faces
+            }
+            var mesh = assets.Own(new Mesh { name = "UnitSelectionRing" });
+            mesh.SetVertices(verts); mesh.SetTriangles(tris, 0); mesh.RecalculateBounds(); mesh.UploadMeshData(true);
+            var go = new GameObject("SelectionRing");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = ringTemplate;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+    }
+}

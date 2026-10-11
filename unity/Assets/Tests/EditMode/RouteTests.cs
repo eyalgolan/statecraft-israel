@@ -1,0 +1,489 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using NUnit.Framework;
+using Statecraft.Game;
+using Statecraft.Game.Map;
+using Statecraft.Game.Map.Routes;
+using Statecraft.Sim;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+/// <summary>The 1948 railways and roads (issue #35): the traced data, the ribbons, the train, the toggles and the look.</summary>
+public class RouteTests
+{
+    static readonly (double, double, double, double) Bounds = (34.2, 35.9, 29.45, 33.35);
+    static string CommittedYaml => File.ReadAllText(Path.Combine(Paths.Content, "map", RoutePaths.DefaultFileName));
+
+    [Test]
+    public void TheCommittedRoutesParse()
+    {
+        var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+        Assert.GreaterOrEqual(routes.Count, 19);
+        var ids = routes.Select(r => r.Id).ToList();
+        CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_railway", "kantara_main_line_south", "eastern_railway",
+            "hadera_haifa_railway", "jaffa_jerusalem_road", "burma_road", "tel_aviv_haifa_road", "coastal_road_south" }, ids);
+        Assert.AreEqual(RoutePaths.Rail, routes.First(r => r.Id == RouteLayer.TrainRoute).Kind);
+        Assert.IsTrue(routes.All(r => r.Status == "draft" || r.Status == "fact-checked"));
+    }
+
+    [TestCase("routes: []", "no routes")]
+    [TestCase("routes:\n- {id: a, kind: canal, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "unknown kind 'canal'")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5]]}", "'a' needs at least two points")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [40.0, 31.6]]}", "'a' point 1 (40, 31.6) is outside the map")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6]]}", "'a' point 1 is not a [lon, lat] pair")]
+    [TestCase("routes:\n- {id: Bad, kind: road, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "'Bad' id must be lower snake_case")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}\n- {id: a, kind: rail, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "'a' duplicate id")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "'a' from/to")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, from: '1948-6-1', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "'a' from/to")]
+    [TestCase("routes:\n- {id: a, kind: road, status: draft, from: '1948', to: '1947', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "'a' to must be after from")]
+    [TestCase("routes:\n- {id: a, kind: road, colour: red, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}", "colour")]
+    public void BadRouteFilesNameTheFileAndTheProblem(string yaml, string expected)
+    {
+        var e = Assert.Throws<InvalidDataException>(() => RoutePaths.Parse(yaml, Bounds, "r.yaml"));
+        StringAssert.StartsWith("r.yaml:", e.Message);
+        StringAssert.Contains(expected, e.Message);
+    }
+
+    /// <summary>Map-only: the sim's content hash is the same with and without the route files (so neither moves the
+    /// goldens), and the WebGL manifest ships the traced file the map reads.</summary>
+    [Test]
+    public void TheRoutesDoNotMoveTheContentHash()
+    {
+        var copy = Path.Combine(Path.GetTempPath(), "statecraft-noroutes-" + System.Guid.NewGuid().ToString("N"));
+        try
+        {
+            Statecraft.Game.Boot.ContentManifest.Copy(Paths.Content, copy);
+            foreach (var f in Directory.GetFiles(Path.Combine(copy, "map"), "route*_1948.yaml")) File.Delete(f);
+            Assert.AreEqual(ContentLoader.Load(Paths.Content).Hash, ContentLoader.Load(copy).Hash);
+            var manifest = Statecraft.Game.Boot.ContentManifest.Collect(Paths.Content);
+            CollectionAssert.Contains(manifest, "map/" + RoutePaths.DefaultFileName);
+            CollectionAssert.DoesNotContain(manifest, "map/routes_1948.yaml", "the tracer's hand-written input is never downloaded (review M10)");
+        }
+        finally { if (Directory.Exists(copy)) Directory.Delete(copy, true); }
+    }
+
+    [Test]
+    public void ResampleKeepsTheEndsAndTheSpacing()
+    {
+        var (pts, along) = RouteLayer.Resample(new List<Vector2> { new Vector2(0, 0), new Vector2(250, 0), new Vector2(250, 100) }, 120f);
+        Assert.AreEqual(new Vector2(0, 0), pts[0]);
+        Assert.AreEqual(new Vector2(250, 100), pts[pts.Count - 1]);
+        Assert.AreEqual(350f, along[along.Count - 1], 1e-3f);
+        for (int i = 1; i + 1 < along.Count; i++) Assert.AreEqual(120f * i, along[i], 1e-3f);
+    }
+
+    static MapScene BuildMap()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        var map = new GameObject("MapScene").AddComponent<MapScene>();
+        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("BorderLand"));
+        map.Build();
+        return map;
+    }
+
+    static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
+
+    static Transform RoutesRoot(MapScene map) => map.Terrain.transform.Find(RouteLayer.RootName);
+
+    static IEnumerable<MeshFilter> Ribbons(Transform root, string name) =>
+        root.Find(RouteLayer.RibbonsName).GetComponentsInChildren<MeshFilter>(true).Where(f => f.name == name);
+
+    /// <summary>The rail ribbon's vertices, hashed (SHA-256 over their float bits). Pinned below, so a fresh editor process
+    /// building the committed data must give the same geometry bit for bit (review M11), and an unintended geometry
+    /// change fails here. A deliberate change (new data, new widths) updates the constant.</summary>
+    static string Hash(Mesh m)
+    {
+        var bytes = new List<byte>();
+        foreach (var v in m.vertices) { bytes.AddRange(System.BitConverter.GetBytes(v.x)); bytes.AddRange(System.BitConverter.GetBytes(v.y)); bytes.AddRange(System.BitConverter.GetBytes(v.z)); }
+        foreach (var uv in m.uv) { bytes.AddRange(System.BitConverter.GetBytes(uv.x)); bytes.AddRange(System.BitConverter.GetBytes(uv.y)); }
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return string.Concat(sha.ComputeHash(bytes.ToArray()).Select(b => b.ToString("x2")));
+    }
+    const string RailMeshHash = "10b9365cce450aa2e425bbbe5869c850f6014e68d056f1e1b44b3a2d36bc8fea";
+
+    [Test]
+    public void TheMapBuildsRibbonsOnTheGroundAndTheTogglesHideThem()
+    {
+        var map = BuildMap();
+        List<Object> owned;
+        try
+        {
+            var root = RoutesRoot(map);
+            Assert.IsNotNull(root, "MapScene.Build adds the routes under the terrain (a rebuild destroys them)");
+            var rail = Ribbons(root, "Rail").ToList(); var roads = Ribbons(root, "Roads").ToList();
+            Assert.IsTrue(rail.Count > 0 && roads.Count > 0);
+            Assert.AreSame(Resources.Load<Material>(RouteLayer.RailMaterialResource), rail[0].GetComponent<MeshRenderer>().sharedMaterial);
+            // Budget: well under 100k triangles in all (WebGL's integrated GPUs draw millions), one draw call per window
+            // group and look (about a dozen).
+            int tris = (int)(rail.Concat(roads).Sum(f => (long)f.sharedMesh.GetIndexCount(0)) / 3);
+            int railVerts = rail.Sum(f => f.sharedMesh.vertexCount), roadVerts = roads.Sum(f => f.sharedMesh.vertexCount);
+            TestContext.WriteLine($"rail {railVerts} vertices, roads {roadVerts}, {tris} triangles, {rail.Count + roads.Count} draw calls");
+            Assert.Less(tris, 100000);
+            Assert.LessOrEqual(rail.Count + roads.Count, 20);
+            // The meshes are freed after upload (no CPU copy), so check a fresh build of the same data: every vertex
+            // clears the ground under it by the clearance, and lies on the terrain.
+            var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+            var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
+            var check = RouteLayer.Ribbon(routes.Where(r => r.Kind == RoutePaths.Rail).Select(r => (RouteLayer.World(map.Frame, r), RouteLayer.RailWidthM)), data, origin, "check");
+            try
+            {
+                Assert.AreEqual(railVerts, check.vertexCount, "the same data gives the same vertices");
+                foreach (var v in check.vertices)
+                {
+                    Assert.GreaterOrEqual(v.y - RouteLayer.Ground(data, origin, new Vector2(v.x, v.z)), RouteLayer.ClearanceM - 0.01f);
+                    Assert.That(v.x, Is.InRange(origin.x, origin.x + data.size.x)); Assert.That(v.z, Is.InRange(origin.z, origin.z + data.size.z));
+                }
+                var hash = Hash(check);
+                TestContext.WriteLine($"rail mesh hash {hash}");
+                Assert.AreEqual(RailMeshHash, hash, "the committed data builds the pinned rail geometry in a fresh process");
+            }
+            finally { Object.DestroyImmediate(check); }
+
+            CollectionAssert.Contains(VisualToggles.Names, RouteLayer.RoutesToggle);
+            CollectionAssert.Contains(VisualToggles.Names, RouteLayer.TrainToggle);
+            VisualToggles.Set(RouteLayer.RoutesToggle, false);
+            Assert.IsFalse(root.Find(RouteLayer.RibbonsName).gameObject.activeSelf);
+            Assert.IsTrue(root.Find("Train").gameObject.activeSelf, "each toggle prices its own part");
+            VisualToggles.Set(RouteLayer.TrainToggle, false);
+            Assert.IsFalse(root.Find("Train").gameObject.activeSelf);
+            VisualToggles.SetAll(true);
+            Assert.IsTrue(root.Find(RouteLayer.RibbonsName).gameObject.activeSelf && root.Find("Train").gameObject.activeSelf);
+            owned = root.GetComponentsInChildren<MeshFilter>(true).Select(f => (Object)f.sharedMesh).ToList();
+            var paint = root.Find("Train/Locomotive").GetComponent<MeshRenderer>().sharedMaterial;
+            owned.Add(paint); owned.Add(paint.GetTexture("_BaseMap"));
+            Assert.IsTrue(owned.All(o => o != null));
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+        Assert.IsTrue(owned.All(o => o == null), "destroying the map frees the route meshes, the train's material and its palette texture");
+        CollectionAssert.DoesNotContain(VisualToggles.Names, RouteLayer.RoutesToggle, "the map's teardown removes the switches");
+        CollectionAssert.DoesNotContain(VisualToggles.Names, RouteLayer.TrainToggle);
+    }
+
+    /// <summary>C1: the Burma Road shows only from its completion on 14 June 1948; the start (15 May 1948) does not have
+    /// it, every other route is there from the start.</summary>
+    [Test]
+    public void TheBurmaRoadAppearsOn14June1948()
+    {
+        var map = BuildMap();
+        try
+        {
+            var groups = RoutesRoot(map).Find(RouteLayer.RibbonsName).GetComponentsInChildren<RouteGroup>(true).ToList();
+            var burma = groups.Single(g => g.Window.From == new System.DateTime(1948, 6, 14));
+            Assert.IsFalse(burma.gameObject.activeSelf, "built as at the game's start, 15 May 1948");
+            Assert.IsTrue(groups.Where(g => g != burma).All(g => g.gameObject.activeSelf), "the rest are on the 1946 map");
+            RouteLayer.ShowAt(map, new System.DateTime(1948, 6, 13));
+            Assert.IsFalse(burma.gameObject.activeSelf);
+            RouteLayer.ShowAt(map, new System.DateTime(1948, 6, 14));
+            Assert.IsTrue(burma.gameObject.activeSelf);
+            RouteLayer.ShowAt(map, new System.DateTime(1948, 5, 15));
+            Assert.IsFalse(burma.gameObject.activeSelf, "a reloaded earlier save hides it again");
+            RouteLayer.ShowAt(map, new System.DateTime(1910, 1, 1));
+            Assert.IsTrue(groups.Where(g => g.Window.From.Year > 1910).All(g => !g.gameObject.activeSelf), "nothing before its window");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [Test]
+    public void WindowsAndBounds()
+    {
+        Assert.AreEqual(new System.DateTime(1946, 1, 1), RoutePaths.Bound("1946"));
+        Assert.AreEqual(new System.DateTime(1948, 6, 14), RoutePaths.Bound("1948-06-14"));
+        Assert.Throws<System.FormatException>(() => RoutePaths.Bound("48"));
+        var w = new RouteWindow(new System.DateTime(1948, 6, 14), new System.DateTime(1949, 1, 1));
+        Assert.IsFalse(w.Covers(new System.DateTime(1948, 6, 13))); Assert.IsTrue(w.Covers(new System.DateTime(1948, 6, 14)));
+        Assert.IsFalse(w.Covers(new System.DateTime(1949, 1, 1)), "to is exclusive");
+    }
+
+    /// <summary>I3: a missing or malformed route file means no routes and a warning, never a broken map.</summary>
+    [Test]
+    public void AMissingOrBadRouteFileLeavesTheMapWithoutRoutes()
+    {
+        var warnings = new List<string>();
+        Assert.IsEmpty(RoutePaths.ReadOrNone("", Bounds, warnings.Add));
+        Assert.IsEmpty(RoutePaths.ReadOrNone("routes: [", Bounds, warnings.Add));
+        Assert.AreEqual(2, warnings.Count);
+        StringAssert.Contains("missing", warnings[0]);
+        Assert.Greater(RoutePaths.ReadOrNone(CommittedYaml, Bounds, warnings.Add).Count, 0);
+        Assert.AreEqual(2, warnings.Count, "the committed file reads without a warning");
+
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        var map = new GameObject("MapScene").AddComponent<MapScene>();
+        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("BorderLand"));
+        var inputs = Statecraft.Game.Boot.GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap);
+        inputs.RoutesYaml = "";
+        UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("route_paths_1948.yaml: missing"));
+        try
+        {
+            map.Build(inputs);
+            Assert.IsNotNull(map.Terrain, "the map still builds");
+            Assert.IsEmpty(RoutesRoot(map).GetComponentsInChildren<MeshFilter>(true), "no ribbons and no train");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Re-review nit 1: a route with an impossible date (year 0000, a 13th month) is skipped with a warning by the
+    /// tolerant read, and the map still builds with every other route; the strict parse still rejects it.</summary>
+    [Test]
+    public void ABadDateSkipsOnlyThatRoute()
+    {
+        const string good = "- {id: a, kind: road, status: draft, from: '1946', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}\n";
+        foreach (var bad in new[] { "0000", "1948-13-40" })
+        {
+            var yaml = "routes:\n" + good + $"- {{id: b, kind: road, status: draft, from: '{bad}', length_km: 1, points: [[34.5, 31.5], [34.6, 31.6]]}}\n";
+            var warnings = new List<string>();
+            var routes = RoutePaths.ReadOrNone(yaml, Bounds, warnings.Add);
+            CollectionAssert.AreEqual(new[] { "a" }, routes.Select(r => r.Id).ToList(), bad);
+            Assert.AreEqual(1, warnings.Count, bad);
+            StringAssert.Contains("'b' from/to", warnings[0]);
+            var e = Assert.Throws<InvalidDataException>(() => RoutePaths.Parse(yaml, Bounds, "r.yaml"));
+            StringAssert.Contains("'b' from/to", e.Message);
+        }
+
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        var map = new GameObject("MapScene").AddComponent<MapScene>();
+        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("BorderLand"));
+        var inputs = Statecraft.Game.Boot.GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap);
+        Assert.IsTrue(inputs.RoutesYaml.Contains("from: '1948-06-14'"));
+        inputs.RoutesYaml = inputs.RoutesYaml.Replace("from: '1948-06-14'", "from: '0000'");
+        UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("'burma_road' from/to"));
+        try
+        {
+            map.Build(inputs);
+            var groups = RoutesRoot(map).Find(RouteLayer.RibbonsName).GetComponentsInChildren<RouteGroup>(true);
+            Assert.Greater(groups.Length, 0, "the other routes are drawn");
+            Assert.IsFalse(groups.Any(g => g.Window.From.Year == 1948), "only the bad route is left out");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Re-review nit 2: a map rebuilt mid-game draws its routes as at the game's date at once, not as at 15 May
+    /// until the next state change.</summary>
+    [Test]
+    public void ARebuiltMapKeepsTheGameDate()
+    {
+        var map = BuildMap();
+        try
+        {
+            Assert.IsNull(map.RouteDate);
+            RouteLayer.ShowAt(map, new System.DateTime(1948, 7, 1));
+            Assert.AreEqual(new System.DateTime(1948, 7, 1), map.RouteDate);
+            map.Build();
+            var burma = RoutesRoot(map).Find(RouteLayer.RibbonsName).GetComponentsInChildren<RouteGroup>(true)
+                .Single(g => g.Window.From == new System.DateTime(1948, 6, 14));
+            Assert.IsTrue(burma.gameObject.activeSelf, "shown at once after the rebuild");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Kits and routes together (#179 on main): no kit building, landmark or tree reaches into any route's
+    /// corridor, half the drawn width plus RouteLayer.CorridorMarginM, the Burma Road included (the kits are built once,
+    /// not per date). Checked by brute force against every segment, independent of KitGround's grid.</summary>
+    [Test]
+    public void NoKitBuildingOrTreeStandsOnARoute()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        try
+        {
+            map.Build();
+            Assert.IsNotNull(map.KitStats, "Map.unity builds the kits");
+            var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+            var corridors = RouteLayer.Corridors(map.Frame, routes);
+            Assert.AreEqual(corridors.Sum(c => c.line.Count - 1), map.KitStats.CorridorSegments, "the map hands every route to the kits");
+            Assert.IsTrue(routes.Any(r => r.Id == "burma_road"), "the dated Burma Road keeps its corridor from the start");
+
+            // The same placement the map runs, with the same corridors.
+            var g = new Statecraft.Game.Map.Kits.KitGround(map.Terrain, map.Frame, map.Hexes, HeightmapLoader.Load(Paths.StreamingMap).meta.elev_min_m);
+            foreach (var (line, half) in corridors) g.AddCorridor(line, half);
+            var built = Statecraft.Game.Map.Kits.SettlementKits.Build(map.Settlements, g, out var lots);
+            foreach (var k in built) Object.DestroyImmediate(k.mesh);
+            foreach (var l in lots) g.Lots.Add((l.centre, l.radius));
+            var trees = Statecraft.Game.Map.Kits.Vegetation.Plant(map.Settlements, g);
+            Assert.Greater(lots.Count, 200); Assert.Greater(trees.Count, 1000);   // 264 lots and about 7,000 trees (306 lots without the corridors)
+
+            float Clearance(Vector2 p) => corridors.Min(c =>
+            {
+                float best = float.MaxValue;
+                for (int i = 0; i + 1 < c.line.Count; i++)
+                    best = Mathf.Min(best, Statecraft.Game.Map.Kits.KitGround.SegmentDistance(p, c.line[i], c.line[i + 1]) - c.halfWidth);
+                return best;
+            });
+            int badLots = lots.Count(l => Clearance(l.centre) < l.radius - 0.01f);
+            int badTrees = trees.Count(t =>
+            {
+                Vector3 p = t.Item2.GetColumn(3);
+                float crown = Statecraft.Game.Map.Kits.Vegetation.CrownRadiusM(t.Item1) * ((Vector3)t.Item2.GetColumn(0)).magnitude;
+                return Clearance(new Vector2(p.x, p.z)) < crown - 0.01f;
+            });
+            TestContext.WriteLine($"{lots.Count} lots, {trees.Count} trees, {map.KitStats.CorridorSegments} route segments: {badLots} lots and {badTrees} trees on a route");
+            Assert.AreEqual(0, badLots, "no building or landmark lot reaches a route corridor");
+            Assert.AreEqual(0, badTrees, "no tree crown reaches a route corridor");
+            Assert.AreEqual(map.Settlements.Count, lots.Select(l => l.id).Distinct().Count(), "every town still has buildings");
+        }
+        finally
+        {
+            Object.DestroyImmediate(map.gameObject);
+            Statecraft.Game.Map.Kits.KitScale.Reset();
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+    }
+
+    /// <summary>I1 and M11: the train is a showcase. Editor renders and `?shot` hold it still (the promo frames); `?train`
+    /// or `?units` runs it; normal play has none.</summary>
+    [Test]
+    public void TheTrainIsAShowcaseOnly()
+    {
+        Assert.AreEqual(RouteLayer.TrainMode.Still, RouteLayer.ModeFor(playing: false, shot: false, requested: false), "editor renders");
+        Assert.AreEqual(RouteLayer.TrainMode.Still, RouteLayer.ModeFor(playing: true, shot: true, requested: false), "?shot freezes it");
+        Assert.AreEqual(RouteLayer.TrainMode.Still, RouteLayer.ModeFor(playing: true, shot: true, requested: true));
+        Assert.AreEqual(RouteLayer.TrainMode.Moving, RouteLayer.ModeFor(playing: true, shot: false, requested: true));
+        Assert.AreEqual(RouteLayer.TrainMode.None, RouteLayer.ModeFor(playing: true, shot: false, requested: false), "normal play: no train");
+        Assert.IsTrue(RouteLayer.TrainRequested("https://x/index.html?train", new string[0], true));
+        Assert.IsTrue(RouteLayer.TrainRequested("https://x/index.html?golden&units", new string[0], true));
+        Assert.IsFalse(RouteLayer.TrainRequested("https://x/index.html?golden&smoke=5", new string[0], true));
+        Assert.IsFalse(RouteLayer.TrainRequested("https://x/index.html?trainx", new string[0], true));
+        Assert.IsTrue(RouteLayer.TrainRequested(null, new[] { "player", "-train" }, false));
+        Assert.IsFalse(RouteLayer.TrainRequested(null, new[] { "player", "-shot" }, false));
+        Assert.IsTrue(VisualShots.Requested("https://x/?golden&shot", new string[0], true), "the flag ModeForThisRun reads for ?shot");
+
+        var map = BuildMap();
+        try
+        {
+            var data = map.Terrain.terrainData;
+            var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+            var none = RouteLayer.Build(map.Terrain, map.Frame, routes, RouteLayer.TrainMode.None, RouteLayer.DefaultDate);
+            Assert.IsNull(none.GetComponentInChildren<RouteTrain>(true), "no train in normal play");
+            var moving = RouteLayer.Build(map.Terrain, map.Frame, routes, RouteLayer.TrainMode.Moving, RouteLayer.DefaultDate);
+            Assert.IsNull(moving.GetComponentInChildren<RouteTrain>().StillHead, "the showcase runs");
+            Object.DestroyImmediate(none); Object.DestroyImmediate(moving);
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [Test]
+    public void TheStillTrainStandsOnTheLineInTheGameplayView()
+    {
+        var map = BuildMap();
+        try
+        {
+            var train = RoutesRoot(map).GetComponentInChildren<RouteTrain>();
+            Assert.IsNotNull(train.StillHead, "an editor build holds the train still (screenshots repeat)");
+            Assert.AreEqual(2 + TrainModels.Coaches, train.Cars.Count);
+            // Its middle by Mikve Israel, east of Jaffa, as the promo's train.
+            var still = map.Frame.ToWorld(RouteTrain.StillAt.lon, RouteTrain.StillAt.lat, 0);
+            var mid = Vector3.Lerp(train.Cars[0].position, train.Cars[train.Cars.Count - 1].position, 0.5f);
+            Assert.Less(new Vector2(mid.x - still.x, mid.z - still.z).magnitude, 1500f);
+            // About the promo's 8.8 km, and each car on the ribbon (ground + clearance + ride), heading inland (east) first.
+            Assert.That(train.Length, Is.InRange(6000f, 10000f));
+            var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
+            // On the ribbon's own centre height (the same max-of-samples rule, review M4) plus the ride height: never below
+            // the ribbon's bed at the car's middle.
+            foreach (var c in train.Cars)
+            {
+                var p = new Vector2(c.position.x, c.position.z);
+                float bed = RouteLayer.RibbonHeight(data, origin, p, new Vector2(c.forward.x, c.forward.z).normalized, RouteLayer.RailWidthM / (RouteLayer.Across - 1));
+                Assert.AreEqual(bed + RouteTrain.RideM, c.position.y, 40f, c.name);
+                Assert.GreaterOrEqual(c.position.y, RouteLayer.Ground(data, origin, p) + RouteLayer.ClearanceM, c.name);
+            }
+            Assert.Greater(train.Cars[0].position.x, train.Cars[train.Cars.Count - 1].position.x, "the locomotive leads towards Lydda");
+            var cam = Camera.main; PromoPose.Gameplay03.Apply(cam.GetComponent<CameraRig>(), map.Frame);
+            foreach (var c in train.Cars)
+            {
+                var vp = cam.WorldToViewportPoint(c.position);
+                Assert.That(vp.x, Is.InRange(0.05f, 0.95f), c.name); Assert.That(vp.y, Is.InRange(0.05f, 0.95f), c.name);
+            }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [Test]
+    public void TheTrainShuttlesWithTheLocomotiveLeading()
+    {
+        var map = BuildMap();
+        try
+        {
+            var train = RoutesRoot(map).GetComponentInChildren<RouteTrain>();
+            var (start, end) = train.Stretch;
+            Assert.Greater(end - start, 2f * train.Length, "Jaffa to Lydda is longer than the train");
+            var (h0, d0) = train.HeadAt(0f);
+            Assert.AreEqual(start + train.Length, h0, 1e-2f); Assert.AreEqual(1, d0);
+            float leg = (end - start - train.Length) / RouteTrain.SpeedMps + RouteTrain.DwellSeconds;
+            var (h1, d1) = train.HeadAt(leg - 0.01f);
+            Assert.AreEqual(end, h1, 1f, "at Lydda before turning"); Assert.AreEqual(1, d1);
+            var (h2, d2) = train.HeadAt(leg + 0.01f);
+            Assert.AreEqual(-1, d2, "back towards Jaffa");
+            Assert.AreEqual(end - train.Length, h2, 5f, "the consist stays where it stopped; the locomotive is now at the other end");
+            // Smooth: no jump between consecutive frames while running.
+            float prev = train.HeadAt(1f).head;
+            for (float t = 1f + 1f / 60f; t < leg - RouteTrain.DwellSeconds; t += 1f / 60f)
+            {
+                float h = train.HeadAt(t).head;
+                Assert.Less(Mathf.Abs(h - prev), RouteTrain.SpeedMps / 60f + 0.01f);
+                prev = h;
+            }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [Test]
+    public void TrainModelsAreRepeatable()
+    {
+        var a = TrainModels.Consist(); var b = TrainModels.Consist();
+        int tris = 0;
+        for (int i = 0; i < a.Count; i++)
+        {
+            CollectionAssert.AreEqual(a[i].mesh.vertices, b[i].mesh.vertices, a[i].name);
+            CollectionAssert.AreEqual(a[i].mesh.triangles, b[i].mesh.triangles, a[i].name);
+            tris += a[i].mesh.triangles.Length / 3;
+        }
+        Assert.Less(tris, 5000, $"train triangles {tris}");
+        foreach (var c in a.Concat(b)) Object.DestroyImmediate(c.mesh);
+    }
+
+    [Test]
+    public void TheRouteShaderRunsOnWebGL2()
+    {
+        CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(Shader.Find("Statecraft/Route")));
+        var rail = Resources.Load<Material>(RouteLayer.RailMaterialResource); var road = Resources.Load<Material>(RouteLayer.RoadMaterialResource);
+        Assert.AreEqual(1f, rail.GetFloat("_Kind")); Assert.AreEqual(0f, road.GetFloat("_Kind"));
+        Assert.Less(rail.renderQueue, road.renderQueue, "the railway draws first, so it stays on top where it crosses a road");
+    }
+
+    /// <summary>The look at gameplay03 (promo 03): the railway reads darker than the ground beside it (ballast and
+    /// sleepers) and a road lighter (pale dirt), and switching the routes off restores the ground.</summary>
+    [Test]
+    public void AtTheGameplayPoseTheRailwayIsDarkAndTheRoadPale()
+    {
+        var map = BuildMap();
+        try
+        {
+            RenderSample.TiltShift(false);
+            VisualToggles.Set(RouteLayer.TrainToggle, false);
+            var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+            PromoPose.Gameplay03.Apply(rig, map.Frame);
+            var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+            // A railway point and a road point in open country near the pose's centre (east of Tel Aviv).
+            Vector3 OnRoute(string id, double lon, double lat)
+            {
+                var line = RouteLayer.World(map.Frame, routes.First(r => r.Id == id));
+                var want = map.Frame.ToWorld(lon, lat, 0);
+                var best = line.OrderBy(p => (p - new Vector2(want.x, want.z)).sqrMagnitude).First();
+                return new Vector3(best.x, RouteLayer.Ground(map.Terrain.terrainData, map.Terrain.transform.position, best), best.y);
+            }
+            var railAt = OnRoute("eastern_railway", 34.93, 32.06);
+            var roadAt = OnRoute("tel_aviv_tulkarm_nablus_road", 34.92, 32.09);
+            var px = new Vector2[2];
+            var on = RenderSample.Render(cam, 1920, 1080, new[] { railAt, roadAt }, px);
+            VisualToggles.Set(RouteLayer.RoutesToggle, false);
+            var off = RenderSample.Render(cam, 1920, 1080);
+            Color railOn = on.Mean((int)px[0].x, (int)px[0].y, 1), railOff = off.Mean((int)px[0].x, (int)px[0].y, 1);
+            Color roadOn = on.Mean((int)px[1].x, (int)px[1].y, 1), roadOff = off.Mean((int)px[1].x, (int)px[1].y, 1);
+            TestContext.WriteLine($"rail {railOn} over ground {railOff}; road {roadOn} over ground {roadOff}");
+            Assert.Less(RenderSample.Luma(railOn), RenderSample.Luma(railOff) - 0.05f, "the railway is darker than the ground");
+            Assert.Greater(RenderSample.Luma(roadOn), RenderSample.Luma(roadOff) + 0.03f, "the road is paler than the ground");
+        }
+        finally { VisualToggles.SetAll(true); Object.DestroyImmediate(map.gameObject); }
+    }
+}

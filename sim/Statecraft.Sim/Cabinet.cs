@@ -33,6 +33,7 @@ namespace Statecraft.Sim
         /// appointee who dies leaves office on the date of death, and the historical holder applies again).</summary>
         static Appointment? Active(Content c, GameState s, string office, DateTime date)
         {
+            if (c.Offices.Any(o => o.Id == office && o.HistoricalOnly)) return null;
             if (!s.Appointments.TryGetValue(office, out var a) || date < a.From) return null;
             var died = c.People.First(p => p.Id == a.Person).Died;
             if (died.HasValue && date >= died.Value) return null;
@@ -53,9 +54,9 @@ namespace Statecraft.Sim
                 Holder(c, s, m.Groups[1].Value, date)?.Name
                 ?? throw new InvalidOperationException(FormattableString.Invariant($"no holder of '{m.Groups[1].Value}' on {date:yyyy-MM-dd}")));
 
-        /// <summary>Every office that exists on the state's date, in offices.yaml order, with its holder (null = vacant).</summary>
+        /// <summary>Every playable office that exists on the state's date, in offices.yaml order, with its holder (null = vacant).</summary>
         public static IReadOnlyList<Seat> Lineup(Content c, GameState s) =>
-            c.Offices.Where(o => !o.Until.HasValue || s.Date < o.Until.Value)
+            c.Offices.Where(o => !o.HistoricalOnly && (!o.Until.HasValue || s.Date < o.Until.Value))
                 .Select(o => new Seat(o, Holder(c, s, o.Id), Active(c, s, o.Id, s.Date) != null))
                 .ToList();
 
@@ -70,6 +71,7 @@ namespace Statecraft.Sim
         {
             var office = c.Offices.FirstOrDefault(o => o.Id == officeId);
             if (office == null) return "That office does not exist in this game";
+            if (office.HistoricalOnly) return $"{office.Title} is a historical title, not an appointable office";
             if (office.Until.HasValue && s.Date >= office.Until.Value)
                 return $"The office of {office.Title} was abolished on {PlayerText.Date(office.Until.Value)}";
             if (officeId == "prime_minister") return "You are the Prime Minister: that office is not yours to fill";

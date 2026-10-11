@@ -93,7 +93,7 @@ def test_the_textures_are_blackboard_properties_with_the_shaders_names():
     objs, by_id = built()
     graph = objs[0]
     props = [by_id[p["m_Id"]] for p in graph["m_Properties"]]
-    assert [p["m_DefaultReferenceName"] for p in props] == ["_ScBakeTex", "_ScCoastTex", "_ScAoTex"]
+    assert [p["m_DefaultReferenceName"] for p in props] == ["_ScBakeTex", "_ScCoastTex", "_ScAoTex", "_ScLandTex"]
     cat = next(o for o in objs if tg.kind(o) == "CategoryData")
     assert [c["m_Id"] for c in cat["m_ChildObjectList"]] == [p["m_ObjectId"] for p in props]
     assert next(o for o in objs if tg.kind(o) == "UniversalTarget")["m_CastShadows"] is True

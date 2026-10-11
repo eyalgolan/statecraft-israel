@@ -38,3 +38,19 @@ def test_shore_settlement_moves_to_nearest_land_neighbour():
     assert BY_QR[(q0, r0)]["biome"] == "lake"          # its own hex is mostly Sea of Galilee
     q, r = hg.settlement_hex(tiberias["lon"], tiberias["lat"], HEXES)
     assert (q - q0, r - r0) in hg.NEIGHBOURS
+
+
+POPULATION = yaml.safe_load((ROOT / "content" / "map" / "settlement_population_1945.yaml").read_text())["settlements"]
+
+
+def test_population_rows_match_the_settlements_and_carry_sources():
+    """settlement_population_1945.yaml (the settlement kits' footprints): one row per settlement id, a non-negative
+    population or null, a status, and at least one source with an https url and a check date."""
+    ids = [r["id"] for r in POPULATION]
+    assert len(set(ids)) == len(ids)
+    assert set(ids) == {s["id"] for s in TOWNS}
+    for r in POPULATION:
+        assert r["population"] is None or (isinstance(r["population"], int) and r["population"] >= 0), r["id"]
+        assert r["population"] is not None or r.get("note"), f"{r['id']}: a missing figure needs a note"
+        assert r["status"] in {"owner-verify", "fact-checked", "verified"}, r["id"]
+        assert r["sources"] and all(src["url"].startswith("https://") and src["checked"] for src in r["sources"]), r["id"]

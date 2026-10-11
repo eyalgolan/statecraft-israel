@@ -12,6 +12,8 @@ namespace Statecraft.Game.UI
     {
         /// <summary>The portrait thumbnail's size in the card (Statecraft.uss .event-image).</summary>
         public const float PortraitWidth = 96f, PortraitHeight = 128f;
+        /// <summary>The class on each option button (Statecraft.uss).</summary>
+        public const string OptionClass = "event-option";
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         
@@ -57,10 +59,19 @@ namespace Statecraft.Game.UI
             {
                 var option = o;
                 var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = Cabinet.Fill(c, s, o.Text, date) };
+                b.AddToClassList(OptionClass);
+                b.generateVisualContent += PaintSign;                      // the promo's round sign at the option's left
                 options.Add(b);
             }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
         }
+
+        /// <summary>The round sign in an option's left padding (Statecraft.uss .event-option), painted into the button so it
+        /// stays a leaf whose wrapped text Yoga measures (UiIcon.Paint).</summary>
+        const float SignRadius = 15f, SignLeft = 9f;
+
+        static void PaintSign(MeshGenerationContext m) =>
+            UiIcon.PaintDisc(m, "chevron", new UnityEngine.Vector2(SignLeft + SignRadius, m.visualElement.layout.height / 2f), SignRadius);
 
         void Choose(GameEvent e, EventOption o)
         {

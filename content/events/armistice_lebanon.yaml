@@ -4,6 +4,9 @@ text: 'Negotiators have reached an armistice agreement with Lebanon. {prime_mini
 anchor: hard
 office: prime_minister
 from: 1949-03-23
+# Hard anchor: fires on the first turn on or after `from`. `to` (exclusive, end of 1949) only makes the window finite,
+# so the {prime_minister} placeholder needs a holder through 1949 and not past the holder's death (#1).
+to: 1950-01-01
 options:
   - id: sign
     text: Sign the armistice

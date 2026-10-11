@@ -16,7 +16,7 @@ namespace Statecraft.Sim
         public static readonly DateTime Until1950 = new DateTime(1950, 1, 1);
 
         /// <summary>Final hash of Play(content, Until1952): the M3 content range (to 31 December 1951).</summary>
-        public const string Hash1952 = "73590e324f19e9959a455a4da79e93d7089dfcf283c13aac02af6b0a624b9767";
+        public const string Hash1952 = "62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8";
 
         public static readonly DateTime Until1952 = new DateTime(1952, 1, 1);
 

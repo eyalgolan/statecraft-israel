@@ -82,7 +82,7 @@ AI-assisted work is welcome. Say so in the pull request: which parts, and how yo
 
 - Base your branch on `main`. History on `main` is protected, so no force-pushes.
 - In the description, say what changed and why. Paste the test commands you ran and their output; a description of the output doesn't count.
-- The maintainer reviews every PR (`.github/CODEOWNERS`).
+- The maintainer reviews every PR (`.github/CODEOWNERS`). Once the maintainer approves your latest commit and every check on it has passed, `.github/workflows/merge-approved.yml` squash-merges it within about ten minutes. A new push needs a new approval.
 
 ## What CI runs
 

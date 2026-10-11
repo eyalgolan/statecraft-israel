@@ -188,3 +188,15 @@ def test_notices_cover_shader_graph_and_spike_evidence_logs():
 def test_audit_says_what_changed_since_the_snapshot():
     text = read("docs/oss/AUDIT.md")
     assert "Snapshot as of 2026-10-10" in text and "Since then" in text and "5411f02" in text
+
+
+def test_m3_release_records_the_completed_sensitivity_review():
+    text = read("docs/m3-release.md")
+    review = text.split("## OWNER STEP: sensitivity review before any shared build", 1)[1].split("\n## ", 1)[0]
+    limits = text.split("## Known limits of this build", 1)[1]
+    # D11 is recorded in 25d2ef6; neither section should send the owner back to an already completed review.
+    for section in (review, limits):
+        assert "25d2ef6" in section
+        assert "sensitivity-reviewed" in section
+    assert "only `fact-checked`" not in review
+    assert "await the owner's sensitivity review" not in limits

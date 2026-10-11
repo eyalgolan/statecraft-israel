@@ -27,13 +27,15 @@ Plan: `docs/superpowers/plans/2026-10-11-statecraft-visual-v1.md`. Promo targets
 - Headed frame time: `uv run tools/headed.py profile --dpr 1` (`--dpr 2` is the fill-rate stress proxy). `--wait-unity`
   also waits for an interactive Unity editor that has any worktree open (it holds `unity/Temp/UnityLockfile`): close it,
   or the profile waits.
-- Screenshots: `tools/art_checkpoint.sh [--no-build] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
+- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
   images and their deuteranopia/protanopia copies under `captures/visual/<name>/`, git-ignored; rows in the main
   checkout's `captures/visual/art-log.tsv` with the branch, short commit and the image's absolute path). It refuses to run
   while `QualitySettings.asset` (and, when it builds, `unity/Assets/Settings` or `ProjectSettings.asset`) has unstaged
   changes, restores them on every exit, and takes the pose list from `PromoPose.cs`. Each checkpoint switches the
   worktree's build target WebGL -> OSXUniversal (editor renders) and back at the next build, a reimport each way: budget
-  a few minutes per checkpoint.
+  a few minutes per checkpoint. `--units` adds the unit art slice (`docs/units.md`): `&units` on the WebGL shots and
+  `-units` on the editor renders. Its art-log rows are named `<name>-units`, so they are never compared with plain
+  checkpoints, which never show units.
 
 ## Budgets (proposed; ratified in Task 10: see "Tier decisions")
 Measured on the development Mac (Apple silicon, integrated GPU), 1920x1080 at DPR 1, Chrome for Testing:
@@ -964,6 +966,253 @@ Final macOS player (SSAO, copies and bloom off):
 macOS `-golden`, both builds: `GOLDEN OK 1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07`,
 `GOLDEN OK 1952 73590e324f19e9959a455a4da79e93d7089dfcf283c13aac02af6b0a624b9767`.
 
+## promo-sea: water, surf and beach (art track, open item 3, issue #38)
+`ScWaterShade` (`StatecraftMap.hlsl`) is reworked on both sides of the edge, and a new `ScShore` paints the land's shore.
+Review round 1 (staff review I1-I2, M1-M8) is folded in; the values below are the shipped ones.
+- **Depth.** The map has no bathymetry (GLO-30 is a land model; its sea texels are 0 m), so depth is still the distance to
+  the shore from `coast.png`. The ramp:
+  - turquoise shallows `ScShallowM` 2.6 km wide, on a linear weight so the band reads at its width; the edge wanders
+    +-35% on a 3 km noise;
+  - then teal (mid), then a steel blue (deep) by 12 km (`ScCoastRangeM`), on `pow(smoothstep(0, 12 km), 0.6)`.
+- **Colours** (sRGB, before the grade; Task 7's in brackets):
+
+  | Constant | Value | Task 7 |
+  |---|---|---|
+  | `ScShallowSrgb` | (0.40, 0.72, 0.70) | (0.38, 0.74, 0.72) |
+  | `ScMidSrgb` | (0.29, 0.50, 0.59) | (0.13, 0.47, 0.58) |
+  | `ScDeepSrgb` | (0.27, 0.40, 0.54) | (0.06, 0.24, 0.40) |
+  | `ScFlatSeaSrgb` (the `water` toggle's flat sea, x 0.8) | (0.20, 0.36, 0.47) | (0.16, 0.42, 0.55) |
+  | `ScGalileeSrgb` (fresh water, -300 to -100 m) | (0.20, 0.45, 0.55) | (0.15, 0.48, 0.60) |
+  | `ScSandSrgb` / `ScSaltSrgb` | (0.88, 0.76, 0.56) / (0.92, 0.90, 0.85) | none |
+
+- **Waves.** Two layers drive the wave normal:
+  - the 700 m swell (unchanged);
+  - a 170 m chop moving the other way, `ScChopGain` 1.4 times the swell, full under a 40 m pixel and gone by 170 m.
+
+  The tilt is `ScWaveTilt` 0.6 under a 50 m pixel (gameplay03 is about 45 m: chop and sparkle show). It eases to
+  `ScWaveTiltFar` 0.10 by 120 m (Task 7's 0.15 until sea-fix): the far sea reads calm, and the seam test's patch means
+  stay within bound (at a flat 0.6, one 7x7 patch at 120 km carried 0.032 against 0.012). The glint (0.06) fades out
+  between 60 and 120 m pixels (sea-fix, below).
+
+  Bug B10 (sea-fix): both layers were value noise differenced along the map's axes, on axis-aligned lattices. Their
+  slope jumped at every cell edge, so the open sea showed a blocky checker at 6-20 km. Both layers are now gradient noise
+  with its analytic slope (`ScGradientNoiseD`, quintic fade: smooth across cell edges), the swell's lattice turned
+  0.6 rad and the chop's -0.9 rad (`ScWaveSlope`), scaled by `ScWaveSlopeGain` 0.22 to the old layers' strength (open
+  sea luma std at 6 / 12 / 18 km: 5.5 / 6.6 / 6.8 before, 6.0 / 6.8 / 7.1 after, in 8-bit levels). Fewer hashes than
+  before: 4 gradients per layer against 16 value-noise lookups. `TheOpenSeaHasNoBlockGrid` renders the open sea straight
+  down at 4 m a pixel and folds the luma gradient by its position in each old lattice's cell; the block-edge energy
+  ((largest bin - smallest) / mean, bound 0.25) was 0.660 before (170 m along z) and 0.122 after. `MapCapture.SeaClose`
+  renders the sea at 6, 12 and 18 km. With the new swell the seam test's single +-2.5 km patches (one 7x7 patch is about
+  one swell cell at 120 km) read up to 0.016 apart (bound 0.012) at the far tilt of 0.15, so the far tilt is now 0.10,
+  and the glint, the near zoom's sparkle, fades out between 60 and 120 m pixels.
+  Frame time (headless; another session loaded the machine, load average 4-18, so the spreads are wide):
+  - `PROFILE summary visual=all pose=gameplay03 runs=3 median_avg_ms=8.35 spread_ms=0.11 median_p95_ms=10.00`
+  - `PROFILE summary visual=-water pose=gameplay03 runs=3 median_avg_ms=8.03 spread_ms=2.69 median_p95_ms=9.00`
+  - `PROFILE summary visual=all pose=diorama02 runs=3 median_avg_ms=13.54 spread_ms=0.22 median_p95_ms=14.00`
+  - `PROFILE summary visual=-water pose=diorama02 runs=3 median_avg_ms=13.24 spread_ms=0.21 median_p95_ms=14.00`
+
+  Water and shore cost 0.32 ms at gameplay03 (inside a 2.69 ms spread) and 0.30 ms at diorama02, against the 2.5 ms
+  budget (0.89 / 0.13 ms in promo-sea round 1); p95 with everything on is 10 / 14 ms, under 16.7 ms.
+- **Surf** (review I2).
+  - A swash line, full to `ScSwashM` 180 m and gone by 324 m.
+  - Breakers through a `ScSurfM` 900 m zone. They are a squared triangle wave in the distance from the shore, spacing
+    `ScBreakerSpacingM` 300 m, rolling shoreward at `ScBreakerRate` 0.05 cycles/s (15 m/s, a quarter pixel a frame at
+    gameplay03 and 60 fps).
+  - The breakers are box-filtered in closed form (`ScTriSqBox`), so they never alias and tend to their mean (1/3) as the
+    pixel grows. The previous `pow(tri, 5)` crest was about 21 m wide on 45 m pixels: hairline, dashed crests.
+  - The box is `fwidth(phase)` x `ScBreakerFilterPx` 1.25, with the phase taken by `ScBreakers` outside the water branch
+    in both callers (re-review N2). The phase's true gradient is not 1 / 300 m: its noise term adds up to 0.0025
+    cycles/m and the 8-bit coast's slope varies up to 2x, so a width from the nominal spacing was up to 2x too narrow in
+    places.
+  - The 300 m break-up noise fades to its mean between 75 and 150 m pixels.
+- **Beach** (`ScShore`).
+  - A sand strip along every sea-level coast (above -100 m): the Mediterranean and the Gulf of Eilat, both sand beaches,
+    but not the rift lakes. `ScBeachM` is 650 m on average, +-40% on a 4 km noise. The width is symbolic, after the
+    promo's beach: wider than the real 30-100 m strip, inside the coastal dune belt.
+  - Wet sand (x 0.78) to 60-160 m; steep faces keep their rock.
+  - White salt flats along the Dead Sea (below -300 m).
+  - Both elevation thresholds are 20 m ramps (review M7: no hard contour where a shore slope crosses them).
+  - The shore is off with the `water` toggle (review M1), so `all - (-water)` measures water and shore together.
+- **Coast precision (review M6).**
+  - `coast.png` is L8 over +-12 km: 94 m a level (texels 79 m E-W by about 211 m N-S), linearly interpolated between
+    texels. A crest or band edge can sit up to 47 m off its true place, about one pixel at gameplay03 (about 45 m), and
+    under the breakers' 2-cycle phase noise.
+  - The wet-sand band (60-160 m) is about one level wide: a soft darkening, not a measured feature.
+  - A 16-bit coast, or a fine near-shore channel, is the fix if surf detail is pushed below about 100 m.
+- **Test and capture hooks.**
+  - `MapShaderGlobals.PinWaterTime(seconds)` pins the water's clock (`_ScWaterTime`), so tests and captures can render
+    chosen moments.
+  - `MapCapture.SurfFrames` renders 60 gameplay03 frames on the web tier, consecutive at 60 fps or `-surfDt` seconds
+    apart.
+- **Not done here.**
+  - Boats: the owner wants no civilian boats; navy ships are units, on another track.
+  - Harbour water and piers at Jaffa need geometry, which belongs to the settlement track.
+  - Issue #16 (the 1948 Dead Sea level, Lake Hula) is untouched.
+
+### Measured
+WebGL `?shot`, from `tools/art_checkpoint.sh`. The checkpoints:
+- before: `promo-sea-before`, at `0f13336`;
+- round 0: `promo-sea-after`, at `45a357e`;
+- round 1: `promo-sea-r1`, at `af6e3cc`.
+
+Sea pixels are those with blue above red by 0.06, outside the top bar, the bottom-left panel, the minimap and promo 03's
+icon column. Spread is the p90 minus p10 of sea-pixel luma; "sea sat p10/p90" is the same for HSV saturation.
+
+| | before | round 0 | round 1 | promo |
+|---|---|---|---|---|
+| gameplay03 frame saturation | 0.57 | 0.49 | 0.48 | 0.38 |
+| gameplay03 contrast | 0.196 | 0.182 | 0.174 | 0.203 |
+| gameplay03 warmth | 0.077 | 0.103 | 0.102 | 0.064 |
+| gameplay03 palette distance | 0.69 | 0.61 | 0.60 | - |
+| gameplay03 sea mean sRGB | (21, 77, 105) | (49, 85, 107) | (62, 101, 121) | (57, 81, 103) |
+| gameplay03 sea saturation | 0.82 | 0.55 | 0.49 | 0.47 |
+| gameplay03 sea sat p10/p90 | 0.57/0.93 | 0.44/0.63 | 0.43/0.55 | 0.29/0.58 |
+| gameplay03 sea luma p10/p90 (spread) | 0.16/0.45 (0.29) | 0.26/0.39 (0.13) | 0.31/0.44 (0.12) | 0.09/0.48 (0.39) |
+| diorama02 frame saturation | 0.47 | 0.43 | 0.42 | 0.43 |
+| diorama02 contrast | 0.203 | 0.192 | 0.187 | 0.200 |
+| diorama02 warmth | 0.104 | 0.117 | 0.117 | 0.145 |
+| diorama02 palette distance | 0.67 | 0.67 | 0.59 | - |
+| diorama02 sea mean sRGB | (40, 82, 111) | (63, 97, 118) | (74, 109, 129) | (80, 120, 151) |
+| diorama02 sea saturation | 0.66 | 0.48 | 0.43 | 0.47 |
+| diorama02 sea sat p10/p90 | 0.59/0.73 | 0.42/0.52 | 0.41/0.46 | 0.30/0.56 |
+| diorama02 sea luma p10/p90 (spread) | 0.24/0.42 (0.19) | 0.32/0.40 (0.08) | 0.36/0.44 (0.08) | 0.38/0.53 (0.15) |
+
+Against the bars:
+- diorama02 warmth stays in [0.087, 0.145], and saturation stays at or under 0.48.
+- The sea means now sit between the two promos.
+
+What still differs:
+- The sea's spread is a third of promo 03's and half of promo 02's. Promo 03's dark tail is boat hulls and building
+  shadows on the water, and its bright tail is glints and foam lace.
+- gameplay03 contrast falls as the sea brightens (0.196 -> 0.174).
+- gameplay03 warmth rises as the sea loses blue and gains a beach (0.077 -> 0.102 against the promo's 0.064).
+
+`SeaTests` (round 1, against Task 7, each with its bound):
+
+| Check | Task 7 | Round 1 | Bound |
+|---|---|---|---|
+| Foam over shallows (luma) | 0.154 | 0.180 | 0.02 |
+| Shallows over the open sea | 0.344 | 0.211 | 0.05 |
+| Dead Sea over the Mediterranean | 0.46 | 0.27 | 0.1 |
+| Diorama open sea b - r | 0.299 | 0.230 | 0.15 |
+| Haze luma shift | 0.069 | 0.034 | 0.01 |
+| Open sea pre-grade HSV saturation | 0.91 | 0.49 | < 0.7 |
+
+`TheSeaBeyondTheEdgeMatchesTheTerrainSea`: 32 lines pre-grade max 0.007 (bound 0.012; Task 7 0.004), graded max 0.014
+(0.024).
+
+New tests:
+- `ASandStripLinesTheMediterraneanShore`.
+  - Strip off: RGBA(0.716, 0.656, 0.378), luma 0.65, b/g 0.58, 0.25 over the plain.
+  - Strip on: RGBA(0.906, 0.771, 0.516), luma 0.78, b/g 0.67, 0.39 over the plain.
+  - Bounds 0.72, 0.62 and +0.32: all three fail with the strip off.
+- `TheBreakersAreFilteredToThePixel` (re-review N1).
+  - It renders at 30 km and 960x540, about 45 m a pixel: the same footprint as gameplay03's 60 km at 1920x1080. There an
+    unfiltered crest is sub-pixel but not yet faded.
+  - Each water pixel of a 49x49 patch around the surf zone (6067 pixels over four moments of a cycle) must match its 4x4
+    block in the same view rendered at 4x. Pixels touching land or markers are left out: the shoreline's step and the
+    markers' edges are not filtered by design.
+  - With the filter: p99 0.0082, worst 0.0176 (bounds 0.014 and 0.035).
+  - Red with Round 0's crest swapped back in temporarily: p99 0.0200, worst 0.0620, and the test fails.
+  - The same squared crest without its box measured p99 0.0087, worst 0.0247. At 300 m spacing it is about two pixels
+    wide by itself, so the box is what keeps it exact as the zoom changes.
+  - The surf pixel spans luma 0.642-0.788 over one breaker cycle (bound 0.03).
+  - The overview is still: 0.0036 over 0.5 s (bound 0.01).
+
+In motion (`MapCapture.SurfFrames`, a 200x400 px coast crop at gameplay03):
+- Over one second of consecutive 60 fps frames, no pixel changes more than 2/255 from one frame to the next, either
+  before or after the change.
+- Over the whole second, the old crests moved single pixels by up to 46/255 (2.8% of the crop over 2/255). The filtered
+  breakers move them by at most 9/255 (2.5%), the same with the `fwidth(phase)` box. The open sea's waves move them by
+  at most 14/255 (1.7%).
+- A 15 s clip at `-surfDt 0.25` shows soft crests rolling in, broken along the shore.
+
+Frame time: headless, the machine loaded by other sessions (load average 4-12), so the absolutes are inflated; read the
+differences.
+- `PROFILE summary visual=all pose=gameplay03 runs=3 median_avg_ms=8.19 spread_ms=0.05 median_p95_ms=9.00`
+- `PROFILE summary visual=-water pose=gameplay03 runs=3 median_avg_ms=7.30 spread_ms=0.05 median_p95_ms=9.00`
+- `PROFILE summary visual=none pose=gameplay03 runs=3 median_avg_ms=7.01 spread_ms=0.05 median_p95_ms=8.00`
+- `PROFILE summary visual=all pose=diorama02 runs=3 median_avg_ms=13.63 spread_ms=0.18 median_p95_ms=15.00`
+- `PROFILE summary visual=-water pose=diorama02 runs=3 median_avg_ms=13.50 spread_ms=0.14 median_p95_ms=15.00`
+- `PROFILE summary visual=none pose=diorama02 runs=3 median_avg_ms=10.31 spread_ms=0.03 median_p95_ms=13.00`
+
+Water and shore together (the toggle now covers both):
+- gameplay03: 0.89 ms, against a 2.5 ms budget. Round 0 measured 0.50 ms for the water alone; the shore was then
+  unmeasured.
+- diorama02: 0.13 ms, below the noise (spread 0.18 ms).
+- p95 is at or under 16.7 ms at both poses.
+## Promo track: land use (issue #33, branch promo-land)
+The flat mustard/olive ground becomes the promo's patchwork. `tools/land_bake.py` (no network, about 20 s, deterministic:
+`test_the_committed_textures_are_the_bake` checks the committed PNGs against a fresh bake) decides where from real data
+and paints what procedurally, baked:
+- where (158 x 211 m grid): fields on gentle slopes (< ~7%) with enough rain for dry farming (CHELSA bio12,
+  station-corrected as `hexgrid.py`: smoothstep 180-380 mm; the irrigated Jordan valley floor at least 0.7); the citrus
+  belt on the flat coastal plain and valley floor below 150 m near the 1948 towns (the hex-wise biome inputs softened over
+  1.5 km, so nothing steps at hex edges); garrigue, terraces and scrub where the rain is 250-600 mm, the ground unfarmed
+  and not the shader's rock;
+- what (`landuse.png`, 2048 x 4096 RGBA, about 79 x 105 m): strip-field parcels in rotated 5 km blocks (green, ochre
+  stubble, ploughed, fallow, grass, groves), soft grassy rims, hedges, some block edges as farm tracks; on the wet hills patches
+  of stony soil and grass, terraces along the real contours every 40 m of rise, scrub; 2 x 2 samples per texel; sRGB
+  colour (the sampler decodes it) spread into the empty texels so mips and BC3 blocks never blend with black; weight in
+  alpha;
+- no roads between the towns: the first rounds joined each town to its three nearest with seeded meandering tracks
+  (`tracks.png`); a controller ruling removed them, as invented routes would draw a second road beside the real 1948 roads
+  and railways the roads track traces from the 1946 Survey of Palestine map (`tools/routes_1948.py`). A finer track
+  network, if wanted, is traced there, not generated.
+The shader lays the land between `ScGroundBase` and `ScGroundShade` (relief, AO and breakup shade the fields), up to the
+waterline: promo-sea's beach band (`ScShore`, drawn after) covers it where there is a beach, and fields reach the water
+where there is none (the Sea of Galilee, cliffs). The `land` visual toggle lerps it away: a visual switch, not a price
+(the sample still runs).
+
+**Why baked, not procedural in the shader.** The first cut drew the same pattern in the shader (about 150 instructions).
+WebGL headless, same night: base 2.72 / 9.76 ms (gameplay03 / diorama02 `all`), procedural 13.94 / 15.44; with a
+per-pixel `[branch]` and one shared noise 10.37 / 13.60; branch-free 9.58 / 13.58; flattened 10.91 / 15.01. The cost stayed
+when no pixel took the branch (`-land` 8.11 at gameplay03), and sampling the textures alone cost nothing (2.69 ms):
+most likely register pressure / occupancy from the shader's size (the GPU reserves registers for the worst path, and
+ANGLE may flatten the branch), not its arithmetic. Single builds differ by a few tenths of a millisecond, so the
+bisecting steps (fields alone +4.3 ms) are indicative only. The decision to bake holds either way.
+
+**Cost, measured base vs branch (separate builds; the toggle cannot price it).**
+- Night of 2026-10-11, idle machine: main base 2.72 / 9.76 ms -> promo-land (`4b3c307`, before the review fixes) 2.68 / 9.93
+  ms (`PROFILE summary visual=all pose=gameplay03 runs=3 median_avg_ms=2.68 spread_ms=0.09 median_p95_ms=5.00`,
+  `... pose=diorama02 ... median_avg_ms=9.93 spread_ms=0.02 median_p95_ms=11.00`): within the noise between builds.
+- Review round 1 (`24b540f` on promo-sea), A/B against the same branch with the land call cut from the shader
+  (`Builds/Web-noland`), profiled back to back while the machine was busy (another browser on the GPU: every number about
+  5 ms above the night's): gameplay03 `all` 8.20 -> 9.09 ms (+0.89, spreads 0.09 / 0.07), `none` 7.10 -> 7.73; diorama02
+  `all` 14.07 -> 13.70 (-0.37, inside the spreads 0.49 / 0.25). p95 10 / 16 ms.
+- Idle re-measure (re-review R1): **not measured.** Waiting for a 1-minute load average under 3, checked every 5 minutes,
+  2026-10-11 09:02-10:47 and 14:32-15:32: it went under 3 once (2.64 at 09:22), but the A/B taken then was still inflated
+  (`none` 7.36 ms at gameplay03 against the night's 2.33) and the branch half was disturbed (spreads up to 10 ms), so it
+  is not used; otherwise the load stayed between 3.9 and 51. The busy-machine A/B above is the only cost figure; re-measure
+  on an idle machine before the tier numbers are re-ratified.
+
+**Size and memory.** `landuse.png` is 10.7 MB in the build report (2048 x 4096 BC3 with mips: 10.7 MiB of GPU memory).
+The WebGL `.data` is LZ4-compressed, so the download grows less: `Web-disabled.data` 21.53 MB (promo-sea) -> 24.40 MB
+(+2.86 MB, then with the since-removed tracks texture's 0.02 MB). Halving the texture (the platforms' 2048 cap gives 1024 x 2048) blurred the
+hedges, rims and rows (gameplay03 local gradient on the plain 0.0220 -> 0.0174, -21%), so it stays 4096 rows; BC1 cannot
+hold the weight, so BC3 stays.
+
+**Platforms.** The default web build targets desktop browsers (S3TC/BC, as the map's other textures already need). The land
+texture's WebGL override pins only the size (4096) and leaves the format automatic, so the build's texture subtarget picks
+it: DXT5 by default; `Build.Web -textureSubtarget astc` (or `etc2`) makes a build for browsers without S3TC (iOS Safari,
+most Android Chrome), where the land is ASTC 6x6, 4.8 MB (`unity-build-astc.log`), and golden + smoke=5 pass. A desktop
+build opened on such a browser would decompress the land to RGBA32 on the CPU: 42.7 MiB. WebGL2 guarantees only 2048-texel
+textures; virtually every GPU offers 4096.
+
+Tests, review round 1: EditMode 465 passed (`LandUseTests`: import settings for every platform, the subtarget argument,
+`-extraPose` validation, the land follows slope/rain/towns, gameplay detail; `TheTerrainShaderCompilesForWebGL2`); tools
+pytest 194 passed; `dotnet test` 628; golden and smoke unchanged on `Web-disabled` and `Web-astc`.
+
+Colour (WebGL `?shot`, checkpoint `promo-land-r5` against `promo-sea-r2`): gameplay03 saturation 0.4792 -> 0.4681
+(promo 0.38), warmth 0.1018 -> 0.0921 (promo 0.064), contrast 0.1738 -> 0.1730, palette distance 0.5971 -> 0.5148;
+diorama02 saturation 0.4183 -> 0.4164 (bar <= 0.48), warmth 0.1171 -> 0.1154 (bar 0.087-0.145), palette distance
+0.5869 -> 0.5868. Open item 3: the land lowers gameplay03 saturation by 0.011. Open item 5: the olive plain / gold hills
+seam is now fields against garrigue, a softer step (owner to judge).
+Licence: the texture is `owner-verify` in `ASSETS.yaml` pending decision D13 (`docs/oss/DECISIONS.md`).
+Still different from the promo: soft at close zoom (rows, hedges and bushes read at the gameplay zoom, blur at 15-20 km
+and closer); terraces read faintly; the orchard ground and promo-art's groves follow separate rules; the promo's ground is warmer and browner under
+its grade.
+
 ## Open items for the art track
 Each item below was ruled to the art track (controller, rank 10). None blocks landing the branch.
 
@@ -977,7 +1226,8 @@ Each item below was ruled to the art track (controller, rank 10). None blocks la
    scale, 300-700 m) show long detached shadows, so they look as if they hover. Set the sun's shadow bias (depth and normal
    bias) at kit scale: offsets of about 100-150 m at that texel. Do not just turn marker shadows off.
 3. **Saturation of gameplay03 and warmth of diorama02.** gameplay03 saturation is +0.18 over promo 03, mostly the sea (0.83
-   against 0.51) and the gold `hills` biome. Measure the `SeaTests` margins before any sea change. diorama02 warmth
+   against 0.51) and the gold `hills` biome. Sea part done in promo-sea (frame 0.57 -> 0.48, sea 0.82 -> 0.49); the
+   `hills` biome remains. Measure the `SeaTests` margins before any sea change. diorama02 warmth
    (0.1038) sits near its 0.087 floor, so any sea desaturation must re-check it.
 4. **Tilt-shift bottom band.** The bottom blurred band measures 17-22% of the frame against about 15% in the promo. It
    awaits the owner's verdict on the offer `BottomHalfWidth` 0.16 / `BottomFeather` 0.19.
@@ -985,6 +1235,14 @@ Each item below was ruled to the art track (controller, rank 10). None blocks la
    biome is for the owner to judge.
 6. **Overview shadow overrun.** The shadow pass overruns the budget by 0.1-0.4 ms at the overview pose; the levers are in
    "Tier decisions".
+7. **Sea brightness spread (promo-sea re-review N3).** The sea's luma p90 - p10 is 0.12 at gameplay03 against promo 03's
+   0.39, and 0.08 at diorama02 against promo 02's 0.15. Its saturation p10/p90 is narrower too (0.43/0.55 against
+   0.29/0.58). The means match ("promo-sea", Measured). The causes:
+   - promo 03's dark tail is boat hulls and building shadows on the water. Boats are out of scope: navy ships are units,
+     and there are no civilian boats (owner).
+   - Its bright tail is foam lace and glints. The glint is held at 0.06 by the seam test (Task 7), and the surf is a
+     smooth band, not lace.
+   - diorama02's sea has a near-to-far gradient that ours keeps flat.
 
 ### Rulings digest
 One line each: ruling - reason.
@@ -1002,3 +1260,57 @@ One line each: ruling - reason.
 - Bloom, SSAO and the depth/opaque copies off - bloom changed at most 2/255 of any pixel; see "Tier decisions" for the costs.
 - NOT taken: dropping the bake's R channel - zero memory gain (BC1 either way) and it churns the assets; R stays as the AO reference.
 - NOT taken: deduplicating the `OpenMap` helper across `SeaTests` and `TerrainShaderTests` - test-only duplication; refactor risk with no behaviour gain.
+
+## Art spike: procedural settlement kits and trees (branch `promo-art`)
+Question: can code-generated settlement and vegetation art at Civ-style symbolic scale bring gameplay03 close to promo 03?
+Code: `unity/Assets/Scripts/Map/Kits/` (built at load, seeded per settlement id by `KitRandom`, no sim state touched),
+`Assets/Shaders/Kit.shader` (`Kit.mat` buildings, `Tree.mat` instanced trees), `KitTests`.
+- **Archetypes** (`SettlementKits`): white city (Tel Aviv, Haifa: 2-9 storey flat-roof blocks, ribbon windows and
+  balcony lines in the shader, L-shaped wings, roof rooms), old town (Jaffa, Acre, Gaza, Jerusalem: packed stone houses,
+  domes; Jaffa's clock tower, belfry, mosque, breakwater, lighthouse and boats), Arab town (tan cubes on slopes, a mosque),
+  moshava/kibbutz/moshav (red gable roofs, yards, a water tower; Nahalal as a ring). One merged mesh per settlement; all
+  towns share one lot list, so a smaller neighbour never overlaps a bigger town's buildings. The `kits` toggle off shows
+  the marker boxes again.
+- **Footprint** = (1945 population / 60,000) hexes, floored at 0.08 hex. The populations live in
+  `content/map/settlement_population_1945.yaml` (Village Statistics, 1945, read from the Wikipedia table on 2026-10-11:
+  owner-verify until checked against a scan; Beersheba's row there is garbled, 5,570 is its likely reading), read through
+  `MapInputs.PopulationYaml`. The sim never reads the file: `SaveGameTests.TheKitPopulationFileIsOutsideTheContentHash`, and
+  the player's `BOOT OK content 96035735...` is unchanged. Towns share seams (distance over radius), stay on land, and tint
+  their ground in the baked biome texture.
+- **Trees** (`Vegetation`, `VegetationLayer`): citrus groves in 2x2 patches (every tree of a patch checked for water and
+  towns, else one tree) round the coastal-plain towns, olives over the hills (and lone ones on the plain), palms by the
+  coastal towns, cypress windbreaks; `Graphics.RenderMeshInstanced` per 30 km tile from `beginCameraRendering`, thinned as
+  (110 km / distance)^2 past 110 km. The WebGL cost is per instance, not per triangle (at 25x a 30% triangle cut changed
+  nothing; the 2x2 patches took the instances from 51,000 to 21,165 and the gameplay03 cost from 2.9 to 1.3 ms).
+- **Scale (owner ruling 2026-10-11, superseding 10-25x):** buildings and trees match promo 03's measured scale per class:
+  city blocks about 60x real size, houses and trees about 100x (`KitScale`; landmarks take the city-block scale). Counts
+  were tuned at 25x and fall with the square of the scale. `?kitscale=`, `?housescale=`, `?treescale=` (clamped to 5-200)
+  override them in the player; `MapCapture.Kits` takes `-kitScale`, `-houseScale`, `-treeScale`.
+- **#37:** the kits use the sun's own URP shadow bias, unchanged (review I3: a kit-only bias and receiver offset were
+  removed, as the probe could not show a need for them). `KitTests.AKitShadowStartsAtItsWalls` walks out from a lone box's
+  shadow-side wall from 1 m in 1 m steps, on both tiers: the first shadowed sample is 3 m out at 12 km (pixel 7 m), 10 m at
+  60 km (pixel 35 m) and 1 m at 250 km, the same as with the old marker material, and the sunlit roof darkens at most 1.9%
+  with shadows on (no acne). No bias gap reproduces, so the floating look of the old markers was not a bias gap.
+- **Grid readability:** `KitTests.TheGridStaysReadableThroughTownsAndGroves`: at gameplay03, 76 of the 90 land edge
+  midpoints whose line shows on bare ground still show it with kits and trees on (84%; the floor is 75%).
+- **Measured at the 60x/100x defaults** (`d4e7275`, headless WebGL, `machine_lock.py --exclusive --wait-unity`, load 4-9,
+  other sessions running; "none" means every visual feature off, not only the kits and trees):
+  gameplay03 all 2.34 ms (p95 3), -trees 2.57, -kits 2.34, none 2.34; diorama02 all 11.22 (p95 12), -trees 10.41, -kits
+  11.35, none 7.29. Trees -0.23 / 0.81 ms and kits 0.00 / -0.13 ms (gameplay03 sits in the ~1 ms clock's bimodal
+  2.0 / 2.4 ms noise, so its negative costs are noise): every feature is within budget, all - none 0.00 / 3.93 ms, p95
+  3 / 12 ms. The `main` build in the same session: gameplay03 all 2.78, diorama02 all 10.12 (so +1.10 ms at diorama02).
+  The diorama02 shadow overrun is unchanged (2.95 ms against `main`'s 2.91). Headed DPR 1: all 2.46 / 10.95, trees
+  -0.24 / 0.75. Headed DPR 2: all p95 6 / 20 ms (floor 33), trees 0.35 / 0.89. Boot (`headed.py boot --runs 3`, `main`
+  then this build): cpu 1 map_build 491 -> 508, first_frame 3631 -> 3610; cpu 4 1874 -> 2035, 6795 -> 6991 (within
+  max(300 ms, 50%)). The player logs `KITS buildings=306 vertices=12374 triangles=8556 trees=8147 build_ms=20 plant_ms=19`.
+- **After merging `main` with promo-sea and promo-units** (`689880d`, headless, load 18.7 at the start and 4.4 at the end,
+  so absolute times are noisy): gameplay03 all 9.57 (p95 11), -trees 8.75, -kits 9.45, none 7.47; diorama02 all 14.99
+  (p95 16), -trees 14.28, -kits 15.40, none 10.92. Trees 0.82 / 0.71 ms and kits 0.12 / -0.41 ms stay within budget, as
+  do all - none (2.10 / 4.07 ms) and p95 (11 / 16 ms). The rise in "none" (2.34 -> 7.47 ms at gameplay03) is not the kits
+  (both "none" runs draw no kits or trees); it should be re-measured on a quiet machine against `main`.
+- **Build size** (WebGL, `main` -> this branch): uncompressed +318,885 bytes (+0.44%: wasm +286,873, data +28,978,
+  framework.js +3,034); Brotli (quality 11, as shipped) +33,407 bytes (+0.17%: wasm +13,092, data +20,091). No texture or
+  model files: everything is generated at load.
+- **Authored meshes later:** trees swap as is (`Vegetation.Build(kind)` returns a mesh in real metres). Buildings will need
+  `Emit` to return placements (archetype, variant, position, yaw, scale) drawn through the same tile instancing and a
+  textured, instanced variant of `Kit.shader`; that refactor waits for the first authored mesh.

@@ -1,0 +1,245 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace Statecraft.Game.Map.Routes
+{
+    /// <summary>The 1948 railways and roads on the map (issue #35): one ribbon mesh per look (rail; roads and the Burma
+    /// Road's track), draped on the terrain along the traced lines of route_paths_1948.yaml, drawn with the editor-made
+    /// Statecraft/Route materials in Resources (no runtime Shader.Find, no new serialized field on MapScene). Each route
+    /// shows only while the game date is inside its window (RoutePath.From/To; review C1: the Burma Road from 14 June
+    /// 1948): routes are grouped by window, one ribbon pair per group, and <see cref="ShowAt"/> switches the groups. A
+    /// steam train on the Jaffa–Jerusalem line is a showcase, never normal play (review I1, <see cref="ModeFor"/>). Widths are symbolic, measured on the
+    /// promo's gameplay frame like the settlements and units (docs/routes.md): a road about 8 px and the railway about
+    /// 16 px wide at 1920 px (the soft edges take about a sixth of the railway's width, so its bed is drawn 680 m), so they read at the gameplay zoom as the promo draws them. Registers the "routes" (ribbons)
+    /// and "train" visual toggles, so the frame profile prices each. Pure geometry from the data: the same file gives the
+    /// same meshes, vertex for vertex.</summary>
+    public static class RouteLayer
+    {
+        public const string RootName = "Routes", RibbonsName = "RouteRibbons", RoutesToggle = "routes", TrainToggle = "train";
+        public const string RailMaterialResource = "Routes/Rail", RoadMaterialResource = "Routes/Road";
+        public const string Folder = "Assets/Resources/Routes";
+
+        /// <summary>Full ribbon widths (m), soft edges included (the shader fades the outer 16-30%).</summary>
+        public const float RailWidthM = 680f, RoadWidthM = 300f, TrackWidthM = 200f;
+        /// <summary>Spacing (m) of the ribbon's cross-sections along its line: under the heightmap's 211 m N-S spacing, so
+        /// every terrain row gets a section; about 3 px at the gameplay zoom.</summary>
+        public const float StepM = 120f;
+        /// <summary>Vertices across a ribbon: its edges, its centre and the quarter lines, each on its own ground, so a
+        /// ribbon on a slope follows the slope instead of standing out flat.</summary>
+        public const int Across = 5;
+        /// <summary>Height above the highest ground sampled around each vertex; the shader's depth offset does the rest.</summary>
+        public const float ClearanceM = 20f;
+
+        /// <summary>The showcase train's route and stretch: the Jaffa–Jerusalem railway from its Jaffa end to Lydda junction,
+        /// the stretch the promo's train runs (promo/final/03). It is ambience for the promo frames, not a timetable: no
+        /// regular trains ran here from the British withdrawal in May 1948 until Lydda was taken in July and service resumed
+        /// later (Palestine Railways), which is why normal play shows no train (<see cref="ModeFor"/>).</summary>
+        public const string TrainRoute = "jaffa_jerusalem_railway";
+        public static readonly (double lon, double lat) TrainTurnAt = (34.87556, 31.94583);   // Lod railway station
+
+        /// <summary>The date the map shows before the game tells it one (editor renders, screenshots before GAME OK): the
+        /// game's start, 15 May 1948.</summary>
+        public static readonly DateTime DefaultDate = new DateTime(1948, 5, 15);
+
+        public enum TrainMode { None, Still, Moving }
+
+        /// <summary>Whether there is a train and whether it moves (review I1): editor renders and screenshots (`?shot` /
+        /// `-shot`) show the promo's still train; `?train` or `?units` (desktop `-train` / `-units`) asks for the moving
+        /// showcase; normal play has none, as no service is sourced for the line at the game's dates.</summary>
+        public static TrainMode ModeFor(bool playing, bool shot, bool requested) =>
+            !playing || shot ? TrainMode.Still : requested ? TrainMode.Moving : TrainMode.None;
+
+        public static bool TrainRequested(string? url, string[] args, bool webgl) =>
+            webgl ? Boot.UrlFlags.Has(url, "train") || Boot.UrlFlags.Has(url, "units") : Array.IndexOf(args, "-train") >= 0 || Array.IndexOf(args, "-units") >= 0;
+
+        public static TrainMode ModeForThisRun() => ModeFor(Application.isPlaying, VisualShots.Requested(),
+            TrainRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer));
+
+        /// <summary>Shows the route groups whose window covers <paramref name="date"/> and hides the rest (the game calls it
+        /// on every state change; cheap: a few SetActive calls), and remembers the date on the map, so a rebuild of the map
+        /// (MapScene.Build) draws the routes as at the game's date at once. A map without routes is left alone.</summary>
+        public static void ShowAt(MapScene map, DateTime date)
+        {
+            if (map == null) return;
+            map.RouteDate = date;                   // a later rebuild of this map starts at the game's date (re-review nit 2)
+            if (map.Terrain == null) return;
+            var ribbons = map.Terrain.transform.Find($"{RootName}/{RibbonsName}");
+            if (ribbons == null) return;
+            foreach (var g in ribbons.GetComponentsInChildren<RouteGroup>(true)) g.gameObject.SetActive(g.Window.Covers(date));
+        }
+
+        /// <summary>Clearance (m) beyond a ribbon's drawn half-width that kit buildings and trees keep from it, so a lot's or
+        /// crown's edge never touches the soft edge of the road or the ballast.</summary>
+        public const float CorridorMarginM = 100f;
+
+        /// <summary>Every route's line (world x, z) with the half-width kits must keep clear of: half the drawn width plus
+        /// <see cref="CorridorMarginM"/>. All routes, whatever their window: the kits are built once, not per date, so a route
+        /// that appears later (the Burma Road) has its corridor from the start.</summary>
+        public static List<(List<Vector2> line, float halfWidth)> Corridors(GeoFrame frame, IEnumerable<RoutePath> routes) =>
+            routes.Select(r => (World(frame, r), WidthOf(r.Kind) / 2f + CorridorMarginM)).ToList();
+
+        public static float WidthOf(string kind) => kind switch
+        {
+            RoutePaths.Rail => RailWidthM,
+            RoutePaths.Road => RoadWidthM,
+            RoutePaths.Track => TrackWidthM,
+            _ => throw new ArgumentException($"unknown route kind '{kind}'", nameof(kind)),
+        };
+
+        /// <summary>Builds the routes under <paramref name="terrain"/> (so a map rebuild destroys them): one group per display
+        /// window (its rail and road ribbons), shown as at <paramref name="date"/>, and, when <paramref name="train"/> is not
+        /// None and the train's route is in <paramref name="routes"/>, the train (still: it stands at its still position, so
+        /// screenshots and editor renders repeat exactly). Meshes, the train's palette and its material copy are owned by
+        /// the root's own MapRuntimeAssets, which also unregisters the toggles. Returns the root.</summary>
+        public static GameObject Build(Terrain terrain, GeoFrame frame, IReadOnlyList<RoutePath> routes, TrainMode train, DateTime date)
+        {
+            if (terrain == null) throw new ArgumentNullException(nameof(terrain));
+            if (routes == null) throw new ArgumentNullException(nameof(routes));
+            var rail = Resources.Load<Material>(RailMaterialResource)
+                ?? throw new InvalidOperationException($"Resources/{RailMaterialResource}.mat is missing (run RouteMaterialAssets.Create)");
+            var road = Resources.Load<Material>(RoadMaterialResource)
+                ?? throw new InvalidOperationException($"Resources/{RoadMaterialResource}.mat is missing (run RouteMaterialAssets.Create)");
+
+            var root = new GameObject(RootName);
+            root.transform.SetParent(terrain.transform, false);
+            root.transform.position = Vector3.zero;           // children are in world space
+            var assets = root.AddComponent<MapRuntimeAssets>();
+            var ribbons = new GameObject(RibbonsName);
+            ribbons.transform.SetParent(root.transform, false);
+            var data = terrain.terrainData; var origin = terrain.transform.position;
+
+            // One group per display window, in the order the windows open (deterministic names and draw order).
+            foreach (var group in routes.GroupBy(RoutePaths.WindowOf).OrderBy(g => g.Key.From).ThenBy(g => g.Key.To ?? DateTime.MaxValue))
+            {
+                var holder = new GameObject($"Window {group.Key}");
+                holder.transform.SetParent(ribbons.transform, false);
+                holder.AddComponent<RouteGroup>().Window = group.Key;
+                foreach (var (kinds, material, name) in new[]
+                         {
+                             (new[] { RoutePaths.Rail }, rail, "Rail"),
+                             (new[] { RoutePaths.Road, RoutePaths.Track }, road, "Roads"),
+                         })
+                {
+                    var lines = group.Where(r => kinds.Contains(r.Kind)).Select(r => (World(frame, r), WidthOf(r.Kind))).ToList();
+                    if (lines.Count == 0) continue;
+                    var mesh = assets.Own(Ribbon(lines, data, origin, $"Route{name} {group.Key}"));
+                    mesh.UploadMeshData(true);
+                    var go = new GameObject(name);
+                    go.transform.SetParent(holder.transform, false);
+                    go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                    var r = go.AddComponent<MeshRenderer>();
+                    r.sharedMaterial = material;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    r.receiveShadows = true;
+                }
+                holder.SetActive(group.Key.Covers(date));
+            }
+            assets.OnTeardown(VisualToggles.Register(RoutesToggle, on => { if (ribbons != null) ribbons.SetActive(on); }));
+
+            var trainRoute = routes.FirstOrDefault(r => r.Id == TrainRoute);
+            if (trainRoute != null && train != TrainMode.None)
+            {
+                var go = RouteTrain.Spawn(root.transform, assets, World(frame, trainRoute), data, origin,
+                    frame.ToWorld(TrainTurnAt.lon, TrainTurnAt.lat, 0), frame.ToWorld(RouteTrain.StillAt.lon, RouteTrain.StillAt.lat, 0),
+                    train == TrainMode.Still);
+                assets.OnTeardown(VisualToggles.Register(TrainToggle, on => { if (go != null) go.SetActive(on); }));
+            }
+            return root;
+        }
+
+        /// <summary>A route's points in world metres (x east, z north).</summary>
+        public static List<Vector2> World(GeoFrame frame, RoutePath route)
+        {
+            var w = new List<Vector2>(route.Points.Count);
+            foreach (var p in route.Points)
+            {
+                var v = frame.ToWorld(p[0], p[1], 0);
+                var q = new Vector2(v.x, v.z);
+                if (w.Count == 0 || (q - w[w.Count - 1]).sqrMagnitude > 1e-4f) w.Add(q);
+            }
+            return w;
+        }
+
+        /// <summary>Points every <paramref name="step"/> metres along a polyline, its last point included, and the
+        /// distance along it of each.</summary>
+        public static (List<Vector2> points, List<float> along) Resample(IReadOnlyList<Vector2> line, float step)
+        {
+            var pts = new List<Vector2>(); var along = new List<float>();
+            if (line.Count == 0) return (pts, along);
+            pts.Add(line[0]); along.Add(0f);
+            float s = 0f, next = step;
+            for (int i = 1; i < line.Count; i++)
+            {
+                var a = line[i - 1]; var b = line[i]; float len = (b - a).magnitude;
+                while (next <= s + len && len > 0f)
+                {
+                    pts.Add(Vector2.Lerp(a, b, (next - s) / len)); along.Add(next);
+                    next += step;
+                }
+                s += len;
+            }
+            if (s - along[along.Count - 1] > 1e-3f) { pts.Add(line[line.Count - 1]); along.Add(s); }
+            return (pts, along);
+        }
+
+        /// <summary>The height (world y) of a ribbon vertex at <paramref name="q"/>: <see cref="ClearanceM"/> above the highest
+        /// ground at q and half a step along <paramref name="along"/> (unit) and half a vertex spacing across, either way.
+        /// The ribbon and the train's wheels share it (review M4), so the bed never rises over the train on a grade.</summary>
+        public static float RibbonHeight(TerrainData data, Vector3 origin, Vector2 q, Vector2 along, float spacing)
+        {
+            var side = new Vector2(along.y, -along.x);
+            float y = Ground(data, origin, q);
+            foreach (var d in new[] { along * (StepM / 2), -along * (StepM / 2), side * (spacing / 2), -side * (spacing / 2) })
+                y = Mathf.Max(y, Ground(data, origin, q + d));
+            return y + ClearanceM;
+        }
+
+        /// <summary>The ground height (world y) under (x, z), clamped to the terrain.</summary>
+        public static float Ground(TerrainData data, Vector3 origin, Vector2 p) =>
+            origin.y + data.GetInterpolatedHeight(Mathf.Clamp01((p.x - origin.x) / data.size.x), Mathf.Clamp01((p.y - origin.z) / data.size.z));
+
+        /// <summary>One mesh for several ribbons. Along each line, a cross-section every <see cref="StepM"/>, square to the
+        /// line's direction (averaged over two steps each way, so a tight bend fans instead of folding); across it,
+        /// <see cref="Across"/> vertices, each <see cref="ClearanceM"/> above the highest ground at its own point and half a
+        /// step and half a spacing around it (so terrain between vertices cannot rise through the ribbon), with the
+        /// terrain's own normal (so the sun shades it as the ground). UV: u across (0 left edge, 1 right), v along (m).</summary>
+        public static Mesh Ribbon(IEnumerable<(List<Vector2> line, float width)> lines, TerrainData data, Vector3 origin, string name)
+        {
+            var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
+            foreach (var (line, width) in lines)
+            {
+                if (line.Count < 2) continue;
+                var (pts, along) = Resample(line, StepM);
+                int n = pts.Count, first = verts.Count;
+                float spacing = width / (Across - 1);
+                for (int i = 0; i < n; i++)
+                {
+                    var t = (pts[Math.Min(n - 1, i + 2)] - pts[Math.Max(0, i - 2)]).normalized;
+                    var side = new Vector2(t.y, -t.x);                         // right of the direction of travel
+                    for (int j = 0; j < Across; j++)
+                    {
+                        float a = (float)j / (Across - 1);
+                        var q = pts[i] + side * ((a - 0.5f) * width);
+                        verts.Add(new Vector3(q.x, RibbonHeight(data, origin, q, t, spacing), q.y));
+                        normals.Add(data.GetInterpolatedNormal(Mathf.Clamp01((q.x - origin.x) / data.size.x), Mathf.Clamp01((q.y - origin.z) / data.size.z)));
+                        uvs.Add(new Vector2(a, along[i]));
+                    }
+                }
+                for (int i = 0; i + 1 < n; i++)
+                    for (int j = 0; j + 1 < Across; j++)
+                    {
+                        int a = first + i * Across + j, b = a + 1, c = a + Across, d = c + 1;
+                        tris.AddRange(new[] { a, c, b, b, c, d });         // the shader draws both faces
+                    }
+            }
+            var mesh = new Mesh { name = name };
+            if (verts.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.SetVertices(verts); mesh.SetNormals(normals); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+    }
+}

@@ -12,6 +12,18 @@ Bechor-Shalom Sheetrit (Shitreet), Yehuda Leib Maimon, Peretz Bernstein, David R
 Yitzhak Meir Levin.
 CC0: "Moshe Dayan met mgr. A.C. Ramselaar (cropped).jpg" (1962).
 
+## In-game portraits from US-safe sources (licence checked on 2026-10-11)
+- David Ben-Gurion: crop of Abbie Rowe (National Park Service), 8 May 1951, NARA 200318, {{PD-USGov}}:
+  https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
+  (Truman Library record 73-3680 names Ben-Gurion and marks it public domain). The D597-087 photo above stays as a
+  reference only.
+- Golda Meir: crop of Willem van de Poll / Nationaal Archief 255-4314, 1964, {{Cc-zero}}:
+  https://commons.wikimedia.org/wiki/File:Golda_Meir%2C_minister_van_buitenlandse_zaken_van_Israel%2C_Bestanddeelnr_255-4314.jpg
+
+- Zalman Shazar: crop of Yoichi Okamoto / LBJ Library, 2 August 1966, {{PD-USGov}}:
+  https://commons.wikimedia.org/wiki/File:President_Lyndon_B._Johnson_with_President_Zalman_Shazar_of_Israel.jpg
+  (official White House photograph; later than the game period; human likeness and era review required).
+
 ## Facts shown (verified 2026-10-09)
 - Provisional Government (May 1948): 13 ministers and portfolios; Provisional State Council 37 members,
   coalition 30 / opposition 7, Mapai 10, president Chaim Weizmann (Wikipedia: Provisional government of

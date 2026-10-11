@@ -53,7 +53,14 @@ namespace Statecraft.Game.Map
         /// <summary>Builds the map from already-read inputs (HeightmapLoader.Load and LoadHexes over text and bytes), so a
         /// WebGL build needs no System.IO. Throws InvalidDataException, before creating any object, when the hexes' bounds
         /// differ from the heightmap's by more than <see cref="BoundsTolerance"/>.</summary>
-        public static GameObject Build(HeightmapMeta meta, float[,] heights, HexFile hexFile, Material terrainMaterial)
+        public static GameObject Build(HeightmapMeta meta, float[,] heights, HexFile hexFile, Material terrainMaterial) =>
+            Build(meta, heights, hexFile, terrainMaterial, null);
+
+        /// <summary>As Build, with <paramref name="paintGround"/> given the baked biome colour texels (row 0 = south,
+        /// <see cref="BiomeTextureResolution"/> square over the map) before they are uploaded, so the settlement kits can tint
+        /// the ground of their footprints (art spike) at no cost per frame.</summary>
+        public static GameObject Build(HeightmapMeta meta, float[,] heights, HexFile hexFile, Material terrainMaterial,
+            Action<Color32[], int, GeoFrame> paintGround)
         {
             if (meta == null) throw new ArgumentNullException(nameof(meta));
             if (heights == null) throw new ArgumentNullException(nameof(heights));
@@ -79,7 +86,7 @@ namespace Statecraft.Game.Map
             terrain.basemapDistance = NoBasemapDistanceM;
             data.terrainLayers = new[] { NeutralLayer(assets) };   // one layer, one pass: the graph paints from the biome texture
             data.alphamapResolution = 16;
-            MapShaderGlobals.Apply(terrain, meta, hexFile.hex_size_km * 1000f, BakeBiomeTexture(frame, hexFile, assets), assets);
+            MapShaderGlobals.Apply(terrain, meta, hexFile.hex_size_km * 1000f, BakeBiomeTexture(frame, hexFile, assets, paintGround), assets);
             Boot.DiagLog.BootPhase("biome texture baked");
             return terrainGo;
         }
@@ -132,7 +139,7 @@ namespace Statecraft.Game.Map
         /// <summary>The ground colour of every point, blended from the biomes of nearby hex centres (BiomeBlender) in the
         /// MapPalette.Ground colours, baked once into an sRGB texture over the whole map (texel row 0 = south) that the
         /// terrain shader samples as _ScBiomeTex. Owned by the map.</summary>
-        static Texture2D BakeBiomeTexture(GeoFrame frame, HexFile hexes, MapRuntimeAssets assets)
+        static Texture2D BakeBiomeTexture(GeoFrame frame, HexFile hexes, MapRuntimeAssets assets, Action<Color32[], int, GeoFrame> paint)
         {
             var names = new List<string>(Biome.Keys);
             var colours = new Color[names.Count];
@@ -156,6 +163,7 @@ namespace Statecraft.Game.Map
                     c.a = 1f;
                     px[y * res + x] = c;
                 }
+            paint?.Invoke(px, res, frame);
             tex.SetPixels32(px); tex.Apply(true, true);   // no CPU copy: nothing reads the pixels back (about 5.6 MB on the heap)
             return tex;
         }

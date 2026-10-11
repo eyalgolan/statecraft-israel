@@ -288,6 +288,7 @@ namespace Statecraft.Sim
         static void Validate(Content c, List<string> settlementIds)
         {
             var offices = new HashSet<string>(c.Offices.Select(o => o.Id));
+            var historicalOffices = new HashSet<string>(c.Offices.Where(o => o.HistoricalOnly).Select(o => o.Id));
             var parties = new HashSet<string>(c.Parties.Select(p => p.Id));
             var indicators = new HashSet<string>(c.Indicators.Select(i => i.Id));
             var sources = new HashSet<string>(c.Policies.Select(p => p.Id).Concat(indicators));
@@ -341,6 +342,22 @@ namespace Statecraft.Sim
                 if (p.Competence < 0 || p.Competence > 10) throw new ContentException("people.yaml", $"people[{p.Id}].competence", "must be 0-10");
                 if (p.Loyalty < 0 || p.Loyalty > 10) throw new ContentException("people.yaml", $"people[{p.Id}].loyalty", "must be 0-10");
                 if (p.Party != "" && !parties.Contains(p.Party)) throw new ContentException("people.yaml", $"people[{p.Id}].party", $"unknown party '{p.Party}'");
+                if (p.Born.HasValue && p.Died.HasValue && p.Born.Value >= p.Died.Value)
+                    throw new ContentException("people.yaml", $"people[{p.Id}].born", FormattableString.Invariant($"must be before {p.Died:yyyy-MM-dd}, the date of death"));
+                var firstTerm = p.Offices.Count > 0 ? p.Offices.Min(t => t.From) : (DateTime?)null;
+                if (p.Born.HasValue && firstTerm.HasValue && p.Born.Value > firstTerm.Value)
+                    throw new ContentException("people.yaml", $"people[{p.Id}].born", FormattableString.Invariant($"must be on or before {firstTerm:yyyy-MM-dd}, when the first office term starts"));
+                // A map skips CheckNulls' list and entry checks, so a misspelt key or an empty source would load silently.
+                foreach (var kv in p.BiographySources)
+                {
+                    var field = $"people[{p.Id}].biography_sources.{kv.Key}";
+                    if (kv.Key != "name_he" && kv.Key != "born" && kv.Key != "died")
+                        throw new ContentException("people.yaml", field, "unknown field (must be name_he, born or died)");
+                    if (kv.Value == null) throw new ContentException("people.yaml", field, "must be a list");
+                    for (int i = 0; i < kv.Value.Count; i++)
+                        if (kv.Value[i] == null || string.IsNullOrWhiteSpace(kv.Value[i].Url) || kv.Value[i].Checked == default)
+                            throw new ContentException("people.yaml", FormattableString.Invariant($"{field}[{i}]"), "needs a url and a checked date");
+                }
                 foreach (var t in p.Offices)
                 {
                     if (string.IsNullOrEmpty(t.Office)) throw new ContentException("people.yaml", $"people[{p.Id}].offices", "office term without an office");
@@ -355,10 +372,17 @@ namespace Statecraft.Sim
                     foreach (var t in p.Offices.Where(t => t.Office == o.Id))
                         if (!t.To.HasValue || t.To.Value > o.Until!.Value)
                             throw new ContentException("people.yaml", $"people[{p.Id}].offices.{o.Id}.to", FormattableString.Invariant($"must be on or before {o.Until:yyyy-MM-dd}, when the office was abolished"));
+            // An open-ended term runs past the authored governments, so it only conflicts with a death before the latest
+            // government began (#167). With no governments, every open-ended term conflicts, as before.
+            var latestGovernmentStart = c.Governments.Count > 0 ? c.Governments.Max(g => g.From) : DateTime.MaxValue;
             foreach (var p in c.People.Where(p => p.Died.HasValue))
                 foreach (var t in p.Offices)
-                    if (!t.To.HasValue || t.To.Value > p.Died!.Value)
+                {
+                    if (t.From >= p.Died!.Value)
+                        throw new ContentException("people.yaml", $"people[{p.Id}].offices.{t.Office}.from", FormattableString.Invariant($"must be before {p.Died:yyyy-MM-dd}, the date of death"));
+                    if (t.To.HasValue ? t.To.Value > p.Died!.Value : p.Died!.Value < latestGovernmentStart)
                         throw new ContentException("people.yaml", $"people[{p.Id}].offices.{t.Office}.to", FormattableString.Invariant($"must be on or before {p.Died:yyyy-MM-dd}, the date of death"));
+                }
             foreach (var p in c.People)
                 for (int i = 0; i < p.Offices.Count; i++)
                     for (int j = i + 1; j < p.Offices.Count; j++)
@@ -407,7 +431,10 @@ namespace Statecraft.Sim
                 Unit("model.yaml", $"policies[{p.Id}].default", p.Default);
             }
             foreach (var p in c.Policies)
+            {
                 if (!offices.Contains(p.Office)) throw new ContentException("model.yaml", $"policies[{p.Id}].office", $"unknown office '{p.Office}'");
+                if (historicalOffices.Contains(p.Office)) throw new ContentException("model.yaml", $"policies[{p.Id}].office", "historical-only titles cannot own policies");
+            }
             foreach (var e in c.Effects)
             {
                 if (!sources.Contains(e.Source)) throw new ContentException("model.yaml", $"effects[{e.Id}].source", $"unknown policy or indicator '{e.Source}'");
@@ -415,6 +442,7 @@ namespace Statecraft.Sim
                 Finite("model.yaml", $"effects[{e.Id}].k", e.K);
                 if (e.Inertia < 1) throw new ContentException("model.yaml", $"effects[{e.Id}].inertia", "must be >= 1");
                 if (e.Office != "" && !offices.Contains(e.Office)) throw new ContentException("model.yaml", $"effects[{e.Id}].office", $"unknown office '{e.Office}'");
+                if (historicalOffices.Contains(e.Office)) throw new ContentException("model.yaml", $"effects[{e.Id}].office", "historical-only titles cannot own effects");
             }
             foreach (var s in c.Situations)
             {
@@ -477,6 +505,7 @@ namespace Statecraft.Sim
             foreach (var kv in r.BudgetStart)
             {
                 if (!offices.Contains(kv.Key)) throw new ContentException("rules.yaml", $"budget_start.{kv.Key}", "unknown office");
+                if (historicalOffices.Contains(kv.Key)) throw new ContentException("rules.yaml", $"budget_start.{kv.Key}", "historical-only titles cannot have a budget line");
                 // A budget line must not silently stop mattering when its office is abolished: move it to the office that
                 // took over (plan amendment C3).
                 var until = c.Offices.First(o => o.Id == kv.Key).Until;

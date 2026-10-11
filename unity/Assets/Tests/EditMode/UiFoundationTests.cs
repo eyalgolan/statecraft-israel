@@ -86,7 +86,10 @@ public class UiFoundationTests
         var navy = new Color(9 / 255f, 14 / 255f, 26 / 255f, 1f);
         var goldDim = new Color(196 / 255f, 160 / 255f, 92 / 255f, 0.45f);
         var gold = new Color(196 / 255f, 160 / 255f, 92 / 255f, 1f);
-        var nav = ui.Q<Button>("nav-cabinet");
+        // A screen button is a round, gold-rimmed navy disc with the screen's name under it (promo HUD pass): the disc
+        // carries the theme's navy and dim gold.
+        var nav = ui.Q<Button>("nav-cabinet").Q<UiIcon>(className: "nav-disc");
+        Assert.IsNotNull(nav, "the screen button has its disc");
         for (int i = 0; i < 10 && nav.resolvedStyle.backgroundColor.a < 0.5f; i++) yield return null;
         void Near(Color e, Color a, string what) => Assert.That(Mathf.Abs(e.r - a.r) + Mathf.Abs(e.g - a.g) + Mathf.Abs(e.b - a.b) + Mathf.Abs(e.a - a.a), Is.LessThan(0.02f), $"{what}: expected {e} got {a}");
         Near(navy, nav.resolvedStyle.backgroundColor, "nav background");

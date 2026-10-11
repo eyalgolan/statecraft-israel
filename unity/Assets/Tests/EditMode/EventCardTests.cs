@@ -30,7 +30,8 @@ public class EventCardTests
         var expected = C.People.Where(p => p.Portrait != null && p.Portrait.File != "").Select(p => p.Id).OrderBy(x => x).ToArray();
         Assert.AreEqual(expected, catalog.entries.Select(e => e.personId).OrderBy(x => x).ToArray());
         Assert.IsNotNull(catalog.Get("ben_gurion"));
-        Assert.IsNull(catalog.Get("golda_meir"));                     // no public-domain portrait recorded
+        Assert.IsNotNull(catalog.Get("golda_meir"));
+        Assert.IsNull(catalog.Get("lavon"));                          // no public-domain portrait recorded
     }
 
     [Test]

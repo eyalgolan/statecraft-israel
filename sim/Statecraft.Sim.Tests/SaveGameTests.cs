@@ -329,6 +329,30 @@ public class SaveGameTests
         Assert.Equal(Played(c).State.Hash(), loaded.State.Hash());
     }
 
+    /// <summary>content/map/settlement_population_1945.yaml sizes the map's settlement kits (presentation only). The sim
+    /// never reads it, so it is outside the content hash: editing it cannot break a save or move a golden. Checked on the
+    /// fixture and on the real content (with the file removed from a copy).</summary>
+    [Fact]
+    public void TheKitPopulationFileIsOutsideTheContentHash()
+    {
+        var dir = Fixture.Write();
+        var before = ContentLoader.Load(dir).Hash;
+        File.WriteAllText(Path.Combine(dir, "map", "settlement_population_1945.yaml"), "settlements:\n- id: x\n  population: 1\n");
+        Assert.Equal(before, ContentLoader.Load(dir).Hash);
+
+        var real = RealContentTests.ContentRoot();
+        Assert.True(File.Exists(Path.Combine(real, "map", "settlement_population_1945.yaml")));
+        var copy = Path.Combine(Path.GetTempPath(), "statecraft-nopop-" + Guid.NewGuid().ToString("N"));
+        foreach (var f in Directory.GetFiles(real, "*", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(real, f);
+            if (rel.Replace('\\', '/') == "map/settlement_population_1945.yaml") continue;
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, rel))!);
+            File.Copy(f, Path.Combine(copy, rel));
+        }
+        Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
+    }
+
     [Fact]
     public void TheContentHashChangesWithEventsAndSettlements()
     {

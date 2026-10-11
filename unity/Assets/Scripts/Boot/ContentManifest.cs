@@ -17,16 +17,21 @@ namespace Statecraft.Game.Boot
         /// (settlements); the precipitation files are tool inputs only.</summary>
         public const string HexesJson = "map/hexes.json";
 
+        /// <summary>Map files that only the offline tools read, so players never download them: routes_1948.yaml is the
+        /// hand-written input of tools/routes_1948.py; the map reads its traced output (review M10).</summary>
+        public static readonly IReadOnlyCollection<string> ToolInputs = new HashSet<string> { "map/routes_1948.yaml" };
+
         [Serializable] sealed class ManifestJson { public string[] files = new string[0]; }
 
-        /// <summary>Every *.yaml in <paramref name="contentDir"/>, events/ and map/, plus map/hexes.json; ordinal order.</summary>
+        /// <summary>Every *.yaml in <paramref name="contentDir"/>, events/ and map/ (but <see cref="ToolInputs"/>), plus
+        /// map/hexes.json; ordinal order.</summary>
         public static List<string> Collect(string contentDir)
         {
             IEnumerable<string> Yaml(string sub) => Directory.GetFiles(Path.Combine(contentDir, sub), "*.yaml")
                 .Select(f => (sub == "" ? "" : sub + "/") + Path.GetFileName(f));
             if (!File.Exists(Path.Combine(contentDir, HexesJson))) throw new FileNotFoundException("content file missing", HexesJson);
             return Yaml("").Concat(Yaml("events")).Concat(Yaml("map")).Append(HexesJson)
-                .OrderBy(f => f, StringComparer.Ordinal).ToList();
+                .Where(f => !ToolInputs.Contains(f)).OrderBy(f => f, StringComparer.Ordinal).ToList();
         }
 
         public static string Write(IEnumerable<string> files) => JsonUtility.ToJson(new ManifestJson { files = files.ToArray() }, true);

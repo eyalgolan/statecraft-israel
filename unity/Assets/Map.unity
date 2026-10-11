@@ -384,6 +384,8 @@ MonoBehaviour:
   selectionMaterial: {fileID: 2100000, guid: 6116b1f8c72b244e0a9556c2cdb6b1c5, type: 2}
   seaMaterial: {fileID: 2100000, guid: 5bb451931546c49d6b2fe35726d07cfd, type: 2}
   borderLandMaterial: {fileID: 2100000, guid: ed41bb6e0c8274066b408da9b1f5bef2, type: 2}
+  kitMaterial: {fileID: 2100000, guid: 24c1cceae1b22492e9c9f2be7c1a6b5e, type: 2}
+  treeMaterial: {fileID: 2100000, guid: 2dd15539298814dafa803cdbc57e2426, type: 2}
 --- !u!4 &1195372453
 Transform:
   m_ObjectHideFlags: 0

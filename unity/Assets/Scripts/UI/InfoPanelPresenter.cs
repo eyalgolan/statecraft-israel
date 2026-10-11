@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
+using Statecraft.Game.Map;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -14,6 +15,7 @@ namespace Statecraft.Game.UI
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
         readonly Button campButton, housingButton; readonly System.Action onCamp, onHousing;
         readonly Label title, subtitle, settlements, placement, reason;
+        readonly UiIcon thumb;
         readonly IReadOnlyDictionary<string, string> settlementNames;
 
         public InfoPanelPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, string> settlementNames)
@@ -22,6 +24,7 @@ namespace Statecraft.Game.UI
             this.settlementNames = settlementNames;
             title = panel.Q<Label>("info-title"); subtitle = panel.Q<Label>("info-subtitle"); settlements = panel.Q<Label>("info-settlements");
             placement = panel.Q<Label>("info-placement"); reason = panel.Q<Label>("info-reason");
+            thumb = panel.Q<UiIcon>("info-thumb");
             campButton = panel.Q<Button>("build-camp"); housingButton = panel.Q<Button>("build-housing");
             onCamp = () => Build(MapActions.TransitCamp); onHousing = () => Build(MapActions.Housing);
             campButton.clicked += onCamp; housingButton.clicked += onHousing;
@@ -43,19 +46,32 @@ namespace Statecraft.Game.UI
             bridge.Queue(new MapAction(action, Selected.Value.q, Selected.Value.r));
         }
 
+        /// <summary>The terrain sign: the biome's glyph on the biome's own map colour (MapBuilder.BiomeColours), hidden when no
+        /// hex (or no hex on the map) is selected.</summary>
+        void ShowThumb(string? biome)
+        {
+            var known = biome != null && MapBuilder.BiomeColours.ContainsKey(biome);
+            thumb.style.display = known ? DisplayStyle.Flex : DisplayStyle.None;
+            thumb.Glyph = known ? "biome-" + biome : "";
+            thumb.style.backgroundColor = known ? new StyleColor(MapBuilder.BiomeColours[biome!]) : new StyleColor(StyleKeyword.Null);
+        }
+
         public void Render()
         {
             var c = bridge.Content; var s = bridge.State;
             var camp = campButton; var housing = housingButton;
+            panel.EnableInClassList("info-empty", Selected == null);
             if (Selected == null)
             {
                 title.text = text["info.hint"];
                 subtitle.text = settlements.text = placement.text = reason.text = "";
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
+                ShowThumb(null);
                 return;
             }
             var (q, r) = Selected.Value;
             var hex = c.HexAt(q, r);
+            ShowThumb(hex?.Biome);
             var owned = c.SettlementHexes.Where(x => x.Q == q && x.R == r).Select(x => settlementNames[x.Id]).ToList();   // strict: every settlement hex has a name (final review M4)
             title.text = owned.Count > 0 ? owned[0] : hex == null ? text["info.off_map"] : text["info.biome." + hex.Biome];
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)

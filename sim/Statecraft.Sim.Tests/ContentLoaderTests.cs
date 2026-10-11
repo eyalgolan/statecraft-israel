@@ -16,6 +16,107 @@ public class ContentLoaderTests
         Assert.Equal(5, c.Rules.StartRung);
     }
 
+    [Theory]
+    [InlineData("policy", "model.yaml", "policies[rationing].office")]
+    [InlineData("effect", "model.yaml", "effects[rationing_food].office")]
+    [InlineData("event", "events/drought.yaml", "events[drought].office")]
+    [InlineData("budget", "rules.yaml", "budget_start.historical_title")]
+    public void HistoricalTitlesCannotOwnGameplayResponsibilities(string kind, string file, string field)
+    {
+        var overrides = new Dictionary<string, string>
+        {
+            ["offices.yaml"] = Fixture.Files["offices.yaml"] +
+                "\n  - { id: historical_title, title: Historical title, historical_only: true }\n"
+        };
+        var events = new Dictionary<string, string>();
+        if (kind == "policy") overrides["model.yaml"] = Fixture.Files["model.yaml"].Replace(
+            "default: 0.0\n    office: finance_minister", "default: 0.0\n    office: historical_title");
+        if (kind == "effect") overrides["model.yaml"] = Fixture.Files["model.yaml"].Replace(
+            "inertia: 2\n    office: finance_minister", "inertia: 2\n    office: historical_title");
+        if (kind == "event") events["drought.yaml"] = ValidationTests.Event.Replace(
+            "office: finance_minister", "office: historical_title");
+        if (kind == "budget") overrides["rules.yaml"] = Fixture.Files["rules.yaml"].Replace(
+            "budget_start: { finance_minister: 1.0 }", "budget_start: { historical_title: 1.0 }");
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(overrides, events)));
+        Assert.Equal(file, ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains("historical-only", ex.Message);
+    }
+
+    [Fact]
+    public void HistoricalTitlesRemainAvailableForDatedTextPlaceholders()
+    {
+        var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+        {
+            ["offices.yaml"] = Fixture.Files["offices.yaml"] +
+                "\n  - { id: historical_title, title: Historical title, historical_only: true }\n",
+            ["people.yaml"] = Fixture.Files["people.yaml"].Replace("office: finance_minister", "office: historical_title")
+        }, new Dictionary<string, string>
+        {
+            ["drought.yaml"] = ValidationTests.Event.Replace("{finance_minister}", "{historical_title}")
+        }));
+        Assert.Equal("Def Two reports a drought.", EventSystem.Render(c, c.Events[0], new DateTime(1948, 6, 1)));
+        Assert.Equal("finance_minister", c.Events[0].Office);
+    }
+
+    [Fact]
+    public void PersonLifeMetadataHasSourcesPerFieldAndRemainsOptional()
+    {
+        var yaml = Fixture.Files["people.yaml"].Replace("    name: Pm One\n", @"    name: Pm One
+    name_he: דמות לדוגמה
+    born: 1900-01-01
+    biography_sources:
+      name_he: [{ url: 'https://example.org/name', checked: 2026-10-11 }]
+      born: [{ url: 'https://example.org/birth', checked: 2026-10-11 }]
+");
+        var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = yaml }));
+        var person = c.People[0];
+        Assert.Equal("דמות לדוגמה", person.NameHe);
+        Assert.Equal(new DateTime(1900, 1, 1), person.Born);
+        Assert.Equal("https://example.org/name", person.BiographySources["name_he"][0].Url);
+        Assert.Equal("https://example.org/birth", person.BiographySources["born"][0].Url);
+        Assert.Null(c.People[1].Born);
+        Assert.Empty(c.People[1].BiographySources);
+    }
+
+    static ContentException LoadPmOneWith(string lines) =>
+        Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+        {
+            ["people.yaml"] = Fixture.Files["people.yaml"].Replace("    name: Pm One\n", "    name: Pm One\n" + lines),
+        })));
+
+    [Theory]
+    [InlineData("      bron: [{ url: 'https://example.org/birth', checked: 2026-10-11 }]\n", "people[pm_one].biography_sources.bron")]
+    [InlineData("      born:\n", "people[pm_one].biography_sources.born")]
+    [InlineData("      born: [~]\n", "people[pm_one].biography_sources.born[0]")]
+    [InlineData("      born: [{}]\n", "people[pm_one].biography_sources.born[0]")]
+    [InlineData("      born: [{ checked: 2026-10-11 }]\n", "people[pm_one].biography_sources.born[0]")]
+    [InlineData("      born: [{ url: 'https://example.org/birth', checked: 2026-10-11 }, { url: 'https://example.org/b2' }]\n", "people[pm_one].biography_sources.born[1]")]
+    public void BadBiographySourceNamesFileAndField(string sources, string field)
+    {
+        var ex = LoadPmOneWith("    born: 1900-01-01\n    biography_sources:\n" + sources);
+        Assert.Equal("people.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+    }
+
+    [Theory]
+    [InlineData("    born: 1900-01-01\n    died: 1900-01-01\n")]
+    [InlineData("    born: 1948-05-15\n")]
+    public void ImpossibleBirthDateIsAnError(string lines)
+    {
+        var ex = LoadPmOneWith(lines);
+        Assert.Equal("people.yaml", ex.File);
+        Assert.Equal("people[pm_one].born", ex.Field);
+    }
+
+    [Fact]
+    public void BirthOnFirstTermStartLoads()
+    {
+        var yaml = Fixture.Files["people.yaml"].Replace("    name: Pm One\n", "    name: Pm One\n    born: 1948-05-14\n");
+        var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = yaml }));
+        Assert.Equal(new DateTime(1948, 5, 14), c.People[0].Born);
+    }
+
     [Fact]
     public void UnknownPartyInSeatsNamesFileAndField()
     {

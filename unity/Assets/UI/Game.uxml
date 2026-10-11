@@ -6,49 +6,69 @@
         <!-- Settlement names, positioned by MapLabelsPresenter under every panel; clicks pass through to the map. -->
         <ui:VisualElement name="map-labels" class="map-labels" picking-mode="Ignore" />
         <ui:VisualElement name="top-bar" class="panel top-bar">
+            <Statecraft.Game.UI.UiFrame corners="false" rule="false" />
             <ui:VisualElement class="date-box">
                 <ui:Label name="year" class="year" />
                 <ui:VisualElement class="date-row">
                     <ui:Label name="turn" class="muted" />
                     <ui:Label name="date" class="muted" />
                 </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame shadow="false" />
             </ui:VisualElement>
             <!-- Meter captions are the content display names in title case, a deliberate casing for captions (Treasury and
                  Foreign Currency: model.yaml money; Security and International Standing: model.yaml indicators;
                  HudTests.TopBarCaptionsAreTheContentNamesInTitleCase). Immigration and Public Support are UI quantities. -->
             <ui:VisualElement name="meters" class="meters">
                 <ui:VisualElement name="meter-treasury" class="meter">
-                    <ui:Label text="Treasury" class="meter-name" />
-                    <ui:VisualElement class="meter-row"><ui:Label name="treasury-value" class="meter-value" /><ui:Label name="treasury-delta" class="meter-delta" /></ui:VisualElement>
+                    <Statecraft.Game.UI.UiIcon glyph="coin" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Treasury" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="treasury-value" class="meter-value" /><ui:Label name="treasury-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-immigration" class="meter">
-                    <ui:Label text="Immigration" class="meter-name" />
-                    <ui:VisualElement class="meter-row"><ui:Label name="immigration-value" class="meter-value" /><ui:Label name="immigration-delta" class="meter-delta" /></ui:VisualElement>
+                    <Statecraft.Game.UI.UiIcon glyph="people" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Immigration" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="immigration-value" class="meter-value" /><ui:Label name="immigration-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-security" class="meter">
-                    <ui:Label text="Security" class="meter-name" />
-                    <ui:VisualElement class="meter-row"><ui:Label name="security-value" class="meter-value" /><ui:Label name="security-delta" class="meter-delta" /></ui:VisualElement>
-                    <ui:Label name="security-level" class="meter-name" />
+                    <Statecraft.Game.UI.UiIcon glyph="shield" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Security" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="security-value" class="meter-value" /><ui:Label name="security-delta" class="meter-delta" /></ui:VisualElement>
+                        <ui:Label name="security-level" class="meter-name" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-support" class="meter">
-                    <ui:Label text="Public Support" class="meter-name" />
-                    <ui:VisualElement class="meter-row"><ui:Label name="support-value" class="meter-value" /><ui:Label name="support-delta" class="meter-delta" /></ui:VisualElement>
+                    <Statecraft.Game.UI.UiIcon glyph="crowd" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Public Support" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="support-value" class="meter-value" /><ui:Label name="support-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-standing" class="meter">
-                    <ui:Label text="International Standing" class="meter-name" />
-                    <ui:VisualElement class="meter-row"><ui:Label name="standing-value" class="meter-value" /><ui:Label name="standing-delta" class="meter-delta" /></ui:VisualElement>
+                    <Statecraft.Game.UI.UiIcon glyph="globe" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="International Standing" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="standing-value" class="meter-value" /><ui:Label name="standing-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-fx" class="meter">
-                    <ui:Label text="Foreign Currency" class="meter-name" />
-                    <ui:VisualElement class="meter-row"><ui:Label name="fx-value" class="meter-value" /><ui:Label name="fx-delta" class="meter-delta" /></ui:VisualElement>
+                    <Statecraft.Game.UI.UiIcon glyph="banknote" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Foreign Currency" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="fx-value" class="meter-value" /><ui:Label name="fx-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="nav" class="nav">
-                <ui:Button name="nav-cabinet" text="Cabinet" />
-                <ui:Button name="nav-budget" text="Budget" />
-                <ui:Button name="nav-defence" text="Defence" />
-                <ui:Button name="nav-why" text="Why?" />
-                <ui:Button name="new-game" text="New Game" />
+                <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /></ui:Button>
+                <ui:Button name="nav-budget" text="Budget" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="scales" class="nav-disc" /></ui:Button>
+                <ui:Button name="nav-defence" text="Defence" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
+                <ui:Button name="nav-why" text="Why?" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
+                <ui:Button name="new-game" text="New Game" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
             </ui:VisualElement>
             <ui:VisualElement class="turn-box">
                 <ui:Label name="attention" class="muted" />
@@ -68,27 +88,36 @@
                         <ui:Label name="event-office" class="muted event-office" />
                     </ui:VisualElement>
                 </ui:VisualElement>
+                <ui:VisualElement class="gold-rule" />
                 <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /></ui:ScrollView>
                 <ui:VisualElement name="event-options" />
                 <ui:Label name="event-count" class="muted" />
+                <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
             <ui:VisualElement class="right-gap" picking-mode="Ignore" />
             <ui:VisualElement name="minimap" class="panel minimap">
                 <ui:VisualElement name="minimap-image" class="minimap-image">
                     <ui:VisualElement name="minimap-view" class="minimap-view" picking-mode="Ignore" />
                 </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="info-panel" class="panel info-panel">
-            <ui:Label name="info-title" class="title" />
-            <ui:Label name="info-subtitle" class="muted" />
-            <ui:Label name="info-settlements" />
-            <ui:Label name="info-placement" class="muted" />
-            <ui:VisualElement class="row">
-                <ui:Button name="build-camp" />
-                <ui:Button name="build-housing" />
+            <!-- The selected hex's terrain sign on its map colour, beside its real facts (no tile yields: owner ruling). -->
+            <Statecraft.Game.UI.UiIcon name="info-thumb" class="info-thumb" />
+            <ui:VisualElement class="info-body">
+                <ui:Label name="info-title" class="title" />
+                <ui:Label name="info-subtitle" class="muted" />
+                <ui:VisualElement class="gold-rule" />
+                <ui:Label name="info-settlements" />
+                <ui:Label name="info-placement" class="muted" />
+                <ui:VisualElement class="row">
+                    <ui:Button name="build-camp" />
+                    <ui:Button name="build-housing" />
+                </ui:VisualElement>
+                <ui:Label name="info-reason" class="reason" />
             </ui:VisualElement>
-            <ui:Label name="info-reason" class="reason" />
+            <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-cabinet" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label name="cabinet-government" class="title" /><ui:Label name="cabinet-coalition" class="muted" /></ui:VisualElement>
@@ -100,6 +129,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Label name="cabinet-status" class="muted" />
+            <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-budget" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label text="Budget" class="title" /><ui:Label name="budget-vote" class="muted" /></ui:VisualElement>
@@ -111,6 +141,7 @@
                 <ui:Button name="budget-submit" text="Submit the budget" />
                 <ui:Label name="budget-status" class="muted grow" />
             </ui:VisualElement>
+            <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-defence" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label text="Defence" class="title" /><ui:Label name="defence-command" class="muted" /></ui:VisualElement>
@@ -135,10 +166,12 @@
                 <ui:Button name="mob-up" text="+5%" />
             </ui:VisualElement>
             <ui:Label name="mob-cost" class="muted" />
+            <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-why" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label text="Why did this happen?" class="title" /><ui:Label name="why-turn" class="muted" /></ui:VisualElement>
             <ui:ScrollView name="why-rows" class="grow" />
+            <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:Label name="toast" class="panel toast" />
     </ui:VisualElement>

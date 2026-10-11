@@ -6,12 +6,15 @@ using UnityEngine;
 
 namespace Statecraft.Game.Map
 {
-    /// <summary>Builds the whole map: terrain, hexes, 1948 settlements, camera. Materials are editor-made assets
+    /// <summary>Builds the whole map: terrain, hexes, 1948 settlements, railways and roads, camera. Materials are editor-made assets
     /// (M0 correction 1). Build is idempotent: it destroys what the previous Build made first. In play mode the Boot
     /// component calls Build(inputs) once the inputs are loaded (fetched on WebGL); editor tools call Build().</summary>
     public sealed class MapScene : MonoBehaviour
     {
         [SerializeField] Material terrainMaterial, markerMaterial, selectionMaterial, seaMaterial, borderLandMaterial;
+        /// <summary>The art spike's procedural settlement kits and trees (Kit.mat, Tree.mat: Statecraft/Kit). Optional: without
+        /// them the map keeps the placeholder marker boxes.</summary>
+        [SerializeField] Material kitMaterial, treeMaterial;
 
         public GeoFrame Frame { get; private set; }
         /// <summary>hexes.json as the last Build read it (bounds, hex size, biomes).</summary>
@@ -20,6 +23,9 @@ namespace Statecraft.Game.Map
         public Material MarkerMaterial => markerMaterial;
         /// <summary>The settlements the last Build placed (settlements_1948.yaml), for the UI's map labels.</summary>
         public IReadOnlyList<Settlement> Settlements { get; private set; } = new List<Settlement>();
+        /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
+        /// null before the game has set one (the routes then show as at the game's start).</summary>
+        public DateTime? RouteDate { get; set; }
 
         /// <summary>The selected hex's outline: a child of the terrain (so a rebuild destroys it).</summary>
         public const string SelectionName = "HexSelection";
@@ -94,6 +100,12 @@ namespace Statecraft.Game.Map
             seaMaterial = sea; borderLandMaterial = borderLand;
         }
 
+        /// <summary>The settlement kits' and trees' materials (null, null: placeholder markers only).</summary>
+        public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
+
+        /// <summary>The last Build's kit numbers (buildings, vertices, trees, build time), or null without kits.</summary>
+        public Kits.KitLayer.Stats KitStats { get; private set; }
+
         /// <summary>Builds from the repository files with System.IO (editor and desktop only).</summary>
         public void Build() => Build(GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap));
 
@@ -113,17 +125,62 @@ namespace Statecraft.Game.Map
             DiagLog.BootPhase("heightmap decoded");
             Hexes = MapBuilder.LoadHexes(inputs.HexesJson, HexesPath);
             DiagLog.BootPhase("hexes parsed");
-            var terrainGo = MapBuilder.Build(meta, heights, Hexes, terrainMaterial);
+            var list = SettlementPlacer.Parse(inputs.SettlementsYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), SettlementsPath);
+            Settlements = list;
+            bool kitsOn = kitMaterial != null && treeMaterial != null;
+            if (kitsOn)
+            {
+                if (string.IsNullOrWhiteSpace(inputs.PopulationYaml))
+                {
+                    // Review N1: without the file every town would quietly take the smallest footprint. The editor (and its
+                    // tests) refuses; a player warns and builds the small towns rather than no map.
+                    var missing = $"map/{Kits.KitPopulation.FileName} is missing or empty: the settlement kits need it to size the towns";
+                    if (Application.isEditor) throw new InvalidDataException(missing);
+                    Debug.LogWarning("KITS " + missing + "; every town takes the smallest footprint");
+                }
+                Kits.KitPopulation.Use(string.IsNullOrWhiteSpace(inputs.PopulationYaml)
+                    ? new Dictionary<string, int>() : Kits.KitPopulation.Parse(inputs.PopulationYaml, "map/" + Kits.KitPopulation.FileName));
+            }
+            float hexSizeM = Hexes.hex_size_km * 1000f;
+            var terrainGo = MapBuilder.Build(meta, heights, Hexes, terrainMaterial,
+                kitsOn ? (px, res, frame) => Kits.SettlementKits.PaintGround(px, res, frame, list, hexSizeM) : null);
             terrainGo.transform.SetParent(transform, true);
             Terrain = terrainGo.GetComponent<Terrain>();
             var size = Terrain.terrainData.size;
             AddBorderSkirt(terrainGo, meta.elev_min_m);
             DiagLog.BootPhase("border skirt");
             Frame = new GeoFrame(meta.lon0, meta.lon1, meta.lat0, meta.lat1, size.x, size.z);
-            var list = SettlementPlacer.Parse(inputs.SettlementsYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), SettlementsPath);
-            Settlements = list;
-            SettlementPlacer.Place(list, Frame, Terrain, markerMaterial).transform.SetParent(transform, true);
+            var markers = SettlementPlacer.Place(list, Frame, Terrain, markerMaterial);
+            markers.transform.SetParent(transform, true);
             DiagLog.BootPhase("settlements placed");
+            KitStats = null;
+            // The 1948 railways and roads (issue #35), read before the kits so buildings and trees keep off them.
+            var routes = Routes.RoutePaths.ReadOrNone(inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
+            if (kitsOn)
+            {
+                // ?kitscale=, ?housescale=, ?treescale= in the WebGL player: the same layout at another symbolic scale (city
+                // blocks, houses, trees), clamped to KitScale.Min..Max; docs/dev-setup.md lists the flags.
+                if (Application.platform == RuntimePlatform.WebGLPlayer)
+                {
+                    var url = Application.absoluteURL;
+                    int ks = UrlFlags.Int(url, "kitscale"), hs = UrlFlags.Int(url, "housescale"), ts = UrlFlags.Int(url, "treescale");
+                    if (ks > 0) Kits.KitScale.CityBlocks = Kits.KitScale.Clamp(ks);
+                    if (hs > 0) Kits.KitScale.Houses = Kits.KitScale.Clamp(hs);
+                    if (ts > 0) Kits.KitScale.Trees = Kits.KitScale.Clamp(ts);
+                }
+                // The kits replace the marker boxes; the boxes stay as the labels' and tests' anchors, and come back when the
+                // "kits" toggle turns the kits off (so settlements are never left undrawn).
+                var kits = Kits.KitLayer.Build(list, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
+                    terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats, Routes.RouteLayer.Corridors(Frame, routes));
+                kits.transform.SetParent(transform, true);
+                KitStats = stats;
+                DiagLog.BootPhase("kits built");
+                Debug.Log(stats.ToString());
+            }
+            // The routes are drawn map-only, as at the game's date (the start until the game sets one); a missing or malformed
+            // file means no routes and a warning; the train only in screenshots, editor renders and ?train.
+            Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate);
+            DiagLog.BootPhase("routes built");
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();
             rig.LookAt = Frame.ToWorld(34.95, 31.95, 0); rig.Init(); // central Israel: Tel Aviv–Jerusalem corridor

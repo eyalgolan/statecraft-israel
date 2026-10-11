@@ -23,6 +23,9 @@ Rain-gauge data: Israel Meteorological Service, meteorological data archive, dat
 Wikipedia (CC BY-SA 4.0): many facts in content/ cite English and Hebrew Wikipedia articles, and the 1948 settlement
 coordinates come from the Wikipedia API; each entry lists its source URLs.
 
+Railways and roads of 1948 (content/map/route*_1948.yaml): traced on the Survey of Palestine 1:250,000 map of 1946
+(public domain), using the scans and georeferencing published by Palestine Open Maps (https://palopenmaps.org).
+
 Portraits: public-domain and CC0 photographs from Wikimedia Commons; per-file records in ASSETS.portraits.yaml.
 
 Fonts: EB Garamond, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/OFL.txt).

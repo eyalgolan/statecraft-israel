@@ -20,7 +20,7 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-brotli --query "golden&smoke=5" \
      --expect "GOLDEN OK 1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07" \
-     --expect "GOLDEN OK 1952 73590e324f19e9959a455a4da79e93d7089dfcf283c13aac02af6b0a624b9767" \
+     --expect "GOLDEN OK 1952 62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8" \
      --expect "SMOKE OK 5 turns 1948-06-19 d3fdd459ddb876bd8d775c20edd1202cf56ca7134a8ad06f873d4d92034aa5b6"
    bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
@@ -73,3 +73,54 @@ that look (the owner judges this at a visual-v1 or later art checkpoint, side by
 4. In `scripts/oss/tests/test_readme.py`, change `HERO` to `docs/images/hero-build.jpg`, and keep the assertion that
    any concept-art image carries the concept-art caption.
 5. Add a CHANGELOG line, and land it as a normal pull request.
+
+## Store-page checklist (issue #45; OWNER STEP)
+
+This is preparation, not a published store page or an answered content survey. The checklist does not clear the name,
+assets or content for commercial use. Finish the release gates above first; the owner reviews and submits the page.
+
+- [ ] Resolve D8 in `docs/oss/DECISIONS.md` before using "Statecraft: Israel" as the commercial name. Do not treat the
+  repository name as trademark clearance. Review the description against the actual release build: distinguish
+  features that are playable now from roadmap plans, and do not promise a platform or language not verified in it.
+- [ ] Prepare the Steam store capsules at the current upload sizes below, with a readable game logo and artwork.
+  Capsule text is the game title only, not quotes, awards or marketing copy. Check the small capsule at its generated
+  120 x 45 and 184 x 69 display sizes before approval. Use the current official templates, not older dimensions.
+
+  | Store asset | Upload pixels |
+  | --- | --- |
+  | Header capsule | 920 x 430 |
+  | Small capsule | 462 x 174 |
+  | Main capsule | 1232 x 706 |
+  | Vertical capsule | 748 x 896 |
+
+- [ ] Capture at least five gameplay screenshots, minimum 1920 x 1080, 16:9, from the real release build, not concept art,
+  pre-rendered cinematic stills or marketing images. Record the build commit and zip SHA-256 with the capture date.
+  The README build shots (`docs/images/build-m3-*.jpg`, 1568 x 752 and not 16:9) do not meet this minimum. Show the
+  actual UI when useful; do not pass off `promo/final/03-gameplay-1936.png` or the AI likenesses in promo/final/04 and
+  08 as gameplay. Review each screenshot's age-suitability flag individually; never mark a sensitive scene suitable for
+  all ages just to gain placement.
+- [ ] Prepare a trailer from the real build, not the M2 recruiting flythrough or concept-art target. The deterministic
+  1920 x 1080, 60 fps capture and draft cut are the separate trailer part of #45, still pending; this checklist does
+  not provide a capture script or a finished trailer. Record the build/seed and capture settings with the cut.
+  Steam requires a trailer and recommends that the first one be mostly gameplay; this project's rule (real build only)
+  is stricter. Upload up to 1920 x 1080 at 30 or 60 fps, 5,000+ Kbps, preferably .mp4 with H.264/AAC. The game cannot
+  be released while a trailer is still encoding.
+- [ ] Complete all Steam Content Survey sections against the build and store page (OWNER STEP): general content,
+  mature content and generative AI. Review war, terror and the Holocaust in both playable and bundled content;
+  disclose all adult content uploaded in the build, even if it cannot be reached during play. Prepare honest answers
+  and access instructions from what actually ships, not ratings guessed from the project's subject.
+- [ ] Regenerate `docs/ai-disclosure.md` with
+  `uv run scripts/oss/ai_disclosure.py --output docs/ai-disclosure.md` and review its diff against both manifests.
+  It lists explicit `ai_generated: true` asset rows only and does not answer the survey. Steam's current AI section
+  concerns player-consumed content such as artwork, sound, narrative and localization, not efficiency tools alone.
+  Check shipped content outside the manifest's media rows too; do not infer a complete survey from an empty media
+  group. Keep the no-live-generation statement only while it remains true. An `owner-verify` asset is not cleared
+  by appearing in generated disclosure text; do not change flags merely to make an answer convenient.
+- [ ] Have the owner inspect the final previews, descriptions, media and survey answers together before submission.
+  For itch.io, use `docs/m3-release.md`'s separate upload and save test; Steam image sizes are not itch.io requirements.
+
+Official Steam sources checked 11 October 2026; re-check them before submission:
+- [Graphical assets overview](https://partner.steamgames.com/doc/store/assets).
+- [Store assets and screenshots](https://partner.steamgames.com/doc/store/assets/standard).
+- [Content Survey](https://partner.steamgames.com/doc/gettingstarted/contentsurvey).
+- [Trailers](https://partner.steamgames.com/doc/store/trailer).

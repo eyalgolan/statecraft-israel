@@ -1,4 +1,5 @@
 #nullable enable
+using System.Linq;
 using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
@@ -8,6 +9,42 @@ namespace Statecraft.Game.UI
     {
         readonly VisualElement root; readonly SimBridge bridge; readonly UiText text;
         readonly Button endTurn; readonly System.Action onEndTurn;
+        readonly VisualElement bar, hudRoot, nav;
+        readonly System.Collections.Generic.List<VisualElement> meters;
+
+        // Three tiers by the bar's logical width (1080p reference, match 0.5: logical width = sqrt(aspect x 1920 x 1080)).
+        // Each threshold sits well clear of a common window shape, so a small window change does not flip a tier:
+        //   16:9 fullscreen 1920, a 16:10 MacBook browser ~1910 | NarrowBelowPx 1860 | 16:10 fullscreen ~1821
+        //   | CompactBelowPx 1700 | 4:3 ~1662, 5:4 ~1585 | TwoRowBelowPx 1500 | square ~1440, half a 1080p screen ~1358.
+        // PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn proves each tier holds the widest late-game values and changes.
+
+        /// <summary>Below this width the HUD's root gets NarrowClass: a taller bar (124 px) whose meters stack the change under
+        /// the value, and the panels below it move down to match (Statecraft.uss .hud-narrow). Above it, six values and their
+        /// changes fit side by side with the icons.</summary>
+        public const float NarrowBelowPx = 1860f;
+        public const string NarrowClass = "hud-narrow";
+        /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): 16:10 keeps them on the
+        /// stacked bar; 4:3 and 5:4 do not have the room.</summary>
+        public const float CompactBelowPx = 1700f;
+        public const string CompactClass = "top-bar--compact";
+        /// <summary>Below this width (windows narrower than about square, e.g. a browser snapped to half a 1080p screen, about
+        /// 1360 logical px) one row cannot hold the badge, six meters, the screen buttons and End Turn: the root also gets
+        /// TwoRowClass, and the bar wraps into two rows, the date and the meters above, the screen buttons and End Turn
+        /// below (Statecraft.uss .hud-two-row).</summary>
+        public const float TwoRowBelowPx = 1500f;
+        public const string TwoRowClass = "hud-two-row";
+        /// <summary>On the one-row bar, when the meters leave enough room, the bar gets RoomyClass: promo-sized icons (38 px)
+        /// and values (25 px) (Statecraft.uss .top-bar--roomy). It turns on only when the measured spare room covers the
+        /// predicted growth (RoomyGrowth) plus SpareShare, and off when the spare room falls below SpareShare, so it never
+        /// flips back and forth.</summary>
+        public const string RoomyClass = "top-bar--roomy";
+        /// <summary>The share of the meters' width kept free after them (room for the browser's text measuring wider than the
+        /// editor's; PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn asserts it).</summary>
+        public const float SpareShare = 0.05f;
+
+        /// <summary>The meters' predicted growth when roomy: six icons 30 -> 38 px, values 22 -> 25 px (about 14% wider), and
+        /// each wrapped caption back to its one-line width (<paramref name="captionGrowth"/>).</summary>
+        public static float RoomyGrowth(float valueWidths, float captionGrowth = 0f) => 6 * 8f + 0.14f * valueWidths + captionGrowth;
 
         public HudPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
@@ -15,12 +52,75 @@ namespace Statecraft.Game.UI
             endTurn = root.Q<Button>("end-turn");
             onEndTurn = () => bridge.EndTurn();
             endTurn.clicked += onEndTurn;
+            endTurn.generateVisualContent += PaintHourglass;
+            bar = root.Q<VisualElement>("top-bar");
+            hudRoot = root.Q<VisualElement>("root");
+            bar.RegisterCallback<GeometryChangedEvent>(OnBarGeometry);
+            meters = root.Q<VisualElement>("meters").Children().ToList();
+            nav = root.Q<VisualElement>("nav");
+            foreach (var m in meters) m.RegisterCallback<GeometryChangedEvent>(OnMeterGeometry);
+            SetCompact(bar.layout.width);   // the bar may already be laid out (the loading screen shows it) and never resize
             bridge.Changed += Render;
             Render();
         }
 
         /// <summary>Unsubscribes from the bridge and the button (the owner calls this when it is disabled).</summary>
-        public void Dispose() { bridge.Changed -= Render; endTurn.clicked -= onEndTurn; }
+        public void Dispose()
+        {
+            bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
+            bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
+            foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
+            bar.RemoveFromClassList(RoomyClass);
+            bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass);
+        }
+
+        // The bar's width does not depend on the class, so this settles in one pass.
+        void OnBarGeometry(GeometryChangedEvent e) => SetCompact(e.newRect.width);
+
+        void OnMeterGeometry(GeometryChangedEvent e) => UpdateRoomy();
+
+        /// <summary>Roomy only on the one-row bar with icons; see RoomyClass.</summary>
+        void UpdateRoomy()
+        {
+            if (meters.Count == 0) return;
+            var oneRow = !hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass);
+            // Panel coordinates (logical px), so the meters and the screen buttons compare directly.
+            float first = meters[0].worldBound.xMin, last = meters[meters.Count - 1].worldBound.xMax, limit = nav.worldBound.xMin;
+            if (!oneRow || float.IsNaN(first) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
+            var used = last - first; var spare = limit - last;
+            if (bar.ClassListContains(RoomyClass))
+            {
+                if (spare < SpareShare * used) bar.RemoveFromClassList(RoomyClass);
+            }
+            else
+            {
+                var values = meters.Sum(m => m.Q<Label>(className: "meter-value")?.worldBound.width ?? 0f);
+                var captions = meters.Sum(m =>
+                {
+                    var c = m.Q<Label>(className: "meter-name");
+                    if (c == null || string.IsNullOrEmpty(c.text)) return 0f;
+                    var oneLine = c.MeasureTextSize(c.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+                    return UnityEngine.Mathf.Max(0f, oneLine - c.worldBound.width);
+                });
+                if (spare - RoomyGrowth(values, captions) >= SpareShare * used + 8f) bar.AddToClassList(RoomyClass);
+            }
+        }
+
+        void SetCompact(float width)
+        {
+            if (!(width > 0)) return;   // NaN before layout: wait for it
+            bar.EnableInClassList(CompactClass, width < CompactBelowPx);
+            hudRoot.EnableInClassList(NarrowClass, width < NarrowBelowPx);
+            hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx);
+        }
+
+        /// <summary>End Turn's hourglass, in the button's left padding (Statecraft.uss .end-turn), painted into the button so it
+        /// stays a leaf sized by its text (UiIcon.Paint).</summary>
+        static void PaintHourglass(MeshGenerationContext m)
+        {
+            if (!m.visualElement.enabledInHierarchy) return;   // no bright sign on a disabled End Turn (game over)
+            UiIcon.Paint(m, "hourglass", new UnityEngine.Rect(10f, (m.visualElement.layout.height - 22f) / 2f, 22f, 22f), UiIcon.IsFocused(m.visualElement));
+        }
 
         void Set(string name, string value) => root.Q<Label>(name).text = value;
 

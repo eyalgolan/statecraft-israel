@@ -9,8 +9,10 @@ namespace Statecraft.Sim
     {
         static bool In(DateTime d, DateTime from, DateTime? to) => d >= from && (to == null || d < to.Value);
 
+        /// <summary>The historical holder on date. A holder has left office from their date of death on, even when the
+        /// term is open-ended (the loader lets an open term outlive a death inside the latest government, #167).</summary>
         public static Person? Holder(Content c, string office, DateTime date) =>
-            c.People.FirstOrDefault(p => p.Offices.Any(t => t.Office == office && In(date, t.From, t.To)));
+            c.People.FirstOrDefault(p => (!p.Died.HasValue || date < p.Died.Value) && p.Offices.Any(t => t.Office == office && In(date, t.From, t.To)));
 
         /// <summary>Party of the person on date: the party of a term held that day, else Person.Party.</summary>
         public static string PartyOf(Content c, Person p, DateTime date) =>

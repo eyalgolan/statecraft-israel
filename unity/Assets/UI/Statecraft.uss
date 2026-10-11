@@ -1,14 +1,19 @@
-/* Statecraft UI language (target: promo/final/03-gameplay-1936.png): dark navy panels, thin gold borders, serif type. */
+/* Statecraft UI language, restyled to the promo's interface (promo/final/03-gameplay-1936.png, 05, 08): translucent navy
+   panels with a thin gold border, an inset gold rule, corner brackets and a soft shadow (UiFrame), round gold-rimmed icon
+   buttons (UiIcon), an icon per indicator in the top bar, and EB Garamond throughout. */
 :root {
-    --navy: rgba(14, 22, 38, 0.94);
+    --navy: rgba(13, 21, 37, 0.97);   /* blended in linear space: 0.97 still lets the map's light through faintly */
     --navy-deep: rgb(9, 14, 26);
     --navy-solid: rgb(14, 22, 38);   /* --navy without its transparency */
+    --navy-raised: rgb(20, 31, 52);  /* the date badge and a hovered button */
     --gold: rgb(196, 160, 92);
+    --gold-light: rgb(232, 204, 142);
     --gold-dim: rgba(196, 160, 92, 0.45);
     --ink: rgb(236, 228, 210);
     --ink-dim: rgb(170, 164, 150);
     --up: rgb(126, 196, 120);
     --down: rgb(222, 120, 104);
+    --focus: rgb(120, 98, 58);       /* keyboard focus fill: >= 3:1 against --navy-deep (WCAG 2.4.13) */
 }
 
 .root {
@@ -22,9 +27,12 @@
     background-color: var(--navy);
     border-color: var(--gold-dim);
     border-width: 1px;
-    border-radius: 4px;
+    border-radius: 3px;
     padding: 12px;
 }
+
+/* UiFrame: the trim overlay (drawn in code) fills its panel and is never laid out with the content. */
+.ui-frame { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 
 .title {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
@@ -35,12 +43,14 @@
 .muted { color: var(--ink-dim); }
 .delta-up { color: var(--up); }
 .delta-down { color: var(--down); }
+/* A thin gold rule under a heading (the promo's divider). */
+.gold-rule { height: 1px; flex-shrink: 0; background-color: var(--gold-dim); margin: 4px 0 6px 0; }
 
 .button, Button {
     background-color: var(--navy-deep);
     border-color: var(--gold-dim);
     border-width: 1px;
-    border-radius: 3px;
+    border-radius: 4px;
     color: var(--ink);
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-Regular.ttf");
     font-size: 19px;
@@ -48,33 +58,102 @@
     margin: 3px 0;
     -unity-text-align: middle-left;
 }
-Button:hover { border-color: var(--gold); }
-Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4); }
+Button:hover { border-color: var(--gold); background-color: var(--navy-raised); }
+/* Keyboard focus shows as a bright gold edge (navigation with Tab and the arrow keys). */
+Button:focus { border-color: var(--gold-light); background-color: var(--focus); }
+Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4); background-color: var(--navy-deep); }
+/* A screen button stays transparent around its disc in every state. */
+.nav-button:disabled, .nav-button:focus { background-color: rgba(0, 0, 0, 0); border-width: 0; }
 
-/* Top bar: date box, national indicators with value and change, screen buttons, attention and End turn. */
+/* Top bar: the date badge, the national indicators (icon, name, value and change), the round screen buttons, attention
+   and End Turn. */
 .top-bar {
     position: absolute; left: 0; right: 0; top: 0; height: 96px;
     flex-direction: row; align-items: center;
-    border-width: 0 0 1px 0; border-radius: 0; padding: 0 16px;
+    border-width: 0 0 1px 0; border-radius: 0; padding: 0 14px 0 8px;
+    border-color: rgba(196, 160, 92, 0.75);
     background-color: var(--navy-solid);   /* opaque: map labels must not show through it (Task 24 review M7) */
 }
 /* Everything in the bar must fit its 96px (EB Garamond lines are about 1.55 x the font size): labels lose their default
    vertical padding and margin, the year is 32px, and turn and date share one line. */
 .top-bar Label { padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
-.date-box { width: 190px; flex-shrink: 1; min-width: 150px; border-right-width: 1px; border-color: var(--gold-dim); padding-right: 12px; }
+/* The date badge: a raised, trimmed box at the left, as the promo's "1936 / Turn 1 / January 1936" plate. */
+.date-box {
+    flex-shrink: 0; width: 230px; height: 82px;   /* fixed, and wide enough for the widest line ("Turn 120  30 September 1956"),
+                                                     so the meters never shift when the month changes */ justify-content: center;
+    padding: 0 10px 0 12px; margin-right: 10px;
+    background-color: var(--navy-raised); border-width: 1px; border-color: var(--gold-dim); border-radius: 2px;
+}
 .date-row { flex-direction: row; }
 .date-row Label { font-size: 17px; margin-right: 8px; }
-.year { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 32px; }
-.meters { flex-direction: row; flex-grow: 1; }
-.meter { min-width: 130px; flex-shrink: 1; padding: 0 8px; border-right-width: 1px; border-color: var(--gold-dim); }
-.meter-name { font-size: 16px; color: var(--ink-dim); white-space: normal; }   /* wraps in a narrow meter */
+.year { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 32px; color: var(--ink); }
+.meters { flex-direction: row; flex-grow: 1; align-items: center; }
+.meter {
+    flex-direction: row; align-items: center; min-width: 130px; flex-shrink: 1; padding: 0 7px 0 6px;
+    border-right-width: 1px; border-color: rgba(196, 160, 92, 0.25);
+}
+/* The icon gives way first in a narrow window (down to 26px), so the caption keeps its line. */
+.meter-icon { width: 30px; height: 30px; flex-shrink: 1; min-width: 24px; margin-right: 5px; }
+/* With room to spare (HudPresenter sets top-bar--roomy on the one-row bar), the promo's sizes. */
+.top-bar--roomy .meter-icon { width: 38px; height: 38px; margin-right: 7px; }
+.top-bar--roomy .meter-value { font-size: 25px; }
+.meter-body { flex-shrink: 1; flex-grow: 1; min-width: 0; }
+.meter-name { font-size: 16px; color: var(--ink); white-space: normal; }
+/* In the bar a long caption wraps rather than widen its meter; on the roomy bar it keeps one line, as in the promo (B8). */
+.meter .meter-name { max-width: 120px; }
+.top-bar--roomy .meter .meter-name { max-width: none; white-space: nowrap; }
+#security-level { font-size: 14px; color: var(--ink-dim); }
 .meter-row { flex-direction: row; align-items: flex-end; }
-.meter-value { font-size: 24px; }
-.meter-delta { font-size: 16px; margin-left: 8px; }
-.nav { flex-direction: row; flex-shrink: 0; }
-.nav Button { margin: 0 4px; -unity-text-align: middle-center; }
-.turn-box { width: 190px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
-.end-turn { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 22px; border-color: var(--gold); }
+.meter-value { font-size: 22px; color: var(--ink); }
+.meter-delta { font-size: 16px; margin-left: 7px; }
+/* The screen buttons: a round, gold-rimmed icon with its name under it (the name keeps them legible without tooltips). */
+.nav { flex-direction: row; flex-shrink: 0; align-items: center; }
+.nav-button {
+    width: 60px; height: 86px; margin: 0 1px; padding: 56px 0 0 0;
+    background-color: rgba(0, 0, 0, 0); border-width: 0;
+    font-size: 14px; color: var(--ink-dim); -unity-text-align: upper-center; white-space: nowrap;
+}
+.nav-disc {
+    position: absolute; top: 2px; left: 5px; width: 50px; height: 50px; padding: 11px;
+    border-radius: 25px; border-width: 1.5px; border-color: var(--gold-dim); background-color: var(--navy-deep);
+}
+/* "New Game" is the longest caption: its button is wider, its disc centred (PromoHudTests: every caption fits). */
+#new-game { width: 66px; }
+#new-game .nav-disc { left: 8px; }
+.nav-button:hover { background-color: rgba(0, 0, 0, 0); color: var(--ink); }
+.nav-button:hover .nav-disc { border-color: var(--gold); background-color: var(--navy-raised); }
+/* Two separate signals: "open" (ScreenNav's nav-open) is a gold-light rim on a raised disc with a gold caption; keyboard
+   focus is an ink rim on the warm focus fill, which a pointer click clears (ScreenNav blurs the button). */
+.nav-open { color: var(--gold-light); }
+.nav-open .nav-disc { border-color: var(--gold-light); background-color: var(--navy-raised); }
+.nav-button:focus { color: var(--ink); }
+.nav-button:focus .nav-disc { border-color: var(--ink); background-color: var(--focus); }
+/* A window too narrow for the icons (HudPresenter sets top-bar--compact below HudPresenter.CompactBelowPx): the meters
+   drop their icons and tighten, as the bar was before the icons. */
+.top-bar--compact .meter-icon { display: none; }
+.top-bar--compact .date-box { width: 226px; margin-right: 6px; }
+.top-bar--compact .date-row Label { font-size: 16px; margin-right: 6px; }
+.top-bar--compact .meter { padding: 0 8px; }
+/* The narrow HUD (HudPresenter sets hud-narrow on the root, with the compact bar): a taller bar whose meters put the
+   change under the value, so no change runs into its neighbour; the panels below the bar move down with it. */
+.hud-narrow .top-bar { height: 124px; }
+.hud-narrow .right-column, .hud-narrow .screen, .hud-narrow .toast { top: 140px; }
+.hud-narrow .meter { min-width: 96px; padding: 0 6px; }
+.hud-narrow .meter-row { flex-direction: column; align-items: flex-start; }
+.hud-narrow .meter-value { font-size: 22px; }
+.hud-narrow .meter-delta { margin-left: 0; font-size: 15px; }
+/* Narrower than about square (HudPresenter adds hud-two-row): the bar wraps into two rows, the date badge and the meters
+   (78% of the bar, so they always take the first row) above, the screen buttons and End Turn below; the panels move down. */
+.hud-two-row .top-bar { height: 216px; padding-top: 6px; padding-bottom: 4px; flex-wrap: wrap; justify-content: space-between; align-content: space-around; }
+.hud-two-row .meters { width: 78%; flex-grow: 1; }
+.hud-two-row .right-column, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
+.turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
+#attention { font-size: 16px; }
+.end-turn {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 22px;
+    border-color: var(--gold); border-width: 1.5px; color: var(--gold-light); padding: 4px 14px 4px 40px;
+}
+.end-turn:hover { border-color: var(--gold-light); }
 
 /* Event card at the right, info panel at the bottom-left, minimap at the bottom-right. */
 /* The event card and the minimap share one column (Task 24 review I2): the card can never reach the minimap; when the
@@ -87,27 +166,49 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 #event-options { flex-shrink: 0; }
 /* Hidden until EventCardPresenter shows an event (never visible while loading). */
 .event-card { display: none; }
-.event-head { flex-direction: row; align-items: flex-start; margin-bottom: 8px; }
+/* The card's head is its picture band: a dark plate holding the minister's framed portrait beside the title. */
+.event-head {
+    flex-direction: row; align-items: center; margin-bottom: 2px; padding: 4px;
+    background-color: rgba(5, 9, 18, 0.65); border-width: 1px; border-color: var(--gold-dim); border-radius: 2px;
+}
 .event-heading { flex-grow: 1; flex-shrink: 1; }
 /* Portrait-shaped, so the whole head shows; EventCardPresenter sets background-position-y from the portrait's focal point. */
-.event-image { width: 96px; height: 128px; flex-shrink: 0; margin-right: 12px; background-size: cover; background-color: var(--navy-deep); }
-.event-office { white-space: normal; }
-/* Options wrap inside the card (playtest 2, P2-2). */
+.event-image {
+    width: 96px; height: 128px; flex-shrink: 0; margin-right: 12px; background-size: cover; background-color: var(--navy-deep);
+    border-width: 1px; border-color: var(--gold);
+}
+.event-office { white-space: normal; -unity-text-align: middle-center; font-size: 18px; }
+/* Options wrap inside the card (playtest 2, P2-2); each has a round gold-rimmed sign at its left, as the promo's choices. */
 #event-options Button { white-space: normal; -unity-text-align: middle-left; }
-.event-title { -unity-text-align: middle-center; margin-bottom: 4px; white-space: normal; font-size: 26px; }   /* centred, as before, in its column */
+.event-option { min-height: 42px; padding: 5px 12px 5px 46px; margin: 3px 0; border-color: rgba(196, 160, 92, 0.6); }
+.event-title { -unity-text-align: middle-center; margin-bottom: 4px; white-space: normal; font-size: 28px; }   /* centred, as before, in its column */
 .event-text { white-space: normal; margin-bottom: 8px; }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
-.info-panel { position: absolute; left: 16px; bottom: 16px; width: 520px; min-height: 160px; }
-.minimap { align-self: flex-end; flex-shrink: 0; width: 300px; height: 340px; padding: 6px; }
+/* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. */
+.info-panel { position: absolute; left: 16px; bottom: 16px; width: 520px; min-height: 160px; flex-direction: row; align-items: flex-start; }
+.info-thumb {
+    width: 92px; height: 116px; flex-shrink: 0; margin-right: 14px; padding: 10px;
+    border-width: 1px; border-color: var(--gold); border-radius: 2px; background-color: var(--navy-deep);
+}
+.info-body { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.info-body > .row { flex-wrap: wrap; }
+.info-body > .row Button { margin-right: 6px; font-size: 18px; }
+/* Before a hex is chosen only the hint shows (InfoPanelPresenter sets info-empty). */
+.info-empty .gold-rule { display: none; }
+/* Narrow, as the country is: the frame hugs the tall map picture (MinimapPresenter fits it to the content box). */
+.minimap { align-self: flex-end; flex-shrink: 0; width: 160px; height: 340px; padding: 12px; background-color: rgba(9, 14, 26, 0.97); }
 .minimap-image { align-self: center; -unity-background-scale-mode: stretch-to-fill; }   /* the element is sized to the picture's aspect by MinimapPresenter */
-.minimap-view { position: absolute; border-color: var(--ink); border-width: 1px; }
+.minimap-view { position: absolute; border-color: var(--ink); border-width: 1.5px; }
 
 /* Full screens (Cabinet, Budget, Defence, Why) open in the centre, one at a time. */
 /* Hidden until ScreenNav opens one (never visible while loading; playtest 2, P2-1). Right edge clear of the 480px column. */
-.screen { display: none; position: absolute; left: 552px; right: 512px; top: 112px; bottom: 16px; }
-.screen-header { flex-direction: row; justify-content: space-between; align-items: center; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 8px; }
+.screen { display: none; position: absolute; left: 552px; right: 512px; top: 112px; bottom: 16px; padding: 18px; background-color: rgb(11, 18, 32); }   /* opaque: a reading screen, and the map labels must not show through */
+.screen-header { flex-direction: row; justify-content: space-between; align-items: center; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 10px; padding-bottom: 4px; }
+/* Screen titles and section names in gold, letter-spaced, as the promo's "DEFENSE" and "LEADERSHIP". */
+.screen-header > .title { color: var(--gold-light); letter-spacing: 1px; }
+.screen .meter-name { color: var(--gold); letter-spacing: 2px; font-size: 16px; margin-top: 8px; }
 .row { flex-direction: row; align-items: center; }
-.rung { flex-direction: row; padding: 4px 8px; border-left-width: 3px; border-color: rgba(0, 0, 0, 0); }
+.rung { flex-direction: row; padding: 5px 10px; margin: 1px 0; border-left-width: 3px; border-color: rgba(0, 0, 0, 0); }
 .rung-current { border-color: var(--gold); background-color: rgba(196, 160, 92, 0.15); }
 .grow { flex-grow: 1; }
 /* A growing row inside a screen (the Cabinet's seats and candidates) takes the height that is left and stretches its
@@ -115,16 +216,42 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .screen .row.grow { align-items: stretch; flex-basis: 0; flex-shrink: 1; min-height: 0; }
 .screen .row.grow > .grow { min-height: 0; flex-shrink: 1; }
 
-.toast { display: none; position: absolute; left: 30%; right: 30%; top: 112px; -unity-text-align: middle-center; white-space: normal; }
+/* The toast sits in the map's free top-left corner, above the info panel: opaque, and never over an open screen's title or
+   the event column (B7). */
+.toast {
+    display: none; position: absolute; left: 16px; width: 520px; top: 112px; -unity-text-align: middle-center; white-space: normal;
+    background-color: var(--navy-solid); border-color: var(--gold); border-width: 1.5px;
+}
 
-.why-group { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); color: var(--gold); margin-top: 8px; }
+/* Scroll bars in the theme: a slim gold thumb on a faint track, no arrow buttons. */
+.unity-scroller--vertical { width: 10px; border-width: 0; background-color: rgba(0, 0, 0, 0); margin-left: 4px; }
+.unity-scroller--vertical > .unity-scroller__low-button, .unity-scroller--vertical > .unity-scroller__high-button { display: none; }
+.unity-scroller--vertical .unity-base-slider__tracker { background-color: rgba(196, 160, 92, 0.10); border-width: 0; border-radius: 5px; }
+.unity-scroller--vertical .unity-base-slider__dragger { background-color: rgba(196, 160, 92, 0.55); border-width: 0; border-radius: 5px; }
+.unity-scroller--vertical .unity-base-slider__dragger-border { display: none; }
+
+.why-group { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); color: var(--gold); letter-spacing: 1px; margin-top: 10px; border-bottom-width: 1px; border-color: rgba(196, 160, 92, 0.25); }
 .why-line { white-space: normal; padding-left: 12px; }
 
-.seat { flex-direction: row; align-items: center; }
-.seat-portrait { width: 40px; height: 48px; margin-right: 8px; -unity-background-scale-mode: scale-and-crop; background-color: var(--navy-deep); }
-.seat-selected { border-color: var(--gold); }
+/* The candidate column (B5): a fixed share beside the portrait grid, clear of the grid's scroll bar, its heading on one line. */
+#cabinet-pick { flex-grow: 0; flex-shrink: 0; width: 42%; margin-left: 14px; }
+#cabinet-pick-title { white-space: normal; }
+/* The Cabinet as the promo's portrait cards (promo/final/04): the lineup wraps into a grid of cards, each a gold-framed
+   portrait over the office and its holder; a long lineup scrolls. */
+#cabinet-seats .unity-scroll-view__content-container { flex-direction: row; flex-wrap: wrap; }
+.seat {
+    flex-direction: column; align-items: center; justify-content: flex-start; width: 188px; min-height: 250px;
+    padding: 8px 8px 10px 8px; margin: 4px; -unity-text-align: upper-center;
+}
+.seat > Label { white-space: normal; -unity-text-align: upper-center; font-size: 16px; margin-top: 6px; }
+.seat-portrait {
+    width: 112px; height: 140px; flex-shrink: 0; -unity-background-scale-mode: scale-and-crop; background-position-y: top 20%;
+    background-color: var(--navy-deep); border-width: 1px; border-color: var(--gold);
+}
+.seat-selected { border-color: var(--gold); background-color: var(--navy-raised); }
 .appointed { color: var(--gold); }
-.candidate { flex-direction: row; align-items: center; }
+.candidate { flex-direction: column; align-items: stretch; margin-bottom: 4px; }
+.candidate > Button { white-space: normal; }
 .reason { color: var(--ink-dim); font-size: 16px; white-space: normal; flex-shrink: 1; }
 
 /* Loading (playtest 2, P2-1): until GameRoot is ready only this line shows; the bar's values, the info panel and the
@@ -134,7 +261,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .root.loading { background-color: var(--navy-solid); }   /* the template's navy, not the default sky (final review M1) */
 .loading .date-box, .loading .meters, .loading .nav, .loading .turn-box, .loading .info-panel, .loading .right-column { visibility: hidden; }
 
-/* Map labels (visual v1 Task 9): the promo's dark pill with a thin gold edge, in EB Garamond SemiBold. Each pill sits in a
+/* Map labels (visual v1 Task 9; promo HUD pass: rounder, a firmer gold edge): the promo's dark pill with a thin gold edge, in EB Garamond SemiBold. Each pill sits in a
    zero-size slot that MapLabelsPresenter moves with an inline translate; the anchor class says which corner of the pill sits
    on the marker's top. Hidden while the game loads. */
 .map-labels { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
@@ -148,13 +275,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     background-color: rgba(14, 22, 38, 0.82);
     border-width: 1px;
     border-color: var(--gold);
-    border-radius: 12px;
-    padding: 1px 10px 2px 10px;
+    border-radius: 14px;
+    padding: 1px 12px 2px 12px;
     margin: 0;
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
-.map-label-city { font-size: 22px; }
+.map-label-city { font-size: 23px; color: rgb(250, 242, 224); }
 .map-label-town, .map-label-arab_town { font-size: 19px; }
 .anchor-lower-centre { translate: -50% -100%; }
 .anchor-lower-left { translate: 0 -100%; }

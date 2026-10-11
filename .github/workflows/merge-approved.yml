@@ -1,0 +1,69 @@
+name: Merge approved
+
+# Squash-merges an open pull request into main once the maintainer has approved its latest commit and every check
+# on that commit has passed (owner ruling, 2026-10-11). Outside contributors get no write access; this job merges for
+# them. It runs from main's copy of this file and never checks out, builds or runs pull-request code, so the write
+# token never meets outside code. It starts when CI finishes (workflow_run runs in this repository's context with a
+# write token, also for forks), when a review is submitted (for a fork's pull request GitHub gives that run a read-only
+# token, so its merge is refused and the next CI or timer run merges), on a timer as a fallback (GitHub runs
+# schedules late or not at all under load), and by hand. It reads only numbers, SHAs and states from the API, never titles or
+# bodies, so no pull-request text reaches the shell.
+#
+# A pull request merges only when all of these hold on its current head commit:
+# - it targets main, is not a draft, and GitHub reports it MERGEABLE (no conflicts);
+# - the maintainer's most recent review is APPROVED and was made on that exact commit (a later push needs a new
+#   approval);
+# - the four CI checks below exist on that commit and each concluded SUCCESS (a first-time contributor's run that is
+#   still waiting for approval has no results, so it waits).
+# GitHub does not start other workflows from a merge made with this token, so CI on main is not re-run by it.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  pull_request_review:
+    types: [submitted]
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: merge-approved
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    name: Merge approved pull requests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      MAINTAINER: eyalgolan
+      REQUIRED_CHECKS: "Sim (dotnet test)|Tools (pytest)|Repo policy|Changelog"
+    steps:
+      - name: Merge every pull request that is approved and green
+        run: |
+          set -euo pipefail
+          gh pr list --state open --base main --limit 100 --json number --jq '.[].number' | while read -r n; do
+            ready=$(gh pr view "$n" --json isDraft,mergeable,headRefOid,reviews,statusCheckRollup --jq '
+              . as $p
+              | ([$p.reviews[] | select(.author.login == env.MAINTAINER)] | last) as $r
+              | (env.REQUIRED_CHECKS | split("|")) as $need
+              | ($p.isDraft | not)
+                and $p.mergeable == "MERGEABLE"
+                and $r != null and $r.state == "APPROVED" and $r.commit.oid == $p.headRefOid
+                and ($need | all(. as $x | [$p.statusCheckRollup[] | select(.name == $x)]
+                                 | length > 0 and all(.conclusion == "SUCCESS")))
+              | if . then $p.headRefOid else "no" end')
+            if [ "$ready" = "no" ]; then
+              echo "#$n: not ready"
+            else
+              echo "#$n: approved and green at $ready, merging"
+              gh pr merge "$n" --squash --match-head-commit "$ready" || echo "#$n: merge refused (read-only token or head moved); a later run retries"
+            fi
+          done

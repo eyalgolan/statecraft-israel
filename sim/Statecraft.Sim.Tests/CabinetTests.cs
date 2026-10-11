@@ -242,6 +242,29 @@ public class CabinetTests
     }
 
     [Fact]
+    public void HistoricalOnlyOfficesKeepTheirTermsButAreNotCabinetSeatsOrAppointable()
+    {
+        var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+        {
+            ["offices.yaml"] = Fixture.Files["offices.yaml"] +
+                "\n  - { id: historical_title, title: Historical title, historical_only: true }\n",
+            ["people.yaml"] = Fixture.Files["people.yaml"].Replace("office: finance_minister", "office: historical_title")
+        }));
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        Assert.Equal("def_two", Offices.Holder(c, "historical_title", s.Date)?.Id);
+        Assert.DoesNotContain(Cabinet.Lineup(c, s), seat => seat.Office.Id == "historical_title");
+        Assert.Equal("Historical title is a historical title, not an appointable office",
+            Cabinet.Check(c, s, "historical_title", "pm_one"));
+        Assert.All(Cabinet.Candidates(c, s, "historical_title"), candidate => Assert.NotNull(candidate.reason));
+        Assert.NotNull(Cabinet.Appoint(c, s, "historical_title", "pm_one", new List<Cause>()));
+        Assert.Empty(s.Appointments);
+        s.AppointedUnder = Offices.Government(c, s.Date)!.Id;
+        s.Appointments["historical_title"] = new Appointment("pm_one", s.Date);
+        Assert.Equal("def_two", Cabinet.Holder(c, s, "historical_title")?.Id);
+        Assert.Equal("Def Two", Cabinet.Fill(c, s, "{historical_title}", s.Date));
+    }
+
+    [Fact]
     public void TheLineupListsEveryExistingOfficeAndMarksAppointees()
     {
         var s = Simulation.NewGame(C, 42, Mode.Historical);

@@ -299,6 +299,18 @@ options:
     }
 
     [Fact]
+    public void PlaceholderOfficeLeftByAHoldersDeathFailsToLoad()
+    {
+        // def_two's finance term is open-ended; a death inside the latest government (from 1949-03-10) loads, but
+        // the office is then vacant from the date of death on, inside the open event window.
+        var people = Fixture.Files["people.yaml"].Replace("    name: Def Two\n", "    name: Def Two\n    died: 1949-06-01\n");
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = people },
+                                                                                          new Dictionary<string, string> { ["shortage.yaml"] = Shortage })));
+        Assert.Equal("events[shortage].text", ex.Field);
+        Assert.Contains("office 'finance_minister' has no holder on 1949-06-01", ex.Message);
+    }
+
+    [Fact]
     public void PlaceholderUncoveredAtWindowStartNamesThatDate()
     {
         var bad = Shortage.Replace("text: Ration food", "text: '{defense_minister} rations food'")

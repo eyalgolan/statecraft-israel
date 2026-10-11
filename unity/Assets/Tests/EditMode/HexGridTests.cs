@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using UnityEditor;
@@ -128,6 +129,8 @@ public class HexGridTests
         yield return null;
         PromoPose.Gameplay03.Apply(rig, map.Frame);
         rig.TopInset = 0; rig.Apply();
+        // The line's profile on the ground itself: the settlement kits and trees (art spike) stand on some edges.
+        foreach (var n in new[] { "kits", "trees" }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
         float size = map.Hexes.hex_size_km * 1000f, inradius = Mathf.Sqrt(3f) / 2f * size;
         var origin = map.Terrain.transform.position;
         HexJson? Find(double lon, double lat, System.Func<HexJson, bool> ok)

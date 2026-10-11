@@ -25,6 +25,34 @@ float ScNoise(float2 p)
     return lerp(lerp(ScHash(i), ScHash(i + float2(1, 0)), u.x), lerp(ScHash(i + float2(0, 1)), ScHash(i + float2(1, 1)), u.x), u.y);
 }
 
+// Gradient noise and its derivative, (value, d/dp.x, d/dp.y): random unit gradients at the lattice corners, blended with
+// the quintic fade, so the field and its slope are smooth across cell edges (bug B10: the waves' value-noise differences
+// jumped at the lattice lines, a checker up close). The value is in about [-0.7, 0.7].
+float3 ScGradientNoiseD(float2 p)
+{
+    float2 i = floor(p), f = frac(p);
+    float2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    float2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+    float ha = ScHash(i) * 6.2831853, hb = ScHash(i + float2(1, 0)) * 6.2831853;
+    float hc = ScHash(i + float2(0, 1)) * 6.2831853, hd = ScHash(i + float2(1, 1)) * 6.2831853;
+    float2 ga = float2(cos(ha), sin(ha)), gb = float2(cos(hb), sin(hb)), gc = float2(cos(hc), sin(hc)), gd = float2(cos(hd), sin(hd));
+    float va = dot(ga, f), vb = dot(gb, f - float2(1, 0)), vc = dot(gc, f - float2(0, 1)), vd = dot(gd, f - float2(1, 1));
+    float k = va - vb - vc + vd;
+    float v = va + u.x * (vb - va) + u.y * (vc - va) + u.x * u.y * k;
+    float2 d = ga + u.x * (gb - ga) + u.y * (gc - ga) + u.x * u.y * (ga - gb - gc + gd) + du * (u.yx * k + float2(vb, vc) - va);
+    return float3(v, d);
+}
+
+// The slope of a gradient-noise wave layer at mapM: its lattice turned by `angle` (so no two layers, and neither, line up
+// with the map's axes or the hex grid) and drifting along `drift` (cells per second), the slope turned back to map axes.
+float2 ScWaveSlope(float2 mapM, float cellM, float angle, float2 drift, float time)
+{
+    float s, c; sincos(angle, s, c);
+    float2 p = mapM / cellM;
+    float2 d = ScGradientNoiseD(float2(c * p.x - s * p.y, s * p.x + c * p.y) + drift * time).yz;
+    return float2(c * d.x + s * d.y, -s * d.x + c * d.y);
+}
+
 // Low in the rift the haze grows by up to this share (1.5 saturated the rift at the country-wide zoom: Task 6 review I1).
 static const float ScRiftHazeBoost = 0.6;
 
@@ -48,32 +76,99 @@ float3 ScHazeWater(float3 colour, float3 positionWS)
 float ScWater(float coast) { return 1.0 - smoothstep(0.497, 0.503, coast); }
 
 static const float ScCoastRangeM = 12000.0;   // tools/terrain_bake.py COAST_RANGE_M
-float _ScWaterOn;                              // 1 = shaded water, 0 = the flat sea colour (the "water" toggle)
+float _ScWaterOn;                              // 1 = shaded water and shore, 0 = the flat sea colour, no shore (the "water" toggle)
+float4 _ScWaterTime;                           // y = 1: the water's clock is x seconds (tests and frame captures); else _Time.y
 
-// The water's lit colour before haze (callers apply ScHazeWater and output it as is): a turquoise -> teal -> navy ramp with
-// distance from the shore; the Dead Sea (below -300 m) pale turquoise with a white salt rim, the Sea of Galilee a fresher
-// teal; two scrolling noise layers tilt a wave normal for Lambert from the sun (with its shadows: cliffs shade the water)
-// plus sky fill and a small glint; animated foam bands within 350 m of the shore. elevM is the real elevation of the water
-// surface; mapM metres east and north of the map's south-west corner.
-float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM)
+// Depth from the shore (promo-sea). The map has no bathymetry: the heightmap is Copernicus GLO-30, a land model whose sea
+// texels are 0 m, so the water's depth is read from the distance to the shore (coast.png). To first order that is the
+// Israeli shelf: sandy shallows for the first kilometre or two, the 100 m isobath some 10-20 km out. Turquoise shallows
+// ScShallowM wide (the edge wanders +-35% with a 3 km noise, so it never reads as a ruled stripe), teal, then the open
+// sea's steel blue towards ScCoastRangeM. sRGB, before the grade: a clearly turquoise band (linear weight, so it reads at
+// its width) over a muted deep blue, so the graded sea matches the promo in its spread, not only its mean (promo 03 sea
+// pixels: saturation 0.49; Task 7's ramp graded to 0.81, open item 3).
+static const float ScShallowM = 2600.0;
+static const float3 ScShallowSrgb = float3(0.40, 0.72, 0.70);
+static const float3 ScMidSrgb = float3(0.29, 0.50, 0.59);
+static const float3 ScDeepSrgb = float3(0.27, 0.40, 0.54);
+static const float3 ScFlatSeaSrgb = float3(0.20, 0.36, 0.47);    // the "water" toggle's flat sea (x 0.8)
+static const float3 ScGalileeSrgb = float3(0.20, 0.45, 0.55);    // fresh water (-300..-100 m): the Sea of Galilee
+static const float ScChopGain = 1.4;                             // the chop's share of the wave tilt against the swell's
+static const float ScWaveSlopeGain = 0.22;                       // gradient-noise slope -> the old layers' strength
+static const float ScWaveTiltFar = 0.10;                         // ... and beyond a 120 m pixel (Task 7: 0.15 everywhere)
+static const float ScWaveTilt = 0.6;                             // wave normal tilt at the gameplay zoom (Task 7: 0.15)
+// The surf: a swash line along the sand (full to ScSwashM) and breakers rolling shoreward through the surf zone
+// (ScSurfM), broken along the shore by noise. The breakers are a squared triangle wave in the distance from the shore,
+// box-filtered over the pixel's footprint in closed form, so they never alias and tend to their mean (1/3) as the pixel
+// grows; ScBreakerRate cycles per second roll them in at ScBreakerSpacingM x ScBreakerRate = 15 m/s (a quarter pixel per
+// frame at the gameplay pose's ~45 m pixels and 60 fps). coast.png's 94 m levels are interpolated linearly between
+// texels, so a crest can sit up to ~47 m off its true place: about one gameplay pixel, under the phase noise.
+static const float ScSwashM = 180.0, ScSurfM = 900.0, ScBreakerSpacingM = 300.0, ScBreakerRate = 0.05;
+
+// Antiderivative of tri(x)^2, tri(x) = 1 - |2 frac(x) - 1| (period 1, mean 1/3).
+float ScTriSqIntegral(float x)
 {
-    if (_ScWaterOn < 0.5) return SRGBToLinear(float3(0.16, 0.42, 0.55)) * 0.8;
+    float t = frac(x);
+    float g = t < 0.5 ? 4.0 * t * t * t / 3.0 : 1.0 / 3.0 - 4.0 * (1.0 - t) * (1.0 - t) * (1.0 - t) / 3.0;
+    return floor(x) / 3.0 + g;
+}
+
+// tri(x)^2 averaged over [x - w/2, x + w/2].
+float ScTriSqBox(float x, float w)
+{
+    w = max(w, 1e-3);
+    return (ScTriSqIntegral(x + 0.5 * w) - ScTriSqIntegral(x - 0.5 * w)) / w;
+}
+
+// The water's clock: Unity's time, or the pinned seconds (MapShaderGlobals.PinWaterTime).
+float ScWaterClock() { return _ScWaterTime.y > 0.5 ? _ScWaterTime.x : _Time.y; }
+
+// The breakers' phase (cycles; crests at whole numbers) and its box width: fwidth(phase) x ScBreakerFilterPx. The phase's
+// true gradient is not 1 / ScBreakerSpacingM: its noise term adds up to 0.0025 cycles/m and the 8-bit coast's slope varies
+// up to 2x, so the width comes from the phase itself (review N2). Call it in uniform control flow (outside any [branch]);
+// pass the result to ScWaterShade.
+static const float ScBreakerFilterPx = 1.25;
+float2 ScBreakers(float coast, float2 mapM)
+{
     float offshoreM = saturate(0.5 - coast) * 2.0 * ScCoastRangeM;
-    float t = pow(saturate(offshoreM / ScCoastRangeM), 0.55);
-    float3 shallow = SRGBToLinear(float3(0.38, 0.74, 0.72));
-    float3 mid = SRGBToLinear(float3(0.13, 0.47, 0.58));
-    float3 deep = SRGBToLinear(float3(0.06, 0.24, 0.40));
-    float3 c = t < 0.5 ? lerp(shallow, mid, t * 2.0) : lerp(mid, deep, t * 2.0 - 1.0);
+    float phase = offshoreM / ScBreakerSpacingM + ScWaterClock() * ScBreakerRate + ScNoise(mapM / 1200.0) * 2.0;
+    return float2(phase, fwidth(phase) * ScBreakerFilterPx);
+}
+
+// The water's lit colour before haze (callers apply ScHazeWater and output it as is): the depth ramp above; the Dead Sea
+// (below -300 m) pale turquoise with a white salt rim, the Sea of Galilee a fresher teal; a long swell and a finer chop
+// (scrolling noise, the chop faded by the footprint) tilt a wave normal for Lambert from the sun (with its shadows: cliffs
+// shade the water) plus sky fill and a small glint; the surf along the shore. elevM is the real elevation of the water
+// surface; mapM metres east and north of the map's south-west corner; footprintM the metres one pixel covers (from fwidth,
+// taken by the caller in uniform control flow); breakers ScBreakers' (phase, box width).
+float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM, float footprintM, float2 breakers)
+{
+    if (_ScWaterOn < 0.5) return SRGBToLinear(ScFlatSeaSrgb) * 0.8;
+    float offshoreM = saturate(0.5 - coast) * 2.0 * ScCoastRangeM;
+    float shallowEdge = ScShallowM * (0.65 + 0.7 * ScNoise(mapM / 3000.0));
+    float shallow = 1.0 - smoothstep(0.0, shallowEdge, offshoreM);
+    float deepT = pow(smoothstep(0.0, ScCoastRangeM, offshoreM), 0.6);
+    float3 c = lerp(SRGBToLinear(ScMidSrgb), SRGBToLinear(ScDeepSrgb), deepT);
+    c = lerp(c, SRGBToLinear(ScShallowSrgb), shallow);
     float salt = step(elevM, -300.0);
     float fresh = step(elevM, -100.0) * (1.0 - salt);
     c = lerp(c, SRGBToLinear(float3(0.45, 0.78, 0.78)), salt * 0.8);
-    c = lerp(c, SRGBToLinear(float3(0.15, 0.48, 0.60)), fresh * 0.7);
+    c = lerp(c, SRGBToLinear(ScGalileeSrgb), fresh * 0.7);
 
-    float time = _Time.y;
-    float2 p = mapM / 700.0;
-    float2 g = float2(ScNoise(p + float2(time * 0.05, 0.0)) - ScNoise(p + float2(0.37 + time * 0.05, 0.0)),
-                      ScNoise(p.yx + float2(0.0, time * 0.04)) - ScNoise(p.yx + float2(0.0, 0.41 + time * 0.04)));
-    float3 n = normalize(float3(g.x * 0.15, 1.0, g.y * 0.15));
+    float time = ScWaterClock();
+    // The swell: a 700 m gradient-noise layer turned 0.6 rad. Bug B10: it was value noise differenced along the map's axes
+    // (on an axis-aligned lattice), whose slope jumped at every cell edge; ScWaveSlopeGain scales the smooth slope to the
+    // old layers' strength.
+    float2 g = ScWaveSlopeGain * ScWaveSlope(mapM, 700.0, 0.6, float2(0.05, 0.02), time);
+    // The chop: a 170 m layer turned -0.9 rad and moving the other way, full while a pixel covers under 40 m, gone by
+    // 170 m (the gameplay pose sees it, the overview averages it away).
+    float chop = 1.0 - smoothstep(40.0, 170.0, footprintM);
+    g += ScChopGain * chop * ScWaveSlopeGain * ScWaveSlope(mapM, 170.0, -0.9, float2(-0.11, -0.07), time);
+    // The wave tilt: ScWaveTilt near (pixels under 50 m: the gameplay zoom shows the chop and sparkle), easing to 0.10 by
+    // 120 m, where a pixel spans a good part of a swell cell: the far sea reads as a calm surface, and patch means either
+    // side of the map's edge stay within the seam test's 0.012 (at 0.6 a single 7x7 patch at 120 km carried 0.03; with the
+    // gradient-noise swell (sea-fix) Task 7's far 0.15 left single patches up to 0.016 apart).
+    float tilt = lerp(ScWaveTilt, ScWaveTiltFar, smoothstep(50.0, 120.0, footprintM));
+    float3 n = normalize(float3(g.x * tilt, 1.0, g.y * tilt));
 #if defined(UNIVERSAL_REALTIME_LIGHTS_INCLUDED) && !defined(SHADERGRAPH_PREVIEW)
     Light sun = GetMainLight(TransformWorldToShadowCoord(positionWS));   // review I6: the water receives the sun's shadows
     float3 l = sun.direction, lc = sun.color;
@@ -86,19 +181,50 @@ float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM)
     float3 lit = c * (0.55 + 0.45 * saturate(dot(n, l)) * lc * shadow);
     // A small glint (Task 7: 0.06, not the plan's 0.25). Where the camera's pitch meets the sun's height (50 deg each with
     // Map.unity's default sun, at yaw 180) the 0.25 lobe lit a warm patch rising 0.08 in sRGB red over 6 km of open sea, a
-    // view-dependent gradient that read as a seam between samples 5 km apart either side of the map's edge.
-    lit += pow(saturate(dot(reflect(-l, n), v)), 80.0) * 0.06 * lc * shadow;
+    // view-dependent gradient that read as a seam between samples 5 km apart either side of the map's edge. The glint is
+    // the near zoom's sparkle: it fades out between 60 and 120 m pixels, where the calmer far sea turned it back into that
+    // smooth warm gradient (sea-fix: up to 0.016 between the seam test's +-2.5 km patches with the gradient-noise waves).
+    float glint = 0.06 * (1.0 - smoothstep(60.0, 120.0, footprintM));
+    lit += pow(saturate(dot(reflect(-l, n), v)), 80.0) * glint * lc * shadow;
 
-    float band = 1.0 - smoothstep(0.0, 350.0, offshoreM);
-    float waves = 0.7 + 0.3 * sin(offshoreM / 90.0 - time * 1.3);
+    // Surf: the swash line, then breakers (crests every ScBreakerSpacingM, rolling in: the phase grows with time towards
+    // the shore; box-filtered over ScBreakers' width) whose crests break up along the coast (a 300 m noise, faded to its mean once a
+    // pixel covers 75-150 m). Neither on the Dead Sea, which keeps its salt rim.
+    float swash = 1.0 - smoothstep(ScSwashM, ScSwashM * 1.8, offshoreM);
+    float zone = 1.0 - smoothstep(ScSwashM, ScSurfM, offshoreM);
+    float crest = ScTriSqBox(breakers.x, breakers.y);
+    float broken = smoothstep(0.3, 0.7, ScNoise(mapM / 300.0 + float2(0.0, time * 0.02)));
+    broken = lerp(0.5, broken, 1.0 - smoothstep(75.0, 150.0, footprintM));
     float rim = salt * (1.0 - smoothstep(0.0, 900.0, offshoreM));
-    float foam = saturate(band * waves * (1.0 - salt) + rim);
+    float foam = saturate((swash * (0.8 + 0.2 * broken) + zone * crest * broken) * (1.0 - salt) + rim);
     return lerp(lit, SRGBToLinear(float3(0.93, 0.95, 0.94)), foam * 0.85);
+}
+
+// The shore on land (promo-sea): a sand strip along every sea-level coast (above -100 m: the Mediterranean and the Gulf
+// of Eilat, both sand beaches; not the rift lakes), wet and darker where the swash reaches, ScBeachM wide on average (+-40% with a 4 km noise) - symbolic width, as the promo's
+// beach, wider than the real 30-100 m strip but within the coastal dune belt's kilometres; white salt flats along the
+// Dead Sea (below -300 m). Both thresholds are 20 m ramps, so a shore slope crossing one leaves no hard contour. Steep
+// faces (the Carmel's and the kurkar cliffs) keep their rock. Off with the "water" toggle (so its cost is in the
+// toggle's).
+static const float ScBeachM = 650.0;
+static const float3 ScSandSrgb = float3(0.88, 0.76, 0.56), ScSaltSrgb = float3(0.92, 0.90, 0.85);
+float3 ScShore(float3 ground, float coast, float elevM, float3 n, float2 mapM)
+{
+    if (_ScWaterOn < 0.5) return ground;
+    float landM = saturate(coast - 0.5) * 2.0 * ScCoastRangeM;
+    float width = ScBeachM * (0.6 + 0.8 * ScNoise(mapM / 4000.0 + 7.3));
+    float strip = (1.0 - smoothstep(width * 0.55, width, landM)) * (1.0 - smoothstep(0.25, 0.45, 1.0 - saturate(n.y)));
+    float salt = 1.0 - smoothstep(-310.0, -290.0, elevM);
+    float med = smoothstep(-110.0, -90.0, elevM);
+    float3 sand = SRGBToLinear(ScSandSrgb) * lerp(0.94, 1.04, ScNoise(mapM / 350.0));
+    sand = lerp(sand, sand * 0.78, 1.0 - smoothstep(60.0, 160.0, landM));          // wet sand at the waterline
+    float3 shore = lerp(sand, SRGBToLinear(ScSaltSrgb), salt);
+    return lerp(ground, shore, strip * saturate(med + salt));
 }
 
 // The painted ground: biome colour, warmer stone high up, a dusty rift floor, rock on steep slopes, two octaves of
 // breakup, curvature (ridges light, hollows dark) and the baked occlusion (bake: r AO from ao.png, g curvature, b sky-view).
-float3 ScGround(float2 uv, float2 mapM, float3 n, float3 positionWS, float4 bake)
+float3 ScGroundBase(float2 uv, float2 mapM, float3 n, float3 positionWS)
 {
     float elevM = (positionWS.y - _ScMap.z) / _ScMap.w;            // real metres above sea level
     float slope = 1.0 - saturate(n.y);                             // 0 flat, 1 vertical
@@ -107,12 +233,23 @@ float3 ScGround(float2 uv, float2 mapM, float3 n, float3 positionWS, float4 bake
     g = lerp(g, g * float3(1.10, 1.04, 0.92), 1.0 - smoothstep(-350.0, -150.0, elevM));
     float rock = smoothstep(0.22, 0.45, slope + (ScNoise(mapM / 900.0) - 0.5) * 0.12);
     g = lerp(g, SRGBToLinear(float3(0.56, 0.49, 0.41)), rock);
+    return g;
+}
+
+// ScGround's shading, split from its colour so the terrain can paint land use in between (StatecraftLand.hlsl).
+float3 ScGroundShade(float3 g, float2 mapM, float4 bake)
+{
     // The fine octave fades to its mean as a pixel's footprint nears its 520 m period, so it never aliases into shimmer.
     float fine = lerp(0.5, ScNoise(mapM / 520.0), 1.0 - saturate(length(fwidth(mapM)) / 520.0));
     g *= 0.93 + 0.14 * (ScNoise(mapM / 2600.0) * 0.6 + fine * 0.4);
     g *= 1.0 + 0.40 * (bake.g - 0.5) * 2.0;
     g *= lerp(1.0, bake.r * lerp(0.6, 1.0, bake.b), 0.45);
     return g;
+}
+
+float3 ScGround(float2 uv, float2 mapM, float3 n, float3 positionWS, float4 bake)
+{
+    return ScGroundShade(ScGroundBase(uv, mapM, n, positionWS), mapM, bake);
 }
 
 // Distance (m) from p to the nearest edge of its hex: tools/hexgrid.py's pointy-top axial layout, (0, 0) at the north-west

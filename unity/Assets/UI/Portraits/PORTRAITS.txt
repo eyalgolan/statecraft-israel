@@ -1,5 +1,5 @@
 # Portraits shipped in the build (copied from people.yaml portrait records; public domain only).
-ben_gurion | Public domain | https://commons.wikimedia.org/wiki/File:David_Ben-Gurion_(D597-087).jpg
+ben_gurion | Public domain | https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
 zisling | Public domain | https://commons.wikimedia.org/wiki/File:Aharon_Zisling.jpg
 kaplan | Public domain | https://commons.wikimedia.org/wiki/File:Eliezer_Kaplan.jpg
 sharett | Public domain | https://commons.wikimedia.org/wiki/File:Moshe_Sharett_Portrait.jpg
@@ -12,3 +12,5 @@ maimon | Public domain | https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Mai
 bernstein | Public domain | https://commons.wikimedia.org/wiki/File:Peretz_Bernstein.jpg
 remez | Public domain | https://commons.wikimedia.org/wiki/File:David_Remez_(cropped).jpg
 levin | Public domain | https://commons.wikimedia.org/wiki/File:Yitzhak_Meir_Levin.jpg
+shazar | Public domain | https://commons.wikimedia.org/wiki/File:President_Lyndon_B._Johnson_with_President_Zalman_Shazar_of_Israel.jpg
+golda_meir | CC0 | https://commons.wikimedia.org/wiki/File:Golda_Meir%2C_minister_van_buitenlandse_zaken_van_Israel%2C_Bestanddeelnr_255-4314.jpg

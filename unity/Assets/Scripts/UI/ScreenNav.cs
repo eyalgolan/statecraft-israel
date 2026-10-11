@@ -11,6 +11,8 @@ namespace Statecraft.Game.UI
     public sealed class ScreenNav : System.IDisposable
     {
         public static readonly string[] Screens = { "cabinet", "budget", "defence", "why" };
+        /// <summary>The class on the open screen's button (Statecraft.uss lights its ring).</summary>
+        public const string OpenClass = "nav-open";
         readonly VisualElement root;
         readonly List<(Button, System.Action)> hooks = new List<(Button, System.Action)>();
 
@@ -43,7 +45,10 @@ namespace Statecraft.Game.UI
         {
             Current = screen;
             foreach (var s in Screens)
+            {
                 root.Q<VisualElement>("screen-" + s).style.display = s == screen ? DisplayStyle.Flex : DisplayStyle.None;
+                root.Q<Button>("nav-" + s).EnableInClassList(OpenClass, s == screen);   // the open screen's button is lit
+            }
         }
     }
 }

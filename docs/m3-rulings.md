@@ -134,6 +134,7 @@ These are the decisions made while building M3 where the spec or plan was silent
 - **itch.io upload stays an owner step.** The auto-mode classifier denied further itch.io actions ("Create Public Surface") and the controller did not work around it.
 - **Promo-quality visuals are the priority after the M3 merge.**
   - Map scale is Civ-style symbolic: settlements spread over neighbouring hexes by population, buildings and trees about 10–25x real size, and a closer hero zoom. Geography stays real.
+    - **Superseded on 2026-10-11** (owner ruling during the art spike): buildings and trees match promo 03's measured scale per class, about 60x real size for city blocks and about 100x for houses and trees (`KitScale` in `unity/Assets/Scripts/Map/Kits/SettlementKits.cs`; measurements in `docs/visual-v1.md`, "Art spike"). Settlements still spread over hexes by population, and geography stays real.
   - Match the promo skyline where the promo shows it (for example, 1936 Tel Aviv towers).
   - Order: visual quick wins first (lighting, shadows, tilt-shift, terrain shader with baked AO, sea, colour grade; about 1–2 weeks), then the settlements and vegetation art track (research estimate 17–23 weeks).
   - Owner art checkpoints are screenshot comparisons against `promo/final/03-gameplay-1936.png`. Work continues past a checkpoint and owner feedback arrives as fix rounds. Cost if wrong: art rework.

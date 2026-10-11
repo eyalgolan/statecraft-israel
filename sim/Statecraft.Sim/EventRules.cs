@@ -23,6 +23,8 @@ namespace Statecraft.Sim
                 ContentLoader.Status(e.File, F("status"), e.Status);
                 ContentLoader.Period(e.File, $"events[{e.Id}]", e.From, e.To);
                 if (e.Office != "" && !offices.Contains(e.Office)) throw new ContentException(e.File, F("office"), $"unknown office '{e.Office}'");
+                if (c.Offices.Any(o => o.Id == e.Office && o.HistoricalOnly))
+                    throw new ContentException(e.File, F("office"), "historical-only titles cannot be delegated events");
                 CheckPlaceholders(c, e, F("title"), e.Title, offices);
                 CheckPlaceholders(c, e, F("text"), e.Text, offices);
                 foreach (var cond in e.Conditions)
@@ -107,7 +109,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>First date in [from, to) with nobody holding office, or null. Holders only change at term
-        /// starts and ends, so checking those dates (plus from) covers the whole window.</summary>
+        /// starts and ends and at a holder's death, so checking those dates (plus from) covers the whole window.</summary>
         static DateTime? FirstUncovered(Content c, string office, DateTime from, DateTime? to)
         {
             bool Inside(DateTime d) => d >= from && (to == null || d < to.Value);
@@ -118,6 +120,8 @@ namespace Statecraft.Sim
                 if (Inside(t.From)) points.Add(t.From);
                 if (t.To.HasValue && Inside(t.To.Value)) points.Add(t.To.Value);
             }
+            foreach (var p in c.People.Where(p => p.Died.HasValue && Inside(p.Died.Value) && p.Offices.Any(t => t.Office == office)))
+                points.Add(p.Died!.Value);
             // An open-ended window needs no extra check: a last finite term ends inside [from, ∞) and is caught above.
             foreach (var d in points)
                 if (Offices.Holder(c, office, d) == null) return d;

@@ -34,7 +34,7 @@ public class DeterminismTests
     }
 
     /// <summary>Same rule for the second golden run, which covers the M3 content range (to 1952-01-01).</summary>
-    public const string GoldenHash1952 = "73590e324f19e9959a455a4da79e93d7089dfcf283c13aac02af6b0a624b9767";
+    public const string GoldenHash1952 = "62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8";
 
     [Fact]
     public void GoldenPlaythroughTo1952HashIsFixed()

@@ -6,25 +6,44 @@
 # living: false is set only after confirming each person's death date (en.wikipedia.org infobox; 2026-10-09 for the
 # 1948-49 cabinet, 2026-10-10 for people added in M3).
 # Portraits: public-domain files fetched with license check (promo/CREDITS.md).
-# Not modelled: deputy ministers (Efrati, Shari, Kahana) and Kaplan's Deputy Prime Minister title (research notes 1c, 1e).
+# Deputy ministers (Efrati, Shari, Kahana) and Kaplan's Deputy Prime Minister title are historical-only titles
+# (offices.yaml `historical_only: true`); sources in research_notes/M3 content 1950-51/deputy-titles.md.
 # portrait.focus_y: the face centre's height as a share of the picture (0 top, 1 bottom), measured on each picture;
 # the event card keeps it in view (playtest 2, P2-5).
 people:
   - id: ben_gurion
     name: David Ben-Gurion
+    name_he: דוד בן-גוריון
+    born: 1886-10-16
+    died: 1973-12-01
+    biography_sources:
+      name_he: &bg_bio [{ url: "https://en.wikipedia.org/wiki/David_Ben-Gurion", checked: 2026-10-11 }]
+      born: *bg_bio
+      died: [{ url: "https://en.wikipedia.org/wiki/David_Ben-Gurion", checked: 2026-10-11 }, { url: "https://m.knesset.gov.il/EN/About/Pages/bg.aspx", checked: 2026-10-11 }]
     living: false
     party: mapai
     competence: 9
     loyalty: 10
-    portrait: { file: promo/ref/people/David_Ben-Gurion.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:David_Ben-Gurion_(D597-087).jpg", focus_y: 0.3 }
+    portrait: { file: promo/ref/people/David_Ben-Gurion_NARA_1951.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg", focus_y: 0.4 }
     offices:
       - { office: prime_minister, from: 1948-05-14, sources: &prov [{ url: "https://en.wikipedia.org/wiki/Provisional_government_of_Israel", checked: 2026-10-09 }] }
       - { office: defense_minister, from: 1948-05-14, sources: *prov }
       # Held Education after Remez died in office on 19 May 1951.
       - { office: education_minister, from: 1951-05-19, to: 1951-10-08, sources: &second [{ url: "https://en.wikipedia.org/wiki/Second_government_of_Israel", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השנייה", checked: 2026-10-10 }] }
+      # Held Transportation after Pinkas died in office on 14 August 1952, until the Fourth Government was sworn in on
+      # 24 December 1952 (Knesset data: Ben-Gurion 14 Aug - 24 Dec 1952; Serlin from 24 Dec). Serlin and Sapir are not
+      # authored yet (#26), so the seat shows as vacant from 24 December rather than keeping a wrong holder.
+      - { office: transportation_minister, from: 1952-08-14, to: 1952-12-24, sources: [{ url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-11 }, { url: "https://en.wikipedia.org/wiki/Ministry_of_Transport_and_Road_Safety", checked: 2026-10-11 }, { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-11 }] }
     status: fact-checked
   - id: zisling
     name: Aharon Zisling
+    name_he: אהרון ציזלינג
+    born: 1901-02-26
+    died: 1964-01-16
+    biography_sources:
+      name_he: &zisling_bio [{ url: "https://en.wikipedia.org/wiki/Aharon_Zisling", checked: 2026-10-11 }]
+      born: *zisling_bio
+      died: *zisling_bio
     living: false
     party: mapam
     competence: 6
@@ -35,7 +54,15 @@ people:
     status: fact-checked
   - id: kaplan
     name: Eliezer Kaplan
+    name_he: אליעזר קפלן
+    born: 1891-01-27
     living: false
+    # Died in office on 13 July 1952.
+    died: 1952-07-13
+    biography_sources:
+      name_he: &kaplan_bio [{ url: "https://en.wikipedia.org/wiki/Eliezer_Kaplan", checked: 2026-10-11 }]
+      born: *kaplan_bio
+      died: [{ url: "https://en.wikipedia.org/wiki/Eliezer_Kaplan", checked: 2026-10-11 }, { url: "https://he.wikipedia.org/wiki/אליעזר_קפלן", checked: 2026-10-11 }]
     party: mapai
     competence: 8
     loyalty: 9
@@ -45,10 +72,32 @@ people:
       - { office: finance_minister, from: 1949-03-10, to: 1950-11-01, sources: &first [{ url: "https://en.wikipedia.org/wiki/First_government_of_Israel", checked: 2026-10-10 }, { url: "https://bengurionarchive.bgu.ac.il/en/node/14566", checked: 2026-10-09 }] }
       - { office: trade_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
       - { office: finance_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
-      - { office: finance_minister, from: 1951-10-08, sources: &third [{ url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-10 }] }
+      - office: finance_minister
+        from: 1951-10-08
+        to: 1952-06-25
+        sources:
+          - &third_en { url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }
+          - &third_he { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-10 }
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }
+      # 25 June 1952: Kaplan leaves Finance and remains Deputy PM without portfolio; primary Knesset proceeding.
+      - office: deputy_prime_minister
+        from: 1952-06-25
+        to: 1952-07-13
+        sources: &june_1952
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-11 }
+          - { url: "https://en.wikipedia.org/wiki/Eliezer_Kaplan", checked: 2026-10-11 }
+      - { office: minister_without_portfolio, from: 1952-06-25, to: 1952-07-13, sources: *june_1952 }
     status: fact-checked
   - id: sharett
     name: Moshe Sharett
+    name_he: משה שרת
+    born: 1894-10-15
+    died: 1965-07-07
+    biography_sources:
+      name_he: &sharett_bio [{ url: "https://en.wikipedia.org/wiki/Moshe_Sharett", checked: 2026-10-11 }]
+      born: *sharett_bio
+      died: *sharett_bio
     living: false
     party: mapai
     competence: 8
@@ -58,10 +107,17 @@ people:
       - { office: foreign_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: foreign_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
       - { office: foreign_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
-      - { office: foreign_minister, from: 1951-10-08, sources: *third }
+      - { office: foreign_minister, from: 1951-10-08, sources: &third [*third_en, *third_he] }
     status: fact-checked
   - id: shapira
     name: Haim-Moshe Shapira
+    name_he: חיים משה שפירא
+    born: 1902-03-26
+    died: 1970-07-16
+    biography_sources:
+      name_he: &shapira_bio [{ url: "https://en.wikipedia.org/wiki/Haim-Moshe_Shapira", checked: 2026-10-11 }]
+      born: *shapira_bio
+      died: *shapira_bio
     living: false
     party: hapoel_hamizrachi
     competence: 7
@@ -85,6 +141,13 @@ people:
     status: fact-checked
   - id: gruenbaum
     name: Yitzhak Gruenbaum
+    name_he: יצחק גרינבוים
+    born: 1879-11-24
+    died: 1970-09-07
+    biography_sources:
+      name_he: &gruenbaum_bio [{ url: "https://en.wikipedia.org/wiki/Yitzhak_Gruenbaum", checked: 2026-10-11 }]
+      born: *gruenbaum_bio
+      died: *gruenbaum_bio
     living: false
     party: independent
     competence: 6
@@ -95,6 +158,13 @@ people:
     status: fact-checked
   - id: rosen
     name: Pinchas Rosen
+    name_he: פנחס רוזן
+    born: 1887-05-01
+    died: 1978-05-03
+    biography_sources:
+      name_he: &rosen_bio [{ url: "https://en.wikipedia.org/wiki/Pinchas_Rosen", checked: 2026-10-11 }]
+      born: *rosen_bio
+      died: *rosen_bio
     living: false
     party: new_aliyah
     competence: 8
@@ -108,6 +178,13 @@ people:
     status: fact-checked
   - id: bentov
     name: Mordechai Bentov
+    name_he: מרדכי בנטוב
+    born: 1900-03-28
+    died: 1985-01-18
+    biography_sources:
+      name_he: &bentov_bio [{ url: "https://en.wikipedia.org/wiki/Mordechai_Bentov", checked: 2026-10-11 }]
+      born: *bentov_bio
+      died: *bentov_bio
     living: false
     party: mapam
     competence: 7
@@ -118,6 +195,13 @@ people:
     status: fact-checked
   - id: sheetrit
     name: Bechor-Shalom Sheetrit
+    name_he: בכור-שלום שטרית
+    born: 1895-01-20
+    died: 1967-01-28
+    biography_sources:
+      name_he: &sheetrit_bio [{ url: "https://en.wikipedia.org/wiki/Bechor-Shalom_Sheetrit", checked: 2026-10-11 }]
+      born: *sheetrit_bio
+      died: *sheetrit_bio
     living: false
     party: sephardim
     competence: 7
@@ -134,6 +218,14 @@ people:
     status: fact-checked
   - id: maimon
     name: Yehuda Leib Maimon
+    name_he: יהודה לייב מימון
+    # Hebrew biography date chosen; the conflicting English/dictionary dates are recorded in research_notes/person-biographies.md.
+    born: 1875-12-11
+    died: 1962-07-10
+    biography_sources:
+      name_he: &maimon_bio [{ url: "https://en.wikipedia.org/wiki/Yehuda_Leib_Maimon", checked: 2026-10-11 }]
+      born: [{ url: "https://he.wikipedia.org/wiki/יהודה_לייב_פישמן_מימון", checked: 2026-10-11 }]
+      died: *maimon_bio
     living: false
     party: mizrachi
     competence: 6
@@ -154,6 +246,13 @@ people:
     status: fact-checked
   - id: bernstein
     name: Peretz Bernstein
+    name_he: פרץ ברנשטיין
+    born: 1890-06-12
+    died: 1971-03-21
+    biography_sources:
+      name_he: &bernstein_bio [{ url: "https://en.wikipedia.org/wiki/Peretz_Bernstein", checked: 2026-10-11 }]
+      born: *bernstein_bio
+      died: *bernstein_bio
     living: false
     party: general_zionists
     competence: 7
@@ -164,6 +263,12 @@ people:
     status: fact-checked
   - id: remez
     name: David Remez
+    name_he: דוד רמז
+    born: 1886-05-23
+    biography_sources:
+      name_he: &remez_bio [{ url: "https://en.wikipedia.org/wiki/David_Remez", checked: 2026-10-11 }]
+      born: *remez_bio
+      died: *remez_bio
     living: false
     # Died in office on 19 May 1951 (research notes 1c).
     died: 1951-05-19
@@ -178,6 +283,13 @@ people:
     status: fact-checked
   - id: levin
     name: Yitzhak-Meir Levin
+    name_he: יצחק-מאיר לוין
+    born: 1893-01-30
+    died: 1971-08-07
+    biography_sources:
+      name_he: &levin_bio [{ url: "https://en.wikipedia.org/wiki/Yitzhak-Meir_Levin", checked: 2026-10-11 }]
+      born: *levin_bio
+      died: *levin_bio
     living: false
     party: agudat_yisrael
     competence: 6
@@ -191,6 +303,13 @@ people:
     status: fact-checked
   - id: dov_yosef
     name: Dov Yosef
+    name_he: דב יוסף
+    born: 1899-05-27
+    died: 1980-01-07
+    biography_sources:
+      name_he: &dov_yosef_bio [{ url: "https://en.wikipedia.org/wiki/Dov_Yosef", checked: 2026-10-11 }]
+      born: *dov_yosef_bio
+      died: *dov_yosef_bio
     living: false
     party: mapai
     competence: 7
@@ -204,22 +323,44 @@ people:
       # en.wiki lists Trade and Industry and Justice; he.wiki lists only Trade and Industry clearly (research notes 1e).
       - { office: trade_minister, from: 1951-10-08, sources: *third }
       - { office: justice_minister, from: 1951-10-08, sources: *third }
+      # Food supply and rationing within Trade and Industry, not a revival of the abolished ministry.
+      # Schiffman/Goldstein (2026), pp.6 n.9, 33, 62; Knesset 7 January 1952, questions 8-10.
+      # Exact start is explicit in the archival working paper; the research note records the conflicting Rozin date.
+      - { office: rationing_minister, from: 1951-10-08, to: 1952-12-24, sources: [{ url: "https://mpra.ub.uni-muenchen.de/129488/1/MPRA_paper_129488.pdf", checked: 2026-10-11 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250631.pdf", checked: 2026-10-11 }] }
     status: fact-checked
   - id: shazar
     name: Zalman Shazar
+    name_he: זלמן שז"ר
+    born: 1889-11-24
+    died: 1974-10-05
+    biography_sources:
+      name_he: &shazar_bio [{ url: "https://en.wikipedia.org/wiki/Zalman_Shazar", checked: 2026-10-11 }]
+      born: *shazar_bio
+      died: *shazar_bio
     living: false
     party: mapai
     competence: 7
     loyalty: 8
+    # Yoichi Okamoto, official White House photograph, 2 August 1966; PD-USGov checked 2026-10-11.
+    # Later than the game period; human likeness/era review remains required.
+    portrait: { file: promo/ref/people/Zalman_Shazar_USGov_1966.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:President_Lyndon_B._Johnson_with_President_Zalman_Shazar_of_Israel.jpg", focus_y: 0.35 }
     offices:
       - { office: education_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
     status: fact-checked
   - id: golda_meir
     name: Golda Meir
+    name_he: גולדה מאיר
+    born: 1898-05-03
+    died: 1978-12-08
+    biography_sources:
+      name_he: &golda_meir_bio [{ url: "https://en.wikipedia.org/wiki/Golda_Meir", checked: 2026-10-11 }]
+      born: *golda_meir_bio
+      died: *golda_meir_bio
     living: false
     party: mapai
     competence: 8
     loyalty: 9
+    portrait: { file: promo/ref/people/Golda_Meir_CC0_1964.jpg, license: CC0, source: "https://commons.wikimedia.org/wiki/File:Golda_Meir%2C_minister_van_buitenlandse_zaken_van_Israel%2C_Bestanddeelnr_255-4314.jpg", focus_y: 0.3 }
     offices:
       - { office: labour_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
       - { office: labour_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
@@ -227,6 +368,13 @@ people:
     status: fact-checked
   - id: lavon
     name: Pinhas Lavon
+    name_he: פנחס לבון
+    born: 1904-07-12
+    died: 1976-01-24
+    biography_sources:
+      name_he: &lavon_bio [{ url: "https://en.wikipedia.org/wiki/Pinhas_Lavon", checked: 2026-10-11 }]
+      born: *lavon_bio
+      died: *lavon_bio
     living: false
     party: mapai
     competence: 7
@@ -237,10 +385,17 @@ people:
       # Trade and Industry (Geri) took some supply departments (commodities and stock). Research notes, Addendum 2 (A1):
       # he.wiki was read directly; the Weitz PDF and SSRN 6351358 were not read directly, only their search summaries.
       - { office: rationing_minister, from: 1950-11-01, to: 1951-10-08, sources: [{ url: "https://he.wikipedia.org/wiki/משרד_האספקה_והקיצוב", checked: 2026-10-10 }, { url: "https://in.bgu.ac.il/bgi/iyunim/24/Yechiam-Weitz.pdf", checked: 2026-10-10 }, { url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6351358", checked: 2026-10-10 }] }
-      # From 8 October 1951: no source names the responsible minister (Addendum 2: not found), so the office is vacant.
+      # Yosef took food-supply/rationing responsibility in the Third Government (see his sourced term above).
     status: fact-checked
   - id: geri
     name: Ya'akov Geri
+    name_he: יעקב גרי
+    born: 1901-09-18
+    died: 1974-12-18
+    biography_sources:
+      name_he: &geri_bio [{ url: "https://en.wikipedia.org/wiki/Yaakov_Geri", checked: 2026-10-11 }]
+      born: *geri_bio
+      died: *geri_bio
     living: false
     # Not a Knesset member. en.wiki gives no party; he.wiki lists him under Mapai (research notes 1c). He sat for no
     # list, so no party is set.
@@ -252,15 +407,30 @@ people:
     status: fact-checked
   - id: eshkol
     name: Levi Eshkol
+    name_he: לוי אשכול
+    born: 1895-10-25
+    died: 1969-02-26
+    biography_sources:
+      name_he: &eshkol_bio [{ url: "https://en.wikipedia.org/wiki/Levi_Eshkol", checked: 2026-10-11 }]
+      born: *eshkol_bio
+      died: *eshkol_bio
     living: false
     party: mapai
     competence: 8
     loyalty: 8
     offices:
-      - { office: agriculture_minister, from: 1951-10-08, sources: *third }
+      - { office: agriculture_minister, from: 1951-10-08, to: 1952-06-25, sources: [*third_en, *third_he, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }] }
+      - { office: finance_minister, from: 1952-06-25, sources: *june_1952 }
     status: fact-checked
   - id: dinur
     name: Ben-Zion Dinur
+    name_he: בן ציון דינור
+    born: 1884-01-02
+    died: 1973-07-08
+    biography_sources:
+      name_he: &dinur_bio [{ url: "https://en.wikipedia.org/wiki/Ben-Zion_Dinur", checked: 2026-10-11 }]
+      born: *dinur_bio
+      died: *dinur_bio
     living: false
     # Not a Knesset member in the Third Government (a former Mapai MK; he.wiki lists him under Mapai), so no party is set.
     party: ""
@@ -271,6 +441,13 @@ people:
     status: fact-checked
   - id: burg
     name: Yosef Burg
+    name_he: שלמה יוסף בורג
+    born: 1909-01-31
+    died: 1999-10-15
+    biography_sources:
+      name_he: &burg_bio [{ url: "https://en.wikipedia.org/wiki/Yosef_Burg", checked: 2026-10-11 }]
+      born: *burg_bio
+      died: *burg_bio
     living: false
     party: hapoel_hamizrachi
     competence: 7
@@ -282,24 +459,47 @@ people:
     status: fact-checked
   - id: pinkas
     name: David-Zvi Pinkas
+    name_he: דוד-צבי פנקס
+    born: 1895-12-05
+    died: 1952-08-14
+    biography_sources:
+      name_he: &pinkas_bio [{ url: "https://en.wikipedia.org/wiki/David-Zvi_Pinkas", checked: 2026-10-11 }]
+      born: *pinkas_bio
+      died: *pinkas_bio
     living: false
     party: mizrachi
     competence: 6
     loyalty: 6
     offices:
-      - { office: transportation_minister, from: 1951-10-08, sources: *third }
+      # Died in office on 14 August 1952; Ben-Gurion took the portfolio the same day.
+      - { office: transportation_minister, from: 1951-10-08, to: 1952-08-14, sources: [*third_en, *third_he, { url: "https://en.wikipedia.org/wiki/Ministry_of_Transport_and_Road_Safety", checked: 2026-10-11 }] }
     status: fact-checked
   - id: naftali
     name: Peretz Naftali
+    name_he: פרץ נפתלי
+    born: 1888-03-19
+    died: 1961-04-30
+    biography_sources:
+      name_he: &naftali_bio [{ url: "https://en.wikipedia.org/wiki/Peretz_Naftali", checked: 2026-10-11 }]
+      born: *naftali_bio
+      died: *naftali_bio
     living: false
     party: mapai
     competence: 7
     loyalty: 8
     offices:
-      - { office: minister_without_portfolio, from: 1951-10-08, sources: *third }
+      - { office: minister_without_portfolio, from: 1951-10-08, to: 1952-06-25, sources: [*third_en, *third_he, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }] }
+      - { office: agriculture_minister, from: 1952-06-25, sources: *june_1952 }
     status: fact-checked
   - id: weizmann
     name: Chaim Weizmann
+    name_he: חיים ויצמן
+    born: 1874-11-27
+    died: 1952-11-09
+    biography_sources:
+      name_he: &weizmann_bio [{ url: "https://en.wikipedia.org/wiki/Chaim_Weizmann", checked: 2026-10-11 }]
+      born: *weizmann_bio
+      died: *weizmann_bio
     living: false
     party: ""
     competence: 8
@@ -311,10 +511,38 @@ people:
       - { office: president, from: 1949-02-17, to: 1951-11-19, sources: [{ url: "https://en.wikipedia.org/wiki/Chaim_Weizmann", checked: 2026-10-10 }, { url: "https://en.wikipedia.org/wiki/1949_Israeli_presidential_election", checked: 2026-10-10 }, { url: "https://weizmann.ac.il/WeizmannCompass/node/914", checked: 2026-10-10 }] }
       # The second term starts on the election date (notes section 3); he was sworn in at Rehovot on 25 November 1951
       # (stated on the cited en.wiki 1951 presidential election page), which is not used as a date.
-      - { office: president, from: 1951-11-19, sources: [{ url: "https://en.wikipedia.org/wiki/1951_Israeli_presidential_election", checked: 2026-10-10 }, { url: "https://en.wikipedia.org/wiki/1951_in_Israel", checked: 2026-10-10 }] }
+      # Died in office on 9 November 1952.
+      - { office: president, from: 1951-11-19, to: 1952-11-09, sources: [{ url: "https://en.wikipedia.org/wiki/1951_Israeli_presidential_election", checked: 2026-10-10 }, { url: "https://en.wikipedia.org/wiki/1951_in_Israel", checked: 2026-10-10 }, { url: "https://en.wikipedia.org/wiki/1952_Israeli_presidential_election", checked: 2026-10-11 }] }
+    status: fact-checked
+  - id: ben_zvi
+    name: Yitzhak Ben-Zvi
+    name_he: יצחק בן-צבי
+    # Gregorian date; en.wikipedia gives 24 November 1884, the Julian date then used in Russia (he.wikipedia's note).
+    born: 1884-12-06
+    died: 1963-04-23
+    biography_sources:
+      name_he: &ben_zvi_bio [{ url: "https://en.wikipedia.org/wiki/Yitzhak_Ben-Zvi", checked: 2026-10-11 }]
+      born: [{ url: "https://he.wikipedia.org/wiki/יצחק_בן-צבי", checked: 2026-10-11 }]
+      died: [{ url: "https://en.wikipedia.org/wiki/Yitzhak_Ben-Zvi", checked: 2026-10-11 }, { url: "https://he.wikipedia.org/wiki/יצחק_בן-צבי", checked: 2026-10-11 }]
+    living: false
+    party: ""
+    competence: 7
+    loyalty: 8
+    offices:
+      # Elected by the Knesset on 8 December 1952, took office on 16 December 1952. From Weizmann's death on 9 November,
+      # Speaker Yosef Sprinzak was acting President; acting holders are not modelled, so the office is vacant until then.
+      # The term runs past the Fourth Government (24 December 1952) and stays open, like the other open terms.
+      - { office: president, from: 1952-12-16, sources: [{ url: "https://en.wikipedia.org/wiki/1952_Israeli_presidential_election", checked: 2026-10-11 }, { url: "https://en.wikipedia.org/wiki/Yitzhak_Ben-Zvi", checked: 2026-10-11 }, { url: "https://he.wikipedia.org/wiki/נשיא_מדינת_ישראל", checked: 2026-10-11 }] }
     status: fact-checked
   - id: dori
     name: Yaakov Dori
+    name_he: יעקב דורי
+    born: 1899-10-08
+    died: 1973-01-22
+    biography_sources:
+      name_he: &dori_bio [{ url: "https://en.wikipedia.org/wiki/Yaakov_Dori", checked: 2026-10-11 }]
+      born: *dori_bio
+      died: *dori_bio
     living: false
     competence: 7
     loyalty: 8
@@ -323,10 +551,90 @@ people:
     status: fact-checked
   - id: yadin
     name: Yigael Yadin
+    name_he: יגאל ידין
+    born: 1917-03-20
+    died: 1984-06-28
+    biography_sources:
+      name_he: &yadin_bio [{ url: "https://en.wikipedia.org/wiki/Yigal_Yadin", checked: 2026-10-11 }]
+      born: *yadin_bio
+      died: *yadin_bio
     living: false
     competence: 8
     loyalty: 8
     offices:
       # In office through the M3 range: resigned 7 December 1952 (research notes 8).
       - { office: chief_of_staff, from: 1949-11-09, sources: *cos }
+    status: fact-checked
+  # Deputies use neutral game ratings, not claims about historical ability or loyalty.
+  - id: efrati
+    name: Yosef Efrati
+    name_he: יוסף אפרתי
+    born: 1897-02-19
+    died: 1975-02-08
+    biography_sources:
+      name_he: &efrati_bio [{ url: "https://en.wikipedia.org/wiki/Yosef_Efrati", checked: 2026-10-11 }]
+      born: *efrati_bio
+      died: *efrati_bio
+    living: false
+    party: mapai
+    competence: 5
+    loyalty: 5
+    offices:
+      - office: deputy_agriculture_minister
+        from: 1951-02-26
+        to: 1951-10-08
+        sources: &deputies
+          - { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plmsessionitem/kns_plmsessionitem.csv", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plenumsession/kns_plenumsession.csv", checked: 2026-10-11 }
+          - { url: "https://en.wikipedia.org/wiki/Yosef_Efrati", checked: 2026-10-11 }
+      - { office: deputy_agriculture_minister, from: 1951-11-04, to: 1952-06-25, sources: *deputies }
+    status: fact-checked
+  - id: shari
+    name: Reuven Shari
+    name_he: ראובן שרי
+    born: 1903-04-07
+    died: 1989-07-06
+    biography_sources:
+      name_he: &shari_bio [{ url: "https://en.wikipedia.org/wiki/Reuven_Shari", checked: 2026-10-11 }]
+      born: *shari_bio
+      died: *shari_bio
+    living: false
+    party: mapai
+    competence: 5
+    loyalty: 5
+    offices:
+      # Knesset notification on 2 April, not the role table's 1 April. See deputy-titles.md and the 1951 law.
+      - office: deputy_transportation_minister
+        from: 1951-04-02
+        to: 1951-10-08
+        sources:
+          - { url: "https://fs.knesset.gov.il/1/law/1_lsr_208918.pdf", checked: 2026-10-11 }
+          - { url: "https://en.wikipedia.org/wiki/Reuven_Shari", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plmsessionitem/kns_plmsessionitem.csv", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plenumsession/kns_plenumsession.csv", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-11 }
+    status: fact-checked
+  - id: kahana
+    name: Kalman Kahana
+    name_he: קלמן כהנא
+    born: 1910-05-31
+    died: 1991-08-20
+    biography_sources:
+      name_he: &kahana_bio [{ url: "https://en.wikipedia.org/wiki/Kalman_Kahana", checked: 2026-10-11 }]
+      born: *kahana_bio
+      died: *kahana_bio
+    living: false
+    party: poalei_agudat_yisrael
+    competence: 5
+    loyalty: 5
+    offices:
+      - office: deputy_education_minister
+        from: 1951-11-04
+        to: 1952-12-24
+        sources:
+          - { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plmsessionitem/kns_plmsessionitem.csv", checked: 2026-10-11 }
+          - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plenumsession/kns_plenumsession.csv", checked: 2026-10-11 }
+          - { url: "https://en.wikipedia.org/wiki/Kalman_Kahana", checked: 2026-10-11 }
     status: fact-checked

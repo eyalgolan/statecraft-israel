@@ -10,7 +10,13 @@ namespace Statecraft.Game.Map
     {
         public static readonly int Map = Shader.PropertyToID("_ScMap"), MapOrigin = Shader.PropertyToID("_ScMapOrigin"),
             Biome = Shader.PropertyToID("_ScBiomeTex"), Haze = Shader.PropertyToID("_ScHaze"), HazeWater = Shader.PropertyToID("_ScHazeWater"),
-            HazeRange = Shader.PropertyToID("_ScHazeRange"), WaterOn = Shader.PropertyToID("_ScWaterOn"), Grid = Shader.PropertyToID("_ScGrid");
+            HazeRange = Shader.PropertyToID("_ScHazeRange"), WaterOn = Shader.PropertyToID("_ScWaterOn"), Grid = Shader.PropertyToID("_ScGrid"),
+            WaterTime = Shader.PropertyToID("_ScWaterTime"), LandOn = Shader.PropertyToID("_ScLandOn");
+
+        /// <summary>Pins the water's clock (waves, surf) to the given seconds, or back to Unity's time with null: for tests and
+        /// frame captures that must render chosen moments (promo-sea review I2, M5).</summary>
+        public static void PinWaterTime(float? seconds) =>
+            Shader.SetGlobalVector(WaterTime, seconds.HasValue ? new Vector4(seconds.Value, 1f, 0f, 0f) : Vector4.zero);
 
         /// <summary>A warm, dusty haze over land (sRGB): warmer than the ground it covers (R - B 0.26), so the far land reads
         /// as dust, not as a cool milky veil (Task 6 review I1).</summary>
@@ -51,6 +57,9 @@ namespace Statecraft.Game.Map
             Shader.SetGlobalVector(HazeRange, new Vector4(Y(RiftHazeTopM), Y(RiftHazeFullM), HazeDistanceM, HazeStartM));
             Shader.SetGlobalVector(Grid, new Vector4(GridLandOpacity, GridWaterOpacity, GridWidthPx, 1f));
             assets.OnTeardown(VisualToggles.Register("grid", on => Shader.SetGlobalVector(Grid, new Vector4(GridLandOpacity, GridWaterOpacity, GridWidthPx, on ? 1f : 0f))));
+            // Land use (issue #33, StatecraftLand.hlsl): fields, farm tracks, terraces and scrub; off = the bare biome ground.
+            Shader.SetGlobalFloat(LandOn, 1f);
+            assets.OnTeardown(VisualToggles.Register("land", on => Shader.SetGlobalFloat(LandOn, on ? 1f : 0f)));
             Shader.SetGlobalFloat(WaterOn, 1f);
             assets.OnTeardown(VisualToggles.Register("water", on => Shader.SetGlobalFloat(WaterOn, on ? 1f : 0f)));
             assets.OnTeardown(VisualToggles.Register("haze", on =>
@@ -68,5 +77,7 @@ namespace Statecraft.Game.Map
         public const string Coast = "Assets/Textures/Map/coast.png";
         /// <summary>The ambient occlusion on its own, uncompressed (R8): BC1 stepped it on broad slopes (Task 6 fix round 1).</summary>
         public const string Ao = "Assets/Textures/Map/ao.png";
+        /// <summary>The land (tools/land_bake.py, issue #33): rgb its linear colour, a its weight over the biome ground.</summary>
+        public const string Land = "Assets/Textures/Map/landuse.png";
     }
 }

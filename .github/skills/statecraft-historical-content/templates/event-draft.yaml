@@ -1,0 +1,28 @@
+id: event_id
+# Explain why this date is the relevant window.
+from: 1948-06-01
+# Optional end date if this event is time-boxed.
+# to: 1948-06-15
+
+title: The event title
+text: 'The situation is underway. {prime_minister} must decide how to respond.'
+anchor: soft
+# office: prime_minister
+# conditions:
+#   - { indicator: morale, min: 0.2, max: 0.7 }
+options:
+  - id: option_a
+    text: Accept the immediate course
+    recommended: true
+    effects:
+      - { target: morale, delta: 0.02 }
+  - id: option_b
+    text: Reject the course and wait for a different response
+    effects:
+      - { target: intl_standing, delta: -0.03 }
+
+sources:
+  # Replace with the real page you opened, and the day you opened it.
+  - { url: "https://example.org/source", checked: 2026-10-11 }
+# Leave as draft. A person sets fact-checked after checking every claim against its source.
+status: draft

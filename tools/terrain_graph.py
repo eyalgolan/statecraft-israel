@@ -6,7 +6,7 @@
 "Terrain Simple" Terrain Lit template with its sample nodes, groups, notes and HDRP target removed, and one Custom
 Function node (File mode, m_SourceType 0: StatecraftTerrain.hlsl, function StatecraftTerrain; the graph and every added
 node at single precision) that takes the terrain UV, the absolute world position and normal and three blackboard
-textures (_ScBakeTex, _ScCoastTex, _ScAoTex) and feeds every fragment block. All shading lives in the HLSL file;
+textures (_ScBakeTex, _ScCoastTex, _ScAoTex, _ScLandTex) and feeds every fragment block. All shading lives in the HLSL file;
 re-run this only when the node's inputs or outputs change. Slot objects are copied from the template's own slots, so
 they match the installed Shader Graph version. Object ids are UUID5s: the output is deterministic.
 
@@ -30,10 +30,11 @@ SINGLE = 1      # Precision.Single (node precision)
 GRAPH_SINGLE = 0   # GraphPrecision.Single (the template's is Half, 2: an inheriting node would run at mediump on GLES3)
 URP = "UnityEditor.Rendering.Universal."
 FILE_MODE = 0   # HlslSourceType.File (Shader Graph: enum HlslSourceType { File, String })
-# display name, reference, function slot; the AO is its own uncompressed texture (Task 6 fix round 1: BC1 banded it)
-TEXTURES = [("ScBakeTex", "_ScBakeTex", 3), ("ScCoastTex", "_ScCoastTex", 4), ("ScAoTex", "_ScAoTex", 5)]
+# display name, reference, function slot; the AO is its own uncompressed texture (Task 6 fix round 1: BC1 banded it); the
+# land use (tools/land_bake.py, issue #33) came later, so its slot id follows the outputs' and those stay unchanged
+TEXTURES = [("ScBakeTex", "_ScBakeTex", 3), ("ScCoastTex", "_ScCoastTex", 4), ("ScAoTex", "_ScAoTex", 5), ("ScLandTex", "_ScLandTex", 12)]
 INPUTS = [(0, "UV", "Vector2"), (1, "PositionWS", "Vector3"), (2, "NormalWS", "Vector3"),
-          (3, "Bake", "Texture2DInput"), (4, "Coast", "Texture2DInput"), (5, "Ao", "Texture2DInput")]
+          (3, "Bake", "Texture2DInput"), (4, "Coast", "Texture2DInput"), (5, "Ao", "Texture2DInput"), (12, "Land", "Texture2DInput")]
 OUTPUTS = [(6, "BaseColor", "Vector3", "SurfaceDescription.BaseColor"), (7, "NormalOut", "Vector3", "SurfaceDescription.NormalWS"),
            (8, "Occlusion", "Vector1", "SurfaceDescription.Occlusion"), (9, "Smoothness", "Vector1", "SurfaceDescription.Smoothness"),
            (10, "Metallic", "Vector1", "SurfaceDescription.Metallic"), (11, "Emission", "Vector3", "SurfaceDescription.Emission")]

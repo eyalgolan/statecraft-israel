@@ -87,6 +87,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: ac04311e70bde4db0a5e4129f5d58af1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _ScLandTex:
+        m_Texture: {fileID: 2800000, guid: f4c67647f4d1e46dc9fa627580da19dd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Splat0:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}

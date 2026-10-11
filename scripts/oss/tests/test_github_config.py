@@ -118,3 +118,27 @@ def test_setup_uv_caches_on_the_files_that_carry_the_dependencies():
     for s in uv_steps:
         globs = s["with"]["cache-dependency-glob"].split()
         assert globs == ["tools/**/*.py", "scripts/oss/**/*.py"], globs
+
+
+MERGE = ROOT / ".github/workflows/merge-approved.yml"
+
+
+def test_merge_workflow_never_touches_pull_request_code():
+    # Owner ruling 2026-10-11: approved pull requests merge without giving contributors write access. The job holds a
+    # write token, so it must never check out, build or run pull-request code, and never read PR text into the shell.
+    wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
+    assert set(triggers(wf)) == {"workflow_run", "pull_request_review", "schedule", "workflow_dispatch"}
+    assert triggers(wf)["workflow_run"]["workflows"] == ["CI"]
+    assert "pull_request_target" not in triggers(wf)
+    assert wf["permissions"] == {"contents": "write", "pull-requests": "write"}
+    script = "\n".join(s.get("run", "") for s in steps(wf))
+    assert not any("uses" in s for s in steps(wf)) and "checkout" not in script
+    for field in ("title", "body", "headRefName"):
+        assert field not in script, field
+    assert "--match-head-commit" in script and "$r.commit.oid == $p.headRefOid" in script
+
+
+def test_merge_workflow_waits_for_every_required_check():
+    wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
+    need = set(wf["jobs"]["merge"]["env"]["REQUIRED_CHECKS"].split("|"))
+    assert need == EXPECTED_JOBS

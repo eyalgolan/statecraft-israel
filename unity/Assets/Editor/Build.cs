@@ -12,7 +12,9 @@ namespace Statecraft.Game.EditorTools
     /// <summary>Headless player builds. Map.unity is the boot scene; ContentSync copies content/ into StreamingAssets
     /// first (IPreprocessBuildWithReport). Exits non-zero on failure.
     ///   Web: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web
-    ///        [-compression disabled|gzip|brotli] [-out Builds/Web-disabled]
+    ///        [-compression disabled|gzip|brotli] [-out Builds/Web-disabled] [-textureSubtarget dxt|etc2|astc]
+    ///        (-textureSubtarget: the compressed format of every automatic texture; the default build is DXT, for desktop
+    ///        browsers; astc or etc2 makes a build for browsers without S3TC, as on phones)
     ///   Mac: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod Statecraft.Game.EditorTools.Build.Mac
     ///        [-out Builds/Mac/Statecraft.app] [-ffp-contract-off]</summary>
     public static class Build
@@ -32,6 +34,16 @@ namespace Statecraft.Game.EditorTools
             "gzip" => WebGLCompressionFormat.Gzip,
             "brotli" => WebGLCompressionFormat.Brotli,
             _ => throw new ArgumentException($"-compression must be disabled, gzip or brotli (got '{name}')"),
+        };
+
+        /// <summary>The WebGL texture subtarget named by -textureSubtarget (Unity's own default when absent).</summary>
+        public static WebGLTextureSubtarget? TextureSubtarget(string? name) => name switch
+        {
+            null => null,
+            "dxt" => WebGLTextureSubtarget.DXT,
+            "etc2" => WebGLTextureSubtarget.ETC2,
+            "astc" => WebGLTextureSubtarget.ASTC,
+            _ => throw new ArgumentException($"-textureSubtarget must be dxt, etc2 or astc (got '{name}')"),
         };
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
@@ -66,9 +78,12 @@ namespace Statecraft.Game.EditorTools
             ProjectSetup.Apply();
             PlayerSettings.WebGL.compressionFormat = Compression(name);
             PlayerSettings.WebGL.decompressionFallback = false;   // itch.io serves .br/.gz with Content-Encoding
+            var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
+            var sub = TextureSubtarget(Arg("-textureSubtarget"));
+            if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;
             bool ok;
-            try { ok = Run(BuildTarget.WebGL, Arg("-out") ?? "Builds/Web-" + name); }
-            finally { ProjectSetup.Apply(); }                      // back to the committed settings (compression Disabled)
+            try { ok = Run(BuildTarget.WebGL, Arg("-out") ?? "Builds/Web-" + name, sub.HasValue ? (int)sub.Value : 0); }
+            finally { EditorUserBuildSettings.webGLBuildSubtarget = savedSubtarget; ProjectSetup.Apply(); }   // back to the committed settings
             ExitIfFailed(ok);
         }
 
@@ -94,11 +109,12 @@ namespace Statecraft.Game.EditorTools
             return Directory.Exists(path) ? new DirectoryInfo(path).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length) / 1048576.0 : 0;
         }
 
-        static bool Run(BuildTarget target, string location)
+        static bool Run(BuildTarget target, string location, int subtarget = 0)
         {
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = new[] { ProjectSetup.BootScene }, locationPathName = location, target = target, options = BuildOptions.None,
+                subtarget = subtarget,   // WebGL: the texture subtarget (0, Generic: the project's own setting)
             });
             var s = report.summary;
             Debug.Log($"BUILD {s.result} {target} -> {location}: {OutputMegabytes(location):0.0} MB on disk, {s.totalErrors} errors, {s.totalTime.TotalSeconds:0}s");

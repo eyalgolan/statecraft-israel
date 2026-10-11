@@ -158,7 +158,8 @@ One of `draft`, `fact-checked`, `historian-reviewed`, `sensitivity-reviewed`; an
 - `draft`: a work in progress. A pull request for `content/` should not stay at this.
 - `fact-checked`: a person checked every claim against its sources. This is what you submit. The content tests
   require `fact-checked` on every non-sensitive event in `content/`.
-- `historian-reviewed`: planned for M4, not a gate yet.
+- `historian-reviewed`: planned for M4, not a gate yet. How a review is done and recorded until then:
+  [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md).
 - `sensitivity-reviewed`: set by the maintainer for events with a sensitive tag (see above).
 
 If AI helped draft the text, you still check every claim yourself before using `fact-checked`
@@ -246,3 +247,12 @@ a row to its "Rebaseline history". Contributors do not.
 - [ ] no invented quotes; sensitive tags only where they apply, `status: fact-checked`
 - [ ] `dotnet test sim/Statecraft.sln` passes
 - [ ] a line in `CHANGELOG.md`
+
+### Historical-only titles
+
+An office with `historical_only: true` records a dated title without adding a playable Cabinet seat.
+Its terms in `people.yaml` can be used in text placeholders such as `{deputy_title}` when the
+event window has a holder throughout. It cannot own a policy, effect, budget line or an event's
+`office:` delegation. Use the responsible senior minister for those gameplay fields. Existing
+offices default to `historical_only: false`. A historical-only title ignores player appointments,
+including entries carried in an older save.

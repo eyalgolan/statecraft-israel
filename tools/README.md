@@ -13,6 +13,14 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `hexgrid.py` writes `content/map/hexes.json` from the heightmap and those committed precipitation inputs (no network).
 - `settlement_hexes.py` writes `content/map/settlement_hexes.yaml` (committed): the hex that owns each settlement, by the
   `hexgrid.settlement_hex` rule. The sim reads it, so it needs no projection maths.
+- `routes_1948.py [--fetch] [--only ID ...] [--preview DIR]` traces the railways and main roads of May 1948 (issue #35)
+  on the Survey of Palestine 1:250,000 map of 1946 (public domain; Palestine Open Maps' tiles, downloaded with `--fetch`
+  into `tools/.cache/pal250k-1946/`, not committed): it reads the hand-written routes, sources and waypoints in
+  `content/map/routes_1948.yaml` and writes the traced lines to `content/map/route_paths_1948.yaml` (committed; the map
+  draws it, the sim never reads it). `--preview` writes each traced segment over the map for checking by eye.
+- `routes_accuracy.py [--fetch]` measures how far those traced lines lie from OpenHistoricalMap (CC0) and OpenStreetMap
+  (ODbL) lines, downloaded with `--fetch` into `tools/.cache/routes-accuracy/` (never committed or copied into content),
+  and prints the accuracy table of `docs/routes.md`.
 - `web_check.py` serves a WebGL build on http://localhost and opens it in headless Chrome for Testing (Playwright's
   cache; macOS only, arm64 or x64); it passes when the console shows the expected lines (`GOLDEN OK ...`, `SMOKE OK ...`).
 - `package_release.py` zips a Brotli WebGL build for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses
@@ -22,6 +30,10 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   alone, imported uncompressed) and `coast.png`
   (exact signed Euclidean distance to the shoreline; lakes under 1 km2 count as land) from the committed heightmap (no
   network). Re-run it whenever the heightmap changes; its PNG bytes are reproducible only on the same toolchain.
+- `land_bake.py` writes `unity/Assets/Textures/Map/landuse.png` (the land-use colour and weight: field parcels with
+  farm tracks, garrigue, terraces and scrub, placed by slope, rainfall and towns) from the heightmap, the CHELSA rainfall,
+  the hex biomes and the 1948 settlements (no network); `StatecraftLand.hlsl` lays it over the biome ground. Re-run it
+  whenever one of those inputs changes.
 - `terrain_graph.py` writes `unity/Assets/Shaders/StatecraftTerrain.shadergraph` from Unity's "Terrain Simple" template
   with one Custom Function node (`StatecraftTerrain.hlsl`); re-run it only when that function's inputs or outputs change.
 - `art_compare.py` puts screenshots next to the promo image of their pose, writes deuteranopia and protanopia copies and
@@ -62,3 +74,10 @@ Rain-gauge data: Israel Meteorological Service (השירות המטאורולו�
 
 CHELSA is CC0 (no attribution required); both are credited here and should be credited in the game credits alongside the
 Copernicus notice.
+
+## Manifest AI-disclosure review text (#45)
+
+`uv run scripts/oss/ai_disclosure.py --output docs/ai-disclosure.md` regenerates the checked-in review text from
+`ASSETS.yaml` and `ASSETS.portraits.yaml`. It groups only explicit `ai_generated: true` rows by media kind,
+keeps source/status and manifest names, and includes the README's no-live-generation statement. It does not
+change flags, clear licences, expand asset patterns into filenames, or answer the store content survey.
