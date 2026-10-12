@@ -48,6 +48,15 @@ never take a hash from the run without the variable, so a second plain run is th
 hash), add a row to the rebaseline history, and say why in the commit message. The snapshot test also fails if a snapshot is
 stale while the hash is unchanged.
 
+**Invariants.** A hash says something changed; `sim/Statecraft.Sim.Tests/golden/invariants.yaml` says whether it is
+still plausible. Each entry names a golden run (`1950` or `1952`), a value (an indicator id, or `treasury`, `debt`,
+`fx`, `population`, `stability`), when it is read (`end`, `always`, or a date: the first state on or after it), a `min`
+and/or `max`, and a `reason` (a source, or the test or note the band comes from). `InvariantTests` plays the golden runs
+and fails with the check, the value, the date and the band, for example `invariant 'foreign-currency-runs-out' (...): fx
+= 12.5 on 1952-02-27 is outside [-inf, 0]`. The invariants only add checks: a tuned rate that stays in its band still
+moves the hash goldens (rebaseline as above), but not an invariant. The shipped bands are loose guards set around the
+current runs; the design document and the maintainers decide which ranges matter.
+
 **Rules per era.** A system reads `Content.RulesAt(date)`, where `date` is the date of the state the turn starts from (`s.Date`
 before the step); `AttentionSystem.Refill` runs after the date moves, so it fills the next turn from that turn's era. Rules
 change only at era boundaries (chapters spec section 3.3). Spec section 4.1 will end the turn that reaches a boundary exactly

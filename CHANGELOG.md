@@ -12,6 +12,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `prime_minister`) belongs to the Minister of Immigration until 7 October 1951 and to the Prime Minister from 8 October
   1951. A line scales effects through the owner of the day, and the Budget screen names that office. An office with
   several holders cannot own a line. The goldens do not move.
+- A turn now ends on the next era's start date, not only on the last era's end (chapters spec 4.1). A turn that would
+  leave under 14 days before the boundary is lengthened to it. Real days scale the turn's rates. With one era, or no
+  boundary in a run, nothing changes; goldens unchanged (refs #59).
 - Writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set key=value` plays the historical run with a
   rules.yaml change applied in memory and prints the changed state lines and a table of chosen values, without Unity and
   without touching `content/` (fixes #295).
