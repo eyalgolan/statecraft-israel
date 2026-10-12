@@ -21,6 +21,14 @@ offices:
   - { id: trade_minister, title: Minister of Trade and Industry }
   - { id: transportation_minister, title: Minister of Transportation }
   - { id: welfare_minister, title: Minister of Welfare }
+  # The Ministry of Postal Services (renamed Communications in 1970). Its first minister, Mordechai Nurock, took office
+  # on 3 November 1952 (Knesset records and plenum record, he.wiki Third Government, en.wiki "Ministry of Communications
+  # (Israel)", checked 2026-10-12).
+  - { id: posts_minister, title: Minister of Postal Services, from: 1952-11-03 }
+  # Set up on 15 June 1953 for Dov Yosef (he.wiki "משרד הפיתוח", en.wiki "Development Minister of Israel", Knesset
+  # records, checked 2026-10-12). The Knesset records and he.wiki "לוי אשכול" also give Eshkol a Development title in
+  # the Third Government, before the ministry existed; the office starts with the ministry (see Eshkol in people.yaml).
+  - { id: development_minister, title: Minister of Development, from: 1953-06-15 }
   # The Provisional Government (14 May 1948 - 10 March 1949) had no education portfolio. The ministry dates from the First
   # Government; Zalman Shazar was its first minister, from 10 March 1949 (en.wiki "Provisional government of Israel" and
   # "Ministry of Education (Israel)", he.wiki "הממשלה הזמנית", checked 2026-10-11). The budget line stays from 1948.
@@ -50,3 +58,7 @@ offices:
   - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, historical_only: true }
   - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, historical_only: true }
   - { id: deputy_prime_minister, title: Deputy Prime Minister, historical_only: true }
+  # Deputy ministers of 1953-1956 (#26): dates from the Knesset records (KNS_PersonToPosition), see people.yaml.
+  - { id: deputy_religions_minister, title: Deputy Minister of Religions, historical_only: true }
+  - { id: deputy_welfare_minister, title: Deputy Minister of Welfare, historical_only: true }
+  - { id: deputy_trade_minister, title: Deputy Minister of Trade and Industry, historical_only: true }

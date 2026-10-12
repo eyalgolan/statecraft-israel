@@ -30,7 +30,7 @@ public class DeterminismTests
         var s = GoldenPlaythrough(ContentLoader.Load(RealContentTests.ContentRoot()));
         Assert.Null(s.GameOver);
         Assert.True(s.Date >= GoldenRun.Until1950);
-        Assert.Equal(GoldenHash, s.Hash());
+        GoldenSnapshot.Check("hash1950", s, GoldenHash);
     }
 
     /// <summary>Same rule for the second golden run, which covers the M3 content range (to 1952-01-01).</summary>
@@ -42,7 +42,7 @@ public class DeterminismTests
         var s = GoldenRun.Play(ContentLoader.Load(RealContentTests.ContentRoot()), GoldenRun.Until1952);
         Assert.Null(s.GameOver);
         Assert.Equal(new DateTime(1952, 2, 27), s.Date);
-        Assert.Equal(GoldenHash1952, s.Hash());
+        GoldenSnapshot.Check("hash1952", s, GoldenHash1952);
     }
 
     /// <summary>The library constants Unity players compare against are the values these tests pin.</summary>
