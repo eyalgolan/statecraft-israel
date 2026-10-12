@@ -5,23 +5,24 @@
   "features": {
     // .NET SDK 10.0.401: the `dotnet-version` in .github/workflows/ci.yml. The sim targets net10.0
     // (sim/Statecraft.Sim and sim/Statecraft.Cli csproj files). There is no global.json, so CI is the source of truth.
-    "ghcr.io/devcontainers/features/dotnet:2": {
+    "ghcr.io/devcontainers/features/dotnet:2.5.0": {
       "version": "10.0.401"
     },
-    // Python 3.12: the system Python of the ubuntu-24.04 runner CI uses. Every script declares
-    // `requires-python = ">=3.11"`. uv runs the scripts, so no extra Python tools are installed.
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12",
+    // Python: Ubuntu 24.04's own python3 (3.12), the same one the ubuntu-24.04 runner CI uses. UV_PYTHON below is
+    // CI's value. Every script declares `requires-python = ">=3.11"`. uv runs the scripts, so no extra Python tools.
+    "ghcr.io/devcontainers/features/python:1.8.0": {
+      "version": "os-provided",
       "installTools": false
     },
     // SSH server: `gh codespace ssh` needs it, so agents and CLI users can run the headless checks.
-    "ghcr.io/devcontainers/features/sshd:1": {}
+    "ghcr.io/devcontainers/features/sshd:1.1.0": {}
   },
   // git comes with the base image. uv 0.12.5 is installed in the Dockerfile.
   // Restore the solution so `dotnet test` starts from a warm cache.
   "postCreateCommand": "dotnet restore sim/Statecraft.sln",
   "remoteEnv": {
     "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
-    "DOTNET_NOLOGO": "1"
+    "DOTNET_NOLOGO": "1",
+    "UV_PYTHON": "3.12"
   }
 }

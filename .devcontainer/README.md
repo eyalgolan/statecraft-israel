@@ -9,11 +9,11 @@ or for a coding agent. It has no Unity. Unity work (`unity/`, builds, edit-mode 
 | --- | --- | --- |
 | .NET SDK | 10.0.401 | `dotnet-version` in `.github/workflows/ci.yml`. The sim targets `net10.0`. There is no `global.json`. |
 | uv | 0.12.5 | `version` of `astral-sh/setup-uv` in `.github/workflows/ci.yml` |
-| Python | 3.12 | System Python of the `ubuntu-24.04` CI runner. The scripts need `>=3.11`. |
-| OS | Ubuntu 24.04 | `runs-on: ubuntu-24.04` in `.github/workflows/ci.yml` |
+| Python | 3.12 | Ubuntu 24.04's own `python3`, as on the `ubuntu-24.04` CI runner, and `UV_PYTHON` in `.github/workflows/ci.yml`. The scripts need `>=3.11`. |
+| OS | Ubuntu 24.04 (`devcontainers/base` 3.0.8) | `runs-on: ubuntu-24.04` in `.github/workflows/ci.yml` |
 | git | from the base image | |
 
-When CI changes one of these versions, change it here too. Dependabot bumps the uv image tag and the features.
+When CI changes one of these versions, change it here too. The base image and the uv image are pinned by version and digest and are bumped by hand. Dependabot bumps the features.
 
 `postCreateCommand` runs `dotnet restore sim/Statecraft.sln`.
 
