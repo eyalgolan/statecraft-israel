@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
+using Statecraft.Game.Prototype;
 using Statecraft.Sim;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -48,6 +49,7 @@ namespace Statecraft.Game.UI
         ScreenNav? nav;
         StartScreenPresenter? start;
         CameraRig? rig;
+        CommandPrototype? command;
         List<(string, int, int, DateTime)>? drawn;
 
         public SimBridge? Bridge { get; private set; }
@@ -112,11 +114,11 @@ namespace Statecraft.Game.UI
 
         /// <summary>GameBoot.Ready: starts the game, smoke-testing when the URL or command line asks, with the start screen
         /// unless an automated run skips it.</summary>
-        public void Begin(GameInputs inputs) => Begin(inputs, SmokeTurns(), Application.isPlaying && !StartScreenPresenter.Skipped());
+        public void Begin(GameInputs inputs) => Begin(inputs, SmokeTurns(), Application.isPlaying && !StartScreenPresenter.Skipped(), CommandPrototype.Requested());
 
         /// <summary>Starts (or restarts) the game over the built map. <paramref name="smoke"/> &gt; 0 plays that many turns;
         /// <paramref name="startScreen"/> shows the start screen first (never in a smoke run, which has no New Game).</summary>
-        internal void Begin(GameInputs inputs, int smoke, bool startScreen = false)
+        internal void Begin(GameInputs inputs, int smoke, bool startScreen = false, bool commandMode = false)
         {
             if (inputs == null) throw new ArgumentNullException(nameof(inputs));
             foreach (var (value, field) in new (UnityEngine.Object?, string)[] { (document, nameof(document)), (strings, nameof(strings)),
@@ -124,6 +126,8 @@ namespace Statecraft.Game.UI
                 if (value == null) throw new InvalidOperationException($"GameRoot: {field} is not assigned (run MapCapture.MakeScene)");
             if (map.Terrain == null) throw new InvalidOperationException("GameRoot: the map is not built (GameBoot builds it before Ready)");
             Shutdown();
+            // Opt-in prototype branches before SaveStore and all campaign presenters, including New Game and autosave.
+            if (commandMode) { BeginCommand(inputs); return; }
 
             var text = UiText.Parse(strings.text);
             var store = Store ?? SaveStore.ForPlatform();
@@ -268,6 +272,21 @@ namespace Statecraft.Game.UI
             else if (Application.isPlaying && VisualShots.Requested()) StartCoroutine(VisualShots.Run(camRig, map.Frame, Debug.Log));
         }
 
+        /// <summary>An isolated, reproducible prototype session. No save store is opened and no campaign UI is wired.</summary>
+        void BeginCommand(GameInputs inputs)
+        {
+            Bridge = new SimBridge(GameSession.New(inputs.Content, GoldenRun.Seed, Mode.Historical), UiText.Parse(strings.text));
+            var root = document.rootVisualElement;
+            var camRig = rig = cameraController.GetComponent<CameraRig>();
+            var placementObject = placements.gameObject;
+            bool placementActive = placementObject.activeSelf;
+            placementObject.SetActive(false);
+            Own(new Undo(() => { if (placementObject != null) placementObject.SetActive(placementActive); }));
+            command = Own(CommandPrototype.Attach(gameObject, root, map, camRig, cameraController, pointer));
+            root.Q("root")?.RemoveFromClassList("loading");
+            DiagLog.BootPhase("command prototype ready");
+        }
+
         /// <summary>The 1948 localities in a hex (by the hex their point lies in, as the map picks hexes), for the info panel.</summary>
         internal static Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>> LocalitiesAt(MapScene map)
         {
@@ -302,7 +321,7 @@ namespace Statecraft.Game.UI
             StopAllCoroutines();
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
-            minimap = null; labels = null; nav = null; start = null; rig = null; drawn = null; units = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; rig = null; drawn = null; units = null; logCamera = false; command = null;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -353,6 +372,7 @@ namespace Statecraft.Game.UI
 
         void Update()
         {
+            if (command != null) return; // Command owns its input, pause and camera; no campaign shortcuts run here.
             // Escape closes the open screen even when no element has the keyboard focus (ScreenNav also takes the UI
             // Cancel event from a focused element; closing twice is harmless). On the start screen it withdraws an open New
             // Game request (StartScreenPresenter.Escape; idempotent too).

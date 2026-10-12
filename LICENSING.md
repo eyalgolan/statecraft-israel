@@ -4,6 +4,7 @@ Different parts of this repository are under different licences. Where a file is
 
 | What | Paths | Licence |
 |---|---|---|
+| Command model contribution (explicit path exception) | `unity/Assets/Art/CommandModels/`, its folder metadata `unity/Assets/Art/CommandModels.meta`, and every file beneath it, including models, textures, materials, prefabs, animations and `.meta` files | [Statecraft Models License 1.0](LICENSES/Statecraft-Models.txt), `LicenseRef-Statecraft-Models`. Download, use, modification and redistribution, including commercial games, are allowed; standalone asset sales and paid asset-pack/marketplace redistribution require the original contributing model creator's written permission. This exception overrides the general MIT/CC BY folder rules for this path only. |
 | Code | `sim/`, `tools/` (Python), `scripts/`, `.github/`, `.gitignore`, `unity/Assets/Scripts/`, `unity/Assets/Editor/`, `unity/Assets/Tests/`, `promo/*.py`, `spikes/` code, and everything else under `unity/Assets/` not listed below (scenes such as `Map.unity`, `WebGLTemplates/`, `link.xml`, `*.inputactions`, `.meta` files) | [MIT](LICENSE) |
 | Game content (text and data) | `content/` (events, people, offices, model, rules, map YAML/JSON), except the third-party map data below | [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt), credit "Statecraft: Israel contributors". The text paraphrases its cited sources, many from Wikipedia (CC BY-SA), so share-alike applies; each entry lists its sources |
 | Original docs, art and UI assets | `docs/`, the root `*.md` files (except `LICENSE`), `ASSETS.yaml`, `ASSETS.portraits.yaml`, `promo/shots.json`, `promo/CREDITS.md`, `tools/README.md`, `reports/` (our own text), `research_notes/` (our own text), `unity/Assets/UI/*.uxml`, `*.uss`, `strings.en.yaml`, `unity/Assets/Materials/`, `unity/Assets/Resources/Units/` (materials), `unity/Assets/Shaders/`, `unity/Assets/UI/*.asset`, `unity/Assets/WebGLTemplates/Statecraft/favicon.ico`, `unity/Assets/Resources/EventImageCatalog.asset` (the event-photo catalog: alt texts, credits and flags; the pictures it points to are under their own licences below), `promo/ref/geo-reference.png` | [CC BY 4.0](LICENSES/CC-BY-4.0.txt), credit "Statecraft: Israel contributors" |
@@ -19,6 +20,28 @@ Different parts of this repository are under different licences. Where a file is
 | Rain-gauge data | `content/map/precip_stations.json` | Israel Meteorological Service, data.gov.il dataset 481, under the licence stated on the dataset ("Other (Open)") |
 | Unity engine and packages | `unity/Packages/`, `unity/ProjectSettings/` | Configuration only. The Unity engine and its packages are under Unity's own terms and are not included. Two editor-only packages come from OpenUPM under their own licences and are not included either: `com.ivanmurzak.unity.mcp` (Unity-MCP, Apache-2.0) and its dependency `extensions.unity.playerprefsex` (MIT); see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). No Asset Store content is in this repository. |
 | In every build | `YamlDotNet.dll` | MIT, Copyright (c) Antoine Aubry and contributors ([LICENSES/YamlDotNet-MIT.txt](LICENSES/YamlDotNet-MIT.txt)) |
+
+### Command model license exception offered for maintainer acceptance
+
+The original contributing model creator is identified by the pull request introducing the 34 models; no personal
+identity is inferred from an account name. That contributor authorized public release under the model-specific
+terms on 12 October 2026. [The sanitized manifest](docs/command-models.json) records the paid Tripo P2.0 generations
+from 10–11 October 2026. [NOTICE](NOTICE) supplies the credit. Materials, prefabs and Unity metadata in the model
+folder use the same exception so downstream users have one set of terms for each complete asset.
+
+This is a restricted asset license, not an OSI open-source or unrestricted CC BY/MIT license. It is an explicit
+exception offered with the draft pull request: **maintainer acceptance is required before merge**. Publishing the
+draft is not a claim that the maintainer has accepted the exception. The contribution is offered under this custom
+license, not under the general inbound license for other art. All other repository licensing and release checks
+remain unchanged.
+
+The [Tripo terms, section 5.2.2](https://www.tripo3d.ai/terms) describe paid-user output rights subject to their
+conditions. They do not establish copyrightability or clear every third-party right. The model license therefore
+grants only rights the contributor can grant and preserves applicable law and existing platform permissions.
+[GitHub's terms, sections D.4–D.6](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service#d-user-generated-content)
+cover platform permissions, public viewing/forking and repository contributions. The custom terms do not revoke
+those permissions. Both sources were checked on 12 October 2026. The manifest's verified provenance/authorization
+status is not a guarantee of copyright, exclusivity or legal enforceability.
 
 Historical facts are not owned by anyone. The text describing them paraphrases the cited sources. The research notes and reports quote short passages from their sources for commentary; those quotes remain © their authors.
 

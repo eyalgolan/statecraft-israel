@@ -41,7 +41,7 @@ MAX_FILE_BYTES = 10 * 1024 * 1024
 
 REQUIRED_FILES: tuple[str, ...] = (
     "LICENSE", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
-    "LICENSES/YamlDotNet-MIT.txt", "LICENSING.md", "NOTICE", "THIRD-PARTY-NOTICES.md", "ASSETS.yaml",
+    "LICENSES/YamlDotNet-MIT.txt", "LICENSES/Statecraft-Models.txt", "LICENSING.md", "NOTICE", "THIRD-PARTY-NOTICES.md", "ASSETS.yaml",
     "README.md", "README.he.md", "BUILDING.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md",
     "TRADEMARK.md", "CHANGELOG.md", "docs/CONTENT_POLICY.md",
     "docs/UNTRUSTED_PR_REVIEW.md", "docs/RELEASING.md", "docs/oss/DECISIONS.md", ".github/CODEOWNERS",
@@ -60,7 +60,7 @@ BINARY_EXTENSIONS = frozenset({
 PROVENANCE_GLOBS: tuple[str, ...] = ("content/map/*", "unity/Assets/StreamingAssets/map/*")
 
 ALLOWED_LICENCES = frozenset({"MIT", "CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0", "OFL-1.1", "Public-Domain",
-                              "Copernicus-DEM", "IMS-data.gov.il", "Unity-Companion-License", "unknown"})
+                              "Copernicus-DEM", "IMS-data.gov.il", "Unity-Companion-License", "LicenseRef-Statecraft-Models", "unknown"})
 STATUSES = frozenset({"verified", "owner-verify"})
 RULE_KEYS = ("glob", "licence", "source", "status")
 

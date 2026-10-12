@@ -1,0 +1,81 @@
+Statecraft Models License 1.0
+License identifier: LicenseRef-Statecraft-Models
+12 October 2026
+
+1. Covered material and creator
+
+This license covers unity/Assets/Art/CommandModels.meta and all files under
+unity/Assets/Art/CommandModels/, including models, textures, materials,
+prefabs, animation data and Unity metadata, and modifications and
+derivatives of that material (the Models).
+It does not change the licenses of code or other repository content.
+
+The Creator is the original contributing model creator identified in the
+pull request that first introduces these Models to Statecraft: Israel.
+The introducing pull request and docs/command-models.json record their
+provenance. Copyright and other rights, to the extent they exist and are
+held by the Creator, remain with the Creator. No ownership is transferred.
+
+2. Permission
+
+Subject to section 3, the Creator grants you a worldwide, nonexclusive,
+royalty-free license, for the duration of the rights the Creator holds,
+to download, copy, use, display, modify and redistribute the Models and
+their derivatives, for commercial or noncommercial purposes. This includes
+incorporating them in games, applications, films and other larger works;
+you may sell or otherwise monetize those larger works. Free distribution
+of the Models, including in source repositories and game projects, is
+permitted under these terms.
+
+3. Conditions and reserved permission
+
+You must not sell, license for a fee, rent, or otherwise offer the Models
+or their derivatives for payment as standalone assets, an asset pack, or
+an asset-marketplace product without the Creator's prior written
+permission. Renaming, converting, modifying or bundling the Models with
+other assets does not remove this restriction. A larger work allowed by
+section 2 must have substantial functionality or creative content beyond
+supplying assets; an asset collection or asset-delivery product does not
+become an allowed larger work merely by including a viewer or wrapper.
+
+Redistributions must include this license and identify the Creator by
+reference to the introducing pull request. Credit in accompanying notices,
+a README or game credits is sufficient. Retain existing provenance and
+rights notices, identify material changes, and do not imply endorsement.
+Do not purport to relicense the Models under terms that permit the asset
+resale restricted here. These conditions apply to the Models, not to your
+independent code or other independently licensed content in a larger work.
+Permission for restricted asset sales must come from the Creator; a
+repository fork, contributor or maintainer cannot grant that permission
+unless separately authorized by the Creator.
+
+4. Existing rights, platform permissions and AI-generated material
+
+This license grants only rights the Creator can grant. The Models include
+AI-generated output. Neither this license nor payment for generation
+establishes that every element is copyrightable, original, exclusively
+owned or free of third-party rights. No blanket copyright or exclusivity
+guarantee is made. Trademarks, personality rights and rights held by third
+parties are not licensed here.
+
+Nothing here restricts rights that applicable law grants independently of
+this license, including applicable copyright exceptions or use of
+uncopyrightable material. Nothing here withdraws or limits permissions
+already granted under GitHub's Terms of Service, including the platform
+permissions for public repositories and viewing and forking through
+GitHub's functionality. Public forks do not otherwise grant permission
+for restricted asset resale under this license.
+
+5. Disclaimer and termination
+
+The Models are provided as is, without warranty of title, noninfringement,
+accuracy, merchantability or fitness for a particular purpose. To the
+extent allowed by law, the Creator is not liable for claims or damages
+arising from their use. This does not exclude liability that cannot
+lawfully be excluded.
+
+Your permissions under this license terminate if you violate its
+conditions. They are reinstated if you cure the violation within 30 days
+of discovering it, or if the Creator expressly reinstates them. This does
+not terminate compliant downstream recipients' permissions or affect
+rights and platform permissions described in section 4.

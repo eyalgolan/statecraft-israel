@@ -8,6 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Optional Command prototype (`?prototype=command` / `-prototype command`): direct unit control, pause, resource gathering,
+  rescue and convoy objectives, and construction in an isolated fictional mission. Campaign saves and default startup
+  remain separate; the experimental Unity rules require maintainer design review before production use. Imported
+  unit/building models replace fallback geometry, with a paused inspection viewer for all 34 models.
 - Map: today's name of a 1948 locality by tap and in the info panel. A tap on a locality pill toggles its tooltip, a tap
   elsewhere hides it, and a mouse still hovers as before. The info panel lists the selected hex's 1948 localities with
   today's name where a living place carries on, by the same rule as the tooltip. Keyboard players reach the panel list

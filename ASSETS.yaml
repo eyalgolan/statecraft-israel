@@ -6,6 +6,21 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
+  # --- Paid Tripo model contribution: restricted, explicitly offered path exception ---
+  - glob: "unity/Assets/Art/CommandModels/*.fbx"
+    licence: LicenseRef-Statecraft-Models
+    ai_generated: true
+    source: "Paid Tripo P2.0 generations, 10–11 October 2026; sanitized per-model provenance and file hashes in docs/command-models.json; https://www.tripo3d.ai/terms section 5.2.2 (checked 2026-10-12)"
+    status: verified
+    credit: "Original contributing model creator identified in the introducing pull request; LicenseRef-Statecraft-Models"
+    note: "Contributing creator authorized public download/use/modification/redistribution on 12 October 2026 with retained rights and a restriction on standalone asset sales and paid asset-pack/marketplace resale without that creator's written permission. Verified records authorization/provenance, not a guarantee of copyrightability, exclusivity or third-party clearance. Custom path exception requires maintainer acceptance before merge; see LICENSING.md and LICENSES/Statecraft-Models.txt."
+  - glob: "unity/Assets/Art/CommandModels/*.jpg"
+    licence: LicenseRef-Statecraft-Models
+    ai_generated: true
+    source: "Textures accompanying paid Tripo P2.0 generations, 10–11 October 2026; sanitized per-model provenance and file hashes in docs/command-models.json; https://www.tripo3d.ai/terms section 5.2.2 (checked 2026-10-12)"
+    status: verified
+    credit: "Original contributing model creator identified in the introducing pull request; LicenseRef-Statecraft-Models"
+    note: "Contributing creator authorized public release on 12 October 2026 under the same custom model license. Includes use in commercial games; standalone asset sales and paid asset-pack/marketplace resale require the original contributing creator's written permission. Verified records authorization/provenance, not guaranteed copyright or legal clearance. Maintainer acceptance of the license exception is required before merge."
   - glob: "promo/ref/people/David_Ben-Gurion.jpg"
     licence: Public-Domain
     source: "https://commons.wikimedia.org/wiki/File:David_Ben-Gurion_(D597-087).jpg"

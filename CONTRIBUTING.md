@@ -21,6 +21,12 @@ There is no CLA and no sign-off. By opening a pull request you agree that your c
 - `content/` under [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt);
 - other original material under [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 
+The Command model contribution under `unity/Assets/Art/CommandModels/` is explicitly offered under
+[LicenseRef-Statecraft-Models](LICENSES/Statecraft-Models.txt), including its textures, materials, prefabs and metadata (also `CommandModels.meta`),
+instead of the general art/code terms above. This restricted asset-license exception requires maintainer acceptance
+before merge; publishing its draft pull request does not assert that acceptance. It does not change the default
+license of other contributions. See the path exception and provenance in LICENSING.md.
+
 [LICENSING.md](LICENSING.md) lists which licence covers each path. Only contribute work you have the right to license this way. If you add a third-party file, include its source and licence. Material from the Unity Asset Store is never accepted.
 
 ## Setup
