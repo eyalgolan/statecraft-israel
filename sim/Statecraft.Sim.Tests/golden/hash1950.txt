@@ -1,0 +1,99 @@
+1950-02-27;1948;Historical;35;
+ind{
+  food_supply=0.8475 [3FEB1EB851EB851F]
+  housing=0.4330532365826626 [3FDBB724EC232ACA]
+  intl_standing=0.8400000000000003 [3FEAE147AE147AE4]
+  morale=0.44505666965923585 [3FDC7BCEF84365E2]
+  security=0.5037912258539358 [3FE01F0EC6E1BDAD]
+pol{
+  border_settlement=0.2 [3FC999999999999A]
+  housing_construction=0.3 [3FD3333333333333]
+  maabarot=0 [0000000000000000]
+  rationing=1 [3FF0000000000000]
+eff{
+  border_villages_secure=0.03879122585393575 [3FA3DC718CD42CB9]
+  building_houses=0.08305323658266262 [3FB542FA16F31190]
+  homes_lift_morale=0.06474706472362149 [3FB093437D7FFCB2]
+  rationing_feeds=0.2975 [3FD30A3D70A3D70A]
+  rationing_grates=-0.15 [BFC3333333333333]
+  safety_lifts_morale=0.05030960493561433 [3FA9C22E37BF0CB2]
+shift{
+  food_supply=0.15000000000000002 [3FC3333333333334]
+  housing=0 [0000000000000000]
+  intl_standing=0.3400000000000003 [3FD5C28F5C28F5C8]
+  morale=-0.07000000000000006 [BFB1EB851EB851F0]
+  security=0.16500000000000004 [3FC51EB851EB8520]
+bud{
+  agriculture_minister=0.07 [3FB1EB851EB851EC]
+  defense_minister=0.45 [3FDCCCCCCCCCCCCD]
+  education_minister=0.06 [3FAEB851EB851EB8]
+  finance_minister=0.05 [3FA999999999999A]
+  health_minister=0.07 [3FB1EB851EB851EC]
+  interior_minister=0.05 [3FA999999999999A]
+  labour_minister=0.1 [3FB999999999999A]
+  prime_minister=0.15 [3FC3333333333333]
+pop{
+  africa=52054.01585594315 [40E96AC081E452A9]
+  america_oceania=2229.985467792672 [40A16BF88F3C0993]
+  asia=86153.10721742504 [40F50891B7299E62]
+  europe=214207.90382761517 [410A25FF3B09F903]
+  unknown=18488.77061889312 [40D20E3151D1E7E8]
+  veterans=669284.2678813029 [41246CC88927BCF6]
+sit[
+treasury=0 [0000000000000000]
+debt=97.88494849189715 [405878A2FEFFD5F0]
+fx=88.29485501614538 [405612DEE792D9FB]
+rung=2;cf=0;
+mob=0.05 [3FA999999999999A]
+stab=0.507928756679837 [3FE040F3CED46932]
+att=4 [4010000000000000]
+fired[
+  altalena
+  armistice_egypt
+  armistice_jordan
+  armistice_lebanon
+  armistice_syria
+  austerity_1949
+  bernadotte_assassination
+  elections_1949
+  first_truce
+  frumkin_commission
+  idf_founding
+  jerusalem_ceasefire
+  jerusalem_military_government
+  latrun_proposal
+  operation_hiram
+  operation_horev
+  operation_yoav
+  rhodes_talks
+  second_truce
+  sinai_withdrawal
+  ten_days
+pending[
+  frumkin_commission
+chosen{
+  altalena=enforce
+  armistice_egypt=sign
+  armistice_jordan=sign
+  armistice_lebanon=sign
+  armistice_syria=sign
+  austerity_1949=impose
+  bernadotte_assassination=outlaw
+  elections_1949=hold
+  first_truce=accept
+  idf_founding=one_army
+  jerusalem_ceasefire=sign
+  jerusalem_military_government=military_government
+  latrun_proposal=accept_vote
+  operation_hiram=launch
+  operation_horev=launch
+  operation_yoav=stop_at_ceasefire
+  rhodes_talks=send_delegation
+  second_truce=comply
+  sinai_withdrawal=withdraw
+  ten_days=central_front
+appt{
+under=;
+map[
+mapturn=0001-01-01:0;
+over=

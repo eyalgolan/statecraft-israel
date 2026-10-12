@@ -13,6 +13,16 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `sources:` as you type. `SchemaTests` checks all real content against them, keeps their field names equal to the loader
   types and checks that they reject the usual mistakes. The comment changes the content hash, so an old save shows the
   content-changed warning once. The golden hashes do not move.
+- The Fourth to Seventh Governments (24 December 1952 to 1956) with their coalitions and the ministers' dated terms,
+  the 1953-1956 deputy ministers, the Ministries of Postal Services (from 3 November 1952) and Development (from
+  15 June 1953), and the Chiefs of Staff Maklef and Dayan. Dates follow the Knesset's own position records and plenum
+  minutes, checked against both Wikipedias. The Third Government now ends on 24 December 1952 and gains its 1952 changes:
+  Haim Cohn at Justice, Lavon without portfolio, Nurock at Postal Services, and Welfare vacant after Levin left on
+  18 September (refs #26).
+- A golden-hash failure now shows what changed (#256): `GameState.Describe()` writes the state `Hash()` hashes as readable
+  lines, each golden run's final state is committed under `sim/Statecraft.Sim.Tests/golden/`, and a failing golden test
+  prints the changed lines by section. `STATECRAFT_UPDATE_GOLDEN=1 dotnet test` rewrites the snapshots. `Hash()` is
+  unchanged, so the goldens do not move.
 - A start screen (#247): a painting of the 14 May 1948 ceremony in the Tel Aviv Museum hall (AI-generated concept art
   with no identifiable person), two lines of the Declaration of Independence in the official Hebrew with the official
   English under each, and Continue (only with a save) and New Game (with the top bar's two-press confirmation). Automated

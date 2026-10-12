@@ -61,6 +61,34 @@ Before writing or editing content, review:
 - Never run `git commit` or `git push` unless the user asks for it in that message.
 - Stage and commit only the files the user names or the task clearly covers.
 
+## Engineering (sim, tests, tools)
+
+For changes under `sim/`, `tools/`, `scripts/` or `unity/`, not only content.
+
+**Layout**
+- `sim/Statecraft.Sim/` is the game rules library (netstandard2.1, so Unity can use it). `sim/Statecraft.Cli/` is the command line. `sim/Statecraft.Sim.Tests/` holds the tests (net10.0). The tests load the real `content/`.
+- `unity/` only draws and takes input. Rules never live there (`CONTRIBUTING.md`).
+
+**Checks** (run them before every PR; the exact commands are in `CONTRIBUTING.md`, rule 3)
+- `dotnet test sim/Statecraft.sln`: .NET SDK 10.0.401 (`docs/dev-setup.md`); it must end with 0 warnings.
+- The tools tests (`pytest tools/tests`), the policy checker tests (`pytest scripts/oss/tests`) and `uv run scripts/oss/check_repo.py`. These and the sim tests need no Unity.
+- CI runs them as `Sim (dotnet test)`, `Tools (pytest)` and `Repo policy`, plus `Changelog`. Unity EditMode tests, WebGL builds and `tools/web_check.py` need Unity and are not in CI. If your change touches `unity/` or code Unity compiles and you cannot run them, say so in the PR; do not claim they passed.
+- When you do run Unity: wrap the command in `uv run tools/machine_lock.py --shared --wait-unity -- ...`, never add `-nographics` to an editor run, and stop a stuck Unity by its PID. Afterwards drop the settings churn with `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`, and never commit the `UNITY_MCP_*` scripting defines.
+
+**Determinism** (`docs/determinism.md`)
+- The sim must give the same state, bit for bit, on .NET, Mono and IL2CPP: no new RNG, no trigonometry, no unordered iteration into state, no culture-dependent formatting.
+- `GoldenRun.Hash1950` and `Hash1952` must not move unless the change is a deliberate rules or content change. The browser smoke value also moves when the UI path changes; re-record it then. If they move, update every place the doc lists in the same commit and say why in the message and the PR.
+- A content edit changes the content hash and old saves then warn; that is expected and is not a golden change.
+
+**Pull requests**
+- Branch from `main`, one focused change per PR, no force-push to `main`. Fill in `.github/pull_request_template.md`, including "AI assistance". Use "Fixes #N" only if the PR completes the issue, otherwise "Refs #N".
+- Add a line under `## [Unreleased]` in `CHANGELOG.md` for any change to `sim/`, `content/` or `unity/` (tests excepted).
+- Write the test first and check it fails without the change.
+
+**Leave to the maintainer**
+- The framing in `docs/CONTENT_POLICY.md` section 1, sensitivity tags and the release gates.
+- Anything that needs a design call (for example which date a rule is read at). Put the question in the PR description with the options and what each costs.
+
 ## Red flags
 
 - Unattributed claims or vague historical language
