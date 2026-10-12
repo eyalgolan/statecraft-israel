@@ -8,7 +8,7 @@
 
 ## Evidence
 
-<!-- Paste the commands you ran and the end of their output. Not a description of the output. -->
+<!-- Paste the commands you ran and the end of their output. Not a description of the output. `scripts/check.sh` runs everything CI runs. -->
 
 ```
 ```

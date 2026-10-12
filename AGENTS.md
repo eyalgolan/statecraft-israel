@@ -55,6 +55,7 @@ Before writing or editing content, review:
 - `dotnet test sim/Statecraft.sln` loads all of `content/` and must pass with 0 warnings.
 - `uv run scripts/oss/check_repo.py` runs the repository policy checks that CI runs.
 - If you change `sim/`, `content/` or `unity/`, add a line under `## [Unreleased]` in `CHANGELOG.md`.
+- `scripts/check.sh` runs all of the above and the tools tests in one command. It stops at the first failure.
 
 ## Git
 
