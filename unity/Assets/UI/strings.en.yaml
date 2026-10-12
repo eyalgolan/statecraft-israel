@@ -101,6 +101,8 @@ map.layer_front_no_data: " · {0}: Mandate sub-districts, no armistice line data
 map.layer_front_low: "{0} (low accuracy)"
 map.layer_front_note: "{0} (and the {1})"
 info.owned: "Settlements: {0}"
+info.localities: "1948 localities: {0}"
+info.locality_today: "{0} (today: {1})"
 map.today: "Today: {0}"
 map.mixed: "Mixed locality"
 ui.lang: "en"

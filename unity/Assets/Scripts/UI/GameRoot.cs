@@ -180,9 +180,10 @@ namespace Statecraft.Game.UI
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
+            var localitiesAt = LocalitiesAt(map);
             var info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,
-                regions: regions));
+                regions: regions, localitiesAt: localitiesAt));
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -211,7 +212,7 @@ namespace Statecraft.Game.UI
             var mini = minimap = Own(new MinimapPresenter(root, map.Hexes));
             bool hebrew = text["ui.lang"] == "he";   // today's name in the UI's language (review M6)
             labels = Own(new MapLabelsPresenter(root, map, cameraController.GetComponent<Camera>(), null,
-                p => MapLabelsPresenter.TipOf(p, n => text.Format("map.today", hebrew && p.TodayHe != null ? p.TodayHe : n), text["map.mixed"])));
+                p => MapLabelsPresenter.TipOf(p, n => text.Format("map.today", n), text["map.mixed"], hebrew)));
             mini.Clicked += (lon, lat) => { camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); cameraController.Settle(); SyncMinimap(); labels?.Refresh(); };   // the click may come after LateUpdate (review M6)
             Action onChanged = RenderPlacementsIfChanged;
             bridge.Changed += onChanged;
@@ -265,6 +266,14 @@ namespace Statecraft.Game.UI
             if (Application.isPlaying && FrameProfile.Requested())
                 StartCoroutine(FrameProfile.Run(camRig, map.Frame, Debug.Log, Application.platform != RuntimePlatform.WebGLPlayer));
             else if (Application.isPlaying && VisualShots.Requested()) StartCoroutine(VisualShots.Run(camRig, map.Frame, Debug.Log));
+        }
+
+        /// <summary>The 1948 localities in a hex (by the hex their point lies in, as the map picks hexes), for the info panel.</summary>
+        internal static Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>> LocalitiesAt(MapScene map)
+        {
+            var byHex = Statecraft.Game.Map.Kits.Localities.ByHex(map.Localities, p => HexPicker.FromLonLat(p.Settlement.Lon, p.Settlement.Lat, map.Hexes.bounds, map.Hexes.hex_size_km));
+            IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place> none = Array.Empty<Statecraft.Game.Map.Kits.Localities.Place>();
+            return (q, r) => byHex.TryGetValue((q, r), out var l) ? l : none;
         }
 
         T Own<T>(T d) where T : IDisposable { owned.Add(d); return d; }
@@ -335,9 +344,11 @@ namespace Statecraft.Game.UI
         {
             if (labels == null) return;
             labels.Refresh();
-            // Today's name under a 1948 locality's pill while the pointer is over it (owner ruling 2026-10-11).
-            var pointer = UnityEngine.InputSystem.Pointer.current;
-            labels.Hover(pointer != null ? pointer.position.ReadValue() : (Vector2?)null);
+            // Today's name under a 1948 locality's pill: while a mouse (or pen) is over it (owner ruling 2026-10-11), or after a
+            // tap on it (#245). A touchscreen has no hover: its last touch position stays after the finger lifts.
+            labels.Hover(MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current));
+            var touch = UnityEngine.InputSystem.Touchscreen.current;
+            if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }
 
         void Update()

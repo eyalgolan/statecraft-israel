@@ -53,6 +53,8 @@ namespace Statecraft.Game.UI
         public const string LocalityClass = "map-label-locality", TooltipClass = "map-label-tooltip", TooltipName = "map-label-tooltip";
         /// <summary>Extra room a pill hidden in the last refresh needs before it is shown again (review M7).</summary>
         public const float HysteresisPx = 2f;
+        /// <summary>How far outside a pill a tap still counts as on it (a fingertip is wider than a mouse pointer).</summary>
+        public const float TapSlopPx = 8f;
         /// <summary>The most of a kit's screen rectangle a pill may cover (issue #214): its own kit's, and any other
         /// visible kit's.</summary>
         public const float MaxKitCover = 0.1f;
@@ -106,26 +108,21 @@ namespace Statecraft.Game.UI
         /// ("Today: Beit She'an" under "Beisan"; owner ruling 2026-10-12: none for a place that did not), "Mixed locality" for
         /// Nesher; hidden otherwise, and never for a pill with nothing to say. Ignores the pointer, like the pills.</summary>
         public Label Tooltip { get; }
-        Item? hovered;
+        Item? tapped, shownFor;   // the pill a tap opened; the pill the tooltip shows now
 
         /// <summary>The default tooltip text (tests; GameRoot passes the UI strings): null when there is nothing to say.</summary>
         public static string? DefaultTip(Statecraft.Game.Map.Kits.Localities.Place p) =>
             TipOf(p, n => "Today: " + n, "Mixed locality");
 
-        /// <summary>A locality's tooltip: "Mixed locality" for a mixed one, then today's name where one carries on and it is not
-        /// the 1948 name itself (Nablus is Nablus); null when neither.</summary>
-        public static string? TipOf(Statecraft.Game.Map.Kits.Localities.Place p, Func<string, string> today, string mixed)
+        /// <summary>A locality's tooltip: "Mixed locality" for a mixed one, then today's name where a living place carries on
+        /// (Localities.TodayName, the rule the info panel shares); null when neither.</summary>
+        public static string? TipOf(Statecraft.Game.Map.Kits.Localities.Place p, Func<string, string> today, string mixed, bool hebrew = false)
         {
             var lines = new List<string>();
             if (p.Mixed) lines.Add(mixed);
-            if (p.Today != null && !SameName(p.Today, p.Settlement.Name)) lines.Add(today(p.Today));
+            var name = Statecraft.Game.Map.Kits.Localities.TodayName(p, hebrew);
+            if (name != null) lines.Add(today(name));
             return lines.Count == 0 ? null : string.Join("\n", lines);
-        }
-
-        static bool SameName(string a, string b)
-        {
-            static string Norm(string x) { var sb = new System.Text.StringBuilder(); foreach (var c in x) if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c)); return sb.ToString(); }
-            return Norm(a) == Norm(b);
         }
 
         public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null)
@@ -386,15 +383,50 @@ namespace Statecraft.Game.UI
             return true;
         }
 
+        /// <summary>The pointer position the hover tooltip may follow, or null: a touchscreen has no hover (the Input System
+        /// keeps its last touch position after the finger lifts, which would leave a tooltip up), so a touch is answered by
+        /// <see cref="Tap"/> instead. A mouse, a pen or any other pointer hovers. Decided by the device type, not guessed.</summary>
+        public static Vector2? HoverPosition(UnityEngine.InputSystem.Pointer? pointer) =>
+            pointer == null || pointer is UnityEngine.InputSystem.Touchscreen ? (Vector2?)null : pointer.position.ReadValue();
+
         /// <summary>Shows today's name under the locality pill at <paramref name="screenYUp"/> (an Input System pointer position,
-        /// y up), or hides it (null: no pointer). Called after Refresh each frame (GameRoot.LateUpdate); allocates only when
-        /// the hovered pill changes.</summary>
+        /// y up), or hides the hover tooltip (null: no hovering pointer, see <see cref="HoverPosition"/>). A position means a
+        /// mouse is in use, so a tooltip a tap left up goes. Called after Refresh each frame (GameRoot.LateUpdate); it also
+        /// keeps a tapped tooltip under its pill as the camera moves; allocates only when the shown pill changes.</summary>
         public void Hover(Vector2? screenYUp)
         {
             var panel = container.panel;
-            if (!screenYUp.HasValue || panel == null) { HoverItem(null); return; }
-            HoverAt(UiPointer.ToPanel(panel, screenYUp.Value, Screen.height) - container.worldBound.position);
+            if (screenYUp.HasValue && panel != null)
+            {
+                tapped = null;
+                HoverAt(UiPointer.ToPanel(panel, screenYUp.Value, Screen.height) - container.worldBound.position);
+                return;
+            }
+            ShowTooltipFor(tapped);
         }
+
+        /// <summary>A touch at <paramref name="screenYUp"/> (a Touchscreen position, y up): on a locality pill it toggles that
+        /// pill's tooltip (a second tap on it hides it); anywhere else it hides the tooltip.</summary>
+        public void Tap(Vector2 screenYUp)
+        {
+            var panel = container.panel;
+            if (panel == null) { TapAt(new Vector2(float.NaN, float.NaN)); return; }
+            TapAt(UiPointer.ToPanel(panel, screenYUp, Screen.height) - container.worldBound.position);
+        }
+
+        /// <summary>The hit test under Tap, at a point in the labels layer's coordinates. The pill is grown by TapSlopPx,
+        /// as a fingertip is wider than a mouse pointer.</summary>
+        public void TapAt(Vector2 layerPoint)
+        {
+            Item? hit = null;
+            for (int i = 0; i < items.Count && hit == null; i++)
+                if (Hittable(items[i]) && Grow(items[i].Placed, TapSlopPx).Contains(layerPoint)) hit = items[i];
+            tapped = hit != null && hit != tapped ? hit : null;
+            ShowTooltipFor(tapped);
+        }
+
+        static Rect Grow(Rect r, float by) => new Rect(r.x - by, r.y - by, r.width + 2f * by, r.height + 2f * by);
+        static bool Hittable(Item it) => it.IsLocality && it.Tip != null && it.ShownLast;
 
         /// <summary>The hit test under Hover, at a point in the labels layer's coordinates: the shown locality pill (with
         /// something to say) that contains it, or none.</summary>
@@ -404,23 +436,24 @@ namespace Statecraft.Game.UI
             for (int i = 0; i < items.Count && over == null; i++)
             {
                 var it = items[i];
-                if (it.IsLocality && it.Tip != null && it.ShownLast && it.Placed.Contains(layerPoint)) over = it;
+                if (Hittable(it) && it.Placed.Contains(layerPoint)) over = it;
             }
-            HoverItem(over);
+            ShowTooltipFor(over);
         }
 
         /// <summary>Hover by locality id (tests): shows its tooltip when its pill is shown.</summary>
         public void HoverLocality(string? id)
         {
             Item? over = null;
-            foreach (var it in items) if (it.IsLocality && it.Tip != null && it.ShownLast && it.Settlement.Id == id) over = it;
-            HoverItem(over);
+            foreach (var it in items) if (Hittable(it) && it.Settlement.Id == id) over = it;
+            ShowTooltipFor(over);
         }
 
-        void HoverItem(Item? over)
+        void ShowTooltipFor(Item? over)
         {
-            if (over == null) { if (hovered != null) { Tooltip.style.visibility = Visibility.Hidden; hovered = null; } return; }
-            if (over != hovered) { Tooltip.text = over.Tip; hovered = over; }
+            if (over != null && !Hittable(over)) { over = null; if (tapped != null && !Hittable(tapped)) tapped = null; }   // its pill went (zoom, a panel)
+            if (over == null) { if (shownFor != null) { Tooltip.style.visibility = Visibility.Hidden; shownFor = null; } return; }
+            if (over != shownFor) { Tooltip.text = over.Tip; shownFor = over; }
             // left/top, not an inline translate: that would replace the USS translate (-50%) that centres it under the pill.
             Tooltip.style.left = over.Placed.center.x; Tooltip.style.top = over.Placed.yMax + 2f;
             Tooltip.style.visibility = Visibility.Visible;

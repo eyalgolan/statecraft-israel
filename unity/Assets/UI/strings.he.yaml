@@ -96,6 +96,8 @@ map.layer_front_no_data: " · {0}: נפות המנדט, אין נתוני קו �
 map.layer_front_low: "{0} (דיוק נמוך)"
 map.layer_front_note: "{0} (וגם {1})"
 info.owned: "יישובים: {0}"
+info.localities: "יישובים ב-1948: {0}"
+info.locality_today: "{0} (היום: {1})"
 map.today: "היום: {0}"
 map.mixed: "יישוב מעורב"
 ui.lang: "he"

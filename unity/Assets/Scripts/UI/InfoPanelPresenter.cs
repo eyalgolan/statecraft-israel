@@ -19,11 +19,14 @@ namespace Statecraft.Game.UI
         readonly Button campButton, housingButton, defenceButton; readonly System.Action onCamp, onHousing, onDefence;
         readonly System.Func<PlacedToken?> selectedUnit;
         bool unitMode;
-        readonly Label title, subtitle, region, settlements, placement, reason;
+        readonly Label title, subtitle, region, settlements, localitiesLabel, placement, reason;
+        readonly System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt;
         readonly UiIcon thumb;
         readonly IReadOnlyDictionary<string, string> settlementNames;
         readonly MapRegions? regions;
 
+        /// <param name="localitiesAt">The 1948 localities that lie in a hex (null: the panel lists none); they are listed under the
+        /// settlements with today's name where the shared rule (Localities.TodayName) allows (#245).</param>
         /// <param name="nav">Opens the Defence screen from a unit's card (null: the button does nothing).</param>
         /// <param name="selectedUnit">The selected unit's token now (null: none), read at every render so the card follows
         /// the state.</param>
@@ -31,11 +34,13 @@ namespace Statecraft.Game.UI
         /// panel names the selected hex's sub-district or armistice zone, and any armistice line through it, with its
         /// agreement (null: no region line).</param>
         public InfoPanelPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, string> settlementNames,
-            ScreenNav? nav = null, System.Func<PlacedToken?>? selectedUnit = null, MapRegions? regions = null)
+            ScreenNav? nav = null, System.Func<PlacedToken?>? selectedUnit = null, MapRegions? regions = null,
+            System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
-            this.settlementNames = settlementNames; this.regions = regions;
+            this.settlementNames = settlementNames; this.regions = regions; this.localitiesAt = localitiesAt;
             title = panel.Q<Label>("info-title"); subtitle = panel.Q<Label>("info-subtitle"); region = panel.Q<Label>("info-region"); settlements = panel.Q<Label>("info-settlements");
+            localitiesLabel = panel.Q<Label>("info-localities");
             placement = panel.Q<Label>("info-placement"); reason = panel.Q<Label>("info-reason");
             thumb = panel.Q<UiIcon>("info-thumb");
             campButton = panel.Q<Button>("build-camp"); housingButton = panel.Q<Button>("build-housing");
@@ -116,6 +121,23 @@ namespace Statecraft.Game.UI
             return string.Join("\n", parts);
         }
 
+        /// <summary>The "1948 localities" line for a hex: each place's 1948 name, with today's name where Localities.TodayName
+        /// allows ("Beisan (today: Beit She'an)"); empty for a hex with none.</summary>
+        public static string LocalitiesText(UiText text, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place> places)
+        {
+            if (places.Count == 0) return "";
+            bool hebrew = text["ui.lang"] == "he";
+            var names = places.Select(p => Statecraft.Game.Map.Kits.Localities.TodayName(p, hebrew) is string today
+                ? text.Format("info.locality_today", p.Settlement.Name, today) : p.Settlement.Name);
+            return text.Format("info.localities", string.Join(", ", names));
+        }
+
+        void ShowLocalities(string line)
+        {
+            localitiesLabel.text = line;
+            localitiesLabel.style.display = line.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
         public void Render()
         {
             var c = bridge.Content; var s = bridge.State;
@@ -127,6 +149,7 @@ namespace Statecraft.Game.UI
                 var card = UnitCard.For(unit.Value, s, text);
                 panel.EnableInClassList("info-empty", false);
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = card.Body;
+                ShowLocalities("");
                 region.text = "";   // a unit's card names no sub-district (the last hex's would stay under it)
                 placement.text = card.Footer; reason.text = card.Note;
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
@@ -138,6 +161,7 @@ namespace Statecraft.Game.UI
             {
                 title.text = text["info.hint"];
                 subtitle.text = region.text = settlements.text = placement.text = reason.text = "";
+                ShowLocalities("");
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
                 ShowThumb(null);
                 return;
@@ -152,6 +176,7 @@ namespace Statecraft.Game.UI
             // hex, each with its agreement (true lines drawn to the nearest hex edge: the owner's ruling).
             region.text = regions == null ? "" : RegionText(regions, text, q, r, s.Date);
             settlements.text = owned.Count > 0 ? text.Format("info.owned", string.Join(", ", owned)) : "";
+            ShowLocalities(localitiesAt == null ? "" : LocalitiesText(text, localitiesAt(q, r)));
             var here = MapActions.At(s, q, r);
             var queued = bridge.QueuedLike(new MapAction(MapActions.Housing, q, r)) as MapAction;
             placement.text = queued != null ? text.Format("info.queued", PlayerText.Capitalised(PlayerText.MapAction(c, queued.Action)))

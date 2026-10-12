@@ -386,6 +386,75 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>Issue #245: on a touchscreen a tap on a locality pill toggles its tooltip (a second tap hides it), and a tap
+    /// elsewhere, or on a pill with nothing to say, hides it. The touch's own Hover(null) each frame leaves a tapped
+    /// tooltip up. A mouse hover still shows and hides it as before, and a mouse in use takes a tapped tooltip away.</summary>
+    [UnityTest]
+    public IEnumerator ATapTogglesTheTooltipAndATapElsewhereHidesIt()
+    {
+        var hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            Pose(35.50, 32.49, 30000f);
+            yield return Settle(labels);
+            var container = hd.Root.Q<VisualElement>(MapLabelsPresenter.ContainerName).worldBound.position;
+            Vector2 Centre(string id) => labels.LocalitySlots.Single(x => x.name == "slot-" + id).Q<Label>().worldBound.center - container;
+            bool Up() => labels.Tooltip.style.visibility.value == Visibility.Visible;
+            Assert.IsTrue(Shown(labels.LocalitySlots.Single(x => x.name == "slot-beit_shean")));
+
+            labels.TapAt(Centre("beit_shean"));
+            Assert.IsTrue(Up(), "a tap on Beisan's pill shows its tooltip");
+            Assert.AreEqual("Today: Beit She'an", labels.Tooltip.text);
+            labels.Hover(null);   // the frames after the tap: a touchscreen has no hover position
+            Assert.IsTrue(Up(), "and it stays up across frames");
+            labels.TapAt(Centre("beit_shean"));
+            Assert.IsFalse(Up(), "a second tap on the pill hides it");
+            labels.TapAt(Centre("beit_shean"));
+            labels.TapAt(new Vector2(-50f, -50f));
+            Assert.IsFalse(Up(), "a tap elsewhere hides it");
+
+            labels.HoverAt(Centre("beit_shean"));
+            Assert.IsTrue(Up(), "a mouse hover still shows it");
+            Assert.AreEqual("Today: Beit She'an", labels.Tooltip.text);
+            labels.HoverAt(new Vector2(-50f, -50f));
+            Assert.IsFalse(Up(), "and off the pill hides it");
+
+            labels.TapAt(Centre("beit_shean"));
+            Assert.IsTrue(Up());
+            labels.Hover(new Vector2(-500f, -500f));   // a mouse position well off every pill
+            Assert.IsFalse(Up(), "a mouse in use takes a tapped tooltip away");
+
+            labels.TapAt(Centre("beit_shean"));
+            Pose(PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, PromoPose.Gameplay03.Distance);
+            yield return Settle(labels);
+            labels.Hover(null);
+            Assert.IsFalse(Up(), "zooming out hides the pill and the tooltip with it");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>Issue #245: the device type decides. A touchscreen has no hover position (the Input System keeps its last
+    /// touch after the finger lifts); a mouse and a pen do.</summary>
+    [Test]
+    public void OnlyANonTouchPointerHovers()
+    {
+        Assert.IsNull(MapLabelsPresenter.HoverPosition(null));
+        var touch = UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Touchscreen>();
+        var mouse = UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Mouse>();
+        var pen = UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Pen>();
+        try
+        {
+            Assert.IsNull(MapLabelsPresenter.HoverPosition(touch), "a touchscreen does not hover");
+            Assert.IsNotNull(MapLabelsPresenter.HoverPosition(mouse), "a mouse hovers");
+            Assert.IsNotNull(MapLabelsPresenter.HoverPosition(pen), "a pen hovers");
+        }
+        finally
+        {
+            UnityEngine.InputSystem.InputSystem.RemoveDevice(touch); UnityEngine.InputSystem.InputSystem.RemoveDevice(mouse); UnityEngine.InputSystem.InputSystem.RemoveDevice(pen);
+        }
+    }
+
     static float Gap(Rect r, Vector2 p) => new Vector2(Mathf.Max(0, Mathf.Max(r.xMin - p.x, p.x - r.xMax)), Mathf.Max(0, Mathf.Max(r.yMin - p.y, p.y - r.yMax))).magnitude;
     static float RectGap(Rect a, Rect b) => new Vector2(Mathf.Max(0, Mathf.Max(a.xMin - b.xMax, b.xMin - a.xMax)), Mathf.Max(0, Mathf.Max(a.yMin - b.yMax, b.yMin - a.yMax))).magnitude;
 

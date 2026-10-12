@@ -8,6 +8,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Map: today's name of a 1948 locality for touch and keyboard players. A tap on a locality pill toggles its tooltip, a tap
+  elsewhere hides it, and a mouse still hovers as before. The info panel lists the selected hex's 1948 localities with
+  today's name where a living place carries on, by the same rule as the tooltip (fixes #245).
 - Era system switches in eras.yaml (`systems`): `legislature: state | assembly` (an assembly's vote against a policy or
   the budget is held and reported, but does not bind) and `map_actions` (the actions the era allows). The Cabinet and
   Budget screens say when the body's vote does not bind, and the hex panel shows only the era's map actions. With no

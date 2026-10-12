@@ -39,6 +39,35 @@ namespace Statecraft.Game.Map.Kits
             public int Sources;
         }
 
+        /// <summary>The one "living place carries on" rule (owner ruling 2026-10-12), shared by the label tooltip and the info
+        /// panel: the name to show as today's name, in Hebrew when asked and one is recorded; null when no living place carries
+        /// on (<see cref="Place.Today"/> is null) or when today's name is the 1948 name itself (Nablus is Nablus). It shows
+        /// only what the file records.</summary>
+        public static string? TodayName(Place p, bool hebrew)
+        {
+            if (p.Today == null || SameName(p.Today, p.Settlement.Name)) return null;
+            return hebrew && !string.IsNullOrEmpty(p.TodayHe) ? p.TodayHe : p.Today;
+        }
+
+        static bool SameName(string a, string b)
+        {
+            static string Norm(string x) { var sb = new System.Text.StringBuilder(); foreach (var c in x) if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c)); return sb.ToString(); }
+            return Norm(a) == Norm(b);
+        }
+
+        /// <summary>The places by the hex they lie in (<paramref name="hexOf"/> maps a place to its hex), in the places' order.</summary>
+        public static Dictionary<(int q, int r), List<Place>> ByHex(IEnumerable<Place> places, System.Func<Place, (int q, int r)> hexOf)
+        {
+            var by = new Dictionary<(int q, int r), List<Place>>();
+            foreach (var p in places)
+            {
+                var h = hexOf(p);
+                if (!by.TryGetValue(h, out var list)) by[h] = list = new List<Place>();
+                list.Add(p);
+            }
+            return by;
+        }
+
         public sealed class Area
         {
             public string Subdistrict = "";
