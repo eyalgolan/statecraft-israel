@@ -62,8 +62,10 @@ initial_population: { veterans: 649400 }
 budget_start:
   defense_minister: 0.45
   finance_minister: 0.05
-  # The Immigration line (its id is `immigration`, not an office id; budget_owners below says who owns it when).
-  immigration: 0.15
+  # The Immigration line. Its id stays `prime_minister` (ids are stable: a rename would move every golden hash and break
+  # the replay of saved budget orders), but it was the Ministry of Immigration's line until 8 October 1951:
+  # budget_owners below says which office owns it on each date, and the Budget screen shows that office.
+  prime_minister: 0.15
   labour_minister: 0.10
   health_minister: 0.07
   education_minister: 0.06
@@ -80,6 +82,6 @@ budget_start:
 # assumed to stay with the Jewish Agency and the Prime Minister. Re-point the second owner if a source shows otherwise.
 # Source: https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%202 (and eq 3).
 budget_owners:
-  immigration:
+  prime_minister:
     - { from: 1948-05-15, office: immigration_minister }
     - { from: 1951-10-08, office: prime_minister }

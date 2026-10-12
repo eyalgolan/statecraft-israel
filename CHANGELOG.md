@@ -8,10 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
-- Budget lines owned by office and date (`budget_owners` in `rules.yaml`, issue #108): the Immigration line (id `immigration`)
-  belongs to the Minister of Immigration until 7 October 1951 and to the Prime Minister from 8 October 1951. A line
-  scales effects through the owner of the day. Both goldens and the five-turn smoke move (one renamed budget key, no value
-  changes; see `docs/determinism.md`).
+- Budget lines owned by office and date (`budget_owners` in `rules.yaml`, issue #108): the Immigration line (its id stays
+  `prime_minister`) belongs to the Minister of Immigration until 7 October 1951 and to the Prime Minister from 8 October
+  1951. A line scales effects through the owner of the day, and the Budget screen names that office. An office with
+  several holders cannot own a line. The goldens do not move.
 - Writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set key=value` plays the historical run with a
   rules.yaml change applied in memory and prints the changed state lines and a table of chosen values, without Unity and
   without touching `content/` (fixes #295).

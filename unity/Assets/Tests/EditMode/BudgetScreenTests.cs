@@ -35,11 +35,11 @@ public class BudgetScreenTests
         var budget = new BudgetPresenter(ui.Root, bridge, Text);
         bridge.State.Date = new System.DateTime(1951, 10, 7);
         budget.Render();
-        Assert.AreEqual("Minister of Immigration (Haim-Moshe Shapira)", ui.Q<Label>("budget-immigration-name").text);
+        Assert.AreEqual("Minister of Immigration (Haim-Moshe Shapira)", ui.Q<Label>("budget-prime_minister-name").text);
         bridge.State.Date = new System.DateTime(1951, 10, 8);
         budget.Render();
-        Assert.AreEqual("Prime Minister (David Ben-Gurion)", ui.Q<Label>("budget-immigration-name").text);
-        Assert.AreEqual("15%", ui.Q<Label>("budget-immigration-share").text);       // the share stays on the line's own id
+        Assert.AreEqual("Prime Minister (David Ben-Gurion)", ui.Q<Label>("budget-prime_minister-name").text);
+        Assert.AreEqual("15%", ui.Q<Label>("budget-prime_minister-share").text);       // the line keeps its id; only the owner changes
     }
 
     [Test]

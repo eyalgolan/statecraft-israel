@@ -2,6 +2,6 @@
 # Tests read this file. To accept a deliberate change: STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln
 # rewrites this file, the snapshots and the GoldenRun.cs constants; then update docs/determinism.md and tools/web_check.py
 # (GoldenManifestTests names any place that is out of date) and add a row to the rebaseline history.
-hash1950 4304d8ec14493b3963758957c2bb07fd9166e54e1b3ea36e5565280db5647681
-hash1952 082f9af406a6ffa445421617e327679ea094f4c1c056871dd18c54f58beef6e0
-smoke5 2379a67620391db1a0fbfc1b0d8c5dcfee94f570d491bca6cd4a777db3e911a4
+hash1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07
+hash1952 62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8
+smoke5 d3fdd459ddb876bd8d775c20edd1202cf56ca7134a8ad06f873d4d92034aa5b6

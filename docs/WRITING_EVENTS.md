@@ -276,9 +276,9 @@ for the whole era (and must not be abolished). A line can have a dated list of o
 
 ```yaml
 budget_start:
-  immigration: 0.15
+  prime_minister: 0.15       # the Immigration line; its id stays as it was, the owner changes
 budget_owners:
-  immigration:
+  prime_minister:
     - { from: 1948-05-15, office: immigration_minister }
     - { from: 1951-10-08, office: prime_minister }
 ```

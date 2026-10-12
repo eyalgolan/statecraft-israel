@@ -129,11 +129,11 @@ public class BudgetOwnersTests
     public void TheRealImmigrationLineMovesToThePrimeMinisterOn8October1951()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        Assert.Equal("immigration_minister", Offices.BudgetOwner(c, "immigration", c.Rules.Start));
-        Assert.Equal("immigration_minister", Offices.BudgetOwner(c, "immigration", new DateTime(1951, 10, 7)));
-        Assert.Equal("prime_minister", Offices.BudgetOwner(c, "immigration", new DateTime(1951, 10, 8)));
-        Assert.Equal(c.Offices.Single(o => o.Id == "immigration_minister").Until, c.Rules.BudgetOwners["immigration"][1].From);   // the date cannot drift from offices.yaml
-        var share = c.Rules.BudgetStart["immigration"];
+        Assert.Equal("immigration_minister", Offices.BudgetOwner(c, "prime_minister", c.Rules.Start));
+        Assert.Equal("immigration_minister", Offices.BudgetOwner(c, "prime_minister", new DateTime(1951, 10, 7)));
+        Assert.Equal("prime_minister", Offices.BudgetOwner(c, "prime_minister", new DateTime(1951, 10, 8)));
+        Assert.Equal(c.Offices.Single(o => o.Id == "immigration_minister").Until, c.Rules.BudgetOwners["prime_minister"][1].From);   // the date cannot drift from offices.yaml
+        var share = c.Rules.BudgetStart["prime_minister"];
         var factor = Math.Min(1.5, 0.5 + share * c.Rules.BudgetStart.Count / 2.0);
 
         var before = At(c, new DateTime(1951, 10, 7));
