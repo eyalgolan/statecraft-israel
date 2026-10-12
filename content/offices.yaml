@@ -48,7 +48,7 @@ offices:
   - { id: chief_of_staff, title: IDF Chief of the General Staff }
   # The role first appeared in the Third Government (Peretz Naphtali, 8 October 1951): he.wiki "שר בלי תיק"; the
   # Provisional, First and Second Governments' tables on en.wiki list none (checked 2026-10-11).
-  - { id: minister_without_portfolio, title: Minister without Portfolio, from: 1951-10-08 }
+  - { id: minister_without_portfolio, title: Minister without Portfolio, from: 1951-10-08, several_holders: true }
   # Established by the Transition Law of 16 February 1949 (he.wiki "נשיא מדינת ישראל", en.wiki "President of Israel",
   # checked 2026-10-11; he.wiki "חוק המעבר" gives 16 or 17 February). Weizmann's 1948 office, President of the
   # Provisional State Council, is a different office the game does not model.
@@ -57,7 +57,7 @@ offices:
   # Sources and the start-date conflict are in research_notes/M3 content 1950-51/deputy-titles.md.
   - { id: deputy_agriculture_minister, title: Deputy Minister of Agriculture, historical_only: true }
   - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, historical_only: true }
-  - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, historical_only: true }
+  - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, historical_only: true, several_holders: true }
   - { id: deputy_prime_minister, title: Deputy Prime Minister, historical_only: true }
   # Deputy ministers of 1953-1956 (#26): dates from the Knesset records (KNS_PersonToPosition), see people.yaml.
   - { id: deputy_religions_minister, title: Deputy Minister of Religions, historical_only: true }

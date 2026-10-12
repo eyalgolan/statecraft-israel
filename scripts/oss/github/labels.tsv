@@ -23,3 +23,4 @@ M4	b60205	Milestone M4: full 1948-1956 slice
 in progress (maintainer)	ededed	Being built in the maintainer's pipeline; comment, but please don't open a competing PR
 roadmap	3e4b9e	A tracker for a milestone or era; detailed issues follow its design
 ready for a contributor	2da44e	Every field of the Task form is filled; no question to the maintainer needed
+needs-unity	e99695	Acceptance needs the Unity editor, a player build or the WebGL check

@@ -417,6 +417,22 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 }
 .map-label-city { font-size: 23px; color: rgb(250, 242, 224); }
 .map-label-town, .map-label-arab_town { font-size: 19px; }
+/* The 1948 localities (named only at close zoom): the same pill, smaller and quieter; today's name in a tooltip under it. */
+.map-label-locality { font-size: 15px; padding: 0 9px 1px 9px; color: rgb(232, 222, 200); background-color: rgba(14, 22, 38, 0.72); }
+.map-label-tooltip {
+    position: absolute;
+    translate: -50% 0;
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 14px;
+    color: rgb(243, 234, 216);
+    background-color: rgba(14, 22, 38, 0.92);
+    border-width: 1px;
+    border-color: var(--gold);
+    border-radius: 6px;
+    padding: 1px 8px 2px 8px;
+    margin: 0;
+    white-space: nowrap;
+}
 .anchor-lower-centre { translate: -50% -100%; }
 .anchor-lower-left { translate: 0 -100%; }
 .anchor-lower-right { translate: -100% -100%; }

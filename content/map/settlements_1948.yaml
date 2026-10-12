@@ -82,7 +82,7 @@ settlements:
   - url: https://en.wikipedia.org/wiki/Nazareth
     checked: '2026-10-09'
 - id: lod
-  name: Lod
+  name: Lydda
   lon: 34.8881
   lat: 31.9519
   type: arab_town
@@ -91,8 +91,10 @@ settlements:
   sources:
   - url: https://en.wikipedia.org/wiki/Lod
     checked: '2026-10-09'
+  - url: https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+    checked: '2026-10-12'
 - id: ramla
-  name: Ramla
+  name: Ramle
   lon: 34.8625
   lat: 31.9275
   type: arab_town
@@ -101,6 +103,8 @@ settlements:
   sources:
   - url: https://en.wikipedia.org/wiki/Ramla
     checked: '2026-10-09'
+  - url: https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+    checked: '2026-10-12'
 - id: gaza
   name: Gaza
   lon: 34.4597

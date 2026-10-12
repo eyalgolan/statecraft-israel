@@ -334,6 +334,49 @@ public class UnitsInPlayTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>promo-villages review I5: with the kits on, the units keep off the 1948 villages and the Bedouin camps as they
+    /// keep off the game towns. Every token outside a town has its ring clear of every kit footprint (MapScene.KitFootprints:
+    /// a town's or a locality's with its tinted margin, a camp's); every token in a town has the kits' clearing, which village
+    /// houses and tents keep off like a road.</summary>
+    [Test]
+    public void NoTokenStandsInAVillageOrACamp()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = UnityEngine.Object.FindFirstObjectByType<MapScene>();
+        map.Build();
+        Assert.Greater(map.Localities.Count, 200, "the kits and the 1948 localities are on");
+        var footprints = map.KitFootprints;
+        Assert.IsTrue(footprints.Any(f => f.id.StartsWith("camp:")), "the camps are built");
+        Assert.AreEqual(map.Settlements.Count + map.Localities.Count, map.SettlementFootprints.Count,
+            "the units' footprints are the game settlements' and the localities'");
+        var units = Units;
+        var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
+        int outside = 0, inTown = 0;
+        foreach (var u in units.Where(u => u.Hidden == null && u.Service != UnitData.Navy))
+            foreach (var a in u.Anchors)
+            {
+                var at = $"{u.Id} {a.Place}";
+                Assert.IsTrue(layer.Spots.TryGetValue(a, out var s), $"{at}: no spot");
+                var c = new Vector2((float)s.X, (float)s.Z);
+                if (s.InTown)
+                {
+                    inTown++;
+                    Assert.IsTrue(map.UnitClearings.Any(x => x.centre == c), $"{at}: a token in a town has the kits' clearing");
+                    continue;
+                }
+                outside++;
+                float ring = layer.PlacementGround.RingRadius(s.Compact);
+                foreach (var (fc, fr, id) in footprints)
+                {
+                    float reach = fr * (id.StartsWith("camp:") ? 1f : UnitGround.FootprintMargin) + ring;
+                    Assert.GreaterOrEqual((fc - c).magnitude, reach, $"{at}: its ring reaches {id}'s kit");
+                }
+            }
+        TestContext.WriteLine($"{outside} tokens outside the towns, {inTown} in one; {footprints.Count} kit footprints, "
+            + $"{footprints.Count(f => f.id.StartsWith("camp:"))} of them camps");
+        Assert.Greater(outside, 0);
+    }
+
     /// <summary>Owner question (units on hard terrain): on a steep slope a figure stands on the highest ground under its
     /// boots, so no boot sinks into the hill, and the downhill boot floats by no more than the slope's rise.</summary>
     [Test]

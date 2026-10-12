@@ -1528,3 +1528,151 @@ Code: `unity/Assets/Scripts/Map/Kits/` (built at load, seeded per settlement id 
 - **Authored meshes later:** trees swap as is (`Vegetation.Build(kind)` returns a mesh in real metres). Buildings will need
   `Emit` to return placements (archetype, variant, position, yaw, scale) drawn through the same tile instancing and a
   textured, instanced variant of `Kit.shader`; that refactor waits for the first authored mesh.
+
+## The 1948 localities and Bedouin camps (branch `promo-villages`)
+Owner rulings (2026-10-11): show the places of 1,000 or more people first, by their 1948 names, as town and village kits
+beside the 25 game settlements, and a light Bedouin encampment scatter sized by the Village Statistics tribal totals,
+inventing no names or points. Owner rulings (2026-10-12, after the staff review): the "Today:" tooltip only where a living
+place carries on; Lydda and Ramle for the game settlements `lod` and `ramla`; Nesher drawn as a mixed locality.
+- **Data:** `content/map/localities_1948.yaml` (status draft; its header lists every field and rule). It has 271 places
+  and 8 camp areas.
+  - The places are the 293 of 1,000+ in VS 1945, less the 20 game settlements among them, the Jahalin tribe row (counted
+    with the camps) and Huj (810 plus 230 Jews of kibbutz Dorot: the village alone is under 1,000).
+  - The camp areas total 64,670 people: Beersheba 47,980, Jerusalem 7,070 (its "Tribal Units" row only), Ramle 3,780,
+    Jaffa 2,270, Hebron 2,000, Safad 820, Gaza 530 and Nablus 220. Tulkarm's "Tribal Units" row has no figure.
+  - The file is presentation only, outside the content hash (`SaveGameTests.TheLocalitiesFileIsOutsideTheContentHash`),
+    `tools/tests/test_localities.py` checks it. The player reads a baked runtime form, `localities_1948.tsv` (see
+    "Boot" below), through `MapInputs.LocalitiesTsv`.
+  - Left for later rounds: places under 1,000, the 70 VS rows with no point, and the 29 foundings dated only "1948".
+- **Today's name:** a `today` entry (`{name, name_he, source}`) exists only for a place that carries on. There are 161 of
+  them.
+  - None is given where Wikidata classes the place's item as a depopulated village or a former settlement. The test's
+    QID list is `tools/tests/data/localities_no_today_qids.txt`; the content records no such class.
+  - There are two exceptions:
+    - Majdal, whose item is today's Ashkelon (the owner's example).
+    - Sha'b → Sha'ab (שעב). Its item, Q2655669, is also the living Arab local council. This applies the owner's rule
+      (2026-10-12 re-review).
+  - Walaja, Samakh and Lubiya are classed both ways too, but no living place carries them on, so they have no today
+    name.
+  - Jewish places merged into a later municipality take the municipality: Magdiel and Ramatayim become Hod HaSharon, and
+    Kfar Ganim becomes Petah Tikva.
+- **Kits:**
+  - Villages and Arab towns take the Arab-town archetype (`village` type: a smaller mosque).
+  - Jewish places take the red-roofed archetype: kibbutz, moshav ring or moshava, and the 14 Jewish towns too, since the
+    repo maps them to `town` and several began as moshavot.
+  - Nesher (VS: 1,430 Muslims, 1,400 Jews) is a mixed locality: Arab houses on its west side and Jewish houses on its
+    east, with a mosque and a water tower. Its tooltip says "Mixed locality".
+  - No Templer colony reaches 1,000. When they come, the moshava archetype is the closest.
+  - The landmark follows VS's religion columns: 11 churches (Shafa 'Amr by its Urban row) and none in the 5 Druze
+    villages.
+  - Every place shares the one lot list. Every game settlement's landmark claims its spot first, then every locality's,
+    then all houses, largest place first. The 25 game settlements keep their cells and their landmarks (tested); a
+    village fills in around them.
+  - Localities and camps are merged into one mesh per 30 km tile.
+- **Camps:** one per 1,000 of an area's total, rounded half up with no floor, so Nablus draws none: 65 camps, 175 tents (after #250).
+  - The areas are the sub-districts as `content/map/subdistrict_hexes_1948.yaml` draws them, read at load
+    (`Localities.FillHexes`).
+  - Each camp is placed at a seeded spot, dry, gentle, outside every town and off every route.
+  - It has two to four brown goat-hair tents in a loose line.
+- **Labels:** smaller pills (`.map-label-locality`), only nearer than 40 km (`MapLabelsPresenter.LocalityDistanceM`), placed
+  after every game settlement with the same declutter rules.
+  - Hovering one shows its tooltip, in the UI's language (`ui.lang`).
+  - Touch and keyboard players have no route to the tooltip yet (#245).
+- **Units in play (review I5, merged with #250):** the unit tokens keep off the villages and camps as they keep off the
+  game towns.
+  - The units are placed before the kits are built, since their clearings feed the kit build. So
+    `MapScene.SettlementFootprints`, which the units place against, holds the game settlements' and the localities' discs
+    (`SettlementKits.FootprintRadiusM`), the same discs the kit build claims.
+  - A token standing in a town or village gets a clearing. The kits take the clearings as corridors, so village houses,
+    tents and trees keep off them, as they do on main.
+  - The camps are placed after the units. They keep off every token outside the towns (`KitGround.Tokens`): a camp's
+    centre stays `SettlementKits.CampReach` house-scale metres plus the token's ring away from it.
+  - `UnitsInPlayTests.NoTokenStandsInAVillageOrACamp` builds the map with the kits on. It checks that every token outside
+    a town has its ring clear of every `MapScene.KitFootprints` entry (towns, localities, camps), and that every token in
+    one has its clearing.
+- **Grid readability** with the villages: 79% (70 of 89 edge midpoints) at gameplay03, against 84% before. The floor stays at 75%.
+  - Merging #250 made the units keep off the villages and the camps keep off the units. The camps and village houses
+    moved, and the share fell to 72%, under the floor.
+  - The fix is the plan from review M10. A 1948 locality's houses and a camp's tents keep off the edge midpoints of the
+    hex they stand in (`KitGround.OnGridMark`). This costs a few locality buildings (1,332 after #251) and a few tents (175).
+  - The game settlements are unchanged.
+  - The next data round (places under 1,000) gets the same rule. Don't lower the floor.
+- **Bands** stay legible through the villages: `BorderTests.TheBandsStillReadThroughTheVillages` reads the bands with the
+  kits and trees on (18 of 18 walks at gameplay03 and Tulkarm). The other border tests measure the bands with the kits
+  and trees off.
+- **Start of game only.** The file records no later fate, depopulation date or post-May-1948 status, and the test
+  `test_start_of_game_only_no_later_fate` keeps it so. A dated map (#61) needs the owner's framing decision first: whether
+  the settlement layer is ever dated after the start, and if so how places that ceased to exist are shown. The research
+  note `.superpowers/handover-2026-10-11/promo/localities-1948.md` ("Sensitivity note") lists the options.
+- **Measured.**
+  - Frame time (headless WebGL `vprofile`, exclusive lock, aa1a40a against main c2089b4, 2026-10-12):
+
+    | | gameplay03 | diorama02 |
+    |---|---|---|
+    | all | 13.83 ms (p95 15); main 14.33 (16) | 18.01 ms (p95 20); main 17.53 (20) |
+    | all − none (budget 8 ms) | 3.33 ms; main 3.91 | 5.29 ms; main 4.96 |
+    | trees (budget 2.5 ms) | 0.48 ms; main 0.52 | 1.26 ms; main 0.90 |
+    | labels | 0.02 ms | 0.06 ms |
+
+    The kits' cost is within the noise. The 20 ms p95 at diorama02 is main's too.
+  - Boot (`headed.py boot --runs 3`, main c2089b4 → this branch, 2026-10-12; budgets at cpu 4: 2720 / 10445 ms):
+
+    | | map_build | first_frame |
+    |---|---|---|
+    | cpu 1 | 601 → 640 ms | 3860 → 3884 ms |
+    | cpu 4 | 2506 → 2572 ms (148 ms under budget) | 8141 → 8006 ms |
+
+    Before this review round, cpu 4 map_build was 2712 against 2720.
+
+    **Re-measured after merging #248, #250 and #251 (2026-10-12, cpu 4, three runs, exclusive lock):**
+
+    | build | map_build | first_frame |
+    |---|---|---|
+    | main f974c9f | 2581 ms | 8114 ms |
+    | this branch | 2768 ms | 8508 ms |
+    | this branch, light read of the sub-district file | 2745 ms (25 over 2720) | 8489 ms |
+    | the same after merging #253, #255, #261 and #267 (4b9283a) | 2850 ms (130 over) | 8904 ms |
+
+    - The `localities parsed` phase included a second, full parse of `subdistrict_hexes_1948.yaml` (the camps' areas,
+      review I4), done with the reflection deserializer. GameRoot parses that file in full again later in the boot.
+    - The map build now reads only the regions' keys and the hexes' regions, with the event reader
+      (`Localities.FillHexes(doc, string, ...)`); KitTests checks that it gives the same areas. The phase went from 221
+      to 172 ms.
+    - Main itself grew 75 ms since c2089b4 (#250's unit placement, #251's routes). The branch adds about 165 ms over
+      main at cpu 4, nearly all of it the localities file's YAML scan.
+    - **Resolved by a baked runtime file (coordinator ruling 2026-10-12: fix the root cause, not defer the kit build or
+      re-baseline the budget):**
+      - `localities_1948.yaml` stays the sourced, hand-edited source of truth.
+      - `tools/localities_bake.py` bakes it into `localities_1948.tsv`: 26k characters against 176k, one tab-separated
+        row per place or camp.
+      - The player reads the file with `Localities.ParseRuntime` (a split, no YAML), with the same checks as the YAML
+        reader. Errors name `file:line`.
+      - The manifest ships the .tsv and no longer the YAML.
+      - pytest fails a stale bake; `KitTests.TheRuntimeFileYieldsTheSameRowsAsTheYaml` compares every row.
+      - The `localities parsed` phase went from 172 ms to 53 ms. Main and the branch now boot within noise of each other.
+
+      Measured at cpu 4, three runs each, interleaved, exclusive lock, 2026-10-12:
+
+      | build | map_build | first_frame |
+      |---|---|---|
+      | main 316a042, round 1 | 2573 ms | 8113 ms |
+      | this branch f715717, round 1 | 2588 ms | 8229 ms |
+      | main 316a042, round 2 | 2610 ms | 8234 ms |
+      | this branch f715717, round 2 | 2553 ms | 8131 ms |
+      | this branch after merging main (05390da), final checks | 2658 ms | 8367 ms |
+
+      The branch is 130 to 170 ms under the 2720 ms budget: real headroom for the towns' round 2. That round should bake
+      the same way.
+  - The growth is the localities file's parse: the `localities parsed` boot phase is 50 ms at cpu 1 and 220 ms at cpu 4.
+    It is not the ground tint, which the player logs as `KITS ground_tint_ms=0.8`. My earlier attribution to the tint was
+    checked with that timer and was wrong; the earlier "terrain heights set" growth was the parse that ran before it.
+  - Two changes cut the parse:
+    - An event-based reader (`Localities.Read`) replaces YamlDotNet's reflection deserializer.
+    - Each row's sources are written as a plain URL list, so the file went from 266k to 176k characters. Raw scanning is
+      about 90% of the parse, so file size is the lever.
+  - The tint was made cheaper anyway: rows are clipped to the circle, the inner half skips the smoothstep, and the blend
+    is in integers.
+  - The next data round (places under 1,000) must not ship as a bigger file of this kind without re-measuring.
+  - History: a first version scanned every lot and footprint linearly, taking 350 ms (kits) and 330 ms (trees) in the
+    editor. `DiscIndex` (a 4 km grid) brought that to about 30 ms each.
+  - Build: wasm +111,913 bytes and data +14,441, plus the localities file fetched at boot.

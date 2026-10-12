@@ -37,6 +37,10 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The grid a kit's columns are counted on (Columns).</summary>
         public const int ColumnGrid = 4;
 
+        /// <summary>Appends the positions of vertices [<paramref name="from"/>, <paramref name="to"/>) to <paramref name="into"/>
+        /// (one settlement's part of a shared mesh). Read before ToMesh's upload drops the CPU copy.</summary>
+        public void Positions(int from, int to, List<Vector3> into) { for (int i = from; i < to; i++) into.Add(pos[i]); }
+
         /// <summary>This mesh's vertices as columns (see the static Columns); empty for an empty mesh. Read before
         /// ToMesh's upload drops the CPU copy.</summary>
         public Bounds[] Columns() => pos.Count == 0 ? new Bounds[0] : Columns(pos);

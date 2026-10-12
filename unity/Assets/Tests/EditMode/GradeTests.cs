@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using UnityEditor;
@@ -55,20 +56,35 @@ public class GradeTests
         return best!;
     }
 
-    /// <summary>Selects the land hex nearest (lon, lat) and returns world points on the band (the middle of its second edge,
-    /// read from the band's own mesh, so it holds whatever height the band rides at) and on the land 1 km inside it.</summary>
+    /// <summary>Selects the land hex nearest (lon, lat) and returns world points on the band (the middle of an edge, read
+    /// from the band's own mesh, so it holds whatever height the band rides at) and on the land 1 km inside it. The edge is
+    /// the second, or the next whose land point lies outside every settlement's and 1948 locality's kit ground (its
+    /// footprint and tint, plus 500 m): the band is measured against the land, not against a village's houses.</summary>
     static (Vector3 band, Vector3 land) SelectNear(MapScene map, double lon, double lat)
     {
         var hex = NearestLandHex(map, lon, lat);
         map.Select(hex.q, hex.r);
         var sel = map.Terrain.transform.Find(MapScene.SelectionName);
         var v = sel.GetComponent<MeshFilter>().sharedMesh.vertices;
-        int n = MapBuilder.RingVertices, j = MapBuilder.OverlaySegmentsPerEdge + MapBuilder.OverlaySegmentsPerEdge / 2;
-        var band = sel.TransformPoint((v[j] + v[n + j]) / 2f);
+        int n = MapBuilder.RingVertices;
         var centre = map.Frame.ToWorld(hex.lon, hex.lat, 0);
-        var inward = new Vector3(centre.x - band.x, 0, centre.z - band.z).normalized;
-        var land = new Vector3(band.x, 0, band.z) + inward * 1000f; land.y = map.Terrain.SampleHeight(land);
-        return (band, land);
+        var places = map.Settlements.Concat(map.Localities.Select(p => p.Settlement)).ToList();
+        float hexM = map.Hexes.hex_size_km * 1000f;
+        bool OnKitGround(Vector3 p) => places.Any(s =>
+        {
+            var c = map.Frame.ToWorld(s.Lon, s.Lat, 0);
+            return new Vector2(p.x - c.x, p.z - c.z).magnitude < Statecraft.Game.Map.Kits.SettlementKits.FootprintRadiusM(s, hexM) * 1.1f + 500f;
+        });
+        (Vector3, Vector3) At(int edge)
+        {
+            int j = edge * MapBuilder.OverlaySegmentsPerEdge + MapBuilder.OverlaySegmentsPerEdge / 2;
+            var band = sel.TransformPoint((v[j] + v[n + j]) / 2f);
+            var inward = new Vector3(centre.x - band.x, 0, centre.z - band.z).normalized;
+            var land = new Vector3(band.x, 0, band.z) + inward * 1000f; land.y = map.Terrain.SampleHeight(land);
+            return (band, land);
+        }
+        for (int k = 0; k < 6; k++) { var (b, l) = At((1 + k) % 6); if (!OnKitGround(l)) return (b, l); }
+        return At(1);
     }
 
     /// <summary>Review I9: the selected hex still reads on graded land, at both promo poses, graded and ungraded.</summary>

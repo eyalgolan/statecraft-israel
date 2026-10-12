@@ -11,7 +11,8 @@ namespace Statecraft.Game.UI
     /// Prime Minister's card at the side, listing every office the PM holds (each also a button to select it); the
     /// legislature as a half circle of seats, coalition and opposition, with the majority line, and the coalition's seats,
     /// the opposition's, the majority, the largest party, coalition stability and each party's seats beside it; and a card
-    /// for every other office held by someone else (portrait, party, competence and loyalty bars). Every number is the
+    /// for every other office held by someone else (portrait, party, competence and loyalty bars; one card per holder of an
+    /// office that has several at once). Every number is the
     /// sim's: legislatures.yaml seats and size, governments.yaml coalition, people.yaml competence and loyalty, GameState
     /// coalition stability. The two seat colours mark coalition and opposition only (content records no party colours).
     /// Selecting an office lists every person with Appoint, or the reason they cannot be appointed (Cabinet.Check).
@@ -101,7 +102,8 @@ namespace Statecraft.Game.UI
             var leg = Offices.Legislature(c, s.Date);
             var (seats, size) = PoliticsSystem.CoalitionSeats(c, s.Date);
             screen.Q<Label>("cabinet-government").text = gov?.Name ?? "";
-            screen.Q<Label>("cabinet-legislature").text = leg == null ? "" : text.Format("cabinet.legislature", leg.Body, leg.Size);
+            var advisory = c.SystemsAt(s.Date).Legislature == EraSystems.Assembly;   // eras.yaml systems.legislature (#58)
+            screen.Q<Label>("cabinet-legislature").text = leg == null ? "" : text.Format(advisory ? "cabinet.legislature_advisory" : "cabinet.legislature", leg.Body, leg.Size);
             RenderHouse(c, s, gov, leg, seats, size);
 
             var lineup = Cabinet.Lineup(c, s);
@@ -135,27 +137,27 @@ namespace Statecraft.Game.UI
             foreach (var b in pmOffices.Children()) b.EnableInClassList("seat-selected", b.name == "seat-" + Selected);
             pmOffices.style.display = pmHeld.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
-            var grid = lineup.Where(x => x.Office.Id != PrimeMinister && !HeldByPm(x)).ToList();
-            if (!grid.Select(x => x.Office.Id).SequenceEqual(cardOrder))
+            var grid = Cards(lineup.Where(x => x.Office.Id != PrimeMinister && !HeldByPm(x)));
+            if (!grid.Select(x => x.key).SequenceEqual(cardOrder))
             {
                 list.Clear(); cards.Clear();
-                foreach (var seat in grid)
+                foreach (var (key, seat, _) in grid)
                 {
                     var office = seat.Office.Id;
-                    var card = new Button(() => Select(office)) { name = "seat-" + office };
+                    var card = new Button(() => Select(office)) { name = "seat-" + key };
                     card.AddToClassList("seat");
-                    PersonCard.Build(card, "seat-" + office, text);
-                    cards[office] = card;
+                    PersonCard.Build(card, "seat-" + key, text);
+                    cards[key] = card;
                     list.Add(card);
                 }
-                cardOrder = grid.Select(x => x.Office.Id).ToList();
+                cardOrder = grid.Select(x => x.key).ToList();
             }
-            foreach (var seat in grid)
+            foreach (var (key, seat, holder) in grid)
             {
-                var card = cards[seat.Office.Id];
+                var card = cards[key];
                 card.EnableInClassList("seat-selected", seat.Office.Id == Selected);
-                card.EnableInClassList("seat-vacant", seat.Holder == null);
-                PersonCard.Fill(card, "seat-" + seat.Office.Id, c, s, seat.Holder, seat.Office.Title, seat.Appointed, text, portraits, CardPortrait);
+                card.EnableInClassList("seat-vacant", holder == null);
+                PersonCard.Fill(card, "seat-" + key, c, s, holder, seat.Office.Title, seat.Appointed, text, portraits, CardPortrait);
             }
 
             RenderPick(c, s);
@@ -163,6 +165,13 @@ namespace Statecraft.Game.UI
                 text.Format("cabinet.queued", c.People.First(p => p.Id == a.Person).Name, c.Offices.First(o => o.Id == a.Office).Title));
             screen.Q<Label>("cabinet-status").text = string.Join("\n", queued);
         }
+
+        /// <summary>One card per holder: an office with several holders today (#277: Minister without Portfolio) gets a card for
+        /// each, in Seat.Holders order, named office, office-2, office-3...; every other office one card, named by its id.</summary>
+        static List<(string key, Seat seat, Person? holder)> Cards(IEnumerable<Seat> seats) =>
+            seats.SelectMany(seat => seat.Holders.Count > 1
+                ? seat.Holders.Select((p, i) => (i == 0 ? seat.Office.Id : seat.Office.Id + "-" + (i + 1), seat, (Person?)p))
+                : new[] { (seat.Office.Id, seat, seat.Holder) }).ToList();
 
         /// <summary>The candidate list for the selected office: rows are made when the office changes and updated in place.</summary>
         void RenderPick(Content c, GameState s)

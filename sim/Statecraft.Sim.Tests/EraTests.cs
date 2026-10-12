@@ -139,7 +139,7 @@ public class EraTests
 
     [Fact]
     public void AnUnknownFieldIsALoadError() =>
-        BadEras(Eras(Era("a", "1948-05-15", "1957-01-01") + "\n    systems: {}"));
+        BadEras(Eras(Era("a", "1948-05-15", "1957-01-01") + "\n    carry: carry/founding.yaml"));
 
     // --- the boundary turn (spec 4.1) and the end of the last era (spec 4.5)
 

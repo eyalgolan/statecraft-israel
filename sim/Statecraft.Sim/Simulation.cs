@@ -94,8 +94,13 @@ namespace Statecraft.Sim
                     if (legislature == null) return "No legislature is sitting";
                     if (!PassVote(c, s))
                     {
-                        why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted down {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}"));
-                        return null;
+                        if (Advisory(c, s))
+                            why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted against {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}, but its vote does not bind"));
+                        else
+                        {
+                            why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted down {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}"));
+                            return null;
+                        }
                     }
                     s.Policies[p.Policy] = p.Level;
                     why.Add(new Cause("policy", p.Policy, p.Level, $"{PlayerText.Target(c, p.Policy)} set to {PlayerText.Percent(p.Level)}"));
@@ -108,8 +113,13 @@ namespace Statecraft.Sim
                     if (invalid != null) return invalid;
                     if (PoliticsSystem.BudgetNeedsVote(c, s.Date) && !PassVote(c, s))
                     {
-                        s.Budget = old;
-                        why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted the budget down"));
+                        if (Advisory(c, s))
+                            why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted against the budget, but its vote does not bind"));
+                        else
+                        {
+                            s.Budget = old;
+                            why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted the budget down"));
+                        }
                     }
                     return null;
                 }
@@ -129,6 +139,9 @@ namespace Statecraft.Sim
                     return "That order is not known";
             }
         }
+
+        /// <summary>True in an era whose legislature is an assembly (eras.yaml systems.legislature): its vote is held but does not bind.</summary>
+        static bool Advisory(Content c, GameState s) => c.SystemsAt(s.Date).Legislature == EraSystems.Assembly;
 
         static bool PassVote(Content c, GameState s)
         {

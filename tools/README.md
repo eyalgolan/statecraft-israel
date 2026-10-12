@@ -18,6 +18,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   into `tools/.cache/pal250k-1946/`, not committed): it reads the hand-written routes, sources and waypoints in
   `content/map/routes_1948.yaml` and writes the traced lines to `content/map/route_paths_1948.yaml` (committed; the map
   draws it, the sim never reads it). `--preview` writes each traced segment over the map for checking by eye.
+- `localities_bake.py [--check]` bakes `content/map/localities_1948.yaml` (the sourced 1948 localities, edited by hand)
+  into `content/map/localities_1948.tsv` (committed), the compact runtime form the map reads at boot. Rerun it after
+  editing the YAML: `test_localities.py` fails a stale bake, and `--check` does the same.
 - `routes_accuracy.py [--fetch]` measures how far those traced lines lie from OpenHistoricalMap (CC0) and OpenStreetMap
   (ODbL) lines, downloaded with `--fetch` into `tools/.cache/routes-accuracy/` (never committed or copied into content),
   and prints the accuracy table of `docs/routes.md`.

@@ -15,8 +15,10 @@ namespace Statecraft.Game.Map.Kits
         readonly HexBounds bounds; readonly double hexSizeKm;
         public readonly GeoFrame Frame;
         public readonly float HexSizeM;
-        /// <summary>Settlement footprints (centre x, z; radius), claimed in placement order.</summary>
-        public readonly List<(Vector2 centre, float radius, string id)> Footprints = new List<(Vector2, float, string)>();
+        /// <summary>Settlement footprints (centre x, z; radius), claimed in placement order. Indexed for questions up to 1.7
+        /// radii from a centre (SettlementKits' cells reach 1.6, InTown's shares 1.2).</summary>
+        public readonly DiscIndex Footprints = new DiscIndex(FootprintReach, 0f);
+        public const float FootprintReach = 1.7f;
 
         public KitGround(Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM)
         {
@@ -28,6 +30,8 @@ namespace Statecraft.Game.Map.Kits
             foreach (var h in hexes.hexes) biome[(h.q, h.r)] = h.biome;
         }
 
+        /// <summary>The terrain's world position (the hex grid's origin: HexGrid.ToWorld).</summary>
+        public Vector3 TerrainOrigin => terrain.transform.position;
         public float Width => Frame.WidthM;
         public float Length => Frame.LengthM;
 
@@ -65,14 +69,18 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>True when (x, z) lies within <paramref name="share"/> of any claimed footprint's radius.</summary>
         /// <summary>Every building's and landmark's lot (centre x, z; radius), filled by SettlementKits.Build before the trees
         /// are planted, so no tree grows through a roof (integration bug B9).</summary>
-        public readonly List<(Vector2 centre, float radius)> Lots = new List<(Vector2, float)>();
+        public readonly DiscIndex Lots = new DiscIndex(1f, LotQueryM);
+        /// <summary>The largest crown or lot radius a lot query is indexed for (a bigger one scans every lot).</summary>
+        public const float LotQueryM = 1500f;
 
         /// <summary>True when a crown of radius <paramref name="crown"/> at (x, z) would reach into any building's or landmark's
-        /// lot. A linear scan: a few hundred lots and about ten thousand trees at load.</summary>
+        /// lot (through the grid index: some 2,000 lots and 10,000 trees at load).</summary>
         public bool OnLot(float x, float z, float crown)
         {
             var p = new Vector2(x, z);
-            foreach (var (c, r) in Lots) { float d = r + crown; if ((p - c).sqrMagnitude < d * d) return true; }
+            if (crown > LotQueryM) { foreach (var (c, r, _) in Lots) { float d = r + crown; if ((p - c).sqrMagnitude < d * d) return true; } return false; }
+            var near = Lots.Near(p);
+            for (int k = 0; k < near.Count; k++) { var (c, r, _) = Lots[near[k]]; float d = r + crown; if ((p - c).sqrMagnitude < d * d) return true; }
             return false;
         }
 
@@ -107,6 +115,33 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
+        /// <summary>True when a disc of radius <paramref name="r"/> at <paramref name="p"/> (world x, z) covers the midpoint of
+        /// an edge of the hex it stands in. The 1948 villages' houses and the camps' tents keep off these, so the hex grid
+        /// still reads through them where it is easiest to see (review M10, KitTests.TheGridStaysReadableThroughTownsAndGroves).</summary>
+        public bool OnGridMark(Vector2 p, float r)
+        {
+            var g = HexGrid.FromWorld(new Vector3(p.x, 0f, p.y), TerrainOrigin, Length);
+            var c = HexGrid.NearestCentre(g, HexSizeM);
+            float inradius = 0.8660254f * HexSizeM;
+            for (int k = 0; k < 6; k++)
+            {
+                float a = k * Mathf.PI / 3f;
+                if ((g - (c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * inradius)).sqrMagnitude < r * r) return true;
+            }
+            return false;
+        }
+
+        /// <summary>The unit tokens that stand outside every footprint (centre x, z; ring radius m; MapScene). The Bedouin camps,
+        /// the one kit placed where no footprint is, keep off them (units-in-play merge, review I5).</summary>
+        public readonly List<(Vector2 centre, float radius)> Tokens = new List<(Vector2, float)>();
+
+        /// <summary>True when a disc of radius <paramref name="r"/> at <paramref name="p"/> reaches a unit token's ring.</summary>
+        public bool OnToken(Vector2 p, float r)
+        {
+            foreach (var (c, tr) in Tokens) if ((p - c).sqrMagnitude < (tr + r) * (tr + r)) return true;
+            return false;
+        }
+
         /// <summary>True when a disc of radius <paramref name="r"/> at <paramref name="p"/> reaches into any route corridor.</summary>
         public bool OnRoute(Vector2 p, float r)
         {
@@ -137,10 +172,17 @@ namespace Statecraft.Game.Map.Kits
 
         public bool InTown(float x, float z, float share = 1f)
         {
-            foreach (var f in Footprints)
+            var p = new Vector2(x, z);
+            if (share > FootprintReach)
             {
-                float r = f.radius * share;
-                if ((new Vector2(x, z) - f.centre).sqrMagnitude < r * r) return true;
+                foreach (var f in Footprints) { float r = f.radius * share; if ((p - f.centre).sqrMagnitude < r * r) return true; }
+                return false;
+            }
+            var near = Footprints.Near(p);
+            for (int k = 0; k < near.Count; k++)
+            {
+                var f = Footprints[near[k]]; float r = f.radius * share;
+                if ((p - f.centre).sqrMagnitude < r * r) return true;
             }
             return false;
         }

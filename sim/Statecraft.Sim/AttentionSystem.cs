@@ -13,11 +13,14 @@ namespace Statecraft.Sim
 
         public static bool IsCommandKind(string kind) => Kinds.Contains(kind);
 
-        public static void Refill(Content c, GameState s) => s.Attention = c.Rules.AttentionPerTurn;
+        public static void Refill(Content c, GameState s) => s.Attention = c.RulesAt(s.Date).AttentionPerTurn;
 
         /// <summary>Cost at <paramref name="rung"/> if given, else at the state's current rung.</summary>
-        public static double Cost(Content c, GameState s, string kind, int? rung = null) =>
-            c.Rules.AttentionCost[kind] * (1 + c.Rules.RungAttentionStep * ((rung ?? s.Rung) - 1));
+        public static double Cost(Content c, GameState s, string kind, int? rung = null)
+        {
+            var r = c.RulesAt(s.Date);   // the era the turn starts in (docs/determinism.md, "Rules per era")
+            return r.AttentionCost[kind] * (1 + r.RungAttentionStep * ((rung ?? s.Rung) - 1));
+        }
 
         /// <summary>Returns null and deducts on success, or the reason it could not be afforded.
         /// <paramref name="rung"/> prices the command at that security level (the turn's starting rung).</summary>

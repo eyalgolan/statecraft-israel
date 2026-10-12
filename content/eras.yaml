@@ -2,6 +2,8 @@
 # half-open, like every other window: `to` is the first day after the era. Reaching the last era's `to` ends the game.
 # Design decision D3 (docs/superpowers/specs/2026-10-10-chapters-architecture-design.md): the founding era runs from
 # the start of play to 1 January 1957, the spec's "Q2 1948 to Q4 1956". These are game-design dates, not historical facts.
+# Optional per era: `systems: { legislature: state | assembly, map_actions: [transit_camp, housing] }` (issue #58). Absent means
+# a state legislature and both map actions. A key is added only with the code behind it.
 eras:
   - id: founding
     name: The Founding

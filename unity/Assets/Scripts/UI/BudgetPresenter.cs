@@ -126,8 +126,10 @@ namespace Statecraft.Game.UI
             }
             var leg = Offices.Legislature(c, s.Date);
             var (seats, size) = PoliticsSystem.CoalitionSeats(c, s.Date);
-            screen.Q<Label>("budget-vote").text = leg == null ? "" : leg.BudgetApproval
-                ? text.Format("budget.vote_needed", leg.Body, seats, size) : text.Format("budget.no_vote", leg.Body);
+            // eras.yaml systems.legislature: an assembly's vote is held but does not bind (#58)
+            var advisory = c.SystemsAt(s.Date).Legislature == EraSystems.Assembly;
+            screen.Q<Label>("budget-vote").text = leg == null ? "" : !leg.BudgetApproval ? text.Format("budget.no_vote", leg.Body)
+                : text.Format(advisory ? "budget.vote_advisory" : "budget.vote_needed", leg.Body, seats, size);
             screen.Q<Label>("budget-money").text = text.Format("budget.money", PlayerText.Money(c, "treasury", s.Treasury), PlayerText.Money(c, "debt", s.Debt), PlayerText.Money(c, "fx_reserves", s.FxReserves));
             var flows = EconomySystem.Flows(c, s, 1.0);   // the sim's own arithmetic, for a year
             screen.Q<Label>("budget-flow").text = text.Format("budget.flow", PlayerText.Money(c, "treasury", flows.Tax), PlayerText.Money(c, "treasury", flows.Spending), PlayerText.Money(c, "treasury", flows.Mobilization));
