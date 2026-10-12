@@ -61,6 +61,23 @@ public class PeriodValidationTests
     }
 
     [Fact]
+    public void ATermStartingBeforeTheOfficeIsEstablishedIsALoadError()
+    {
+        var ex = ValidationTests.Bad("offices.yaml", "title: Minister of Finance", "title: Minister of Finance\n    from: 1949-01-01");
+        Assert.Equal("people.yaml", ex.File);
+        Assert.Equal("people[def_two].offices.finance_minister.from", ex.Field);
+        Assert.Contains("must be on or after 1949-01-01, when the office was established", ex.Message);
+    }
+
+    [Fact]
+    public void AnOfficeAbolishedBeforeItIsEstablishedIsALoadError()
+    {
+        var ex = ValidationTests.Bad("offices.yaml", "title: Minister of Finance", "title: Minister of Finance\n    from: 1949-01-01\n    until: 1949-01-01");
+        Assert.Equal("offices.yaml", ex.File);
+        Assert.Equal("offices[finance_minister].until", ex.Field);
+    }
+
+    [Fact]
     public void AnAbolishedOfficeWhoseTermsEndInTimeLoads()
     {
         var offices = Fixture.Files["offices.yaml"].Replace("title: Minister of Finance", "title: Minister of Finance\n    until: 1949-01-01");

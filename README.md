@@ -38,12 +38,12 @@ A deterministic C# simulation runs underneath. The same choices always give the 
 ## What it looks like today
 
 <p align="center">
-  <img src="docs/images/build-m3-map.jpg" alt="Current build: the terrain map of the coastal plain and Jerusalem with hex lines, settlement markers, the top bar and an event card" width="820">
+  <img src="docs/images/build-m3-map.jpg" alt="Current build: the coastal plain around Tel Aviv, Jaffa and Ramla with hex lines, settlement models, fields and groves, railways and roads, the top bar and an event card" width="820">
 </p>
 <p align="center">
   <img src="docs/images/build-m3-cabinet.jpg" alt="Current build: the Cabinet screen listing the Provisional Government's ministers with portraits" width="405">
   <img src="docs/images/build-m3-why.jpg" alt="Current build: the Why panel explaining a turn's changes" width="405">
-  <br><em>Real screenshots from build 0.1.0 (M3), 2026-10-10.</em>
+  <br><em>Real screenshots from build 0.1.0 (M3), 2026-10-11.</em>
 </p>
 
 ## Is this any good?
@@ -61,7 +61,7 @@ It is an early, honest prototype.
 - The browser (WebGL) build.
 
 **What is missing:**
-- The art in the concept image above. Settlements are still simple markers.
+- The art in the concept image above. Settlements and trees are still placeholder art.
 - Diplomacy.
 - War mode.
 - Anything after 1951.
@@ -69,7 +69,7 @@ It is an early, honest prototype.
 
 ## Roadmap
 
-- **Visual v1 (next):** shadows at map scale, a two-band tilt-shift, a stylised terrain shader, a graded sea, a cleaner hex grid and serif labels.
+- **Visual v1 (done):** shadows at map scale, a two-band tilt-shift, a stylised terrain shader, a graded sea, a cleaner hex grid and serif labels.
 - **M4:** the full 1948–1956 slice, war mode for 1948 and Suez, the legacy report, a historian review and a hosted browser build.
 - **Art track:** era-correct 3D settlements, vegetation and units, toward the concept image.
 
@@ -125,7 +125,7 @@ You need Unity **6000.3.25f1 (6.3 LTS)** with Web Build Support; the exact versi
 
 This project is built with heavy AI assistance, disclosed here using itch.io's categories:
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images in `promo/` are AI-generated. The game's terrain comes from real elevation data. The portraits are public-domain photographs.
+- **Graphics:** the concept and promo images in `promo/` are AI-generated, and the web page's tab icon was drawn with AI help. The game's terrain comes from real elevation data. The portraits are public-domain or CC0 photographs.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
 - **Sound:** none yet.
 
@@ -137,7 +137,7 @@ Nothing is generated live while you play.
 - **Original art, docs and data:** [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 - **Game content text** (`content/`, which paraphrases its sources, many from Wikipedia): [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt).
 - **AI-generated images:** marked [CC0](LICENSES/CC0-1.0.txt), with no rights claimed.
-- **Third-party material:** fonts, public-domain portraits and the Unity engine and packages are under their own terms.
+- **Third-party material:** fonts, public-domain and CC0 portraits and the Unity engine and packages are under their own terms.
 
 Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
 

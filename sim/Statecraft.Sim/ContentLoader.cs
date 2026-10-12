@@ -16,6 +16,7 @@ namespace Statecraft.Sim
         sealed class PartiesFile { public List<Party> Parties { get; set; } = new List<Party>(); }
         sealed class PeopleFile { public List<Person> People { get; set; } = new List<Person>(); }
         sealed class LegislaturesFile { public List<Legislature> Legislatures { get; set; } = new List<Legislature>(); }
+        sealed class ErasFile { public List<Era> Eras { get; set; } = new List<Era>(); }
         sealed class GovernmentsFile { public List<Government> Governments { get; set; } = new List<Government>(); }
         sealed class ModelFile
         {
@@ -72,6 +73,59 @@ namespace Statecraft.Sim
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .WithDuplicateKeyChecking()   // two equal keys would otherwise silently keep only the last value
             .Build();
+
+        static readonly IDeserializer NodeYaml = new DeserializerBuilder().WithDuplicateKeyChecking().Build();
+        static readonly ISerializer NodeWriter = new SerializerBuilder().Build();
+
+        /// <summary>Keys an era override may not set: the values <c>NewGame</c> reads once. A later era's start values
+        /// belong in start/&lt;era&gt;.yaml (chapters spec section 6), and the set of budget lines in the carry rules (section 4).</summary>
+        static readonly string[] StartOnlyKeys = { "start", "treasury_start", "fx_start", "start_rung", "initial_population", "budget_start" };
+
+        /// <summary>Era rules (#58): for each era with a content/rules/&lt;era&gt;.yaml file, rules.yaml with that file's keys
+        /// merged in at the YAML-node level (maps merge key by key, a list or a value replaces), then read with the strict
+        /// <see cref="Rules"/> type. The override is first read on its own with the same strict reader, so a misspelt key
+        /// or a wrong type fails naming the era file and the line. An override cannot remove a key: an era cannot drop a
+        /// budget_start line, a map_actions entry or an attention_cost kind. An override file is read through
+        /// <paramref name="readFile"/>, so it counts in the content hash; <paramref name="baseText"/> is the text of
+        /// rules.yaml already read (and hashed) once. An era with no file is left out of the map.</summary>
+        static Dictionary<string, Rules> ReadEraRules(string baseText, Func<string, string?> readFile, List<Era> eras)
+        {
+            var result = new Dictionary<string, Rules>();
+            foreach (var era in eras)
+            {
+                if (!Offices.OfficeId.IsMatch(era.Id ?? "")) continue;   // eras.yaml validation names a bad id
+                var rel = "rules/" + era.Id + ".yaml";
+                string? text;
+                try { text = readFile(rel); }
+                catch (IOException e) { throw new ContentException(rel, "(file)", e.Message); }
+                catch (UnauthorizedAccessException e) { throw new ContentException(rel, "(file)", e.Message); }
+                if (text == null) continue;
+                Dictionary<object, object> over;
+                try
+                {
+                    var alone = Yaml.Deserialize<Rules>(text) ?? throw new ContentException(rel, "(file)", "empty file: list the keys this era changes");
+                    CheckNulls(rel, "", alone);
+                    over = NodeYaml.Deserialize<Dictionary<object, object>>(text) ?? throw new ContentException(rel, "(file)", "empty file: list the keys this era changes");
+                }
+                catch (YamlException e) { throw new ContentException(rel, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
+                foreach (var k in StartOnlyKeys)
+                    if (over.ContainsKey(k))
+                        throw new ContentException(rel, k, k == "start" ? "an era cannot change the start date"
+                            : "start values go in start/<era>.yaml (chapters spec section 6), not in an override");
+                var merged = NodeYaml.Deserialize<Dictionary<object, object>>(baseText) ?? new Dictionary<object, object>();
+                MergeNodes(merged, over);
+                try { result[era.Id!] = Yaml.Deserialize<Rules>(NodeWriter.Serialize(merged)) ?? throw new ContentException(rel, "(file)", "empty file"); }
+                catch (YamlException e) { throw new ContentException(rel, "(merged with rules.yaml)", e.InnerException?.Message ?? e.Message); }
+            }
+            return result;
+        }
+
+        static void MergeNodes(Dictionary<object, object> into, Dictionary<object, object> over)
+        {
+            foreach (var kv in over)
+                if (into.TryGetValue(kv.Key, out var cur) && cur is Dictionary<object, object> a && kv.Value is Dictionary<object, object> b) MergeNodes(a, b);
+                else into[kv.Key] = kv.Value;
+        }
 
         static T Read<T>(Func<string, string?> readFile, string relPath)
         {
@@ -158,10 +212,13 @@ namespace Statecraft.Sim
             c.People = Read<PeopleFile>(readFile, "people.yaml").People;
             c.Legislatures = Read<LegislaturesFile>(readFile, "legislatures.yaml").Legislatures;
             c.Governments = Read<GovernmentsFile>(readFile, "governments.yaml").Governments;
+            c.Eras = Read<ErasFile>(readFile, "eras.yaml").Eras;
             var m = Read<ModelFile>(readFile, "model.yaml");
             c.Indicators = m.Indicators; c.Policies = m.Policies; c.Effects = m.Effects;
             c.Situations = m.Situations; c.VoterGroups = m.VoterGroups; c.Actors = m.Actors; c.Money = m.Money;
-            c.Rules = Read<Rules>(readFile, "rules.yaml");
+            string rulesText = "";
+            c.Rules = Read<Rules>(p => { var t = readFile(p); rulesText = t ?? ""; return t; }, "rules.yaml");
+            c.EraRules = ReadEraRules(rulesText, readFile, c.Eras);
             var aliyah = Read<AliyahFile>(readFile, "aliyah.yaml");
             c.Aliyah = aliyah.Series; c.Regions = aliyah.Regions;
             c.PopulationAnchors = Read<PopulationFile>(readFile, "population.yaml").Anchors;
@@ -212,11 +269,19 @@ namespace Statecraft.Sim
             var eventFiles = Directory.Exists(eventsDir)
                 ? Directory.GetFiles(eventsDir, "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList()
                 : new List<string>();
-            return Load(rel =>
+            var content = Load(rel =>
             {
                 var path = Path.Combine(contentRoot, rel);
                 return File.Exists(path) ? File.ReadAllText(path) : null;
             }, eventFiles);
+            // Only this overload can list the directory. The readFile overload (WebGL) cannot, so a misnamed file is caught
+            // here and by RealContentTests before anything ships.
+            var rulesDir = Path.Combine(contentRoot, "rules");
+            if (Directory.Exists(rulesDir))
+                foreach (var f in Directory.GetFiles(rulesDir, "*.yaml").OrderBy(f => f, StringComparer.Ordinal))
+                    if (!content.EraRules.ContainsKey(Path.GetFileNameWithoutExtension(f)))
+                        throw new ContentException("rules/" + Path.GetFileName(f), "(file)", "the file name must be the id of an era in eras.yaml");
+            return content;
         }
 
         internal const string IdRule = "must be lowercase letters, digits and underscores, starting with a letter";
@@ -285,6 +350,66 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>Checks one complete rules set: rules.yaml itself, or an era's rules after its override is merged in.</summary>
+        static void ValidateRules(Content c, Rules r, string file, HashSet<string> indicators, HashSet<string> offices, HashSet<string> historicalOffices)
+        {
+            if (r.Start == default) throw new ContentException(file, "start", "required");
+            if (!(r.AttentionPerTurn >= 0 && !double.IsInfinity(r.AttentionPerTurn))) throw new ContentException(file, "attention_per_turn", "must be a finite non-negative number");
+            if (!(r.RungAttentionStep >= 0 && !double.IsInfinity(r.RungAttentionStep))) throw new ContentException(file, "rung_attention_step", "must be a finite non-negative number");
+            foreach (var kv in r.AttentionCost)
+                if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException(file, $"attention_cost.{kv.Key}", "must be a finite non-negative number");
+            foreach (var k in r.AttentionCost.Keys)
+                if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
+            foreach (var k in AttentionSystem.CommandKinds)
+                if (!r.AttentionCost.ContainsKey(k)) throw new ContentException(file, $"attention_cost.{k}", "missing cost");
+            if (r.RungMinMobilization.Count != 5) throw new ContentException(file, "rung_min_mobilization", "needs exactly 5 values (rungs 1-5)");
+            for (int i = 0; i < 5; i++)
+            {
+                var field = FormattableString.Invariant($"rung_min_mobilization[{i}]");
+                Unit(file, field, r.RungMinMobilization[i]);
+                if (i > 0 && r.RungMinMobilization[i] < r.RungMinMobilization[i - 1])
+                    throw new ContentException(file, field, "must not be below the previous rung's floor");
+            }
+            if (r.StartRung < 1 || r.StartRung > 5) throw new ContentException(file, "start_rung", "must be 1-5");
+            if (r.CeasefireWeeks <= 0) throw new ContentException(file, "ceasefire_weeks", "must be > 0");
+            foreach (var (key, v) in new[] { ("treasury_start", r.TreasuryStart), ("fx_start", r.FxStart), ("tax_per_capita_per_year", r.TaxPerCapitaPerYear),
+                ("spending_per_capita_per_year", r.SpendingPerCapitaPerYear), ("exports_per_year", r.ExportsPerYear), ("imports_per_capita_per_year", r.ImportsPerCapitaPerYear),
+                ("mobilization_cost_per_year", r.MobilizationCostPerYear), ("natural_increase_per_year", r.NaturalIncreasePerYear),
+                ("capital_inflow_per_year", r.CapitalInflowPerYear), ("fx_crisis_food_per_year", r.FxCrisisFoodPerYear) })
+                Finite(file, key, v);
+            Unit(file, "appoint_stability_cost_other_party", r.AppointStabilityCostOtherParty);
+            Unit(file, "appoint_stability_cost_same_party", r.AppointStabilityCostSameParty);
+            if (r.MapActionMaxDistance < 0) throw new ContentException(file, "map_action_max_distance", "must be >= 0");
+            if (r.MapActionsPerTurn < 1) throw new ContentException(file, "map_actions_per_turn", "must be >= 1");
+            foreach (var kv in r.MapActions)
+            {
+                if (!MapActions.Actions.Contains(kv.Key)) throw new ContentException(file, $"map_actions.{kv.Key}", "unknown map action (transit_camp or housing)");
+                if (!(kv.Value.Cost >= 0 && IsFinite(kv.Value.Cost))) throw new ContentException(file, $"map_actions.{kv.Key}.cost", "must be a finite number >= 0");
+                Named(file, $"map_actions.{kv.Key}.name", kv.Value.Name);
+                foreach (var (key, v) in new[] { ("housing", kv.Value.Housing), ("morale", kv.Value.Morale) })
+                    if (!(v >= -1 && v <= 1)) throw new ContentException(file, $"map_actions.{kv.Key}.{key}", "must be a number from -1 to 1");
+            }
+            if (r.MapActions.Count > 0 && r.MapActionsFrom == default) throw new ContentException(file, "map_actions_from", "required when map_actions are defined");
+            if (r.MapActions.Count > 0 && (!indicators.Contains("housing") || !indicators.Contains("morale")))
+                throw new ContentException(file, "map_actions", "needs housing and morale indicators in model.yaml");
+            if (r.FxCrisisFoodPerYear > 0) throw new ContentException(file, "fx_crisis_food_per_year", "must be <= 0 (a crisis cuts food imports)");
+            if (r.FxCrisisFoodPerYear < 0 && !indicators.Contains("food_supply")) throw new ContentException(file, "fx_crisis_food_per_year", "needs a food_supply indicator in model.yaml");
+            foreach (var kv in r.InitialPopulation) Count(file, $"initial_population.{kv.Key}", kv.Value);
+            foreach (var kv in r.BudgetStart)
+            {
+                if (!offices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "unknown office");
+                if (historicalOffices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "historical-only titles cannot have a budget line");
+                // A budget line must not silently stop mattering when its office is abolished: move it to the office that
+                // took over (plan amendment C3).
+                var until = c.Offices.First(o => o.Id == kv.Key).Until;
+                if (until.HasValue)
+                    throw new ContentException(file, $"budget_start.{kv.Key}", FormattableString.Invariant($"office '{kv.Key}' is abolished on {until:yyyy-MM-dd}: give its budget line to the office that took over"));
+                Unit(file, $"budget_start.{kv.Key}", kv.Value);
+            }
+            // The same rule EconomySystem.Allocate applies to every later allocation.
+            if (r.BudgetStart.Count > 0 && Math.Abs(r.BudgetStart.Values.Sum() - 1.0) > 1e-6) throw new ContentException(file, "budget_start", "shares must sum to 1");
+        }
+
         static void Validate(Content c, List<string> settlementIds)
         {
             var offices = new HashSet<string>(c.Offices.Select(o => o.Id));
@@ -297,6 +422,8 @@ namespace Statecraft.Sim
             Unique("people.yaml", "people", c.People.Select(p => p.Id));
             Unique("legislatures.yaml", "legislatures", c.Legislatures.Select(l => l.Id));
             Unique("governments.yaml", "governments", c.Governments.Select(g => g.Id));
+            Unique("eras.yaml", "eras", c.Eras.Select(e => e.Id));
+            ValidateEras(c);
             Unique("model.yaml", "indicators", c.Indicators.Select(i => i.Id));
             Unique("model.yaml", "policies", c.Policies.Select(p => p.Id));
             Unique("model.yaml", "effects", c.Effects.Select(e => e.Id));
@@ -366,6 +493,14 @@ namespace Statecraft.Sim
                     if (t.Party != "" && !parties.Contains(t.Party)) throw new ContentException("people.yaml", $"people[{p.Id}].offices.{t.Office}.party", $"unknown party '{t.Party}'");
                     if (t.To.HasValue && t.To.Value <= t.From) throw new ContentException("people.yaml", $"people[{p.Id}].offices.{t.Office}", FormattableString.Invariant($"term ends ({t.To:yyyy-MM-dd}) before it starts ({t.From:yyyy-MM-dd})"));
                 }
+            }
+            foreach (var o in c.Offices.Where(o => o.From.HasValue))
+            {
+                if (o.Until.HasValue && o.Until.Value <= o.From!.Value)
+                    throw new ContentException("offices.yaml", $"offices[{o.Id}].until", FormattableString.Invariant($"must be after from ({o.From:yyyy-MM-dd})"));
+                foreach (var p in c.People)
+                    foreach (var t in p.Offices.Where(t => t.Office == o.Id && t.From < o.From!.Value))
+                        throw new ContentException("people.yaml", $"people[{p.Id}].offices.{o.Id}.from", FormattableString.Invariant($"must be on or after {o.From:yyyy-MM-dd}, when the office was established"));
             }
             foreach (var o in c.Offices.Where(o => o.Until.HasValue))
                 foreach (var p in c.People)
@@ -459,62 +594,9 @@ namespace Statecraft.Sim
                     Finite("model.yaml", $"voter_groups[{v.Id}].weights.{kv.Key}", kv.Value);
                 }
             foreach (var a in c.Actors) Unit("model.yaml", $"actors[{a.Id}].standing", a.Standing);
-            if (c.Rules.Start == default) throw new ContentException("rules.yaml", "start", "required");
-            if (!(c.Rules.AttentionPerTurn >= 0 && !double.IsInfinity(c.Rules.AttentionPerTurn))) throw new ContentException("rules.yaml", "attention_per_turn", "must be a finite non-negative number");
-            if (!(c.Rules.RungAttentionStep >= 0 && !double.IsInfinity(c.Rules.RungAttentionStep))) throw new ContentException("rules.yaml", "rung_attention_step", "must be a finite non-negative number");
-            foreach (var kv in c.Rules.AttentionCost)
-                if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException("rules.yaml", $"attention_cost.{kv.Key}", "must be a finite non-negative number");
-            foreach (var k in c.Rules.AttentionCost.Keys)
-                if (!AttentionSystem.IsCommandKind(k)) throw new ContentException("rules.yaml", $"attention_cost.{k}", "unknown command kind");
-            foreach (var k in AttentionSystem.CommandKinds)
-                if (!c.Rules.AttentionCost.ContainsKey(k)) throw new ContentException("rules.yaml", $"attention_cost.{k}", "missing cost");
-            if (c.Rules.RungMinMobilization.Count != 5) throw new ContentException("rules.yaml", "rung_min_mobilization", "needs exactly 5 values (rungs 1-5)");
-            for (int i = 0; i < 5; i++)
-            {
-                var field = FormattableString.Invariant($"rung_min_mobilization[{i}]");
-                Unit("rules.yaml", field, c.Rules.RungMinMobilization[i]);
-                if (i > 0 && c.Rules.RungMinMobilization[i] < c.Rules.RungMinMobilization[i - 1])
-                    throw new ContentException("rules.yaml", field, "must not be below the previous rung's floor");
-            }
-            if (c.Rules.StartRung < 1 || c.Rules.StartRung > 5) throw new ContentException("rules.yaml", "start_rung", "must be 1-5");
-            if (c.Rules.CeasefireWeeks <= 0) throw new ContentException("rules.yaml", "ceasefire_weeks", "must be > 0");
-            var r = c.Rules;
-            foreach (var (key, v) in new[] { ("treasury_start", r.TreasuryStart), ("fx_start", r.FxStart), ("tax_per_capita_per_year", r.TaxPerCapitaPerYear),
-                ("spending_per_capita_per_year", r.SpendingPerCapitaPerYear), ("exports_per_year", r.ExportsPerYear), ("imports_per_capita_per_year", r.ImportsPerCapitaPerYear),
-                ("mobilization_cost_per_year", r.MobilizationCostPerYear), ("natural_increase_per_year", r.NaturalIncreasePerYear),
-                ("capital_inflow_per_year", r.CapitalInflowPerYear), ("fx_crisis_food_per_year", r.FxCrisisFoodPerYear) })
-                Finite("rules.yaml", key, v);
-            Unit("rules.yaml", "appoint_stability_cost_other_party", r.AppointStabilityCostOtherParty);
-            Unit("rules.yaml", "appoint_stability_cost_same_party", r.AppointStabilityCostSameParty);
-            if (r.MapActionMaxDistance < 0) throw new ContentException("rules.yaml", "map_action_max_distance", "must be >= 0");
-            if (r.MapActionsPerTurn < 1) throw new ContentException("rules.yaml", "map_actions_per_turn", "must be >= 1");
-            foreach (var kv in r.MapActions)
-            {
-                if (!MapActions.Actions.Contains(kv.Key)) throw new ContentException("rules.yaml", $"map_actions.{kv.Key}", "unknown map action (transit_camp or housing)");
-                if (!(kv.Value.Cost >= 0 && IsFinite(kv.Value.Cost))) throw new ContentException("rules.yaml", $"map_actions.{kv.Key}.cost", "must be a finite number >= 0");
-                Named("rules.yaml", $"map_actions.{kv.Key}.name", kv.Value.Name);
-                foreach (var (key, v) in new[] { ("housing", kv.Value.Housing), ("morale", kv.Value.Morale) })
-                    if (!(v >= -1 && v <= 1)) throw new ContentException("rules.yaml", $"map_actions.{kv.Key}.{key}", "must be a number from -1 to 1");
-            }
-            if (r.MapActions.Count > 0 && r.MapActionsFrom == default) throw new ContentException("rules.yaml", "map_actions_from", "required when map_actions are defined");
-            if (r.MapActions.Count > 0 && (!indicators.Contains("housing") || !indicators.Contains("morale")))
-                throw new ContentException("rules.yaml", "map_actions", "needs housing and morale indicators in model.yaml");
-            if (r.FxCrisisFoodPerYear > 0) throw new ContentException("rules.yaml", "fx_crisis_food_per_year", "must be <= 0 (a crisis cuts food imports)");
-            if (r.FxCrisisFoodPerYear < 0 && !indicators.Contains("food_supply")) throw new ContentException("rules.yaml", "fx_crisis_food_per_year", "needs a food_supply indicator in model.yaml");
-            foreach (var kv in r.InitialPopulation) Count("rules.yaml", $"initial_population.{kv.Key}", kv.Value);
-            foreach (var kv in r.BudgetStart)
-            {
-                if (!offices.Contains(kv.Key)) throw new ContentException("rules.yaml", $"budget_start.{kv.Key}", "unknown office");
-                if (historicalOffices.Contains(kv.Key)) throw new ContentException("rules.yaml", $"budget_start.{kv.Key}", "historical-only titles cannot have a budget line");
-                // A budget line must not silently stop mattering when its office is abolished: move it to the office that
-                // took over (plan amendment C3).
-                var until = c.Offices.First(o => o.Id == kv.Key).Until;
-                if (until.HasValue)
-                    throw new ContentException("rules.yaml", $"budget_start.{kv.Key}", FormattableString.Invariant($"office '{kv.Key}' is abolished on {until:yyyy-MM-dd}: give its budget line to the office that took over"));
-                Unit("rules.yaml", $"budget_start.{kv.Key}", kv.Value);
-            }
-            // The same rule EconomySystem.Allocate applies to every later allocation.
-            if (r.BudgetStart.Count > 0 && Math.Abs(r.BudgetStart.Values.Sum() - 1.0) > 1e-6) throw new ContentException("rules.yaml", "budget_start", "shares must sum to 1");
+            ValidateRules(c, c.Rules, "rules.yaml", indicators, offices, historicalOffices);
+            foreach (var kv in c.EraRules)
+                ValidateRules(c, kv.Value, "rules/" + kv.Key + ".yaml", indicators, offices, historicalOffices);
             for (int i = 0; i < c.Aliyah.Count; i++)
             {
                 var a = c.Aliyah[i]; var path = FormattableString.Invariant($"series[{i}]");
@@ -534,6 +616,32 @@ namespace Statecraft.Sim
             }
             ValidateMap(c, settlementIds);
             EventRules.Validate(c, offices, indicators);
+        }
+
+        /// <summary>One or more eras, each with a name and a non-empty range; the first starts on rules.yaml start and
+        /// each starts where the one before ended, so every date in range is in exactly one era.</summary>
+        static void ValidateEras(Content c)
+        {
+            if (c.Eras.Count == 0) throw new ContentException("eras.yaml", "eras", "at least one era is required");
+            for (int i = 0; i < c.Eras.Count; i++)
+            {
+                var e = c.Eras[i];
+                var at = $"eras[{e.Id}]";
+                Named("eras.yaml", at + ".name", e.Name);
+                if (e.To == default) throw new ContentException("eras.yaml", at + ".to", "required (the first day after the era)");
+                Period("eras.yaml", at, e.From, e.To);
+                if (i == 0)
+                {
+                    if (c.Rules.Start != default && e.From != c.Rules.Start)   // a missing start is rules.yaml's own error
+                        throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"must equal start in rules.yaml ({c.Rules.Start:yyyy-MM-dd})"));
+                    continue;
+                }
+                var prev = c.Eras[i - 1];
+                if (e.From < prev.To)
+                    throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"overlaps {prev.Id} (ends {prev.To:yyyy-MM-dd})"));
+                if (e.From > prev.To)
+                    throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"leaves a gap after {prev.Id}: must equal its end ({prev.To:yyyy-MM-dd})"));
+            }
         }
 
         static void ValidateMap(Content c, List<string> settlementIds)

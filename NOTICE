@@ -23,12 +23,112 @@ Rain-gauge data: Israel Meteorological Service, meteorological data archive, dat
 Wikipedia (CC BY-SA 4.0): many facts in content/ cite English and Hebrew Wikipedia articles, and the 1948 settlement
 coordinates come from the Wikipedia API; each entry lists its source URLs.
 
+Sub-district boundaries (content/map/subdistricts_1948.geojson): digitised from the Survey of Palestine map
+"Administrative Divisions" (1946, overprinted May 1947) and the Administrative Divisions (Amendment) Proclamation, 1947
+(Palestine Gazette No. 1552), Government of Palestine works (public domain in Israel and the UK; facts only are used: decision D-B in
+docs/oss/DECISIONS.md; see the file's licence note); scans from
+the National Library of Israel via Wikimedia Commons. Hebrew and Arabic names from Wikipedia (CC BY-SA 4.0).
+
 Railways and roads of 1948 (content/map/route*_1948.yaml): traced on the Survey of Palestine 1:250,000 map of 1946
-(public domain), using the scans and georeferencing published by Palestine Open Maps (https://palopenmaps.org).
+(public domain in Israel and the UK; facts only are used, as for decision D-B in docs/oss/DECISIONS.md), using the scans
+and georeferencing published by Palestine Open Maps (https://palopenmaps.org).
+
+1949 armistice lines (content/map/armistice_lines_1949.geojson): digitised from the General Armistice Agreements of
+1949 and their annexed maps (United Nations Treaty Series vol. 42; UN documents S/1264/Corr.1, S/1296, S/1302/Rev.1,
+S/1353/Rev.1, and S/1471 with its signed 1950 map; UN documents are not copyrighted, ST/AI/189/Add.9/Rev.2), from the
+UN Official Document System, UNISPAL and the UN Treaty Collection; the Egypt line uses the Survey of Palestine
+1:100,000 sheet "Gaza" (Government of Palestine, decision D-B; National Library of Israel scan via Wikimedia Commons)
+and the Lebanon line the sub-district data's Mandate frontier; the Jordan map is drawn on the Survey of Palestine
+1:250,000 (1946, decision D-B) and S/1471's on Survey of Palestine 1:20,000 sheets reprinted by the Survey of Israel
+(only the agreements' line positions are taken); town coordinates for georeferencing from Wikidata (CC0)
+and Wikipedia. Decision D-A.
 
 Portraits: public-domain and CC0 photographs from Wikimedia Commons; per-file records in ASSETS.portraits.yaml.
 
-Fonts: EB Garamond, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/OFL.txt).
+Event-card photographs (unity/Assets/UI/EventImages/; per-file records in ASSETS.yaml). Each is adapted: graded and
+cropped (shown in black and white with a navy-sepia tone, cropped and resized; nothing else changed).
+CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), via Wikimedia Commons:
+- idf_founding.jpg: Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Jerusalem_(997008872766605171.jpg
+- first_truce.jpg: Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Jerusalem_(997008872623805171).jpg
+- altalena.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:1948_Arab-Israeli_War_(997008136847805171).jpg
+- ten_days.jpg: Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography
+  Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:1948_Arab-Israeli_War_997009323190005171.jpg
+- jerusalem_military_government.jpg: Moshe Marlin Levin / Meitar Collection / National Library of Israel / The
+  Pritzker Family National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Jerusalem_(997008872608005171.jpg
+- latrun_proposal.jpg: Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Latrun_(997009322899505171.jpg
+- bernadotte_assassination.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker
+  Family National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136963805171).jpg
+- operation_yoav.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:1948_Arab-Israeli_War_997008137023805171.jpg
+- operation_hiram.jpg: Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Galilee_(997009323161505171.jpg
+- operation_horev.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:1948_Arab-Israeli_War_997008137257005171.jpg
+- elections_1949.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Meitar_Collection_(997008137164005171.jpg
+- armistice_egypt.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Meitar_Collection_(997008137405105171.jpg
+- armistice_jordan.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008137543905171).jpg
+- austerity_1949.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Meitar_Collection_(997008136819405171).jpg
+- frumkin_commission.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection / Israel State Archives, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Rosh_Ha%27Ayin_(997008136256005171).jpg
+- maabarot_policy.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Ma%27abara_(997008136927805171.jpg
+- law_of_return.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Jerusalem_(997008136347905171).jpg
+- clothing_rationing_1950.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_997008137472205171.jpg
+- ministry_supply_crisis.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_997008137468405171.jpg
+- hula_drainage.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Hula_Valley_(997008137583605171.jpg
+- iraqi_exodus.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Aliyah_(997008136551705171).jpg
+Public domain or CC0 (credited as a courtesy):
+- second_truce.jpg: Ben Merk / Anefo, Nationaal Archief (Anefo 934-6899) · CC0 · graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Graaf_Bernadotte_op_Schiphol,_Bestanddeelnr_934-6899.jpg
+- jerusalem_ceasefire.jpg: Willem van de Poll, Nationaal Archief (Van de Poll 255-0327) · CC0 · graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Jeruzalem._Wegversperringen_in_de_Propheet_Samuelstraat,_op_de_grens_tussen_Jord,_Bestanddeelnr_255-0327.jpg
+- israel_bonds.jpg: Abbie Rowe, National Park Service / U.S. National Archives (NARA 200318) · public domain · graded
+  and cropped.
+  https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office,_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
+
+Fonts: EB Garamond, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/OFL.txt). Frank Ruhl Libre, Copyright 2015 The
+Frank Ruhl Libre Project Authors, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt).
+
+The start screen quotes the Declaration of the Establishment of the State of Israel (14 May 1948): the Hebrew as
+published in Iton Rishmi (Official Gazette) No. 1, and the official English translation of the Israel Ministry of Foreign
+Affairs (https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel). An official State publication, in the
+public domain; sources in docs/sources/declaration-1948/.
 
 Builds also contain YamlDotNet, Copyright (c) Antoine Aubry and contributors, MIT (LICENSES/YamlDotNet-MIT.txt), and
-the Unity runtime, used under the Unity Terms of Service.
+the Unity runtime, used under the Unity Terms of Service. The Unity runtime includes the ICU data file that
+UI Toolkit's advanced text generator uses (Hebrew on the start screen): Copyright (c) 2016 and later Unicode, Inc. and
+others, Unicode License v3 (https://www.unicode.org/license.txt).

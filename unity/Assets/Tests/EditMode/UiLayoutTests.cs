@@ -41,9 +41,15 @@ public class UiLayoutTests
                 foreach (var a in Fixed)
                     foreach (var b in Fixed)
                         if (string.CompareOrdinal(a, b) < 0) Assert.IsFalse(R(a).Overlaps(R(b)), $"{w}x{h}: {a} {R(a)} overlaps {b} {R(b)}");
+                // A wide screen (Cabinet, Defence: promo 04 and 08) opens over the info panel, drawn above it; no screen
+                // covers the top bar, the event card or the minimap.
                 foreach (var s in Screens)
                     foreach (var f in Fixed)
+                    {
+                        if (f == "info-panel" && root.Q(s).ClassListContains("screen-wide"))
+                            continue;   // checked below: hidden while the wide screen is open
                         Assert.IsFalse(R(s).Overlaps(R(f)), $"{w}x{h}: {s} {R(s)} overlaps {f} {R(f)}");
+                    }
                 Assert.LessOrEqual(R("meters").xMax, R("nav").xMin + 0.5f, $"{w}x{h}: the meters run into the screen buttons");
                 Assert.LessOrEqual(R("top-bar").xMin, root.Q(className: "date-box").worldBound.xMin, $"{w}x{h}: date box starts outside the top bar");
                 Assert.LessOrEqual(root.Q(className: "date-box").worldBound.xMax, R("meters").xMin + 0.5f, $"{w}x{h}: date box runs into the meters");
@@ -68,6 +74,60 @@ public class UiLayoutTests
     }
 
     static readonly Content C = ContentLoader.Load(Paths.Content);
+
+    /// <summary>Review I3: a wide screen (Cabinet, Defence) covers the info panel, so while it is open the panel is hidden:
+    /// it is drawn under the screen, takes no keyboard focus (its build buttons cannot be reached with Tab), and a map
+    /// click does not change it. A narrow screen (Budget) leaves it as it was.</summary>
+    [UnityTest]
+    public IEnumerator AWideScreenHidesTheInfoPanelItCovers()
+    {
+        var rt = new RenderTexture(1920, 1080, 0);
+        var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+        ps.targetTexture = rt;
+        var go = new GameObject("WideTest");
+        go.SetActive(false);
+        var doc = go.AddComponent<UIDocument>();
+        doc.panelSettings = ps;
+        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+        go.SetActive(true);
+        var root = doc.rootVisualElement;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id));
+        var nav = new ScreenNav(root);
+        try
+        {
+            root.Q("root").RemoveFromClassList("loading");
+            var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            info.Show(tlv.Q, tlv.R);
+            for (int i = 0; i < 4; i++) yield return null;
+            var panel = root.Q("info-panel");
+            var build = root.Q<Button>("build-camp");
+            Assert.AreEqual(DisplayStyle.Flex, panel.resolvedStyle.display, "precondition: the panel shows");
+            foreach (var s in new[] { "cabinet", "defence" })
+            {
+                nav.Open(s);
+                for (int i = 0; i < 3; i++) yield return null;
+                Assert.IsTrue(root.Q("screen-" + s).ClassListContains(ScreenNav.WideClass), s);
+                Assert.Greater(root.Q("root").IndexOf(root.Q("screen-" + s)), root.Q("root").IndexOf(panel), $"{s} is drawn above the info panel");
+                Assert.IsTrue(root.Q("screen-" + s).worldBound.Overlaps(panel.worldBound) || panel.resolvedStyle.display == DisplayStyle.None, s);
+                Assert.AreEqual(DisplayStyle.None, panel.resolvedStyle.display, $"{s}: the covered info panel is hidden");
+                Assert.IsFalse(build.canGrabFocus, $"{s}: its build button cannot take the keyboard focus");
+                build.Focus();
+                Assert.AreNotSame(build, build.focusController?.focusedElement, $"{s}: focus does not reach it");
+                info.Show(tlv.Q + 3, tlv.R);
+                Assert.AreEqual((tlv.Q, tlv.R), info.Selected, $"{s}: a map click does not change the hidden panel");
+            }
+            nav.Open("budget");
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.AreEqual(DisplayStyle.Flex, panel.resolvedStyle.display, "a narrow screen leaves the panel");
+            nav.Open(null);
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.AreEqual(DisplayStyle.Flex, panel.resolvedStyle.display, "closing brings it back");
+            info.Show(tlv.Q + 3, tlv.R);
+            Assert.AreEqual((tlv.Q + 3, tlv.R), info.Selected, "and map clicks reach it again");
+        }
+        finally { nav.Dispose(); info.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
+    }
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     /// <summary>The window sizes a player is likely to have: 16:9, 5:4, the playtest's wide-and-short browser window
@@ -210,7 +270,7 @@ public class UiLayoutTests
             g.Step(new Command[0]);
         }
         var problems = new List<string>();
-        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1920, 960), (1600, 757), (1366, 657) })
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1920, 960), (1600, 757), (1366, 657), (390, 844), (960, 600) })   // #210: and narrow windows
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -293,7 +353,10 @@ public class UiLayoutTests
             // The real portraits: a minister's portrait adds the 200 px image row, so the tallest card is a portrait card.
             var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>("Assets/UI/Portraits/PortraitCatalog.asset");
             Assert.IsNotNull(portraits);
-            var card = new EventCardPresenter(root, bridge, Text, portraits);
+            // And the real event photographs: a photograph card adds the 200 px header band and its credit line.
+            var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
+            Assert.IsNotNull(photos);
+            var card = new EventCardPresenter(root, bridge, Text, portraits, photos);
             float tallest = 0; string tallestId = "";
             try
             {
@@ -304,7 +367,8 @@ public class UiLayoutTests
                     g.State.Date = e.From;                       // the text names the office holders of the event's own time
                     g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
                     bridge.Replace(g);
-                    for (int i = 0; i < 3; i++) yield return null;
+                    for (int i = 0; i < 4; i++) yield return null;   // the fourth: a photograph dropped for height settles
+                    CheckPhoto($"{w}x{h}: {e.Id}", root, card, problems);
                     var c = root.Q("event-card").worldBound;
                     var mini = root.Q("minimap").worldBound;
                     if (c.height > tallest) { tallest = c.height; tallestId = e.Id; }
@@ -322,7 +386,7 @@ public class UiLayoutTests
                     // without scrolling; shorter windows may scroll the body as the fallback.
                     var scroll = root.Q<ScrollView>("event-scroll");
                     var logicalHeight = root.panel.visualTree.layout.height;
-                    if (logicalHeight >= 990f && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
+                    if (logicalHeight >= EventCardPresenter.ScrollFallbackHeight && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
                         problems.Add($"{w}x{h} (logical height {logicalHeight:0}): {e.Id}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px)");
                 }
                 Debug.Log($"I2 {w}x{h}: tallest card {tallestId} {tallest:0} px");
@@ -335,5 +399,126 @@ public class UiLayoutTests
             }
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Review I2 and I6: a shown photograph keeps at least MinPhotoHeight of picture above its whole credit line
+    /// (CC BY 4.0 needs the credit), the credit's text fits the strip, and PhotoAlt says whether it is shown.</summary>
+    static void CheckPhoto(string where, VisualElement root, EventCardPresenter card, List<string> problems)
+    {
+        var band = root.Q("event-photo");
+        var credit = root.Q<Label>("event-photo-credit");
+        if (band.resolvedStyle.display == DisplayStyle.None)
+        {
+            if (card.PhotoAlt != null) problems.Add($"{where}: PhotoAlt is set but the photograph is hidden");
+            return;
+        }
+        if (card.PhotoAlt == null) problems.Add($"{where}: the photograph band shows with no PhotoAlt");
+        if (band.layout.height + 0.5f < credit.layout.height + EventCardPresenter.MinPhotoHeight)
+            problems.Add($"{where}: the photograph band is {band.layout.height:0} px, under its credit ({credit.layout.height:0} px) + {EventCardPresenter.MinPhotoHeight} px");
+        if (!Inside(credit.worldBound, band.worldBound)) problems.Add($"{where}: the credit {credit.worldBound} is cut by the band {band.worldBound}");
+        if (!TextFits(credit)) problems.Add($"{where}: the credit '{credit.text}' does not fit its strip {credit.contentRect}");
+    }
+
+    /// <summary>Review I6 and the re-review's ultrawide finding: on a short window (logically under
+    /// EventCardPresenter.ScrollFallbackHeight) a photograph is either shown whole with its credit, the body scrolling for
+    /// it as it may there, or dropped rather than squeezed (PhotoAlt is null); the credit is never cut and the card clears
+    /// the minimap with its options inside it. An ultrawide 2560x1080 window shows photographs.</summary>
+    [UnityTest]
+    public IEnumerator AShortWindowShowsThePhotographWholeOrDropsIt()
+    {
+        var problems = new List<string>();
+        var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
+        Assert.IsNotNull(photos);
+        foreach (var (w, h) in new[] { (1280, 600), (2560, 1080) })   // logically about 985 and 935 px tall
+        {
+            var rt = new RenderTexture(w, h, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("LayoutTest");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var card = new EventCardPresenter(root, bridge, Text, null, photos);
+            int dropped = 0, shown = 0;
+            try
+            {
+                for (int i = 0; i < 20 && float.IsNaN(root.Q("minimap").worldBound.width); i++) yield return null;
+                foreach (var e in C.Events.Where(e => photos.Find(e.Id) != null))
+                {
+                    var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                    g.State.Date = e.From;
+                    g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                    bridge.Replace(g);
+                    for (int i = 0; i < 4; i++) yield return null;
+                    CheckPhoto($"{w}x{h}: {e.Id}", root, card, problems);
+                    if (card.PhotoAlt == null) dropped++; else shown++;
+                    var c = root.Q("event-card").worldBound;
+                    var mini = root.Q("minimap").worldBound;
+                    if (c.yMax > mini.yMin + 0.5f && c.xMax > mini.xMin && c.xMin < mini.xMax)
+                        problems.Add($"{w}x{h}: {e.Id}: card {c} overlaps the minimap {mini}");
+                    foreach (var b in root.Q("event-options").Query<Button>().ToList())
+                        if (!Inside(b.worldBound, c)) problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
+                }
+                Debug.Log($"I6 {w}x{h}: {shown} photographs shown, {dropped} dropped");
+                Assert.Greater(shown, 0, $"{w}x{h}: photographs show on this window");
+                Assert.Less(root.panel.visualTree.layout.height, EventCardPresenter.ScrollFallbackHeight, $"{w}x{h} is a short window");
+            }
+            finally
+            {
+                card.Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Review I2: a photograph dropped because the window got shorter comes back when it grows again, without a
+    /// new event (the card listens to the right-hand column's size, which only the window changes).</summary>
+    [UnityTest]
+    public IEnumerator ADroppedPhotographReturnsWhenTheWindowGrows()
+    {
+        var rt = new RenderTexture(1920, 1080, 0);
+        var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+        ps.targetTexture = rt;
+        var go = new GameObject("LayoutTest");
+        go.SetActive(false);
+        var doc = go.AddComponent<UIDocument>();
+        doc.panelSettings = ps;
+        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+        go.SetActive(true);
+        var root = doc.rootVisualElement;
+        var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = C.Events.First(e => e.Id == "armistice_egypt").From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add("armistice_egypt");
+        var card = new EventCardPresenter(root, new SimBridge(g, Text), Text, null, photos);
+        var column = root.Q("right-column");
+        try
+        {
+            for (int i = 0; i < 20 && float.IsNaN(root.Q("minimap").worldBound.width); i++) yield return null;
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsNotNull(card.PhotoAlt, "1080p has room for the photograph");
+            column.style.bottom = 560;                    // as a much shorter window would leave the column
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.IsNull(card.PhotoAlt, "a short column drops the photograph");
+            Assert.AreEqual(DisplayStyle.None, root.Q("event-photo").resolvedStyle.display);
+            Assert.AreEqual("", root.Q("event-photo").tooltip, "the alt text goes with it");
+            column.style.bottom = StyleKeyword.Null;      // the window grows back
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.IsNotNull(card.PhotoAlt, "the photograph is back without a new event");
+            Assert.AreEqual(DisplayStyle.Flex, root.Q("event-photo").resolvedStyle.display);
+            var problems = new List<string>();
+            CheckPhoto("1920x1080 regrown", root, card, problems);
+            Assert.IsEmpty(problems, string.Join("\n", problems));
+        }
+        finally
+        {
+            card.Dispose();
+            Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+        }
     }
 }

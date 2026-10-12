@@ -31,6 +31,24 @@ public class GameInputsTests
     }
 
     [Test]
+    public void TheManifestListsEraRuleOverridesAndToleratesNoRulesFolder()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "manifest-rules-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(dir, "events"));
+            Directory.CreateDirectory(Path.Combine(dir, "map"));
+            File.WriteAllText(Path.Combine(dir, "people.yaml"), "people: []\n");
+            File.WriteAllText(Path.Combine(dir, "map", "hexes.json"), "{}");
+            CollectionAssert.DoesNotContain(ContentManifest.Collect(dir), "rules/later.yaml");   // no rules/ folder: fine
+            Directory.CreateDirectory(Path.Combine(dir, "rules"));
+            File.WriteAllText(Path.Combine(dir, "rules", "later.yaml"), "ceasefire_weeks: 4\n");
+            CollectionAssert.Contains(ContentManifest.Collect(dir), "rules/later.yaml");   // #58: players must get override files
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Test]
     public void ABrokenManifestIsAClearError()
     {
         var ex = Assert.Throws<InvalidDataException>(() => ContentManifest.Parse("{\"files\": []}"));

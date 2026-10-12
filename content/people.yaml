@@ -1,15 +1,21 @@
-# Offices and dates are historical facts (sourced per term). competence/loyalty are game-balance values, not facts.
-# A term's `party` (when set) is the list the holder sat for in that government; otherwise `party` of the person applies.
-# An empty person `party` means the person sat for no list (non-MK ministers, the President).
-# Periods are [from, to). Terms without `to` continue beyond the M3 content range (end of 1951).
-# Terms are split per government (Provisional, First 1949-03-10, Second 1950-11-01, Third 1951-10-08).
-# living: false is set only after confirming each person's death date (en.wikipedia.org infobox; 2026-10-09 for the
-# 1948-49 cabinet, 2026-10-10 for people added in M3).
-# Portraits: public-domain files fetched with license check (promo/CREDITS.md).
-# Deputy ministers (Efrati, Shari, Kahana) and Kaplan's Deputy Prime Minister title are historical-only titles
-# (offices.yaml `historical_only: true`); sources in research_notes/M3 content 1950-51/deputy-titles.md.
-# portrait.focus_y: the face centre's height as a share of the picture (0 top, 1 bottom), measured on each picture;
-# the event card keeps it in view (playtest 2, P2-5).
+# Offices and dates are historical facts (sourced per term). competence/loyalty are game-balance values, not facts. A
+# term's `party` (when set) is the list the holder sat for in that government; otherwise `party` of the person applies.
+# An empty person `party` means the person sat for no list (non-MK ministers, the President). Periods are [from, to).
+# Terms without `to` continue beyond the content range (the game ends on 1 January 1957). Terms are split per government
+# (Provisional, First 1949-03-10, Second 1950-11-01, Third 1951-10-08, Fourth 1952-12-24, Fifth 1954-01-26, Sixth
+# 1955-06-29, Seventh 1955-11-03). Ben-Gurion's 1948 Prime Minister and Defense terms are not split before the Fourth
+# Government. 1952-1956 terms (#26) follow the Knesset's own position records (knesset.gov.il OData,
+# KNS_PersonToPosition, one query per government; the Knesset's web pages return a bot challenge), checked against
+# he.wiki and en.wiki and, for each government's formation and the mid-term changes, the Knesset plenum record
+# (fs.knesset.gov.il). The Knesset data split the Sixth Government's terms at 15 August 1955, when the Third Knesset
+# convened; they are merged here except where the holder's list changed (Hapoel HaMizrachi and Mizrachi MKs sat for the
+# National Religious Front in the Third Knesset). People added for 1952-1956 have neutral game ratings (competence 5,
+# loyalty 5), like the deputies. living: false is set only after confirming each person's death date (en.wikipedia.org
+# infobox; 2026-10-09 for the 1948-49 cabinet, 2026-10-10 for people added in M3). Portraits: public-domain files
+# fetched with license check (promo/CREDITS.md). Deputy ministers (Efrati, Shari, Kahana) and Kaplan's Deputy Prime
+# Minister title are historical-only titles (offices.yaml `historical_only: true`); sources in research_notes/M3 content
+# 1950-51/deputy-titles.md. portrait.focus_y: the face centre's height as a share of the picture (0 top, 1 bottom),
+# measured on each picture; the event card keeps it in view (playtest 2, P2-5).
 people:
   - id: ben_gurion
     name: David Ben-Gurion
@@ -26,8 +32,69 @@ people:
     loyalty: 10
     portrait: { file: promo/ref/people/David_Ben-Gurion_NARA_1951.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg", focus_y: 0.4 }
     offices:
-      - { office: prime_minister, from: 1948-05-14, sources: &prov [{ url: "https://en.wikipedia.org/wiki/Provisional_government_of_Israel", checked: 2026-10-09 }] }
-      - { office: defense_minister, from: 1948-05-14, sources: *prov }
+      # Prime Minister and Defense from 14 May 1948 until the Fourth Government; the Knesset's Third Government records
+      # end both on 24 December 1952.
+      - office: prime_minister
+        from: 1948-05-14
+        to: 1952-12-24
+        sources: &bg_1948
+          - { url: "https://en.wikipedia.org/wiki/Provisional_government_of_Israel", checked: 2026-10-09 }
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%203", checked: 2026-10-12 }
+      - { office: defense_minister, from: 1948-05-14, to: 1952-12-24, sources: *bg_1948 }
+      # Fourth Government. He resigned on 7 December 1953 and en.wiki shows Sharett acting from then; the Knesset
+      # records and he.wiki keep him in both offices until the Fifth Government took office on 26 January 1954, which is
+      # used.
+      - office: prime_minister
+        from: 1952-12-24
+        to: 1954-01-26
+        sources: &gov4
+          - &gov4_k { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%204", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }
+          # Ben-Gurion's statement of 22 December 1952 naming the ministers, and the oath on 24 December.
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250689.pdf", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250350.pdf", checked: 2026-10-12 }
+      - { office: defense_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      # Back as Minister of Defense when Lavon resigned on 21 February 1955 (Fifth Government).
+      - office: defense_minister
+        from: 1955-02-21
+        to: 1955-06-29
+        sources: &gov5
+          - &gov5_k { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%205", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Fifth_government_of_Israel", checked: 2026-10-12 }
+          # Sharett's statement of 25 January 1954 naming the ministers.
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250778.pdf", checked: 2026-10-12 }
+      - office: defense_minister
+        from: 1955-06-29
+        to: 1955-11-03
+        sources: &gov6
+          - &gov6_k { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%206", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השישית", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Sixth_government_of_Israel", checked: 2026-10-12 }
+          # Sharett's statement of 29 June 1955 naming the parties and the twelve ministers.
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250532.pdf", checked: 2026-10-12 }
+      # Seventh Government (to 7 January 1958, after the content range).
+      - office: prime_minister
+        from: 1955-11-03
+        sources: &gov7
+          - &gov7_k { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%207", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }
+          # Ben-Gurion's statement of 2 November 1955 naming the ministers.
+          - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251309.pdf", checked: 2026-10-12 }
+      - { office: defense_minister, from: 1955-11-03, sources: *gov7 }
+      # Justice while Rosen was out of the government, 13 to 28 February 1956: Knesset records and en.wiki (citing
+      # HaBoker, 8 February, and Haaretz, 29 February 1956); the plenum heard of Rosen's resignation on 13 February and
+      # of his return on 28 February. he.wiki's table shows no break.
+      - office: justice_minister
+        from: 1956-02-13
+        to: 1956-02-28
+        sources: &rosen_1956
+          - *gov7_k
+          - { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251333.pdf", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251016.pdf", checked: 2026-10-12 }
       # Held Education after Remez died in office on 19 May 1951.
       - { office: education_minister, from: 1951-05-19, to: 1951-10-08, sources: &second [{ url: "https://en.wikipedia.org/wiki/Second_government_of_Israel", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השנייה", checked: 2026-10-10 }] }
       # Held Transportation after Pinkas died in office on 14 August 1952, until the Fourth Government was sworn in on
@@ -50,7 +117,7 @@ people:
     loyalty: 5
     portrait: { file: promo/ref/people/Aharon_Zisling.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Aharon_Zisling.jpg", focus_y: 0.34 }
     offices:
-      - { office: agriculture_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
+      - { office: agriculture_minister, from: 1948-05-14, to: 1949-03-10, sources: &prov [{ url: "https://en.wikipedia.org/wiki/Provisional_government_of_Israel", checked: 2026-10-09 }] }
     status: fact-checked
   - id: kaplan
     name: Eliezer Kaplan
@@ -102,12 +169,29 @@ people:
     party: mapai
     competence: 8
     loyalty: 8
-    portrait: { file: promo/ref/people/Moshe_Sharett.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Moshe_Sharett_Portrait.jpg", focus_y: 0.22 }
+    # Van de Poll collection Israel 1948-1949; the archive's 1948-01-01 field conflicts with the caption, so no exact day is inferred.
+    portrait: { file: promo/ref/people/Moshe_Sharett_CC0_1948.jpg, license: CC0, source: "https://commons.wikimedia.org/wiki/File:Moshe_Sharett,_de_eerste_minister_van_buitenlandse_zaken_van_de_staat_Israel,_tu,_Bestanddeelnr_255-1438.jpg", focus_y: 0.3 }
     offices:
       - { office: foreign_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: foreign_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
       - { office: foreign_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
-      - { office: foreign_minister, from: 1951-10-08, sources: &third [*third_en, *third_he] }
+      - { office: foreign_minister, from: 1951-10-08, to: 1952-12-24, sources: &third [*third_en, *third_he, &gov3 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%203", checked: 2026-10-12 }] }
+      - { office: foreign_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: prime_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: foreign_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: prime_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: foreign_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      # Resigned as Foreign Minister on 18 June 1956 (statements in the plenum that evening); the Knesset records end
+      # the term and start Golda Meir's on 19 June.
+      - office: foreign_minister
+        from: 1955-11-03
+        to: 1956-06-19
+        sources: &june_1956
+          - *gov7_k
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251360.pdf", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251362.pdf", checked: 2026-10-12 }
     status: fact-checked
   - id: shapira
     name: Haim-Moshe Shapira
@@ -136,8 +220,24 @@ people:
       - { office: interior_minister, from: 1950-11-01, to: 1951-10-08, party: united_religious_front, sources: *second }
       # The United Religious Front dissolved in 1951; Shapira sat for Hapoel HaMizrachi (the person's party). The Third
       # Government had no Immigration portfolio (notes, Addendum (a)): offices.yaml ends that office on 1951-10-08.
-      - { office: interior_minister, from: 1951-10-08, sources: *third }
-      - { office: religions_minister, from: 1951-10-08, sources: *third }
+      - { office: interior_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
+      - { office: religions_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
+      # Fourth Government: Hapoel HaMizrachi joined on the day it took office; Shapira and Burg took the oath on 24
+      # December 1952 (plenum record in *gov4).
+      - { office: religions_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: welfare_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: religions_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: welfare_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      # Sixth Government, split where the Third Knesset convened (15 August 1955): from then he sat for the National
+      # Religious Front, the joint list of Hapoel HaMizrachi and Mizrachi (Knesset faction records).
+      - { office: religions_minister, from: 1955-06-29, to: 1955-08-15, sources: *gov6 }
+      - { office: welfare_minister, from: 1955-06-29, to: 1955-08-15, sources: *gov6 }
+      - { office: interior_minister, from: 1955-06-29, to: 1955-08-15, sources: *gov6 }
+      - { office: religions_minister, from: 1955-08-15, to: 1955-11-03, party: national_religious_front, sources: &shapira_k3 [*gov6_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202661%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+      - { office: welfare_minister, from: 1955-08-15, to: 1955-11-03, party: national_religious_front, sources: *shapira_k3 }
+      - { office: interior_minister, from: 1955-08-15, to: 1955-11-03, party: national_religious_front, sources: *shapira_k3 }
+      - { office: religions_minister, from: 1955-11-03, party: national_religious_front, sources: &shapira_7 [*gov7_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202661%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }] }
+      - { office: welfare_minister, from: 1955-11-03, party: national_religious_front, sources: *shapira_7 }
     status: fact-checked
   - id: gruenbaum
     name: Yitzhak Gruenbaum
@@ -175,6 +275,15 @@ people:
       - { office: justice_minister, from: 1949-03-10, to: 1950-11-01, party: progressive, sources: *first }
       # The Progressive Party went into opposition and was not in the Third Government.
       - { office: justice_minister, from: 1950-11-01, to: 1951-10-08, party: progressive, sources: *second }
+      - { office: justice_minister, from: 1952-12-24, to: 1954-01-26, party: progressive, sources: *gov4 }
+      # The Progressives had not yet decided to join the Fifth Government on 25 January 1954, and Sharett said the Prime
+      # Minister would hold Justice until then (plenum record in *gov5). Rosen's term starts on 1 February 1954 (Knesset
+      # records, he.wiki); the week before is vacant, as acting holders are not modelled.
+      - { office: justice_minister, from: 1954-02-01, to: 1955-06-29, party: progressive, sources: *gov5 }
+      - { office: justice_minister, from: 1955-06-29, to: 1955-11-03, party: progressive, sources: *gov6 }
+      # Out of the government from 13 to 28 February 1956 (see Ben-Gurion's Justice term).
+      - { office: justice_minister, from: 1955-11-03, to: 1956-02-13, party: progressive, sources: *rosen_1956 }
+      - { office: justice_minister, from: 1956-02-28, party: progressive, sources: *rosen_1956 }
     status: fact-checked
   - id: bentov
     name: Mordechai Bentov
@@ -192,6 +301,7 @@ people:
     portrait: { file: promo/ref/people/Mordechai_Bentov.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:MordechaiBentov.jpg", focus_y: 0.28 }
     offices:
       - { office: labour_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
+      - { office: development_minister, from: 1955-11-03, sources: *gov7 }
     status: fact-checked
   - id: sheetrit
     name: Bechor-Shalom Sheetrit
@@ -214,7 +324,12 @@ people:
       - { office: police_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
       # Both Wikipedias and JVL list him under Mapai for 1951 (Addendum (d)); he was elected in 1949 for the Sephardim
       # list. The cabinet tables are used.
-      - { office: police_minister, from: 1951-10-08, party: mapai, sources: [{ url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-10 }, { url: "https://www.jewishvirtuallibrary.org/third-government-of-israel", checked: 2026-10-10 }] }
+      - { office: police_minister, from: 1951-10-08, to: 1952-12-24, party: mapai, sources: [{ url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-10 }, { url: "https://www.jewishvirtuallibrary.org/third-government-of-israel", checked: 2026-10-10 }, *gov3] }
+      # Mapai faction in the Second and Third Knessets (Knesset faction records; the cabinet tables agree).
+      - { office: police_minister, from: 1952-12-24, to: 1954-01-26, party: mapai, sources: *gov4 }
+      - { office: police_minister, from: 1954-01-26, to: 1955-06-29, party: mapai, sources: *gov5 }
+      - { office: police_minister, from: 1955-06-29, to: 1955-11-03, party: mapai, sources: *gov6 }
+      - { office: police_minister, from: 1955-11-03, party: mapai, sources: *gov7 }
     status: fact-checked
   - id: maimon
     name: Yehuda Leib Maimon
@@ -260,6 +375,8 @@ people:
     portrait: { file: promo/ref/people/Peretz_Bernstein.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Peretz_Bernstein.jpg", focus_y: 0.28 }
     offices:
       - { office: trade_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
+      - { office: trade_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: trade_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
     status: fact-checked
   - id: remez
     name: David Remez
@@ -299,7 +416,10 @@ people:
       - { office: welfare_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: welfare_minister, from: 1949-03-10, to: 1950-11-01, party: united_religious_front, sources: *first }
       - { office: welfare_minister, from: 1950-11-01, to: 1951-10-08, party: united_religious_front, sources: *second }
-      - { office: welfare_minister, from: 1951-10-08, party: agudat_yisrael, sources: *third }
+      # Resigned on 18 September 1952, when Agudat Yisrael left the coalition (Knesset records; en.wiki and he.wiki
+      # Third Government; he.wiki's text gives 23 September for the party's exit). No successor until Shapira took
+      # Welfare in the Fourth Government, so the office is vacant from 18 September to 24 December 1952.
+      - { office: welfare_minister, from: 1951-10-08, to: 1952-09-18, party: agudat_yisrael, sources: *third }
     status: fact-checked
   - id: dov_yosef
     name: Dov Yosef
@@ -316,17 +436,35 @@ people:
     loyalty: 8
     offices:
       - { office: agriculture_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
-      # As Minister of Rationing and Supply: the ministry was created on 26 April 1949, the day rationing was decided,
-      # and abolished on 1 November 1950.
-      - { office: rationing_minister, from: 1949-04-26, to: 1950-11-01, sources: &rationing [{ url: "https://en.wikipedia.org/wiki/Rationing_and_Supply_Minister_of_Israel", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/תקופת_הצנע", checked: 2026-10-10 }] }
+      # As Minister of Rationing and Supply: named in the First Government presented to the Knesset on 8 March 1949 and in
+      # office from 10 March 1949 (Knesset gov1.pdf; he.wiki First Government table and "דב יוסף"). Rationing itself was
+      # decided on 26 April 1949 (austerity event), the date en.wiki "Rationing and Supply Minister of Israel" and
+      # he.wiki "משרד האספקה והקיצוב" give for the office. The ministry was abolished on 1 November 1950. Issue #225.
+      - { office: rationing_minister, from: 1949-03-10, to: 1950-11-01, sources: &rationing [{ url: "https://main.knesset.gov.il/mk/government/documents/gov1.pdf", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הראשונה", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/דב_יוסף", checked: 2026-10-12 }] }
       - { office: transportation_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
       # en.wiki lists Trade and Industry and Justice; he.wiki lists only Trade and Industry clearly (research notes 1e).
-      - { office: trade_minister, from: 1951-10-08, sources: *third }
-      - { office: justice_minister, from: 1951-10-08, sources: *third }
+      # The Knesset records give Justice too, until Haim Cohn took it on 25 June 1952 (en.wiki and he.wiki agree).
+      - { office: trade_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
+      - { office: justice_minister, from: 1951-10-08, to: 1952-06-25, sources: [*third_en, *third_he, *gov3, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-12 }] }
       # Food supply and rationing within Trade and Industry, not a revival of the abolished ministry.
       # Schiffman/Goldstein (2026), pp.6 n.9, 33, 62; Knesset 7 January 1952, questions 8-10.
       # Exact start is explicit in the archival working paper; the research note records the conflicting Rozin date.
       - { office: rationing_minister, from: 1951-10-08, to: 1952-12-24, sources: [{ url: "https://mpra.ub.uni-muenchen.de/129488/1/MPRA_paper_129488.pdf", checked: 2026-10-11 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250631.pdf", checked: 2026-10-11 }] }
+      # Fourth Government: Minister without Portfolio from 24 December 1952 until the Ministry of Development was set up
+      # for him on 15 June 1953 (same sources). Lavon was also without portfolio then, and an office has one holder at a
+      # time here, so that term is not authored.
+      - office: development_minister
+        from: 1953-06-15
+        to: 1954-01-26
+        sources: &development_1953
+          - *gov4_k
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/משרד_הפיתוח", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Development_Minister_of_Israel", checked: 2026-10-12 }
+      - { office: development_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: development_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: health_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
     status: fact-checked
   - id: shazar
     name: Zalman Shazar
@@ -364,7 +502,12 @@ people:
     offices:
       - { office: labour_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
       - { office: labour_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
-      - { office: labour_minister, from: 1951-10-08, sources: *third }
+      - { office: labour_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
+      - { office: labour_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: labour_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: labour_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: labour_minister, from: 1955-11-03, to: 1956-06-19, sources: *june_1956 }
+      - { office: foreign_minister, from: 1956-06-19, sources: *june_1956 }
     status: fact-checked
   - id: lavon
     name: Pinhas Lavon
@@ -385,7 +528,20 @@ people:
       # Trade and Industry (Geri) took some supply departments (commodities and stock). Research notes, Addendum 2 (A1):
       # he.wiki was read directly; the Weitz PDF and SSRN 6351358 were not read directly, only their search summaries.
       - { office: rationing_minister, from: 1950-11-01, to: 1951-10-08, sources: [{ url: "https://he.wikipedia.org/wiki/משרד_האספקה_והקיצוב", checked: 2026-10-10 }, { url: "https://in.bgu.ac.il/bgi/iyunim/24/Yechiam-Weitz.pdf", checked: 2026-10-10 }, { url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6351358", checked: 2026-10-10 }] }
-      # Yosef took food-supply/rationing responsibility in the Third Government (see his sourced term above).
+      # Yosef took food-supply/rationing responsibility in the Third Government (see his sourced term above). Without
+      # portfolio from his oath on 18 August 1952 (Knesset records and the plenum record of that day); en.wiki and
+      # he.wiki give 17 August.
+      - office: minister_without_portfolio
+        from: 1952-08-18
+        to: 1952-12-24
+        sources:
+          - *gov3
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250346.pdf", checked: 2026-10-12 }
+          - { url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-12 }
+      - { office: minister_without_portfolio, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      # Resigned on 21 February 1955 (the Lavon affair); Ben-Gurion succeeded him.
+      - { office: defense_minister, from: 1954-01-26, to: 1955-02-21, sources: *gov5 }
     status: fact-checked
   - id: geri
     name: Ya'akov Geri
@@ -420,7 +576,17 @@ people:
     loyalty: 8
     offices:
       - { office: agriculture_minister, from: 1951-10-08, to: 1952-06-25, sources: [*third_en, *third_he, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }] }
-      - { office: finance_minister, from: 1952-06-25, sources: *june_1952 }
+      - { office: finance_minister, from: 1952-06-25, to: 1952-12-24, sources: *june_1952 }
+      # The Knesset records also list Eshkol as Minister of Development from 8 October 1951 to 24 December 1952, and
+      # he.wiki "לוי אשכול" (citing Goldstein's biography, p. 319) has him appointed to Agriculture and Development on 8
+      # October 1951, with Development moving under the Finance Ministry when he went there on 25 June 1952. Neither
+      # Wikipedia's Third Government table lists it, and he.wiki "משרד הפיתוח" and en.wiki "Development Minister of
+      # Israel" date the ministry from 15 June 1953. The office here is that ministry, so the 1951-52 title is not
+      # authored (checked 2026-10-12).
+      - { office: finance_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: finance_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: finance_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: finance_minister, from: 1955-11-03, sources: *gov7 }
     status: fact-checked
   - id: dinur
     name: Ben-Zion Dinur
@@ -437,7 +603,10 @@ people:
     competence: 7
     loyalty: 7
     offices:
-      - { office: education_minister, from: 1951-10-08, sources: *third }
+      - { office: education_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
+      - { office: education_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: education_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: education_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
     status: fact-checked
   - id: burg
     name: Yosef Burg
@@ -455,7 +624,13 @@ people:
     offices:
       # Four sources give Health (en.wiki Third Government and Yosef Burg, he.wiki Yosef Burg, JVL). Posts came only in
       # the Fourth Government (24 December 1952), per Addendum (c).
-      - { office: health_minister, from: 1951-10-08, sources: [{ url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }, { url: "https://en.wikipedia.org/wiki/Yosef_Burg", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/יוסף_בורג", checked: 2026-10-10 }] }
+      - { office: health_minister, from: 1951-10-08, to: 1952-12-24, sources: [{ url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }, { url: "https://en.wikipedia.org/wiki/Yosef_Burg", checked: 2026-10-10 }, { url: "https://he.wikipedia.org/wiki/יוסף_בורג", checked: 2026-10-10 }, *gov3] }
+      - { office: posts_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: posts_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      # Split at 15 August 1955: National Religious Front in the Third Knesset (see Shapira).
+      - { office: posts_minister, from: 1955-06-29, to: 1955-08-15, sources: *gov6 }
+      - { office: posts_minister, from: 1955-08-15, to: 1955-11-03, party: national_religious_front, sources: &burg_k3 [*gov6_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202187%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+      - { office: posts_minister, from: 1955-11-03, party: national_religious_front, sources: [*gov7_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202187%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }] }
     status: fact-checked
   - id: pinkas
     name: David-Zvi Pinkas
@@ -489,7 +664,225 @@ people:
     loyalty: 8
     offices:
       - { office: minister_without_portfolio, from: 1951-10-08, to: 1952-06-25, sources: [*third_en, *third_he, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }] }
-      - { office: agriculture_minister, from: 1952-06-25, sources: *june_1952 }
+      - { office: agriculture_minister, from: 1952-06-25, to: 1952-12-24, sources: *june_1952 }
+      - { office: agriculture_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: agriculture_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: agriculture_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: trade_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: minister_without_portfolio, from: 1955-11-03, sources: *gov7 }
+    status: fact-checked
+  - id: haim_cohn
+    name: Haim Cohn
+    name_he: חיים כהן
+    born: 1911-03-11
+    died: 2002-04-10
+    biography_sources:
+      name_he: [{ url: "https://he.wikipedia.org/wiki/חיים_כהן_(משפטן)", checked: 2026-10-12 }]
+      born: &haim_cohn_bio [{ url: "https://en.wikipedia.org/wiki/Haim_Cohn", checked: 2026-10-12 }]
+      died: *haim_cohn_bio
+    living: false
+    # Not a Knesset member (he.wiki Third Government), so no party is set.
+    party: ""
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: justice_minister, from: 1952-06-25, to: 1952-12-24, sources: [*gov3, { url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-12 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: nurock
+    name: Mordechai Nurock
+    name_he: מרדכי נורוק
+    born: 1879-11-07
+    died: 1962-11-08
+    biography_sources:
+      name_he: &nurock_bio [{ url: "https://en.wikipedia.org/wiki/Mordechai_Nurock", checked: 2026-10-12 }]
+      born: *nurock_bio
+      died: *nurock_bio
+    living: false
+    party: mizrachi
+    competence: 5
+    loyalty: 5
+    offices:
+      # The first Minister of Postal Services; took the oath on 3 November 1952 (plenum record).
+      - { office: posts_minister, from: 1952-11-03, to: 1952-12-24, sources: [*gov3, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250408.pdf", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Ministry_of_Communications_(Israel)", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: rokach
+    name: Israel Rokach
+    name_he: ישראל רוקח
+    born: 1896-12-31
+    died: 1959-09-13
+    biography_sources:
+      name_he: &rokach_bio [{ url: "https://en.wikipedia.org/wiki/Israel_Rokach", checked: 2026-10-12 }]
+      born: *rokach_bio
+      died: *rokach_bio
+    living: false
+    party: general_zionists
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: interior_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
+      - { office: interior_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+    status: fact-checked
+  - id: serlin
+    name: Yosef Serlin
+    name_he: יוסף סרלין
+    born: 1906-02-24
+    died: 1974-01-15
+    biography_sources:
+      name_he: &serlin_bio [{ url: "https://en.wikipedia.org/wiki/Yosef_Serlin", checked: 2026-10-12 }]
+      born: [{ url: "https://he.wikipedia.org/wiki/יוסף_סרלין", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Yosef_Serlin", checked: 2026-10-12 }]
+      died: [{ url: "https://en.wikipedia.org/wiki/Yosef_Serlin", checked: 2026-10-12 }, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202516%20and%20KnessetNum%20eq%207", checked: 2026-10-12 }]
+    living: false
+    # en.wiki's infobox gives 24 January 1906 for the birth; its lead, its death-date template and he.wiki give 24
+    # February. For the death, he.wiki gives 13 January 1974 (citing Maariv of 14 January 1974); en.wiki and the
+    # Knesset records, which end his Seventh Knesset seat on 15 January 1974, give 15 January, which is used.
+    party: general_zionists
+    competence: 5
+    loyalty: 5
+    offices:
+      # Serlin and Yosef Sapir swapped Transportation and Health on 29 December 1952 (Knesset records, he.wiki).
+      # en.wiki's Fourth Government table dates the swap 29 December 1953; the government ended on 26 January 1954, so
+      # 1952 is used.
+      - { office: transportation_minister, from: 1952-12-24, to: 1952-12-29, sources: &swap_1952 [*gov4_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }] }
+      - { office: health_minister, from: 1952-12-29, to: 1954-01-26, sources: *swap_1952 }
+      - { office: health_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+    status: fact-checked
+  - id: yosef_sapir
+    name: Yosef Sapir
+    name_he: יוסף ספיר
+    born: 1902-01-27
+    died: 1972-02-26
+    biography_sources:
+      name_he: &yosef_sapir_bio [{ url: "https://en.wikipedia.org/wiki/Yosef_Sapir", checked: 2026-10-12 }]
+      born: *yosef_sapir_bio
+      died: *yosef_sapir_bio
+    living: false
+    party: general_zionists
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: health_minister, from: 1952-12-24, to: 1952-12-29, sources: *swap_1952 }
+      - { office: transportation_minister, from: 1952-12-29, to: 1954-01-26, sources: *swap_1952 }
+      - { office: transportation_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+    status: fact-checked
+  - id: aran
+    name: Zalman Aran
+    name_he: זלמן ארן
+    born: 1899-03-01
+    died: 1970-09-06
+    biography_sources:
+      name_he: &aran_bio [{ url: "https://en.wikipedia.org/wiki/Zalman_Aran", checked: 2026-10-12 }]
+      born: *aran_bio
+      died: *aran_bio
+    living: false
+    party: mapai
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: minister_without_portfolio, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      - { office: transportation_minister, from: 1955-06-29, to: 1955-11-03, sources: *gov6 }
+      - { office: education_minister, from: 1955-11-03, sources: *gov7 }
+    status: fact-checked
+  - id: luz
+    name: Kadish Luz
+    name_he: קדיש לוז
+    born: 1895-01-10
+    died: 1972-12-04
+    biography_sources:
+      name_he: &luz_bio [{ url: "https://en.wikipedia.org/wiki/Kadish_Luz", checked: 2026-10-12 }]
+      born: *luz_bio
+      died: *luz_bio
+    living: false
+    party: mapai
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: agriculture_minister, from: 1955-11-03, sources: *gov7 }
+    status: fact-checked
+  - id: pinchas_sapir
+    name: Pinchas Sapir
+    name_he: פנחס ספיר
+    born: 1906-10-15
+    died: 1975-08-12
+    biography_sources:
+      name_he: &pinchas_sapir_bio [{ url: "https://en.wikipedia.org/wiki/Pinchas_Sapir", checked: 2026-10-12 }]
+      born: *pinchas_sapir_bio
+      died: *pinchas_sapir_bio
+    living: false
+    # Not a Knesset member in the Seventh Government (en.wiki; elected for Mapai in 1959), so no party is set.
+    party: ""
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: trade_minister, from: 1955-11-03, sources: *gov7 }
+    status: fact-checked
+  - id: barzilai
+    name: Yisrael Barzilai
+    name_he: ישראל ברזילי
+    born: 1913-10-01
+    died: 1970-06-12
+    biography_sources:
+      name_he: &barzilai_bio [{ url: "https://en.wikipedia.org/wiki/Yisrael_Barzilai", checked: 2026-10-12 }]
+      born: *barzilai_bio
+      died: *barzilai_bio
+    living: false
+    party: mapam
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: health_minister, from: 1955-11-03, sources: *gov7 }
+    status: fact-checked
+  - id: bar_yehuda
+    name: Yisrael Bar-Yehuda
+    name_he: ישראל בר-יהודה
+    born: 1895-11-15
+    died: 1965-05-04
+    biography_sources:
+      name_he: &bar_yehuda_bio [{ url: "https://en.wikipedia.org/wiki/Yisrael_Bar-Yehuda", checked: 2026-10-12 }]
+      born: *bar_yehuda_bio
+      died: *bar_yehuda_bio
+    living: false
+    # Elected for Mapam in 1951; in the Ahdut HaAvoda-Poalei Tzion faction from 23 August 1954 and elected for it in
+    # 1955 (Knesset faction records).
+    party: ahdut_haavoda_poalei_tzion
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: interior_minister, from: 1955-11-03, sources: [*gov7_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202215%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: carmel
+    name: Moshe Carmel
+    name_he: משה כרמל
+    born: 1911-01-17
+    died: 2003-08-14
+    biography_sources:
+      name_he: &carmel_bio [{ url: "https://en.wikipedia.org/wiki/Moshe_Carmel", checked: 2026-10-12 }]
+      born: *carmel_bio
+      died: *carmel_bio
+    living: false
+    # Not a Knesset member when appointed (en.wiki; the Knesset records start his Third Knesset seat on 9 June 1958), so
+    # no party is set.
+    party: ""
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: transportation_minister, from: 1955-11-03, sources: *gov7 }
+    status: fact-checked
+  - id: namir
+    name: Mordechai Namir
+    name_he: מרדכי נמיר
+    born: 1897-02-23
+    died: 1975-02-22
+    biography_sources:
+      name_he: &namir_bio [{ url: "https://en.wikipedia.org/wiki/Mordechai_Namir", checked: 2026-10-12 }]
+      born: *namir_bio
+      died: *namir_bio
+    living: false
+    party: mapai
+    competence: 5
+    loyalty: 5
+    offices:
+      # Took Labour when Golda Meir became Foreign Minister; oath on 19 June 1956 (plenum record).
+      - { office: labour_minister, from: 1956-06-19, sources: *june_1956 }
     status: fact-checked
   - id: weizmann
     name: Chaim Weizmann
@@ -535,6 +928,8 @@ people:
       # Speaker Yosef Sprinzak was acting President; acting holders are not modelled, so the office is vacant until then.
       # The term runs past the Fourth Government (24 December 1952) and stays open, like the other open terms.
       - { office: president, from: 1952-12-16, sources: [{ url: "https://en.wikipedia.org/wiki/1952_Israeli_presidential_election", checked: 2026-10-11 }, { url: "https://en.wikipedia.org/wiki/Yitzhak_Ben-Zvi", checked: 2026-10-11 }, { url: "https://he.wikipedia.org/wiki/נשיא_מדינת_ישראל", checked: 2026-10-11 }] }
+    # Anefo photograph from 15 July 1958, after the Founding slice but within his presidency.
+    portrait: { file: promo/ref/people/Yitzhak_Ben_Zvi_CC0_1958.jpg, license: CC0, source: "https://commons.wikimedia.org/wiki/File:President_Isaac_Ben_Zwi_,_president_van_Israel_en_echtgenote_ontvangen_door_het_,_Bestanddeelnr_909-7131.jpg", focus_y: 0.32 }
     status: fact-checked
   - id: dori
     name: Yaakov Dori
@@ -565,8 +960,40 @@ people:
     competence: 8
     loyalty: 8
     offices:
-      # In office through the M3 range: resigned 7 December 1952 (research notes 8).
-      - { office: chief_of_staff, from: 1949-11-09, sources: *cos }
+      # Resigned; Maklef succeeded him on 7 December 1952 (en.wiki and he.wiki lists of Chiefs of Staff; research notes
+      # 8).
+      - { office: chief_of_staff, from: 1949-11-09, to: 1952-12-07, sources: &cos_1952 [{ url: "https://en.wikipedia.org/wiki/Chief_of_the_General_Staff_(Israel)", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ראש_המטה_הכללי", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: maklef
+    name: Mordechai Maklef
+    name_he: מרדכי מקלף
+    born: 1920-01-19
+    died: 1978-02-22
+    biography_sources:
+      name_he: &maklef_bio [{ url: "https://en.wikipedia.org/wiki/Mordechai_Maklef", checked: 2026-10-12 }]
+      born: *maklef_bio
+      died: *maklef_bio
+    living: false
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: chief_of_staff, from: 1952-12-07, to: 1953-12-06, sources: *cos_1952 }
+    status: fact-checked
+  - id: dayan
+    name: Moshe Dayan
+    name_he: משה דיין
+    born: 1915-05-20
+    died: 1981-10-16
+    biography_sources:
+      name_he: &dayan_bio [{ url: "https://en.wikipedia.org/wiki/Moshe_Dayan", checked: 2026-10-12 }]
+      born: *dayan_bio
+      died: *dayan_bio
+    living: false
+    competence: 5
+    loyalty: 5
+    offices:
+      # Chief of Staff until 29 January 1958, after the content range.
+      - { office: chief_of_staff, from: 1953-12-06, sources: *cos_1952 }
     status: fact-checked
   # Deputies use neutral game ratings, not claims about historical ability or loyalty.
   - id: efrati
@@ -592,6 +1019,12 @@ people:
           - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plenumsession/kns_plenumsession.csv", checked: 2026-10-11 }
           - { url: "https://en.wikipedia.org/wiki/Yosef_Efrati", checked: 2026-10-11 }
       - { office: deputy_agriculture_minister, from: 1951-11-04, to: 1952-06-25, sources: *deputies }
+      # Each later term starts a few days after its government took office (Knesset records). en.wiki
+      # lists him in the Fourth to Sixth Governments without dates; he.wiki's tables omit him.
+      - { office: deputy_agriculture_minister, from: 1952-07-09, to: 1952-12-24, sources: [*gov3] }
+      - { office: deputy_agriculture_minister, from: 1953-01-05, to: 1954-01-26, sources: [*gov4_k, { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }] }
+      - { office: deputy_agriculture_minister, from: 1954-01-27, to: 1955-06-29, sources: [*gov5_k, { url: "https://en.wikipedia.org/wiki/Fifth_government_of_Israel", checked: 2026-10-12 }] }
+      - { office: deputy_agriculture_minister, from: 1955-06-30, to: 1955-11-03, sources: [*gov6_k, { url: "https://en.wikipedia.org/wiki/Sixth_government_of_Israel", checked: 2026-10-12 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250385.pdf", checked: 2026-10-12 }] }
     status: fact-checked
   - id: shari
     name: Reuven Shari
@@ -640,4 +1073,103 @@ people:
           - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plmsessionitem/kns_plmsessionitem.csv", checked: 2026-10-11 }
           - { url: "https://production.oknesset.org/pipelines/data/plenum/kns_plenumsession/kns_plenumsession.csv", checked: 2026-10-11 }
           - { url: "https://en.wikipedia.org/wiki/Kalman_Kahana", checked: 2026-10-11 }
+    status: fact-checked
+  - id: warhaftig
+    name: Zorach Warhaftig
+    name_he: זרח ורהפטיג
+    born: 1906-02-02
+    died: 2002-09-26
+    biography_sources:
+      name_he: &warhaftig_bio [{ url: "https://en.wikipedia.org/wiki/Zorach_Warhaftig", checked: 2026-10-12 }]
+      born: *warhaftig_bio
+      died: *warhaftig_bio
+    living: false
+    party: hapoel_hamizrachi
+    competence: 5
+    loyalty: 5
+    offices:
+      # Dates from the Knesset records. en.wiki gives the same two Fifth Government terms; for the Seventh it gives 3
+      # November 1955, while the Knesset records and he.wiki give 9 January 1956, which is used. The Third Knesset terms
+      # are for the National Religious Front (see Shapira).
+      - { office: deputy_religions_minister, from: 1953-01-05, to: 1954-01-26, sources: [*gov4_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }] }
+      - { office: deputy_religions_minister, from: 1954-01-27, to: 1954-05-24, sources: &warhaftig_5 [*gov5_k, { url: "https://en.wikipedia.org/wiki/Fifth_government_of_Israel", checked: 2026-10-12 }] }
+      - { office: deputy_religions_minister, from: 1954-06-15, to: 1955-06-29, sources: *warhaftig_5 }
+      - { office: deputy_religions_minister, from: 1955-06-30, to: 1955-08-15, sources: &deputies_1955 [*gov6_k, { url: "https://en.wikipedia.org/wiki/Sixth_government_of_Israel", checked: 2026-10-12 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250385.pdf", checked: 2026-10-12 }] }
+      - { office: deputy_religions_minister, from: 1955-08-15, to: 1955-11-03, party: national_religious_front, sources: [*gov6_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202325%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+      - { office: deputy_religions_minister, from: 1956-01-09, party: national_religious_front, sources: [*gov7_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202325%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: ben_meir
+    name: Shlomo-Yisrael Ben-Meir
+    name_he: שלמה-ישראל בן-מאיר
+    born: 1910-08-13
+    died: 1971-04-04
+    biography_sources:
+      name_he: [{ url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Person(2203)", checked: 2026-10-12 }]
+      born: &ben_meir_bio [{ url: "https://en.wikipedia.org/wiki/Shlomo-Yisrael_Ben-Meir", checked: 2026-10-12 }]
+      died: *ben_meir_bio
+    living: false
+    # Name order as in the Knesset records (en.wiki: Shlomo-Yisrael); he.wiki titles him ישראל שלמה בן-מאיר.
+    party: mizrachi
+    competence: 5
+    loyalty: 5
+    offices:
+      # Sat for Mizrachi in the Second Knesset (Knesset faction records, from 14 August 1952; he.wiki and en.wiki Fourth
+      # Government). en.wiki's Sixth Government table lists him under Mapai, against the faction records.
+      - { office: deputy_welfare_minister, from: 1953-01-05, to: 1954-01-26, sources: [*gov4_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }] }
+      - { office: deputy_welfare_minister, from: 1954-01-27, to: 1955-06-29, sources: [*gov5_k] }
+      - { office: deputy_welfare_minister, from: 1955-06-30, to: 1955-08-15, sources: *deputies_1955 }
+      - { office: deputy_welfare_minister, from: 1955-08-15, to: 1955-11-03, party: national_religious_front, sources: [*gov6_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202203%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+      - { office: deputy_welfare_minister, from: 1955-12-20, party: national_religious_front, sources: [*gov7_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202203%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: susayeff
+    name: Zalman Susayeff
+    name_he: זלמן סוזאיב
+    born: 1911-02-14
+    died: 1981-02-25
+    biography_sources:
+      name_he: &susayeff_bio [{ url: "https://en.wikipedia.org/wiki/Zalman_Susayeff", checked: 2026-10-12 }]
+      born: *susayeff_bio
+      died: *susayeff_bio
+    living: false
+    party: general_zionists
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: deputy_trade_minister, from: 1953-06-15, to: 1954-01-26, sources: [*gov4_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }] }
+      - { office: deputy_trade_minister, from: 1954-01-27, to: 1955-06-29, sources: [*gov5_k, { url: "https://en.wikipedia.org/wiki/Fifth_government_of_Israel", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: tzur
+    name: Ze'ev Tzur
+    name_he: זאב צור
+    born: 1911-09-11
+    died: 1994-09-28
+    biography_sources:
+      name_he: &tzur_bio [{ url: "https://en.wikipedia.org/wiki/Ze'ev_Tzur", checked: 2026-10-12 }]
+      born: *tzur_bio
+      died: *tzur_bio
+    living: false
+    party: ahdut_haavoda_poalei_tzion
+    competence: 5
+    loyalty: 5
+    offices:
+      - { office: deputy_agriculture_minister, from: 1955-12-05, sources: [*gov7_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: unna
+    name: Moshe Unna
+    name_he: משה אונא
+    born: 1902-11-22
+    died: 1989-02-21
+    biography_sources:
+      name_he: &unna_bio [{ url: "https://en.wikipedia.org/wiki/Moshe_Unna", checked: 2026-10-12 }]
+      born: *unna_bio
+      died: *unna_bio
+    living: false
+    party: hapoel_hamizrachi
+    competence: 5
+    loyalty: 5
+    offices:
+      # From 22 March 1956 (Knesset records, he.wiki; en.wiki gives 3 November 1955) to 31 December 1957, after the
+      # content range. Ami Assaf (Mapai) was a second Deputy Minister of Education from 11 June 1956 (same sources); one
+      # office has one holder at a time here, so his term is not authored.
+      - { office: deputy_education_minister, from: 1956-03-22, party: national_religious_front, sources: [*gov7_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202131%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
     status: fact-checked

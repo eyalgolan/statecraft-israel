@@ -39,7 +39,7 @@ namespace Statecraft.Sim
                 why.Add(new Cause("politics", "coalition_stability", s.CoalitionStability - old, $"coalition stability {PlayerText.PercentChange(s.CoalitionStability - old)} (public approval)"));
             if (s.CoalitionStability < CollapseBelow && s.GameOver == null)
             {
-                s.GameOver = "coalition_collapse";
+                s.GameOver = GameOverCodes.CoalitionCollapse;
                 why.Add(new Cause("politics", "game_over", 0, "The coalition collapsed. Your premiership is over."));
             }
         }

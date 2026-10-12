@@ -368,6 +368,7 @@ public class HudTests
     {
         ("MinimapPresenter.cs", "Length.Percent(", "the view frame's position and size in percent of the picture (layout, not text)"),
         ("PortraitFraming.cs", "offset / (h - boxH) * 100f", "a portrait's background-position-y in percent (layout, not text)"),
+        ("UiBar.cs", "Length.Percent(", "a bar's fill width and tick position in percent of its track (layout, not text)"),
         ("MapShaderGlobals.cs", "RiftHazeTopM = -100f", "a real elevation in metres for the rift haze (shader input, not a displayed number)"),
         ("SettlementKits.cs", "DefaultHouses = 100f", "the owner's symbolic scale for houses and trees (100x real size), not a displayed number"),
         ("RouteLayer.cs", "CorridorMarginM = 100f", "a clearance in map metres that kit buildings and trees keep from a route (geometry, not a displayed number)"),

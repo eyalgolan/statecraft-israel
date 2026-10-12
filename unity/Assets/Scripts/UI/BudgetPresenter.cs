@@ -111,7 +111,10 @@ namespace Statecraft.Game.UI
                 var share = draft.TryGetValue(office, out var v) ? v : 0;
                 var row = new VisualElement { name = "budget-" + office };
                 row.AddToClassList("row");
-                row.Add(new Label(text.Format("budget.office", o.Title, Cabinet.Holder(c, s, office)?.Name ?? text["budget.vacant"])) { name = "budget-" + office + "-name" });
+                // A budget line can run before its ministry exists (Education from 10 March 1949): say so, not "vacant".
+                var who = o.From.HasValue && s.Date < o.From.Value ? text.Format("budget.not_established", PlayerText.Date(o.From.Value))
+                    : Cabinet.Holder(c, s, office)?.Name ?? text["budget.vacant"];
+                row.Add(new Label(text.Format("budget.office", o.Title, who)) { name = "budget-" + office + "-name" });
                 row[0].AddToClassList("grow");
                 row.Add(new Button(() => Change(office, -Step)) { name = "budget-" + office + "-down", text = "-" });
                 row.Add(new Label(text.Format("budget.share", PlayerText.Percent(share))) { name = "budget-" + office + "-share" });

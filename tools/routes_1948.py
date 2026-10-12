@@ -57,6 +57,11 @@ WINDOW_MARGIN_M = 3000.0  # the search window around two waypoints: their box gr
 SPUR_M = 130.0            # a trace that comes back this close to where it was cuts the loop (a waypoint off the line)
 SMOOTH_PX = 15            # moving average over the traced pixels (ends kept): the 16 m pixel staircase and the trace
                           # hopping between the two edges of a thick symbol drew a 100-200 m wobble at close zoom
+SMOOTH_SIGMA_M = 250.0    # Gaussian along a straight stretch (gaussian_smooth): removes the 100-300 m wobble (review B14)
+BEND_SIGMA_M = 60.0       # ... and along a real bend, so the Sorek canyon's meanders keep their shape
+BEND_WINDOW_M = 320.0     # a bend is a net heading change, over +- this, of BEND_FROM_DEG (straight) to BEND_TO_DEG (bend)
+BEND_FROM_DEG, BEND_TO_DEG = 30.0, 90.0
+RESAMPLE_M = 40.0         # spacing the chain is resampled to before the Gaussian
 SIMPLIFY_M = 35.0         # Douglas-Peucker tolerance of the written line: about two map pixels, a tenth of a road's width
 OFF_SYMBOL_COST = 40.0    # cost of a pixel off the symbol (on it: 1), so a gap in the scan of up to ~40 px is bridged
 THIN_RAIL_COST = 4.0      # a rail trace's cost on a thin dark line (cost_raster)
@@ -285,6 +290,45 @@ def smooth(points: list[tuple[float, float]], window: int) -> list[tuple[float, 
     return out
 
 
+def resample(points: list[tuple[float, float]], step: float) -> list[tuple[float, float]]:
+    """Points every `step` along a polyline (its own units), both ends kept."""
+    pts = np.asarray(points, float)
+    seg = np.hypot(*np.diff(pts, axis=0).T)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    if s[-1] <= 0:
+        return [tuple(pts[0]), tuple(pts[-1])]
+    t = np.append(np.arange(0.0, s[-1], step), s[-1])
+    return list(zip(np.interp(t, s, pts[:, 0]), np.interp(t, s, pts[:, 1])))
+
+
+def gaussian_smooth(points: list[tuple[float, float]], spacing: float) -> list[tuple[float, float]]:
+    """Curvature-adaptive Gaussian smoothing of evenly spaced points (`spacing` apart, own units = metres). The trace hops
+    between the two edges of a thick symbol, a 100-300 m wobble that drew kinks every few hundred metres (review B14).
+    A wobble's turns alternate, so over +-BEND_WINDOW_M its net heading change is small, while a real bend's adds up
+    (at an S-bend's inflection the net turn is also small, so it is smoothed as a straight there: measured against the
+    unsmoothed trace that moves no line more than 86 m, under a third of a road's width; review A-m4):
+    each point takes a Gaussian of SMOOTH_SIGMA_M on a straight stretch, easing to BEND_SIGMA_M where the net turn grows
+    from BEND_FROM_DEG to BEND_TO_DEG, so the wobble goes and the meanders stay. The window shrinks symmetrically at the
+    ends, so both end points stay put. Deterministic: plain arithmetic on the input."""
+    if len(points) < 3:
+        return list(points)
+    pts = np.asarray(points, float)
+    head = np.unwrap(np.arctan2(*np.diff(pts, axis=0)[:, ::-1].T))
+    head = np.append(head, head[-1])
+    k = max(1, int(round(BEND_WINDOW_M / spacing)))
+    n = len(pts)
+    out = []
+    for i in range(n):
+        net = abs(head[min(n - 1, i + k)] - head[max(0, i - k)])
+        t = np.clip((math.degrees(net) - BEND_FROM_DEG) / (BEND_TO_DEG - BEND_FROM_DEG), 0.0, 1.0)
+        t = t * t * (3 - 2 * t)
+        sigma = (SMOOTH_SIGMA_M + (BEND_SIGMA_M - SMOOTH_SIGMA_M) * t) / spacing
+        half = min(int(math.ceil(3 * sigma)), i, n - 1 - i)
+        w = np.exp(-0.5 * (np.arange(-half, half + 1) / sigma) ** 2)
+        out.append(tuple((pts[i - half:i + half + 1] * w[:, None]).sum(axis=0) / w.sum()))
+    return out
+
+
 def simplify(points: list[tuple[float, float]], tol: float) -> list[tuple[float, float]]:
     """Douglas-Peucker in the points' own units (iterative; keeps both ends)."""
     if len(points) < 3:
@@ -365,7 +409,8 @@ def trace_route(route: dict, fetch: bool, preview: Path | None = None) -> list[t
     # Simplify in metres (a local equirectangular frame), then back to lon/lat.
     lat0 = math.radians(sum(p[1] for p in lonlat) / len(lonlat))
     kx, ky = 111320.0 * math.cos(lat0), 110570.0
-    simple = simplify(smooth([(lo * kx, la * ky) for lo, la in lonlat], SMOOTH_PX), SIMPLIFY_M)
+    even = resample(smooth([(lo * kx, la * ky) for lo, la in lonlat], SMOOTH_PX), RESAMPLE_M)
+    simple = simplify(gaussian_smooth(even, RESAMPLE_M), SIMPLIFY_M)
     return [(x / kx, y / ky) for x, y in simple]
 
 

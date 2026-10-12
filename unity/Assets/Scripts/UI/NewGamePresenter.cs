@@ -6,7 +6,8 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>New Game asks for a second press (no browser confirm dialogs in WebGL), then deletes the autosave and
-    /// starts a new Historical game. Ending a turn in between cancels the request.</summary>
+    /// starts a new Historical game. Ending a turn in between cancels the request. The start screen's New Game goes through
+    /// the same two presses (Press), so neither button can wipe the save with one stray press (#175, B6).</summary>
     public sealed class NewGamePresenter : IDisposable
     {
         readonly VisualElement root; readonly SimBridge bridge; readonly SaveStore store; readonly ToastPresenter toast; readonly UiText text; readonly Func<ulong> seed;
@@ -29,7 +30,20 @@ namespace Statecraft.Game.UI
 
         public bool Armed { get; private set; }
 
-        void Press()
+        /// <summary>Raised after the second press has started the new game.</summary>
+        public event Action? Started;
+
+        /// <summary>Withdraws an open request (the start screen's Continue and Escape): disarms and takes the prompt off the
+        /// toast. Nothing happens when no request is open.</summary>
+        public void Cancel()
+        {
+            if (!Armed) return;
+            Armed = false;
+            toast.Clear();
+        }
+
+        /// <summary>One press of New Game: the first arms and shows the prompt, the second starts the new game.</summary>
+        public void Press()
         {
             if (!Armed) { Armed = true; toast.Show(text["newgame.confirm"]); return; }
             Armed = false;
@@ -38,6 +52,7 @@ namespace Statecraft.Game.UI
             try { store.DeleteAutosave(); } catch (Exception e) { deleted = false; UnityEngine.Debug.LogWarning("Autosave could not be deleted: " + e); }
             bridge.Replace(GameSession.New(bridge.Content, seed(), Mode.Historical));
             if (deleted) toast.Clear(); else toast.Show(text["newgame.delete_failed"]);
+            Started?.Invoke();
         }
     }
 }

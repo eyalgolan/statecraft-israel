@@ -109,6 +109,59 @@ public class QualityFallbackTests
         Assert.IsNotEmpty(steps, "35 ms is over"); Assert.AreEqual(1, steps[0]);
     }
 
+    /// <summary>Issue #216 (integration B18): a Chromium window behind others (document.hidden) ran at about 5 fps (168-204 ms frames, each under the
+    /// 1 s pause line) and stepped to level 3 within 90 s. Frame times alone cannot tell that from a slow device (the same
+    /// frames with the page in front do step down), so the hidden page is not measured at all.</summary>
+    [Test]
+    public void AHiddenThrottledPageIsNotMeasured()
+    {
+        var shown = Started();
+        Assert.IsNotEmpty(Run(shown, 200f, 90f), "control: 200 ms frames in front are load, and step down");
+
+        var q = Started();
+        int windows = q.Windows;
+        q.SetBackground(true);
+        Assert.IsTrue(q.Background);
+        Assert.IsEmpty(Run(q, 200f, 90f), "B18: 90 s of a throttled background window");
+        Assert.IsEmpty(Run(q, 170f, 90f));
+        Assert.AreEqual(0, q.Level); Assert.AreEqual(windows, q.Windows, "no window was measured while hidden");
+        q.SetBackground(false);
+        Assert.IsEmpty(Run(q, Slow, QualityFallback.ResumeSettleSeconds - 0.1f), "the first frames back settle");
+        Assert.AreEqual(windows, q.Windows);
+        CollectionAssert.AreEqual(new[] { 1 }, Windows(q, Slow, 1), "a real shortfall in front still steps down");
+    }
+
+    /// <summary>Issue #216: going hidden drops the partial window, so slow frames just before a tab switch and fine ones
+    /// after it are never mixed into one p95; repeated calls with the same state change nothing.</summary>
+    [Test]
+    public void GoingHiddenDropsThePartialWindow()
+    {
+        var q = Started();
+        Run(q, Slow, QualityFallback.WindowSeconds - 0.5f);   // most of a slow window
+        q.SetBackground(true); q.SetBackground(true);
+        q.SetBackground(false); q.SetBackground(false);
+        Assert.IsEmpty(Windows(q, Fine, 3), "the slow frames before the switch were dropped");
+        Assert.AreEqual(0, q.Level);
+        Assert.Less(q.LastP95, QualityFallback.RecoverMs);
+    }
+
+    /// <summary>Issue #216: a level set by a real shortfall is kept while hidden and recovers in reverse once the page is
+    /// back in front, after the usual RecoverWindows good windows (a hidden stretch counts neither for nor against).</summary>
+    [Test]
+    public void AFallenLevelRecoversOnceThePageIsBackInFront()
+    {
+        var q = Started();
+        CollectionAssert.AreEqual(new[] { 1, 2 }, Windows(q, Slow, 2));
+        q.SetBackground(true);
+        Assert.IsEmpty(Run(q, 200f, 120f));
+        Assert.AreEqual(2, q.Level, "kept while hidden: nothing is known about the device then");
+        q.SetBackground(false);
+        int n = QualityFallback.RecoverWindows;
+        Assert.IsEmpty(Windows(q, Fine, n - 1));
+        CollectionAssert.AreEqual(new[] { 1 }, Windows(q, Fine, 1), "back in front, good windows step up as usual");
+        CollectionAssert.AreEqual(new[] { 0 }, Windows(q, Fine, n));
+    }
+
     [Test]
     public void ItRecoversInReverseOnlyAfterSustainedComfortableFrames()
     {

@@ -1,7 +1,9 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Statecraft.Game.UI;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -47,28 +49,114 @@ namespace Statecraft.Game.EditorTools
         };
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
-        /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4).</summary>
-        public static string? ShareableRefusal(Statecraft.Sim.Content c)
+        /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), and so does every
+        /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md). See
+        /// <see cref="EventImageRefusal"/> for <paramref name="catalogFileExists"/> and <paramref name="mapping"/>.</summary>
+        public static string? ShareableRefusal(Statecraft.Sim.Content c, EventImageCatalog? photos, bool catalogFileExists = false,
+            IReadOnlyList<EventImageMapping.Row>? mapping = null)
         {
             var open = Statecraft.Sim.ReleaseGate.SensitiveUnreviewed(c);
-            return open.Count == 0 ? null
-                : "a shareable build needs the owner's sensitivity review of: " + string.Join(", ", open) + " (set status: sensitivity-reviewed; see docs/m3-release.md)";
+            var reasons = new List<string>();
+            if (open.Count > 0)
+                reasons.Add("a shareable build needs the owner's sensitivity review of: " + string.Join(", ", open) + " (set status: sensitivity-reviewed; see docs/m3-release.md)");
+            if (EventImageRefusal(photos, catalogFileExists, mapping) is string pictures) reasons.Add(pictures);
+            return reasons.Count == 0 ? null : string.Join("; ", reasons);
+        }
+
+        /// <summary>Why the event photographs may not ship in a shareable build, or null: a picture marked sensitive needs
+        /// the owner's sensitivity review (sensitivity_reviewed: true in Assets/UI/EventImages/event-images.yaml, then
+        /// EventImageImport.Run). An OWNER step, like the event review. It fails closed (review I5): a catalog file that
+        /// exists but did not load is a refusal, not "nothing to review"; and when the mapping is given, a sensitive and
+        /// unreviewed row there refuses too, as does any row the catalog does not match (a hand-edited or stale catalog).</summary>
+        public static string? EventImageRefusal(EventImageCatalog? photos, bool catalogFileExists = false,
+            IReadOnlyList<EventImageMapping.Row>? mapping = null)
+        {
+            var reasons = new List<string>();
+            if (photos == null && catalogFileExists)
+                reasons.Add($"the event photograph catalog {EventImageImport.CatalogPath} exists but did not load (fix the import, then run EventImageImport)");
+            var open = new SortedSet<string>(StringComparer.Ordinal);
+            if (photos != null) open.UnionWith(photos.SensitiveUnreviewed());
+            if (mapping != null) open.UnionWith(mapping.Where(r => r.Sensitive && !r.SensitivityReviewed).Select(r => r.Event));
+            if (open.Count > 0)
+                reasons.Add("a shareable build needs the owner's sensitivity review of the event photographs: " + string.Join(", ", open)
+                    + " (set sensitivity_reviewed: true in " + EventImageMapping.Path + ", run EventImageImport; see docs/event-images.md)");
+            if (mapping != null && photos != null && CatalogMismatches(photos, mapping) is { Count: > 0 } stale)
+                reasons.Add("the event photograph catalog does not match " + EventImageMapping.Path + " for: " + string.Join(", ", stale)
+                    + " (run EventImageImport)");
+            return reasons.Count == 0 ? null : string.Join("; ", reasons);
+        }
+
+        /// <summary>The events whose catalog entry and mapping row disagree (one is missing, or the credit, the alt text or a
+        /// sensitivity flag differs), in id order.</summary>
+        public static List<string> CatalogMismatches(EventImageCatalog photos, IReadOnlyList<EventImageMapping.Row> mapping)
+        {
+            var rows = mapping.GroupBy(r => r.Event).ToDictionary(g => g.Key, g => g.First());
+            var entries = photos.entries.GroupBy(e => e.eventId ?? "").ToDictionary(g => g.Key, g => g.First());
+            var bad = new SortedSet<string>(StringComparer.Ordinal);
+            foreach (var id in rows.Keys.Union(entries.Keys))
+            {
+                if (!rows.TryGetValue(id, out var r) || !entries.TryGetValue(id, out var e) || e.image == null) { bad.Add(id); continue; }
+                if (e.credit != r.Credit || e.alt != r.Alt || e.sensitive != r.Sensitive || e.sensitivityReviewed != r.SensitivityReviewed) bad.Add(id);
+            }
+            if (photos.entries.Count != entries.Count || mapping.Count != rows.Count) bad.Add("(repeated rows)");
+            return bad.ToList();
         }
 
         /// <summary>The gate for a build made with these command-line args: a -shareable build (Web or Mac) is refused
-        /// until the review is done; a dev build is never gated (web_check and the golden checks need them).</summary>
-        public static string? GateRefusal(string[] args, Statecraft.Sim.Content c) =>
-            Array.IndexOf(args, "-shareable") >= 0 ? ShareableRefusal(c) : null;
+        /// until the reviews are done; a dev build is never gated (web_check and the golden checks need them).</summary>
+        public static string? GateRefusal(string[] args, Statecraft.Sim.Content c, EventImageCatalog? photos, bool catalogFileExists = false,
+            IReadOnlyList<EventImageMapping.Row>? mapping = null) =>
+            Array.IndexOf(args, "-shareable") >= 0 ? ShareableRefusal(c, photos, catalogFileExists, mapping) : null;
 
-        /// <summary>Logs "BUILD REFUSED ..." and exits 1 when the gate refuses this build; true if it did.</summary>
+        /// <summary>Logs "BUILD REFUSED ..." and exits 1 when the gate refuses this build; true if it did. The photographs
+        /// checked are the catalog the build ships (Resources/EventImageCatalog.asset), cross-checked against the mapping.</summary>
         static bool RefuseUnlessShareable()
         {
             var args = Environment.GetCommandLineArgs();
             if (Array.IndexOf(args, "-shareable") < 0) return false;
-            if (!(GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content)) is string refusal)) return false;
+            var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(EventImageImport.CatalogPath);
+            string? refusal;
+            try
+            {
+                var mapping = EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
+                refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos, File.Exists(EventImageImport.CatalogPath), mapping);
+            }
+            catch (Exception e) when (e is IOException || e is InvalidOperationException || e is UnauthorizedAccessException)
+            {
+                refusal = "cannot read the event photograph mapping " + EventImageMapping.Path + ": " + e.Message;
+            }
+            if (refusal == null) return false;
             Debug.LogError("BUILD REFUSED " + refusal);
             EditorApplication.Exit(1);
             return true;
+        }
+
+        /// <summary>The name of the manifest every build writes beside its output (review I1): which event photographs it
+        /// carries, whether each is sensitive and reviewed, and whether it was a -shareable build. tools/package_release.py
+        /// refuses a build folder without it, or with an unreviewed sensitive photograph, or not built -shareable; the
+        /// pictures themselves are packed into Unity's data files, where the packager cannot see them.</summary>
+        public const string PhotoManifestName = "event-photos.json";
+
+        [Serializable] sealed class PhotoManifest { public int version = 1; public bool shareable; public List<PhotoRecord> photos = new List<PhotoRecord>(); }
+        [Serializable] sealed class PhotoRecord { public string event_id = ""; public bool sensitive; public bool sensitivity_reviewed; }
+
+        /// <summary>The manifest's JSON for a build carrying <paramref name="photos"/> (null: none).</summary>
+        public static string PhotoManifestJson(EventImageCatalog? photos, bool shareable)
+        {
+            var m = new PhotoManifest { shareable = shareable };
+            if (photos != null)
+                foreach (var e in photos.entries.Where(e => e.image != null).OrderBy(e => e.eventId, StringComparer.Ordinal))
+                    m.photos.Add(new PhotoRecord { event_id = e.eventId, sensitive = e.sensitive, sensitivity_reviewed = e.sensitivityReviewed });
+            return JsonUtility.ToJson(m, true) + "\n";
+        }
+
+        /// <summary>Writes the manifest into <paramref name="folder"/> (the WebGL build folder; for the Mac app, the folder
+        /// holding it, so the signed bundle is not touched).</summary>
+        static void WritePhotoManifest(string folder)
+        {
+            Directory.CreateDirectory(folder);
+            var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(EventImageImport.CatalogPath);
+            File.WriteAllText(Path.Combine(folder, PhotoManifestName), PhotoManifestJson(photos, Flag("-shareable")));
         }
 
         public static void Web()
@@ -82,7 +170,8 @@ namespace Statecraft.Game.EditorTools
             var sub = TextureSubtarget(Arg("-textureSubtarget"));
             if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;
             bool ok;
-            try { ok = Run(BuildTarget.WebGL, Arg("-out") ?? "Builds/Web-" + name, sub.HasValue ? (int)sub.Value : 0); }
+            var web = Arg("-out") ?? "Builds/Web-" + name;
+            try { ok = Run(BuildTarget.WebGL, web, sub.HasValue ? (int)sub.Value : 0); if (ok) WritePhotoManifest(web); }
             finally { EditorUserBuildSettings.webGLBuildSubtarget = savedSubtarget; ProjectSetup.Apply(); }   // back to the committed settings
             ExitIfFailed(ok);
         }
@@ -94,7 +183,8 @@ namespace Statecraft.Game.EditorTools
             // Apple clang fuses a*b+c into fmadd by default (tech notes 4.2); turn it off if the Mac golden check fails.
             PlayerSettings.SetAdditionalIl2CppArgs(Flag("-ffp-contract-off") ? "--compiler-flags=-ffp-contract=off" : "");
             bool ok;
-            try { ok = Run(BuildTarget.StandaloneOSX, Arg("-out") ?? "Builds/Mac/Statecraft.app"); }
+            var app = Arg("-out") ?? "Builds/Mac/Statecraft.app";
+            try { ok = Run(BuildTarget.StandaloneOSX, app); if (ok) WritePhotoManifest(Path.GetDirectoryName(Path.GetFullPath(app))!); }
             finally { PlayerSettings.SetAdditionalIl2CppArgs(""); AssetDatabase.SaveAssets(); }
             ExitIfFailed(ok);
         }

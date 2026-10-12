@@ -23,14 +23,14 @@ namespace Statecraft.Game.Boot
 
         [Serializable] sealed class ManifestJson { public string[] files = new string[0]; }
 
-        /// <summary>Every *.yaml in <paramref name="contentDir"/>, events/ and map/ (but <see cref="ToolInputs"/>), plus
+        /// <summary>Every *.yaml in <paramref name="contentDir"/>, events/, map/ and rules/ (era rule overrides, #58; the folder may be absent) (but <see cref="ToolInputs"/>), plus
         /// map/hexes.json; ordinal order.</summary>
         public static List<string> Collect(string contentDir)
         {
-            IEnumerable<string> Yaml(string sub) => Directory.GetFiles(Path.Combine(contentDir, sub), "*.yaml")
+            IEnumerable<string> Yaml(string sub) => sub == "rules" && !Directory.Exists(Path.Combine(contentDir, sub)) ? new string[0] : Directory.GetFiles(Path.Combine(contentDir, sub), "*.yaml")
                 .Select(f => (sub == "" ? "" : sub + "/") + Path.GetFileName(f));
             if (!File.Exists(Path.Combine(contentDir, HexesJson))) throw new FileNotFoundException("content file missing", HexesJson);
-            return Yaml("").Concat(Yaml("events")).Concat(Yaml("map")).Append(HexesJson)
+            return Yaml("").Concat(Yaml("events")).Concat(Yaml("map")).Concat(Yaml("rules")).Append(HexesJson)
                 .Where(f => !ToolInputs.Contains(f)).OrderBy(f => f, StringComparer.Ordinal).ToList();
         }
 

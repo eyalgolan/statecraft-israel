@@ -125,7 +125,7 @@ namespace Statecraft.Game.Map.Routes
                 {
                     var lines = group.Where(r => kinds.Contains(r.Kind)).Select(r => (World(frame, r), WidthOf(r.Kind))).ToList();
                     if (lines.Count == 0) continue;
-                    var mesh = assets.Own(Ribbon(lines, data, origin, $"Route{name} {group.Key}"));
+                    var mesh = assets.Own(Ribbon(lines, data, origin, $"Route{name} {group.Key}", railGrade: name == "Rail"));
                     mesh.UploadMeshData(true);
                     var go = new GameObject(name);
                     go.transform.SetParent(holder.transform, false);
@@ -185,10 +185,61 @@ namespace Statecraft.Game.Map.Routes
             return (pts, along);
         }
 
-        /// <summary>The height (world y) of a ribbon vertex at <paramref name="q"/>: <see cref="ClearanceM"/> above the highest
-        /// ground at q and half a step along <paramref name="along"/> (unit) and half a vertex spacing across, either way.
-        /// The ribbon and the train's wheels share it (review M4), so the bed never rises over the train on a grade.</summary>
-        public static float RibbonHeight(TerrainData data, Vector3 origin, Vector2 q, Vector2 along, float spacing)
+        /// <summary>A ribbon's height (world y) at line point <paramref name="q"/>: <see cref="ClearanceM"/> above the highest
+        /// ground at q and a quarter step (30 m) along the line either way (<paramref name="along"/>, unit). The line's own grade: no
+        /// sample across it, so the gorge walls beside the line do not lift it (review B15). A railway cross-section takes
+        /// this height across (raised only where the ground would rise under its rails), and the train's wheels too
+        /// (review M4).</summary>
+        public static float GradeHeight(TerrainData data, Vector3 origin, Vector2 q, Vector2 along) =>
+            Mathf.Max(Ground(data, origin, q), Mathf.Max(Ground(data, origin, q + along * (StepM / 4)), Ground(data, origin, q - along * (StepM / 4))))
+            + ClearanceM;
+
+        /// <summary>How far ground may lie below a cross-section before the section narrows (m, world): a ribbon edge floating
+        /// higher than this over a falling slope would read as a shelf.</summary>
+        public const float FallToleranceM = 60f;
+        /// <summary>How far ground may rise above a cross-section before it narrows (m, world): an edge running under a
+        /// little higher ground reads as a cutting, and the rails are kept clear by the lift (RailSpanShare). Without it,
+        /// any rise over the clearance narrowed the band on the rolling foothills too, not only in the gorges.</summary>
+        public const float RiseToleranceM = 40f;
+        /// <summary>The narrowest a cross-section gets, as a share of the ribbon's width (a gorge floor).</summary>
+        public const float MinWidthShare = 0.25f;
+        /// <summary>Samples per side when a cross-section looks for where it must stop.</summary>
+        const int NarrowSamples = 8;
+
+        /// <summary>The half-width (m) a cross-section at <paramref name="q"/> (flat at <paramref name="y"/>) may span. A sample
+        /// leaves the tolerance where the ground is more than <see cref="RiseToleranceM"/> above the section or more than
+        /// <see cref="FallToleranceM"/> below it. Where the ground leaves it on both sides within the half-width (a gorge floor, a
+        /// gorge side, a ridge), the section is cut back symmetrically (so the rails stay centred) to the last sample before
+        /// the first one that leaves it, on either side, but never under <see cref="MinWidthShare"/> of the width. Where it leaves
+        /// it on one side only (one hill or one drop beside the line), the full <paramref name="half"/>: that edge reads as a
+        /// cutting or an embankment, and cutting both sides for it narrowed the foothill lines to about 70% (#252). Railways
+        /// only (RailHalfWidths smooths it along the line): in the Sorek gorge the band keeps to the floor instead of riding up
+        /// the walls (review B15); on the plains nothing changes.</summary>
+        public static float FlatHalfWidth(TerrainData data, Vector3 origin, Vector2 q, Vector2 side, float y, float half)
+        {
+            int left = 0, right = 0;                                              // the first sample out of tolerance each side
+            for (int k = 1; k <= NarrowSamples && (left == 0 || right == 0); k++)
+            {
+                float o = half * k / NarrowSamples;
+                if (left == 0 && OutOfTolerance(Ground(data, origin, q - side * o), y)) left = k;
+                if (right == 0 && OutOfTolerance(Ground(data, origin, q + side * o), y)) right = k;
+            }
+            if (left == 0 || right == 0) return half;
+            return Mathf.Max(half * (Math.Min(left, right) - 1) / NarrowSamples, half * MinWidthShare);
+        }
+
+        static bool OutOfTolerance(float ground, float y) => ground > y + RiseToleranceM || ground < y - FallToleranceM;
+
+        /// <summary>The ground height (world y) under (x, z), clamped to the terrain.</summary>
+        public static float Ground(TerrainData data, Vector3 origin, Vector2 p) =>
+            origin.y + data.GetInterpolatedHeight(Mathf.Clamp01((p.x - origin.x) / data.size.x), Mathf.Clamp01((p.y - origin.z) / data.size.z));
+
+        /// <summary>A road vertex's height (world y) at <paramref name="q"/>: <see cref="ClearanceM"/> above the highest ground at
+        /// q and half a step along and half a vertex spacing across, either way, so terrain between vertices cannot rise
+        /// through the ribbon. Roads drape over the ground this way (each vertex on its own ground); their pale band has
+        /// no rails or sleepers to warp, so they keep main's rule (review A-I1: narrowing them thinned and beaded every
+        /// hill road).</summary>
+        public static float DrapeHeight(TerrainData data, Vector3 origin, Vector2 q, Vector2 along, float spacing)
         {
             var side = new Vector2(along.y, -along.x);
             float y = Ground(data, origin, q);
@@ -197,16 +248,54 @@ namespace Statecraft.Game.Map.Routes
             return y + ClearanceM;
         }
 
-        /// <summary>The ground height (world y) under (x, z), clamped to the terrain.</summary>
-        public static float Ground(TerrainData data, Vector3 origin, Vector2 p) =>
-            origin.y + data.GetInterpolatedHeight(Mathf.Clamp01((p.x - origin.x) / data.size.x), Mathf.Clamp01((p.y - origin.z) / data.size.z));
+        /// <summary>The largest step (m) of a rail band's half-width from one cross-section to the next: 5% of the full width,
+        /// so its width changes by at most a tenth between sections and narrows in a ramp, never in beads (review A-I1).</summary>
+        public const float HalfWidthStepShare = 0.05f;
+        /// <summary>The share of the half-width, either side of the line, that must stay clear of the ground: the rails
+        /// (Route.shader's RailOffset 0.12 plus RailHalfWidth 0.018 of the width, so 0.276 of the half-width, rounded up;
+        /// review A-I2). Clearing the whole sleeper span (0.58) lifted the narrowed gorge band a median 39 m off the floor;
+        /// the sleepers' outer ends may meet a gorge wall, as a cutting's would.</summary>
+        public const float RailSpanShare = 0.3f;
+        /// <summary>Clearance (m, world) of the rails over the highest ground under them, where a section had to be lifted.</summary>
+        public const float RailClearanceM = 3f;
+        /// <summary>Ground samples each side of the line when a section checks the ground under its rails (<see cref="RailSpanShare"/>).</summary>
+        const int LiftSamples = 4;
+
+        /// <summary>The half-widths of a rail line's sections (centre points <paramref name="pts"/>, unit directions
+        /// <paramref name="dirs"/>, heights <paramref name="ys"/>), smoothed along the line: FlatHalfWidth per section, then
+        /// the minimum over two sections each way, then limited to <see cref="HalfWidthStepShare"/> of the width per step
+        /// (forward and backward passes, which only narrow, so a narrow spot stays narrow and its neighbours ramp to it).</summary>
+        public static float[] RailHalfWidths(TerrainData data, Vector3 origin, IReadOnlyList<Vector2> pts, IReadOnlyList<Vector2> dirs,
+            IReadOnlyList<float> ys, float width)
+        {
+            int n = pts.Count; float half = width / 2f, step = HalfWidthStepShare * width;
+            var raw = new float[n];
+            for (int i = 0; i < n; i++) raw[i] = FlatHalfWidth(data, origin, pts[i], new Vector2(dirs[i].y, -dirs[i].x), ys[i], half);
+            var h = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                float m = raw[i];
+                for (int k = Math.Max(0, i - 2); k <= Math.Min(n - 1, i + 2); k++) m = Mathf.Min(m, raw[k]);
+                h[i] = m;
+            }
+            for (int i = 1; i < n; i++) h[i] = Mathf.Min(h[i], h[i - 1] + step);
+            for (int i = n - 2; i >= 0; i--) h[i] = Mathf.Min(h[i], h[i + 1] + step);
+            return h;
+        }
 
         /// <summary>One mesh for several ribbons. Along each line, a cross-section every <see cref="StepM"/>, square to the
         /// line's direction (averaged over two steps each way, so a tight bend fans instead of folding); across it,
-        /// <see cref="Across"/> vertices, each <see cref="ClearanceM"/> above the highest ground at its own point and half a
-        /// step and half a spacing around it (so terrain between vertices cannot rise through the ribbon), with the
-        /// terrain's own normal (so the sun shades it as the ground). UV: u across (0 left edge, 1 right), v along (m).</summary>
-        public static Mesh Ribbon(IEnumerable<(List<Vector2> line, float width)> lines, TerrainData data, Vector3 origin, string name)
+        /// <see cref="Across"/> vertices. UV: u across (0 left edge, 1 right), v along (m).
+        /// <list type="bullet">
+        /// <item>Roads (<paramref name="railGrade"/> false) drape: each vertex at <see cref="DrapeHeight"/>, with the terrain's
+        /// normal at that vertex (main's rule).</item>
+        /// <item>Railways (<paramref name="railGrade"/> true) are flat across at the line's own grade (<see cref="GradeHeight"/>,
+        /// review B15), so the rails and sleepers never warp; their width follows <see cref="RailHalfWidths"/> (full on the
+        /// plains, ramping down to a gorge floor); and a section is lifted, if need be, so the ground never rises under the
+        /// rails (<see cref="RailSpanShare"/>; review A-I2). Normal: the terrain's at the line.</item>
+        /// </list></summary>
+        public static Mesh Ribbon(IEnumerable<(List<Vector2> line, float width)> lines, TerrainData data, Vector3 origin, string name,
+            bool railGrade = false)
         {
             var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
             foreach (var (line, width) in lines)
@@ -214,18 +303,41 @@ namespace Statecraft.Game.Map.Routes
                 if (line.Count < 2) continue;
                 var (pts, along) = Resample(line, StepM);
                 int n = pts.Count, first = verts.Count;
-                float spacing = width / (Across - 1);
-                for (int i = 0; i < n; i++)
+                var dirs = new Vector2[n];
+                for (int i = 0; i < n; i++) dirs[i] = (pts[Math.Min(n - 1, i + 2)] - pts[Math.Max(0, i - 2)]).normalized;
+                if (railGrade)
                 {
-                    var t = (pts[Math.Min(n - 1, i + 2)] - pts[Math.Max(0, i - 2)]).normalized;
-                    var side = new Vector2(t.y, -t.x);                         // right of the direction of travel
-                    for (int j = 0; j < Across; j++)
+                    var ys = new float[n];
+                    for (int i = 0; i < n; i++) ys[i] = GradeHeight(data, origin, pts[i], dirs[i]);
+                    var halves = RailHalfWidths(data, origin, pts, dirs, ys, width);
+                    for (int i = 0; i < n; i++)
                     {
-                        float a = (float)j / (Across - 1);
-                        var q = pts[i] + side * ((a - 0.5f) * width);
-                        verts.Add(new Vector3(q.x, RibbonHeight(data, origin, q, t, spacing), q.y));
-                        normals.Add(data.GetInterpolatedNormal(Mathf.Clamp01((q.x - origin.x) / data.size.x), Mathf.Clamp01((q.y - origin.z) / data.size.z)));
-                        uvs.Add(new Vector2(a, along[i]));
+                        var side = new Vector2(dirs[i].y, -dirs[i].x);                   // right of the direction of travel
+                        float y = ys[i], span = RailSpanShare * halves[i];
+                        for (int k = -LiftSamples; k <= LiftSamples; k++) y = Mathf.Max(y, Ground(data, origin, pts[i] + side * (span * k / (float)LiftSamples)) + RailClearanceM);
+                        var normal = data.GetInterpolatedNormal(Mathf.Clamp01((pts[i].x - origin.x) / data.size.x), Mathf.Clamp01((pts[i].y - origin.z) / data.size.z));
+                        for (int j = 0; j < Across; j++)
+                        {
+                            float a = (float)j / (Across - 1);
+                            var q = pts[i] + side * ((a - 0.5f) * 2f * halves[i]);
+                            verts.Add(new Vector3(q.x, y, q.y)); normals.Add(normal); uvs.Add(new Vector2(a, along[i]));
+                        }
+                    }
+                }
+                else
+                {
+                    float spacing = width / (Across - 1);
+                    for (int i = 0; i < n; i++)
+                    {
+                        var side = new Vector2(dirs[i].y, -dirs[i].x);
+                        for (int j = 0; j < Across; j++)
+                        {
+                            float a = (float)j / (Across - 1);
+                            var q = pts[i] + side * ((a - 0.5f) * width);
+                            verts.Add(new Vector3(q.x, DrapeHeight(data, origin, q, dirs[i], spacing), q.y));
+                            normals.Add(data.GetInterpolatedNormal(Mathf.Clamp01((q.x - origin.x) / data.size.x), Mathf.Clamp01((q.y - origin.z) / data.size.z)));
+                            uvs.Add(new Vector2(a, along[i]));
+                        }
                     }
                 }
                 for (int i = 0; i + 1 < n; i++)

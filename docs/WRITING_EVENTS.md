@@ -256,3 +256,9 @@ event window has a holder throughout. It cannot own a policy, effect, budget lin
 `office:` delegation. Use the responsible senior minister for those gameplay fields. Existing
 offices default to `historical_only: false`. A historical-only title ignores player appointments,
 including entries carried in an older save.
+
+### Dated offices
+
+`from` (the day an office was established) and `until` (the day it was abolished) limit when an office is a Cabinet seat
+and can be filled. Terms in `people.yaml` must fall between them. A budget line may run before `from`: the Budget
+screen then names the date the ministry begins instead of calling it vacant.

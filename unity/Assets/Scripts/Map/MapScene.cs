@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Statecraft.Game.Boot;
 using UnityEngine;
 
@@ -43,6 +44,13 @@ namespace Statecraft.Game.Map
         /// 120 m plus 20 m, to cover the lines; at the 6 km hero zoom that floated); the material's depth offset keeps it
         /// from z-fighting the terrain.</summary>
         public const float SelectionClearanceM = 30f;
+
+        /// <summary>Hides the selected hex's outline (a selected unit has the ring instead: UnitLayer).</summary>
+        public void ClearSelection()
+        {
+            var found = Terrain != null ? Terrain.transform.Find(SelectionName) : null;
+            if (found != null) found.GetComponent<MeshRenderer>().enabled = false;
+        }
 
         /// <summary>Outlines hex (q, r) with a band draped on the terrain (MapBuilder.DrapedRing, HexMath corners) drawn with
         /// the editor-made HexSelection.mat, whose depth offset keeps it from z-fighting the ground (no runtime material). The band is sampled at its outer, middle and inner rings and each index
@@ -103,8 +111,36 @@ namespace Statecraft.Game.Map
         /// <summary>The settlement kits' and trees' materials (null, null: placeholder markers only).</summary>
         public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
 
+        /// <summary>Each settlement's footprint on the ground plane (centre x, z; radius m): the kits' discs
+        /// (SettlementKits.FootprintRadiusM), so the units keep their tokens off the buildings (UnitLayer). Empty before Build.</summary>
+        public IReadOnlyList<(Vector2 centre, float radius)> SettlementFootprints { get; private set; } = new List<(Vector2, float)>();
+
+        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors), every route whatever its date, so the units keep
+        /// their figures off them. Empty before Build.</summary>
+        public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
+
+        /// <summary>Where the kits keep their buildings and trees off the units (centre x, z; radius m): the spot of a unit that
+        /// stands in a town (UnitPlacer's last round, UnitGround.ClearingRadius), so no token stands in a building. Empty before
+        /// Build or without the unit file.</summary>
+        public IReadOnlyList<(Vector2 centre, float radius)> UnitClearings { get; private set; } = new List<(Vector2, float)>();
+
         /// <summary>The last Build's kit numbers (buildings, vertices, trees, build time), or null without kits.</summary>
         public Kits.KitLayer.Stats KitStats { get; private set; }
+
+        readonly Dictionary<string, Bounds[]> kitColumns = new Dictionary<string, Bounds[]>();
+
+        /// <summary>A settlement's kit (its buildings' merged mesh, as the last Build made it) as a few world boxes that hold
+        /// all of it: the occupied cells of a KitMesh.ColumnGrid-square grid over its footprint, each from the ground
+        /// under the kit to its tallest vertex in the cell. Much tighter on screen than the kit's one bounding box under a
+        /// tilted camera (a water tower at the back no longer lifts the whole box). False without kits or for a kit with no
+        /// buildings. The map labels keep clear of it (issue #214).</summary>
+        public bool TryKitColumns(string id, out Bounds[] columns) => kitColumns.TryGetValue(id, out columns);
+
+        MeshRenderer kitProbe;   // one kit's renderer: the "kits" toggle enables or disables them all together
+
+        /// <summary>Whether the kits are drawn (built, and the "kits" toggle on); when not, the marker boxes are, and the map
+        /// labels keep clear of those instead.</summary>
+        public bool KitsShown => kitProbe != null && kitProbe.enabled;
 
         /// <summary>Builds from the repository files with System.IO (editor and desktop only).</summary>
         public void Build() => Build(GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap));
@@ -121,6 +157,7 @@ namespace Statecraft.Game.Map
             if (cam == null) throw new InvalidOperationException("MapScene needs a camera tagged MainCamera");
 
             Clear();
+            kitColumns.Clear(); kitProbe = null;
             var (meta, heights) = HeightmapLoader.Load(inputs.HeightmapJson, inputs.HeightmapR16z, MetaPath);
             DiagLog.BootPhase("heightmap decoded");
             Hexes = MapBuilder.LoadHexes(inputs.HexesJson, HexesPath);
@@ -156,6 +193,25 @@ namespace Statecraft.Game.Map
             KitStats = null;
             // The 1948 railways and roads (issue #35), read before the kits so buildings and trees keep off them.
             var routes = Routes.RoutePaths.ReadOrNone(inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
+            RouteCorridors = Routes.RouteLayer.Corridors(Frame, routes);
+            SettlementFootprints = list.Select(s => { var w = Frame.ToWorld(s.Lon, s.Lat, 0); return (new Vector2(w.x, w.z), Kits.SettlementKits.FootprintRadiusM(s, hexSizeM)); }).ToList();
+            // The units' spots depend only on the footprints, the routes and the land, so they are known before the kits:
+            // a unit placed in a town gets a clearing the kits keep free (UnitLayer places it the same way).
+            var unitData = Units.UnitData.ReadOrNone(inputs.UnitsYaml, Debug.LogWarning);
+            var unitHexes = Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Lon = h.lon, Lat = h.lat, ElevM = h.elev_m, Land = h.land, Biome = h.biome }).ToList();
+            var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
+                (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM);
+            var clearings = new List<(Vector2 centre, float radius)>();
+            if (unitData.Count > 0)
+            {
+                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null);
+                foreach (var kv in spots.OrderBy(k => k.Value.X).ThenBy(k => k.Value.Z))
+                {
+                    var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
+                    if (kv.Value.InTown && !clearings.Exists(x => x.centre == c)) clearings.Add((c, unitGround.ClearingRadius));
+                }
+            }
+            UnitClearings = clearings;
             if (kitsOn)
             {
                 // ?kitscale=, ?housescale=, ?treescale= in the WebGL player: the same layout at another symbolic scale (city
@@ -171,8 +227,10 @@ namespace Statecraft.Game.Map
                 // The kits replace the marker boxes; the boxes stay as the labels' and tests' anchors, and come back when the
                 // "kits" toggle turns the kits off (so settlements are never left undrawn).
                 var kits = Kits.KitLayer.Build(list, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
-                    terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats, Routes.RouteLayer.Corridors(Frame, routes));
+                    terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
+                    RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns);
                 kits.transform.SetParent(transform, true);
+                kitProbe = kits.GetComponentInChildren<MeshRenderer>(true);
                 KitStats = stats;
                 DiagLog.BootPhase("kits built");
                 Debug.Log(stats.ToString());

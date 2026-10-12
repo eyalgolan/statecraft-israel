@@ -9,7 +9,8 @@ namespace Statecraft.Game.Map.Kits
     /// buildings, merged: one draw each, culled by its bounds) drawn with the editor-made Kit.mat, and the instanced trees
     /// (<see cref="VegetationLayer"/>) drawn with Tree.mat. Meshes are owned by the map's MapRuntimeAssets, so a rebuild
     /// frees them. Hides the marker boxes under <paramref name="markers"/> while the kits show. Registers the "kits" and
-        /// "trees" visual toggles, so the frame-time profile prices each ("kits" off shows the markers again).</summary>
+        /// "trees" visual toggles, so the frame-time profile prices each ("kits" off shows the markers again). Fills
+    /// <paramref name="columns"/>, when given, with each kit's columns (world space: the kits sit at the root's origin).</summary>
     public static class KitLayer
     {
         public const string RootName = "Kits", VegetationName = "Vegetation";
@@ -23,7 +24,7 @@ namespace Statecraft.Game.Map.Kits
 
         public static GameObject Build(IReadOnlyList<Settlement> settlements, Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM,
             Material kitMaterial, Material treeMaterial, MapRuntimeAssets assets, GameObject markers, out Stats stats,
-            IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null)
+            IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null, Dictionary<string, Bounds[]>? columns = null)
         {
             stats = new Stats();
             var root = new GameObject(RootName);
@@ -33,7 +34,7 @@ namespace Statecraft.Game.Map.Kits
             if (corridors != null) foreach (var (line, half) in corridors) ground.AddCorridor(line, half);
             stats.CorridorSegments = ground.CorridorSegments;
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            var built = SettlementKits.Build(settlements, ground, out var lots);
+            var built = SettlementKits.Build(settlements, ground, out var lots, columns);   // the labels' kit footprints (issue #214)
             foreach (var l in lots) ground.Lots.Add((l.centre, l.radius));
             foreach (var (s, mesh, n) in built)
             {

@@ -58,7 +58,22 @@ Facts are open to correction. The framing (section 1) is not.
 - Content without sources, or with a source that does not support the claim.
 - Quotes, speeches or letters that are not sourced verbatim.
 - Mechanics or text that reward or celebrate violence against civilians, from any side.
-- Images of real people that are not public domain or CC0. AI-generated likenesses of real people appear only in
-  concept art (`promo/final/04`, `08`), are recorded as AI-generated in the asset provenance records, and are never presented as photographs
-  or used in the game.
+- Images of real people that are not public domain or CC0. One narrow exception, by owner ruling 2026-10-11
+  (summarised): archival photographs of events (not portraits) under CC BY 4.0 are allowed, on these terms:
+  - Each carries a credit line naming the photographer and collection (for the Meitar Collection: photographer,
+    Meitar Collection, National Library of Israel, The Pritzker Family National Photography Collection), with the
+    licence, both on screen with the picture and in `NOTICE`.
+  - The only changes are a subtle warm tone grade (the pictures stay black and white, in the gold frame), a crop and a
+    resize. No AI colourising and no change to what the picture shows. The adaptation is recorded with the credit as
+    "graded and cropped".
+  - Government Press Office (GPO) photographs are refused. So are files whose only licence is a PD-Israel or PD-India
+    tag, and share-alike files (CC BY-SA).
+  - Each photograph gets a sensitivity review before a shareable build may carry it: every one is screened, and any
+    marked sensitive waits for the owner's sign-off (the `-shareable` build and the packager refuse until then).
+
+  Each event photograph's credit, alt text and sensitivity review are recorded in
+  `unity/Assets/UI/EventImages/event-images.yaml` and `ASSETS.yaml` (see `docs/event-images.md`).
+
+  AI-generated likenesses of real people appear only in concept art (`promo/final/04`, `08`), are recorded as
+  AI-generated in the asset provenance records, and are never presented as photographs or used in the game.
 - Hate speech, slurs or dehumanising language about any group, in content, code comments, issues or commits.

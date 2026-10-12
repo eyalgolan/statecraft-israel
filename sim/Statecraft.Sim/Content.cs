@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Statecraft.Sim
@@ -14,8 +15,22 @@ namespace Statecraft.Sim
         public string Title { get; set; } = "";
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
+        /// <summary>Day the office was established (inclusive, like a term's `from`); null when it exists from the start.</summary>
+        public DateTime? From { get; set; }
         /// <summary>Day the office was abolished (exclusive end, like a term's `to`); null while it still exists.</summary>
         public DateTime? Until { get; set; }
+        /// <summary>True when the office exists on <paramref name="date"/>: on or after From and before Until.</summary>
+        public bool ExistsOn(DateTime date) => (!From.HasValue || date >= From.Value) && (!Until.HasValue || date < Until.Value);
+    }
+
+    /// <summary>A chapter of the game: the half-open range [From, To). Eras are contiguous; the last era's To ends the game.</summary>
+    public sealed class Era
+    {
+        public string Id { get; set; } = "";
+        /// <summary>The chapter name the player sees.</summary>
+        public string Name { get; set; } = "";
+        public DateTime From { get; set; }
+        public DateTime To { get; set; }
     }
 
     public sealed class Party { public string Id { get; set; } = ""; public string Name { get; set; } = ""; }
@@ -283,6 +298,10 @@ namespace Statecraft.Sim
         public List<Person> People = new List<Person>();
         public List<Legislature> Legislatures = new List<Legislature>();
         public List<Government> Governments = new List<Government>();
+        /// <summary>The eras in order (eras.yaml).</summary>
+        public List<Era> Eras = new List<Era>();
+        /// <summary>The era that contains <paramref name="date"/> (From inclusive, To exclusive), or null outside every era.</summary>
+        public Era? EraAt(DateTime date) => Eras.FirstOrDefault(e => date >= e.From && date < e.To);
         public List<Indicator> Indicators = new List<Indicator>();
         public List<Policy> Policies = new List<Policy>();
         public List<Effect> Effects = new List<Effect>();
@@ -290,6 +309,16 @@ namespace Statecraft.Sim
         public List<VoterGroup> VoterGroups = new List<VoterGroup>();
         public List<Actor> Actors = new List<Actor>();
         public Rules Rules = new Rules();
+        /// <summary>The complete rules of each era that has an override file (content/rules/&lt;era&gt;.yaml): rules.yaml with that
+        /// file's keys merged in. Built once at load and never changed. An era without a file is not in this map.</summary>
+        public Dictionary<string, Rules> EraRules = new Dictionary<string, Rules>();
+        /// <summary>The rules in force on <paramref name="date"/>: the era's own rules when its override file exists, else
+        /// <see cref="Rules"/> (the founding era has no override, so its rules are rules.yaml itself).</summary>
+        public Rules RulesAt(DateTime date)
+        {
+            var era = EraAt(date);
+            return era != null && EraRules.TryGetValue(era.Id, out var r) ? r : Rules;
+        }
         public List<AliyahPeriod> Aliyah = new List<AliyahPeriod>();
         /// <summary>Origin groups of the aliyah series, with display names (aliyah.yaml regions).</summary>
         public List<Region> Regions = new List<Region>();

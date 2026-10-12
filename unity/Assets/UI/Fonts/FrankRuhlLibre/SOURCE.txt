@@ -1,0 +1,4 @@
+Frank Ruhl Libre (static TTF, Medium), SIL Open Font License 1.1 (OFL.txt in this folder), by Yanek Iontef.
+Source: https://github.com/fontef/frankruhllibre at commit 2372d1998e51dc011f86554c0d23f1ccf44afddf, fonts/ttf/
+(the commit google/fonts ofl/frankruhllibre/METADATA.pb names). Unmodified.
+sha256 73b01157af9e1ff5d4a2690a23a7c14cb746fa71d8b0b72d07d980df6a60d0ea  FrankRuhlLibre-Medium.ttf

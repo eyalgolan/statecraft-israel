@@ -33,6 +33,11 @@ namespace Statecraft.Game.UI
         /// below (Statecraft.uss .hud-two-row).</summary>
         public const float TwoRowBelowPx = 1500f;
         public const string TwoRowClass = "hud-two-row";
+        /// <summary>Below this width (a phone held upright: 390x844 is about 790 logical px) the badge and six meters do not
+        /// fit one row either: the root also gets ThreeRowClass, and the bar takes three rows, the badge, the meters, then the
+        /// screen buttons and End Turn (Statecraft.uss .hud-three-row; #210).</summary>
+        public const float ThreeRowBelowPx = 1100f;
+        public const string ThreeRowClass = "hud-three-row";
         /// <summary>On the one-row bar, when the meters leave enough room, the bar gets RoomyClass: promo-sized icons (38 px)
         /// and values (25 px) (Statecraft.uss .top-bar--roomy). It turns on only when the measured spare room covers the
         /// predicted growth (RoomyGrowth) plus SpareShare, and off when the spare room falls below SpareShare, so it never
@@ -71,7 +76,7 @@ namespace Statecraft.Game.UI
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
             bar.RemoveFromClassList(RoomyClass);
-            bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass);
+            bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass); hudRoot.RemoveFromClassList(ThreeRowClass);
         }
 
         // The bar's width does not depend on the class, so this settles in one pass.
@@ -112,6 +117,7 @@ namespace Statecraft.Game.UI
             bar.EnableInClassList(CompactClass, width < CompactBelowPx);
             hudRoot.EnableInClassList(NarrowClass, width < NarrowBelowPx);
             hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx);
+            hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
         }
 
         /// <summary>End Turn's hourglass, in the button's left padding (Statecraft.uss .end-turn), painted into the button so it

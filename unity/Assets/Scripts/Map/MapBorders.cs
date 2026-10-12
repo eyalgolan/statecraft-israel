@@ -16,8 +16,8 @@ namespace Statecraft.Game.Map
     /// listed belongs to no region, and no band is drawn against it (the coast, the edge of the data). Region ids run from 1
     /// to <see cref="MaxId"/>. The renderer draws only what a layer says, so a layer must come from real, sourced data (owner
     /// ruling, 2026-10-11: no invented political boundaries): the 1945-48 districts and sub-districts, the 1949 armistice
-    /// lines when dated, fronts. None is in the repository yet (docs/visual-v1.md, "Region borders"), so the game draws no
-    /// border; <see cref="BorderProof"/> is a synthetic pattern for tests and captures only.</summary>
+    /// lines when dated, fronts. Play draws the 1948 sub-districts (<see cref="Subdistricts1948"/>); the rest are research
+    /// items (docs/visual-v1.md, "Region borders"); <see cref="BorderProof"/> is a synthetic pattern for tests only.</summary>
     public sealed class RegionLayer
     {
         public const int MaxId = 65535;   // two texel bytes

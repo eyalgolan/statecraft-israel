@@ -128,7 +128,7 @@ def test_contributing_links_the_issue_filters_and_the_open_issues():
 
 def test_hebrew_readme_keeps_the_english_facts():
     he = read("README.he.md")
-    for fact in ("15 במאי 1948", "M3", "0.1.0", "2026-10-10", "M4", "CC BY-SA 4.0", "CC0", "Firaxis", "2K", "1936",
+    for fact in ("15 במאי 1948", "M3", "0.1.0", "2026-10-11", "M4", "CC BY-SA 4.0", "CC0", "Firaxis", "2K", "1936",
                  "6000.3.25f1", "docs/CONTENT_POLICY.md", "historical_accuracy.yml", "SECURITY.md"):
         assert fact in he, fact
     assert "מסחרית" in he  # a commercial edition is planned

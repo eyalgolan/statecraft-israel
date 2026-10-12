@@ -61,10 +61,14 @@ namespace Statecraft.Sim
             }
         }
 
-        public static void Apply(Content c, GameState s, TurnLength len, List<Cause> why)
+        public static void Apply(Content c, GameState s, TurnLength len, List<Cause> why) => Apply(c, s, Weeks(len), why);
+
+        /// <summary>Counts the ceasefire clock down by <paramref name="weeks"/> (a whole turn's weeks, or the whole weeks of
+        /// an adjusted turn at an era's end) while the country is at full war.</summary>
+        public static void Apply(Content c, GameState s, int weeks, List<Cause> why)
         {
             if (s.Rung != 5) return;
-            s.CeasefireWeeksLeft = Math.Max(0, s.CeasefireWeeksLeft - Weeks(len));
+            s.CeasefireWeeksLeft = Math.Max(0, s.CeasefireWeeksLeft - weeks);
             if (s.CeasefireWeeksLeft == 0)
             {
                 why.Add(new Cause("security", "ceasefire", 0, "UN ceasefire imposed: full war ends"));   // the rung cause SetRung adds carries the -2

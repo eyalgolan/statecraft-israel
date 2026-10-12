@@ -27,7 +27,15 @@ namespace Statecraft.Game.Map
     ///   under the floor; the tilt-shift costs under 1.5 ms. Between 20 and 34 ms nothing changes (the dead band).
     /// - Settle: frames in the first 0.5 s after a change are not measured (the change reallocates render targets), nor
     ///   the first 3 s after start (scene load and shader compiles).
-    /// - A frame over 1 s is a pause (a hidden tab, a stalled load), not load: it drops the window.
+    /// - A frame over 1 s is a pause (a stalled load, a tab coming back), not load: it drops the window.
+    /// - A hidden page is not measured (issue #216, integration B18): a browser throttles a background tab or a minimised
+    ///   window to a few frames a second (170-200 ms frames, each under the 1 s pause line), which says nothing about the
+    ///   device. Chromium on Windows and macOS also marks a window covered by others hidden (B18 was one); Firefox and
+    ///   Safari do not, and there only the 1 s pause line catches a stall. While Background is set
+    ///   (QualityFallbackDriver reads document.hidden) frames are ignored and
+    ///   the partial window is dropped; on coming back the first ResumeSettleSeconds are not measured either. The level and
+    ///   the count of good windows towards a step up are kept, so a level that a real shortfall set recovers as usual
+    ///   once the page is in front: RecoverNeeded windows in a row under RecoverMs.
     /// - A window needs MinWindowFrames = 3 frames. With every counted frame at most 1 s, a full 3 s window always has 3,
     ///   so every window counts down to 1 fps (review M2: a minimum of 10 left 1-3 fps devices, the ones that need the
     ///   fallback most, with no decision at all). Few frames make the p95 the slowest frame, but a window that holds under
@@ -47,7 +55,7 @@ namespace Statecraft.Game.Map
         /// 0.8-1.0 dynamic range (notes 2.3), then the tilt-shift.</summary>
         public static readonly IReadOnlyList<Step> Steps = new[] { new Step(1f, true), new Step(0.9f, true), new Step(0.8f, true), new Step(0.8f, false) };
 
-        public const float FloorMs = 33f, OverMs = 34f, RecoverMs = 20f, WindowSeconds = 3f, SettleSeconds = 0.5f, StartupSeconds = 3f, PauseMs = 1000f;
+        public const float FloorMs = 33f, OverMs = 34f, RecoverMs = 20f, WindowSeconds = 3f, SettleSeconds = 0.5f, StartupSeconds = 3f, PauseMs = 1000f, ResumeSettleSeconds = 1f;
         public const int MinWindowFrames = 3, RecoverWindows = 3, MaxRecoverWindows = 48, FailedRecoveryWindows = 2;
 
         public int Level { get; private set; }
@@ -59,6 +67,20 @@ namespace Statecraft.Game.Map
         /// <summary>Windows in a row under RecoverMs that the next step up needs (doubles after a failed step up).</summary>
         public int RecoverNeeded { get; private set; } = RecoverWindows;
 
+        /// <summary>Whether the page is hidden (document.hidden: a background tab or a minimised window, and in Chromium a
+        /// covered one): frames are not measured.</summary>
+        public bool Background { get; private set; }
+
+        /// <summary>Sets <see cref="Background"/>. Going hidden drops the partial window; coming back starts a
+        /// ResumeSettleSeconds settle (the first frames back redraw and refill caches).</summary>
+        public void SetBackground(bool hidden)
+        {
+            if (hidden == Background) return;
+            Background = hidden;
+            window.Clear(); windowMs = 0f;
+            if (!hidden) settleMs = Math.Max(settleMs, ResumeSettleSeconds * 1000f);
+        }
+
         readonly List<float> window = new List<float>();
         float windowMs, settleMs = StartupSeconds * 1000f;
         int goodWindows, windowsSinceStepUp = int.MaxValue;
@@ -66,7 +88,7 @@ namespace Statecraft.Game.Map
         /// <summary>Feeds one frame's time in ms; true when it moved Level (the caller then applies Current).</summary>
         public bool Feed(float frameMs)
         {
-            if (float.IsNaN(frameMs) || frameMs < 0f) return false;
+            if (float.IsNaN(frameMs) || frameMs < 0f || Background) return false;
             if (frameMs > PauseMs) { window.Clear(); windowMs = 0f; return false; }
             if (settleMs > 0f) { settleMs -= frameMs; return false; }
             window.Add(frameMs); windowMs += frameMs;
@@ -104,12 +126,15 @@ namespace Statecraft.Game.Map
         public string Line() => string.Format(CultureInfo.InvariantCulture, "QUALITY level={0} {1} p95_ms={2:0.00}", Level, Current, LastP95);
     }
 
-    /// <summary>Feeds QualityFallback the player's frame times (unscaled, so a paused game still counts) and applies its step:
+    /// <summary>Feeds QualityFallback the player's frame times (unscaled, so a paused game still counts) and whether the page
+    /// is hidden (document.hidden through DocumentVisibility.jslib, read every frame; never hidden outside the WebGL player), and applies its step:
     /// the active URP asset's render scale (never above the tier's own) and TiltShift.FallbackOff. CameraRig.Init attaches it
     /// to the map camera through Attach, whose undo (run by the map's teardown) removes it and puts both back.</summary>
     public sealed class QualityFallbackDriver : MonoBehaviour
     {
         public QualityFallback Controller { get; } = new QualityFallback();
+        /// <summary>Whether the page is hidden now (tests replace it).</summary>
+        public Func<bool> Hidden { get; set; } = DocumentHidden;
         float tierScale = 1f;
         Action<float> setScale = _ => { };
 
@@ -141,6 +166,13 @@ namespace Statecraft.Game.Map
             Debug.Log(Controller.Line());
         }
 
-        void Update() => Feed(Time.unscaledDeltaTime * 1000f);
+        void Update() { Controller.SetBackground(Hidden()); Feed(Time.unscaledDeltaTime * 1000f); }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftDocumentHidden();
+        static bool DocumentHidden() => StatecraftDocumentHidden() != 0;
+#else
+        static bool DocumentHidden() => false;
+#endif
     }
 }

@@ -175,7 +175,9 @@ public class PlayerTextTests
             {
                 if (done) continue;
                 var hex = c.Hexes.FirstOrDefault(h => MapActions.Check(c, s, action, h.Q, h.R) == null);
-                if (hex != null) cmds.Add(new MapAction(action, hex.Q, hex.R));
+                // Ahead of the appointment: the 1952-56 offices keep appointments going until 1956, by when the
+                // ma'abarot policy that transit camps need may be off.
+                if (hex != null) cmds.Insert(0, new MapAction(action, hex.Q, hex.R));
             }
             var r = Simulation.Step(c, s, cmds);
             causes.AddRange(r.Why);

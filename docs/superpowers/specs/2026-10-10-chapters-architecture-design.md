@@ -278,7 +278,8 @@ real mapping is #49's research and needs sources.
 ### 4.5 The end of the last era
 
 Reaching the last era's `to` ends the game. The turn that reaches it is adjusted as in §4.1. The legacy report (#19)
-is shown, then `GameOver` is set to "The chapter has ended" (player-facing text, not an id). Commands after that are
+is shown, then `GameOver` is set to the stable code `era_ended`, which the UI shows as "The chapter has ended" (as #53
+ruled: codes in state, text in the strings files). Commands after that are
 refused as for any ended game. Today the last era is `founding`, so a game ends on 1 January 1957. When the next era
 is added, the same date becomes a boundary instead. **Golden safety:** the golden runs end in 1950 and 1952.
 

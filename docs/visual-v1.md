@@ -2,7 +2,10 @@
 
 Plan: `docs/superpowers/plans/2026-10-11-statecraft-visual-v1.md`. Promo targets: `promo/final/03-gameplay-1936.png`,
 `promo/final/02-map-diorama.png`. Poses: `PromoPose.Gameplay03` (34.86 E, 32.00 N, 60 km, yaw 10) and
-`PromoPose.Diorama02` (35.05 E, 31.55 N, 250 km, yaw 0).
+`PromoPose.Diorama02` (35.05 E, 31.55 N, 250 km, yaw 0). Since #174 the camera keeps its view on the map, and centres
+it east to west wherever the view is wider than the map. In the player, which runs that fit every frame, diorama02 can
+shift by up to a few hundred metres from its pose. The controller accepted this (owner-delegated). The other poses do
+not move.
 
 ## How to measure
 - Frame time: `?vprofile` (WebGL) or `-vprofile` (desktop player, quits when done), always under
@@ -33,9 +36,13 @@ Plan: `docs/superpowers/plans/2026-10-11-statecraft-visual-v1.md`. Promo targets
   while `QualitySettings.asset` (and, when it builds, `unity/Assets/Settings` or `ProjectSettings.asset`) has unstaged
   changes, restores them on every exit, and takes the pose list from `PromoPose.cs`. Each checkpoint switches the
   worktree's build target WebGL -> OSXUniversal (editor renders) and back at the next build, a reimport each way: budget
-  a few minutes per checkpoint. `--units` adds the unit art slice (`docs/units.md`): `&units` on the WebGL shots and
-  `-units` on the editor renders. Its art-log rows are named `<name>-units`, so they are never compared with plain
-  checkpoints, which never show units.
+  a few minutes per checkpoint. `--units` adds the units (`docs/units.md`): `&units` on the WebGL shots and
+  `-units` on the editor renders. That shows both the unit art slice and the units in play as a new game starts.
+  Normal play draws the units in play, but a `?shot` run switches them off unless `&units` is given
+  (`UnitLayer.HiddenInCaptures`), and the editor draws them only with `-units`. So plain checkpoints never show units, and
+  the `--units` rows are named `<name>-units`, so they are never compared with plain ones.
+  The kits do change for the units, though: from units-in-play's 943184c they keep a clearing where a unit stands in a town
+  (Tel Aviv, West Jerusalem; `MapScene.UnitClearings`). That is a kit baseline break in the art log.
 
 ## Budgets (proposed; ratified in Task 10: see "Tier decisions")
 Measured on the development Mac (Apple silicon, integrated GPU), 1920x1080 at DPR 1, Chrome for Testing:
@@ -999,7 +1006,8 @@ white (sRGB 1.08 / 1.05 red) so the graded result reaches the promo's. Toggle `b
 `MapBorders.NoEarlyOut`) turns the early-out off; `TheEarlyOutIsExact` renders both promo poses both ways and finds 0
 pixels apart (review M6). Visual only: no sim state read or written, goldens unchanged.
 
-**Data: none yet, so the game draws no border.** Owner ruling (2026-10-11): no invented political boundaries; borders come
+**The no-data path** (a map built with no layer: `MapScene.Build` alone; play now draws the 1948 sub-districts, below).
+Owner ruling (2026-10-11): no invented political boundaries; borders come
 from real data only (the 1945-48 districts and sub-districts, the 1949 armistice lines when dated, fronts). The repository
 has none of these: `hexes.json` holds elevation, land and biome; `settlements_1948.yaml` points; the armistice events
 (`content/events/armistice_*.yaml`) dates and text but no geometry; the sim has no fronts (war mode, #21 / M4 N4). So
@@ -1030,6 +1038,72 @@ its flag (`Application.isEditor || Debug.isDebugBuild`; `AReleaseBuildIgnoresThe
 promo renders and tests, `tools/art_checkpoint.sh --borderproof` (editor renders; the release WebGL shots ignore it, so the
 WebGL frame profile can no longer draw it), and `?borderproof` / `-borderproof` in a development player.
 
+**Data: the 1948 sub-districts (promo-borderdata).** The sixteen sub-districts of six districts in force on 15 May 1948,
+the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (Palestine Gazette No. 1552, Supplement No. 2,
+30 Jan 1947, pp. 125-133, in force 1 Jan 1947) revoked and replaced the whole Schedule, so it alone defines them; the 1942
+(No. 1163) and 1945 (No. 1415) changes are superseded (cited, not read). No later amendment was found (two web searches,
+2026-10-11); **the check stays open**: the Palestine Gazette's 1947 and 1948 indexes, or "Laws of Palestine 1947"
+(subsidiary legislation) at the National Library of Israel, would close it.
+- *True lines:* `content/map/subdistricts_1948.geojson` (status `sensitivity-reviewed`, checked 2026-10-11; names as in
+  the Gazette, Hebrew and Arabic from Wikipedia, the source noted per row), written by `tools/borders_digitise.py` from the Survey of Palestine map
+  "Administrative Divisions" (1:750,000, drawn April 1946, red boundary overprint May 1947; map 6 of the "Maps of
+  Palestine" prepared for UNSCOP, June 1947), two Commons scans of different prints (National Library of Israel), SHA-256
+  checked. Method: the graticule (35-36 E x 30-33 N) georeferences each scan (affine, rms 5-6 px, about 0.2 km); the red
+  overprint plus the black dots between its dashes, with the district lettering and the name underlines erased, is closed
+  and flood-labelled from each sub-district's chief town (a leak fails the run); a fine closing then gives the narrow
+  salients the coarse one filled back to their own side, and Gazette-listed Metulla (Safad, p. 127), which the 1:750,000
+  map draws on the frontier's tip, is kept in Safad; six connectors where a line runs under a black label or stops short
+  of the coast, and the Metulla tip, are recorded as uncertain segments; water (sea, the Dead Sea at its 1948 level)
+  from the game's DEM, so the coast is the game's coast. Accuracy about +-1 km: areas within -4.1% to +3.7% of Village
+  Statistics 1945 (which follows the 1945 Schedule; Beersheba's rounded figure makes its check nominal); the second print
+  agrees to a mean 0.11-0.23 km, at most 1.23 km (per feature in the file); 41 independent Gazette-listed places (none a
+  digitiser seed) plus Metulla (kept by its patch) fall in their sub-district (Ra'anana 0.1 km over the Jaffa/Tulkarm
+  line, within the accuracy). The
+  file is written one vertex per line and is byte-identical on a rerun.
+- *Display:* `tools/borders_bake.py` gives each land hex the sub-district containing its centre (a shore hex whose centre
+  is in the water: the side of its nearest land, so the hexes off Taba, west of Rafah's frontier and by the Lisan in the
+  Dead Sea are outside), the hex that holds a Gazette-listed place that place's sub-district, never outside (controller
+  ruling, owner-delegated, 2026-10-11; `GAZETTE_PLACES` / `GAZETTE_SETTLEMENTS`, placed as the game places settlements:
+  this puts Rafah town's hex (-15, 31), whose centre is in Sinai, in Gaza, Metulla's (15, 1) in Safad and Ein Gev's
+  (12, 8) in Tiberias, which the centre rule had left outside, and moves the Kefar Sava / Ra'anana and Kafr Qasim hexes
+  to their own sub-districts), land beyond the Mandate frontier the `outside` region (style none, so the
+  bands run along the frontier and nothing is drawn beyond it), sea and lake hexes none (no coast band) ->
+  `content/map/subdistrict_hexes_1948.yaml`. Every sub-district is Primary (blue). `GameRoot.Begin` and
+  `MapCapture.Promo` draw it (`Subdistricts1948.Show`); the info panel names a hex's sub-district and district ("Jaffa
+  Sub-District, Lydda District (Mandate sub-districts, 1947)"). Snapping moves a line by up to half a hex (about 4 km);
+  the true line is the GeoJSON's. The "Why" screen lists sim causes only, so it does not name map lines (the sim must not
+  read this file).
+- *When it shows (owner ruling, 2026-10-11):* from the 1948 start until the 1949 armistice lines replace it, each front
+  switching to its armistice line on that agreement's date (February-July 1949) once that data is built; until then the
+  layer stays, labelled on screen "Mandate sub-districts, 1947" (a UI label above the minimap while the layer is drawn;
+  not the renderer's 3D banner, which the tilt-shift blurs; editor-only renders have no UI and so no label) (the baked
+  file's `label`, `shown_from: 1948-05-15`,
+  `shown_until: null`; `Subdistricts1948.ShowsOn`, applied on every turn; `SubdistrictTests`). Recorded in decision D-B.
+- *Kept out of the sim:* the sim reads files by name and its content hash covers only those, so neither file moves the
+  hash or the goldens (`SubdistrictTests.TheSimIgnoresTheFileTheContentHashDoesNotMove`; `test_the_sim_never_reads_the_border_files`).
+- *Licence:* Government of Palestine works of 1945-47, public domain in Israel and the UK, with a possible URAA US
+  copyright in the map's drawing that does not reach facts (Feist): decision D-B (docs/oss/DECISIONS.md), decided
+  (owner-delegated, 2026-10-11): allowed; facts redrawn, no image copied; `ASSETS.yaml` row verified.
+- *Rulings (owner-delegated to the controller, 2026-10-11):* the near-frontier shore hexes (Taba, west of Rafah, the
+  Lisan) stay as built; the Mandate frontier outline stays; Samaria District in Arabic stays "لواء السامرة" (no official
+  Arabic Mandate text reachable online; "لواء نابلس" is the common usage; unverified, noted in the file); the Hebrew and
+  Arabic names from Wikipedia are accepted for now; the sensitivity review is done (`sensitivity-reviewed`), while the
+  1947-48 amendment check stays open.
+- *1949 armistice lines (armistice-lines, #196):* `content/map/armistice_lines_1949.geojson` (true lines, draft) and
+  `armistice_hexes_1949.yaml` (snapped), from the agreements and their annexed maps
+  (`research_notes/Map borders/armistice-lines-1949.md`, "Built"): Syria (line and three-part DMZ), Lebanon (the
+  frontier), Egypt (El Auja DMZ; the Gaza-Rafah line from the Wadi Hasi to Gaza; from 22 Feb 1950 the line on the
+  signed modus vivendi map, S/1471), Jordan (low accuracy, from the low-resolution UNISPAL copy of map 1; line A by
+  its Art. VI.3 stages; Jerusalem a gap). Each front switches on its agreement's date, which the sub-district layer records per
+  front (`Subdistricts1948.FrontReplaced`, used by `MapRegions`): from then its zones are drawn over the sub-districts in the
+  secondary style and its lines named in the info panel with their own agreement and date, while the sub-district bands
+  stay as the base; the map label adds "1949 armistice lines: <fronts>", with "Jordan (low
+  accuracy)" and "Egypt (and the 1950 modus vivendi)" (`ArmisticeTests`); its box takes up to the right column's
+  480 px (`.map-layer`, was 160 px), so the longest label is three lines, checked beside a real event card at seven window
+  shapes (`ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard`). The sub-district layer stays as the base
+  while the lines leave gaps. A line is visible as a band only where it bounds a zone or is the Mandate frontier; at
+  5-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
+
 **Research item: region data (to source, then the owner's sensitivity review).**
 - *What:* per-hex region labels for (a) the sub-districts of Mandatory Palestine at the end of the Mandate (six districts:
   Galilee, Haifa, Samaria, Jerusalem, Lydda, Gaza; sixteen sub-districts: Acre, Beisan, Nazareth, Safad, Tiberias, Haifa,
@@ -1059,7 +1133,7 @@ WebGL frame profile can no longer draw it), and `?borderproof` / `-borderproof` 
   3. Styles are per region, not per edge: an edge's look comes from the regions on its two sides.
   4. Hex snapping moves a line by up to half a hex (see the owner decision below).
   Follow-up: more styles or per-edge styles when the data and the owner's ruling on snapping need them.
-- *Owner decision needed:* the promo snaps borders to hex edges, but spec §3 (map state) says hex boundaries carry no
+- *Owner decision (ruled 2026-10-11: store the true lines, snap to hex edges only for display, as the promo does):* the promo snaps borders to hex edges, but spec §3 (map state) says hex boundaries carry no
   political meaning and the chapters design draws lines as true polylines. Snapping a line to hex edges moves it by up to
   half a hex (about 4 km). Options: (1) hex-snapped regions (this renderer, the promo look); (2) true polylines (a separate
   overlay, not the promo look); (3) both, hex-snapped at the gameplay zoom and true lines in a map mode.

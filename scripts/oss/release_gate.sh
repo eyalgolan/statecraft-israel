@@ -25,7 +25,7 @@ step "sensitivity gate on content/ (decision D11; Statecraft.Cli --release-gate)
 dotnet run --project sim/Statecraft.Cli -v q -- --release-gate --content "$PWD/content" || fail=1
 
 step "tools tests"
-uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 pytest tools/tests -q || fail=1
+uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q || fail=1
 
 step "history scan of main (information; rows in docs/oss/history-accepted.tsv are accepted)"
 uv run scripts/oss/scan_history.py --ref main | tee "$scan_out"

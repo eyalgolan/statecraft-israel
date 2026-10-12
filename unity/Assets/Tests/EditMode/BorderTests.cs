@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 
 /// <summary>promo-borders: the region border renderer (MapBorders, StatecraftBorders.hlsl). The rendered tests draw the
-/// synthetic BorderProof rings: the repository holds no real region data yet, and the game draws none.</summary>
+/// synthetic BorderProof pattern; the real 1948 sub-districts, which play draws (GameRoot), are SubdistrictTests'.</summary>
 public class BorderTests
 {
     [TearDown]
@@ -151,7 +151,7 @@ public class BorderTests
         Assert.Throws<System.InvalidOperationException>(() => MapBorders.Use(null));
     }
 
-    /// <summary>Without data the "borders" toggle is a no-op: the frame is identical with it on and off (that both run the
+    /// <summary>Without data (MapScene.Build alone; play draws the 1948 sub-districts, SubdistrictTests) the "borders" toggle is a no-op: the frame is identical with it on and off (that both run the
     /// same shader is the point: the branch's frame against main's is checked by the art checkpoints, docs/visual-v1.md,
     /// "Region borders"). Once a layer is in use the toggle removes it (with its label), and an empty layer draws
     /// nothing.</summary>
@@ -449,19 +449,28 @@ public class BorderTests
         Assert.That(share, Is.InRange(0.01f, 0.15f));
     }
 
-    /// <summary>The same layer and pose give the same pixels (no time, no randomness in the borders).</summary>
+    /// <summary>The same layer and pose give the same pixels (no time, no randomness in the borders). The pattern is shown
+    /// once and a warm-up frame is drawn first, with shaders compiled synchronously: showing it again re-created the
+    /// banner's TextMesh, which can repack the dynamic font's atlas, and an editor shader variant could finish compiling
+    /// between the two frames; either changed a pixel or two now and then, not the borders.</summary>
     [UnityTest]
     public IEnumerator BordersAreDeterministic()
     {
-        var (map, cam, rig) = Open();
-        yield return null;
-        RenderSample.TiltShift(false);
-        PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
-        BorderProof.Show(map);
-        var a = RenderSample.Render(cam, 480, 270);
-        BorderProof.Show(map);
-        var b = RenderSample.Render(cam, 480, 270);
-        Assert.AreEqual(0f, Changed(a, b, 0f));
+        bool async = UnityEditor.ShaderUtil.allowAsyncCompilation;
+        UnityEditor.ShaderUtil.allowAsyncCompilation = false;
+        try
+        {
+            var (map, cam, rig) = Open();
+            yield return null;
+            RenderSample.TiltShift(false);
+            PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+            BorderProof.Show(map);
+            RenderSample.Render(cam, 480, 270);   // warm-up: the banner's glyphs and every variant in place
+            var a = RenderSample.Render(cam, 480, 270);
+            var b = RenderSample.Render(cam, 480, 270);
+            Assert.AreEqual(0f, Changed(a, b, 0f));
+        }
+        finally { UnityEditor.ShaderUtil.allowAsyncCompilation = async; }
     }
 
     static float Median(List<float> v) { var s = v.OrderBy(x => x).ToList(); return s[s.Count / 2]; }

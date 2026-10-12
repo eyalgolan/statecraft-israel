@@ -81,6 +81,101 @@ public class MapLabelTests
         return box.position + Vector3.up * box.lossyScale.y / 2;
     }
 
+    /// <summary>A settlement's kit (its drawn buildings) as a panel rectangle, independently of the presenter: the hull of
+    /// every vertex of its mesh through the camera's pixels.</summary>
+    static Rect KitRectOf(HdPanel hd, string id)
+    {
+        var kit = GameObject.Find(Statecraft.Game.Map.Kits.KitLayer.RootName).transform.Find(id);
+        Assert.IsNotNull(kit, id + " has a kit");
+        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+        foreach (var v in kit.GetComponent<MeshFilter>().sharedMesh.vertices)
+        {
+            var p = hd.ToPanel(kit.localToWorldMatrix.MultiplyPoint3x4(v), out _);
+            x0 = Mathf.Min(x0, p.x); y0 = Mathf.Min(y0, p.y); x1 = Mathf.Max(x1, p.x); y1 = Mathf.Max(y1, p.y);
+        }
+        return Rect.MinMaxRect(x0, y0, x1, y1);
+    }
+
+    static float Cover(Rect pill, Rect kit)
+    {
+        float w = Mathf.Min(pill.xMax, kit.xMax) - Mathf.Max(pill.xMin, kit.xMin), h = Mathf.Min(pill.yMax, kit.yMax) - Mathf.Max(pill.yMin, kit.yMin);
+        return w <= 0 || h <= 0 ? 0f : w * h / (kit.width * kit.height);
+    }
+
+    /// <summary>Issue #214: a kit's columns hold every vertex, stand on the kit's lowest point, and keep a tall landmark's
+    /// height to its own cell (a low house beside a tall tower gets a low column).</summary>
+    [Test]
+    public void KitColumnsHoldTheKitAndKeepATowerToItsCell()
+    {
+        var pts = new[] { new Vector3(0, 0, 0), new Vector3(10, 8, 10), new Vector3(90, 0, 90), new Vector3(100, 60, 100) };   // a house, a tower
+        var cols = Statecraft.Game.Map.Kits.KitMesh.Columns(pts);
+        Assert.AreEqual(2, cols.Length, "two occupied cells");
+        foreach (var p in pts) Assert.IsTrue(cols.Any(c => c.min.x <= p.x && p.x <= c.max.x && c.min.y <= p.y && p.y <= c.max.y && c.min.z <= p.z && p.z <= c.max.z), p.ToString());
+        foreach (var c in cols) Assert.AreEqual(0f, c.min.y, "from the ground");
+        Assert.AreEqual(8f, cols.Min(c => c.max.y), "the house's column is as tall as the house");
+        // The built map's columns come from the kit build, not from the uploaded mesh: the player has no CPU copy to read
+        // (a WebGL boot read mesh.vertices and failed).
+        var tlv = GameObject.Find(Statecraft.Game.Map.Kits.KitLayer.RootName).transform.Find("tel_aviv").GetComponent<MeshFilter>().sharedMesh;
+        Assert.IsFalse(tlv.isReadable, "the kit meshes keep no CPU copy");
+        foreach (var s in map.Settlements) Assert.IsTrue(map.TryKitColumns(s.Id, out var c) && c.Length > 0, s.Id + " has kit columns");
+    }
+
+    /// <summary>Review C-m3: with the "kits" toggle off the marker boxes are drawn, and a pill sits just above its box, not
+    /// above the hidden kit; turning the kits back on moves it back above the kit.</summary>
+    [UnityTest]
+    public IEnumerator WithTheKitsOffAPillSitsAboveItsMarker()
+    {
+        var hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            var deg = map.Settlements.Single(s => s.Id == "degania_alef");
+            Pose(deg.Lon, deg.Lat, 10000f);
+            var pill = labels.Labels.Single(l => l.name == "label-degania_alef");
+            Assert.IsTrue(map.KitsShown);
+            yield return Settle(labels);
+            var withKit = pill.worldBound;
+            VisualToggles.Set("kits", false);
+            Assert.IsFalse(map.KitsShown);
+            labels.Refresh(); yield return null;
+            var box = GameObject.Find("Settlements").transform.Find("degania_alef");
+            float top = float.MaxValue;
+            for (int c = 0; c < 8; c++)
+            {
+                var corner = box.position + Vector3.Scale(box.lossyScale, new Vector3((c & 1) - 0.5f, ((c >> 1) & 1) - 0.5f, ((c >> 2) & 1) - 0.5f));
+                top = Mathf.Min(top, hd.ToPanel(corner, out _).y);
+            }
+            var withMarker = pill.worldBound;
+            TestContext.WriteLine($"Degania pill with the kit {withKit}, with the marker {withMarker}, marker top {top:F0}");
+            Assert.AreEqual(top - MapLabelsPresenter.LiftPx, withMarker.yMax, 2f, "LiftPx above the marker box");
+            Assert.Greater(withMarker.yMax, withKit.yMax + 2f, "lower than above the (hidden) kit");
+            VisualToggles.Set("kits", true);
+            labels.Refresh(); yield return null;
+            Assert.AreEqual(withKit.yMax, pill.worldBound.yMax, 0.5f, "back above the kit");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>Issue #214: the spots a pill may take against its kit's screen rectangle, LiftPx clear of it.</summary>
+    [Test]
+    public void SpotsSitClearOfTheKit()
+    {
+        var kit = new Rect(100, 200, 60, 40); var size = new Vector2(30, 10); var point = new Vector2(130, 215);
+        float lift = MapLabelsPresenter.LiftPx;
+        Assert.AreEqual(new Rect(115, 200 - lift - 10, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.AboveCentre, kit, point, size));
+        Assert.AreEqual(new Rect(130, 200 - lift - 10, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.AboveLeft, kit, point, size));
+        Assert.AreEqual(new Rect(100, 200 - lift - 10, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.AboveRight, kit, point, size));
+        Assert.AreEqual(new Rect(160 + lift, 215, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.BesideRight, kit, point, size));
+        Assert.AreEqual(new Rect(100 - lift - 30, 215, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.BesideLeft, kit, point, size));
+        Assert.AreEqual(new Rect(115, 240 + lift, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.Below, kit, point, size));
+        foreach (var spot in new[] { MapLabelsPresenter.Spot.AboveCentre, MapLabelsPresenter.Spot.AboveLeft, MapLabelsPresenter.Spot.AboveRight,
+                     MapLabelsPresenter.Spot.BesideRight, MapLabelsPresenter.Spot.BesideLeft, MapLabelsPresenter.Spot.Below })
+            Assert.AreEqual(0f, MapLabelsPresenter.Cover(MapLabelsPresenter.SpotRect(spot, kit, point, size), kit), spot.ToString());
+        var over = MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.Over, kit, point, size);
+        Assert.AreEqual(new Rect(115, 215 - lift - 10, 30, 10), over);
+        Assert.AreEqual(30f * 9f / (60f * 40f), MapLabelsPresenter.Cover(over, kit), 1e-4f, "over the kit: its bottom 9 rows, 270 of its 2400 px");
+        Assert.AreEqual(0f, MapLabelsPresenter.Cover(over, new Rect(0, 0, 0, 0)), "an empty kit is never covered");
+    }
     [Test]
     public void EverySettlementHasOneGaramondPillThatIgnoresThePointer()
     {
@@ -126,8 +221,6 @@ public class MapLabelTests
         Assert.AreEqual("anchor-lower-right", AnchorOf("jaffa")); Assert.AreEqual("anchor-lower-right", AnchorOf("rishon_lezion"));
         Assert.AreEqual("anchor-lower-left", AnchorOf("lod")); Assert.AreEqual("anchor-lower-left", AnchorOf("petah_tikva"));
         Assert.AreEqual("anchor-lower-centre", AnchorOf("tel_aviv"));
-        var ramla = map.Settlements.Single(s => s.Id == "ramla");
-        Assert.AreEqual(map.Frame.ToWorld(ramla.Lon, ramla.Lat, 0).x - 1500f, MapLabelsPresenter.Anchor(map, ramla).x, 1f, "Ramla's label nudged west");
         Assert.Less(MapLabelsPresenter.Priority("city"), MapLabelsPresenter.Priority("town"));
         Assert.AreEqual(MapLabelsPresenter.Priority("town"), MapLabelsPresenter.Priority("arab_town"));
         Assert.Less(MapLabelsPresenter.Priority("arab_town"), MapLabelsPresenter.Priority("kibbutz"));
@@ -213,14 +306,15 @@ public class MapLabelTests
         labels.Refresh(force: true); yield return null;
     }
 
-    /// <summary>Independent of the presenter's own projection call: the Tel Aviv pill's bottom centre is within 2 px of its
-    /// marker box's top, projected with Camera.WorldToScreenPoint and the panel's scale, LiftPx above it. Also on a 2880x1620
-    /// target (panel scale 1.5, Retina-like) with the game's top-bar inset (review I5).</summary>
+    /// <summary>Independent of the presenter's own projection call: the Tel Aviv pill sits centred over its kit and just
+    /// above it (issue #214): its bottom at least LiftPx and at most 30 px above the top of the kit's drawn buildings (every
+    /// vertex projected with Camera.WorldToScreenPoint and the panel's scale; the presenter's columns are a little looser). Also on a 2880x1620 target (panel scale 1.5, Retina-like) with the game's top-bar
+    /// inset (review I5).</summary>
     [UnityTest]
-    public IEnumerator APillSitsJustAboveItsMarkerTop() => PillOnMarker(1920, 1080, 0f);
+    public IEnumerator APillSitsJustAboveItsKit() => PillOnMarker(1920, 1080, 0f);
 
     [UnityTest]
-    public IEnumerator APillSitsJustAboveItsMarkerTopAtScaleOneAndAHalfWithTheTopInset() => PillOnMarker(2880, 1620, 0.088f);
+    public IEnumerator APillSitsJustAboveItsKitAtScaleOneAndAHalfWithTheTopInset() => PillOnMarker(2880, 1620, 0.088f);
 
     IEnumerator PillOnMarker(int width, int height, float topInset)
     {
@@ -230,17 +324,66 @@ public class MapLabelTests
         try
         {
             yield return Settle(labels);
-            var expected = hd.ToPanel(MarkerTopOf("tel_aviv"), out _) - new Vector2(0, MapLabelsPresenter.LiftPx);
+            var kit = KitRectOf(hd, "tel_aviv");
             var wb = labels.Labels.Single(l => l.name == "label-tel_aviv").worldBound;
-            TestContext.WriteLine($"{width}x{height} inset {topInset}: Tel Aviv pill {wb}, expected bottom centre {expected}, panel {hd.Root.worldBound.size}");
+            TestContext.WriteLine($"{width}x{height} inset {topInset}: Tel Aviv pill {wb}, kit {kit}, panel {hd.Root.worldBound.size}");
             Assert.AreEqual(1920f, hd.Root.worldBound.width, 1f, $"the panel is 1920 points wide: a scale of {width / 1920f}");
-            Assert.AreEqual(expected.x, wb.center.x, 2f, "centred on the marker");
-            Assert.AreEqual(expected.y, wb.yMax, 2f, "LiftPx above the marker's top");
+            Assert.AreEqual(kit.center.x, wb.center.x, 0.05f * kit.width + 2f, "centred on the kit");
+            Assert.LessOrEqual(wb.yMax, kit.yMin - MapLabelsPresenter.LiftPx + 1f, "clear of the kit, LiftPx above it");
+            Assert.GreaterOrEqual(wb.yMax, kit.yMin - 30f, "just above the kit, not floating");
         }
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
     static float Gap(Rect r, Vector2 p) => new Vector2(Mathf.Max(0, Mathf.Max(r.xMin - p.x, p.x - r.xMax)), Mathf.Max(0, Mathf.Max(r.yMin - p.y, p.y - r.yMax))).magnitude;
+    static float RectGap(Rect a, Rect b) => new Vector2(Mathf.Max(0, Mathf.Max(a.xMin - b.xMax, b.xMin - a.xMax)), Mathf.Max(0, Mathf.Max(a.yMin - b.yMax, b.yMin - a.yMax))).magnitude;
+
+    /// <summary>Issue #214 (integration B16): at the gameplay03 promo pose (with the game's top-bar inset), and close over
+    /// Degania Alef (10 km) and Zikhron Ya'akov (25 km), no shown pill covers more than MaxKitCover of its own kit's screen
+    /// rectangle or of any other visible kit's, and no two shown pills overlap; both small places are labelled close up.</summary>
+    [UnityTest]
+    public IEnumerator NoPillHidesAKit()
+    {
+        var hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        var inset = new TopBarInset(hd.Root, rig);
+        try
+        {
+            var degania = map.Settlements.Single(s => s.Id == "degania_alef");
+            var zikhron = map.Settlements.Single(s => s.Id == "zikhron_yaakov");
+            foreach (var (name, lon, lat, distance, yaw, must) in new[]
+            {
+                ("gameplay03", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, PromoPose.Gameplay03.Distance, PromoPose.Gameplay03.Yaw, ""),
+                ("degania 10 km", degania.Lon, degania.Lat, 10000f, 0f, "degania_alef"),
+                ("zikhron 25 km", zikhron.Lon, zikhron.Lat, 25000f, 0f, "zikhron_yaakov"),
+            })
+            {
+                rig.LookAt = map.Frame.ToWorld(lon, lat, 0); rig.Distance = distance; rig.Yaw = yaw; rig.Apply();
+                yield return null;
+                inset.Update();
+                yield return Settle(labels);
+                var tops = VisibleMarkerTops(hd, map);
+                var shown = labels.Slots.Where(Shown).Select(s => (id: s.name.Substring("slot-".Length), rect: s.Q<Label>().worldBound)).ToList();
+                TestContext.WriteLine($"{name}: {shown.Count} shown: {string.Join(" ", shown.Select(x => $"{x.id}{x.rect} kit {KitRectOf(hd, x.id)}"))}");
+                Assert.Greater(shown.Count, 0, $"{name}: pills are shown");
+                if (must != "") Assert.IsTrue(shown.Any(x => x.id == must), $"{name}: {must} is labelled");
+                foreach (var (id, rect) in shown)
+                {
+                    float own = Cover(rect, KitRectOf(hd, id));
+                    Assert.LessOrEqual(own, MapLabelsPresenter.MaxKitCover + 0.01f, $"{name}: {id}'s pill {rect} covers {own:P0} of its kit {KitRectOf(hd, id)}");
+                    foreach (var other in tops.Keys.Where(o => o != id))
+                    {
+                        float c = Cover(rect, KitRectOf(hd, other));
+                        Assert.LessOrEqual(c, MapLabelsPresenter.MaxKitCover + 0.01f, $"{name}: {id}'s pill {rect} covers {c:P0} of {other}'s kit");
+                    }
+                }
+                for (int i = 0; i < shown.Count; i++)
+                    for (int j = i + 1; j < shown.Count; j++)
+                        Assert.IsFalse(shown[i].rect.Overlaps(shown[j].rect), $"{name}: {shown[i].id} {shown[i].rect} overlaps {shown[j].id} {shown[j].rect}");
+            }
+        }
+        finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
+    }
 
     static readonly string[] Occluders = { "top-bar", "info-panel", "minimap" };
 
@@ -293,9 +436,11 @@ public class MapLabelTests
                 foreach (var (id, rect) in shown)
                 {
                     Assert.IsTrue(tops.ContainsKey(id), $"{name}: {id} is shown but its marker is not visible");
-                    float own = Gap(rect, tops[id]);
+                    // The pill's gap to its own kit (issue #214), as the presenter measures it: at most LiftPx, since its
+                    // kit columns may reach a few px past the drawn vertices this test projects.
+                    float own = Mathf.Min(RectGap(rect, KitRectOf(hd, id)), MapLabelsPresenter.LiftPx);
                     foreach (var other in tops.Where(o => o.Key != id))
-                        Assert.Greater(Gap(rect, other.Value), 2f * own + 4f, $"{name}: {id} pill is {own:F0} px from its marker but closer to {other.Key}'s");
+                        Assert.Greater(Gap(rect, other.Value), 2f * own + 4f, $"{name}: {id} pill is {own:F0} px from its kit but closer to {other.Key}'s marker");
                 }
                 foreach (var s in map.Settlements.Where(s => tops.ContainsKey(s.Id) && !MapLabelsPresenter.HiddenByZoom(s.Type, distance)))
                 {
@@ -381,6 +526,7 @@ public class MapLabelTests
                 var bar = hd.Root.Q<VisualElement>("top-bar").worldBound;
                 var info = hd.Root.Q<VisualElement>("info-panel").worldBound;
                 var mini = hd.Root.Q<VisualElement>("minimap").worldBound;
+                var layer = hd.Root.Q<VisualElement>("map-layer").worldBound;   // the minimap's caption (#234)
                 int count = 0;
                 foreach (var slot in labels.Slots.Where(Shown))
                 {
@@ -388,6 +534,7 @@ public class MapLabelTests
                     Assert.GreaterOrEqual(r.yMin, bar.yMax - 0.5f, $"{pose.Name}: {slot.name} {r} reaches under the top bar {bar}");
                     Assert.IsFalse(r.Overlaps(info), $"{pose.Name}: {slot.name} {r} under the info panel {info}");
                     Assert.IsFalse(r.Overlaps(mini), $"{pose.Name}: {slot.name} {r} under the minimap {mini}");
+                    Assert.IsFalse(layer.width > 0 && r.Overlaps(layer), $"{pose.Name}: {slot.name} {r} under the map-layer caption {layer}");
                 }
                 var zikhron = labels.Slots.Single(s => s.name == "slot-zikhron_yaakov");
                 TestContext.WriteLine($"{pose.Name}: {count} shown; Zikhron Ya'akov shown={Shown(zikhron)} {zikhron.Q<Label>().worldBound}; bar {bar}");

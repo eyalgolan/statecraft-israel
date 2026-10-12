@@ -16,9 +16,11 @@ required attribution texts are in [`NOTICE`](NOTICE).
 | IMS rain-gauge normals (data.gov.il dataset 481) | `content/map/precip_stations.json` | "Other (Open)" (data.gov.il) | Attribution in `NOTICE`; terms under owner review (decision D6) |
 | Wikipedia text and coordinates | cited throughout `content/` | CC BY-SA 4.0 | Attribution (source URL per entry); share-alike, which is why `content/` is CC BY-SA 4.0 |
 | Portraits (Wikimedia Commons) | `promo/ref/people/`, `unity/Assets/UI/Portraits/` | Public domain or CC0, per file | None legally; the per-file record in `ASSETS.portraits.yaml` is kept as provenance |
+| Event-card photographs (Wikimedia Commons: Meitar Collection / National Library of Israel, Nationaal Archief, US National Archives) | `unity/Assets/UI/EventImages/` | CC BY 4.0, CC0 1.0 or public domain, per file | CC BY 4.0: keep the credit line (photographer, Meitar Collection, National Library of Israel, The Pritzker Family National Photography Collection; licence; "graded and cropped") in `NOTICE` and under the picture in the game; per-file records in `ASSETS.yaml` |
 | EB Garamond | `unity/Assets/UI/Fonts/` | SIL Open Font License 1.1 | Keep `OFL.txt` with the fonts; do not sell the fonts on their own |
+| Frank Ruhl Libre | `unity/Assets/UI/Fonts/FrankRuhlLibre/` | SIL Open Font License 1.1 | Keep `OFL.txt` with the fonts; do not sell the fonts on their own |
 | Unity template-derived files | `unity/Assets/Settings/`, `spikes/m0/unity/Assets/Settings/`, `spikes/m0/unity/Assets/UI Toolkit/UnityThemes/`, and Shader Graphs generated from a Unity template (`unity/Assets/Shaders/StatecraftTerrain.shadergraph`) | Unity Companion License | Use with Unity; see `LICENSING.md` |
-| AI-generated concept art | `promo/final/01`–`08`, `promo/ref/*-src.jpg`, `docs/images/hero-concept-1936.jpg` | CC0 / no rights claimed (`LICENSING.md`); generator terms under owner review (D5) | Disclose as AI-generated (Steam and itch.io require it) |
+| AI-generated concept art | `promo/final/01`–`08`, `promo/ref/*-src.jpg`, `docs/images/hero-concept-1936.jpg`, `promo/start-screen/*.png`, `unity/Assets/UI/StartScreen/declaration-hall.jpg` (in every build) | CC0 / no rights claimed (`LICENSING.md`); generator terms under owner review (D5) | Disclose as AI-generated (Steam and itch.io require it) |
 
 Code dependencies are fetched at build or run time under their own licences and are not vendored: NuGet packages in
 `sim/**/*.csproj` (YamlDotNet MIT; test-only: xUnit Apache-2.0, Microsoft.NET.Test.Sdk MIT, xunit.runner.visualstudio
@@ -40,8 +42,8 @@ None of these is redistributed by this repository or shipped in a build: `UnityM
 
 ## Builds (what a WebGL or desktop build carries)
 
-A build is a different artefact. It contains the Unity runtime, `YamlDotNet.dll`, the fonts, the portraits and the map
-data. Before a build is handed to anyone, it must carry `LICENSE`, `NOTICE`, this file, `LICENSES/` and
+A build is a different artefact. It contains the Unity runtime, `YamlDotNet.dll`, the fonts, the portraits, the event
+photographs (CC BY 4.0 credits in `NOTICE` and on the card) and the map data. Before a build is handed to anyone, it must carry `LICENSE`, `NOTICE`, this file, `LICENSES/` and
 `unity/Assets/UI/Fonts/OFL.txt`. `scripts/oss/package_web.sh` copies them into the build folder, has
 `tools/package_release.py` (the sensitivity gate) zip it, and refuses to finish unless the zip lists every one of them
 (see [`docs/RELEASING.md`](docs/RELEASING.md)).

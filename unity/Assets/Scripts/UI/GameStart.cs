@@ -14,8 +14,16 @@ namespace Statecraft.Game.UI
     {
         public static ulong NewSeed() => (ulong)DateTime.UtcNow.Ticks;
 
-        public static GameSession Begin(Content c, SaveStore store, Func<ulong> newSeed, List<string> notes, UiText text, bool fresh = false)
+        public static GameSession Begin(Content c, SaveStore store, Func<ulong> newSeed, List<string> notes, UiText text, bool fresh = false) =>
+            Begin(c, store, newSeed, notes, text, out _, fresh);
+
+        /// <summary>Begin, also saying whether the session continues the autosave (<paramref name="resumed"/>): false for a
+        /// new game, whether there was no save, the save was set aside, or <paramref name="fresh"/> ignored it. The start
+        /// screen offers Continue only when it is true.</summary>
+        public static GameSession Begin(Content c, SaveStore store, Func<ulong> newSeed, List<string> notes, UiText text, out bool resumed,
+            bool fresh = false)
         {
+            resumed = false;
             if (!fresh)
             {
                 try
@@ -24,6 +32,7 @@ namespace Statecraft.Game.UI
                     if (saved == null) return GameSession.New(c, newSeed(), Mode.Historical);
                     var loaded = GameSession.Load(c, saved, out var warnings);
                     notes.AddRange(warnings);
+                    resumed = true;
                     return loaded;
                 }
                 catch (Exception e)   // any failure (a bad save, a replay that throws): never block the start

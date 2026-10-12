@@ -19,10 +19,21 @@ from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
 UA = {"User-Agent": "statecraft-israel-licence-audit/1.0 (https://github.com/eyalgolan/statecraft-israel)"}
-US_STATUS = ("PD-US", "PD-1996", "Cc-zero")
+# Only the {{PD-1996}} licence tag itself. {{PD-1996-text}} is a text helper that other tags also transclude,
+# including PD-India-URAA, PD-Poland and PD-HU-unknown, so on its own it is not an explicit US status.
+US_1996_TEMPLATES = {"PD-1996"}
+# The dated composite tags on the Weizmann source explicitly include US expiry.
+US_EXPIRED_COMPOSITES = {"PD-old-70-expired", "PD-old-70-1923"}
 # Portrait files with no people.yaml record (promo/CREDITS.md lists Dayan as CC0).
 EXTRA = [("promo/ref/people/Moshe_Dayan_1962_CC0.jpg",
           "https://commons.wikimedia.org/wiki/File:Moshe_Dayan_met_mgr._A.C._Ramselaar_(cropped).jpg")]
+
+
+def _has_us_status(name: str) -> bool:
+    # Shared text/localisation helpers are not licence tags in their own right.
+    if "/" in name or re.search(r"-text(?:$|-)", name):
+        return False
+    return name.startswith("PD-US") or name == "Cc-zero" or name in US_1996_TEMPLATES or name in US_EXPIRED_COMPOSITES
 
 
 def rule_for(path: str, source: str, licence_short: str, templates: list[str], artist: str) -> dict:
@@ -35,7 +46,9 @@ def rule_for(path: str, source: str, licence_short: str, templates: list[str], a
             "artist": re.sub(r"<[^>]+>", "", html.unescape(artist)).strip()}
     if licence == "unknown":
         rule.update(status="owner-verify", note=f"Commons licence '{licence_short}' is not public domain or CC0")
-    elif not any(n.startswith(US_STATUS) for n in names):
+    elif any(n == "Not-PD-US-URAA" or n.startswith("Not-PD-US-URAA/") for n in names):
+        rule.update(status="owner-verify", note="Commons explicitly warns Not-PD-US-URAA: US copyright restored")
+    elif not any(_has_us_status(n) for n in names):
         rule.update(status="owner-verify", note="no explicit US status template on the Commons page")
     return rule
 
@@ -47,7 +60,7 @@ def _commons(title: str, session) -> tuple[str, list[str], str]:
     page = next(iter(j["query"]["pages"].values()))
     meta = (page.get("imageinfo") or [{}])[0].get("extmetadata", {})
     templates = [t["title"] for t in page.get("templates", [])
-                 if re.match(r"Template:(PD-|Cc-zero|Cc-by)", t["title"], re.I)]
+                 if re.match(r"Template:(PD-|Not-PD-US-URAA(?:/|$)|Cc-zero|Cc-by)", t["title"], re.I)]
     return meta.get("LicenseShortName", {}).get("value", "UNKNOWN"), templates, meta.get("Artist", {}).get("value", "")
 
 

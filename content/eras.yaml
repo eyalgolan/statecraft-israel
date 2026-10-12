@@ -1,0 +1,9 @@
+# The chapters of the game, in order. Eras are contiguous: each era's `from` is the previous era's `to`. A window is
+# half-open, like every other window: `to` is the first day after the era. Reaching the last era's `to` ends the game.
+# Design decision D3 (docs/superpowers/specs/2026-10-10-chapters-architecture-design.md): the founding era runs from
+# the start of play to 1 January 1957, the spec's "Q2 1948 to Q4 1956". These are game-design dates, not historical facts.
+eras:
+  - id: founding
+    name: The Founding
+    from: 1948-05-15               # = rules.yaml start
+    to: 1957-01-01

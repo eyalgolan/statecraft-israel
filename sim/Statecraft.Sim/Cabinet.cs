@@ -33,7 +33,7 @@ namespace Statecraft.Sim
         /// appointee who dies leaves office on the date of death, and the historical holder applies again).</summary>
         static Appointment? Active(Content c, GameState s, string office, DateTime date)
         {
-            if (c.Offices.Any(o => o.Id == office && o.HistoricalOnly)) return null;
+            if (c.Offices.Any(o => o.Id == office && (o.HistoricalOnly || !o.ExistsOn(date)))) return null;
             if (!s.Appointments.TryGetValue(office, out var a) || date < a.From) return null;
             var died = c.People.First(p => p.Id == a.Person).Died;
             if (died.HasValue && date >= died.Value) return null;
@@ -56,13 +56,13 @@ namespace Statecraft.Sim
 
         /// <summary>Every playable office that exists on the state's date, in offices.yaml order, with its holder (null = vacant).</summary>
         public static IReadOnlyList<Seat> Lineup(Content c, GameState s) =>
-            c.Offices.Where(o => !o.HistoricalOnly && (!o.Until.HasValue || s.Date < o.Until.Value))
+            c.Offices.Where(o => !o.HistoricalOnly && o.ExistsOn(s.Date))
                 .Select(o => new Seat(o, Holder(c, s, o.Id), Active(c, s, o.Id, s.Date) != null))
                 .ToList();
 
         /// <summary>Null when <paramref name="personId"/> may be appointed to <paramref name="officeId"/> now, else the
-        /// reason shown to the player. Checks, in order: the office exists and has not been abolished; it is not the
-        /// Prime Minister's (the player) or the President's (elected by the Knesset); the person exists, is alive, is not
+        /// reason shown to the player. Checks, in order: the office exists, has not been abolished and has been established; it
+        /// is not the Prime Minister's (the player) or the President's (elected by the Knesset); the person exists, is alive, is not
         /// the sitting President, is not the serving Chief of Staff (for any other office) and does not already hold it; a
         /// government is in office; a Chief of Staff must be a career officer (has held the post in people.yaml); a
         /// minister's party, if any, must be in the coalition.</summary>
@@ -74,6 +74,8 @@ namespace Statecraft.Sim
             if (office.HistoricalOnly) return $"{office.Title} is a historical title, not an appointable office";
             if (office.Until.HasValue && s.Date >= office.Until.Value)
                 return $"The office of {office.Title} was abolished on {PlayerText.Date(office.Until.Value)}";
+            if (office.From.HasValue && s.Date < office.From.Value)
+                return $"The office of {office.Title} is not established until {PlayerText.Date(office.From.Value)}";
             if (officeId == "prime_minister") return "You are the Prime Minister: that office is not yours to fill";
             if (officeId == "president") return "The President is elected by the Knesset, not appointed";
             var person = c.People.FirstOrDefault(p => p.Id == personId);

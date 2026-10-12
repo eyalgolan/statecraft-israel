@@ -1,0 +1,220 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3240123ad63ed4a2dbd76283afa9295b, type: 3}
+  m_Name: EventImageCatalog
+  m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.UI.EventImageCatalog
+  entries:
+  - eventId: altalena
+    image: {fileID: 2800000, guid: 778f252f061854a6191a38a48bba8dd1, type: 3}
+    alt: "The Altalena off the Tel Aviv shore, seen from a seafront caf\xE9 shortly
+      before the shelling, June 1948."
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
+  - eventId: armistice_egypt
+    image: {fileID: 2800000, guid: 6a3375c172b3341c48ed637bc90bf014, type: 3}
+    alt: IDF and UN officers near the Faluja pocket during the siege of the Egyptian
+      brigade, late 1948.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: armistice_jordan
+    image: {fileID: 2800000, guid: 1b071919ea9d249d3a94254f72713262, type: 3}
+    alt: Members of Israel's delegation beside a United Nations aircraft, leaving
+      for armistice talks with Jordan, 1949.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: austerity_1949
+    image: {fileID: 2800000, guid: fbdeb44f6ea2348d982ff0887c3259f8, type: 3}
+    alt: A clerk hands out the new government ration-coupon books, 1949.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: bernadotte_assassination
+    image: {fileID: 2800000, guid: bd6487f6ceba74ad3a9060a52cabc3ba, type: 3}
+    alt: UN and Israeli officials salute at Lydda airport as Count Bernadotte's coffin
+      leaves for Sweden, September 1948.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
+  - eventId: clothing_rationing_1950
+    image: {fileID: 2800000, guid: a2430cb25bd4644c3a6040cf18617c73, type: 3}
+    alt: Shops on Nahalat Binyamin Street, Tel Aviv, shut in protest after the government
+      decided to ration clothing, 1950.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: elections_1949
+    image: {fileID: 2800000, guid: 8c959d4b13cfc4b7a8a5ac3c7a46b480, type: 3}
+    alt: A voter drops his envelope into the ballot box at a polling station on election
+      day, 25 January 1949.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: first_truce
+    image: {fileID: 2800000, guid: e52b94b9d64f24bafa07294fd5068c17, type: 3}
+    alt: A quiet, tree-lined street in Jerusalem during a pause in the fighting,
+      1948.
+    credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel
+      / The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: frumkin_commission
+    image: {fileID: 2800000, guid: 9ac6b7418fe5f408a9d7be0e1c317ec0, type: 3}
+    alt: Snow and slush at the Ras al-Ein (Rosh HaAyin) immigrant camp, winter 1950.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection / Israel State Archives
+      \xB7 CC BY 4.0 \xB7 graded and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: hula_drainage
+    image: {fileID: 2800000, guid: 8667fce6f8c2b4633b2e291e9cdddd07, type: 3}
+    alt: Timber shuttering and earthworks for the dams that drained Lake Hula, 1951.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: idf_founding
+    image: {fileID: 2800000, guid: bd09df6e255af486aa2b097209f0a079, type: 3}
+    alt: Officers and a rabbi with a banner at the Jerusalem ceremony founding the
+      Israel Defense Forces, June 1948.
+    credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel
+      / The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: iraqi_exodus
+    image: {fileID: 2800000, guid: 500a6138a65cb4b94a22c47acc06c71c, type: 3}
+    alt: Children newly arrived from Iraq at a reception table with bread, oranges
+      and mugs, 1951.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: israel_bonds
+    image: {fileID: 2800000, guid: a4ce290bdab3342189da25741919d8d8, type: 3}
+    alt: David Ben-Gurion and Abba Eban present a menorah to President Harry Truman
+      in the Oval Office, May 1951.
+    credit: "Abbie Rowe, National Park Service / U.S. National Archives (NARA 200318)
+      \xB7 public domain \xB7 graded and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: jerusalem_ceasefire
+    image: {fileID: 2800000, guid: df224a98a048241d9a46dfc713802e5e, type: 3}
+    alt: Tank traps and roadblocks on Shmuel HaNavi Street, on the line between Israeli-
+      and Jordanian-held Jerusalem, 1948-49.
+    credit: "Willem van de Poll, Nationaal Archief (Van de Poll 255-0327) \xB7 CC0
+      \xB7 graded and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: jerusalem_military_government
+    image: {fileID: 2800000, guid: 58b9f14a3ed1e4a9aba4e8a649be050a, type: 3}
+    alt: One of Israel's first policemen directs traffic on Ussishkin Street, Jerusalem,
+      June 1948.
+    credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel
+      / The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: latrun_proposal
+    image: {fileID: 2800000, guid: f55b884d1a14b458a979e0b862f98b22, type: 3}
+    alt: A Palmach squad walks across the rocky slopes to the Israeli positions facing
+      Latrun, 1948.
+    credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker
+      Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: law_of_return
+    image: {fileID: 2800000, guid: 37245b3d68ea14b38b4acd5dca8169db, type: 3}
+    alt: The Knesset building, Beit Froumine on King George Street, Jerusalem, 1950.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: maabarot_policy
+    image: {fileID: 2800000, guid: 30e66f07968ea470285400148cdda3ec, type: 3}
+    alt: Immigrant women and children inside a large tent at a ma'abara on the road
+      to Jerusalem, 1950.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: ministry_supply_crisis
+    image: {fileID: 2800000, guid: dc210581e182c4a49a80c62a22465013, type: 3}
+    alt: Customers at the counter of a Tel Aviv grocery with bare shelves under austerity,
+      1950.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: operation_hiram
+    image: {fileID: 2800000, guid: abf15c791a3374e62806e9976b5537e5, type: 3}
+    alt: A soldier sweeps a Galilee road for mines after Operation Hiram, 1948.
+    credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker
+      Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
+  - eventId: operation_horev
+    image: {fileID: 2800000, guid: 53720b264363543d5862414d660c8b40, type: 3}
+    alt: A column of IDF vehicles and a motorcyclist on a desert track in the Negev
+      during Operation Horev, December 1948.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
+  - eventId: operation_yoav
+    image: {fileID: 2800000, guid: 4dbff23757d784486a804849886fb63e, type: 3}
+    alt: IDF officers study a map on a jeep as forces move south before Operation
+      Yoav, 13 October 1948.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
+  - eventId: second_truce
+    image: {fileID: 2800000, guid: eeb2c6a1420f649d6b259c164df97e0a, type: 3}
+    alt: Count Folke Bernadotte, the UN mediator, interviewed by a radio reporter
+      at Schiphol airport, 17 July 1948.
+    credit: "Ben Merk / Anefo, Nationaal Archief (Anefo 934-6899) \xB7 CC0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
+  - eventId: ten_days
+    image: {fileID: 2800000, guid: 706abfabe556e4b3798cc6be35896d85, type: 3}
+    alt: Two soldiers keep watch from an armoured car among eucalyptus trees during
+      the capture of Lydda airport, 10 July 1948.
+    credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker
+      Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1

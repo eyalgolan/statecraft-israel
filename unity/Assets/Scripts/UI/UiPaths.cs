@@ -12,5 +12,7 @@ namespace Statecraft.Game.UI
         public const string Strings = Folder + "/strings.en.yaml";
         public const string FontRegular = Folder + "/Fonts/EBGaramond-Regular.ttf";
         public const string FontSemiBold = Folder + "/Fonts/EBGaramond-SemiBold.ttf";
+        /// <summary>The Hebrew face (EB Garamond has no Hebrew; #193): Frank Ruhl Libre, OFL.</summary>
+        public const string FontHebrew = Folder + "/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf";
     }
 }

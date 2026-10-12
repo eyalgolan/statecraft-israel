@@ -2,7 +2,7 @@
 ben_gurion | Public domain | https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
 zisling | Public domain | https://commons.wikimedia.org/wiki/File:Aharon_Zisling.jpg
 kaplan | Public domain | https://commons.wikimedia.org/wiki/File:Eliezer_Kaplan.jpg
-sharett | Public domain | https://commons.wikimedia.org/wiki/File:Moshe_Sharett_Portrait.jpg
+sharett | CC0 | https://commons.wikimedia.org/wiki/File:Moshe_Sharett,_de_eerste_minister_van_buitenlandse_zaken_van_de_staat_Israel,_tu,_Bestanddeelnr_255-1438.jpg
 shapira | Public domain | https://commons.wikimedia.org/wiki/File:Moshe_Shapira.jpg
 gruenbaum | Public domain | https://commons.wikimedia.org/wiki/File:Yitzhak_Gruenbaum_1948.jpg
 rosen | Public domain | https://commons.wikimedia.org/wiki/File:Pinchas_Rosen.jpg
@@ -15,4 +15,5 @@ levin | Public domain | https://commons.wikimedia.org/wiki/File:Yitzhak_Meir_Lev
 shazar | Public domain | https://commons.wikimedia.org/wiki/File:President_Lyndon_B._Johnson_with_President_Zalman_Shazar_of_Israel.jpg
 golda_meir | CC0 | https://commons.wikimedia.org/wiki/File:Golda_Meir%2C_minister_van_buitenlandse_zaken_van_Israel%2C_Bestanddeelnr_255-4314.jpg
 weizmann | Public domain | https://commons.wikimedia.org/wiki/File:C._(Chaim)_Weizmann_LCCN2014712248.jpg
+ben_zvi | CC0 | https://commons.wikimedia.org/wiki/File:President_Isaac_Ben_Zwi_,_president_van_Israel_en_echtgenote_ontvangen_door_het_,_Bestanddeelnr_909-7131.jpg
 dori | CC0 | https://commons.wikimedia.org/wiki/File:Stafchef_Dori_houdt_toespraak_tijdens_de_militaire_parade_bij_gelegenheid_van_de,_Bestanddeelnr_255-0981.jpg

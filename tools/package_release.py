@@ -6,8 +6,14 @@ run on the content INSIDE the build folder, so it checks exactly what would ship
 
 Exit 0 and "PACKAGED <zip> <bytes>" on success; exit 1 and "PACKAGE REFUSED ..." when the gate refuses or the build is
 not a WebGL build folder.
+
+The event-card photographs are packed into Unity's data files, where this script cannot see them, so the build writes
+what it carries into event-photos.json (Build.PhotoManifestName, review I1). The zip is refused when that file is
+missing or unreadable, when the build was not made with -shareable, or when any photograph in it is sensitive and not
+sensitivity-reviewed (docs/event-images.md).
 """
 import argparse
+import json
 import subprocess
 import sys
 import zipfile
@@ -24,6 +30,31 @@ def gate(content_dir: Path):
     return r.returncode == 0, "\n".join(lines) or f"release gate exited {r.returncode}"
 
 
+PHOTO_MANIFEST = "event-photos.json"   # Build.PhotoManifestName (unity/Assets/Editor/Build.cs)
+
+
+def photo_refusal(build: Path):
+    """Why the build's event photographs may not be shared, or None (see the module docstring)."""
+    f = build / PHOTO_MANIFEST
+    if not f.is_file():
+        return f"{build} has no {PHOTO_MANIFEST}: build it with Build.Web -shareable, which writes it"
+    try:
+        m = json.loads(f.read_text(encoding="utf-8"))
+        photos = m["photos"]
+        shareable = m["shareable"]
+        if not isinstance(photos, list) or not isinstance(shareable, bool):
+            raise TypeError("photos must be a list and shareable a boolean")
+        open_ = sorted(p["event_id"] for p in photos if p["sensitive"] is not False and p["sensitivity_reviewed"] is not True)
+    except (ValueError, KeyError, TypeError) as e:
+        return f"{f} is not a valid photo manifest ({e})"
+    if shareable is not True:
+        return f"{build} was not built with -shareable ({PHOTO_MANIFEST} says shareable: false)"
+    if open_:
+        return ("the event photographs need the owner's sensitivity review first: " + ", ".join(open_)
+                + " (sensitivity_reviewed: true in unity/Assets/UI/EventImages/event-images.yaml; docs/event-images.md)")
+    return None
+
+
 def package(build: Path, zip_path: Path) -> int:
     if not (build / "index.html").is_file():
         print(f"PACKAGE REFUSED: {build} has no index.html (not a WebGL build folder)")
@@ -31,6 +62,9 @@ def package(build: Path, zip_path: Path) -> int:
     content = build / "StreamingAssets" / "content"
     if not content.is_dir():
         print(f"PACKAGE REFUSED: {build} has no StreamingAssets/content")
+        return 1
+    if (photos := photo_refusal(build)) is not None:
+        print(f"PACKAGE REFUSED: {photos}")
         return 1
     ok, message = gate(content)
     print(message)

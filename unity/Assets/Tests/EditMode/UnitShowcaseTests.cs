@@ -15,6 +15,7 @@ public class UnitShowcaseTests
         UnitModels.Rifleman(UnitModels.Headgear.SteelHelmet, UnitModels.RiflePose.Grounded, true, "b"),
         UnitModels.Rifleman(UnitModels.Headgear.WoolCap, UnitModels.RiflePose.Slung, false, "c"),
         UnitModels.Spitfire("s"), UnitModels.SpitfirePropeller("p"), UnitModels.Corvette("k"),
+        UnitModels.AviaS199("v"), UnitModels.S199Propeller("q"),
     };
 
     [Test]
@@ -174,9 +175,9 @@ public class UnitShowcaseTests
             Assert.IsNotNull(root.transform.Find("Spitfire1948/Propeller"));
             var plane = root.GetComponentInChildren<ShowcaseFlight>();
             Assert.AreEqual(UnitShowcase.StillPhase, plane.StillPhase);
-            // Each figure stands on the ground under it.
+            // Each figure stands on the highest ground under its boots (UnitShowcase.Stand).
             foreach (var f in root.GetComponentsInChildren<MeshFilter>().Where(f => f.name.StartsWith("Rifleman")))
-                Assert.AreEqual(UnitShowcase.Ground(map, f.transform.position).y, f.transform.position.y, 1f, f.name);
+                Assert.AreEqual(UnitShowcase.Stand(map, f.transform.position).y, f.transform.position.y, 1f, f.name);
             // The aircraft clears the highest ground under its loop.
             var loop = map.Frame.ToWorld(UnitShowcase.LoopCentre.lon, UnitShowcase.LoopCentre.lat, 0);
             Assert.Greater(plane.transform.position.y, UnitShowcase.LoopFloor(map, loop, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM * 0.99f);

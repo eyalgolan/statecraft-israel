@@ -37,7 +37,7 @@ def test_checklist_reports_measured_readme_screenshots():
     text = checklist()
     for width, height in sizes:
         assert f'{width} x {height}' in text
-    assert 'not 16:9' in text
+    assert 'smaller than this minimum' in text
 
 
 def test_trailer_recommendation_is_separate_from_project_rule():

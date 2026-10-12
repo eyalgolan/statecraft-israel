@@ -25,6 +25,10 @@ CC0: "Moshe Dayan met mgr. A.C. Ramselaar (cropped).jpg" (1962).
   https://commons.wikimedia.org/wiki/File:C._(Chaim)_Weizmann_LCCN2014712248.jpg
   https://www.loc.gov/pictures/item/2014712248/
   Earlier likeness, not a photograph of his presidential term.
+- Yitzhak Ben-Zvi: crop of Harry Pot / Anefo / Nationaal Archief 909-7131, 15 July 1958, {{Cc-zero}}:
+  https://commons.wikimedia.org/wiki/File:President_Isaac_Ben_Zwi_,_president_van_Israel_en_echtgenote_ontvangen_door_het_,_Bestanddeelnr_909-7131.jpg
+  https://www.nationaalarchief.nl/onderzoeken/fotocollectie/a98090b0-d0b4-102d-bcf8-003048976d84
+  Later than the Founding slice; profile crop, not a 1952-1956 photograph.
 - Yaakov Dori: crop of Willem van de Poll / Nationaal Archief 255-0981, {{Cc-zero}}:
   https://commons.wikimedia.org/wiki/File:Stafchef_Dori_houdt_toespraak_tijdens_de_militaire_parade_bij_gelegenheid_van_de,_Bestanddeelnr_255-0981.jpg
   https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed504c4-d0b4-102d-bcf8-003048976d84
@@ -32,6 +36,12 @@ CC0: "Moshe Dayan met mgr. A.C. Ramselaar (cropped).jpg" (1962).
 - Zalman Shazar: crop of Yoichi Okamoto / LBJ Library, 2 August 1966, {{PD-USGov}}:
   https://commons.wikimedia.org/wiki/File:President_Lyndon_B._Johnson_with_President_Zalman_Shazar_of_Israel.jpg
   (official White House photograph; later than the game period; human likeness and era review required).
+
+- Moshe Sharett: crop of Willem van de Poll / Nationaal Archief 255-1438, {{Cc-zero}}:
+  https://commons.wikimedia.org/wiki/File:Moshe_Sharett,_de_eerste_minister_van_buitenlandse_zaken_van_de_staat_Israel,_tu,_Bestanddeelnr_255-1438.jpg
+  https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed665c6-d0b4-102d-bcf8-003048976d84
+  Collection Israel 1948-1949; archive date field 1948-01-01 conflicts with the caption identifying the
+  new state's foreign minister. No exact day is inferred. Old GPO likeness reference above remains unchanged.
 
 ## Facts shown (verified 2026-10-09)
 - Provisional Government (May 1948): 13 ministers and portfolios; Provisional State Council 37 members,

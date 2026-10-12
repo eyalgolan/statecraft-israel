@@ -61,7 +61,7 @@ jobs:
             tools/**/*.py
             scripts/oss/**/*.py
       - name: Data tool tests
-        run: uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 pytest tools/tests -q
+        run: uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q
 
   policy:
     name: Repo policy

@@ -51,10 +51,10 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 Run from the repo root; this installs every pinned dependency (rasterio included) and runs all tools tests:
 
 ```
-uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 pytest tools/tests -q
+uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q
 ```
 
-Expected: `177 passed, 1 skipped` (the skipped one is the headed browser check; add `--headed` and `--with websockets==15.0.1` to run it). Omitting a dependency (e.g. rasterio) silently drops tests or fails collection.
+Expected: `391 passed, 3 skipped` (one skipped is the headed browser check, two need skimage and scipy; add `--headed` and `--with websockets==15.0.1` to run it). Omitting a dependency (e.g. rasterio) silently drops tests or fails collection.
 
 ## Required attribution (Copernicus DEM licence, modified data)
 

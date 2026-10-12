@@ -115,10 +115,9 @@ namespace Statecraft.Game.Map.Routes
             train.tableP = new Vector3[pts.Count];
             for (int i = 0; i < pts.Count; i++)
             {
-                // The ribbon's own centre height (the same max-of-samples rule, review M4) plus the ride height.
+                // The ribbon's own height (its grade, the same rule, review M4) plus the ride height.
                 var dir = (pts[Math.Min(pts.Count - 1, i + 1)] - pts[Math.Max(0, i - 1)]).normalized;
-                float spacing = RouteLayer.RailWidthM / (RouteLayer.Across - 1);
-                train.tableP[i] = new Vector3(pts[i].x, RouteLayer.RibbonHeight(data, origin, pts[i], dir, spacing) + RideM, pts[i].y);
+                train.tableP[i] = new Vector3(pts[i].x, RouteLayer.GradeHeight(data, origin, pts[i], dir) + RideM, pts[i].y);
             }
             train.startS = 0f;
             train.endS = train.Nearest(new Vector2(turnAt.x, turnAt.z));

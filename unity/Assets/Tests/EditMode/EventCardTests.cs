@@ -152,4 +152,87 @@ public class EventCardTests
         var queued = (ChooseEventOption)bridge.Queued.Single();
         Assert.AreEqual(("elections_1949", "hold"), (queued.EventId, queued.OptionId));
     }
+
+    // Owner ruling 2026-10-11: the promo's header picture is a real archival photograph with its credit line under it.
+    const string PhotosPath = "Assets/Resources/EventImageCatalog.asset";
+
+    /// <summary>The historical game with only this event pending, on its first day (as UiLayoutTests does).</summary>
+    static SimBridge Showing(string eventId)
+    {
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = C.Events.First(e => e.Id == eventId).From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(eventId);
+        return new SimBridge(g, Text);
+    }
+
+    [Test]
+    public void AnEventWithAPhotographShowsItWithItsCreditAndAltText()
+    {
+        using var ui = new UiTestKit();
+        var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(PhotosPath);
+        var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>(CatalogPath);
+        var card = new EventCardPresenter(ui.Root, AtArmistice(), Text, portraits, photos);
+        var entry = photos.Find("armistice_egypt")!.Value;
+        var band = ui.Q<VisualElement>("event-photo");
+        Assert.AreEqual(entry.image, band.style.backgroundImage.value.texture);
+        Assert.AreEqual(DisplayStyle.Flex, band.style.display.value);
+        Assert.AreEqual(entry.alt, band.tooltip, "the alt text");
+        Assert.AreEqual(entry.alt, card.PhotoAlt);
+        var credit = ui.Q<Label>("event-photo-credit");
+        Assert.AreEqual(DisplayStyle.Flex, credit.style.display.value);
+        Assert.AreEqual(entry.credit, credit.text);
+        StringAssert.Contains("Benno Rothenberg", credit.text);
+        StringAssert.Contains("CC BY 4.0", credit.text);
+        StringAssert.Contains("graded and cropped", credit.text);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-image").style.display.value, "the photograph replaces the portrait");
+        Assert.AreEqual("Prime Minister: David Ben-Gurion", ui.Q<Label>("event-office").text, "the minister is still named");
+    }
+
+    [Test]
+    public void AnEventWithoutAPhotographFallsBackToTheMinistersPortrait()
+    {
+        using var ui = new UiTestKit();
+        var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(PhotosPath);
+        var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>(CatalogPath);
+        Assert.IsNull(photos.Find("armistice_lebanon"), "no free photograph was found for it");
+        var card = new EventCardPresenter(ui.Root, Showing("armistice_lebanon"), Text, portraits, photos);
+        Assert.AreEqual("armistice_lebanon", card.Shown!.Id);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-photo").style.display.value);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-photo-credit").style.display.value);
+        Assert.AreEqual("", ui.Q<Label>("event-photo-credit").text);
+        Assert.IsNull(card.PhotoAlt);
+        Assert.AreEqual(portraits.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
+        Assert.AreEqual(DisplayStyle.Flex, ui.Q<VisualElement>("event-image").style.display.value);
+    }
+
+    [Test]
+    public void ThePhotographGoesWhenTheNextEventHasNone()
+    {
+        using var ui = new UiTestKit();
+        var real = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(PhotosPath);
+        var photos = Object.Instantiate(real);                          // the real catalog; its entries are edited between renders
+        try
+        {
+            var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>(CatalogPath);
+            var card = new EventCardPresenter(ui.Root, AtArmistice(), Text, portraits, photos);
+            Assert.AreEqual(DisplayStyle.Flex, ui.Q<VisualElement>("event-photo").style.display.value);
+            photos.entries.RemoveAll(e => e.eventId == "armistice_egypt");
+            card.Render();
+            Assert.IsNull(ui.Q<VisualElement>("event-photo").style.backgroundImage.value.texture, "the texture is gone");
+            Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-photo").style.display.value);
+            Assert.AreEqual("", ui.Q<VisualElement>("event-photo").tooltip);
+            Assert.AreEqual(portraits.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture, "the portrait is back");
+        }
+        finally { Object.DestroyImmediate(photos); }
+    }
+
+    [Test]
+    public void WithNoPhotoCatalogTheCardKeepsThePortrait()
+    {
+        using var ui = new UiTestKit();
+        var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>(CatalogPath);
+        new EventCardPresenter(ui.Root, AtArmistice(), Text, portraits);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-photo").style.display.value);
+        Assert.AreEqual(portraits.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
+    }
 }

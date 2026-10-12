@@ -14,11 +14,19 @@ namespace Statecraft.Game.Boot
     public sealed class MapInputs
     {
         public string HeightmapJson = "", HexesJson = "", SettlementsYaml = "";
+        /// <summary>content/map/subdistrict_hexes_1948.yaml: the 1948 sub-districts the map outlines (display only).</summary>
+        public string RegionsYaml = "";
         /// <summary>content/map/route_paths_1948.yaml: the traced railways and roads the map draws (issue #35; map-only).</summary>
         public string RoutesYaml = "";
+        /// <summary>content/map/units_1948.yaml: the sourced units the map draws in play (docs/units.md; map-only, "" when
+        /// absent).</summary>
+        public string UnitsYaml = "";
         /// <summary>content/map/settlement_population_1945.yaml (the settlement kits' footprints; "" when absent). The sim
         /// never reads it.</summary>
         public string PopulationYaml = "";
+        /// <summary>content/map/armistice_hexes_1949.yaml: the 1949 armistice lines drawn over it from their dates (display
+        /// only; "" when absent: no armistice layer, like the other cosmetic map inputs).</summary>
+        public string ArmisticeYaml = "";
         /// <summary>heightmap.r16z as read: packed (HeightmapCodec); HeightmapLoader decodes it when the map is built.</summary>
         public byte[] HeightmapR16z = new byte[0];
     }
@@ -37,9 +45,12 @@ namespace Statecraft.Game.Boot
             HeightmapR16z = File.ReadAllBytes(Path.Combine(mapDir, HeightmapCodec.FileName)),
             HexesJson = File.ReadAllText(Path.Combine(contentDir, "map", "hexes.json")),
             SettlementsYaml = File.ReadAllText(Path.Combine(contentDir, "map", SettlementPlacer.DefaultFileName)),
+            RegionsYaml = File.ReadAllText(Path.Combine(contentDir, "map", Subdistricts1948.FileName)),
             RoutesYaml = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName)),
+            UnitsYaml = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)),
             PopulationYaml = File.Exists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))
                 ? File.ReadAllText(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName)) : "",
+            ArmisticeYaml = ReadIfExists(Path.Combine(contentDir, "map", Armistice1949.FileName)),
         };
 
         /// <summary>A map-only, cosmetic input: "" when the file is missing (the map then skips that layer with a warning).</summary>
@@ -60,8 +71,11 @@ namespace Statecraft.Game.Boot
                 {
                     HeightmapJson = heightmapJson, HeightmapR16z = r16z,
                     HexesJson = texts["map/hexes.json"], SettlementsYaml = texts["map/" + SettlementPlacer.DefaultFileName],
+                    RegionsYaml = texts["map/" + Subdistricts1948.FileName],
                     RoutesYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName, out var routes) ? routes : "",
+                    UnitsYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Units.UnitData.DefaultFileName, out var unitsYaml) ? unitsYaml : "",
                     PopulationYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Kits.KitPopulation.FileName, out var pop) ? pop : "",
+                    ArmisticeYaml = texts.TryGetValue("map/" + Armistice1949.FileName, out var armistice) ? armistice : "",
                 },
             };
         }

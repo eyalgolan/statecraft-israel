@@ -162,6 +162,26 @@ public class CabinetTests
     }
 
     [Fact]
+    public void AnOfficeIsNotASeatOrAppointableBeforeItIsEstablished()
+    {
+        var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+        {
+            ["offices.yaml"] = Fixture.Files["offices.yaml"] + "\n  - { id: new_office, title: New Office, from: 1949-01-01 }\n",
+            ["people.yaml"] = Fixture.Files["people.yaml"] + ExtraPeople,
+        }));
+        var before = new GameState { Date = new DateTime(1948, 12, 31) };
+        Assert.DoesNotContain(Cabinet.Lineup(c, before), seat => seat.Office.Id == "new_office");
+        Assert.Equal("The office of New Office is not established until 1 January 1949", Cabinet.Check(c, before, "new_office", "loyalist"));
+        // An appointment from an older save does not make anyone hold an office that does not exist yet.
+        before.Appointments["new_office"] = new Appointment("loyalist", before.Date);
+        before.AppointedUnder = Offices.Government(c, before.Date)!.Id;
+        Assert.Null(Cabinet.Holder(c, before, "new_office"));
+        var on = new GameState { Date = new DateTime(1949, 1, 1) };
+        Assert.Contains(Cabinet.Lineup(c, on), seat => seat.Office.Id == "new_office" && seat.Holder == null);
+        Assert.NotEqual("The office of New Office is not established until 1 January 1949", Cabinet.Check(c, on, "new_office", "loyalist"));
+    }
+
+    [Fact]
     public void AnAbolishedOfficeCannotBeFilled()
     {
         var s = new GameState { Date = new DateTime(1948, 12, 1) };
@@ -294,6 +314,17 @@ public class CabinetTests
         Assert.Equal("The office of Minister of War Victims was abolished on 8 October 1951",
             Cabinet.Check(c, new GameState { Date = new DateTime(1951, 11, 1) }, "war_victims_minister", "maimon"));
         Assert.Equal("Aharon Zisling's party (Mapam) is not in the coalition", Cabinet.Check(c, s, "agriculture_minister", "zisling"));
+        // The Provisional Government had no education portfolio: the ministry dates from 10 March 1949.
+        var provisional = new GameState { Date = new DateTime(1948, 6, 12) };
+        Assert.DoesNotContain(Cabinet.Lineup(c, provisional), seat => seat.Office.Id == "education_minister");
+        Assert.Equal("The office of Minister of Education and Culture is not established until 10 March 1949",
+            Cabinet.Check(c, provisional, "education_minister", "shazar"));
+        Assert.Contains(Cabinet.Lineup(c, new GameState { Date = new DateTime(1949, 3, 10) }), seat => seat.Office.Id == "education_minister" && seat.Holder?.Id == "shazar");
+        // #217: no office in the 1948 lineup is vacant; the presidency and the minister without portfolio begin later.
+        Assert.All(Cabinet.Lineup(c, provisional), seat => Assert.NotNull(seat.Holder));
+        Assert.Equal(new DateTime(1949, 3, 10), c.Offices.Single(o => o.Id == "rationing_minister").From);
+        Assert.Equal(new DateTime(1949, 2, 16), c.Offices.Single(o => o.Id == "president").From);
+        Assert.Equal(new DateTime(1951, 10, 8), c.Offices.Single(o => o.Id == "minister_without_portfolio").From);
         Assert.Equal("The President is elected by the Knesset, not appointed", Cabinet.Check(c, s, "president", "sharett"));
         Assert.Null(Cabinet.Check(c, s, "agriculture_minister", "eshkol"));
         Assert.Equal("Chaim Weizmann is the President", Cabinet.Check(c, s, "finance_minister", "weizmann"));

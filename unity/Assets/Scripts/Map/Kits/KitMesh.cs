@@ -34,6 +34,38 @@ namespace Statecraft.Game.Map.Kits
             return m;
         }
 
+        /// <summary>The grid a kit's columns are counted on (Columns).</summary>
+        public const int ColumnGrid = 4;
+
+        /// <summary>This mesh's vertices as columns (see the static Columns); empty for an empty mesh. Read before
+        /// ToMesh's upload drops the CPU copy.</summary>
+        public Bounds[] Columns() => pos.Count == 0 ? new Bounds[0] : Columns(pos);
+
+        /// <summary>The occupied columns of a point set: for each cell of a <paramref name="grid"/>-square grid over the points'
+        /// footprint that holds any, a box over its points from the lowest point of the set to the cell's highest (the map
+        /// labels keep clear of these, issue #214; MapScene.TryKitColumns).</summary>
+        public static Bounds[] Columns(IReadOnlyList<Vector3> points, int grid = ColumnGrid)
+        {
+            var min = points[0]; var max = points[0];
+            foreach (var p in points) { min = Vector3.Min(min, p); max = Vector3.Max(max, p); }
+            var lo = new Vector3[grid * grid]; var hi = new Vector3[grid * grid]; var used = new bool[grid * grid];
+            float sx = Mathf.Max(max.x - min.x, 1e-3f) / grid, sz = Mathf.Max(max.z - min.z, 1e-3f) / grid;
+            foreach (var p in points)
+            {
+                int i = Mathf.Min(grid - 1, (int)((p.x - min.x) / sx)) + grid * Mathf.Min(grid - 1, (int)((p.z - min.z) / sz));
+                if (!used[i]) { used[i] = true; lo[i] = p; hi[i] = p; }
+                else { lo[i] = Vector3.Min(lo[i], p); hi[i] = Vector3.Max(hi[i], p); }
+            }
+            var result = new List<Bounds>();
+            for (int i = 0; i < used.Length; i++)
+                if (used[i])
+                {
+                    var b = new Bounds(); b.SetMinMax(new Vector3(lo[i].x, min.y, lo[i].z), hi[i]);
+                    result.Add(b);
+                }
+            return result.ToArray();
+        }
+
         int V(Vector3 p, Vector3 n, Color32 c, Vector2 t) { pos.Add(p); nrm.Add(n); col.Add(c); uv.Add(t); return pos.Count - 1; }
 
         void Quad(int a, int b, int c, int d) { tri.Add(a); tri.Add(b); tri.Add(c); tri.Add(a); tri.Add(c); tri.Add(d); }

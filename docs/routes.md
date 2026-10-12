@@ -42,8 +42,17 @@ month) is skipped alone, with a warning.
 - The 1,050 mm narrow-gauge Jezreel Valley line is drawn thin, so it traces as a `track`.
 - A waypoint first snaps to its symbol within 1.5 km. A waypoint off the line (a town circle, its name, a modern
   town's point such as Ashkelon's for al-Majdal) is reached by an out-and-back spur, which the tool cuts.
-- The chain is smoothed over 15 pixels and simplified at 35 m. With 5 pixels, the close views showed a 100–200 m
-  wobble: the trace hops between the two edges of a thick symbol.
+- The chain is smoothed over 15 pixels, resampled every 40 m, smoothed again and simplified at 35 m.
+- The second smoothing is a curvature-adaptive Gaussian (`gaussian_smooth`, review B14 / #212).
+  - The trace hops between the two edges of a thick symbol, which drew kinks every few hundred metres. Hadera–Haifa had
+    20 zigzags in 92 points; the main line south had 54 in 185.
+  - A wobble's turns cancel out over ±320 m; a real bend's add up. So a straight stretch takes sigma 250 m, and a bend
+    of 30–90° net turn eases to 60 m.
+  - That removes the wobble. The Sorek meanders keep their shape: the Jaffa–Jerusalem line traces 79.4 km against
+    80.7 km before.
+  - The accuracy table is unchanged within a few metres (Jaffa–Jerusalem median 64 m, 96% within 300 m).
+  - `test_no_sawtooth_on_straight_lines` bounds the zigzags: at most 3 on the plain railways, and at most 15% of points
+    anywhere. The hill roads and the Jericho descent have real hairpins.
 - A hook at either end is cut. The line goes out to a waypoint just off the route's end and back; for example the Burma
   Road began "just east of Dayr Muhaysin".
 - `--preview DIR` writes every traced segment over the map, which is how each was checked by eye.
@@ -96,14 +105,14 @@ downloads the references into the git-ignored `tools/.cache/routes-accuracy/`.
 
 | Route | Reference | Median distance | Within 300 m |
 |---|---|---|---|
-| Jaffa–Jerusalem railway | OHM, 1890 ways | 68 m | 96% |
-| Eastern Railway | OSM rail, current and abandoned | 112 m | 87% |
-| Hadera–Haifa railway | OSM | 214 m | 84% |
-| Jezreel Valley railway | OSM | 152 m | 83% |
-| Haifa–Beirut railway | OSM | 242 m | 73% |
-| Main line south | OSM | 139 m | 58% |
-| Beersheba–Auja road | OHM roads valid in 1948 | 30 m | 100% |
-| Gaza–Beersheba road | OHM | 185 m | 93% |
+| Jaffa–Jerusalem railway | OHM, 1890 ways | 64 m | 96% |
+| Eastern Railway | OSM rail, current and abandoned | 108 m | 87% |
+| Hadera–Haifa railway | OSM | 217 m | 88% |
+| Jezreel Valley railway | OSM | 153 m | 83% |
+| Haifa–Beirut railway | OSM | 241 m | 75% |
+| Main line south | OSM | 145 m | 58% |
+| Beersheba–Auja road | OHM roads valid in 1948 | 39 m | 100% |
+| Gaza–Beersheba road | OHM | 187 m | 95% |
 
 - The misses on the railways are the reference's, not the trace's. Today's lines were rebuilt off the old alignment:
   near Rosh HaAyin the 1946 line runs past Rantiya and Wilhelma, and south of Ashkelon it differs too. OSM has almost
@@ -136,8 +145,55 @@ measurement in `docs/units.md`:
 
 **The mesh** (`RouteLayer.Ribbon`).
 - A cross-section every 120 m, square to the line's direction averaged over two steps each way.
-- Five vertices across each section. Each sits 20 m above the highest ground at its own point and half a step or half a
-  spacing around it, and takes the terrain's normal.
+- Five vertices across each section.
+- **Roads drape as on main.** Each vertex sits 20 m above the highest ground at its own point and half a step or half
+  a spacing around it, and takes the terrain's normal there (`DrapeHeight`).
+  - Their pale band has no rails or sleepers to warp.
+  - Narrowing them made every hill road about 40% thinner and beaded its width (review A-I1).
+- **Railways keep their own grade** (review B15 / #213). Each section is flat across at `GradeHeight`: 20 m above the
+  highest ground at the line and 30 m along it either way, with nothing sampled across.
+  - **The old rule.** Each vertex took the highest ground around itself, so in the Sorek gorge the 680 m band rode up
+    both walls and its rails and sleepers warped.
+  - **Width.** It narrows to the gorge floor and ramps: `RailHalfWidths`.
+    - Per section, `FlatHalfWidth` looks for ground more than 40 m above the band or more than 60 m below it, out to
+      the band's edge on each side.
+      - Where it finds such ground on both sides (a gorge floor, a gorge side, a ridge), it cuts the band back
+        symmetrically to the last sample before the first one, down to 25% of the width.
+      - Where only one side has it (one hill or one drop beside the line), the band keeps its full width. That edge reads
+        as a cutting or an embankment (#252).
+        - Cutting both sides for it had narrowed the foothill lines: on main (f974c9f), 85% of the narrowed
+          Jaffa–Jerusalem sections and 93% of the Jezreel Valley ones failed on one side only. That covers the Latrun
+          foothills, the Carmel foot by Haifa and the Jordan terraces.
+        - The smoothing below cost only 5–7 points.
+      - An edge under a little higher ground reads as a cutting.
+      - A stricter rule (any rise over the clearance) also thinned the band on the rolling Shephelah foothills.
+    - Then it takes the minimum over two sections each way.
+    - Then it limits the change to 5% of the width per 120 m step, in forward and backward passes that only narrow.
+    - So the width never jumps by more than a tenth between sections (review A-I1).
+  - **Lift.** A section is raised where needed, so the ground never rises under its rails (±30% of the half-width)
+    and the rails clear it by 3 m (review A-I2). The narrowed gorge band had buried the rails by up to 32 m.
+    - Clearing the whole sleeper span instead lifted the band a median 39 m off the gorge floor, so the sleepers' outer
+      ends may meet a wall, as in a cutting.
+  - **Shading.** Every vertex takes the terrain's normal at the line.
+  - **The train** rides `GradeHeight`.
+  - **Tests.**
+    - `TheRailwayKeepsItsGradeInTheSorekGorge`: every section is flat. Main's rule warped the band by a median 315 m
+      across. The band now sits a median 10 m over the ground at the line (p90 25 m, max 40 m; bounds 12 m and 35 m).
+    - `TheRailClearsTheGroundUnderItsRailsAndRampsItsWidth`: on every railway, no ground over the rails, no width
+      jump over 10%, and the edges' float bounded (p99 85 m, bound 100 m). It fails on 005e60e: 67 sections with ground
+      over the rails, 819 width jumps and an edge float p99 of 107 m.
+    - `EveryRailwayKeepsItsWidthOutsideTheGorges` (#252): every line keeps at least 90% of its width, on average, outside
+      the gorges (sections where the ground leaves the tolerance on both sides), and its mean width stays at its pinned
+      floor. The edge float p99 stays 86 m; the Sorek numbers do not move.
+
+      | Line | Mean width, main (f974c9f) | Now | Outside the gorges, main | Now | Sections in gorges |
+      |---|---|---|---|---|---|
+      | Jaffa–Jerusalem | 70.7% | 76.2% | 87.4% | 94.9% | 178 of 665 (the Sorek) |
+      | Main line south | 98.9% | 100.0% | 98.9% | 100.0% | 0 of 856 |
+      | Eastern Railway | 99.3% | 100.0% | 99.3% | 100.0% | 0 of 525 |
+      | Hadera–Haifa | 92.0% | 97.4% | 93.5% | 99.0% | 9 of 419 |
+      | Haifa–Beirut | 95.1% | 95.5% | 97.0% | 97.4% | 9 of 326 |
+      | Jezreel Valley | 74.5% | 82.5% | 82.8% | 92.1% | 113 of 775 (the Beisan–Jordan descent, the Yarmuk, the Carmel foot) |
 - u runs across the ribbon and v along it, in metres.
 
 **The shader** (`Statecraft/Route`). It is transparent and has no new keywords; the shadow keywords are the terrain's.
@@ -222,8 +278,8 @@ All of these are on `promo-roads`.
 - The idle-machine re-measure is centralised (controller ruling) and is not repeated here.
 
 **Size.** The meshes, after the review round:
-- rail 18,100 vertices and roads 37,515;
-- 88,832 triangles in all, in 10 draw calls (one per display window and look);
+- rail 17,830 vertices and roads 37,005 (after #212 and #213);
+- 87,584 triangles in all, in 10 draw calls (one per display window and look);
 - uploaded without a CPU copy.
 
 The train is about 1,100 triangles; that figure is counted from the builders, not measured, and `TrainModelsAreRepeatable` bounds it under 5,000. The data file is 55 KB.

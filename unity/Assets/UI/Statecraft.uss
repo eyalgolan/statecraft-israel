@@ -147,6 +147,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .top-bar { height: 216px; padding-top: 6px; padding-bottom: 4px; flex-wrap: wrap; justify-content: space-between; align-content: space-around; }
 .hud-two-row .meters { width: 78%; flex-grow: 1; }
 .hud-two-row .right-column, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
+/* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
+   screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). */
+.hud-three-row .top-bar { height: 312px; }
+.hud-three-row .meters { width: 100%; }
+.hud-three-row .right-column, .hud-three-row .screen, .hud-three-row .toast { top: 328px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 16px; }
 .end-turn {
@@ -160,7 +165,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    window is short the portrait and then the text (it scrolls) give way, never the option buttons. */
 .right-column { position: absolute; right: 16px; top: 112px; bottom: 16px; width: 480px; }
 .right-gap { flex-grow: 1; flex-shrink: 0; min-height: 16px; }
-.event-card { flex-shrink: 1; min-height: 0; max-height: 560px; overflow: hidden; }
+.event-card { flex-shrink: 1; min-height: 0; max-height: 600px; overflow: hidden; }   /* 600: room for a photograph card; the column still bounds it */
 .event-card > * { flex-shrink: 0; }
 .event-card > .event-scroll { flex-shrink: 1; min-height: 48px; }
 #event-options { flex-shrink: 0; }
@@ -176,6 +181,18 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-image {
     width: 96px; height: 128px; flex-shrink: 0; margin-right: 12px; background-size: cover; background-color: var(--navy-deep);
     border-width: 1px; border-color: var(--gold);
+}
+/* The header photograph (promo 03 and 05): full width, 9:4, a gold frame, its credit as a caption strip along the bottom
+   (so the credit costs the card no height). It gives way first on a short window (the large flex-shrink takes the
+   shortfall before the text); below its credit's height plus EventCardPresenter.MinPhotoHeight it is dropped until the
+   window grows again, so the body and the options never scroll for it and the credit (CC BY 4.0) is never cut. */
+.event-card > .event-photo {
+    display: none; height: 200px; min-height: 0; flex-shrink: 1000; margin-bottom: 4px; overflow: hidden;
+    justify-content: flex-end; background-size: cover; background-color: var(--navy-deep); border-width: 1px; border-color: var(--gold);
+}
+.event-photo-credit {
+    flex-shrink: 0; font-size: 13px; white-space: normal; -unity-text-align: middle-center; margin: 0; padding: 2px 8px 3px 8px;
+    color: var(--ink); background-color: rgba(5, 9, 18, 0.92); -unity-font-style: italic;   /* 0.92: blending is linear, so less reads grey */
 }
 .event-office { white-space: normal; -unity-text-align: middle-center; font-size: 18px; }
 /* Options wrap inside the card (playtest 2, P2-2); each has a round gold-rimmed sign at its left, as the promo's choices. */
@@ -196,6 +213,12 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Before a hex is chosen only the hint shows (InfoPanelPresenter sets info-empty). */
 .info-empty .gold-rule { display: none; }
 /* Narrow, as the country is: the frame hugs the tall map picture (MinimapPresenter fits it to the content box). */
+/* The border layer's label, beside the minimap's lower left: what the outlines are (MapRegions.Label). Out of the column's
+   flex flow (absolute), so it takes no height from the event card at any HUD tier (armistice review I-4). */
+.map-layer { display: none; position: absolute; right: 168px; bottom: 0; max-width: 312px; padding: 5px 8px; font-size: 15px; white-space: normal; -unity-text-align: middle-center; color: var(--ink); background-color: rgba(9, 14, 26, 0.9); border-radius: 3px; }
+/* A phone upright (three-row bar): the info panel spans the bottom left, beside the minimap, but the column is tall, so the
+   label goes back above the minimap, in the column's flow. */
+.hud-three-row .map-layer { position: relative; right: auto; bottom: auto; align-self: flex-end; max-width: 480px; margin-bottom: 6px; }
 .minimap { align-self: flex-end; flex-shrink: 0; width: 160px; height: 340px; padding: 12px; background-color: rgba(9, 14, 26, 0.97); }
 .minimap-image { align-self: center; -unity-background-scale-mode: stretch-to-fill; }   /* the element is sized to the picture's aspect by MinimapPresenter */
 .minimap-view { position: absolute; border-color: var(--ink); border-width: 1.5px; }
@@ -203,13 +226,14 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Full screens (Cabinet, Budget, Defence, Why) open in the centre, one at a time. */
 /* Hidden until ScreenNav opens one (never visible while loading; playtest 2, P2-1). Right edge clear of the 480px column. */
 .screen { display: none; position: absolute; left: 552px; right: 512px; top: 112px; bottom: 16px; padding: 18px; background-color: rgb(11, 18, 32); }   /* opaque: a reading screen, and the map labels must not show through */
-.screen-header { flex-direction: row; justify-content: space-between; align-items: center; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 10px; padding-bottom: 4px; }
+.screen-header { flex-direction: column; align-items: stretch; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 10px; padding-bottom: 4px; }
 /* Screen titles and section names in gold, letter-spaced, as the promo's "DEFENSE" and "LEADERSHIP". */
 .screen-header > .title { color: var(--gold-light); letter-spacing: 1px; }
+/* The subtitle sits under the title, the screen's full width, and wraps in a narrow window (#211). A column, not a
+   wrapping row: a shrinking, wrapping label in a row re-measured itself every frame (PromoScreensTests idle test). */
+.screen-header > .muted { white-space: normal; }
 .screen .meter-name { color: var(--gold); letter-spacing: 2px; font-size: 16px; margin-top: 8px; }
 .row { flex-direction: row; align-items: center; }
-.rung { flex-direction: row; padding: 5px 10px; margin: 1px 0; border-left-width: 3px; border-color: rgba(0, 0, 0, 0); }
-.rung-current { border-color: var(--gold); background-color: rgba(196, 160, 92, 0.15); }
 .grow { flex-grow: 1; }
 /* A growing row inside a screen (the Cabinet's seats and candidates) takes the height that is left and stretches its
    lists to it, so a long list scrolls instead of growing out of the screen. */
@@ -233,26 +257,136 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .why-group { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); color: var(--gold); letter-spacing: 1px; margin-top: 10px; border-bottom-width: 1px; border-color: rgba(196, 160, 92, 0.25); }
 .why-line { white-space: normal; padding-left: 12px; }
 
-/* The candidate column (B5): a fixed share beside the portrait grid, clear of the grid's scroll bar, its heading on one line. */
-#cabinet-pick { flex-grow: 0; flex-shrink: 0; width: 42%; margin-left: 14px; }
-#cabinet-pick-title { white-space: normal; }
-/* The Cabinet as the promo's portrait cards (promo/final/04): the lineup wraps into a grid of cards, each a gold-framed
-   portrait over the office and its holder; a long lineup scrolls. */
-#cabinet-seats .unity-scroll-view__content-container { flex-direction: row; flex-wrap: wrap; }
+/* Wide screens (Cabinet and Defence, laid out as promo/final/04 and 08): from the left edge to the event column, over the
+   info panel (an opaque reading screen; the info panel is about a hex, not needed while reading a screen). The event card
+   and the minimap stay in view (UiLayoutTests). */
+.screen-wide { left: 16px; bottom: 100px; }
+/* While a wide screen is open the toast's corner (B7) is under it, so the toast moves to the strip the wide screen leaves
+   free at the bottom, between the window's left edge and the event column: opaque, clear of the screen and the column
+   (PromoHudTests.TheToastIsOpaqueAndClearOfTheScreens). Two lines fit. */
+.wide-screen-open .toast { top: auto; bottom: 16px; left: 16px; right: 512px; width: auto; padding: 6px 12px; }
+/* The info panel under an open wide screen is hidden (ScreenNav sets wide-screen-open): no focus, no clicks, no updates. */
+.wide-screen-open .info-panel { display: none; }
+.section-title {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    color: var(--gold); letter-spacing: 3px; font-size: 17px; margin: 0 0 8px 2px; padding: 0;
+}
+.wrap { white-space: normal; }
+
+/* Bars (UiBar): a dark track and a coloured fill, each fill at least 3:1 against the track (PromoScreensTests). */
+.ui-bar { height: 8px; min-width: 40px; flex-grow: 1; flex-shrink: 1; background-color: rgb(34, 42, 58); border-radius: 2px; overflow: visible; }
+.ui-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background-color: var(--gold); }
+.ui-bar-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background-color: var(--ink); }
+.ui-bar--competence .ui-bar-fill { background-color: rgb(86, 164, 204); }
+.ui-bar--loyalty .ui-bar-fill { background-color: rgb(104, 186, 132); }
+.ui-bar--stability .ui-bar-fill { background-color: var(--gold); }
+.ui-bar--mobilization .ui-bar-fill { background-color: rgb(152, 178, 96); }
+.ui-bar--budget .ui-bar-fill { background-color: rgb(152, 178, 96); }
+.big-bar { height: 16px; }
+
+/* Person cards (PersonCard): a framed portrait (or a plate with the initials), then name, office, party and the two bars. */
 .seat {
-    flex-direction: column; align-items: center; justify-content: flex-start; width: 188px; min-height: 250px;
-    padding: 8px 8px 10px 8px; margin: 4px; -unity-text-align: upper-center;
+    flex-direction: column; align-items: stretch; justify-content: flex-start; width: 190px;
+    padding: 0 0 8px 0; margin: 4px; -unity-text-align: upper-center; border-color: rgba(196, 160, 92, 0.6);
 }
-.seat > Label { white-space: normal; -unity-text-align: upper-center; font-size: 16px; margin-top: 6px; }
-.seat-portrait {
-    width: 112px; height: 140px; flex-shrink: 0; -unity-background-scale-mode: scale-and-crop; background-position-y: top 20%;
-    background-color: var(--navy-deep); border-width: 1px; border-color: var(--gold);
+.card-plate { height: 150px; flex-shrink: 0; background-color: var(--navy-raised); border-bottom-width: 1px; border-color: var(--gold-dim); overflow: hidden; }
+.card-portrait { flex-grow: 1; background-size: cover; }
+.card-initials {
+    flex-grow: 1; -unity-text-align: middle-center; font-size: 46px; color: rgba(196, 160, 92, 0.75);
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); letter-spacing: 2px;
 }
-.seat-selected { border-color: var(--gold); background-color: var(--navy-raised); }
+.card-name {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 19px; color: var(--ink); -unity-text-align: upper-center; white-space: normal; margin: 6px 6px 0 6px; padding: 0;
+}
+.card-office { font-size: 15px; color: var(--ink-dim); -unity-text-align: upper-center; white-space: normal; margin: 0 6px; padding: 0; }
+.card-party { font-size: 15px; color: var(--gold); -unity-text-align: upper-center; white-space: normal; -unity-font-style: italic; margin: 0 6px 4px 6px; padding: 0; }
+.card-stat { flex-direction: row; align-items: center; height: 21px; padding: 0 10px; }
+.card-stat-name { width: 82px; flex-shrink: 0; font-size: 14px; color: var(--ink-dim); -unity-text-align: middle-left; padding: 0; margin: 0; }
+.card-stat-value { width: 24px; flex-shrink: 0; font-size: 16px; color: var(--ink); -unity-text-align: middle-right; padding: 0; margin: 0; }
+.seat-selected { border-color: var(--gold-light); background-color: var(--navy-raised); }
+.seat-vacant .card-name { color: var(--ink-dim); }
 .appointed { color: var(--gold); }
+/* A keyboard-focused card takes the warm focus fill (Button:focus); its dim and gold text turn ink to stay legible on it. */
+.seat:focus .card-name, .seat:focus .card-office, .seat:focus .card-party, .seat:focus .card-stat-name, .seat:focus .card-initials { color: var(--ink); }
+
+/* The Cabinet: the Prime Minister's card and the appointment list at the side; the house and the cards in the main column. */
+.cabinet-side { width: 300px; flex-shrink: 0; margin-right: 14px; }
+.cabinet-main { min-width: 0; }
+.pm-card { width: auto; margin: 0 0 8px 0; padding-bottom: 12px; }
+.pm-card .card-plate { height: 250px; }
+.pm-card .card-name { font-size: 27px; color: var(--gold-light); margin-top: 8px; }
+.pm-card .card-office { font-size: 17px; }
+.pm-card .card-party { font-size: 17px; margin-bottom: 8px; }
+.pm-card .card-stat { height: 26px; padding: 0 16px; }
+.pm-card .card-stat-name { font-size: 16px; width: 96px; }
+.pm-card .ui-bar { height: 10px; }
+#cabinet-pick { flex-shrink: 1; min-height: 0; }
+/* The Appoint heading wraps rather than run past the 300 px side column (B5; PromoHudTests.TheAppointHeadingHasRoom). */
+#cabinet-pick-title { white-space: normal; }
+.pm-offices { flex-direction: row; flex-wrap: wrap; margin: -2px 0 8px 0; }
+.pm-office { font-size: 15px; padding: 3px 10px; margin: 0 6px 4px 0; border-color: rgba(196, 160, 92, 0.6); }
+.cabinet-house {
+    flex-direction: row; flex-wrap: wrap; align-items: center; flex-shrink: 0; margin: 0 5px 8px 5px; padding: 10px 14px;
+    background-color: rgba(5, 9, 18, 0.55); border-width: 1px; border-color: var(--gold-dim); border-radius: 2px;
+}
+.hemicycle-box { width: 320px; height: 168px; flex-shrink: 0; margin-right: 18px; }
+.hemicycle { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.hemicycle-count { position: absolute; left: 0; right: 0; bottom: 0; align-items: center; }
+.house-size { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 34px; color: var(--ink); padding: 0; margin: 0; -unity-text-align: lower-center; }
+.house-unit { font-size: 13px; letter-spacing: 2px; color: var(--ink-dim); padding: 0; margin: 0; -unity-text-align: upper-center; }
+.house-legend { flex-grow: 1; flex-shrink: 1; min-width: 260px; }
+.house-coalition { font-size: 20px; color: var(--ink); white-space: normal; }
+.house-stability { flex-grow: 0; height: 8px; margin: 3px 0 6px 0; max-width: 360px; }
+.house-legend > Label { padding-top: 0; padding-bottom: 0; }
+.party-chips { flex-direction: row; flex-wrap: wrap; margin-top: 6px; }
+.party-chip { flex-direction: row; align-items: center; margin: 0 12px 2px 0; }
+.party-chip > Label { font-size: 14px; color: var(--ink-dim); padding: 0; margin: 0; }
+.party-swatch { width: 11px; height: 11px; border-radius: 6px; margin-right: 5px; }
+.party-swatch--hollow { border-width: 1.2px; border-color: var(--ink-dim); }
+#cabinet-seats .unity-scroll-view__content-container { flex-direction: row; flex-wrap: wrap; }
 .candidate { flex-direction: column; align-items: stretch; margin-bottom: 4px; }
 .candidate > Button { white-space: normal; }
 .reason { color: var(--ink-dim); font-size: 16px; white-space: normal; flex-shrink: 1; }
+
+/* Defence: three panels side by side that wrap in a narrow window, then the budget share. */
+.defence-row { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
+.defence-panel {
+    margin: 6px; padding: 14px 16px; background-color: rgba(5, 9, 18, 0.55);
+    border-width: 1px; border-color: var(--gold-dim); border-radius: 2px;
+}
+.defence-leadership { flex-grow: 3; flex-basis: 560px; }
+.defence-ladder { flex-grow: 2; flex-basis: 380px; }
+.defence-callup { flex-grow: 1; flex-basis: 300px; }
+.leaders { flex-direction: row; flex-wrap: wrap; justify-content: space-around; }
+.leader .card-plate { height: 200px; }
+.leader .card-name { font-size: 20px; }
+.leader {
+    width: 172px; flex-grow: 1; max-width: 230px; margin: 4px; padding-bottom: 8px; background-color: var(--navy-deep);
+    border-width: 1px; border-color: rgba(196, 160, 92, 0.6); border-radius: 2px;
+}
+.rung { flex-direction: row; align-items: center; padding: 8px 10px; margin: 2px 0; border-left-width: 3px; border-color: rgba(0, 0, 0, 0); background-color: rgba(255, 255, 255, 0.03); }
+.rung-name { white-space: normal; font-size: 18px; flex-shrink: 1; min-width: 0; }
+.rung-turn { font-size: 15px; margin-left: 8px; flex-shrink: 0; }
+.rung-current { border-color: var(--gold-light); background-color: rgba(196, 160, 92, 0.20); }
+.rung-current .rung-name { color: var(--gold-light); }
+/* The level an order will move to at End Turn: a dashed-looking ink edge, distinct from the lit current level. */
+.rung-target { border-color: var(--ink); border-left-width: 3px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; }
+.big-figure { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 44px; color: var(--ink); padding: 0; margin: 0 0 4px 0; }
+.defence-callup .big-bar { flex-grow: 0; margin: 4px 0 10px 0; }
+.defence-budget { flex-direction: row; align-items: center; }
+.budget-title { margin: 0 18px 0 0; }
+.budget-share { margin-left: 16px; font-size: 18px; }
+/* A wide screen's header wraps its subtitle under the title when the window is narrow. */
+/* Square and narrower windows: a slimmer side column leaves room for two columns of cards. */
+.hud-two-row .cabinet-side { width: 250px; }
+.hud-two-row .pm-card .card-plate { height: 210px; }
+/* #210: in the two-row (narrow) HUD every screen takes the full width under the bar. While one is open the event column
+   and the info panel under it are hidden (no focus, no clicks), and the toast takes the strip below the screen. */
+.hud-two-row .screen { left: 16px; right: 16px; bottom: 100px; }
+.hud-two-row.screen-open .right-column, .hud-two-row.screen-open .info-panel { display: none; }
+.hud-two-row.screen-open .toast { top: auto; bottom: 16px; left: 16px; right: 16px; width: auto; padding: 6px 12px; }
+.hud-two-row .cabinet-house { justify-content: center; }
 
 /* Loading (playtest 2, P2-1): until GameRoot is ready only this line shows; the bar's values, the info panel and the
    right-hand column are kept out of sight (visibility, so the layout does not jump when they appear). */
@@ -286,3 +420,47 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .anchor-lower-centre { translate: -50% -100%; }
 .anchor-lower-left { translate: 0 -100%; }
 .anchor-lower-right { translate: -100% -100%; }
+
+/* The start screen (StartScreenPresenter): the painting of the 14 May 1948 hall, two lines of the Declaration (official
+   Hebrew, official English under each), Continue and New Game. Hidden until GameRoot shows it; while it shows (.start-open
+   on the root) the HUD under it is hidden, so it takes no focus and no clicks, and the painting is opaque over the map.
+   The painting fills the window (cover, anchored at the top-left, so the Dreamina AI badge in that corner stays in view)
+   and the panel sits at the foot over the audience; a tall window (.start-band) stacks the whole painting, as a
+   full-width band, over the panel (StartScreenPresenter.Fit). */
+.start-screen { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--navy-deep); }
+.start-open .start-screen { display: flex; }
+.start-open .top-bar, .start-open .right-column, .start-open .info-panel, .start-open .screen, .start-open .map-labels { display: none; }
+.start-art {
+    position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+    background-image: url("project://database/Assets/UI/StartScreen/declaration-hall.jpg");
+    background-size: cover; background-position-x: left; background-position-y: top; background-repeat: no-repeat;
+}
+.start-band .start-art { bottom: auto; }
+.start-body { position: absolute; left: 0; top: 0; right: 0; bottom: 0; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0 16px 28px 16px; }
+.start-band .start-body { padding-top: 16px; padding-bottom: 16px; }
+.start-panel {
+    width: 1240px; max-width: 100%; flex-shrink: 0; align-items: center; padding: 18px 40px 20px 40px;
+    background-color: rgba(9, 14, 26, 0.88);
+}
+.start-title {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 50px; color: var(--gold-light); letter-spacing: 2px; -unity-text-align: middle-center; margin: 0;
+}
+.start-rule { width: 60%; margin: 2px 0 10px 0; }
+/* Hebrew in Frank Ruhl Libre (EB Garamond has no Hebrew; #193) through the advanced text generator, which orders
+   right-to-left text and the numbers in it (StartScreenTests renders it and checks the order). */
+.start-he {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
+    -unity-text-generator: advanced;
+    font-size: 34px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 4px 0 0 0;
+}
+.start-he-date { font-size: 28px; margin-top: 12px; }
+.start-en { font-size: 18px; color: var(--ink-dim); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
+.start-source { font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
+.start-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+.start-button {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 24px; min-width: 220px; margin: 4px 10px; padding: 8px 24px; -unity-text-align: middle-center;
+}
+/* New Game's prompt (the toast) shows at the top of the start screen, clear of the AI badge and the panel. */
+.start-open .toast { top: 24px; left: 25%; right: 25%; width: auto; }

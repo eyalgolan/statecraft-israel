@@ -41,7 +41,7 @@ def test_contributing_names_every_ci_command_and_the_unity_gate():
     text = read("CONTRIBUTING.md")
     for cmd in ("dotnet test sim/Statecraft.sln",
                 "uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 "
-                "--with pillow==12.3.0 --with requests==2.32.5 pytest tools/tests -q",
+                "--with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q",
                 "uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q",
                 "uv run scripts/oss/check_repo.py",
                 "-buildTarget OSXUniversal -runTests -testPlatform EditMode", "## What CI runs", "CHANGELOG.md"):
@@ -86,6 +86,15 @@ def test_pr_template_has_evidence_and_no_cla_item():
     text = read(".github/pull_request_template.md")
     assert "## Evidence" in text and "LICENSING.md" in text and "ASSETS.yaml" in text
     assert "CLA" not in text and "contributors/" not in text
+
+
+def test_pr_template_asks_for_ai_disclosure_issue_link_and_goldens():
+    # Issue #264: the checklist pointed at a disclosure "above" that nothing asked for.
+    text = read(".github/pull_request_template.md")
+    assert "## AI assistance" in text and "disclosed under \"AI assistance\"" in text
+    assert "Fixes #" in text and "Refs #" in text and "only if this PR completes the issue" in text
+    assert "`Hash1950`" in text and "`Hash1952`" in text and "docs/determinism.md" in text
+    assert "## [Unreleased]" in text
 
 
 def test_content_policy_claims_no_mechanism_that_does_not_exist():
@@ -200,3 +209,10 @@ def test_m3_release_records_the_completed_sensitivity_review():
         assert "sensitivity-reviewed" in section
     assert "only `fact-checked`" not in review
     assert "await the owner's sensitivity review" not in limits
+
+
+def test_release_gate_runs_the_tools_tests_exactly_as_ci_does():
+    # Without the same --with list (pyproj), the gate skipped 12 tools tests that CI runs.
+    ci = [l.strip() for l in read(".github/workflows/ci.yml").splitlines() if "pytest tools/tests" in l]
+    assert len(ci) == 1 and ci[0].startswith("run: ")
+    assert ci[0][len("run: "):] in read("scripts/oss/release_gate.sh")

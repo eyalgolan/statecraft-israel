@@ -21,19 +21,44 @@ offices:
   - { id: trade_minister, title: Minister of Trade and Industry }
   - { id: transportation_minister, title: Minister of Transportation }
   - { id: welfare_minister, title: Minister of Welfare }
-  - { id: education_minister, title: Minister of Education and Culture }
+  # The Ministry of Postal Services (renamed Communications in 1970). Its first minister, Mordechai Nurock, took office
+  # on 3 November 1952 (Knesset records and plenum record, he.wiki Third Government, en.wiki "Ministry of Communications
+  # (Israel)", checked 2026-10-12).
+  - { id: posts_minister, title: Minister of Postal Services, from: 1952-11-03 }
+  # Set up on 15 June 1953 for Dov Yosef (he.wiki "משרד הפיתוח", en.wiki "Development Minister of Israel", Knesset
+  # records, checked 2026-10-12). The Knesset records and he.wiki "לוי אשכול" also give Eshkol a Development title in
+  # the Third Government, before the ministry existed; the office starts with the ministry (see Eshkol in people.yaml).
+  - { id: development_minister, title: Minister of Development, from: 1953-06-15 }
+  # The Provisional Government (14 May 1948 - 10 March 1949) had no education portfolio. The ministry dates from the First
+  # Government; Zalman Shazar was its first minister, from 10 March 1949 (en.wiki "Provisional government of Israel" and
+  # "Ministry of Education (Israel)", he.wiki "הממשלה הזמנית", checked 2026-10-11). The budget line stays from 1948.
+  - { id: education_minister, title: Minister of Education and Culture, from: 1949-03-10 }
   # The minister responsible for rationing: the rationing policy's effects and events look this office up. Until
   # 1 November 1950 that was the Minister of Rationing and Supply (Dov Yosef). The ministry was then abolished and its
   # functions split: most went to Agriculture (Lavon), some supply departments to Trade and Industry (Geri) (research
   # notes, Addendum 2). From 8 October 1951 food-supply/rationing responsibility was with Trade and Industry (Yosef);
   # see people.yaml and research_notes/M3 content 1950-51/rationing-responsibility.md for evidence and caveats.
-  - { id: rationing_minister, title: Minister responsible for rationing }
+  # No rationing ministry or minister in the Provisional Government. Dov Yosef is named Minister of Rationing and Supply
+  # in the First Government that Ben-Gurion presented to the Knesset on 8 March 1949 and that took office on
+  # 10 March 1949 (Knesset, gov1.pdf; he.wiki "דב יוסף", en.wiki "Dov Yosef", checked 2026-10-12). The 26 April 1949 date
+  # in en.wiki "Rationing and Supply Minister of Israel" and he.wiki "משרד האספקה והקיצוב" is when rationing was decided
+  # (the austerity event), not when the office began (issue #225).
+  - { id: rationing_minister, title: Minister responsible for rationing, from: 1949-03-10 }
   - { id: chief_of_staff, title: IDF Chief of the General Staff }
-  - { id: minister_without_portfolio, title: Minister without Portfolio }
-  - { id: president, title: President of Israel }
+  # The role first appeared in the Third Government (Peretz Naphtali, 8 October 1951): he.wiki "שר בלי תיק"; the
+  # Provisional, First and Second Governments' tables on en.wiki list none (checked 2026-10-11).
+  - { id: minister_without_portfolio, title: Minister without Portfolio, from: 1951-10-08 }
+  # Established by the Transition Law of 16 February 1949 (he.wiki "נשיא מדינת ישראל", en.wiki "President of Israel",
+  # checked 2026-10-11; he.wiki "חוק המעבר" gives 16 or 17 February). Weizmann's 1948 office, President of the
+  # Provisional State Council, is a different office the game does not model.
+  - { id: president, title: President of Israel, from: 1949-02-16 }
   # Historical deputy titles: dated lookup/text only, never playable Cabinet seats or gameplay owners.
   # Sources and the start-date conflict are in research_notes/M3 content 1950-51/deputy-titles.md.
   - { id: deputy_agriculture_minister, title: Deputy Minister of Agriculture, historical_only: true }
   - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, historical_only: true }
   - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, historical_only: true }
   - { id: deputy_prime_minister, title: Deputy Prime Minister, historical_only: true }
+  # Deputy ministers of 1953-1956 (#26): dates from the Knesset records (KNS_PersonToPosition), see people.yaml.
+  - { id: deputy_religions_minister, title: Deputy Minister of Religions, historical_only: true }
+  - { id: deputy_welfare_minister, title: Deputy Minister of Welfare, historical_only: true }
+  - { id: deputy_trade_minister, title: Deputy Minister of Trade and Industry, historical_only: true }

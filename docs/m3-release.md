@@ -5,7 +5,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
 
 ## What ships
 - **Folder and zip:** `unity/Builds/Web-brotli/` uses Brotli compression with no decompression fallback. It is zipped as `unity/Builds/statecraft-m3-web.zip`, with `index.html` at the zip root. Both are build output and are not committed.
-- **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -logFile "$PWD/unity-build-web-br.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed). Never zip by hand.
+- **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed, and when the build's `event-photos.json` is missing, says the build was not `-shareable`, or lists an unreviewed sensitive event photograph). Never zip by hand.
 - **After building:** drop the build's rewrites of the settings with
   `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset` (as in `dev-setup.md`), so no
   build-cache change gets committed.
@@ -118,7 +118,9 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 - **Gate:** `Build.Web ... -shareable` and `Build.Mac ... -shareable` refuse to build while any sensitive event is not
   `sensitivity-reviewed`, and name them (`Statecraft.Sim.ReleaseGate.SensitiveUnreviewed`). `tools/package_release.py`
   makes the shareable zip and runs the same check (`Statecraft.Cli --release-gate`) on the content inside the build, so
-  it prints `PACKAGE REFUSED ...` and exits 1 while any sensitive event is not sensitivity-reviewed. Use `-shareable` and the script for every build
+  it prints `PACKAGE REFUSED ...` and exits 1 while any sensitive event is not sensitivity-reviewed. It also refuses a
+  build folder whose `event-photos.json` (written by every build) is missing, not `-shareable`, or lists an unreviewed
+  sensitive event photograph (`docs/event-images.md`). Use `-shareable` and the script for every build
   that leaves this machine, including the M4 private Draft once it is shared with anyone. Local dev builds (no flag)
   are not gated, because web_check and the golden checks need them.
 - **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the seven ids, and
@@ -134,6 +136,22 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 | `operation_horev` | security, war-casualties | military text only |
 | `bernadotte_assassination` | security, terror | the `terror` tag follows the Israeli government's own Prevention of Terrorism Ordinance |
 | `reparations_claim` | holocaust | the claim's framing (the cost of absorbing survivors: 500,000 at $3,000 each); the "refuse" option |
+
+**Map lines (display only; not gated by the release gate).** The 1949 armistice lines and zones
+(`content/map/armistice_lines_1949.geojson`, decision D-A) need the same review before a shared build shows them. The owner
+records the sign-off by moving each feature's `status` to `sensitivity-reviewed` (after `fact-checked`). The 1948
+sub-districts (D-B) are reviewed with them.
+
+| Line or zone | Front, from | What to review |
+|---|---|---|
+| `egypt_adl_gaza` | Egypt, 24 Feb 1949 | the Gaza-Rafah line, Wadi Hasi to Gaza only (the stretch to the frontier is a gap, shown as nothing); its name |
+| `egypt_el_auja_dmz` | Egypt, 24 Feb 1949 | the El Auja Demilitarized Zone and its name |
+| `lebanon_adl` | Lebanon, 23 Mar 1949 | the line shown as the Mandate frontier it follows; "the international boundary" in its name |
+| `syria_adl` | Syria, 20 Jul 1949 | the line and its name |
+| `syria_dmz_north`, `syria_dmz_central`, `syria_dmz_south` | Syria, 20 Jul 1949 | the three parts of the Demilitarized Zone, their names (place names chosen by us: Banias, Tell el Qadi, Dardara, Mishmar HaYarden, Ein Gev, El Hamma; a mix of Arabic forms, Tell el Qadi rather than Dan and El Hamma rather than Hamat Gader, and Hebrew ones) |
+| `egypt_mv1950_demarcation`, `egypt_mv1950_zone_lines` | Egypt, 22 Feb 1950 | the line as drawn on the signed modus vivendi map and the zone A and C lines; that the label and panel name the modus vivendi apart from the 1949 line |
+| `jordan_adl_iraqi_*` (four stages), `jordan_adl_a_latrun`, `jordan_adl_bc_south`, `jordan_adl_d_arava` | Jordan, 3 Apr 1949 (line A by its deadlines: 8 May, 22 May, 17 Jul 1949) | low accuracy, traced from a low-resolution scan, and labelled so; the Art. VI.3 stage areas as read; Latrun traced along the outer loop; Jerusalem, the no-man's-lands and Mount Scopus left out (gaps) |
+| On-screen strings | from 1949 | the map label ("Mandate sub-districts, 1947 · 1949 armistice lines: Egypt (and the 1950 modus vivendi), Lebanon, Jordan (low accuracy), Syria"), the info panel lines ("On the ... · low accuracy, from a low-resolution scan"), the agreement titles in the "Egypt-Israel" style (the agreements' own: "Egyptian-Israeli", "Lebanese-Israeli", "Hashemite Jordan Kingdom-Israel", "Israeli-Syrian"), and the seven Hebrew strings in `strings.he.yaml` (Hebrew is off until reviewed) |
 
 ## Deferred to M4: upload to itch.io (OWNER STEP)
 Deferred to the start of M4, as a private Draft (owner ruling, 2026-10-10). The steps stay correct for then. This needs the

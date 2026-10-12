@@ -49,9 +49,10 @@ namespace Statecraft.Game.Map.Kits
             Build(list, ground, out _);
 
         /// <summary>As Build, also returning every claimed lot (centre, radius, owning settlement id): buildings and landmarks
-        /// of all towns, none overlapping another (tests).</summary>
+        /// of all towns, none overlapping another (tests); and, when <paramref name="columns"/> is given, filling it with each
+        /// non-empty kit's columns by settlement id (KitMesh.Columns, read before the mesh's CPU copy is dropped).</summary>
         public static List<(Settlement s, Mesh mesh, int buildings)> Build(IReadOnlyList<Settlement> list, KitGround ground,
-            out List<(Vector2 centre, float radius, string id)> claimed)
+            out List<(Vector2 centre, float radius, string id)> claimed, Dictionary<string, Bounds[]>? columns = null)
         {
             var order = new List<Settlement>(list);
             order.Sort((a, b) => KitPopulation.Of(b.Id).CompareTo(KitPopulation.Of(a.Id)) != 0
@@ -70,6 +71,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var km = new KitMesh();
                 int n = BuildOne(s, centres[s.Id], ground, km, lots);
+                if (columns != null && km.VertexCount > 0) columns[s.Id] = km.Columns();
                 result.Add((s, km.ToMesh(s.Id + "_kit"), n));
             }
             claimed = lots.ConvertAll(l => (centre: l.c, radius: l.r, id: l.id));

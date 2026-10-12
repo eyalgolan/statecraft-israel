@@ -1,0 +1,424 @@
+# The military formations the map draws in 1948-49 (docs/units.md, "Units in play"). Map-only: the sim never reads this
+# file (ContentLoader reads only its own files), so it does not move the content hash or the goldens. The map reads it
+# (UnitRoster) together with the sim's security level and reserve call-up, and draws one token per unit.
+#
+# Owner rulings (2026-10-11): one token per brigade; the number of figures follows the call-up (1, 2 or 3); an Avia
+# S-199 until the Spitfire's sourced date, then the Spitfire; brigades with no sourced position are listed but hidden;
+# tokens stand only at dated, sourced positions and do not move with operation events; after the armistices only what a
+# source says continued is shown; no orders (the unit panel links to the Defence screen). Controller rulings (review
+# C1, I1, I3, I4): no invented end dates; "since" only from a sourced start; the squadron's bases where two sources agree.
+#
+# anchors: where the unit stood, each a named place a source gives for a dated window. The map draws the unit while the
+#   game date is inside one of its windows: from (inclusive) to `to` (exclusive), 'YYYY-MM-DD', quoted. A window that a
+#   source opens before the game starts opens on the game's first day (15 May 1948); `since` then gives the sourced start,
+#   which the unit's card shows ("since February 1948"). With no `since`, the card gives no start.
+#   precision: month marks a window edge that the source gives only as a month (the first of the month is used).
+# end_basis: why a window ends.
+#   source: a cited source moves the unit, ends its sector or disbands it; `end_note` says which.
+#   front_armistice: no source gives an end, so the window ends on the day the armistice of the front it stood on was
+#     signed (`front`: egypt 24 February, lebanon 23 March, jordan 3 April, syria 20 July 1949;
+#     https://en.wikipedia.org/wiki/1949_Armistice_Agreements, checked 2026-10-11). This applies the owner's ruling
+#     "after the armistices, show only what a source says continued"; no source yet gives a later position.
+#   A window also ends no later than the unit's sourced disbandment (`disbanded`).
+# The token stands on its anchor's hex or one next to it, clear of the settlement kits and the railways and roads
+#   (UnitPlacer): a presentation offset of at most one hex step, not a claim about the position. Where the nearest such
+#   spot would be the other side's ground, `toward` names a sourced place on the unit's own side and `place_hex` the hex
+#   next to the anchor on that side ([q, r] in content/map/hexes.json); the token stands in that hex, nearest the place.
+# Coordinates: the place's Wikipedia article (Wikipedia API prop=coordinates), or Wikidata (CC0) where it has none.
+# wikipedia_only: true when every source of the row is a Wikipedia article (English or Hebrew) or a Wikidata item (for
+#   coordinates only). Such a row is a draft until checked against a published history (Netanel Lorch, The Edge of the
+#   Sword, 1961) or the IDF and Defense Establishment Archives. The card computes the same note per anchor.
+# headgear: the riflemen's headgear, only where a source ties it to the unit (otherwise the uniform default: bush hat,
+#   steel helmet, bush hat; docs/units.md).
+# hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
+# status: draft = sourced and checked against the cited text, not yet by a historian.
+units:
+# --- Army: the twelve brigades of 1948 -------------------------------------------------------------------------------
+- id: golani
+  name: Golani Brigade
+  number: 1st Brigade
+  service: army
+  formed: 22 February 1948
+  first_commander: Moshe Mann
+  sector: "Much of the Lower Galilee and the Jezreel Valley, the Jordan Valley and the Hula Valley; headquarters in Yavne'el. In December 1948 it moved to the southern front, at the Julis camp."
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: "Yavne'el"
+    lon: 35.49944
+    lat: 32.70944
+    from: '1948-05-15'
+    since: February 1948
+    to: '1948-12-01'
+    precision: month
+    end_basis: source
+    end_note: "he.wiki: in December 1948 the brigade moved to the southern front, to the Julis camp."
+    note: The brigade's headquarters from its formation in February 1948 (en.wiki).
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%92%D7%95%D7%9C%D7%A0%D7%99', checked: '2026-10-11'}
+    - {url: "https://en.wikipedia.org/wiki/Yavne'el", checked: '2026-10-11'}
+  - place: Julis camp
+    lon: 34.65361
+    lat: 31.68167
+    from: '1948-12-01'
+    since: December 1948
+    to: '1949-02-24'
+    precision: month
+    end_basis: front_armistice
+    front: egypt
+    note: "he.wiki: in December 1948 the brigade moved to the southern front, camped at Julis (Operations Assaf and Horev)."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%92%D7%95%D7%9C%D7%A0%D7%99', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Julis,_Gaza', checked: '2026-10-11'}
+- id: carmeli
+  name: Carmeli Brigade
+  number: 2nd Brigade
+  service: army
+  formed: 22 February 1948
+  sector: The northwest (split from the Levanoni Brigade in February 1948).
+  wikipedia_only: true
+  status: draft
+  hidden: The sources name its sector ("the northwest") but no place or headquarters.
+  anchors: []
+  sources:
+  - {url: 'https://en.wikipedia.org/wiki/Carmeli_Brigade', checked: '2026-10-11'}
+  - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
+- id: alexandroni
+  name: Alexandroni Brigade
+  number: 3rd Brigade
+  service: army
+  formed: November 1947 (the Haganah's decision of 7 November)
+  sector: The Sharon region.
+  wikipedia_only: true
+  status: draft
+  hidden: The sources name its region ("the Sharon") but no place or headquarters.
+  anchors: []
+  sources:
+  - {url: 'https://en.wikipedia.org/wiki/Alexandroni_Brigade', checked: '2026-10-11'}
+  - {url: 'https://en.wikipedia.org/wiki/Etzioni_Brigade', checked: '2026-10-11'}
+  - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
+- id: kiryati
+  name: Kiryati Brigade
+  number: 4th Brigade
+  service: army
+  formed: February 1948
+  sector: "The urban area of Tel Aviv, from the Yarkon River in the north to Bat Yam in the south and Yazur in the east."
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: Tel Aviv
+    lon: 34.78
+    lat: 32.08
+    from: '1948-05-15'
+    since: February 1948
+    to: '1949-04-03'
+    end_basis: front_armistice
+    front: jordan
+    note: Established in Tel Aviv in February 1948; its border was the city's urban area. The central front was covered by the agreement with Jordan.
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/4th_Armored_Brigade_%22Kiryati%22', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Tel_Aviv', checked: '2026-10-11'}
+- id: givati
+  name: Givati Brigade
+  number: 5th Brigade
+  service: army
+  formed: December 1947
+  first_commander: Shimon Avidan
+  sector: "Moved to the south as the war entered its second stage, concentrated mainly around Gedera, Gan Yavne and Be'er Tuvia."
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: Gedera
+    lon: 34.77722
+    lat: 31.81194
+    from: '1948-05-15'
+    to: '1949-02-24'
+    end_basis: front_armistice
+    front: egypt
+    note: "One place picked from the sector: the first of the three the source names. The move south is not dated, so the card gives no start."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Givati_Brigade', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Gedera', checked: '2026-10-11'}
+- id: etzioni
+  name: Etzioni Brigade
+  number: 6th Brigade
+  service: army
+  formed: Late 1947
+  first_commander: Yisrael Amir
+  sector: The defence of Jerusalem and its surroundings.
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: Jerusalem
+    lon: 35.22556
+    lat: 31.77889
+    from: '1948-05-15'
+    since: late 1947
+    to: '1949-04-03'
+    end_basis: front_armistice
+    front: jordan
+    note: Founded in late 1947 as the Field Corps unit responsible for the defence of Jerusalem.
+    toward:
+      place: West Jerusalem
+      lon: 35.21944
+      lat: 31.78194
+      note: "The section of Jerusalem Israel held at the end of the war; without it the token's nearest clear spot fell north-east of the city, by Hizma and Anata, which Jordan held."
+      sources:
+      - {url: 'https://en.wikipedia.org/wiki/West_Jerusalem', checked: '2026-10-11'}
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Etzioni_Brigade', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Jerusalem', checked: '2026-10-11'}
+- id: brigade_7
+  name: 7th Brigade
+  number: 7th Brigade
+  service: army
+  formed: 16 May 1948
+  first_commander: Shlomo Shamir
+  sector: "The battles of Latrun (Operation Bin Nun, 24 May to 1 June 1948), from the headquarters at Hulda; in June 1948 it moved to the northern front, organising for a time at Ein Shemer."
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: Hulda (headquarters for the Latrun attacks)
+    lon: 34.88333
+    lat: 31.83222
+    from: '1948-05-24'
+    since: 24 May 1948
+    to: '1948-06-01'
+    end_basis: source
+    end_note: "Operation Bin Nun Alef (24-25 May) and Bin Nun Bet (30 May-1 June); he.wiki: in June 1948 the brigade moved north."
+    note: "The brigade attacked Latrun from the Israeli headquarters at Hulda (Battles of Latrun); Shlomo Shamir led both attacks. Anchored at Hulda, not Latrun: the Arab Legion held Latrun and the ridge behind it (Yalu, Bayt Nuba), and the ground between was contested until the area of Bayt Jiz and Bayt Susin was cleared on 28 May; Sar'a was taken only on 13-14 July."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Battles_of_Latrun_(1948)', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Hulda,_Israel', checked: '2026-10-12'}
+    - {url: "https://en.wikipedia.org/wiki/Sar'a", checked: '2026-10-12'}
+  - place: Ein Shemer
+    lon: 35.00667
+    lat: 32.46139
+    from: '1948-06-01'
+    since: June 1948
+    to: '1948-07-01'
+    precision: month
+    end_basis: source
+    end_note: "he.wiki: it organised at Ein Shemer \"for a time\" in June 1948; no later place is given."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_7', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Ein_Shemer', checked: '2026-10-11'}
+- id: brigade_8
+  name: 8th Brigade
+  number: 8th Brigade
+  service: army
+  formed: 24 May 1948
+  first_commander: Yitzhak Sadeh
+  sector: Not stated in the sources.
+  wikipedia_only: true
+  status: draft
+  hidden: The sources give its founding but no sector or headquarters.
+  anchors: []
+  sources:
+  - {url: 'https://en.wikipedia.org/wiki/8th_Armored_Brigade_(Israel)', checked: '2026-10-11'}
+- id: oded
+  name: Oded Brigade
+  number: 9th Brigade
+  service: army
+  sector: The sources conflict.
+  wikipedia_only: true
+  status: draft
+  hidden: "The source says it was headquartered in Jerusalem, yet it fought at al-Malkiyya in the north in June 1948."
+  anchors: []
+  sources:
+  - {url: 'https://en.wikipedia.org/wiki/Oded_Brigade', checked: '2026-10-11'}
+- id: harel
+  name: Harel Brigade
+  number: 10th Brigade (Palmach)
+  service: army
+  formed: 16 April 1948
+  first_commander: Yitzhak Rabin
+  sector: "All units in the Jerusalem corridor and hills; in the first half of May 1948 it took the corridor and opened the road to Sha'ar HaGai. Later it fought in Operation Horev."
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: "Sha'ar HaGai"
+    lon: 35.03333
+    lat: 31.81667
+    from: '1948-05-15'
+    since: the first half of May 1948
+    to: '1948-12-22'
+    end_basis: source
+    end_note: Operation Horev, from 22 December 1948, in the south; no place is given for the brigade there.
+    note: "One place picked from the sector: the source names the Jerusalem corridor as the sector and Sha'ar HaGai as the end of the road the brigade opened (and as a battalion's name)."
+    place_hex: [-2, 23]
+    toward:
+      place: Saris
+      lon: 35.07389
+      lat: 31.79806
+      note: "Taken in the Haganah offensive of 16-17 April 1948, on the corridor road east of Sha'ar HaGai, where the Harel Brigade's 4th Battalion fought from Kiryat Anavim; without this the token's nearest clear spot fell by Sar'a and Artuf (later the Yalu ridge), not yet taken on 15 May."
+      sources:
+      - {url: 'https://en.wikipedia.org/wiki/Saris,_Jerusalem', checked: '2026-10-11'}
+      - {url: 'https://en.wikipedia.org/wiki/Kiryat_Anavim', checked: '2026-10-11'}
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Harel_Brigade', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Horev', checked: '2026-10-11'}
+    - {url: "https://en.wikipedia.org/wiki/Sha'ar_HaGai", checked: '2026-10-11'}
+- id: yiftach
+  name: Yiftach Brigade
+  number: 11th Brigade (Palmach)
+  service: army
+  formed: April 1948
+  sector: "Formed from Palmach battalions of the Jezreel Valley and the eastern valleys; in July 1948 it fought in Operation Dani, which took Lydda and Ramle. Disbanded in May 1949."
+  wikipedia_only: true
+  status: draft
+  disbanded: {date: '1949-05-01', precision: month, sources: [{url: 'https://en.wikipedia.org/wiki/Yiftach_Brigade', checked: '2026-10-11'}]}
+  anchors:
+  - place: Lydda
+    lon: 34.88806
+    lat: 31.95194
+    from: '1948-07-11'
+    since: 11 July 1948
+    to: '1948-07-20'
+    end_basis: source
+    end_note: Operation Dani ended on 19 July 1948.
+    note: "The IDF entered Lydda on 11 July 1948 (Lod article); the Operation Danny article has the two towns taken on 10 July. Yiftach approached from the south from 9 July."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Danny', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Yiftach_Brigade', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Lod', checked: '2026-10-11'}
+- id: negev
+  name: Negev Brigade
+  number: 12th Brigade (Palmach)
+  service: army
+  formed: March 1948
+  first_commander: Nahum Sarig
+  sector: "The Negev, in two sectors divided by the Beersheba-Gaza road; brigade headquarters at the Mekorot camp near Nir Am."
+  wikipedia_only: false
+  status: draft
+  headgear: [wool_cap, steel_helmet, wool_cap]
+  headgear_sources:
+  - {url: 'https://commons.wikimedia.org/wiki/File:Palmach-negev-instructed2operation.jpg', checked: '2026-10-11'}
+  - {url: 'https://commons.wikimedia.org/wiki/File:Negev_Brigade_soldiers_1948.jpg', checked: '2026-10-11'}
+  anchors:
+  - place: Nir Am (Mekorot camp)
+    lon: 34.58083
+    lat: 31.51944
+    from: '1948-05-15'
+    since: March 1948
+    to: '1949-02-24'
+    end_basis: front_armistice
+    front: egypt
+    note: he.wiki sets up the brigade's headquarters at the Mekorot camp near Nir Am when the brigade was formed.
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Negev_Brigade', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A0%D7%92%D7%91', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Nir_Am', checked: '2026-10-11'}
+# --- Air: the first fighter squadron ---------------------------------------------------------------------------------
+- id: squadron_101
+  name: 101 Squadron
+  number: First Fighter Squadron
+  service: air
+  formed: 20 May 1948
+  first_commander: Modi Alon
+  sector: "Formed at Ekron (the former RAF Aqir) in May 1948; first mission 29 May. It flew from a strip near Herzliya from mid-June, and from Hatzor from November 1948."
+  wikipedia_only: false
+  status: draft
+  aircraft:
+  - type: avia-s199
+    from: '1948-05-20'
+    to: '1948-10-15'
+    note: "The first four arrived on 20 May 1948 and flew first on 29 May (Avia S-199). The type flew on, sporadically, until mid-December (Avia S-199; Eduard p. 54 has one in Operation Horev); the map shows it until the squadron's Spitfires are first sourced in service."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Avia_S-199', checked: '2026-10-11'}
+    - {url: 'https://info.eduard.com/en/11-2025-1/strana-53', checked: '2026-10-11'}
+    - {url: 'https://info.eduard.com/en/11-2025-1/strana-54', checked: '2026-10-11'}
+  - type: spitfire
+    from: '1948-10-15'
+    note: "The first Spitfires flew in from Czechoslovakia on 27 September 1948 (Operation Velvetta, he.wiki), unarmed; the first sourced sortie is 15 October 1948, three Spitfires escorting Beaufighters to El Arish (he.wiki Supermarine Spitfire). The squadron flew both the Avias and the Spitfires (he.wiki 101 Squadron). en.wiki's Spitfire operational history has IAF Spitfires in combat on 21 October and calls a 101 Squadron claim that day the IAF's \"first ever aerial victory\", which is wrong: the first victories were on 3 June 1948 (101 Squadron, Avia S-199)."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%A1%D7%95%D7%A4%D7%A8%D7%9E%D7%A8%D7%99%D7%9F_%D7%A1%D7%A4%D7%99%D7%98%D7%A4%D7%99%D7%99%D7%A8', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%95%D7%9C%D7%95%D7%95%D7%98%D7%94', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%98%D7%99%D7%99%D7%A1%D7%AA_101', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Supermarine_Spitfire_operational_history', checked: '2026-10-11'}
+  anchors:
+  - place: Ekron (RAF Aqir)
+    lon: 34.82184
+    lat: 31.83947
+    from: '1948-05-20'
+    since: 20 May 1948
+    to: '1948-05-30'
+    end_basis: source
+    end_note: "en.wiki: the squadron left Ekron after its unassembled aircraft were strafed on 30 May. he.wiki keeps it at Ekron until mid-June (Modi Alon took off from Ekron on 3 June). The map shows no base from 30 May to mid-June, where the two disagree."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/101_Squadron_(Israel)', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%98%D7%99%D7%99%D7%A1%D7%AA_101', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Tel_Nof_Airbase', checked: '2026-10-11'}
+  - place: Herzliya strip
+    lon: 34.83398
+    lat: 32.18029
+    from: '1948-06-15'
+    since: mid-June 1948
+    to: '1948-11-21'
+    end_basis: source
+    end_note: "Eduard p. 54: the squadron moved to Qastina (Hatzor) on 21 November 1948; he.wiki: November 1948. en.wiki and Eduard p. 53's profile caption say October; he.wiki has Modi Alon killed landing at Herzliya on 16 October, which fits November."
+    note: "Both en.wiki (\"between June and October 1948\") and he.wiki (mid-June, in the first truce) have the squadron here from mid-June; en.wiki says it moved in after 30 May."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/101_Squadron_(Israel)', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%98%D7%99%D7%99%D7%A1%D7%AA_101', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Herzliya_Airport', checked: '2026-10-11'}
+  - place: Hatzor
+    lon: 34.72722
+    lat: 31.7625
+    from: '1948-11-21'
+    since: 21 November 1948
+    to: '1949-06-01'
+    precision: month
+    end_basis: source
+    end_note: "he.wiki: in June 1949 Hatzor closed and the squadron moved to Ramat David."
+    sources:
+    - {url: 'https://info.eduard.com/en/11-2025-1/strana-54', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%98%D7%99%D7%99%D7%A1%D7%AA_101', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Hatzor_Airbase', checked: '2026-10-11'}
+# --- Navy: the first ships (four ex-Aliyah Bet ships impounded in Haifa harbour; two are named and sourced here) ----
+- id: ins_haganah
+  name: INS Haganah (K-20)
+  number: Corvette, commissioned 1948
+  service: navy
+  formed: 1948 (taken over and rearmed by the navy)
+  sector: "Ex-HMCS Norsyd, a modified Flower-class corvette; as the Aliyah Bet ship Haganah it was moored in Haifa harbour until the state was founded, then taken over and rearmed by the navy in 1948."
+  wikipedia_only: true
+  status: draft
+  anchors:
+  - place: Haifa harbour
+    lon: 35.00448
+    lat: 32.82012
+    from: '1948-05-15'
+    to: '1949-02-24'
+    end_basis: front_armistice
+    front: egypt
+    note: "The navy began the war with four ex-Aliyah Bet ships impounded in Haifa harbour; Haganah fought Egyptian naval forces in Operation Yoav and returned to Haifa for repairs. The sources date its commissioning only to 1948, so the card says \"commissioned 1948\" and gives no start."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/HMCS_Norsyd', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Israeli_Navy', checked: '2026-10-11'}
+    - {url: 'https://www.wikidata.org/wiki/Q1376739', checked: '2026-10-11'}
+- id: ins_wedgwood
+  name: INS Wedgwood
+  number: Corvette, commissioned 1948
+  service: navy
+  formed: 1948 (commissioned after independence)
+  sector: "Ex-HMCS Beauharnois, a modified Flower-class corvette; impounded at Haifa until independence, then commissioned in the navy. It fought beside Haganah in Operation Yoav."
+  wikipedia_only: true
+  status: draft
+  to_verify:
+  - "Its Israeli name and pennant number: the Beauharnois article says it served as Hashomer, K 20, which the Norsyd article gives to Haganah; the Norsyd article calls it INS Wedgwood. The map shows the name Wedgwood and no pennant number."
+  anchors:
+  - place: Haifa harbour
+    lon: 35.00448
+    lat: 32.82012
+    from: '1948-05-15'
+    to: '1949-02-24'
+    end_basis: front_armistice
+    front: egypt
+    note: Its sourced actions were against the Egyptian forces (Operation Yoav).
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/HMCS_Beauharnois_(K540)', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/HMCS_Norsyd', checked: '2026-10-11'}
+    - {url: 'https://en.wikipedia.org/wiki/Israeli_Navy', checked: '2026-10-11'}
+    - {url: 'https://www.wikidata.org/wiki/Q1376739', checked: '2026-10-11'}

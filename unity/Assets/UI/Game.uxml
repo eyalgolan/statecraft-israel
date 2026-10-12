@@ -79,6 +79,10 @@
              card shrinks its text, which scrolls, and keeps its option buttons. -->
         <ui:VisualElement name="right-column" class="right-column" picking-mode="Ignore">
             <ui:VisualElement name="event-card" class="panel event-card">
+                <!-- The promo's header picture: an archival photograph of the event (EventImageCatalog), framed in gold, with its
+                     credit line as a caption strip along its bottom edge. Events without one show the minister's portrait in
+                     the head instead. -->
+                <ui:VisualElement name="event-photo" class="event-photo"><ui:Label name="event-photo-credit" class="event-photo-credit" /></ui:VisualElement>
                 <!-- A portrait-shaped thumbnail beside the heading, framed on the face (playtest 2, P2-3 and P2-5). -->
                 <ui:VisualElement class="event-head">
                     <ui:VisualElement name="event-image" class="event-image" />
@@ -95,6 +99,8 @@
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
             <ui:VisualElement class="right-gap" picking-mode="Ignore" />
+            <!-- What the map's region borders show while they are drawn (owner ruling 2026-10-11: "Mandate sub-districts, 1947"). -->
+            <ui:Label name="map-layer" class="map-layer" picking-mode="Ignore" />
             <ui:VisualElement name="minimap" class="panel minimap">
                 <ui:VisualElement name="minimap-image" class="minimap-image">
                     <ui:VisualElement name="minimap-view" class="minimap-view" picking-mode="Ignore" />
@@ -108,27 +114,57 @@
             <ui:VisualElement class="info-body">
                 <ui:Label name="info-title" class="title" />
                 <ui:Label name="info-subtitle" class="muted" />
+                <ui:Label name="info-region" class="muted" />
                 <ui:VisualElement class="gold-rule" />
                 <ui:Label name="info-settlements" />
                 <ui:Label name="info-placement" class="muted" />
                 <ui:VisualElement class="row">
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
+                    <ui:Button name="info-defence" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
-        <ui:VisualElement name="screen-cabinet" class="panel screen">
-            <ui:VisualElement class="screen-header"><ui:Label name="cabinet-government" class="title" /><ui:Label name="cabinet-coalition" class="muted" /></ui:VisualElement>
-            <ui:VisualElement class="row grow">
-                <ui:ScrollView name="cabinet-seats" class="grow" />
-                <ui:VisualElement name="cabinet-pick" class="grow">
-                    <ui:Label name="cabinet-pick-title" class="meter-name" />
-                    <ui:ScrollView name="cabinet-candidates" class="grow" />
+        <!-- The Cabinet as promo/final/04 (CabinetPresenter): a wide screen; the Prime Minister's card and the appointment
+             list at the side; the legislature's seats (Hemicycle) with its legend above a grid of person cards. -->
+        <ui:VisualElement name="screen-cabinet" class="panel screen screen-wide">
+            <ui:VisualElement class="screen-header"><ui:Label name="cabinet-government" class="title" /><ui:Label name="cabinet-legislature" class="muted" /></ui:VisualElement>
+            <ui:VisualElement name="cabinet-body" class="row grow">
+                <ui:VisualElement name="cabinet-side" class="cabinet-side">
+                    <ui:Button name="seat-prime_minister" class="seat pm-card" />
+                    <!-- The other offices the PM holds: listed on the card, selectable here (CabinetPresenter). -->
+                    <ui:VisualElement name="cabinet-pm-offices" class="pm-offices" />
+                    <ui:VisualElement name="cabinet-pick" class="grow">
+                        <ui:Label name="cabinet-pick-title" class="meter-name" />
+                        <ui:Label name="cabinet-pick-reason" class="reason" />
+                        <ui:ScrollView name="cabinet-candidates" class="grow" />
+                    </ui:VisualElement>
+                    <ui:Label name="cabinet-status" class="muted" />
+                </ui:VisualElement>
+                <ui:VisualElement name="cabinet-main" class="cabinet-main grow">
+                    <ui:VisualElement name="cabinet-house" class="cabinet-house">
+                        <ui:VisualElement class="hemicycle-box">
+                            <Statecraft.Game.UI.Hemicycle name="cabinet-hemicycle" class="hemicycle" />
+                            <ui:VisualElement class="hemicycle-count" picking-mode="Ignore">
+                                <ui:Label name="cabinet-house-size" class="house-size" />
+                                <ui:Label name="cabinet-house-unit" class="house-unit" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="house-legend">
+                            <ui:Label name="cabinet-coalition" class="house-coalition" />
+                            <Statecraft.Game.UI.UiBar name="cabinet-stability" class="ui-bar--stability house-stability" />
+                            <ui:Label name="cabinet-opposition" class="muted" />
+                            <ui:Label name="cabinet-majority" class="muted" />
+                            <ui:Label name="cabinet-largest" class="muted" />
+                            <ui:VisualElement name="cabinet-parties" class="party-chips" />
+                        </ui:VisualElement>
+                        <Statecraft.Game.UI.UiFrame shadow="false" corners="false" />
+                    </ui:VisualElement>
+                    <ui:ScrollView name="cabinet-seats" class="grow" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="cabinet-status" class="muted" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-budget" class="panel screen">
@@ -143,35 +179,89 @@
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
-        <ui:VisualElement name="screen-defence" class="panel screen">
+        <!-- Defence as promo/final/08 (DefencePresenter): leadership, the escalation ladder and the reserve call-up side by
+             side (wrapping in a narrow window), then the defence share of the budget. Only what the sim models. -->
+        <ui:VisualElement name="screen-defence" class="panel screen screen-wide">
             <ui:VisualElement class="screen-header"><ui:Label text="Defence" class="title" /><ui:Label name="defence-command" class="muted" /></ui:VisualElement>
-            <ui:Label text="Security level" class="meter-name" />
-            <ui:VisualElement name="ladder">
-                <ui:VisualElement name="rung-5" class="rung"><ui:Label name="rung-5-name" class="grow" /><ui:Label name="rung-5-turn" class="muted" /></ui:VisualElement>
-                <ui:VisualElement name="rung-4" class="rung"><ui:Label name="rung-4-name" class="grow" /><ui:Label name="rung-4-turn" class="muted" /></ui:VisualElement>
-                <ui:VisualElement name="rung-3" class="rung"><ui:Label name="rung-3-name" class="grow" /><ui:Label name="rung-3-turn" class="muted" /></ui:VisualElement>
-                <ui:VisualElement name="rung-2" class="rung"><ui:Label name="rung-2-name" class="grow" /><ui:Label name="rung-2-turn" class="muted" /></ui:VisualElement>
-                <ui:VisualElement name="rung-1" class="rung"><ui:Label name="rung-1-name" class="grow" /><ui:Label name="rung-1-turn" class="muted" /></ui:VisualElement>
-            </ui:VisualElement>
-            <ui:Label name="ceasefire" class="muted" />
-            <ui:VisualElement class="row">
-                <ui:Button name="de-escalate" text="Lower the level" />
-                <ui:Button name="escalate" text="Raise the level" />
-                <ui:Label name="order-pending" class="muted grow" />
-            </ui:VisualElement>
-            <ui:Label text="Reserve call-up" class="meter-name" />
-            <ui:VisualElement class="row">
-                <ui:Button name="mob-down" text="-5%" />
-                <ui:Label name="mob-level" class="grow" />
-                <ui:Button name="mob-up" text="+5%" />
-            </ui:VisualElement>
-            <ui:Label name="mob-cost" class="muted" />
+            <ui:ScrollView name="defence-body" class="grow">
+                <ui:VisualElement class="defence-row">
+                    <ui:VisualElement name="defence-leadership" class="defence-panel defence-leadership">
+                        <ui:Label name="defence-title-leadership" class="section-title" />
+                        <ui:VisualElement class="leaders">
+                            <ui:VisualElement name="lead-prime_minister" class="leader" />
+                            <ui:VisualElement name="lead-defense_minister" class="leader" />
+                            <ui:VisualElement name="lead-chief_of_staff" class="leader" />
+                        </ui:VisualElement>
+                        <Statecraft.Game.UI.UiFrame shadow="false" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="defence-ladder" class="defence-panel defence-ladder">
+                        <ui:Label name="defence-title-ladder" class="section-title" />
+                        <ui:VisualElement name="ladder">
+                            <ui:VisualElement name="rung-5" class="rung"><ui:Label name="rung-5-name" class="grow rung-name" /><ui:Label name="rung-5-turn" class="muted rung-turn" /></ui:VisualElement>
+                            <ui:VisualElement name="rung-4" class="rung"><ui:Label name="rung-4-name" class="grow rung-name" /><ui:Label name="rung-4-turn" class="muted rung-turn" /></ui:VisualElement>
+                            <ui:VisualElement name="rung-3" class="rung"><ui:Label name="rung-3-name" class="grow rung-name" /><ui:Label name="rung-3-turn" class="muted rung-turn" /></ui:VisualElement>
+                            <ui:VisualElement name="rung-2" class="rung"><ui:Label name="rung-2-name" class="grow rung-name" /><ui:Label name="rung-2-turn" class="muted rung-turn" /></ui:VisualElement>
+                            <ui:VisualElement name="rung-1" class="rung"><ui:Label name="rung-1-name" class="grow rung-name" /><ui:Label name="rung-1-turn" class="muted rung-turn" /></ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Label name="ceasefire" class="muted wrap" />
+                        <ui:VisualElement class="row">
+                            <ui:Button name="de-escalate" text="Lower the level" />
+                            <ui:Button name="escalate" text="Raise the level" />
+                        </ui:VisualElement>
+                        <ui:Label name="order-pending" class="muted" />
+                        <Statecraft.Game.UI.UiFrame shadow="false" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="defence-callup" class="defence-panel defence-callup">
+                        <ui:Label name="defence-title-callup" class="section-title" />
+                        <ui:Label name="mob-percent" class="big-figure" />
+                        <Statecraft.Game.UI.UiBar name="mob-bar" class="ui-bar--mobilization big-bar" />
+                        <ui:Label name="mob-level" class="wrap" />
+                        <ui:VisualElement class="row">
+                            <ui:Button name="mob-down" text="-5%" />
+                            <ui:Button name="mob-up" text="+5%" />
+                        </ui:VisualElement>
+                        <ui:Label name="mob-cost" class="muted wrap" />
+                        <Statecraft.Game.UI.UiFrame shadow="false" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="defence-budget" class="defence-panel defence-budget">
+                    <ui:Label name="defence-title-budget" class="section-title budget-title" />
+                    <Statecraft.Game.UI.UiBar name="defence-budget-bar" class="ui-bar--budget big-bar grow" />
+                    <ui:Label name="defence-budget-share" class="budget-share" />
+                    <Statecraft.Game.UI.UiFrame shadow="false" />
+                </ui:VisualElement>
+            </ui:ScrollView>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-why" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label text="Why did this happen?" class="title" /><ui:Label name="why-turn" class="muted" /></ui:VisualElement>
             <ui:ScrollView name="why-rows" class="grow" />
             <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
+        <!-- The start screen (StartScreenPresenter): shown over the started game before its first turn (never in automated
+             runs). The painting is AI-generated concept art (ASSETS.yaml), with no identifiable person. The two quotations
+             are the Declaration of the Establishment of the State of Israel, word for word: the official Hebrew (Iton
+             Rishmi No. 1, 14 May 1948) with the official English translation under each line; StartScreenTests checks them
+             against docs/sources/declaration-1948. The Hebrew labels use the advanced text generator, which lays out
+             right-to-left text (#193), with a right-to-left base direction (each line starts with a neutral ellipsis or ends with a full stop, which would otherwise take the left-to-right default). Drawn above the HUD and below the toast, which carries New Game's prompt. -->
+        <ui:VisualElement name="start-screen" class="start-screen">
+            <ui:VisualElement name="start-art" class="start-art" picking-mode="Ignore" />
+            <ui:VisualElement name="start-body" class="start-body" picking-mode="Ignore">
+                <ui:VisualElement name="start-panel" class="panel start-panel">
+                    <ui:Label name="start-title" text="Statecraft: Israel" class="start-title" />
+                    <ui:VisualElement class="gold-rule start-rule" />
+                    <ui:Label name="start-he-proclamation" text="…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל." class="start-he" language-direction="RTL" />
+                    <ui:Label name="start-en-proclamation" text="…HEREBY DECLARE THE ESTABLISHMENT OF A JEWISH STATE IN ERETZ-ISRAEL, TO BE KNOWN AS THE STATE OF ISRAEL." class="start-en" />
+                    <ui:Label name="start-he-date" text="בעיר תל־אביב, היום הזה, ערב שבת, ה׳ אייר תש״ח, 14 במאי 1948." class="start-he start-he-date" language-direction="RTL" />
+                    <ui:Label name="start-en-date" text="IN THE CITY OF TEL-AVIV, ON THIS SABBATH EVE, THE 5TH DAY OF IYAR, 5708 (14TH MAY, 1948)." class="start-en" />
+                    <ui:Label name="start-source" text="From the Declaration of the Establishment of the State of Israel (Official Gazette No. 1, 14 May 1948) and its official English translation. Painting: AI-generated." class="start-source" />
+                    <ui:VisualElement name="start-actions" class="start-actions">
+                        <ui:Button name="start-continue" text="Continue" class="start-button" />
+                        <ui:Button name="start-new-game" text="New Game" class="start-button" />
+                    </ui:VisualElement>
+                    <Statecraft.Game.UI.UiFrame />
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="toast" class="panel toast" />
     </ui:VisualElement>

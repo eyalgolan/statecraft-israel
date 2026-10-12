@@ -24,7 +24,7 @@ MonoBehaviour:
     focusY: 0.3
   - personId: sharett
     image: {fileID: 2800000, guid: f0ed7522ce11d4c0db50dafd321df604, type: 3}
-    focusY: 0.22
+    focusY: 0.3
   - personId: shapira
     image: {fileID: 2800000, guid: 01b0755a76e4d4a23843d26ac45b200f, type: 3}
     focusY: 0.42
@@ -60,6 +60,9 @@ MonoBehaviour:
     focusY: 0.3
   - personId: weizmann
     image: {fileID: 2800000, guid: 0c84d13281034087ba62fa4a45d82f6f, type: 3}
+    focusY: 0.32
+  - personId: ben_zvi
+    image: {fileID: 2800000, guid: 9b1c33533567441087c7756343c9979f, type: 3}
     focusY: 0.32
   - personId: dori
     image: {fileID: 2800000, guid: 7ec048d34e0e45a7adc5115351c9d4df, type: 3}

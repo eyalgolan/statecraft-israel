@@ -160,16 +160,32 @@ public static class MapCapture
 
     /// <summary>Renders each promo pose (PromoPose.All) at 1920x1080 once per quality tier (0 = Mobile, the WebGL tier;
     /// 1 = PC) into &lt;-captureDir&gt; (default captures/visual/editor) as &lt;tier&gt;-&lt;pose&gt;.png. Editor renders show no UI
-    /// Toolkit labels; tools/art_checkpoint.sh pairs them with the WebGL screenshots, which do. With -units it adds the unit
-    /// art slice (UnitShowcase), still.</summary>
+    /// Toolkit labels; tools/art_checkpoint.sh pairs them with the WebGL screenshots, which do. Units only with -units (from
+    /// tools/art_checkpoint.sh --units), as ?shot&amp;units shows them, so plain renders stay comparable across tracks: then
+    /// the unit art slice (UnitShowcase) and the units in play as a new game starts (UnitLayer, as the player shows them
+    /// on its first turn), both still.</summary>
     public static void Promo()
     {
         var args = System.Environment.GetCommandLineArgs();
         int at = System.Array.IndexOf(args, "-captureDir");
         var dir = at >= 0 && at + 1 < args.Length ? args[at + 1] : Path.Combine(CaptureDir, "visual", "editor");
         var map = OpenAndBuild();
-        // The unit art slice only when asked (-units, from tools/art_checkpoint.sh --units), as ?shot&units shows it.
-        if (System.Array.IndexOf(args, "-units") >= 0) Statecraft.Game.Map.Units.UnitShowcase.Spawn(map, still: true);
+        // The unit art slice and the units in play only when asked (-units, from tools/art_checkpoint.sh --units).
+        if (System.Array.IndexOf(args, "-units") >= 0)
+        {
+            Statecraft.Game.Map.Units.UnitShowcase.Spawn(map, still: true);
+            ShowStartUnits(map);
+        }
+        // The 1948 sub-districts and the 1949 armistice lines, as play draws them (GameRoot.Begin), so the editor renders pair
+        // with the WebGL shots: on the game's start by default, or on -regionsDate yyyy-MM-dd (a 1949 date shows the
+        // armistice zones in force then).
+        var subdistricts = Subdistricts1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName)));
+        var regions = new MapRegions(subdistricts, Armistice1949.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Armistice1949.FileName))));
+        int dateAt = System.Array.IndexOf(args, "-regionsDate");
+        var date = dateAt >= 0 && dateAt + 1 < args.Length
+            ? System.DateTime.ParseExact(args[dateAt + 1], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
+            : subdistricts.ShownFrom;
+        regions.Apply(date);
         // The border renderer's synthetic proof only when asked (-borderproof, from tools/art_checkpoint.sh --borderproof).
         if (System.Array.IndexOf(args, "-" + BorderProof.Flag) >= 0) BorderProof.Show(map);
         var rig = Camera.main.GetComponent<CameraRig>();
@@ -187,6 +203,25 @@ public static class MapCapture
             }
         }
         finally { QualitySettings.SetQualityLevel(saved, true); }
+    }
+
+    /// <summary>The units in play as a new game starts (golden seed, historical mode): what the player draws on turn 1, or, with
+    /// -unitsDate, on that day.</summary>
+    static void ShowStartUnits(MapScene map)
+    {
+        var content = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
+        var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, units, content.Hexes, still: true);
+        var state = Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical);
+        // -unitsDate YYYY-MM-DD: the units as on that day (a render of a unit outside the first turn; the sim never sees it).
+        var args = System.Environment.GetCommandLineArgs();
+        int at = System.Array.IndexOf(args, "-unitsDate");
+        if (at >= 0 && at + 1 < args.Length)
+        {
+            state = state.Clone();
+            state.Date = Statecraft.Game.Map.Units.UnitData.Day(args[at + 1]);
+        }
+        layer.Show(content, state);
     }
 
     /// <summary>PromoPose.All, plus any "-extraPose name:lon:lat:distanceM:yaw" given (close looks while tuning the art, for
@@ -253,6 +288,49 @@ public static class MapCapture
         {
             QualitySettings.SetQualityLevel(saved, true);
             Statecraft.Game.Map.Kits.KitScale.Reset();
+        }
+    }
+
+    /// <summary>Close-ups of the unit aircraft (the Avia S-199 and the Spitfire) alone, top and side, at a size where the
+    /// insignia read, into -captureDir (default captures/visual/aircraft) as &lt;aircraft&gt;-&lt;view&gt;.png: for checking the
+    /// markings against the sourced photographs (docs/units.md).</summary>
+    public static void Aircraft()
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        int at = System.Array.IndexOf(args, "-captureDir");
+        var dir = at >= 0 && at + 1 < args.Length ? args[at + 1] : Path.Combine(CaptureDir, "visual", "aircraft");
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var sun = new GameObject("Sun").AddComponent<Light>();
+        sun.type = LightType.Directional; sun.intensity = 1.2f; sun.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat; RenderSettings.ambientLight = new Color(0.55f, 0.55f, 0.55f);
+        var cam = new GameObject("Camera").AddComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.82f, 0.80f, 0.74f); cam.fieldOfView = 30f;
+        var paint = new Material(Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.MiniatureResource));
+        paint.SetTexture("_BaseMap", Statecraft.Game.Map.Units.UnitPalette.MakeTexture());
+        foreach (var (name, airframe, prop, hub) in new[]
+        {
+            ("avia-s199", Statecraft.Game.Map.Units.UnitModels.AviaS199("s199"), Statecraft.Game.Map.Units.UnitModels.S199Propeller("p"), Statecraft.Game.Map.Units.UnitModels.S199PropellerHub),
+            ("spitfire", Statecraft.Game.Map.Units.UnitModels.Spitfire("spit"), Statecraft.Game.Map.Units.UnitModels.SpitfirePropeller("p"), Statecraft.Game.Map.Units.UnitModels.SpitfirePropellerHub),
+        })
+        {
+            var plane = new GameObject(name);
+            var body = new GameObject("Airframe"); body.transform.SetParent(plane.transform, false);
+            body.AddComponent<MeshFilter>().sharedMesh = airframe; body.AddComponent<MeshRenderer>().sharedMaterial = paint;
+            var p = new GameObject("Propeller"); p.transform.SetParent(plane.transform, false); p.transform.localPosition = hub;
+            p.AddComponent<MeshFilter>().sharedMesh = prop; p.AddComponent<MeshRenderer>().sharedMaterial = paint;
+            foreach (var (view, pos, look) in new[]
+            {
+                ("top", new Vector3(0f, 22f, -0.5f), new Vector3(0f, 0f, -0.5f)),
+                ("bottom", new Vector3(0f, -22f, -0.5f), new Vector3(0f, 0f, -0.5f)),
+                ("side-left", new Vector3(-20f, 2.5f, -1f), new Vector3(0f, 0f, -1f)),
+                ("three-quarter", new Vector3(-13f, 9f, 13f), Vector3.zero),
+            })
+            {
+                cam.transform.position = pos;
+                cam.transform.LookAt(look, Mathf.Abs(pos.y) > 15f ? Vector3.forward : Vector3.up);
+                Save(cam, 1600, 1000, Path.Combine(dir, $"{name}-{view}.png"));
+            }
+            Object.DestroyImmediate(plane);
         }
     }
 

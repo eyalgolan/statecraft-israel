@@ -500,8 +500,10 @@ public class PromoHudTests
         finally { nav.Dispose(); }
     }
 
-    /// <summary>Integration bug B5: in the Cabinet the "Appoint to ..." heading has its own column, clear of the portrait
-    /// grid and its scroll bar, and does not wrap a word to a line.</summary>
+    /// <summary>Integration bug B5, for the promo Cabinet (promo-screens): the "Appoint to ..." heading sits in the side
+    /// column under the Prime Minister's card, clear of the portrait grid and its scroll bar and of the candidate list's
+    /// scroll bar, inside the column; with the longest office title it breaks only between words (no word is wider than
+    /// the column) and takes at most two lines.</summary>
     [UnityTest]
     public IEnumerator TheAppointHeadingHasRoom()
     {
@@ -513,13 +515,31 @@ public class PromoHudTests
         try
         {
             nav.Open("cabinet");
-            cabinet.Select("health_minister");
-            for (int i = 0; i < 5; i++) yield return null;
-            var title = ui.Q<Label>("cabinet-pick-title");
-            StringAssert.StartsWith("Appoint to ", title.text);
-            var seats = ui.Q<ScrollView>("cabinet-seats").worldBound;
-            Assert.GreaterOrEqual(title.worldBound.xMin, seats.xMax, $"the heading {title.worldBound} starts inside the portrait grid {seats}");
-            Assert.LessOrEqual(title.worldBound.height, title.resolvedStyle.fontSize * 2.2f, $"'{title.text}' wraps to more than one line ({title.worldBound.height:0} px)");
+            var longest = Cabinet.Lineup(C, bridge.State).Select(x => x.Office).OrderByDescending(o => o.Title.Length).First();
+            foreach (var office in new[] { "health_minister", longest.Id })
+            {
+                cabinet.Select(office);
+                for (int i = 0; i < 5; i++) yield return null;
+                var title = ui.Q<Label>("cabinet-pick-title");
+                StringAssert.StartsWith("Appoint to ", title.text);
+                var r = title.worldBound;
+                var side = ui.Q<VisualElement>("cabinet-side").worldBound;
+                var grid = ui.Q<ScrollView>("cabinet-seats");
+                Assert.IsFalse(r.Overlaps(grid.worldBound), $"{office}: the heading {r} overlaps the portrait grid {grid.worldBound}");
+                Assert.IsFalse(r.Overlaps(grid.verticalScroller.worldBound), $"{office}: the heading overlaps the grid's scroll bar");
+                var list = ui.Q<ScrollView>("cabinet-candidates");
+                if (list.verticalScroller.resolvedStyle.display == DisplayStyle.Flex)
+                    Assert.IsFalse(r.Overlaps(list.verticalScroller.worldBound), $"{office}: the heading overlaps the candidates' scroll bar");
+                Assert.GreaterOrEqual(r.xMin, side.xMin - 0.5f, $"{office}: the heading leaves the side column");
+                Assert.LessOrEqual(r.xMax, side.xMax + 0.5f, $"{office}: the heading leaves the side column");
+                foreach (var word in title.text.Split(' '))
+                {
+                    var w = title.MeasureTextSize(word, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+                    Assert.LessOrEqual(w, title.contentRect.width + 0.5f, $"{office}: '{word}' ({w:0} px) is wider than the heading ({title.contentRect.width:0} px) and breaks");
+                }
+                var line = title.MeasureTextSize("A", 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).y;
+                Assert.LessOrEqual(title.contentRect.height, line * 2f + 1f, $"{office}: '{title.text}' takes more than two lines ({title.contentRect.height:0} px, line {line:0} px)");
+            }
         }
         finally { cabinet.Dispose(); nav.Dispose(); }
     }

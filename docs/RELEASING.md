@@ -27,7 +27,8 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
 
    `package_web.sh` copies the licence and attribution files into the build folder, then runs
    `tools/package_release.py`, M3's sensitivity gate, which zips the folder and prints `PACKAGED …` or
-   `PACKAGE REFUSED …`. It then lists the zip, and prints the SHA-256 and `OK: notices inside …`. If it prints anything
+   `PACKAGE REFUSED …`. It refuses a build that was not made with `-shareable` (the build's `event-photos.json` says
+   so) or that carries an unreviewed sensitive event photograph. It then lists the zip, and prints the SHA-256 and `OK: notices inside …`. If it prints anything
    else, stop. This one zip is the file for GitHub Releases and for the M4 itch.io upload (`docs/m3-release.md`); never
    zip a build by hand.
 6. **Tag and publish (owner):**
@@ -95,7 +96,7 @@ assets or content for commercial use. Finish the release gates above first; the 
 
 - [ ] Capture at least five gameplay screenshots, minimum 1920 x 1080, 16:9, from the real release build, not concept art,
   pre-rendered cinematic stills or marketing images. Record the build commit and zip SHA-256 with the capture date.
-  The README build shots (`docs/images/build-m3-*.jpg`, 1568 x 752 and not 16:9) do not meet this minimum. Show the
+  The README build shots (`docs/images/build-m3-*.jpg`, 1568 x 882) are smaller than this minimum. Show the
   actual UI when useful; do not pass off `promo/final/03-gameplay-1936.png` or the AI likenesses in promo/final/04 and
   08 as gameplay. Review each screenshot's age-suitability flag individually; never mark a sensitive scene suitable for
   all ages just to gain placement. If at least four genuinely qualify, mark them suitable for all ages; with fewer

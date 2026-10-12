@@ -197,3 +197,42 @@ def test_accuracy_script_pure_parts():
     assert np.all(np.linalg.norm(np.diff(d, axis=0), axis=1) <= 20.01)
     assert ra.valid_1948({"start_date": "1937-05"}) and ra.valid_1948({})
     assert not ra.valid_1948({"start_date": "1975"}) and not ra.valid_1948({"end_date": "1948-01"})
+
+
+def sawtooth(points: list, deg: float = 15.0, short_m: float = 600.0) -> int:
+    """Kinks that zigzag: consecutive turns over `deg` in opposite directions, with a segment under `short_m` between
+    them (review B14's measure; a real S-bend has longer legs)."""
+    k = math.cos(math.radians(31.8))
+    p = [(lon * 111320 * k, lat * 110570) for lon, lat in points]
+    heads = [math.atan2(b[1] - a[1], b[0] - a[0]) for a, b in zip(p, p[1:])]
+    lens = [math.dist(a, b) for a, b in zip(p, p[1:])]
+    turns = [(h2 - h1 + math.pi) % (2 * math.pi) - math.pi for h1, h2 in zip(heads, heads[1:])]
+    lim = math.radians(deg)
+    return sum(1 for i in range(len(turns) - 1)
+               if abs(turns[i]) > lim and abs(turns[i + 1]) > lim and turns[i] * turns[i + 1] < 0 and lens[i + 1] < short_m)
+
+
+def test_no_sawtooth_on_straight_lines():
+    """Review B14: the trace's 100-300 m wobble drew kinks every few hundred metres (Hadera-Haifa had 20 zigzags in 92
+    points, the main line south 54 in 185). Now the near-straight plain railways have at most 3, and no route more than
+    15% of its points (the rest are real bends: the Sorek canyon, the hill roads, the Jericho descent)."""
+    for r in PATHS:
+        n = sawtooth(r["points"])
+        assert n <= 0.15 * len(r["points"]), (r["id"], n, len(r["points"]))
+        if r["id"] in ("hadera_haifa_railway", "kantara_main_line_south", "eastern_railway", "haifa_beirut_railway"):
+            assert n <= 3, (r["id"], n)
+
+
+def test_gaussian_smooth_flattens_a_wobble_and_keeps_a_bend():
+    rng = np.random.default_rng(7)
+    xs = np.arange(0, 6000, rt.RESAMPLE_M)
+    wobble = [(x, 40.0 * math.sin(x / 120.0) + rng.normal(0, 5)) for x in xs]   # a 750 m wobble on a straight line
+    out = np.asarray(rt.gaussian_smooth(wobble, rt.RESAMPLE_M))
+    assert np.abs(out[10:-10, 1]).max() < 15.0                                   # 40 m swings down to under 15 m
+    assert out[0] == pytest.approx(wobble[0]) and out[-1] == pytest.approx(wobble[-1])
+    r = 400.0                                                                    # a tight bend, like the Sorek meanders
+    arc = [(r * math.cos(a), r * math.sin(a)) for a in np.arange(0, math.pi, rt.RESAMPLE_M / r)]
+    out = np.asarray(rt.gaussian_smooth(arc, rt.RESAMPLE_M))
+    radii = np.hypot(out[5:-5, 0], out[5:-5, 1])
+    assert radii.min() > 0.9 * r, radii.min()                                    # the bend keeps its shape
+    assert rt.gaussian_smooth(arc, rt.RESAMPLE_M) == rt.gaussian_smooth(arc, rt.RESAMPLE_M)   # deterministic

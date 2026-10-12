@@ -90,6 +90,9 @@ public class RealContentTests
     [InlineData("deputy_agriculture_minister", "efrati", 1951, 11, 4, 1952, 6, 25)]
     [InlineData("deputy_transportation_minister", "shari", 1951, 4, 2, 1951, 10, 8)]
     [InlineData("deputy_education_minister", "kahana", 1951, 11, 4, 1952, 12, 24)]
+    [InlineData("deputy_religions_minister", "warhaftig", 1954, 6, 15, 1955, 6, 29)]
+    [InlineData("deputy_welfare_minister", "ben_meir", 1953, 1, 5, 1954, 1, 26)]
+    [InlineData("deputy_trade_minister", "susayeff", 1953, 6, 15, 1954, 1, 26)]
     public void DeputyTitlesHaveDatedTermsAndNoCabinetPowers(string office, string person,
         int y1, int m1, int d1, int y2, int m2, int d2)
     {
@@ -123,7 +126,7 @@ public class RealContentTests
         Assert.Equal("kaplan", Offices.Holder(C, "deputy_prime_minister", end.AddDays(-1))?.Id);
         Assert.Null(Offices.Holder(C, "deputy_prime_minister", end));
         Assert.Null(Offices.Holder(C, "minister_without_portfolio", end));
-        // The new Finance/Agriculture terms stay open until #26 adds the Fourth Government (24 December 1952).
+        // The same holders continue into the Fourth Government (24 December 1952).
         Assert.Equal("eshkol", Offices.Holder(C, "finance_minister", new DateTime(1952, 12, 24))?.Id);
         Assert.Equal("naftali", Offices.Holder(C, "agriculture_minister", new DateTime(1952, 12, 24))?.Id);
         var state = Simulation.NewGame(C, 42, Mode.Historical);
@@ -178,7 +181,8 @@ public class RealContentTests
         Assert.Equal("dori", Offices.Holder(C, "chief_of_staff", new DateTime(1949, 11, 8))!.Id);
         Assert.Equal("yadin", Offices.Holder(C, "chief_of_staff", new DateTime(1949, 11, 9))!.Id);
         Assert.Equal("dov_yosef", Offices.Holder(C, "rationing_minister", new DateTime(1949, 6, 1))!.Id);
-        Assert.Null(Offices.Holder(C, "rationing_minister", new DateTime(1949, 4, 25)));   // ministry created 26 April 1949
+        Assert.Null(Offices.Holder(C, "rationing_minister", new DateTime(1949, 3, 9)));    // First Government took office 10 March 1949
+        Assert.Equal("dov_yosef", Offices.Holder(C, "rationing_minister", new DateTime(1949, 3, 10))!.Id);
         Assert.Equal((30, 37), PoliticsSystem.CoalitionSeats(C, new DateTime(1948, 6, 1)));
         Assert.Equal((73, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1949, 6, 1)));
         Assert.Equal(101828, C.Aliyah[0].Origins.Values.Sum());
@@ -219,8 +223,8 @@ public class RealContentTests
     public void BenGurionTransportationTermEndsAtFourthGovernmentHandover()
     {
         Assert.Equal("ben_gurion", Offices.Holder(C, "transportation_minister", new DateTime(1952, 12, 23))!.Id);
-        Assert.Null(Offices.Holder(C, "transportation_minister", new DateTime(1952, 12, 24)));
-        Assert.Null(Offices.Holder(C, "transportation_minister", new DateTime(1953, 1, 1)));
+        Assert.Equal("serlin", Offices.Holder(C, "transportation_minister", new DateTime(1952, 12, 24))!.Id);
+        Assert.Equal("yosef_sapir", Offices.Holder(C, "transportation_minister", new DateTime(1952, 12, 29))!.Id);
         var term = C.People.Single(p => p.Id == "ben_gurion").Offices.Single(t => t.Office == "transportation_minister");
         Assert.Equal(new DateTime(1952, 12, 24), term.To);
         Assert.NotEmpty(term.Sources);
