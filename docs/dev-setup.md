@@ -14,7 +14,7 @@
 
 ## Without Unity (Linux, a container, a sandbox)
 
-Unity, a Unity licence and macOS are only needed for `unity/`. The sim, the content and the policy checks run headless. These are the commands CI runs (`.github/workflows/ci.yml`), with the .NET SDK 10.0.401 and `uv`:
+Unity, a Unity licence and macOS are only needed for `unity/`. The sim, the content and the policy checks run headless, also in the dev container (`.devcontainer/README.md`, for a local container or a Codespace). These are the commands CI runs (`.github/workflows/ci.yml`), with the .NET SDK 10.0.401 and `uv`:
 
 | Check | Command | CI job |
 |---|---|---|
