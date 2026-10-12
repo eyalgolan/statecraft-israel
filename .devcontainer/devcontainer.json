@@ -13,7 +13,9 @@
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12",
       "installTools": false
-    }
+    },
+    // SSH server: `gh codespace ssh` needs it, so agents and CLI users can run the headless checks.
+    "ghcr.io/devcontainers/features/sshd:1": {}
   },
   // git comes with the base image. uv 0.12.5 is installed in the Dockerfile.
   // Restore the solution so `dotnet test` starts from a warm cache.

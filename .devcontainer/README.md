@@ -17,6 +17,8 @@ When CI changes one of these versions, change it here too. Dependabot bumps the 
 
 `postCreateCommand` runs `dotnet restore sim/Statecraft.sln`.
 
+The container has an SSH server, so `gh codespace ssh -c <name>` can run the checks.
+
 ## Run the checks
 
 ```bash
