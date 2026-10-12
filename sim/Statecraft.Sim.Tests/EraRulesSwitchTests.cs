@@ -145,35 +145,36 @@ eras:
   - id: founding
     name: The Founding
     from: 1948-05-15
-    to: 1948-06-01
+    to: 1948-06-05
   - id: later
     name: A Later Chapter
-    from: 1948-06-01
+    from: 1948-06-05
     to: 1957-01-01
 " });
         Directory.CreateDirectory(Path.Combine(dir, "rules"));
         File.WriteAllText(Path.Combine(dir, "rules", "later.yaml"), "attention_per_turn: 7.5\ntax_per_capita_per_year: 1.0\n");
         var c = ContentLoader.Load(dir);
-        var boundary = new DateTime(1948, 6, 1);
+        var boundary = new DateTime(1948, 6, 5);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         Assert.Equal(c.Rules.AttentionPerTurn, s.Attention);
-        var crossed = false;
+        var lengths = new List<int>();
         while (s.Date < boundary.AddDays(7))   // through the first whole turn of the new era (the fixture's ceasefire ends the weekly turns after it)
         {
             var start = s.Date;
             var step = Simulation.Step(c, s, new List<Command>());
             var end = step.State.Date;
-            Assert.Equal(7, (end - start).Days);   // weekly turns; no turn here is adjusted to the boundary yet (spec 4.1)
+            var days = (end - start).Days;
+            lengths.Add(days);
             var tax = start < boundary ? c.Rules.TaxPerCapitaPerYear : 1.0;
-            var expected = (tax - c.Rules.SpendingPerCapitaPerYear) * step.State.TotalPopulation * (7 / 365.0)
-                - c.Rules.MobilizationCostPerYear * s.Mobilization * (7 / 365.0);
+            var expected = (tax - c.Rules.SpendingPerCapitaPerYear) * step.State.TotalPopulation * (days / 365.0)
+                - c.Rules.MobilizationCostPerYear * s.Mobilization * (days / 365.0);
             var treasury = step.Why.Single(w => w.System == "economy" && w.Target == "treasury").Delta;
             Assert.True(Math.Abs(expected - treasury) < 1e-9, $"{start:yyyy-MM-dd}: treasury {treasury}, expected {expected}");
             Assert.Equal(end < boundary ? c.Rules.AttentionPerTurn : 7.5, step.State.Attention);
-            crossed |= start < boundary && end > boundary;
             s = step.State;
         }
-        Assert.True(crossed);
+        // 22 May + 7 would leave 7 days, under 14, so that turn runs 14 days to the boundary (spec 4.1); the rest are weeks.
+        Assert.Equal(new[] { 7, 14, 7 }, lengths);
     }
 
     /// <summary>The only places the sim reads the base rules directly are the values <c>NewGame</c> reads once (an era
@@ -183,7 +184,7 @@ eras:
     public void OnlyStartValuesAndMapActionNamesReadTheBaseRulesDirectly()
     {
         var simDir = Path.Combine(Directory.GetParent(RealContentTests.ContentRoot())!.FullName, "sim", "Statecraft.Sim");
-        var allowed = new HashSet<string> { "Start", "TreasuryStart", "FxStart", "BudgetStart", "InitialPopulation", "StartRung", "MapActions" };
+        var allowed = new HashSet<string> { "Start", "TreasuryStart", "FxStart", "BudgetStart", "InitialPopulation", "StartRung", "MapActions", "BudgetOwners" };
         var bad = new List<string>();
         foreach (var f in Directory.GetFiles(simDir, "*.cs", SearchOption.AllDirectories))
         {

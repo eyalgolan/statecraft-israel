@@ -73,7 +73,7 @@ namespace Statecraft.Sim
         public static string? Allocate(Content c, GameState s, Dictionary<string, double> shares)
         {
             if (shares == null) return "Budget shares are required";
-            var unknown = shares.Keys.OrderBy(k => k, StringComparer.Ordinal).FirstOrDefault(k => c.Offices.All(o => o.Id != k));   // ordinal: play and replay name the same office
+            var unknown = shares.Keys.OrderBy(k => k, StringComparer.Ordinal).FirstOrDefault(k => c.Offices.All(o => o.Id != k) && !c.Rules.BudgetStart.ContainsKey(k));   // ordinal: play and replay name the same office
             if (unknown != null) return "The budget names a ministry that does not exist in this game";
             if (shares.Values.Any(v => double.IsNaN(v) || double.IsInfinity(v))) return "Budget shares must be finite numbers";
             if (!new HashSet<string>(shares.Keys).SetEquals(c.Rules.BudgetStart.Keys))

@@ -8,11 +8,24 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Budget lines owned by office and date (`budget_owners` in `rules.yaml`, issue #108): the Immigration line (its id stays
+  `prime_minister`) belongs to the Minister of Immigration until 7 October 1951 and to the Prime Minister from 8 October
+  1951. A line scales effects through the owner of the day, and the Budget screen names that office. An office with
+  several holders cannot own a line. The goldens do not move.
+- Coalition changes inside a government's term (`coalition_changes` in governments.yaml, each with a date and sources).
+  Seats, majority, the Cabinet's party rule and the causes use the coalition of the day. Adds Agudat Yisrael and Poalei
+  Agudat Yisrael leaving the Third Government (18 September 1952, so 60 of 120 seats and no majority until 24 December),
+  the General Zionists leaving the Fourth (25 May 1953) and returning (3 June 1953), and the Progressive Party joining
+  the Fifth (1 February 1954). The goldens do not move (fixes #278).
+- A turn now ends on the next era's start date, not only on the last era's end (chapters spec 4.1). A turn that would
+  leave under 14 days before the boundary is lengthened to it. Real days scale the turn's rates. With one era, or no
+  boundary in a run, nothing changes; goldens unchanged (refs #59).
 - Writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set key=value` plays the historical run with a
   rules.yaml change applied in memory and prints the changed state lines and a table of chosen values, without Unity and
   without touching `content/` (fixes #295).
 - One golden manifest (`sim/Statecraft.Sim.Tests/golden/manifest.txt`) pins the golden hashes; `STATECRAFT_UPDATE_GOLDEN=1`
-  now rewrites it and the `GoldenRun.cs` constants, and a test names any doc that shows an old hash (fixes #293).
+  now rewrites it and the `GoldenRun.cs` constants, `tools/art_checkpoint.sh` reads it, and a test names any doc that
+  shows an old hash (fixes #293).
 - Era system switches in eras.yaml (`systems`): `legislature: state | assembly` (an assembly's vote against a policy or
   the budget is held and reported, but does not bind) and `map_actions` (the actions the era allows). The Cabinet and
   Budget screens say when the body's vote does not bind, and the hex panel shows only the era's map actions. With no
@@ -22,8 +35,6 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   and Ami Assaf as a second Deputy Minister of Education (from 11 June 1956). Event text, policies and effects cannot
   name such an office, and the Cabinet refuses to appoint to it. The Cabinet screen shows a card for each holder. No
   golden moves (#277).
-  now rewrites it and the `GoldenRun.cs` constants, `tools/art_checkpoint.sh` reads it, and a test names any doc that shows an
-  old hash (fixes #293).
 - Rules per era (#58, second piece): the attention, economy, population, security, map-action and cabinet systems read
   `RulesAt(date)` of the turn's starting date instead of `rules.yaml` directly, and the Defence and Info screens and the
   HUD follow. With no `content/rules/<era>.yaml` files yet, nothing changes: the goldens do not move. A test fails if a
@@ -159,6 +170,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   Tiberias, Afula and the Hula valley margin. The map colours, the info panel text (English and Hebrew) and the land
   tools know the new name. The change moves the content hash, so an old save shows the content-changed warning once. The
   golden hashes do not move, because the sim does not read `biome`.
+- Rationing no longer has a vacant minister from 24 December 1952. The Knesset records show no Ministry of Rationing and
+  Supply in the Fourth Government, and on 4 May 1953 the Minister of Trade and Industry, Peretz Bernstein, told the
+  Knesset that his ministry held the supply tasks and, to some extent, rationing. He answers for rationing until
+  29 June 1955. Dov Yosef's Agriculture term now starts on 22 March 1949, as in the Knesset position record, not 10 March
+  (issues #225 and #283). The golden hashes do not move.
 - The game settlements Lod and Ramla show their 1948 names, Lydda and Ramle, as Village Statistics 1945 lists them
   (owner ruling). Content only: the goldens and the smoke run are unchanged; saves made before load with the
   "different game content" warning.
@@ -209,6 +225,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- The Unity idle test `PromoScreensTests.AnOpenScreenIsStillWhenIdle` no longer fails now and then (#242). It was not a
+  font atlas and not a recurring layout. A batch-mode editor runs few frames, and now and then it tells
+  `UIDocument` late that the test's GameObject exists. `UIDocument` then re-adds its root and the whole screen lays out
+  once more. The test now queues a player-loop update on every step, waits for that editor notification plus 5 frames,
+  and then allows no relayout or repaint in the next 60 frames (before: at most one, in the first 60 steps).
 - The Ministry of Rationing and Supply, and Dov Yosef as its minister, now start on 10 March 1949, when the First
   Government took office, not on 26 April 1949 (the day rationing was decided, which the austerity event keeps). The
   Knesset's 8 March 1949 First Government document names him. Agriculture is unchanged. The goldens do not move; the

@@ -76,6 +76,9 @@ For changes under `sim/`, `tools/`, `scripts/` or `unity/`, not only content.
 - CI runs them as `Sim (dotnet test)`, `Tools (pytest)` and `Repo policy`, plus `Changelog`. Unity EditMode tests, WebGL builds and `tools/web_check.py` need Unity and are not in CI. If your change touches `unity/` or code Unity compiles and you cannot run them, say so in the PR; do not claim they passed.
 - When you do run Unity: wrap the command in `uv run tools/machine_lock.py --shared --wait-unity -- ...`, never add `-nographics` to an editor run, and stop a stuck Unity by its PID. Afterwards drop the settings churn with `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`, and never commit the `UNITY_MCP_*` scripting defines.
 
+**Rule IDs** (`docs/rules/README.md`)
+- A rule with an ID like `R-ECON-014` is cited by that ID in its test (`// R-ECON-014`), in YAML comments and in the PR body ("implements R-ECON-014"). Run `uv run scripts/oss/rule_ids.py`; it fails on an untested rule and on a cited ID no rule defines.
+
 **Determinism** (`docs/determinism.md`)
 - The sim must give the same state, bit for bit, on .NET, Mono and IL2CPP: no new RNG, no trigonometry, no unordered iteration into state, no culture-dependent formatting.
 - `GoldenRun.Hash1950` and `Hash1952` must not move unless the change is a deliberate rules or content change. The browser smoke value also moves when the UI path changes; re-record it then. If they move, update every place the doc lists in the same commit and say why in the message and the PR.

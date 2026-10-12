@@ -79,7 +79,7 @@ namespace Statecraft.Sim
 
         /// <summary>Keys an era override may not set: the values <c>NewGame</c> reads once. A later era's start values
         /// belong in start/&lt;era&gt;.yaml (chapters spec section 6), and the set of budget lines in the carry rules (section 4).</summary>
-        static readonly string[] StartOnlyKeys = { "start", "treasury_start", "fx_start", "start_rung", "initial_population", "budget_start" };
+        static readonly string[] StartOnlyKeys = { "start", "treasury_start", "fx_start", "start_rung", "initial_population", "budget_start", "budget_owners" };
 
         /// <summary>Era rules (#58): for each era with a content/rules/&lt;era&gt;.yaml file, rules.yaml with that file's keys
         /// merged in at the YAML-node level (maps merge key by key, a list or a value replaces), then read with the strict
@@ -395,17 +395,60 @@ namespace Statecraft.Sim
             if (r.FxCrisisFoodPerYear > 0) throw new ContentException(file, "fx_crisis_food_per_year", "must be <= 0 (a crisis cuts food imports)");
             if (r.FxCrisisFoodPerYear < 0 && !indicators.Contains("food_supply")) throw new ContentException(file, "fx_crisis_food_per_year", "needs a food_supply indicator in model.yaml");
             foreach (var kv in r.InitialPopulation) Count(file, $"initial_population.{kv.Key}", kv.Value);
+            // Budget lines (#108). A line is keyed by its own id. With no budget_owners entry the office of that id owns it for
+            // the whole era; with an entry, a dated list says which office owns it when. Within one era only: a line that
+            // changes across an era boundary is the carry rules' job (chapters spec section 4, #59).
+            var era = c.EraAt(r.Start);
+            var eraEnd = era?.To ?? DateTime.MaxValue;
+            foreach (var kv in r.BudgetOwners)
+                if (!r.BudgetStart.ContainsKey(kv.Key)) throw new ContentException(file, $"budget_owners.{kv.Key}", "unknown budget line: list it in budget_start");
+            var spans = new List<(string line, string office, DateTime from, DateTime to)>();
             foreach (var kv in r.BudgetStart)
             {
-                if (!offices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "unknown office");
-                if (historicalOffices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "historical-only titles cannot have a budget line");
-                // A budget line must not silently stop mattering when its office is abolished: move it to the office that
-                // took over (plan amendment C3).
-                var until = c.Offices.First(o => o.Id == kv.Key).Until;
-                if (until.HasValue)
-                    throw new ContentException(file, $"budget_start.{kv.Key}", FormattableString.Invariant($"office '{kv.Key}' is abolished on {until:yyyy-MM-dd}: give its budget line to the office that took over"));
                 Unit(file, $"budget_start.{kv.Key}", kv.Value);
+                if (!r.BudgetOwners.TryGetValue(kv.Key, out var terms))
+                {
+                    if (!offices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "unknown office (or give the line an owner in budget_owners)");
+                    if (historicalOffices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "historical-only titles cannot have a budget line");
+                    if (c.Offices.Any(o => o.Id == kv.Key && o.SeveralHolders)) throw new ContentException(file, $"budget_start.{kv.Key}", "an office with several holders cannot own a budget line");
+                    // A budget line must not silently stop mattering when its office is abolished: give it dated owners (#108).
+                    var until = c.Offices.First(o => o.Id == kv.Key).Until;
+                    if (until.HasValue)
+                        throw new ContentException(file, $"budget_start.{kv.Key}", FormattableString.Invariant($"office '{kv.Key}' is abolished on {until:yyyy-MM-dd}: give its budget line to the office that took over (budget_owners)"));
+                    spans.Add((kv.Key, kv.Key, r.Start, eraEnd));
+                    continue;
+                }
+                if (!Offices.OfficeId.IsMatch(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "a budget line id is lowercase letters, digits and underscores");
+                var path = $"budget_owners.{kv.Key}";
+                if (terms.Count == 0) throw new ContentException(file, path, "needs at least one owner");
+                for (int i = 0; i < terms.Count; i++)
+                {
+                    var t = terms[i]; var tp = FormattableString.Invariant($"{path}[{i}]");
+                    if (t.From == default) throw new ContentException(file, tp + ".from", "required");
+                    if (t.From < r.Start || t.From >= eraEnd)
+                        throw new ContentException(file, tp + ".from", FormattableString.Invariant($"must be inside the era ({r.Start:yyyy-MM-dd} to {eraEnd:yyyy-MM-dd}); a line that changes across eras is the carry rules' job"));
+                    if (i == 0 && t.From != r.Start)
+                        throw new ContentException(file, tp + ".from", FormattableString.Invariant($"the first owner must start on {r.Start:yyyy-MM-dd}, the first day of the era (no gap)"));
+                    if (i > 0 && t.From <= terms[i - 1].From)
+                        throw new ContentException(file, tp + ".from", FormattableString.Invariant($"must be after the previous owner's date ({terms[i - 1].From:yyyy-MM-dd})"));
+                    if (t.Office == "" || !offices.Contains(t.Office)) throw new ContentException(file, tp + ".office", "unknown office");
+                    if (historicalOffices.Contains(t.Office)) throw new ContentException(file, tp + ".office", "historical-only titles cannot have a budget line");
+                    // Like policies and effects (#277): the line's factor scales one minister's competence, so it needs one holder.
+                    if (c.Offices.Any(o => o.Id == t.Office && o.SeveralHolders)) throw new ContentException(file, tp + ".office", "an office with several holders cannot own a budget line");
+                    var end = i + 1 < terms.Count ? terms[i + 1].From : eraEnd;
+                    var office = c.Offices.First(o => o.Id == t.Office);
+                    if (!office.ExistsOn(t.From))
+                        throw new ContentException(file, tp + ".office", FormattableString.Invariant($"office '{t.Office}' does not exist on {t.From:yyyy-MM-dd}"));
+                    if (office.Until.HasValue && office.Until.Value < end)
+                        throw new ContentException(file, tp + ".office", FormattableString.Invariant($"office '{t.Office}' is abolished on {office.Until:yyyy-MM-dd}, before this owner's stretch ends ({end:yyyy-MM-dd}): add the office that took over"));
+                    spans.Add((kv.Key, t.Office, t.From, end));
+                }
             }
+            // One office owns at most one line on any day, so BudgetFactor(office) has one answer.
+            foreach (var a in spans)
+                foreach (var b in spans)
+                    if (string.CompareOrdinal(a.line, b.line) < 0 && a.office == b.office && a.from < b.to && b.from < a.to)
+                        throw new ContentException(file, $"budget_start.{b.line}", $"office '{a.office}' would own both '{a.line}' and '{b.line}' on the same day");
             // The same rule EconomySystem.Allocate applies to every later allocation.
             if (r.BudgetStart.Count > 0 && Math.Abs(r.BudgetStart.Values.Sum() - 1.0) > 1e-6) throw new ContentException(file, "budget_start", "shares must sum to 1");
         }
@@ -553,6 +596,32 @@ namespace Statecraft.Sim
                 Period("governments.yaml", $"governments[{g.Id}]", g.From, g.To);
                 foreach (var p in g.Coalition)
                     if (!parties.Contains(p)) throw new ContentException("governments.yaml", $"governments[{g.Id}].coalition.{p}", "unknown party");
+                var inOffice = new List<string>(g.Coalition);
+                var previous = g.From;
+                for (int i = 0; i < g.CoalitionChanges.Count; i++)
+                {
+                    var ch = g.CoalitionChanges[i];
+                    var at = $"governments[{g.Id}].coalition_changes[{i}]";
+                    if (ch.Date == default) throw new ContentException("governments.yaml", at + ".date", "required");
+                    if (ch.Date <= g.From || (g.To.HasValue && ch.Date >= g.To.Value))
+                        throw new ContentException("governments.yaml", at + ".date", FormattableString.Invariant($"must be inside the term, after {g.From:yyyy-MM-dd}") + (g.To.HasValue ? FormattableString.Invariant($" and before {g.To.Value:yyyy-MM-dd}") : ""));
+                    if (i > 0 && ch.Date <= previous) throw new ContentException("governments.yaml", at + ".date", FormattableString.Invariant($"must be after the previous change ({previous:yyyy-MM-dd})"));
+                    previous = ch.Date;
+                    if (ch.Joins.Count == 0 && ch.Leaves.Count == 0) throw new ContentException("governments.yaml", at, "needs joins or leaves");
+                    if (ch.Sources.Count == 0) throw new ContentException("governments.yaml", at + ".sources", "required: a coalition change needs a source");
+                    foreach (var p in ch.Leaves)
+                    {
+                        if (!parties.Contains(p)) throw new ContentException("governments.yaml", $"{at}.leaves.{p}", "unknown party");
+                        if (!inOffice.Remove(p)) throw new ContentException("governments.yaml", $"{at}.leaves.{p}", "not in the coalition on that day");
+                    }
+                    foreach (var p in ch.Joins)
+                    {
+                        if (!parties.Contains(p)) throw new ContentException("governments.yaml", $"{at}.joins.{p}", "unknown party");
+                        if (ch.Leaves.Contains(p)) throw new ContentException("governments.yaml", $"{at}.joins.{p}", "cannot join and leave on the same day");
+                        if (inOffice.Contains(p)) throw new ContentException("governments.yaml", $"{at}.joins.{p}", "already in the coalition on that day");
+                        inOffice.Add(p);
+                    }
+                }
             }
             NoOverlap("legislatures.yaml", "legislatures", c.Legislatures.Select(l => (l.Id, l.From, l.To)));
             NoOverlap("governments.yaml", "governments", c.Governments.Select(g => (g.Id, g.From, g.To)));

@@ -132,10 +132,10 @@ public class RealContentTests
         var state = Simulation.NewGame(C, 42, Mode.Historical);
         state.Date = change.AddDays(-1);
         Assert.Equal(0.9, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
-            EffectsSystem.BudgetFactor(state, "agriculture_minister"), 10);
+            EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         state.Date = change;
         Assert.Equal(0.85, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
-            EffectsSystem.BudgetFactor(state, "agriculture_minister"), 10);
+            EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         Assert.Equal("kaplan", Cabinet.Holder(C, state, "minister_without_portfolio")?.Id);
         Assert.DoesNotContain(Cabinet.Lineup(C, state), seat => seat.Office.Id == "deputy_prime_minister");
         state.Date = end;
@@ -183,6 +183,9 @@ public class RealContentTests
         Assert.Equal("dov_yosef", Offices.Holder(C, "rationing_minister", new DateTime(1949, 6, 1))!.Id);
         Assert.Null(Offices.Holder(C, "rationing_minister", new DateTime(1949, 3, 9)));    // First Government took office 10 March 1949
         Assert.Equal("dov_yosef", Offices.Holder(C, "rationing_minister", new DateTime(1949, 3, 10))!.Id);
+        // #225: Yosef held Rationing from 10 March 1949 (Knesset OData, gov1.pdf). Agriculture was unassigned until 22 March 1949.
+        Assert.Null(Offices.Holder(C, "agriculture_minister", new DateTime(1949, 3, 21)));
+        Assert.Equal("dov_yosef", Offices.Holder(C, "agriculture_minister", new DateTime(1949, 3, 22))!.Id);
         Assert.Equal((30, 37), PoliticsSystem.CoalitionSeats(C, new DateTime(1948, 6, 1)));
         Assert.Equal((73, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1949, 6, 1)));
         Assert.Equal(101828, C.Aliyah[0].Origins.Values.Sum());
@@ -203,7 +206,7 @@ public class RealContentTests
     {
         Assert.DoesNotContain("rationing_minister", C.Rules.BudgetStart.Keys);
         var s = Simulation.NewGame(C, 1, Mode.Historical);
-        Assert.Equal(1.0, EffectsSystem.BudgetFactor(s, "rationing_minister"));
+        Assert.Equal(1.0, EffectsSystem.BudgetFactor(C, s, "rationing_minister"));
     }
 
     [Fact]
@@ -262,7 +265,7 @@ public class RealContentTests
         Assert.Equal("dov_yosef", Who("rationing_minister", 1951, 10, 8));
         Assert.Equal("dov_yosef", Who("rationing_minister", 1951, 12, 31));
         Assert.Equal("dov_yosef", Who("rationing_minister", 1952, 12, 23));
-        Assert.Equal("(vacant)", Who("rationing_minister", 1952, 12, 24));
+        Assert.Equal("bernstein", Who("rationing_minister", 1952, 12, 24));   // Fourth Government, Trade and Industry (#283)
         Assert.Equal("dov_yosef", Who("transportation_minister", 1951, 1, 1));
         Assert.Equal("pinkas", Who("transportation_minister", 1951, 10, 8));
         Assert.Equal("lavon", Who("agriculture_minister", 1951, 1, 1));
@@ -278,7 +281,7 @@ public class RealContentTests
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "immigration_minister").Until);
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "war_victims_minister").Until);
         Assert.Equal("shapira", Who("immigration_minister", 1951, 10, 7));
-        Assert.Equal(0.15, C.Rules.BudgetStart["prime_minister"]);
+        Assert.Equal(0.15, C.Rules.BudgetStart["prime_minister"]);   // the Immigration line keeps its id (#108)
         var sheetrit = C.People.Single(p => p.Id == "sheetrit");
         Assert.Equal("sephardim", Offices.PartyOf(C, sheetrit, new DateTime(1951, 1, 1)));
         Assert.Equal("mapai", Offices.PartyOf(C, sheetrit, new DateTime(1951, 10, 8)));

@@ -105,15 +105,16 @@ namespace Statecraft.Game.UI
             var c = bridge.Content; var s = bridge.State;
             var rows = screen.Q<ScrollView>("budget-rows");
             rows.Clear();
+            // A budget line is keyed by its own id; the office that owns it today can change (rules.yaml budget_owners, #108).
             foreach (var office in c.Rules.BudgetStart.Keys)
             {
-                var o = c.Offices.First(x => x.Id == office);
+                var o = c.Offices.First(x => x.Id == (Offices.BudgetOwner(c, office, s.Date) ?? office));
                 var share = draft.TryGetValue(office, out var v) ? v : 0;
                 var row = new VisualElement { name = "budget-" + office };
                 row.AddToClassList("row");
                 // A budget line can run before its ministry exists (Education from 10 March 1949): say so, not "vacant".
                 var who = o.From.HasValue && s.Date < o.From.Value ? text.Format("budget.not_established", PlayerText.Date(o.From.Value))
-                    : Cabinet.Holder(c, s, office)?.Name ?? text["budget.vacant"];
+                    : Cabinet.Holder(c, s, o.Id)?.Name ?? text["budget.vacant"];
                 row.Add(new Label(text.Format("budget.office", o.Title, who)) { name = "budget-" + office + "-name" });
                 row[0].AddToClassList("grow");
                 row.Add(new Button(() => Change(office, -Step)) { name = "budget-" + office + "-down", text = "-" });

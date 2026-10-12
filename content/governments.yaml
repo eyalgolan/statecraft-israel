@@ -40,12 +40,26 @@ governments:
     # Coalition of 65 seats per he.wiki. Democratic List for Israeli Arabs, Progress and Work and Agriculture and
     # Development were Mapai-affiliated minority lists without ministers. The Progressive Party and the General Zionists
     # were in opposition. Investiture vote 56-40 (he.wiki citing Haaretz, 9 October 1951). Agudat Yisrael and Poalei
-    # Agudat Yisrael left the coalition in September 1952 (he.wiki: 18 September in its table, 23 September in its text;
-    # Levin's term ends on 18 September), leaving 60 seats. A government has one coalition list here, so the change is
-    # not modelled.
+    # Agudat Yisrael left the coalition in September 1952 (#278). The Knesset's position record ends Levin's Welfare term
+    # on 18 September 1952, and he.wiki's table gives 18 September for the party's exit; he.wiki's text gives 23
+    # September, but its own footnote cites a press report of 19 September 1952, so 18 September is used. The Knesset's
+    # session list (KNS_PlenumSession) has no plenum sitting between 28 August and 3 November 1952, so there is no
+    # plenum record: the position record and he.wiki are the only sources for the date.
+    # DECISION FOR THE MAINTAINER (proposal, change it if you prefer another rule): the coalition then held 60 of 120
+    # seats, which is half and not more than half. HasMajority stays "more than half", so a vote that needs a majority
+    # (SetPolicy, and AllocateBudget while the legislature approves the budget) fails from 18 September to 24 December
+    # 1952. Why: it is the simplest rule, it follows the seat count, and it breaks nothing: the historical AI sends no policy or budget order, so a historical run never
+    # votes, and a player can still act in other ways (events, cabinet changes, security orders). Other options: a
+    # tie-break in favour of the government, or a confidence rule; both need a new rule in the sim.
     from: 1951-10-08
     to: 1952-12-24
     coalition: [mapai, hapoel_hamizrachi, agudat_yisrael, democratic_list_israeli_arabs, mizrachi, poalei_agudat_yisrael, progress_and_work, agriculture_and_development]
+    coalition_changes:
+      - date: 1952-09-18
+        leaves: [agudat_yisrael, poalei_agudat_yisrael]
+        sources:
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%203", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-12 }
     sources:
       - { url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-12 }
@@ -59,11 +73,29 @@ governments:
     # ministers were sworn in on 24 December, when Hapoel HaMizrachi's Shapira and Burg joined (plenum records). The
     # General Zionists' 20 seats count with the Sephardim (2) and the Yemenite Association (1): those three MKs sat in
     # the General Zionist faction from 10 September 1951 (Knesset faction records; he.wiki gives the faction 23 seats).
-    # That makes 87 of 120, as in he.wiki. The General Zionists left on 26 May 1953 and returned on 2 June 1953
-    # (he.wiki); not modelled.
+    # That makes 87 of 120, as in he.wiki. The General Zionists left on 25 May 1953 and returned on 3 June 1953 (#278),
+    # per the plenum records: on 25 May 1953 (evening sitting, 2_ptm_250584.pdf) the Prime Minister told the Knesset,
+    # under section 11 of the Transition Law, that the four General Zionist ministers (Rokach, Bernstein, Sapir, Serlin)
+    # had resigned; on 3 June 1953 (2_ptm_250727.pdf) the Knesset approved the government's decision to add the four
+    # again, and they made their declarations of allegiance. he.wiki gives 26 May and 2 June (citing Davar of 26 May).
+    # Without the General Zionists and the three MKs who sat in their faction, the coalition held 64 seats (he.wiki).
+    # The position records (KNS_PersonToPosition) show the four ministers' terms without a break, so their terms in
+    # people.yaml are unchanged.
     from: 1952-12-24
     to: 1954-01-26
     coalition: [mapai, general_zionists, sephardim, yemenite_association, hapoel_hamizrachi, mizrachi, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    coalition_changes:
+      - date: 1953-05-25
+        leaves: [general_zionists, sephardim, yemenite_association]
+        sources:
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250584.pdf", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250724.pdf", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
+      - date: 1953-06-03
+        joins: [general_zionists, sephardim, yemenite_association]
+        sources:
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250727.pdf", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
     sources:
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%204", checked: 2026-10-12 }
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
@@ -76,11 +108,21 @@ governments:
   - id: fifth_government
     name: Fifth Government
     # Sharett's first government, approved 75 to 23 on 26 January 1954, with the same parties as the Fourth. The
-    # Progressives had not decided on 25 January 1954 and joined on 1 February (plenum record of 25 January; he.wiki);
-    # one coalition list per government, so they count from the start.
+    # Progressives had not decided on 25 January 1954 and joined on 1 February (#278). On 1 February the Prime Minister
+    # told the Knesset that the Progressive Party had decided to return to the coalition and that the government had
+    # decided to add Pinchas Rosen as Minister of Justice; the Knesset's position record starts Rosen's Justice term
+    # that day.
     from: 1954-01-26
     to: 1955-06-29
-    coalition: [mapai, general_zionists, sephardim, yemenite_association, hapoel_hamizrachi, mizrachi, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    coalition: [mapai, general_zionists, sephardim, yemenite_association, hapoel_hamizrachi, mizrachi, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    coalition_changes:
+      - date: 1954-02-01
+        joins: [progressive]
+        sources:
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250778.pdf", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250782.pdf", checked: 2026-10-12 }
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%205", checked: 2026-10-12 }
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-12 }
     sources:
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%205", checked: 2026-10-12 }
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-12 }

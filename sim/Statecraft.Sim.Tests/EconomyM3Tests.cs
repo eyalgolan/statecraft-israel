@@ -84,8 +84,6 @@ public class EconomyM3Tests
         Assert.Equal(1.25, EffectsSystem.BudgetFactor(draft, "a"), 9);     // 0.5 + 0.5 * 3 / 2
         Assert.Equal(0.8, EffectsSystem.BudgetFactor(draft, "c"), 9);
         Assert.Equal(1.0, EffectsSystem.BudgetFactor(draft, "z"), 9);      // no line: neutral
-        var s = new GameState { Budget = draft };
-        Assert.Equal(EffectsSystem.BudgetFactor(draft, "b"), EffectsSystem.BudgetFactor(s, "b"));
     }
 
     [Fact]

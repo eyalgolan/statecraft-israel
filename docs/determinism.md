@@ -48,13 +48,22 @@ never take a hash from the run without the variable, so a second plain run is th
 hash), add a row to the rebaseline history, and say why in the commit message. The snapshot test also fails if a snapshot is
 stale while the hash is unchanged.
 
+**Invariants.** A hash says something changed; `sim/Statecraft.Sim.Tests/golden/invariants.yaml` says whether it is
+still plausible. Each entry names a golden run (`1950` or `1952`), a value (an indicator id, or `treasury`, `debt`,
+`fx`, `population`, `stability`), when it is read (`end`, `always`, or a date: the first state on or after it), a `min`
+and/or `max`, and a `reason` (a source, or the test or note the band comes from). `InvariantTests` plays the golden runs
+and fails with the check, the value, the date and the band, for example `invariant 'foreign-currency-runs-out' (...): fx
+= 12.5 on 1952-02-27 is outside [-inf, 0]`. The invariants only add checks: a tuned rate that stays in its band still
+moves the hash goldens (rebaseline as above), but not an invariant. The shipped bands are loose guards set around the
+current runs; the design document and the maintainers decide which ranges matter.
+
 **Rules per era.** A system reads `Content.RulesAt(date)`, where `date` is the date of the state the turn starts from (`s.Date`
 before the step); `AttentionSystem.Refill` runs after the date moves, so it fills the next turn from that turn's era. Rules
 change only at era boundaries (chapters spec section 3.3). Spec section 4.1 will end the turn that reaches a boundary exactly
 on it, so every turn then lies in one era; until that lands, only the last era's end is a boundary turn, and a turn that
 starts in one era and ends in the next uses the starting era's rules for its whole length
 (`EraRulesSwitchTests.ARunPicksUpTheOverrideFromTheFirstTurnThatStartsInTheNewEra`). Start
-values (`start`, `treasury_start`, `fx_start`, `start_rung`, `initial_population`, `budget_start`) are read once by `NewGame`
+values (`start`, `treasury_start`, `fx_start`, `start_rung`, `initial_population`, `budget_start`, `budget_owners`) are read once by `NewGame`
 from the base `rules.yaml`: an era override cannot set them. A map action's display name is also read from the base rules,
 because an override cannot remove an action. `EraRulesSwitchTests.OnlyStartValuesAndMapActionNamesReadTheBaseRulesDirectly`
 fails if a file in `sim/Statecraft.Sim` reads `Rules` directly for anything else, including a bare `var r = c.Rules;`.

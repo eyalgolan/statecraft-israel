@@ -113,9 +113,36 @@ namespace Statecraft.Sim
         public string Name { get; set; } = "";
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
+        /// <summary>The parties in the coalition when the government took office. Parties that join or leave later are
+        /// in <see cref="CoalitionChanges"/>; read the coalition of a given day with <see cref="CoalitionOn"/>.</summary>
         public List<string> Coalition { get; set; } = new List<string>();
+        /// <summary>Parties joining or leaving the coalition inside the term, in date order (the loader checks it).</summary>
+        public List<CoalitionChange> CoalitionChanges { get; set; } = new List<CoalitionChange>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+
+        /// <summary>The coalition on <paramref name="date"/>: the opening list with every change dated on or before that
+        /// day applied. The result keeps the opening order, with parties that joined added at the end.</summary>
+        public List<string> CoalitionOn(DateTime date)
+        {
+            var result = new List<string>(Coalition);
+            foreach (var change in CoalitionChanges)
+            {
+                if (change.Date > date) break;
+                result.RemoveAll(p => change.Leaves.Contains(p));
+                foreach (var p in change.Joins) if (!result.Contains(p)) result.Add(p);
+            }
+            return result;
+        }
+    }
+
+    /// <summary>Parties joining or leaving a government's coalition on one day, inside its term. Applies from that day.</summary>
+    public sealed class CoalitionChange
+    {
+        public DateTime Date { get; set; }
+        public List<string> Joins { get; set; } = new List<string>();
+        public List<string> Leaves { get; set; } = new List<string>();
+        public List<Source> Sources { get; set; } = new List<Source>();
     }
 
     public sealed class Indicator
@@ -199,6 +226,17 @@ namespace Statecraft.Sim
         public double NaturalIncreasePerYear { get; set; }
         public Dictionary<string, double> InitialPopulation { get; set; } = new Dictionary<string, double>();
         public Dictionary<string, double> BudgetStart { get; set; } = new Dictionary<string, double>();
+        /// <summary>Who owns a budget line, by date (#108). A line with no entry here is owned, for the whole era, by the
+        /// office with the line's own id. A listed line is owned by each term's office from that term's day to the next
+        /// term's day. Read through <see cref="Offices.BudgetOwner"/> and <see cref="Offices.BudgetLineOf"/>. Start-only, like budget_start.</summary>
+        public Dictionary<string, List<BudgetOwnerTerm>> BudgetOwners { get; set; } = new Dictionary<string, List<BudgetOwnerTerm>>();
+    }
+
+    /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
+    public sealed class BudgetOwnerTerm
+    {
+        public DateTime From { get; set; }
+        public string Office { get; set; } = "";
     }
 
     /// <summary>Price and effect of one map action (rules.yaml map_actions).</summary>

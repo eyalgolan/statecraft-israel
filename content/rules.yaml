@@ -62,12 +62,26 @@ initial_population: { veterans: 649400 }
 budget_start:
   defense_minister: 0.45
   finance_minister: 0.05
-  # No Immigration portfolio in the Third Government; absorption is assumed to sit with the Jewish Agency and the Prime
-  # Minister (notes, Addendum (a), unverified). The Ministry of Immigration ends on 1951-10-08, so its budget line sits
-  # with the Prime Minister (the loader refuses a line for an abolished office).
+  # The Immigration line. Its id stays `prime_minister` (ids are stable: a rename would move every golden hash and break
+  # the replay of saved budget orders), but it was the Ministry of Immigration's line until 8 October 1951:
+  # budget_owners below says which office owns it on each date, and the Budget screen shows that office.
   prime_minister: 0.15
   labour_minister: 0.10
   health_minister: 0.07
   education_minister: 0.06
   agriculture_minister: 0.07
   interior_minister: 0.05
+# Who owns a budget line, by date (issue #108). A line with no entry here belongs to the office with its own id for the
+# whole era. The first owner starts on the era's first day; each later owner starts on its `from`; every owner's office
+# must exist on its dates (the loader checks). The Ministry of Aliyah (immigration_minister) ends on 8 October 1951: the
+# Knesset's government-positions table (KNS_PersonToPosition, GovernmentNum 2, read 2026-10-12) lists "Minister of
+# Aliyah" (GovMinistryID 784) for Haim-Moshe Shapira (PersonID 2661) from 1 November 1950 to 8 October 1951, and
+# GovernmentNum 3 (from 8 October 1951) lists no such ministry. The same table lists no immigration or absorption
+# portfolio for the Prime Minister (Ben-Gurion, PersonID 2198) in the Third Government. That the line then sits with the
+# Prime Minister is an assumption (research notes M3 1950-51, Addendum (a), unverified), as in M3: absorption is
+# assumed to stay with the Jewish Agency and the Prime Minister. Re-point the second owner if a source shows otherwise.
+# Source: https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%202 (and eq 3).
+budget_owners:
+  prime_minister:
+    - { from: 1948-05-15, office: immigration_minister }
+    - { from: 1951-10-08, office: prime_minister }
