@@ -604,7 +604,7 @@ public class PromoScreensTests
                 // panel's layout and paint) only now and then while idle, so a count of steps put the first layout of a
                 // just-opened screen anywhere in the window. Each step queues a player-loop update, as a player runs one every
                 // frame, and frames are counted with Time.frameCount.
-                int fcStart = Time.frameCount, deadlineMs = Environment.TickCount + 60000;
+                int fcStart = Time.frameCount; var clock = System.Diagnostics.Stopwatch.StartNew();
                 var busy = new SortedDictionary<int, List<string>>();
                 void Note(string what) { var f = Time.frameCount - fcStart; if (!busy.TryGetValue(f, out var l)) busy[f] = l = new List<string>(); l.Add(what); }
                 foreach (var e in new[] { root.Q("screen-cabinet"), root.Q("screen-defence") }.SelectMany(s => s.Query<VisualElement>().ToList()))
@@ -618,7 +618,7 @@ public class PromoScreensTests
                 // 5 more frames; the wait is bounded, so a missing notification fails with a message and does not hang.
                 while (hierarchyFrame < 0 || Time.frameCount - Math.Max(hierarchyFrame, fcStart) < 5)
                 {
-                    Assert.Less(Environment.TickCount, deadlineMs, "the editor did not deliver the hierarchy change and 5 frames in 60 s");
+                    Assert.Less(clock.ElapsedMilliseconds, 60000L, "the editor did not deliver the hierarchy change and 5 frames in 60 s");
                     UnityEditor.EditorApplication.QueuePlayerLoopUpdate(); yield return null;
                 }
                 string Report() => string.Join("; ", busy.Select(kv => $"frame {kv.Key}: {kv.Value.Count} ({string.Join(", ", kv.Value.Distinct().Take(6))})"));
@@ -626,7 +626,7 @@ public class PromoScreensTests
                 busy.Clear(); int observeFrom = Time.frameCount;
                 while (Time.frameCount - observeFrom < 60)
                 {
-                    Assert.Less(Environment.TickCount, deadlineMs, "the editor did not run 60 frames in 60 s");
+                    Assert.Less(clock.ElapsedMilliseconds, 60000L, "the editor did not run 60 frames in 60 s");
                     UnityEditor.EditorApplication.QueuePlayerLoopUpdate(); yield return null;
                 }
                 Assert.AreEqual(0, busy.Count, $"open={open ?? "none"}: relayout or repaint in {busy.Count} of 60 idle frames after {warmUp} warm-up frames with work: {Report()}");
