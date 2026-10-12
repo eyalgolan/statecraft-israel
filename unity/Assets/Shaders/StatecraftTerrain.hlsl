@@ -37,7 +37,12 @@ void StatecraftTerrain_float(float2 UV, float3 PositionWS, float3 NormalWS, Unit
     // multiplied away (Task 7 fix round 1, M3).
     float2 breakers = ScBreakers(coast, mapM);
     float3 waterColour = 0;
-    [branch] if (water > 0.0) waterColour = ScHazeWater(ScWaterShade(coast, elevM, PositionWS, mapM, footprintM, breakers), PositionWS);
+    // The branch is taken by whole 2x2 pixel quads (ddx/ddy of water is non-zero when a quad straddles the shore): the water
+    // code inside reads derivatives and shadow maps, which are undefined for the lanes a diverged quad leaves out. On a Metal
+    // GPU that left a few shoreline pixels one 8-bit step off, differently on every render (flaky BorderTests). Land lanes of a
+    // shore quad shade water and discard it: water is 0 for them below.
+    [branch] if (water > 0.0 || abs(ddx(water)) + abs(ddy(water)) > 0.0)
+        waterColour = ScHazeWater(ScWaterShade(coast, elevM, PositionWS, mapM, footprintM, breakers), PositionWS);
     ground = ScShore(ground, coast, elevM, n, mapM);   // the beach and the Dead Sea's salt flats (promo-sea)
     // The hex grid (visual v1 Task 8), light and faint on land and water, thinner towards the overview: the same lines as
     // Sea.shader past the edge. Computed outside the branch: its fwidth needs uniform control flow.

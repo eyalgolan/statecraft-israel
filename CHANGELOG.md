@@ -196,6 +196,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- The terrain shader shades water in whole 2x2 pixel quads. Before, a quad that straddled the shore ran the water code on
+  some lanes only, and a few shoreline pixels came out one 8-bit step off, differently on every render. This made
+  `BorderTests` (`TheEarlyOutIsExact`, `WithoutRegionDataTheToggleIsANoOp`, `BordersAreDeterministic`) fail now and then.
+  The picture is the same to the eye; no golden moves.
 - The Ministry of Rationing and Supply, and Dov Yosef as its minister, now start on 10 March 1949, when the First
   Government took office, not on 26 April 1949 (the day rationing was decided, which the austerity event keeps). The
   Knesset's 8 March 1949 First Government document names him. Agriculture is unchanged. The goldens do not move; the
