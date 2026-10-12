@@ -112,7 +112,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var c3 = ground.Frame.ToWorld(st.Lon, st.Lat, 0); var c = new Vector2(c3.x, c3.z);
                 var biome = ground.Biome(c.x, c.y);
-                if (biome != "coastal_plain" && biome != "valley" && biome != "sea") continue;
+                if (biome != "coastal_plain" && biome != "lowland" && biome != "valley" && biome != "sea") continue;
                 if (ground.ElevM(c.x, c.y) > 300f) continue;
                 var rnd = new KitRandom(st.Id, 11);
                 float R = SettlementKits.FootprintRadiusM(st, ground.HexSizeM);
@@ -123,7 +123,7 @@ namespace Statecraft.Game.Map.Kits
                     var gc = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
                     if (!ground.Inside(gc.x, gc.y) || ground.Water(gc.x, gc.y) || ground.InTown(gc.x, gc.y, 0.9f)) continue;
                     var gb = ground.Biome(gc.x, gc.y);
-                    if (gb != "coastal_plain" && gb != "valley" || ground.ElevM(gc.x, gc.y) > 250f || ground.Slope(gc.x, gc.y, 800f) > 0.06f) continue;
+                    if (gb != "coastal_plain" && gb != "lowland" && gb != "valley" || ground.ElevM(gc.x, gc.y) > 250f || ground.Slope(gc.x, gc.y, 800f) > 0.06f) continue;
                     g++;
                     float yaw = rnd.Range(0f, 90f) * Mathf.Deg2Rad, ca = Mathf.Cos(yaw), sa = Mathf.Sin(yaw);
                     // Grove sizes grow with the square root of the tree scale, so a bigger tree means fewer, not only larger, rows.
@@ -173,7 +173,7 @@ namespace Statecraft.Game.Map.Kits
                         if (p <= 0f && rnd.Value() > 0.03f) continue;
                         if (!rnd.Chance(Mathf.Max(p, 0.03f))) continue;
                         var b = ground.Biome(px, pz);
-                        bool plain = b == "coastal_plain";
+                        bool plain = b == "coastal_plain" || b == "lowland";
                         if (!plain && b != "hills" && b != "mountains" && b != "valley") continue;
                         if (plain && !rnd.Chance(0.35f)) continue;   // lone trees between the fields
                         float e = ground.ElevM(px, pz);

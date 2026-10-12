@@ -23,8 +23,12 @@ Biome rules, first match wins (per hex, over the heightmap pixels / precipitatio
                   cell uses the nearest valid cell to its centre. Inputs are written by tools/precip_clip.py and
                   tools/ims_normals.py; this build reads only the committed files
   6 hills         median >= 200 m
-  7 coastal_plain everything else
-Current counts (1102 hexes): coastal_plain 109, desert 332, hills 147, lake 16, mountains 251, sea 216, valley 31
+  7 coastal_plain everything else within COASTAL_PLAIN_MAX_KM of the sea (see below)
+  8 lowland       everything else: land of 0-200 m that is further inland (slopes above the Sea of Galilee, the
+                  Jezreel and Hula valley margins)
+The distance is `coast_km`: from the hex centre to the nearest shore pixel (a sea pixel with a non-sea neighbour)
+that lies in a hex classed "sea" by rule 1. It is a pure function of the heightmap; a map with no sea gives infinity.
+Current counts (1102 hexes): coastal_plain 79, desert 332, hills 147, lake 16, lowland 30, mountains 251, sea 216, valley 31
 """
 import json
 import math
@@ -41,6 +45,7 @@ OUT = ROOT / "content" / "map" / "hexes.json"
 PRECIP_DIR = ROOT / "content" / "map"
 PRECIP_NAME = "precip_bio12"
 DEAD_SEA_NORTH_TIP_LAT = 31.77
+COASTAL_PLAIN_MAX_KM = 25.0  # land of 0-200 m further than this from the shore is "lowland", not "coastal_plain"
 ARID_MM = 200.0  # mean annual precipitation below which land is desert (arid)
 PRECIP_NODATA = 65535
 STATIONS_NAME = "precip_stations.json"
@@ -103,6 +108,7 @@ def settlement_hex(lon: float, lat: float, grid: dict) -> tuple[int, int]:
 
 
 def classify(st: dict, lat: float) -> str:
+    """Biome of one hex from its stats (sea_share, water_share, median, precip_mm, coast_km) and its latitude."""
     if st["sea_share"] >= 0.5:
         return "sea"
     if st["water_share"] >= 0.4:
@@ -115,7 +121,28 @@ def classify(st: dict, lat: float) -> str:
         return "desert"
     if st["median"] >= 200:
         return "hills"
-    return "coastal_plain"
+    return "coastal_plain" if st["coast_km"] <= COASTAL_PLAIN_MAX_KM else "lowland"
+
+
+def coast_points_km(sea: np.ndarray, hex_q: np.ndarray, hex_r: np.ndarray, sea_hexes: set,
+                    width_km: float, length_km: float) -> np.ndarray:
+    """Shore pixels, as an (n, 2) array of map km (x, y): sea pixels (2-D mask `sea`) with a non-sea 4-neighbour
+    (the map edge counts as sea) whose hex, from the flat per-pixel `hex_q`, `hex_r`, is in `sea_hexes`.
+    The hex filter drops the few 0 m pixels of inland no-data."""
+    h, w = sea.shape
+    p = np.pad(sea, 1, constant_values=True)
+    shore = sea & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])
+    rows, cols = np.nonzero(shore)
+    flat = rows * w + cols
+    keep = np.array([(int(hex_q[i]), int(hex_r[i])) in sea_hexes for i in flat], dtype=bool)
+    rows, cols = rows[keep], cols[keep]
+    return np.stack([cols / (w - 1) * width_km, rows / (h - 1) * length_km], axis=1)
+
+
+def distance_to_coast_km(cx: float, cy: float, coast: np.ndarray) -> float:
+    if len(coast) == 0:
+        return math.inf
+    return float(np.sqrt(np.min((coast[:, 0] - cx) ** 2 + (coast[:, 1] - cy) ** 2)))
 
 
 def write_precip(mm: np.ndarray, lon0: float, lat1: float, cell_deg: float, out_dir: Path, extra: dict) -> dict:
@@ -265,7 +292,7 @@ def build(map_dir: Path, size: float = HEX_SIZE_KM, precip_dir: Path = PRECIP_DI
     order = np.lexsort((q, r))
     keys = np.stack([r[order], q[order]], axis=1)
     starts = np.flatnonzero(np.r_[True, np.any(keys[1:] != keys[:-1], axis=1)])
-    hexes = []
+    cells = []
     for a, b in zip(starts, np.r_[starts[1:], len(order)]):
         hr, hq = (int(v) for v in keys[a])
         cx, cy = hex_center_km(hq, hr, size)
@@ -277,6 +304,12 @@ def build(map_dir: Path, size: float = HEX_SIZE_KM, precip_dir: Path = PRECIP_DI
         mm = precip.get((hq, hr))
         st = {"sea_share": float(np.mean(is_sea(v))), "water_share": water_share(v),
               "median": float(np.median(v)), "precip_mm": mm if mm is not None else nearest_precip(lon, lat, pr)}
+        cells.append((hq, hr, cx, cy, lon, lat, st))
+    sea_hexes = {(hq, hr) for hq, hr, _, _, _, _, st in cells if st["sea_share"] >= 0.5}
+    coast = coast_points_km(is_sea(elev), q, r, sea_hexes, width_km, length_km)
+    hexes = []
+    for hq, hr, cx, cy, lon, lat, st in cells:
+        st["coast_km"] = distance_to_coast_km(cx, cy, coast)
         biome = classify(st, lat)
         hexes.append({"q": hq, "r": hr, "lon": round(lon, 5), "lat": round(lat, 5), "elev_m": round(st["median"], 1),
                       "land": biome not in ("sea", "lake"), "biome": biome})

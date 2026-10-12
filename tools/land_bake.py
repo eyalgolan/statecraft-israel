@@ -12,7 +12,7 @@ content/map/precip_bio12.* + precip_stations.json (CHELSA mean annual rainfall, 
 tools/hexgrid.py does) and content/map/settlements_1948.yaml. Where, on a WIDTH x HEIGHT grid (about 158 x 211 m):
   fields:   arable land: gentle slope (< ~7%) with enough rain for dry farming (smoothstep 180..380 mm; the Jordan
             valley floor, irrigated, at least 0.7), outside water
-  orchards: the citrus belt: flat coastal plain or valley floor below 150 m within about 10 km of a town (exp(-d/7 km))
+  orchards: the citrus belt: flat coastal plain, inland lowland or valley floor below 150 m within about 10 km of a town (exp(-d/7 km))
   wet:      rainfall smoothstep 250..600 mm: garrigue, terraces and scrub grow where it is high
 What (paint_land, seeded by map position only): field parcels in rotated blocks (green, ochre, ploughed, fallow, grass,
 groves in the citrus belt) with soft rims and hedges, some block edges as farm tracks; on the wet unfarmed hills patches of
@@ -304,7 +304,7 @@ def bake() -> np.ndarray:
     d_town = np.full(xk.shape, np.inf)
     for _, x, y in towns:
         d_town = np.minimum(d_town, np.hypot(xk - x, yk - y))
-    lowland = soften((e < ORCHARD_BELOW_M) & np.isin(biome, ("coastal_plain", "valley")))
+    lowland = soften((e < ORCHARD_BELOW_M) & np.isin(biome, ("coastal_plain", "lowland", "valley")))
     orchards = lowland * flat * farm_rain * np.clip(1.4 * np.exp(-d_town / ORCHARD_DECAY_KM) - 0.15, 0, 1)
 
     wet = smoothstep(*RAIN_WET_MM, rain)

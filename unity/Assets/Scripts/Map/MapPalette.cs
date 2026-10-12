@@ -20,7 +20,7 @@ namespace Statecraft.Game.Map
             ["sea"] = Lit(0.62f, 0.60f, 0.42f), ["lake"] = Lit(0.60f, 0.58f, 0.42f),
             ["coastal_plain"] = Lit(0.52f, 0.54f, 0.33f), ["hills"] = Lit(0.66f, 0.58f, 0.38f),
             ["mountains"] = Lit(0.62f, 0.53f, 0.40f), ["valley"] = Lit(0.50f, 0.53f, 0.33f),
-            ["desert"] = Lit(0.84f, 0.70f, 0.48f),
+            ["lowland"] = Lit(0.51f, 0.535f, 0.33f), ["desert"] = Lit(0.84f, 0.70f, 0.48f),
         };
 
         static Color Lit(float r, float g, float b) =>

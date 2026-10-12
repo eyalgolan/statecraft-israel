@@ -44,7 +44,7 @@ namespace Statecraft.Game.UI
             ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["restart"] = Restart,
             ["chevron"] = Chevron, ["hourglass"] = Hourglass,
             ["biome-sea"] = Waves, ["biome-lake"] = Waves, ["biome-coastal_plain"] = Plain, ["biome-hills"] = Hills,
-            ["biome-mountains"] = Mountains, ["biome-valley"] = Valley, ["biome-desert"] = Dunes,
+            ["biome-mountains"] = Mountains, ["biome-valley"] = Valley, ["biome-lowland"] = Plain, ["biome-desert"] = Dunes,
         };
 
         /// <summary>The gold glyphs' line colour, plain or lit (PromoHudTests checks lit stays >= 3:1 on the focus fill).</summary>

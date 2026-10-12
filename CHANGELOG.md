@@ -127,6 +127,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- Inland lowlands are no longer labelled "Coastal plain" (refs #204). `tools/hexgrid.py` now measures the distance from
+  each hex centre to the shore and keeps `coastal_plain` for 0 to 200 m land within 25 km of it. Further inland the new
+  biome `lowland` ("Inland lowland") applies: 30 of the 109 coastal plain hexes change, among them the hex that holds
+  Tiberias, Afula and the Hula valley margin. The map colours, the info panel text (English and Hebrew) and the land
+  tools know the new name. The change moves the content hash, so an old save shows the content-changed warning once. The
+  golden hashes do not move, because the sim does not read `biome`.
 - Sharett's in-game portrait uses a CC0 Van de Poll photograph in place of the US-unverified GPO source (refs #30).
 - Hebrew UI wording, still not enabled: a count-neutral pending-decisions line, "מנדטים" for Knesset seats, and
   reworded attention and full-war labels (#193).

@@ -20,7 +20,7 @@ import hexgrid as hg  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 BIOME_RGB = {"sea": (70, 130, 180), "lake": (40, 110, 200), "coastal_plain": (175, 215, 120),
-             "hills": (80, 135, 55), "mountains": (150, 120, 90), "valley": (215, 160, 50),
+             "hills": (80, 135, 55), "mountains": (150, 120, 90), "valley": (215, 160, 50), "lowland": (150, 200, 100),
              "desert": (220, 195, 140)}
 DOT_RGB = (200, 20, 20)
 

@@ -44,7 +44,11 @@ def test_neighbouring_centres_are_one_hex_width_apart():
     ({"sea_share": 0.0, "median": 300.0, "water_share": 0.0, "precip_mm": 199.9}, 31.6, "desert"),
     ({"sea_share": 0.0, "median": 300.0, "water_share": 0.0, "precip_mm": 200.0}, 31.0, "hills"),  # no latitude rule
     ({"sea_share": 0.0, "median": 400.0, "water_share": 0.0, "precip_mm": 700.0}, 32.7, "hills"),
-    ({"sea_share": 0.1, "median": 25.0, "water_share": 0.0, "precip_mm": 550.0}, 32.08, "coastal_plain"),
+    ({"sea_share": 0.1, "median": 25.0, "water_share": 0.0, "precip_mm": 550.0, "coast_km": 4.4}, 32.08, "coastal_plain"),
+    # rule 7 against rule 8: the same hex is coastal_plain up to COASTAL_PLAIN_MAX_KM from the shore and lowland beyond it
+    ({"sea_share": 0.0, "median": 70.4, "water_share": 0.0, "precip_mm": 450.0, "coast_km": 25.0}, 32.8, "coastal_plain"),
+    ({"sea_share": 0.0, "median": 70.4, "water_share": 0.0, "precip_mm": 450.0, "coast_km": 25.1}, 32.8, "lowland"),
+    ({"sea_share": 0.0, "median": 70.4, "water_share": 0.0, "precip_mm": 450.0, "coast_km": float("inf")}, 32.8, "lowland"),
     ({"sea_share": 0.1, "median": 60.0, "water_share": 0.0, "precip_mm": 120.0}, 31.3, "desert"),
     # Dead Sea basin and northern Arava (below 0 m, south of the Dead Sea's north tip 31.77) are hyper-arid desert
     ({"sea_share": 0.0, "median": -380.0, "water_share": 0.1, "precip_mm": 90.0}, 31.5, "desert"),
@@ -53,7 +57,30 @@ def test_neighbouring_centres_are_one_hex_width_apart():
     ({"sea_share": 0.0, "water_share": 0.8, "median": -430.0, "precip_mm": 60.0}, 31.5, "lake"),  # lake still wins
 ])
 def test_biome_rules(stats, lat, biome):
+    stats = {"coast_km": 4.4, **stats}   # the rules before 7 do not look at the distance
     assert hg.classify(stats, lat) == biome
+
+
+def test_coastal_plain_threshold_is_a_pure_function_of_distance():
+    base = {"sea_share": 0.0, "median": 100.0, "water_share": 0.0, "precip_mm": 500.0}
+    for km in (0.0, 10.0, hg.COASTAL_PLAIN_MAX_KM):
+        assert hg.classify({**base, "coast_km": km}, 32.0) == "coastal_plain"
+    for km in (hg.COASTAL_PLAIN_MAX_KM + 0.1, 60.0):
+        assert hg.classify({**base, "coast_km": km}, 32.0) == "lowland"
+    assert 15.0 <= hg.COASTAL_PLAIN_MAX_KM <= 40.0   # the coastal plain is roughly 15 to 40 km wide
+
+
+def test_coast_points_are_the_shore_of_sea_hexes_only():
+    sea = np.zeros((6, 6), dtype=bool)
+    sea[:, :3] = True                       # west half sea; its shore is column 2
+    sea[0, 5] = True                        # a lone 0 m pixel of inland no-data, in a land hex
+    q = np.zeros(36, dtype=int); r = np.zeros(36, dtype=int)
+    q[np.arange(36) % 6 >= 3] = 1           # hex (0, 0) holds the west half, hex (1, 0) the east half
+    pts = hg.coast_points_km(sea, q, r, {(0, 0)}, 5.0, 5.0)
+    assert sorted(set(pts[:, 0])) == [2.0]  # x = col 2 / 5 * 5 km
+    assert len(pts) == 6                    # one shore pixel per row; the inland speck is dropped
+    assert hg.distance_to_coast_km(5.0, 2.0, pts) == pytest.approx(3.0)
+    assert hg.distance_to_coast_km(5.0, 2.0, np.zeros((0, 2))) == float("inf")
 
 
 def test_water_share_counts_flat_water_below_minus_150():
@@ -216,7 +243,8 @@ STATIONS = json.loads((MAP_INPUTS / "precip_stations.json").read_text()) if HAVE
 PLACES = {"eilat": (34.951, 29.557), "mitzpe_ramon": (34.801, 30.610), "dimona": (35.033, 31.069),
           "arad": (35.213, 31.259), "tel_aviv": (34.781, 32.085), "ashkelon": (34.571, 31.669),
           "gaza_city": (34.454, 31.515), "jerusalem": (35.214, 31.778), "hebron": (35.099, 31.532),
-          "haifa": (34.989, 32.794)}
+          "haifa": (34.989, 32.794), "netanya": (34.857, 32.332), "tiberias": (35.533, 32.794),
+          "afula": (35.289, 32.610), "kiryat_shmona": (35.570, 33.208)}
 # Not asserted (borderline semi-arid, ~200 mm): Beersheba, Rafah, and Mar Saba (31.705, 35.330), whose own IMS gauge
 # DEIR MAR SABA (station 246950) averaged 216 mm in 1942-48, i.e. just above the 200 mm arid line.
 
@@ -272,3 +300,29 @@ def test_committed_hex_biome_matches_arid_boundary(place, dry):
     q, r = hg.settlement_hex(lon, lat, grid)
     biome = next(h["biome"] for h in grid["hexes"] if (h["q"], h["r"]) == (q, r))
     assert (biome == "desert") == dry, f"{place} hex ({q}, {r}) is {biome}"
+
+
+@pytest.mark.parametrize("place, biome", [("tel_aviv", "coastal_plain"), ("netanya", "coastal_plain"),
+                                          ("gaza_city", "coastal_plain"), ("ashkelon", "coastal_plain"),
+                                          ("haifa", "coastal_plain"),
+                                          ("tiberias", "lowland"), ("afula", "lowland")])
+def test_committed_hex_biome_is_coastal_only_near_the_sea(place, biome):
+    """Issue #204: the Tiberias hex (slopes above the Sea of Galilee, 70 m, ~39 km from the Mediterranean) was labelled
+    coastal plain."""
+    grid = json.loads(HEXES.read_text())
+    lon, lat = PLACES[place]
+    q, r = hg.settlement_hex(lon, lat, grid)
+    assert next(h["biome"] for h in grid["hexes"] if (h["q"], h["r"]) == (q, r)) == biome, place
+
+
+def test_no_committed_coastal_plain_hex_is_far_from_the_sea():
+    """Drift guard on the data: every committed coastal_plain hex is within the threshold of a sea hex's shore (a hex
+    centre is at most the threshold plus one hex circumradius from the nearest sea hex centre)."""
+    grid = json.loads(HEXES.read_text())
+    size = grid["hex_size_km"]
+    sea = [hg.hex_center_km(h["q"], h["r"], size) for h in grid["hexes"] if h["biome"] == "sea"]
+    for h in grid["hexes"]:
+        if h["biome"] == "coastal_plain":
+            c = hg.hex_center_km(h["q"], h["r"], size)
+            d = min(((c[0] - x) ** 2 + (c[1] - y) ** 2) ** 0.5 for x, y in sea)
+            assert d <= hg.COASTAL_PLAIN_MAX_KM + size, (h["q"], h["r"], d)

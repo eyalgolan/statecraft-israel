@@ -36,7 +36,7 @@ namespace Statecraft.Game.Map
             ["sea"] = new Color(0.16f, 0.42f, 0.55f), ["lake"] = new Color(0.20f, 0.50f, 0.62f),
             ["coastal_plain"] = new Color(0.55f, 0.62f, 0.36f), ["hills"] = new Color(0.62f, 0.58f, 0.40f),
             ["mountains"] = new Color(0.58f, 0.52f, 0.42f), ["valley"] = new Color(0.50f, 0.56f, 0.38f),
-            ["desert"] = new Color(0.80f, 0.68f, 0.48f),
+            ["lowland"] = new Color(0.53f, 0.59f, 0.37f), ["desert"] = new Color(0.80f, 0.68f, 0.48f),
         };
 
         /// <summary>Builds the terrain from the heightmap in <paramref name="mapDir"/> and the
