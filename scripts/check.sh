@@ -10,6 +10,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 base="${1:-${CHECK_BASE:-origin/main}}"
 tail_lines="${CHECK_TAIL:-40}"
+export UV_PYTHON="${UV_PYTHON:-3.12}"   # the Python CI uses (UV_PYTHON in .github/workflows/ci.yml)
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 

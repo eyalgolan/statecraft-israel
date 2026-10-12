@@ -48,6 +48,20 @@ def test_contributing_names_every_ci_command_and_the_unity_gate():
         assert cmd in text, cmd
 
 
+def test_check_script_runs_every_ci_command():
+    # scripts/check.sh (#263) promises to run what CI runs; a pin changed in ci.yml must change there too.
+    import yaml
+    ci = yaml.safe_load(read(".github/workflows/ci.yml"))
+    script = read("scripts/check.sh")
+    runs = [s["run"] for job in ci["jobs"].values() for s in job["steps"] if "run" in s]
+    assert len(runs) == 5, runs
+    for cmd in runs:
+        # The changelog job passes the PR's SHAs; the script passes its own base ref.
+        cmd = cmd.split(" --base ")[0]
+        assert cmd in script, cmd
+    assert f'UV_PYTHON:-{ci["env"]["UV_PYTHON"]}' in script
+
+
 def test_changelog_has_unreleased_on_top():
     text = read("CHANGELOG.md")
     assert text.index("## [Unreleased]") == text.index("## [")
