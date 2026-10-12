@@ -39,7 +39,7 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 3. **Tests first.** Add or change a test that fails without your change, then make it pass. Run:
    - `dotnet test sim/Statecraft.sln`, which must pass with 0 warnings (warnings are errors);
    - the tools tests (they need the .NET SDK too: one runs the sim's release gate):
-     `uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 pytest tools/tests -q`;
+     `uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q`;
    - the repository policy checks:
      `uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q` and `uv run scripts/oss/check_repo.py` (the command CI runs);
    - Unity EditMode tests, if you touched `unity/` (`-buildTarget OSXUniversal` keeps an earlier WebGL build from leaving the editor on the wrong platform):

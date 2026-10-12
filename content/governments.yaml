@@ -39,10 +39,84 @@ governments:
     name: Third Government
     # Coalition of 65 seats per he.wiki. Democratic List for Israeli Arabs, Progress and Work and Agriculture and
     # Development were Mapai-affiliated minority lists without ministers. The Progressive Party and the General Zionists
-    # were in opposition. Investiture vote 56-40 (he.wiki citing Haaretz, 9 October 1951).
+    # were in opposition. Investiture vote 56-40 (he.wiki citing Haaretz, 9 October 1951). Agudat Yisrael and Poalei
+    # Agudat Yisrael left the coalition in September 1952 (he.wiki: 18 September in its table, 23 September in its text;
+    # Levin's term ends on 18 September), leaving 60 seats. A government has one coalition list here, so the change is
+    # not modelled.
     from: 1951-10-08
+    to: 1952-12-24
     coalition: [mapai, hapoel_hamizrachi, agudat_yisrael, democratic_list_israeli_arabs, mizrachi, poalei_agudat_yisrael, progress_and_work, agriculture_and_development]
     sources:
       - { url: "https://en.wikipedia.org/wiki/Third_government_of_Israel", checked: 2026-10-10 }
-      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-10 }
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-12 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%203", checked: 2026-10-12 }
+    status: fact-checked
+  # Governments of 1952-1956 (#26). Dates and ministers follow the Knesset's position records (knesset.gov.il OData, one
+  # query per government), checked against he.wiki and en.wiki and against the plenum record of each formation.
+  - id: fourth_government
+    name: Fourth Government
+    # Ben-Gurion named the ministers on 22 December 1952, won the confidence vote on 23 December (63 to 24), and the
+    # ministers were sworn in on 24 December, when Hapoel HaMizrachi's Shapira and Burg joined (plenum records). The
+    # General Zionists' 20 seats count with the Sephardim (2) and the Yemenite Association (1): those three MKs sat in
+    # the General Zionist faction from 10 September 1951 (Knesset faction records; he.wiki gives the faction 23 seats).
+    # That makes 87 of 120, as in he.wiki. The General Zionists left on 26 May 1953 and returned on 2 June 1953
+    # (he.wiki); not modelled.
+    from: 1952-12-24
+    to: 1954-01-26
+    coalition: [mapai, general_zionists, sephardim, yemenite_association, hapoel_hamizrachi, mizrachi, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    sources:
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%204", checked: 2026-10-12 }
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
+      - { url: "https://en.wikipedia.org/wiki/Fourth_government_of_Israel", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250689.pdf", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250692.pdf", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250350.pdf", checked: 2026-10-12 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=KnessetNum%20eq%202%20and%20PositionID%20eq%2054", checked: 2026-10-12 }
+    status: fact-checked
+  - id: fifth_government
+    name: Fifth Government
+    # Sharett's first government, approved 75 to 23 on 26 January 1954, with the same parties as the Fourth. The
+    # Progressives had not decided on 25 January 1954 and joined on 1 February (plenum record of 25 January; he.wiki);
+    # one coalition list per government, so they count from the start.
+    from: 1954-01-26
+    to: 1955-06-29
+    coalition: [mapai, general_zionists, sephardim, yemenite_association, hapoel_hamizrachi, mizrachi, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    sources:
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%205", checked: 2026-10-12 }
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-12 }
+      - { url: "https://en.wikipedia.org/wiki/Fifth_government_of_Israel", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250778.pdf", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250781.pdf", checked: 2026-10-12 }
+    status: fact-checked
+  - id: sixth_government
+    name: Sixth Government
+    # Formed on 29 June 1955 without the General Zionists. Sharett told the Knesset that day that Mapai, Mizrachi,
+    # Hapoel HaMizrachi and the Progressive Party had agreed to support it (plenum record); he.wiki agrees. en.wiki's
+    # text says the Progressives were dropped, though Rosen stayed at Justice; the plenum record is used. It stayed in
+    # office as a caretaker after the 26 July 1955 election. From 15 August 1955 it faces the Third Knesset, where
+    # Hapoel HaMizrachi and Mizrachi sat as the National Religious Front (Knesset faction records), so that list is in
+    # the coalition too; each list has seats in only one of the two Knessets.
+    from: 1955-06-29
+    to: 1955-11-03
+    coalition: [mapai, hapoel_hamizrachi, mizrachi, national_religious_front, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    sources:
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%206", checked: 2026-10-12 }
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השישית", checked: 2026-10-12 }
+      - { url: "https://en.wikipedia.org/wiki/Sixth_government_of_Israel", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250532.pdf", checked: 2026-10-12 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202661%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }
+    status: fact-checked
+  - id: seventh_government
+    name: Seventh Government
+    # Ben-Gurion named the ministers on 2 November 1955 and won the confidence vote on 3 November, 73 to 32 (plenum
+    # records). 80 of 120 seats with the three Arab lists (he.wiki; IDI per research_notes/M4 content
+    # 1952-56/election-1955.md). It served until 7 January 1958, after the content range, so it has no end date.
+    from: 1955-11-03
+    coalition: [mapai, national_religious_front, ahdut_haavoda_poalei_tzion, mapam, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
+    sources:
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%207", checked: 2026-10-12 }
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }
+      - { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251309.pdf", checked: 2026-10-12 }
+      - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251311.pdf", checked: 2026-10-12 }
     status: fact-checked
