@@ -174,6 +174,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- The Unity idle test `PromoScreensTests.AnOpenScreenIsStillWhenIdle` no longer fails now and then (#242). It was not a
+  font atlas and not a recurring layout. A batch-mode editor runs few frames, and now and then it tells
+  `UIDocument` late that the test's GameObject exists. `UIDocument` then re-adds its root and the whole screen lays out
+  once more. The test now queues a player-loop update on every step, waits for that editor notification plus 5 frames,
+  and then allows no relayout or repaint in the next 60 frames (before: at most one, in the first 60 steps).
 - The Ministry of Rationing and Supply, and Dov Yosef as its minister, now start on 10 March 1949, when the First
   Government took office, not on 26 April 1949 (the day rationing was decided, which the austerity event keeps). The
   Knesset's 8 March 1949 First Government document names him. Agriculture is unchanged. The goldens do not move; the

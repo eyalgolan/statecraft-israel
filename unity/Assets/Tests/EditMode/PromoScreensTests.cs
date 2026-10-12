@@ -566,7 +566,9 @@ public class PromoScreensTests
     }
 
     /// <summary>The review's idle probe as a test: with Cabinet or Defence open (and with neither), 180 idle frames cause no
-    /// recurring relayout or repaint anywhere on either screen (at most one late settle, in the first 60).</summary>
+    /// recurring relayout or repaint anywhere on either screen. Once the editor has delivered its hierarchy-changed
+    /// notification for the new UIDocument (which makes it re-add its root, one full relayout) and 5 frames have passed, the
+    /// next 60 frames must have none. Frames are Time.frameCount, not test-runner steps (#242).</summary>
     [UnityTest]
     public IEnumerator AnOpenScreenIsStillWhenIdle()
     {
@@ -575,6 +577,12 @@ public class PromoScreensTests
             var rt = new RenderTexture(1920, 1080, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            // The editor tells UIDocument about the new GameObject some time later, in a batch-mode editor from the next
+            // step to tens of frames on. UIDocument then removes and re-adds its root, which resets every layout to zero and
+            // lays out the whole tree again (#242). Subscribe first, so that the warm-up below can wait for that.
+            int hierarchyFrame = -1;
+            Action onHierarchy = () => hierarchyFrame = Time.frameCount;
+            UnityEditor.EditorApplication.hierarchyChanged += onHierarchy;
             var go = new GameObject("ScreensIdle");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -592,25 +600,40 @@ public class PromoScreensTests
                 owned.Add(new DefencePresenter(root, bridge, Text));
                 var nav = new ScreenNav(root); owned.Add(nav);
                 nav.Open(open);
-                for (int i = 0; i < 30; i++) yield return null;                          // settle
-                // Frames with any relayout or repaint. One late settle (a font atlas growing when an earlier test drew new
-                // glyphs re-measures every label once) is allowed; anything recurring, or still happening in the last 120
-                // frames, is a per-frame cost and fails.
-                int frame = 0; var busy = new SortedDictionary<int, List<string>>();
-                void Note(string what) { if (!busy.TryGetValue(frame, out var l)) busy[frame] = l = new List<string>(); l.Add(what); }
+                // `yield return null` is a test-runner step, not a frame. A batch-mode editor runs the player loop (and with it the
+                // panel's layout and paint) only now and then while idle, so a count of steps put the first layout of a
+                // just-opened screen anywhere in the window. Each step queues a player-loop update, as a player runs one every
+                // frame, and frames are counted with Time.frameCount.
+                int fcStart = Time.frameCount, deadlineMs = Environment.TickCount + 60000;
+                var busy = new SortedDictionary<int, List<string>>();
+                void Note(string what) { var f = Time.frameCount - fcStart; if (!busy.TryGetValue(f, out var l)) busy[f] = l = new List<string>(); l.Add(what); }
                 foreach (var e in new[] { root.Q("screen-cabinet"), root.Q("screen-defence") }.SelectMany(s => s.Query<VisualElement>().ToList()))
                 {
                     var name = e.name;
                     e.RegisterCallback<GeometryChangedEvent>(_ => Note("layout " + name));
                     e.generateVisualContent += _ => Note("paint " + name);
                 }
-                for (frame = 0; frame < 180; frame++) yield return null;
+                // Warm-up: the screen is laid out and painted when it opens, and once more when the editor's hierarchy
+                // notification makes UIDocument re-add its root. That work is a one-off. Wait for the notification and then for
+                // 5 more frames; the wait is bounded, so a missing notification fails with a message and does not hang.
+                while (hierarchyFrame < 0 || Time.frameCount - Math.Max(hierarchyFrame, fcStart) < 5)
+                {
+                    Assert.Less(Environment.TickCount, deadlineMs, "the editor did not deliver the hierarchy change and 5 frames in 60 s");
+                    UnityEditor.EditorApplication.QueuePlayerLoopUpdate(); yield return null;
+                }
                 string Report() => string.Join("; ", busy.Select(kv => $"frame {kv.Key}: {kv.Value.Count} ({string.Join(", ", kv.Value.Distinct().Take(6))})"));
-                Assert.LessOrEqual(busy.Count, 1, $"open={open ?? "none"}: work in more than one idle frame: {Report()}");
-                Assert.IsFalse(busy.Keys.Any(f => f >= 60), $"open={open ?? "none"}: still working after 60 idle frames: {Report()}");
+                var warmUp = busy.Count;
+                busy.Clear(); int observeFrom = Time.frameCount;
+                while (Time.frameCount - observeFrom < 60)
+                {
+                    Assert.Less(Environment.TickCount, deadlineMs, "the editor did not run 60 frames in 60 s");
+                    UnityEditor.EditorApplication.QueuePlayerLoopUpdate(); yield return null;
+                }
+                Assert.AreEqual(0, busy.Count, $"open={open ?? "none"}: relayout or repaint in {busy.Count} of 60 idle frames after {warmUp} warm-up frames with work: {Report()}");
             }
             finally
             {
+                UnityEditor.EditorApplication.hierarchyChanged -= onHierarchy;
                 for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
