@@ -117,7 +117,7 @@
                 <ui:Label name="info-region" class="muted" />
                 <ui:VisualElement class="gold-rule" />
                 <ui:Label name="info-settlements" />
-                <ui:Label name="info-localities" class="muted" />
+                <ui:Label name="info-localities" class="muted wrap" />
                 <ui:Label name="info-placement" class="muted" />
                 <ui:VisualElement class="row">
                     <ui:Button name="build-camp" />

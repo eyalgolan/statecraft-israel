@@ -1,4 +1,5 @@
 #nullable enable
+using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
@@ -9,6 +10,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
 /// <summary>Issue #245: the info panel lists a hex's 1948 localities, with today's name by the same rule as the map tooltip
@@ -103,5 +105,51 @@ public class LocalityNameTests
         var text = InfoPanelPresenter.LocalitiesText(He, new[] { p });
         StringAssert.Contains(p.TodayHe!, text);
         Assert.AreEqual("", InfoPanelPresenter.LocalitiesText(He, new Localities.Place[0]));
+    }
+
+    /// <summary>The list wraps inside the info panel: the hex with the most localities (seven around Tel Aviv) at a desktop,
+    /// a laptop and a phone size, on the real Game.uxml and PanelSettings. Unwrapped, the line ran far past the panel.</summary>
+    [UnityTest]
+    public IEnumerator TheLongestListWrapsInsideThePanel()
+    {
+        var at = GameRoot.LocalitiesAt(map);
+        var hex = map.Localities.Select(p => HexPicker.FromLonLat(p.Settlement.Lon, p.Settlement.Lat, map.Hexes.bounds, map.Hexes.hex_size_km))
+            .OrderByDescending(h => at(h.q, h.r).Count).First();
+        Assert.GreaterOrEqual(at(hex.q, hex.r).Count, 5);
+        foreach (var (w, h) in new[] { (1920, 1080), (960, 600), (390, 844) })
+        {
+            var rt = new RenderTexture(w, h, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("LocalityLayoutTest");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var info = new InfoPanelPresenter(root, new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En), En,
+                C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id), localitiesAt: at);
+            try
+            {
+                info.Show(hex.q, hex.r);
+                var label = root.Q<Label>("info-localities");
+                for (int i = 0; i < 20 && !(label.contentRect.width > 0); i++) yield return null;
+                yield return null;   // one more pass, so text measured after the first layout settles
+                var box = label.contentRect;
+                var natural = label.MeasureTextSize(label.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                Assert.Greater(natural.x, box.width, $"{w}x{h}: the test needs a line longer than the panel");
+                Assert.AreEqual(WhiteSpace.Normal, label.resolvedStyle.whiteSpace, $"{w}x{h}: the list wraps");
+                var wrapped = label.MeasureTextSize(label.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
+                Assert.LessOrEqual(wrapped.y, box.height + 1f, $"{w}x{h}: the wrapped list fits its box {box}");
+                var panel = root.Q("info-panel").worldBound;
+                Assert.LessOrEqual(label.worldBound.xMax, panel.xMax + 0.5f, $"{w}x{h}: inside the panel {panel}");
+            }
+            finally
+            {
+                info.Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
     }
 }
