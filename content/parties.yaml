@@ -24,3 +24,5 @@ parties:
   - { id: democratic_list_israeli_arabs, name: Democratic List for Israeli Arabs }
   - { id: progress_and_work, name: Progress and Work }
   - { id: agriculture_and_development, name: Agriculture and Development }
+  - { id: national_religious_front, name: National Religious Front }
+  - { id: religious_torah_front, name: Religious Torah Front }

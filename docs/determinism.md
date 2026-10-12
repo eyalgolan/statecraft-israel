@@ -37,6 +37,14 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
   --expect "SMOKE OK 5 turns 1948-06-19 d3fdd459ddb876bd8d775c20edd1202cf56ca7134a8ad06f873d4d92034aa5b6"
 ```
 
+**When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
+`[sit]` and so on), against a committed snapshot of the run's final state: `sim/Statecraft.Sim.Tests/golden/hash1950.txt`
+and `hash1952.txt`, written by `GameState.Describe()`, which uses the same writer as `Hash()` (so the two cannot list
+different fields) and shows every number as a plain value next to its IEEE bits. If the change is deliberate, run
+`STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln`: it rewrites the snapshots, so the PR's diff of them shows
+reviewers what moved. Then update the hash constants in the three places below by hand, and say why in the commit
+message. The snapshot test also fails if a snapshot is stale while the hash is unchanged.
+
 **Cause text is derived, not hashed.** The "Why did this happen?" lines (`Cause.Message`, `Cause.Delta`) are output
 computed from the hashed state; replaying a save's commands regenerates them. Wording changes therefore do not move the
 goldens (playtest 2 changed every line's casing with no hash change). They are still deterministic:

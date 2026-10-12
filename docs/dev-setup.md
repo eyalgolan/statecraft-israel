@@ -12,6 +12,20 @@
 ## After cloning
 - Run `tools/build_sim_for_unity.sh` before opening `unity/`. The sim DLLs are build output and are git-ignored.
 
+## Without Unity (Linux, a container, a sandbox)
+
+Unity, a Unity licence and macOS are only needed for `unity/`. The sim, the content and the policy checks run headless. These are the commands CI runs (`.github/workflows/ci.yml`), with the .NET SDK 10.0.401 and `uv`:
+
+| Check | Command | CI job |
+|---|---|---|
+| Sim and content tests (0 warnings) | `dotnet test sim/Statecraft.sln -c Release` | Sim (dotnet test) |
+| Repository policy | `uv run scripts/oss/check_repo.py` | Repo policy |
+| Policy checker tests | `uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q` | Repo policy |
+| Data tool tests (one runs the sim's release gate, so they need the .NET SDK too) | `uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q` | Tools (pytest) |
+| Changelog line | `uv run scripts/oss/changelog_check.py --base origin/main` | Changelog |
+
+Not possible without Unity and not in CI: the Unity EditMode tests, player builds, `tools/web_check.py` and the visual profiles below. If your change touches `unity/`, or `sim/` code that Unity compiles, say in the PR that you could not run them. The maintainer runs them (`CONTRIBUTING.md`, "Unity EditMode tests are not in CI").
+
 ## Builds and browser checks (M3)
 - Web build: `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression disabled -logFile "$PWD/unity-build-web.log"`
   (`-compression` is `disabled`, `gzip` or `brotli`; output in `unity/Builds/Web-<compression>/`, about 2 minutes).
