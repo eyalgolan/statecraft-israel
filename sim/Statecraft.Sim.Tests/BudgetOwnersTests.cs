@@ -173,6 +173,43 @@ public class BudgetOwnersTests
     }
 
     [Fact]
+    public void AHistoricalOnlyOrSeveralHolderOfficeCannotOwnALine()
+    {
+        var offices = Fixture.Files["offices.yaml"] + SupplyOffice
+            + "  - id: elder\n    title: Elder\n    historical_only: true\n"
+            + "  - id: without_portfolio\n    title: Minister without Portfolio\n    several_holders: true\n";
+        foreach (var (office, message) in new[] { ("elder", "historical-only"), ("without_portfolio", "several holders") })
+        {
+            var owned = Assert.Throws<ContentException>(() => Load($"budget_owners:\n  supply:\n    - {{ from: 1948-05-15, office: supply_minister }}\n    - {{ from: 1950-01-01, office: {office} }}\n", offices: offices));
+            Assert.Equal("budget_owners.supply[1].office", owned.Field);
+            Assert.Contains(message, owned.Message);
+            var ownLine = Assert.Throws<ContentException>(() => Load(owners: "", shares: $"budget_start: {{ finance_minister: 0.5, {office}: 0.5 }}\n", offices: offices));
+            Assert.Equal($"budget_start.{office}", ownLine.Field);
+            Assert.Contains(message, ownLine.Message);
+        }
+    }
+
+    [Fact]
+    public void AnOfficeCanHandOneLineOverAndTakeAnotherOnTheSameDay()
+    {
+        // The Prime Minister owns relief until 1 January 1950 and supply from that day: the stretches touch, they do not overlap.
+        var offices = Fixture.Files["offices.yaml"] + SupplyOffice + "  - id: relief_minister\n    title: Minister of Relief\n";
+        var c = Load(Owners + "  relief:\n    - { from: 1948-05-15, office: prime_minister }\n    - { from: 1950-01-01, office: relief_minister }\n",
+            "budget_start: { finance_minister: 0.4, defense_minister: 0.3, supply: 0.2, relief: 0.1 }\n", offices);
+        Assert.Equal("relief", Offices.BudgetLineOf(c, "prime_minister", Last));
+        Assert.Equal("supply", Offices.BudgetLineOf(c, "prime_minister", Change));
+        Assert.Equal("relief", Offices.BudgetLineOf(c, "relief_minister", Change));
+    }
+
+    [Fact]
+    public void ALineIdWithDatedOwnersIsLowercase()
+    {
+        var e = Assert.Throws<ContentException>(() => Load(Owners.Replace("  supply:", "  Supply:"), Shares.Replace("supply:", "Supply:")));
+        Assert.Equal("budget_start.Supply", e.Field);
+        Assert.Contains("lowercase", e.Message);
+    }
+
+    [Fact]
     public void ATypoInAnOwnerKeyFailsAtTheYamlLevel()
     {
         Assert.Throws<ContentException>(() => Load("budget_owners:\n  supply:\n    - { from: 1948-05-15, ofice: prime_minister }\n"));

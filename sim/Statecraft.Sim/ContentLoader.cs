@@ -410,6 +410,7 @@ namespace Statecraft.Sim
                 {
                     if (!offices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "unknown office (or give the line an owner in budget_owners)");
                     if (historicalOffices.Contains(kv.Key)) throw new ContentException(file, $"budget_start.{kv.Key}", "historical-only titles cannot have a budget line");
+                    if (c.Offices.Any(o => o.Id == kv.Key && o.SeveralHolders)) throw new ContentException(file, $"budget_start.{kv.Key}", "an office with several holders cannot own a budget line");
                     // A budget line must not silently stop mattering when its office is abolished: give it dated owners (#108).
                     var until = c.Offices.First(o => o.Id == kv.Key).Until;
                     if (until.HasValue)
@@ -432,6 +433,8 @@ namespace Statecraft.Sim
                         throw new ContentException(file, tp + ".from", FormattableString.Invariant($"must be after the previous owner's date ({terms[i - 1].From:yyyy-MM-dd})"));
                     if (t.Office == "" || !offices.Contains(t.Office)) throw new ContentException(file, tp + ".office", "unknown office");
                     if (historicalOffices.Contains(t.Office)) throw new ContentException(file, tp + ".office", "historical-only titles cannot have a budget line");
+                    // Like policies and effects (#277): the line's factor scales one minister's competence, so it needs one holder.
+                    if (c.Offices.Any(o => o.Id == t.Office && o.SeveralHolders)) throw new ContentException(file, tp + ".office", "an office with several holders cannot own a budget line");
                     var end = i + 1 < terms.Count ? terms[i + 1].From : eraEnd;
                     var office = c.Offices.First(o => o.Id == t.Office);
                     if (!office.ExistsOn(t.From))

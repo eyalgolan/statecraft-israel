@@ -27,6 +27,22 @@ public class BudgetScreenTests
     }
 
     [Test]
+    public void TheImmigrationLineNamesTheOwnerOfTheDay()
+    {
+        // rules.yaml budget_owners (#108): the Minister of Immigration until 7 October 1951, the Prime Minister from 8 October.
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        var budget = new BudgetPresenter(ui.Root, bridge, Text);
+        bridge.State.Date = new System.DateTime(1951, 10, 7);
+        budget.Render();
+        Assert.AreEqual("Minister of Immigration (Haim-Moshe Shapira)", ui.Q<Label>("budget-immigration-name").text);
+        bridge.State.Date = new System.DateTime(1951, 10, 8);
+        budget.Render();
+        Assert.AreEqual("Prime Minister (David Ben-Gurion)", ui.Q<Label>("budget-immigration-name").text);
+        Assert.AreEqual("15%", ui.Q<Label>("budget-immigration-share").text);       // the share stays on the line's own id
+    }
+
+    [Test]
     public void TheScreenListsTheMinistriesAndSubmitsTheDraft()
     {
         using var ui = new UiTestKit();
