@@ -4,6 +4,8 @@ using Statecraft.Sim;
 
 // Text front end for the headless sim.
 //   dotnet run --project Statecraft.Cli -- [--content DIR] [--seed N] [--auto historical --turns N]
+//   dotnet run --project Statecraft.Cli -- --preview [--until YYYY-MM-DD] [--set key=value]... [--show id,id] [--every N]
+//       writer preview: the historical run with some rules.yaml values changed in memory, against the real content
 //   dotnet run --project Statecraft.Cli -- --release-gate [--content DIR]   (exit 0 when shareable, 3 when not)
 // Interactive commands: c EVENT OPTION | p POLICY LEVEL | m LEVEL | s DELTA | n (end turn) | q
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -11,7 +13,7 @@ CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
 string? Arg(string name) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
 
-foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto" })
+foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every" })
 {
     var at = Array.IndexOf(args, flag);
     if (at >= 0 && (at + 1 >= args.Length || args[at + 1].StartsWith("--", StringComparison.Ordinal)))
@@ -25,6 +27,31 @@ string FindContent()
     for (var d = new DirectoryInfo(Directory.GetCurrentDirectory()); d != null; d = d.Parent)
         if (File.Exists(Path.Combine(d.FullName, "content", "people.yaml"))) return Path.Combine(d.FullName, "content");
     throw new DirectoryNotFoundException();
+}
+
+if (Array.IndexOf(args, "--preview") >= 0)
+{
+    try
+    {
+        var sets = new List<string>();
+        for (int i = 0; i + 1 < args.Length; i++) if (args[i] == "--set") sets.Add(args[i + 1]);
+        var until = new DateTime(1950, 1, 1);
+        var untilText = Arg("--until");
+        if (untilText != null && !DateTime.TryParseExact(untilText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out until))
+        { Console.Error.WriteLine($"Invalid value for --until: '{untilText}' (use YYYY-MM-DD)"); return 1; }
+        ulong pseed = GoldenRun.Seed;
+        var pseedText = Arg("--seed");
+        if (pseedText != null && !InputParse.TryULong(pseedText, out pseed)) { Console.Error.WriteLine($"Invalid value for --seed: '{pseedText}'"); return 1; }
+        int every = 8;
+        var everyText = Arg("--every");
+        if (everyText != null && !InputParse.TryInt(everyText, out every)) { Console.Error.WriteLine($"Invalid value for --every: '{everyText}'"); return 1; }
+        var show = (Arg("--show") ?? "morale,food_supply,treasury,fx").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        Console.Write(Preview.Run(Arg("--content") ?? FindContent(), until, pseed, sets, show, every));
+        return 0;
+    }
+    catch (ArgumentException e) { Console.Error.WriteLine($"Preview error: {e.Message}"); return 1; }
+    catch (DirectoryNotFoundException) { Console.Error.WriteLine("Content error: content directory not found (use --content <path>)"); return 2; }
+    catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message}"); return 2; }
 }
 
 Content content;
