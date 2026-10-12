@@ -44,7 +44,11 @@ fi
 [[ -f unity/Builds/Web-disabled/index.html ]] || { echo "art_checkpoint: no build at unity/Builds/Web-disabled (run without --no-build)" >&2; exit 2; }
 out="captures/visual/$name"
 rm -rf "$out"; mkdir -p "$out"
-uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&shot${units_query}${proof_query}" --expect "GOLDEN OK 1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07" --expect "GOLDEN OK 1952 62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8" --expect "SHOT done" --shots "$out" --stall 180 \
+# The expected hashes come from the golden manifest (docs/determinism.md), so a re-pin needs no edit here.
+golden() { awk -v k="$1" '$1 == k { print $2 }' sim/Statecraft.Sim.Tests/golden/manifest.txt; }
+hash1950=$(golden hash1950); hash1952=$(golden hash1952)
+[[ -n "$hash1950" && -n "$hash1952" ]] || { echo "art_checkpoint: no hash1950/hash1952 in sim/Statecraft.Sim.Tests/golden/manifest.txt" >&2; exit 2; }
+uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&shot${units_query}${proof_query}" --expect "GOLDEN OK 1950 $hash1950" --expect "GOLDEN OK 1952 $hash1952" --expect "SHOT done" --shots "$out" --stall 180 \
   --fail 'GOLDEN FAIL|SMOKE FAIL|BOOT FAIL|Statecraft/.*(not supported|Unsupported)|(not supported|Unsupported).*Statecraft/'
 # The poses come from PromoPose.All's source, so a new pose is checked without editing this script (review M3).
 poses=$(grep -o 'new PromoPose("[A-Za-z0-9_]*"' unity/Assets/Scripts/Map/PromoPose.cs | cut -d'"' -f2)
