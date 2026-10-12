@@ -3782,5 +3782,10 @@
       "bytes": 172,
       "sha256": "f4ec54958a23a42aa805457256fe60b763f220f6a87a226302a6161a76774028"
     }
-  ]
+  ],
+  "contribution": {
+    "pull_request": "https://github.com/eyalgolan/statecraft-israel/pull/336",
+    "contributing_account": "pixelrenderai-hash",
+    "permissions_contact": "Request standalone asset-sale permission from the original contributing model creator through the introducing pull request. Maintainers and forks cannot grant it unless separately authorized."
+  }
 }

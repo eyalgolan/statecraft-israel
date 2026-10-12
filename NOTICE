@@ -135,7 +135,8 @@ UI Toolkit's advanced text generator uses (Hebrew on the start screen): Copyrigh
 others, Unicode License v3 (https://www.unicode.org/license.txt).
 
 Command model contribution (unity/Assets/Art/CommandModels/):
-Original contributing model creator: identified in the pull request introducing these models.
+Original contributing model creator: contributed via @pixelrenderai-hash in
+https://github.com/eyalgolan/statecraft-israel/pull/336 (contact for standalone asset-sale permission).
 Generated using paid Tripo P2.0 on 10–11 October 2026; sanitized provenance: docs/command-models.json.
 Public release authorized by the contributing creator on 12 October 2026 under LicenseRef-Statecraft-Models
 (LICENSES/Statecraft-Models.txt). Rights are retained to the extent held. Download/use/modification/redistribution,
