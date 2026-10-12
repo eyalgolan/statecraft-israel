@@ -69,7 +69,8 @@ public class Governments1952To1956Tests
     public void CoalitionSeatsMatchTheSources()
     {
         Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(C, Fourth));                     // he.wiki: 87
-        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1954, 1, 26)));
+        Assert.Equal((83, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1954, 1, 26)));   // without the Progressives' 4 seats until 1 February (#278)
+        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1954, 2, 1)));
         Assert.Equal((64, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1955, 6, 29))); // election lists; he.wiki's 66 counts later factions
         // The Third Knesset convenes on 15 August 1955 once #221's results are in content/; until then the Second runs on.
         var third = C.Legislatures.FirstOrDefault(l => l.Id == "third_knesset");
@@ -139,6 +140,21 @@ public class Governments1952To1956Tests
             Assert.Equal("national_religious_front", Offices.PartyOf(C, p, new DateTime(1956, 1, 1)));
         }
         Assert.Contains("national_religious_front", Offices.Government(C, new DateTime(1956, 1, 1))!.Coalition);
+    }
+
+    /// <summary>The Ministry of Rationing and Supply is not in the Fourth Government's records. Rationing stays with the
+    /// Minister of Trade and Industry, Peretz Bernstein, who said in the Knesset on 4 May 1953 that his ministry holds the
+    /// supply tasks and, to some extent, rationing (#283). Yosef, now without portfolio, no longer answers for it.</summary>
+    [Fact]
+    public void RationingIsTheTradeMinistersAfterTheFourthGovernmentForms()
+    {
+        Assert.Equal("dov_yosef", Who("rationing_minister", 1952, 12, 23));
+        foreach (var (y, m, d) in new[] { (1952, 12, 24), (1953, 1, 1), (1953, 5, 4), (1953, 7, 1), (1953, 12, 31), (1954, 1, 25) })
+        {
+            Assert.Equal("bernstein", Who("rationing_minister", y, m, d));
+            Assert.Equal(Who("trade_minister", y, m, d), Who("rationing_minister", y, m, d));
+        }
+        Assert.Equal("bernstein", Who("rationing_minister", 1954, 3, 15));
     }
 
     /// <summary>Postal Services (3 November 1952) and Development (15 June 1953) are not seats before they exist, cannot

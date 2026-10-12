@@ -12,6 +12,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `prime_minister`) belongs to the Minister of Immigration until 7 October 1951 and to the Prime Minister from 8 October
   1951. A line scales effects through the owner of the day, and the Budget screen names that office. An office with
   several holders cannot own a line. The goldens do not move.
+- Coalition changes inside a government's term (`coalition_changes` in governments.yaml, each with a date and sources).
+  Seats, majority, the Cabinet's party rule and the causes use the coalition of the day. Adds Agudat Yisrael and Poalei
+  Agudat Yisrael leaving the Third Government (18 September 1952, so 60 of 120 seats and no majority until 24 December),
+  the General Zionists leaving the Fourth (25 May 1953) and returning (3 June 1953), and the Progressive Party joining
+  the Fifth (1 February 1954). The goldens do not move (fixes #278).
 - A turn now ends on the next era's start date, not only on the last era's end (chapters spec 4.1). A turn that would
   leave under 14 days before the boundary is lengthened to it. Real days scale the turn's rates. With one era, or no
   boundary in a run, nothing changes; goldens unchanged (refs #59).
@@ -160,6 +165,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- Rationing no longer has a vacant minister from 24 December 1952. The Knesset records show no Ministry of Rationing and
+  Supply in the Fourth Government, and on 4 May 1953 the Minister of Trade and Industry, Peretz Bernstein, told the
+  Knesset that his ministry held the supply tasks and, to some extent, rationing. He answers for rationing until
+  29 June 1955. Dov Yosef's Agriculture term now starts on 22 March 1949, as in the Knesset position record, not 10 March
+  (issues #225 and #283). The golden hashes do not move.
 - The game settlements Lod and Ramla show their 1948 names, Lydda and Ramle, as Village Statistics 1945 lists them
   (owner ruling). Content only: the goldens and the smoke run are unchanged; saves made before load with the
   "different game content" warning.
@@ -210,6 +220,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- The Unity idle test `PromoScreensTests.AnOpenScreenIsStillWhenIdle` no longer fails now and then (#242). It was not a
+  font atlas and not a recurring layout. A batch-mode editor runs few frames, and now and then it tells
+  `UIDocument` late that the test's GameObject exists. `UIDocument` then re-adds its root and the whole screen lays out
+  once more. The test now queues a player-loop update on every step, waits for that editor notification plus 5 frames,
+  and then allows no relayout or repaint in the next 60 frames (before: at most one, in the first 60 steps).
 - The Ministry of Rationing and Supply, and Dov Yosef as its minister, now start on 10 March 1949, when the First
   Government took office, not on 26 April 1949 (the day rationing was decided, which the austerity event keeps). The
   Knesset's 8 March 1949 First Government document names him. Agriculture is unchanged. The goldens do not move; the

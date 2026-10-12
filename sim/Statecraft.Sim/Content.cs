@@ -113,9 +113,36 @@ namespace Statecraft.Sim
         public string Name { get; set; } = "";
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
+        /// <summary>The parties in the coalition when the government took office. Parties that join or leave later are
+        /// in <see cref="CoalitionChanges"/>; read the coalition of a given day with <see cref="CoalitionOn"/>.</summary>
         public List<string> Coalition { get; set; } = new List<string>();
+        /// <summary>Parties joining or leaving the coalition inside the term, in date order (the loader checks it).</summary>
+        public List<CoalitionChange> CoalitionChanges { get; set; } = new List<CoalitionChange>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+
+        /// <summary>The coalition on <paramref name="date"/>: the opening list with every change dated on or before that
+        /// day applied. The result keeps the opening order, with parties that joined added at the end.</summary>
+        public List<string> CoalitionOn(DateTime date)
+        {
+            var result = new List<string>(Coalition);
+            foreach (var change in CoalitionChanges)
+            {
+                if (change.Date > date) break;
+                result.RemoveAll(p => change.Leaves.Contains(p));
+                foreach (var p in change.Joins) if (!result.Contains(p)) result.Add(p);
+            }
+            return result;
+        }
+    }
+
+    /// <summary>Parties joining or leaving a government's coalition on one day, inside its term. Applies from that day.</summary>
+    public sealed class CoalitionChange
+    {
+        public DateTime Date { get; set; }
+        public List<string> Joins { get; set; } = new List<string>();
+        public List<string> Leaves { get; set; } = new List<string>();
+        public List<Source> Sources { get; set; } = new List<Source>();
     }
 
     public sealed class Indicator

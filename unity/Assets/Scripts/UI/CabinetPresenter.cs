@@ -81,11 +81,11 @@ namespace Statecraft.Game.UI
 
         /// <summary>The legislature's party blocks in drawing order: the coalition's parties, then the opposition's, each by
         /// seats (most first, then content order), in the coalition or opposition colour. Parties without a seat are left out.</summary>
-        public static IReadOnlyList<Hemicycle.Group> Blocks(Content c, Legislature leg, Government? gov)
+        public static IReadOnlyList<Hemicycle.Group> Blocks(Content c, Legislature leg, Government? gov, System.DateTime date)
         {
             var order = c.Parties.Select((p, i) => (p.Id, i)).ToDictionary(x => x.Id, x => x.i);
             int Order(string id) => order.TryGetValue(id, out var i) ? i : int.MaxValue;
-            var inCoalition = new HashSet<string>(gov?.Coalition ?? new List<string>());
+            var inCoalition = new HashSet<string>(gov?.CoalitionOn(date) ?? new List<string>());
             var blocks = new List<Hemicycle.Group>();
             foreach (var coalition in new[] { true, false })
                 foreach (var kv in leg.Seats.Where(kv => kv.Value > 0 && inCoalition.Contains(kv.Key) == coalition)
@@ -223,7 +223,7 @@ namespace Statecraft.Game.UI
             screen.Q<Label>("cabinet-coalition").text = text.Format("cabinet.coalition", seats, size, PlayerText.Percent(s.CoalitionStability));
             screen.Q<UiBar>("cabinet-stability").Value = (float)s.CoalitionStability;
             if (leg == null) { hemicycle.Set(new Hemicycle.Group[0], 0); chips.Clear(); chipsFor = ""; return; }
-            var blocks = Blocks(c, leg, gov);
+            var blocks = Blocks(c, leg, gov, s.Date);
             hemicycle.Set(blocks, leg.Size);
             screen.Q<Label>("cabinet-house-size").text = leg.Size.ToString(System.Globalization.CultureInfo.InvariantCulture);
             screen.Q<Label>("cabinet-opposition").text = text.Format("cabinet.opposition", blocks.Where(b => !b.Coalition).Sum(b => b.Seats));

@@ -596,6 +596,32 @@ namespace Statecraft.Sim
                 Period("governments.yaml", $"governments[{g.Id}]", g.From, g.To);
                 foreach (var p in g.Coalition)
                     if (!parties.Contains(p)) throw new ContentException("governments.yaml", $"governments[{g.Id}].coalition.{p}", "unknown party");
+                var inOffice = new List<string>(g.Coalition);
+                var previous = g.From;
+                for (int i = 0; i < g.CoalitionChanges.Count; i++)
+                {
+                    var ch = g.CoalitionChanges[i];
+                    var at = $"governments[{g.Id}].coalition_changes[{i}]";
+                    if (ch.Date == default) throw new ContentException("governments.yaml", at + ".date", "required");
+                    if (ch.Date <= g.From || (g.To.HasValue && ch.Date >= g.To.Value))
+                        throw new ContentException("governments.yaml", at + ".date", FormattableString.Invariant($"must be inside the term, after {g.From:yyyy-MM-dd}") + (g.To.HasValue ? FormattableString.Invariant($" and before {g.To.Value:yyyy-MM-dd}") : ""));
+                    if (i > 0 && ch.Date <= previous) throw new ContentException("governments.yaml", at + ".date", FormattableString.Invariant($"must be after the previous change ({previous:yyyy-MM-dd})"));
+                    previous = ch.Date;
+                    if (ch.Joins.Count == 0 && ch.Leaves.Count == 0) throw new ContentException("governments.yaml", at, "needs joins or leaves");
+                    if (ch.Sources.Count == 0) throw new ContentException("governments.yaml", at + ".sources", "required: a coalition change needs a source");
+                    foreach (var p in ch.Leaves)
+                    {
+                        if (!parties.Contains(p)) throw new ContentException("governments.yaml", $"{at}.leaves.{p}", "unknown party");
+                        if (!inOffice.Remove(p)) throw new ContentException("governments.yaml", $"{at}.leaves.{p}", "not in the coalition on that day");
+                    }
+                    foreach (var p in ch.Joins)
+                    {
+                        if (!parties.Contains(p)) throw new ContentException("governments.yaml", $"{at}.joins.{p}", "unknown party");
+                        if (ch.Leaves.Contains(p)) throw new ContentException("governments.yaml", $"{at}.joins.{p}", "cannot join and leave on the same day");
+                        if (inOffice.Contains(p)) throw new ContentException("governments.yaml", $"{at}.joins.{p}", "already in the coalition on that day");
+                        inOffice.Add(p);
+                    }
+                }
             }
             NoOverlap("legislatures.yaml", "legislatures", c.Legislatures.Select(l => (l.Id, l.From, l.To)));
             NoOverlap("governments.yaml", "governments", c.Governments.Select(g => (g.Id, g.From, g.To)));
