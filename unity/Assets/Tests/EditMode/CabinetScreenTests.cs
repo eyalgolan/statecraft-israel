@@ -279,4 +279,17 @@ public class CabinetScreenTests
         Assert.AreEqual($"Consults the {leg.Body} · {leg.Size} members · its votes do not bind", ui.Q<Label>("cabinet-legislature").text);
         cabinet.Dispose();
     }
+
+    [Test]
+    public void TheHouseColoursTheCoalitionOfTheDay()
+    {
+        // Agudat Yisrael and Poalei Agudat Yisrael leave the Third Government on 18 September 1952 (#278).
+        var leg = Offices.Legislature(C, new DateTime(1952, 9, 18))!;
+        var gov = Offices.Government(C, new DateTime(1952, 9, 18))!;
+        bool InCoalition(DateTime d, string party) => CabinetPresenter.Blocks(C, leg, gov, d).Single(b => b.Party == party).Coalition;
+        Assert.IsTrue(InCoalition(new DateTime(1952, 9, 17), "agudat_yisrael"));
+        Assert.IsFalse(InCoalition(new DateTime(1952, 9, 18), "agudat_yisrael"));
+        Assert.IsFalse(InCoalition(new DateTime(1952, 9, 18), "poalei_agudat_yisrael"));
+        Assert.AreEqual(60, CabinetPresenter.Blocks(C, leg, gov, new DateTime(1952, 9, 18)).Where(b => b.Coalition).Sum(b => b.Seats));
+    }
 }

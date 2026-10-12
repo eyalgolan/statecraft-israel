@@ -268,3 +268,22 @@ including entries carried in an older save.
 `from` (the day an office was established) and `until` (the day it was abolished) limit when an office is a Cabinet seat
 and can be filled. Terms in `people.yaml` must fall between them. A budget line may run before `from`: the Budget
 screen then names the date the ministry begins instead of calling it vacant.
+
+### Budget lines owned by office and date
+
+A line in `rules.yaml` `budget_start` is keyed by its own id. With no `budget_owners` entry, the office with that id owns it
+for the whole era (and must not be abolished). A line can have a dated list of owners instead:
+
+```yaml
+budget_start:
+  prime_minister: 0.15       # the Immigration line; its id stays as it was, the owner changes
+budget_owners:
+  prime_minister:
+    - { from: 1948-05-15, office: immigration_minister }
+    - { from: 1951-10-08, office: prime_minister }
+```
+
+The first owner starts on the first day of the era (no gap). Each `from` is inside the era and after the one before. Each
+owner's office must exist from its `from` to the next `from` (or the end of the era), and one office may own only one line on
+any day. The loader refuses anything else. `Offices.BudgetOwner(content, line, date)` and `Offices.BudgetLineOf(content,
+office, date)` are the only readers. Lines that change across an era boundary are the carry rules' job (#59).

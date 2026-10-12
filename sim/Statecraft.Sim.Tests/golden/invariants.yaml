@@ -1,0 +1,40 @@
+# Invariant checks with tolerance bands (#294), evaluated on the golden runs by InvariantTests. A hash golden says
+# "something changed"; these say "it is still plausible". They only add checks: a tuned number still moves the hash
+# goldens, which are rebaselined as before (docs/determinism.md).
+#
+# Fields: name, run (1950 or 1952), value (an indicator id, or treasury, debt, fx, population, stability),
+# when (end | always | yyyy-MM-dd = the first state on or after that date), min and/or max, reason (a source, or the
+# test or note the band comes from). A failure names the check, the value and the band.
+#
+# These first bands are loose guards set around the current runs. Which ranges matter comes from the design document
+# and the maintainers: replace or tighten them there.
+invariants:
+  - name: foreign-currency-runs-out
+    run: 1952
+    value: fx
+    when: end
+    max: 0
+    reason: "Foreign currency ran out in autumn 1951 (FRUS 1951 v.V doc 513); capital_inflow_per_year is tuned to it (EconomyCalibrationTests)."
+
+  - name: debt-grows-through-the-run
+    run: 1952
+    value: debt
+    when: end
+    min: 100
+    max: 300
+    reason: "Internal debt rose IL 98.4m over 1950-51 (Michaely 1975, Table 5-2), and the budget is financed by borrowing (EconomyCalibrationTests). Wide band around the current run."
+
+  - name: population-stays-in-range
+    run: 1952
+    value: population
+    when: always
+    min: 600000
+    max: 1800000
+    reason: "Plausibility guard, not a sourced range: the run starts at 649,400 (rules.yaml initial_population) and ends near 1.4 million after the immigration of 1948-51. The band catches a run that loses people or runs away."
+
+  - name: coalition-stays-clear-of-collapse
+    run: 1952
+    value: stability
+    when: always
+    min: 0.35
+    reason: "The run must not approach PoliticsSystem.CollapseBelow (0.2); ThePlaythroughSurvivesTo1952 checks the game does not end."

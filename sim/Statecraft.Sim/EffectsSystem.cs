@@ -20,18 +20,23 @@ namespace Statecraft.Sim
             if (office == "") return 1.0;
             var holder = Cabinet.Holder(c, s, office);
             var competence = holder == null ? 0.5 : 0.5 + holder.Competence / 20.0;
-            return competence * BudgetFactor(s, office);
+            return competence * BudgetFactor(c, s, office);
         }
 
-        /// <summary>An equal split of the budget is neutral (1.0); a ministry's factor runs from 0.5 (no money) to 1.5.
-        /// An office with no budget line (not in budget_start, so the player can never fund it) is neutral too:
-        /// treating it as unfunded would halve its effects permanently with no way to fix it.</summary>
-        public static double BudgetFactor(GameState s, string office) => BudgetFactor(s.Budget, office);
-
-        /// <summary>The same rule for any set of shares (the Budget screen shows the factor of a draft budget).</summary>
-        public static double BudgetFactor(IReadOnlyDictionary<string, double> budget, string office)
+        /// <summary>The factor of the budget line that <paramref name="office"/> owns on the state's date (#108: a line can
+        /// change owner on a date, see <see cref="Offices.BudgetOwner"/>). An equal split of the budget is neutral (1.0); a
+        /// line's factor runs from 0.5 (no money) to 1.5. An office that owns no line (the player can never fund it) is
+        /// neutral too: treating it as unfunded would halve its effects permanently with no way to fix it.</summary>
+        public static double BudgetFactor(Content c, GameState s, string office)
         {
-            if (!budget.TryGetValue(office, out var share)) return 1.0;
+            var line = Offices.BudgetLineOf(c, office, s.Date);
+            return line == null ? 1.0 : BudgetFactor(s.Budget, line);
+        }
+
+        /// <summary>The same rule for one budget line of any set of shares (the Budget screen shows the factor of a draft budget).</summary>
+        public static double BudgetFactor(IReadOnlyDictionary<string, double> budget, string line)
+        {
+            if (!budget.TryGetValue(line, out var share)) return 1.0;
             return Math.Min(1.5, 0.5 + share * budget.Count / 2.0);
         }
 

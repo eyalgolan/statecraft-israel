@@ -378,6 +378,14 @@ people:
       - { office: trade_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: trade_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
       - { office: trade_minister, from: 1954-01-26, to: 1955-06-29, sources: *gov5 }
+      # Responsibility for rationing stayed with Trade and Industry when the Fourth Government took office: the Knesset
+      # records show no Ministry of Rationing and Supply or rationing minister in the Fourth Government, and on
+      # 4 May 1953 Bernstein told the Knesset that his ministry had been called the Ministry of Rationing and Supply and
+      # still held the supply tasks and, to some extent, rationing, with a special food division. On 15 March 1954 he said
+      # the same about the ministry's past and its move from control to development. No separate handover is recorded, so
+      # the term starts with his Trade term. Plenum minutes of the Second Knesset, checked 2026-10-12. Issue #283.
+      - { office: rationing_minister, from: 1952-12-24, to: 1954-01-26, sources: [*gov4_k, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250540.pdf", checked: 2026-10-12 }] }
+      - { office: rationing_minister, from: 1954-01-26, to: 1955-06-29, sources: [*gov5_k, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250596.pdf", checked: 2026-10-12 }] }
     status: fact-checked
   - id: remez
     name: David Remez
@@ -436,12 +444,16 @@ people:
     competence: 7
     loyalty: 8
     offices:
-      - { office: agriculture_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
+      # Agriculture from 22 March 1949, not 10 March: the Knesset position record gives that date, and on 8 March 1949
+      # the Prime Minister told the Knesset that Trade and Industry, Health, Agriculture and Minorities were not yet
+      # assigned and that the whole government was answerable for them for now (gov1.pdf). The 1 June 1949 date in the
+      # he.wiki First Government table is not in the Knesset records. Issue #225.
+      - { office: agriculture_minister, from: 1949-03-22, to: 1950-11-01, sources: [&gov1_pdf { url: "https://main.knesset.gov.il/mk/government/documents/gov1.pdf", checked: 2026-10-12 }, &gov1_k { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%201", checked: 2026-10-12 }] }
       # As Minister of Rationing and Supply: named in the First Government presented to the Knesset on 8 March 1949 and in
       # office from 10 March 1949 (Knesset gov1.pdf; he.wiki First Government table and "דב יוסף"). Rationing itself was
       # decided on 26 April 1949 (austerity event), the date en.wiki "Rationing and Supply Minister of Israel" and
       # he.wiki "משרד האספקה והקיצוב" give for the office. The ministry was abolished on 1 November 1950. Issue #225.
-      - { office: rationing_minister, from: 1949-03-10, to: 1950-11-01, sources: &rationing [{ url: "https://main.knesset.gov.il/mk/government/documents/gov1.pdf", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הראשונה", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/דב_יוסף", checked: 2026-10-12 }] }
+      - { office: rationing_minister, from: 1949-03-10, to: 1950-11-01, sources: &rationing [*gov1_pdf, *gov1_k,{ url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הראשונה", checked: 2026-10-12 }, { url: "https://he.wikipedia.org/wiki/דב_יוסף", checked: 2026-10-12 }] }
       - { office: transportation_minister, from: 1950-11-01, to: 1951-10-08, sources: *second }
       # en.wiki lists Trade and Industry and Justice; he.wiki lists only Trade and Industry clearly (research notes 1e).
       # The Knesset records give Justice too, until Haim Cohn took it on 25 June 1952 (en.wiki and he.wiki agree).
@@ -454,9 +466,6 @@ people:
       # Schiffman/Goldstein (2026), pp.6 n.9, 33, 62; Knesset 7 January 1952, questions 8-10.
       # Exact start is explicit in the archival working paper; the research note records the conflicting Rozin date.
       - { office: rationing_minister, from: 1951-10-08, to: 1952-12-24, sources: [{ url: "https://mpra.ub.uni-muenchen.de/129488/1/MPRA_paper_129488.pdf", checked: 2026-10-11 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250631.pdf", checked: 2026-10-11 }] }
-      # Fourth Government: Minister without Portfolio from 24 December 1952 until the Ministry of Development was set up
-      # for him on 15 June 1953 (same sources). Lavon was also without portfolio then, and an office has one holder at a
-      # time here, so that term is not authored.
       - office: development_minister
         from: 1953-06-15
         to: 1954-01-26

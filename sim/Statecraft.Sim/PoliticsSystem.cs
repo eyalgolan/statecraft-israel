@@ -13,7 +13,7 @@ namespace Statecraft.Sim
             var leg = Offices.Legislature(c, date);
             var gov = Offices.Government(c, date);
             if (leg == null || gov == null) return (0, 0);
-            return (gov.Coalition.Sum(p => leg.Seats.TryGetValue(p, out var n) ? n : 0), leg.Size);
+            return (gov.CoalitionOn(date).Sum(p => leg.Seats.TryGetValue(p, out var n) ? n : 0), leg.Size);
         }
 
         public static bool HasMajority(Content c, DateTime date)
@@ -54,8 +54,24 @@ namespace Statecraft.Sim
                 why.Add(new Cause("politics", l1.Id, 0, FormattableString.Invariant($"{l1.Body} convened ({l1.Size} seats{elected}); coalition holds {seats}/{size}")));
             }
             var g0 = Offices.Government(c, from); var g1 = Offices.Government(c, to);
-            if (g1 != null && g1 != g0)
-                why.Add(new Cause("politics", g1.Id, 0, $"{g1.Name} took office ({string.Join(", ", g1.Coalition.Select(id => c.Parties.First(p => p.Id == id).Name))})"));
+            var tookOffice = g1 != null && g1 != g0;
+            var reported = false;
+            void TookOffice() { reported = true; why.Add(new Cause("politics", g1!.Id, 0, $"{g1.Name} took office ({string.Join(", ", PartyNames(c, g1.CoalitionOn(g1.From)))})")); }
+            // Changes inside a term, in date order; a government taking office comes before the changes dated on or after its start.
+            var changes = c.Governments.SelectMany(g => g.CoalitionChanges.Select(ch => (g, ch)))
+                .Where(x => x.ch.Date > from && x.ch.Date <= to).OrderBy(x => x.ch.Date);
+            foreach (var (g, ch) in changes)
+            {
+                if (tookOffice && !reported && ch.Date >= g1!.From) TookOffice();
+                var (seats, size) = CoalitionSeats(c, ch.Date);
+                var what = new List<string>();
+                if (ch.Leaves.Count > 0) what.Add($"{string.Join(", ", PartyNames(c, ch.Leaves))} left the coalition");
+                if (ch.Joins.Count > 0) what.Add($"{string.Join(", ", PartyNames(c, ch.Joins))} joined the coalition");
+                why.Add(new Cause("politics", g.Id, 0, FormattableString.Invariant($"{string.Join("; ", what)} (coalition holds {seats}/{size})")));
+            }
+            if (tookOffice && !reported) TookOffice();
         }
+
+        static IEnumerable<string> PartyNames(Content c, IEnumerable<string> ids) => ids.Select(id => c.Parties.First(p => p.Id == id).Name);
     }
 }

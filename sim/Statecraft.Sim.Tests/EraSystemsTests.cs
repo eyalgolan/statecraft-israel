@@ -114,22 +114,22 @@ eras:
   - id: yishuv
     name: An Assembly Chapter
     from: 1948-05-15
-    to: 1948-06-01
+    to: 1948-06-05
     systems: { legislature: assembly, map_actions: [] }
   - id: founding
     name: The Founding
-    from: 1948-06-01
+    from: 1948-06-05
     to: 1957-01-01
 ",
             ["governments.yaml"] = Fixture.Files["governments.yaml"].Replace("coalition: [alpha]", "coalition: [beta]"),
         };
         var c = ContentLoader.Load(Fixture.Write(o));
-        var boundary = new DateTime(1948, 6, 1);
+        var boundary = new DateTime(1948, 6, 5);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
-        while (s.Date.AddDays(7) <= boundary) s = Simulation.Step(c, s, new Command[0]).State;
+        while ((boundary - s.Date).Days > 14) s = Simulation.Step(c, s, new Command[0]).State;
         Assert.True(s.Date < boundary);
         var crossing = Simulation.Step(c, s, new Command[] { new SetPolicy("rationing", 1.0) });
-        Assert.True(crossing.State.Date > boundary);   // the turn ends in the state era
+        Assert.True(crossing.State.Date == boundary);   // the turn ends on the boundary, in the state era
         Assert.Equal(1.0, crossing.State.Policies["rationing"]);
         Assert.Equal("assembly", c.SystemsAt(s.Date).Legislature);
         var next = Simulation.Step(c, crossing.State, new Command[] { new SetPolicy("rationing", 0.0) });
