@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: armistice_egypt
 title: Armistice with Egypt
 text: 'Talks in Rhodes have produced an armistice agreement with Egypt. {prime_minister} must decide whether Israel signs.'

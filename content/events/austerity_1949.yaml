@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: austerity_1949
 title: Austerity
 text: 'Food and foreign currency cannot keep pace with the immigrants arriving every week. {rationing_minister}, heading the new Ministry of Rationing and Supply, proposes strict rationing.'

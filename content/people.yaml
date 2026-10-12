@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./schema/people.schema.json
 # Offices and dates are historical facts (sourced per term). competence/loyalty are game-balance values, not facts.
 # A term's `party` (when set) is the list the holder sat for in that government; otherwise `party` of the person applies.
 # An empty person `party` means the person sat for no list (non-MK ministers, the President).

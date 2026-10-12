@@ -20,6 +20,12 @@ topics. The worked example below is [content/events/hula_drainage.yaml](../conte
 The loader is strict. An unknown key is an error, so a typo such as `titel:` fails loudly instead of being ignored.
 A key written with no value (`tags:`) is an error for lists.
 
+Editor help: the first line of every event file, `people.yaml`, `offices.yaml` and `parties.yaml` is a
+`# yaml-language-server: $schema=...` comment. With the YAML extension (Red Hat YAML, in VS Code and others) a wrong
+field name or a missing `sources:` gets a red line as you type. The schemas are in `content/schema/`. They are written
+by hand, and `SchemaTests` keeps them equal to the loader types. If you add a field to a content type, add it to the
+schema too, or that test fails. Keep the comment when you copy a file.
+
 | Field | Required | What it is |
 |---|---|---|
 | `id` | yes | Unique across all events. Lowercase letters, digits and underscores, starting with a letter. |

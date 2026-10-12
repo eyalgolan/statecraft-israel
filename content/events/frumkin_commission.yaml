@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: frumkin_commission
 title: Education in the Immigrant Camps
 text: 'Religious Yemenite parents report coercion in the immigrant-camp schools, which the uniform system put under the Culture Department, including the cutting of sidelocks. The religious parties demand action. {prime_minister} must decide whether to appoint an inquiry.'

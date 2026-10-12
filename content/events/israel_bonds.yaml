@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: israel_bonds
 title: Israel Bonds
 text: 'The Knesset authorised a bond issue in February; it launches on 10 May. {finance_minister} proposes selling State of Israel bonds to Jews abroad, alongside the United Jewish Appeal donations.'

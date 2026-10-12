@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: second_truce
 title: The Second Truce
 text: 'The Security Council has found a threat to the peace under Article 39 of the Charter and ordered a cease-fire within three days, and an immediate cease-fire in Jerusalem. {prime_minister} must decide whether Israel complies.'

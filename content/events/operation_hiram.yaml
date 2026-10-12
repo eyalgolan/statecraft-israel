@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: operation_hiram
 title: Operation Hiram
 text: 'In breach of the truce, the Arab Liberation Army has attacked the Sheikh Abd position above Kibbutz Manara, and Qawuqji refuses to withdraw. Israel has told the UN that it feels free to act. {defense_minister} must decide whether Moshe Carmel''s forces clear the Upper Galilee.'

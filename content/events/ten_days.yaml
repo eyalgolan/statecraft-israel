@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: ten_days
 title: The Ten Days
 text: 'The first truce is due to end on 9 July. Where should the main effort go when the fighting resumes? In the centre, Operation Dani under Yigal Allon would take Lydda airport and secure the road to Jerusalem. {defense_minister} must decide.'

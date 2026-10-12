@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: elections_1949
 title: Electing the Constituent Assembly
 text: 'The Provisional State Council has set the Constituent Assembly at 120 seats, elected nationwide by proportional representation, and a national registration taken under curfew on 8 November built the voters'' roll. Postponed because of the war, the vote is set for 25 January.'

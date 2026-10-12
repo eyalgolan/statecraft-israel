@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: latrun_proposal
 title: Latrun
 text: '{prime_minister} proposes to the cabinet that the IDF break the truce to attack and take Latrun. Most ministers, among them {finance_minister}, {justice_minister} and {immigration_minister}, oppose it.'

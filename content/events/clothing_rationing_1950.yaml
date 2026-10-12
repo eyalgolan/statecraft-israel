@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: clothing_rationing_1950
 title: Rationing Clothes and Shoes
 text: 'Prices on the black market are climbing. {rationing_minister} proposes extending rationing to clothing and footwear and fighting the black market.'

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: jerusalem_ceasefire
 title: Cease-fire in Jerusalem
 text: 'Talks began on 28 November between Dayan and Abdullah el-Tell on a full cease-fire for the Jerusalem area, with UN observers present. {prime_minister} must decide whether Israel signs it at Government House.'

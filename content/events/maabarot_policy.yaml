@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: maabarot_policy
 title: Transit Camps
 text: 'The immigrant camps, which house and feed new arrivals free of charge, are overflowing. Levi Eshkol of the Jewish Agency Settlement Department proposes transit camps near towns and work, where residents earn their own living. {prime_minister} must decide.'

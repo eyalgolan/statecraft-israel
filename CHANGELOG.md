@@ -8,6 +8,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- JSON Schemas for `people.yaml`, `offices.yaml`, `parties.yaml` and the event files (#265), in `content/schema/`. Each file
+  names its schema on the first line, so an editor with a YAML language server flags a wrong field name or a missing
+  `sources:` as you type. `SchemaTests` checks all real content against them, keeps their field names equal to the loader
+  types and checks that they reject the usual mistakes. The comment changes the content hash, so an old save shows the
+  content-changed warning once. The golden hashes do not move.
 - A start screen (#247): a painting of the 14 May 1948 ceremony in the Tel Aviv Museum hall (AI-generated concept art
   with no identifiable person), two lines of the Declaration of Independence in the official Hebrew with the official
   English under each, and Continue (only with a save) and New Game (with the top bar's two-press confirmation). Automated

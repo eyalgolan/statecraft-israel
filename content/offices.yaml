@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./schema/offices.schema.json
 offices:
   - { id: prime_minister, title: Prime Minister }
   # Spelling is deliberate, do not "fix" it (playtest 1, item 8): the office title keeps Israel's official English,

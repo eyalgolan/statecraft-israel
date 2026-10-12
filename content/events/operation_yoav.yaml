@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: operation_yoav
 title: Operation Yoav
 text: 'An Israeli supply convoy was fired on as it passed the Egyptian positions on 14 October, and the offensive the cabinet approved on 6 October is under way under Yigal Allon. {defense_minister} must decide how far it goes.'

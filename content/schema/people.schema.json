@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "content/people.yaml",
+  "description": "People and their office terms. Field names follow the Person, OfficeTerm, Portrait and Source types in sim/Statecraft.Sim/Content.cs; a test keeps them equal.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["people"],
+  "properties": {
+    "people": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/person" }
+    }
+  },
+  "definitions": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "A day, YYYY-MM-DD." },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Lowercase letters, digits and underscores, starting with a letter." },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "checked"],
+      "properties": {
+        "url": { "type": "string", "minLength": 1 },
+        "checked": { "$ref": "#/definitions/date", "description": "The day you opened the source." }
+      }
+    },
+    "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/source" } },
+    "person": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "living"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "Unique across people." },
+        "name": { "type": "string", "minLength": 1 },
+        "name_he": { "type": "string" },
+        "born": { "$ref": "#/definitions/date" },
+        "died": { "$ref": "#/definitions/date", "description": "Every office term must end by this day." },
+        "biography_sources": {
+          "type": "object",
+          "description": "Sources for each biography value. Keep a source for every value you set.",
+          "additionalProperties": false,
+          "properties": {
+            "name_he": { "$ref": "#/definitions/sources" },
+            "born": { "$ref": "#/definitions/sources" },
+            "died": { "$ref": "#/definitions/sources" }
+          }
+        },
+        "living": { "type": "boolean", "description": "Required. A living person is left out of release builds." },
+        "party": { "type": "string", "description": "A party id from parties.yaml. Empty means no list." },
+        "competence": { "type": "integer", "minimum": 0, "maximum": 10, "description": "A game-balance value, not a fact." },
+        "loyalty": { "type": "integer", "minimum": 0, "maximum": 10, "description": "A game-balance value, not a fact." },
+        "portrait": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "license", "source", "focus_y"],
+          "properties": {
+            "file": { "type": "string" },
+            "license": { "type": "string" },
+            "source": { "type": "string" },
+            "focus_y": { "type": "number", "minimum": 0, "maximum": 1, "description": "Height of the face centre as a share of the picture: 0 top, 1 bottom." }
+          }
+        },
+        "offices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["office", "from", "sources"],
+            "properties": {
+              "office": { "$ref": "#/definitions/id", "description": "An office id from offices.yaml." },
+              "from": { "$ref": "#/definitions/date", "description": "First day of the term (inclusive)." },
+              "to": { "$ref": "#/definitions/date", "description": "End of the term (exclusive). Leave out if it continues." },
+              "party": { "type": "string", "description": "The list the holder sat for in this term. Empty means the person's party." },
+              "sources": { "$ref": "#/definitions/sources" }
+            }
+          }
+        },
+        "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"] }
+      }
+    }
+  }
+}

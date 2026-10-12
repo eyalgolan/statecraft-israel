@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: idf_founding
 title: One Army
 text: 'Armed forces are being brought into the new Israel Defense Forces, while the Irgun and Lehi still keep their own units. {defense_minister} proposes an order that forbids any armed force other than the IDF.'

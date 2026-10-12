@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: reparations_claim
 title: A Claim on Germany
 text: '{foreign_minister} proposes a note to the four occupying powers claiming 1.5 billion dollars from Germany: the cost of absorbing 500,000 survivors of the Holocaust, at 3,000 dollars each.'

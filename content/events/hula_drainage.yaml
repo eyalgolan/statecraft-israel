@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: hula_drainage
 title: Draining the Hula
 text: 'Drainage works south of Lake Hula, under the Palestine Land Development Company''s concession, reach into the demilitarised zone with Syria. Syria has complained, and the chairman of the armistice commission asks that work stop pending agreement. {prime_minister} must decide.'

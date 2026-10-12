@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: rhodes_talks
 title: Talks at Rhodes
 text: 'Egypt announced on 6 January that it will negotiate, and Israel accepted the cease-fire on 7 January. The talks are to open at Rhodes. {foreign_minister} must decide whether Israel sends a delegation.'

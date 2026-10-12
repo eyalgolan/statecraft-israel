@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./schema/parties.schema.json
 # Names as listed in the Provisional State Council, 1949 and 1951 election sources (see legislatures.yaml).
 parties:
   - { id: mapai, name: Mapai }

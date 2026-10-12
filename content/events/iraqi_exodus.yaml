@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: iraqi_exodus
 title: The Jews of Iraq
 text: 'Iraq has frozen the assets of the Jews who gave up their citizenship to leave, and some 64,000 people are still waiting to fly. The transit camps are already crowded. {immigration_minister} asks whether to bring everyone at once.'

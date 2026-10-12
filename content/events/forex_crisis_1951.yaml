@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: forex_crisis_1951
 title: Foreign Currency Runs Out
 text: 'Drought has forced larger wheat imports, immigration in the first half of the year far exceeded the plan, and about 45 million dollars of short-term credit falls due by December. {finance_minister} proposes asking the United States for about 15 million dollars in immediate aid.'

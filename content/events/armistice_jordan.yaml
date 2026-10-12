@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: armistice_jordan
 title: Armistice with Jordan
 text: 'Negotiators have reached an armistice agreement with Jordan. {prime_minister} must decide whether Israel signs.'

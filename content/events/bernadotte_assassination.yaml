@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: bernadotte_assassination
 title: The Mediator Assassinated
 text: 'Lehi gunmen have assassinated the UN mediator, Count Folke Bernadotte, in Jerusalem, a day after he completed his second plan. {prime_minister} must decide how the government answers the armed groups still outside the IDF: Lehi, and the Irgun battalions in Jerusalem.'

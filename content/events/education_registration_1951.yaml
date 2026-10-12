@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: education_registration_1951
 title: Schools in the Transit Camps
 text: 'The coalition is split over schooling for immigrant children in the transit camps: the religious parties oppose a religious stream run by the labour movement. {education_minister} brings a registration plan to the Knesset.'

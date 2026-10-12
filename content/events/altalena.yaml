@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: altalena
 title: The Altalena
 text: 'The Altalena, a ship carrying arms for the Irgun, is due at Kfar Vitkin. Begin asks that a fifth of the arms go to the Irgun''s battalion in Jerusalem and the rest to Irgun battalions inside the IDF. {defense_minister} must decide.'

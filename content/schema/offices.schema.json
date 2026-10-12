@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "content/offices.yaml",
+  "description": "The offices of the state. Field names follow the Office type in sim/Statecraft.Sim/Content.cs; a test keeps them equal.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["offices"],
+  "properties": {
+    "offices": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/office" }
+    }
+  },
+  "definitions": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "A day, YYYY-MM-DD." },
+    "office": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Lowercase letters, digits and underscores, starting with a letter. Unique." },
+        "title": { "type": "string", "minLength": 1, "description": "The official English title, as the player sees it." },
+        "historical_only": { "type": "boolean", "description": "Historical record only: no Cabinet seat, no player appointment, no gameplay." },
+        "from": { "$ref": "#/definitions/date", "description": "Day the office was established (inclusive). Leave out if it exists from the start." },
+        "until": { "$ref": "#/definitions/date", "description": "Day the office was abolished (exclusive). Leave out while it still exists." }
+      }
+    }
+  }
+}

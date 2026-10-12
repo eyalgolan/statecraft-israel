@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: law_of_return
 title: The Law of Return
 text: 'The Knesset is ready to vote on the Law of Return, which gives every Jew the right to come to Israel as an oleh. {prime_minister} must decide whether the government backs it.'

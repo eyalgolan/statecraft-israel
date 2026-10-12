@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: jerusalem_military_government
 title: Jerusalem
 text: 'Count Bernadotte''s proposals would put Jerusalem under UN authority, and he has suggested demilitarising the city. The alternative is to put the part of Jerusalem held by the IDF under Israeli military government, with Dov Yosef as military governor. {prime_minister} must decide.'

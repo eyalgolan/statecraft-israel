@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: operation_horev
 title: Operation Horev
 text: '{defense_minister} proposes an offensive against the Egyptian army in the south, under Yigal Allon, with five brigades.'

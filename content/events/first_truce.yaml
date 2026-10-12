@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/event.schema.json
 id: first_truce
 title: The First Truce
 text: 'The Security Council has called for a four-week cease-fire, supervised by the UN mediator, Count Folke Bernadotte. Neither side may bring fighting men or war material into Palestine or the Arab states, and the Council has warned of Chapter VII action if the terms are broken. {prime_minister} must decide whether Israel accepts.'
