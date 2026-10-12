@@ -22,9 +22,10 @@ Unity, a Unity licence and macOS are only needed for `unity/`. The sim, the cont
 | Repository policy | `uv run scripts/oss/check_repo.py` | Repo policy |
 | Policy checker tests | `uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q` | Repo policy |
 | Data tool tests (one runs the sim's release gate, so they need the .NET SDK too) | `uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q` | Tools (pytest) |
+| GDD feature sections (also run by the policy checker tests) | `uv run scripts/oss/gdd_lint.py` | Repo policy |
 | Changelog line | `uv run scripts/oss/changelog_check.py --base origin/main` | Changelog |
 
-`scripts/check.sh` runs all five in one go, cheapest first, plus a sim build with warnings as errors. It stops at the first failure and shows the end of its output. It takes the base ref as its argument (default `origin/main`); set `CHECK_NO_CHANGELOG=1` if the PR has the `no-changelog` label.
+`scripts/check.sh` runs all of them in one go, cheapest first, plus a sim build with warnings as errors. It stops at the first failure and shows the end of its output. It takes the base ref as its argument (default `origin/main`); set `CHECK_NO_CHANGELOG=1` if the PR has the `no-changelog` label.
 
 To try a rules.yaml change without editing it, use the writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set tax_per_capita_per_year=0.00007 --show morale,treasury,fx`. It plays the historical run on the real content and on the same content with the change applied in memory, then prints the changed final-state lines (grouped like a golden failure) and a table of the values you ask for. Other options: `--until YYYY-MM-DD` (default 1950-01-01), `--seed N`, `--every N` (turns between table rows, default 8). It takes single-value top-level keys of `rules.yaml` (an era's own `content/rules/<era>.yaml` value still wins in that era) and writes nothing. A typo fails with the key named, a wrong type with the line.
 

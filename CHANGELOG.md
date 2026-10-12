@@ -13,6 +13,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   Agudat Yisrael leaving the Third Government (18 September 1952, so 60 of 120 seats and no majority until 24 December),
   the General Zionists leaving the Fourth (25 May 1953) and returning (3 June 1953), and the Progressive Party joining
   the Fifth (1 February 1954). The goldens do not move (fixes #278).
+- A turn now ends on the next era's start date, not only on the last era's end (chapters spec 4.1). A turn that would
+  leave under 14 days before the boundary is lengthened to it. Real days scale the turn's rates. With one era, or no
+  boundary in a run, nothing changes; goldens unchanged (refs #59).
 - Writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set key=value` plays the historical run with a
   rules.yaml change applied in memory and prints the changed state lines and a table of chosen values, without Unity and
   without touching `content/` (fixes #295).
