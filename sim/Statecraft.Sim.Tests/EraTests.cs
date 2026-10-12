@@ -70,6 +70,7 @@ public class EraTests
     public void AGapBetweenErasIsALoadError()
     {
         var ex = BadEras(Eras(Era("a", "1948-05-15", "1950-01-01"), Era("b", "1950-02-01", "1957-01-01")));
+        Assert.Equal("eras.yaml", ex.File);
         Assert.Equal("eras[b].from", ex.Field);
         Assert.Contains("gap after a", ex.Message);
     }
@@ -82,6 +83,27 @@ public class EraTests
         var ex = BadEras(Eras(Era("a", "1948-05-15", to)));
         Assert.Equal("eras[a].to", ex.Field);
         Assert.Contains("must be after from", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("from")]
+    [InlineData("to")]
+    public void AMissingDateIsALoadError(string field)
+    {
+        var era = field == "from" ? "  - id: a\n    name: A Name\n    to: 1957-01-01" : "  - id: a\n    name: A Name\n    from: 1948-05-15";
+        var ex = BadEras(Eras(era));
+        Assert.Equal("eras.yaml", ex.File);
+        Assert.Equal("eras[a]." + field, ex.Field);
+        Assert.Contains("required", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("1957-13-01")]
+    [InlineData("soon")]
+    public void ABadDateIsALoadError(string to)
+    {
+        var ex = BadEras(Eras(Era("a", "1948-05-15", to)));
+        Assert.Equal("eras.yaml", ex.File);
     }
 
     [Fact]

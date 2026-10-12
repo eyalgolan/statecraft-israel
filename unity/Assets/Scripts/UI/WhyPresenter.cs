@@ -9,7 +9,7 @@ namespace Statecraft.Game.UI
     /// that produced it, in a fixed order (what was decided first, then its consequences).</summary>
     public sealed class WhyPresenter : System.IDisposable
     {
-        public static readonly string[] Order = { "events", "politics", "cabinet", "security", "economy", "population", "map", "policy", "effects", "situations" };
+        public static readonly string[] Order = { "era", "events", "politics", "cabinet", "security", "economy", "population", "map", "policy", "effects", "situations" };
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text;
 
         public WhyPresenter(VisualElement root, SimBridge bridge, UiText text)

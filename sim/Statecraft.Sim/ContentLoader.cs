@@ -558,6 +558,7 @@ namespace Statecraft.Sim
                 var e = c.Eras[i];
                 var at = $"eras[{e.Id}]";
                 Named("eras.yaml", at + ".name", e.Name);
+                if (e.To == default) throw new ContentException("eras.yaml", at + ".to", "required (the first day after the era)");
                 Period("eras.yaml", at, e.From, e.To);
                 if (i == 0)
                 {

@@ -221,12 +221,16 @@ public class BudgetScreenTests
     [Test]
     public void AVacantMinistryReadsVacant()
     {
-        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        // No budgeted ministry falls vacant in the historical run before the founding era ends (1 January 1957); the first
+        // is Agriculture in May 1961. So this test plays on past the end, on its own copy of the content.
+        var c = ContentLoader.Load(Paths.Content);
+        c.Eras[c.Eras.Count - 1].To = new System.DateTime(1990, 1, 1);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         Seat vacant = null;
         for (int i = 0; i < 400 && g.State.GameOver == null && vacant == null; i++)
         {
-            vacant = Cabinet.Lineup(C, g.State).FirstOrDefault(x => x.Holder == null && g.State.Budget.ContainsKey(x.Office.Id));
-            if (vacant == null) g.Step(HistoricalAI.Commands(C, g.State));
+            vacant = Cabinet.Lineup(c, g.State).FirstOrDefault(x => x.Holder == null && g.State.Budget.ContainsKey(x.Office.Id));
+            if (vacant == null) g.Step(HistoricalAI.Commands(c, g.State));
         }
         Assert.IsNotNull(vacant, "the historical game has a vacant budgeted ministry to test with");
         using var ui = new UiTestKit();
