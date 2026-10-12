@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 LABELS = ROOT / "scripts/oss/github/labels.tsv"
 # The labels that exist on github.com/eyalgolan/statecraft-israel (read with `gh label list`, 2026-10-11), with colours.
+# "ready for a contributor" is added with the Task form (#260); it exists after apply_github_settings.sh runs.
 LIVE = {
     "accessibility": "f143ab", "bug": "d73a4a", "documentation": "0075ca", "duplicate": "cfd3d7",
     "enhancement": "a2eeef", "good first issue": "7057ff", "help wanted": "008672", "invalid": "e4e669",
@@ -10,6 +11,7 @@ LIVE = {
     "no-changelog": "cfd3d7", "spam": "000000", "area: sim": "5319e7", "area: tools": "bfd4f2",
     "area: unity": "222222", "area: art": "f9d0c4", "area: design": "c5def5", "research": "0e8a16",
     "translation": "fbca04", "M4": "b60205", "in progress (maintainer)": "ededed", "roadmap": "3e4b9e",
+    "ready for a contributor": "2da44e",
 }
 
 

@@ -1,0 +1,60 @@
+name: Task
+description: A small piece of work that a contributor can finish without asking questions
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A task is **ready for a contributor** when every field below is filled in. The maintainer then adds the label
+        `ready for a contributor`. A contributor, human or agent, can take it and finish without a question.
+        If you cannot fill a field, use the Idea or feature request form instead.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What changes, in one or two sentences. The result, not the history.
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Files likely touched
+      description: Paths, one per line. Name the tests too.
+      placeholder: |
+        sim/Statecraft.Sim/Rng.cs
+        sim/Statecraft.Sim.Tests/RngTests.cs
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Each check is a command that must pass, with the result you expect. Add what the change must do that a command cannot show.
+      placeholder: |
+        - dotnet test sim/Statecraft.Sim.Tests/Statecraft.Sim.Tests.csproj passes with 0 warnings
+        - uv run scripts/oss/check_repo.py passes
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources already agreed
+      description: For a task that adds or changes a fact, give the links the contributor must use. Write "None, no facts change" if the task has no facts.
+    validations:
+      required: true
+  - type: textarea
+    id: signoff
+    attributes:
+      label: What needs maintainer sign-off
+      description: Decisions the contributor must not make alone, for example a golden hash change, a sensitive event or a new asset. Write "Nothing" if there are none.
+    validations:
+      required: true
+  - type: dropdown
+    id: unity
+    attributes:
+      label: Needs Unity?
+      description: Unity is needed to run the Unity EditMode tests or to open `unity/`. See docs/dev-setup.md.
+      options:
+        - "No: .NET SDK and uv are enough"
+        - "Yes: Unity 6000.3.25f1 is needed"
+    validations:
+      required: true

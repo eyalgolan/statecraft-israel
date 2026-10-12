@@ -64,6 +64,15 @@ def test_historical_accuracy_form_requires_a_source():
     assert any("security/advisories/new" in c["url"] for c in cfg["contact_links"])
 
 
+def test_task_form_has_every_field_and_all_are_required():
+    import yaml
+    form = yaml.safe_load(read(".github/ISSUE_TEMPLATE/task.yml"))
+    fields = {b["id"]: b for b in form["body"] if b["type"] != "markdown"}
+    assert set(fields) == {"goal", "files", "done", "sources", "signoff", "unity"}
+    assert all(f["validations"]["required"] is True for f in fields.values())
+    assert fields["unity"]["type"] == "dropdown"
+
+
 def test_content_policy_states_the_owner_rules_and_only_real_mechanisms():
     text = read("docs/CONTENT_POLICY.md")
     for s in ("Israeli framing", "Every fact is sourced", "No invented quotes", "How to dispute a fact",
