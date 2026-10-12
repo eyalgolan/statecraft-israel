@@ -20,8 +20,8 @@ body:
       label: Files likely touched
       description: Paths, one per line. Name the tests too.
       placeholder: |
-        sim/Statecraft.Sim/Rng.cs
-        sim/Statecraft.Sim.Tests/RngTests.cs
+        content/people.yaml
+        sim/Statecraft.Sim.Tests/RealContentTests.cs
     validations:
       required: true
   - type: textarea
@@ -30,7 +30,7 @@ body:
       label: Done when
       description: Each check is a command that must pass, with the result you expect. Add what the change must do that a command cannot show.
       placeholder: |
-        - dotnet test sim/Statecraft.Sim.Tests/Statecraft.Sim.Tests.csproj passes with 0 warnings
+        - dotnet test sim/Statecraft.sln passes with 0 warnings
         - uv run scripts/oss/check_repo.py passes
     validations:
       required: true
