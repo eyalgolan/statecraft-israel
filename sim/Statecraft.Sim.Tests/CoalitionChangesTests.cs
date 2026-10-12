@@ -161,8 +161,12 @@ public class CoalitionChangesTests
     [Fact]
     public void AChangeNamesKnownPartiesThatAreInOrOutOfTheCoalition()
     {
-        Assert.Equal("governments[gov2].coalition_changes[0].leaves.nobody", ValidationTests.Bad("governments.yaml", Open, Changes(Leave("1949-06-01", "nobody"))).Field);
-        Assert.Equal("governments[gov2].coalition_changes[0].joins.nobody", ValidationTests.Bad("governments.yaml", Open, Changes(Join("1949-06-01", "nobody"))).Field);
+        var unknownLeaver = ValidationTests.Bad("governments.yaml", Open, Changes(Leave("1949-06-01", "nobody")));
+        Assert.Equal("governments[gov2].coalition_changes[0].leaves.nobody", unknownLeaver.Field);
+        Assert.Contains("unknown party", unknownLeaver.Message);                              // not "not in the coalition"
+        var unknownJoiner = ValidationTests.Bad("governments.yaml", Open, Changes(Join("1949-06-01", "nobody")));
+        Assert.Equal("governments[gov2].coalition_changes[0].joins.nobody", unknownJoiner.Field);
+        Assert.Contains("unknown party", unknownJoiner.Message);
         Assert.Equal("governments[gov2].coalition_changes[0].joins.beta", ValidationTests.Bad("governments.yaml", Open, Changes(Join("1949-06-01"))).Field);   // already in
         Assert.Equal("governments[gov2].coalition_changes[1].leaves.beta", ValidationTests.Bad("governments.yaml", Open, Changes(Leave("1949-06-01"), Leave("1949-07-01"))).Field);   // already out
         var both = ValidationTests.Bad("governments.yaml", Open, Changes($"{{ date: 1949-06-01, leaves: [beta], joins: [beta], {Src} }}"));
@@ -201,11 +205,11 @@ public class CoalitionChangesTests
     [Fact]
     public void TheFourthGovernmentLosesTheGeneralZionistsForAWeekIn1953()
     {
-        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 5, 25)));
-        Assert.Equal((64, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 5, 26)));   // he.wiki: 64 without the General Zionist faction
-        Assert.Equal((64, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 6, 1)));
-        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 6, 2)));
-        Assert.True(PoliticsSystem.HasMajority(Real, new DateTime(1953, 5, 26)));                   // 64 of 120 is still a majority
+        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 5, 24)));
+        Assert.Equal((64, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 5, 25)));   // plenum of 25 May: the four ministers resigned; he.wiki: 64
+        Assert.Equal((64, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 6, 2)));
+        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1953, 6, 3)));   // plenum of 3 June: the Knesset approves their return
+        Assert.True(PoliticsSystem.HasMajority(Real, new DateTime(1953, 5, 25)));                   // 64 of 120 is still a majority
     }
 
     [Fact]
@@ -244,7 +248,7 @@ public class CoalitionChangesTests
         foreach (var (from, to, text) in new[]
         {
             (new DateTime(1952, 9, 15), new DateTime(1952, 9, 22), "Agudat Yisrael, Poalei Agudat Yisrael left the coalition (coalition holds 60/120)"),
-            (new DateTime(1953, 5, 24), new DateTime(1953, 5, 28), "General Zionists, Sephardim and Oriental Communities, Yemenite Association left the coalition (coalition holds 64/120)"),
+            (new DateTime(1953, 5, 23), new DateTime(1953, 5, 27), "General Zionists, Sephardim and Oriental Communities, Yemenite Association left the coalition (coalition holds 64/120)"),
             (new DateTime(1954, 1, 30), new DateTime(1954, 2, 3), "Progressive Party joined the coalition (coalition holds 87/120)"),
         })
         {

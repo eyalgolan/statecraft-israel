@@ -43,8 +43,8 @@ governments:
     # Agudat Yisrael left the coalition in September 1952 (#278). The Knesset's position record ends Levin's Welfare term
     # on 18 September 1952, and he.wiki's table gives 18 September for the party's exit; he.wiki's text gives 23
     # September, but its own footnote cites a press report of 19 September 1952, so 18 September is used. The Knesset's
-    # session list has no plenum sitting between 28 August and 20 October 1952, so there is no plenum record: the
-    # position record and he.wiki are the only sources for the date.
+    # session list (KNS_PlenumSession) has no plenum sitting between 28 August and 3 November 1952, so there is no
+    # plenum record: the position record and he.wiki are the only sources for the date.
     # DECISION FOR THE MAINTAINER (proposal, change it if you prefer another rule): the coalition then held 60 of 120
     # seats, which is half and not more than half. HasMajority stays "more than half", so a vote that needs a majority
     # (SetPolicy, and AllocateBudget while the legislature approves the budget) fails from 18 September to 24 December
@@ -73,25 +73,28 @@ governments:
     # ministers were sworn in on 24 December, when Hapoel HaMizrachi's Shapira and Burg joined (plenum records). The
     # General Zionists' 20 seats count with the Sephardim (2) and the Yemenite Association (1): those three MKs sat in
     # the General Zionist faction from 10 September 1951 (Knesset faction records; he.wiki gives the faction 23 seats).
-    # That makes 87 of 120, as in he.wiki. The General Zionists left on 26 May 1953 and returned on 2 June 1953 (#278).
-    # The dates rest on he.wiki (citing a Davar report of 26 May 1953). The Knesset records do not give the dates: the
-    # position records show no General Zionist minister leaving office, and in the plenum of 27 May 1953 the Prime
-    # Minister reports a government crisis over the state education law and says he will report on the government's
-    # fate the next week. Without the General Zionists and the three MKs who sat in their faction, the coalition held 64
-    # seats (he.wiki). The ministers stay in their terms in people.yaml, as in the
-    # Knesset records.
+    # That makes 87 of 120, as in he.wiki. The General Zionists left on 25 May 1953 and returned on 3 June 1953 (#278),
+    # per the plenum records: on 25 May 1953 (evening sitting, 2_ptm_250584.pdf) the Prime Minister told the Knesset,
+    # under section 11 of the Transition Law, that the four General Zionist ministers (Rokach, Bernstein, Sapir, Serlin)
+    # had resigned; on 3 June 1953 (2_ptm_250727.pdf) the Knesset approved the government's decision to add the four
+    # again, and they made their declarations of allegiance. he.wiki gives 26 May and 2 June (citing Davar of 26 May).
+    # Without the General Zionists and the three MKs who sat in their faction, the coalition held 64 seats (he.wiki).
+    # The position records (KNS_PersonToPosition) show the four ministers' terms without a break, so their terms in
+    # people.yaml are unchanged.
     from: 1952-12-24
     to: 1954-01-26
     coalition: [mapai, general_zionists, sephardim, yemenite_association, hapoel_hamizrachi, mizrachi, progressive, democratic_list_israeli_arabs, progress_and_work, agriculture_and_development]
     coalition_changes:
-      - date: 1953-05-26
+      - date: 1953-05-25
         leaves: [general_zionists, sephardim, yemenite_association]
         sources:
-          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250584.pdf", checked: 2026-10-12 }
           - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250724.pdf", checked: 2026-10-12 }
-      - date: 1953-06-02
+          - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
+      - date: 1953-06-03
         joins: [general_zionists, sephardim, yemenite_association]
         sources:
+          - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250727.pdf", checked: 2026-10-12 }
           - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-12 }
     sources:
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%204", checked: 2026-10-12 }

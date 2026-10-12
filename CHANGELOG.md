@@ -11,7 +11,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Coalition changes inside a government's term (`coalition_changes` in governments.yaml, each with a date and sources).
   Seats, majority, the Cabinet's party rule and the causes use the coalition of the day. Adds Agudat Yisrael and Poalei
   Agudat Yisrael leaving the Third Government (18 September 1952, so 60 of 120 seats and no majority until 24 December),
-  the General Zionists leaving the Fourth (26 May 1953) and returning (2 June 1953), and the Progressive Party joining
+  the General Zionists leaving the Fourth (25 May 1953) and returning (3 June 1953), and the Progressive Party joining
   the Fifth (1 February 1954). The goldens do not move (fixes #278).
 - Writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set key=value` plays the historical run with a
   rules.yaml change applied in memory and prints the changed state lines and a table of chosen values, without Unity and
