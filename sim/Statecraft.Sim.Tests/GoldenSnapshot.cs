@@ -21,8 +21,8 @@ public static class GoldenSnapshot
     {
         var now = state.Describe();
         var path = Path_(name);
-        var update = Environment.GetEnvironmentVariable("STATECRAFT_UPDATE_GOLDEN") == "1";
-        if (update) File.WriteAllText(path, now);
+        var update = GoldenManifest.UpdateRequested;
+        if (update) { File.WriteAllText(path, now); GoldenManifest.Update(name, state.Hash()); }
         var hashOk = state.Hash() == expectedHash;
         var saved = File.Exists(path) ? File.ReadAllText(path).Replace("\r\n", "\n") : null;   // a CRLF checkout is not a change
         if (hashOk && saved == now) return;
@@ -31,42 +31,11 @@ public static class GoldenSnapshot
         else sb.AppendLine($"Golden '{name}' hash is unchanged but its snapshot is out of date.");
         if (saved == null) sb.AppendLine($"No snapshot at {path}; run STATECRAFT_UPDATE_GOLDEN=1 dotnet test to create it.");
         else sb.Append(Diff(saved, now));
-        if (update) sb.AppendLine("Snapshot rewritten (STATECRAFT_UPDATE_GOLDEN=1). Update the hash constants in GoldenRun.cs, DeterminismTests.cs and docs/determinism.md, and say why in the commit message.");
-        else sb.AppendLine("If this is deliberate: STATECRAFT_UPDATE_GOLDEN=1 dotnet test, then update the three hash constants (docs/determinism.md).");
+        if (update) sb.AppendLine("Snapshot, manifest and GoldenRun.cs rewritten (STATECRAFT_UPDATE_GOLDEN=1). Run the tests again: GoldenManifestTests names the docs that still show the old hash. Add a row to the rebaseline history and say why in the commit message.");
+        else sb.AppendLine("If this is deliberate: STATECRAFT_UPDATE_GOLDEN=1 dotnet test, then follow docs/determinism.md.");
         Assert.Fail(sb.ToString());
     }
 
-    /// <summary>Changed lines between two descriptions, grouped by section (the label before '{' or '[' or '=').</summary>
-    public static string Diff(string before, string after)
-    {
-        List<(string section, string line)> Parse(string text)
-        {
-            var res = new List<(string, string)>();
-            string section = "header";
-            foreach (var raw in text.Split('\n'))
-            {
-                if (raw.Length == 0) continue;
-                if (!raw.StartsWith("  "))
-                {
-                    var end = raw.IndexOfAny(new[] { '{', '[', '=' });
-                    section = end > 0 && raw.IndexOf(';') is var semi && (semi < 0 || end < semi) ? raw.Substring(0, end) : "header";
-                }
-                res.Add((section, raw));
-            }
-            return res;
-        }
-        var a = Parse(before); var b = Parse(after);
-        var aSet = new HashSet<(string, string)>(a); var bSet = new HashSet<(string, string)>(b);
-        var sb = new StringBuilder();
-        foreach (var g in a.Concat(b).Select(x => x.section).Distinct())
-        {
-            var removed = a.Where(x => x.section == g && !bSet.Contains(x)).Select(x => "  - " + x.line.TrimStart()).ToList();
-            var added = b.Where(x => x.section == g && !aSet.Contains(x)).Select(x => "  + " + x.line.TrimStart()).ToList();
-            if (removed.Count + added.Count == 0) continue;
-            sb.AppendLine($"[{g}]");
-            foreach (var l in removed.Take(40)) sb.AppendLine(l);
-            foreach (var l in added.Take(40)) sb.AppendLine(l);
-        }
-        return sb.Length == 0 ? "(the descriptions are identical)\n" : sb.ToString();
-    }
+    /// <summary>Changed lines between two descriptions, grouped by section (see <see cref="StateDiff"/>).</summary>
+    public static string Diff(string before, string after) => StateDiff.Lines(before, after);
 }

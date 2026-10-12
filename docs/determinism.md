@@ -42,8 +42,11 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 and `hash1952.txt`, written by `GameState.Describe()`, which uses the same writer as `Hash()` (so the two cannot list
 different fields) and shows every number as a plain value next to its IEEE bits. If the change is deliberate, run
 `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln`: it rewrites the snapshots, so the PR's diff of them shows
-reviewers what moved. Then update the hash constants in the three places below by hand, and say why in the commit
-message. The snapshot test also fails if a snapshot is stale while the hash is unchanged.
+reviewers what moved. The same command rewrites `sim/Statecraft.Sim.Tests/golden/manifest.txt` (the pinned hashes) and the
+`GoldenRun.cs` constants. That run still fails for every golden that moved, against the value it started with; the tests
+never take a hash from the run without the variable, so a second plain run is the check. Then update the docs below by hand (`GoldenManifestTests` names any place still showing the old
+hash), add a row to the rebaseline history, and say why in the commit message. The snapshot test also fails if a snapshot is
+stale while the hash is unchanged.
 
 **Rules per era.** A system reads `Content.RulesAt(date)`, where `date` is the date of the state the turn starts from (`s.Date`
 before the step); `AttentionSystem.Refill` runs after the date moves, so it fills the next turn from that turn's era. Rules
@@ -62,10 +65,12 @@ goldens (playtest 2 changed every line's casing with no hash change). They are s
 `FinalWaveTests.AReloadedSaveReproducesTheLastTurnsCauses` checks a reloaded save gives the same last-turn Causes, and
 `TheGoldenRunsCausesAreTheSameInEveryCulture` runs the 1952 golden under de-DE and ar-SA against the invariant culture.
 
-Each golden constant is written in three places that must agree:
-- `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against;
-- `sim/Statecraft.Sim.Tests/DeterminismTests.cs`, which pins the value on .NET and asserts the library constant equals it;
-- this file.
+Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `smoke5`). The .NET tests
+compare against it. These places must agree with it, and `GoldenManifestTests` fails naming the one that does not:
+- `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against (the update command rewrites it);
+- this file, `docs/RELEASING.md` and `tools/web_check.py`'s usage example (by hand).
+
+`tools/art_checkpoint.sh` reads its expected hashes from the manifest, so it needs no edit.
 
 `unity/Assets/Tests/EditMode/SimSmokeTests.cs` runs the same playthroughs inside Unity against `GoldenRun`'s constants
 (run `tools/build_sim_for_unity.sh` first so Unity has the current DLLs).
@@ -101,7 +106,7 @@ moved. A save made before it therefore loads with the "different game content" w
 to the same state.
 
 **Any change to a golden hash is a deliberate rules or content change.** Such a change could be to a rule, a system,
-content in `content/`, or the hash format. When it happens, update every place above in the same commit, add a row to
+content in `content/`, or the hash format. When it happens, update the manifest and every place above in the same commit, add a row to
 the history below, and say in the commit message why the hash moved. If a hash changes and you did not mean to change
 rules or content, treat it as a determinism bug.
 
