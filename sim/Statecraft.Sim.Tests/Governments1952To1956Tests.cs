@@ -69,7 +69,8 @@ public class Governments1952To1956Tests
     public void CoalitionSeatsMatchTheSources()
     {
         Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(C, Fourth));                     // he.wiki: 87
-        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1954, 1, 26)));
+        Assert.Equal((83, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1954, 1, 26)));   // without the Progressives' 4 seats until 1 February (#278)
+        Assert.Equal((87, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1954, 2, 1)));
         Assert.Equal((64, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1955, 6, 29))); // election lists; he.wiki's 66 counts later factions
         // The Third Knesset convenes on 15 August 1955 once #221's results are in content/; until then the Second runs on.
         var third = C.Legislatures.FirstOrDefault(l => l.Id == "third_knesset");

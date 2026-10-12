@@ -8,6 +8,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Coalition changes inside a government's term (`coalition_changes` in governments.yaml, each with a date and sources).
+  Seats, majority, the Cabinet's party rule and the causes use the coalition of the day. Adds Agudat Yisrael and Poalei
+  Agudat Yisrael leaving the Third Government (18 September 1952, so 60 of 120 seats and no majority until 24 December),
+  the General Zionists leaving the Fourth (26 May 1953) and returning (2 June 1953), and the Progressive Party joining
+  the Fifth (1 February 1954). The goldens do not move (fixes #278).
 - Era system switches in eras.yaml (`systems`): `legislature: state | assembly` (an assembly's vote against a policy or
   the budget is held and reported, but does not bind) and `map_actions` (the actions the era allows). The Cabinet and
   Budget screens say when the body's vote does not bind, and the hex panel shows only the era's map actions. With no

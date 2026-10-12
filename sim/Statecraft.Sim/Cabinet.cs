@@ -103,7 +103,7 @@ namespace Statecraft.Sim
             if (officeId == "chief_of_staff")
                 return person.Offices.Any(t => t.Office == "chief_of_staff") ? null : $"{person.Name} is not an IDF career officer";
             var party = Offices.PartyOf(c, person, s.Date);
-            if (party != "" && !gov.Coalition.Contains(party))
+            if (party != "" && !gov.CoalitionOn(s.Date).Contains(party))
                 return $"{person.Name}'s party ({c.Parties.First(p => p.Id == party).Name}) is not in the coalition";
             return null;
         }

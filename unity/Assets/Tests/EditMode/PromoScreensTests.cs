@@ -57,7 +57,7 @@ public class PromoScreensTests
             {
                 var block = house.Groups.Single(b => b.Party == kv.Key);
                 Assert.AreEqual(kv.Value, block.Seats, where + " " + kv.Key);
-                Assert.AreEqual(gov.Coalition.Contains(kv.Key), block.Coalition, where + " " + kv.Key);
+                Assert.AreEqual(gov.CoalitionOn(g.State.Date).Contains(kv.Key), block.Coalition, where + " " + kv.Key);
             }
             Assert.AreEqual(leg.Seats.Count(kv => kv.Value > 0), house.Groups.Count, where + ": only parties with seats");
             var (seats, size) = PoliticsSystem.CoalitionSeats(C, g.State.Date);
@@ -70,7 +70,7 @@ public class PromoScreensTests
             Assert.AreEqual(size, dots.Count);
             Assert.AreEqual(leg.Size.ToString(), ui.Q<Label>("cabinet-house-size").text, where);
             Assert.AreEqual($"Coalition: {seats} of {size} seats · stability {PlayerText.Percent(g.State.CoalitionStability)}", ui.Q<Label>("cabinet-coalition").text, where);
-            Assert.AreEqual($"Opposition: {leg.Seats.Where(kv => !gov.Coalition.Contains(kv.Key)).Sum(kv => kv.Value)} seats", ui.Q<Label>("cabinet-opposition").text, where);
+            Assert.AreEqual($"Opposition: {leg.Seats.Where(kv => !gov.CoalitionOn(g.State.Date).Contains(kv.Key)).Sum(kv => kv.Value)} seats", ui.Q<Label>("cabinet-opposition").text, where);
             Assert.AreEqual($"Majority: {size / 2 + 1} seats", ui.Q<Label>("cabinet-majority").text, where);
             var top = leg.Seats.OrderByDescending(kv => kv.Value).First();
             Assert.AreEqual($"Largest party: {C.Parties.First(p => p.Id == top.Key).Name}, {top.Value} seats", ui.Q<Label>("cabinet-largest").text, where);
@@ -302,9 +302,9 @@ public class PromoScreensTests
             var leg = Offices.Legislature(C, s.Date)!;
             var gov = Offices.Government(C, s.Date);
             var (seats, size) = PoliticsSystem.CoalitionSeats(C, s.Date);
-            var blocks = CabinetPresenter.Blocks(C, leg, gov);
+            var blocks = CabinetPresenter.Blocks(C, leg, gov, s.Date);
             texts["cabinet-coalition"] = $"Coalition: {seats} of {size} seats · stability {PlayerText.Percent(s.CoalitionStability)}";
-            texts["cabinet-opposition"] = $"Opposition: {leg.Seats.Where(kv => gov == null || !gov.Coalition.Contains(kv.Key)).Sum(kv => kv.Value)} seats";
+            texts["cabinet-opposition"] = $"Opposition: {leg.Seats.Where(kv => gov == null || !gov.CoalitionOn(s.Date).Contains(kv.Key)).Sum(kv => kv.Value)} seats";
             texts["cabinet-majority"] = $"Majority: {leg.Size / 2 + 1} seats";
             var top = leg.Seats.OrderByDescending(kv => kv.Value).First();
             texts["cabinet-largest"] = $"Largest party: {C.Parties.First(p => p.Id == top.Key).Name}, {top.Value} seats";
