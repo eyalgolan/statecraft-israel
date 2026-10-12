@@ -7,3 +7,16 @@ updates:
       interval: weekly
     commit-message:
       prefix: "ci"
+  # Keeps the dev container features and the uv image tag in .devcontainer/ current.
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "repo"
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "repo"
