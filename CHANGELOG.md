@@ -8,9 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
-- Map: today's name of a 1948 locality for touch and keyboard players. A tap on a locality pill toggles its tooltip, a tap
+- Map: today's name of a 1948 locality by tap and in the info panel. A tap on a locality pill toggles its tooltip, a tap
   elsewhere hides it, and a mouse still hovers as before. The info panel lists the selected hex's 1948 localities with
-  today's name where a living place carries on, by the same rule as the tooltip (fixes #245).
+  today's name where a living place carries on, by the same rule as the tooltip. Keyboard players reach the panel list
+  once a hex can be selected from the keyboard (#41) (refs #245).
 - Writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set key=value` plays the historical run with a
   rules.yaml change applied in memory and prints the changed state lines and a table of chosen values, without Unity and
   without touching `content/` (fixes #295).
