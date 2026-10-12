@@ -4,6 +4,7 @@ https://github.com/eyalgolan/statecraft-israel
 
 Code is MIT (LICENSE). Game content (content/) is CC BY-SA 4.0. Original docs, art and UI assets are CC BY 4.0.
 AI-only images are CC0 / no rights claimed. Files derived from Unity's templates are under the Unity Companion License.
+CommandModels has a separate restricted model license; it is not covered by the general art/code licenses.
 See LICENSING.md for the path-by-path map.
 
 This product includes or is derived from the following third-party material. Per-file records: ASSETS.yaml,
@@ -132,3 +133,13 @@ Builds also contain YamlDotNet, Copyright (c) Antoine Aubry and contributors, MI
 the Unity runtime, used under the Unity Terms of Service. The Unity runtime includes the ICU data file that
 UI Toolkit's advanced text generator uses (Hebrew on the start screen): Copyright (c) 2016 and later Unicode, Inc. and
 others, Unicode License v3 (https://www.unicode.org/license.txt).
+
+Command model contribution (unity/Assets/Art/CommandModels/):
+Original contributing model creator: contributed via @pixelrenderai-hash in
+https://github.com/eyalgolan/statecraft-israel/pull/336 (contact for standalone asset-sale permission).
+Generated using paid Tripo P2.0 on 10–11 October 2026; sanitized provenance: docs/command-models.json.
+Public release authorized by the contributing creator on 12 October 2026 under LicenseRef-Statecraft-Models
+(LICENSES/Statecraft-Models.txt). Rights are retained to the extent held. Download/use/modification/redistribution,
+including in commercial games, are allowed; standalone asset sales or paid asset-pack/marketplace redistribution
+require the original contributing creator's written permission. These AI-generated assets carry no blanket
+copyright or exclusivity guarantee. The path exception is proposed for maintainer acceptance before merge.

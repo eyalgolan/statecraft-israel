@@ -102,3 +102,27 @@ def test_removed_path_must_not_be_tracked(make_repo, capsys):
     root = make_repo({"ASSETS.yaml": rules, "img/a.png": b"\x89PNG"})
     assert run(root) == 1
     assert "img/a.png: removed-but-tracked" in capsys.readouterr().out
+
+
+def test_command_models_custom_licence_keeps_provenance_and_release_checks(make_repo, capsys):
+    rules = """rules:
+  - glob: "unity/Assets/Art/CommandModels/*"
+    licence: LicenseRef-Statecraft-Models
+    source: "Paid Tripo P2.0; docs/command-models.json"
+    status: verified
+    ai_generated: true
+removed: []
+"""
+    root = make_repo({"ASSETS.yaml": rules,
+                      "unity/Assets/Art/CommandModels/ship/model.fbx": b"FBX\x00",
+                      "unity/Assets/Art/CommandModels/ship/albedo.jpg": b"\xff\xd8"})
+    assert run(root, "--release") == 0
+    (root / "ASSETS.yaml").write_text(rules.replace("status: verified", "status: owner-verify"))
+    assert run(root, "--release") == 1
+    assert "owner-verify" in capsys.readouterr().out
+    (root / "ASSETS.yaml").write_text(rules.replace("source:", "missing_source:"))
+    assert run(root) == 1
+    assert "bad-rule missing source" in capsys.readouterr().out
+    (root / "ASSETS.yaml").write_text(rules.replace("LicenseRef-Statecraft-Models", "LicenseRef-Other-Models"))
+    assert run(root) == 1
+    assert "unknown-licence LicenseRef-Other-Models" in capsys.readouterr().out

@@ -1,0 +1,3791 @@
+{
+  "schema_version": 1,
+  "title": "Statecraft AI-generated visual prototypes",
+  "description": "These 34 assets are AI-generated visual prototypes for the game. They are not historical evidence, verified depictions, or source material about real people, buildings or vehicles. Names and placements are symbolic game art.",
+  "license": "LicenseRef-Statecraft-Models",
+  "license_summary": "Download and use are allowed under the accompanying model license. Selling these models as standalone assets requires permission from their creator.",
+  "generation": {
+    "service": "Tripo Studio",
+    "model": "Smart Mesh P2.0",
+    "plan_evidence": "Local generation records identify paid-plan output; Max is recorded for the first two batches.",
+    "source_images": "Original AI-generated concepts, according to the local generation records; concepts and private session records are not included.",
+    "export": "FBX with base-color textures. Unity materials, prefabs and applicable animation controllers are included.",
+    "provenance_note": "Hashes describe the current imported bytes, including the farmer eight-animation re-export, rather than superseded local export records."
+  },
+  "model_count": 34,
+  "file_count": 330,
+  "total_bytes": 74676061,
+  "largest_file_bytes": 4487708,
+  "models": [
+    {
+      "name": "kibbutz-dining-hall-v1",
+      "generated_date": "2026-10-10",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.fbx",
+          "bytes": 54556,
+          "sha256": "9a09fb9be0f0b16822da59e7ff7187551015bab6813a734be73bff4f2eb3481f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "84d892b08fd668de8c56f13771b224ce7eff5d230bc6b68b45be4097ce3ced26"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.mat",
+          "bytes": 3924,
+          "sha256": "07c026a99c3a636bef4c60857d1d63d07cf9fe41ff03d91f6fe0d2ccc7816850"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "8f2ebfb25b57302f8e450d39fb6093c7954db5e520c8167ac97d0bff7bc80b56"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1_basecolor.jpg",
+          "bytes": 814473,
+          "sha256": "1ab2a54433845b321f59c034dc6d382a45a649aa5126d1a29495673f1aef930e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "59b5974a5c7f8f8a7976565354fb99600a221a80f46daf8945ea698109b8b2f9"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1.meta",
+          "bytes": 172,
+          "sha256": "78c03ae2fde1125c4c8b628b77fb452fb9a9399555140f4aa3eb53d99a721e4f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-dining-hall-v1.prefab",
+          "bytes": 4572,
+          "sha256": "b4094cd9037f8f97815739bbd4001866250435d96c19700af7071c829621086a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-dining-hall-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "47ce524e23734c0f46b087ab4b3687cab8b3281e94383fe3a552747da49db744"
+        }
+      ]
+    },
+    {
+      "name": "stone-village-v1",
+      "generated_date": "2026-10-10",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.fbx",
+          "bytes": 316204,
+          "sha256": "e547e96e7ff2fb538c42145cc63020e147c490dc13bfd73231f6b912df2d3a03"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "aed02d117f5b1b496d268fe0fa8d7296d63b877b67296ea46c4fcaf701e43dbb"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.mat",
+          "bytes": 3917,
+          "sha256": "a2e11923b384cfb05904d0f69409dbb36269aaebce9f36cb2c56c058ef1b91e1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "d143ef7c1b6ce4c8093c875196f7b4f2f73636edcaed2024c4c7d0a8c0e532de"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1_basecolor.jpg",
+          "bytes": 1258062,
+          "sha256": "c5cce0f56adf35311c2f9f9a226c243b14862e9f3caf401a7954e67d8eb62161"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "0091b3063f65ef192ac421d827633a27eaca1d87e276ad7a1c36b6377b7074c5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1.meta",
+          "bytes": 172,
+          "sha256": "880f14620ea0411c90640207a28dba3f657c2c39c947016c9b54c7f39cc19762"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/stone-village-v1.prefab",
+          "bytes": 4584,
+          "sha256": "155c67f970d6dc1decb5ccaf44d5bfdb03f7b054e96a64a6aa22597228f060d3"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/stone-village-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "d0e67dea9eb10c39eee50fb1fc0f1954a75723c24fe182cf5cb9b01e9e332543"
+        }
+      ]
+    },
+    {
+      "name": "tel-aviv-white-city-v1",
+      "generated_date": "2026-10-10",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.fbx",
+          "bytes": 252028,
+          "sha256": "a694d212a058c6dd0e8bf32de4e2b7b1ca240751101e441eee682c00838ad814"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "445cc5a019d31b931772fa8477459f1e00879f67330cb1c1bac5d41db47a0d1a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.mat",
+          "bytes": 3924,
+          "sha256": "499b53577ca6c3882850eb599bfee1022aa4804adc18278fe7d2070a8d4ff386"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "6321f8fbdf668cb6c818651f620c5580b60c0da2406beea8bd34cc84ece0ddde"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1_basecolor.jpg",
+          "bytes": 1266251,
+          "sha256": "93c16f7ec31655a9981e2ff694c405b520d8068f3fd5f0af3eb6f5a46526642d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "af6379683fa9c77caf985795075fa33b51d8d10cbe858b5be9892ee240799266"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1.meta",
+          "bytes": 172,
+          "sha256": "c2ecedafb5a3e1e7abeff79bf4990d4a483c1f5121fef8d4a5db903df09a8d69"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tel-aviv-white-city-v1.prefab",
+          "bytes": 4575,
+          "sha256": "3276f53f40cd20950527a828cc92d8b167a63c903e91abda9fc8ad496e2efb8f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tel-aviv-white-city-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "76f62fecc2a9a63e8b4de1e6d9f4031da8b4c034ce3be951be9ab1629e3be269"
+        }
+      ]
+    },
+    {
+      "name": "airliner-c54-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.fbx",
+          "bytes": 165372,
+          "sha256": "adadf2b260d440b46d894608f084f695ce9aa80ff0e55f5ac3e494bf82d1d831"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "c8ffbc6cdb8f554244dbd9907093aa045ec4d077e4251d676776e6417a611282"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.mat",
+          "bytes": 3916,
+          "sha256": "de1eb1306372057eb3dbce7d0a1da40bee0d4037e0249184bf5cb8bae8583663"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "02bea610084f646d2defea66d158475016d9e053673122025c13a4e4fde56a90"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1_basecolor.jpg",
+          "bytes": 1094448,
+          "sha256": "85e51865b133565eacb2e3986c335a3eddfb690eb65ed90353d2591fcff082b7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "02bcddf6125a1f8a93b722ecbdab146514305e9314ff151e119b1e2d47c81018"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1.meta",
+          "bytes": 172,
+          "sha256": "997f9af39b580f13553537692d51be1e63d9ec65ca0671f1567f8f56185495fa"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/airliner-c54-v1.prefab",
+          "bytes": 4548,
+          "sha256": "a64bd33dfaf305f9b147941f202cc76e362c0ea075a82b6f4572a6d635e66fe5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/airliner-c54-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "e0771872138fece31e91902a19c5f44cf14da33246d5c157078e6cc1707333c4"
+        }
+      ]
+    },
+    {
+      "name": "altalena-lst-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.fbx",
+          "bytes": 240348,
+          "sha256": "51a8bc0ce3b7c875c37d8aab51aea89c741e0b46435edb5999bcaba5811ccfe2"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "35570e977c87a02f03d9f676bbd3eeafb0730d2331438208b481cc4e4afeef10"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.mat",
+          "bytes": 3916,
+          "sha256": "10e94cddb88b85703da75240f8477b2a6503f2c40cf5b7de2d58e1d2b38d7a86"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "f76b248d53e59d0dbd6f7730c8de556b8698a22fcc56ed951d863c6dcaf5f3e0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1_basecolor.jpg",
+          "bytes": 1348939,
+          "sha256": "e04675eb47cf031b65a97c100735691bf53c85a728e3ad7c9b5ba13945e02ce0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "1ff2f0741a295ef067b9274e4fab094f265a11460d3805e0e065785e28547967"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1.meta",
+          "bytes": 172,
+          "sha256": "43e11431ea785afac21159b31a5ac6923a9266b527615ce65eec11e44354da97"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/altalena-lst-v1.prefab",
+          "bytes": 4578,
+          "sha256": "005d16b441fc47b581b8cbee83c36a59ad8747b17e6412b96ab21db5cd4041fe"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/altalena-lst-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "97ada7285c60f7e54ec5857f261205e36f69c80ed612ad21bcde564f44e4eca2"
+        }
+      ]
+    },
+    {
+      "name": "figure-immigrant-woman-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "idle.001",
+        "walk.001"
+      ],
+      "animation_count": 2,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.controller",
+          "bytes": 2853,
+          "sha256": "df8af854fddf8313e63ad7d8b5cc47dc074abd0e827fd0c506eba9e7aee03622"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "17aed75cce966581aa9b191ae9549e85496c91f0e8310c62ae473eaee6a6d57d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.fbx",
+          "bytes": 1508252,
+          "sha256": "a25ff2f76ea387e0eef0e60a0f4627c707d5414375c154b4c8a2c440903f6f5a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.fbx.meta",
+          "bytes": 4508,
+          "sha256": "d308995e19bb085c9fe4c36fa9ae8a9e15a271e8a516584bc2c8761906aedcc0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.mat",
+          "bytes": 3927,
+          "sha256": "3f0778a210f752859de08204690d07b9f26db5ce766c5c485558b9c2db1dc77d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "9a1d36c4d1412637e03b505a24fd6254e72f17cdae64ead2dca63be1e247cc81"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1_basecolor.jpg",
+          "bytes": 723010,
+          "sha256": "529e44ac2b447cf45f289e61314c0b90f9df68c3a41930b2ca070cf09b884e13"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e07304d6df7d41443f199244da34717eeba30b4c354cf4bb80c817ef10f42e5b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1.meta",
+          "bytes": 172,
+          "sha256": "5b2f6c0d5a078dfa5e0635669ff838193a01d9620d2f85d7cf97e03cdda964ae"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-woman-v1.prefab",
+          "bytes": 77548,
+          "sha256": "75bebdfedf9da4ab66554dbe92fc4a0a0f5862c741ffa526bd3f5fda7f758fa7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-woman-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "c97b35e0f518365dde4e819cf8c24fdfb790a51bb18f4229f1bccc63b9ac4054"
+        }
+      ]
+    },
+    {
+      "name": "figure-pioneer-farmer-v1-tpose",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "dig.001",
+        "greet_01.001",
+        "run.001",
+        "walk.001",
+        "idle.001",
+        "look_around.001",
+        "sit.001",
+        "lift_heavy.001"
+      ],
+      "animation_count": 8,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.controller",
+          "bytes": 7729,
+          "sha256": "1fff06e0cf2205bfe65f8c1c1b9e74c73954e83addb3f616ee13036c8dd943bc"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.controller.meta",
+          "bytes": 188,
+          "sha256": "b0ff3e9ba8d09bb87113c58fc5274b080d92d9e30a77eaedb5961ff76abcff08"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.fbx",
+          "bytes": 4487708,
+          "sha256": "076d74fe7424ee4039bcd936b8528f403f6a149a5221be049ff928ad8a301595"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.fbx.meta",
+          "bytes": 9396,
+          "sha256": "6fc3bc51fbedb6e285790b9a846d6e309dd228d303d881ccc7670a9ab731f4f8"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.mat",
+          "bytes": 3931,
+          "sha256": "1d35d21e10a2aed8b27c14d93f1f49cc76f8ed956bc7ac91c15974cc087bc151"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.mat.meta",
+          "bytes": 188,
+          "sha256": "67550103aeed9fac3a8d567c5bce63e8508059fc1d3caa807ed286958c8ed0b9"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose_basecolor.jpg",
+          "bytes": 914387,
+          "sha256": "c2c87c9de673fdecee9271112bb5dca5b728f75b75ae0b119874c662738675b5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "38412c4baa0f304b83c1c13f95e96186a0afa1dce71e267246fd0a07d9c648b7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose.meta",
+          "bytes": 172,
+          "sha256": "62d80a2834fe71d8d2f98a93b9f96758781d62acde4cc6ebc2c7f845e9c6dcd0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-pioneer-farmer-v1-tpose.prefab",
+          "bytes": 77555,
+          "sha256": "99546f5fb695df58eb0693c97e867daee4bcfd511e06ad6c8c5451b4c783e278"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-pioneer-farmer-v1-tpose.prefab.meta",
+          "bytes": 154,
+          "sha256": "2709eca4f1d2187a7ad5dc8055f2d5bc841f0517294f7af58ce473cd7da9fa56"
+        }
+      ]
+    },
+    {
+      "name": "figure-soldier-1948-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.fbx",
+          "bytes": 281996,
+          "sha256": "f13635851969c1bb6e4c0babb5283685159805dfba4a2912bf2bc88813861782"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "7f31f85e8ff6c99b2f6f32e116e80b89b09c79dd1b574be6ba83ea5a57b46269"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.mat",
+          "bytes": 3924,
+          "sha256": "f5ab52aa232380269d45c28f32ec6b11c3b7c0a34945cdc381f773e28d4e6ab4"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "395d1fc6b6296d91766528f4dde6ec43adf26459aa7e76f11abca19e46891051"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1_basecolor.jpg",
+          "bytes": 1035115,
+          "sha256": "cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "775ee91a23665e5c818a52e704f5827442bcb6ec0475673d7c210b6da45277d6"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1.meta",
+          "bytes": 172,
+          "sha256": "5d19c82fd528a2048508075ffed5f33d95802f321e26fb657b0bb1aa67f21dcf"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-soldier-1948-v1.prefab",
+          "bytes": 4554,
+          "sha256": "feb04d9308c00ae5c66fb686501b37843c1e5aa17412c89cb2d89184b56108f5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-soldier-1948-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "ac824adafe8fcdc7a5104a28b2b2c558ebc3ba635826f78f53646d2c92bf9c9e"
+        }
+      ]
+    },
+    {
+      "name": "haifa-port-city-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.fbx",
+          "bytes": 190236,
+          "sha256": "18bd0d3194a1d0a0d491cf8396400aece9426ef46fffa923ebe64f628c48411f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "fee3d29a6489bb3b2fbaace579c49a2845fef45aeed34083b7a16097220cc057"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.mat",
+          "bytes": 3919,
+          "sha256": "f79524168069e262423cda48ac1d7293062223805b578a3e285123138e11348e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "c6258a0266665e3f323a2e7a39f4e787faac43a789697382d492c4b109a3f39c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1_basecolor.jpg",
+          "bytes": 1320120,
+          "sha256": "cf4dcbda98bbd04a588b15537e1e97908d315467fe35054aa158a9fdbfa710ff"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "103202a3d0725fbe3b0ef833ea529e8b83f644aca4e4a22a3e962cf17caffff8"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1.meta",
+          "bytes": 172,
+          "sha256": "12afe96bbcc8a58c2c1a91c30a722d20094611c3f709089b93a1a8423d49b154"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/haifa-port-city-v1.prefab",
+          "bytes": 4562,
+          "sha256": "8c21b8d0494d152187bd9054e7e43a6812191d982f13eaddf0f9384e8a0ca712"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/haifa-port-city-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "abe6d35c608a3c04c3a2e0a00f7c2ebf0f0d96114ef2c3179eb8c1441d7f00e5"
+        }
+      ]
+    },
+    {
+      "name": "immigrant-steamer-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.fbx",
+          "bytes": 197788,
+          "sha256": "93c09b9ea2f2624af26dcfa3fd9e76056e592ab3b67cc57ad23775a02ded1b21"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "145a60086ecaced22cdf5e017e1b8a913f6741736483a988909456b752487823"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.mat",
+          "bytes": 3921,
+          "sha256": "e5fa03a5265c993fa140837ef36acd6677aacf681f93c3dfa36f5bf5455de97e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "8a4a599dcfcab01c05bc3e77206574df8d597f2ed494e5e7fb698dfa17df700a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1_basecolor.jpg",
+          "bytes": 1436796,
+          "sha256": "1a5aa261dab6baed2e34207b1844954273e274e5af18424e10563cb20966e08a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "b1d10687dde4275f23e64d9eb09bc0e855923a31a39d0f98e28e76f428424b9e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1.meta",
+          "bytes": 172,
+          "sha256": "1c607ca6901ca487714a734d4908a4f67a8e4653ca26b1034156c0b22170d609"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/immigrant-steamer-v1.prefab",
+          "bytes": 4571,
+          "sha256": "4a21d0cb0ac80e083e2b43539db4d1e279c627cb9a505f7e4bfdd14be7aca367"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/immigrant-steamer-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "2ff26c2ed0a3e07362dfb219910dea2a6c16c68c34b2e4d07fae4c514d4488ef"
+        }
+      ]
+    },
+    {
+      "name": "jerusalem-stone-city-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.fbx",
+          "bytes": 197244,
+          "sha256": "bfe5514bdb12312741ef1a3034b2944a4b1a00ad4b932374f03e7456c353b9b9"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "2d8403da116b5a3907a9ca88058ef92310649d381811ab5e88ceb5ceaad787a5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.mat",
+          "bytes": 3924,
+          "sha256": "e96a5d833d95530671f8ba5c3c3ad0a02d3cb7e6a36cfeda25eb60d9a9eec83e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "903d07d6ae3001c86033306b28570b67c2ad5194b94bcf64ee8561dd5dceab0d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1_basecolor.jpg",
+          "bytes": 1520404,
+          "sha256": "88f048c62050fee66679996410ecd5490f316ee3f82965c56bd8bce0272190ae"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "d6302f0123c584243712d76f6750ccb5930f38ce8408ff189fde85f48ebea62b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1.meta",
+          "bytes": 172,
+          "sha256": "e51f26a6597a1a37e827c379d515e931e4a2186275da521c56ea8dbe93ea3e1e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1.prefab",
+          "bytes": 4590,
+          "sha256": "bfc0babaedc403fbaf1df4962403f3baa5c4b01f93c6420efa9747334ddfa5e6"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "c641fc098152901d4e634bd6e252b7a1e3c0a034fd919c748572b79a8c1d34ce"
+        }
+      ]
+    },
+    {
+      "name": "jerusalem-stone-city-v1-3denhance",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.fbx",
+          "bytes": 186892,
+          "sha256": "174391c0a7513391b76ece55481409df302a61cc0749e859f2048f50f83fb90d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.fbx.meta",
+          "bytes": 2891,
+          "sha256": "9d2d695d5eabe65ff6f339d2c81c16cebb21b88c9d1a12ad7802653ffaab7702"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.mat",
+          "bytes": 3935,
+          "sha256": "84cfce5da537badfbfbe047819c377dd2454bf38608208024214ca5a5d332879"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.mat.meta",
+          "bytes": 188,
+          "sha256": "bb44b7a0eaff032e0a34a63483cb36726c54698aeb5c8746261650951aa09e96"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance_basecolor.jpg",
+          "bytes": 1593614,
+          "sha256": "d28e169fee42f814b7032cc7123a9ecdcae6ae344b991cd39ff8b5b4a13ce8b1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "994e123038c2c0d52f8890b836b2981d61589b5fb59de0b4d23f81813c1e8581"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance.meta",
+          "bytes": 172,
+          "sha256": "cdd4f1f2cfcd85861acf2d8e2cf31e0110e39e2afc55de8f6dc145c9e6764dc4"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1-3denhance.prefab",
+          "bytes": 4616,
+          "sha256": "1df31cee2a654129c494876f03c878f310acc10a588483cd861d743b46b05bd5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1-3denhance.prefab.meta",
+          "bytes": 154,
+          "sha256": "f8791a4b63825cbb271453ca5457cecf7299084d642c7870d1d978a3e142858f"
+        }
+      ]
+    },
+    {
+      "name": "kibbutz-compound-v2",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.fbx",
+          "bytes": 164108,
+          "sha256": "2affd4008889dae96934edaab287e3c6ff5fee6081674788c382332fa225a847"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.fbx.meta",
+          "bytes": 2891,
+          "sha256": "7b60665e79285ea47152f8854c3e10add0096e03831015c97ca3b0c5e1b81c57"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.mat",
+          "bytes": 3920,
+          "sha256": "f76cecf152baae8d31a96c027682cca77fb915bbbe4faa15f4ffee7107401109"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.mat.meta",
+          "bytes": 188,
+          "sha256": "e8e3747d650e7918e724c560123a17f9d8c1faaac79b8dc377d3b199d70a0aa3"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2_basecolor.jpg",
+          "bytes": 1647095,
+          "sha256": "54e2c84e16b6bdd1b6bd2d14f11159d8bb2885590511f4b6cebd32c812ae78e7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "b5023b4082a5d0cc2f624dbfc41e25c03598afaa46c0f75ef817a08bba20f0d7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2.meta",
+          "bytes": 172,
+          "sha256": "b316c12f0d1d2c96fd3baf684a552dcaa5f7930c9d139d3dd09889b80ceb0fb0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-compound-v2.prefab",
+          "bytes": 4554,
+          "sha256": "7b59ac0291aa2d083967d3020a0fc1aefd67e5b0fd3517aaa3367ae06d95f528"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-compound-v2.prefab.meta",
+          "bytes": 154,
+          "sha256": "2fa1ed8572465afb0850bf6c6b3db937a29222360087fcc38adbf5462a6438a7"
+        }
+      ]
+    },
+    {
+      "name": "maabara-camp-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.fbx",
+          "bytes": 121980,
+          "sha256": "ad2116017a09712ed095d9d572fea300dd069e659faf7fa85a01d2b1ab91b34e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "3c58dde0d260ea0d92821e3d5e98c033febccee12ebfd01522d8ebbcf18055f6"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.mat",
+          "bytes": 3917,
+          "sha256": "af85ff654956a4af359e1e7a21cc814bd681b9c2d9401670b98849df3867e761"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "349d9c96c82df3492babf08524a10b9ccd87add2dd50e50cecc3eaec4e4e8a49"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1_basecolor.jpg",
+          "bytes": 1180274,
+          "sha256": "da31f291b1709da8a11f61612fcd7af11a73e80e5da41b0a583f1f101238d201"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "8f74465a00901d27e87b8b3de0d61e602352d683f1b4fb1ba7a4a8eacef26bd0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1.meta",
+          "bytes": 172,
+          "sha256": "a084f538a3d77bb76ee22fc78871d5594b9333025b2c5a6624fe2f6498d0a8ba"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/maabara-camp-v1.prefab",
+          "bytes": 4563,
+          "sha256": "260697ac1bda261a5a93c0c98a173fc8878e90270477f3ee1b7db20bd99bec5a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/maabara-camp-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "fffeff046f69fc201149675d37f327b99ff44e8bf9b0cb3b255ac7907f94dd59"
+        }
+      ]
+    },
+    {
+      "name": "moshava-town-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.fbx",
+          "bytes": 148204,
+          "sha256": "0b86fd127f2350ab3a79d05d44bbb44a978309d68afc87e888274bda266dfbcd"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "634d8708768bcb9c386a1b61acb33f6a162b678718154141910b4ed038cb4888"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.mat",
+          "bytes": 3917,
+          "sha256": "12ccb8b3898400599e6eceaee7e3fa52b340002359f50f9c3bbf8bb1a2610818"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "d6255a89545ab734801b9fcbbba86010eb6f2baaa2436690678f40e7cc3d90be"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1_basecolor.jpg",
+          "bytes": 1481609,
+          "sha256": "6109d0359cbd3b724e9150b7bdce3be8c65f34ca9841f87ac45326067a9149aa"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "d2255fa3eef69cf0fa09fa5039f8c24d2db53c6cdb17f2b6f27a029332b6502d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1.meta",
+          "bytes": 172,
+          "sha256": "2b39144570449b15940bdde4f0e357fb6c479635285f7eb9bcedc981fc197e38"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/moshava-town-v1.prefab",
+          "bytes": 4545,
+          "sha256": "d847a5c3d95a97a3faad2ac0e5ac9fa5b358d3e92176da90b3a43dc29009b090"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/moshava-town-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "7a5143cd539d52e896c05fba457767d49cf435594177f16f1e9eafc08096ab4f"
+        }
+      ]
+    },
+    {
+      "name": "nahalal-moshav-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.fbx",
+          "bytes": 152748,
+          "sha256": "778c3940c0da49d7e640e349b8f5e78079600561829bae1bf6bb36fdf51a181f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "3d491b6aeba85162c25eebe962c55f5e6e1d4d2f91420a72aafab61a5159ad72"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.mat",
+          "bytes": 3919,
+          "sha256": "7bc4ae906f60006081b955ca9f96dd48ed2d27ae2f9acfb88d00861d11d4d59d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "4e143f49fbf66a9ef2302c6dce9aa417631e4a6bbd6560208e6058d9927cab09"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1_basecolor.jpg",
+          "bytes": 1445686,
+          "sha256": "b8c1c03a601d24361d948006572f5ede63af2454511a2d27cf2c9f886f488f15"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e8648a0728aad1bdc6a5a801e3ece171378a2d68b06d8ab6c09d77f28dbef2d7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1.meta",
+          "bytes": 172,
+          "sha256": "e5dd2445aec4280b3b08e600c35db2584b43341a899847660d7e1a2462a81aa1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/nahalal-moshav-v1.prefab",
+          "bytes": 4533,
+          "sha256": "846d57ea719e1797ddd1073dfdd0b050e8ce5f8b87a6a2090d40694d35ddd4f2"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/nahalal-moshav-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "7c41af4ab43ddbb0f333bf23eb1dd273586194f3602ed26b8e18361c83a4fd31"
+        }
+      ]
+    },
+    {
+      "name": "sandwich-armoured-truck-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.fbx",
+          "bytes": 126268,
+          "sha256": "78c4d3e0123454641932fd231e7a98c5561cf9dc63f4cda202a1436c414ce7f8"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "d6d8eeb5e69c66578b30ffdcbae7f2d71ccc8dd05878c08a2417904691c7b292"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.mat",
+          "bytes": 3928,
+          "sha256": "c7cc3ccdbb24b05152acfbc63eb9479d502c86349ebf8e090b4f16c03fd7c4d4"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "8a73b4e2a60defeb4de34eea04711d61730743e77c4f3ccb6461f54ed43441af"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1_basecolor.jpg",
+          "bytes": 1197984,
+          "sha256": "4c62a4249e8caed426e4c350c4ab3e880da9c0ec61ddf30e95c4b3312dc98078"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "1ad857739eec021465320b979c70700cb0caf13752fec4787b11d5cbd3d38967"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1.meta",
+          "bytes": 172,
+          "sha256": "9f933a30d428f4c6e3c82a2147556456694e00fcdb808bae65ded60b0f24bef4"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/sandwich-armoured-truck-v1.prefab",
+          "bytes": 4574,
+          "sha256": "03aaf0a8737259d3c2d01ca06511643d2b5b1a35a2421e5fc05e4ca467a9b1c7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/sandwich-armoured-truck-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "234eb08e416b2a0cb85bfb147e8a5460de394e3dd0407b29eace7feaddd5f838"
+        }
+      ]
+    },
+    {
+      "name": "shikun-housing-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.fbx",
+          "bytes": 121308,
+          "sha256": "75d72517a7e20367b2cbe8110292483a6e3cfea025aaf0475fd208e91b3fe519"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "6f448867df46a37e60a82553c0e35bc673f43c720ae88bc55bb3ab1024d8087a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.mat",
+          "bytes": 3918,
+          "sha256": "286dff733eacbcabbe5ed93d0c42fc42cd52bac772c118c85a627407ccec4d58"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "634689a031b5e841054dfc5b86058b01d3ced317f2162475da4590684d8a2c02"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1_basecolor.jpg",
+          "bytes": 1086753,
+          "sha256": "ead46da0a62f2a87f376a08ed0e5e88accdb7df87ae59442a17c81a0745d15c6"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "71b202784d56d30c4d467e20291dad16c555a32d0f394c7cb0136f57e4998096"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1.meta",
+          "bytes": 172,
+          "sha256": "06a19e902ca2bb6d6d55649d2b4f137aaa291d3b91997e28650b85a9ee3bfe8f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/shikun-housing-v1.prefab",
+          "bytes": 4569,
+          "sha256": "e0bd7df8c7372a67c08d8c039e4fc54416f747198d8100b4ec377def23135200"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/shikun-housing-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "d17fca0ca6f7ab52641c27003f9c5c2c3afade47d5241d7b4753e1b0909ab0ed"
+        }
+      ]
+    },
+    {
+      "name": "tegart-fort-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "building_or_prop",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.fbx",
+          "bytes": 128732,
+          "sha256": "d3f809a0e2dce5f14acaad1a8ca9f9bd195c925b75225ad4923f14acc75def94"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "e3a229e4b12ca07890e388e8cca1cbe224858d16bae94f499c73ffb510605005"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.mat",
+          "bytes": 3916,
+          "sha256": "b67985b4c93f2c6dfd89e12083788c025eb0421d1d0331d103da8fbeec9c8c3e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "140ba2f5637224fa4120a64449a8cd7916c49440327893307998870921197257"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1_basecolor.jpg",
+          "bytes": 1219118,
+          "sha256": "b5fa3f2f766bb86eefda81a28db8dc57bc7cc6e8d5c5f0557d87ba8d1ac4dd67"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "f39cf9b91d9e07fec13a8cc8f2bf6432e3cacff26792d820cb9f72c11bcc1a24"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1.meta",
+          "bytes": 172,
+          "sha256": "14515668b66a4d22ca55a6ae24656ef78f5d136e91b2ef11081b26b247138bbe"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tegart-fort-v1.prefab",
+          "bytes": 4596,
+          "sha256": "0b5e53b2961ab6e0bf60039aab5cc7b4f5516f1877f5160e1e7c9a976daadcba"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tegart-fort-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "413f44f06612e3178e007364b7c9491b69071694eee83d84b9f2ba68e17b8464"
+        }
+      ]
+    },
+    {
+      "name": "figure-arab-villager-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "idle.001",
+        "look_around.001",
+        "walk.001",
+        "greet_01.001",
+        "sit.001",
+        "run.001"
+      ],
+      "animation_count": 6,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.controller",
+          "bytes": 6109,
+          "sha256": "3f6df769d853bc00788c3bd5e0b26f0976ded7070fee4d0481fc89401047f115"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "b2ff68f4ed0e0ade8b5c5e26753c0f2f0fb24c3d638c8ed327e4e86de7b395c5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.fbx",
+          "bytes": 3190668,
+          "sha256": "881ac8bdf2c1470a8ad8bc21243ee519a82a4987d9cb988561ac1f7c8c3ea2b7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.fbx.meta",
+          "bytes": 7766,
+          "sha256": "0f765ef1ec3ca07f0b13415fcd6b30ed69cb84528d525f5b90c5abad11b3c4ec"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.mat",
+          "bytes": 3924,
+          "sha256": "62179f2bacbd2da388dba5ce8eac47c8a4fb01ced2d515ac74e7887f5f9ecf4d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "6ed60a30f73dde104f4d617e0c3ab8c86954386757fbe6a1ee87fad63509ab97"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1_basecolor.jpg",
+          "bytes": 678103,
+          "sha256": "c38d1c12e2b89273b457ba017fe5a53c80102bf52252b14d6b04769a605abc4c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e87839be144f1c416758b61d598d6d17b0ff44e6d402a18b679ecae09593b9b1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1.meta",
+          "bytes": 172,
+          "sha256": "77658029de7e73977af9c831a38f790ef589fff760c3bc4e6eb3df30f6db1d60"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-arab-villager-v1.prefab",
+          "bytes": 77517,
+          "sha256": "721a26f03a927ec6e42c726bee58754809408d5e9b91c69dab7aaf69ea62a347"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-arab-villager-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "1b1b9b03c585be9c995f5658de387ce8a0611790db1718181aa2efa94a4c792c"
+        }
+      ]
+    },
+    {
+      "name": "figure-builder-1950-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "look_around.001",
+        "run.001",
+        "walk.001",
+        "dig.001",
+        "lift_heavy.001",
+        "idle.001",
+        "greet_01.001",
+        "sit.001"
+      ],
+      "animation_count": 8,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.controller",
+          "bytes": 7719,
+          "sha256": "4b37fb830d97bb6c944fb7034e1f29772ec38bd572d65f8e06059cf494622057"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "bd43c13a41018a7d77d6b64266b149f67575384dd8044ac838e805d4b5d6de26"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.fbx",
+          "bytes": 4371500,
+          "sha256": "7322942081efd614c3a8977a8de6c077c377258b86ed0b08a359e958e58d23e2"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.fbx.meta",
+          "bytes": 9396,
+          "sha256": "f0b2512fa9abddfcf0b5b7f9ccb0ccbd89b464be9cedf21e4d80ff4c671cd876"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.mat",
+          "bytes": 3924,
+          "sha256": "5b53009bc38946f3aabea73dabf53347f2cd79d3f8db35e181226d58e8482549"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "f7ca59b2c7f30fa471646505268b627275e4074f7b634affa19e6ccfafbf1550"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1_basecolor.jpg",
+          "bytes": 748761,
+          "sha256": "2261f0fe257a5e586f35efc396f3fe4969fd529bba33ba6040003917c228a2d5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e3f687d920c7cd090a702fe113731d5b3215b02b066d4cac486bcc544ad4bdd1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1.meta",
+          "bytes": 172,
+          "sha256": "4039eb39a9f3fabb13952c583c053971932a31084815452625b84c1a5d4b27a8"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-builder-1950-v1.prefab",
+          "bytes": 77366,
+          "sha256": "f68e9fb17943425448b556ec0b1ba1451bedecf3af772a9426a9195b9a56239e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-builder-1950-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "b6ff08d7201628e64d6efebcd2ea18b61adc403c4435927903a536d1ee501262"
+        }
+      ]
+    },
+    {
+      "name": "figure-elder-immigrant-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "run.001",
+        "walk.001",
+        "greet_01.001",
+        "look_around.001",
+        "idle.001",
+        "sit.001"
+      ],
+      "animation_count": 6,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.controller",
+          "bytes": 6103,
+          "sha256": "6b3a09d6162315876cc780aa4dc1802a27a8837f631ba56c0412d45d55112aab"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "7f7493531211eb1bd9889e61c1670844ed29531af1dfc04316f66dc4b0b43e12"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.fbx",
+          "bytes": 3173916,
+          "sha256": "ab7aa7f645df42dbd48d491ad6671a69c8d9b7186d5667438b2a471a9e1b3073"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.fbx.meta",
+          "bytes": 7766,
+          "sha256": "4e00f675fd8acba6a1e10a386902755eadbed3c34fee87f4b90f29c513d4e9cb"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.mat",
+          "bytes": 3926,
+          "sha256": "b8e0475c57c7389333417920544a094228313951594348875c629e837be99b55"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "8e66a2193421d94edf5872147fb254fc7f02865e140945f2da07701fc8179831"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1_basecolor.jpg",
+          "bytes": 563869,
+          "sha256": "34851af175c91a8098341e41d9fd11524eaa3430a3bed0e631d66f3fa0dbf076"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "5a991ef31e2633e92e7b9b68ef1e7ce664b609cd37e64d272da88b18c7ec5eae"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1.meta",
+          "bytes": 172,
+          "sha256": "7119b510b8349d0a010f324b4e384b00cf7b916667a234266b46322e170ae50e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-elder-immigrant-v1.prefab",
+          "bytes": 77604,
+          "sha256": "c164ce7569723a3cf4063bb2e72956520fce7596a04d62827c22863da22b3b4c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-elder-immigrant-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "b4994670e3b9cd668b1c2bf9d6bab9bff300774c4d5da82ed821f6e2e5cebb5d"
+        }
+      ]
+    },
+    {
+      "name": "figure-immigrant-child-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "sit.001",
+        "run.001",
+        "greet_01.001",
+        "look_around.001",
+        "idle.001",
+        "walk.001"
+      ],
+      "animation_count": 6,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.controller",
+          "bytes": 6109,
+          "sha256": "814e155a475d789d3d2ae4a96e3968abd840f50418c3a4ce5b1818db11ebf87b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "75e920947b290bb3c2935dfc1c068223ef6d3dcd427c6aa59b159b0438f86380"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.fbx",
+          "bytes": 3227500,
+          "sha256": "3343e6131a4dea9d84431946492d9fb79fd42c57286e3f29dfafc132ad96fd9b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.fbx.meta",
+          "bytes": 7766,
+          "sha256": "b273ff3dc361c62c3f05aa936e525e9d8435771bcdacebb14b165365ebe8a2a8"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.mat",
+          "bytes": 3927,
+          "sha256": "56fc673c9bd59a8ffaeb706d66c0a488c48a62212b3fc396a89bb6a007453f12"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "a73d196b2c97b7796b88c97bf486fc51834f898cdbb2f3bb8e2fdaf17861f194"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1_basecolor.jpg",
+          "bytes": 701796,
+          "sha256": "38ee2cd6b3130bb4597ef69eb5ccd3c152785ee2ffaf81014afc97f20fdff8d3"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "d5a50f4c36e5634474ecaa4b57f2b724c3d86b7e478d4307a8e1d55b44cfc79b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1.meta",
+          "bytes": 172,
+          "sha256": "2d2f4c43425a6d41cfd1db5f7d229d32c94b53ef2add8b9b87d0fe216f3bf20b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-child-v1.prefab",
+          "bytes": 77586,
+          "sha256": "ea5f8f0f1c3217847ba11f3b4265af625be4b24491097f89e5b6f821640f3378"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-child-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "1969e9c00cdfed16921adc135c88d691d0b365b23f44b3de4d815595b6effb04"
+        }
+      ]
+    },
+    {
+      "name": "figure-kibbutz-woman-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "run.001",
+        "dig.001",
+        "lift_heavy.001",
+        "look_around.001",
+        "walk.001",
+        "idle.001",
+        "sit.001",
+        "greet_01.001"
+      ],
+      "animation_count": 8,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.controller",
+          "bytes": 7717,
+          "sha256": "1247d7298059c7afef4f23a4f1a4255b32ab1084490523ee95b4ac76563dd815"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "a5311b12a33cd446397540d56dc83f775c7a0ee4b6af481f74ebfd135a7990fb"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.fbx",
+          "bytes": 4391260,
+          "sha256": "adb61cd4cf41f2401c497e279a592aa1e6aa40a170f331ba6309bc876d7a27db"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.fbx.meta",
+          "bytes": 9396,
+          "sha256": "0158f091f06e8cffe038a3e2d76c4f49edfce6f0a9c59e583723c23928ec98ce"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.mat",
+          "bytes": 3924,
+          "sha256": "af8cbb44f87fd4af7683e0e53607d8f507b6d6cdcc216d66b0e9faba552e70c5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "882927019fe040d36e2cf9e539610c65363b5010f1ca0abdc0a7fb4fe9dc02fc"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1_basecolor.jpg",
+          "bytes": 745383,
+          "sha256": "41ebb68267e9ff5e3165c5e919a303a6f4018883a151dd15aa06b7dac8762af9"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "38573045707ee9231c813d406874688291e3fabc7dc8f877c2698c975efa29ed"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1.meta",
+          "bytes": 172,
+          "sha256": "ef8dc5370cca0d8ef3fec0b25d21b68143dbd3b18fa109bad1ed9f74b9d9cb92"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-kibbutz-woman-v1.prefab",
+          "bytes": 77670,
+          "sha256": "1814ac0abd1038723e725a8837a1fd970753513c09a4f2726a40252fbb74f727"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-kibbutz-woman-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "c6c32cee7efbd556c53d9a3986e578c3ab27b5f3eaba625645d5a6653d183f7e"
+        }
+      ]
+    },
+    {
+      "name": "figure-nurse-1948-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "look_around.001",
+        "run.001",
+        "greet_01.001",
+        "idle.001",
+        "sit.001",
+        "walk.001"
+      ],
+      "animation_count": 6,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.controller",
+          "bytes": 6095,
+          "sha256": "f5074da707fe20c41803783c314d57629cea32f9a9a32f00c687c5335246a441"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "661b79910a5cd97c13149fb255466603117d985a0ccedcfc04de2eeb48ba07e6"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.fbx",
+          "bytes": 3209740,
+          "sha256": "63e626195c28008b28b250e0b7306b8d3756571773768d79ec42e9ee970324d7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.fbx.meta",
+          "bytes": 7766,
+          "sha256": "03fa1721817f7d3d584d2b0263582579c8e177fa71fd8b1bb682131212643b17"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.mat",
+          "bytes": 3921,
+          "sha256": "4648012ca823a8c42b51d22bc975f7b73fcc394aac3148fc1115ce51753113cd"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "1ef96e13b04d542f7f56bf0178df373c4cfe7cdb397ddab980a6689709fa1d25"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1_basecolor.jpg",
+          "bytes": 541613,
+          "sha256": "3d63a226bd7f0f7a515e33b86ccd45fa1121ac0dfa77d576a33c5051158cdaab"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e6130d33de40151a56cfaccb0b4ab0c7fada1240c2482cd84757511c1b25cc2e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1.meta",
+          "bytes": 172,
+          "sha256": "ae1a070f4ace97760884aa97df474612a75e102e23d82a2c829fe148ed826a6a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-nurse-1948-v1.prefab",
+          "bytes": 77556,
+          "sha256": "3272f4a42e3f8ae7822a72d397d9745334d37b40f1d6c153e6e3503c83847a6d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-nurse-1948-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "23903a81fdcc1bd6ad412ecf84b39630eb6f7ba5e576ed0b943bcd2bb2fc8ea5"
+        }
+      ]
+    },
+    {
+      "name": "figure-palmach-scout-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "look_around.001",
+        "greet_01.001",
+        "sit.001",
+        "idle.001",
+        "defeat_02.001",
+        "hit_to_body_01.001",
+        "walk.001",
+        "box_01.001",
+        "run.001"
+      ],
+      "animation_count": 9,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.controller",
+          "bytes": 8546,
+          "sha256": "28596608b505bca6147f3ad650c28626e3296df6d9a5320e68155a87864ffbf6"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "481d69a6de068a840e6639257bd6d91cedf45c0f0b620a1d2d34b6c61953c6a2"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.fbx",
+          "bytes": 4332300,
+          "sha256": "02298b10fc8c8c61b41a8b0f85e7891ad048163864dda1ee10f4db4531227548"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.fbx.meta",
+          "bytes": 10229,
+          "sha256": "c640d6ac71eaf4de79417391f08e4bcb262eadb6baf0e88d7a5e2343b8bf690e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.mat",
+          "bytes": 3925,
+          "sha256": "1a0ad4f6fe464b0910524f4f27717443cf0ac5d8cf1fc20cf24b91329cfb8a54"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "8479dcffaaa6ba44a63a83c1dd19512056cb2fde56d956be51c200e6a90e42de"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1_basecolor.jpg",
+          "bytes": 650081,
+          "sha256": "f6431ab9d6f01b37b1f87cdc4aefff9eb877c0c65e555d63209907add02f89be"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "4de335f734ed2c717402f7286ec0f9e9c186f10e2097e651a67af6b2aca43001"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1.meta",
+          "bytes": 172,
+          "sha256": "73019ee92abb91ab39ada22c277d38f102a796ab5bbae8aa443909db7511d3bb"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-palmach-scout-v1.prefab",
+          "bytes": 77475,
+          "sha256": "5013543b3dd743bc80377d6263bd0c69e65c4902f0329179c04c1e5885c02243"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-palmach-scout-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "6ff636e4234fd63c492c176cd4164dbe6ec09e8cc432520501975792f98a3ea7"
+        }
+      ]
+    },
+    {
+      "name": "figure-yemenite-immigrant-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "character",
+      "animations": [
+        "look_around.001",
+        "sit.001",
+        "walk.001",
+        "greet_01.001",
+        "run.001",
+        "idle.001"
+      ],
+      "animation_count": 6,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.controller",
+          "bytes": 6098,
+          "sha256": "e15aa50f2727f833aeddea2ee50544d394a0605ec12a03674497457e8c620a3c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.controller.meta",
+          "bytes": 188,
+          "sha256": "76d4a18bc79057a80aeac3a01081d301e795cd9e627a5899410f6122b003f59c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.fbx",
+          "bytes": 3205100,
+          "sha256": "bf4cddddc8ef13af7c8692822578a2c189287df0d664129f62e65ef659b76c96"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.fbx.meta",
+          "bytes": 7766,
+          "sha256": "01b060501c1610269da2e14d0913ccdd75850416e7544fe5bf8319aef1a133ec"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.mat",
+          "bytes": 3930,
+          "sha256": "e02cfe8364628a7c209e50ac71f709a152a4a6bcf25e3ef82ded2e99b4b360dc"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "3ea516f94b6b6fe246f0aeb3270b8ac3125a8f3287639f1fddfd758c4bb05b9f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1_basecolor.jpg",
+          "bytes": 717298,
+          "sha256": "3cdeb8b6c1d77fb2260722fee622e321fa91da3ffa6720670905084f67ab7f97"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e57ef21b04cfa7655137a4cb505c1578d7b20fac1a8b99fb9b840abff93c677f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1.meta",
+          "bytes": 172,
+          "sha256": "0160e29614bf671174fa4b0edf703fe3f29cf634ce335c397d5d5d1fb9406b7f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-yemenite-immigrant-v1.prefab",
+          "bytes": 77494,
+          "sha256": "1adf40513940a8598b60e7d35a30496309962e5d94b816b4a3c2f2afe98e8f17"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-yemenite-immigrant-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "70fa945968416b5f20f3f40e4b678e867fff89e773417c324eb24d3dd0e1608e"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-citrus-truck-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.fbx",
+          "bytes": 132384,
+          "sha256": "e5afe560cd58b46e3ed0ace63566f2f3ce114fa78439e64d3f5fec98ff749230"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "d9831eb2a3017a402848fa9402a6b4cb693ebfa0ef0061d662ca06f64cef8563"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.mat",
+          "bytes": 3924,
+          "sha256": "4dd98b81cfcaea311789b8ce55dd0696099a59fede39bcfe0f248c9e5ca88802"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "3efdd2744966223c0cb1d07a94091e8a3661e654dbd9e62ca6b70762a3affb3c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1_basecolor.jpg",
+          "bytes": 603899,
+          "sha256": "3cc14bf3459b38c66d14aeb58c65809c32597247f8e7da1ceadd1c7f3d89cc1b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "9a1ae22307e2f5bc648c2ab658a2fbb36c09c186f281c8d3e43596239a24556f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1.meta",
+          "bytes": 172,
+          "sha256": "874c5f1191ecfbc3e61664a0d808c5d231ff79fe6e276a712c8a32edd165d29e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-citrus-truck-v1.prefab",
+          "bytes": 4501,
+          "sha256": "a87687ce03a87c5acbf7ccae3f450cbd32254b362a873de66bbeb0a3c2ba5c72"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-citrus-truck-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "e1171a890600e7e0fe828a718999c4735aeb3120e4219c240f2de657f520de9d"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-farm-tractor-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.fbx",
+          "bytes": 142640,
+          "sha256": "d7116e88249d7a7f2511008c678d212e70d1417ad96f03bc477f1bced080de27"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "93f27a97f37b9e4fbe2a45aaa1d6c455d68f857a5e264a945220cb2040ab9ac4"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.mat",
+          "bytes": 3924,
+          "sha256": "4e9fdcd536e08be10719db6102e8376527bbd3e60f063cb0dc14cd686f6278a5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "75604de1aaef3e33233437d5fcf26340ddf32d02da11c9558086f4f300a1c363"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1_basecolor.jpg",
+          "bytes": 894990,
+          "sha256": "bf1f936e7af836bea0d9fd4050627beba1c3f926b732654930ed8262848bebf2"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "d0ca9c2453e77d496094f5055dc468d4dd9986fce6371b8d74786ab5fdca3d3c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1.meta",
+          "bytes": 172,
+          "sha256": "1a5fa631425598a59a3cc01eaa39df32393931f563aae635397553afbe579f29"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-farm-tractor-v1.prefab",
+          "bytes": 4510,
+          "sha256": "6498bd1061fc5ee523993fdb1431c956a515c4e3f17617cbc563d70376710755"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-farm-tractor-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "62ccc9d1a96b38d4171039471daa53a3e9b2ff78b64974e5075693ad64ff22c4"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-fishing-boat-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.fbx",
+          "bytes": 138560,
+          "sha256": "2681a6d806bdbc4cacc60c26711e930c325bedccab7f907c85eecb60b615226d"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "b6e2aab275b50ce885ec587a9c5a6b405b180840cf295d491594bd089f60125c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.mat",
+          "bytes": 3925,
+          "sha256": "70753bab65b4be9e4f96d1f5080a2a07803c2e649f11a1dcb706173760c0b122"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "759224ec416772768047a7cd063e10a9c894079fa2745cbaddb42e15080a7c2f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1_basecolor.jpg",
+          "bytes": 994191,
+          "sha256": "c3379341166816344332474da1b56e617f22709280027b70ebdb4a124970cacb"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "ef47048aa529a6d3d214df76a7ed3ddfb1f4dfc8989d953b2afe3db8d22916ce"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1.meta",
+          "bytes": 172,
+          "sha256": "228c935288fa20131e328bca081ad333f142dc3e4f8702deb996d5c9fd0568a1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-fishing-boat-v1.prefab",
+          "bytes": 4502,
+          "sha256": "6cf866eb34f7fd73a5daf6b160d6a4233653351c00054b5dde14f7842845d010"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-fishing-boat-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "0a36310616d77dc9f9cd0f8f0b606c4b63bcff72b1b32fc4d5c8f0e1b6d7f67b"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-horse-wagon-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.fbx",
+          "bytes": 136528,
+          "sha256": "0433cabc6d16e40cd4a0f4fb8fa67144ad9a54f190c48247247cd052433fd158"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "4084e9cea49346101e97b702422a02da5f8b80c97442d18a0aecbaf4d54f70b5"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.mat",
+          "bytes": 3924,
+          "sha256": "59cea3b2adc25c145e224b3b34655be592ce774533a8a16dc78b5ed35f28426b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "eef69f32f84cf18586f0ee4a14cbfb2380363faa40e8290a36ae8d49ead5cd35"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1_basecolor.jpg",
+          "bytes": 818843,
+          "sha256": "a7a9795b4dc9ed13d6e74d1b662dd0f15add5bf7ac0fe6aaa55e097ef4db27bd"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "aec7b3400a1eb5dfa10b6fb160fd22b931caca2d11812d38804a2e0ad6da216f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1.meta",
+          "bytes": 172,
+          "sha256": "fc7aad26ca59a90ed59204bf3d26f27163e76355bec8186115ace1f8311f4074"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-horse-wagon-v1.prefab",
+          "bytes": 4509,
+          "sha256": "8608e98e0c156fbb045b75e72d7e019c132723ec44508e2de3efcdaaa50e03ea"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-horse-wagon-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "c2017ad7b2ef630252a6fb5ba2f4f62077f9cfc95e484d601acebcdd4e08805b"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-intercity-bus-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.fbx",
+          "bytes": 133744,
+          "sha256": "e9bd141b73741be500a65750863aa90f10141d6bc718af0e5dd1a2a506a4b1d7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "a3f3390f5e88e84ef62fc8ab08a1143f4eda5efe1a0e59f7648b9398b6c16a93"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.mat",
+          "bytes": 3925,
+          "sha256": "310fd1926085628e6ab69169116caa208cb0ac3429a877dcdc8821e3458e76ab"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "4af91bfce74ff5b18492419d75f0f226237189413be67160533b63975d10bc0f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1_basecolor.jpg",
+          "bytes": 710474,
+          "sha256": "240f686bcfca68abaf82f77a725c6d2f206f689852fb038cd9a6e18fbcb1f69f"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "e7de4b73ba099080324b4b55bfd75f13a509a63832aab2acf0e91940b564c8a7"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1.meta",
+          "bytes": 172,
+          "sha256": "d83b7ca60ec40c8931510972c1699922b7c38ce587d3db5d816d2409e18b887a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-intercity-bus-v1.prefab",
+          "bytes": 4512,
+          "sha256": "f8e131e0e23943984852a0fa638a3c789e112381435e14d2b94bfd5d99f098f8"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-intercity-bus-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "5b56da100690a0025c583d1c4006433883041028897acb5c12d985aa66f24f81"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-steam-locomotive-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.fbx",
+          "bytes": 127168,
+          "sha256": "8813970873d3431976dd394f2386d2e73277833e684c898a9ce8fda2bad781cf"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "c9f929b426d2ad6b34e5566352ae4917b32be1336abb61d46b3e37d65bf4ce42"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.mat",
+          "bytes": 3929,
+          "sha256": "3b232dcdd02a79a2c0b3314dae075cb4f5b99e093e77b86e216401d42dd5d63e"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "712b63d67e73a10317fbe51b2acc9be4d1b9d73a836e5c39a91fc88a13a30534"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1_basecolor.jpg",
+          "bytes": 699853,
+          "sha256": "00471a9992cd7b29153768965e0516fece4c4af1957576c4e639dbe675260b3a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "5d6df20b15b1b2c2f775f041f37c5a4f1f24ad35c452afeda2e883c1a62e1bc1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1.meta",
+          "bytes": 172,
+          "sha256": "ab8709af4c82677e9c1e595d7830cd1146c5237682ec8dc5e15f3d01457448f0"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-steam-locomotive-v1.prefab",
+          "bytes": 4511,
+          "sha256": "a2fdc85b2621c7bac6f2c3c5c4485f57ea43437e8550b7f48d05a8a04d127f2a"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-steam-locomotive-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "3363e74a8acb3b2e7ce3d24451536f95c4796284fd7cf81cbb998622368785f3"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-willys-jeep-v1",
+      "generated_date": "2026-10-11",
+      "generator": "Tripo Studio Smart Mesh P2.0",
+      "concept": "AI-generated concept image; not included in this repository",
+      "kind": "vehicle",
+      "animations": [],
+      "animation_count": 0,
+      "current_import_matches_export": true,
+      "files": [
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.fbx",
+          "bytes": 128912,
+          "sha256": "6deee28b0b8b2550ce4f6606015b8fb2f396f3bda6fdd7641ac9cb5a46f7bf00"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.fbx.meta",
+          "bytes": 2891,
+          "sha256": "2b23f3335a432b633ed8813fb71cef735bf237a8e7e1aad5a48fb726f1c418f1"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.mat",
+          "bytes": 3924,
+          "sha256": "c1e6f94cc3dbe310cc63cb758529e54bfa14583306696509af6dad07dbc69c0b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.mat.meta",
+          "bytes": 188,
+          "sha256": "38f54e2da152d61c2da66f133515718aaff69cc58199b36e65bb63b023260224"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1_basecolor.jpg",
+          "bytes": 582379,
+          "sha256": "68cbcd6d6a244572722e571e284651e4d9d8b584fdc60a3026918d836f3254c2"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1_basecolor.jpg.meta",
+          "bytes": 3007,
+          "sha256": "efe30c0bde83aa9f059394f4d8b76ab51ca75fcaef960b3c35d14c74afee608c"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1.meta",
+          "bytes": 172,
+          "sha256": "056f8377f18c92895509293a1070cb136c8e50baa8e1bb8adcd7722b5cf03e6b"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-willys-jeep-v1.prefab",
+          "bytes": 4510,
+          "sha256": "409e4a0078d14f425eeea3d1a945e73fdd1cceb05a3c1d7ab448738ebc373233"
+        },
+        {
+          "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-willys-jeep-v1.prefab.meta",
+          "bytes": 154,
+          "sha256": "387a11e884b3dc3b82cd6143a8613296aacce541f1f18a45c6c3724eee5a7cd3"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.fbx",
+      "bytes": 165372,
+      "sha256": "adadf2b260d440b46d894608f084f695ce9aa80ff0e55f5ac3e494bf82d1d831"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "c8ffbc6cdb8f554244dbd9907093aa045ec4d077e4251d676776e6417a611282"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.mat",
+      "bytes": 3916,
+      "sha256": "de1eb1306372057eb3dbce7d0a1da40bee0d4037e0249184bf5cb8bae8583663"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "02bea610084f646d2defea66d158475016d9e053673122025c13a4e4fde56a90"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1_basecolor.jpg",
+      "bytes": 1094448,
+      "sha256": "85e51865b133565eacb2e3986c335a3eddfb690eb65ed90353d2591fcff082b7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1/airliner-c54-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "02bcddf6125a1f8a93b722ecbdab146514305e9314ff151e119b1e2d47c81018"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/airliner-c54-v1.meta",
+      "bytes": 172,
+      "sha256": "997f9af39b580f13553537692d51be1e63d9ec65ca0671f1567f8f56185495fa"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.fbx",
+      "bytes": 240348,
+      "sha256": "51a8bc0ce3b7c875c37d8aab51aea89c741e0b46435edb5999bcaba5811ccfe2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "35570e977c87a02f03d9f676bbd3eeafb0730d2331438208b481cc4e4afeef10"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.mat",
+      "bytes": 3916,
+      "sha256": "10e94cddb88b85703da75240f8477b2a6503f2c40cf5b7de2d58e1d2b38d7a86"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "f76b248d53e59d0dbd6f7730c8de556b8698a22fcc56ed951d863c6dcaf5f3e0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1_basecolor.jpg",
+      "bytes": 1348939,
+      "sha256": "e04675eb47cf031b65a97c100735691bf53c85a728e3ad7c9b5ba13945e02ce0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1/altalena-lst-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "1ff2f0741a295ef067b9274e4fab094f265a11460d3805e0e065785e28547967"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/altalena-lst-v1.meta",
+      "bytes": 172,
+      "sha256": "43e11431ea785afac21159b31a5ac6923a9266b527615ce65eec11e44354da97"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.controller",
+      "bytes": 6109,
+      "sha256": "3f6df769d853bc00788c3bd5e0b26f0976ded7070fee4d0481fc89401047f115"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "b2ff68f4ed0e0ade8b5c5e26753c0f2f0fb24c3d638c8ed327e4e86de7b395c5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.fbx",
+      "bytes": 3190668,
+      "sha256": "881ac8bdf2c1470a8ad8bc21243ee519a82a4987d9cb988561ac1f7c8c3ea2b7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.fbx.meta",
+      "bytes": 7766,
+      "sha256": "0f765ef1ec3ca07f0b13415fcd6b30ed69cb84528d525f5b90c5abad11b3c4ec"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.mat",
+      "bytes": 3924,
+      "sha256": "62179f2bacbd2da388dba5ce8eac47c8a4fb01ced2d515ac74e7887f5f9ecf4d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "6ed60a30f73dde104f4d617e0c3ab8c86954386757fbe6a1ee87fad63509ab97"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1_basecolor.jpg",
+      "bytes": 678103,
+      "sha256": "c38d1c12e2b89273b457ba017fe5a53c80102bf52252b14d6b04769a605abc4c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e87839be144f1c416758b61d598d6d17b0ff44e6d402a18b679ecae09593b9b1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1.meta",
+      "bytes": 172,
+      "sha256": "77658029de7e73977af9c831a38f790ef589fff760c3bc4e6eb3df30f6db1d60"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.controller",
+      "bytes": 7719,
+      "sha256": "4b37fb830d97bb6c944fb7034e1f29772ec38bd572d65f8e06059cf494622057"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "bd43c13a41018a7d77d6b64266b149f67575384dd8044ac838e805d4b5d6de26"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.fbx",
+      "bytes": 4371500,
+      "sha256": "7322942081efd614c3a8977a8de6c077c377258b86ed0b08a359e958e58d23e2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.fbx.meta",
+      "bytes": 9396,
+      "sha256": "f0b2512fa9abddfcf0b5b7f9ccb0ccbd89b464be9cedf21e4d80ff4c671cd876"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.mat",
+      "bytes": 3924,
+      "sha256": "5b53009bc38946f3aabea73dabf53347f2cd79d3f8db35e181226d58e8482549"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "f7ca59b2c7f30fa471646505268b627275e4074f7b634affa19e6ccfafbf1550"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1_basecolor.jpg",
+      "bytes": 748761,
+      "sha256": "2261f0fe257a5e586f35efc396f3fe4969fd529bba33ba6040003917c228a2d5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e3f687d920c7cd090a702fe113731d5b3215b02b066d4cac486bcc544ad4bdd1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1.meta",
+      "bytes": 172,
+      "sha256": "4039eb39a9f3fabb13952c583c053971932a31084815452625b84c1a5d4b27a8"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.controller",
+      "bytes": 6103,
+      "sha256": "6b3a09d6162315876cc780aa4dc1802a27a8837f631ba56c0412d45d55112aab"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "7f7493531211eb1bd9889e61c1670844ed29531af1dfc04316f66dc4b0b43e12"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.fbx",
+      "bytes": 3173916,
+      "sha256": "ab7aa7f645df42dbd48d491ad6671a69c8d9b7186d5667438b2a471a9e1b3073"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.fbx.meta",
+      "bytes": 7766,
+      "sha256": "4e00f675fd8acba6a1e10a386902755eadbed3c34fee87f4b90f29c513d4e9cb"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.mat",
+      "bytes": 3926,
+      "sha256": "b8e0475c57c7389333417920544a094228313951594348875c629e837be99b55"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "8e66a2193421d94edf5872147fb254fc7f02865e140945f2da07701fc8179831"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1_basecolor.jpg",
+      "bytes": 563869,
+      "sha256": "34851af175c91a8098341e41d9fd11524eaa3430a3bed0e631d66f3fa0dbf076"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "5a991ef31e2633e92e7b9b68ef1e7ce664b609cd37e64d272da88b18c7ec5eae"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1.meta",
+      "bytes": 172,
+      "sha256": "7119b510b8349d0a010f324b4e384b00cf7b916667a234266b46322e170ae50e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.controller",
+      "bytes": 6109,
+      "sha256": "814e155a475d789d3d2ae4a96e3968abd840f50418c3a4ce5b1818db11ebf87b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "75e920947b290bb3c2935dfc1c068223ef6d3dcd427c6aa59b159b0438f86380"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.fbx",
+      "bytes": 3227500,
+      "sha256": "3343e6131a4dea9d84431946492d9fb79fd42c57286e3f29dfafc132ad96fd9b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.fbx.meta",
+      "bytes": 7766,
+      "sha256": "b273ff3dc361c62c3f05aa936e525e9d8435771bcdacebb14b165365ebe8a2a8"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.mat",
+      "bytes": 3927,
+      "sha256": "56fc673c9bd59a8ffaeb706d66c0a488c48a62212b3fc396a89bb6a007453f12"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "a73d196b2c97b7796b88c97bf486fc51834f898cdbb2f3bb8e2fdaf17861f194"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1_basecolor.jpg",
+      "bytes": 701796,
+      "sha256": "38ee2cd6b3130bb4597ef69eb5ccd3c152785ee2ffaf81014afc97f20fdff8d3"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "d5a50f4c36e5634474ecaa4b57f2b724c3d86b7e478d4307a8e1d55b44cfc79b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1.meta",
+      "bytes": 172,
+      "sha256": "2d2f4c43425a6d41cfd1db5f7d229d32c94b53ef2add8b9b87d0fe216f3bf20b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.controller",
+      "bytes": 2853,
+      "sha256": "df8af854fddf8313e63ad7d8b5cc47dc074abd0e827fd0c506eba9e7aee03622"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "17aed75cce966581aa9b191ae9549e85496c91f0e8310c62ae473eaee6a6d57d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.fbx",
+      "bytes": 1508252,
+      "sha256": "a25ff2f76ea387e0eef0e60a0f4627c707d5414375c154b4c8a2c440903f6f5a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.fbx.meta",
+      "bytes": 4508,
+      "sha256": "d308995e19bb085c9fe4c36fa9ae8a9e15a271e8a516584bc2c8761906aedcc0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.mat",
+      "bytes": 3927,
+      "sha256": "3f0778a210f752859de08204690d07b9f26db5ce766c5c485558b9c2db1dc77d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "9a1d36c4d1412637e03b505a24fd6254e72f17cdae64ead2dca63be1e247cc81"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1_basecolor.jpg",
+      "bytes": 723010,
+      "sha256": "529e44ac2b447cf45f289e61314c0b90f9df68c3a41930b2ca070cf09b884e13"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e07304d6df7d41443f199244da34717eeba30b4c354cf4bb80c817ef10f42e5b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1.meta",
+      "bytes": 172,
+      "sha256": "5b2f6c0d5a078dfa5e0635669ff838193a01d9620d2f85d7cf97e03cdda964ae"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.controller",
+      "bytes": 7717,
+      "sha256": "1247d7298059c7afef4f23a4f1a4255b32ab1084490523ee95b4ac76563dd815"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "a5311b12a33cd446397540d56dc83f775c7a0ee4b6af481f74ebfd135a7990fb"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.fbx",
+      "bytes": 4391260,
+      "sha256": "adb61cd4cf41f2401c497e279a592aa1e6aa40a170f331ba6309bc876d7a27db"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.fbx.meta",
+      "bytes": 9396,
+      "sha256": "0158f091f06e8cffe038a3e2d76c4f49edfce6f0a9c59e583723c23928ec98ce"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.mat",
+      "bytes": 3924,
+      "sha256": "af8cbb44f87fd4af7683e0e53607d8f507b6d6cdcc216d66b0e9faba552e70c5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "882927019fe040d36e2cf9e539610c65363b5010f1ca0abdc0a7fb4fe9dc02fc"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1_basecolor.jpg",
+      "bytes": 745383,
+      "sha256": "41ebb68267e9ff5e3165c5e919a303a6f4018883a151dd15aa06b7dac8762af9"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "38573045707ee9231c813d406874688291e3fabc7dc8f877c2698c975efa29ed"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1.meta",
+      "bytes": 172,
+      "sha256": "ef8dc5370cca0d8ef3fec0b25d21b68143dbd3b18fa109bad1ed9f74b9d9cb92"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.controller",
+      "bytes": 6095,
+      "sha256": "f5074da707fe20c41803783c314d57629cea32f9a9a32f00c687c5335246a441"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "661b79910a5cd97c13149fb255466603117d985a0ccedcfc04de2eeb48ba07e6"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.fbx",
+      "bytes": 3209740,
+      "sha256": "63e626195c28008b28b250e0b7306b8d3756571773768d79ec42e9ee970324d7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.fbx.meta",
+      "bytes": 7766,
+      "sha256": "03fa1721817f7d3d584d2b0263582579c8e177fa71fd8b1bb682131212643b17"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.mat",
+      "bytes": 3921,
+      "sha256": "4648012ca823a8c42b51d22bc975f7b73fcc394aac3148fc1115ce51753113cd"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "1ef96e13b04d542f7f56bf0178df373c4cfe7cdb397ddab980a6689709fa1d25"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1_basecolor.jpg",
+      "bytes": 541613,
+      "sha256": "3d63a226bd7f0f7a515e33b86ccd45fa1121ac0dfa77d576a33c5051158cdaab"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1/figure-nurse-1948-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e6130d33de40151a56cfaccb0b4ab0c7fada1240c2482cd84757511c1b25cc2e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-nurse-1948-v1.meta",
+      "bytes": 172,
+      "sha256": "ae1a070f4ace97760884aa97df474612a75e102e23d82a2c829fe148ed826a6a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.controller",
+      "bytes": 8546,
+      "sha256": "28596608b505bca6147f3ad650c28626e3296df6d9a5320e68155a87864ffbf6"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "481d69a6de068a840e6639257bd6d91cedf45c0f0b620a1d2d34b6c61953c6a2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.fbx",
+      "bytes": 4332300,
+      "sha256": "02298b10fc8c8c61b41a8b0f85e7891ad048163864dda1ee10f4db4531227548"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.fbx.meta",
+      "bytes": 10229,
+      "sha256": "c640d6ac71eaf4de79417391f08e4bcb262eadb6baf0e88d7a5e2343b8bf690e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.mat",
+      "bytes": 3925,
+      "sha256": "1a0ad4f6fe464b0910524f4f27717443cf0ac5d8cf1fc20cf24b91329cfb8a54"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "8479dcffaaa6ba44a63a83c1dd19512056cb2fde56d956be51c200e6a90e42de"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1_basecolor.jpg",
+      "bytes": 650081,
+      "sha256": "f6431ab9d6f01b37b1f87cdc4aefff9eb877c0c65e555d63209907add02f89be"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1/figure-palmach-scout-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "4de335f734ed2c717402f7286ec0f9e9c186f10e2097e651a67af6b2aca43001"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-palmach-scout-v1.meta",
+      "bytes": 172,
+      "sha256": "73019ee92abb91ab39ada22c277d38f102a796ab5bbae8aa443909db7511d3bb"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.controller",
+      "bytes": 7729,
+      "sha256": "1fff06e0cf2205bfe65f8c1c1b9e74c73954e83addb3f616ee13036c8dd943bc"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.controller.meta",
+      "bytes": 188,
+      "sha256": "b0ff3e9ba8d09bb87113c58fc5274b080d92d9e30a77eaedb5961ff76abcff08"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.fbx",
+      "bytes": 4487708,
+      "sha256": "076d74fe7424ee4039bcd936b8528f403f6a149a5221be049ff928ad8a301595"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.fbx.meta",
+      "bytes": 9396,
+      "sha256": "6fc3bc51fbedb6e285790b9a846d6e309dd228d303d881ccc7670a9ab731f4f8"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.mat",
+      "bytes": 3931,
+      "sha256": "1d35d21e10a2aed8b27c14d93f1f49cc76f8ed956bc7ac91c15974cc087bc151"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.mat.meta",
+      "bytes": 188,
+      "sha256": "67550103aeed9fac3a8d567c5bce63e8508059fc1d3caa807ed286958c8ed0b9"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose_basecolor.jpg",
+      "bytes": 914387,
+      "sha256": "c2c87c9de673fdecee9271112bb5dca5b728f75b75ae0b119874c662738675b5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "38412c4baa0f304b83c1c13f95e96186a0afa1dce71e267246fd0a07d9c648b7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose.meta",
+      "bytes": 172,
+      "sha256": "62d80a2834fe71d8d2f98a93b9f96758781d62acde4cc6ebc2c7f845e9c6dcd0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.fbx",
+      "bytes": 281996,
+      "sha256": "f13635851969c1bb6e4c0babb5283685159805dfba4a2912bf2bc88813861782"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "7f31f85e8ff6c99b2f6f32e116e80b89b09c79dd1b574be6ba83ea5a57b46269"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.mat",
+      "bytes": 3924,
+      "sha256": "f5ab52aa232380269d45c28f32ec6b11c3b7c0a34945cdc381f773e28d4e6ab4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "395d1fc6b6296d91766528f4dde6ec43adf26459aa7e76f11abca19e46891051"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1_basecolor.jpg",
+      "bytes": 1035115,
+      "sha256": "cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "775ee91a23665e5c818a52e704f5827442bcb6ec0475673d7c210b6da45277d6"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1.meta",
+      "bytes": 172,
+      "sha256": "5d19c82fd528a2048508075ffed5f33d95802f321e26fb657b0bb1aa67f21dcf"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.controller",
+      "bytes": 6098,
+      "sha256": "e15aa50f2727f833aeddea2ee50544d394a0605ec12a03674497457e8c620a3c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.controller.meta",
+      "bytes": 188,
+      "sha256": "76d4a18bc79057a80aeac3a01081d301e795cd9e627a5899410f6122b003f59c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.fbx",
+      "bytes": 3205100,
+      "sha256": "bf4cddddc8ef13af7c8692822578a2c189287df0d664129f62e65ef659b76c96"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.fbx.meta",
+      "bytes": 7766,
+      "sha256": "01b060501c1610269da2e14d0913ccdd75850416e7544fe5bf8319aef1a133ec"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.mat",
+      "bytes": 3930,
+      "sha256": "e02cfe8364628a7c209e50ac71f709a152a4a6bcf25e3ef82ded2e99b4b360dc"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "3ea516f94b6b6fe246f0aeb3270b8ac3125a8f3287639f1fddfd758c4bb05b9f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1_basecolor.jpg",
+      "bytes": 717298,
+      "sha256": "3cdeb8b6c1d77fb2260722fee622e321fa91da3ffa6720670905084f67ab7f97"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e57ef21b04cfa7655137a4cb505c1578d7b20fac1a8b99fb9b840abff93c677f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1.meta",
+      "bytes": 172,
+      "sha256": "0160e29614bf671174fa4b0edf703fe3f29cf634ce335c397d5d5d1fb9406b7f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.fbx",
+      "bytes": 190236,
+      "sha256": "18bd0d3194a1d0a0d491cf8396400aece9426ef46fffa923ebe64f628c48411f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "fee3d29a6489bb3b2fbaace579c49a2845fef45aeed34083b7a16097220cc057"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.mat",
+      "bytes": 3919,
+      "sha256": "f79524168069e262423cda48ac1d7293062223805b578a3e285123138e11348e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "c6258a0266665e3f323a2e7a39f4e787faac43a789697382d492c4b109a3f39c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1_basecolor.jpg",
+      "bytes": 1320120,
+      "sha256": "cf4dcbda98bbd04a588b15537e1e97908d315467fe35054aa158a9fdbfa710ff"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1/haifa-port-city-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "103202a3d0725fbe3b0ef833ea529e8b83f644aca4e4a22a3e962cf17caffff8"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/haifa-port-city-v1.meta",
+      "bytes": 172,
+      "sha256": "12afe96bbcc8a58c2c1a91c30a722d20094611c3f709089b93a1a8423d49b154"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.fbx",
+      "bytes": 197788,
+      "sha256": "93c09b9ea2f2624af26dcfa3fd9e76056e592ab3b67cc57ad23775a02ded1b21"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "145a60086ecaced22cdf5e017e1b8a913f6741736483a988909456b752487823"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.mat",
+      "bytes": 3921,
+      "sha256": "e5fa03a5265c993fa140837ef36acd6677aacf681f93c3dfa36f5bf5455de97e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "8a4a599dcfcab01c05bc3e77206574df8d597f2ed494e5e7fb698dfa17df700a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1_basecolor.jpg",
+      "bytes": 1436796,
+      "sha256": "1a5aa261dab6baed2e34207b1844954273e274e5af18424e10563cb20966e08a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1/immigrant-steamer-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "b1d10687dde4275f23e64d9eb09bc0e855923a31a39d0f98e28e76f428424b9e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/immigrant-steamer-v1.meta",
+      "bytes": 172,
+      "sha256": "1c607ca6901ca487714a734d4908a4f67a8e4653ca26b1034156c0b22170d609"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.fbx",
+      "bytes": 197244,
+      "sha256": "bfe5514bdb12312741ef1a3034b2944a4b1a00ad4b932374f03e7456c353b9b9"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "2d8403da116b5a3907a9ca88058ef92310649d381811ab5e88ceb5ceaad787a5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.mat",
+      "bytes": 3924,
+      "sha256": "e96a5d833d95530671f8ba5c3c3ad0a02d3cb7e6a36cfeda25eb60d9a9eec83e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "903d07d6ae3001c86033306b28570b67c2ad5194b94bcf64ee8561dd5dceab0d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1_basecolor.jpg",
+      "bytes": 1520404,
+      "sha256": "88f048c62050fee66679996410ecd5490f316ee3f82965c56bd8bce0272190ae"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "d6302f0123c584243712d76f6750ccb5930f38ce8408ff189fde85f48ebea62b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.fbx",
+      "bytes": 186892,
+      "sha256": "174391c0a7513391b76ece55481409df302a61cc0749e859f2048f50f83fb90d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.fbx.meta",
+      "bytes": 2891,
+      "sha256": "9d2d695d5eabe65ff6f339d2c81c16cebb21b88c9d1a12ad7802653ffaab7702"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.mat",
+      "bytes": 3935,
+      "sha256": "84cfce5da537badfbfbe047819c377dd2454bf38608208024214ca5a5d332879"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.mat.meta",
+      "bytes": 188,
+      "sha256": "bb44b7a0eaff032e0a34a63483cb36726c54698aeb5c8746261650951aa09e96"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance_basecolor.jpg",
+      "bytes": 1593614,
+      "sha256": "d28e169fee42f814b7032cc7123a9ecdcae6ae344b991cd39ff8b5b4a13ce8b1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "994e123038c2c0d52f8890b836b2981d61589b5fb59de0b4d23f81813c1e8581"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance.meta",
+      "bytes": 172,
+      "sha256": "cdd4f1f2cfcd85861acf2d8e2cf31e0110e39e2afc55de8f6dc145c9e6764dc4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1.meta",
+      "bytes": 172,
+      "sha256": "e51f26a6597a1a37e827c379d515e931e4a2186275da521c56ea8dbe93ea3e1e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.fbx",
+      "bytes": 164108,
+      "sha256": "2affd4008889dae96934edaab287e3c6ff5fee6081674788c382332fa225a847"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.fbx.meta",
+      "bytes": 2891,
+      "sha256": "7b60665e79285ea47152f8854c3e10add0096e03831015c97ca3b0c5e1b81c57"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.mat",
+      "bytes": 3920,
+      "sha256": "f76cecf152baae8d31a96c027682cca77fb915bbbe4faa15f4ffee7107401109"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2.mat.meta",
+      "bytes": 188,
+      "sha256": "e8e3747d650e7918e724c560123a17f9d8c1faaac79b8dc377d3b199d70a0aa3"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2_basecolor.jpg",
+      "bytes": 1647095,
+      "sha256": "54e2c84e16b6bdd1b6bd2d14f11159d8bb2885590511f4b6cebd32c812ae78e7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2/kibbutz-compound-v2_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "b5023b4082a5d0cc2f624dbfc41e25c03598afaa46c0f75ef817a08bba20f0d7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-compound-v2.meta",
+      "bytes": 172,
+      "sha256": "b316c12f0d1d2c96fd3baf684a552dcaa5f7930c9d139d3dd09889b80ceb0fb0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.fbx",
+      "bytes": 54556,
+      "sha256": "9a09fb9be0f0b16822da59e7ff7187551015bab6813a734be73bff4f2eb3481f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "84d892b08fd668de8c56f13771b224ce7eff5d230bc6b68b45be4097ce3ced26"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.mat",
+      "bytes": 3924,
+      "sha256": "07c026a99c3a636bef4c60857d1d63d07cf9fe41ff03d91f6fe0d2ccc7816850"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "8f2ebfb25b57302f8e450d39fb6093c7954db5e520c8167ac97d0bff7bc80b56"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1_basecolor.jpg",
+      "bytes": 814473,
+      "sha256": "1ab2a54433845b321f59c034dc6d382a45a649aa5126d1a29495673f1aef930e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1/kibbutz-dining-hall-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "59b5974a5c7f8f8a7976565354fb99600a221a80f46daf8945ea698109b8b2f9"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/kibbutz-dining-hall-v1.meta",
+      "bytes": 172,
+      "sha256": "78c03ae2fde1125c4c8b628b77fb452fb9a9399555140f4aa3eb53d99a721e4f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.fbx",
+      "bytes": 121980,
+      "sha256": "ad2116017a09712ed095d9d572fea300dd069e659faf7fa85a01d2b1ab91b34e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "3c58dde0d260ea0d92821e3d5e98c033febccee12ebfd01522d8ebbcf18055f6"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.mat",
+      "bytes": 3917,
+      "sha256": "af85ff654956a4af359e1e7a21cc814bd681b9c2d9401670b98849df3867e761"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "349d9c96c82df3492babf08524a10b9ccd87add2dd50e50cecc3eaec4e4e8a49"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1_basecolor.jpg",
+      "bytes": 1180274,
+      "sha256": "da31f291b1709da8a11f61612fcd7af11a73e80e5da41b0a583f1f101238d201"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1/maabara-camp-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "8f74465a00901d27e87b8b3de0d61e602352d683f1b4fb1ba7a4a8eacef26bd0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/maabara-camp-v1.meta",
+      "bytes": 172,
+      "sha256": "a084f538a3d77bb76ee22fc78871d5594b9333025b2c5a6624fe2f6498d0a8ba"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.fbx",
+      "bytes": 148204,
+      "sha256": "0b86fd127f2350ab3a79d05d44bbb44a978309d68afc87e888274bda266dfbcd"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "634d8708768bcb9c386a1b61acb33f6a162b678718154141910b4ed038cb4888"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.mat",
+      "bytes": 3917,
+      "sha256": "12ccb8b3898400599e6eceaee7e3fa52b340002359f50f9c3bbf8bb1a2610818"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "d6255a89545ab734801b9fcbbba86010eb6f2baaa2436690678f40e7cc3d90be"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1_basecolor.jpg",
+      "bytes": 1481609,
+      "sha256": "6109d0359cbd3b724e9150b7bdce3be8c65f34ca9841f87ac45326067a9149aa"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1/moshava-town-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "d2255fa3eef69cf0fa09fa5039f8c24d2db53c6cdb17f2b6f27a029332b6502d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/moshava-town-v1.meta",
+      "bytes": 172,
+      "sha256": "2b39144570449b15940bdde4f0e357fb6c479635285f7eb9bcedc981fc197e38"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.fbx",
+      "bytes": 152748,
+      "sha256": "778c3940c0da49d7e640e349b8f5e78079600561829bae1bf6bb36fdf51a181f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "3d491b6aeba85162c25eebe962c55f5e6e1d4d2f91420a72aafab61a5159ad72"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.mat",
+      "bytes": 3919,
+      "sha256": "7bc4ae906f60006081b955ca9f96dd48ed2d27ae2f9acfb88d00861d11d4d59d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "4e143f49fbf66a9ef2302c6dce9aa417631e4a6bbd6560208e6058d9927cab09"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1_basecolor.jpg",
+      "bytes": 1445686,
+      "sha256": "b8c1c03a601d24361d948006572f5ede63af2454511a2d27cf2c9f886f488f15"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1/nahalal-moshav-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e8648a0728aad1bdc6a5a801e3ece171378a2d68b06d8ab6c09d77f28dbef2d7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/nahalal-moshav-v1.meta",
+      "bytes": 172,
+      "sha256": "e5dd2445aec4280b3b08e600c35db2584b43341a899847660d7e1a2462a81aa1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.fbx",
+      "bytes": 126268,
+      "sha256": "78c4d3e0123454641932fd231e7a98c5561cf9dc63f4cda202a1436c414ce7f8"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "d6d8eeb5e69c66578b30ffdcbae7f2d71ccc8dd05878c08a2417904691c7b292"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.mat",
+      "bytes": 3928,
+      "sha256": "c7cc3ccdbb24b05152acfbc63eb9479d502c86349ebf8e090b4f16c03fd7c4d4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "8a73b4e2a60defeb4de34eea04711d61730743e77c4f3ccb6461f54ed43441af"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1_basecolor.jpg",
+      "bytes": 1197984,
+      "sha256": "4c62a4249e8caed426e4c350c4ab3e880da9c0ec61ddf30e95c4b3312dc98078"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1/sandwich-armoured-truck-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "1ad857739eec021465320b979c70700cb0caf13752fec4787b11d5cbd3d38967"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/sandwich-armoured-truck-v1.meta",
+      "bytes": 172,
+      "sha256": "9f933a30d428f4c6e3c82a2147556456694e00fcdb808bae65ded60b0f24bef4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.fbx",
+      "bytes": 121308,
+      "sha256": "75d72517a7e20367b2cbe8110292483a6e3cfea025aaf0475fd208e91b3fe519"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "6f448867df46a37e60a82553c0e35bc673f43c720ae88bc55bb3ab1024d8087a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.mat",
+      "bytes": 3918,
+      "sha256": "286dff733eacbcabbe5ed93d0c42fc42cd52bac772c118c85a627407ccec4d58"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "634689a031b5e841054dfc5b86058b01d3ced317f2162475da4590684d8a2c02"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1_basecolor.jpg",
+      "bytes": 1086753,
+      "sha256": "ead46da0a62f2a87f376a08ed0e5e88accdb7df87ae59442a17c81a0745d15c6"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1/shikun-housing-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "71b202784d56d30c4d467e20291dad16c555a32d0f394c7cb0136f57e4998096"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/shikun-housing-v1.meta",
+      "bytes": 172,
+      "sha256": "06a19e902ca2bb6d6d55649d2b4f137aaa291d3b91997e28650b85a9ee3bfe8f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.fbx",
+      "bytes": 316204,
+      "sha256": "e547e96e7ff2fb538c42145cc63020e147c490dc13bfd73231f6b912df2d3a03"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "aed02d117f5b1b496d268fe0fa8d7296d63b877b67296ea46c4fcaf701e43dbb"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.mat",
+      "bytes": 3917,
+      "sha256": "a2e11923b384cfb05904d0f69409dbb36269aaebce9f36cb2c56c058ef1b91e1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "d143ef7c1b6ce4c8093c875196f7b4f2f73636edcaed2024c4c7d0a8c0e532de"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1_basecolor.jpg",
+      "bytes": 1258062,
+      "sha256": "c5cce0f56adf35311c2f9f9a226c243b14862e9f3caf401a7954e67d8eb62161"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1/stone-village-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "0091b3063f65ef192ac421d827633a27eaca1d87e276ad7a1c36b6377b7074c5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/stone-village-v1.meta",
+      "bytes": 172,
+      "sha256": "880f14620ea0411c90640207a28dba3f657c2c39c947016c9b54c7f39cc19762"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.fbx",
+      "bytes": 128732,
+      "sha256": "d3f809a0e2dce5f14acaad1a8ca9f9bd195c925b75225ad4923f14acc75def94"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "e3a229e4b12ca07890e388e8cca1cbe224858d16bae94f499c73ffb510605005"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.mat",
+      "bytes": 3916,
+      "sha256": "b67985b4c93f2c6dfd89e12083788c025eb0421d1d0331d103da8fbeec9c8c3e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "140ba2f5637224fa4120a64449a8cd7916c49440327893307998870921197257"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1_basecolor.jpg",
+      "bytes": 1219118,
+      "sha256": "b5fa3f2f766bb86eefda81a28db8dc57bc7cc6e8d5c5f0557d87ba8d1ac4dd67"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1/tegart-fort-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "f39cf9b91d9e07fec13a8cc8f2bf6432e3cacff26792d820cb9f72c11bcc1a24"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tegart-fort-v1.meta",
+      "bytes": 172,
+      "sha256": "14515668b66a4d22ca55a6ae24656ef78f5d136e91b2ef11081b26b247138bbe"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.fbx",
+      "bytes": 252028,
+      "sha256": "a694d212a058c6dd0e8bf32de4e2b7b1ca240751101e441eee682c00838ad814"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "445cc5a019d31b931772fa8477459f1e00879f67330cb1c1bac5d41db47a0d1a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.mat",
+      "bytes": 3924,
+      "sha256": "499b53577ca6c3882850eb599bfee1022aa4804adc18278fe7d2070a8d4ff386"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "6321f8fbdf668cb6c818651f620c5580b60c0da2406beea8bd34cc84ece0ddde"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1_basecolor.jpg",
+      "bytes": 1266251,
+      "sha256": "93c16f7ec31655a9981e2ff694c405b520d8068f3fd5f0af3eb6f5a46526642d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "af6379683fa9c77caf985795075fa33b51d8d10cbe858b5be9892ee240799266"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/tel-aviv-white-city-v1.meta",
+      "bytes": 172,
+      "sha256": "c2ecedafb5a3e1e7abeff79bf4990d4a483c1f5121fef8d4a5db903df09a8d69"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.fbx",
+      "bytes": 132384,
+      "sha256": "e5afe560cd58b46e3ed0ace63566f2f3ce114fa78439e64d3f5fec98ff749230"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "d9831eb2a3017a402848fa9402a6b4cb693ebfa0ef0061d662ca06f64cef8563"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.mat",
+      "bytes": 3924,
+      "sha256": "4dd98b81cfcaea311789b8ce55dd0696099a59fede39bcfe0f248c9e5ca88802"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "3efdd2744966223c0cb1d07a94091e8a3661e654dbd9e62ca6b70762a3affb3c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1_basecolor.jpg",
+      "bytes": 603899,
+      "sha256": "3cc14bf3459b38c66d14aeb58c65809c32597247f8e7da1ceadd1c7f3d89cc1b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1/vehicle-citrus-truck-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "9a1ae22307e2f5bc648c2ab658a2fbb36c09c186f281c8d3e43596239a24556f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-citrus-truck-v1.meta",
+      "bytes": 172,
+      "sha256": "874c5f1191ecfbc3e61664a0d808c5d231ff79fe6e276a712c8a32edd165d29e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.fbx",
+      "bytes": 142640,
+      "sha256": "d7116e88249d7a7f2511008c678d212e70d1417ad96f03bc477f1bced080de27"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "93f27a97f37b9e4fbe2a45aaa1d6c455d68f857a5e264a945220cb2040ab9ac4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.mat",
+      "bytes": 3924,
+      "sha256": "4e9fdcd536e08be10719db6102e8376527bbd3e60f063cb0dc14cd686f6278a5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "75604de1aaef3e33233437d5fcf26340ddf32d02da11c9558086f4f300a1c363"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1_basecolor.jpg",
+      "bytes": 894990,
+      "sha256": "bf1f936e7af836bea0d9fd4050627beba1c3f926b732654930ed8262848bebf2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1/vehicle-farm-tractor-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "d0ca9c2453e77d496094f5055dc468d4dd9986fce6371b8d74786ab5fdca3d3c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-farm-tractor-v1.meta",
+      "bytes": 172,
+      "sha256": "1a5fa631425598a59a3cc01eaa39df32393931f563aae635397553afbe579f29"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.fbx",
+      "bytes": 138560,
+      "sha256": "2681a6d806bdbc4cacc60c26711e930c325bedccab7f907c85eecb60b615226d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "b6e2aab275b50ce885ec587a9c5a6b405b180840cf295d491594bd089f60125c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.mat",
+      "bytes": 3925,
+      "sha256": "70753bab65b4be9e4f96d1f5080a2a07803c2e649f11a1dcb706173760c0b122"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "759224ec416772768047a7cd063e10a9c894079fa2745cbaddb42e15080a7c2f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1_basecolor.jpg",
+      "bytes": 994191,
+      "sha256": "c3379341166816344332474da1b56e617f22709280027b70ebdb4a124970cacb"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1/vehicle-fishing-boat-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "ef47048aa529a6d3d214df76a7ed3ddfb1f4dfc8989d953b2afe3db8d22916ce"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-fishing-boat-v1.meta",
+      "bytes": 172,
+      "sha256": "228c935288fa20131e328bca081ad333f142dc3e4f8702deb996d5c9fd0568a1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.fbx",
+      "bytes": 136528,
+      "sha256": "0433cabc6d16e40cd4a0f4fb8fa67144ad9a54f190c48247247cd052433fd158"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "4084e9cea49346101e97b702422a02da5f8b80c97442d18a0aecbaf4d54f70b5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.mat",
+      "bytes": 3924,
+      "sha256": "59cea3b2adc25c145e224b3b34655be592ce774533a8a16dc78b5ed35f28426b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "eef69f32f84cf18586f0ee4a14cbfb2380363faa40e8290a36ae8d49ead5cd35"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1_basecolor.jpg",
+      "bytes": 818843,
+      "sha256": "a7a9795b4dc9ed13d6e74d1b662dd0f15add5bf7ac0fe6aaa55e097ef4db27bd"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1/vehicle-horse-wagon-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "aec7b3400a1eb5dfa10b6fb160fd22b931caca2d11812d38804a2e0ad6da216f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-horse-wagon-v1.meta",
+      "bytes": 172,
+      "sha256": "fc7aad26ca59a90ed59204bf3d26f27163e76355bec8186115ace1f8311f4074"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.fbx",
+      "bytes": 133744,
+      "sha256": "e9bd141b73741be500a65750863aa90f10141d6bc718af0e5dd1a2a506a4b1d7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "a3f3390f5e88e84ef62fc8ab08a1143f4eda5efe1a0e59f7648b9398b6c16a93"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.mat",
+      "bytes": 3925,
+      "sha256": "310fd1926085628e6ab69169116caa208cb0ac3429a877dcdc8821e3458e76ab"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "4af91bfce74ff5b18492419d75f0f226237189413be67160533b63975d10bc0f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1_basecolor.jpg",
+      "bytes": 710474,
+      "sha256": "240f686bcfca68abaf82f77a725c6d2f206f689852fb038cd9a6e18fbcb1f69f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1/vehicle-intercity-bus-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "e7de4b73ba099080324b4b55bfd75f13a509a63832aab2acf0e91940b564c8a7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-intercity-bus-v1.meta",
+      "bytes": 172,
+      "sha256": "d83b7ca60ec40c8931510972c1699922b7c38ce587d3db5d816d2409e18b887a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.fbx",
+      "bytes": 127168,
+      "sha256": "8813970873d3431976dd394f2386d2e73277833e684c898a9ce8fda2bad781cf"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "c9f929b426d2ad6b34e5566352ae4917b32be1336abb61d46b3e37d65bf4ce42"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.mat",
+      "bytes": 3929,
+      "sha256": "3b232dcdd02a79a2c0b3314dae075cb4f5b99e093e77b86e216401d42dd5d63e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "712b63d67e73a10317fbe51b2acc9be4d1b9d73a836e5c39a91fc88a13a30534"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1_basecolor.jpg",
+      "bytes": 699853,
+      "sha256": "00471a9992cd7b29153768965e0516fece4c4af1957576c4e639dbe675260b3a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1/vehicle-steam-locomotive-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "5d6df20b15b1b2c2f775f041f37c5a4f1f24ad35c452afeda2e883c1a62e1bc1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-steam-locomotive-v1.meta",
+      "bytes": 172,
+      "sha256": "ab8709af4c82677e9c1e595d7830cd1146c5237682ec8dc5e15f3d01457448f0"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.fbx",
+      "bytes": 128912,
+      "sha256": "6deee28b0b8b2550ce4f6606015b8fb2f396f3bda6fdd7641ac9cb5a46f7bf00"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.fbx.meta",
+      "bytes": 2891,
+      "sha256": "2b23f3335a432b633ed8813fb71cef735bf237a8e7e1aad5a48fb726f1c418f1"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.mat",
+      "bytes": 3924,
+      "sha256": "c1e6f94cc3dbe310cc63cb758529e54bfa14583306696509af6dad07dbc69c0b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1.mat.meta",
+      "bytes": 188,
+      "sha256": "38f54e2da152d61c2da66f133515718aaff69cc58199b36e65bb63b023260224"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1_basecolor.jpg",
+      "bytes": 582379,
+      "sha256": "68cbcd6d6a244572722e571e284651e4d9d8b584fdc60a3026918d836f3254c2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1/vehicle-willys-jeep-v1_basecolor.jpg.meta",
+      "bytes": 3007,
+      "sha256": "efe30c0bde83aa9f059394f4d8b76ab51ca75fcaef960b3c35d14c74afee608c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models/vehicle-willys-jeep-v1.meta",
+      "bytes": 172,
+      "sha256": "056f8377f18c92895509293a1070cb136c8e50baa8e1bb8adcd7722b5cf03e6b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Models.meta",
+      "bytes": 172,
+      "sha256": "e32beab2f545a5bc9fd470f6c3962ef2db79503c12b46a5456fe3aa2f7f01447"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/airliner-c54-v1.prefab",
+      "bytes": 4548,
+      "sha256": "a64bd33dfaf305f9b147941f202cc76e362c0ea075a82b6f4572a6d635e66fe5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/airliner-c54-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "e0771872138fece31e91902a19c5f44cf14da33246d5c157078e6cc1707333c4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/altalena-lst-v1.prefab",
+      "bytes": 4578,
+      "sha256": "005d16b441fc47b581b8cbee83c36a59ad8747b17e6412b96ab21db5cd4041fe"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/altalena-lst-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "97ada7285c60f7e54ec5857f261205e36f69c80ed612ad21bcde564f44e4eca2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-arab-villager-v1.prefab",
+      "bytes": 77517,
+      "sha256": "721a26f03a927ec6e42c726bee58754809408d5e9b91c69dab7aaf69ea62a347"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-arab-villager-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "1b1b9b03c585be9c995f5658de387ce8a0611790db1718181aa2efa94a4c792c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-builder-1950-v1.prefab",
+      "bytes": 77366,
+      "sha256": "f68e9fb17943425448b556ec0b1ba1451bedecf3af772a9426a9195b9a56239e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-builder-1950-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "b6ff08d7201628e64d6efebcd2ea18b61adc403c4435927903a536d1ee501262"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-elder-immigrant-v1.prefab",
+      "bytes": 77604,
+      "sha256": "c164ce7569723a3cf4063bb2e72956520fce7596a04d62827c22863da22b3b4c"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-elder-immigrant-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "b4994670e3b9cd668b1c2bf9d6bab9bff300774c4d5da82ed821f6e2e5cebb5d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-child-v1.prefab",
+      "bytes": 77586,
+      "sha256": "ea5f8f0f1c3217847ba11f3b4265af625be4b24491097f89e5b6f821640f3378"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-child-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "1969e9c00cdfed16921adc135c88d691d0b365b23f44b3de4d815595b6effb04"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-woman-v1.prefab",
+      "bytes": 77548,
+      "sha256": "75bebdfedf9da4ab66554dbe92fc4a0a0f5862c741ffa526bd3f5fda7f758fa7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-immigrant-woman-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "c97b35e0f518365dde4e819cf8c24fdfb790a51bb18f4229f1bccc63b9ac4054"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-kibbutz-woman-v1.prefab",
+      "bytes": 77670,
+      "sha256": "1814ac0abd1038723e725a8837a1fd970753513c09a4f2726a40252fbb74f727"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-kibbutz-woman-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "c6c32cee7efbd556c53d9a3986e578c3ab27b5f3eaba625645d5a6653d183f7e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-nurse-1948-v1.prefab",
+      "bytes": 77556,
+      "sha256": "3272f4a42e3f8ae7822a72d397d9745334d37b40f1d6c153e6e3503c83847a6d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-nurse-1948-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "23903a81fdcc1bd6ad412ecf84b39630eb6f7ba5e576ed0b943bcd2bb2fc8ea5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-palmach-scout-v1.prefab",
+      "bytes": 77475,
+      "sha256": "5013543b3dd743bc80377d6263bd0c69e65c4902f0329179c04c1e5885c02243"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-palmach-scout-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "6ff636e4234fd63c492c176cd4164dbe6ec09e8cc432520501975792f98a3ea7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-pioneer-farmer-v1-tpose.prefab",
+      "bytes": 77555,
+      "sha256": "99546f5fb695df58eb0693c97e867daee4bcfd511e06ad6c8c5451b4c783e278"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-pioneer-farmer-v1-tpose.prefab.meta",
+      "bytes": 154,
+      "sha256": "2709eca4f1d2187a7ad5dc8055f2d5bc841f0517294f7af58ce473cd7da9fa56"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-soldier-1948-v1.prefab",
+      "bytes": 4554,
+      "sha256": "feb04d9308c00ae5c66fb686501b37843c1e5aa17412c89cb2d89184b56108f5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-soldier-1948-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "ac824adafe8fcdc7a5104a28b2b2c558ebc3ba635826f78f53646d2c92bf9c9e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-yemenite-immigrant-v1.prefab",
+      "bytes": 77494,
+      "sha256": "1adf40513940a8598b60e7d35a30496309962e5d94b816b4a3c2f2afe98e8f17"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/figure-yemenite-immigrant-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "70fa945968416b5f20f3f40e4b678e867fff89e773417c324eb24d3dd0e1608e"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/haifa-port-city-v1.prefab",
+      "bytes": 4562,
+      "sha256": "8c21b8d0494d152187bd9054e7e43a6812191d982f13eaddf0f9384e8a0ca712"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/haifa-port-city-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "abe6d35c608a3c04c3a2e0a00f7c2ebf0f0d96114ef2c3179eb8c1441d7f00e5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/immigrant-steamer-v1.prefab",
+      "bytes": 4571,
+      "sha256": "4a21d0cb0ac80e083e2b43539db4d1e279c627cb9a505f7e4bfdd14be7aca367"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/immigrant-steamer-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "2ff26c2ed0a3e07362dfb219910dea2a6c16c68c34b2e4d07fae4c514d4488ef"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1-3denhance.prefab",
+      "bytes": 4616,
+      "sha256": "1df31cee2a654129c494876f03c878f310acc10a588483cd861d743b46b05bd5"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1-3denhance.prefab.meta",
+      "bytes": 154,
+      "sha256": "f8791a4b63825cbb271453ca5457cecf7299084d642c7870d1d978a3e142858f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1.prefab",
+      "bytes": 4590,
+      "sha256": "bfc0babaedc403fbaf1df4962403f3baa5c4b01f93c6420efa9747334ddfa5e6"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/jerusalem-stone-city-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "c641fc098152901d4e634bd6e252b7a1e3c0a034fd919c748572b79a8c1d34ce"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-compound-v2.prefab",
+      "bytes": 4554,
+      "sha256": "7b59ac0291aa2d083967d3020a0fc1aefd67e5b0fd3517aaa3367ae06d95f528"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-compound-v2.prefab.meta",
+      "bytes": 154,
+      "sha256": "2fa1ed8572465afb0850bf6c6b3db937a29222360087fcc38adbf5462a6438a7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-dining-hall-v1.prefab",
+      "bytes": 4572,
+      "sha256": "b4094cd9037f8f97815739bbd4001866250435d96c19700af7071c829621086a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/kibbutz-dining-hall-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "47ce524e23734c0f46b087ab4b3687cab8b3281e94383fe3a552747da49db744"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/maabara-camp-v1.prefab",
+      "bytes": 4563,
+      "sha256": "260697ac1bda261a5a93c0c98a173fc8878e90270477f3ee1b7db20bd99bec5a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/maabara-camp-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "fffeff046f69fc201149675d37f327b99ff44e8bf9b0cb3b255ac7907f94dd59"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/moshava-town-v1.prefab",
+      "bytes": 4545,
+      "sha256": "d847a5c3d95a97a3faad2ac0e5ac9fa5b358d3e92176da90b3a43dc29009b090"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/moshava-town-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "7a5143cd539d52e896c05fba457767d49cf435594177f16f1e9eafc08096ab4f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/nahalal-moshav-v1.prefab",
+      "bytes": 4533,
+      "sha256": "846d57ea719e1797ddd1073dfdd0b050e8ce5f8b87a6a2090d40694d35ddd4f2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/nahalal-moshav-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "7c41af4ab43ddbb0f333bf23eb1dd273586194f3602ed26b8e18361c83a4fd31"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/sandwich-armoured-truck-v1.prefab",
+      "bytes": 4574,
+      "sha256": "03aaf0a8737259d3c2d01ca06511643d2b5b1a35a2421e5fc05e4ca467a9b1c7"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/sandwich-armoured-truck-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "234eb08e416b2a0cb85bfb147e8a5460de394e3dd0407b29eace7feaddd5f838"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/shikun-housing-v1.prefab",
+      "bytes": 4569,
+      "sha256": "e0bd7df8c7372a67c08d8c039e4fc54416f747198d8100b4ec377def23135200"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/shikun-housing-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "d17fca0ca6f7ab52641c27003f9c5c2c3afade47d5241d7b4753e1b0909ab0ed"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/stone-village-v1.prefab",
+      "bytes": 4584,
+      "sha256": "155c67f970d6dc1decb5ccaf44d5bfdb03f7b054e96a64a6aa22597228f060d3"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/stone-village-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "d0e67dea9eb10c39eee50fb1fc0f1954a75723c24fe182cf5cb9b01e9e332543"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tegart-fort-v1.prefab",
+      "bytes": 4596,
+      "sha256": "0b5e53b2961ab6e0bf60039aab5cc7b4f5516f1877f5160e1e7c9a976daadcba"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tegart-fort-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "413f44f06612e3178e007364b7c9491b69071694eee83d84b9f2ba68e17b8464"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tel-aviv-white-city-v1.prefab",
+      "bytes": 4575,
+      "sha256": "3276f53f40cd20950527a828cc92d8b167a63c903e91abda9fc8ad496e2efb8f"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/tel-aviv-white-city-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "76f62fecc2a9a63e8b4de1e6d9f4031da8b4c034ce3be951be9ab1629e3be269"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-citrus-truck-v1.prefab",
+      "bytes": 4501,
+      "sha256": "a87687ce03a87c5acbf7ccae3f450cbd32254b362a873de66bbeb0a3c2ba5c72"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-citrus-truck-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "e1171a890600e7e0fe828a718999c4735aeb3120e4219c240f2de657f520de9d"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-farm-tractor-v1.prefab",
+      "bytes": 4510,
+      "sha256": "6498bd1061fc5ee523993fdb1431c956a515c4e3f17617cbc563d70376710755"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-farm-tractor-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "62ccc9d1a96b38d4171039471daa53a3e9b2ff78b64974e5075693ad64ff22c4"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-fishing-boat-v1.prefab",
+      "bytes": 4502,
+      "sha256": "6cf866eb34f7fd73a5daf6b160d6a4233653351c00054b5dde14f7842845d010"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-fishing-boat-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "0a36310616d77dc9f9cd0f8f0b606c4b63bcff72b1b32fc4d5c8f0e1b6d7f67b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-horse-wagon-v1.prefab",
+      "bytes": 4509,
+      "sha256": "8608e98e0c156fbb045b75e72d7e019c132723ec44508e2de3efcdaaa50e03ea"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-horse-wagon-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "c2017ad7b2ef630252a6fb5ba2f4f62077f9cfc95e484d601acebcdd4e08805b"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-intercity-bus-v1.prefab",
+      "bytes": 4512,
+      "sha256": "f8e131e0e23943984852a0fa638a3c789e112381435e14d2b94bfd5d99f098f8"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-intercity-bus-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "5b56da100690a0025c583d1c4006433883041028897acb5c12d985aa66f24f81"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-steam-locomotive-v1.prefab",
+      "bytes": 4511,
+      "sha256": "a2fdc85b2621c7bac6f2c3c5c4485f57ea43437e8550b7f48d05a8a04d127f2a"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-steam-locomotive-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "3363e74a8acb3b2e7ce3d24451536f95c4796284fd7cf81cbb998622368785f3"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-willys-jeep-v1.prefab",
+      "bytes": 4510,
+      "sha256": "409e4a0078d14f425eeea3d1a945e73fdd1cceb05a3c1d7ab448738ebc373233"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes/vehicle-willys-jeep-v1.prefab.meta",
+      "bytes": 154,
+      "sha256": "387a11e884b3dc3b82cd6143a8613296aacce541f1f18a45c6c3724eee5a7cd3"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources/SettlementPrototypes.meta",
+      "bytes": 172,
+      "sha256": "21a1391bc8774ec32d6490587f50a6958bd199e300a0566639fd7d8d0f81d080"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels/Resources.meta",
+      "bytes": 172,
+      "sha256": "589affef7e4e241936fc7327d7ab27b64ab2f349f2dea551bcc449b02c9b73c2"
+    },
+    {
+      "path": "unity/Assets/Art/CommandModels.meta",
+      "bytes": 172,
+      "sha256": "f4ec54958a23a42aa805457256fe60b763f220f6a87a226302a6161a76774028"
+    }
+  ],
+  "contribution": {
+    "pull_request": "https://github.com/eyalgolan/statecraft-israel/pull/336",
+    "contributing_account": "pixelrenderai-hash",
+    "permissions_contact": "Request standalone asset-sale permission from the original contributing model creator through the introducing pull request. Maintainers and forks cannot grant it unless separately authorized."
+  }
+}
