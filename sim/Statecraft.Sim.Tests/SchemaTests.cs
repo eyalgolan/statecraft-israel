@@ -267,6 +267,13 @@ people:
         Assert.Contains(Errors("people.schema.json", GoodPerson.Replace(", checked: 2026-10-09", "")), e => e.Contains("missing 'checked'"));
 
     [Fact]
+    public void ASourceThatIsNotHttpsFails()
+    {
+        Assert.Contains(Errors("people.schema.json", GoodPerson.Replace("https://example.org", "http://example.org")), e => e.Contains("does not match"));
+        Assert.Contains(Errors("people.schema.json", GoodPerson.Replace("https://example.org", "")), e => e.Contains("does not match"));
+    }
+
+    [Fact]
     public void LivingIsRequiredAndCompetenceIsBounded()
     {
         Assert.Contains(Errors("people.schema.json", GoodPerson.Replace("    living: false\n", "")), e => e.Contains("missing 'living'"));
@@ -290,6 +297,7 @@ people:
         Assert.Contains(Errors("event.schema.json", good.Replace("sources:", "source:")), e => e.Contains("missing 'sources'") || e.Contains("unknown field"));
         Assert.Contains(Errors("event.schema.json", good.Replace("title:", "titel:")), e => e.Contains("titel"));
         Assert.Contains(Errors("event.schema.json", good.Replace("A }", "A, historcal: true }")), e => e.Contains("historcal"));
+        Assert.Contains(Errors("event.schema.json", good.Replace("https://", "http://")), e => e.Contains("does not match"));
     }
 
     [Fact]

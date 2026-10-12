@@ -19,7 +19,7 @@
       "additionalProperties": false,
       "required": ["url", "checked"],
       "properties": {
-        "url": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://", "description": "An https:// address (RealContentTests checks this)." },
         "checked": { "$ref": "#/definitions/date", "description": "The day you opened the source." }
       }
     },
