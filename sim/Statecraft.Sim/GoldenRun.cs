@@ -9,8 +9,9 @@ namespace Statecraft.Sim
     {
         public const ulong Seed = 1948;
 
-        /// <summary>Final hash of Play(content, Until1950). Changing it is a deliberate rules or content change:
-        /// update it, DeterminismTests and docs/determinism.md in the same commit and say why in the message.</summary>
+        /// <summary>Final hash of Play(content, Until1950). Changing it is a deliberate rules or content change: the value
+        /// is pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt, and STATECRAFT_UPDATE_GOLDEN=1 dotnet test rewrites
+        /// both (docs/determinism.md). Say why in the commit message.</summary>
         public const string Hash1950 = "71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07";
 
         public static readonly DateTime Until1950 = new DateTime(1950, 1, 1);
