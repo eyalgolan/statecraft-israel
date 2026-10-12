@@ -18,9 +18,15 @@ namespace Statecraft.Sim
     {
         public Office Office { get; }
         public Person? Holder { get; }
+        /// <summary>Everyone holding the office today: one person or none, except for an office with several_holders.</summary>
+        public IReadOnlyList<Person> Holders { get; }
         /// <summary>True when the holder is the player's appointee, not the historical minister.</summary>
         public bool Appointed { get; }
-        public Seat(Office office, Person? holder, bool appointed) { Office = office; Holder = holder; Appointed = appointed; }
+        public Seat(Office office, Person? holder, bool appointed, IReadOnlyList<Person>? holders = null)
+        {
+            Office = office; Holder = holder; Appointed = appointed;
+            Holders = holders ?? (holder == null ? new Person[0] : new[] { holder });
+        }
     }
 
     /// <summary>The cabinet as the game sees it: the historical holders from people.yaml, overridden by the player's
@@ -54,10 +60,16 @@ namespace Statecraft.Sim
                 Holder(c, s, m.Groups[1].Value, date)?.Name
                 ?? throw new InvalidOperationException(FormattableString.Invariant($"no holder of '{m.Groups[1].Value}' on {date:yyyy-MM-dd}")));
 
-        /// <summary>Every playable office that exists on the state's date, in offices.yaml order, with its holder (null = vacant).</summary>
+        /// <summary>Every playable office that exists on the state's date, in offices.yaml order, with its holder (null = vacant).
+        /// A player's appointee is the seat's only holder (an appointment from a save made before an office allowed several
+        /// holders), so Seat.Holders never disagrees with Seat.Holder.</summary>
         public static IReadOnlyList<Seat> Lineup(Content c, GameState s) =>
             c.Offices.Where(o => !o.HistoricalOnly && o.ExistsOn(s.Date))
-                .Select(o => new Seat(o, Holder(c, s, o.Id), Active(c, s, o.Id, s.Date) != null))
+                .Select(o =>
+                {
+                    bool appointed = Active(c, s, o.Id, s.Date) != null;
+                    return new Seat(o, Holder(c, s, o.Id), appointed, o.SeveralHolders && !appointed ? Offices.Holders(c, o.Id, s.Date) : null);
+                })
                 .ToList();
 
         /// <summary>Null when <paramref name="personId"/> may be appointed to <paramref name="officeId"/> now, else the
@@ -76,6 +88,7 @@ namespace Statecraft.Sim
                 return $"The office of {office.Title} was abolished on {PlayerText.Date(office.Until.Value)}";
             if (office.From.HasValue && s.Date < office.From.Value)
                 return $"The office of {office.Title} is not established until {PlayerText.Date(office.From.Value)}";
+            if (office.SeveralHolders) return $"{office.Title} can have several holders at once, and appointing to it is not part of the game yet";
             if (officeId == "prime_minister") return "You are the Prime Minister: that office is not yours to fill";
             if (officeId == "president") return "The President is elected by the Knesset, not appointed";
             var person = c.People.FirstOrDefault(p => p.Id == personId);
@@ -120,7 +133,8 @@ namespace Statecraft.Sim
             var oldParty = Offices.PartyOf(c, displaced, s.Date);
             var newParty = Offices.PartyOf(c, person, s.Date);
             bool sameParty = oldParty != "" && oldParty == newParty;
-            var cost = sameParty ? c.Rules.AppointStabilityCostSameParty : c.Rules.AppointStabilityCostOtherParty;
+            var rules = c.RulesAt(s.Date);
+            var cost = sameParty ? rules.AppointStabilityCostSameParty : rules.AppointStabilityCostOtherParty;
             if (cost <= 0) return null;
             var before = s.CoalitionStability;
             s.CoalitionStability = Math.Max(0, before - cost);

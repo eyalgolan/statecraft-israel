@@ -149,3 +149,33 @@ def test_a_failure_line_fails_and_a_silent_running_browser_times_out(capsys):
     assert "FAIL: GOLDEN FAIL" in capsys.readouterr().out
     assert run_watch([], exit_code=None) == 1
     assert "TIMEOUT" in capsys.readouterr().out
+
+
+def test_find_chrome_takes_chrome_path_when_set(tmp_path, monkeypatch):
+    exe = tmp_path / "chrome.exe"
+    exe.write_bytes(b"")
+    monkeypatch.setenv("CHROME_PATH", str(exe))
+    assert wc.find_chrome() == exe
+
+
+def test_find_chrome_refuses_a_chrome_path_that_is_not_a_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHROME_PATH", str(tmp_path / "missing"))
+    try:
+        wc.find_chrome()
+    except SystemExit as e:
+        assert "CHROME_PATH is not a file" in str(e)
+    else:
+        raise AssertionError("expected SystemExit")
+
+
+def test_find_chrome_without_chrome_path_picks_the_newest_revision(tmp_path, monkeypatch):
+    # PR #289 review: the override must not change the default lookup, which returns the highest chromium-<rev>.
+    monkeypatch.delenv("CHROME_PATH", raising=False)
+    monkeypatch.setattr(wc.Path, "home", classmethod(lambda cls: tmp_path))
+    found = []
+    for rev in ("999", "1223", "1100"):
+        exe = tmp_path / "Library" / "Caches" / wc.CHROME_GLOB.replace("chromium-*", f"chromium-{rev}").replace("*", "x")
+        exe.parent.mkdir(parents=True, exist_ok=True)
+        exe.write_bytes(b"")
+        found.append(exe)
+    assert wc.find_chrome() == found[1]

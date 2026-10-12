@@ -87,6 +87,18 @@ def test_task_form_has_every_field_and_all_are_required():
     assert fields["unity"]["type"] == "dropdown"
 
 
+def test_task_and_feature_forms_ask_the_same_unity_question():
+    import yaml
+    forms = {}
+    for name in ("task", "feature_request"):
+        form = yaml.safe_load(read(f".github/ISSUE_TEMPLATE/{name}.yml"))
+        field = {b["id"]: b for b in form["body"] if b["type"] != "markdown"}["unity"]
+        assert field["type"] == "dropdown" and field["validations"]["required"] is True, name
+        forms[name] = field["attributes"]["options"]
+    assert forms["task"] == forms["feature_request"]
+    assert read("docs/dev-setup.md").count("needs-unity") >= 1 and "needs-unity" in read("CONTRIBUTING.md")
+
+
 def test_content_policy_states_the_owner_rules_and_only_real_mechanisms():
     text = read("docs/CONTENT_POLICY.md")
     for s in ("Israeli framing", "Every fact is sourced", "No invented quotes", "How to dispute a fact",

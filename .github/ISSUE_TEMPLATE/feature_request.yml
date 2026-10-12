@@ -18,3 +18,13 @@ body:
     attributes:
       label: Historical basis (for gameplay or content ideas)
       description: Sources for the history the idea models, if any.
+  - type: dropdown
+    id: unity
+    attributes:
+      label: Needs Unity?
+      description: Unity is needed to run the Unity EditMode tests or to open `unity/`. See docs/dev-setup.md. Your best guess is enough; the maintainer sets the `needs-unity` label.
+      options:
+        - "No: .NET SDK and uv are enough"
+        - "Yes: Unity 6000.3.25f1 is needed"
+    validations:
+      required: true

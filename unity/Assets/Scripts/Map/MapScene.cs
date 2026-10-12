@@ -24,6 +24,14 @@ namespace Statecraft.Game.Map
         public Material MarkerMaterial => markerMaterial;
         /// <summary>The settlements the last Build placed (settlements_1948.yaml), for the UI's map labels.</summary>
         public IReadOnlyList<Settlement> Settlements { get; private set; } = new List<Settlement>();
+        /// <summary>The 1948 localities the last Build drew with the kits (content/map/localities_1948.yaml; empty without the
+        /// kits), for the map labels: 1948 name, today's name. Presentation only, never in the sim.</summary>
+        public IReadOnlyList<Kits.Localities.Place> Localities { get; private set; } = new List<Kits.Localities.Place>();
+
+        /// <summary>Every kit's ground after the last Build (world x, z centre; radius; owner id): the 25 game settlements', the
+        /// 1948 localities' and the Bedouin camps' footprints (empty without the kits). Anything placed on the map "off the
+        /// towns" (unit tokens: review I5) keeps clear of these, not of the 25 settlements alone.</summary>
+        public IReadOnlyList<(Vector2 centre, float radius, string id)> KitFootprints => KitStats?.Footprints ?? (IReadOnlyList<(Vector2, float, string)>)System.Array.Empty<(Vector2, float, string)>();
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
@@ -112,7 +120,9 @@ namespace Statecraft.Game.Map
         public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
 
         /// <summary>Each settlement's footprint on the ground plane (centre x, z; radius m): the kits' discs
-        /// (SettlementKits.FootprintRadiusM), so the units keep their tokens off the buildings (UnitLayer). Empty before Build.</summary>
+        /// (SettlementKits.FootprintRadiusM) of the game settlements and, with the kits, of the 1948 localities, so the units
+        /// keep their tokens off the buildings (UnitLayer). The Bedouin camps are not here: they are placed after the units and
+        /// keep off them (KitGround.Tokens). Empty before Build.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> SettlementFootprints { get; private set; } = new List<(Vector2, float)>();
 
         /// <summary>The railways' and roads' corridors (RouteLayer.Corridors), every route whatever its date, so the units keep
@@ -165,6 +175,7 @@ namespace Statecraft.Game.Map
             var list = SettlementPlacer.Parse(inputs.SettlementsYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), SettlementsPath);
             Settlements = list;
             bool kitsOn = kitMaterial != null && treeMaterial != null;
+            var localities = new Kits.Localities.Doc();
             if (kitsOn)
             {
                 if (string.IsNullOrWhiteSpace(inputs.PopulationYaml))
@@ -175,12 +186,44 @@ namespace Statecraft.Game.Map
                     if (Application.isEditor) throw new InvalidDataException(missing);
                     Debug.LogWarning("KITS " + missing + "; every town takes the smallest footprint");
                 }
-                Kits.KitPopulation.Use(string.IsNullOrWhiteSpace(inputs.PopulationYaml)
-                    ? new Dictionary<string, int>() : Kits.KitPopulation.Parse(inputs.PopulationYaml, "map/" + Kits.KitPopulation.FileName));
+                var table = string.IsNullOrWhiteSpace(inputs.PopulationYaml)
+                    ? new Dictionary<string, int>() : Kits.KitPopulation.Parse(inputs.PopulationYaml, "map/" + Kits.KitPopulation.FileName);
+                if (string.IsNullOrWhiteSpace(inputs.LocalitiesTsv))
+                {
+                    // As the population file: the editor refuses, a player warns and draws the 25 game settlements only.
+                    var missing = $"map/{Kits.Localities.RuntimeFileName} is missing or empty: the kits draw the 1948 localities from it (tools/localities_bake.py)";
+                    if (Application.isEditor) throw new InvalidDataException(missing);
+                    Debug.LogWarning("KITS " + missing);
+                    localities = new Kits.Localities.Doc();
+                }
+                else
+                {
+                    var reserved = new HashSet<string>(); foreach (var s in list) reserved.Add(s.Id);
+                    // The baked runtime form, not the 176k-character YAML (boot budget; pytest fails a stale bake).
+                    localities = Kits.Localities.ParseRuntime(inputs.LocalitiesTsv, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), reserved,
+                        "map/" + Kits.Localities.RuntimeFileName);
+                }
+                foreach (var p in localities.Places) table[p.Settlement.Id] = p.Population;
+                Kits.KitPopulation.Use(table);
+                // The camps' areas are the sub-districts as the region layer draws them (review I4: no copy in the
+                // localities file).
+                if (string.IsNullOrWhiteSpace(inputs.RegionsYaml)) { localities.Encampments.Clear(); Debug.LogWarning($"KITS map/{Subdistricts1948.FileName} is missing: no Bedouin camps"); }
+                else Kits.Localities.FillHexes(localities, inputs.RegionsYaml, Hexes, "map/" + Kits.Localities.FileName);
             }
+            Kits.Localities.Use(localities.Places);   // on every build, so a map without the kits inherits nothing (review M13)
+            if (kitsOn) DiagLog.BootPhase("localities parsed");
+            Localities = localities.Places;
+            var localitySettlements = localities.Places.ConvertAll(p => p.Settlement);
+            var painted = new List<Settlement>(list); painted.AddRange(localitySettlements);
             float hexSizeM = Hexes.hex_size_km * 1000f;
             var terrainGo = MapBuilder.Build(meta, heights, Hexes, terrainMaterial,
-                kitsOn ? (px, res, frame) => Kits.SettlementKits.PaintGround(px, res, frame, list, hexSizeM) : null);
+                kitsOn ? (px, res, frame) =>
+                {
+                    // The ground tint under every town and locality (review I6: timed, as the boot budget is tight).
+                    var tint = System.Diagnostics.Stopwatch.StartNew();
+                    Kits.SettlementKits.PaintGround(px, res, frame, painted, hexSizeM);
+                    Debug.Log(FormattableString.Invariant($"KITS ground_tint_ms={tint.Elapsed.TotalMilliseconds:0.0} places={painted.Count}"));
+                } : null);
             terrainGo.transform.SetParent(transform, true);
             Terrain = terrainGo.GetComponent<Terrain>();
             var size = Terrain.terrainData.size;
@@ -194,7 +237,9 @@ namespace Statecraft.Game.Map
             // The 1948 railways and roads (issue #35), read before the kits so buildings and trees keep off them.
             var routes = Routes.RoutePaths.ReadOrNone(inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
             RouteCorridors = Routes.RouteLayer.Corridors(Frame, routes);
-            SettlementFootprints = list.Select(s => { var w = Frame.ToWorld(s.Lon, s.Lat, 0); return (new Vector2(w.x, w.z), Kits.SettlementKits.FootprintRadiusM(s, hexSizeM)); }).ToList();
+            // The game settlements' and the 1948 localities' discs, as the kits will claim them (review I5: a token placed "off
+            // the towns" keeps off the villages too). The camps are placed after the units and keep off them instead.
+            SettlementFootprints = painted.Select(s => { var w = Frame.ToWorld(s.Lon, s.Lat, 0); return (new Vector2(w.x, w.z), Kits.SettlementKits.FootprintRadiusM(s, hexSizeM)); }).ToList();
             // The units' spots depend only on the footprints, the routes and the land, so they are known before the kits:
             // a unit placed in a town gets a clearing the kits keep free (UnitLayer places it the same way).
             var unitData = Units.UnitData.ReadOrNone(inputs.UnitsYaml, Debug.LogWarning);
@@ -202,6 +247,7 @@ namespace Statecraft.Game.Map
             var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
                 (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM);
             var clearings = new List<(Vector2 centre, float radius)>();
+            var unitRings = new List<(Vector2 centre, float radius)>();
             if (unitData.Count > 0)
             {
                 var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null);
@@ -209,6 +255,7 @@ namespace Statecraft.Game.Map
                 {
                     var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
                     if (kv.Value.InTown && !clearings.Exists(x => x.centre == c)) clearings.Add((c, unitGround.ClearingRadius));
+                    else if (!kv.Value.InTown) unitRings.Add((c, unitGround.RingRadius(kv.Value.Compact)));
                 }
             }
             UnitClearings = clearings;
@@ -226,9 +273,12 @@ namespace Statecraft.Game.Map
                 }
                 // The kits replace the marker boxes; the boxes stay as the labels' and tests' anchors, and come back when the
                 // "kits" toggle turns the kits off (so settlements are never left undrawn).
-                var kits = Kits.KitLayer.Build(list, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
+                // The units' clearings go in as corridors (village houses and tents keep off them too); the tokens outside
+                // the towns are kept off by the Bedouin camps, the one kit placed where no footprint is (review I5).
+                var kits = Kits.KitLayer.Build(list, localitySettlements, localities.Encampments, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
                     terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
-                    RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns);
+                    RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
+                    unitRings);
                 kits.transform.SetParent(transform, true);
                 kitProbe = kits.GetComponentInChildren<MeshRenderer>(true);
                 KitStats = stats;

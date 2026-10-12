@@ -24,6 +24,9 @@ namespace Statecraft.Game.Boot
         /// <summary>content/map/settlement_population_1945.yaml (the settlement kits' footprints; "" when absent). The sim
         /// never reads it.</summary>
         public string PopulationYaml = "";
+        /// <summary>content/map/localities_1948.tsv, the baked runtime form of localities_1948.yaml (the 1948 localities and
+        /// Bedouin camp areas the kits and labels draw; "" when absent). The sim never reads it.</summary>
+        public string LocalitiesTsv = "";
         /// <summary>content/map/armistice_hexes_1949.yaml: the 1949 armistice lines drawn over it from their dates (display
         /// only; "" when absent: no armistice layer, like the other cosmetic map inputs).</summary>
         public string ArmisticeYaml = "";
@@ -50,6 +53,7 @@ namespace Statecraft.Game.Boot
             UnitsYaml = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)),
             PopulationYaml = File.Exists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))
                 ? File.ReadAllText(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName)) : "",
+            LocalitiesTsv = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.Localities.RuntimeFileName)),
             ArmisticeYaml = ReadIfExists(Path.Combine(contentDir, "map", Armistice1949.FileName)),
         };
 
@@ -75,6 +79,7 @@ namespace Statecraft.Game.Boot
                     RoutesYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName, out var routes) ? routes : "",
                     UnitsYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Units.UnitData.DefaultFileName, out var unitsYaml) ? unitsYaml : "",
                     PopulationYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Kits.KitPopulation.FileName, out var pop) ? pop : "",
+                    LocalitiesTsv = texts.TryGetValue("map/" + Statecraft.Game.Map.Kits.Localities.RuntimeFileName, out var loc) ? loc : "",
                     ArmisticeYaml = texts.TryGetValue("map/" + Armistice1949.FileName, out var armistice) ? armistice : "",
                 },
             };

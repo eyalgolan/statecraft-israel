@@ -50,7 +50,7 @@ namespace Statecraft.Game.Map.Units
             if (units == null) throw new ArgumentNullException(nameof(units));
             if (content == null) throw new ArgumentNullException(nameof(content));
             if (state == null) throw new ArgumentNullException(nameof(state));
-            return Build(units, content.Rules, state.Date, state.Rung, state.Mobilization);
+            return Build(units, content.RulesAt(state.Date), state.Date, state.Rung, state.Mobilization);
         }
 
         public static List<UnitToken> Build(IReadOnlyList<UnitEntry> units, Rules rules, DateTime date, int rung, double mobilization)

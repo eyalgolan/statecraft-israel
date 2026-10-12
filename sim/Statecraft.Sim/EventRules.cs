@@ -102,6 +102,8 @@ namespace Statecraft.Sim
             {
                 var office = m.Groups[1].Value;
                 if (!offices.Contains(office)) throw new ContentException(e.File, field, $"unknown office placeholder '{m.Value}'");
+                if (c.Offices.Any(o => o.Id == office && o.SeveralHolders))
+                    throw new ContentException(e.File, field, $"office '{office}' can have several holders at once, so '{m.Value}' would not name one person");
                 var gap = FirstUncovered(c, office, e.From, e.To);
                 if (gap.HasValue)
                     throw new ContentException(e.File, field, FormattableString.Invariant($"office '{office}' has no holder on {gap.Value:yyyy-MM-dd}, inside the event window"));

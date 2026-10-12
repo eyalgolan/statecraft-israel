@@ -377,4 +377,32 @@ public class MapActionUiTests
         { e.target = image; image.SendEvent(e); }
         Assert.AreEqual(0, clicks);
     }
+
+    /// <summary>eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason; with
+    /// both allowed both show. Played on a copy of the content, switching the list between renders.</summary>
+    [Test]
+    public void OnlyTheErasMapActionsHaveButtons()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
+        using var ui = new UiTestKit();
+        var info = new InfoPanelPresenter(ui.Root, new SimBridge(g, Text), Text, Towns.ToDictionary(t => t.Id, t => t.Name));
+        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        void ShowWith(params string[] actions) { c.Eras[0].Systems.MapActions = actions.ToList(); info.Show(tlv.Q, tlv.R); }
+        DisplayStyle Display(string name) => ui.Q<Button>(name).style.display.value;
+
+        ShowWith(MapActions.TransitCamp, MapActions.Housing);
+        Assert.AreEqual(DisplayStyle.Flex, Display("build-camp")); Assert.AreEqual(DisplayStyle.Flex, Display("build-housing"));
+        Assert.IsTrue(ui.Q<Button>("build-camp").enabledSelf, ui.Q<Label>("info-reason").text);
+
+        ShowWith(MapActions.Housing);
+        Assert.AreEqual(DisplayStyle.None, Display("build-camp")); Assert.AreEqual(DisplayStyle.Flex, Display("build-housing"));
+        Assert.IsFalse(ui.Q<Button>("build-camp").enabledSelf);
+        StringAssert.DoesNotContain("chapter", ui.Q<Label>("info-reason").text);
+
+        ShowWith();
+        Assert.AreEqual(DisplayStyle.None, Display("build-camp")); Assert.AreEqual(DisplayStyle.None, Display("build-housing"));
+        Assert.AreEqual("", ui.Q<Label>("info-reason").text);
+    }
 }

@@ -353,6 +353,36 @@ public class SaveGameTests
         Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
     }
 
+    /// <summary>content/map/localities_1948.yaml (the 1948 localities and Bedouin camp areas the map's kits and labels draw)
+    /// and its baked runtime form localities_1948.tsv are presentation only, like the population file: the sim never reads it, so it is outside the content hash and no save
+    /// or golden depends on it. Checked on the fixture (a file added) and on the real content (the file removed from a copy).</summary>
+    [Fact]
+    public void TheLocalitiesFileIsOutsideTheContentHash()
+    {
+        var dir = Fixture.Write();
+        var before = ContentLoader.Load(dir).Hash;
+        File.WriteAllText(Path.Combine(dir, "map", "localities_1948.yaml"), "status: draft\nplaces:\n- id: x\n  population: 1\n");
+        File.WriteAllText(Path.Combine(dir, "map", "localities_1948.tsv"), "place\tx\n");
+        Assert.Equal(before, ContentLoader.Load(dir).Hash);
+
+        var real = RealContentTests.ContentRoot();
+        Assert.True(File.Exists(Path.Combine(real, "map", "localities_1948.yaml")));
+        Assert.True(File.Exists(Path.Combine(real, "map", "localities_1948.tsv")));
+        var copy = Path.Combine(Path.GetTempPath(), "statecraft-noloc-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            foreach (var f in Directory.GetFiles(real, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(real, f);
+                if (rel.Replace('\\', '/') is "map/localities_1948.yaml" or "map/localities_1948.tsv") continue;
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, rel))!);
+                File.Copy(f, Path.Combine(copy, rel));
+            }
+            Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
+        }
+        finally { if (Directory.Exists(copy)) Directory.Delete(copy, true); }   // review M13: no temp copy left behind
+    }
+
     [Fact]
     public void TheContentHashChangesWithEventsAndSettlements()
     {

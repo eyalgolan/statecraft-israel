@@ -56,7 +56,7 @@ namespace Statecraft.Game.UI
                 Year = s.Date.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 Turn = t.Format("hud.turn", s.Turn),
                 Date = t.Format("hud.date", PlayerText.Date(s.Date)),
-                Attention = t.Format("hud.attention", b.AttentionLeft, c.Rules.AttentionPerTurn),
+                Attention = t.Format("hud.attention", b.AttentionLeft, c.RulesAt(s.Date).AttentionPerTurn),
                 SecurityLevel = t.Format("hud.level", s.Rung),
                 Treasury = Money("treasury", s.Treasury - s.Debt, prev == null ? (double?)null : prev.Treasury - prev.Debt),
                 Immigration = People(Arrivals(b.Session.Last), b.BeforeLast == null ? (double?)null : Arrivals(b.BeforeLast)),

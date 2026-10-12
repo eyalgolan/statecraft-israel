@@ -1,0 +1,6723 @@
+# Localities on 15 May 1948 (status: draft): presentation only. The map's settlement kits and labels read this file;
+# the sim never does (ContentLoader reads named files only), so it is outside the content hash and no save or golden
+# depends on it (SaveGameTests.TheLocalitiesFileIsOutsideTheContentHash). It is NOT settlements_1948.yaml: that is the
+# sim's list, and every id there needs a hex row (settlement_hexes.yaml).
+#
+# Scope (owner ruling 2026-10-11): every place of 1,000 or more people in Village Statistics, 1945 (VS) that is not one
+# of the 25 game settlements, which keep their own entries (the mixed cities included). Smaller places, the 70 VS rows
+# with no fixed point and the 29 foundings dated only "1948" are left for a later round.
+# Start of game only: no later fate, depopulation date or post-May-1948 status is recorded (see docs/visual-v1.md).
+#
+# Fields:
+#   name         the 1948 name shown on the map. name_basis vs1945: as VS lists it, with the article dropped ("Majdal,
+#                El" -> Majdal), the "(Urban)"/"(includes ...)" notes and diacritics removed, and ayn as an apostrophe.
+#                name_basis hebrew: a Jewish locality whose Hebrew name was the same in 1948, spelt as the game's 25
+#                settlements are (Kfar Ata, renamed Kiryat Ata later, keeps its 1948 name).
+#   today        only for a place that carries on today (owner ruling 2026-10-12): {name, name_he, source}, the name of
+#                the living place (its Wikidata item's English Wikipedia title, else its label; Hebrew label), sourced to
+#                that item; for a Jewish place merged into a later municipality, the municipality, sourced to the
+#                place's article. A place whose item is a depopulated village or a former settlement has no today and
+#                no tooltip (the item's class is not recorded here). Shown in the label's tooltip.
+#   name_he/ar   Hebrew and Arabic names as the research draft took them (Wikidata labels, else the he/ar Wikipedia title).
+#   kind/type    finer kind and the repo's settlement type; the kit archetype follows type (village and arab_town:
+#                Arab village houses; town, kibbutz, moshav: red-roofed Jewish settlement, moshav as a ring);
+#                kind mixed_locality (Nesher): both, side by side.
+#   landmark     from VS's religion columns over the place's rows: Muslim majority mosque, Christian majority church,
+#                Druze ("others") none; Jewish places a water tower; a mixed locality (Nesher) both a mosque and a water
+#                tower, each on its own side.
+#   population   VS 1945 (1 April 1945), summed over listed_as; match: how the row was tied to the place (high, medium,
+#                low = transliteration, manual = set by hand); owner_verify: true for low and manual, for a VS row that
+#                names more than one place, and for a row with both Jews and Muslims over 10%.
+# Bedouin (owner ruling 2026-10-11): encampments has one row per sub-district whose VS rows are labelled tribes, tribal
+# units, nomads or nomadic, with no fixed point (plus the Jahalin, see its note), with their total. The map scatters
+# symbolic camps, one per 1,000 people rounded half up with no floor (so Nablus's 220 draw none), over the
+# sub-district's land hexes as content/map/subdistrict_hexes_1948.yaml draws them, read at load (no copy here); seeded,
+# never named. Tulkarm's "Tribal Units" row has no figure in the transcription, so it has no camps. VS's own caveat: its
+# nomad figures are the 1931 census estimate carried forward.
+# sources: each row's URLs, all read on its `checked` date (a plain list, to keep the file small: the player parses it at
+#   boot). By host: the en.wikipedia Village_Statistics,_1945 revision (oldid 1359600351) is the population and the 1948
+#   name as listed (CC BY-SA 4.0); www.wikidata.org/wiki/Q... the coordinates, Hebrew and Arabic labels and whether the
+#   place carries on today (CC0); an en.wikipedia article the identity check (CC BY-SA 4.0); a today's own source is in
+#   today.source.
+# Licences: Wikidata CC0; Wikipedia (the VS transcription, revision 1359600351; identity checks) CC BY-SA 4.0. The VS
+# figures are the Mandate government's rough estimates, read from the transcription, not yet checked against a scan.
+# Built from the research draft (.superpowers/handover-2026-10-11/promo/localities-1948.yaml and .md) on 2026-10-11;
+# review fixes 2026-10-12 (.superpowers/handover-2026-10-11/promo/villages-review.md).
+status: draft
+places:
+- id: hebron
+  name: Hebron
+  name_basis: vs1945
+  today:
+    name: Hebron
+    name_he: חברון
+    source: https://www.wikidata.org/wiki/Q168225
+  name_he: חברון
+  name_ar: الخليل
+  lon: 35.0986
+  lat: 31.535
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 24560
+  listed_as:
+  - Hebron (Urban) (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q168225
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q168225
+  - https://en.wikipedia.org/wiki/Hebron
+- id: nablus
+  name: Nablus
+  name_basis: vs1945
+  today:
+    name: Nablus
+    name_he: שכם
+    source: https://www.wikidata.org/wiki/Q214178
+  name_he: שכם
+  name_ar: نابلس
+  lon: 35.2608
+  lat: 32.2211
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 23250
+  listed_as:
+  - Nablus (Urban) (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q214178
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q214178
+  - https://en.wikipedia.org/wiki/Nablus
+- id: khan_yunis
+  name: Khan Yunis
+  name_basis: vs1945
+  today:
+    name: Khan Yunis
+    name_he: ח'אן יונס
+    source: https://www.wikidata.org/wiki/Q309348
+  name_he: ח'אן יונס
+  name_ar: خان يونس
+  lon: 34.3025
+  lat: 31.3439
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 11220
+  listed_as:
+  - Khān Yūnis (Urban) (Gaza subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q309348
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q309348
+  - https://en.wikipedia.org/wiki/Khan_Yunis
+- id: ramat_gan
+  name: Ramat Gan
+  name_basis: hebrew
+  today:
+    name: Ramat Gan
+    name_he: רמת גן
+    source: https://www.wikidata.org/wiki/Q192807
+  name_he: רמת גן
+  lon: 34.8235
+  lat: 32.07
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 10200
+  listed_as:
+  - Ramat Gan (Urban) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q192807
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q192807
+  - https://en.wikipedia.org/wiki/Ramat_Gan
+- id: al_majdal
+  name: Majdal
+  name_basis: vs1945
+  today:
+    name: Ashkelon
+    name_he: אשקלון
+    source: https://www.wikidata.org/wiki/Q60956
+  name_he: אל-מג'דל
+  name_ar: المجدل
+  lon: 34.5664
+  lat: 31.6658
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 9910
+  listed_as:
+  - Majdal, El (Urban) (Gaza subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q60956
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q60956
+  - https://en.wikipedia.org/wiki/Ashkelon
+- id: dura_hebron
+  name: Dura
+  name_basis: vs1945
+  today:
+    name: Dura
+    name_he: דורא
+    source: https://www.wikidata.org/wiki/Q2435966
+  name_he: דורא
+  name_ar: دورا
+  lon: 35.0277
+  lat: 31.5068
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 9700
+  listed_as:
+  - Dura (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2435966
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2435966
+  - https://en.wikipedia.org/wiki/Dura,_Hebron
+- id: bethlehem
+  name: Bethlehem
+  name_basis: vs1945
+  today:
+    name: Bethlehem
+    name_he: בית לחם
+    source: https://www.wikidata.org/wiki/Q5776
+  name_he: בית לחם
+  name_ar: بيت لحم
+  lon: 35.2061
+  lat: 31.7044
+  kind: arab_town
+  type: arab_town
+  landmark: church
+  population: 8820
+  listed_as:
+  - Bethlehem (Urban) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5776
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5776
+  - https://en.wikipedia.org/wiki/Bethlehem
+- id: tulkarm
+  name: Tulkarm
+  name_basis: vs1945
+  today:
+    name: Tulkarm
+    name_he: טולכרם
+    source: https://www.wikidata.org/wiki/Q985531
+  name_he: טולכרם
+  name_ar: طولكرم
+  lon: 35.0308
+  lat: 32.3111
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 8090
+  listed_as:
+  - Tulkarm (Urban) (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q985531
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q985531
+  - https://en.wikipedia.org/wiki/Tulkarm
+- id: salama_jaffa
+  name: Salama
+  name_basis: vs1945
+  name_he: סלמה (יפו)
+  name_ar: سَلَمة
+  lon: 34.805
+  lat: 32.0491
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 6730
+  listed_as:
+  - Salama (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7403531
+  note: Wikidata Q7403531 P1082 (1945) = 6670; chose Village Statistics figure 6730 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7403531
+  - https://en.wikipedia.org/wiki/Salama,_Jaffa
+- id: qalqilya
+  name: Qalqilya
+  name_basis: vs1945
+  today:
+    name: Qalqilya
+    name_he: קלקיליה
+    source: https://www.wikidata.org/wiki/Q623159
+  name_he: קלקיליה
+  name_ar: قلقيلية
+  lon: 34.9685
+  lat: 32.1904
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5850
+  listed_as:
+  - Qalqilya (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q623159
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q623159
+  - https://en.wikipedia.org/wiki/Qalqilya
+- id: al_abbasiyya
+  name: '''Abbasiyya'
+  name_basis: vs1945
+  name_he: יהודייה
+  name_ar: العباسِيَّة
+  lon: 34.8903
+  lat: 32.0308
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5800
+  listed_as:
+  - Yahudiya (El) (‘Abbasiyya) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2905774
+  note: VS lists it as 'Yahudiya (El) ('Abbasiyya)'; it was renamed al-'Abbasiyya in 1932; Wikidata Q2905774 P1082 (1945) = 5650; chose Village Statistics figure 5800 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2905774
+  - https://en.wikipedia.org/wiki/Al-'Abbasiyya
+- id: givatayim
+  name: Givatayim
+  name_basis: hebrew
+  today:
+    name: Givatayim
+    name_he: גבעתיים
+    source: https://www.wikidata.org/wiki/Q152413
+  name_he: גבעתיים
+  lon: 34.8117
+  lat: 32.0697
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 5800
+  listed_as:
+  - Giv‘atayim (Jaffa subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q152413
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152413
+  - https://en.wikipedia.org/wiki/Givatayim
+- id: bnei_brak
+  name: Bnei Brak
+  name_basis: hebrew
+  today:
+    name: Bnei Brak
+    name_he: בני ברק
+    source: https://www.wikidata.org/wiki/Q152467
+  name_he: בני ברק
+  lon: 34.8338
+  lat: 32.0807
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 5760
+  listed_as:
+  - Benei Beraq (Urban) (Jaffa subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q152467
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152467
+  - https://en.wikipedia.org/wiki/Bnei_Brak
+- id: tubas
+  name: Tubas
+  name_basis: vs1945
+  today:
+    name: Tubas
+    name_he: טובאס
+    source: https://www.wikidata.org/wiki/Q275919
+  name_he: טובאס
+  name_ar: طوباس
+  lon: 35.3686
+  lat: 32.3222
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5530
+  listed_as:
+  - Tubas (includes Kashda and Bardala) (Nablus subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q275919
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q275919
+  - https://en.wikipedia.org/wiki/Tubas_(city)
+- id: umm_al_fahm
+  name: Umm el Fahm
+  name_basis: vs1945
+  today:
+    name: Umm al-Fahm
+    name_he: אום אל-פחם
+    source: https://www.wikidata.org/wiki/Q168245
+  name_he: אום אל-פחם
+  name_ar: أم الفحم
+  lon: 35.1525
+  lat: 32.5158
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5490
+  listed_as:
+  - Umm el Fahm (includes ‘Aqqada, ‘Ein Ibrahim, Khirbat el Buweishat, El Murtafi‘a, Lajjun, Mu‘awiya, Musheirifa and Musmus) (Jenin subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q168245
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q168245
+  - https://en.wikipedia.org/wiki/Umm_al-Fahm
+- id: yibna
+  name: Yibna
+  name_basis: vs1945
+  name_he: יבנא
+  name_ar: يبنا
+  lon: 34.7463
+  lat: 31.866
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5420
+  listed_as:
+  - Yibna (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4120556
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4120556
+  - https://en.wikipedia.org/wiki/Yibna
+- id: pardes_hanna_karkur
+  name: Pardes Hanna
+  name_basis: hebrew
+  today:
+    name: Pardes Hanna-Karkur
+    name_he: פרדס חנה-כרכור
+    source: https://www.wikidata.org/wiki/Q2475182
+  name_he: פרדס חנה-כרכור
+  lon: 34.9675
+  lat: 32.4711
+  kind: moshava
+  type: town
+  landmark: water_tower
+  population: 5350
+  listed_as:
+  - Karkur (Haifa subdistrict)
+  - Pardes Hanna (Haifa subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q2475182
+  note: Pardes Hanna (2,970) and Karkur (2,380) are two VS rows; Wikidata has one item for both today, so one kit at its point
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2475182
+  - https://en.wikipedia.org/wiki/Pardes_Hanna-Karkur
+- id: al_tira_haifa
+  name: Tira
+  name_basis: vs1945
+  name_he: א-טירה (חיפה)
+  name_ar: الطيرة، حيفا
+  lon: 34.9752
+  lat: 32.7618
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5270
+  listed_as:
+  - Tira (Et) (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4118776
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4118776
+  - https://en.wikipedia.org/wiki/Al-Tira,_Haifa
+- id: yatta
+  name: Yatta
+  name_basis: vs1945
+  today:
+    name: Yatta
+    name_he: יטא
+    source: https://www.wikidata.org/wiki/Q2282208
+  name_he: יטא
+  name_ar: يطا
+  lon: 35.09
+  lat: 31.4478
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5260
+  listed_as:
+  - Yatta (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2282208
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2282208
+  - https://en.wikipedia.org/wiki/Yatta,_Hebron
+- id: beit_shean
+  name: Beisan
+  name_basis: vs1945
+  today:
+    name: Beit She'an
+    name_he: בית שאן
+    source: https://www.wikidata.org/wiki/Q152368
+  name_he: בית שאן
+  name_ar: بيسان
+  lon: 35.4989
+  lat: 32.4961
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5180
+  listed_as:
+  - Beisan (Urban) (Beisan subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q152368
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152368
+  - https://en.wikipedia.org/wiki/Beit_She'an
+- id: ramallah
+  name: Ramallah
+  name_basis: vs1945
+  today:
+    name: Ramallah
+    name_he: רמאללה
+    source: https://www.wikidata.org/wiki/Q158119
+  name_he: רמאללה
+  name_ar: رام الله
+  lon: 35.2017
+  lat: 31.8969
+  kind: arab_town
+  type: arab_town
+  landmark: church
+  population: 5080
+  listed_as:
+  - Ramallah (Urban) (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q158119
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q158119
+  - https://en.wikipedia.org/wiki/Ramallah
+- id: hamama
+  name: Hamama
+  name_basis: vs1945
+  name_he: חממה (יישוב היסטורי)
+  name_ar: حمامة
+  lon: 34.59
+  lat: 31.6912
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 5070
+  listed_as:
+  - Hamāma (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5644017
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5644017
+  - https://en.wikipedia.org/wiki/Hamama
+- id: isdud
+  name: Isdud
+  name_basis: vs1945
+  name_he: איסדוד
+  name_ar: إسدود
+  lon: 34.6578
+  lat: 31.7572
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4910
+  listed_as:
+  - Isdūd (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7183947
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7183947
+  - https://en.wikipedia.org/wiki/Isdud
+- id: al_faluja
+  name: Faluja
+  name_basis: vs1945
+  name_he: אל-פאלוג'ה
+  name_ar: الفالوجة
+  lon: 34.7477
+  lat: 31.6246
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4670
+  listed_as:
+  - Fālūja, El (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2777849
+  note: Wikidata Q2777849 P1082 (1945) = 5670; chose Village Statistics figure 4670 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2777849
+  - https://en.wikipedia.org/wiki/Al-Faluja
+- id: herzliya
+  name: Herzliya
+  name_basis: hebrew
+  today:
+    name: Herzliya
+    name_he: הרצליה
+    source: https://www.wikidata.org/wiki/Q152491
+  name_he: הרצליה
+  lon: 34.8422
+  lat: 32.1556
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 4650
+  listed_as:
+  - Herzliya (Urban) (Jaffa subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q152491
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152491
+  - https://en.wikipedia.org/wiki/Herzliya
+- id: sepphoris
+  name: Saffuriya
+  name_basis: vs1945
+  name_he: ציפורי
+  name_ar: صفورية
+  lon: 35.2792
+  lat: 32.7531
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4330
+  listed_as:
+  - Saffuriya (Nazareth subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q1132798
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1132798
+  - https://en.wikipedia.org/wiki/Sepphoris
+- id: kfar_saba
+  name: Kfar Saba
+  name_basis: hebrew
+  today:
+    name: Kfar Saba
+    name_he: כפר סבא
+    source: https://www.wikidata.org/wiki/Q152436
+  name_he: כפר סבא
+  lon: 34.9077
+  lat: 32.1858
+  kind: moshava
+  type: town
+  landmark: water_tower
+  population: 4320
+  listed_as:
+  - Kefar Sava (Urban) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q152436
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152436
+  - https://en.wikipedia.org/wiki/Kfar_Saba
+- id: taibe_2
+  name: Taiyiba
+  name_basis: vs1945
+  today:
+    name: Tayibe
+    name_he: טייבה
+    source: https://www.wikidata.org/wiki/Q1022481
+  name_he: טייבה
+  name_ar: الطيبة، المثلث
+  lon: 35
+  lat: 32.2667
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4290
+  listed_as:
+  - Taiyiba (Et) (includes Khirbat el ‘Amarin, Nuseirat, Khirbat Takla) (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1022481
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1022481
+  - https://en.wikipedia.org/wiki/Tayibe
+- id: ijzim
+  name: Ijzim
+  name_basis: vs1945
+  name_he: איג'זים
+  name_ar: اجْزِم
+  lon: 34.9881
+  lat: 32.6447
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4280
+  listed_as:
+  - Ijzim (Haifa subdistrict)
+  - Ijzim (Nazareth subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q2918334
+  note: Wikidata Q2918334 P1082 (1945) = 3000; chose Village Statistics figure 4280 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918334
+  - https://en.wikipedia.org/wiki/Ijzim
+- id: balad_al_sheikh
+  name: Balad esh Sheikh
+  name_basis: vs1945
+  name_he: בלד א-שייח'
+  name_ar: بلد الشيخ
+  lon: 35.0421
+  lat: 32.7716
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4120
+  listed_as:
+  - Balad esh Sheikh (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2776471
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2776471
+  - https://en.wikipedia.org/wiki/Balad_al-Sheikh
+- id: yazur
+  name: Yazur
+  name_basis: vs1945
+  name_he: יאזור
+  name_ar: يازور
+  lon: 34.7994
+  lat: 32.0289
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 4030
+  listed_as:
+  - Yazur (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q8050647
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q8050647
+  - https://en.wikipedia.org/wiki/Yazur
+- id: jenin
+  name: Jenin
+  name_basis: vs1945
+  today:
+    name: Jenin
+    name_he: ג'נין
+    source: https://www.wikidata.org/wiki/Q374748
+  name_he: ג'נין
+  name_ar: جِنِين
+  lon: 35.3
+  lat: 32.4611
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 3990
+  listed_as:
+  - Jenin (Urban) (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q374748
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q374748
+  - https://en.wikipedia.org/wiki/Jenin
+- id: bayt_dajan_jaffa
+  name: Beit Dajan
+  name_basis: vs1945
+  name_he: בית דג'ן
+  name_ar: بيت دجن، يافا
+  lon: 34.8293
+  lat: 32.0035
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3840
+  listed_as:
+  - Beit Dajan (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2905719
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2905719
+  - https://en.wikipedia.org/wiki/Bayt_Dajan
+- id: tarshiha
+  name: Tarshiha
+  name_basis: vs1945
+  name_ar: ترشيحا
+  lon: 35.2683
+  lat: 33.009
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3830
+  listed_as:
+  - Tarshiha (Acre subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q134496896
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q134496896
+- id: silwan
+  name: Silwan
+  name_basis: vs1945
+  today:
+    name: Silwan
+    name_he: סילואן
+    source: https://www.wikidata.org/wiki/Q2448062
+  name_he: סילואן
+  name_ar: سلوان
+  lon: 35.237
+  lat: 31.77
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3820
+  listed_as:
+  - Silwan (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2448062
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2448062
+  - https://en.wikipedia.org/wiki/Silwan
+- id: arraba_2
+  name: Arraba
+  name_basis: vs1945
+  today:
+    name: Arraba
+    name_he: עראבה
+    source: https://www.wikidata.org/wiki/Q2463999
+  name_he: עראבה
+  name_ar: عَرّابة
+  lon: 35.2033
+  lat: 32.4044
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3810
+  listed_as:
+  - Arraba (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2463999
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2463999
+  - https://en.wikipedia.org/wiki/Arraba,_Jenin
+- id: al_dahiriya
+  name: Dhahiriya
+  name_basis: vs1945
+  today:
+    name: Ad-Dhahiriya
+    name_he: דאהרייה
+    source: https://www.wikidata.org/wiki/Q600680
+  name_he: דאהרייה
+  name_ar: الظاهرية
+  lon: 34.9723
+  lat: 31.4076
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3760
+  listed_as:
+  - Dhahiriya, Edh (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q600680
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q600680
+  - https://en.wikipedia.org/wiki/Ad-Dhahiriya
+- id: ajjur
+  name: Ajjur
+  name_basis: vs1945
+  name_he: עג'ור
+  name_ar: عجّور
+  lon: 34.9239
+  lat: 31.6911
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3730
+  listed_as:
+  - Ajjur (Includes Khirbat ‘Ammuriya) (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4540421
+  note: Wikidata Q4540421 P1082 (1945) = 3735; chose Village Statistics figure 3730 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4540421
+  - https://en.wikipedia.org/wiki/'Ajjur
+- id: al_dawayima
+  name: Dawayima
+  name_basis: vs1945
+  name_he: דווימה
+  name_ar: الدَوايمَة
+  lon: 34.9119
+  lat: 31.5361
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3710
+  listed_as:
+  - Dawayima, Ed (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2917375
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2917375
+  - https://en.wikipedia.org/wiki/Al-Dawayima
+- id: beit_yala
+  name: Beit Jala
+  name_basis: vs1945
+  today:
+    name: Beit Jala
+    name_he: בית ג'אלא
+    source: https://www.wikidata.org/wiki/Q803984
+  name_he: בית ג'אלא
+  name_ar: بيت جالا
+  lon: 35.1875
+  lat: 31.7158
+  kind: arab_town
+  type: arab_town
+  landmark: church
+  population: 3710
+  listed_as:
+  - Beit Jala (Urban) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q803984
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q803984
+  - https://en.wikipedia.org/wiki/Beit_Jala
+- id: qabatiya
+  name: Qabatiya
+  name_basis: vs1945
+  today:
+    name: Qabatiya
+    name_he: קבטיה
+    source: https://www.wikidata.org/wiki/Q1899332
+  name_he: קבטיה
+  name_ar: قباطية
+  lon: 35.2809
+  lat: 32.4096
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3670
+  listed_as:
+  - Qabatiya (includes Khirbat Tannin) (Jenin subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q1899332
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1899332
+  - https://en.wikipedia.org/wiki/Qabatiya
+- id: shefa_amr
+  name: Shafa 'Amr
+  name_basis: vs1945
+  today:
+    name: Shefa-Amr
+    name_he: שפרעם
+    source: https://www.wikidata.org/wiki/Q990657
+  name_he: שפרעם
+  name_ar: شفا عمرو
+  lon: 35.1694
+  lat: 32.8056
+  kind: arab_town
+  type: arab_town
+  landmark: church
+  population: 3640
+  listed_as:
+  - Shafa ‘Amr (Urban) (Haifa subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q990657
+  note: 'the Urban row only (1,560 Christians, 1,380 Muslims, 690 Druze, 10 Jews): the Rural row (3,560 Muslims) is the town''s rural lands, which the draft had summed in, turning the landmark to a mosque'
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q990657
+  - https://en.wikipedia.org/wiki/Shefa-Amr
+- id: jabalia
+  name: Jabaliya
+  name_basis: vs1945
+  today:
+    name: Jabalia
+    name_he: ג'באליה
+    source: https://www.wikidata.org/wiki/Q1015472
+  name_he: ג'באליה
+  name_ar: جباليا
+  lon: 34.4831
+  lat: 31.5281
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3520
+  listed_as:
+  - Jabāliya (Gaza subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q1015472
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1015472
+  - https://en.wikipedia.org/wiki/Jabalia
+- id: yabad
+  name: Ya'bad
+  name_basis: vs1945
+  today:
+    name: Ya'bad
+    name_he: יעבד
+    source: https://www.wikidata.org/wiki/Q1828708
+  name_he: יעבד
+  name_ar: يعبد
+  lon: 35.1703
+  lat: 32.4467
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3480
+  listed_as:
+  - Ya‘bad (includes Khirbat el Khuljan, Khirbat et Tarim, Khirbat Tura esh Sharqiya, Nazlat Sheikh Zeid and Khirbat Umm Rihan) (Jenin subdistrict)
+  match: medium
+  owner_verify: true
+  wikidata: Q1828708
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1828708
+  - https://en.wikipedia.org/wiki/Ya'bad
+- id: samakh
+  name: Samakh
+  name_basis: vs1945
+  name_he: צמח
+  name_ar: سمخ
+  lon: 35.5876
+  lat: 32.7049
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3460
+  listed_as:
+  - Samakh (Tiberias subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2908710
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2908710
+  - https://en.wikipedia.org/wiki/Samakh,_Tiberias
+- id: halhul
+  name: Halhul
+  name_basis: vs1945
+  today:
+    name: Halhul
+    name_he: חלחול
+    source: https://www.wikidata.org/wiki/Q2574933
+  name_he: חלחול
+  name_ar: حلحول
+  lon: 35.0992
+  lat: 31.5789
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3380
+  listed_as:
+  - Halhul (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2574933
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2574933
+  - https://en.wikipedia.org/wiki/Halhul
+- id: raanana
+  name: Ra'anana
+  name_basis: hebrew
+  today:
+    name: Ra'anana
+    name_he: רעננה
+    source: https://www.wikidata.org/wiki/Q309164
+  name_he: רעננה
+  lon: 34.8667
+  lat: 32.1833
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 3290
+  listed_as:
+  - Ra‘anana (Urban) (Jaffa subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q309164
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q309164
+  - https://en.wikipedia.org/wiki/Ra'anana
+- id: holon
+  name: Holon
+  name_basis: hebrew
+  today:
+    name: Holon
+    name_he: חולון
+    source: https://www.wikidata.org/wiki/Q192213
+  name_he: חולון
+  lon: 34.7667
+  lat: 32.0167
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 3280
+  listed_as:
+  - Holon (Urban) (Jaffa subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q192213
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q192213
+  - https://en.wikipedia.org/wiki/Holon
+- id: bani_suheila
+  name: Bani Suheila
+  name_basis: vs1945
+  today:
+    name: Bani Suheila
+    name_he: בני סוהילה
+    source: https://www.wikidata.org/wiki/Q1983186
+  name_he: בני סוהילה
+  name_ar: بني سهيلا
+  lon: 34.3253
+  lat: 31.3428
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3220
+  listed_as:
+  - Bani Suheila (Gaza subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q1983186
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1983186
+  - https://en.wikipedia.org/wiki/Bani_Suheila
+- id: ein_karem
+  name: Ein Karim
+  name_basis: vs1945
+  name_he: עין כרם
+  name_ar: عين كارم
+  lon: 35.162
+  lat: 31.7667
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3180
+  listed_as:
+  - Ein Karim (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1022487
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1022487
+  - https://en.wikipedia.org/wiki/Ein_Karem
+- id: tira
+  name: Tira
+  name_basis: vs1945
+  today:
+    name: Tira
+    name_he: טירה
+    source: https://www.wikidata.org/wiki/Q167594
+  name_he: טירה
+  name_ar: الطيرة
+  lon: 34.9503
+  lat: 32.2328
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3180
+  listed_as:
+  - Tira (Et) (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q167594
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q167594
+  - https://en.wikipedia.org/wiki/Tira,_Israel
+- id: anabta
+  name: Anabta
+  name_basis: vs1945
+  today:
+    name: Anabta
+    name_he: ענבתא
+    source: https://www.wikidata.org/wiki/Q2701952
+  name_he: ענבתא
+  name_ar: عنبتا
+  lon: 35.1169
+  lat: 32.3072
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3120
+  listed_as:
+  - Anabta and Iktaba (Tulkarm subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q2701952
+  draft_id: iktaba
+  note: 'VS row ''Anabta and Iktaba'' (3,120): the draft placed it at Iktaba (Q5996268); moved to Anabta, the row''s first and larger place'
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2701952
+  - https://en.wikipedia.org/wiki/Anabta
+- id: al_safiriyya
+  name: Safiriya
+  name_basis: vs1945
+  name_he: סאפריה
+  name_ar: السافرية
+  lon: 34.8509
+  lat: 31.9934
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3070
+  listed_as:
+  - Safiriya (Es) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703157
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703157
+  - https://en.wikipedia.org/wiki/Al-Safiriyya
+- id: kafr_ana
+  name: Kafr 'Ana
+  name_basis: vs1945
+  name_he: כפר עאנה
+  name_ar: كفرعانة
+  lon: 34.8681
+  lat: 32.0272
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3020
+  listed_as:
+  - Kafr ‘Ana (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2905286
+  note: Wikidata Q2905286 P1082 (1945) = 2800; chose Village Statistics figure 3020 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2905286
+  - https://en.wikipedia.org/wiki/Kafr_'Ana
+- id: jericho
+  name: Jericho
+  name_basis: vs1945
+  today:
+    name: Jericho
+    name_he: יריחו
+    source: https://www.wikidata.org/wiki/Q5687
+  name_he: יריחו
+  name_ar: أريحا
+  lon: 35.4631
+  lat: 31.8561
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 3010
+  listed_as:
+  - Jericho (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5687
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5687
+  - https://en.wikipedia.org/wiki/Jericho
+- id: al_bassa
+  name: Bassa
+  name_basis: vs1945
+  name_he: אל-באסה
+  name_ar: البصة
+  lon: 35.1408
+  lat: 33.0761
+  kind: arab_village
+  type: village
+  landmark: church
+  population: 2950
+  listed_as:
+  - Bassa (El) (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915875
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915875
+  - https://en.wikipedia.org/wiki/Al-Bassa
+- id: al_bireh
+  name: Bira
+  name_basis: vs1945
+  today:
+    name: Al-Bireh
+    name_he: אל-בירה
+    source: https://www.wikidata.org/wiki/Q311326
+  name_he: אל-בירה
+  name_ar: البيرة
+  lon: 35.215
+  lat: 31.9051
+  kind: arab_town
+  type: arab_town
+  landmark: mosque
+  population: 2920
+  listed_as:
+  - Bira (El) (Urban) (Ramallah subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q311326
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q311326
+  - https://en.wikipedia.org/wiki/Al-Bireh
+- id: deir_al_ghusun
+  name: Deir el Ghusun
+  name_basis: vs1945
+  today:
+    name: Deir al-Ghusun
+    name_he: דיר אל-ע'וסון
+    source: https://www.wikidata.org/wiki/Q627230
+  name_he: דיר אל-ע'וסון
+  name_ar: دير الغصون
+  lon: 35.077
+  lat: 32.3531
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2860
+  listed_as:
+  - Deir el Ghusun (includes Khirbat el Masqifa, El Marja, Khirbat Jarishiya, Khirbat Bir es Sikka, Khirbat Yamma and Khirbat Ibthan) (Tulkarm subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q627230
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q627230
+  - https://en.wikipedia.org/wiki/Deir_al-Ghusun
+- id: silat_adh_dhahr
+  name: Silat edh Dhahr
+  name_basis: vs1945
+  today:
+    name: Silat ad-Dhahr
+    name_he: סילת א-דהר
+    source: https://www.wikidata.org/wiki/Q2898957
+  name_he: סילת א-דהר
+  name_ar: سيلَة الظَھْر
+  lon: 35.1846
+  lat: 32.3195
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2850
+  listed_as:
+  - Silat edh Dhahr (Jenin subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q2898957
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2898957
+  - https://en.wikipedia.org/wiki/Silat_ad-Dhahr
+- id: nesher
+  name: Nesher
+  name_basis: hebrew
+  today:
+    name: Nesher
+    name_he: נשר
+    source: https://www.wikidata.org/wiki/Q135432
+  name_he: נשר
+  name_ar: نيشير
+  lon: 35.0394
+  lat: 32.7711
+  kind: mixed_locality
+  type: town
+  landmark: mosque_and_water_tower
+  population: 2830
+  listed_as:
+  - Nesher (Haifa subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q135432
+  note: 'the VS row splits 1,430 Muslims and 1,400 Jews (the draft had arab_village): drawn as a mixed locality, Arab village and Jewish houses side by side (owner ruling 2026-10-12)'
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q135432
+  - https://en.wikipedia.org/wiki/Nesher
+- id: at_tur
+  name: Tur
+  name_basis: vs1945
+  today:
+    name: At-Tur
+    name_he: א-טור
+    source: https://www.wikidata.org/wiki/Q2916177
+  name_he: א-טור
+  name_ar: الطور
+  lon: 35.2464
+  lat: 31.7803
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2770
+  listed_as:
+  - Tur (Et) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2916177
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2916177
+  - https://en.wikipedia.org/wiki/At-Tur,_East_Jerusalem
+- id: beit_sahour
+  name: Beit Sahur
+  name_basis: vs1945
+  today:
+    name: Beit Sahour
+    name_he: בית סאחור
+    source: https://www.wikidata.org/wiki/Q803990
+  name_he: בית סאחור
+  name_ar: بيت ساحور
+  lon: 35.2167
+  lat: 31.7
+  kind: arab_town
+  type: arab_town
+  landmark: church
+  population: 2770
+  listed_as:
+  - Beit Sahur (Urban) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q803990
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q803990
+  - https://en.wikipedia.org/wiki/Beit_Sahour
+- id: bayt_daras
+  name: Beit Daras
+  name_basis: vs1945
+  name_he: בית דראס
+  name_ar: بيت دراس
+  lon: 34.6828
+  lat: 31.7232
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2750
+  listed_as:
+  - Beit Darās (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2919976
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2919976
+  - https://en.wikipedia.org/wiki/Bayt_Daras
+- id: burayr
+  name: Bureir
+  name_basis: vs1945
+  name_he: בריר
+  name_ar: برير
+  lon: 34.6392
+  lat: 31.5706
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2740
+  listed_as:
+  - Bureir (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4998139
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4998139
+  - https://en.wikipedia.org/wiki/Burayr
+- id: sair
+  name: Si'ir
+  name_basis: vs1945
+  today:
+    name: Sa'ir
+    name_he: סיעיר
+    source: https://www.wikidata.org/wiki/Q7395443
+  name_he: סיעיר
+  name_ar: سعير
+  lon: 35.1453
+  lat: 31.5844
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2710
+  listed_as:
+  - Si‘ir (Hebron subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q7395443
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7395443
+  - https://en.wikipedia.org/wiki/Sa'ir
+- id: attil
+  name: Attil
+  name_basis: vs1945
+  today:
+    name: Attil
+    name_he: עתיל
+    source: https://www.wikidata.org/wiki/Q246431
+  name_he: עתיל
+  name_ar: عَتِّيل
+  lon: 35.0718
+  lat: 32.3694
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2650
+  listed_as:
+  - Attil (Tulkarm subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q246431
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q246431
+  - https://en.wikipedia.org/wiki/Attil
+- id: sakhnin
+  name: Sakhnin
+  name_basis: vs1945
+  today:
+    name: Sakhnin
+    name_he: סח'נין
+    source: https://www.wikidata.org/wiki/Q168330
+  name_he: סח'נין
+  name_ar: سخنين
+  lon: 35.3
+  lat: 32.8667
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2600
+  listed_as:
+  - Sakhnin (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q168330
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q168330
+  - https://en.wikipedia.org/wiki/Sakhnin
+- id: burqa_nablus
+  name: Buraq
+  name_basis: vs1945
+  today:
+    name: Burqa
+    name_he: בורקה
+    source: https://www.wikidata.org/wiki/Q5000295
+  name_he: בורקה
+  name_ar: برقة
+  lon: 35.1931
+  lat: 32.3022
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2590
+  listed_as:
+  - Buraq (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5000295
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5000295
+  - https://en.wikipedia.org/wiki/Burqa,_Nablus
+- id: deir_al_balah
+  name: Deir el Balah
+  name_basis: vs1945
+  today:
+    name: Deir al-Balah
+    name_he: דיר אל-בלח
+    source: https://www.wikidata.org/wiki/Q557383
+  name_he: דיר אל-בלח
+  name_ar: دير البلح
+  lon: 34.35
+  lat: 31.4167
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2560
+  listed_as:
+  - Deir el Balaḥ (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q557383
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q557383
+  - https://en.wikipedia.org/wiki/Deir_al-Balah
+- id: lifta
+  name: Lifta
+  name_basis: vs1945
+  name_he: ליפתא
+  name_ar: لفتا
+  lon: 35.1967
+  lat: 31.7944
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2550
+  listed_as:
+  - Lifta (Jerusalem subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2599091
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2599091
+  - https://en.wikipedia.org/wiki/Lifta
+- id: al_masmiyya_al_kabira
+  name: Masmiya el Kabira
+  name_basis: vs1945
+  name_he: אל-מסמיה אל-כבירה
+  name_ar: المسمية الكبيرة
+  lon: 34.7847
+  lat: 31.7575
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2520
+  listed_as:
+  - Masmiya el Kabīra, El (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2912367
+  note: Wikidata Q2912367 P1082 (1945) = 2510; chose Village Statistics figure 2520 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2912367
+  - https://en.wikipedia.org/wiki/Al-Masmiyya_al-Kabira
+- id: al_yamun
+  name: Yamun
+  name_basis: vs1945
+  today:
+    name: Al-Yamun
+    name_he: אליאמון
+    source: https://www.wikidata.org/wiki/Q4703350
+  name_he: אליאמון
+  name_ar: اليامون
+  lon: 35.2353
+  lat: 32.4865
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2520
+  listed_as:
+  - Yamun (El) (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703350
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703350
+  - https://en.wikipedia.org/wiki/Al-Yamun
+- id: as_samu
+  name: Samu'
+  name_basis: vs1945
+  today:
+    name: As-Samu
+    name_he: א-סמוע
+    source: https://www.wikidata.org/wiki/Q1768653
+  name_he: א-סמוע
+  name_ar: السموع
+  lon: 35.0671
+  lat: 31.4008
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2520
+  listed_as:
+  - Samu‘, Es (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q1768653
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1768653
+  - https://en.wikipedia.org/wiki/As-Samu
+- id: aqir
+  name: Aqir
+  name_basis: vs1945
+  name_he: עאקיר
+  name_ar: عاقر
+  lon: 34.8208
+  lat: 31.8594
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2480
+  listed_as:
+  - Aqir (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4782546
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4782546
+  - https://en.wikipedia.org/wiki/Aqir
+- id: sur_bahir
+  name: Sur Bahir
+  name_basis: vs1945
+  today:
+    name: Sur Baher
+    name_he: צור באהר
+    source: https://www.wikidata.org/wiki/Q2916287
+  name_he: צור באהר
+  name_ar: صور باهر
+  lon: 35.2331
+  lat: 31.7372
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2450
+  listed_as:
+  - Sur Bahir and Umm Tuba (Jerusalem subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q2916287
+  draft_id: umm_tuba
+  note: 'VS row ''Sur Bahir and Umm Tuba'' (2,450): the draft placed it at Umm Tuba; moved to Sur Bahir, the row''s first place'
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2916287
+  - https://en.wikipedia.org/wiki/Sur_Baher
+- id: bayt_jibrin
+  name: Beit Jibrin
+  name_basis: vs1945
+  name_he: בית ג'יברין
+  name_ar: بيت جبرين
+  lon: 34.8983
+  lat: 31.6053
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2430
+  listed_as:
+  - Beit Jibrin (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q556637
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q556637
+  - https://en.wikipedia.org/wiki/Bayt_Jibrin
+- id: al_jura
+  name: Jura
+  name_basis: vs1945
+  name_he: אל-ג'ורה (נפת עזה)
+  name_ar: الجُورة، عسقلان
+  lon: 34.5542
+  lat: 31.665
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2420
+  listed_as:
+  - Jūra, El (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2380265
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2380265
+  - https://en.wikipedia.org/wiki/Al-Jura
+- id: barbara_gaza
+  name: Barbara
+  name_basis: vs1945
+  name_he: ברברה (נפת עזה)
+  name_ar: بربرة
+  lon: 34.5794
+  lat: 31.6239
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2410
+  listed_as:
+  - Barbara (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4858687
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4858687
+  - https://en.wikipedia.org/wiki/Barbara,_Gaza
+- id: bayt_mahsir
+  name: Beit Mahsir
+  name_basis: vs1945
+  name_he: בית מחסיר
+  name_ar: بيت مَحسير
+  lon: 35.0347
+  lat: 31.7944
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2400
+  listed_as:
+  - Beit Mahsir (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2899514
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2899514
+  - https://en.wikipedia.org/wiki/Bayt_Mahsir
+- id: zarnuqa
+  name: Zarnuqa
+  name_basis: vs1945
+  name_he: זרנוגה
+  name_ar: زرنوقة
+  lon: 34.7897
+  lat: 31.8803
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2380
+  listed_as:
+  - Zarnuqa (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q8066856
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q8066856
+  - https://en.wikipedia.org/wiki/Zarnuqa
+- id: shwiaka_tulkarm
+  name: Shuweika
+  name_basis: vs1945
+  today:
+    name: Shwiaka
+    name_he: שוויכה
+    source: https://www.wikidata.org/wiki/Q12219298
+  name_he: שוויכה
+  name_ar: شويكة (طولكرم)
+  lon: 35.037
+  lat: 32.335
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2370
+  listed_as:
+  - Shuweika (Tulkarm subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q12219298
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q12219298
+- id: lubya
+  name: Lubiya
+  name_basis: vs1945
+  name_he: לוביה
+  name_ar: لوبيا
+  lon: 35.4293
+  lat: 32.7759
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2350
+  listed_as:
+  - Lubiya (Tiberias subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2920974
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2920974
+  - https://en.wikipedia.org/wiki/Lubya
+- id: afula
+  name: Afula
+  name_basis: hebrew
+  today:
+    name: Afula
+    name_he: עפולה
+    source: https://www.wikidata.org/wiki/Q152462
+  name_he: עפולה
+  lon: 35.2897
+  lat: 32.6078
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 2310
+  listed_as:
+  - Afula (Urban) (Nazareth subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q152462
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152462
+  - https://en.wikipedia.org/wiki/Afula
+- id: bayt_nabala
+  name: Beit Nabala
+  name_basis: vs1945
+  name_he: בית נבאלא
+  name_ar: بيت نبالا
+  lon: 34.9567
+  lat: 31.9856
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2310
+  listed_as:
+  - Beit Nabala (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4874905
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4874905
+  - https://en.wikipedia.org/wiki/Bayt_Nabala
+- id: hiribya
+  name: Hirbiya
+  name_basis: vs1945
+  name_he: הירביא
+  name_ar: هربيا
+  lon: 34.5464
+  lat: 31.6058
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2300
+  listed_as:
+  - Hirbīya (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5769818
+  note: Wikidata Q5769818 P1082 (1945) = 2240; chose Village Statistics figure 2300 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5769818
+  - https://en.wikipedia.org/wiki/Hiribya
+- id: arara
+  name: Ar'ara
+  name_basis: vs1945
+  today:
+    name: Ar'ara
+    name_he: ערערה
+    source: https://www.wikidata.org/wiki/Q2915935
+  name_he: ערערה
+  name_ar: عرعرة
+  lon: 35.0941
+  lat: 32.4946
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2290
+  listed_as:
+  - Ar‘ara (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915935
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915935
+  - https://en.wikipedia.org/wiki/Ar'ara
+- id: baqa_al_gharbiyye
+  name: Baqa el Gharbiya
+  name_basis: vs1945
+  today:
+    name: Baqa al-Gharbiyye
+    name_he: באקה אל-גרבייה
+    source: https://www.wikidata.org/wiki/Q2916599
+  name_he: באקה אל-גרבייה
+  name_ar: باقة الغربية
+  lon: 35.0422
+  lat: 32.4203
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2240
+  listed_as:
+  - Baqa el Gharbiya (includes Manshiyat Baqa) (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2916599
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2916599
+  - https://en.wikipedia.org/wiki/Baqa_al-Gharbiyye
+- id: abasan_al_kabira
+  name: Abasan
+  name_basis: vs1945
+  today:
+    name: Abasan al-Kabira
+    name_he: עבסאן אל-כבירה
+    source: https://www.wikidata.org/wiki/Q3303148
+  name_he: עבסאן אל-כבירה
+  name_ar: عبسان الكبيرة
+  lon: 34.3469
+  lat: 31.3233
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2230
+  listed_as:
+  - Abasân (Gaza subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q3303148
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q3303148
+  - https://en.wikipedia.org/wiki/Abasan_al-Kabira
+- id: bala
+  name: Bal'a
+  name_basis: vs1945
+  today:
+    name: Bal'a
+    name_he: בלעא
+    source: https://www.wikidata.org/wiki/Q4849622
+  name_he: בלעא
+  name_ar: بلعا
+  lon: 35.1087
+  lat: 32.3332
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2220
+  listed_as:
+  - Bal‘a (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4849622
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4849622
+  - https://en.wikipedia.org/wiki/Bal'a
+- id: iraq_al_manshiyya
+  name: '''Iraq el Manshiya'
+  name_basis: vs1945
+  name_he: עיראק אל-מנשייה
+  name_ar: عراق المنشية
+  lon: 34.7831
+  lat: 31.6047
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2220
+  listed_as:
+  - Irāq el Manshiya and Gat (Gaza subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q2777842
+  note: the VS row 'Iraq el Manshiya and Gat' includes kibbutz Gat (210 Jews); the kit is sized on the whole row; Wikidata Q2777842 P1082 (1945) = 2010; chose Village Statistics figure 2220 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2777842
+  - https://en.wikipedia.org/wiki/Iraq_al-Manshiyya
+- id: rafah
+  name: Rafah
+  name_basis: vs1945
+  today:
+    name: Rafah
+    name_he: רפיח
+    source: https://www.wikidata.org/wiki/Q172343
+  name_he: רפיח
+  name_ar: رفح
+  lon: 34.2519
+  lat: 31.2886
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2220
+  listed_as:
+  - Rafah (Gaza subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q172343
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q172343
+  - https://en.wikipedia.org/wiki/Rafah
+- id: idna
+  name: Idna
+  name_basis: vs1945
+  today:
+    name: Idna
+    name_he: אידנא
+    source: https://www.wikidata.org/wiki/Q2919205
+  name_he: אידנא
+  name_ar: إذنا
+  lon: 34.9761
+  lat: 31.5586
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2190
+  listed_as:
+  - Idna (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2919205
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2919205
+  - https://en.wikipedia.org/wiki/Idna
+- id: surif
+  name: Surif
+  name_basis: vs1945
+  today:
+    name: Surif
+    name_he: צוריף
+    source: https://www.wikidata.org/wiki/Q2898863
+  name_he: צוריף
+  name_ar: صوريف
+  lon: 35.0662
+  lat: 31.6505
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2190
+  listed_as:
+  - Surif (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2898863
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2898863
+  - https://en.wikipedia.org/wiki/Surif
+- id: ayn_ghazal
+  name: Ein Ghazal
+  name_basis: vs1945
+  name_he: עין ע'זאל
+  name_ar: عين غزال
+  lon: 34.9674
+  lat: 32.6319
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2170
+  listed_as:
+  - Ein Ghazal (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2918965
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918965
+  - https://en.wikipedia.org/wiki/Ayn_Ghazal_(village)
+- id: bani_naim
+  name: Bani Na'im
+  name_basis: vs1945
+  today:
+    name: Bani Na'im
+    name_he: בני נעים
+    source: https://www.wikidata.org/wiki/Q2918596
+  name_he: בני נעים
+  name_ar: بني نعيم
+  lon: 35.1642
+  lat: 31.5161
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2160
+  listed_as:
+  - Bani Na‘im (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2918596
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918596
+  - https://en.wikipedia.org/wiki/Bani_Na'im
+- id: bayt_nattif
+  name: Beit Nattif
+  name_basis: vs1945
+  name_he: בית נטיף
+  name_ar: بيت نَتيِف
+  lon: 34.996
+  lat: 31.6955
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2150
+  listed_as:
+  - Beit Nattif (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2902477
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2902477
+  - https://en.wikipedia.org/wiki/Bayt_Nattif
+- id: kafr_rai
+  name: Kafr Ra'i
+  name_basis: vs1945
+  today:
+    name: Kafr Ra'i
+    name_he: כפר ראעי
+    source: https://www.wikidata.org/wiki/Q2898490
+  name_he: כפר ראעי
+  name_ar: كفر راعي
+  lon: 35.1551
+  lat: 32.376
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2150
+  listed_as:
+  - Kafr Ra‘i (Jenin subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2898490
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2898490
+  - https://en.wikipedia.org/wiki/Kafr_Ra'i
+- id: maghar
+  name: Maghar
+  name_basis: vs1945
+  today:
+    name: Maghar
+    name_he: מע'אר
+    source: https://www.wikidata.org/wiki/Q930847
+  name_he: מע'אר
+  name_ar: المغار
+  lon: 35.4083
+  lat: 32.89
+  kind: arab_village
+  type: village
+  landmark: none
+  population: 2140
+  listed_as:
+  - Maghar and El Mansura (Tiberias subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q930847
+  draft_id: al_mansura_tiberias
+  note: 'VS row ''Maghar and El Mansura'' (2,140): the draft placed it at al-Mansura (Q4702829); moved to Maghar, the row''s first place'
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q930847
+  - https://en.wikipedia.org/wiki/Maghar,_Israel
+- id: dayr_aban
+  name: Deiraban
+  name_basis: vs1945
+  name_he: דיר-אבאן
+  name_ar: دير آبان
+  lon: 35.0104
+  lat: 31.7429
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2100
+  listed_as:
+  - Deiraban (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2896327
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2896327
+  - https://en.wikipedia.org/wiki/Dayr_Aban
+- id: jaba_2
+  name: Jaba'
+  name_basis: vs1945
+  today:
+    name: Jaba'
+    name_he: ג'בע
+    source: https://www.wikidata.org/wiki/Q2267472
+  name_he: ג'בע
+  name_ar: جَبَع( جنين)
+  lon: 35.2222
+  lat: 32.3239
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2100
+  listed_as:
+  - Jaba‘ (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2267472
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2267472
+  - https://en.wikipedia.org/wiki/Jaba',_Jenin
+- id: deir_dibwan
+  name: Deir Dibwan
+  name_basis: vs1945
+  today:
+    name: Deir Dibwan
+    name_he: דיר דיבוואן
+    source: https://www.wikidata.org/wiki/Q12212354
+  name_he: דיר דיבוואן
+  name_ar: دير دبوان
+  lon: 35.2706
+  lat: 31.9108
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2080
+  listed_as:
+  - Deir Dibwan (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q12212354
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q12212354
+  - https://en.wikipedia.org/wiki/Deir_Dibwan
+- id: tammun
+  name: Tammun
+  name_basis: vs1945
+  today:
+    name: Tammun
+    name_he: טמון
+    source: https://www.wikidata.org/wiki/Q275722
+  name_he: טמון
+  name_ar: طمون
+  lon: 35.3858
+  lat: 32.2842
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2070
+  listed_as:
+  - Tammun (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q275722
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q275722
+  - https://en.wikipedia.org/wiki/Tammun
+- id: aqraba
+  name: Aqraba
+  name_basis: vs1945
+  today:
+    name: Aqraba
+    name_he: עקרבה
+    source: https://www.wikidata.org/wiki/Q2918318
+  name_he: עקרבה
+  name_ar: عقربا
+  lon: 35.3436
+  lat: 32.1264
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2060
+  listed_as:
+  - Aqraba (includes Khirbat Fasayil) (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2918318
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918318
+  - https://en.wikipedia.org/wiki/Aqraba,_Nablus
+- id: asira_ash_shamaliya
+  name: Asira esh Shamaliya
+  name_basis: vs1945
+  today:
+    name: Asira ash-Shamaliya
+    name_he: עסירה א-שמאלייה
+    source: https://www.wikidata.org/wiki/Q4807028
+  name_he: עסירה א-שמאלייה
+  name_ar: عصيرة الشمالية
+  lon: 35.267
+  lat: 32.2507
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2060
+  listed_as:
+  - Asira esh Shamaliya (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q4807028
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4807028
+  - https://en.wikipedia.org/wiki/Asira_ash-Shamaliya
+- id: daliyat_al_karmel
+  name: Dalyat el Karmil
+  name_basis: vs1945
+  today:
+    name: Daliyat al-Karmel
+    name_he: דאלית אל-כרמל
+    source: https://www.wikidata.org/wiki/Q2667061
+  name_he: דאלית אל-כרמל
+  name_ar: دالية الكرمل
+  lon: 35.0494
+  lat: 32.6931
+  kind: arab_village
+  type: village
+  landmark: none
+  population: 2060
+  listed_as:
+  - Dalyat el Karmil (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2667061
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2667061
+  - https://en.wikipedia.org/wiki/Daliyat_al-Karmel
+- id: naana
+  name: Na'ana
+  name_basis: vs1945
+  name_ar: النعاني
+  lon: 34.8733
+  lat: 31.8722
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 2060
+  listed_as:
+  - Na‘ana (Ni‘ana) (Ramle subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q4703007
+  draft_id: naan
+  note: VS row 'Na'ana (Ni'ana)' (2,060) is the Arab village; the draft placed it at kibbutz Na'an (Q1026840); the row is 1,450 Muslims, 20 Christians and 590 Jews of kibbutz Na'an; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703007
+  - https://en.wikipedia.org/wiki/Al-Na'ani
+- id: bat_yam
+  name: Bat Yam
+  name_basis: hebrew
+  today:
+    name: Bat Yam
+    name_he: בת ים
+    source: https://www.wikidata.org/wiki/Q208725
+  name_he: בת ים
+  lon: 34.7503
+  lat: 32.0231
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 2000
+  listed_as:
+  - Bat Yam (Urban) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q208725
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q208725
+  - https://en.wikipedia.org/wiki/Bat_Yam
+- id: al_qubab
+  name: Qubab
+  name_basis: vs1945
+  name_he: אל קובאב
+  name_ar: القباب
+  lon: 34.9542
+  lat: 31.8666
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1980
+  listed_as:
+  - Qubab (El) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703094
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703094
+  - https://en.wikipedia.org/wiki/Al-Qubab
+- id: qaqun
+  name: Qaqun
+  name_basis: vs1945
+  name_he: קאקון
+  name_ar: قاقون
+  lon: 34.9953
+  lat: 32.36
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1970
+  listed_as:
+  - Qaqun (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2919625
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2919625
+  - https://en.wikipedia.org/wiki/Qaqun
+- id: sarafand_al_amar
+  name: Sarafand el 'Amar
+  name_basis: vs1945
+  name_he: סרפאנד אל-עמאר
+  name_ar: صرفند العمار
+  lon: 34.8493
+  lat: 31.9595
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1950
+  listed_as:
+  - Sarafand el ‘Amar (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7421982
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7421982
+  - https://en.wikipedia.org/wiki/Sarafand_al-Amar
+- id: abu_dis
+  name: Abu Dis
+  name_basis: vs1945
+  today:
+    name: Abu Dis
+    name_he: אבו דיס
+    source: https://www.wikidata.org/wiki/Q246590
+  name_he: אבו דיס
+  name_ar: أبو ديس
+  lon: 35.2658
+  lat: 31.7625
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1940
+  listed_as:
+  - Abu Dis (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q246590
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q246590
+  - https://en.wikipedia.org/wiki/Abu_Dis
+- id: malha
+  name: Malha
+  name_basis: vs1945
+  name_he: מלחה
+  name_ar: المالحة
+  lon: 35.182
+  lat: 31.7524
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1940
+  listed_as:
+  - Malha (El) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915596
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915596
+  - https://en.wikipedia.org/wiki/Malha
+- id: al_shaykh_muwannis
+  name: Sheikh Muwannis
+  name_basis: vs1945
+  name_he: שייח' מוניס
+  name_ar: الشيخ مونس
+  lon: 34.8031
+  lat: 32.1083
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1930
+  listed_as:
+  - Sheikh Muwannis (Esh) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q291432
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q291432
+  - https://en.wikipedia.org/wiki/Al-Shaykh_Muwannis
+- id: kafr_kanna
+  name: Kafr Kanna
+  name_basis: vs1945
+  today:
+    name: Kafr Kanna
+    name_he: כפר כנא
+    source: https://www.wikidata.org/wiki/Q2633158
+  name_he: כפר כנא
+  name_ar: كفر كنا
+  lon: 35.35
+  lat: 32.75
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1930
+  listed_as:
+  - Kafr Kanna (Nazareth subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2633158
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2633158
+  - https://en.wikipedia.org/wiki/Kafr_Kanna
+- id: az_zeeb
+  name: Zib
+  name_basis: vs1945
+  name_he: א-זיב
+  name_ar: الزيب
+  lon: 35.1017
+  lat: 33.0481
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1910
+  listed_as:
+  - Zib (Ez, includes Manawat) (Acre subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q4831969
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4831969
+  - https://en.wikipedia.org/wiki/Az-Zeeb
+- id: silwad
+  name: Silwad
+  name_basis: vs1945
+  today:
+    name: Silwad
+    name_he: סילוואד
+    source: https://www.wikidata.org/wiki/Q684632
+  name_he: סילוואד
+  name_ar: سلواد
+  lon: 35.2592
+  lat: 31.9861
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1910
+  listed_as:
+  - Silwad (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q684632
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q684632
+  - https://en.wikipedia.org/wiki/Silwad
+- id: abu_kishk
+  name: Abu Kishk
+  name_basis: vs1945
+  name_he: אבו כישכ
+  name_ar: أبو كِشْك
+  lon: 34.8653
+  lat: 32.1363
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1900
+  listed_as:
+  - Abu Kishk (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4670255
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4670255
+  - https://en.wikipedia.org/wiki/Abu_Kishk
+- id: al_mujaydil
+  name: Mujeidil
+  name_basis: vs1945
+  name_he: אל-מוג'ידל
+  name_ar: المجيدل
+  lon: 35.2418
+  lat: 32.6779
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1900
+  listed_as:
+  - Mujeidil (El) (Nazareth subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2892602
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2892602
+  - https://en.wikipedia.org/wiki/Al-Mujaydil
+- id: silat_al_harithiya
+  name: Silat el Harithiya
+  name_basis: vs1945
+  today:
+    name: Silat al-Harithiya
+    name_he: סילת אל-חארית'יה
+    source: https://www.wikidata.org/wiki/Q2898808
+  name_he: סילת אל-חארית'יה
+  name_ar: السيلة الحارثية
+  lon: 35.2277
+  lat: 32.5081
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1860
+  listed_as:
+  - Silat el Harithiya (Jenin subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2898808
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2898808
+  - https://en.wikipedia.org/wiki/Silat_al-Harithiya
+- id: al_khalisa
+  name: Khalisa
+  name_basis: vs1945
+  name_he: אל-ח'אלצה
+  name_ar: الخالِصة
+  lon: 35.5672
+  lat: 33.2144
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1840
+  listed_as:
+  - Khalisa (El) (Safad subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702703
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702703
+  - https://en.wikipedia.org/wiki/Al-Khalisa
+- id: salfit
+  name: Salfit
+  name_basis: vs1945
+  today:
+    name: Salfit
+    name_he: סלפית
+    source: https://www.wikidata.org/wiki/Q1972013
+  name_he: סלפית
+  name_ar: سلفيت
+  lon: 35.1822
+  lat: 32.0819
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1830
+  listed_as:
+  - Salfit (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1972013
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1972013
+  - https://en.wikipedia.org/wiki/Salfit
+- id: talluza
+  name: Talluza
+  name_basis: vs1945
+  today:
+    name: Talluza
+    name_he: טלוזה
+    source: https://www.wikidata.org/wiki/Q6811409
+  name_he: טלוזה
+  name_ar: طلوزة
+  lon: 35.2939
+  lat: 32.2711
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1830
+  listed_as:
+  - Talluza (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q6811409
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q6811409
+  - https://en.wikipedia.org/wiki/Talluza
+- id: tamra
+  name: Tamra
+  name_basis: vs1945
+  today:
+    name: Tamra
+    name_he: טמרה
+    source: https://www.wikidata.org/wiki/Q168176
+  name_he: טמרה
+  name_ar: طمرة
+  lon: 35.2071
+  lat: 32.8511
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1830
+  listed_as:
+  - Tamra (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q168176
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q168176
+  - https://en.wikipedia.org/wiki/Tamra
+- id: arraba
+  name: Arraba
+  name_basis: vs1945
+  today:
+    name: Arraba
+    name_he: עראבה
+    source: https://www.wikidata.org/wiki/Q2568887
+  name_he: עראבה
+  name_ar: عرابة البطوف
+  lon: 35.3386
+  lat: 32.8511
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1800
+  listed_as:
+  - Arraba (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2568887
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2568887
+  - https://en.wikipedia.org/wiki/Arraba,_Israel
+- id: isfiya
+  name: Isfiya
+  name_basis: vs1945
+  today:
+    name: Isfiya
+    name_he: עספיא
+    source: https://www.wikidata.org/wiki/Q2890836
+  name_he: עספיא
+  name_ar: عسفيا
+  lon: 35.0633
+  lat: 32.7194
+  kind: arab_village
+  type: village
+  landmark: none
+  population: 1790
+  listed_as:
+  - Isfiya (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2890836
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2890836
+  - https://en.wikipedia.org/wiki/Isfiya
+- id: zeita_tulkarm
+  name: Zeita
+  name_basis: vs1945
+  today:
+    name: Zeita
+    name_he: זיתא
+    source: https://www.wikidata.org/wiki/Q8068604
+  name_he: זיתא
+  name_ar: زيتا، طولكرم
+  lon: 35.0508
+  lat: 32.3845
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1780
+  listed_as:
+  - Zeita (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q8068604
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q8068604
+  - https://en.wikipedia.org/wiki/Zeita,_Tulkarm
+- id: ness_ziona
+  name: Ness Ziona
+  name_basis: hebrew
+  today:
+    name: Ness Ziona
+    name_he: נס ציונה
+    source: https://www.wikidata.org/wiki/Q168162
+  name_he: נס ציונה
+  lon: 34.8
+  lat: 31.9333
+  kind: moshava
+  type: town
+  landmark: water_tower
+  population: 1760
+  listed_as:
+  - Wadi Hunein (Nes Tsiyona) (Ramle subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q168162
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q168162
+  - https://en.wikipedia.org/wiki/Ness_Ziona
+- id: dayr_tarif
+  name: Deir Tarif
+  name_basis: vs1945
+  name_he: דיר טריף
+  name_ar: دير طريف
+  lon: 34.9397
+  lat: 31.9904
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1750
+  listed_as:
+  - Deir Tarif (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5243302
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5243302
+  - https://en.wikipedia.org/wiki/Dayr_Tarif
+- id: al_maghar
+  name: Mughar
+  name_basis: vs1945
+  name_he: מע'אר (השפלה)
+  name_ar: المغار
+  lon: 34.7822
+  lat: 31.8385
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1740
+  listed_as:
+  - Mughar (El) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702763
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702763
+  - https://en.wikipedia.org/wiki/Al-Maghar
+- id: shaab
+  name: Sha'b
+  name_basis: vs1945
+  today:
+    name: Sha'ab
+    name_he: שעב
+    source: https://www.wikidata.org/wiki/Q2655669
+  name_he: שעב
+  name_ar: شعب
+  lon: 35.2369
+  lat: 32.8889
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1740
+  listed_as:
+  - Sha'b (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2655669
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2655669
+  - https://en.wikipedia.org/wiki/Sha'ab,_Israel
+- id: beit_hanoun
+  name: Beit Hanun
+  name_basis: vs1945
+  today:
+    name: Beit Hanoun
+    name_he: בית חאנון
+    source: https://www.wikidata.org/wiki/Q74176
+  name_he: בית חאנון
+  name_ar: بيت حانون
+  lon: 34.5372
+  lat: 31.5386
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1730
+  listed_as:
+  - Beit Hānūn (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q74176
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q74176
+  - https://en.wikipedia.org/wiki/Beit_Hanoun
+- id: al_qubayba_ramla
+  name: Qubeiba
+  name_basis: vs1945
+  name_he: אל-קובייבה
+  name_ar: القبيبة، الرملة
+  lon: 34.7714
+  lat: 31.8947
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1720
+  listed_as:
+  - Qubeiba (El) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703091
+  note: Wikidata Q4703091 P1082 (1945) = 2597; chose Village Statistics figure 1720 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703091
+  - https://en.wikipedia.org/wiki/Al-Qubayba,_Ramle
+- id: kfar_ganim
+  name: Kfar Ganim
+  name_basis: hebrew
+  today:
+    name: Petah Tikva
+    name_he: פתח תקווה
+    source: https://en.wikipedia.org/wiki/Kfar_Ganim
+  name_he: כפר גנים
+  lon: 34.8711
+  lat: 32.0782
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 1720
+  listed_as:
+  - Kefar Gannim (Jaffa subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q7033804
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7033804
+- id: beit_lahia
+  name: Beit Lahiya
+  name_basis: vs1945
+  today:
+    name: Beit Lahia
+    name_he: בית לאהיא
+    source: https://www.wikidata.org/wiki/Q803986
+  name_he: בית לאהיא
+  name_ar: بيت لاهيا
+  lon: 34.5014
+  lat: 31.5539
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1700
+  listed_as:
+  - Beit Lāhiya (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q803986
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q803986
+  - https://en.wikipedia.org/wiki/Beit_Lahia
+- id: sabbarin
+  name: Sabbirin
+  name_basis: vs1945
+  name_he: סבארין
+  name_ar: صبارين
+  lon: 35.0231
+  lat: 32.5711
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1700
+  listed_as:
+  - Sabbirin (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7395979
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7395979
+  - https://en.wikipedia.org/wiki/Sabbarin
+- id: kiryat_ata
+  name: Kfar Ata
+  name_basis: hebrew
+  today:
+    name: Kiryat Ata
+    name_he: קריית אתא
+    source: https://www.wikidata.org/wiki/Q152602
+  name_he: קריית אתא
+  lon: 35.1
+  lat: 32.8
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 1690
+  listed_as:
+  - Kefar ‘Atta (Kufritta) (Haifa subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q152602
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152602
+  - https://en.wikipedia.org/wiki/Kiryat_Ata
+- id: rameh
+  name: Rama
+  name_basis: vs1945
+  name_he: ראמה
+  name_ar: الرامَة، عكا
+  lon: 35.3671
+  lat: 32.9393
+  kind: arab_village
+  type: village
+  landmark: church
+  population: 1690
+  listed_as:
+  - Rama (Er) (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915661
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915661
+  - https://en.wikipedia.org/wiki/Rameh
+- id: beit_ummar
+  name: Beit 'Ummar
+  name_basis: vs1945
+  today:
+    name: Beit Ummar
+    name_he: בית אומר
+    source: https://www.wikidata.org/wiki/Q2893117
+  name_he: בית אומר
+  name_ar: بيت أمر
+  lon: 35.1022
+  lat: 31.6214
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1680
+  listed_as:
+  - Beit ‘Ummar (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2893117
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2893117
+  - https://en.wikipedia.org/wiki/Beit_Ummar
+- id: ibillin
+  name: I'billin
+  name_basis: vs1945
+  today:
+    name: I'billin
+    name_he: אעבלין
+    source: https://www.wikidata.org/wiki/Q2915647
+  name_he: אעבלין
+  name_ar: إعبلين
+  lon: 35.1933
+  lat: 32.8222
+  kind: arab_village
+  type: village
+  landmark: church
+  population: 1660
+  listed_as:
+  - I‘billin (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915647
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915647
+  - https://en.wikipedia.org/wiki/I'billin
+- id: al_walaja
+  name: Walaja
+  name_basis: vs1945
+  name_he: אל-ולג'ה
+  name_ar: الولجة
+  lon: 35.1636
+  lat: 31.7312
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1650
+  listed_as:
+  - Walaja (El) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2293751
+  note: Wikidata Q2293751 P1082 (1945) = 1656; chose Village Statistics figure 1650 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2293751
+  - https://en.wikipedia.org/wiki/Al-Walaja
+- id: bashshit
+  name: Bashshit
+  name_basis: vs1945
+  name_he: בשית
+  name_ar: بشيت
+  lon: 34.7467
+  lat: 31.824
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1620
+  listed_as:
+  - Bashshit (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4866903
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4866903
+  - https://en.wikipedia.org/wiki/Bashshit
+- id: hunin
+  name: Hunin
+  name_basis: vs1945
+  name_he: הונין
+  name_ar: هونين
+  lon: 35.5447
+  lat: 33.2144
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1620
+  listed_as:
+  - Hunin (includes Hula and ‘Udeisa) (Safad subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q12406488
+  note: the VS row names more than one place; the kit is sized on the whole row; Wikidata Q12406488 P1082 (1945) = 1670; chose Village Statistics figure 1620 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q12406488
+  - https://en.wikipedia.org/wiki/Hunin
+- id: wadi_hunayn
+  name: Wadi Hunein
+  name_basis: vs1945
+  name_he: ואדי חנין
+  name_ar: وادي حنين
+  lon: 34.7952
+  lat: 31.9274
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1620
+  listed_as:
+  - Wadi Hunein (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7959226
+  note: Wikidata Q7959226 P1082 (1945) = 1630; chose Village Statistics figure 1620 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7959226
+  - https://en.wikipedia.org/wiki/Wadi_Hunayn
+- id: beit_hanina
+  name: Beit Hanina
+  name_basis: vs1945
+  today:
+    name: Beit Hanina
+    name_he: בית חנינא
+    source: https://www.wikidata.org/wiki/Q2919614
+  name_he: בית חנינא
+  name_ar: بيت حنينا
+  lon: 35.2161
+  lat: 31.8306
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1590
+  listed_as:
+  - Beit Hanina (Jerusalem subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2919614
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2919614
+  - https://en.wikipedia.org/wiki/Beit_Hanina
+- id: kafr_zibad
+  name: Kafr Zibad
+  name_basis: vs1945
+  today:
+    name: Kafr Zibad
+    name_he: כפר זיבאד
+    source: https://www.wikidata.org/wiki/Q6346223
+  name_he: כפר זיבאד
+  name_ar: كفر زيباد
+  lon: 35.071
+  lat: 32.224
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1590
+  listed_as:
+  - Kafr Zibad (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q6346223
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q6346223
+  - https://en.wikipedia.org/wiki/Kafr_Zibad
+- id: beita
+  name: Beita
+  name_basis: vs1945
+  today:
+    name: Beita
+    name_he: ביתא
+    source: https://www.wikidata.org/wiki/Q275915
+  name_he: ביתא
+  name_ar: بيتا
+  lon: 35.2875
+  lat: 32.1436
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1580
+  listed_as:
+  - Beita (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q275915
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q275915
+  - https://en.wikipedia.org/wiki/Beita,_Nablus
+- id: fajja
+  name: Fajja
+  name_basis: vs1945
+  name_he: פג'ה
+  name_ar: فجة
+  lon: 34.9044
+  lat: 32.0883
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1570
+  listed_as:
+  - Fajja (Jaffa subdistrict)
+  match: medium
+  owner_verify: true
+  wikidata: Q5431395
+  note: Wikidata Q5431395 P1082 (1945) = 1200; chose Village Statistics figure 1570 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5431395
+  - https://en.wikipedia.org/wiki/Fajja
+- id: qaffin
+  name: Qaffin
+  name_basis: vs1945
+  today:
+    name: Qaffin
+    name_he: קפין
+    source: https://www.wikidata.org/wiki/Q2892780
+  name_he: קפין
+  name_ar: قَفِّين
+  lon: 35.0835
+  lat: 32.4333
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1570
+  listed_as:
+  - Qaffin (includes Khirbat el ‘Aqqaba and Khirbat esh Sheikh Meisar) (Tulkarm subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q2892780
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2892780
+  - https://en.wikipedia.org/wiki/Qaffin
+- id: birzeit
+  name: Bir Zeit
+  name_basis: vs1945
+  today:
+    name: Birzeit
+    name_he: ביר זית
+    source: https://www.wikidata.org/wiki/Q212381
+  name_he: ביר זית
+  name_ar: بيرزيت
+  lon: 35.1956
+  lat: 31.9722
+  kind: arab_village
+  type: village
+  landmark: church
+  population: 1560
+  listed_as:
+  - Bir Zeit (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q212381
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q212381
+  - https://en.wikipedia.org/wiki/Birzeit
+- id: tarqumiyah
+  name: Tarqumiya
+  name_basis: vs1945
+  today:
+    name: Tarqumiyah
+    name_he: תרקומיא
+    source: https://www.wikidata.org/wiki/Q1998630
+  name_he: תרקומיא
+  name_ar: ترقوميا
+  lon: 35.0131
+  lat: 31.575
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1550
+  listed_as:
+  - Tarqumiya (Hebron subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q1998630
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1998630
+  - https://en.wikipedia.org/wiki/Tarqumiyah
+- id: burqin
+  name: Birqin
+  name_basis: vs1945
+  today:
+    name: Burqin
+    name_he: בורקין
+    source: https://www.wikidata.org/wiki/Q286871
+  name_he: בורקין
+  name_ar: برقين
+  lon: 35.2603
+  lat: 32.4556
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1540
+  listed_as:
+  - Birqin (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q286871
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q286871
+  - https://en.wikipedia.org/wiki/Burqin,_Palestine
+- id: qalansawe
+  name: Qalansuwa
+  name_basis: vs1945
+  today:
+    name: Qalansawe
+    name_he: קלנסווה
+    source: https://www.wikidata.org/wiki/Q168152
+  name_he: קלנסווה
+  name_ar: قلنسوة
+  lon: 34.9811
+  lat: 32.285
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1540
+  listed_as:
+  - Qalansuwa (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q168152
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q168152
+  - https://en.wikipedia.org/wiki/Qalansawe
+- id: al_kabri
+  name: Kabri
+  name_basis: vs1945
+  name_he: כאברי
+  name_ar: الكابري
+  lon: 35.1509
+  lat: 33.0155
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1530
+  listed_as:
+  - Kabri (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702652
+  note: Wikidata Q4702652 P1082 (1945) = 1529; chose Village Statistics figure 1530 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702652
+  - https://en.wikipedia.org/wiki/Al-Kabri
+- id: al_salihiyya
+  name: Salihiya
+  name_basis: vs1945
+  name_ar: الصالحية
+  lon: 35.6124
+  lat: 33.1673
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1520
+  listed_as:
+  - Salihiya (Es) (Safad subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703174
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703174
+  - https://en.wikipedia.org/wiki/Al-Salihiyya,_Palestine
+- id: beit_jann
+  name: Beit Jann
+  name_basis: vs1945
+  today:
+    name: Bayt Jann
+    name_he: בית ג׳ן
+    source: https://www.wikidata.org/wiki/Q814900
+  name_he: בית ג׳ן
+  name_ar: بيت جن
+  lon: 35.3794
+  lat: 32.9653
+  kind: arab_village
+  type: village
+  landmark: none
+  population: 1520
+  listed_as:
+  - Beit Jann (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q814900
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q814900
+  - https://en.wikipedia.org/wiki/Bayt_Jann
+- id: binyamina
+  name: Binyamina
+  name_basis: hebrew
+  name_he: בנימינה
+  lon: 34.945
+  lat: 32.5222
+  kind: moshava
+  type: town
+  landmark: water_tower
+  population: 1520
+  listed_as:
+  - Binyamina (Haifa subdistrict)
+  match: medium
+  owner_verify: true
+  wikidata: Q863886
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q863886
+- id: majdal_yaba
+  name: Majdal Yaba
+  name_basis: vs1945
+  name_he: מג'דל יאבא
+  name_ar: مجدل يابا
+  lon: 34.9569
+  lat: 32.0808
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1520
+  listed_as:
+  - Majdal Yaba (Majdal es Sadiq) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q15243925
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q15243925
+  - https://en.wikipedia.org/wiki/Majdal_Yaba
+- id: jimzu
+  name: Jimzu
+  name_basis: vs1945
+  name_he: ג'ימזו
+  name_ar: جِمْزو
+  lon: 34.9464
+  lat: 31.9308
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1510
+  listed_as:
+  - Jimzu (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2907137
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2907137
+  - https://en.wikipedia.org/wiki/Jimzu
+- id: kafr_qara
+  name: Kafr Qari'
+  name_basis: vs1945
+  today:
+    name: Kafr Qara
+    name_he: כפר קרע
+    source: https://www.wikidata.org/wiki/Q1721086
+  name_he: כפר קרע
+  name_ar: كفر قرع
+  lon: 35.0538
+  lat: 32.5058
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1510
+  listed_as:
+  - Kafr Qari‘ (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1721086
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1721086
+  - https://en.wikipedia.org/wiki/Kafr_Qara
+- id: yarka
+  name: Yirka
+  name_basis: vs1945
+  today:
+    name: Yarka
+    name_he: ירכא
+    source: https://www.wikidata.org/wiki/Q2640151
+  name_he: ירכא
+  name_ar: يركا
+  lon: 35.1833
+  lat: 32.9333
+  kind: arab_village
+  type: village
+  landmark: none
+  population: 1500
+  listed_as:
+  - Yirka (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2640151
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2640151
+  - https://en.wikipedia.org/wiki/Yarka
+- id: beitunia
+  name: Beituniya
+  name_basis: vs1945
+  today:
+    name: Beitunia
+    name_he: ביתוניא
+    source: https://www.wikidata.org/wiki/Q528941
+  name_he: ביתוניא
+  name_ar: بيتونيا
+  lon: 35.1675
+  lat: 31.889
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1490
+  listed_as:
+  - Beituniya (Ramallah subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q528941
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q528941
+  - https://en.wikipedia.org/wiki/Beitunia
+- id: tantura
+  name: Tantura
+  name_basis: vs1945
+  name_he: טנטורה
+  name_ar: الطنطورة
+  lon: 34.9177
+  lat: 32.6094
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1490
+  listed_as:
+  - Tantura (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2100836
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2100836
+  - https://en.wikipedia.org/wiki/Tantura
+- id: beit_fajjar
+  name: Beit Fajjar
+  name_basis: vs1945
+  today:
+    name: Beit Fajjar
+    name_he: בית פג'אר
+    source: https://www.wikidata.org/wiki/Q4881435
+  name_he: בית פג'אר
+  name_ar: بيت فجار
+  lon: 35.1556
+  lat: 31.6247
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1480
+  listed_as:
+  - Beit Fajjar (Jerusalem subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q4881435
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4881435
+  - https://en.wikipedia.org/wiki/Beit_Fajjar
+- id: ramatayim
+  name: Ramatayim
+  name_basis: hebrew
+  today:
+    name: Hod HaSharon
+    name_he: הוד השרון
+    source: https://en.wikipedia.org/wiki/Ramatayim
+  name_he: רמתיים
+  lon: 34.8859
+  lat: 32.1581
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 1480
+  listed_as:
+  - Ramatayim (Jaffa subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q7024558
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7024558
+- id: awarta
+  name: Awarta
+  name_basis: vs1945
+  today:
+    name: Awarta
+    name_he: עוורתא
+    source: https://www.wikidata.org/wiki/Q2905293
+  name_he: עוורתא
+  name_ar: عورتا
+  lon: 35.2864
+  lat: 32.1614
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1470
+  listed_as:
+  - Awarta and Udala (Nablus subdistrict)
+  match: medium
+  owner_verify: true
+  wikidata: Q2905293
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2905293
+  - https://en.wikipedia.org/wiki/Awarta
+- id: umm_az_zinat
+  name: Umm ez Zinat
+  name_basis: vs1945
+  name_he: אום א-זינאת
+  name_ar: أم الزينات
+  lon: 35.0633
+  lat: 32.6472
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1470
+  listed_as:
+  - Umm ez Zinat (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2255513
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2255513
+  - https://en.wikipedia.org/wiki/Umm_az-Zinat
+- id: al_birwa
+  name: Birwa
+  name_basis: vs1945
+  name_he: אל-בירווה
+  name_ar: البروة
+  lon: 35.1802
+  lat: 32.9052
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1460
+  listed_as:
+  - Birwa (El) (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2914542
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2914542
+  - https://en.wikipedia.org/wiki/Al-Birwa
+- id: kafr_qasim
+  name: Kafr Qasim
+  name_basis: vs1945
+  today:
+    name: Kafr Qasim
+    name_he: כפר קאסם
+    source: https://www.wikidata.org/wiki/Q152659
+  name_he: כפר קאסם
+  name_ar: كفر قاسم
+  lon: 34.9772
+  lat: 32.1142
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1460
+  listed_as:
+  - Kafr Qasim (Tulkarm subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q152659
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q152659
+  - https://en.wikipedia.org/wiki/Kafr_Qasim
+- id: ilar
+  name: Ilar
+  name_basis: vs1945
+  today:
+    name: '''Illar'
+    source: https://www.wikidata.org/wiki/Q33534652
+  lon: 35.1071
+  lat: 32.3702
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1450
+  listed_as:
+  - Ilar (Tulkarm subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q33534652
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q33534652
+- id: imwas
+  name: Imwas
+  name_basis: vs1945
+  name_he: ‏עִמְוַאס‎
+  name_ar: ‏عِمواس‎
+  lon: 34.9927
+  lat: 31.842
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1450
+  listed_as:
+  - Imwas (Ramle subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q11711969
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q11711969
+  - https://en.wikipedia.org/wiki/Imwas
+- id: nahariya
+  name: Nahariya
+  name_basis: hebrew
+  today:
+    name: Nahariya
+    name_he: נהריה
+    source: https://www.wikidata.org/wiki/Q167749
+  name_he: נהריה
+  lon: 35.0925
+  lat: 33.0036
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 1440
+  listed_as:
+  - Nahariya (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q167749
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q167749
+  - https://en.wikipedia.org/wiki/Nahariya
+- id: al_khayriyya
+  name: Kheiriya
+  name_basis: vs1945
+  name_he: אל-ח'ירייה
+  name_ar: الخيرية
+  lon: 34.828
+  lat: 32.0371
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1420
+  listed_as:
+  - Kheiriya (El) (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702707
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702707
+  - https://en.wikipedia.org/wiki/Al-Khayriyya
+- id: innaba
+  name: Inaba
+  name_basis: vs1945
+  name_he: ענאבה
+  name_ar: عنابة
+  lon: 34.9476
+  lat: 31.9021
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1420
+  listed_as:
+  - Inaba (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q11712617
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q11712617
+  - https://en.wikipedia.org/wiki/Innaba
+- id: nabi_rubin
+  name: Nabi Rubin
+  name_basis: vs1945
+  name_he: נבי רובין
+  name_ar: النبي روبين
+  lon: 34.7337
+  lat: 31.9293
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1420
+  listed_as:
+  - Nabi Rubin (En) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2911822
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2911822
+  - https://en.wikipedia.org/wiki/Nabi_Rubin
+- id: nilin
+  name: Ni'lin
+  name_basis: vs1945
+  today:
+    name: Ni'lin
+    name_he: נעלין
+    source: https://www.wikidata.org/wiki/Q2918718
+  name_he: נעלין
+  name_ar: نعلين
+  lon: 35.0216
+  lat: 31.9466
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1420
+  listed_as:
+  - Ni‘lin (Ramle subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2918718
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918718
+  - https://en.wikipedia.org/wiki/Ni'lin
+- id: zirin
+  name: Zir'in
+  name_basis: vs1945
+  name_he: זירעין
+  name_ar: زِرْعين
+  lon: 35.3278
+  lat: 32.5575
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1420
+  listed_as:
+  - Zir‘in (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2899965
+  note: Wikidata Q2899965 P1082 (1945) = 1450; chose Village Statistics figure 1420 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2899965
+  - https://en.wikipedia.org/wiki/Zir'in
+- id: beit_iksa
+  name: Beit Iksa
+  name_basis: vs1945
+  today:
+    name: Beit Iksa
+    name_he: בית איכסא
+    source: https://www.wikidata.org/wiki/Q4881448
+  name_he: בית איכסא
+  name_ar: بيت إكسا
+  lon: 35.1806
+  lat: 31.8181
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1410
+  listed_as:
+  - Beit Iksa (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4881448
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4881448
+  - https://en.wikipedia.org/wiki/Beit_Iksa
+- id: beit_safafa
+  name: Beit Safafa
+  name_basis: vs1945
+  today:
+    name: Beit Safafa
+    name_he: בית צפאפא
+    source: https://www.wikidata.org/wiki/Q814904
+  name_he: בית צפאפא
+  name_ar: بيت صفافا
+  lon: 35.2056
+  lat: 31.7439
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1410
+  listed_as:
+  - Beit Safafa (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q814904
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q814904
+  - https://en.wikipedia.org/wiki/Beit_Safafa
+- id: al_mazraa_ash_sharqiya
+  name: Mazra'a esh Sharqiya
+  name_basis: vs1945
+  today:
+    name: Al-Mazra'a ash-Sharqiya
+    name_he: מזרעה א-שרקיה
+    source: https://www.wikidata.org/wiki/Q4702883
+  name_he: מזרעה א-שרקיה
+  name_ar: المزرعة الشرقية
+  lon: 35.2731
+  lat: 32.0033
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1400
+  listed_as:
+  - Mazra‘a esh Sharqiya (El) (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702883
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702883
+  - https://en.wikipedia.org/wiki/Al-Mazra'a_ash-Sharqiya
+- id: kafr_yasif
+  name: Kafr Yasif
+  name_basis: vs1945
+  today:
+    name: Kafr Yasif
+    name_he: כפר יאסיף
+    source: https://www.wikidata.org/wiki/Q2632879
+  name_he: כפר יאסיף
+  name_ar: كفرياسيف
+  lon: 35.1653
+  lat: 32.9547
+  kind: arab_village
+  type: village
+  landmark: church
+  population: 1400
+  listed_as:
+  - Kafr Yasif (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2632879
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2632879
+  - https://en.wikipedia.org/wiki/Kafr_Yasif
+- id: majd_al_krum
+  name: Majd el Kurum
+  name_basis: vs1945
+  today:
+    name: Majd al-Krum
+    name_he: מג׳ד אל־כרום
+    source: https://www.wikidata.org/wiki/Q2777868
+  name_he: מג׳ד אל־כרום
+  name_ar: مجد الكروم
+  lon: 35.2569
+  lat: 32.9214
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1400
+  listed_as:
+  - Majd el Kurum (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2777868
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2777868
+  - https://en.wikipedia.org/wiki/Majd_al-Krum
+- id: karatiyya
+  name: Karatiya
+  name_basis: vs1945
+  name_ar: كرتيا
+  lon: 34.7258
+  lat: 31.6436
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1370
+  listed_as:
+  - Karatiyā (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q11735547
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q11735547
+  - https://en.wikipedia.org/wiki/Karatiyya
+- id: biddya
+  name: Bidya
+  name_basis: vs1945
+  today:
+    name: Biddya
+    name_he: בידיה
+    source: https://www.wikidata.org/wiki/Q2533232
+  name_he: בידיה
+  name_ar: بديا
+  lon: 35.0775
+  lat: 32.1142
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1360
+  listed_as:
+  - Bidya (Nablus subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q2533232
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2533232
+  - https://en.wikipedia.org/wiki/Biddya
+- id: meithalun
+  name: Meithalun
+  name_basis: vs1945
+  today:
+    name: Meithalun
+    name_he: מיית'לון
+    source: https://www.wikidata.org/wiki/Q2898712
+  name_he: מיית'לון
+  name_ar: ميثلون
+  lon: 35.2733
+  lat: 32.3492
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1360
+  listed_as:
+  - Meithalun (Jenin subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2898712
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2898712
+  - https://en.wikipedia.org/wiki/Meithalun
+- id: simsim_gaza
+  name: Sumsum
+  name_basis: vs1945
+  name_ar: سمسم
+  lon: 34.6072
+  lat: 31.5672
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1360
+  listed_as:
+  - Sumsum (Gaza subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q7521263
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7521263
+  - https://en.wikipedia.org/wiki/Simsim,_Gaza
+- id: turan
+  name: Tur'an
+  name_basis: vs1945
+  today:
+    name: Tur'an
+    name_he: טורעאן
+    source: https://www.wikidata.org/wiki/Q2915766
+  name_he: טורעאן
+  name_ar: طرعان
+  lon: 35.3757
+  lat: 32.7769
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1350
+  listed_as:
+  - Tur‘an (Nazareth subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915766
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915766
+  - https://en.wikipedia.org/wiki/Tur'an
+- id: nazla
+  name: Nazla
+  name_basis: vs1945
+  today:
+    name: Nazla
+    name_he: נזלה
+    source: https://www.wikidata.org/wiki/Q6983510
+  name_he: נזלה
+  name_ar: النزلة
+  lon: 34.4822
+  lat: 31.5328
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1330
+  listed_as:
+  - Nazla (Gaza subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q6983510
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q6983510
+  - https://en.wikipedia.org/wiki/Nazla
+- id: taybeh_ramallah
+  name: Taiyiba
+  name_basis: vs1945
+  today:
+    name: Taybeh
+    name_he: טייבה
+    source: https://www.wikidata.org/wiki/Q931667
+  name_he: טייבה
+  name_ar: الطيبة، رام الله
+  lon: 35.3003
+  lat: 31.9544
+  kind: arab_village
+  type: village
+  landmark: church
+  population: 1330
+  listed_as:
+  - Taiyiba (Et) (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q931667
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q931667
+  - https://en.wikipedia.org/wiki/Taybeh,_Ramallah
+- id: wadi_al_hawarith
+  name: Wadi el Hawarith
+  name_basis: vs1945
+  name_he: ואדי אל-חוארת'
+  name_ar: وادي الحوارث
+  lon: 34.9
+  lat: 32.39
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1330
+  listed_as:
+  - Wadi el Hawarith (North) (Tulkarm subdistrict)
+  - Wadi el Hawarith (South) (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q13358574
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q13358574
+  - https://en.wikipedia.org/wiki/Wadi_al-Hawarith
+- id: nahef
+  name: Nahf
+  name_basis: vs1945
+  today:
+    name: Nahf
+    name_he: נחף
+    source: https://www.wikidata.org/wiki/Q2390257
+  name_he: נחף
+  name_ar: نحف
+  lon: 35.3175
+  lat: 32.9319
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1320
+  listed_as:
+  - Nahf (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2390257
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2390257
+  - https://en.wikipedia.org/wiki/Nahf
+- id: sinjil
+  name: Sinjil
+  name_basis: vs1945
+  today:
+    name: Sinjil
+    name_he: סינג'יל
+    source: https://www.wikidata.org/wiki/Q2909143
+  name_he: סינג'יל
+  name_ar: سنجل
+  lon: 35.2642
+  lat: 32.0331
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1320
+  listed_as:
+  - Sinjil (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2909143
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2909143
+  - https://en.wikipedia.org/wiki/Sinjil
+- id: al_damun
+  name: Damin
+  name_basis: vs1945
+  name_he: א-דאמון
+  name_ar: الدامون
+  lon: 35.1831
+  lat: 32.8769
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1310
+  listed_as:
+  - Damin (Ed) (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1186264
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1186264
+  - https://en.wikipedia.org/wiki/Damun
+- id: beit_ula
+  name: Beit Aula
+  name_basis: vs1945
+  today:
+    name: Beit Ula
+    name_he: בית אולא
+    source: https://www.wikidata.org/wiki/Q4881463
+  name_he: בית אולא
+  name_ar: بيت أولا
+  lon: 35.0288
+  lat: 31.596
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1310
+  listed_as:
+  - Beit Aula (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4881463
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4881463
+  - https://en.wikipedia.org/wiki/Beit_Ula
+- id: niilya
+  name: Ni'ilya
+  name_basis: vs1945
+  name_ar: نعليا
+  lon: 34.5717
+  lat: 31.6461
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1310
+  listed_as:
+  - Ni‘ilyā (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q13230591
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q13230591
+  - https://en.wikipedia.org/wiki/Ni'ilya
+- id: qabalan
+  name: Qabalan
+  name_basis: vs1945
+  today:
+    name: Qabalan
+    name_he: קבלאן
+    source: https://www.wikidata.org/wiki/Q7265686
+  name_he: קבלאן
+  name_ar: قبلان
+  lon: 35.2542
+  lat: 32.4786
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1310
+  listed_as:
+  - Qabalan (Nablus subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q7265686
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7265686
+  - https://en.wikipedia.org/wiki/Qabalan
+- id: huwara
+  name: Huwwara
+  name_basis: vs1945
+  today:
+    name: Huwara
+    name_he: חווארה
+    source: https://www.wikidata.org/wiki/Q2898928
+  name_he: חווארה
+  name_ar: حُوارة
+  lon: 35.2567
+  lat: 32.1525
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1300
+  listed_as:
+  - Huwwara (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2898928
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2898928
+  - https://en.wikipedia.org/wiki/Huwara
+- id: al_tira
+  name: Tira
+  name_basis: vs1945
+  name_he: טירה (רמלה)
+  name_ar: الطيرة
+  lon: 34.9431
+  lat: 32.0172
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1290
+  listed_as:
+  - Tira (Et) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703299
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703299
+  - https://en.wikipedia.org/wiki/Al-Tira,_Ramle
+- id: daburiyya
+  name: Daburiyya
+  name_basis: vs1945
+  today:
+    name: Daburiyya
+    name_he: דבורייה
+    source: https://www.wikidata.org/wiki/Q2915531
+  name_he: דבורייה
+  name_ar: دبُّورية
+  lon: 35.3703
+  lat: 32.6914
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1290
+  listed_as:
+  - Daburiyya (Nazareth subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2915531
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915531
+  - https://en.wikipedia.org/wiki/Daburiyya
+- id: kafr_thulth
+  name: Kafr Thulth
+  name_basis: vs1945
+  today:
+    name: Kafr Thulth
+    name_he: כפר ת'ולת'
+    source: https://www.wikidata.org/wiki/Q2903619
+  name_he: כפר ת'ולת'
+  name_ar: كفر ثلث
+  lon: 35.0442
+  lat: 32.1525
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1290
+  listed_as:
+  - Kafr Thulth (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2903619
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2903619
+  - https://en.wikipedia.org/wiki/Kafr_Thulth
+- id: reineh
+  name: Reina
+  name_basis: vs1945
+  today:
+    name: Reineh
+    name_he: ריינה
+    source: https://www.wikidata.org/wiki/Q2655682
+  name_he: ריינה
+  name_ar: الرينة
+  lon: 35.3158
+  lat: 32.7231
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1290
+  listed_as:
+  - Reina (Er) (Nazareth subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2655682
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2655682
+  - https://en.wikipedia.org/wiki/Reineh
+- id: tell_es_safi
+  name: Tell es Safi
+  name_basis: vs1945
+  name_he: תל צפית
+  name_ar: تل الصافي
+  lon: 34.8467
+  lat: 31.6994
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1290
+  listed_as:
+  - Tell es Safi (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2402271
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2402271
+  - https://en.wikipedia.org/wiki/Tell_es-Safi
+- id: rantis
+  name: Rantis
+  name_basis: vs1945
+  today:
+    name: Rantis
+    name_he: רנתיס
+    source: https://www.wikidata.org/wiki/Q7293548
+  name_he: רנתיס
+  name_ar: رنتيس
+  lon: 35.0194
+  lat: 32.0281
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1280
+  listed_as:
+  - Rantis (Ramle subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q7293548
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7293548
+  - https://en.wikipedia.org/wiki/Rantis
+- id: kfar_saba_2
+  name: Kafr Saba
+  name_basis: vs1945
+  today:
+    name: Kafr Saba
+    name_he: כפר סאבא
+    source: https://www.wikidata.org/wiki/Q6346204
+  name_he: כפר סאבא
+  name_ar: كفر سابا
+  lon: 34.9373
+  lat: 32.181
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1270
+  listed_as:
+  - Kafr Saba (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q6346204
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q6346204
+  - https://en.wikipedia.org/wiki/Kafr_Saba
+- id: kafr_manda
+  name: Kafr Manda
+  name_basis: vs1945
+  today:
+    name: Kafr Manda
+    name_he: כפר מנדא
+    source: https://www.wikidata.org/wiki/Q2915534
+  name_he: כפר מנדא
+  name_ar: كفر مندا
+  lon: 35.2667
+  lat: 32.8167
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1260
+  listed_as:
+  - Kafr Manda (Nazareth subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2915534
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915534
+  - https://en.wikipedia.org/wiki/Kafr_Manda
+- id: magdiel
+  name: Magdiel
+  name_basis: hebrew
+  today:
+    name: Hod HaSharon
+    name_he: הוד השרון
+    source: https://en.wikipedia.org/wiki/Magdiel
+  name_he: מגדיאל
+  lon: 34.9027
+  lat: 32.1613
+  kind: jewish_town
+  type: town
+  landmark: water_tower
+  population: 1260
+  listed_as:
+  - Magdiel (Jaffa subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q2910711
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2910711
+  - https://en.wikipedia.org/wiki/Magdiel
+- id: al_sindiyana
+  name: Sindiyana
+  name_basis: vs1945
+  name_he: אל-סינדיאנה
+  name_ar: السنديانة
+  lon: 35.0023
+  lat: 32.5568
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1250
+  listed_as:
+  - Sindiyana (Es) (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703260
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703260
+  - https://en.wikipedia.org/wiki/Al-Sindiyana
+- id: dayr_al_qassi
+  name: Deir el Qasi
+  name_basis: vs1945
+  name_he: דיר אל-קאסי
+  name_ar: دير القاسي
+  lon: 35.325
+  lat: 33.0352
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1250
+  listed_as:
+  - Deir el Qasi and El Mansura (Acre subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q5243305
+  note: the transcription reads 370 Muslims and 880 Christians, the reverse of the en.wikipedia article citing the same VS page (880 Muslims, 370 Christians); the 1922 and 1931 censuses give an all-Muslim village, and the Christians most likely belong to El Mansura, the row's second place. Mosque, pending a check of the scan (VS p. 2; Hadawi, Acre); the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5243305
+  - https://en.wikipedia.org/wiki/Dayr_al-Qasi
+- id: qibya
+  name: Qibya
+  name_basis: vs1945
+  today:
+    name: Qibya
+    name_he: קיביה
+    source: https://www.wikidata.org/wiki/Q599333
+  name_he: קיביה
+  name_ar: قبيا
+  lon: 35.0097
+  lat: 31.9775
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1250
+  listed_as:
+  - Qibya (Ramle subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q599333
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q599333
+  - https://en.wikipedia.org/wiki/Qibya
+- id: al_naima
+  name: Na'ima
+  name_basis: vs1945
+  name_ar: الناعمة، فلسطين
+  lon: 35.595
+  lat: 33.1882
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Na‘ima (En) (Safad subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q4703008
+  note: Wikidata Q4703008 P1082 (1945) = 1030; chose Village Statistics figure 1240 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703008
+  - https://en.wikipedia.org/wiki/Al-Na'ima
+- id: amka
+  name: Amqa
+  name_basis: vs1945
+  name_he: עמקה
+  name_ar: عمقا
+  lon: 35.1633
+  lat: 32.9794
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Amqa (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2914984
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2914984
+  - https://en.wikipedia.org/wiki/Amka
+- id: ash_shuyukh
+  name: Shuyukh
+  name_basis: vs1945
+  today:
+    name: Al-Shuyukh
+    name_he: אל שיוח'
+    source: https://www.wikidata.org/wiki/Q4804345
+  name_he: אל שיוח'
+  name_ar: الشيوخ
+  lon: 35.1499
+  lat: 31.5781
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Shuyukh, Esh (Hebron subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q4804345
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4804345
+  - https://en.wikipedia.org/wiki/Al-Shuyukh
+- id: bayt_nuba
+  name: Beit Nuba
+  name_basis: vs1945
+  name_he: בית נובא
+  name_ar: بيت نُوبا
+  lon: 35.0325
+  lat: 31.8533
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Beit Nuba and ‘Ajanul (Ramle subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q4874907
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4874907
+  - https://en.wikipedia.org/wiki/Bayt_Nuba
+- id: beit_furik
+  name: Beit Furik
+  name_basis: vs1945
+  today:
+    name: Beit Furik
+    name_he: בית פוריכ
+    source: https://www.wikidata.org/wiki/Q246369
+  name_he: בית פוריכ
+  name_ar: بيت فُورِيك
+  lon: 35.3364
+  lat: 32.1769
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Beit Furik (includes Khirbat Kafr Beita) (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q246369
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q246369
+  - https://en.wikipedia.org/wiki/Beit_Furik
+- id: ghuwayr_abu_shusha
+  name: Ghuweir Abu Shusha
+  name_basis: vs1945
+  name_he: ע'ויר אבו שושה
+  name_ar: غوير أبو شوشة
+  lon: 35.5094
+  lat: 32.8535
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Ghuweir Abu Shusha (Tiberias subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5557756
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5557756
+  - https://en.wikipedia.org/wiki/Ghuwayr_Abu_Shusha
+- id: jammain
+  name: Jamma'in
+  name_basis: vs1945
+  today:
+    name: Jamma'in
+    name_he: ג'מאעין
+    source: https://www.wikidata.org/wiki/Q2896581
+  name_he: ג'מאעין
+  name_ar: جَمّاعِين
+  lon: 35.2008
+  lat: 32.1311
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Jamma‘in (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2896581
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2896581
+  - https://en.wikipedia.org/wiki/Jamma'in
+- id: kafr_qaddum
+  name: Kafr Qaddum
+  name_basis: vs1945
+  today:
+    name: Kafr Qaddum
+    name_he: כפר קדום
+    source: https://www.wikidata.org/wiki/Q2896936
+  name_he: כפר קדום
+  name_ar: كفر قدوم
+  lon: 35.1428
+  lat: 32.2217
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1240
+  listed_as:
+  - Kafr Qaddum (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2896936
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2896936
+  - https://en.wikipedia.org/wiki/Kafr_Qaddum
+- id: al_jiyya
+  name: Jiya
+  name_basis: vs1945
+  name_ar: الجِيّة
+  lon: 34.5975
+  lat: 31.6272
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1230
+  listed_as:
+  - Jiya, El (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702641
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702641
+  - https://en.wikipedia.org/wiki/Al-Jiyya
+- id: yagur
+  name: Yagur
+  name_basis: hebrew
+  today:
+    name: Yagur
+    name_he: יגור
+    source: https://www.wikidata.org/wiki/Q586687
+  name_he: יגור
+  lon: 35.0772
+  lat: 32.7415
+  kind: kibbutz
+  type: kibbutz
+  landmark: water_tower
+  population: 1220
+  listed_as:
+  - Mesheq Yagur (Haifa subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q586687
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q586687
+  - https://en.wikipedia.org/wiki/Yagur
+- id: yalo
+  name: Yalu
+  name_basis: vs1945
+  name_he: יאלו
+  name_ar: يالو
+  lon: 35.0226
+  lat: 31.8405
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1220
+  listed_as:
+  - Yalu (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q11716708
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q11716708
+  - https://en.wikipedia.org/wiki/Yalo
+- id: qatra
+  name: Qatra
+  name_basis: vs1945
+  name_he: קטרה
+  name_ar: قطرة
+  lon: 34.7777
+  lat: 31.8229
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1210
+  listed_as:
+  - Qatra (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7267178
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7267178
+  - https://en.wikipedia.org/wiki/Qatra
+- id: al_mansi
+  name: Mansi
+  name_basis: vs1945
+  name_ar: المنسي
+  lon: 35.1727
+  lat: 32.5949
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1200
+  listed_as:
+  - Mansi (El, ‘Arab Baniha) (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2368058
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2368058
+  - https://en.wikipedia.org/wiki/Al-Mansi
+- id: burin
+  name: Burin
+  name_basis: vs1945
+  today:
+    name: Burin
+    name_he: בורין
+    source: https://www.wikidata.org/wiki/Q2896916
+  name_he: בורין
+  name_ar: بورين
+  lon: 35.2497
+  lat: 32.1842
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1200
+  listed_as:
+  - Burin and ‘Iraq Burin (Nablus subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q2896916
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2896916
+  - https://en.wikipedia.org/wiki/Burin,_Nablus
+- id: azzoun
+  name: Azzun
+  name_basis: vs1945
+  today:
+    name: Azzun
+    name_he: עזון
+    source: https://www.wikidata.org/wiki/Q2918963
+  name_he: עזון
+  name_ar: عزون
+  lon: 35.0596
+  lat: 32.1765
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1190
+  listed_as:
+  - Azzun and En Nabi Ilyas and ‘Isla (Tulkarm subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q2918963
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918963
+  - https://en.wikipedia.org/wiki/Azzun
+- id: deir_istiya
+  name: Deir Istiya
+  name_basis: vs1945
+  today:
+    name: Deir Istiya
+    name_he: דיר איסתיא
+    source: https://www.wikidata.org/wiki/Q5252508
+  name_he: דיר איסתיא
+  name_ar: دير استيا
+  lon: 35.14
+  lat: 32.1306
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1190
+  listed_as:
+  - Deir Istiya (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q5252508
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5252508
+  - https://en.wikipedia.org/wiki/Deir_Istiya
+- id: hittin
+  name: Hittin
+  name_basis: vs1945
+  name_he: חיטין
+  name_ar: حطين
+  lon: 35.4538
+  lat: 32.8076
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1190
+  listed_as:
+  - Hittin (Tiberias subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1246960
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1246960
+  - https://en.wikipedia.org/wiki/Hittin
+- id: az_zakariyya
+  name: Zakariya
+  name_basis: vs1945
+  name_ar: قرية زكريا
+  lon: 34.9472
+  lat: 31.7084
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1180
+  listed_as:
+  - Zakariya (Hebron subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q4831967
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4831967
+  - https://en.wikipedia.org/wiki/Az-Zakariyya
+- id: jusayr
+  name: Juseir
+  name_basis: vs1945
+  name_he: ג'וסר
+  name_ar: جسير
+  lon: 34.7708
+  lat: 31.6569
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1180
+  listed_as:
+  - Juseir (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q11695929
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q11695929
+  - https://en.wikipedia.org/wiki/Jusayr
+- id: al_muzayria
+  name: Muzeiri'a
+  name_basis: vs1945
+  name_he: אל-מוזירע
+  name_ar: المزيرعة
+  lon: 34.9496
+  lat: 32.0491
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1160
+  listed_as:
+  - Muzeiri‘a (El) (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4119830
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4119830
+  - https://en.wikipedia.org/wiki/Al-Muzayri'a
+- id: al_jauna
+  name: Ja'una
+  name_basis: vs1945
+  name_he: ג'עוני
+  name_ar: الجاعونة
+  lon: 35.5327
+  lat: 32.9716
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1150
+  listed_as:
+  - Ja‘una (Safad subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702571
+  note: Wikidata Q4702571 P1082 (1945) = 799; chose Village Statistics figure 1150 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702571
+  - https://en.wikipedia.org/wiki/Al-Ja'una
+- id: qatanna
+  name: Qatanna
+  name_basis: vs1945
+  today:
+    name: Qatanna
+    name_he: קטנה
+    source: https://www.wikidata.org/wiki/Q7267085
+  name_he: קטנה
+  name_ar: قطنة، القدس
+  lon: 35.1088
+  lat: 31.8315
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1150
+  listed_as:
+  - Qatanna (Jerusalem subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q7267085
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7267085
+  - https://en.wikipedia.org/wiki/Qatanna
+- id: jaba
+  name: Jaba'
+  name_basis: vs1945
+  name_he: ג'בע (כרמל)
+  name_ar: جَبَع( حيفا)
+  lon: 34.962
+  lat: 32.6513
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1140
+  listed_as:
+  - Jaba‘ (Haifa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4118648
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4118648
+  - https://en.wikipedia.org/wiki/Jaba',_Haifa
+- id: al_khader
+  name: Khadr
+  name_basis: vs1945
+  today:
+    name: Al-Khader
+    name_he: אל-ח'דר
+    source: https://www.wikidata.org/wiki/Q1996562
+  name_he: אל-ח'דר
+  name_ar: الخضر، بيت لحم
+  lon: 35.1664
+  lat: 31.6927
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1130
+  listed_as:
+  - Khadr (El) (Jerusalem subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1996562
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1996562
+  - https://en.wikipedia.org/wiki/Al-Khader
+- id: sasa
+  name: Sa'sa'
+  name_basis: vs1945
+  name_he: סעסע
+  name_ar: سعسع، فلسطين
+  lon: 35.3944
+  lat: 33.0287
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1130
+  listed_as:
+  - Sa‘sa‘ (Safad subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q12468030
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q12468030
+  - https://en.wikipedia.org/wiki/Sa'sa',_Palestine
+- id: suhmata
+  name: Suhmata
+  name_basis: vs1945
+  name_he: סוחמאתא
+  name_ar: سحماتا
+  lon: 35.3038
+  lat: 33.0052
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1130
+  listed_as:
+  - Suhmata (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2777621
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2777621
+  - https://en.wikipedia.org/wiki/Suhmata
+- id: caesarea
+  name: Qisariya
+  name_basis: vs1945
+  today:
+    name: Caesarea
+    name_he: קיסריה
+    source: https://www.wikidata.org/wiki/Q1615560
+  name_he: קיסריה
+  name_ar: قيسارية
+  lon: 34.9
+  lat: 32.5
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1120
+  listed_as:
+  - Qisariya (Caesarea) (Haifa subdistrict)
+  match: medium
+  owner_verify: true
+  wikidata: Q1615560
+  note: Wikidata Q1615560 P1082 (1945) = 960; chose Village Statistics figure 1120 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1615560
+  - https://en.wikipedia.org/wiki/Caesarea_(modern_town)
+- id: jatt
+  name: Jatt
+  name_basis: vs1945
+  today:
+    name: Jatt
+    name_he: ג'ת
+    source: https://www.wikidata.org/wiki/Q2911762
+  name_he: ג'ת
+  name_ar: جت
+  lon: 35.0361
+  lat: 32.4306
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1120
+  listed_as:
+  - Jatt (Tulkarm subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2911762
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2911762
+  - https://en.wikipedia.org/wiki/Jatt,_Israel
+- id: qusra
+  name: Qusra
+  name_basis: vs1945
+  today:
+    name: Qusra
+    name_he: קוסרא
+    source: https://www.wikidata.org/wiki/Q3928087
+  name_he: קוסרא
+  name_ar: قصرة
+  lon: 35.33
+  lat: 32.0853
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1120
+  listed_as:
+  - Qusra (Nablus subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q3928087
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q3928087
+  - https://en.wikipedia.org/wiki/Qusra
+- id: iksal
+  name: Iksal
+  name_basis: vs1945
+  today:
+    name: Iksal
+    name_he: אכסאל
+    source: https://www.wikidata.org/wiki/Q2915526
+  name_he: אכסאל
+  name_ar: إكسال
+  lon: 35.3244
+  lat: 32.6825
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1110
+  listed_as:
+  - Iksal (Nazareth subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2915526
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915526
+  - https://en.wikipedia.org/wiki/Iksal
+- id: deir_al_asad
+  name: Deir el Asad
+  name_basis: vs1945
+  today:
+    name: Deir al-Asad
+    name_he: דיר אל-אסד
+    source: https://www.wikidata.org/wiki/Q612599
+  name_he: דיר אל-אסד
+  name_ar: دير الأسد
+  lon: 35.2719
+  lat: 32.9364
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1100
+  listed_as:
+  - Deir el Asad (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q612599
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q612599
+  - https://en.wikipedia.org/wiki/Deir_al-Asad
+- id: kafr_malik
+  name: Kafr Malik
+  name_basis: vs1945
+  today:
+    name: Kafr Malik
+    name_he: כפר מאלכ
+    source: https://www.wikidata.org/wiki/Q6346188
+  name_he: כפר מאלכ
+  name_ar: كفر مالك
+  lon: 35.3089
+  lat: 31.9897
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1100
+  listed_as:
+  - Kafr Malik (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q6346188
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q6346188
+  - https://en.wikipedia.org/wiki/Kafr_Malik
+- id: saqiya
+  name: Saqiya
+  name_basis: vs1945
+  name_he: סאקיה
+  name_ar: ساقية
+  lon: 34.8431
+  lat: 32.029
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1100
+  listed_as:
+  - Saqiya (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7421230
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7421230
+  - https://en.wikipedia.org/wiki/Saqiya
+- id: jish
+  name: Jish
+  name_basis: vs1945
+  today:
+    name: Jish
+    name_he: ג׳ש (גוש חלב)
+    source: https://www.wikidata.org/wiki/Q1527236
+  name_he: ג׳ש (גוש חלב)
+  name_ar: الجِش
+  lon: 35.4447
+  lat: 33.0258
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1090
+  listed_as:
+  - Jish (Safad subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1527236
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1527236
+  - https://en.wikipedia.org/wiki/Jish
+- id: aboud
+  name: Abud
+  name_basis: vs1945
+  today:
+    name: Aboud
+    name_he: עאבוד
+    source: https://www.wikidata.org/wiki/Q2821768
+  name_he: עאבוד
+  name_ar: عابود
+  lon: 35.0681
+  lat: 32.015
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1080
+  listed_as:
+  - Abud (Ramallah subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2821768
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2821768
+  - https://en.wikipedia.org/wiki/Aboud
+- id: al_jammasin_al_gharbi
+  name: Jammasin el Gharbi
+  name_basis: vs1945
+  name_he: ג'מאסין אל ע'רבי
+  name_ar: الجماسين الغربي
+  lon: 34.7971
+  lat: 32.0926
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1080
+  listed_as:
+  - Jammasin el Gharbi (Jaffa subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4702609
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702609
+  - https://en.wikipedia.org/wiki/Al-Jammasin_al-Gharbi
+- id: al_manshiyya_acre
+  name: Manshiya
+  name_basis: vs1945
+  name_he: מנשייה (עכו)
+  name_ar: المنشية
+  lon: 35.0905
+  lat: 32.9351
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1080
+  listed_as:
+  - Manshiya (Acre subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q4702804
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4702804
+  - https://en.wikipedia.org/wiki/Al-Manshiyya,_Acre
+- id: deir_jarir
+  name: Deir Jarir
+  name_basis: vs1945
+  today:
+    name: Deir Jarir
+    name_he: דיר ג'ריר
+    source: https://www.wikidata.org/wiki/Q5252515
+  name_he: דיר ג'ריר
+  name_ar: دير جرير
+  lon: 35.2958
+  lat: 31.9644
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1080
+  listed_as:
+  - Deir Jarir (Ramallah subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q5252515
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q5252515
+  - https://en.wikipedia.org/wiki/Deir_Jarir
+- id: saliha
+  name: Saliha
+  name_basis: vs1945
+  name_he: צליחא
+  name_ar: صلحا
+  lon: 35.4722
+  lat: 33.0752
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1070
+  listed_as:
+  - Saliha (includes Marun er Ras and Yarun) (Safad subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q7404513
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7404513
+  - https://en.wikipedia.org/wiki/Saliha
+- id: yafa_an_naseriyye
+  name: Yafa
+  name_basis: vs1945
+  today:
+    name: Yafa an-Naseriyye
+    name_he: יפיע
+    source: https://www.wikidata.org/wiki/Q2468131
+  name_he: יפיע
+  name_ar: يافة الناصرة
+  lon: 35.2753
+  lat: 32.6869
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1070
+  listed_as:
+  - Yafa (Nazareth subdistrict)
+  match: manual
+  owner_verify: true
+  wikidata: Q2468131
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2468131
+  - https://en.wikipedia.org/wiki/Yafa_an-Naseriyye
+- id: yasur
+  name: Yasur
+  name_basis: vs1945
+  name_he: יאצור
+  name_ar: ياصور
+  lon: 34.748
+  lat: 31.7656
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1070
+  listed_as:
+  - Yasūr (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4166540
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4166540
+  - https://en.wikipedia.org/wiki/Yasur,_Gaza
+- id: al_eizariya
+  name: Eizariya
+  name_basis: vs1945
+  today:
+    name: Al-Eizariya
+    name_he: אלעיזריה
+    source: https://www.wikidata.org/wiki/Q2181579
+  name_he: אלעיזריה
+  name_ar: العيزرية
+  lon: 35.2644
+  lat: 31.77
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1060
+  listed_as:
+  - Eizariya (El) (Jerusalem subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2181579
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2181579
+  - https://en.wikipedia.org/wiki/Al-Eizariya
+- id: al_qubayba_hebron
+  name: Qubeiba
+  name_basis: vs1945
+  name_ar: القبيبة، الخليل
+  lon: 34.8545
+  lat: 31.5705
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1060
+  listed_as:
+  - Qubeiba, El (Hebron subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703092
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703092
+  - https://en.wikipedia.org/wiki/Al-Qubayba,_Hebron
+- id: bayt_tima
+  name: Beit Tima
+  name_basis: vs1945
+  name_he: בית טימא
+  name_ar: بيت طيما
+  lon: 34.6392
+  lat: 31.6233
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1060
+  listed_as:
+  - Beit Ṭimā (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4874922
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4874922
+  - https://en.wikipedia.org/wiki/Bayt_Tima
+- id: irtah
+  name: Irtah
+  name_basis: vs1945
+  today:
+    name: Irtah
+    name_he: אירתח
+    source: https://www.wikidata.org/wiki/Q12182129
+  name_he: אירתח
+  name_ar: ارتاح
+  lon: 35.0166
+  lat: 32.2977
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1060
+  listed_as:
+  - Irtah (Tulkarm subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q12182129
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q12182129
+- id: tell_nablus
+  name: Tell
+  name_basis: vs1945
+  today:
+    name: Tell
+    name_he: תל
+    source: https://www.wikidata.org/wiki/Q7697359
+  name_he: תל
+  name_ar: تِل، نابلس
+  lon: 35.2129
+  lat: 32.2007
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1060
+  listed_as:
+  - Tell (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7697359
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7697359
+  - https://en.wikipedia.org/wiki/Tell,_Nablus
+- id: al_zuq_al_tahtani
+  name: Zuq et Tahtani
+  name_basis: vs1945
+  name_ar: الزوق التحتاني
+  lon: 35.6011
+  lat: 33.215
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1050
+  listed_as:
+  - Zuq et Tahtani (Ez) (Safad subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703391
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703391
+  - https://en.wikipedia.org/wiki/Al-Zuq_al-Tahtani
+- id: battir
+  name: Battir
+  name_basis: vs1945
+  today:
+    name: Battir
+    name_he: בתיר
+    source: https://www.wikidata.org/wiki/Q2915285
+  name_he: בתיר
+  name_ar: بتير
+  lon: 35.1367
+  lat: 31.7247
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1050
+  listed_as:
+  - Battir (Jerusalem subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q2915285
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2915285
+  - https://en.wikipedia.org/wiki/Battir
+- id: fassuta
+  name: Fassuta
+  name_basis: vs1945
+  today:
+    name: Fassuta
+    name_he: פסוטה
+    source: https://www.wikidata.org/wiki/Q2917294
+  name_he: פסוטה
+  name_ar: فسوطة
+  lon: 35.3058
+  lat: 33.0494
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1050
+  listed_as:
+  - Fassuta (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2917294
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2917294
+  - https://en.wikipedia.org/wiki/Fassuta
+- id: kuwaykat
+  name: Kuweikat
+  name_basis: vs1945
+  name_he: כויכאת
+  name_ar: كويكات
+  lon: 35.1465
+  lat: 32.9711
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1050
+  listed_as:
+  - Kuweikat (Acre subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q3545099
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q3545099
+  - https://en.wikipedia.org/wiki/Kuwaykat
+- id: beit_liqya
+  name: Beit Liqya
+  name_basis: vs1945
+  today:
+    name: Beit Liqya
+    name_he: בית ליקיא
+    source: https://www.wikidata.org/wiki/Q4881453
+  name_he: בית ליקיא
+  name_ar: بيت لقيا
+  lon: 35.0669
+  lat: 31.8692
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1040
+  listed_as:
+  - Beit Liqya (Ramallah subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q4881453
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4881453
+  - https://en.wikipedia.org/wiki/Beit_Liqya
+- id: ein_mahil
+  name: Ein Mahil
+  name_basis: vs1945
+  today:
+    name: Ein Mahil
+    name_he: עין מאהל
+    source: https://www.wikidata.org/wiki/Q730195
+  name_he: עין מאהל
+  name_ar: عين ماهل
+  lon: 35.3522
+  lat: 32.723
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1040
+  listed_as:
+  - Ein Mahil (Nazareth subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q730195
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q730195
+  - https://en.wikipedia.org/wiki/Ein_Mahil
+- id: sarafand_al_kharab
+  name: Sarafand el Kharab
+  name_basis: vs1945
+  name_he: סרפנד אל-חרב
+  name_ar: صرفند الخراب
+  lon: 34.8056
+  lat: 31.9363
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1040
+  listed_as:
+  - Sarafand el Kharab (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q7421983
+  note: Wikidata Q7421983 P1082 (1945) = 840; chose Village Statistics figure 1040 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q7421983
+  - https://en.wikipedia.org/wiki/Sarafand_al-Kharab
+- id: al_sawafir_al_gharbiyya
+  name: Sawafir el Gharbiya
+  name_basis: vs1945
+  name_ar: السوافير الغربية
+  lon: 34.7031
+  lat: 31.6992
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1030
+  listed_as:
+  - Sawāfīr el Gharbīya, Es (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q4703196
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q4703196
+  - https://en.wikipedia.org/wiki/Al-Sawafir_al-Gharbiyya
+- id: julis_2
+  name: Julis
+  name_basis: vs1945
+  name_he: ג'וליס
+  name_ar: جولس
+  lon: 34.6535
+  lat: 31.6817
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1030
+  listed_as:
+  - Jūlis (Gaza subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2918322
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918322
+  - https://en.wikipedia.org/wiki/Julis,_Gaza
+- id: al_ghazzawiyya
+  name: Ghazawiya
+  name_basis: vs1945
+  name_ar: الغزاوية، بيسان
+  lon: 35.5415
+  lat: 32.5021
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1020
+  listed_as:
+  - Ghazawiya (El) (Beisan subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q860809
+  note: Wikidata Q860809 P1082 (1945) = 1000; chose Village Statistics figure 1020 (primary source, one value for every place)
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q860809
+  - https://en.wikipedia.org/wiki/Al-Ghazzawiyya
+- id: ashdot_yaakov
+  name: Ashdot Ya'akov
+  name_basis: hebrew
+  today:
+    name: Ashdot Ya'akov
+    name_he: אשדות יעקב
+    source: https://www.wikidata.org/wiki/Q2891543
+  name_he: אשדות יעקב
+  lon: 35.5819
+  lat: 32.6581
+  kind: kibbutz
+  type: kibbutz
+  landmark: water_tower
+  population: 1020
+  listed_as:
+  - Ashdot Ya‘aqov (Tiberias subdistrict)
+  match: low
+  owner_verify: true
+  wikidata: Q2891543
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2891543
+  - https://en.wikipedia.org/wiki/Ashdot_Ya'akov
+- id: sanur_jenin
+  name: Sanur
+  name_basis: vs1945
+  today:
+    name: Sanur
+    name_he: סנור
+    source: https://www.wikidata.org/wiki/Q2384654
+  name_he: סנור
+  name_ar: صانور
+  lon: 35.2469
+  lat: 32.3564
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1020
+  listed_as:
+  - Sanur (includes Nukheil) (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2384654
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2384654
+  - https://en.wikipedia.org/wiki/Sanur,_Jenin
+- id: sebastia
+  name: Sabastiya
+  name_basis: vs1945
+  today:
+    name: Sebastia
+    name_he: סבסטיה
+    source: https://www.wikidata.org/wiki/Q2918480
+  name_he: סבסטיה
+  name_ar: سبسطية
+  lon: 35.1833
+  lat: 32.2667
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1020
+  listed_as:
+  - Sabastiya (Nablus subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2918480
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2918480
+  - https://en.wikipedia.org/wiki/Sebastia,_Nablus
+- id: givat_brenner
+  name: Givat Brenner
+  name_basis: hebrew
+  today:
+    name: Givat Brenner
+    name_he: גבעת ברנר
+    source: https://www.wikidata.org/wiki/Q476835
+  name_he: גבעת ברנר
+  lon: 34.8003
+  lat: 31.8644
+  kind: kibbutz
+  type: kibbutz
+  landmark: water_tower
+  population: 1010
+  listed_as:
+  - Giv‘at Brenner (Ramle subdistrict)
+  match: medium
+  owner_verify: false
+  wikidata: Q476835
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q476835
+  - https://en.wikipedia.org/wiki/Givat_Brenner
+- id: qula
+  name: Qula
+  name_basis: vs1945
+  name_he: קולה
+  name_ar: قرية قولة
+  lon: 34.9565
+  lat: 32.0381
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1010
+  listed_as:
+  - Qula (Ramle subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q1107567
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q1107567
+  - https://en.wikipedia.org/wiki/Qula
+- id: bartaa
+  name: Barta'a
+  name_basis: vs1945
+  today:
+    name: Barta'a
+    name_he: ברטעה
+    source: https://www.wikidata.org/wiki/Q2885908
+  name_he: ברטעה
+  name_ar: برطعة
+  lon: 35.0921
+  lat: 32.4744
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1000
+  listed_as:
+  - Barta‘a (includes Khirbat Tura el Gharbiya) (Jenin subdistrict)
+  match: high
+  owner_verify: false
+  wikidata: Q2885908
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2885908
+  - https://en.wikipedia.org/wiki/Barta'a
+- id: tarbikha
+  name: Tarbiha
+  name_basis: vs1945
+  name_he: תרביחא
+  name_ar: تربيخا
+  lon: 35.2843
+  lat: 33.0826
+  kind: arab_village
+  type: village
+  landmark: mosque
+  population: 1000
+  listed_as:
+  - Tarbiha (includes En Nabi Rubin and Suruh) (Acre subdistrict)
+  match: high
+  owner_verify: true
+  wikidata: Q2777821
+  note: the VS row names more than one place; the kit is sized on the whole row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+  - https://www.wikidata.org/wiki/Q2777821
+  - https://en.wikipedia.org/wiki/Tarbikha
+encampments:
+- subdistrict: beersheba
+  population: 47980
+  listed_as:
+  - Jubarat Tribes
+  note: VS lists the Ahyawat, Azazima, Hanajira, Jubarat, Sa'idiyin, Tarabin and Tayaha tribes; the transcription gives the one figure, 47,980, on the Jubarat row
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: jerusalem
+  population: 7070
+  listed_as:
+  - Tribal Units – 'Arab Ibn 'Ubeid, 'Arab er Rashaida, 'Arab es Sawahira, 'Arab et Ta'amira
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: hebron
+  population: 2000
+  listed_as:
+  - Arab el Jahalin (Dawahik, Ed; Dhalamat, Edh; Sarayi'a, Es)
+  note: the draft placed this tribe at its Wikidata point east of Jerusalem, which is not a 1948 location; counted here instead
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: ramle
+  population: 3780
+  listed_as:
+  - Nomadic
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: jaffa
+  population: 2270
+  listed_as:
+  - Nomadic
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: safad
+  population: 820
+  listed_as:
+  - Nomads
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: gaza
+  population: 530
+  listed_as:
+  - Nomads
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
+- subdistrict: nablus
+  population: 220
+  listed_as:
+  - Nomadic
+  checked: '2026-10-11'
+  status: draft
+  sources:
+  - https://en.wikipedia.org/w/index.php?title=Village_Statistics,_1945&oldid=1359600351
