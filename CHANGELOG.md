@@ -152,3 +152,6 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - "International Standing" keeps to one line on a full-width bar.
 - The open sea no longer shows a blocky checker up close (about 6-20 km): its waves now come from smooth gradient noise
   on rotated lattices instead of value noise differenced along the map's axes. Presentation only.
+- Panning past the map's edge no longer fills the view with flat land and a hard seam: the camera stops where the view
+  meets the edge of the map, and at close zoom over high ground (the Golan, the Galilee hills) it no longer sinks into
+  the hills. At the overview, where the view is wider than the map, it is centred east to west (#174).

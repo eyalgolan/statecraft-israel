@@ -2,7 +2,10 @@
 
 Plan: `docs/superpowers/plans/2026-10-11-statecraft-visual-v1.md`. Promo targets: `promo/final/03-gameplay-1936.png`,
 `promo/final/02-map-diorama.png`. Poses: `PromoPose.Gameplay03` (34.86 E, 32.00 N, 60 km, yaw 10) and
-`PromoPose.Diorama02` (35.05 E, 31.55 N, 250 km, yaw 0).
+`PromoPose.Diorama02` (35.05 E, 31.55 N, 250 km, yaw 0). Since #174 the camera keeps its view on the map, and centres
+it east to west wherever the view is wider than the map. In the player, which runs that fit every frame, diorama02 can
+shift by up to a few hundred metres from its pose. The controller accepted this (owner-delegated). The other poses do
+not move.
 
 ## How to measure
 - Frame time: `?vprofile` (WebGL) or `-vprofile` (desktop player, quits when done), always under

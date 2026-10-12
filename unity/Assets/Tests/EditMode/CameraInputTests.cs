@@ -11,11 +11,15 @@ public class CameraInputTests
     {
         var go = new GameObject("RigTest", typeof(Camera));
         var rig = go.AddComponent<CameraRig>();
-        rig.LookAt = new Vector3(50000, 0, 50000); rig.Distance = 100000f;
+        rig.LookAt = new Vector3(500000, 0, 500000); rig.Distance = 100000f;
         return rig;
     }
 
-    static readonly Rect Map = new Rect(0, 0, 160000, 430000);
+    /// <summary>A map far larger than the view, so the input tests below never meet the view clamp (issue #174), which
+    /// the edge tests further down check on a map the size of the real one.</summary>
+    static readonly Rect Map = new Rect(0, 0, 1000000, 1000000);
+    /// <summary>The real terrain's size (heightmap.json: 161.5 x 431.2 km).</summary>
+    static readonly Rect RealMap = new Rect(0, 0, 161529f, 431223f);
 
     [Test]
     public void TheCameraActionMapIsInTheProjectWideAsset()
@@ -50,8 +54,8 @@ public class CameraInputTests
         try
         {
             CameraController.Step(rig, new CameraInput { Pan = Vector2.up }, 0.5f, Map);
-            Assert.AreEqual(50000f, rig.LookAt.x, 1e-2);
-            Assert.AreEqual(50000f + 0.4f * 100000f, rig.LookAt.z, 1e-1);   // 0.8 distances per second for half a second
+            Assert.AreEqual(500000f, rig.LookAt.x, 1e-2);
+            Assert.AreEqual(500000f + 0.4f * 100000f, rig.LookAt.z, 1e-1);   // 0.8 distances per second for half a second
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
@@ -67,8 +71,9 @@ public class CameraInputTests
             CameraController.Step(rig, new CameraInput { Orbit = 1 }, 0.5f, Map);
             Assert.AreEqual(30f, rig.Yaw, 1e-3);
             Assert.AreEqual(30f, rig.transform.eulerAngles.y, 1e-3);
-            CameraController.Step(rig, new CameraInput { Pan = Vector2.left }, 100f, Map);
-            Assert.AreEqual(0f, rig.LookAt.x, 1e-3);                       // clamped to the map edge
+            CameraController.Step(rig, new CameraInput { Pan = Vector2.left }, 1000f, Map);
+            // Clamped so the view's west edge is the map's (issue #174), not the look-at point.
+            Assert.AreEqual(Map.xMin, rig.LookAt.x + CameraController.ViewFootprint(rig).xMin, 1f);
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
@@ -98,7 +103,7 @@ public class CameraInputTests
             CameraController.Step(rig, new CameraInput { Pan = Vector2.up, Orbit = 1, Zoom = 1, OverUi = true }, 0.5f, Map);
             Assert.AreEqual(100000f, rig.Distance, 1e-3);                 // the wheel was over the UI
             Assert.AreEqual(30f, rig.Yaw, 1e-3);
-            Assert.Greater(rig.LookAt.z, 50000f);
+            Assert.Greater(rig.LookAt.z, 500000f);
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
@@ -126,8 +131,8 @@ public class CameraInputTests
         {
             rig.Yaw = 90f;   // looking east: forward is +x
             CameraController.Step(rig, new CameraInput { Pan = Vector2.up }, 0.5f, Map);
-            Assert.AreEqual(50000f + 0.4f * 100000f, rig.LookAt.x, 1f);
-            Assert.AreEqual(50000f, rig.LookAt.z, 1f);
+            Assert.AreEqual(500000f + 0.4f * 100000f, rig.LookAt.x, 1f);
+            Assert.AreEqual(500000f, rig.LookAt.z, 1f);
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
@@ -178,6 +183,141 @@ public class CameraInputTests
             Assert.AreEqual(b.Yaw, a.Yaw, 1e-4);
         }
         finally { Object.DestroyImmediate(a.gameObject); Object.DestroyImmediate(b.gameObject); }
+    }
+
+    /// <summary>The view's ground on the map at the rig's current pose: [look-at + footprint] inside the map, within tol.</summary>
+    static void AssertViewOnMap(CameraRig rig, Rect map, string what, float tol = 1f)
+    {
+        var f = CameraController.ViewFootprint(rig);
+        Assert.GreaterOrEqual(rig.LookAt.x + f.xMin, map.xMin - tol, what + ": west");
+        Assert.LessOrEqual(rig.LookAt.x + f.xMax, map.xMax + tol, what + ": east");
+        Assert.GreaterOrEqual(rig.LookAt.z + f.yMin, map.yMin - tol, what + ": south");
+        Assert.LessOrEqual(rig.LookAt.z + f.yMax, map.yMax + tol, what + ": north");
+    }
+
+    /// <summary>Issue #174: panning past a corner at gameplay zoom stops where the view's edges meet the map's, at every
+    /// yaw and with the top bar's inset, so the border skirt never shows. (The look-at clamp alone left 3/4 of the view on it.)</summary>
+    [Test]
+    public void PanningPastACornerKeepsTheViewOnTheMap()
+    {
+        var rig = NewRig();
+        try
+        {
+            var cam = rig.GetComponent<Camera>(); cam.aspect = 16f / 9f; cam.fieldOfView = CameraRig.Fov;   // the game's view (Init is not run here)
+            foreach (var d in new[] { CameraController.MinDistance, 30000f, 60000f })
+                foreach (var yaw in new[] { 0f, 45f, 90f, 200f })
+                    foreach (var inset in new[] { 0f, 0.1f })
+                        foreach (var dir in new[] { new Vector2(1, 1), new Vector2(-1, 1), new Vector2(1, -1), new Vector2(-1, -1) })
+                        {
+                            rig.LookAt = new Vector3(RealMap.center.x, 0, RealMap.center.y); rig.Distance = d; rig.Yaw = yaw; rig.TopInset = inset;
+                            var what = $"{d / 1000f} km, yaw {yaw}, inset {inset}, pan {dir}";
+                            for (int i = 0; i < 120; i++) CameraController.Step(rig, new CameraInput { Pan = dir }, 0.5f, RealMap);
+                            AssertViewOnMap(rig, RealMap, what);
+                            // and it got there: the view touches the map's edge on at least one side
+                            var f = CameraController.ViewFootprint(rig);
+                            float gap = Mathf.Min(Mathf.Abs(rig.LookAt.x + f.xMin - RealMap.xMin), Mathf.Abs(rig.LookAt.x + f.xMax - RealMap.xMax),
+                                Mathf.Abs(rig.LookAt.z + f.yMin - RealMap.yMin), Mathf.Abs(rig.LookAt.z + f.yMax - RealMap.yMax));
+                            Assert.Less(gap, 1f, what + ": the pan reached the edge");
+                        }
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>Issue #174: where the view is wider than the map (the overview), it is centred on the map on that axis, and
+    /// zooming out at the edge moves the view smoothly rather than jumping (the clamp narrows to the centre continuously).</summary>
+    [Test]
+    public void AViewWiderThanTheMapIsCentredAndZoomingOutNeverJumps()
+    {
+        var rig = NewRig();
+        try
+        {
+            var cam = rig.GetComponent<Camera>(); cam.aspect = 16f / 9f; cam.fieldOfView = CameraRig.Fov;   // the game's view (Init is not run here)
+            rig.LookAt = new Vector3(RealMap.xMax, 0, RealMap.center.y); rig.Distance = CameraController.MinDistance; rig.Yaw = 0;
+            CameraController.Step(rig, new CameraInput { Pan = Vector2.right }, 10f, RealMap);
+            float worst = 0f;
+            while (rig.Distance < CameraController.MaxDistance - 1f)
+            {
+                var before = rig.LookAt;
+                CameraController.Step(rig, new CameraInput { Zoom = -0.2f, Pan = Vector2.right }, 0.016f, RealMap);
+                // a frame's pan alone moves 0.8 * 0.016 distances; the clamp may add the view's growth, a few % of it
+                worst = Mathf.Max(worst, (rig.LookAt - before).magnitude / rig.Distance);
+                if (CameraController.ViewFootprint(rig).width <= RealMap.width)
+                    AssertViewOnMap(rig, RealMap, $"{rig.Distance / 1000f:0} km");
+            }
+            Assert.Less(worst, 0.05f, "no jump while zooming out at the edge");
+            var f = CameraController.ViewFootprint(rig);
+            Assert.Greater(f.width, RealMap.width, "at the overview the view is wider than the map");
+            Assert.AreEqual(RealMap.center.x, rig.LookAt.x + f.center.x, 1f, "so it is centred on the map");
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>Issue #174: over low ground the look-at point stays on y = 0 (the approved framing); over ground high enough
+    /// to come within MinClearanceShare of the camera, it is lifted just enough, and dropped again on the way back down.</summary>
+    [Test]
+    public void TheCameraIsLiftedOnlyOverHighGround()
+    {
+        var rig = NewRig();
+        try
+        {
+            rig.Distance = CameraController.MinDistance;
+            float height = rig.Distance * Mathf.Sin(CameraRig.Pitch * Mathf.Deg2Rad);
+            float groundY = 0f;
+            System.Func<Vector2, float> ground = _ => groundY;
+            foreach (var g in new[] { 0f, 0.5f, 0.79f, 0.9f, 1.3f, 0.3f })
+            {
+                groundY = g * height;
+                CameraController.Step(rig, new CameraInput(), 0f, Map, ground);
+                float clearance = rig.transform.position.y - groundY;
+                if (g <= 1f - CameraController.MinClearanceShare)
+                    Assert.AreEqual(0f, rig.LookAt.y, 1e-3, $"ground at {g} of the camera's height: no lift");
+                else
+                    Assert.AreEqual(CameraController.MinClearanceShare * height, clearance, 1f, $"ground at {g}: lifted to the least clearance");
+            }
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>Review B-I1: with the ground's top given, the near side of the view is bounded by the corner rays' hits on
+    /// that plane, not by the point below the camera: at 60 km, pushed to the south edge, the camera may stand behind the
+    /// edge, and the strip kept off screen is a few km (it was 19-20 km). With the camera below the top plane (the hero
+    /// zoom over high ground) the point below the camera is the bound.</summary>
+    [Test]
+    public void TheNearSideIsBoundedByTheGroundsTopNotTheCamera()
+    {
+        var rig = NewRig();
+        try
+        {
+            var cam = rig.GetComponent<Camera>(); cam.aspect = 16f / 9f; cam.fieldOfView = CameraRig.Fov;
+            const float top = 8400f;   // about the real terrain's highest point (2367 m + 427 m, at 3x)
+            float back = Mathf.Cos(CameraRig.Pitch * Mathf.Deg2Rad);   // the camera is this many distances behind the look-at point
+            rig.LookAt = new Vector3(RealMap.center.x, 0, RealMap.center.y); rig.Distance = 60000f; rig.Yaw = 0; rig.TopInset = 0;
+            for (int i = 0; i < 60; i++) CameraController.Step(rig, new CameraInput { Pan = Vector2.down }, 0.5f, RealMap, _ => 0f, top);
+            var f = CameraController.ViewFootprint(rig, top);
+            Assert.AreEqual(RealMap.yMin, rig.LookAt.z + f.yMin, 1f, "the view's near side at the south edge");
+            Assert.Less(rig.LookAt.z, back * rig.Distance - 10000f, "the camera stands behind the edge: the edge rows stay reachable");
+            var flat = CameraController.ViewFootprint(rig);
+            Assert.Less(flat.yMin - f.yMin, 5000f, "the high-ground margin at 60 km is a few km");
+            Assert.Greater(flat.yMin - f.yMin, 1000f, "and it is there");
+            rig.Distance = CameraController.MinDistance; rig.ApplyProjection();   // camera 4.6 km up, below the 8.4 km plane
+            Assert.AreEqual(-back * rig.Distance, CameraController.ViewFootprint(rig, top).yMin, 1f, "the point below the camera bounds it");
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>A rig without a camera keeps the old rule: the look-at point itself stays on the map.</summary>
+    [Test]
+    public void ARigWithoutACameraClampsTheLookAtPoint()
+    {
+        var go = new GameObject("BareRig");
+        try
+        {
+            var rig = go.AddComponent<CameraRig>(); rig.LookAt = new Vector3(100, 0, 100); rig.Distance = 6000f;
+            Assert.AreEqual(Rect.zero, CameraController.ViewFootprint(rig));
+            CameraController.Step(rig, new CameraInput { Pan = Vector2.left }, 10f, RealMap);
+            Assert.AreEqual(0f, rig.LookAt.x, 1e-3);
+        }
+        finally { Object.DestroyImmediate(go); }
     }
 
     static CameraController NewController(out GameObject go)

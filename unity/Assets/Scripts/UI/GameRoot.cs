@@ -169,8 +169,11 @@ namespace Statecraft.Game.UI
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
+            var oldGround = cameraController.Ground; var oldTop = cameraController.GroundTop;
             cameraController.IsOverUi = overUi;
             cameraController.Bounds = new Rect(terrain.transform.position.x, terrain.transform.position.z, size.x, size.z);
+            cameraController.Ground = CameraController.GroundOf(terrain);
+            cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
             pointer.IsOverUi = overUi;
             Action<int, int> onHex = info.Show;
@@ -179,7 +182,7 @@ namespace Statecraft.Game.UI
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
             var mini = minimap = Own(new MinimapPresenter(root, map.Hexes));
             labels = Own(new MapLabelsPresenter(root, map, cameraController.GetComponent<Camera>()));
-            mini.Clicked += (lon, lat) => { camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); camRig.Apply(); SyncMinimap(); labels?.Refresh(); };   // the click may come after LateUpdate (review M6)
+            mini.Clicked += (lon, lat) => { camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); cameraController.Settle(); SyncMinimap(); labels?.Refresh(); };   // the click may come after LateUpdate (review M6)
             Action onChanged = RenderPlacementsIfChanged;
             bridge.Changed += onChanged;
             // One console line per turn, so a browser run (reload, Continue) can be checked against the hash.
@@ -197,6 +200,7 @@ namespace Statecraft.Game.UI
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
                 if (pointer.Map == map) pointer.Map = null;
                 cameraController.Bounds = oldBounds;
+                cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
             }));
             drawn = null;
             RenderPlacementsIfChanged();
