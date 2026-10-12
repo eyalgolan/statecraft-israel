@@ -183,7 +183,7 @@ eras:
     public void OnlyStartValuesAndMapActionNamesReadTheBaseRulesDirectly()
     {
         var simDir = Path.Combine(Directory.GetParent(RealContentTests.ContentRoot())!.FullName, "sim", "Statecraft.Sim");
-        var allowed = new HashSet<string> { "Start", "TreasuryStart", "FxStart", "BudgetStart", "InitialPopulation", "StartRung", "MapActions" };
+        var allowed = new HashSet<string> { "Start", "TreasuryStart", "FxStart", "BudgetStart", "InitialPopulation", "StartRung", "MapActions", "BudgetOwners" };
         var bad = new List<string>();
         foreach (var f in Directory.GetFiles(simDir, "*.cs", SearchOption.AllDirectories))
         {

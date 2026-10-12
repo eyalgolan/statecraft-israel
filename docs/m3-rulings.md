@@ -49,7 +49,7 @@ These are the decisions made while building M3 where the spec or plan was silent
 - **Historical choices have halved security and stability deltas.** Alternatives are halved too, which keeps the shape of each trade-off. The elections event has a single option.
 - **Sensitive tags stay honest.** The war-casualties and terror tags were kept, because they already sit in the loader's sensitive list. The sensitivity review of 7 events is an owner step, not a self-approval.
 - **Event timing is fitted to the facts, not to the plan.** For example, `hula_drainage` waits for 7 March 1951, and the forex event waits for 1951-10-19. The Bonds window starts at the 10 May launch. Clothing rationing has no food effects. Education concede costs morale 0.03, because the model has no coalition target. Reparations refuse has no penalty (no moral judgement). Maabarot text says "transit camps" before 21 April 1950. Event effects on coalition or support are a Deferred M4 row.
-- **Dated budget ownership is deferred.** The Immigration budget stays on the PM from game start, not Shapira. Cost if wrong: absorption spending is scaled by the PM, not Shapira, for 1948–51.
+- **Dated budget ownership is deferred.** The Immigration budget stays on the PM from game start, not Shapira. Cost if wrong: absorption spending is scaled by the PM, not Shapira, for 1948–51. Update (#108): dated budget ownership landed; see `docs/determinism.md`.
 
 ## UI and input
 

@@ -22,19 +22,19 @@ with `GoldenRun.Seed = 1948` on the real `content/`, then steps with `Historical
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-02-27, turn 35 | `71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07` |
-| to 1952-01-01 (`Hash1952`) | 1952-02-27, turn 43 | `62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8` |
+| to 1950-01-01 (`Hash1950`) | 1950-02-27, turn 35 | `4304d8ec14493b3963758957c2bb07fd9166e54e1b3ea36e5565280db5647681` |
+| to 1952-01-01 (`Hash1952`) | 1952-02-27, turn 43 | `082f9af406a6ffa445421617e327679ea094f4c1c056871dd18c54f58beef6e0` |
 
 A third value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
-buttons, answering each event with its first option): `SMOKE OK 5 turns 1948-06-19 d3fdd459ddb876bd8d775c20edd1202cf56ca7134a8ad06f873d4d92034aa5b6`.
+buttons, answering each event with its first option): `SMOKE OK 5 turns 1948-06-19 2379a67620391db1a0fbfc1b0d8c5dcfee94f570d491bca6cd4a777db3e911a4`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07" \
-  --expect "GOLDEN OK 1952 62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8" \
-  --expect "SMOKE OK 5 turns 1948-06-19 d3fdd459ddb876bd8d775c20edd1202cf56ca7134a8ad06f873d4d92034aa5b6"
+  --expect "GOLDEN OK 1950 4304d8ec14493b3963758957c2bb07fd9166e54e1b3ea36e5565280db5647681" \
+  --expect "GOLDEN OK 1952 082f9af406a6ffa445421617e327679ea094f4c1c056871dd18c54f58beef6e0" \
+  --expect "SMOKE OK 5 turns 1948-06-19 2379a67620391db1a0fbfc1b0d8c5dcfee94f570d491bca6cd4a777db3e911a4"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -51,7 +51,7 @@ change only at era boundaries (chapters spec section 3.3). Spec section 4.1 will
 on it, so every turn then lies in one era; until that lands, only the last era's end is a boundary turn, and a turn that
 starts in one era and ends in the next uses the starting era's rules for its whole length
 (`EraRulesSwitchTests.ARunPicksUpTheOverrideFromTheFirstTurnThatStartsInTheNewEra`). Start
-values (`start`, `treasury_start`, `fx_start`, `start_rung`, `initial_population`, `budget_start`) are read once by `NewGame`
+values (`start`, `treasury_start`, `fx_start`, `start_rung`, `initial_population`, `budget_start`, `budget_owners`) are read once by `NewGame`
 from the base `rules.yaml`: an era override cannot set them. A map action's display name is also read from the base rules,
 because an override cannot remove an action. `EraRulesSwitchTests.OnlyStartValuesAndMapActionNamesReadTheBaseRulesDirectly`
 fails if a file in `sim/Statecraft.Sim` reads `Rules` directly for anything else, including a bare `var r = c.Rules;`.
@@ -129,3 +129,16 @@ rules or content, treat it as a determinism bug.
 | playtest 1 E fix 1 | 1950 | `71e9904d` | 1948 war-period events revised after review: windows open on the turn before each decision, Yoav becomes the Hebron-hills decision, follow-ups use `requires`, Bernadotte's shared standing hit, security deltas halved, the elections a one-option card in January, two events added (Jerusalem cease-fire, Rhodes talks); still ends 1950-02-27, turn 35 |
 | playtest 1 E fix 1 | 1952 | `73590e32` | same; still ends 1952-02-27, turn 43 |
 | Issue #2 | 1952 | `62f8ec61` | sourced Yosef food-supply/rationing responsibility from 8 October 1951 replaces a vacancy and changes late-1951 rationing competence; 1950 and five-turn smoke unchanged |
+| Issue #108 | 1950 | `4304d8ec` | the Immigration budget line gets its own id, `immigration`, and dated owners (`budget_owners` in `rules.yaml`: `immigration_minister` until 7 October 1951, the Prime Minister from 8 October 1951). The hashed budget renames one key, `prime_minister` to `immigration`. No share and no indicator moved (see below) |
+| Issue #108 | 1952 | `082f9af4` | same rename. The five-turn smoke (`SMOKE OK 5 turns 1948-06-19`) moves too, to `2379a676` (was `d3fdd459`), because it hashes the same budget |
+
+**What moved for #108, from the snapshot diff.** `golden/hash1950.txt` and `golden/hash1952.txt` each change in one place. In
+`bud{`, the line `prime_minister=0.15 [3FC3333333333333]` becomes `immigration=0.15 [3FC3333333333333]`. The value and its
+IEEE bits are the same. Nothing else in either snapshot changed: no indicator, no treasury, no population figure. The hash
+moves only because a key in the hashed budget has a new name.
+
+Why nothing else moved: a budget line scales only an effect whose `office:` is the line's owner (`EffectsSystem.Multiplier`).
+No effect or policy in `model.yaml` names `immigration_minister` or `prime_minister`. So Shapira's competence did not scale
+any spending in 1948 to 1951 before this change, and it still scales none. The change makes the owner of the day correct
+(`EffectsSystem.BudgetFactor(content, state, office)` reads `Offices.BudgetLineOf`). The first effect that names either
+office will be scaled by the right minister on each side of 8 October 1951. This change adds no such effect.

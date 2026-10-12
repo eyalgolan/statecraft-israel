@@ -24,6 +24,24 @@ namespace Statecraft.Sim
         public static string PartyOf(Content c, Person p, DateTime date) =>
             p.Offices.FirstOrDefault(t => t.Party != "" && In(date, t.From, t.To))?.Party ?? p.Party;
 
+        /// <summary>The office that owns budget line <paramref name="line"/> on date (#108): the last term of rules.yaml
+        /// budget_owners that has begun, or, for a line with no entry, the office with the line's own id. Null when the
+        /// line does not exist or its first term has not begun. Lines are start-only, so this reads the base rules.</summary>
+        public static string? BudgetOwner(Content c, string line, DateTime date)
+        {
+            if (!c.Rules.BudgetStart.ContainsKey(line)) return null;
+            if (!c.Rules.BudgetOwners.TryGetValue(line, out var terms)) return line;
+            string? owner = null;
+            foreach (var t in terms.OrderBy(t => t.From))
+                if (t.From <= date) owner = t.Office;
+            return owner;
+        }
+
+        /// <summary>The budget line that <paramref name="office"/> owns on date, or null when it owns none (the loader allows
+        /// at most one). Lines are searched in ordinal order, so the answer never depends on dictionary order.</summary>
+        public static string? BudgetLineOf(Content c, string office, DateTime date) =>
+            c.Rules.BudgetStart.Keys.OrderBy(k => k, StringComparer.Ordinal).FirstOrDefault(l => BudgetOwner(c, l, date) == office);
+
         public static Legislature? Legislature(Content c, DateTime date) =>
             c.Legislatures.FirstOrDefault(l => In(date, l.From, l.To));
 

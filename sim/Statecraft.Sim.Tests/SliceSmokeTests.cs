@@ -24,7 +24,7 @@ public class SliceSmokeTests
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
     /// <summary>docs/determinism.md: the WebGL smoke (?smoke=5) ends here; its policy is FirstOption.</summary>
-    const string WebSmoke5 = "SMOKE OK 5 turns 1948-06-19 d3fdd459ddb876bd8d775c20edd1202cf56ca7134a8ad06f873d4d92034aa5b6";
+    const string WebSmoke5 = "SMOKE OK 5 turns 1948-06-19 2379a67620391db1a0fbfc1b0d8c5dcfee94f570d491bca6cd4a777db3e911a4";
 
     static readonly Regex IsoDate = new Regex(@"\d{4}-\d{2}-\d{2}");
 

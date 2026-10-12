@@ -199,6 +199,17 @@ namespace Statecraft.Sim
         public double NaturalIncreasePerYear { get; set; }
         public Dictionary<string, double> InitialPopulation { get; set; } = new Dictionary<string, double>();
         public Dictionary<string, double> BudgetStart { get; set; } = new Dictionary<string, double>();
+        /// <summary>Who owns a budget line, by date (#108). A line with no entry here is owned, for the whole era, by the
+        /// office with the line's own id. A listed line is owned by each term's office from that term's day to the next
+        /// term's day. Read through <see cref="Offices.BudgetOwner"/> and <see cref="Offices.BudgetLineOf"/>. Start-only, like budget_start.</summary>
+        public Dictionary<string, List<BudgetOwnerTerm>> BudgetOwners { get; set; } = new Dictionary<string, List<BudgetOwnerTerm>>();
+    }
+
+    /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
+    public sealed class BudgetOwnerTerm
+    {
+        public DateTime From { get; set; }
+        public string Office { get; set; } = "";
     }
 
     /// <summary>Price and effect of one map action (rules.yaml map_actions).</summary>

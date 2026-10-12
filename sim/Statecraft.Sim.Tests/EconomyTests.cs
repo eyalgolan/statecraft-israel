@@ -66,10 +66,10 @@ public class EconomyTests
     public void BudgetShareScalesEffects()
     {
         var s = Fresh();
-        Assert.Equal(1.0, EffectsSystem.BudgetFactor(s, "finance_minister"));   // equal split is neutral
+        Assert.Equal(1.0, EffectsSystem.BudgetFactor(C, s, "finance_minister"));   // equal split is neutral
         s.Budget = new Dictionary<string, double> { ["finance_minister"] = 0.0, ["defense_minister"] = 1.0 };
-        Assert.Equal(0.5, EffectsSystem.BudgetFactor(s, "finance_minister"));
-        Assert.Equal(1.5, EffectsSystem.BudgetFactor(s, "defense_minister"));
+        Assert.Equal(0.5, EffectsSystem.BudgetFactor(C, s, "finance_minister"));
+        Assert.Equal(1.5, EffectsSystem.BudgetFactor(s.Budget, "defense_minister"));
     }
 }
 

@@ -29,9 +29,9 @@ bud{
   education_minister=0.06 [3FAEB851EB851EB8]
   finance_minister=0.05 [3FA999999999999A]
   health_minister=0.07 [3FB1EB851EB851EC]
+  immigration=0.15 [3FC3333333333333]
   interior_minister=0.05 [3FA999999999999A]
   labour_minister=0.1 [3FB999999999999A]
-  prime_minister=0.15 [3FC3333333333333]
 pop{
   africa=52054.01585594315 [40E96AC081E452A9]
   america_oceania=2229.985467792672 [40A16BF88F3C0993]

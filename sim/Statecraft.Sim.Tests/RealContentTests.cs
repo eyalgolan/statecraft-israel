@@ -132,10 +132,10 @@ public class RealContentTests
         var state = Simulation.NewGame(C, 42, Mode.Historical);
         state.Date = change.AddDays(-1);
         Assert.Equal(0.9, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
-            EffectsSystem.BudgetFactor(state, "agriculture_minister"), 10);
+            EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         state.Date = change;
         Assert.Equal(0.85, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
-            EffectsSystem.BudgetFactor(state, "agriculture_minister"), 10);
+            EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         Assert.Equal("kaplan", Cabinet.Holder(C, state, "minister_without_portfolio")?.Id);
         Assert.DoesNotContain(Cabinet.Lineup(C, state), seat => seat.Office.Id == "deputy_prime_minister");
         state.Date = end;
@@ -203,7 +203,7 @@ public class RealContentTests
     {
         Assert.DoesNotContain("rationing_minister", C.Rules.BudgetStart.Keys);
         var s = Simulation.NewGame(C, 1, Mode.Historical);
-        Assert.Equal(1.0, EffectsSystem.BudgetFactor(s, "rationing_minister"));
+        Assert.Equal(1.0, EffectsSystem.BudgetFactor(C, s, "rationing_minister"));
     }
 
     [Fact]
@@ -278,7 +278,8 @@ public class RealContentTests
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "immigration_minister").Until);
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "war_victims_minister").Until);
         Assert.Equal("shapira", Who("immigration_minister", 1951, 10, 7));
-        Assert.Equal(0.15, C.Rules.BudgetStart["prime_minister"]);
+        Assert.Equal(0.15, C.Rules.BudgetStart["immigration"]);
+        Assert.DoesNotContain("prime_minister", C.Rules.BudgetStart.Keys);
         var sheetrit = C.People.Single(p => p.Id == "sheetrit");
         Assert.Equal("sephardim", Offices.PartyOf(C, sheetrit, new DateTime(1951, 1, 1)));
         Assert.Equal("mapai", Offices.PartyOf(C, sheetrit, new DateTime(1951, 10, 8)));

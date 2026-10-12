@@ -8,6 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Budget lines owned by office and date (`budget_owners` in `rules.yaml`, issue #108): the Immigration line (id `immigration`)
+  belongs to the Minister of Immigration until 7 October 1951 and to the Prime Minister from 8 October 1951. A line
+  scales effects through the owner of the day. Both goldens and the five-turn smoke move (one renamed budget key, no value
+  changes; see `docs/determinism.md`).
 - Era system switches in eras.yaml (`systems`): `legislature: state | assembly` (an assembly's vote against a policy or
   the budget is held and reported, but does not bind) and `map_actions` (the actions the era allows). The Cabinet and
   Budget screens say when the body's vote does not bind, and the hex panel shows only the era's map actions. With no
