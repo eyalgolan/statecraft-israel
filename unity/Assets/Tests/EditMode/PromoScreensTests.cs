@@ -255,7 +255,7 @@ public class PromoScreensTests
         Assert.AreEqual("Prime Minister\nMinister of Defense", ui.Q<Label>("lead-prime_minister-office").text);
         var bar = ui.Q<UiBar>("mob-bar");
         Assert.AreEqual((float)g.State.Mobilization, bar.Value, 1e-6f);
-        Assert.AreEqual((float)SecuritySystem.MinMobilization(C, g.State.Rung), bar.Mark!.Value, 1e-6f, "the level's minimum is marked");
+        Assert.AreEqual((float)SecuritySystem.MinMobilization(C, g.State.Date, g.State.Rung), bar.Mark!.Value, 1e-6f, "the level's minimum is marked");
         Assert.AreEqual(PlayerText.Percent(g.State.Mobilization), ui.Q<Label>("mob-percent").text);
         Assert.AreEqual((float)g.State.Budget[DefencePresenter.BudgetLine], ui.Q<UiBar>("defence-budget-bar").Value, 1e-6f);
         Assert.AreEqual($"{PlayerText.Percent(g.State.Budget[DefencePresenter.BudgetLine])} of budget spending", ui.Q<Label>("defence-budget-share").text);
@@ -265,7 +265,7 @@ public class PromoScreensTests
         Assert.IsTrue(ui.Q<VisualElement>("rung-4").ClassListContains("rung-target"));
         Assert.IsTrue(ui.Q<VisualElement>("rung-5").ClassListContains("rung-current"));
         Assert.IsFalse(ui.Q<VisualElement>("rung-5").ClassListContains("rung-target"));
-        Assert.AreEqual((float)SecuritySystem.MinMobilization(C, 4), bar.Mark!.Value, 1e-6f);
+        Assert.AreEqual((float)SecuritySystem.MinMobilization(C, g.State.Date, 4), bar.Mark!.Value, 1e-6f);
         ui.Press("mob-down");
         Assert.AreEqual((float)defence.ProposedMobilization, bar.Value, 1e-6f, "the bar shows the ordered call-up");
         ui.Press("escalate");
@@ -321,11 +321,11 @@ public class PromoScreensTests
             foreach (var seat in Cabinet.Lineup(C, s)) Person("seat-" + seat.Office.Id, seat.Holder);
             foreach (var office in DefencePresenter.Leaders) Person("lead-" + office, Cabinet.Holder(C, s, office));
             for (int rung = 1; rung <= 5; rung++) texts[$"rung-{rung}-name"] = Text[$"defence.rung{rung}"];
-            var floor = SecuritySystem.MinMobilization(C, s.Rung);
-            var callUp = SecuritySystem.EffectiveMobilization(C, s.Rung, s.Mobilization);
+            var floor = SecuritySystem.MinMobilization(C, s.Date, s.Rung);
+            var callUp = SecuritySystem.EffectiveMobilization(C, s.Date, s.Rung, s.Mobilization);
             texts["mob-percent"] = PlayerText.Percent(callUp);
             texts["mob-level"] = $"{PlayerText.Percent(callUp)} of reserves called up (level {s.Rung} needs at least {PlayerText.Percent(floor)})";
-            texts["mob-cost"] = $"Costs {PlayerText.Money(C, "treasury", EconomySystem.MobilizationCost(C, callUp))} a year in pay and lost work";
+            texts["mob-cost"] = $"Costs {PlayerText.Money(C, "treasury", EconomySystem.MobilizationCost(C, s.Date, callUp))} a year in pay and lost work";
             texts["mob-down"] = "-5%"; texts["mob-up"] = "+5%";   // the step, DefencePresenter.MobilizationStep
             Assert.AreEqual(0.05, DefencePresenter.MobilizationStep, 1e-12);
             texts["ceasefire"] = s.Rung == 5 ? Text.Format("defence.ceasefire", s.CeasefireWeeksLeft) : "";

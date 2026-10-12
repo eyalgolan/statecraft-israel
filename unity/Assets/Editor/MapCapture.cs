@@ -277,6 +277,10 @@ public static class MapCapture
             var poses = new System.Collections.Generic.List<PromoPose>(PromoPose.All)
             {
                 new PromoPose("close30", 34.83, 32.00, 30000f, 10f), new PromoPose("hero12", 34.79, 32.06, 12000f, 10f),
+                // The 1948 localities (promo-villages): Galilee villages, the Hebron hills, the Beisan valley and Bedouin camps
+                // in the northern Negev.
+                new PromoPose("galilee30", 35.25, 32.90, 30000f, 10f), new PromoPose("hebron30", 35.10, 31.55, 30000f, 10f),
+                new PromoPose("beisan30", 35.50, 32.49, 30000f, 10f), new PromoPose("negev40", 34.80, 31.25, 40000f, 10f),
             };
             foreach (var pose in poses)
             {

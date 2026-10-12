@@ -126,8 +126,8 @@ public class FinalWaveTests
     public void TheCallUpCostComesFromOneRule()
     {
         var s = Simulation.NewGame(Real, 1, Mode.Historical);
-        Assert.Equal(Real.Rules.MobilizationCostPerYear * 0.35, EconomySystem.MobilizationCost(Real, 0.35), 12);
+        Assert.Equal(Real.Rules.MobilizationCostPerYear * 0.35, EconomySystem.MobilizationCost(Real, Real.Rules.Start, 0.35), 12);
         s.Mobilization = 0.35;
-        Assert.Equal(EconomySystem.MobilizationCost(Real, 0.35, 0.25), EconomySystem.Flows(Real, s, 0.25).Mobilization, 12);
+        Assert.Equal(EconomySystem.MobilizationCost(Real, s.Date, 0.35, 0.25), EconomySystem.Flows(Real, s, 0.25).Mobilization, 12);
     }
 }

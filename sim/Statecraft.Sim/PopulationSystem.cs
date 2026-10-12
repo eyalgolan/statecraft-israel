@@ -29,7 +29,7 @@ namespace Statecraft.Sim
 
         public static void Apply(Content c, GameState s, DateTime to, double yearFraction, List<Cause> why)
         {
-            var rate = c.Rules.NaturalIncreasePerYear * yearFraction;
+            var rate = c.RulesAt(s.Date).NaturalIncreasePerYear * yearFraction;
             foreach (var k in s.Population.Keys.ToList()) s.Population[k] *= 1 + rate;
             foreach (var kv in Arrivals(c, s.Date, to).OrderBy(k => k.Key, StringComparer.Ordinal))
             {

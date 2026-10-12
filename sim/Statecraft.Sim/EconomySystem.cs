@@ -25,18 +25,18 @@ namespace Statecraft.Sim
 
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
-            var r = c.Rules; var pop = s.TotalPopulation;
+            var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             return new TreasuryFlows(r.TaxPerCapitaPerYear * pop * yearFraction, r.SpendingPerCapitaPerYear * pop * yearFraction,
-                MobilizationCost(c, s.Mobilization, yearFraction));
+                MobilizationCost(c, s.Date, s.Mobilization, yearFraction));
         }
 
         /// <summary>The reserve call-up's cost (pay and lost work) for <paramref name="level"/> (0..1) over a share of a year:
         /// the one rule Flows and the Defence screen both use (M3 final review M5).</summary>
-        public static double MobilizationCost(Content c, double level, double yearFraction = 1.0) => c.Rules.MobilizationCostPerYear * level * yearFraction;
+        public static double MobilizationCost(Content c, DateTime date, double level, double yearFraction = 1.0) => c.RulesAt(date).MobilizationCostPerYear * level * yearFraction;
 
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
         {
-            var r = c.Rules; var pop = s.TotalPopulation;
+            var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             var flows = Flows(c, s, yearFraction);
             var revenue = flows.Tax; var spending = flows.Spending; var mobilization = flows.Mobilization;
             s.Treasury += revenue - spending - mobilization;

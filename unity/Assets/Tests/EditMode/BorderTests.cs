@@ -24,6 +24,9 @@ public class BorderTests
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = Object.FindFirstObjectByType<MapScene>(); map.Build();
         MapShaderGlobals.PinWaterTime(100f);   // renders compared pixel for pixel: the sea must not move between them
+        // The borders themselves, as SeaTests measures the water: the 1948 villages' houses and trees stand on many edges near
+        // gameplay03, and a roof or crown on a walk is not the border's colour.
+        foreach (var n in new[] { "kits", "trees" }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
         var cam = Camera.main;
         return (map, cam, cam.GetComponent<CameraRig>());
     }
@@ -300,6 +303,43 @@ public class BorderTests
 
     internal static float Blueness(Color c) => c.b - c.r;
     internal static float Redness(Color c) => c.r - c.g;
+
+    /// <summary>Share of walks across a band, kits and trees on, where the band still reads (review M9 of promo-villages);
+    /// measured 2026-10-12 (see the test's log), floor below it as the grid readability test does.</summary>
+    public const float BandLegibleShare = 0.8f;
+
+    /// <summary>Review M9 (promo-villages): Open measures the bands with the kits and trees off; this one checks them in the
+    /// shipped look. Across proof edges by gameplay03 (the coastal plain's villages) and by Tulkarm, with kits and trees on,
+    /// a walk "reads" when some pixel within 900 m of the edge changes by deltaE76 >= 8 with the borders on against off (a
+    /// roof or crown may cover part of the band, not all of it). At least BandLegibleShare of the walks read.</summary>
+    [UnityTest]
+    public IEnumerator TheBandsStillReadThroughTheVillages()
+    {
+        var (map, cam, rig) = Open();
+        yield return null;
+        foreach (var n in new[] { "kits", "trees" }) VisualToggles.Set(n, true);
+        RenderSample.TiltShift(false);
+        BorderProof.Show(map);
+        int walks = 0, read = 0;
+        foreach (var (name, lon, lat, biome) in new[] { ("gameplay03", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, "coastal_plain"), ("tulkarm", 35.03, 32.31, "coastal_plain") })
+        {
+            var (inner, outer) = ProofEdge(map, lon, lat, biome);
+            LookAtEdge(map, rig, inner);
+            int here = 0;
+            foreach (var w in WalkEdge(map, cam, inner, outer, 9, 1920, 1080))
+            {
+                walks++;
+                bool shows = false;
+                for (int k = 0; k < w.On.Count && !shows; k++)
+                    shows = Mathf.Abs(w.SignedM[k]) <= 900f && RenderSample.DeltaE(w.On[k], w.Off[k]) >= 8f;
+                if (shows) { read++; here++; }
+            }
+            TestContext.WriteLine($"{name}: the band reads on {here} of 9 walks with kits and trees on");
+        }
+        float share = read / (float)walks;
+        TestContext.WriteLine($"bands legible on {read} of {walks} walks ({share:P0})");
+        Assert.GreaterOrEqual(share, BandLegibleShare, "the villages bury the region bands");
+    }
 
     /// <summary>The promo 03 look at gameplay03's zoom (1920x1080, tilt-shift off), on a coastal-plain edge (flat, as the
     /// promo's lines are measured): along the whole edge, the Primary side carries a blue stripe and a near-white one, the

@@ -158,11 +158,17 @@ namespace Statecraft.Game.UI
                 : here != null ? text.Format("info.built", PlayerText.Capitalised(PlayerText.MapAction(c, here.Action)), PlayerText.Month(here.Date)) : "";
             var campWhy = MapActions.Check(c, s, MapActions.TransitCamp, q, r);
             var housingWhy = MapActions.Check(c, s, MapActions.Housing, q, r);
-            camp.style.display = DisplayStyle.Flex; housing.style.display = DisplayStyle.Flex;
-            camp.SetEnabled(campWhy == null); housing.SetEnabled(housingWhy == null);
+            // eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason
+            var allowed = c.SystemsAt(s.Date).MapActions;
+            bool campOn = allowed.Contains(MapActions.TransitCamp), housingOn = allowed.Contains(MapActions.Housing);
+            camp.style.display = campOn ? DisplayStyle.Flex : DisplayStyle.None;
+            housing.style.display = housingOn ? DisplayStyle.Flex : DisplayStyle.None;
+            camp.SetEnabled(campOn && campWhy == null); housing.SetEnabled(housingOn && housingWhy == null);
+            if (!campOn) campWhy = null;
+            if (!housingOn) housingWhy = null;
             // with no rule for an action there is no cost to show (it is disabled with the sim's reason anyway)
-            camp.text = c.Rules.MapActions.TryGetValue(MapActions.TransitCamp, out var cr) ? text.Format("info.build_camp", PlayerText.Money(c, "treasury", cr.Cost)) : text["info.build_camp_plain"];
-            housing.text = c.Rules.MapActions.TryGetValue(MapActions.Housing, out var hr) ? text.Format("info.build_housing", PlayerText.Money(c, "treasury", hr.Cost)) : text["info.build_housing_plain"];
+            camp.text = c.RulesAt(s.Date).MapActions.TryGetValue(MapActions.TransitCamp, out var cr) ? text.Format("info.build_camp", PlayerText.Money(c, "treasury", cr.Cost)) : text["info.build_camp_plain"];
+            housing.text = c.RulesAt(s.Date).MapActions.TryGetValue(MapActions.Housing, out var hr) ? text.Format("info.build_housing", PlayerText.Money(c, "treasury", hr.Cost)) : text["info.build_housing_plain"];
             reason.text = string.Join("\n", new[] { campWhy, housingWhy }.Where(x => x != null).Distinct());   // the sim's reasons, each once
         }
     }

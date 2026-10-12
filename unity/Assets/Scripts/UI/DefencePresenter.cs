@@ -97,7 +97,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The call-up the turn will end with if <paramref name="level"/> is ordered (the sim raises a lower one to the minimum).</summary>
-        double EffectiveAt(double level) => SecuritySystem.EffectiveMobilization(bridge.Content, TargetRung, level);
+        double EffectiveAt(double level) => SecuritySystem.EffectiveMobilization(bridge.Content, bridge.State.Date, TargetRung, level);
 
         bool SameAsToday(double level) => Math.Abs(EffectiveAt(level) - EffectiveAt(bridge.State.Mobilization)) < 1e-9;
 
@@ -110,7 +110,7 @@ namespace Statecraft.Game.UI
 
         void Mobilize(double step)
         {
-            var floor = SecuritySystem.MinMobilization(bridge.Content, TargetRung);
+            var floor = SecuritySystem.MinMobilization(bridge.Content, bridge.State.Date, TargetRung);
             var level = Math.Max(floor, Math.Min(1, Math.Round((EffectiveAt(ProposedMobilization) + step) / MobilizationStep) * MobilizationStep));
             if (SameAsToday(level)) Withdraw(new SetMobilization(0)); else bridge.Queue(new SetMobilization(level));
         }
@@ -161,11 +161,11 @@ namespace Statecraft.Game.UI
             var ceasefire = screen.Q<Label>("ceasefire");
             if (s.Rung == 5 && target == 5) ceasefire.text = text.Format("defence.ceasefire", s.CeasefireWeeksLeft);
             else if (s.Rung == 5) ceasefire.text = text["defence.ceasefire_stops"];                       // a lowering is queued
-            else if (target == 5) ceasefire.text = text.Format("defence.ceasefire_starts", SecuritySystem.CeasefireWeeksAfter(c, s.Rung, s.CeasefireWeeksLeft, target));
+            else if (target == 5) ceasefire.text = text.Format("defence.ceasefire_starts", SecuritySystem.CeasefireWeeksAfter(c, s.Date, s.Rung, s.CeasefireWeeksLeft, target));
             else ceasefire.text = "";
             ceasefire.style.display = ceasefire.text == "" ? DisplayStyle.None : DisplayStyle.Flex;
             screen.Q<Label>("order-pending").text = delta == 0 ? "" : text.Format("defence.order", s.Rung, target);
-            var floor = SecuritySystem.MinMobilization(c, target);
+            var floor = SecuritySystem.MinMobilization(c, s.Date, target);
             var proposed = EffectiveAt(ProposedMobilization);   // what the call-up will be: the sim raises a lower order to the minimum
             screen.Q<Label>("mob-level").text = text.Format("defence.mob", PlayerText.Percent(proposed), target, PlayerText.Percent(floor));
             screen.Q<Label>("mob-percent").text = PlayerText.Percent(proposed);
@@ -174,7 +174,7 @@ namespace Statecraft.Game.UI
             var share = ProposedBudgetShare;
             screen.Q<UiBar>("defence-budget-bar").Value = share.HasValue ? (float)share.Value : 0f;
             screen.Q<Label>("defence-budget-share").text = share.HasValue ? text.Format("defence.budget_share", PlayerText.Percent(share.Value)) : text["defence.budget_none"];
-            screen.Q<Label>("mob-cost").text = text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, proposed)));
+            screen.Q<Label>("mob-cost").text = text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, s.Date, proposed)));
             screen.Q<Button>("escalate").SetEnabled(target < 5);
             screen.Q<Button>("de-escalate").SetEnabled(target > 1);
         }

@@ -104,14 +104,14 @@ public class SecurityTests
 
     [Theory]
     [InlineData(1, 0.02)] [InlineData(4, 0.4)] [InlineData(5, 0.8)] [InlineData(9, 0.8)] [InlineData(0, 0.02)]
-    public void MinMobilizationIsTheRungsFloor(int rung, double expected) => Assert.Equal(expected, SecuritySystem.MinMobilization(C, rung));
+    public void MinMobilizationIsTheRungsFloor(int rung, double expected) => Assert.Equal(expected, SecuritySystem.MinMobilization(C, C.Rules.Start, rung));
 
     [Fact]
     public void EffectiveMobilizationIsNeverBelowTheFloor()
     {
-        Assert.Equal(0.8, SecuritySystem.EffectiveMobilization(C, 5, 0.1));
-        Assert.Equal(0.9, SecuritySystem.EffectiveMobilization(C, 5, 0.9));
-        Assert.Equal(0.4, SecuritySystem.EffectiveMobilization(C, 4, 0.0));
+        Assert.Equal(0.8, SecuritySystem.EffectiveMobilization(C, C.Rules.Start, 5, 0.1));
+        Assert.Equal(0.9, SecuritySystem.EffectiveMobilization(C, C.Rules.Start, 5, 0.9));
+        Assert.Equal(0.4, SecuritySystem.EffectiveMobilization(C, C.Rules.Start, 4, 0.0));
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class SecurityTests
             {
                 var s = new GameState { Rung = rung, Mobilization = 0 };
                 Assert.Null(SecuritySystem.SetMobilization(C, s, level, new List<Cause>()));
-                Assert.Equal(SecuritySystem.EffectiveMobilization(C, rung, level), s.Mobilization);
+                Assert.Equal(SecuritySystem.EffectiveMobilization(C, s.Date, rung, level), s.Mobilization);
             }
     }
 
@@ -133,7 +133,7 @@ public class SecurityTests
     [InlineData(2, 0, 3, 0)]
     public void CeasefireWeeksAfterAnOrderFollowsSetRung(int from, int left, int to, int expected)
     {
-        Assert.Equal(expected, SecuritySystem.CeasefireWeeksAfter(C, from, left, to));
+        Assert.Equal(expected, SecuritySystem.CeasefireWeeksAfter(C, C.Rules.Start, from, left, to));
         var s = new GameState { Rung = from, CeasefireWeeksLeft = left };
         SecuritySystem.SetRung(C, s, to, new List<Cause>());
         Assert.Equal(expected, s.CeasefireWeeksLeft);

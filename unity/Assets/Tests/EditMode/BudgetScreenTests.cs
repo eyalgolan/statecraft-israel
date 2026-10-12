@@ -237,4 +237,28 @@ public class BudgetScreenTests
         new BudgetPresenter(ui.Root, new SimBridge(g, Text), Text);
         Assert.AreEqual(vacant.Office.Title + " (vacant)", ui.Q<Label>("budget-" + vacant.Office.Id + "-name").text);
     }
+
+    /// <summary>eras.yaml systems.legislature (#58): where the body votes on the budget, an assembly era says its vote does
+    /// not bind and a state era says it must approve. Played on a copy of the content with the switch set.</summary>
+    [Test]
+    public void TheBudgetVoteLineFollowsTheErasSwitch()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        while (!(Offices.Legislature(c, g.State.Date)?.BudgetApproval ?? false)) g.Step(new Command[0]);
+        var leg = Offices.Legislature(c, g.State.Date)!;
+        var (seats, size) = PoliticsSystem.CoalitionSeats(c, g.State.Date);
+        using (var ui = new UiTestKit())
+        {
+            c.Eras[0].Systems.Legislature = EraSystems.Assembly;
+            new BudgetPresenter(ui.Root, new SimBridge(g, Text), Text);
+            Assert.AreEqual(System.FormattableString.Invariant($"The {leg.Body} votes on it, but its vote does not bind: the coalition holds {seats} of {size} seats"), ui.Q<Label>("budget-vote").text);
+        }
+        using (var ui = new UiTestKit())
+        {
+            c.Eras[0].Systems.Legislature = EraSystems.State;
+            new BudgetPresenter(ui.Root, new SimBridge(g, Text), Text);
+            Assert.AreEqual(System.FormattableString.Invariant($"The {leg.Body} must approve it: the coalition holds {seats} of {size} seats"), ui.Q<Label>("budget-vote").text);
+        }
+    }
 }

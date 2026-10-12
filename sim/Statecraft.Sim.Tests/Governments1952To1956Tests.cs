@@ -41,7 +41,7 @@ public class Governments1952To1956Tests
     [Fact]
     public void NoOfficeHasTwoHoldersAtOnce()
     {
-        foreach (var office in C.Offices)
+        foreach (var office in C.Offices.Where(o => !o.SeveralHolders))
         {
             var terms = C.People.SelectMany(p => p.Offices.Where(t => t.Office == office.Id).Select(t => (p.Id, t.From, To: t.To ?? DateTime.MaxValue)))
                 .OrderBy(x => x.From).ToList();

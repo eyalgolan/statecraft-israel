@@ -458,14 +458,14 @@ people:
       # en.wiki lists Trade and Industry and Justice; he.wiki lists only Trade and Industry clearly (research notes 1e).
       # The Knesset records give Justice too, until Haim Cohn took it on 25 June 1952 (en.wiki and he.wiki agree).
       - { office: trade_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
+      # Without portfolio in the Fourth Government, beside Lavon, until the Ministry of Development was set up for him on
+      # 15 June 1953 (Knesset records, issue #277). Needs several_holders on the office.
+      - { office: minister_without_portfolio, from: 1952-12-24, to: 1953-06-15, sources: [*gov4_k, { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-12 }] }
       - { office: justice_minister, from: 1951-10-08, to: 1952-06-25, sources: [*third_en, *third_he, *gov3, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-12 }] }
       # Food supply and rationing within Trade and Industry, not a revival of the abolished ministry.
       # Schiffman/Goldstein (2026), pp.6 n.9, 33, 62; Knesset 7 January 1952, questions 8-10.
       # Exact start is explicit in the archival working paper; the research note records the conflicting Rozin date.
       - { office: rationing_minister, from: 1951-10-08, to: 1952-12-24, sources: [{ url: "https://mpra.ub.uni-muenchen.de/129488/1/MPRA_paper_129488.pdf", checked: 2026-10-11 }, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250631.pdf", checked: 2026-10-11 }] }
-      # Fourth Government: Minister without Portfolio from 24 December 1952 until the Ministry of Development was set up
-      # for him on 15 June 1953 (same sources). Lavon was also without portfolio then, and an office has one holder at a
-      # time here, so that term is not authored.
       - office: development_minister
         from: 1953-06-15
         to: 1954-01-26
@@ -1182,7 +1182,25 @@ people:
     loyalty: 5
     offices:
       # From 22 March 1956 (Knesset records, he.wiki; en.wiki gives 3 November 1955) to 31 December 1957, after the
-      # content range. Ami Assaf (Mapai) was a second Deputy Minister of Education from 11 June 1956 (same sources); one
-      # office has one holder at a time here, so his term is not authored.
+      # content range. Ami Assaf (Mapai) was a second Deputy Minister of Education from 11 June 1956 (same sources), below.
       - { office: deputy_education_minister, from: 1956-03-22, party: national_religious_front, sources: [*gov7_k, { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202131%20and%20KnessetNum%20eq%203", checked: 2026-10-12 }] }
+    status: fact-checked
+  - id: assaf
+    name: Ami Assaf
+    name_he: עמי אסף
+    born: 1903-07-22
+    died: 1963-05-17
+    biography_sources:
+      name_he: &assaf_bio [{ url: "https://en.wikipedia.org/wiki/Ami_Assaf", checked: 2026-10-12 }]
+      born: *assaf_bio
+      died: *assaf_bio
+    living: false
+    party: mapai
+    competence: 5
+    loyalty: 5
+    offices:
+      # Second Deputy Minister of Education from 11 June 1956, beside Moshe Unna (Knesset records: the Knesset's
+      # position records give him the post in the Seventh Government from that date, to 7 January 1958, after the
+      # content range). Open-ended here, like Unna's term. Needs several_holders on the office (issue #277).
+      - { office: deputy_education_minister, from: 1956-06-11, party: mapai, sources: [*gov7_k, { url: "https://production.oknesset.org/pipelines/data/members/kns_persontoposition/kns_persontoposition.csv", checked: 2026-10-12 }, { url: "https://en.wikipedia.org/wiki/Ami_Assaf", checked: 2026-10-12 }] }
     status: fact-checked

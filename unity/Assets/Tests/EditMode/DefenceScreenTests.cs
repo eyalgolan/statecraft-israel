@@ -214,7 +214,7 @@ public class DefenceScreenTests
         var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), Text);
         new DefencePresenter(ui.Root, bridge, Text);
         StringAssert.StartsWith("Minister of Defense (vacant) · Chief of Staff ", ui.Q<Label>("defence-command").text);
-        Assert.AreEqual(Text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, bridge.State.Mobilization))),
+        Assert.AreEqual(Text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, bridge.State.Date, bridge.State.Mobilization))),
             ui.Q<Label>("mob-cost").text);
     }
 }

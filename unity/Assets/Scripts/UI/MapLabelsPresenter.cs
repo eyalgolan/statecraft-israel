@@ -37,11 +37,20 @@ namespace Statecraft.Game.UI
     /// the first that is clear of panels, pills and its own kit. A pill hidden in the last refresh needs HysteresisPx more
     /// room to come back, so it does not blink at a threshold. Refresh allocates nothing. The dense Tel Aviv - Lod cluster
     /// keeps M2's anchor classes. The kits' bounds are read once, when the presenter is created (a later MapScene.Build
-    /// needs a new presenter; GameRoot makes one per Begin).</summary>
+    /// needs a new presenter; GameRoot makes one per Begin).
+    ///
+    /// The 1948 localities (MapScene.Localities, owner rulings 2026-10-11) get smaller pills with their 1948 names, placed
+    /// after every game settlement by the same rules and only nearer than LocalityDistanceM (farther out they are skipped
+    /// outright, so the overview pays nothing for them); Hover shows today's name in a tooltip under the pill the pointer
+    /// is over.</summary>
     public sealed class MapLabelsPresenter : IDisposable
     {
         public const string ContainerName = "map-labels", SlotClass = "map-label-slot", LabelClass = "map-label";
         public const float LiftPx = 6f, MarginPx = 4f, DeclutterDistanceM = 150000f;
+        /// <summary>The 1948 localities are named only nearer than this (owner ruling 2026-10-11: names at closer zoom, so
+        /// the map is not cluttered); farther out their pills are hidden and their places are nobody's neighbour.</summary>
+        public const float LocalityDistanceM = 40000f;
+        public const string LocalityClass = "map-label-locality", TooltipClass = "map-label-tooltip", TooltipName = "map-label-tooltip";
         /// <summary>Extra room a pill hidden in the last refresh needs before it is shown again (review M7).</summary>
         public const float HysteresisPx = 2f;
         /// <summary>The most of a kit's screen rectangle a pill may cover (issue #214): its own kit's, and any other
@@ -66,8 +75,8 @@ namespace Statecraft.Game.UI
         sealed class Item
         {
             public Settlement Settlement = null!; public Vector3 MarkerTop; public Bounds[] Kit = null!, Marker = null!; public VisualElement Slot = null!;
-            public Label Label = null!; public Spot First; public bool IsCity, TopVisible, KitInFront, ShownLast = true;
-            public Vector2 TopPanel; public Rect KitPanel;
+            public Label Label = null!; public Spot First; public bool IsCity, IsLocality, TopVisible, KitInFront, ShownLast = true;
+            public Vector2 TopPanel; public Rect KitPanel, Placed; public string? Tip;
         }
 
         readonly VisualElement container;
@@ -87,11 +96,41 @@ namespace Statecraft.Game.UI
         int lastOccluderMask = -1; float lastLabelSizes = float.NaN; bool sizesKnown, geometryDirty = true;
         Action? removeToggle;   // the labels switch's removal token (VisualToggles.Register): a disposed presenter never removes a newer one
 
+        /// <summary>The game settlements' pills, in settlements_1948.yaml order.</summary>
         public IReadOnlyList<Label> Labels { get; }
         public IReadOnlyList<VisualElement> Slots { get; }
+        /// <summary>The 1948 localities' pills (smaller, named only within LocalityDistanceM), in localities_1948.yaml order.</summary>
+        public IReadOnlyList<Label> LocalityLabels { get; }
+        public IReadOnlyList<VisualElement> LocalitySlots { get; }
+        /// <summary>The tooltip of the locality whose pill the pointer is over: today's name where a living place carries on
+        /// ("Today: Beit She'an" under "Beisan"; owner ruling 2026-10-12: none for a place that did not), "Mixed locality" for
+        /// Nesher; hidden otherwise, and never for a pill with nothing to say. Ignores the pointer, like the pills.</summary>
+        public Label Tooltip { get; }
+        Item? hovered;
 
-        public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null)
+        /// <summary>The default tooltip text (tests; GameRoot passes the UI strings): null when there is nothing to say.</summary>
+        public static string? DefaultTip(Statecraft.Game.Map.Kits.Localities.Place p) =>
+            TipOf(p, n => "Today: " + n, "Mixed locality");
+
+        /// <summary>A locality's tooltip: "Mixed locality" for a mixed one, then today's name where one carries on and it is not
+        /// the 1948 name itself (Nablus is Nablus); null when neither.</summary>
+        public static string? TipOf(Statecraft.Game.Map.Kits.Localities.Place p, Func<string, string> today, string mixed)
         {
+            var lines = new List<string>();
+            if (p.Mixed) lines.Add(mixed);
+            if (p.Today != null && !SameName(p.Today, p.Settlement.Name)) lines.Add(today(p.Today));
+            return lines.Count == 0 ? null : string.Join("\n", lines);
+        }
+
+        static bool SameName(string a, string b)
+        {
+            static string Norm(string x) { var sb = new System.Text.StringBuilder(); foreach (var c in x) if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c)); return sb.ToString(); }
+            return Norm(a) == Norm(b);
+        }
+
+        public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null)
+        {
+            var tip = tipText ?? DefaultTip;
             container = root.Q<VisualElement>(ContainerName) ?? throw new InvalidOperationException($"Game.uxml has no '{ContainerName}' element");
             this.camera = camera;
             this.map = map;
@@ -122,6 +161,31 @@ namespace Statecraft.Game.UI
             for (int p = 0; p <= 2; p++)
                 foreach (var it in settlementOrder) if (Priority(it.Settlement.Type) == p) items.Add(it);
             Labels = labels; Slots = slots;
+            // The 1948 localities after every game settlement, largest first (the file's order): presentation only.
+            var localityLabels = new List<Label>(); var localitySlots = new List<VisualElement>();
+            foreach (var place in map.Localities)
+            {
+                var s = place.Settlement;
+                var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
+                slot.AddToClassList(SlotClass);
+                var label = new Label(s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                label.AddToClassList(LabelClass); label.AddToClassList(LocalityClass); label.AddToClassList(Centre);
+                slot.Add(label);
+                container.Add(slot);
+                localityLabels.Add(label); localitySlots.Add(slot);
+                var top = MarkerTop(map, s);
+                var it = new Item
+                {
+                    Settlement = s, MarkerTop = top, Kit = KitBounds(map, s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label,
+                    First = Spot.AboveCentre, IsLocality = true, Tip = tip(place),
+                };
+                settlementOrder.Add(it); items.Add(it);
+            }
+            LocalityLabels = localityLabels; LocalitySlots = localitySlots;
+            Tooltip = new Label { name = TooltipName, pickingMode = PickingMode.Ignore };
+            Tooltip.AddToClassList(TooltipClass);
+            Tooltip.style.visibility = Visibility.Hidden;
+            container.Add(Tooltip);
 
             onOccluderGeometry = _ => { geometryDirty = true; Refresh(force: true); };   // a panel that appears hides the pills it covers before the repaint (re-review N1)
             onContainerGeometry = _ => { geometryDirty = true; Refresh(force: true); };   // a resize is placed before the repaint (review M4)
@@ -223,7 +287,12 @@ namespace Statecraft.Game.UI
             bool kitsShown = map != null && map.KitsShown;   // with the "kits" toggle off the marker boxes are drawn instead
             int mask = OccluderMask();
             float labelSizes = 0f;   // a pill that grows or shrinks (a late font, a new text) is re-placed (re-review N2)
-            for (int i = 0; i < items.Count; i++) { var st = items[i].Label.resolvedStyle; if (!float.IsNaN(st.width) && !float.IsNaN(st.height)) labelSizes += st.width + st.height; }
+            bool localities = distance <= LocalityDistanceM;   // farther out the localities are skipped outright (cost)
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i].IsLocality && !localities) continue;
+                var st = items[i].Label.resolvedStyle; if (!float.IsNaN(st.width) && !float.IsNaN(st.height)) labelSizes += st.width + st.height;
+            }
             if (!force && sizesKnown && !geometryDirty && labelSizes == lastLabelSizes && viewProjection == lastViewProjection && cameraRect == lastCameraRect
                 && screen == lastPanelSize && origin == lastOrigin && distance == lastZoom && mask == lastOccluderMask && kitsShown == lastKitsShown) return;
             lastViewProjection = viewProjection; lastCameraRect = cameraRect; lastPanelSize = screen; lastOrigin = origin;
@@ -245,6 +314,7 @@ namespace Statecraft.Game.UI
             for (int i = 0; i < items.Count; i++)
             {
                 var it = items[i];
+                if (it.IsLocality && !localities) { it.TopVisible = it.KitInFront = false; continue; }
                 var t = camera.WorldToViewportPoint(it.MarkerTop);
                 it.TopPanel = ToPanel(t, cameraRect, screen, origin);
                 it.TopVisible = t.z > 0f && t.x >= 0f && t.x <= 1f && t.y >= 0f && t.y <= 1f && !UnderAPanel(it.TopPanel);   // a marker under a panel is no one's neighbour
@@ -255,7 +325,12 @@ namespace Statecraft.Game.UI
             for (int i = 0; i < items.Count; i++)
             {
                 var it = items[i];
-                bool shown = it.KitInFront && it.TopVisible && !HiddenByZoom(it.Settlement.Type, distance);
+                if (it.IsLocality && !localities)
+                {
+                    if (it.ShownLast) { it.ShownLast = false; it.Slot.style.visibility = Visibility.Hidden; }
+                    continue;
+                }
+                bool shown = it.KitInFront && it.TopVisible && (it.IsLocality || !HiddenByZoom(it.Settlement.Type, distance));
                 var at = new Vector2(it.KitPanel.center.x, it.KitPanel.yMin - LiftPx);   // the slot: the USS anchor puts the pill above the kit
                 var shift = Vector2.zero;
                 if (shown)
@@ -306,8 +381,49 @@ namespace Statecraft.Game.UI
                 }
             }
             placed.Add(r);
+            it.Placed = r;
             shift = r.position - home.position;
             return true;
+        }
+
+        /// <summary>Shows today's name under the locality pill at <paramref name="screenYUp"/> (an Input System pointer position,
+        /// y up), or hides it (null: no pointer). Called after Refresh each frame (GameRoot.LateUpdate); allocates only when
+        /// the hovered pill changes.</summary>
+        public void Hover(Vector2? screenYUp)
+        {
+            var panel = container.panel;
+            if (!screenYUp.HasValue || panel == null) { HoverItem(null); return; }
+            HoverAt(UiPointer.ToPanel(panel, screenYUp.Value, Screen.height) - container.worldBound.position);
+        }
+
+        /// <summary>The hit test under Hover, at a point in the labels layer's coordinates: the shown locality pill (with
+        /// something to say) that contains it, or none.</summary>
+        public void HoverAt(Vector2 layerPoint)
+        {
+            Item? over = null;
+            for (int i = 0; i < items.Count && over == null; i++)
+            {
+                var it = items[i];
+                if (it.IsLocality && it.Tip != null && it.ShownLast && it.Placed.Contains(layerPoint)) over = it;
+            }
+            HoverItem(over);
+        }
+
+        /// <summary>Hover by locality id (tests): shows its tooltip when its pill is shown.</summary>
+        public void HoverLocality(string? id)
+        {
+            Item? over = null;
+            foreach (var it in items) if (it.IsLocality && it.Tip != null && it.ShownLast && it.Settlement.Id == id) over = it;
+            HoverItem(over);
+        }
+
+        void HoverItem(Item? over)
+        {
+            if (over == null) { if (hovered != null) { Tooltip.style.visibility = Visibility.Hidden; hovered = null; } return; }
+            if (over != hovered) { Tooltip.text = over.Tip; hovered = over; }
+            // left/top, not an inline translate: that would replace the USS translate (-50%) that centres it under the pill.
+            Tooltip.style.left = over.Placed.center.x; Tooltip.style.top = over.Placed.yMax + 2f;
+            Tooltip.style.visibility = Visibility.Visible;
         }
 
         bool UnderAPanel(Vector2 p)
@@ -360,6 +476,8 @@ namespace Statecraft.Game.UI
             container.UnregisterCallback(onContainerGeometry);
             occluders.Clear();
             foreach (var slot in Slots) slot.RemoveFromHierarchy();
+            foreach (var slot in LocalitySlots) slot.RemoveFromHierarchy();
+            Tooltip.RemoveFromHierarchy();
             items.Clear(); settlementOrder.Clear();
         }
     }

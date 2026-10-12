@@ -9,10 +9,16 @@ namespace Statecraft.Sim
     {
         static bool In(DateTime d, DateTime from, DateTime? to) => d >= from && (to == null || d < to.Value);
 
-        /// <summary>The historical holder on date. A holder has left office from their date of death on, even when the
+        /// <summary>The historical holder on date; for an office with several_holders, the first in people.yaml order
+        /// (the loader keeps such offices out of event text, policies and effects, so nothing asks it for one). A holder has left office from their date of death on, even when the
         /// term is open-ended (the loader lets an open term outlive a death inside the latest government, #167).</summary>
         public static Person? Holder(Content c, string office, DateTime date) =>
             c.People.FirstOrDefault(p => (!p.Died.HasValue || date < p.Died.Value) && p.Offices.Any(t => t.Office == office && In(date, t.From, t.To)));
+
+        /// <summary>Everyone holding the office on date, in people.yaml order (one person, or none, unless the office
+        /// has several_holders: true). <see cref="Holder"/> is the first of these.</summary>
+        public static System.Collections.Generic.IReadOnlyList<Person> Holders(Content c, string office, DateTime date) =>
+            c.People.Where(p => (!p.Died.HasValue || date < p.Died.Value) && p.Offices.Any(t => t.Office == office && In(date, t.From, t.To))).ToList();
 
         /// <summary>Party of the person on date: the party of a term held that day, else Person.Party.</summary>
         public static string PartyOf(Content c, Person p, DateTime date) =>

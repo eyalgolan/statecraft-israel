@@ -15,6 +15,9 @@ namespace Statecraft.Sim
         public string Title { get; set; } = "";
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
+        /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
+        /// deputy minister). Every other office has one holder at a time, and the loader refuses overlapping terms.</summary>
+        public bool SeveralHolders { get; set; }
         /// <summary>Day the office was established (inclusive, like a term's `from`); null when it exists from the start.</summary>
         public DateTime? From { get; set; }
         /// <summary>Day the office was abolished (exclusive end, like a term's `to`); null while it still exists.</summary>
@@ -31,6 +34,20 @@ namespace Statecraft.Sim
         public string Name { get; set; } = "";
         public DateTime From { get; set; }
         public DateTime To { get; set; }
+        /// <summary>The era's system switches (eras.yaml `systems`). Absent means the defaults: a state legislature and every map action.</summary>
+        public EraSystems Systems { get; set; } = new EraSystems();
+    }
+
+    /// <summary>Switches for code that exists (chapters design §5). A key is added here only with the code behind it.</summary>
+    public sealed class EraSystems
+    {
+        public const string State = "state";
+        public const string Assembly = "assembly";
+        /// <summary>`state`: the sitting body's votes bind. `assembly`: a consent body without force of law; its votes are
+        /// held and reported, but a vote against does not stop a policy or a budget.</summary>
+        public string Legislature { get; set; } = State;
+        /// <summary>The map actions allowed in the era (transit_camp, housing). Absent means both. An empty list means none.</summary>
+        public List<string> MapActions { get; set; } = new List<string> { "transit_camp", "housing" };
     }
 
     public sealed class Party { public string Id { get; set; } = ""; public string Name { get; set; } = ""; }
@@ -302,6 +319,8 @@ namespace Statecraft.Sim
         public List<Era> Eras = new List<Era>();
         /// <summary>The era that contains <paramref name="date"/> (From inclusive, To exclusive), or null outside every era.</summary>
         public Era? EraAt(DateTime date) => Eras.FirstOrDefault(e => date >= e.From && date < e.To);
+        /// <summary>The system switches in force on <paramref name="date"/>; the defaults outside every era.</summary>
+        public EraSystems SystemsAt(DateTime date) => EraAt(date)?.Systems ?? new EraSystems();
         public List<Indicator> Indicators = new List<Indicator>();
         public List<Policy> Policies = new List<Policy>();
         public List<Effect> Effects = new List<Effect>();

@@ -41,7 +41,8 @@ namespace Statecraft.Sim
             c.Indicators.FirstOrDefault(i => i.Id == id)?.Name ?? c.Policies.FirstOrDefault(p => p.Id == id)?.Name
             ?? c.Money.FirstOrDefault(m => m.Id == id)?.Name ?? throw Unknown("indicator, policy or money", id);
 
-        /// <summary>The phrase a map action reads as in a sentence ("a transit camp"; rules.yaml map_actions name).</summary>
+        /// <summary>The phrase a map action reads as in a sentence ("a transit camp"; rules.yaml map_actions name). Read from the base
+        /// rules on purpose: an era override cannot remove a map action, so the base names cover every action an era can have.</summary>
         public static string MapAction(Content c, string id) =>
             c.Rules.MapActions.TryGetValue(id, out var rule) ? rule.Name : throw Unknown("map action", id);
 

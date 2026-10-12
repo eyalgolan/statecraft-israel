@@ -10,46 +10,67 @@ namespace Statecraft.Game.Map.Kits
     /// (<see cref="VegetationLayer"/>) drawn with Tree.mat. Meshes are owned by the map's MapRuntimeAssets, so a rebuild
     /// frees them. Hides the marker boxes under <paramref name="markers"/> while the kits show. Registers the "kits" and
         /// "trees" visual toggles, so the frame-time profile prices each ("kits" off shows the markers again). Fills
-    /// <paramref name="columns"/>, when given, with each kit's columns (world space: the kits sit at the root's origin).</summary>
+    /// <paramref name="columns"/>, when given, with each kit's columns (world space: the kits sit at the root's origin), the
+    /// 1948 localities' included.</summary>
     public static class KitLayer
     {
         public const string RootName = "Kits", VegetationName = "Vegetation";
 
         public sealed class Stats
         {
-            public int Buildings, Vertices, Triangles, Trees, CorridorSegments; public float BuildMs, PlantMs;
+            public int Buildings, Vertices, Triangles, Trees, CorridorSegments, Localities, LocalityBuildings, Camps, Tents, Draws; public float BuildMs, PlantMs;
+            /// <summary>Every footprint the build claimed (towns, localities, camps), in claim order (MapScene.KitFootprints).</summary>
+            public IReadOnlyList<(Vector2 centre, float radius, string id)> Footprints = System.Array.Empty<(Vector2, float, string)>();
             public override string ToString() =>
-                $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0}";
+                $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
+                $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} draws={Draws}";
         }
 
         public static GameObject Build(IReadOnlyList<Settlement> settlements, Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM,
             Material kitMaterial, Material treeMaterial, MapRuntimeAssets assets, GameObject markers, out Stats stats,
-            IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null, Dictionary<string, Bounds[]>? columns = null)
+            IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null, Dictionary<string, Bounds[]>? columns = null) =>
+            Build(settlements, new List<Settlement>(), new List<Localities.Area>(), terrain, frame, hexes, elevMinM, kitMaterial, treeMaterial,
+                assets, markers, out stats, corridors, columns);
+
+        /// <summary>As Build, with the 1948 localities and the Bedouin camp areas (content/map/localities_1948.yaml) drawn
+        /// beside the game settlements: their buildings merged per tile (SettlementKits.Result.Tiles), one renderer each.</summary>
+        public static GameObject Build(IReadOnlyList<Settlement> settlements, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
+            Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM,
+            Material kitMaterial, Material treeMaterial, MapRuntimeAssets assets, GameObject markers, out Stats stats,
+            IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null, Dictionary<string, Bounds[]>? columns = null,
+            IReadOnlyList<(Vector2 centre, float radius)>? tokens = null)
         {
-            stats = new Stats();
+            var st = stats = new Stats();
             var root = new GameObject(RootName);
             var ground = new KitGround(terrain, frame, hexes, elevMinM);
             // Buildings and trees stay off the railways and roads (RouteLayer.Corridors): every route, whatever its date,
             // since the kits are not rebuilt when a dated route (the Burma Road) appears.
             if (corridors != null) foreach (var (line, half) in corridors) ground.AddCorridor(line, half);
             stats.CorridorSegments = ground.CorridorSegments;
+            if (tokens != null) ground.Tokens.AddRange(tokens);
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            var built = SettlementKits.Build(settlements, ground, out var lots, columns);   // the labels' kit footprints (issue #214)
-            foreach (var l in lots) ground.Lots.Add((l.centre, l.radius));
-            foreach (var (s, mesh, n) in built)
+            var built = SettlementKits.Build(settlements, localities, camps, ground, columns);   // columns: the labels' kit footprints (issue #214)
+            foreach (var l in built.Claimed) ground.Lots.Add((l.centre, l.radius));
+            stats.Footprints = new List<(Vector2, float, string)>(ground.Footprints);
+            void Add(string name, Mesh mesh)
             {
                 assets.Own(mesh);
-                var go = new GameObject(s.Id);
+                var go = new GameObject(name);
                 go.transform.SetParent(root.transform, false);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = kitMaterial;
                 r.shadowCastingMode = ShadowCastingMode.On;
-                stats.Buildings += n; stats.Vertices += mesh.vertexCount; stats.Triangles += (int)mesh.GetIndexCount(0) / 3;
+                st.Vertices += mesh.vertexCount; st.Triangles += (int)mesh.GetIndexCount(0) / 3; st.Draws++;
             }
+            foreach (var (s, mesh, n) in built.Towns) { Add(s.Id, mesh); stats.Buildings += n; }
+            foreach (var (name, mesh) in built.Tiles) Add(name, mesh);
+            stats.Localities = localities.Count; stats.LocalityBuildings = built.LocalityBuildings; stats.Camps = built.Camps; stats.Tents = built.Tents;
+            stats.Buildings += built.LocalityBuildings + built.Tents;
             stats.BuildMs = (float)clock.Elapsed.TotalMilliseconds;
             clock.Restart();
-            var trees = Vegetation.Plant(settlements, ground);
+            var all = new List<Settlement>(settlements); all.AddRange(localities);
+            var trees = Vegetation.Plant(all, ground);
             var veg = new GameObject(VegetationName);
             veg.transform.SetParent(root.transform, false);
             var layer = veg.AddComponent<VegetationLayer>();

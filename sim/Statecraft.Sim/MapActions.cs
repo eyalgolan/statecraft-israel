@@ -42,15 +42,18 @@ namespace Statecraft.Sim
             // No id in either reason: a command from an old save or a stale UI may name an action this content lacks; the
             // replay refuses it here, before anything is formatted, so a placement always has its rule (fix round 3, m-6).
             if (!Actions.Contains(action)) return "There is no such map action";
-            var rule = c.Rules.MapActions.TryGetValue(action, out var x) ? x : null;
+            // eras.yaml systems.map_actions: the actions this era allows
+            if (!c.SystemsAt(s.Date).MapActions.Contains(action)) return "That map action is not available in this chapter";
+            var rules = c.RulesAt(s.Date);   // the era the turn starts in
+            var rule = rules.MapActions.TryGetValue(action, out var x) ? x : null;
             if (rule == null) return "That map action is not available in this game";
-            if (s.Date < c.Rules.MapActionsFrom)
-                return $"Transit camps and housing projects can be placed from {PlayerText.Date(c.Rules.MapActionsFrom)}";
+            if (s.Date < rules.MapActionsFrom)
+                return $"Transit camps and housing projects can be placed from {PlayerText.Date(rules.MapActionsFrom)}";
             if (action == TransitCamp && !(s.Policies.TryGetValue(MaabarotPolicy, out var m) && m >= 0.5))
                 return "Transit camps need the ma'abarot policy";
             var hex = c.HexAt(q, r);
             if (hex == null || !hex.Land) return "This hex is not land";
-            var max = c.Rules.MapActionMaxDistance;
+            var max = rules.MapActionMaxDistance;
             if (!c.SettlementHexes.Any(sh => Distance(q, r, sh.Q, sh.R) <= max))
                 return FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from a settlement");
             var here = At(s, q, r);
@@ -58,8 +61,8 @@ namespace Statecraft.Sim
                 return $"This hex already has {PlayerText.MapAction(c, here.Action)}";
             // The cap comes last so a player who is over it still sees the specific reason an order is illegal. It counts
             // accepted actions (not surviving placements): housing on a camp removes the camp but still used an action.
-            if (ActionsThisTurn(s) >= c.Rules.MapActionsPerTurn)
-                return FormattableString.Invariant($"No more than {c.Rules.MapActionsPerTurn} map actions in one turn");
+            if (ActionsThisTurn(s) >= rules.MapActionsPerTurn)
+                return FormattableString.Invariant($"No more than {rules.MapActionsPerTurn} map actions in one turn");
             return null;
         }
 
@@ -68,7 +71,7 @@ namespace Statecraft.Sim
         {
             var reason = Check(c, s, action, q, r);
             if (reason != null) return reason;
-            var rule = c.Rules.MapActions[action];
+            var rule = c.RulesAt(s.Date).MapActions[action];
             if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; }
             s.MapActionsThisTurn++;
             s.Placements.RemoveAll(p => p.Q == q && p.R == r);
