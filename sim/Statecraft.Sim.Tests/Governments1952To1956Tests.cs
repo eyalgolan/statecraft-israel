@@ -141,6 +141,21 @@ public class Governments1952To1956Tests
         Assert.Contains("national_religious_front", Offices.Government(C, new DateTime(1956, 1, 1))!.Coalition);
     }
 
+    /// <summary>The Ministry of Rationing and Supply is not in the Fourth Government's records. Rationing stays with the
+    /// Minister of Trade and Industry, Peretz Bernstein, who said in the Knesset on 4 May 1953 that his ministry holds the
+    /// supply tasks and, to some extent, rationing (#283). Yosef, now without portfolio, no longer answers for it.</summary>
+    [Fact]
+    public void RationingIsTheTradeMinistersAfterTheFourthGovernmentForms()
+    {
+        Assert.Equal("dov_yosef", Who("rationing_minister", 1952, 12, 23));
+        foreach (var (y, m, d) in new[] { (1952, 12, 24), (1953, 1, 1), (1953, 5, 4), (1953, 7, 1), (1953, 12, 31), (1954, 1, 25) })
+        {
+            Assert.Equal("bernstein", Who("rationing_minister", y, m, d));
+            Assert.Equal(Who("trade_minister", y, m, d), Who("rationing_minister", y, m, d));
+        }
+        Assert.Equal("bernstein", Who("rationing_minister", 1954, 3, 15));
+    }
+
     /// <summary>Postal Services (3 November 1952) and Development (15 June 1953) are not seats before they exist, cannot
     /// be filled then, and an appointment to them works once they do (#224).</summary>
     [Fact]

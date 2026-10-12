@@ -127,6 +127,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- Rationing no longer has a vacant minister from 24 December 1952. The Knesset records show no Ministry of Rationing and
+  Supply in the Fourth Government, and on 4 May 1953 the Minister of Trade and Industry, Peretz Bernstein, told the
+  Knesset that his ministry held the supply tasks and, to some extent, rationing. He answers for rationing until
+  29 June 1955. Dov Yosef's Agriculture term now starts on 22 March 1949, as in the Knesset position record, not 10 March
+  (issues #225 and #283). The golden hashes do not move.
 - Sharett's in-game portrait uses a CC0 Van de Poll photograph in place of the US-unverified GPO source (refs #30).
 - Hebrew UI wording, still not enabled: a count-neutral pending-decisions line, "מנדטים" for Knesset seats, and
   reworded attention and full-war labels (#193).
