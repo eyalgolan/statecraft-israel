@@ -88,6 +88,15 @@ def test_pr_template_has_evidence_and_no_cla_item():
     assert "CLA" not in text and "contributors/" not in text
 
 
+def test_pr_template_asks_for_ai_disclosure_issue_link_and_goldens():
+    # Issue #264: the checklist pointed at a disclosure "above" that nothing asked for.
+    text = read(".github/pull_request_template.md")
+    assert "## AI assistance" in text and "disclosed under \"AI assistance\"" in text
+    assert "Fixes #" in text and "Refs #" in text and "only if this PR completes the issue" in text
+    assert "`Hash1950`" in text and "`Hash1952`" in text and "docs/determinism.md" in text
+    assert "## [Unreleased]" in text
+
+
 def test_content_policy_claims_no_mechanism_that_does_not_exist():
     # Review I1: living-people exclusion, share-alike refusal and a claim verifier have no code behind them.
     text = " ".join(read("docs/CONTENT_POLICY.md").split())
