@@ -136,6 +136,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             var root = document.rootVisualElement;
+            BuildingPreview.Apply(map, true, BuildingPreview.LoadFromResources);   // the Tripo models (Art/Settlements/Prototype), when present
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));

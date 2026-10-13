@@ -24,3 +24,9 @@ This is not a licence clearance or a completed store content survey. owner-verif
 | Asset pattern | Manifest | Recorded source | Review status |
 | --- | --- | --- | --- |
 | site/public/media/promo-trailer-720p.mp4 | ASSETS.yaml | Web encodes of the cinematic trailer (demo 1), promo/demo/out/demo-16x9.mp4 (not in the repository; sha256 ef791cfbdca0868ae43d09157793d54558605cc9477547cf6231a088d9986951, 1920x1080, 83 s), scaled to 1280x720 with ffmpeg on 2026-10-13: H.264 High@3.1, two-pass 660 kb/s, with AAC 96 kb/s; no other change. The same cut as the video in README.md (that upload is a separate export of it, sha256 36322b1b...). The trailer was made with AI video tools from promo/final concept art; its score is planned in promo/demo/MUSIC.md as an ElevenLabs Music cue (owner to confirm the score's source) | owner-verify |
+
+## Other
+
+| Asset pattern | Manifest | Recorded source | Review status |
+| --- | --- | --- | --- |
+| unity/Assets/Art/Settlements/Prototype/Models/* | ASSETS.yaml | Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio. Building modules decimated to 6,000-8,000 triangles in Blender 4.4; characters converted from GLB to FBX in Blender; colour maps 1024 px. The masters and per-model records (prompts, task ids, credits) are kept outside the repository. | owner-verify |

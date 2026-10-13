@@ -32,6 +32,7 @@ namespace Statecraft.Game.Map
                 if (hex == null || !Look.TryGetValue(p.Action, out var look)) continue;
                 var at = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
                 at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+                if (BuildingPreview.DressPlacement(transform, map, p, at, look.size)) continue;   // the local Tripo model, when present
                 var box = new GameObject($"{p.Action}_{p.Q}_{p.R}");
                 box.transform.SetParent(transform, false);
                 box.AddComponent<MeshFilter>().sharedMesh = cube;

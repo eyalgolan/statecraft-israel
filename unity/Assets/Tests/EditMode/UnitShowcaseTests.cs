@@ -18,6 +18,12 @@ public class UnitShowcaseTests
         UnitModels.AviaS199("v"), UnitModels.S199Propeller("q"),
     };
 
+    // These tests check the code-built models. The project now ships authored riflemen (Resources/Units/Authored/, the
+    // Tripo characters), which the hook would load instead, so it is held at "none" here and given back afterwards.
+    System.Func<string, GameObject> authored;
+    [SetUp] public void CodeBuiltOnly() { authored = UnitShowcase.AuthoredModel; UnitShowcase.AuthoredModel = _ => null; }
+    [TearDown] public void RestoreAuthored() => UnitShowcase.AuthoredModel = authored;
+
     [Test]
     public void ShowcaseIsAskedForOnlyByUnits()
     {

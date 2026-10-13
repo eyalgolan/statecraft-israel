@@ -372,6 +372,7 @@ public class HudTests
         ("MapShaderGlobals.cs", "RiftHazeTopM = -100f", "a real elevation in metres for the rift haze (shader input, not a displayed number)"),
         ("SettlementKits.cs", "DefaultHouses = 100f", "the owner's symbolic scale for houses and trees (100x real size), not a displayed number"),
         ("RouteLayer.cs", "CorridorMarginM = 100f", "a clearance in map metres that kit buildings and trees keep from a route (geometry, not a displayed number)"),
+        ("BuildingPreview.cs", "MaxScalePercent) / 100f", "the ?previewscale knob, a percentage of the building models' size (geometry, not a displayed number)"),
     };
 
     [Test]

@@ -47,6 +47,12 @@ rules:
     source: "Dreamina (dreamina.capcut.com), model GPT Image 2.5, 2026-10-12, 1536x864 as downloaded, with promo/final/03-gameplay-1936.png as the style reference; prompts in promo/start-screen/prompt-b.txt and -c.txt"
     status: owner-verify
     note: "Decision D1: AI-only images CC0 / no rights claimed. Two options for the start screen; C is used."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio. Building modules decimated to 6,000-8,000 triangles in Blender 4.4; characters converted from GLB to FBX in Blender; colour maps 1024 px. The masters and per-model records (prompts, task ids, credits) are kept outside the repository."
+    status: owner-verify
+    note: "Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1)."
   - glob: "docs/sources/declaration-1948/*.txt"
     licence: Public-Domain
     source: "The Declaration of the Establishment of the State of Israel: the Hebrew as published in Iton Rishmi (Official Gazette) No. 1, 14 May 1948, via https://he.wikisource.org/wiki/הכרזה_על_הקמת_מדינת_ישראל; the English translation via https://avalon.law.yale.edu/20th_century/israel.asp, checked against the Israel MFA's https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel (all 2026-10-12)"
