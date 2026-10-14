@@ -256,6 +256,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- Tel Aviv's 1948 localities (Sheikh Muwannis, Jammasin, Salama, Ramat Gan, Givatayim, Bnei Brak and the rest inside its
+  footprint) keep their mosques and water towers, at a quarter and three tenths of their size elsewhere, at the street
+  crossing nearest their hearts (refs #318, owner ruling 2026-10-12). The city's blocks keep their plots round them: core
+  cover 18.5% to 25.6%, the whole footprint 17.4% to 25.2%, 43 to 55 blocks.
 - CI checks the water and route-ribbon bakes against the code that makes them (#535), as it does the biome colours'
   (#529): a pinned fingerprint of `MapBuilder.WaterMeshGrid` and of `RouteLayer.Plan` and `Derive`, and a numpy port of
   the water mesh. Doc comments in `MapBuilder`, `RouteLayer` and `RouteRibbonFile` point to the checks. No change in the

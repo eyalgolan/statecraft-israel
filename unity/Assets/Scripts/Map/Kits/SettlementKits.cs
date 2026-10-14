@@ -154,7 +154,7 @@ namespace Statecraft.Game.Map.Kits
                     var km = pass ? Tile(centres[s.Id]) : (townMeshes[s.Id] = new KitMesh());
                     int from = km.VertexCount;
                     // A game settlement's own landmarks (towns round 2: TownLandmarks), a locality's its archetype's.
-                    int n = pass ? BuildOne(s, centres[s.Id], ground, km, lots, Phase.Landmark, ref rnd, 0, null)
+                    int n = pass ? BuildOne(s, centres[s.Id], ground, km, lots, Phase.Landmark, ref rnd, 0, null, PackedIn(s, towns, centres, ground))
                         : TownLandmarks(s, centres[s.Id], ground, km, lots, ref rnd);
                     if (pass) { spans[s.Id] = new List<(KitMesh, int, int)> { (km, from, km.VertexCount) }; result.LocalityBuildings += n; }
                     else result.TownLandmarks[s.Id] = n;
@@ -918,7 +918,7 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>A 1948 locality's landmark or houses (promo-villages): random spots over its disc, its archetype's buildings,
         /// clear of the grid's edge midpoints. The 25 game settlements use TownLandmarks and PlaceHouses (towns round 2).</summary>
         static int BuildOne(Settlement s, Vector2 centre, KitGround ground, KitMesh km, Lots lots, Phase phase, ref KitRandom rnd, int landmarksBefore,
-            HashSet<string>? ignoreCellsOf)
+            HashSet<string>? ignoreCellsOf, CityPlots? city = null)
         {
             var arch = ArchetypeOf(s);
             float R = FootprintRadiusM(s, ground.HexSizeM);
@@ -943,7 +943,7 @@ namespace Statecraft.Game.Map.Kits
             bool Free(Vector2 p, float r) => FreeAt(lots, p, r);
 
             // Landmarks first, at the centre (or the nearest dry spot to it).
-            if (phase != Phase.Houses) placed += PlaceLandmark(s, arch, centre, R, ground, km, lots, ref rnd);
+            if (phase != Phase.Houses) placed += PlaceLandmark(s, arch, centre, R, ground, km, lots, ref rnd, city);
             if (phase == Phase.Landmark) return placed;
 
             bool mixed = Localities.IsMixed(s.Id);
@@ -984,28 +984,73 @@ namespace Statecraft.Game.Map.Kits
         /// town's or village's mosque (a 1948 locality's follows its Village Statistics religion columns: a church in
         /// Christian Bethlehem, none in the Druze villages; a village's is smaller than a town's), a Jewish place's water
         /// tower. Returns how many were built.</summary>
-        static int PlaceLandmark(Settlement s, Archetype arch, Vector2 centre, float R, KitGround ground, KitMesh km, Lots lots, ref KitRandom rnd)
+        static int PlaceLandmark(Settlement s, Archetype arch, Vector2 centre, float R, KitGround ground, KitMesh km, Lots lots, ref KitRandom rnd,
+            CityPlots? city = null)
         {
             var heart = DryNear(centre, ground, R * 0.3f, ref rnd);
+            // Inside Tel Aviv's footprint (#318) the landmark stands at the street crossing nearest its spot, drawn small enough
+            // that the four blocks round the crossing keep their plots. Elsewhere it stands where it wants, at full size.
+            Vector2 At(Vector2 want) => city?.NearestCrossing(want) ?? want;
+            float mosqueK = city == null ? 1f : InCityMosque, towerK = city == null ? 1f : InCityTower;
             if (Localities.LandmarkOf(s.Id) == Landmark.Mixed)   // a mixed locality: a mosque on its west side, a water tower on its east
-                return Mosque(s.Id, heart - new Vector2(R * 0.3f, 0f), ground, km, lots, ref rnd, 0.8f)
-                    + WaterTower(s.Id, heart + new Vector2(R * 0.35f, 0f), ground, km, lots);
+                return Mosque(s.Id, At(heart - new Vector2(R * 0.3f, 0f)), ground, km, lots, ref rnd, 0.8f * mosqueK)
+                    + WaterTower(s.Id, At(heart + new Vector2(R * 0.35f, 0f)), ground, km, lots, towerK);
             switch (arch)
             {
-                case Archetype.OldTown: return Mosque(s.Id, heart, ground, km, lots, ref rnd, 1.2f);   // no locality is an old town today
+                case Archetype.OldTown: return Mosque(s.Id, At(heart), ground, km, lots, ref rnd, 1.2f * mosqueK);   // no locality is an old town today
                 case Archetype.ArabTown:
-                    float size = s.Type == "village" ? 0.8f : 1f;
+                    float size = (s.Type == "village" ? 0.8f : 1f) * mosqueK;
                     switch (Localities.LandmarkOf(s.Id) ?? Landmark.Mosque)
                     {
-                        case Landmark.Mosque: return Mosque(s.Id, heart, ground, km, lots, ref rnd, size);
-                        case Landmark.Church: return Church(s.Id, heart, ground, km, lots, size) ? 1 : 0;
+                        case Landmark.Mosque: return Mosque(s.Id, At(heart), ground, km, lots, ref rnd, size);
+                        case Landmark.Church: return Church(s.Id, At(heart), ground, km, lots, size) ? 1 : 0;
                         default: return 0;
                     }
                 case Archetype.Moshava:
                     return (Localities.LandmarkOf(s.Id) ?? Landmark.WaterTower) == Landmark.WaterTower
-                        ? WaterTower(s.Id, heart + new Vector2(R * 0.35f, -R * 0.2f), ground, km, lots) : 0;
+                        ? WaterTower(s.Id, At(heart + new Vector2(R * 0.35f, -R * 0.2f)), ground, km, lots, towerK) : 0;
                 default: return 0;
             }
+        }
+
+        /// <summary>A 1948 locality's mosque and water tower inside Tel Aviv's footprint, as a share of their size elsewhere
+        /// (#318). Their lots (a village mosque's 132 m, a water tower's 120 m) then fit a street crossing with the blocks of
+        /// all four plots round it at full size: Tel Aviv's core cover is 25.6%, as without the localities, against 18.5%
+        /// with full-size landmarks. At 0.3 for the mosques it falls to 24.3%.</summary>
+        const float InCityMosque = 0.25f, InCityTower = 0.3f;
+
+        /// <summary>A white city's block lattice (Tel Aviv's: one lattice, no jitter), to stand a 1948 locality's landmark at
+        /// one of its street crossings (#318).</summary>
+        sealed class CityPlots
+        {
+            readonly Vector2 c; readonly float pu, pv, ca, sa;
+            public CityPlots(Vector2 centre, float yawDeg)
+            {
+                var g = Grid(Style.WhiteBlock);
+                c = centre; pu = g.pu * g.scale; pv = g.pv * g.scale;
+                ca = Mathf.Cos(yawDeg * Mathf.Deg2Rad); sa = Mathf.Sin(yawDeg * Mathf.Deg2Rad);
+            }
+            /// <summary>The street crossing nearest <paramref name="p"/>: the corner shared by four plots, half a pitch off
+            /// every plot's centre.</summary>
+            public Vector2 NearestCrossing(Vector2 p)
+            {
+                var d = p - c;
+                float u = (Mathf.Floor((d.x * ca + d.y * sa) / pu) + 0.5f) * pu, v = (Mathf.Floor((-d.x * sa + d.y * ca) / pv) + 0.5f) * pv;
+                return c + new Vector2(u * ca - v * sa, u * sa + v * ca);
+            }
+        }
+
+        /// <summary>The city whose plots a 1948 locality's landmark stands on (#318, owner ruling 2026-10-12): Tel Aviv's, when the
+        /// locality's centre lies inside its footprint; else null. Its villages (Sheikh Muwannis, Jammasin, Salama) and its
+        /// neighbours (Ramat Gan, Givatayim, Bnei Brak) keep their landmarks, smaller, at the street crossing nearest their hearts.</summary>
+        static CityPlots? PackedIn(Settlement loc, IReadOnlyList<Settlement> towns, Dictionary<string, Vector2> centres, KitGround ground)
+        {
+            foreach (var t in towns)
+            {
+                if (t.Id != "tel_aviv") continue;
+                if ((centres[loc.Id] - centres[t.Id]).magnitude <= FootprintRadiusM(t, ground.HexSizeM)) return new CityPlots(centres[t.Id], GridYaw(t.Id));
+            }
+            return null;
         }
 
         /// <summary>Buildings per settlement: the footprint area times the archetype's built-up share over its mean lot.</summary>

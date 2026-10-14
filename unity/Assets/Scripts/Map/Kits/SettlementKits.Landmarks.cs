@@ -462,9 +462,9 @@ namespace Statecraft.Game.Map.Kits
             return true;
         }
 
-        static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots)
+        static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size = 1f)
         {
-            float m = KitScale.Houses;
+            float m = KitScale.Houses * size;
             if (!Claim(lots, want, 4f * m, owner, ground, out var p)) return 0;
             float y = ground.Y(p.x, p.y);
             var concrete = C(0.82f, 0.80f, 0.76f);

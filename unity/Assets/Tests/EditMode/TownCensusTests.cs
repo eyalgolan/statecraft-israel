@@ -255,11 +255,40 @@ public class TownCensusTests
     /// landmark, whole footprint and inner half radius). Towns round 2 measured them with the 1948 localities (docs/visual-v1.md,
     /// "Towns round 2"): Tel Aviv 43 / 17.4% / 18.5%, Jaffa 33 / 32.6% / 31.9%, Haifa 45 / 21.0% / 20.6%, Jerusalem 110 /
     /// 22.7% / 24.9%; main before it had 36, 15, 30 and 70 buildings. The building floors sit above main's counts, so a change
-    /// that thins a city back to round 1's sparse handful fails here; the cover floors are about 10% under the measure.</summary>
+    /// that thins a city back to round 1's sparse handful fails here; the cover floors are about 10% under the measure.
+    /// Tel Aviv's row is #318's (owner ruling 2026-10-12): with its localities' landmarks at its street crossings it draws 55 /
+    /// 25.2% / 25.6%, and its core floor is the ruling's 25%.</summary>
     internal static readonly Dictionary<string, (int buildings, float all, float core)> Floors = new Dictionary<string, (int, float, float)>
     {
-        ["tel_aviv"] = (40, 0.155f, 0.165f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (40, 0.19f, 0.185f), ["jerusalem"] = (95, 0.20f, 0.22f),
+        ["tel_aviv"] = (50, 0.225f, 0.25f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (40, 0.19f, 0.185f), ["jerusalem"] = (95, 0.20f, 0.22f),
     };
+
+    /// <summary>#318 (owner ruling 2026-10-12): Tel Aviv's 1948 localities keep their hearts (#291, review M8). Every locality
+    /// whose centre lies inside Tel Aviv's footprint and whose kind has a landmark builds it, before any of the city's blocks.</summary>
+    [Test]
+    public void TelAvivsLocalitiesKeepTheirLandmarks()
+    {
+        var map = OpenMap();
+        Census(map, out var placed, out var g);
+        var ta = map.Settlements.First(s => s.Id == "tel_aviv");
+        var w = map.Frame.ToWorld(ta.Lon, ta.Lat, 0); var c = new Vector2(w.x, w.z);
+        float R = SettlementKits.FootprintRadiusM(ta, g.HexSizeM);
+        var bad = new List<string>(); int checkedN = 0;
+        foreach (var loc in map.Localities.Select(p => p.Settlement))
+        {
+            var lw = map.Frame.ToWorld(loc.Lon, loc.Lat, 0);
+            if ((new Vector2(lw.x, lw.z) - c).magnitude > R) continue;
+            if (Localities.LandmarkOf(loc.Id) == Landmark.None) continue;
+            checkedN++;
+            int firstBlock = placed.FindIndex(p => p.Id == "tel_aviv" && p.Kind == "building");
+            int at = placed.FindIndex(p => p.Id == loc.Id && p.Kind != "building" && p.Kind != "wing");
+            if (at < 0) bad.Add(loc.Id + " lost its landmark");
+            else if (firstBlock >= 0 && at > firstBlock) bad.Add(loc.Id + "'s landmark came after Tel Aviv's blocks");
+        }
+        TestContext.WriteLine($"{checkedN} localities inside Tel Aviv's footprint checked");
+        Assert.GreaterOrEqual(checkedN, 8, "Sheikh Muwannis, Jammasin, Salama, Ramat Gan, Givatayim, Bnei Brak... lie inside it");
+        CollectionAssert.IsEmpty(bad);
+    }
 
     [Test]
     public void TheCitiesCoverTheirGround()
