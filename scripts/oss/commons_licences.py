@@ -27,6 +27,9 @@ UA = {"User-Agent": "statecraft-israel-licence-audit/1.0 (https://github.com/eya
 US_1996_TEMPLATES = {"PD-1996"}
 # The dated composite tags on the Weizmann source explicitly include US expiry.
 US_EXPIRED_COMPOSITES = {"PD-old-70-expired", "PD-old-70-1923"}
+# Commons artist values that name nobody: a CC BY or CC BY-SA attribution needs a named author.
+UNNAMED_ARTISTS = {"unknown", "unknown author", "author unknown", "unknown photographer", "anonymous",
+                   "anonymous photographer"}
 # Portrait files with no people.yaml record (promo/CREDITS.md lists Dayan as CC0).
 EXTRA = [("promo/ref/people/Moshe_Dayan_1962_CC0.jpg",
           "https://commons.wikimedia.org/wiki/File:Moshe_Dayan_met_mgr._A.C._Ramselaar_(cropped).jpg")]
@@ -55,7 +58,7 @@ def rule_for(path: str, source: str, licence_short: str, templates: list[str], a
                                                 "CC BY-SA 4.0")
     elif cc_by or cc_by_sa:
         name = "CC BY 4.0" if cc_by else "CC BY-SA 4.0"
-        if not rule["artist"]:
+        if not rule["artist"] or rule["artist"].lower() in UNNAMED_ARTISTS:
             rule.update(status="owner-verify", note=f"{name} needs a named artist for the attribution")
         elif not attributed:
             rule.update(status="owner-verify", note=f"{name} needs an attribution entry for this file in NOTICE")

@@ -142,7 +142,7 @@ def test_cc_by_sa_without_artist_needs_the_owner():
 
 
 def test_cc_by_sa_text_without_the_template_is_unknown():
-    for templates in ([], CC_BY):
+    for templates in ([], CC_BY, ["Template:Cc-by-sa-3.0"], ["Template:Cc-by-sa-layout"]):
         r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 4.0", templates, "Knesset photographer", attributed=True)
         assert r["licence"] == "unknown" and r["status"] == "owner-verify"
 
@@ -151,3 +151,11 @@ def test_cc_by_sa_template_does_not_make_a_cc_by_or_older_file_share_alike():
     for short in ("CC BY 4.0", "CC BY-SA 3.0"):
         r = cl.rule_for("p/a.jpg", "s", short, CC_BY_SA, "Knesset photographer", attributed=True)
         assert r["licence"] == "unknown"
+
+
+def test_unknown_or_anonymous_is_not_a_named_artist():
+    for short, templates in (("CC BY 4.0", CC_BY), ("CC BY-SA 4.0", CC_BY_SA)):
+        for artist in ("Unknown author", "unknown", "<span>Unknown author</span>", "Anonymous", "anonymous photographer",
+                       "Unknown photographer", "Author unknown"):
+            r = cl.rule_for("p/a.jpg", "s", short, templates, artist, attributed=True)
+            assert r["status"] == "owner-verify" and "artist" in r["note"], (short, artist)

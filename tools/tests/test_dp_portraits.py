@@ -16,7 +16,7 @@ BATCH = {
     "bentov": ("Mordechai_Bentov_(00330019).jpg", "promo/ref/people/Mordechai_Bentov_CCBYSA_Knesset.jpg", 0.5,
                "Knesset photographer", "CC BY-SA 4.0", "CC-BY-SA-4.0", "Cc-by-sa-4.0", (30, 26, 684, 918)),
     "shapira": ("Haim-Moshe_Shapira_(997008137213005171).jpg", "promo/ref/people/Haim-Moshe_Shapira_CCBY_1952.jpg", 0.37,
-                "Benno Rothenberg", "CC BY 4.0", "CC-BY-4.0", "Cc-by-4.0", (640, 900, 540, 684)),
+                "Benno Rothenberg", "CC BY 4.0", "CC-BY-4.0", "Cc-by-4.0", (730, 900, 540, 684)),
 }
 OLD_GPO = {"promo/ref/people/Yehuda_Leib_Maimon.jpg", "promo/ref/people/Mordechai_Bentov.jpg",
            "promo/ref/people/Haim-Moshe_Shapira.jpg"}
@@ -90,3 +90,18 @@ def test_licensing_and_importer_accept_cc_by_sa_portraits():
     assert 'p.Portrait.License != "CC BY-SA 4.0"' in importer
     tests = (ROOT / "unity/Assets/Tests/EditMode/PortraitImportTests.cs").read_text(encoding="utf-8")
     assert 'p.Portrait.License == "CC BY-SA 4.0"' in tests
+
+
+def test_notice_share_alike_block_gives_the_by_sa_licence_link_and_the_share_alike_statement():
+    # The header and sentence give the licence and URI for the adapted crops, which the per-file lines do not.
+    notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+    header = "CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)"
+    first = min(notice.index("\n- maimon.jpg:"), notice.index("\n- bentov.jpg:"))
+    start = notice.rindex("\nCC BY", 0, first) + 1      # the licence header that governs these entries
+    end = notice.find("\n\n", first)
+    block = notice[start:end if end != -1 else len(notice)]
+    assert "- maimon.jpg:" in block and "- bentov.jpg:" in block, "maimon.jpg and bentov.jpg sit under one header"
+    assert block.startswith(header)
+    statement = re.sub(r"\s+", " ", block)
+    assert ("Share-alike: these cropped portraits, and the matching files in promo/ref/people/, are adaptations and are "
+            "released under CC BY-SA 4.0") in statement

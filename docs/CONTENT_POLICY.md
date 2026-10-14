@@ -33,8 +33,10 @@ These rules protect the game and the people in it. They are not a viewpoint:
 4. **The Holocaust is an event the player reacts to, never one the player plays.** It is shown without swastikas.
 5. **Real people.** People appear in their public roles and documented acts. Competence and loyalty values are game
    balance, not judgements of the person, and `content/people.yaml` labels them so. The maintainer does not add living
-   people, and records a legal review before any release that includes one. Portraits are public-domain or CC0
-   photographs only; the maintainer refuses share-alike portraits at review.
+   people, and records a legal review before any release that includes one. Portraits are public-domain, CC0, CC BY 4.0
+   (owner ruling on #30, 13 October 2026) or CC BY-SA 4.0 photographs (owner, 14 October 2026, `docs/oss/DECISIONS.md`
+   D-P: "yes" to CC BY-SA 4.0 for portraits); share-alike applies, so a portrait cropped from a CC BY-SA 4.0 photograph
+   is itself released under CC BY-SA 4.0 and credited in `NOTICE`. The maintainer refuses any other licence at review.
 6. **AI-assisted writing** is a draft. A human checks every factual claim in it against its sources, one by one,
    before the entry is marked `fact-checked`; the maintainer applies this rule at review.
 

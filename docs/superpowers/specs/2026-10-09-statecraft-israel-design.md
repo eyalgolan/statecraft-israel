@@ -227,7 +227,7 @@ Each turn runs in six steps:
 6. **Geography and portraits** reuse the pipelines proven in `promo/`:
    - The map comes from Copernicus elevation data, with attribution.
    - Settlement coordinates and founding dates are sourced for each era.
-   - Portraits use **public-domain or CC0 photos only**. The licence is recorded automatically, a human checks the likeness, and share-alike sources are rejected.
+   - Portraits use **public-domain or CC0 photos only**. The licence is recorded automatically, a human checks the likeness, and share-alike sources are rejected. *Amended: CC BY 4.0 is accepted (owner ruling on #30, 13 October 2026), and so is CC BY-SA 4.0 (owner, 14 October 2026, `docs/oss/DECISIONS.md` D-P), whose crops are themselves CC BY-SA 4.0.*
 7. **Automated content tests** run in `dotnet test` and check that:
    - every file matches its schema;
    - every reference resolves;

@@ -69,8 +69,9 @@ Each crop is taken from the full-resolution Commons original, downscaled to 512 
   https://commons.wikimedia.org/wiki/File:Haim-Moshe_Shapira_(997008137213005171).jpg
   Identity: NLI record 997008137213005171 (archive ARC. 4* 2068 / 8979), «בתצלום: טקס חלוקת פרס יעול ע"י משרד הפנים.
   בימת הנואמים וביניהם שר הפנים משה שפירא.» The seated, moustached man on the right of the frame; not the standing
-  speaker in glasses, and not the men on the far left. Identity confirmed by the owner (D-P, 14 October 2026).
-  Original 1330 x 1889; crop box x=640, y=900, w=540, h=684; output 404 x 512 (scale 0.749).
+  speaker in glasses (the box starts right of his sleeve), and not the men on the far left. Identity confirmed by the
+  owner (D-P, 14 October 2026).
+  Original 1330 x 1889; crop box x=730, y=900, w=540, h=684; output 404 x 512 (scale 0.749).
 - Mordechai Bentov: crop of Knesset photographer / Knesset Archives, between 14 February 1949 and 22 November 1965 (the
   file's date range, his Knesset membership), CC BY-SA 4.0 (attribution in NOTICE; share-alike, so this crop is
   CC BY-SA 4.0 too):
