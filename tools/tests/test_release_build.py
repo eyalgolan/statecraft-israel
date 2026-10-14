@@ -665,3 +665,9 @@ def test_a_dangling_symlink_into_the_repository_is_refused(repo, editor, monkeyp
         fake = Fake()
         assert run_main(["--platform", "mac", "--dev", *extra, "--out", str(link / "x")], repo, editor, fake, monkeypatch) == 1
         assert unity_calls(fake) == []
+
+
+@pytest.mark.parametrize("tag", ["v٠.١.٠", "v０.１.０", "v0.1.0-rc.١"])
+def test_a_tag_with_non_ascii_digits_is_not_a_release_tag(tag):
+    """\\d without re.ASCII matches Arabic-Indic and full-width digits; a tag reaches file names and the CI check."""
+    assert rb.TAG.fullmatch(tag) is None

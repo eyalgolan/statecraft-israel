@@ -73,7 +73,7 @@ ARCHIVES = {
     "linux": "statecraft-israel-{tag}-linux-x64.tar.gz",
     "windows": "statecraft-israel-{tag}-windows-x64.zip",
 }
-TAG = re.compile(r"v\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?")
+TAG = re.compile(r"v\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?", re.ASCII)   # ASCII: \d must not match other digits
 
 
 @dataclass(frozen=True)
