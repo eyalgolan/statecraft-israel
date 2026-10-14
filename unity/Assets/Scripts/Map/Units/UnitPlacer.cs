@@ -112,12 +112,28 @@ namespace Statecraft.Game.Map.Units
                         if (best != null) break;
                         if (sea) break;   // a ship's sea hex is all its test; rounds 2 and 3 add nothing
                     }
-                    if (best == null) { skipped?.Invoke($"UNITS no clear spot within one hex of {a.Place} for {u.Id}; not drawn"); continue; }
+                    if (best == null) { skipped?.Invoke(SkipMessage(u, a)); continue; }
                     held.Add((best.Value.Q, best.Value.R, from, to));
                     result[a] = best.Value;
                 }
             }
             return result;
+        }
+
+        /// <summary>The message for an anchor PlaceAll found no clear spot for.</summary>
+        public static string SkipMessage(UnitEntry u, UnitAnchor a) => $"UNITS no clear spot within one hex of {a.Place} for {u.Id}; not drawn";
+
+        /// <summary>PlaceAll's skip messages for a placement it made of <paramref name="units"/>: one for every anchor of a
+        /// drawn unit with no spot, in its order (issue #321: the units layer reports the map's skips when it takes its spots).</summary>
+        public static List<string> SkipMessages(IReadOnlyList<UnitEntry> units, IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots)
+        {
+            var list = new List<string>();
+            foreach (var u in units)
+            {
+                if (u.Hidden != null) continue;
+                foreach (var a in u.Anchors) if (!spots.ContainsKey(a)) list.Add(SkipMessage(u, a));
+            }
+            return list;
         }
 
         /// <summary>Within the one-hex limit around a `toward` point (every round): rings every

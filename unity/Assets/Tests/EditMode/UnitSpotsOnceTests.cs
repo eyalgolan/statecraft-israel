@@ -87,7 +87,7 @@ public class UnitSpotsOnceTests
             Assert.IsTrue(layer.Spots.TryGetValue(kv.Key, out var spot), kv.Key.Place);
             Assert.AreEqual(kv.Value, spot, kv.Key.Place);
         }
-        CollectionAssert.AreEqual(skipped, map.UnitSkips, "the same anchors skipped, with the same messages");
+        CollectionAssert.AreEqual(skipped, UnitPlacer.SkipMessages(layer.Units, layer.Spots), "the same anchors skipped, with the same messages");
     }
 
     /// <summary>Review of #563, nit 3: an anchor with no clear spot is still reported when the layer takes the map's spots
@@ -103,8 +103,9 @@ public class UnitSpotsOnceTests
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = Object.FindFirstObjectByType<MapScene>();
         map.Build(inputs.Map);
-        Assert.IsNotEmpty(map.UnitSkips, "the map could not place the anchor at sea");
-        foreach (var skip in map.UnitSkips) LogAssert.Expect(LogType.Warning, skip);
+        var skips = UnitPlacer.SkipMessages(map.UnitEntries, map.UnitSpots);
+        Assert.IsNotEmpty(skips, "the map could not place the anchor at sea");
+        foreach (var skip in skips) LogAssert.Expect(LogType.Warning, skip);
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(saveDir);
         root.Begin(inputs, 0);

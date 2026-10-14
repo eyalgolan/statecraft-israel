@@ -85,8 +85,8 @@ namespace Statecraft.Game.Map.Units
             // UnitSpotsOnceTests), with its skipped anchors' warnings; else placed here.
             if (map.UnitSpotsFor(units, hexes) is { } mapSpots)
             {
-                layer.spots = mapSpots.spots;
-                foreach (var skip in mapSpots.skips) Debug.LogWarning(skip);
+                layer.spots = mapSpots;
+                foreach (var skip in UnitPlacer.SkipMessages(units, mapSpots)) Debug.LogWarning(skip);
             }
             else layer.spots = layer.ground.Place(units, XZ(map), Debug.LogWarning);
             layer.assets = root.AddComponent<MapRuntimeAssets>();
