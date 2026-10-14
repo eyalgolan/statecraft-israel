@@ -1,0 +1,128 @@
+name: Player golden
+
+# The licence-free golden check of the released desktop players (plan
+# docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sections 2.2 and 6.3; decision O7 in
+# docs/oss/DECISIONS.md). The players are built on the owner's Mac and attached to a GitHub Release; this workflow only
+# downloads them and runs `-batchmode -nographics -golden` on clean GitHub-hosted machines (docs/determinism.md). No
+# Unity install, no Unity licence and no secret: the only credential is the default token, read-only, which
+# `gh release download` uses.
+#
+# Trust: it runs binaries, so it runs only binaries from a release of THIS repository, which only someone with write
+# access can publish. It never runs on pull requests, takes no URL and no Actions artifact (a fork's pull request can
+# upload artifacts here), and the manual input is a tag checked against vX.Y.Z before anything uses it. The expected
+# hashes are read from the golden manifest AT THE RELEASE TAG (sim/Statecraft.Sim.Tests/golden/manifest.txt), the commit
+# the players were built from, so no hash is copied here. Every action is pinned to a commit SHA
+# (scripts/oss/pin_actions.py). scripts/oss/tests/test_github_config.py pins these properties.
+#
+# Asset names (the contract with the release script, tools/release_build.py; ASSETS in tools/player_golden_check.py):
+#   statecraft-israel-<tag>-windows-x64.zip        Windows x64 (Mono, built on the Mac; decision O8)
+#   statecraft-israel-<tag>-linux-x64.tar.gz       Linux x64 (tar keeps the executable bit)
+#   statecraft-israel-<tag>-macos-universal.zip    macOS Universal (IL2CPP), the .app inside
+# <tag> is the release tag with its v (statecraft-israel-v0.2.0-windows-x64.zip), like the web zip in docs/RELEASING.md.
+# A platform whose asset is missing is skipped with a warning.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag of this repository to check (vX.Y.Z)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  UV_PYTHON: "3.12"
+
+concurrency:
+  group: player-golden-${{ github.event_name == 'release' && github.ref_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Player golden (find the players)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - name: The tag, checked before anything uses it
+        id: tag
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT" = release ]; then tag="$REF_NAME"; else tag="$INPUT_TAG"; fi
+          if ! printf '%s' "$tag" | grep -Eqx 'v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?'; then
+            echo "::error::not a release tag (expected vX.Y.Z)"; exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/player_golden_check.py
+          sparse-checkout-cone-mode: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.12.5"
+          enable-cache: false
+      - name: The release's players
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,assets > "$RUNNER_TEMP/release.json"
+          uv run --no-project tools/player_golden_check.py plan --tag "$TAG" --event "$EVENT" --output "$GITHUB_OUTPUT" < "$RUNNER_TEMP/release.json"
+
+  golden:
+    name: Player golden (${{ matrix.platform }})
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/player_golden_check.py
+          sparse-checkout-cone-mode: false
+      # The manifest of the commit the players were built from: the hashes the players themselves compare against.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ needs.plan.outputs.tag }}
+          path: released
+          persist-credentials: false
+          sparse-checkout: sim/Statecraft.Sim.Tests/golden/manifest.txt
+          sparse-checkout-cone-mode: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.12.5"
+          enable-cache: false
+      - name: Download the player from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.plan.outputs.tag }}
+          ASSET: ${{ matrix.asset }}
+        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$ASSET" --dir "$RUNNER_TEMP/download"
+      - name: Run the player's golden check
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ASSET: ${{ matrix.asset }}
+        run: >-
+          uv run --no-project tools/player_golden_check.py run --platform "$PLATFORM"
+          --archive "$RUNNER_TEMP/download/$ASSET" --manifest released/sim/Statecraft.Sim.Tests/golden/manifest.txt
+          --work "$RUNNER_TEMP/golden" --timeout 900
