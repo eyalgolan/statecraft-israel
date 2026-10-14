@@ -62,5 +62,26 @@ public class SettlementsOnceTests
         var other = map.SettlementsFor(inputs.Map.SettlementsYaml + "\n# edited\n");
         Assert.AreNotSame(map.Settlements, other);
         CollectionAssert.AreEqual(fresh.Select(s => (s.Id, s.Name)).ToList(), other.Select(s => (s.Id, s.Name)).ToList());
+        // Review of #587, nit 4: text that really differs gives its own names, not the map's.
+        var first = fresh[0];
+        var renamed = map.SettlementsFor(inputs.Map.SettlementsYaml.Replace($"name: {first.Name}\n", "name: Renamed\n"));
+        Assert.AreEqual("Renamed", renamed.First(s => s.Id == first.Id).Name, "the edited text's own name");
+        Assert.AreEqual(first.Name, map.Settlements.First(s => s.Id == first.Id).Name, "the map's list is untouched");
+    }
+
+    /// <summary>Review of #587, nit 2: Clear forgets the text the map read. A rebuild that fails on its settlements file
+    /// (after Clear, before the new parse) must not hand the old list out as the parse of the old text.</summary>
+    [Test]
+    public void AFailedRebuildForgetsTheText()
+    {
+        var inputs = Inputs();
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build(inputs.Map);
+        var read = inputs.Map.SettlementsYaml; var old = map.Settlements;
+        Assert.AreSame(old, map.SettlementsFor(read));
+        inputs.Map.SettlementsYaml = "settlements: []\n";
+        Assert.Throws<InvalidDataException>(() => map.Build(inputs.Map));
+        Assert.AreNotSame(old, map.SettlementsFor(read), "the old list is not the parse of the old text after Clear");
     }
 }

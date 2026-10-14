@@ -43,7 +43,7 @@ namespace Statecraft.Game.Map
 
         /// <summary>How many times <see cref="Parse"/> has run in this domain (a test aid: SettlementsOnceTests counts the
         /// parses of one boot, issue #321).</summary>
-        public static int Parses { get; private set; }
+        internal static int Parses { get; private set; }
 
         /// <summary>Parses settlements_1948.yaml. Every malformed input throws InvalidDataException naming
         /// <paramref name="file"/>, and for content errors the settlement id and the field: YAML syntax, duplicate keys,

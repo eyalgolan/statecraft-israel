@@ -25,7 +25,9 @@ namespace Statecraft.Game.Map
         public HexFile Hexes { get; private set; }
         public Terrain Terrain { get; private set; }
         public Material MarkerMaterial => markerMaterial;
-        /// <summary>The settlements the last Build placed (settlements_1948.yaml), for the UI's map labels.</summary>
+        /// <summary>The settlements the last Build placed (settlements_1948.yaml), for the UI's map labels and, through
+        /// SettlementsFor, the info panel's names. Read only: the markers, the kits, the labels and GameRoot share this one
+        /// list and its objects; nothing may write to them.</summary>
         public IReadOnlyList<Settlement> Settlements { get; private set; } = new List<Settlement>();
         string settlementsYamlRead;   // null before a build
 
