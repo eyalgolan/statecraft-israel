@@ -17,7 +17,7 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 
 - `corridors.yaml` (new): corridor and segment definitions with progress.
 - `Projects.cs` (new, Phase 1) and the project's save lines: corridor progress.
-- `Corridors.cs` (new) and `tools/routes_1948.py` (new): the Phase 4 corridor model and route data (the plan, Phase 4 Touches [S2]).
+- `Corridors.cs` (new) and `tools/routes_1948.py` (extended): the Phase 4 corridor model and route data (the plan, Phase 4 Touches [S2]).
 - `RouteLayer` (Unity): draws corridor progress.
 - `sites.yaml` (new, Phase 1): corridor endpoints.
 
