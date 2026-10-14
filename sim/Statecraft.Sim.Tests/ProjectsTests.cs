@@ -35,7 +35,7 @@ public class ProjectsTests
         var r = Step(c, s, Build(id));
         Assert.Empty(r.Rejected);
         var work = r.State.Sites["site_a"];
-        Assert.Equal(("site_a", id, 2, (DateTime?)null), (work.Site, work.Unit, work.TurnsLeft, work.BuiltOn));   // 3 turns, one of them this one
+        Assert.Equal(("site_a", (int?)id, 2, (DateTime?)null), (work.Site, work.Unit, work.TurnsLeft, work.BuiltOn));   // 3 turns, one of them this one
         Assert.True(Projects.IsBusy(r.State, id));
         Assert.Equal(Step(c, s).State.Treasury - 1.5, r.State.Treasury, 9);   // paid in full at the start (question 12)
         Assert.Equal((1, 0), (r.State.Units[id].Q, r.State.Units[id].R));   // the unit works from where it stands (question 9)

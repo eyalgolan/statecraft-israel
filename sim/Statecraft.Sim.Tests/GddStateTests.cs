@@ -91,6 +91,23 @@ public class GddStateTests
         Assert.Equal("mefalsim=done,1949-06-15", SiteWork.Built("mefalsim", new DateTime(1949, 6, 15)).Canonical());
     }
 
+    // R-SITE-003: a built site holds no unit. Unit ids start at 0, so "no unit" is null, never 0: unit 0 is free once its
+    // site is built, and a record cannot be built and have a unit, or be building without one.
+    [Fact]
+    public void ABuiltSiteHoldsNoUnitNotUnitZero()
+    {
+        var built = SiteWork.Built("mefalsim", new DateTime(1949, 3, 15));
+        Assert.Null(built.Unit);
+        var s = new GameState();
+        s.Units.Add(0, new Unit(0, "halutz", -3, 19));
+        s.Sites["mefalsim"] = new SiteWork("mefalsim", 0, 1, null);
+        Assert.True(Projects.IsBusy(s, 0));
+        s.Sites["mefalsim"] = built;
+        Assert.False(Projects.IsBusy(s, 0));
+        Assert.Throws<ArgumentException>(() => new SiteWork("mefalsim", null, 1, null));
+        Assert.Throws<ArgumentException>(() => new SiteWork("mefalsim", 0, 0, new DateTime(1949, 3, 15)));
+    }
+
     // R-LOOP-002, R-TRAIN-003: a city's recruits reach the hash, and a city with none hashes as it did before PR 4, so
     // scenario-mvp-absorb-first (no training) does not move.
     [Fact]

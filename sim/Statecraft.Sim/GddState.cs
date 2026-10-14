@@ -83,16 +83,21 @@ namespace Statecraft.Sim
     public sealed class SiteWork
     {
         public string Site { get; }
-        /// <summary>The halutz unit building the site; 0 once it is built.</summary>
-        public int Unit { get; }
+        /// <summary>The halutz unit building the site; null once it is built (unit ids start at 0, so 0 is a real unit).</summary>
+        public int? Unit { get; }
         public int TurnsLeft { get; }
         /// <summary>The end date of the turn the site was built on; null while it is being built.</summary>
         public DateTime? BuiltOn { get; }
 
-        public SiteWork(string site, int unit, int turnsLeft, DateTime? builtOn) { Site = site; Unit = unit; TurnsLeft = turnsLeft; BuiltOn = builtOn; }
+        /// <summary>A site being built (<paramref name="builtOn"/> null) needs its unit; a built site has none.</summary>
+        public SiteWork(string site, int? unit, int turnsLeft, DateTime? builtOn)
+        {
+            if ((builtOn == null) != (unit != null)) throw new ArgumentException("a site being built has a unit, and a built site has none", nameof(unit));
+            Site = site; Unit = unit; TurnsLeft = turnsLeft; BuiltOn = builtOn;
+        }
 
         /// <summary>The site built on <paramref name="on"/>, with no unit on it.</summary>
-        public static SiteWork Built(string site, DateTime on) => new SiteWork(site, 0, 0, on);
+        public static SiteWork Built(string site, DateTime on) => new SiteWork(site, null, 0, on);
 
         /// <summary>The same work with <paramref name="turnsLeft"/> turns to go.</summary>
         public SiteWork WithTurnsLeft(int turnsLeft) => new SiteWork(Site, Unit, turnsLeft, BuiltOn);
