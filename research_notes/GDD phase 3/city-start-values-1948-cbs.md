@@ -5,6 +5,21 @@ Status: research and a proposal, for issue #383. It builds on the two earlier no
 is in `content/`. The proposed data are in `cities-1948.proposed.yaml`, next to this note. Which cities the MVP uses, and
 every balance value, are the owner's calls (D-D1 to D-D4).
 
+## Owner decision (15 October 2026)
+
+"Census values + defaults", recorded on PR #569:
+
+- The 8 November 1948 census counts are the start values, labelled with their date. They are not scaled back to May
+  1948.
+- All residents are counted (the census basis), not Jews only.
+- Tel Aviv-Yafo is one city (`tel_aviv`, the CBS Tel Aviv-Yafo row). Jaffa stays a separate place on the map.
+- The Hebrew Wikipedia figures for Zikhron Ya'akov (1,900) and Rosh Pinna (about 350) are accepted.
+- Rishon LeZion is 10,433 (CBS SA 14).
+- Labelled design values fill the gaps where no source exists.
+
+The decision does not name the defaults. The ones used (section "Design defaults") are the recommendation this note
+made, and are marked `status: design` in `cities-1948.proposed.yaml`.
+
 ## How to read this note
 
 - **[V]** read on the page named, on the date given. **[S]** a figure from a Wikipedia article, not checked against
@@ -33,8 +48,8 @@ not covered either.
 3. **Housing: 0 of 12 [G].** No per-city housing stock for 1948 was found. What exists: a national room count for May
    1948 (a 1951 secondary source) and per-city rooms completed in 1948-50 for the three big cities (CBS).
 4. **The values are for 8 November 1948, not 15 May 1948.** No per-city count for May 1948 was reached. In those six
-   months the Jewish population grew from about 650,000 to 716,678, so a May value would be lower. Whether to use the
-   census-day values as start values is an owner question.
+   months the Jewish population grew from about 650,000 to 716,678, so a May value would be lower. The owner chose the
+   census-day values as the start values, labelled with their date (15 October 2026).
 
 ## Population [V]
 
@@ -105,7 +120,7 @@ Caveats:
 - "Employed" is the count of working people, not of job slots. The game's `job_slots` (capacity) has no source; with
   unemployment near 1%, the sourced fact is only that slots were at least the employed count.
 - The city shares differ by up to 9 points (Jerusalem 34.2%, Haifa 42.9%), so the national share is a weak stand-in for
-  the other seven towns. They are left empty.
+  the other seven towns. By the owner decision it fills them as a labelled design value ("Design defaults").
 
 ## Housing [G]
 
@@ -114,8 +129,8 @@ No per-city housing stock (dwellings, rooms or capacity) for 1948 was found. Wha
 - National, May 1948: "when the Israeli population numbered 650,000, there were only 300,000 rooms (excluding
   kitchens)" [V]. Charles Abrams, "Israel Grapples with Its Housing Crisis", *Commentary*, April 1951, read 2026-10-15:
   https://www.commentary.org/articles/charles-abrams/israel-grapples-with-its-housing-crisisthe-new-states-number-one-problem/ .
-  That is about 2.2 people per room. It is a contemporary secondary source, not the CBS. Applying it per city would be a
-  design choice, not a fact; this note does not.
+  That is about 2.2 people per room. It is a contemporary secondary source, not the CBS. Applying it per city is a
+  design choice, not a fact; it is the housing default in "Design defaults".
 - Rooms completed in residential buildings, Jewish building in 17 named towns (CBS, Statistical Abstract No. 2,
   Table 2, p. 50, read 2026-10-15) [V]:
 
@@ -152,21 +167,34 @@ reception centres with 26,039 [V, read 2026-10-15]. Ma'abarot attached to existi
 68,345 is a lower bound for all ma'abarot residents at the end of 1951, not the total. SA 14 Table 11 also
 puts Holon at 9,561 on 8 November 1948 [V], one of #504's gaps.
 
-## Open questions for the owner
+## Design defaults (not historical facts)
 
-1. **Start date of the values.** The CBS per-city figures are for 8 November 1948, six months after the game starts.
-   Use them as the start values, labelled with their date, or scale them back to May 1948 (a design step, no per-city
-   source)?
-2. **Population type.** The census counts residents of all groups; the jobs shares are of Jews. Which does a city's
-   `civilians` count?
-3. **Tel Aviv and Jaffa.** The CBS row is Tel Aviv-Yafo (merged 1950). Keep one city with this figure, or split Jaffa
-   out (no 1948 split was reached)?
-4. **Zikhron Ya'akov and Rosh Pinna.** Accept Hebrew Wikipedia values, or wait for a CBS locality list?
-5. **Jobs for seven towns.** Use the national 43.9% share as a labelled design value, or leave the jobs empty?
-6. **Housing.** No city source exists. Should housing capacity be a design value, for example from population and the
-   national 2.2 people per room (May 1948), and labelled so?
-7. **Rishon LeZion.** 10,433 (SA 14) or 11,100 (2006 release)? This note proposes SA 14, the older table with the
-   census column.
+These fill the gaps under the owner decision. Each is a national ratio applied to one city; none is a fact about that
+city.
+
+- **Jobs, seven towns:** employed = 43.9% of the population (314,781 working of 716,678 Jews on 8 November 1948, SA
+  No. 2, Table 9); unemployed = 0.57% (4,111 of 716,678). The five cities with a CBS city share keep it (derived).
+- **Housing, all twelve:** rooms (excluding kitchens) = population x 300,000 / 650,000, the national May 1948 ratio
+  (Abrams, 1951), about 2.2 people per room. At that density each city's housing capacity equals its start population,
+  so every city starts full.
+
+| City | Employed | Unemployed | Rooms (design) |
+|---|---|---|---|
+| Jerusalem | 28,700 (derived) | 760 (derived) | 38,800 |
+| Tel Aviv-Yafo | 105,800 (derived) | 1,990 (derived) | 114,700 |
+| Haifa | 42,300 (derived) | 300 (derived) | 45,500 |
+| Tiberias | 1,900 (derived) | 40 (derived) | 2,600 |
+| Safed | 800 (derived) | 30 (derived) | 1,070 |
+| Petah Tikva | 9,600 (design) | 130 (design) | 10,100 |
+| Rishon LeZion | 4,600 (design) | 60 (design) | 4,800 |
+| Zikhron Ya'akov | 830 (design) | 10 (design) | 880 |
+| Rosh Pinna | 150 (design) | 2 (design) | 160 |
+| Rehovot | 5,500 (design) | 70 (design) | 5,800 |
+| Hadera | 5,200 (design) | 70 (design) | 5,500 |
+| Netanya | 5,100 (design) | 70 (design) | 5,300 |
+
+Still for Phase 3, not settled here: converting people to population units (D-A1), and setting `job_slots` and
+`housing_capacity` (D-D1 to D-D4). The sources only show that job slots were at least the employed count.
 
 ## Not reached
 
