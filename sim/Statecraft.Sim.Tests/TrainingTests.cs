@@ -97,7 +97,7 @@ public class TrainingTests
         Assert.Empty(Step(c, none, new Train("town_a", "recruit", 3)).Rejected);   // an empty Treasury trains too
     }
 
-    // R-TRAIN-001: refused only when the Treasury holds less than the cost, so a Treasury of exactly the cost pays it.
+    // R-TRAIN-001: a Treasury of exactly the cost pays it in full, with nothing borrowed.
     [Fact]
     public void ATreasuryOfExactlyTheCostPaysIt()
     {
