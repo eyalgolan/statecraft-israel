@@ -127,6 +127,25 @@ namespace Statecraft.Game.Map.Units
             return this;
         }
 
+        /// <summary>A flat one-sided facet through <paramref name="poly"/> (convex, or a fan from its first point), already in
+        /// place, facing up (or, when <paramref name="outward"/>, away from the local Y axis), painted at shade row
+        /// <paramref name="shade"/>: a draped base's top and lip.</summary>
+        public MiniatureMesh Facet(IReadOnlyList<Vector3> poly, int slot, float shade, bool outward = false) =>
+            Facet(poly, slot, _ => shade, outward);
+
+        /// <summary>As <see cref="Facet(IReadOnlyList{Vector3}, int, float, bool)"/>, each vertex at its own shade row.</summary>
+        public MiniatureMesh Facet(IReadOnlyList<Vector3> poly, int slot, Func<Vector3, float> shadeAt, bool outward = false)
+        {
+            var n = Vector3.Cross(poly[1] - poly[0], poly[poly.Count - 1] - poly[0]).normalized;
+            var mid = Vector3.zero; foreach (var p in poly) mid += p; mid /= poly.Count;
+            bool flip = outward ? Vector3.Dot(n, new Vector3(mid.x, 0f, mid.z)) < 0f : n.y < 0f;
+            if (flip) n = -n;
+            int b0 = verts.Count;
+            foreach (var p in poly) Add(Matrix4x4.identity, p, n, slot, shadeAt(p));
+            for (int i = 1; i < poly.Count - 1; i++) tris.AddRange(new[] { b0, b0 + i, b0 + i + 1 });
+            return this;
+        }
+
         /// <summary>A flat two-sided polygon (a roundel, a star) in the local XZ plane, placed by <paramref name="m"/>;
         /// <paramref name="outline"/> is convex or a fan from its first point.</summary>
         public MiniatureMesh Plate(Matrix4x4 m, IReadOnlyList<Vector2> outline, int slot, float shade = float.NaN)

@@ -43,7 +43,7 @@ public class UnitPlinthTests
     static bool Painted(Mesh m, int slot) => m.uv.Any(uv => Mathf.Abs(uv.x - UnitPalette.U(slot)) < 1e-4f);
 
     /// <summary>A token's plinth, rim and flag: the plinth mesh is earth with a white rim; the flag is the side's own.</summary>
-    static void AssertPlinth(Transform token, string side, string what)
+    static void AssertPlinth(MapScene map, Transform token, string side, string what)
     {
         var plinth = token.Find(UnitPlinth.PlinthName);
         Assert.IsNotNull(plinth, $"{what}: stands on a plinth");
@@ -52,6 +52,7 @@ public class UnitPlinthTests
         var rim = token.Find(UnitPlinth.RimName);
         Assert.IsNotNull(rim, $"{what}: the plinth has its white rim");
         Assert.AreEqual(plinth.localScale.x, rim.localScale.x, 0.5f, $"{what}: the rim rings the plinth");
+        Assert.IsNotNull(token.Find(UnitPlinth.LipName), $"{what}: the plinth has its edge lip");
         var flag = token.Find(UnitPlinth.FlagName);
         if (UnitFlags.Has(side))
         {
@@ -62,8 +63,10 @@ public class UnitPlinthTests
         var badge = token.Find("Badge");
         if (flag != null && badge != null)   // the flag flies clear of the badge over the trio (a compact token's too)
             Assert.Greater(flag.position.x - badge.position.x, UnitBadge.SizeM / 2f, $"{what}: the flag's pole stands clear of the badge");
+        var ground = UnitPlinth.HeightAt(map);
         foreach (var f in token.Cast<Transform>().Where(t => t.name.StartsWith("Rifleman")))
-            Assert.GreaterOrEqual(f.position.y, plinth.position.y - 0.5f, $"{what}/{f.name}: stands on the plinth's top (or on ground rising through it)");
+            Assert.AreEqual(UnitPlinth.BootsTop(ground, f.position.x, f.position.z) + UnitPlinth.LipShare * plinth.localScale.x, f.position.y, 0.5f,
+                $"{what}/{f.name}: stands on the base's top over the ground at its feet");
     }
 
     // ---- Every token ----------------------------------------------------------------------------------------------
@@ -86,7 +89,7 @@ public class UnitPlinthTests
                 foreach (var p in layer.Tokens)
                 {
                     var t = tokens.Find(p.Token.Unit.Id);
-                    if (p.Token.Unit.Service == UnitData.Army) { AssertPlinth(t, p.Token.Unit.Side, $"{d:yyyy-MM-dd} {t.name}"); army++; }
+                    if (p.Token.Unit.Service == UnitData.Army) { AssertPlinth(map, t, p.Token.Unit.Side, $"{d:yyyy-MM-dd} {t.name}"); army++; }
                     else
                     {
                         Assert.IsNull(t.Find(UnitPlinth.PlinthName), $"{t.name}: no plinth under an aircraft or a ship");
@@ -107,7 +110,7 @@ public class UnitPlinthTests
         try
         {
             var root = UnitShowcase.Spawn(map, still: true);
-            AssertPlinth(root.transform, UnitData.Israel, "showcase");
+            AssertPlinth(map, root.transform, UnitData.Israel, "showcase");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -138,7 +141,7 @@ public class UnitPlinthTests
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
             var army = layer.Tokens.Where(p => p.Token.Unit.Service == UnitData.Army).ToList();
             Assert.Greater(army.Count, 3);
-            foreach (var p in army) AssertPlinth(tokens.Find(p.Token.Unit.Id), "egypt", p.Token.Unit.Id);
+            foreach (var p in army) AssertPlinth(map, tokens.Find(p.Token.Unit.Id), "egypt", p.Token.Unit.Id);
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -201,92 +204,65 @@ public class UnitPlinthTests
 
     // ---- The ground -----------------------------------------------------------------------------------------------
 
-    /// <summary>On the map's hills a plinth sits at the median ground under it (its bottom there, its top a tenth of its
-    /// radius higher) and its skirt reaches at most <see cref="UnitPlinth.SkirtCapM"/> below its bottom, down to the lowest
-    /// ground where that is nearer (review of #559: no mesa).</summary>
-    [Test]
-    public void APlinthSitsAtTheMedianGroundWithAShortSkirt()
+    /// <summary>The base's top, in world space, at every vertex, edge midpoint and triangle centre: the points where a
+    /// draped surface strays furthest from the ground between its samples.</summary>
+    static IEnumerable<Vector3> SurfacePoints(Transform plinth)
     {
-        var map = BuildMap();
-        try
+        var mesh = plinth.GetComponent<MeshFilter>().sharedMesh; var v = mesh.vertices; var t = mesh.triangles; var m = plinth.localToWorldMatrix;
+        for (int i = 0; i < t.Length; i += 3)
         {
-            var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
-            int n = 0, skirts = 0, closed = 0;
-            foreach (var d in Dates)
-            {
-                layer.Show(C, StateAt(d));
-                var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-                foreach (Transform t in tokens)
-                {
-                    var plinth = t.Find(UnitPlinth.PlinthName); if (plinth == null) continue;
-                    float r = plinth.localScale.x;
-                    var (low, median, _) = UnitPlinth.GroundUnder((x, z) => UnitShowcase.Ground(map, new Vector3(x, 0, z)).y, plinth.position.x, plinth.position.z, r);
-                    float bottom = plinth.position.y - UnitPlinth.ThicknessShare * r;
-                    Assert.AreEqual(median, bottom, 1f, $"{d:yyyy-MM-dd} {t.name}: the plinth's bottom is at the median ground");
-                    var skirt = t.Find(UnitPlinth.SkirtName);
-                    float reach = skirt != null ? skirt.position.y - skirt.localScale.y : bottom;
-                    Assert.GreaterOrEqual(reach, bottom - UnitPlinth.SkirtCapM - 1f, $"{t.name}: the skirt is at most {UnitPlinth.SkirtCapM} m");
-                    if (low >= bottom - UnitPlinth.SkirtCapM) { Assert.LessOrEqual(reach, low + 1f, $"{t.name}: the skirt closes the seam"); closed++; }
-                    if (skirt != null) skirts++;
-                    n++;
-                }
-            }
-            Debug.Log($"UNITS plinths: {n} checked, {skirts} with a skirt, {closed} with the seam closed down to the lowest ground");
-            Assert.Greater(n, 15);
+            Vector3 a = m.MultiplyPoint3x4(v[t[i]]), b = m.MultiplyPoint3x4(v[t[i + 1]]), c = m.MultiplyPoint3x4(v[t[i + 2]]);
+            yield return a; yield return (a + b) / 2f; yield return (b + c) / 2f; yield return (a + c) / 2f; yield return (a + b + c) / 3f;
         }
-        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>No mesa on the hills (review of #559): on every hill token the map can draw (every army anchor of the unit
-    /// file, each shown on its first day, the hills found from the terrain under its plinth, not from a hand list), the
-    /// plinth's top stands at most <see cref="MaxRiseOverGround"/> of a figure's height over the lowest ground under it.
-    /// Before the fix it stood on the highest ground: 1,081 m over the lowest at Harel, 916 m at Golani.</summary>
+    /// <summary>Round 3 of #559, T29's base on the ground: on every hill token the map can draw (every army anchor of the
+    /// unit file, each shown on its first day; a hill token is one whose ground spreads over <see cref="HillSpreadM"/>
+    /// under its base, found from the terrain, not a hand list), the base's top follows the ground under it: at every
+    /// vertex, edge midpoint and triangle centre it stands the lip (<see cref="UnitPlinth.LipShare"/> of its radius) over
+    /// the ground, within <see cref="DrapeToleranceShare"/> of the lip. Half the lip: the top never dips into the ground and
+    /// never floats more than one and a half lips over it, where a level disc stood 1,081 m over Harel's valley side.</summary>
     [Test]
-    public void APlinthStandsLowOnEveryHillToken()
+    public void TheBaseFollowsTheGroundOnEveryHillToken()
     {
         var map = BuildMap();
         try
         {
             var units = UnitData.Parse(CommittedYaml);
             var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
+            var ground = UnitPlinth.HeightAt(map);
             var days = units.Where(u => u.Service == UnitData.Army && u.Hidden == null).SelectMany(u => u.Anchors)
                 .Select(a => UnitData.Day(a.From)).Distinct().OrderBy(d => d).ToList();
-            var worst = new Dictionary<string, (float rise, float spread)>();
+            var worst = new Dictionary<string, (float stray, float spread, float tolerance)>();
             foreach (var d in days)
             {
                 layer.Show(C, StateAt(d));
-                var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-                foreach (Transform t in tokens)
+                foreach (Transform t in map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens"))
                 {
                     var plinth = t.Find(UnitPlinth.PlinthName); if (plinth == null) continue;
-                    float r = plinth.localScale.x, low = float.MaxValue, high = float.MinValue;
-                    foreach (var s in new[] { 0f, 0.25f, 0.5f, 0.75f, 0.95f })
-                        for (int k = 0; k < 36; k++)
-                        {
-                            float a = Mathf.PI / 18f * k;
-                            float y = UnitShowcase.Ground(map, plinth.position + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * r * s).y;
-                            low = Mathf.Min(low, y); high = Mathf.Max(high, y);
-                        }
+                    float r = plinth.localScale.x, lip = UnitPlinth.LipShare * r, low = float.MaxValue, high = float.MinValue, stray = 0f;
+                    foreach (var p in SurfacePoints(plinth))
+                    {
+                        float g = ground(p.x, p.z);
+                        low = Mathf.Min(low, g); high = Mathf.Max(high, g);
+                        stray = Mathf.Max(stray, Mathf.Abs(p.y - g - lip));
+                    }
                     if (high - low < HillSpreadM) continue;   // not a hill token
-                    float rise = plinth.position.y - low;
-                    if (!worst.TryGetValue(t.name, out var w) || rise > w.rise) worst[t.name] = (rise, high - low);
+                    if (!worst.TryGetValue(t.name, out var w) || stray > w.stray) worst[t.name] = (stray, high - low, DrapeToleranceShare * lip);
                 }
             }
-            foreach (var kv in worst.OrderByDescending(kv => kv.Value.rise))
-                Debug.Log($"UNITS hill {kv.Key}: plinth top {kv.Value.rise:0} m over the lowest ground under it (ground spread {kv.Value.spread:0} m)");
-            CollectionAssert.Contains(worst.Keys, "harel", "Harel's Jerusalem-hills token is a hill token");
-            float limit = MaxRiseOverGround * UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
-            foreach (var kv in worst) Assert.LessOrEqual(kv.Value.rise, limit, $"{kv.Key}: the plinth stands {kv.Value.rise:0} m over the ground (limit {limit:0} m)");
+            foreach (var kv in worst.OrderByDescending(kv => kv.Value.spread))
+                Debug.Log($"UNITS drape {kv.Key}: ground spread {kv.Value.spread:0} m under the base, the top strays at most {kv.Value.stray:0.0} m from the lip (tolerance {kv.Value.tolerance:0} m)");
+            CollectionAssert.IsSubsetOf(new[] { "harel", "golani" }, worst.Keys.ToList(), "Harel's and Golani's tokens are hill tokens");
+            foreach (var kv in worst) Assert.LessOrEqual(kv.Value.stray, kv.Value.tolerance, $"{kv.Key}: the base strays {kv.Value.stray:0} m from the ground's shape");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>A token is a hill token when the ground under its plinth spreads over this much (m).</summary>
+    /// <summary>A token is a hill token when the ground under its base spreads over this much (m).</summary>
     const float HillSpreadM = 100f;
-    /// <summary>The most a plinth's top may stand over the lowest ground under it, as a share of a figure's height (748 m at
-    /// 1400x). The median seat bounds it by the ground's fall from its median plus the base's thickness; the steepest token,
-    /// Harel's on the Jerusalem hills (959 m of ground under its base), comes to about 707 m. Before the fix: 1,081 m.</summary>
-    const float MaxRiseOverGround = 0.3f;
+    /// <summary>The most the base's top may stray from the lip over the ground, as a share of the lip.</summary>
+    const float DrapeToleranceShare = 0.5f;
 
     /// <summary>The showcase trio (review of #559) stands clear of the kits and the routes, as an in-play token in a town
     /// does: in a run that asks for it, no kit building (the town census, placed as the map places them, with its clearing)
@@ -361,27 +337,89 @@ public class UnitPlinthTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>T29's ring is bright white and wraps the base's edge, about 8% of its radius wide, and the base has a
-    /// little thickness. Ours: the rim is drawn unlit (the selection ring's shader) in near-white, well above the lit earth,
-    /// 9% of the radius wide; the base is a tenth of its radius thick.</summary>
-    [Test]
-    public void TheRimIsBrightWhiteAndWideAndTheBaseHasThickness()
+    static float Luma(Color c) => 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+
+    /// <summary>The luma at a world point on a render: the brightest (<paramref name="max"/>) or the median of its 3x3
+    /// pixels; NaN off screen or behind the camera.</summary>
+    static float LumaAt(Texture2D tex, Camera cam, Vector3 world, bool max)
     {
-        static float Luma(Color c) => 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
-        Assert.GreaterOrEqual(Luma(UnitPlinth.RimColour), 0.95f, "near-white");
-        Assert.GreaterOrEqual(Luma(UnitPlinth.RimColour), 1.5f * Luma(UnitPalette.Shade(UnitPalette.Earth, 0.8f)), "well above the earth it rings");
-        Assert.That(UnitPlinth.RimOuter - UnitPlinth.RimInner, Is.InRange(0.07f, 0.12f), "a wide band");
-        Assert.Greater(UnitPlinth.RimOuter, 1f, "it wraps the base's edge");
-        Assert.That(UnitPlinth.ThicknessShare, Is.InRange(0.08f, 0.14f), "a miniature base's thickness");
-        var map = BuildMap();
+        var v = cam.WorldToViewportPoint(world); var s = new Vector3(v.x * tex.width, v.y * tex.height, v.z);   // the render's pixels, not the editor's screen
+        int w = max ? 3 : 1;   // the ring is a thin band a few pixels off its geometry (the ring shader's depth offset): its brightest pixel within 3 px
+        if (s.z <= 0f || s.x < w + 1 || s.y < w + 1 || s.x > tex.width - w - 2 || s.y > tex.height - w - 2) return float.NaN;
+        var l = new List<float>();
+        for (int dx = -w; dx <= w; dx++) for (int dy = -w; dy <= w; dy++) l.Add(Luma(tex.GetPixel((int)s.x + dx, (int)s.y + dy)));
+        l.Sort(); return max ? l[l.Count - 1] : l[l.Count / 2];
+    }
+
+    static float Median(IEnumerable<float> v) { var l = v.Where(x => !float.IsNaN(x)).OrderBy(x => x).ToList(); return l.Count == 0 ? float.NaN : l[l.Count / 2]; }
+
+    /// <summary>Round 3 of #559, pinned on renders as T29 was measured: a 30 km look at Harel's hill token and at the showcase
+    /// trio on the plain, rendered at 1920 x 1080 through the game's camera (its grade and lighting). Sampled at known world
+    /// points: the base's top in front of the figures, the figures' shirts and the flag's white field; the ring as T29's was
+    /// measured, from its bright, neutral pixels in the screen box of its front half. The bands are T29's measures (4x crops of the 1:12 frame), set before measuring ours:
+    /// base luma 0.24-0.30 (band 0.18-0.36); ring 0.96-0.98 (at least 0.85) and 3.2-4.1 times the base (at least 2.8);
+    /// figure torsos 0.15-0.24, 0.5-0.9 of the base (band 0.45-1.1); flag white 0.83-0.91 (at least 0.8).</summary>
+    [Test]
+    public void TheBaseRingAndFlagReadAsT29OnARender()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = UnityEngine.Object.FindFirstObjectByType<MapScene>();
+        map.ShowcaseClearing = true;
+        map.Build();
+        var rt = new RenderTexture(1920, 1080, 24); var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         try
         {
-            var root = UnitShowcase.Spawn(map, still: true);
-            var rim = root.transform.Find(UnitPlinth.RimName).GetComponent<MeshRenderer>().sharedMaterial;
-            Assert.AreSame(Resources.Load<Material>(UnitMaterials.RingResource).shader, rim.shader, "unlit, as the selection ring");
-            Assert.GreaterOrEqual(Luma(rim.color), 0.95f);
+            var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
+            layer.Show(C, StateAt(Dates[0]));
+            var showcase = UnitShowcase.Spawn(map, still: true).transform;
+            var tokens = new[] { map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Find("harel"), showcase };
+            foreach (var t in tokens)
+            {
+                var plinth = t.Find(UnitPlinth.PlinthName); float r = plinth.localScale.x;
+                var (lon, lat) = map.Frame.ToLonLat(plinth.position);
+                new PromoPose("t", lon, lat, 30000f, 0f).Apply(rig, map.Frame);
+                cam.targetTexture = rt; cam.Render(); RenderTexture.active = rt;
+                tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0); tex.Apply();
+                cam.targetTexture = null; RenderTexture.active = null;
+                var ground = UnitPlinth.HeightAt(map); var c = plinth.position;
+                Vector3 At(float a, float share, float lift) { var p = c + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * r * share; p.y = ground(p.x, p.z) + lift; return p; }
+                var front = Enumerable.Range(0, 15).Select(k => Mathf.Deg2Rad * (205f + 9f * k)).ToList();   // the camera's side
+                // The ring's band as built (its vertices stand over the highest ground across it), on the camera's side.
+                var rimT = t.Find(UnitPlinth.RimName); var rv = rimT.GetComponent<MeshFilter>().sharedMesh.vertices;
+                var bandMids = Enumerable.Range(0, rv.Length / 2).Select(i => rimT.TransformPoint((rv[2 * i] + rv[2 * i + 1]) / 2f))
+                    .Where(p => p.z < c.z - 0.5f * r).ToList();
+                // As T29 was measured: within the screen box of the ring's front half, the mean luma of its bright, neutral
+                // pixels (luma over 0.75, chroma under 0.12), and how many there are (a dim or missing ring finds few).
+                var px = bandMids.Select(p => cam.WorldToViewportPoint(p)).Where(v => v.z > 0f).Select(v => new Vector2(v.x * tex.width, v.y * tex.height)).ToList();
+                int x0 = Mathf.Max(0, (int)px.Min(q => q.x) - 4), x1 = Mathf.Min(tex.width - 1, (int)px.Max(q => q.x) + 4);
+                int y0 = Mathf.Max(0, (int)px.Min(q => q.y) - 4), y1 = Mathf.Min(tex.height - 1, (int)px.Max(q => q.y) + 4);
+                float sum = 0f; int count = 0;
+                for (int x = x0; x <= x1; x++) for (int y = y0; y <= y1; y++)
+                {
+                    var col = tex.GetPixel(x, y); float lu = Luma(col), chroma = Mathf.Max(col.r, Mathf.Max(col.g, col.b)) - Mathf.Min(col.r, Mathf.Min(col.g, col.b));
+                    if (lu > 0.75f && chroma < 0.12f) { sum += lu; count++; }
+                }
+                float ring = count > 0 ? sum / count : 0f;
+                float bas = Median(front.SelectMany(a => new[] { 0.6f, 0.75f, 0.88f }.Select(sh => LumaAt(tex, cam, At(a, sh, UnitPlinth.LipShare * r), false))));
+                float shirt = Median(t.Cast<Transform>().Where(f => f.name.StartsWith("Rifleman")).Select(f => LumaAt(tex, cam, f.TransformPoint(new Vector3(0f, 1.25f, 0.12f)), false)));
+                var flag = t.Find(UnitPlinth.FlagName);
+                float k2 = UnitFlags.FlagWidth / 220f;
+                float white = Median(new[] { (15f, 80f), (205f, 80f), (35f, 50f), (185f, 110f), (60f, 80f), (160f, 80f) }
+                    .Select(q => LumaAt(tex, cam, flag.TransformPoint(new Vector3(UnitFlags.FlagLeft + q.Item1 * k2, UnitFlags.FlagBottom + q.Item2 * k2, 0f)), false)));
+                var png = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"statecraft-unitsrender-{t.name}.png");
+                System.IO.File.WriteAllBytes(png, tex.EncodeToPNG());
+                Debug.Log($"UNITS render {t.name} saved {png}; ring box {x0}-{x1} x {y0}-{y1}, {count} ring pixels, base at {cam.WorldToViewportPoint(At(front[7], 0.75f, UnitPlinth.LipShare * r))}, flag at {cam.WorldToViewportPoint(flag.TransformPoint(new Vector3(UnitFlags.FlagLeft + 15f * k2, UnitFlags.FlagBottom + 80f * k2, 0f)))}");
+                Debug.Log($"UNITS render {t.name}: base {bas:0.000}, ring {ring:0.000} ({ring / bas:0.00}x the base), shirts {shirt:0.000} ({shirt / bas:0.00} of the base), flag white {white:0.000}");
+                Assert.That(bas, Is.InRange(0.18f, 0.36f), $"{t.name}: the base's earth is dark, as T29's");
+                Assert.GreaterOrEqual(count, 300, $"{t.name}: the ring shows as a band of bright white pixels");
+                Assert.GreaterOrEqual(ring, 0.85f, $"{t.name}: the ring is bright");
+                Assert.GreaterOrEqual(ring / bas, 2.8f, $"{t.name}: the ring stands out from the base as T29's");
+                Assert.That(shirt / bas, Is.InRange(0.45f, 1.1f), $"{t.name}: the figures against the base as in T29");
+                Assert.GreaterOrEqual(white, 0.8f, $"{t.name}: the flag reads white");
+            }
         }
-        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+        finally { cam.targetTexture = null; RenderTexture.active = null; UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>T29's flag cloth is 0.47-0.60 of a figure's height tall and 0.65-0.70 wide, on a pole about 1.5 figures
@@ -417,30 +455,34 @@ public class UnitPlinthTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>The plinth and the flag cost little: one shared mesh each (not one per token), low-poly, in the units'
-    /// one palette material (no new shader or texture).</summary>
+    /// <summary>The base, its lip, its ring and the flag cost little: the base, lip and ring are built per token (they
+    /// follow its ground) and low-poly; the flag is one shared mesh per side; the base, lip and the flag's pole are in the
+    /// units' one palette material, the ring and the cloth in three unlit colours shared by every token.</summary>
     [Test]
-    public void ThePlinthAndTheFlagAreSharedLowPolyMeshesInTheUnitMaterial()
+    public void ThePlinthAndTheFlagAreLowPolyAndShareTheirMaterials()
     {
         var map = BuildMap();
         try
         {
             var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
             layer.Show(C, StateAt(Dates[1]));
-            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            var plinths = tokens.Cast<Transform>().Select(t => t.Find(UnitPlinth.PlinthName)).Where(p => p != null).ToList();
-            var flags = tokens.Cast<Transform>().Select(t => t.Find(UnitPlinth.FlagName)).Where(p => p != null).ToList();
-            Assert.Greater(plinths.Count, 4);
-            Assert.AreEqual(1, plinths.Select(p => p.GetComponent<MeshFilter>().sharedMesh).Distinct().Count(), "one plinth mesh");
-            Assert.AreEqual(1, flags.Select(p => p.GetComponent<MeshFilter>().sharedMesh).Distinct().Count(), "one flag mesh per side");
-            var figureMat = tokens.GetComponentsInChildren<MeshRenderer>().First(r => r.name.StartsWith("Rifleman")).sharedMaterial;
-            foreach (var p in plinths.Concat(flags)) Assert.AreSame(figureMat, p.GetComponent<MeshRenderer>().sharedMaterial, p.name);
-            var rims = tokens.Cast<Transform>().Select(t => t.Find(UnitPlinth.RimName)).Where(p => p != null).ToList();
-            Assert.AreEqual(plinths.Count, rims.Count);
-            Assert.AreEqual(1, rims.Select(p => p.GetComponent<MeshFilter>().sharedMesh).Distinct().Count(), "one rim mesh");
-            Assert.AreEqual(1, rims.Select(p => p.GetComponent<MeshRenderer>().sharedMaterial).Distinct().Count(), "one rim material");
-            Assert.Less(rims[0].GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3, 200, "the rim is low-poly");
-            Assert.Less(plinths[0].GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3, 400, "the plinth is low-poly");
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Cast<Transform>().Where(t => t.Find(UnitPlinth.PlinthName) != null).ToList();
+            Assert.Greater(tokens.Count, 4);
+            var figureMat = tokens[0].GetComponentsInChildren<MeshRenderer>().First(r => r.name.StartsWith("Rifleman")).sharedMaterial;
+            int Tris(Transform t, string n) => t.Find(n).GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3;
+            foreach (var t in tokens)
+            {
+                Assert.AreSame(figureMat, t.Find(UnitPlinth.PlinthName).GetComponent<MeshRenderer>().sharedMaterial, t.name);
+                Assert.AreSame(figureMat, t.Find(UnitPlinth.LipName).GetComponent<MeshRenderer>().sharedMaterial, t.name);
+                Assert.LessOrEqual(Tris(t, UnitPlinth.PlinthName), 2 * UnitPlinth.Rings * UnitPlinth.Segments, $"{t.name}: the base is low-poly");
+                Assert.LessOrEqual(Tris(t, UnitPlinth.RimName), 2 * UnitPlinth.RimSegments, $"{t.name}: the ring is a single band");
+            }
+            Assert.AreEqual(1, tokens.Select(t => t.Find(UnitPlinth.RimName).GetComponent<MeshRenderer>().sharedMaterial).Distinct().Count(), "one ring material");
+            var flags = tokens.Select(t => t.Find(UnitPlinth.FlagName)).Where(f => f != null).ToList();
+            Assert.AreEqual(1, flags.Select(f => f.GetComponent<MeshFilter>().sharedMesh).Distinct().Count(), "one flag mesh per side");
+            Assert.AreEqual(1, flags.Select(f => string.Join(",", f.GetComponent<MeshRenderer>().sharedMaterials.Select(m => m.GetInstanceID()))).Distinct().Count(), "one set of flag materials");
+            Assert.AreSame(figureMat, flags[0].GetComponent<MeshRenderer>().sharedMaterials[0], "the pole in the palette");
+            Assert.AreSame(Resources.Load<Material>(UnitMaterials.RingResource).shader, flags[0].GetComponent<MeshRenderer>().sharedMaterials[1].shader, "the cloth unlit");
             Assert.Less(flags[0].GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3, 300, "the flag is low-poly");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }

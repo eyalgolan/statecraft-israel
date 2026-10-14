@@ -141,13 +141,15 @@ namespace Statecraft.Game.Map.Units
             var offsets = FigureOffsets(looks.Length);
             float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(offsets, DrawSpread * hex));
             var rim = assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
-            float stand = UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, (_, build) => Built(build()), paint, rim);
+            var flagWhite = assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
+            var flagBlue = assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
+            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => assets.Own(m), (_, build) => Built(build()), paint, rim, flagWhite, flagBlue);
             var holes = new List<(Vector2 centre, float radius)> { (new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter) };
             for (int i = 0; i < looks.Length; i++)
             {
                 var (type, hat, pose, faded, heading) = looks[i];
                 var p = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * DrawSpread * hex;
-                p.y = UnitPlinth.FigureY(map, stand, p.x, p.z);
+                p.y = UnitPlinth.FigureY(map, plinth, p.x, p.z);
                 Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
                     paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
             }

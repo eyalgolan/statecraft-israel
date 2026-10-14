@@ -64,7 +64,28 @@ namespace Statecraft.Game.Map.Units
                         m.Plate(at, new List<Vector2> { Corner(k, StarOuterCm), Corner(k + 1, StarOuterCm), Corner(k + 1, inner), Corner(k, inner) }, P.RoundelBlue, shade: 0.85f);
                     }
             }
-            return m.Build(MeshName(side!));
+            return Split(m.Build(MeshName(side!)));
+        }
+
+        /// <summary>The cloth's colours, drawn unlit (the selection ring's shader) so the flag reads white and blue under
+        /// the map's light and grade, as T29's (its white 0.83-0.91 luma). The blue is the proclamation's "dark sky-blue".</summary>
+        public static readonly Color WhiteColour = new Color(1f, 1f, 1f), BlueColour = new Color(0.0f, 0.22f, 0.62f);
+
+        /// <summary>Puts the pole, the white and the blue in submeshes 0, 1 and 2 (the palette, white and blue materials).</summary>
+        static Mesh Split(Mesh mesh)
+        {
+            var uv = mesh.uv; var t = mesh.triangles;
+            var parts = new[] { new List<int>(), new List<int>(), new List<int>() };
+            float white = P.U(P.RoundelWhite), blue = P.U(P.RoundelBlue);
+            for (int i = 0; i < t.Length; i += 3)
+            {
+                float u = uv[t[i]].x;
+                int k = Mathf.Abs(u - white) < 1e-4f ? 1 : Mathf.Abs(u - blue) < 1e-4f ? 2 : 0;
+                parts[k].Add(t[i]); parts[k].Add(t[i + 1]); parts[k].Add(t[i + 2]);
+            }
+            mesh.subMeshCount = 3;
+            for (int k = 0; k < 3; k++) mesh.SetTriangles(parts[k], k);
+            return mesh;
         }
 
         /// <summary>Maps a plate's local XZ outline to the XY plane at depth <paramref name="z"/>.</summary>

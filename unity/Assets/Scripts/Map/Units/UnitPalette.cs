@@ -49,7 +49,7 @@ namespace Statecraft.Game.Map.Units
             new Color(0.30f, 0.31f, 0.32f),   // Funnel top
             new Color(0.72f, 0.12f, 0.10f),   // MarkingRed: 101 Squadron's spinner and rudder stripes
             new Color(0.47f, 0.45f, 0.32f),   // AviaGreen: the S-199's one khaki green on all surfaces, about RAL 6013 (Efrati pp. 8 and 11: confirmed from an Avia fuel cap; Eduard Info 11/2025 pp. 53-54)
-            new Color(0.72f, 0.56f, 0.37f),   // Earth: a token's plinth, the warm tan earth of demo2 T29's bases, well lighter than the uniforms so the figures read on it
+            new Color(0.45f, 0.33f, 0.22f),   // Earth: a token's base, the dark warm earth of demo2 T29's bases (rendered about 0.24-0.30 luma there), mottled by its facets' shade rows
         };
 
         /// <summary>u of a slot's column centre.</summary>

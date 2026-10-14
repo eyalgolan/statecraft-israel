@@ -395,22 +395,28 @@ public class UnitsInPlayTests
         Assert.Greater(outside, 0);
     }
 
-    /// <summary>Owner question (units on hard terrain), review of #559: on a steep slope a token's base sits at the median
-    /// ground under it (on a plane, the ground at its centre), a tenth of its radius thick, and its skirt reaches at most
-    /// UnitPlinth.SkirtCapM below it; a figure stands on the base or, uphill, on the ground rising through it, never in it.</summary>
+    /// <summary>Owner question (units on hard terrain), round 3 of #559: on a steep, curved hillside a token's base is draped:
+    /// every vertex of its top stands the lip over the ground, and between them it strays less than half the lip; an uphill
+    /// figure's boots stand on the highest ground under them, never in it.</summary>
     [Test]
-    public void APlinthSitsAtTheMedianOnASteepSlope()
+    public void ABaseIsDrapedOnASteepCurvedSlope()
     {
-        const float slope = 0.6f, r = 2000f;   // a 31-degree hillside (steeper than the 3x relief's hills)
-        float H(float x, float z) => 100f + slope * x + 0.2f * z;
-        var (top, bottom, skirt) = UnitPlinth.Seat(H, 1000f, 2000f, r);
-        Assert.AreEqual(H(1000f, 2000f), bottom, 1f, "at the median ground: on a plane, the centre's");
-        Assert.AreEqual(UnitPlinth.ThicknessShare * r, top - bottom, 0.01f);
-        Assert.AreEqual(bottom - UnitPlinth.SkirtCapM, skirt, 0.01f, "the skirt is capped on a steep slope");
-        var (flatTop, flatBottom, flatSkirt) = UnitPlinth.Seat((x, z) => 50f + 0.01f * x, 1000f, 2000f, r);
-        Assert.AreEqual(50f + 10f - 0.01f * r / Mathf.Cos(Mathf.PI / 36f) - 30f, flatSkirt, 0.5f, "on a gentle slope the skirt reaches the lowest ground");
+        const float r = 2000f;
+        float H(float x, float z) => 100f + 0.6f * x + 0.2f * z + 300f * Mathf.Sin(x / 1500f) * Mathf.Cos(z / 1700f);   // 31 degrees and rolling
+        var mesh = UnitPlinth.TopMesh("t", H, new Vector2(1000f, 2000f), r);
+        float lip = UnitPlinth.LipShare * r, worst = 0f;
+        var v = mesh.vertices; var t = mesh.triangles;
+        Vector3 W(Vector3 p) => new Vector3(1000f + p.x * r, p.y, 2000f + p.z * r);
+        foreach (var p in v) Assert.AreEqual(H(W(p).x, W(p).z) + lip, p.y, 0.01f, "every vertex the lip over the ground");
+        for (int i = 0; i < t.Length; i += 3)
+        {
+            var c = (W(v[t[i]]) + W(v[t[i + 1]]) + W(v[t[i + 2]])) / 3f;
+            worst = Mathf.Max(worst, Mathf.Abs(c.y - H(c.x, c.z) - lip));
+        }
+        Assert.Less(worst, 0.5f * lip, "between its vertices the top strays less than half the lip");
         float uphill = 1000f + 0.9f * r;
         Assert.GreaterOrEqual(UnitPlinth.BootsTop(H, uphill, 2000f), H(uphill + 0.2f * UnitShowcase.FigureScale * 0.99f, 2000f), "an uphill figure's boots are not in the ground");
+        UnityEngine.Object.DestroyImmediate(mesh);
     }
 
     /// <summary>Review of #518: the tokens' keep-clear boxes (what the map's names keep clear of) are right even when the
@@ -475,7 +481,7 @@ public class UnitsInPlayTests
                     worstFloat = Mathf.Max(worstFloat, p.y - lowest);
                     var plinth = f.parent.Find(UnitPlinth.PlinthName);
                     Assert.IsNotNull(plinth, $"{f.parent.name}: the figures stand on a plinth");
-                    Assert.GreaterOrEqual(p.y, plinth.position.y - 0.5f, $"{f.parent.name}/{f.name}: on the plinth's top, or on ground rising through it");
+                    Assert.AreEqual(UnitPlinth.FigureY(map, plinth.localScale.x, p.x, p.z), p.y, 0.5f, $"{f.parent.name}/{f.name}: on the base's top over the ground at its feet");
                     checkedFigures++;
                 }
             }

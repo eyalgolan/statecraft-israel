@@ -136,11 +136,10 @@ public class UnitShowcaseTests
             Assert.Greater(c.r / c.g, 1.24f, $"slot {slot}: warm brown, not olive khaki");
         }
         Assert.Less(Luma(UnitPalette.Shade(UnitPalette.Trousers, 0.5f)), Luma(UnitPalette.Shade(UnitPalette.Shirt, 0.5f)), "the trousers read darker than the shirt");
-        Assert.Greater(Luma(UnitPalette.Shade(UnitPalette.Earth, 0.5f)), 1.5f * Luma(UnitPalette.Shade(UnitPalette.Shirt, 0.5f)), "the plinth is earth, well lighter than the figure");
-        Assert.Greater(Luma(UnitPalette.Shade(UnitPalette.Earth, 0.5f)), Luma(UnitPalette.Shade(UnitPalette.Deck, 0.5f)), "not the old dark deck-grey disc");
         Assert.Greater(UnitPalette.Shade(UnitPalette.Earth, 0.5f).r / UnitPalette.Shade(UnitPalette.Earth, 0.5f).g, 1.15f, "warm earth");
-        var disc = UnitPlinth.SkirtMesh("skirt");
-        Assert.IsTrue(disc.uv.All(uv => Mathf.Abs(uv.x - UnitPalette.U(UnitPalette.Earth)) < 1e-4f), "the skirt is painted in the earth");
+        var disc = UnitPlinth.TopMesh("base", (x, z) => 0f, Vector2.zero, 2000f);
+        Assert.IsTrue(disc.uv.All(uv => Mathf.Abs(uv.x - UnitPalette.U(UnitPalette.Earth)) < 1e-4f), "the base is painted in the earth");
+        Assert.Greater(disc.uv.Select(uv => uv.y).Distinct().Count(), 8, "mottled: its facets take several shade rows");
         Object.DestroyImmediate(disc);
     }
 

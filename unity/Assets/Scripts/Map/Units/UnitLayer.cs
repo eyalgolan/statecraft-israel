@@ -31,7 +31,7 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!, flagWhite = null!, flagBlue = null!;
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         List<UnitToken>? roster;
         List<PlacedToken> placed = new List<PlacedToken>();
@@ -97,6 +97,8 @@ namespace Statecraft.Game.Map.Units
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
+            layer.flagWhite = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
+            layer.flagBlue = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
@@ -228,7 +230,7 @@ namespace Statecraft.Game.Map.Units
                         // rim, under the side's flag (refs #197). The base fits the full trio, whatever the call-up.
                         float k = UnitShowcase.DrawSpread * hex * Scale(p.Spot);
                         float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
-                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, MeshFor, paint, rim);
+                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, m => assets.Own(m), MeshFor, paint, rim, flagWhite, flagBlue);
                         treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         for (int i = 0; i < offsets.Length; i++)
@@ -238,7 +240,7 @@ namespace Statecraft.Game.Map.Units
                             var hat = Hat(t.Headgear[i]);
                             var type = UnitRoster.RiflemanType(t.Headgear[i]);
                             var at = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * k;
-                            at.y = UnitPlinth.FigureY(map, foot.y, at.x, at.z);
+                            at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
                             UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
                                 paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _);
                         }
