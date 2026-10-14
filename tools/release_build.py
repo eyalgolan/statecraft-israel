@@ -238,11 +238,11 @@ def make_archive(p: Platform, folder: Path, target: Path, dest: Path) -> None:
             raise SystemExit(f"ditto failed for {target}")
     elif p.name == "linux":
         with tarfile.open(dest, "w:gz") as t:
-            for path in sorted(folder.rglob("*")):
+            for path in shipped(folder):
                 t.add(path, arcname=path.relative_to(folder).as_posix(), recursive=False)
     else:
         with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as z:
-            for path in sorted(folder.rglob("*")):
+            for path in shipped(folder):
                 z.write(path, path.relative_to(folder).as_posix())
 
 
@@ -271,11 +271,20 @@ def unity_seconds(log_text: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def shipped(folder: Path) -> list[Path]:
+    """Every path under folder that is part of the player, sorted: Unity's own *_DoNotShip and
+    *_ButDontShipItWithYourGame folders (IL2CPP sources, Burst debug data) are left out."""
+    def skip(path: Path) -> bool:
+        top = path.relative_to(folder).parts[0]
+        return top.endswith("_DoNotShip") or top.endswith("_ButDontShipItWithYourGame")
+    return sorted(p for p in folder.rglob("*") if not skip(p))
+
+
 def tree_manifest(folder: Path) -> tuple[str, int, int]:
     """`shasum -a 256` lines for every file under folder, sorted by path; a symlink is listed by its target, not
-    followed. Returns the text, the number of entries and the bytes of the regular files."""
+    followed; the do-not-ship folders are left out. Returns the text, the number of entries and the bytes of the regular files."""
     rows, size = [], 0
-    for path in folder.rglob("*"):
+    for path in shipped(folder):
         rel = path.relative_to(folder).as_posix()
         if path.is_symlink():
             rows.append((rel, f"symlink  {rel} -> {os.readlink(path)}"))

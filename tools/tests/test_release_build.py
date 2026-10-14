@@ -418,3 +418,19 @@ def test_a_boot_fail_line_fails_the_golden_even_with_both_ok_lines():
     expected = {"1950": H1950, "1952": H1952}
     log = f"GOLDEN OK 1950 {H1950}\nGOLDEN OK 1952 {H1952}\nBOOT FAIL could not read content\n"
     assert rb.golden_status(log, 0, expected) == "fail"
+
+
+def test_unitys_do_not_ship_folders_are_left_out_of_the_list_and_the_archives(tmp_path):
+    """IL2CPP and Burst leave Statecraft_BackUpThisFolder_ButDontShipItWithYourGame (2 GB in the first real run) and
+    <product>_BurstDebugInformation_DoNotShip beside the player; neither is part of the release."""
+    import zipfile
+    folder = tmp_path / "w"
+    (folder / "Statecraft_BackUpThisFolder_ButDontShipItWithYourGame").mkdir(parents=True)
+    (folder / "Statecraft_BackUpThisFolder_ButDontShipItWithYourGame/big.cpp").write_bytes(b"x" * 10)
+    (folder / "Statecraft Israel_BurstDebugInformation_DoNotShip").mkdir()
+    (folder / "Statecraft Israel_BurstDebugInformation_DoNotShip/d.pdb").write_bytes(b"y")
+    (folder / "Statecraft.exe").write_bytes(b"exe")
+    text, files, size = rb.tree_manifest(folder)
+    assert text.splitlines() == [f"{hashlib.sha256(b'exe').hexdigest()}  Statecraft.exe"] and (files, size) == (1, 3)
+    rb.make_archive(rb.PLATFORMS["windows"], folder, folder / "Statecraft.exe", tmp_path / "w.zip")
+    assert zipfile.ZipFile(tmp_path / "w.zip").namelist() == ["Statecraft.exe"]
