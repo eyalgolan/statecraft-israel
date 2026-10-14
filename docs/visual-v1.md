@@ -1184,8 +1184,10 @@ D-C (owner-verify).
   Egypt's: Gaza, Deir al-Balah, Khan Yunis and Rafah read Egypt in every period, pinned by `test_control.py`).
 - *Pinned towns* (`pinned_towns`; the bake gives the town's hex the sourced side, as D-B's rule 5 does for Gazette places):
   Mishmar HaYarden, Syria's from June 1948 to 20 July 1949 (en.wiki), whose bridgehead is narrower than the map's accuracy;
-  Qalqilya, on the Jordanian side from 3 April 1949 (en.wiki), which the low-accuracy Jordan trace puts 2 km to the Israeli
-  side.
+  Qalqilya, on the Jordanian side of line A on the signed map 1 (UNTS vol. 42) from 3 April 1949, which the low-accuracy
+  Jordan trace puts 2 km to the Israeli side; Huleiqat, Egypt's from 8 July to 19 October 1948 (en.wiki: retaken by the
+  Egyptian army on 8 July, captured by Giv'ati in Operation Yoav on 19 October), where ISA 6158/1's 9 July line, about
+  1.3 km away, puts it on the Israeli side (the source and the archive map disagree; recorded in the data).
 - *Drawing:* `MapRegions` draws `Control1948`'s layer from 11 June 1948: Israel Primary, the other side Secondary,
   contested, no-man's land and zones the new Neutral style (`BorderStyle.Neutral`, the shader's third style, dashed along
   its edge every 2 km, 65% drawn: a cue that is not colour), the land beyond the frontier style none, no colour left out (no
@@ -1199,12 +1201,11 @@ D-C (owner-verify).
   (all switched) or "Armistice lines: {fronts}; elsewhere front lines of {date}" (some), Jordan named "Jordan (low
   accuracy)" (D-A ruling 2). Dates in the UI's language (Hebrew month names). The label may take up to six lines in its
   narrow box; `ControlTests.TheLongestLegendLabelFitsBesideTheEventCard` checks EN and HE at eleven window shapes. The info
-  panel says who held the hex ("Held by Arab forces (Egypt)"; Jordan's force is named as the Arab Legion in 1948 and as the
-  state, Jordan, from its agreement), nothing for a hex beyond the frontier, and no sub-district once its bands are gone.
+  panel says who held the hex ("Held by Arab forces (Egypt)"; Jordan is named as the state from its agreement; in 1948 the West Bank's holders share one connected area no sourced line divides, so it
+  is named only as "Arab forces"), nothing for a hex beyond the frontier, and no sub-district once its bands are gone.
 - *Known staleness and limits:* the October 1948 line stands until the Egypt agreement (24 February 1949), so Isdud (taken
   28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then (the caption names the source
-  line's date). Huleiqat reads Israeli in every period: ISA 6158/1's lines put it there, and en.wiki gives its capture by
-  Israel on 13 May 1948 (Operation Barak); its later Egyptian occupation until Yoav is not in the source's lines. The ground
+  line's date). Huleiqat is pinned (above). The ground
   east of the Beersheba-Hebron front reads as held by Arab forces in 1948, since the source draws only front lines; no "not
   held" area is invented. Jerusalem's line falls between two hexes (the Old City's hex is the other side's, the one west of
   it Israeli; the grey rule for a hex holding both sides does not fire).

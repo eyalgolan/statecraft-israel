@@ -216,12 +216,52 @@ def test_only_the_three_front_lines_are_traced_never_the_partition_or_the_demand
     assert any("partition" in t for t in META["not_traced"])
 
 
-def test_holders_name_states_after_the_armistice():
-    """Neutrality (review N6): Jordan's force is the Arab Legion in 1948 and the state, Jordan, from its agreement."""
+def test_holders_name_states_after_the_armistice_and_no_holder_is_dead():
+    """Neutrality (review N6): Jordan is named as the state from its agreement. Every holder code the bake can write appears
+    in the layer, so no holder name is listed that players never see (review r2, SR3)."""
     holders = {(f["properties"]["snapshot"], f["properties"]["holder"]) for f in SOURCE["features"] if f["properties"].get("side") == "arab"}
-    assert not any(h == "arab_legion" and s.startswith("arm_1949-0") and s >= "arm_1949-04-03" for s, h in holders)
     assert any(h == "jordan" for s, h in holders if s == "arm_1949-07-20")
-    assert not any(h in ("iraq", "lebanon") for _, h in holders), "no dead holders"
+    seen = {c for codes in CODES.values() for c in codes}
+    for holder, code in cb.HOLDER_CODE.items():
+        if holder != "unspecified":
+            assert code in seen, f"holder {holder} ({code}) is never drawn"
+
+
+def test_huleiqat_is_egypts_from_8_july_to_19_october_1948():
+    """Review r2, R1: en.wiki (Hulayqat) has Egypt retake it on 8 July and Giv'ati capture it on 19 October 1948; the
+    archive's 9 July line disagrees, so its hex is pinned, both edges of the window tested."""
+    c = CODES[hg.settlement_hex(34.6497, 31.6008, HEXES)]
+    at = lambda p: c[PERIODS.index(p)]
+    assert at("truce1") == "I", "Israeli before 8 July (Operation Barak, 13 May)"
+    for p in ("ten_days", "truce2", "shoter", "truce2b"):
+        assert at(p) == "E", p
+    assert at("october") == "I", "Israeli after 19 October"
+    pin = {p["place"]: p for p in META["pinned_towns"]}["Huleiqat"]
+    assert (pin["from"], pin["until"], pin["holder"]) == ("1948-07-08", "1948-10-19", "egypt")
+    assert "disagree" in pin["why"]
+
+
+def test_the_ten_days_start_on_8_july_1948():
+    """Review N1, pinned against the source's date, not the tool's constant."""
+    by = {p["id"]: p for p in BAKED["periods"]}
+    assert str(by["ten_days"]["from"]) == "1948-07-08" and str(by["truce1"]["until"]) == "1948-07-08"
+
+
+def test_the_uncoloured_closure_strip_is_at_most_3_km_wide():
+    """Review r2, mutant c: the band left without colour beside the straight Egypt closure is on its Israeli side only and
+    at most 3 km wide: its area (119 km2 as built) stays under 3 km times the closure's length (about 40 km from Gaza to
+    the frontier at N 71) plus the round ends; 8 km would make it about 330 km2."""
+    f = next(f for f in SOURCE["features"] if f["properties"]["id"] == "unsourced_egypt_south")
+    km_lon = hg.km_per_deg_lon(HEXES["bounds"])
+    def area(ring):
+        x = [lon * km_lon for lon, _ in ring]; y = [lat * 110.574 for _, lat in ring]
+        return abs(sum(x[i] * y[i + 1] - x[i + 1] * y[i] for i in range(len(x) - 1))) / 2
+    g = f["geometry"]
+    polys = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+    total = sum(area(p[0]) - sum(area(h) for h in p[1:]) for p in polys)
+    assert 0 < total <= 3.0 * 40 + 3.14 * 3.0 ** 2, f"{total:.0f} km2"
+    gaza = hg.settlement_hex(34.4597, 31.5075, HEXES)
+    assert set(CODES[gaza]) == {"E"}
 
 
 def test_the_scan_and_its_georeference_are_recorded():

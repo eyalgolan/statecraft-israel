@@ -222,12 +222,12 @@ ARMISTICE_DATES = ["1949-02-24", "1949-03-23", "1949-04-03", "1949-05-08", "1949
 # beyond the frontier, and no source gives a line for January 1949, so the October line stands until the Egypt agreement.
 
 # Holders of the other side, for the info panel only: (place, lon, lat, holder, from, until, source).
-# Every row must land on the other side on every snapshot in its window, or the run fails. Jordan's force is named as
-# the Arab Legion in 1948 and as the state, Jordan, from its agreement (as Egypt is named as the state throughout).
+# Every row must land on the other side on every snapshot in its window, or the run fails. Jordan is named from its
+# agreement, as the state (as Egypt is named as the state throughout); in 1948 the West Bank's holders (the Arab Legion,
+# the Iraqi army, Egyptian forces at Hebron) share one connected area that no sourced line divides, so it is "mixed".
 HOLDERS = [
     ("Gaza", 34.4597, 31.5075, "egypt", "1948-06-11", None, WIKI + "Gaza_Strip"),
     ("Faluja", 34.7477, 31.6246, "egypt", "1948-06-11", "1949-02-24", WIKI + "Faluja_pocket"),
-    ("Ramallah", 35.2017, 31.8969, "arab_legion", "1948-06-11", "1949-04-03", WIKI + "Arab_Legion"),
     ("Ramallah", 35.2017, 31.8969, "jordan", "1949-04-03", None, WIKI + "1949_Armistice_Agreements"),
     ("Nablus", 35.2608, 32.2211, "jordan", "1949-04-03", None, WIKI + "1949_Armistice_Agreements"),
     ("Hebron", 35.0986, 31.535, "mixed", "1948-06-11", "1949-04-03", WIKI + "1948_Arab%E2%80%93Israeli_War"),
@@ -241,9 +241,13 @@ PINNED = [
     ("Mishmar HaYarden", 35.5997, 33.0028, "syria", "1948-06-11", "1949-07-20", WIKI + "Mishmar_HaYarden_(moshava)",
      "taken by the Syrian army in June 1948 and back in Israel's control on 20 July 1949 (en.wiki); the bridgehead is "
      "narrower than ISA 6158/1's accuracy, so its lines put the moshava on the Israeli side"),
-    ("Qalqilya", 34.9685, 32.1904, "jordan", "1949-04-03", None, WIKI + "Qalqilya",
-     "on the Jordanian side of the armistice line, which severed its groves (en.wiki); the Jordan trace (D-A, low "
-     "accuracy, about +-1-2.5 km) puts it 2 km to the Israeli side from 8 May 1949"),
+    ("Qalqilya", 34.9685, 32.1904, "jordan", "1949-04-03", None, ad.UNTS["url"],
+     "on the Jordanian side of line A on the signed map 1 of the Jordan-Israel agreement (UNTS vol. 42; D-A's source); the "
+     "trace of that map (D-A, from a low-resolution scan, about +-1-2.5 km) puts it 2 km to the Israeli side from 8 May 1949"),
+    ("Huleiqat", 34.6497, 31.6008, "egypt", "1948-07-08", "1948-10-19", WIKI + "Hulayqat",
+     "retaken by the Egyptian army on 8 July 1948 and captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav "
+     "(en.wiki); ISA 6158/1's 9 July line puts it on the Israeli side, about 1.3 km from the line, so the source and the "
+     "archive map disagree for these weeks"),
 ]
 # The closure check's anchors: (place, lon, lat, side, from, until, source). Coordinates: settlements_1948.yaml and
 # localities_1948.tsv; the Wikipedia API (prop=coordinates) for Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim,
@@ -865,7 +869,7 @@ def build(isa_pdf: Path, log=print) -> dict:
                        "the 1950 modus vivendi line: it does not change either side's position (S/1471 Art. III)"],
         "south_limit_km_n": SOUTH_N,
         "known_staleness": ["the October 1948 line is shown until the Egypt agreement (24 February 1949), since no source gives a later line: Isdud (taken 28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then; the caption names the source line's date",
-                            "Huleiqat reads Israeli in every period: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, and en.wiki gives its capture by Israel on 13 May 1948 (Operation Barak); its later Egyptian occupation until Operation Yoav is not in the source's lines"],
+                            "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns)"],
         "pinned_towns": [{"place": n, "lon": x, "lat": y, "holder": h, "from": f, "until": u, "source": src, "why": w} for n, x, y, h, f, u, src, w in PINNED],
         "georeference": fit["diag"],
         "conversion": "Palestine Grid (EPSG:28191) to WGS84 by the EPSG Helmert transformation (tools/armistice_digitise.py, PG_PIPELINE)",

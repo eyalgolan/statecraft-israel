@@ -15,8 +15,7 @@ Mandatory Palestine (the sub-district layer's land: its regions but 'outside') t
   1 an overlay containing the centre wins, the later in the period's list first: contested (c), demilitarized zone (z),
     no sourced line (-);
   2 else the snapshot's area containing it: Israel (I), or the other side by its holder (info panel only): Egypt (E),
-    Jordan's Arab Legion in 1948 (G), Jordan from its agreement (J), Syria (S), the Arab Liberation Army (V), several (M),
-    not named (A);
+    Jordan from its agreement (J), Syria (S), the Arab Liberation Army (V), several (M), not named (A);
   3 a shore hex whose centre is in water (tools/borders_bake.py rule 3) takes the code at the nearest land within one hex
     size; a centre outside every polygon takes the commonest code over the hex's area (37 sample points: a frontier hex
     such as Metulla's, whose centre the outline leaves out), and none there means no colour (-: the 60-km northing's
@@ -48,7 +47,7 @@ MAP = ROOT / "content" / "map"
 SOURCE = MAP / "control_1948_49.geojson"
 SUBDISTRICTS = MAP / "subdistrict_hexes_1948.yaml"
 OUT = MAP / "control_hexes_1948_49.yaml"
-HOLDER_CODE = {"israel": "I", "egypt": "E", "jordan": "J", "arab_legion": "G", "syria": "S", "ala": "V", "mixed": "M",
+HOLDER_CODE = {"israel": "I", "egypt": "E", "jordan": "J", "syria": "S", "ala": "V", "mixed": "M",
                "unspecified": "A"}
 KIND_CODE = {"contested": "c", "dmz": "z", "not_sourced": "-", "no_mans_land": "m"}
 JERUSALEM = (35.2256, 31.7789)
@@ -152,7 +151,7 @@ def render(source: dict, periods: list, cells: dict) -> str:
            f"meaning: {q(meta['meaning'])}\n",
            f"line: {q('The true polygons are content/map/control_1948_49.geojson (status ' + meta['status'] + ', ' + meta['review'] + '); shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line.')}\n",
            f"shown_from: {periods[0]['from']}   # before it the 1947 sub-districts, no side colour (no sourced line for 15 May 1948)\n",
-           "codes: \"I Israel; E Egypt, G Jordan's Arab Legion (1948), J Jordan, S Syria, V the Arab Liberation Army, M several, A not named "
+           "codes: \"I Israel; E Egypt, J Jordan, S Syria, V the Arab Liberation Army, M several, A not named "
            "(the other side, by holder); c contested; m no-man's land; z demilitarized zone; - no colour (no sourced line)\"\n",
            "periods:   # legend: held (1948 front lines), armistice (every front's agreement), mixed (some); line_date: the date the source line shows\n"]
     for p in periods:

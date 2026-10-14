@@ -6,7 +6,7 @@ title: "Who held which areas, 1948-49: the front lines of ISA 6158/1 and, from e
 meaning: "Military control on a date (owner ruling 2026-10-14), nothing else: not sovereignty, ownership or population. From each armistice the side of the agreement's line, which the agreements themselves say is not a political or territorial boundary (Egypt Art. V.2; Jordan Art. VI.9)."
 line: "The true polygons are content/map/control_1948_49.geojson (status draft, owner-verify (sensitivity review before a shareable build)); shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line."
 shown_from: 1948-06-11   # before it the 1947 sub-districts, no side colour (no sourced line for 15 May 1948)
-codes: "I Israel; E Egypt, G Jordan's Arab Legion (1948), J Jordan, S Syria, V the Arab Liberation Army, M several, A not named (the other side, by holder); c contested; m no-man's land; z demilitarized zone; - no colour (no sourced line)"
+codes: "I Israel; E Egypt, J Jordan, S Syria, V the Arab Liberation Army, M several, A not named (the other side, by holder); c contested; m no-man's land; z demilitarized zone; - no colour (no sourced line)"
 periods:   # legend: held (1948 front lines), armistice (every front's agreement), mixed (some); line_date: the date the source line shows
   - { id: truce1, from: 1948-06-11, until: 1948-07-08, legend: held, line_date: "1948-07-09", fronts: [] }
   - { id: ten_days, from: 1948-07-08, until: 1948-07-18, legend: held, line_date: "1948-07-09", fronts: [] }
@@ -201,7 +201,7 @@ hexes:   # [q, r, codes: one per period], ordered by r then q
   - [0, 25, "MMMMMMMMMMJJJJJ"]
   - [1, 25, "MMMMMMMMMMJJJJJ"]
   - [-9, 26, "EEEEEEEEIIIIIII"]
-  - [-8, 26, "IIIIIIIIIIIIIII"]
+  - [-8, 26, "IEEEEIIIIIIIIII"]
   - [-7, 26, "MMMMMMMEIIIIIII"]
   - [-6, 26, "MMMMMccIIIIIIII"]
   - [-5, 26, "MMMMMMMMMMIIIII"]

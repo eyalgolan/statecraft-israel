@@ -39,7 +39,7 @@ namespace Statecraft.Game.Map
         public const int IsraelId = 1, ArabId = 2, NeutralId = 3, OutsideId = 4;
         static readonly Dictionary<char, (Side side, string? holder)> CodeOf = new Dictionary<char, (Side, string?)>
         {
-            ['I'] = (Side.Israel, null), ['E'] = (Side.Arab, "egypt"), ['J'] = (Side.Arab, "jordan"), ['G'] = (Side.Arab, "arab_legion"),
+            ['I'] = (Side.Israel, null), ['E'] = (Side.Arab, "egypt"), ['J'] = (Side.Arab, "jordan"),
             ['S'] = (Side.Arab, "syria"), ['V'] = (Side.Arab, "ala"), ['M'] = (Side.Arab, null),
             ['A'] = (Side.Arab, null), ['c'] = (Side.Contested, null), ['m'] = (Side.NoMansLand, null), ['z'] = (Side.Dmz, null),
             ['-'] = (Side.None, null),
