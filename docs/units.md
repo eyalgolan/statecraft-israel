@@ -88,6 +88,8 @@ The owner ruled:
    2 at or above the level-3 floor (0.15), else 1.
 3. 101 Squadron shows an Avia S-199 until the Spitfire's sourced date, then the Spitfire.
 4. The four brigades with no sourced position (Carmeli, Alexandroni, the 8th, Oded) are listed in the file and hidden.
+   - 2026-10-15 (draft, refs #385): Carmeli, Alexandroni and the 8th now have sourced positions (below) and are shown;
+     Oded stays hidden (its sources conflict and name no place).
 
 The controller adopted the design's defaults:
 - tokens stand only at dated, sourced positions and do not move with operation events;
@@ -115,10 +117,13 @@ After the staff review the controller ruled:
 | Unit | Positions (dated, from the sources) | Ends |
 |---|---|---|
 | Golani (1st) | Yavne'el (since February 1948); the Julis camp from December 1948 | December 1948 (source); 24 Feb 1949 (Egypt) |
+| Carmeli (2nd) | Haifa, one place picked from its sector, the Haifa area and the Western Galilee (since February 1948) | 23 Mar 1949 (Lebanon) |
+| Alexandroni (3rd) | Netanya, its headquarters at Camp Dora (since March 1948) | November 1948, the move to the Faluja pocket (source) |
 | Kiryati (4th) | Tel Aviv (since February 1948) | 3 Apr 1949 (Jordan) |
 | Givati (5th) | Gedera, one of the three places its sector names (no start given) | 24 Feb 1949 (Egypt) |
 | Etzioni (6th) | Jerusalem (since late 1947) | 3 Apr 1949 (Jordan) |
 | 7th Brigade | Hulda, its headquarters for the Latrun attacks, 24–31 May 1948; Ein Shemer, June 1948 | sources |
+| 8th Brigade | Tel Litvinsky, where it trained after its founding, 24 May to 8 July 1948 | 9 Jul 1948, Operation Dani (source); disbanded April 1949 |
 | Harel (10th) | Sha'ar HaGai, one place picked from the Jerusalem corridor (since the first half of May 1948) | 22 Dec 1948, Operation Horev (source) |
 | Yiftach (11th) | Lydda, 11–19 July 1948 (Operation Dani; the IDF entered Lydda on 11 July) | 20 Jul 1948 (source); disbanded May 1949 |
 | Negev (12th) | the Mekorot camp near Nir Am (since March 1948) | 24 Feb 1949 (Egypt) |

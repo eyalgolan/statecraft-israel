@@ -76,11 +76,23 @@ units:
   number: 2nd Brigade
   service: army
   formed: 22 February 1948
-  sector: The northwest (split from the Levanoni Brigade in February 1948).
+  sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (13-22 May 1948) and fought in the north to Operation Hiram."
   wikipedia_only: true
   status: draft
-  hidden: The sources name its sector ("the northwest") but no place or headquarters.
-  anchors: []
+  anchors:
+  - place: Haifa
+    lon: 34.99917
+    lat: 32.81917
+    from: '1948-05-15'
+    since: February 1948
+    to: '1949-03-23'
+    end_basis: front_armistice
+    front: lebanon
+    note: "One place picked from the sector: he.wiki gives the brigade's area as the Haifa area and the Zevulun district (Haifa and the Western Galilee) from the split of February 1948; no source found names its headquarters. Its later operations (Ben-Ami, Dekel, Hiram) were in the north, so the window ends on the Lebanon armistice."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Haifa', checked: '2026-10-15'}
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Carmeli_Brigade', checked: '2026-10-11'}
   - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
@@ -89,11 +101,24 @@ units:
   number: 3rd Brigade
   service: army
   formed: November 1947 (the Haganah's decision of 7 November)
-  sector: The Sharon region.
+  sector: "The Sharon region: from the Carmel in the north to the Dan bloc in the south; headquarters at Camp Dora in Netanya. In November 1948 it replaced the Givati Brigade at the Faluja pocket."
   wikipedia_only: true
   status: draft
-  hidden: The sources name its region ("the Sharon") but no place or headquarters.
-  anchors: []
+  anchors:
+  - place: Netanya (Camp Dora)
+    lon: 34.85667
+    lat: 32.32861
+    from: '1948-05-15'
+    since: March 1948
+    to: '1948-11-01'
+    precision: month
+    end_basis: source
+    end_note: "he.wiki: in November 1948 the brigade replaced the Givati Brigade at the siege of the Faluja pocket."
+    note: "he.wiki: in March 1948 the brigade had four battalions, three in the Sharon settlements and the fourth at the brigade's headquarters at Camp Dora in Netanya. en.wiki (Haganah) also has it headquartered in Netanya. The coordinates are Netanya's; Camp Dora is in the town."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%90%D7%9C%D7%9B%D7%A1%D7%A0%D7%93%D7%A8%D7%95%D7%A0%D7%99', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Haganah', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Netanya', checked: '2026-10-15'}
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Alexandroni_Brigade', checked: '2026-10-11'}
   - {url: 'https://en.wikipedia.org/wiki/Etzioni_Brigade', checked: '2026-10-11'}
@@ -210,13 +235,28 @@ units:
   service: army
   formed: 24 May 1948
   first_commander: Yitzhak Sadeh
-  sector: Not stated in the sources.
+  sector: "The IDF's first armoured brigade: after its founding it trained at Tel Litvinsky (later Tel HaShomer); its first operation was Operation Dani in July 1948, then Yoav, Assaf and Horev in the south. Disbanded in April 1949."
   wikipedia_only: true
   status: draft
-  hidden: The sources give its founding but no sector or headquarters.
-  anchors: []
+  disbanded: {date: '1949-04-01', precision: month, sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-15'}]}
+  anchors:
+  - place: Tel Litvinsky
+    lon: 34.85623
+    lat: 32.04195
+    from: '1948-05-24'
+    since: 24 May 1948
+    to: '1948-07-09'
+    end_basis: source
+    end_note: Operation Dani began on 9 July 1948; it was the brigade's first operation (he.wiki).
+    note: "he.wiki: after its founding the brigade trained in the Tel Litvinsky area; en.wiki: the 89th Battalion was stationed at Tel Litvinsky. en.wiki (Haganah) has the brigade \"headquartered near Jerusalem\", with no source; the row follows the two brigade articles. The coordinates are Tel HaShomer's, the later name of the place (the British camp the Alexandroni Brigade took on 15 April 1948)."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/8th_Armored_Brigade_(Israel)', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Danny', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Tel_HaShomer', checked: '2026-10-15'}
   sources:
   - {url: 'https://en.wikipedia.org/wiki/8th_Armored_Brigade_(Israel)', checked: '2026-10-11'}
+  - {url: 'https://en.wikipedia.org/wiki/Haganah', checked: '2026-10-15'}
 - id: oded
   name: Oded Brigade
   number: 9th Brigade
@@ -224,10 +264,12 @@ units:
   sector: The sources conflict.
   wikipedia_only: true
   status: draft
-  hidden: "The source says it was headquartered in Jerusalem, yet it fought at al-Malkiyya in the north in June 1948."
+  hidden: "The sources conflict and none names a place: en.wiki (Oded Brigade, Haganah) says it was headquartered in Jerusalem; he.wiki says it was formed on 1 June 1948 under Uri Yaffe (whose underground name was Oded; the brigade table in en.wiki's 1948 war article names Avraham Yoffe) from a Haifa-area battalion, local Guard Corps forces and new immigrants, to hold the east of the Galilee panhandle against the Golan, and it fought at al-Malkiyya in June 1948. Not yet formed on 15 May 1948 by he.wiki's date."
   anchors: []
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Oded_Brigade', checked: '2026-10-11'}
+  - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%A2%D7%95%D7%93%D7%93', checked: '2026-10-15'}
+  - {url: 'https://en.wikipedia.org/wiki/Haganah', checked: '2026-10-15'}
 - id: harel
   name: Harel Brigade
   number: 10th Brigade (Palmach)
