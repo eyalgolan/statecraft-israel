@@ -241,9 +241,12 @@ PINNED = [
     ("Mishmar HaYarden", 35.5997, 33.0028, "syria", "1948-06-11", "1949-07-20", WIKI + "Mishmar_HaYarden_(moshava)",
      "taken by the Syrian army in June 1948 and back in Israel's control on 20 July 1949 (en.wiki); the bridgehead is "
      "narrower than ISA 6158/1's accuracy, so its lines put the moshava on the Israeli side"),
-    ("Qalqilya", 34.9685, 32.1904, "jordan", "1949-04-03", None, ad.UNTS["url"],
-     "on the Jordanian side of line A on the signed map 1 of the Jordan-Israel agreement (UNTS vol. 42; D-A's source); the "
-     "trace of that map (D-A, from a low-resolution scan, about +-1-2.5 km) puts it 2 km to the Israeli side from 8 May 1949"),
+    ("Qalqilya", 34.9685, 32.1904, "jordan", "1949-04-03", None, WIKI + "Qalqilya",
+     "read 2026-10-14: en.wiki (quoting Sami Hadawi) says the 1949 armistice lines severed the town's orange groves in favour "
+     "of Israel, leaving it its rocky land to the east, so the town stayed on the Jordanian side; on the signed map 1 of the "
+     "Jordan-Israel agreement (the UNISPAL copy D-A traced, 51 m a pixel) the pen line runs along the town's western edge, its "
+     "symbol on or just east of the line, which that resolution cannot settle; D-A's trace of it puts the town 2 km to the "
+     "Israeli side from 8 May 1949"),
     ("Huleiqat", 34.6497, 31.6008, "egypt", "1948-07-08", "1948-10-19", WIKI + "Hulayqat",
      "retaken by the Egyptian army on 8 July 1948 and captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav "
      "(en.wiki); ISA 6158/1's 9 July line puts it on the Israeli side, about 1.3 km from the line, so the source and the "

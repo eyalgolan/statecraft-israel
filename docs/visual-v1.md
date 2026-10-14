@@ -1184,8 +1184,9 @@ D-C (owner-verify).
   Egypt's: Gaza, Deir al-Balah, Khan Yunis and Rafah read Egypt in every period, pinned by `test_control.py`).
 - *Pinned towns* (`pinned_towns`; the bake gives the town's hex the sourced side, as D-B's rule 5 does for Gazette places):
   Mishmar HaYarden, Syria's from June 1948 to 20 July 1949 (en.wiki), whose bridgehead is narrower than the map's accuracy;
-  Qalqilya, on the Jordanian side of line A on the signed map 1 (UNTS vol. 42) from 3 April 1949, which the low-accuracy
-  Jordan trace puts 2 km to the Israeli side; Huleiqat, Egypt's from 8 July to 19 October 1948 (en.wiki: retaken by the
+  Qalqilya, on the Jordanian side from 3 April 1949 (en.wiki, quoting Hadawi: the 1949 lines severed its groves in favour of
+  Israel; on the UNISPAL copy of map 1 the pen line runs along the town's western edge, which 51 m a pixel cannot settle),
+  which the low-accuracy Jordan trace puts 2 km to the Israeli side; Huleiqat, Egypt's from 8 July to 19 October 1948 (en.wiki: retaken by the
   Egyptian army on 8 July, captured by Giv'ati in Operation Yoav on 19 October), where ISA 6158/1's 9 July line, about
   1.3 km away, puts it on the Israeli side (the source and the archive map disagree; recorded in the data).
 - *Drawing:* `MapRegions` draws `Control1948`'s layer from 11 June 1948: Israel Primary, the other side Secondary,
