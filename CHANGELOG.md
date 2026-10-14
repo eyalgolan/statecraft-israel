@@ -8,6 +8,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- GDD v0.1 Phase 1, the Unity queue takes the GDD orders (refs #380): `AssignWorkers`, `Train` and `CancelTraining`
+  now queue in the slice, one per city, per city and track, and per cohort; an unknown city, training track or cohort is
+  refused before End Turn. A reflection test fails for any command type that reaches the queue's default branch.
 - Sourced Hebrew names in content (refs #558, #193), data only (no screen shows them yet): `title_he` for 30 of 31
   offices, plus `title_he_f` where a woman held the office (Labour, Foreign Affairs), `name_he` for 25 of 26 parties,
   the 8 governments and the 25 game settlements, `body_he` for the 4 legislatures, each with its own `*_he_sources`
