@@ -914,7 +914,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>What a designated site may be built as (sites.yaml kinds). Phase 1 has "build yishuv" only.</summary>
-        static readonly string[] SiteKinds = { "yishuv" };
+        static readonly string[] SiteKinds = { Projects.YishuvKind };
 
         /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement,
         /// founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file is display only, and a

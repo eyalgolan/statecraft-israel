@@ -48,7 +48,7 @@ namespace Statecraft.Sim.Reference
             var taken = new HashSet<string>(s.Sites.Keys, StringComparer.Ordinal);
             foreach (var u in s.Units.Values.Where(u => u.Type == "halutz" && !Projects.IsBusy(s, u.Id)))
             {
-                var site = c.Sites.Where(x => x.Kinds.Contains("yishuv") && !taken.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault();
+                var site = c.Sites.Where(x => x.Kinds.Contains(Projects.YishuvKind) && !taken.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault();
                 if (site == null || cost > left + 1e-9) return;
                 list.Add(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id));
                 taken.Add(site.Id);

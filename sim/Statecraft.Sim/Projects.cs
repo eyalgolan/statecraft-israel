@@ -16,6 +16,8 @@ namespace Statecraft.Sim
         public const string StopKind = "stop_work";
         /// <summary>The one pioneer action Phase 1 has (GDD "Pioneer work": "Build yishuv").</summary>
         public const string BuildYishuv = "build_yishuv";
+        /// <summary>The kind of site a yishuv may be built at (sites.yaml kinds).</summary>
+        public const string YishuvKind = "yishuv";
 
         /// <summary>Whether a site being built names <paramref name="unit"/>: the unit has a project (D-D6).</summary>
         public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
@@ -34,7 +36,7 @@ namespace Statecraft.Sim
             if (action != BuildYishuv) return "There is no such pioneer work";
             var place = c.Sites.FirstOrDefault(x => x.Id == site);
             if (place == null) return "There is no such site";
-            if (!place.Kinds.Contains("yishuv")) return $"{place.Name} is not a site for a new yishuv";
+            if (!place.Kinds.Contains(YishuvKind)) return $"{place.Name} is not a site for a new yishuv";
             if (s.Sites.TryGetValue(site, out var work))
                 return work.BuiltOn == null ? $"{place.Name} is already being built" : $"{place.Name} is already built";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
