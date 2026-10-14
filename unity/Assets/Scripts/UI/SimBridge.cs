@@ -9,7 +9,7 @@ namespace Statecraft.Game.UI
     /// <summary>The UI's only door into the simulation (spec section 6). Holds the GameSession, collects this turn's
     /// orders, runs End Turn and tells the screens to refresh. Orders take effect at End Turn, in the order given; each
     /// order replaces an earlier one with the same key (one choice per event, one call-up level, one budget, one appointee
-    /// per office, one policy level per policy, one build per hex).</summary>
+    /// per office, one policy level per policy, one build per hex, one pioneer order per unit).</summary>
     public sealed class SimBridge
     {
         readonly List<Command> queue = new List<Command>();
@@ -51,6 +51,8 @@ namespace Statecraft.Game.UI
             SetPolicy p => "policy:" + p.Policy,
             Appoint a => "appoint:" + a.Office,
             MapAction m => FormattableString.Invariant($"map:{m.Q},{m.R}"),
+            PioneerWork w => FormattableString.Invariant($"unit:{w.Unit}"),
+            StopWork w => FormattableString.Invariant($"unit:{w.Unit}"),
             _ => c.Kind,
         };
 
@@ -82,6 +84,11 @@ namespace Statecraft.Game.UI
                     foreach (var k in b.Shares.Keys) { var r = Unknown("budget line", k, Content.Rules.BudgetStart.Keys); if (r != null) return r; }
                     return null;
                 case SetMobilization _: case SecurityOrder _: return null;
+                // Pioneer work (#378): ids only; the sim refuses a busy unit, a built site or a short Treasury with its own reason.
+                case PioneerWork w:
+                    return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)))
+                        ?? Unknown("pioneer work", w.Action, new[] { Projects.BuildYishuv }) ?? Unknown("site", w.Site, Content.Sites.Select(x => x.Id));
+                case StopWork w: return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 default: return text["order.invalid"];
             }
         }

@@ -31,6 +31,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   unit and the site and keeps the Money spent (D-A3). Construction is step 5 of the GDD turn (D-A6) (R-SITE-001 to
   R-SITE-003). The build turns and cost are placeholders in `MvpSlice.Overlay`, never under `content/`; both orders cost 0
   Attention (D-A6: unit orders free). No golden moves: the slice's Treasury is empty when its halutz group is ready.
+  The Unity order queue (`SimBridge`) takes both orders, one per unit.
 - Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
   `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
   setting back afterwards, and
