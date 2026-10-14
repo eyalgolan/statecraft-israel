@@ -32,8 +32,16 @@ namespace Statecraft.Game.Map.Units
         public const float HouseRatio = UnitBadge.FigureHeightM * FigureScale / ReferenceHouseM;
         public const float AircraftScale = 420f;        // span 11.2 m x 420 = 4.7 km: wider than a man is tall
         public const float ShipScale = 95f;             // 63.4 m x 95 = 6.0 km: about a hex, like the promo's boats
-        /// <summary>Trio spacing and the ring, as fractions of the hex circumradius.</summary>
+        /// <summary>Trio spacing and the ring, as fractions of the hex circumradius. <see cref="TrioSpread"/> is the spacing
+        /// the placer checks a token's spot with (UnitGround), kept so no spot moved.</summary>
         public const float TrioSpread = 0.40f, RingRadius = 0.66f, RingWidth = 0.035f, RingClearanceM = 25f;
+        /// <summary>The spacing the figures are drawn at: shoulder to shoulder, as T29's trios (about 1.15 figure heights
+        /// across; ours 1.15 too: 2 x 950 m between the outer figures' centres plus a figure's width, against a 2.5 km man).
+        /// Narrower than <see cref="TrioSpread"/>, so the drawn figures stand inside the ground the placer checked.</summary>
+        public const float DrawSpread = 0.19f;
+        /// <summary>How far (in hexes) from <see cref="TrioAt"/> the showcase trio may move to stand clear of the kits and
+        /// the routes (<see cref="TrioSpot"/>).</summary>
+        public const float SpotSearchHexes = 2.2f;
         /// <summary>The flight: a circle of <see cref="LoopRadiusM"/> about <see cref="LoopCentre"/>, at
         /// <see cref="AltitudeM"/> above the highest ground under it, once every <see cref="LoopSeconds"/>, banked inwards.</summary>
         public const float LoopRadiusM = 16000f, AltitudeM = 4200f, LoopSeconds = 48f, BankDegrees = 28f;
@@ -72,18 +80,18 @@ namespace Statecraft.Game.Map.Units
             RiflemanWoolCapType = "rifleman-1948-wool-cap", SpitfireType = "spitfire-mk9e-101sqn-1948", CorvetteType = "corvette-k20-1948",
             S199Type = "avia-s199-101sqn-1948";
 
-        /// <summary>The rifle trio's three looks, in the order a token adds them (1, 2 or 3 figures): offset (in hex
-        /// circumradii times <see cref="TrioSpread"/>) and heading.</summary>
-        internal static readonly (string type, UnitModels.Headgear hat, UnitModels.RiflePose pose, bool faded, UnityEngine.Vector2 offset, float heading)[] Trio =
+        /// <summary>The rifle trio's three looks, in the order a token adds them (1, 2 or 3 figures), and their headings.
+        /// They stand at <see cref="FigureOffsets"/>, the showcase as an in-play token.</summary>
+        internal static readonly (string type, UnitModels.Headgear hat, UnitModels.RiflePose pose, bool faded, float heading)[] Trio =
         {
-            (RiflemanSlouchHatType, UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, new Vector2(-0.62f, -0.30f), 200f),
-            (RiflemanHelmetType, UnitModels.Headgear.SteelHelmet, UnitModels.RiflePose.Grounded, true, new Vector2(0.05f, 0.05f), 185f),
-            (RiflemanWoolCapType, UnitModels.Headgear.WoolCap, UnitModels.RiflePose.Slung, false, new Vector2(0.66f, -0.40f), 170f),
+            (RiflemanSlouchHatType, UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, 200f),
+            (RiflemanHelmetType, UnitModels.Headgear.SteelHelmet, UnitModels.RiflePose.Grounded, true, 185f),
+            (RiflemanWoolCapType, UnitModels.Headgear.WoolCap, UnitModels.RiflePose.Slung, false, 170f),
         };
 
-        /// <summary>Where an in-play token's figures stand (in hex circumradii times <see cref="TrioSpread"/>): one in the
-        /// middle, two side by side, or three spread across the ring as in promo 03, side by side across the view (the
-        /// middle one a step back), about 2 km apart so each figure reads on its own (review I6).</summary>
+        /// <summary>Where a token's figures stand (in hex circumradii times the spread): one in the middle, two side by side,
+        /// or three side by side across the view (the middle one a step back). The placer checks them at
+        /// <see cref="TrioSpread"/>; they are drawn at <see cref="DrawSpread"/>, shoulder to shoulder as in T29.</summary>
         internal static Vector2[] FigureOffsets(int figures) => figures switch
         {
             1 => new[] { Vector2.zero },
@@ -127,17 +135,19 @@ namespace Statecraft.Game.Map.Units
             Mesh Built(Mesh m) { assets.Own(m); m.UploadMeshData(true); return m; }   // no CPU copy kept in players
             float hex = map.Hexes.hex_size_km * 1000f;
 
-            // The trio: three riflemen in a loose triangle facing the camera's side of south-west, around the hex's centre.
-            var centre = HexCentreNear(map, TrioAt.lon, TrioAt.lat);
+            // The trio: three riflemen shoulder to shoulder on their base, under the flag, at the clear spot nearest TrioAt.
+            var centre = TrioSpot(map);
             var looks = Trio;
-            float plinth = UnitPlinth.RadiusShare * hex;
-            float stand = UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, (_, build) => Built(build()), paint);
-            var holes = new List<(Vector2 centre, float radius)> { (new Vector2(centre.x, centre.z), plinth) };
+            var offsets = FigureOffsets(looks.Length);
+            float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(offsets, DrawSpread * hex));
+            var rim = assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
+            float stand = UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, (_, build) => Built(build()), paint, rim);
+            var holes = new List<(Vector2 centre, float radius)> { (new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter) };
             for (int i = 0; i < looks.Length; i++)
             {
-                var (type, hat, pose, faded, offset, heading) = looks[i];
-                var p = centre + new Vector3(offset.x, 0, offset.y) * TrioSpread * hex;
-                p.y = stand;
+                var (type, hat, pose, faded, heading) = looks[i];
+                var p = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * DrawSpread * hex;
+                p.y = UnitPlinth.FigureY(map, stand, p.x, p.z);
                 Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
                     paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
             }
@@ -228,6 +238,40 @@ namespace Statecraft.Game.Map.Units
                 if (d < bestD) { bestD = d; best = c; }
             }
             return Ground(map, best);
+        }
+
+        /// <summary>Where the showcase trio stands (review of #559): the centre of the land hex nearest <see cref="TrioAt"/>,
+        /// within <see cref="SpotSearchHexes"/>, whose base keeps off every railway's and road's corridor. The kits keep a
+        /// clearing there when the run asks for the showcase (<see cref="Clearing"/>, MapScene.ShowcaseClearing), as they do
+        /// for a unit standing in a town, so no kit building stands on the base.</summary>
+        public static Vector3 TrioSpot(MapScene map) { var c = TrioSpotXZ(map); return Ground(map, new Vector3(c.x, 0f, c.y)); }
+
+        /// <summary>The kits' clearing for the showcase: its spot and its base's reach plus <see cref="ClearingMarginM"/>.</summary>
+        public static (Vector2 centre, float radius) Clearing(MapScene map) => (TrioSpotXZ(map), BaseReach(map) + ClearingMarginM);
+        public const float ClearingMarginM = 300f;
+
+        static float BaseReach(MapScene map) =>
+            UnitPlinth.Radius(UnitPlinth.TrioWidth(FigureOffsets(3), DrawSpread * map.Hexes.hex_size_km * 1000f)) * UnitPlinth.RimOuter;
+
+        static Vector2 TrioSpotXZ(MapScene map)
+        {
+            float hex = map.Hexes.hex_size_km * 1000f, reach = BaseReach(map);
+            var w = map.Frame.ToWorld(TrioAt.lon, TrioAt.lat, 0); var want = new Vector2(w.x, w.z);
+            var candidates = map.Hexes.hexes.Where(h => h.land).Select(h => { var c = map.Frame.ToWorld(h.lon, h.lat, 0); return new Vector2(c.x, c.z); })
+                .Where(c => (c - want).magnitude <= SpotSearchHexes * hex).OrderBy(c => (c - want).sqrMagnitude).ToList();
+            foreach (var c in candidates)
+                if (RoutesClear(map, c, reach)) return c;
+            return candidates.Count > 0 ? candidates[0] : want;
+        }
+
+        /// <summary>True when a base reaching <paramref name="reach"/> (m) from <paramref name="c"/> keeps off every route
+        /// corridor.</summary>
+        internal static bool RoutesClear(MapScene map, Vector2 c, float reach)
+        {
+            foreach (var (line, half) in map.RouteCorridors)
+                for (int i = 0; i + 1 < line.Count; i++)
+                    if (UnitGround.DistanceToSegment(c, line[i], line[i + 1]) < half + reach) return false;
+            return true;
         }
 
         /// <summary>The point on the terrain under <paramref name="p"/> (world x, z).</summary>

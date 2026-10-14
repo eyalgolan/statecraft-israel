@@ -195,17 +195,20 @@ checks every anchor and logs each spot and its distance.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
   aircraft or a ship). It is turned to face each camera as it renders.
 - **Ring:** the white ring appears only on selection.
-- **Plinth and flag (demo2 T29, refs #197).** An army token's figures stand together on one round earth plinth with a
-  white rim (`UnitPlinth`), and the side's flag flies on a pole at its back (`UnitFlags`). See "The plinth and the flag".
-- **Slopes (owner question, 2026-10-11).** The plinth's top is level at the highest ground under it (`UnitPlinth.GroundRange`:
-  the centre plus six rings of 36 points out to its edge), so no boot sinks into a hill. Where the ground falls below the
-  plinth's own thickness, an earth skirt reaches down to the lowest ground, as a painted miniature's base does, so nothing
-  floats.
-  - **Steepest spots:** the plinth's top stands up to about 1 km over the ground at a figure's boots, on the 3x relief
-    of the Jerusalem hills (Harel).
-  - **Tests:** `APlinthStandsOnASteepSlopeWithoutSinking`, `NoRiflemanSinksIntoTheHillsOfTheMap` and
-    `APlinthNeverSinksOrFloatsOnTheHills`.
-- **Trees (#249).** The kit trees whose crowns reach a drawn token's plinth are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
+- **Base and flag (demo2 T29, refs #197).** An army token's figures stand shoulder to shoulder on one round earth base
+  ringed by a bright white rim (`UnitPlinth`), and the side's flag flies on a pole at the base's back edge (`UnitFlags`).
+  See "The base and the flag".
+- **Slopes (owner question, 2026-10-11; review of #559).** The base sits at the median ground under it
+  (`UnitPlinth.Seat`: the centre plus six rings of 36 points out to its edge), a tenth of its radius thick, so it never
+  stands up as a mesa. An earth skirt reaches at most `UnitPlinth.SkirtCapM` (150 m) below it, which closes the seam on the
+  plain and the Shephelah (12 of the 20 plinths checked over three dates reach the lowest ground). On the steep hills a
+  short gap shows under the downhill edge instead of a pedestal, and ground higher than the base shows through it. A
+  figure stands on the base, or on that ground where it rises above the base (`UnitPlinth.FigureY`), never in it.
+  - **Steepest spots:** the base's top over the lowest ground under it was 1,081 m at Harel and 916 m at Golani when the
+    base stood on the highest ground; it is now 707 m and 446 m (pinned to 0.3 of a figure's height on every hill token).
+  - **Tests:** `APlinthSitsAtTheMedianOnASteepSlope`, `APlinthSitsAtTheMedianGroundWithAShortSkirt`,
+    `APlinthStandsLowOnEveryHillToken` and `NoRiflemanSinksIntoTheHillsOfTheMap`.
+- **Trees (#249).** The kit trees whose crowns reach a drawn token's base are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
   that day clear trees, and they come back when the figure goes. With the `units` toggle off, as in a plain `?shot` run,
   every tree is drawn. The planting, and so the kits' layout, never changes. Tests:
   `NoKitTreeGrowsThroughAShownFiguresFeet` and `OnlyTheShownFiguresTreesGoAndTheToggleBringsThemBack`.
@@ -307,30 +310,50 @@ stood about 2.5 times the White City blocks beside the showcase trio at close30 
 kit's seven-storey heart block, 7 x 3.3 m at the city blocks' 60x, about 1.4 km; on the close30 render it measures about
 1.3 km against the figure. So `UnitShowcase.FigureScale = 1400`: a man about 2.5 km tall, 1.8 times that block
 (`UnitShowcase.HouseRatio`, pinned to 1.6–2.0 by `TheFiguresStandAbout1Point8TimesAHouse`). A one- or two-storey village
-house (100x) is 0.33–0.66 km, so against those the figures still stand about 4–7 times as tall. The token's spacing, its
-ring and its spot are unchanged, so no unit moved and no kit clearing changed.
+house (100x) is 0.33–0.66 km, so against those the figures still stand about 4–7 times as tall. The token's ring and its
+spot are unchanged, so no unit moved; the figures are drawn closer together (below), inside the ground the placer checked.
 
-## The plinth and the flag
+## The base and the flag
 
-Demo2 T29 (owner's reference) stands every unit on a round earth base with a white rim and flies the side's flag on a
-pole. `UnitPlinth` and `UnitFlags` draw the same from code:
-- **Plinth:** one earth disc per army token, 0.52 of a hex's circumradius (halved for a compact token in a town, with its
-  trio), 6% of its radius thick, with a raised white rim near its edge. It sits inside the selection ring, which still
-  appears only on selection. The figures stand on its top. The earth is the palette's `Earth`, a warm brown lighter than
-  the uniforms.
+Demo2 T29 (owner's reference) stands every unit on a round earth base ringed in bright white and flies the side's flag on
+a pole. Measured on 4x crops of three of its tokens (the 1:12 frame): the base (the ring's outer edge) is 1.41, 1.62 and
+1.71 times the trio's width; the trio is about 1.15 figure heights wide (shoulder to shoulder); the ring is about 8% of the
+base's radius wide; the flag's cloth is 0.47–0.60 of a figure's height tall and 0.65–0.70 wide, on a pole about 1.5
+figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw the same from code:
+- **Figures:** drawn at `UnitShowcase.DrawSpread` (0.19 of a hex's circumradius between neighbours), shoulder to
+  shoulder, the trio about 1.15 figure heights wide. The placer still checks a spot at `TrioSpread`, so no spot moved.
+  The showcase trio stands the same way.
+- **Base:** one earth disc per army token, its rim 1.45 times the full trio's width across (`UnitPlinth.BaseToTrio`;
+  1.42–1.44 measured on the built tokens, pinned to 1.3–1.7 by `TheBaseHugsTheTrioAsInT29`), a tenth of its radius thick.
+  The earth is the palette's `Earth`, lighter than the uniforms.
+- **Rim:** a flat band from 0.95 to 1.04 of the radius, wrapping the base's edge, drawn unlit in near-white with the
+  selection ring's shader, so it reads bright as T29's (`TheRimIsBrightWhiteAndWideAndTheBaseHasThickness`). The
+  selection ring is unchanged and still appears only on selection.
 - **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row today; the Arab states' sides are known to the
-  loader for #226). Only a side whose 1948 flag is sourced here gets one, so no flag is invented:
-  - Israel: the flag of the Provisional Council of State's proclamation of 28 October 1948 (220 by 160, two sky-blue
-    stripes 25 broad at 15 from the top and the bottom, a Star of David of six stripes 5.5 broad;
-    https://en.wikipedia.org/wiki/Flag_of_Israel, checked 2026-10-14). The same flag hung at the declaration on
-    14 May 1948 (https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence, checked 2026-10-14), so it flies
-    from the game's first day. The law does not give the star's size; it is drawn 69 across, as the article's
-    construction drawing. Pinned by `TheIsraeliFlagFollowsTheSpecification`.
+  loader for #226). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+  radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). Only a side whose 1948
+  flag is sourced here gets one, so no flag is invented:
+  - Israel: the Provisional Council of State's "Proclamation on the Flag of the State of Israel" of 25 Tishrei 5709
+    (28 October 1948), Iton Rishmi No. 32, 10 Heshvan 5709 (12 November 1948), p. 62
+    (https://fs.knesset.gov.il/0/law/0_lsr_340940.pdf, read 2026-10-14): 220 cm by 160 cm; white, with two dark
+    sky-blue stripes 25 cm broad along its length, 15 cm from the top and the bottom edge; in the middle, equally far from
+    both stripes, a Star of David of six sky-blue stripes 5.5 cm broad forming two equilateral triangles whose bases are
+    parallel to the stripes. The Flag and Emblem Law, 5709-1949 (Sefer HaChukim No. 8, 24 May 1949, p. 37, s. 1(a);
+    https://fs.knesset.gov.il/1/law/1_lsr_208225.pdf, read 2026-10-14) makes that proclaimed flag the State flag "in
+    any size". Neither text sets the star's size: it is drawn 69 cm across, as the construction drawing at
+    https://en.wikipedia.org/wiki/Flag_of_Israel (checked 2026-10-14), which fits the gazette's own drawing. The same
+    design hung at the declaration on 14 May 1948 (https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence,
+    checked 2026-10-14), so it flies from the game's first day. Pinned by `TheIsraeliFlagFollowsTheSpecification`.
   - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag yet, so a token of theirs flies none
     (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
-- **Aircraft and ships** have no plinth and no flag: they fly or float, and carry their own sourced markings.
-- **Cost:** three shared low-poly meshes (plinth about 340 triangles, flag and pole about 250, skirt), in the units'
-  one palette material. No texture, no new shader, no per-pixel cost (docs/visual-v1.md, #391), and no per-frame code.
+- **The showcase trio** (`?units`, `-units`) stands at the land hex nearest its old spot whose base keeps off the
+  railways and roads, and the kits keep a clearing there in such a run, as they do for a unit in a town
+  (`MapScene.ShowcaseClearing`, `UnitShowcase.Clearing`), so no kit building or route crosses its base
+  (`NoKitBuildingOrRailCrossesTheShowcasePlinth`). A plain screenshot keeps every kit.
+- **Aircraft and ships** have no base and no flag: they fly or float, and carry their own sourced markings.
+- **Cost:** four shared low-poly meshes (base 168 triangles, rim 96, flag and pole about 250, skirt), the base, skirt and
+  flag in the units' palette material and the rim in one unlit material. No texture, no new shader, no per-pixel cost
+  (docs/visual-v1.md, #391), and no per-frame code.
 
 ## Colour at map scale
 
@@ -341,7 +364,7 @@ below. Measured on editor renders of both tiers (gameplay03, the showcase trio a
 Golani at 12 km, Harel at 15 km in the Judean hills and Etzioni at 30 km), a figure was 0.68–0.82 of the surrounding
 ground's luminance with the old, lighter khaki, and blended into it; it is now 0.50–0.57, and warm (red above green).
 Promo 03's figures are about 0.45 (figures round 1, refs #197). The webbing stays pale, as the promo's straps do. The
-token's plinth is painted earth (`Earth`), lighter than the uniforms (it replaced round 1's per-figure slope base). The aircraft and ship colours are untouched.
+token's base is painted earth (`Earth`), lighter than the uniforms (it replaced round 1's per-figure slope base). The aircraft and ship colours are untouched.
 
 ## Sources (checked 2026-10-11)
 

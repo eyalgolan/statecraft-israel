@@ -395,22 +395,22 @@ public class UnitsInPlayTests
         Assert.Greater(outside, 0);
     }
 
-    /// <summary>Owner question (units on hard terrain): on a steep slope a token's plinth is level at the highest ground
-    /// under it, so no boot sinks into the hill, and its skirt reaches the lowest (UnitPlinth.GroundRange).</summary>
+    /// <summary>Owner question (units on hard terrain), review of #559: on a steep slope a token's base sits at the median
+    /// ground under it (on a plane, the ground at its centre), a tenth of its radius thick, and its skirt reaches at most
+    /// UnitPlinth.SkirtCapM below it; a figure stands on the base or, uphill, on the ground rising through it, never in it.</summary>
     [Test]
-    public void APlinthStandsOnASteepSlopeWithoutSinking()
+    public void APlinthSitsAtTheMedianOnASteepSlope()
     {
-        const float slope = 0.6f, r = UnitPlinth.RadiusShare * 5000f;   // a 31-degree hillside (steeper than the 3x relief's hills)
+        const float slope = 0.6f, r = 2000f;   // a 31-degree hillside (steeper than the 3x relief's hills)
         float H(float x, float z) => 100f + slope * x + 0.2f * z;
-        var (y, low) = UnitPlinth.GroundRange(H, 1000f, 2000f, r);
-        for (int k = 0; k < 48; k++)
-        {
-            float a = Mathf.PI / 24f * k;
-            float h = H(1000f + Mathf.Cos(a) * r * 0.99f, 2000f + Mathf.Sin(a) * r * 0.99f);
-            Assert.GreaterOrEqual(y + 0.01f, h, "no point of the plinth sinks into the slope");
-            Assert.LessOrEqual(low - 0.01f, h, "the skirt reaches the lowest ground");
-        }
-        Assert.LessOrEqual(y - H(1000f, 2000f), Mathf.Sqrt(slope * slope + 0.04f) * r / Mathf.Cos(Mathf.PI / 36f) + 0.01f, "the rise is bounded by the slope over the plinth");
+        var (top, bottom, skirt) = UnitPlinth.Seat(H, 1000f, 2000f, r);
+        Assert.AreEqual(H(1000f, 2000f), bottom, 1f, "at the median ground: on a plane, the centre's");
+        Assert.AreEqual(UnitPlinth.ThicknessShare * r, top - bottom, 0.01f);
+        Assert.AreEqual(bottom - UnitPlinth.SkirtCapM, skirt, 0.01f, "the skirt is capped on a steep slope");
+        var (flatTop, flatBottom, flatSkirt) = UnitPlinth.Seat((x, z) => 50f + 0.01f * x, 1000f, 2000f, r);
+        Assert.AreEqual(50f + 10f - 0.01f * r / Mathf.Cos(Mathf.PI / 36f) - 30f, flatSkirt, 0.5f, "on a gentle slope the skirt reaches the lowest ground");
+        float uphill = 1000f + 0.9f * r;
+        Assert.GreaterOrEqual(UnitPlinth.BootsTop(H, uphill, 2000f), H(uphill + 0.2f * UnitShowcase.FigureScale * 0.99f, 2000f), "an uphill figure's boots are not in the ground");
     }
 
     /// <summary>Review of #518: the tokens' keep-clear boxes (what the map's names keep clear of) are right even when the
@@ -475,11 +475,11 @@ public class UnitsInPlayTests
                     worstFloat = Mathf.Max(worstFloat, p.y - lowest);
                     var plinth = f.parent.Find(UnitPlinth.PlinthName);
                     Assert.IsNotNull(plinth, $"{f.parent.name}: the figures stand on a plinth");
-                    Assert.AreEqual(plinth.position.y, p.y, 0.5f, $"{f.parent.name}/{f.name}: on the plinth's top");
+                    Assert.GreaterOrEqual(p.y, plinth.position.y - 0.5f, $"{f.parent.name}/{f.name}: on the plinth's top, or on ground rising through it");
                     checkedFigures++;
                 }
             }
-            Debug.Log($"UNITS slope: {checkedFigures} riflemen, worst plinth top over the ground at the boots {worstFloat:0} m");
+            Debug.Log($"UNITS slope: {checkedFigures} riflemen, worst rise of a figure's feet over the ground at its boots {worstFloat:0} m");
             Assert.Greater(checkedFigures, 40);
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
@@ -501,7 +501,7 @@ public class UnitsInPlayTests
     /// <summary>The shown army tokens' plinths, as discs (the figures' boots are all on them).</summary>
     static List<(Vector2 centre, float radius)> FigureFeet(MapScene map) =>
         map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetComponentsInChildren<Transform>()
-            .Where(t => t.name == UnitPlinth.PlinthName).Select(t => (new Vector2(t.position.x, t.position.z), t.localScale.x)).ToList();
+            .Where(t => t.name == UnitPlinth.PlinthName).Select(t => (new Vector2(t.position.x, t.position.z), t.localScale.x * UnitPlinth.RimOuter)).ToList();
 
     static bool UnderAFigure(Statecraft.Game.Map.Kits.TreeKind kind, Matrix4x4 m, List<(Vector2 centre, float radius)> plinths)
     {

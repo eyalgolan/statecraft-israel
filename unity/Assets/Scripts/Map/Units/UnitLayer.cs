@@ -31,7 +31,7 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         List<UnitToken>? roster;
         List<PlacedToken> placed = new List<PlacedToken>();
@@ -96,6 +96,7 @@ namespace Statecraft.Game.Map.Units
             layer.ringTemplate = ringTemplate;
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
+            layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
@@ -223,21 +224,21 @@ namespace Statecraft.Game.Map.Units
                 switch (t.Unit.Service)
                 {
                     case UnitData.Army:
-                        // Demo2 T29's token: the figures stand together on one earth plinth with a white rim, under the
-                        // side's flag (refs #197).
-                        float plinth = UnitPlinth.RadiusShare * hex * Scale(p.Spot);
-                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, MeshFor, paint);
-                        treeHoles.Add((new Vector2(centre.x, centre.z), plinth));
+                        // Demo2 T29's token: the figures stand shoulder to shoulder on one earth base with a bright white
+                        // rim, under the side's flag (refs #197). The base fits the full trio, whatever the call-up.
+                        float k = UnitShowcase.DrawSpread * hex * Scale(p.Spot);
+                        float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
+                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, MeshFor, paint, rim);
+                        treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
-                        float k = UnitShowcase.TrioSpread * hex * Scale(p.Spot);
                         for (int i = 0; i < offsets.Length; i++)
                         {
                             // The pose and heading are the trio position's; the headgear is the unit's (sourced, or the default).
-                            var (_, _, pose, faded, _, heading) = UnitShowcase.Trio[i];
+                            var (_, _, pose, faded, heading) = UnitShowcase.Trio[i];
                             var hat = Hat(t.Headgear[i]);
                             var type = UnitRoster.RiflemanType(t.Headgear[i]);
                             var at = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * k;
-                            at.y = foot.y;
+                            at.y = UnitPlinth.FigureY(map, foot.y, at.x, at.z);
                             UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
                                 paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _);
                         }

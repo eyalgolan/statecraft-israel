@@ -146,6 +146,11 @@ namespace Statecraft.Game.Map
         /// keep off them (KitGround.Tokens). Empty before Build.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> SettlementFootprints { get; private set; } = new List<(Vector2, float)>();
 
+        /// <summary>Whether the next Build keeps a kit clearing for the units' showcase trio (Units.UnitShowcase.Clearing), as
+        /// for a unit in a town: null means only when the run asks for the showcase (?units, -units), so a plain screenshot
+        /// keeps every kit (review of #559).</summary>
+        public bool? ShowcaseClearing { get; set; }
+
         /// <summary>The railways' and roads' corridors (RouteLayer.Corridors), every route whatever its date, so the units keep
         /// their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
@@ -340,6 +345,9 @@ namespace Statecraft.Game.Map
                 (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM);
             var clearings = new List<(Vector2 centre, float radius)>();
             var unitRings = new List<(Vector2 centre, float radius)>();
+            // The units' showcase trio gets the same clearing at its spot, off the railways and roads, so its base stands
+            // clear of the kits (review of #559).
+            if (ShowcaseClearing ?? Units.UnitShowcase.Requested()) clearings.Add(Units.UnitShowcase.Clearing(this));
             if (unitData.Count > 0)
             {
                 var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null);

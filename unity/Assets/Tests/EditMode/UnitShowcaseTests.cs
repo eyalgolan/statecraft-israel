@@ -205,7 +205,7 @@ public class UnitShowcaseTests
             }
             bool Under(Statecraft.Game.Map.Kits.TreeKind k, Matrix4x4 m)
             {
-                var p = m.GetColumn(3); float reach = plinth.localScale.x + Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(k, m);
+                var p = m.GetColumn(3); float reach = plinth.localScale.x * UnitPlinth.RimOuter + Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(k, m);
                 return (centre - new Vector2(p.x, p.z)).sqrMagnitude < reach * reach;
             }
             Assert.IsFalse(veg.Drawable().Any(t => Under(t.kind, t.m)), "no drawn tree reaches the trio's plinth");
@@ -230,11 +230,11 @@ public class UnitShowcaseTests
             Assert.IsNotNull(root.transform.Find("Spitfire1948/Propeller"));
             var plane = root.GetComponentInChildren<ShowcaseFlight>();
             Assert.AreEqual(UnitShowcase.StillPhase, plane.StillPhase);
-            // Each figure stands on the plinth, level at the highest ground under it (UnitPlinth.Build).
+            // Each figure stands on the plinth (at the median ground under it), or on ground rising through it.
             var plinth = root.transform.Find(UnitPlinth.PlinthName);
             Assert.IsNotNull(plinth, "the trio stands on a plinth");
             foreach (var f in root.GetComponentsInChildren<MeshFilter>().Where(f => f.name.StartsWith("Rifleman")))
-                Assert.AreEqual(plinth.position.y, f.transform.position.y, 1f, f.name);
+                Assert.GreaterOrEqual(f.transform.position.y, plinth.position.y - 1f, f.name);
             // The aircraft clears the highest ground under its loop.
             var loop = map.Frame.ToWorld(UnitShowcase.LoopCentre.lon, UnitShowcase.LoopCentre.lat, 0);
             Assert.Greater(plane.transform.position.y, UnitShowcase.LoopFloor(map, loop, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM * 0.99f);
