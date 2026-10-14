@@ -19,6 +19,8 @@ name: Player golden
 #   statecraft-israel-<tag>-linux-x64.tar.gz       Linux x64 (tar keeps the executable bit)
 #   statecraft-israel-<tag>-macos-universal.zip    macOS Universal (IL2CPP), the .app inside; checked twice, on macos-15
 #                                                  (arm64 slice) and macos-15-intel (x86_64 slice; GitHub ends it in Aug 2027: #548)
+# Each archive also carries the notices (REQUIRED_NOTICES in tools/player_golden_check.py) at its top level, beside the
+# player or the .app; a missing one fails before the player runs.
 # <tag> is the release tag with its v (statecraft-israel-v0.2.0-windows-x64.zip), like the web zip in docs/RELEASING.md.
 # A release with desktop players must carry all three, attached in the same `gh release create` (docs/RELEASING.md,
 # step 6): one or two fails the run. A release with none (web only) passes, with an UNCHECKED warning in the summary.

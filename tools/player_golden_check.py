@@ -15,7 +15,9 @@ published, and appends to FILE (the job's $GITHUB_OUTPUT) `matrix=` the GitHub A
 players must carry all three: one or two fails, and so does an asset without a SHA-256 digest. No player at all fails a
 manual run; on a release event it passes (a web-only release) but writes an "UNCHECKED" warning to the run summary.
 
-`run` checks the archive's SHA-256 against that digest (so a re-uploaded asset fails until it is re-planned), unpacks it into an empty folder, finds the player, runs it with
+`run` checks the archive's SHA-256 against that digest (so a re-uploaded asset fails until it is re-planned), unpacks it
+into an empty folder, finds the player, checks the layout (the notices of REQUIRED_NOTICES at the top level beside the
+player or the .app), runs it with
 `-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md) and passes only when it exits 0 and its log
 holds `GOLDEN OK 1950 <hash1950>` and `GOLDEN OK 1952 <hash1952>` from the golden manifest, and no FAIL line. On failure
 it prints the whole player log. With --arch (the Mac app, run once per slice) the runner's `uname -m` must be that
@@ -57,6 +59,13 @@ RUNNERS = {
     "linux": [("ubuntu-24.04", "")],
     "macos": [("macos-15", "arm64"), ("macos-15-intel", "x86_64")],
 }
+
+# The notices every archive carries at its top level, beside the player (tools/release_build.py adds them and takes
+# this list; the web packager, scripts/oss/package_web.sh, copies the same files: test_release_build pins that).
+REQUIRED_NOTICES = ["LICENSE", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
+                    "LICENSES/YamlDotNet-MIT.txt", "NOTICE", "OFL-EBGaramond.txt", "OFL-FrankRuhlLibre.txt",
+                    "THIRD-PARTY-NOTICES.md"]
+NOTICE_TOPS = {n.split("/")[0] for n in REQUIRED_NOTICES}
 
 GOLDENS = (("1950", "hash1950"), ("1952", "hash1952"))
 FAIL = re.compile(r"\b(GOLDEN FAIL|BOOT FAIL)\b")
@@ -175,6 +184,22 @@ def find_player(root: Path, platform: str) -> Path:
     return found[0]
 
 
+def layout_problems(root: Path, platform: str, exe: Path) -> list[str]:
+    """How an unpacked archive breaks the release layout (tools/release_build.py, make_archive): the notices at the top
+    level; Windows and Linux: the player there too; macOS: the .app there, and nothing else beside it but the notices."""
+    problems = [f"missing notice: {n}" for n in REQUIRED_NOTICES if not (root / n).is_file()]
+    if platform == "macos":
+        app = exe.parents[2]   # <app>/Contents/MacOS/<exe>
+        if app.parent != root:
+            problems.append(f"the app is not at the archive's top level: {app.relative_to(root)}")
+        extra = sorted(p.name for p in root.iterdir() if p != app and p.name not in NOTICE_TOPS)
+        if extra:
+            problems.append(f"unexpected beside the app: {', '.join(extra)}")
+    elif exe.parent != root:
+        problems.append(f"the player is not at the archive's top level: {exe.relative_to(root)}")
+    return problems
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -252,6 +277,8 @@ def cmd_run(a) -> int:
         work = Path(a.work).resolve()   # the player runs with cwd at its folder, so every path must be absolute
         unpack(archive, work / "player")
         exe = find_player(work / "player", a.platform)
+        if problems := layout_problems(work / "player", a.platform, exe):
+            raise ValueError("; ".join(problems))
         if a.arch:
             machine = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
             archs = subprocess.run(["lipo", "-archs", str(exe)], capture_output=True, text=True, check=True).stdout
@@ -265,12 +292,12 @@ def cmd_run(a) -> int:
     log = work / "player.log"
     try:
         code = run_player(exe, log, a.timeout)
-    except OSError as e:   # the player could not be started at all (for example: Exec format error)
-        code, start_error = -1, f"the player could not be started: {e}"
+    except OSError as e:   # the player could not be started at all (for example: Exec format error); it has no exit code
+        code, start_error = None, f"the player could not be started: {e}"
     else:
         start_error = ""
     text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-    problems = ([start_error] if start_error else []) + check_log(text, expected, code)
+    problems = [start_error] if start_error else check_log(text, expected, code)
     if not problems:
         for line in expected:
             print(line)

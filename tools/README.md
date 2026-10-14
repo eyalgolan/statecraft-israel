@@ -31,7 +31,7 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   cache; macOS only, arm64 or x64); it passes when the console shows the expected lines (`GOLDEN OK ...`, `SMOKE OK ...`).
 - `player_golden_check.py` is the logic of `.github/workflows/player-golden.yml`: `plan` lists the desktop players a
   GitHub Release carries (their asset names are the contract with the release script) and refuses a partial set, and
-  `run` checks one against GitHub's SHA-256 digest for the asset, unpacks it, runs it
+  `run` checks one against GitHub's SHA-256 digest for the asset, unpacks it, checks the notices sit beside the player, runs it
   with `-batchmode -nographics -golden` and passes only on exit 0 with both `GOLDEN OK` lines from the golden manifest,
   printing the player log otherwise. Stdlib only; no Unity and no licence needed.
 - `package_release.py` zips a Brotli WebGL build for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses

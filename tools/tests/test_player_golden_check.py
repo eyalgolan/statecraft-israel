@@ -23,6 +23,15 @@ def digest(name):
     return "sha256:" + hashlib.sha256(name.encode()).hexdigest()
 
 
+def add_notices_to_tar(t):
+    """The notices at the archive's top level, as tools/release_build.py adds them (#552)."""
+    for n in pg.REQUIRED_NOTICES:
+        info = tarfile.TarInfo(n)
+        data = f"{n}\n".encode()
+        info.size = len(data)
+        t.addfile(info, io.BytesIO(data))
+
+
 def release(tag, *names, draft=False):
     return {"tagName": tag, "isDraft": draft, "assets": [{"name": n, "digest": digest(n)} for n in names]}
 
@@ -228,7 +237,8 @@ def test_run_passes_a_player_that_prints_the_goldens_and_prints_the_log_when_it_
         exe.chmod(0o755)
         path = tmp_path / name
         with tarfile.open(path, "w:gz") as t:
-            t.add(exe, arcname="statecraft/Statecraft.x86_64")
+            t.add(exe, arcname="Statecraft.x86_64")
+            add_notices_to_tar(t)
         return path
 
     # The fake player writes its log where -logFile says (the last argument), as the Unity player does.
@@ -300,7 +310,8 @@ def fake_linux_player(tmp_path, body: bytes, name="p.tar.gz"):
     exe.chmod(0o755)
     path = tmp_path / name
     with tarfile.open(path, "w:gz") as t:
-        t.add(exe, arcname="statecraft/Statecraft.x86_64")
+        t.add(exe, arcname="Statecraft.x86_64")
+        add_notices_to_tar(t)
     return path
 
 
@@ -312,6 +323,7 @@ def test_a_player_that_cannot_start_fails_cleanly(tmp_path, capsys):
                     "--sha256", pg.sha256(arc), "--work", str(tmp_path / "w")])
     out = capsys.readouterr().out
     assert code == 1 and "::error::linux: the player could not be started" in out and "PLAYER GOLDEN FAIL linux" in out
+    assert "exited" not in out and "missing line" not in out, "no made-up exit code (review T53)"
 
 
 def test_arch_is_required_for_macos_and_refused_elsewhere(tmp_path, capsys):
@@ -332,12 +344,94 @@ def test_run_refuses_a_mac_runner_of_the_other_architecture_before_running(tmp_p
     macos = tmp_path / "build" / "Statecraft.app" / "Contents" / "MacOS"
     macos.mkdir(parents=True)
     shutil.copy("/usr/bin/true", macos / "Statecraft Israel")
-    z = tmp_path / "statecraft-israel-v0.2.0-macos-universal.zip"
-    subprocess.run(["ditto", "-c", "-k", "--norsrc", "--keepParent", str(tmp_path / "build" / "Statecraft.app"), str(z)],
-                   check=True)
+    z = mac_release_zip(tmp_path)
     here = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
     other = "x86_64" if here == "arm64" else "arm64"
     code = pg.main(["run", "--platform", "macos", "--arch", other, "--manifest", str(tmp_path / "manifest.txt"),
                     "--archive", str(z), "--sha256", pg.sha256(z), "--work", str(tmp_path / "w")])
     out = capsys.readouterr().out
     assert code == 2 and f"the runner is {here}, not {other}: check the runner label" in out and "RUN " not in out
+
+
+def mac_release_zip(tmp_path, notices=pg.REQUIRED_NOTICES, extra=()):
+    """A zip shaped like tools/release_build.py's (#552): ditto zips the .app, then the notices go in at the top level."""
+    z = tmp_path / "statecraft-israel-v0.2.0-macos-universal.zip"
+    subprocess.run(["ditto", "-c", "-k", "--norsrc", "--keepParent", str(tmp_path / "build" / "Statecraft.app"), str(z)],
+                   check=True)
+    with zipfile.ZipFile(z, "a") as zf:
+        for n in [*notices, *extra]:
+            zf.writestr(n, f"{n}\n")
+    return z
+
+
+def unpacked(tmp_path, platform, notices=pg.REQUIRED_NOTICES, extra=(), nested=False):
+    """An unpacked archive shaped like #552's: the player (Windows, Linux) or the .app (macOS) plus the notices."""
+    root = tmp_path / f"u-{platform}"
+    base = root / "statecraft" if nested else root
+    if platform == "windows":
+        (base / "Statecraft_Data").mkdir(parents=True)
+        (base / "UnityCrashHandler64.exe").write_bytes(b"")
+        exe = base / "Statecraft Israel.exe"
+    elif platform == "linux":
+        (base / "Statecraft_Data").mkdir(parents=True)
+        exe = base / "Statecraft.x86_64"
+    else:
+        (base / "Statecraft.app" / "Contents" / "MacOS").mkdir(parents=True)
+        exe = base / "Statecraft.app" / "Contents" / "MacOS" / "Statecraft Israel"
+    exe.write_bytes(b"")
+    for n in [*notices, *extra]:
+        (root / n).parent.mkdir(parents=True, exist_ok=True)
+        (root / n).write_text(n)
+    return root
+
+
+@pytest.mark.parametrize("platform", ["windows", "linux", "macos"])
+def test_the_player_plus_the_notices_is_the_accepted_layout(tmp_path, platform):
+    root = unpacked(tmp_path, platform)
+    exe = pg.find_player(root, platform)   # the notices are not players: LICENSES/ holds only .txt
+    assert pg.layout_problems(root, platform, exe) == []
+
+
+@pytest.mark.parametrize("platform", ["windows", "linux", "macos"])
+def test_a_missing_notice_or_a_nested_player_breaks_the_layout(tmp_path, platform):
+    root = unpacked(tmp_path, platform, notices=[n for n in pg.REQUIRED_NOTICES if n != "LICENSES/CC0-1.0.txt"])
+    assert pg.layout_problems(root, platform, pg.find_player(root, platform)) == ["missing notice: LICENSES/CC0-1.0.txt"]
+    nested = unpacked(tmp_path / "n", platform, nested=True)
+    problems = pg.layout_problems(nested, platform, pg.find_player(nested, platform))
+    assert "not at the archive's top level" in problems[0]
+
+
+def test_nothing_but_the_notices_may_sit_beside_the_mac_app(tmp_path):
+    root = unpacked(tmp_path, "macos", extra=["event-photos.json"])
+    assert pg.layout_problems(root, "macos", pg.find_player(root, "macos")) == ["unexpected beside the app: event-photos.json"]
+
+
+def test_the_release_script_shares_the_notice_list_and_the_one_player_rule():
+    import release_build as rb
+    assert rb.REQUIRED_NOTICES is pg.REQUIRED_NOTICES and rb.NOTICE_TOPS == pg.NOTICE_TOPS
+    assert set(rb.FONT_LICENCES) <= rb.NOTICE_TOPS
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="the macOS zip is unpacked with ditto")
+def test_a_mac_release_zip_with_its_notices_unpacks_to_an_accepted_layout(tmp_path):
+    macos = tmp_path / "build" / "Statecraft.app" / "Contents" / "MacOS"
+    macos.mkdir(parents=True)
+    (macos / "Statecraft Israel").write_bytes(b"")
+    pg.unpack(mac_release_zip(tmp_path), tmp_path / "out")
+    exe = pg.find_player(tmp_path / "out", "macos")
+    assert pg.layout_problems(tmp_path / "out", "macos", exe) == []
+    assert (tmp_path / "out" / "LICENSES" / "CC0-1.0.txt").is_file()
+
+
+def test_a_release_archive_without_its_notices_is_refused_before_the_player_runs(tmp_path, capsys):
+    (tmp_path / "manifest.txt").write_text(MANIFEST)
+    exe = tmp_path / "Statecraft.x86_64"
+    exe.write_text("#!/bin/sh\n")
+    exe.chmod(0o755)
+    arc = tmp_path / "bare.tar.gz"
+    with tarfile.open(arc, "w:gz") as t:
+        t.add(exe, arcname="Statecraft.x86_64")
+    code = pg.main(["run", "--platform", "linux", "--manifest", str(tmp_path / "manifest.txt"), "--archive", str(arc),
+                    "--sha256", pg.sha256(arc), "--work", str(tmp_path / "w")])
+    out = capsys.readouterr().out
+    assert code == 2 and "missing notice: LICENSE" in out and "RUN " not in out

@@ -73,14 +73,12 @@ METHOD = "Statecraft.Game.EditorTools.Build."
 # The licence and attribution files every archive carries beside the player (RELEASING.md step 7): the list
 # scripts/oss/package_web.sh copies into the web zip and checks (test_the_notice_list_is_the_web_packagers keeps them
 # one list). Archive name -> source in the repository; LICENSES/ is copied whole, as the web packager does.
-REQUIRED_NOTICES = ["LICENSE", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
-                    "LICENSES/YamlDotNet-MIT.txt", "NOTICE", "OFL-EBGaramond.txt", "OFL-FrankRuhlLibre.txt",
-                    "THIRD-PARTY-NOTICES.md"]
+REQUIRED_NOTICES = pgc.REQUIRED_NOTICES   # one list with the CI player check, which checks every archive has them
 # Each font's own OFL text (its copyright line differs), under the names site/public/fonts uses. Every OFL.txt under
 # unity/Assets/UI/Fonts must be here (test_every_shipped_fonts_licence_is_a_required_notice).
 FONT_LICENCES = {"OFL-EBGaramond.txt": "unity/Assets/UI/Fonts/OFL.txt",
                  "OFL-FrankRuhlLibre.txt": "unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt"}
-NOTICE_TOPS = {"LICENSE", "LICENSES", "NOTICE", "THIRD-PARTY-NOTICES.md", *FONT_LICENCES}
+NOTICE_TOPS = pgc.NOTICE_TOPS
 PHOTOS = "event-photos.json"   # Build.PhotoManifestName: written beside every player, read by packaging, not the player
 # The release asset names and the tag rule are the CI player golden check's (tools/player_golden_check.py), so the two
 # cannot drift (issue #546). {tag} carries the v. The CI check names the Mac "macos".
@@ -338,15 +336,13 @@ def make_archive(p: Platform, folder: Path, target: Path, dest: Path) -> None:
 
 
 def player_problem(p: Platform, folder: Path) -> str | None:
-    """Why the player folder breaks the archive contract of PR #533, or None: one player .exe (crash handler aside), one
-    *.x86_64, or one .app with one file in Contents/MacOS."""
-    if p.name == "windows":
-        found = [f for f in folder.rglob("*.exe") if not f.name.lower().startswith("unitycrashhandler")]
-    elif p.name == "linux":
-        found = [f for f in folder.rglob("*.x86_64") if f.is_file()]
-    else:
-        found = [f for app in folder.rglob("*.app") if app.is_dir() for f in (app / "Contents/MacOS").glob("*") if f.is_file()]
-    return None if len(found) == 1 else f"expected one {p.name} player in {folder}, found {len(found)}"
+    """Why the player folder breaks the archive contract, or None: the CI player check's own find_player (one player
+    .exe, crash handler aside; one *.x86_64; or one .app with one file in Contents/MacOS), so the two cannot drift."""
+    try:
+        pgc.find_player(folder, "macos" if p.name == "mac" else p.name)
+    except ValueError as e:
+        return str(e)
+    return None
 
 
 def file_sha256(path: Path) -> str:
