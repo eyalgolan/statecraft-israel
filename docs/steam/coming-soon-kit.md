@@ -47,10 +47,14 @@ transparency; artwork PG-13 (map, towns, boats and unit miniatures).
 | Library header | `library/library_header_920x430.png` | 920 x 430 | 920px x 430px | same two pages |
 | Library hero | `library/library_hero_3840x1240.png` | 3840 x 1240, PNG, no text | 3840px x 1240px .png; safe area 860px x 380px at the centre | same two pages |
 | Library logo | `library/library_logo_1280w.png` | 1280 x 183, PNG with transparency | "Either 1280px wide and/or 720px tall (.png)", transparent background | same two pages |
+| Shortcut icon (Community) | `community/shortcut_icon_256x256.png` | 256 x 256 PNG | 256px x 256px ".ico or .png" ("We will generate a .ico if a png is provided") | [store/assets](https://partner.steamgames.com/doc/store/assets) |
+| App icon (Community) | `community/app_icon_184x184.jpg` | 184 x 184 JPG | 184px x 184px .jpg | same page |
 
 Valve's overview page also says, under "August, 2024", that "Old dimensions are no longer accepted"; the sizes above
-are the current ones on that page. Not in the kit: the optional page background (1438 x 810), the shortcut icon
-(256 x 256) and the app icon (184 x 184), which are Community assets, and the event assets.
+are the current ones on that page. The two Community icons, which Valve lists as Required, are made the same way: a
+square crop of `telaviv40` (dimmed) with the title on two lines (`sources/icons.py`). The title reads at 256 and 184 px,
+but not at the 32 and 48 px sizes a Windows shortcut uses; a simpler mark (a monogram) would read there, and choosing
+one is a design call for the owner. Not in the kit: the optional page background (1438 x 810) and the event assets.
 
 **Legibility at the small display sizes.** The small capsule sets the title on two lines so that it nearly fills the
 capsule, as Valve's page advises, over a dimmed background. Previews at Steam's generated sizes,
@@ -103,7 +107,7 @@ all-ages call:
 Folder: `~/statecraft-release/steam-kit/` on the owner's Mac.
 
 **Licences.** Every file derived from an engine render (the capsules, the library capsule, header and hero, the
-small-capsule previews, the screenshots and the two source renders) is **CC BY-SA 4.0**. That is a licence fact, not a
+small-capsule previews, the two Community icons, the screenshots and the two source renders) is **CC BY-SA 4.0**. That is a licence fact, not a
 choice (coordinator ruling, 15 October 2026): the renders show the land-use, biome and route bakes
 (`unity/Assets/Textures/Map/landuse.png`, `unity/Assets/Resources/Map/BiomeColours.bytes`,
 `unity/Assets/Resources/Routes/RouteRibbons.bytes`), which D13 (PR #565) made CC BY-SA 4.0. The library logo has no
@@ -130,6 +134,8 @@ screenshots as in section 2.
 
 | File | Bytes | Pixels | SHA-256 | Licence |
 | --- | --- | --- | --- | --- |
+| community/app_icon_184x184.jpg | 16950 | 184x184 | fe89fbe88126c2a9eae11a71c1d39b8243279c1525f47d107b0edaab7d340498 | CC BY-SA 4.0 |
+| community/shortcut_icon_256x256.png | 122559 | 256x256 | b37d19ec6b77ded41673d9ba1311e907b127c45cb12daee5423078a997c2f7d7 | CC BY-SA 4.0 |
 | capsules/header_capsule_920x430.png | 681357 | 920x430 | e2d4522ce4a0c7615eeb0a77d55e2abbcc94b62b3c566b3f09043b73f0bb43a8 | CC BY-SA 4.0 |
 | capsules/main_capsule_1232x706.png | 1342138 | 1232x706 | 18b6e75f5319fa49931029b42b695a41c122d4a7448083c59f714cbe1ff44a48 | CC BY-SA 4.0 |
 | capsules/preview_small_120x45.png | 13021 | 120x45 | 60f209b338a474870ecf1cf4c46c1f3f4176777972e3c28579e73cd7a787cfb7 | CC BY-SA 4.0 |
@@ -153,6 +159,7 @@ screenshots as in section 2.
 | sources/SteamKitCapture.cs | 2635 | - | a57eb366b8e38b0f9eeb253cb92b886310c483ac17c26ca0d45f007c37a33f68 | MIT |
 | sources/capsules.py | 5999 | - | 2f79346dc4d426da74b882b52708b1e5baf47c46f107f78d7f7eab869b14ec3d | MIT |
 | sources/capture.py | 4367 | - | 728275b9bc35436264897bf9fd3904059c4c0d9401fd4e37a4a1c465900d02f9 | MIT |
+| sources/icons.py | 1640 | - | 249683bb8c357ceeb4ed24e9083376eac9def2024c0ce6256688bde4702dd235 | MIT |
 | sources/steps1.json | 393 | - | c1d6f57eda508aa0f6900ce24077980d7cc198f01ca6b7e8fa16dfb9ce32e057 | MIT |
 | sources/steps5.json | 208 | - | 6eea8d0e91be8ae415cf706ddee31b57b9b6cede5370970fb0a2cb8315ad9422 | MIT |
 | sources/steps6.json | 209 | - | 716a73fa69e13a4b94ae09870273ad0ed80ee1db8e73b6b5a338a838f4a1c4c8 | MIT |
@@ -173,7 +180,7 @@ narrative, localization), not about efficiency tools
 per-field wording of the form is visible only inside Steamworks, so the field names below follow that public page:
 **[confirm]** them on the form.
 
-**Owner rulings this text follows:** the clips carry no burned-in caption (G4); the four Dreamina clips keep Dreamina's
+**Owner rulings this text follows:** the clips carry no burned-in caption (G4), while the game's UI labels each one "AI-generated illustration" as it plays (`event.ai_label`, shown by `EventCardPresenter` and `OutcomePresenter`); the four Dreamina clips keep Dreamina's
 own small "AI" mark (G5); D-V covers the clips in every build; D-D (PR #565) covers the start-screen painting for the
 free game.
 
@@ -186,7 +193,8 @@ free game.
 > - 14 short, silent video clips. 11 play on decision cards only when the player presses the card's "Illustration"
 >   switch, in place of the card's archival photograph; 3 play once at End Turn when the player has ordered the
 >   historical option of the transit camps, the Hula works or Operation Horev. They were made with Veo 3.1 (10 clips)
->   and Seedance 2.0 (4 clips). They show no recognisable real person. The four Seedance clips keep the generator's small
+>   and Seedance 2.0 (4 clips). They show no recognisable real person. While a clip plays, the game labels it
+>   "AI-generated illustration". The four Seedance clips keep the generator's small
 >   "AI" mark in a corner.
 > - Event and content text was drafted with AI. A person checks every fact in it against its cited source, and every
 >   fact carries its source in the game's data.
@@ -318,8 +326,9 @@ None of these is done. Each is the owner's action.
    attribution for the store images (section 3).
 5. **Tags** from section 6.
 6. **Graphical assets.** Upload the capsules and library art from section 1 (header, small, main, vertical, library
-   capsule, library header, library hero, library logo); place the logo on the hero with Steam's preview tool. The
-   Community icons (shortcut 256 x 256, app icon 184 x 184) are not in this kit.
+   capsule, library header, library hero, library logo); place the logo on the hero with Steam's preview tool. Upload
+   the Community icons (shortcut 256 x 256 PNG, app icon 184 x 184 JPG), or replace them with a monogram first if the
+   title should read at shortcut sizes (section 1).
 7. **Screenshots.** Upload the screenshots from section 2 and tick "suitable for all ages" only on the ones marked so
    there (at least four).
 8. **Trailer.** A real-build gameplay trailer is still pending (#45). Check in Steamworks whether the Coming Soon

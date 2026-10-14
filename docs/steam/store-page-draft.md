@@ -190,8 +190,10 @@ public summary it ends with is repeated here:
 > **In the game.** The painting behind the start screen is AI-generated. On 11 decision cards, an optional
 > "Illustration" switch plays a short, silent, AI-generated video loop in place of the card's archival photograph, and
 > when you order the historical option of three events (the transit camps, the Hula works, Operation Horev), a 3.5-second
-> silent AI-generated clip plays once at End Turn. The 14 clips show no recognisable real person and carry no on-screen
-> caption; the four made with Dreamina keep Dreamina's own small "AI" mark in a corner. Event and content text was
+> silent AI-generated clip plays once at End Turn. The 14 clips show no recognisable real person. While one plays, the
+> game labels it "AI-generated illustration" (in place of the photograph's credit on a card, and on the End Turn clip);
+> no caption is burned into the video itself, and the four made with Dreamina keep Dreamina's own small "AI" mark in a
+> corner. Event and content text was
 > drafted with AI, and every fact in it is checked by a person against its cited source. The game has no music. Its
 > only audio is the archival 1948 recording of David Ben-Gurion reading the Declaration (Israel State Archives), which
 > is not AI. The portraits and the event photographs are archival photographs, not AI images, and the terrain is built
@@ -209,7 +211,7 @@ What each statement rests on:
 | --- | --- | --- |
 | Start-screen painting is AI-generated | `unity/Assets/UI/StartScreen/declaration-hall.jpg` in ASSETS.yaml: ElevenLabs Image API, GPT Image 2.5, with a Dreamina painting as its composition reference | Row is `owner-verify`; D-D decided 2026-10-14 (PR #565) for the free, non-commercial game; a paid release needs the commercial-rights check or a new image |
 | 11 silent illustration clips on decision cards and 3 outcome clips at End Turn | `unity/Assets/StreamingAssets/video/*.mp4`, 14 rows in ASSETS.yaml: 10 made with Veo 3.1 or Veo 3.1 Fast through ElevenLabs, 4 with Seedance 2.0 through Dreamina (`austerity_1949`, `iraqi_exodus`, `maabarot_policy-outcome`, `operation_horev-outcome`); PRs #454 and #466 | Rows `verified` under D-V, which covers free, commercial and paid builds |
-| Clips are AI-generated, silent, opt-in, no recognisable real person | [docs/event-videos.md](../event-videos.md); provenance in ASSETS.yaml (`ai_generated: true` on every clip) and [docs/ai-disclosure.md](../ai-disclosure.md) | Silence is enforced by the encoder. No on-screen caption: owner ruling of 2026-10-14 ([DECISIONS](../oss/DECISIONS.md) G4). The four Dreamina clips (`austerity_1949`, `iraqi_exodus`, `maabarot_policy-outcome`, `operation_horev-outcome`) keep Dreamina's own small "AI" watermark: owner ruling "Keep the badge" (G5). The sensitive clips (`ten_days`, `operation_yoav`, the `operation_horev` outcome) were reviewed by the owner on 2026-10-14 (G4) |
+| Clips are AI-generated, silent, opt-in, no recognisable real person | [docs/event-videos.md](../event-videos.md); provenance in ASSETS.yaml (`ai_generated: true` on every clip) and [docs/ai-disclosure.md](../ai-disclosure.md) | Silence is enforced by the encoder. No caption burned into the video: owner ruling of 2026-10-14 ([DECISIONS](../oss/DECISIONS.md) G4). The game's UI still labels every clip "AI-generated illustration" while it plays (`event.ai_label` in `unity/Assets/UI/strings.en.yaml`, shown by `EventCardPresenter` in place of the photo credit and by `OutcomePresenter` on the End Turn clip). The four Dreamina clips (`austerity_1949`, `iraqi_exodus`, `maabarot_policy-outcome`, `operation_horev-outcome`) keep Dreamina's own small "AI" watermark: owner ruling "Keep the badge" (G5). The sensitive clips (`ten_days`, `operation_yoav`, the `operation_horev` outcome) were reviewed by the owner on 2026-10-14 (G4) |
 | Text drafted with AI, each fact checked by a person | README.md "AI use"; CONTENT_POLICY section 2, rule 6 | Stated project rule |
 | Code written with AI agents | README.md "AI use" | Steam's form is about content players see, not tools, so this sentence is optional |
 | No music; the only audio is the archival recording on the start screen, not AI | PR #465, merged: `unity/Assets/StreamingAssets/audio/declaration-1948-isa-00113hj.wav`, behind a "Play the recording" button; README.md "Sound: no AI sound" | Shipped. Its ASSETS.yaml row is `owner-verify` under D-R, whose part (a) is still open |
@@ -267,15 +269,16 @@ Facts this draft could not settle. Each is flagged above instead of being assert
 
 The report's wording, which follows CONTENT_POLICY section 1 (the perspective is Israeli and says so) and section 2
 (rules 3, 4 and 5). One sentence is added for the illustration clips, which did not exist when the report was written.
-Updated 14 October 2026: the clips carry no on-screen caption since G4, so "labelled as such" was replaced by a pointer
-to the AI disclosure, and the three outcome clips (#466) are named. This is the text for the Content Survey's mature
+Updated 14 October 2026: G4 removed only the caption burned into the clips; the game's UI still labels each clip
+"AI-generated illustration" while it plays, so the sentence says that, points to the AI disclosure, and names the
+three outcome clips (#466). This is the text for the Content Survey's mature
 content description; the per-topic answers are in [coming-soon-kit.md, section 5](coming-soon-kit.md#5-content-survey-draft-answers).
 
 > Statecraft: Israel depicts real events of 1948-1951 from the perspective of Israel's government, including war,
 > terror attacks, refugees and displacement, and references to the Holocaust. These are shown through sourced text,
 > archival photographs and a symbolic map, not graphic violence. Some decision cards can also show a short, silent,
-> AI-generated illustration (disclosed in the AI section of this page), and three historical orders play a short
-> silent clip when the turn ends. Real historical figures appear in their public roles; their in-game ratings are game
+> AI-generated illustration, labelled as such in the game and disclosed in the AI section of this page, and three
+> historical orders play a short, silent, labelled clip when the turn ends. Real historical figures appear in their public roles; their in-game ratings are game
 > balance, not judgements of the people.
 
 Notes:
@@ -303,7 +306,8 @@ report. Files under `promo/demo*` are local, not in the repository, and were lis
 All made from real engine renders with the title in EB Garamond, not from `promo/final/01` (AI): the owner chose real
 captures for itch.io, and this keeps the page's art free of AI. Header 920 x 430, small 462 x 174, main 1232 x 706,
 vertical 748 x 896, library capsule 600 x 900, library header 920 x 430, library hero 3840 x 1240 (no text) and the
-library logo (1280 px wide, transparent). The page background (optional, 1438 x 810) is not made: Steam builds one from
+library logo (1280 px wide, transparent), plus the two Community icons (shortcut 256 x 256, app icon 184 x 184).
+The page background (optional, 1438 x 810) is not made: Steam builds one from
 the last screenshot if none is uploaded.
 
 Capsule text is the game title only. Text on an asset must exist in every language the page lists, so the capsules
