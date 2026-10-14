@@ -75,7 +75,15 @@ namespace Statecraft.Game.UI
 
         /// <summary>The loading line in the UI's language from the first frame (Start runs after every OnEnable, so the
         /// document's tree exists).</summary>
-        void Start() { if (Application.isPlaying) ShowLoading(); }
+        void Start() { if (Application.isPlaying) Started(); }
+
+        /// <summary>Start's work: the loading line in the UI's language (ShowLoading), unless the boot has already failed or
+        /// the game has already begun. GameBoot and GameRoot set no execution order, and on the desktop the load reads from
+        /// disk, so a failure can land inside GameBoot.Start before this runs: its reason must stay (M3 final review I5).</summary>
+        internal void Started()
+        {
+            if ((boot == null || boot.Error == null) && Bridge == null) ShowLoading();
+        }
 
         /// <summary>A boot failure replaces the loading line with the reason; the loading state stays, so no half-built panel
         /// shows (M3 final review I5).</summary>

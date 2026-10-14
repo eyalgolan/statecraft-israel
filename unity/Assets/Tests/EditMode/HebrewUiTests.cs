@@ -243,7 +243,9 @@ public class HebrewUiTests
     }
 
     /// <summary>English shows what it always showed: each English string is the text Game.uxml writes, and every text in
-    /// Game.uxml with a letter in it is either one of StaticTexts, deliberately not translated, or a Hebrew start line.</summary>
+    /// Game.uxml with a letter in it is either one of StaticTexts, deliberately not translated, or a start line in Hebrew
+    /// (an English text with the start-he class is not exempt). Game.uxml writes no tooltip: one with a letter would need
+    /// a string too. Texts C# writes itself are not read here.</summary>
     [Test]
     public void EachEnglishStaticTextIsTheUxmlsOwnText()
     {
@@ -257,9 +259,12 @@ public class HebrewUiTests
         }
         foreach (var name in NotTranslated) listed.Add(ui.Q<TextElement>(name));
         var unlisted = ui.Root.Query<TextElement>().ToList()
-            .Where(t => !listed.Contains(t) && !t.ClassListContains("start-he") && (t.text ?? "").Any(char.IsLetter))
+            .Where(t => !listed.Contains(t) && !(t.ClassListContains("start-he") && UiDirection.RightToLeft(t.text)) && (t.text ?? "").Any(char.IsLetter))
             .Select(t => $"'{t.name}' ({string.Join(" ", t.GetClasses())}): {t.text}").ToList();
         Assert.IsEmpty(unlisted, "a text Game.uxml writes that no string sets");
+        var tooltips = ui.Root.Query<VisualElement>().ToList().Where(v => (v.tooltip ?? "").Any(char.IsLetter))
+            .Select(v => $"'{v.name}': tooltip {v.tooltip}").ToList();
+        Assert.IsEmpty(tooltips, "a tooltip Game.uxml writes that no string sets");
     }
 
     /// <summary>In Hebrew every static text shows its strings.he.yaml words, with no Latin letter but a listed name, and takes
@@ -321,6 +326,31 @@ public class HebrewUiTests
         Assert.AreEqual(LanguageDirection.Inherit, line.languageDirection);
     }
 
+    /// <summary>A boot failure stays on the loading line whichever of GameBoot.Start and GameRoot.Start runs first (neither
+    /// sets an execution order). On the desktop the load reads from disk, so its failure lands inside GameBoot.Start
+    /// (GameSceneTests.AFailingLoadIsCaughtAndShownWithoutLocalPaths drives the same throw); GameRoot's Start must not
+    /// write the loading line over it (M3 final review I5).</summary>
+    [Test]
+    public void ABootFailureStaysOnTheLoadingLineInEitherStartOrder([Values(UiLanguage.English, UiLanguage.Hebrew)] string language)
+    {
+        foreach (var failFirst in new[] { true, false })
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            var boot = Object.FindFirstObjectByType<GameBoot>();
+            game.Language = language;
+            var order = failFirst ? "GameBoot.Start first" : "GameRoot.Start first";
+            if (!failFirst) game.Started();
+            LogAssert.Expect(LogType.Error, new Regex("BOOT FAIL Could not find file"));
+            LogAssert.Expect(LogType.Exception, new Regex("Could not find file"));
+            _ = boot.BootAsync(() => throw new IOException("Could not find file '/Users/someone/Statecraft Israel.app/Contents/Resources/Data/StreamingAssets/map/heightmap.json'."));
+            if (failFirst) game.Started();
+            var t = language == UiLanguage.Hebrew ? He : En;
+            Assert.AreEqual(t.Format("boot.failed", "Could not find file 'heightmap.json'"), Ui.Q<Label>("loading").text, $"{language}, {order}");
+            Assert.AreEqual(language == UiLanguage.Hebrew, Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), $"{language}, {order}: the face");
+        }
+    }
+
     /// <summary>A seat count's unit follows the body (#193, from the #209 review): the Knesset, which was elected
     /// (legislatures.yaml "elected", Legislature.Elected), counts "מנדטים"; the Provisional State Council, which was
     /// appointed, counts its "חברים". English says "seats" for both, as before.</summary>
@@ -328,7 +358,11 @@ public class HebrewUiTests
     public void ASeatCountsUnitIsTheBodysOwnInHebrew()
     {
         var c = Inputs.Content;
-        Assert.IsTrue(c.Legislatures.Any(l => l.Elected.HasValue) && c.Legislatures.Any(l => !l.Elected.HasValue), "both kinds in content");
+        // Only the appointed council may lack its election date: a Knesset row without "elected" would otherwise count
+        // its seats as "חברים" with nothing failing.
+        CollectionAssert.AreEqual(new[] { "provisional_state_council" }, c.Legislatures.Where(l => !l.Elected.HasValue).Select(l => l.Id),
+            "legislatures.yaml: every body but the appointed council has its \"elected\" date");
+        Assert.IsTrue(c.Legislatures.Any(l => l.Elected.HasValue), "elected bodies in content");
         foreach (var leg in c.Legislatures)
         {
             Assert.AreEqual(leg.Elected.HasValue ? "מנדטים" : "חברים", CabinetPresenter.SeatUnit(He, leg), leg.Id);
