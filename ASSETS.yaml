@@ -79,6 +79,16 @@ rules:
     licence: CC-BY-4.0
     source: "In-engine capture: about 11 seconds of real play recorded from the game's own WebGL build (commit f93fd5e, 2026-10-13) in headed Chrome at 1920x1080; the animated WebP for the README, the MP4 (H.264) and WebM (VP9) for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"
     status: verified
+  - glob: "docs/steam/kit/*.png"
+    licence: CC-BY-4.0
+    source: "Steam Coming Soon kit previews (P57, #424; docs/steam/coming-soon-kit.md): the header and small capsules, composed from a 3840x2160 engine render of the game's own map scene (main at c0a38256, PC quality tier, pose telaviv40), and the library logo; the only text is the title 'Statecraft: Israel' set in EB Garamond SemiBold (unity/Assets/UI/Fonts/EBGaramond-SemiBold.ttf, OFL-1.1, its row above; the font is credited, the images are not under the OFL). Byte-identical to the files of the same name in the kit folder kept outside git (SHA-256 in the doc's manifest). Map derived from Copernicus DEM (NOTICE)"
+    status: verified
+    note: "Not AI. Licence per the coordinator's instruction (original captures, CC BY 4.0); the doc asks the owner whether the D13 share-alike bakes the renders show make CC BY-SA 4.0 the better mark."
+  - glob: "docs/steam/kit/screenshots-contact-sheet.jpg"
+    licence: CC-BY-4.0
+    source: "The kit's eight 1920x1080 screenshots of the game's own WebGL build (main at c0a38256, captured 2026-10-14/15 with tools/web_check.py --shots and tools/headed.py's Browser), each at half size on one sheet; listed with their SHA-256 in docs/steam/coming-soon-kit.md. Map derived from Copernicus DEM (NOTICE); the Defence screen's portraits are David Ben-Gurion (public domain, NARA) and Yaakov Dori (CC0), their rows in ASSETS.portraits.yaml"
+    status: verified
+    note: "Not AI. No Cabinet screen, no GPO portrait, no AI painting or clip, no sensitive event card."
   - glob: "docs/GDD-v0.1.pdf"
     licence: CC-BY-4.0
     source: "The owner's game design document (Statecraft-Israel-GDD-v0.1.pages), exported to PDF on 2026-10-12; text copy in docs/GDD.md"
