@@ -503,13 +503,26 @@ public class HudTests
     }
 
     /// <summary>#398 review S3: the spoken captions are strings (so a Hebrew UI says Hebrew captions), and the English ones
-    /// are the captions the bar shows, so the two cannot drift apart.</summary>
+    /// are the captions the bar shows, so the two cannot drift apart. #193: in each language the bar's visible caption is
+    /// the caption its tooltip says (HudPresenter sets both from hud.caption.*), so a Hebrew bar no longer shows "Treasury"
+    /// over a tooltip that says "אוצר".</summary>
     [Test]
     public void TheSpokenCaptionsAreTheBarsCaptions()
     {
         using var ui = new UiTestKit();
         foreach (var id in MeterIds)
             Assert.AreEqual(ui.Q<VisualElement>("meter-" + id).Q<Label>(className: "meter-name").text, Text["hud.caption." + id], id);
+        foreach (var (language, text) in new[] { ("he", He), ("en", Text) })
+        {
+            using var hud = new HudPresenter(ui.Root, new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text), text);
+            foreach (var id in MeterIds)
+            {
+                var meter = ui.Q<VisualElement>("meter-" + id);
+                var shown = meter.Q<Label>(className: "meter-name").text;
+                Assert.AreEqual(text["hud.caption." + id], shown, $"{language}: {id}");
+                StringAssert.StartsWith(shown + ":", meter.tooltip, $"{language}: {id}'s tooltip says the caption it shows");
+            }
+        }
     }
 
     /// <summary>#398: a negative net position, a people count and a Hebrew UI, each through the real path (the

@@ -59,8 +59,11 @@ namespace Statecraft.Game.UI
 
         /// <param name="recording">The "Play the recording" button's player (null in tests that do not need it); the screen
         /// stops it when it closes.</param>
+        /// <param name="text">The UI's strings for the source line and the two buttons (#193); null keeps Game.uxml's English
+        /// (tests). The title is the game's name and the English lines are the Declaration's official translation: neither
+        /// is translated.</param>
         public StartScreenPresenter(VisualElement root, NewGamePresenter newGame, bool resumed, Action<bool>? shownChanged = null,
-            DeclarationRecording? recording = null)
+            DeclarationRecording? recording = null, UiText? text = null)
         {
             this.recording = recording;
             this.newGame = newGame; this.shownChanged = shownChanged; Resumed = resumed;
@@ -71,6 +74,11 @@ namespace Statecraft.Game.UI
             panel = screen.Q<VisualElement>("start-panel");
             continueButton = screen.Q<Button>("start-continue");
             newGameButton = screen.Q<Button>("start-new-game");
+            if (text != null)
+            {
+                screen.Q<Label>("start-source").text = text["start.source"];
+                continueButton.text = text["start.continue"]; newGameButton.text = text["start.new_game"];
+            }
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;

@@ -73,13 +73,39 @@ namespace Statecraft.Game.UI
 
         void OnEnable() { if (boot != null) { boot.Ready += Begin; boot.Failed += OnBootFailed; } }
 
+        /// <summary>The loading line in the UI's language from the first frame (Start runs after every OnEnable, so the
+        /// document's tree exists).</summary>
+        void Start() { if (Application.isPlaying) ShowLoading(); }
+
         /// <summary>A boot failure replaces the loading line with the reason; the loading state stays, so no half-built panel
         /// shows (M3 final review I5).</summary>
         internal void OnBootFailed(string reason)
         {
-            if (document == null || strings == null || stringsHe == null) return;
-            var line = document.rootVisualElement.Q<Label>("loading");
-            if (line != null) line.text = Strings().Format("boot.failed", GameBoot.ForPlayer(reason).TrimEnd('.'));
+            var text = ShowLoading();
+            var line = text == null ? null : document.rootVisualElement.Q<Label>("loading");
+            if (line != null) Say(line, text!.Format("boot.failed", GameBoot.ForPlayer(reason).TrimEnd('.')), text["ui.lang"] == UiLanguage.Hebrew);
+        }
+
+        /// <summary>Puts the loading line in the UI's language (boot.loading, #193). In Hebrew the root also gets its mark
+        /// (UiLanguage.HebrewClass) now, before Begin, so the line and a boot failure are set in the Hebrew face. Returns
+        /// the strings, or null before the scene's fields are set.</summary>
+        internal UiText? ShowLoading()
+        {
+            if (document == null || strings == null || stringsHe == null || document.rootVisualElement == null) return null;
+            var text = Strings();
+            var root = document.rootVisualElement;
+            bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
+            (root.Q("root") ?? root).EnableInClassList(UiLanguage.HebrewClass, hebrew);
+            var line = root.Q<Label>("loading");
+            if (line != null) Say(line, text["boot.loading"], hebrew);
+            return text;
+        }
+
+        /// <summary>A loading-line text, with its own direction in Hebrew (UiDirection is not running yet) and none in English.</summary>
+        static void Say(Label line, string words, bool hebrew)
+        {
+            line.text = words;
+            line.languageDirection = !hebrew ? LanguageDirection.Inherit : UiDirection.RightToLeft(words) ? LanguageDirection.RTL : LanguageDirection.LTR;
         }
 
         /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for, else English.</summary>
@@ -149,6 +175,8 @@ namespace Statecraft.Game.UI
             // Hebrew: the Hebrew face, the advanced text generator and the mirrored rows (.lang-he); each text's paragraph
             // direction comes from its own text (UiDirection, made below once the presenters have rendered).
             (root.Q("root") ?? root).EnableInClassList(UiLanguage.HebrewClass, hebrew);   // on .root, whose face it replaces
+            var loading = root.Q<Label>("loading");
+            if (loading != null) Say(loading, text["boot.loading"], hebrew);   // hidden from here on; set for a restart in the other language
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
@@ -271,7 +299,7 @@ namespace Statecraft.Game.UI
             {
                 var cam = cameraController;
                 var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
-                start = Own(new StartScreenPresenter(root, newGame, resumed, shown => { if (cam != null) cam.enabled = !shown; }, recording));
+                start = Own(new StartScreenPresenter(root, newGame, resumed, shown => { if (cam != null) cam.enabled = !shown; }, recording, text));
                 start.Show();
             }
             if (hebrew) Own(new UiDirection(root, bridge));

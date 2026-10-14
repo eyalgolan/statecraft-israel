@@ -15,6 +15,7 @@ namespace Statecraft.Game.UI
         public WhyPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
             screen = root.Q<VisualElement>("screen-why"); this.bridge = bridge; this.text = text;
+            screen.Q<Label>("why-screen-title").text = text["why.title"];
             bridge.Changed += Render;
             Render();
         }

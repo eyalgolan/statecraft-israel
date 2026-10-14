@@ -80,6 +80,7 @@ namespace Statecraft.Game.UI
             button = root.Q<Button>("start-listen");
             caption = root.Q<VisualElement>("start-caption");
             button.text = text["start.listen"];
+            row.Q<Label>("start-recording-credit").text = text["start.recording_credit"];
             onPress = Toggle;
             button.clicked += onPress;
             row.style.display = DisplayStyle.Flex;

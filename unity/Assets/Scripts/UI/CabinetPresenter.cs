@@ -105,6 +105,13 @@ namespace Statecraft.Game.UI
             return blocks;
         }
 
+        /// <summary>The unit of a seat count in <paramref name="leg"/>: cabinet.seats for an elected body (legislatures.yaml gives
+        /// its election date, Legislature.Elected), cabinet.seats_appointed for one that was not elected (the Provisional
+        /// State Council). The same "seats" in English; Hebrew says "מנדטים" for the Knesset and "חברים" for the council (#193).
+        /// No legislature (no count is shown then) counts as elected.</summary>
+        public static string SeatUnit(UiText text, Legislature? leg) =>
+            text[leg == null || leg.Elected.HasValue ? "cabinet.seats" : "cabinet.seats_appointed"];
+
         public void Render()
         {
             dirty = false; Renders++;
@@ -267,16 +274,17 @@ namespace Statecraft.Game.UI
         void RenderHouse(Content c, GameState s, Government? gov, Legislature? leg, int seats, int size)
         {
             screen.Q<VisualElement>("cabinet-house").style.display = leg == null ? DisplayStyle.None : DisplayStyle.Flex;
-            screen.Q<Label>("cabinet-coalition").text = text.Format("cabinet.coalition", seats, size, PlayerText.Percent(s.CoalitionStability));
+            var unit = SeatUnit(text, leg);
+            screen.Q<Label>("cabinet-coalition").text = text.Format("cabinet.coalition", seats, size, PlayerText.Percent(s.CoalitionStability), unit);
             screen.Q<UiBar>("cabinet-stability").Value = (float)s.CoalitionStability;
             if (leg == null) { hemicycle.Set(new Hemicycle.Group[0], 0); chips.Clear(); chipsFor = ""; return; }
             var blocks = Blocks(c, leg, gov, s.Date);
             hemicycle.Set(blocks, leg.Size);
             screen.Q<Label>("cabinet-house-size").text = leg.Size.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            screen.Q<Label>("cabinet-opposition").text = text.Format("cabinet.opposition", blocks.Where(b => !b.Coalition).Sum(b => b.Seats));
-            screen.Q<Label>("cabinet-majority").text = text.Format("cabinet.majority", hemicycle.Majority);
+            screen.Q<Label>("cabinet-opposition").text = text.Format("cabinet.opposition", blocks.Where(b => !b.Coalition).Sum(b => b.Seats), unit);
+            screen.Q<Label>("cabinet-majority").text = text.Format("cabinet.majority", hemicycle.Majority, unit);
             var largest = blocks.OrderByDescending(b => b.Seats).FirstOrDefault();
-            screen.Q<Label>("cabinet-largest").text = largest.Seats > 0 ? text.Format("cabinet.largest", c.Parties.First(p => p.Id == largest.Party).Name, largest.Seats) : "";
+            screen.Q<Label>("cabinet-largest").text = largest.Seats > 0 ? text.Format("cabinet.largest", c.Parties.First(p => p.Id == largest.Party).Name, largest.Seats, unit) : "";
             var key = leg.Id + "/" + (gov?.Id ?? "");
             if (key == chipsFor) return;
             chipsFor = key;

@@ -186,7 +186,7 @@
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-budget" class="panel screen">
-            <ui:VisualElement class="screen-header"><ui:Label text="Budget" class="title" /><ui:Label name="budget-vote" class="muted" /></ui:VisualElement>
+            <ui:VisualElement class="screen-header"><ui:Label name="budget-screen-title" text="Budget" class="title" /><ui:Label name="budget-vote" class="muted" /></ui:VisualElement>
             <ui:Label name="budget-money" />
             <ui:Label name="budget-flow" class="muted" />
             <ui:ScrollView name="budget-rows" class="grow" />
@@ -200,7 +200,7 @@
         <!-- Defence as promo/final/08 (DefencePresenter): leadership, the escalation ladder and the reserve call-up side by
              side (wrapping in a narrow window), then the defence share of the budget. Only what the sim models. -->
         <ui:VisualElement name="screen-defence" class="panel screen screen-wide">
-            <ui:VisualElement class="screen-header"><ui:Label text="Defence" class="title" /><ui:Label name="defence-command" class="muted" /></ui:VisualElement>
+            <ui:VisualElement class="screen-header"><ui:Label name="defence-screen-title" text="Defence" class="title" /><ui:Label name="defence-command" class="muted" /></ui:VisualElement>
             <ui:ScrollView name="defence-body" class="grow">
                 <ui:VisualElement class="defence-row">
                     <ui:VisualElement name="defence-leadership" class="defence-panel defence-leadership">
@@ -252,7 +252,7 @@
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <ui:VisualElement name="screen-why" class="panel screen">
-            <ui:VisualElement class="screen-header"><ui:Label text="Why did this happen?" class="title" /><ui:Label name="why-turn" class="muted" /></ui:VisualElement>
+            <ui:VisualElement class="screen-header"><ui:Label name="why-screen-title" text="Why did this happen?" class="title" /><ui:Label name="why-turn" class="muted" /></ui:VisualElement>
             <ui:ScrollView name="why-rows" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>

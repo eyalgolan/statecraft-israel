@@ -206,6 +206,147 @@ public class HebrewUiTests
         return () => { doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); };
     }
 
+    // --- The static texts ---------------------------------------------------------------------------------------------
+
+    /// <summary>Every text Game.uxml writes itself that a player reads, and its string (#193). "a/b" is the element of class b
+    /// inside the element named a. The presenter that owns each element sets it from the UI's strings at bind time.</summary>
+    static readonly (string where, string key)[] StaticTexts =
+    {
+        ("loading", "boot.loading"),
+        ("meter-treasury/meter-name", "hud.caption.treasury"), ("meter-immigration/meter-name", "hud.caption.immigration"),
+        ("meter-security/meter-name", "hud.caption.security"), ("meter-support/meter-name", "hud.caption.support"),
+        ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),
+        ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
+        ("nav-why", "hud.nav.why"), ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
+        ("event-draft", "event.draft"),
+        ("budget-screen-title", "budget.title"), ("budget-reset", "budget.reset"), ("budget-submit", "budget.submit"),
+        ("defence-screen-title", "defence.title"), ("de-escalate", "defence.lower"), ("escalate", "defence.raise"),
+        ("why-screen-title", "why.title"),
+        ("start-source", "start.source"), ("start-recording-credit", "start.recording_credit"),
+        ("start-continue", "start.continue"), ("start-new-game", "start.new_game"),
+    };
+
+    /// <summary>Static texts that stay as Game.uxml writes them in every language: the game's name, and the Declaration's
+    /// official English translation under each Hebrew line. ("-5%" and "+5%" have no letters and need no string.)</summary>
+    static readonly string[] NotTranslated = { "start-title", "start-en-proclamation", "start-en-date", "start-caption-en" };
+
+    /// <summary>Names a Hebrew static text keeps in Latin letters: the recording's engineer (names stay as the sources
+    /// spell them until #55).</summary>
+    static readonly string[] LatinNames = { "Ralph Hellinger" };
+
+    static TextElement Static(VisualElement ui, string where)
+    {
+        var parts = where.Split('/');
+        var e = parts.Length == 1 ? ui.Q<TextElement>(where) : ui.Q(parts[0])?.Q<TextElement>(className: parts[1]);
+        Assert.IsNotNull(e, where);
+        return e!;
+    }
+
+    /// <summary>English shows what it always showed: each English string is the text Game.uxml writes, and every text in
+    /// Game.uxml with a letter in it is either one of StaticTexts, deliberately not translated, or a Hebrew start line.</summary>
+    [Test]
+    public void EachEnglishStaticTextIsTheUxmlsOwnText()
+    {
+        using var ui = new UiTestKit();
+        var listed = new HashSet<TextElement>();
+        foreach (var (where, key) in StaticTexts)
+        {
+            var e = Static(ui.Root, where);
+            Assert.AreEqual(e.text, En[key], $"{where}: {key}");
+            listed.Add(e);
+        }
+        foreach (var name in NotTranslated) listed.Add(ui.Q<TextElement>(name));
+        var unlisted = ui.Root.Query<TextElement>().ToList()
+            .Where(t => !listed.Contains(t) && !t.ClassListContains("start-he") && (t.text ?? "").Any(char.IsLetter))
+            .Select(t => $"'{t.name}' ({string.Join(" ", t.GetClasses())}): {t.text}").ToList();
+        Assert.IsEmpty(unlisted, "a text Game.uxml writes that no string sets");
+    }
+
+    /// <summary>In Hebrew every static text shows its strings.he.yaml words, with no Latin letter but a listed name, and takes
+    /// its direction like any other text; an English restart puts the English back.</summary>
+    [Test]
+    public void InHebrewEveryStaticTextIsTheHebrewString()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Language = UiLanguage.Hebrew;
+        game.Begin(Inputs, 0, startScreen: true);                       // the start screen sets its own texts
+        var latin = new Regex("[A-Za-z]");
+        foreach (var (where, key) in StaticTexts)
+        {
+            var e = Static(Ui, where);
+            Assert.AreEqual(He[key], e.text, $"{where}: {key}");
+            var rest = LatinNames.Aggregate(e.text, (s, n) => s.Replace(n, ""));
+            Assert.IsFalse(latin.IsMatch(rest), $"{where}: Latin letters in '{e.text}'");
+            Assert.AreEqual(LanguageDirection.RTL, e.languageDirection, $"{where}: {e.text}");
+        }
+        foreach (var name in NotTranslated) Assert.AreEqual(LanguageDirection.LTR, Ui.Q<TextElement>(name).languageDirection, name);
+
+        game.Language = UiLanguage.English;
+        game.Begin(Inputs, 0, startScreen: true);
+        foreach (var (where, key) in StaticTexts)
+        {
+            var e = Static(Ui, where);
+            Assert.AreEqual(En[key], e.text, $"after an English restart: {where}");
+            Assert.AreEqual(LanguageDirection.Inherit, e.languageDirection, $"after an English restart: {where}");
+        }
+    }
+
+    /// <summary>The loading line is in the UI's language from the first frame, before Begin, in the Hebrew face and right to
+    /// left; a boot failure keeps both. English keeps its line, its face and no direction.</summary>
+    [Test]
+    public void TheLoadingLineIsInTheUisLanguageBeforeTheGameStarts()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        var line = Ui.Q<Label>("loading");
+        game.Language = UiLanguage.Hebrew;
+        Assert.IsNotNull(game.ShowLoading());
+        Assert.AreEqual(He["boot.loading"], line.text);
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "the Hebrew face before Begin");
+        Assert.AreEqual(LanguageDirection.RTL, line.languageDirection);
+        LogAssert.Expect(LogType.Error, "BOOT FAIL people.yaml: people[x].name: required");
+        Object.FindFirstObjectByType<GameBoot>().Fail("people.yaml: people[x].name: required");
+        StringAssert.StartsWith("לא ניתן היה להפעיל", line.text);
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+        Assert.AreEqual(LanguageDirection.RTL, line.languageDirection);
+
+        game.Language = UiLanguage.English;
+        game.ShowLoading();
+        Assert.AreEqual(En["boot.loading"], line.text);
+        Assert.AreEqual("Loading the map of 1948…", line.text);
+        Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+        Assert.AreEqual(LanguageDirection.Inherit, line.languageDirection);
+    }
+
+    /// <summary>A seat count's unit follows the body (#193, from the #209 review): the Knesset, which was elected
+    /// (legislatures.yaml "elected", Legislature.Elected), counts "מנדטים"; the Provisional State Council, which was
+    /// appointed, counts its "חברים". English says "seats" for both, as before.</summary>
+    [Test]
+    public void ASeatCountsUnitIsTheBodysOwnInHebrew()
+    {
+        var c = Inputs.Content;
+        Assert.IsTrue(c.Legislatures.Any(l => l.Elected.HasValue) && c.Legislatures.Any(l => !l.Elected.HasValue), "both kinds in content");
+        foreach (var leg in c.Legislatures)
+        {
+            Assert.AreEqual(leg.Elected.HasValue ? "מנדטים" : "חברים", CabinetPresenter.SeatUnit(He, leg), leg.Id);
+            Assert.AreEqual("seats", CabinetPresenter.SeatUnit(En, leg), leg.Id);
+        }
+        Assert.AreEqual("seats", CabinetPresenter.SeatUnit(En, null));
+
+        // The game opens under the council (15 May 1948 to 14 February 1949): the house and the budget count its members.
+        Boot(UiLanguage.Hebrew);
+        Assert.IsFalse(c.Legislatures.First(l => l.Id == "provisional_state_council").Elected.HasValue);
+        foreach (var name in new[] { "cabinet-coalition", "cabinet-opposition", "cabinet-majority", "cabinet-largest", "budget-vote" })
+        {
+            var t = Ui.Q<Label>(name).text;
+            StringAssert.Contains("חברים", t, name);
+            StringAssert.DoesNotContain("מנדטים", t, name);
+        }
+    }
+
     // --- The house ---------------------------------------------------------------------------------------------------
 
     /// <summary>In Hebrew the half circle is the same picture mirrored (#199): the first seat, the coalition's, is at the

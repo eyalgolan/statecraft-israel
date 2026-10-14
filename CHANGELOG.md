@@ -61,6 +61,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   bars, the hemicycle, the option signs and End Turn's hourglass. English stays the default and has no visible switch.
   A long Budget office name now wraps in its column, so no row is wider than the screen.
 - Map: boats and a calmer open sea (refs #388). Promo 03's white-sailed boats: 10 sailing boats off Jaffa, Tel Aviv, Bat Yam, Haifa, Acre and Gaza, and 7 craft moored in or off the harbours of Jaffa, Tel Aviv and Haifa (a small coastal steamer at anchor off Haifa), kept off the breakwaters and moles. Jaffa's 5 stub-sail hulls are gone and its houses are unchanged. At the gameplay zoom the open sea calms far from the shore (edge density 0.048 to 0.020; promo 0.012) and keeps broad light and dark swells, and #402's surf, shallows and near-coast chop are unchanged. At the overview a lighter teal shelf runs along the coast and tints the shallows' outer edge a little. The effects follow the camera's distance, not the pixel size, under a new `seacalm` toggle. Presentation only: no golden moves.
+- The Hebrew UI preview translates the texts `Game.uxml` wrote in English (refs #193): the top bar's captions (the same
+  words as their tooltips), screen buttons, New Game and End Turn; the screen titles; the Budget and Defence buttons; the
+  draft mark; the loading line; and the start screen's source line, recording credit and buttons. The game's name and the
+  Declaration's official English stay as they are. A seat count says "חברים" for the appointed Provisional State Council
+  and "מנדטים" for the Knesset. "כישורים" for competence and "המצב הביטחוני" for the ladder. English is unchanged.
 - Decision videos, phase 2 (#434 follow-up). On 11 decision cards an Illustration switch over the photograph plays a
   short, silent AI-generated loop. It is labelled "AI-generated illustration" in place of the credit and carries a small
   burned-in bilingual label. The photograph always shows first; nothing plays until the player asks, and the choice holds

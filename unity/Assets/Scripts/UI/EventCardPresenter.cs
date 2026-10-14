@@ -72,6 +72,7 @@ namespace Statecraft.Game.UI
             layer = card.parent; hudRoot = root.Q("root") ?? root;
             hide = card.Q<Button>("event-hide"); reopen = layer.Q<Button>("event-reopen");
             hide.text = text["event.hide"]; reopen.text = text["event.reopen"];
+            card.Q<Label>("event-draft").text = text["event.draft"];
             onHide = Collapse; onReopen = Reopen;
             onUncovered = () => { focusedFor = null; if (Shown != null && !Collapsed) FocusCard(Shown.Id, force: true); };
             onHidePointer = _ => hideByPointer = true;

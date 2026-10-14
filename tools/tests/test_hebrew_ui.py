@@ -41,7 +41,12 @@ def test_hebrew_is_not_enabled_without_runtime_review():
 def test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms():
     he = strings('strings.he.yaml')
     assert he['event.more'] == 'החלטות ממתינות נוספות: {0}'
-    assert 'מנדטים' in he['budget.vote_needed']
-    assert 'מנדטים' in he['cabinet.coalition']
+    # A seat count's unit is its own string, by the body (CabinetPresenter.SeatUnit): the Knesset's seats are
+    # "מנדטים", the appointed Provisional State Council's members "חברים"; no template hard-codes either.
+    assert he['cabinet.seats'] == 'מנדטים'
+    assert he['cabinet.seats_appointed'] == 'חברים'
+    for key in ('budget.vote_needed', 'budget.vote_advisory', 'cabinet.coalition', 'cabinet.opposition',
+                'cabinet.majority', 'cabinet.largest'):
+        assert 'מנדטים' not in he[key] and 'חברים' not in he[key], key
     assert he['order.no_attention'] == 'אין מספיק תשומת לב (נדרש {0:0.0}, יש {1:0.0})'
     assert he['defence.rung5'] == '5  מלחמה כוללת'

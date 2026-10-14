@@ -34,6 +34,8 @@ namespace Statecraft.Game.UI
             onMobUp = () => Mobilize(+MobilizationStep); onMobDown = () => Mobilize(-MobilizationStep);
             escalate.clicked += onEscalate; deEscalate.clicked += onDeEscalate; mobUp.clicked += onMobUp; mobDown.clicked += onMobDown;
             foreach (var (name, key) in Sections) screen.Q<Label>(name).text = text[key].ToUpperInvariant();   // the promo's capitals; a caseless script is unchanged
+            screen.Q<Label>("defence-screen-title").text = text["defence.title"];
+            deEscalate.text = text["defence.lower"]; escalate.text = text["defence.raise"];
             bridge.Changed += OnChanged;
             ScreenNav.OnOpened(screen, () => { if (dirty) Render(); });
             Render();
