@@ -28,11 +28,12 @@ namespace Statecraft.Game.Map
         /// diorama02 measured 0.53 against the promo's 0.43 at 16; the bar is promo + 0.05 (docs/visual-v1.md "Merge point").</summary>
         public const float Saturation = -4f;
         /// <summary>Issue #38: Contrast 18 (was 14) and PostExposure 0.55 (was 0.15). The darker shadow tone and the stronger
-        /// vignette below pull the low end down; the exposure keeps the land's mean luma close to where it was.</summary>
+        /// split balance below pull the low end down; the exposure keeps the land's mean luma close to where it was.</summary>
         public const float PostExposure = 0.55f, Contrast = 18f, Tint = 2f;
-        /// <summary>Issue #38: balance -31 (was -15) and a stronger, softer vignette, 0.34 and 0.84 (was 0.26 and 0.45), which
-        /// darkens the frame's edges as the promo's does and carries diorama02's contrast.</summary>
-        public const float SplitBalance = -31f, VignetteIntensity = 0.34f, VignetteSmoothness = 0.84f;
+        /// <summary>Issue #38: balance -31 (was -15). The vignette stays at 0.26 and 0.45: the retune's stronger, softer 0.34 and
+        /// 0.84 darkened gameplay03's sea, which sits on the frame's left edge, well below promo 03's (owner's rule on #519:
+        /// "if the sea is still dark, use main's vignette"; docs/visual-v1.md, "Issue #38: grade retune").</summary>
+        public const float SplitBalance = -31f, VignetteIntensity = 0.26f, VignetteSmoothness = 0.45f;
         /// <summary>Issue #38: cool slate shadows (0.45, 0.45, 0.53), under neutral in red and green so they darken the low
         /// end. They were teal (0.36, 0.52, 0.60); warm shadows would match the land better (#391) but turn the sea grey.</summary>
         public static readonly Color SplitShadows = new Color(0.45f, 0.45f, 0.53f);
