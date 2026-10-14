@@ -81,10 +81,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `Train` borrow what the Treasury lacks, as map actions do. `mvp-slice` moves (the reference player builds Mefalsim by
   15 March 1949, and the golden now runs to that date); the legacy goldens and `scenario-mvp-absorb-first` do not.
   The Unity order queue (`SimBridge`) takes both orders, one per unit.
-- Map: every army token stands on a round earth plinth with a white rim and flies its side's flag on a pole, as in
-  demo2 T29, and the figures are drawn at 1400x instead of 2000x, about 1.8 times the White City block beside them
-  (refs #197). `units_1948.yaml` gives each unit a `side`. Only Israel's flag is drawn, built from the 1948
-  specification; other sides fly none until a sourced flag exists. Aircraft and ships are unchanged.
+- Map: every army token stands as in demo2 T29: the figures shoulder to shoulder on a round earth base that hugs them
+  (1.45 times the trio's width), ringed by a bright white rim, under its side's flag on a pole at the base's back edge,
+  and drawn at 1400x, 1.8 times a block (owner, 14 October; refs #197). On hills the base sits at the median ground with
+  a short skirt. `units_1948.yaml` gives each unit a `side`; only Israel's flag is drawn, from the 1948 proclamation, and
+  other sides fly none until a sourced flag exists. The showcase trio stands off the routes in a kit clearing. Aircraft
+  and ships are unchanged.
 - Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
   `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
   setting back afterwards, and
