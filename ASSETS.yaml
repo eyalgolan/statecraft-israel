@@ -172,8 +172,8 @@ rules:
   - glob: "content/map/control*"
     licence: CC-BY-SA-4.0
     source: "tools/control_digitise.py from Israel State Archives map 6158/1 ('Palestine: the partition lines and the front lines', 1949, ISA-PMO-GovernmentSecretary-R0005czg; the NYU Faculty Digital Archive copy, hdl 2451/72921, SHA-256 in the tool; source_quality low_res_scan), georeferenced on its printed 10-km Palestine grid; its red (9 July 1948), blue (18 July 1948) and green (end of October 1948) front lines traced; the dates of the operations from Wikipedia; from each 1949 agreement's date the sides of content/map/armistice_lines_1949.geojson (D-A); the Mandate outline of content/map/subdistricts_1948.geojson (D-B); the hex layer by tools/control_bake.py; content/ is CC BY-SA 4.0"
-    status: owner-verify
-    note: "Decision D-C (owner-verify): a 1949 Israeli state work, out of copyright in Israel (Copyright Act 2007 s. 42); a possible URAA US term in its drawing does not reach the facts taken (where a front line ran on a date: Feist); its base is a Survey of Palestine sheet (D-B). Only the lines' positions are taken, redrawn by our own method; no image is copied or committed. Status draft, owner-verify: the owner's fact check and sensitivity review before a shareable build."
+    status: verified
+    note: "Decision D-C (owner, 2026-10-14): allowed. A 1949 Israeli state work, out of copyright in Israel (Copyright Act 2007 s. 42); a possible URAA US term in its drawing does not reach the facts taken (where a front line ran on a date: Feist); its base is a Survey of Palestine sheet (D-B). Only the lines' positions are taken, redrawn by our own method; no image is copied or committed. Status draft, owner-verify: the owner's fact check and sensitivity review before a shareable build."
   - glob: "content/map/settlements_1948.yaml"
     licence: CC-BY-SA-4.0
     source: "Coordinates from the Wikipedia API (prop=coordinates) and tools/settlement_hexes.py; per-settlement URLs and check dates in settlements_1948.yaml"
