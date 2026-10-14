@@ -71,6 +71,22 @@ public class HebrewValuesTests
         Assert.AreEqual(Plain(He, "hud.people", 1234567), He.Format("hud.people", 1234567));
     }
 
+    /// <summary>A malformed pattern throws in Hebrew as string.Format does in English (a lone brace would otherwise reach
+    /// the screen): a stray "}", a stray "{", a format item that is not a number.</summary>
+    [Test]
+    public void AMalformedHebrewPatternThrowsAsStringFormatDoes()
+    {
+        var t = UiText.Parse("a: \"שלום {0} }\"\nb: \"שלום { {0}\"\nc: \"שלום {x}\"\nd: \"שלום {{{0}}}\"\ne: \"hello {0} }\"", "test.yaml");
+        foreach (var key in new[] { "a", "b", "c" })
+        {
+            var e = Assert.Throws<FormatException>(() => t.Format(key, "x"), key);
+            StringAssert.Contains("test.yaml", e.Message, key);
+            Assert.Throws<FormatException>(() => string.Format(CultureInfo.InvariantCulture, t[key], "x"), $"{key}: string.Format throws too");
+        }
+        Assert.Throws<FormatException>(() => t.Format("e", "x"), "English, as before");
+        Assert.AreEqual("שלום {" + Lrm + "x" + Lrm + "}", t.Format("d", "x"), "escaped braces are not malformed");
+    }
+
     /// <summary>English is unchanged byte for byte: every key of strings.en.yaml formats as string.Format did, with values
     /// that a Hebrew template would wrap (a negative amount, a date, a number).</summary>
     [Test]

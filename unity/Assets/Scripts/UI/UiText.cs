@@ -16,6 +16,8 @@ namespace Statecraft.Game.UI
         // A format item ("{0}", "{1:N0}", "{2,-8}") or an escaped brace, as string.Format reads them.
         static readonly Regex FormatItem = new Regex(@"\{\{|\}\}|\{(\d+)((?:,\s*-?\d+)?(?::[^{}]*)?)\}", RegexOptions.CultureInvariant);
 
+        static readonly char[] Braces = { '{', '}' };
+
         readonly Dictionary<string, string> map;
         readonly Dictionary<string, bool> hebrew = new Dictionary<string, bool>();
         readonly string file;
@@ -44,6 +46,9 @@ namespace Statecraft.Game.UI
         {
             var pattern = this[key];
             if (!IsHebrew(key, pattern)) return string.Format(CultureInfo.InvariantCulture, pattern, args);
+            // A brace left once the format items are taken out (a lone "}", "{x}") makes string.Format throw; so does this.
+            if (FormatItem.Replace(pattern, "").IndexOfAny(Braces) >= 0)
+                throw new FormatException($"{file}: '{key}' is not a valid format pattern: {pattern}");
             return FormatItem.Replace(pattern, m =>
             {
                 if (!m.Groups[1].Success) return m.Value.Substring(1);              // "{{" or "}}"
