@@ -9,7 +9,9 @@
 # sensitive: true rows may not ship in a -shareable build until sensitivity_reviewed: true (an OWNER step; Build.cs).
 # Owner ruling of 2026-10-14, relayed by the coordinator, after watching the three sensitive clips (operation_yoav,
 # ten_days and the operation_horev outcome): "the 3 ilustration clips are great but no need to say there were created by
-# ai". So those three rows are sensitivity_reviewed: true, and no clip carries a burned-in caption any more.
+# ai". So those three rows are sensitivity_reviewed: true, and no clip carries a burned-in caption any more
+# (docs/oss/DECISIONS.md G4). The four Dreamina (Seedance) clips keep Dreamina's own small "AI" watermark: owner ruling
+# "Keep the badge", 2026-10-14 (G5).
 # Rights: owner ruling D-V (docs/oss/DECISIONS.md), "no need to check, just use them"; ai_generated: true on every row.
 # Deport never gets a clip (GDD owner ruling 1): EventVideoMapping refuses a row for an event with a deport option.
 # tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, no burned-in caption (owner ruling

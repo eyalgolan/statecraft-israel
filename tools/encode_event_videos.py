@@ -151,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
         with tempfile.TemporaryDirectory() as tmp:   # the promo shot is read from a copy, never in place
             src = Path(tmp) / "src.mp4"
             shutil.copyfile(a.root / r["source"], src)
+            if sha256(src) != r["source_sha256"]:   # the copy is what is encoded, so check it too
+                print(f"SHA-256 MISMATCH {src} (copy of {r['source']})"); return 1
             subprocess.run(encode_command(src, dst, row=r), check=True)
         bad = problems(dst, r.get("frames"))
         if bad:

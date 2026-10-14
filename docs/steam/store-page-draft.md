@@ -175,8 +175,8 @@ fills that placeholder and accounts for decisions D-M (music) and D-V (video cli
 
 > **In the game.** The painting behind the start screen is AI-generated. On 11 decision cards, an optional
 > "Illustration" switch plays a short, silent, AI-generated video loop in place of the card's archival photograph.
-> Each loop is labelled as AI-generated on screen and in the picture itself, shows no recognisable real person, and
-> plays only if you press the switch. Event and content text was drafted with AI and every fact in it is checked by a
+> The loops are AI-generated, show no recognisable real person, and play only if you press the switch. They carry no
+> on-screen caption; the four made with Dreamina keep Dreamina's own small "AI" watermark in a corner. Event and content text was drafted with AI and every fact in it is checked by a
 > person against its cited source. The code was written with AI coding agents and goes through tests and review. The
 > game has no music. Its only audio is the archival 1948 recording of David Ben-Gurion reading the Declaration on the
 > start screen (Israel State Archives), which is not AI. The portraits and the event photographs are archival photographs, not AI images, and
@@ -195,7 +195,7 @@ What each statement rests on:
 | --- | --- | --- |
 | Start-screen painting is AI-generated | `unity/Assets/UI/StartScreen/declaration-hall.jpg` in ASSETS.yaml: ElevenLabs Image API, GPT Image 2.5, with a Dreamina painting as its composition reference | Row is `owner-verify`; decision D-D is open |
 | 11 silent illustration clips on decision cards | `unity/Assets/StreamingAssets/video/*.mp4`, 11 rows in ASSETS.yaml: 9 made with Veo 3.1 or Veo 3.1 Fast through ElevenLabs, 2 with Seedance 2.0 through Dreamina (`austerity_1949`, `iraqi_exodus`); added in PR #454 | Rows `verified` under D-V, which covers free, commercial and paid builds |
-| Clips are silent, opt-in, labelled twice, no recognisable real person | [docs/event-videos.md](../event-videos.md) | Enforced by the encoder and the build. The clips on `ten_days` and `operation_yoav` are marked sensitive and a shareable build refuses them until the owner signs them off |
+| Clips are AI-generated, silent, opt-in, no recognisable real person | [docs/event-videos.md](../event-videos.md); provenance in ASSETS.yaml (`ai_generated: true` on every clip) and [docs/ai-disclosure.md](../ai-disclosure.md) | Silence is enforced by the encoder. No on-screen caption: owner ruling of 2026-10-14 ([DECISIONS](../oss/DECISIONS.md) G4). The four Dreamina clips (`austerity_1949`, `iraqi_exodus`, `maabarot_policy-outcome`, `operation_horev-outcome`) keep Dreamina's own small "AI" watermark: owner ruling "Keep the badge" (G5). The sensitive clips (`ten_days`, `operation_yoav`, the `operation_horev` outcome) were reviewed by the owner on 2026-10-14 (G4) |
 | Text drafted with AI, each fact checked by a person | README.md "AI use"; CONTENT_POLICY section 2, rule 6 | Stated project rule |
 | Code written with AI agents | README.md "AI use" | Steam's form is about content players see, not tools, so this sentence is optional |
 | No music; the only audio is the archival recording on the start screen, not AI | PR #465 (the Israel State Archives recording of the Declaration, behind a "Play the recording" button); README.md "Sound: none yet" until that PR merges | Open PR on 14 October 2026. Check the recording's ASSETS.yaml row once it merges; cut the recording sentence if it does not ship |

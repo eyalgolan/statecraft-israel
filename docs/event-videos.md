@@ -16,7 +16,8 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
     watching the three sensitive clips: "the 3 ilustration clips are great but no need to say there were created by
     ai". Until then each file carried a small "AI-generated · נוצר בבינה מלאכותית" label; every clip was re-encoded
     from its promo shot without it, and nothing else changed. The Dreamina shots keep Dreamina's own small "AI" badge
-    in the top left corner, which is part of the shot (D-D).
+    in the top left corner, which is part of the shot: owner ruling "Keep the badge", 2026-10-14 (`docs/oss/DECISIONS.md`
+    G5). The caption ruling is G4.
   - The provenance stays: every row of the mapping and every clip's `ASSETS.yaml` row says `ai_generated: true`, and
     `docs/ai-disclosure.md` lists them.
 - **Silent.** The clips have no audio stream (`tools/encode_event_videos.py` refuses one).

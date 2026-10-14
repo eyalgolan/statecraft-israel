@@ -433,8 +433,7 @@ How it maps to the repository:
   writes `docs/ai-disclosure.md` from them (`docs/RELEASING.md` store-page checklist). The draft wording, and what each
   statement rests on, is in `docs/steam/store-page-draft.md` section 4 (#424).
 - **In a desktop build** the AI content is: the start-screen painting (`declaration-hall.jpg`, row `owner-verify`, D-D
-  open), the decision-card clips (11 today, 16 if #466 merges, rows citing D-V) and their burned-in label
-  (`tools/event_videos/ai-bug.png`). The WebGL tab icon is not in a desktop build.
+  open), the decision-card clips (11 today, 16 if #466 merges, rows citing D-V). The WebGL tab icon is not in a desktop build.
 - **Live generation:** none ("Nothing is generated live while you play", `docs/ai-disclosure.md`). Keep the statement only
   while it is true.
 - **Gap, proposed for a later issue:** `ai_disclosure.py` lists every manifest row, not what a given build carries. A

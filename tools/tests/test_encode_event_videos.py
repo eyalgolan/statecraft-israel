@@ -4,6 +4,7 @@ there were created by ai"; the rows keep ai_generated: true); Deport and other c
 EventVideoMapping tests."""
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -127,3 +128,66 @@ def test_an_outcome_row_cuts_its_recorded_window_and_decimates_a_dreamina_shot()
     graph = ev.filter_graph({"start_frame": 5, "frames": 84, "decimate": True})
     assert graph.startswith("[0:v]mpdecimate") and "trim=start_frame=5:end_frame=89" in graph
     assert "trim" not in ev.filter_graph() and "mpdecimate" not in ev.filter_graph(), "the card loops are cut as before"
+
+
+# Each shipped clip, as encoded without a caption (owner ruling of 2026-10-14): its SHA-256, and in its first frame the
+# old caption box (x 52-262, y 29-49, inside where the 219x25 label sat at 48,27) as (mean luma minus that of the strips
+# just above and below it, the box's mean horizontal gradient over the strip below's). The old label, a dark pill with
+# light text, made the box 14 to 95 levels darker and its gradient 1.1 to 21 times the strip's; main's captioned files
+# fail both tests below. A deliberate re-encode updates these from tools/encode_event_videos.py's output.
+CAPTION_FREE = {
+    "austerity_1949.mp4": ("a478e52f6348d99b748ab240c56770051fe8ca0eee2d53b3922e66cf7b0f0a9e", -3.6, 0.90),
+    "first_truce.mp4": ("eb98b8d679a97a4e74b26e3fd40398c3fc656a2990768a4a07fe86c45fef2356", -3.5, 1.18),
+    "frumkin_commission.mp4": ("80c038d76e897362ed15c058513d539458cd9033823b5d03b6dc715f76562975", 1.5, 1.05),
+    "hula_drainage-outcome.mp4": ("36bf04a1003e2d0f632241bf126399d31f7f78d321a8ea08c7c9e643f9c18332", -15.0, 1.85),
+    "hula_drainage.mp4": ("3b8dff2b62ebc1c73ce93783511a277fdd851661e0ab3a35db0e661e9199038c", -9.8, 4.05),
+    "iraqi_exodus.mp4": ("6395a6cb62844395102741fe4eed50f4775e40a00b1ac4984f59ed64252fad39", -11.6, 0.27),
+    "jerusalem_ceasefire.mp4": ("5c92dff877abb9d3683f81367a8c5d6056d5af0bb40483ce030ef0d16f4722a1", 2.8, 0.94),
+    "latrun_proposal.mp4": ("d46f0ca640935bc681abbb8f9cc3607d362700ff4e4f306811fb043f1e211f58", -3.0, 0.79),
+    "law_of_return.mp4": ("7de307d0054fcda695fded434fceaacf8f3d20bb4211c369a6f8e2c37a261540", 6.5, 0.85),
+    "maabarot_policy-outcome.mp4": ("479eef410859e096efe635bfc1ad17a2f5dd87183ebfc010cf0c7c7bce53079e", -26.1, 0.14),
+    "maabarot_policy.mp4": ("60f7c69437ab7d938eab9a16a0287862decf1439f47f7636b233d8c1d192afd4", -8.1, 0.80),
+    "operation_horev-outcome.mp4": ("34bf30e2144af91402eb1f2ff608dd7fdc337431ce59e739eeebb94cadfbcd31", -22.6, 0.30),
+    "operation_yoav.mp4": ("023706cf59ede4e3937bc6e3713b19fce6255dde863236633c05ea1b6bb7d507", 25.3, 1.03),
+    "ten_days.mp4": ("c1a121199fefafaa0ae4af5ef53e1b5e60a005c65e89ffbf61273d725fa1dfff", 10.0, 0.43),
+}
+
+
+def test_the_shipped_clips_are_the_caption_free_encodes():
+    """Runs in CI (no ffmpeg needed): every shipped clip is byte for byte the caption-free encode whose caption box was
+    measured below, and there is no other clip."""
+    import hashlib
+    assert sorted(CAPTION_FREE) == sorted(r["file"] for r in ev.load_rows())
+    for name, (digest, _, _) in CAPTION_FREE.items():
+        assert hashlib.sha256((ev.OUT / name).read_bytes()).hexdigest() == digest, f"{name} is not the caption-free encode"
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="decodes the clips with ffmpeg, which the CI runner lacks (the "
+                    "SHA-256 pin above covers CI); run locally")
+def test_no_shipped_clip_has_the_old_caption_in_its_corner():
+    import numpy as np
+    for name, (_, dark, edge) in CAPTION_FREE.items():
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(ev.OUT / name), "-vf", "format=gray", "-frames:v", "1",
+                              "-f", "rawvideo", "-"], capture_output=True, check=True).stdout
+        f = np.frombuffer(raw, np.uint8).reshape(ev.HEIGHT, ev.WIDTH).astype(float)
+        box, below, above = f[29:50, 52:263], f[56:77, 52:263], f[3:24, 52:263]
+        d = box.mean() - np.r_[above.ravel(), below.ravel()].mean()
+        g = np.abs(np.diff(box, axis=1)).mean() / max(np.abs(np.diff(below, axis=1)).mean(), 0.5)
+        assert abs(d - dark) <= 6, f"{name}: the corner is {d:.1f} levels off its surround, not {dark} (a dark caption pill?)"
+        assert abs(g - edge) <= max(0.35, 0.3 * edge), f"{name}: the corner's detail is {g:.2f}x, not {edge}x (caption text?)"
+
+
+def test_the_temporary_copy_is_hashed_again_before_it_is_encoded(tmp_path, capsys, monkeypatch):
+    """The source matches, but the copy that would be encoded does not: refused, nothing written."""
+    shot = b"the reviewed shot"
+    src = tmp_path / "promo/x.mp4"
+    src.parent.mkdir(parents=True)
+    src.write_bytes(shot)
+    row = {"event": "e", "file": "e.mp4", "source": "promo/x.mp4", "source_sha256": ev.sha256(src)}
+    monkeypatch.setattr(ev, "load_rows", lambda mapping=ev.MAPPING: [row])
+    monkeypatch.setattr(ev.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(ev.shutil, "copyfile", lambda a, b: Path(b).write_bytes(b"changed in the copy"))
+    monkeypatch.setattr(ev.subprocess, "run", lambda *a, **k: pytest.fail("encoded a copy that does not match"))
+    assert ev.main(["--root", str(tmp_path), "--out", str(tmp_path / "out")]) == 1
+    assert "SHA-256 MISMATCH" in capsys.readouterr().out
+    assert not any((tmp_path / "out").iterdir())
