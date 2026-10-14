@@ -30,6 +30,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   (exit 1) until every sensitive event is `sensitivity-reviewed` (docs/m3-release.md). The files under `Build/` are
   named by their content hash (issue #437); it reads their names from the build's `index.html`, zips only those and
   refuses a build that is missing one.
+- `release_build.py [--platform mac|linux|windows|all] [--out DIR] [--dev] [--dry-run]` builds the desktop players
+  under the machine lock, runs the macOS player's golden check and writes a build record outside the repository
+  (`docs/RELEASING.md`, "Desktop builds"). It never commits, pushes or uploads.
 - `preview_map.py` renders the geography check image `tools/.cache/map-preview.png`.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO
   alone, imported uncompressed) and `coast.png`

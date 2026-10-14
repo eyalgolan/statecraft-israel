@@ -18,7 +18,10 @@ namespace Statecraft.Game.EditorTools
     ///        (-textureSubtarget: the compressed format of every automatic texture; the default build is DXT, for desktop
     ///        browsers; astc or etc2 makes a build for browsers without S3TC, as on phones)
     ///   Mac: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod Statecraft.Game.EditorTools.Build.Mac
-    ///        [-out Builds/Mac/Statecraft.app] [-ffp-contract-off]</summary>
+    ///        [-out Builds/Mac/Statecraft.app] [-ffp-contract-off]
+    ///   Linux (Mono): ... -buildTarget Linux64 -executeMethod Statecraft.Game.EditorTools.Build.LinuxMono [-out Builds/Linux/Statecraft.x86_64]
+    ///   Windows (Mono): ... -buildTarget Win64 -executeMethod Statecraft.Game.EditorTools.Build.WindowsMono [-out Builds/Windows/Statecraft.exe]
+    ///   Every player takes -shareable (the sensitivity gate). tools/release_build.py runs these under the machine lock.</summary>
     public static class Build
     {
         static string? Arg(string name)
@@ -197,6 +200,26 @@ namespace Statecraft.Game.EditorTools
             var app = Arg("-out") ?? "Builds/Mac/Statecraft.app";
             try { ok = Run(BuildTarget.StandaloneOSX, app); if (ok) WritePhotoManifest(Path.GetDirectoryName(Path.GetFullPath(app))!); }
             finally { PlayerSettings.SetAdditionalIl2CppArgs(""); AssetDatabase.SaveAssets(); }
+            ExitIfFailed(ok);
+        }
+
+        /// <summary>The Linux x64 player on Mono, built from the Mac (decision O7; tools/release_build.py).</summary>
+        public static void LinuxMono() => StandaloneMono(BuildTarget.StandaloneLinux64, "Builds/Linux/Statecraft.x86_64");
+
+        /// <summary>The Windows x64 player on Mono: Unity builds a Windows IL2CPP player only on Windows (decision O8).</summary>
+        public static void WindowsMono() => StandaloneMono(BuildTarget.StandaloneWindows64, "Builds/Windows/Statecraft.exe");
+
+        /// <summary>Builds <paramref name="target"/> with the Mono backend, then puts the committed IL2CPP setting back
+        /// (ProjectSetup.Apply): the Standalone backend is one setting for Mac, Linux and Windows.</summary>
+        static void StandaloneMono(BuildTarget target, string defaultOut)
+        {
+            if (RefuseUnlessShareable()) return;
+            ProjectSetup.Apply();
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+            bool ok;
+            var player = Arg("-out") ?? defaultOut;
+            try { ok = Run(target, player); if (ok) WritePhotoManifest(Path.GetDirectoryName(Path.GetFullPath(player))!); }
+            finally { ProjectSetup.Apply(); AssetDatabase.SaveAssets(); }
             ExitIfFailed(ok);
         }
 

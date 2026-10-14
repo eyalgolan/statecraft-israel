@@ -43,11 +43,30 @@ public class BuildGateTests
         foreach (var e in c.Events) if (e.Id == "reparations_claim") e.Status = "fact-checked";
         StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
         var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
-        foreach (var method in new[] { "public static void Web()", "public static void Mac()" })
+        foreach (var method in new[] { "public static void Web()", "public static void Mac()", "static void StandaloneMono(" })
         {
             var body = source.Substring(source.IndexOf(method, StringComparison.Ordinal), 400);
             StringAssert.Contains("RefuseUnlessShareable()", body, method + " checks the gate first");
         }
+        foreach (var method in new[] { "public static void LinuxMono()", "public static void WindowsMono()" })
+            StringAssert.Contains("=> StandaloneMono(", source.Substring(source.IndexOf(method, StringComparison.Ordinal), 120), method + " goes through the gated Mono build");
+    }
+
+    /// <summary>#482: Linux and Windows are built from the Mac on Mono (decisions O7, O8). The Standalone backend is one
+    /// setting for all three desktop targets, so the Mono build must put the committed IL2CPP back afterwards.</summary>
+    [Test]
+    public void TheMonoPlayersRestoreTheCommittedBackend()
+    {
+        var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
+        foreach (var name in new[] { "Mac", "LinuxMono", "WindowsMono" })
+            Assert.IsNotNull(t.GetMethod(name, BindingFlags.Public | BindingFlags.Static), name + " is an -executeMethod target");
+        var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
+        var start = source.IndexOf("static void StandaloneMono(", StringComparison.Ordinal);
+        var body = source.Substring(start, source.IndexOf("ExitIfFailed(ok);", start, StringComparison.Ordinal) - start);
+        StringAssert.Contains("ScriptingImplementation.Mono2x", body);
+        StringAssert.Contains("finally { ProjectSetup.Apply();", body, "IL2CPP is restored even when the build throws");
+        Assert.AreEqual(UnityEditor.ScriptingImplementation.IL2CPP,
+            UnityEditor.PlayerSettings.GetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone), "the committed Standalone backend");
     }
 
     // Owner ruling 2026-10-11: the event photographs of sensitive events need the

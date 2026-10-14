@@ -55,6 +55,27 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    folder, then run `unzip -Z1 <zip> | grep -E '^(LICENSE|NOTICE|THIRD-PARTY-NOTICES.md|OFL.txt)$'`. It must print four
    lines for each zip.
 
+## Desktop builds (macOS, Linux, Windows)
+
+Desktop players are built on the owner's Mac (decisions O7 and O8 in `docs/oss/DECISIONS.md`; plan in
+`docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`). From a clean checkout of the commit to build:
+
+```bash
+uv run tools/release_build.py --platform all        # or mac, linux, windows; --dry-run prints the commands
+```
+
+It refuses a dirty tree, and stops before building anything if Unity Hub lacks a module the platforms need: Mac Build
+Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the Hub
+command. Each build runs under `tools/machine_lock.py --shared --wait-unity` and is `-shareable` (`--dev` makes an
+unshareable test build, and the record says so). It runs the `-golden` check on the macOS player, the only one the Mac can
+run; the Linux and Windows players are recorded as unchecked until the CI player check runs them. It archives each
+player under the names that check expects (`statecraft-israel-vX.Y.Z-macos-universal.zip`, made with `ditto`;
+`-linux-x64.tar.gz`; `-windows-x64.zip`; `--tag` sets the version part, default `v` plus `bundleVersion`) and writes
+`build-record.json`, `build-record.md` and a `files-<platform>.sha256` list per player to
+`~/statecraft-release/v<version>-<commit>-<UTC time>/` (or `--out`), outside the repository, and prints the path. It
+never commits, pushes or uploads: copy the record files to the build records repository by hand. Adding the notices to
+the archives, signing and Steam upload are later steps, not yet scripted.
+
 ## Refreshing the README screenshots
 
 The README's screenshots are claims about the current build. Re-take them whenever the build looks different, and

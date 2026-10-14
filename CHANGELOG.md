@@ -8,6 +8,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
+  `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
+  setting back afterwards, and
+  `tools/release_build.py` builds the macOS, Linux and Windows players under the machine lock, runs the player golden
+  check on the macOS player and writes a build record (commit, Unity version, UTC date, SHA-256 and size per player,
+  golden results) outside the repository. It never commits, pushes or uploads.
 - The map's frame (refs #36, promo 02): at the overview the board now ends in a walnut frame on a dark wooden table,
   with a bevel of cut earth where the relief stands above the frame and the frame's lip where the sea and low coast meet
   it. It replaces the border skirt's flat tan slab and the sea past the map's edge. At 16:9 only the overview shows it (the
