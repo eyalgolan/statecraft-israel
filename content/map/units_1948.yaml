@@ -251,25 +251,15 @@ units:
   wikipedia_only: false
   status: draft
   disbanded: {date: '1949-04-01', precision: month, sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-15'}]}
-  anchors:
-  - place: Tel Litvinsky
-    lon: 34.85623
-    lat: 32.04195
-    from: '1948-05-24'
-    since: 24 May 1948
-    to: '1948-07-09'
-    end_basis: source
-    end_note: Operation Dani began on 9 July 1948; it was the brigade's first operation (he.wiki).
-    note: "he.wiki: after its founding the brigade trained in the Tel Litvinsky area; en.wiki: the 89th Battalion was stationed at Tel Litvinsky. en.wiki (Haganah) has the brigade \"headquartered near Jerusalem\", with no source; the row follows the two brigade articles. The coordinates are Tel HaShomer's, the later name of the place (the British camp the Alexandroni Brigade took on 15 April 1948)."
-    sources:
-    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-15'}
-    - {url: 'https://en.wikipedia.org/wiki/8th_Armored_Brigade_(Israel)', checked: '2026-10-15'}
-    # Lehi Heritage Association (lehi.org.il), "June 1948 - 1951": the brigade staff's base was at the Tel Litvinsky camp.
-    - {url: 'https://lehi.org.il/he/%d7%99%d7%95%d7%a0%d7%99-1948-1951/', checked: '2026-10-15'}
-    - {url: 'https://en.wikipedia.org/wiki/Operation_Danny', checked: '2026-10-15'}
-    - {url: 'https://en.wikipedia.org/wiki/Tel_HaShomer', checked: '2026-10-15'}
+  hidden: "Sourced at Tel Litvinsky (later Tel HaShomer; 34.85623 E, 32.04195 N) from 24 May 1948 to the start of Operation Dani on 9 July 1948 (owner, 2026-10-15: accepted, verify later), but the map has no clear spot for it: within one hex of the camp the placer finds none, and the only clear ground (UnitGround, full map, 2026-10-15) lies among the Arab villages of Fajja, 'Abbasiyya and Safiriya (content/map/localities_1948.yaml), not on the brigade's own side. Hidden until the placer can stand it at the camp; en.wiki (Haganah) has the brigade \"headquartered near Jerusalem\", with no source."
+  anchors: []
   sources:
-  - {url: 'https://en.wikipedia.org/wiki/8th_Armored_Brigade_(Israel)', checked: '2026-10-11'}
+  - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-15'}
+  - {url: 'https://en.wikipedia.org/wiki/8th_Armored_Brigade_(Israel)', checked: '2026-10-15'}
+  # Lehi Heritage Association (lehi.org.il), "June 1948 - 1951": the brigade staff's base was at the Tel Litvinsky camp.
+  - {url: 'https://lehi.org.il/he/%d7%99%d7%95%d7%a0%d7%99-1948-1951/', checked: '2026-10-15'}
+  - {url: 'https://en.wikipedia.org/wiki/Operation_Danny', checked: '2026-10-15'}
+  - {url: 'https://en.wikipedia.org/wiki/Tel_HaShomer', checked: '2026-10-15'}
   - {url: 'https://en.wikipedia.org/wiki/Haganah', checked: '2026-10-15'}
 - id: oded
   name: Oded Brigade

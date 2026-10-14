@@ -88,8 +88,10 @@ The owner ruled:
    2 at or above the level-3 floor (0.15), else 1.
 3. 101 Squadron shows an Avia S-199 until the Spitfire's sourced date, then the Spitfire.
 4. The four brigades with no sourced position (Carmeli, Alexandroni, the 8th, Oded) are listed in the file and hidden.
-   - 2026-10-15 (draft, refs #385): Carmeli, Alexandroni and the 8th now have sourced positions (below) and are shown;
-     Oded stays hidden (its sources conflict and name no place).
+   - 2026-10-15 (draft, refs #385): Carmeli and Alexandroni now have sourced positions (below) and are shown. The 8th
+     is sourced at Tel Litvinsky (24 May to 9 July 1948; owner, 2026-10-15: "Accept, verify later") but stays hidden:
+     the map has no clear spot for it on its own side within one hex of the camp. Oded stays hidden (its sources
+     conflict and name no place).
 
 The controller adopted the design's defaults:
 - tokens stand only at dated, sourced positions and do not move with operation events;
@@ -123,7 +125,6 @@ After the staff review the controller ruled:
 | Givati (5th) | Gedera, one of the three places its sector names (no start given) | 24 Feb 1949 (Egypt) |
 | Etzioni (6th) | Jerusalem (since late 1947) | 3 Apr 1949 (Jordan) |
 | 7th Brigade | Hulda, its headquarters for the Latrun attacks, 24–31 May 1948; Ein Shemer, June 1948 | sources |
-| 8th Brigade | Tel Litvinsky, where it trained after its founding, 24 May to 8 July 1948 | 9 Jul 1948, Operation Dani (source); disbanded April 1949 |
 | Harel (10th) | Sha'ar HaGai, one place picked from the Jerusalem corridor (since the first half of May 1948) | 22 Dec 1948, Operation Horev (source) |
 | Yiftach (11th) | Lydda, 11–19 July 1948 (Operation Dani; the IDF entered Lydda on 11 July) | 20 Jul 1948 (source); disbanded May 1949 |
 | Negev (12th) | the Mekorot camp near Nir Am (since March 1948) | 24 Feb 1949 (Egypt) |

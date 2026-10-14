@@ -76,7 +76,7 @@ def test_every_source_has_a_url_and_a_check_date_and_wikipedia_only_is_true():
 
 
 def test_hidden_brigades_and_headgear():
-    assert {u['id'] for u in UNITS if u.get('hidden')} == {'oded'}
+    assert {u['id'] for u in UNITS if u.get('hidden')} == {'brigade_8', 'oded'}
     for u in UNITS:
         if u.get('hidden'):
             assert u['anchors'] == []

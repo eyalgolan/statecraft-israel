@@ -70,8 +70,8 @@ public class UnitsInPlayTests
         Assert.AreEqual(12, units.Count(u => u.Service == UnitData.Army), "the twelve brigades of 1948");
         Assert.AreEqual(1, units.Count(u => u.Service == UnitData.Air));
         Assert.AreEqual(2, units.Count(u => u.Service == UnitData.Navy));
-        CollectionAssert.AreEquivalent(new[] { "oded" }, units.Where(u => u.Hidden != null).Select(u => u.Id),
-            "owner ruling: a brigade with no sourced position is listed and hidden (Oded; Carmeli, Alexandroni and the 8th are placed, refs #385)");
+        CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, units.Where(u => u.Hidden != null).Select(u => u.Id),
+            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli and Alexandroni are placed (refs #385)");
         double lon0 = C.Hexes.Min(h => h.Lon), lon1 = C.Hexes.Max(h => h.Lon), lat0 = C.Hexes.Min(h => h.Lat), lat1 = C.Hexes.Max(h => h.Lat);
         foreach (var u in units)
         {
@@ -148,7 +148,7 @@ public class UnitsInPlayTests
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
         var tokens = UnitRoster.Build(Units, C, s);
         CollectionAssert.AreEqual(new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
-            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, the 8th from 24 May, Yiftach only in Operation Dani");
+            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Yiftach only in Operation Dani");
         Assert.AreEqual(5, s.Rung);
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Army).All(t => t.Figures == 3), "full war: call-up at least 0.8");
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Navy).All(t => t.ArtType == UnitShowcase.CorvetteType && t.Anchor.Place == "Haifa harbour"));
@@ -237,8 +237,8 @@ public class UnitsInPlayTests
         Assert.AreEqual(WeeklyGolden, Sha256(all));
     }
 
-    const string RosterGolden1950 = "ef4544705105a98758dc843120b6e3493c52419d1d4afad28e0b4a3b6e87e01c";
-    const string WeeklyGolden = "2d111a792224b0abd544b2fdfd7469c8f20047cefc5492ea272b79134d6d3c06";
+    const string RosterGolden1950 = "47251992443738244ed97a9e542b9eb60c644917bbfa16341f030a646ff83e7d";
+    const string WeeklyGolden = "4c4b1e6855939b64e1352f1746bcc318dba2d72b463ec5145891ae60dd496bcc";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 
