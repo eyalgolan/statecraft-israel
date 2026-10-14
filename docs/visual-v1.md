@@ -1299,7 +1299,8 @@ Review round 1 (staff review I1-I2, M1-M8) is folded in; the values below are th
   - `MapCapture.SurfFrames` renders 60 gameplay03 frames on the web tier, consecutive at 60 fps or `-surfDt` seconds
     apart.
 - **Not done here.**
-  - Boats: the owner wants no civilian boats; navy ships are units, on another track.
+  - Boats: the owner wants no civilian boats; navy ships are units, on another track. (Superseded by #536: see "Sea and
+    boats".)
   - Harbour water and piers at Jaffa need geometry, which belongs to the settlement track.
   - Issue #16 (the 1948 Dead Sea level, Lake Hula) is untouched.
 
@@ -1337,7 +1338,8 @@ Against the bars:
 
 What still differs:
 - The sea's spread is a third of promo 03's and half of promo 02's. Promo 03's dark tail is boat hulls and building
-  shadows on the water, and its bright tail is glints and foam lace.
+  shadows on the water, and its bright tail is glints and foam lace. (The boats are superseded by #536: see "Sea and
+  boats".)
 - gameplay03 contrast falls as the sea brightens (0.196 -> 0.174).
 - gameplay03 warmth rises as the sea loses blue and gains a beach (0.077 -> 0.102 against the promo's 0.064).
 
@@ -1458,11 +1460,11 @@ Spread is luma p90 - p10.
 | diorama02 warmth / saturation | 0.109 / 0.406 | 0.111 / 0.400 | 0.145 / 0.43 | [0.087, 0.145] / <= 0.48 |
 
 The gameplay03 floors above (detail >= 0.035, spread >= 0.15) are superseded by "Sea and boats" below (#388 and #536;
-the detail floor was the maintainer's call). Promo 03's own open sea measures 0.012 in edge density, so the far sea is
-now calmed on purpose. The floors are now:
+the detail floor was the maintainer's call, the spread floor the owner's). Promo 03's own open sea measures 0.012 in
+edge density, so the far sea is now calmed on purpose. The floors are now:
 - detail >= 0.025 in #388's crop and >= 0.033 in the focus band, just under the branch's 0.029 and 0.037;
-- spread >= 0.09, under the branch's 0.096 and 0.104. This one was the author's proposal, recommended by the reviewer and
-  pending the owner (#536, "Changed acceptance criteria").
+- spread >= 0.09, under the branch's 0.096 and 0.104. The author proposed it and the reviewer recommended it; the owner
+  decided "Lower to 0.09" on 2026-10-14 (#536, "Changed acceptance criteria").
 
 They are kept so the sea cannot go flat. #388's "Done when" was updated to match.
 
@@ -1509,7 +1511,8 @@ The goldens and the smoke run are unchanged: `GOLDEN OK 1950 71e9904d...`, `GOLD
 `SMOKE OK 5 turns 1948-06-19 d3fdd459...`. EditMode 747/747 on the merged head, with 0 `warning CS`.
 
 Still different from the promo:
-- promo 03's sea has boats and building shadows in its dark tail (out of scope: no civilian boats);
+- promo 03's sea has boats and building shadows in its dark tail (out of scope here: no civilian boats; superseded by
+  #536, "Sea and boats");
 - promo 02's sea sparkles finely at the overview, where ours is held back from aliasing;
 - the open sea's turquoise near the coast reads a little paler against the brighter, textured open sea at diorama02. The
   shallow-to-open gradient is unchanged (19 levels on both), and the turquoise thins slightly (g - r 43 to 40, 12-24 px
@@ -1808,7 +1811,7 @@ Each item below was ruled to the art track (controller, rank 10). None blocks la
    0.39, and 0.08 at diorama02 against promo 02's 0.15. Its saturation p10/p90 is narrower too (0.43/0.55 against
    0.29/0.58). The means match ("promo-sea", Measured). The causes:
    - promo 03's dark tail is boat hulls and building shadows on the water. Boats are out of scope: navy ships are units,
-     and there are no civilian boats (owner).
+     and there are no civilian boats (owner). Superseded by #536 ("Sea and boats").
    - Its bright tail is foam lace and glints. The glint is held at 0.06 by the seam test (Task 7), and the surf is a
      smooth band, not lace.
    - diorama02's sea has a near-to-far gradient that ours keeps flat.

@@ -58,6 +58,8 @@ Not in the slice:
 - **The mounted rider.** No 1948 IDF mounted unit was sourced for this slice. The promo's rider belongs to 1936, so it
   waits for the Yishuv era (#49) and a source.
 - **Civilian boats.** The owner ruled them out of scope; navy ships are units.
+  - 2026-10-14: the owner reversed this for civilian boats ("Keep civilian boats"); they are drawn as map art in #536.
+    Navy ships are still units.
 
 ## Units in play
 

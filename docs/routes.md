@@ -2,6 +2,7 @@
 
 The map draws the railways and main roads of 1948, each from its sourced date, after the promo (`promo/final/03-gameplay-1936.png`,
 `02-map-diorama.png`, and the 0:21 close-up of `promo/demo/out/demo-16x9.mp4`). Civilian boats are out of scope (owner).
+On 2026-10-14 the owner reversed that for civilian boats ("Keep civilian boats"); they are map art in #536, not routes.
 
 ## Files
 
