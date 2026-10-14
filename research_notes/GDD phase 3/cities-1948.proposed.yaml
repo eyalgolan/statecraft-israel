@@ -6,7 +6,9 @@
 # - The 8 November 1948 census counts are the start values, labelled with their date (no scaling back to May 1948).
 # - All residents are counted (the census basis), not Jews only.
 # - Tel Aviv-Yafo is one city (id tel_aviv, the CBS Tel Aviv-Yafo row). Jaffa stays a separate place on the map.
-# - The Hebrew Wikipedia figures for Zikhron Ya'akov and Rosh Pinna are accepted.
+# - The Hebrew Wikipedia figures for Zikhron Ya'akov and Rosh Pinna are accepted. P66 (15 October 2026) found the census
+#   count for Zikhron Ya'akov in CBS SA No. 3, so it now follows the census rule above (1,935, not about 1,900). Rosh
+#   Pinna stays on the Wikipedia figure: SA No. 3 lists it with no population.
 # - Rishon LeZion is 10,433 (CBS SA 14), not 11,100.
 # - Labelled design values fill the gaps where no source exists. The decision does not name the defaults; the ones below
 #   are personal2's recommendation from the PR and are marked status: design.
@@ -47,6 +49,10 @@ sources:
     title: "Hebrew Wikipedia, Zikhron Ya'akov, population timeline (1948 = 1,900); its source is not named"
     url: https://he.wikipedia.org/wiki/%D7%96%D7%9B%D7%A8%D7%95%D7%9F_%D7%99%D7%A2%D7%A7%D7%91
     checked: 2026-10-14
+  sa3: &sa3
+    title: "CBS, Statistical Abstract of Israel No. 3 (1951/52), Settlements in Israel (list of settlements), population 8 XI 1948 and 31 XII 1951, pp. 126-147; Zikhron Ya'akov (moshava) p. 133: 1,935 and 4,200; Rosh Pinna (moshava) p. 144: both population columns blank"
+    url: https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf
+    checked: 2026-10-15
   he_rosh_pinna: &he_rosh_pinna
     title: "Hebrew Wikipedia, Rosh Pinna, text: about 350 people in May 1948"
     url: https://he.wikipedia.org/wiki/%D7%A8%D7%90%D7%A9_%D7%A4%D7%99%D7%A0%D7%94
@@ -106,14 +112,17 @@ cities:
     unemployed: { value: 60, share: 0.0057, method: "DESIGN: national share 0.57% x 10,433", status: design, sources: [*sa2, *sa14] }
     housing: { rooms: 4800, people_per_room: 2.17, method: "DESIGN: national May 1948 ratio 300,000 rooms / 650,000 people x 10,433; no city source", status: design, sources: [*abrams, *sa14] }
   - id: zikhron_yaakov
-    # Owner-accepted Wikipedia figure.
-    population: { value: 1900, date: 1948, status: wikipedia-only, sources: [*he_zikhron] }
-    population_series: null
-    employed: { value: 830, share: 0.439, method: "DESIGN: national share 43.9% x 1,900; no city share found", status: design, sources: [*sa2, *he_zikhron] }
-    unemployed: { value: 10, share: 0.0057, method: "DESIGN: national share 0.57% x 1,900", status: design, sources: [*sa2, *he_zikhron] }
-    housing: { rooms: 880, people_per_room: 2.17, method: "DESIGN: national May 1948 ratio 300,000 rooms / 650,000 people x 1,900; no city source", status: design, sources: [*abrams, *he_zikhron] }
+    # CBS census count (SA No. 3, p. 133), replacing the owner-accepted Hebrew Wikipedia figure of about 1,900 (1948, day
+    # not given), which it rounds to. The Zikhron Ya'akov Local Council's timeline gives 1,936 for 1948
+    # (https://www.zy1882.co.il/Branches/Timeline.aspx?nodeId=1271, checked 2026-10-15).
+    population: { value: 1935, date: 1948-11-08, status: sourced, sources: [*sa3] }
+    population_series: { 1951-12-31: 4200 }
+    employed: { value: 850, share: 0.439, method: "DESIGN: national share 43.9% x 1,935; no city share found", status: design, sources: [*sa2, *sa3] }
+    unemployed: { value: 10, share: 0.0057, method: "DESIGN: national share 0.57% x 1,935", status: design, sources: [*sa2, *sa3] }
+    housing: { rooms: 890, people_per_room: 2.17, method: "DESIGN: national May 1948 ratio 300,000 rooms / 650,000 people x 1,935; no city source", status: design, sources: [*abrams, *sa3] }
   - id: rosh_pinna
-    # Owner-accepted Wikipedia figure.
+    # Owner-accepted Wikipedia figure. Still Wikipedia-only after P66 (15 October 2026): CBS SA No. 3, p. 144 lists Rosh
+    # Pinna with both population columns blank, and no other printed or official 1948 figure was reached (see the P66 note).
     population: { value: 350, date: 1948-05, status: wikipedia-only, sources: [*he_rosh_pinna] }
     population_series: null
     employed: { value: 150, share: 0.439, method: "DESIGN: national share 43.9% x 350; no city share found", status: design, sources: [*sa2, *he_rosh_pinna] }

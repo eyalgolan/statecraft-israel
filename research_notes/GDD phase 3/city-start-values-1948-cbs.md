@@ -39,9 +39,10 @@ not covered either.
 
 ## Summary
 
-1. **Population: 10 of 12 from the CBS [V], 2 from Wikipedia [S].** CBS Statistical Abstract No. 14, Table 11,
+1. **Population: 11 of 12 from the CBS [V], 1 from Wikipedia [S].** CBS Statistical Abstract No. 14, Table 11,
    gives each town's population on 8 November 1948 (the census day) and at the end of 1949, 1950 and 1951. Zikhron
-   Ya'akov and Rosh Pinna are too small for that table; their values are Hebrew Wikipedia only.
+   Ya'akov and Rosh Pinna are too small for that table. Zikhron Ya'akov's census count is in SA No. 3's list of
+   settlements (1,935, p. 133; P66, 2026-10-15); Rosh Pinna's row there is blank, so it stays Hebrew Wikipedia only.
 2. **Jobs: 5 of 12 [D].** Statistical Abstract No. 1, Table 9, gives the working population as a share of the Jewish
    population on 8 November 1948 for Jerusalem, Tel Aviv, Haifa, Tiberias and Safed. Employed = that share times the
    city's population. The other seven have only the national share [G].
@@ -71,8 +72,8 @@ results"; that applies to the end-of-year estimates.
 | Rehovot | 12,522 | 14,800 | 18,200 | 21,200 | [V] SA 14 |
 | Hadera | 11,811 | 12,000 | 15,000 | 19,000 | [V] SA 14 |
 | Netanya | 11,589 | 15,200 | 23,000 | 26,000 | [V] SA 14 |
-| Zikhron Ya'akov | 1,900 (1948, day not given) | - | - | - | [S] Hebrew Wikipedia population timeline |
-| Rosh Pinna | about 350 (May 1948) | - | - | - | [S] Hebrew Wikipedia text: about 150 more by 1949 |
+| Zikhron Ya'akov | 1,935 | - | - | 4,200 | [V] SA 3, Settlements in Israel, p. 133 (P66, 2026-10-15); was 1,900 [S] Hebrew Wikipedia |
+| Rosh Pinna | about 350 (May 1948) | - | - | - | [S] Hebrew Wikipedia text: about 150 more by 1949; SA 3 p. 144 lists it with no population |
 
 Checks:
 - Statistical Abstract No. 2 (1950/51), Population Table 7 (PDF p. 39), gives the end-1949 and end-1950 values before the 1961
@@ -187,7 +188,7 @@ city.
 | Safed | 800 (derived) | 30 (derived) | 1,070 |
 | Petah Tikva | 9,600 (design) | 130 (design) | 10,100 |
 | Rishon LeZion | 4,600 (design) | 60 (design) | 4,800 |
-| Zikhron Ya'akov | 830 (design) | 10 (design) | 880 |
+| Zikhron Ya'akov | 850 (design) | 10 (design) | 890 |
 | Rosh Pinna | 150 (design) | 2 (design) | 160 |
 | Rehovot | 5,500 (design) | 70 (design) | 5,800 |
 | Hadera | 5,200 (design) | 70 (design) | 5,500 |
@@ -199,7 +200,9 @@ Still for Phase 3, not settled here: converting people to population units (D-A1
 ## Not reached
 
 - The 1948 census volume by locality ("Towns, Villages, Regions"): the CBS locality tables above cover places over
-  5,000 people in 1962, so Zikhron Ya'akov and Rosh Pinna are not in them.
+  5,000 people in 1962, so Zikhron Ya'akov and Rosh Pinna are not in them. P66 (2026-10-15) found the list of
+  settlements in SA No. 3 (pp. 126-147), which gives the 8 November 1948 count per settlement: Zikhron Ya'akov 1,935
+  (p. 133). Its Rosh Pinna row (p. 144) has both population columns blank, so Rosh Pinna stays on Hebrew Wikipedia.
 - Any per-city housing stock, dwelling count or persons-per-room figure for 1948.
 - Working-population shares for the seven towns other than the five above.
 - Per-city values for 15 May 1948.
@@ -212,7 +215,8 @@ Still for Phase 3, not settled here: converting people to population units (D-A1
   https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf [V, 2026-10-15]
 - CBS, Statistical Abstract of Israel No. 2 (1950/51), Population Table 7 (PDF p. 39) and Table 9 p. 24; Building Table 2
   p. 50: https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf [V, 2026-10-15]
-- CBS, Statistical Abstract of Israel No. 3 (1951/52), Population Table 5, p. 7:
+- CBS, Statistical Abstract of Israel No. 3 (1951/52), Population Table 5, p. 7, and Settlements in Israel, pp. 126-147
+  (Zikhron Ya'akov p. 133, Rosh Pinna p. 144):
   https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf [V, 2026-10-15]
 - CBS media release, "On the eve of Israel's 58th Independence Day" (2006):
   https://www.cbs.gov.il/he/mediarelease/DocLib/2006/092/11_06_092e.pdf [V, 2026-10-15]
