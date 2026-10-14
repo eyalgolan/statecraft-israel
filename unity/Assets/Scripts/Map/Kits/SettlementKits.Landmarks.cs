@@ -69,7 +69,7 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Jaffa: the Mahmoudiya Mosque (1812) at the old town's north-east corner, the clock tower (1900-03) on the
         /// plaza east of it, St Peter's Church (1888-94) on the hill near the shore, the lighthouse (1865, red and white bands)
-        /// on the hilltop above the old port, and the port's breakwater with its boats.</summary>
+        /// on the hilltop above the old port, and the port's breakwater.</summary>
         static int Jaffa(Settlement s, Vector2 heart, KitGround ground, KitMesh km, Lots lots, ref KitRandom rnd)
         {
             float m = KitScale.Landmarks;
@@ -113,7 +113,7 @@ namespace Statecraft.Game.Map.Kits
         }
 
         /// <summary>Jaffa's harbour, as promo 03 draws it: a stone breakwater curving out to sea from the shore below the
-        /// lighthouse, and a few sailing boats inside it.</summary>
+        /// lighthouse. Its boats are SeaCraft's.</summary>
         static int Port(Vector2 shore, KitGround ground, KitMesh km, ref KitRandom rnd)
         {
             float m = KitScale.Landmarks;
@@ -133,20 +133,14 @@ namespace Statecraft.Game.Map.Kits
                 prev = cur;
             }
             Record("jaffa", "port", c, 0f, r, r, 2.2f * m, stone);
-            // Sailing boats in and off the harbour.
+            // The boats are SeaCraft's (#388). The random draws the old boats made here stay, so the stream every later
+            // Jaffa house is drawn from is unchanged.
             int boats = 0;
             for (int i = 0; i < 12 && boats < 5; i++)
             {
                 var b = c + new Vector2(rnd.Range(-1.6f, 0.2f) * r, rnd.Range(-1.4f, 0.4f) * r);
                 if (!ground.Water(b.x, b.y) || ground.Water(b.x + 40f * m, b.y) == false) continue;
-                float yaw = rnd.Range(0f, 360f), L = rnd.Range(9f, 14f) * m;
-                km.Box(b.x, b.y, yaw, L, L * 0.32f, sea - 1f * m, sea, 1.6f * m, C(0.42f, 0.30f, 0.20f), C(0.55f, 0.42f, 0.30f), Facade.Plain, m);
-                float a = yaw * Mathf.Deg2Rad; var fwd = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                var mast = new Vector3(b.x, sea + 1.6f * m, b.y);
-                km.Shaft(mast, mast + Vector3.up * L * 0.9f, 0.18f * m, 0.12f * m, C(0.35f, 0.28f, 0.20f), 4);
-                var sail = C(0.95f, 0.93f, 0.86f);
-                var s0 = mast + Vector3.up * L * 0.85f; var s1 = mast + Vector3.up * 0.4f * m; var s2 = mast + fwd * (-L * 0.45f) + Vector3.up * 0.4f * m;
-                km.Triangle(s0, s1, s2, sail); km.Triangle(s0, s2, s1, sail);
+                rnd.Range(0f, 360f); rnd.Range(9f, 14f);
                 boats++;
             }
             return 1;

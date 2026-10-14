@@ -127,6 +127,26 @@ float _ScSeaTexture;                                             // 1 = on, 0 = 
 static const float ScMottleCellM = 2500.0, ScMottleGain = 0.32, ScMottleStretch = 3.0;
 static const float ScRippleGain = 0.54, ScRippleScale = 5.0, ScRippleFarGain = 0.28, ScRippleFarScale = 4.0;
 static const float ScFleckCellM = 120.0, ScFleckM = 18.0, ScFleckShare = 0.22;
+// Sea boats (#388, the 2026-10-13 gap audit): the open sea calms away from the shore at the gameplay zoom. At gameplay03
+// the far sea's fine texture (the ripple, the mottle's fine octave, the whitecaps and the glint) was 4x busier than promo
+// 03's open water (edge density 0.048 against 0.012), whose texture is the surf and the near-coast chop, with broad,
+// smooth swells beyond. From ScCalmNearM offshore (past the turquoise shallows and the surf) to ScCalmFarM those terms
+// ease to their ScCalm* shares and the whitecaps go; the coarse streaks grow by ScCalmCoarse, so the far sea keeps its
+// light and dark. The calm fades out between 90 and 190 m pixels: the overview (diorama02, 190-300 m) keeps #402's
+// texture, which is already under promo 02's. Inside ScCalmNearM nothing changes: #402's surf, shallows and near-coast
+// chop stay as they were.
+// - Broad swells: a ScBroadCellM gradient-noise brightness variation, +-ScBroadGain, on the open sea from ScCalmNearM out
+//   (easing in to ScCalmFarM, as the calm): promo 03's open water lies in broad lighter and darker reaches. At the
+//   gameplay zoom a cell spans some 300 pixels; at the overview (where 50-70 pixel cells read as blotches) it fades out
+//   over 120-250 m pixels, and the coastal band below gives the overview its light and dark instead.
+// - The coastal band at the overview: from 120-250 m pixels the water within ScCoastRangeM of the shore lightens towards
+//   ScOverviewCoastSrgb (by ScOverviewBand at the shallows' edge, fading to none at the range), so diorama02's sea reads
+//   as promo 02's: a wide, lighter teal shelf along the coast over the deep blue. The gameplay zoom is unchanged.
+static const float ScCalmNearM = 3000.0, ScCalmFarM = 8000.0;
+static const float ScCalmRipple = 0.3, ScCalmFine = 0.3, ScCalmGlint = 0.4, ScCalmCoarse = 1.3;
+static const float ScBroadCellM = 14000.0, ScBroadGain = 0.25;
+static const float3 ScOverviewCoastSrgb = float3(0.36, 0.62, 0.66);
+static const float ScOverviewBand = 0.6;
 
 // Antiderivative of tri(x)^2, tri(x) = 1 - |2 frac(x) - 1| (period 1, mean 1/3).
 float ScTriSqIntegral(float x)
@@ -177,6 +197,8 @@ float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM, fl
     float fresh = step(elevM, -100.0) * (1.0 - salt);
     c = lerp(c, SRGBToLinear(float3(0.45, 0.78, 0.78)), salt * 0.8);
     c = lerp(c, SRGBToLinear(ScGalileeSrgb), fresh * 0.7);
+    float overview = smoothstep(120.0, 250.0, footprintM);   // sea boats (#388): the overview's coastal band, on the sea only
+    c = lerp(c, SRGBToLinear(ScOverviewCoastSrgb), overview * ScOverviewBand * (1.0 - deepT) * (1.0 - shallow) * (1.0 - salt) * (1.0 - fresh));
 
     float time = ScWaterClock();
     // The swell: a 700 m gradient-noise layer turned 0.6 rad. Bug B10: it was value noise differenced along the map's axes
@@ -212,6 +234,8 @@ float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM, fl
     // Sea round 2: 0.12 under a 40 m pixel (the gameplay zoom's sparkle), easing to Task 7's 0.06 by 60 m, so nothing
     // changes from 60 m out (the seam test's 120 km view).
     float glint = lerp(0.12, 0.06, smoothstep(40.0, 60.0, footprintM)) * (1.0 - smoothstep(60.0, 120.0, footprintM));
+    float calm = smoothstep(ScCalmNearM, ScCalmFarM, offshoreM) * (1.0 - smoothstep(90.0, 190.0, footprintM));   // sea boats (#388)
+    glint *= lerp(1.0, ScCalmGlint, calm);
     lit += pow(saturate(dot(reflect(-l, n), v)), 80.0) * glint * lc * shadow;
 
     // The far sea's texture (sea round 2, above): on open sea water only.
@@ -220,21 +244,24 @@ float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM, fl
     float nearRipple = 1.0 - smoothstep(50.0, 90.0, footprintM);
     float ripple = ScRippleGain * nearRipple * clamp(dot(n.xz, viewXZ) * ScRippleScale, -1.0, 1.0)
         + ScRippleFarGain * (1.0 - nearRipple) * (1.0 - smoothstep(250.0, 450.0, footprintM)) * clamp(dot(swellSlope, viewXZ) * ScRippleFarScale, -1.0, 1.0);
+    ripple *= lerp(1.0, ScCalmRipple, calm);
     float ms, mc; sincos(0.3, ms, mc);
     float2 mp = mapM / ScMottleCellM;
     mp = float2(mc * mp.x - ms * mp.y, (ms * mp.x + mc * mp.y) * ScMottleStretch);   // streaks along the wind
-    float mottle = ScGradientNoiseD(mp + float2(0.002, 0.001) * time).x + 0.8 * ScGradientNoiseD(mp * 2.7 + float2(5.3, 1.7)).x;
+    float mottle = lerp(1.0, ScCalmCoarse, calm) * ScGradientNoiseD(mp + float2(0.002, 0.001) * time).x
+        + 0.8 * lerp(1.0, ScCalmFine, calm) * ScGradientNoiseD(mp * 2.7 + float2(5.3, 1.7)).x;
     mottle = clamp(mottle / 1.1, -1.0, 1.0);
     float offshore = smoothstep(0.0, shallowEdge, offshoreM);   // 0 in the turquoise shallows, 1 past them
     mottle *= offshore;
     // The shallows keep promo 03's pale turquoise: the ripple runs at 40% there (at full it darkened the band at 25 km).
-    lit *= 1.0 + open * (ripple * lerp(0.4, 1.0, offshore) + ScMottleGain * mottle);
+    float broad = ScGradientNoiseD(mapM / ScBroadCellM + float2(11.3, 4.1)).x * smoothstep(ScCalmNearM, ScCalmFarM, offshoreM) * (1.0 - overview);
+    lit *= 1.0 + open * (ripple * lerp(0.4, 1.0, offshore) + ScMottleGain * mottle + ScBroadGain * broad);
     float2 cell = floor(mapM / ScFleckCellM);
     float2 at = (cell + 0.35 + 0.3 * float2(ScHash(cell + 3.7), ScHash(cell + 9.1))) * ScFleckCellM;
     float reach = max(ScFleckM, 0.6 * footprintM);
     float fleck = step(ScHash(cell + 17.1), ScFleckShare * saturate(mottle * 1.5)) * (ScFleckM * ScFleckM) / (reach * reach)
         * (1.0 - smoothstep(0.5 * reach, reach, length(mapM - at)))
-        * (1.0 - smoothstep(40.0, 80.0, footprintM)) * smoothstep(300.0, 900.0, offshoreM) * open;
+        * (1.0 - smoothstep(40.0, 80.0, footprintM)) * smoothstep(300.0, 900.0, offshoreM) * (1.0 - calm) * open;
 
     // Surf: the swash line, then breakers (crests every ScBreakerSpacingM, rolling in: the phase grows with time towards
     // the shore; box-filtered over ScBreakers' width) whose crests break up along the coast (a 300 m noise, faded to its mean once a

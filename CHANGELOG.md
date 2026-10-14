@@ -60,6 +60,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   text the direction of its own words (dates, money and names are still English, #55), and mirrors the layout: rows,
   bars, the hemicycle, the option signs and End Turn's hourglass. English stays the default and has no visible switch.
   A long Budget office name now wraps in its column, so no row is wider than the screen.
+- Map: boats and a calmer open sea (refs #388). Promo 03's white-sailed boats: 10 feluccas and gaff cutters off Jaffa, Tel Aviv, Bat Yam, Haifa, Acre and Gaza, and 7 craft moored at Jaffa, Tel Aviv and Haifa, Haifa's coastal steamer among them; Jaffa's 5 stub-sail hulls are gone, its houses unchanged. Far from the shore, at the gameplay zoom, the open sea calms (edge density 0.048 to 0.020, promo 0.012) and keeps broad light and dark swells. #402's surf, shallows and near-coast chop are unchanged. The overview gains a lighter teal shelf along the coast. Presentation only: no golden moves.
 - Decision videos, phase 2 (#434 follow-up). On 11 decision cards an Illustration switch over the photograph plays a
   short, silent AI-generated loop. It is labelled "AI-generated illustration" in place of the credit and carries a small
   burned-in bilingual label. The photograph always shows first; nothing plays until the player asks, and the choice holds

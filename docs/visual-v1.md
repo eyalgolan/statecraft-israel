@@ -1457,6 +1457,10 @@ Spread is luma p90 - p10.
 | diorama02 palette distance | 0.563 | **0.534** | - | no worse |
 | diorama02 warmth / saturation | 0.109 / 0.406 | 0.111 / 0.400 | 0.145 / 0.43 | [0.087, 0.145] / <= 0.48 |
 
+The gameplay03 detail floors above (>= 0.035) are superseded by "Sea and boats" below (#388). Promo 03's own open sea
+measures 0.012 in edge density, so the far sea is now calmed on purpose. The floors are now 0.025 in #388's crop and
+0.033 in the focus band, just under the branch's 0.028 and 0.036. They are kept so the sea cannot go flat.
+
 diorama02's spread misses its target by 0.001. Strengthening the streaks barely moves it (0.25 to 0.32 added 0.003). A
 stronger far ripple could close it, but the far ripple already runs at 84-100% at diorama02, at 2.3-3.7 px a swell cell.
 More contrast at that sampling would push it towards aliasing, so it was not raised. In the editor (web tier) the same
@@ -1505,6 +1509,92 @@ Still different from the promo:
 - the open sea's turquoise near the coast reads a little paler against the brighter, textured open sea at diorama02. The
   shallow-to-open gradient is unchanged (19 levels on both), and the turquoise thins slightly (g - r 43 to 40, 12-24 px
   from the coast).
+
+### Sea and boats (branch `sea-boats`, refs #388)
+The gap audit of 2026-10-13 (`.superpowers/audit-2026-10-13/`) found the open sea at gameplay03 4x busier than promo
+03's (edge density 0.048 against 0.012, its open-sea crop at 400 x 300), the overview's sea flat, and 5 small wooden hulls
+with stub sails where the promo has about 10 white-sailed boats and craft moored at Jaffa. #402 had raised the far sea's
+texture on purpose, so the calm applies only far from the shore and only at the gameplay zoom; #402's surf, shallows and
+near-coast chop are unchanged.
+- **The calm** (`ScWaterShade`, `StatecraftMap.hlsl`). From `ScCalmNearM` (3 km offshore, past the shallows and the surf)
+  to `ScCalmFarM` (8 km), the ripple eases to 30%, the mottle's fine octave to 30% and the glint to 40%, and the whitecaps
+  go. The coarse streaks grow 1.3x. The calm fades out between 90 and 190 m pixels, so the overview keeps #402's texture,
+  which was already under promo 02's (edge density 0.021 against 0.032).
+- **Broad swells:** a 14 km gradient-noise brightness variation, +-0.25, on the same far sea, so the calmed water keeps
+  promo 03's broad lighter and darker reaches. It fades out at the overview, where its 50-70 pixel cells read as blotches.
+- **The overview's coastal shelf:** from 120-250 m pixels, the sea within 12 km of the shore lightens towards a pale teal
+  (0.36, 0.62, 0.66), 60% at the shallows' edge and fading to nothing at 12 km, as promo 02's shelf does. It is not
+  applied to the rift lakes, and the gameplay zoom is unchanged.
+- **The boats** (`Kits/SeaCraft.cs`, one more mesh under the kits' root, drawn with Kit.mat, so the "kits" toggle covers
+  it):
+  - 10 under way: 3 off Jaffa, 2 off Tel Aviv, 1 off Bat Yam, 2 off Haifa, 1 off Acre and 1 off Gaza, from 2.4 to 7.5 km
+    out.
+  - Two rigs, both 1948's own: lateen-rigged feluccas (the Jaffa and Gaza fishing boats) and gaff cutters.
+  - 7 moored: 2 in Jaffa's basin inside its breakwater, 2 at Tel Aviv's port, and at Haifa 2 fishing boats by the quays
+    and a small coastal steamer at anchor off the breakwater, where the basin has no room for it at this scale.
+  - No motor launches or modern craft.
+  - Sizes are symbolic, like the buildings: a felucca is 34 landmark metres (2 km at the default scale), a quarter of a
+    hex across, about promo 03's share.
+  - Every boat heads east or west, give or take 35 degrees, so the north-looking gameplay camera sees its sails side-on.
+  - The sails are lit as cloth turned mostly to the sky (each face's normal tipped up by 0.7). Lit as flat plates, the
+    face the camera saw was often the one turned from the sun, and the sails read grey.
+  - `KitMesh.Triangle` gains an overload with an explicit normal for this. The old overload produces the same vertices
+    as before.
+- **Jaffa's old boats** are gone from `SettlementKits.Port`. Their random draws stay, so every later Jaffa house is drawn
+  from the same stream. In pinned-clock renders at 25 km against main, every pixel of the old town, the lighthouse and
+  the clock tower is unchanged (0 of 371,200 differ), and so is Tel Aviv with its port. The breakwater differs only on
+  its 29 edge pixels where it meets the calmer sea; none inside it differs.
+
+Measured: WebGL `?shot` of main `58d7b5d8` (with #525's frame) against the branch rebased on it, with the audit's
+`measure.py` crops and #388's crop:
+
+| | main | branch | promo |
+|---|---|---|---|
+| gameplay03 open sea: edge density (audit crop) | 0.048 | **0.020** | 0.012 |
+| the same, sea only (x 0.02-0.22, clear of the boats) | 0.044 | **0.015** | |
+| gameplay03 open sea: luma contrast | 0.054 | 0.055 | 0.052 |
+| gameplay03 sea, #388 crop: detail / spread | 0.046 / 0.163 | 0.028 / 0.096 | 0.060 / 0.20 |
+| diorama02 sea pixels (inside the frame): luma std / p10-p90 | 0.100 / 0.279 | 0.099 / 0.279 | 0.086 / 0.11 (audit crop) |
+| gameplay03 / diorama02 palette distance | 0.35 / 0.58 | 0.36 / 0.58 | |
+| diorama02 warmth / saturation | 0.129 / 0.36 | 0.129 / 0.36 | 0.145 / 0.43 |
+
+- #525's frame now crops diorama02's sea to the coastal strip. The audit's overview crop holds the frame, and the strip's
+  own spread is already above promo 02's, so the "flat overview sea" gap is closed by the frame.
+- The coastal shelf moves diorama02's WebGL sea pixels by 1.4 levels on average. In the editor test below, on the open
+  water off the strip, it is 0.086 against main's 0.048.
+- Before the rebase (main `dc4b272`, no frame), the audit's overview crop measured contrast 0.030 on main and 0.031 on
+  the branch.
+
+- #388's crop detail falls under #402's 0.035 floor. That crop's promo figure counts the promo's boats and Jaffa, and
+  promo 03's open water alone measures 0.012, so the floor contradicted the target. It is now 0.025 in #388's crop and
+  0.033 in the focus band (the branch measures 0.028 and 0.036), kept so the sea cannot go flat; see "Sea round 2".
+  The near-shore texture is unchanged.
+- The shelf itself: `SeaTests.TheOverviewSeaIsLighterAlongTheCoast`. At diorama02, water 5 km out is 0.086 lighter in
+  luma than water 25 km out; main measures 0.048, and the bound is 0.07.
+- `SeaTests.TheOpenSeaCalmsAwayFromTheShore`, at gameplay03's distance with the water's clock pinned: the fine texture
+  20 km out against 2.2 km out is 0.23 on the branch and 0.89 on main (bound 0.6).
+- `SeaCraftTests` checks the boats:
+  - the count and the kinds;
+  - every hull and its margin in open sea, not a rift lake, with no two boats overlapping;
+  - the size against the hex;
+  - the seeding, and that the boats are drawn under the kits and toggled with them.
+
+Frame time: `headed.py profile`, under the exclusive lock, one round each way.
+
+| pose | `all` main / branch | `-water` main / branch | `none` main / branch | p95 `all` |
+|---|---|---|---|---|
+| gameplay03, main first | 7.30 / 7.65 | 6.76 / 6.74 | 4.44 / 4.31 | 13 / 13 |
+| gameplay03, branch first | 7.59 / 8.56 | 6.96 / 7.25 | 4.42 / 4.50 | 13 / 14 |
+| diorama02, main first | 20.49 / 20.29 | 20.46 / 20.33 | 13.54 / 13.12 | 23 / 22 |
+
+- The branch-first round started at a load average of 27, falling to 10 by the main run. Its `-kits` and `-seatexture`
+  rose by as much as `all`.
+- In the main-first round, at a load of 5-10, `all` differs by 0.35 ms, under the runs' own 1.1-1.3 ms spread, and
+  `-water` and `none` are equal.
+
+Boot (`headed.py boot --cpu 4 --runs 3`, one round each, before the rebase): map_build median 3389 ms on main and 3106
+on the branch, and `kits built` 828 against 785 ms in the last run. The branch is not slower: the boats' placement and
+one more mesh are not measurable against the run-to-run spread.
 
 ## Promo track: land use (issue #33, branch promo-land)
 The flat mustard/olive ground becomes the promo's patchwork. `tools/land_bake.py` (no network, about 20 s, deterministic:

@@ -434,6 +434,87 @@ public class SeaTests
         finally { Object.DestroyImmediate(go); }
     }
 
+    /// <summary>Sea boats (#388, the 2026-10-13 gap audit): at the gameplay zoom the open sea calms away from the shore,
+    /// while the water near it keeps #402's texture. Rendered at gameplay03's distance (60 km, about 46 m a pixel) with the
+    /// water's clock pinned and the grid off, on one coast-texture row south of Jaffa (31.95 N): the fine texture (the mean
+    /// change between neighbouring pixels' luma, over a 25 x 25 window) 20 km out must be under
+    /// <see cref="FarOverNearTexture"/> of that 2.2 km out (past the surf, in the shallows' outer edge). On main the far
+    /// sea was the busier (far / near 0.89: its ripple ran at full strength, against the shallows' 40-100%); calmed, 0.23.</summary>
+    [UnityTest]
+    public IEnumerator TheOpenSeaCalmsAwayFromTheShore()
+    {
+        var map = OpenMap();
+        yield return null;
+        VisualToggles.Set("grid", false);
+        MapShaderGlobals.PinWaterTime(100f);
+        var coast = new Texture2D(2, 2);
+        coast.LoadImage(File.ReadAllBytes(MapTexturePaths.Coast));
+        int row = Mathf.FloorToInt((31.95f - 29.45f) / (33.35f - 29.45f) * coast.height);
+        int col = Mathf.FloorToInt((34.95f - 34.2f) / (35.9f - 34.2f) * coast.width);
+        while (col > 0 && coast.GetPixel(col, row).r >= 0.5f) col--;
+        Object.DestroyImmediate(coast);
+        Vector3 At(float offshoreM)
+        {
+            // The shore texel's centre, then due west (world -x) out to sea.
+            var shore = map.Frame.ToWorld(34.2 + (col + 0.5) / 2048.0 * (35.9 - 34.2), 29.45 + (row + 0.5) / 2048.0 * (33.35 - 29.45), 0);
+            var w = shore + Vector3.left * offshoreM; w.y = map.Terrain.SampleHeight(w); return w;
+        }
+        Vector3 near = At(2200f), far = At(20000f);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        rig.LookAt = (near + far) * 0.5f; rig.Distance = 60000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+        var px = new Vector2[2];
+        var r = RenderSample.Render(cam, 1920, 1080, new[] { near, far }, px);
+        float Texture(Vector2 p)
+        {
+            double sum = 0; int n = 0;
+            for (int y = (int)p.y - 12; y <= (int)p.y + 12; y++)
+                for (int x = (int)p.x - 12; x <= (int)p.x + 12; x++)
+                {
+                    float l = Luma(r.At(x, y));
+                    sum += Mathf.Abs(Luma(r.At(x + 1, y)) - l) + Mathf.Abs(Luma(r.At(x, y + 1)) - l); n++;
+                }
+            return (float)(sum / n);
+        }
+        float tn = Texture(px[0]), tf = Texture(px[1]);
+        TestContext.WriteLine($"fine texture 2.2 km out {tn:0.0000} (at {px[0]}), 20 km out {tf:0.0000} (at {px[1]}): far / near {tf / tn:0.00}");
+        Assert.Greater(tn, 0.005f, "the sea near the shore keeps its texture");
+        Assert.Less(tf / tn, FarOverNearTexture, "the open sea far from the shore is calmer than near it");
+    }
+
+    /// <summary>Bound for TheOpenSeaCalmsAwayFromTheShore.</summary>
+    const float FarOverNearTexture = 0.6f;
+
+    /// <summary>Sea boats (#388): at the overview (diorama02's pose, 190-300 m pixels) the sea along the coast reads as a
+    /// wide, lighter teal shelf over the deep blue, as promo 02's does: on the row of TheOpenSeaCalmsAwayFromTheShore, the
+    /// water 5 km out is lighter than 25 km out by at least <see cref="OverviewShelfOverDeep"/> in luma (a mean over 5 x 5
+    /// pixels, the water's clock pinned, the grid off). Main measured 0.048 (the depth ramp alone), the band 0.086.</summary>
+    [UnityTest]
+    public IEnumerator TheOverviewSeaIsLighterAlongTheCoast()
+    {
+        var map = OpenMap();
+        yield return null;
+        VisualToggles.Set("grid", false);
+        MapShaderGlobals.PinWaterTime(100f);
+        var coast = new Texture2D(2, 2);
+        coast.LoadImage(File.ReadAllBytes(MapTexturePaths.Coast));
+        int row = Mathf.FloorToInt((31.95f - 29.45f) / (33.35f - 29.45f) * coast.height);
+        int col = Mathf.FloorToInt((34.95f - 34.2f) / (35.9f - 34.2f) * coast.width);
+        while (col > 0 && coast.GetPixel(col, row).r >= 0.5f) col--;
+        Object.DestroyImmediate(coast);
+        var shore = map.Frame.ToWorld(34.2 + (col + 0.5) / 2048.0 * (35.9 - 34.2), 29.45 + (row + 0.5) / 2048.0 * (33.35 - 29.45), 0);
+        Vector3 At(float offshoreM) { var w = shore + Vector3.left * offshoreM; w.y = map.Terrain.SampleHeight(w); return w; }
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        PromoPose.Diorama02.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+        var px = new Vector2[2];
+        var r = RenderSample.Render(cam, 1920, 1080, new[] { At(5000f), At(25000f) }, px);
+        Color shelf = r.Mean((int)px[0].x, (int)px[0].y, 2), deep = r.Mean((int)px[1].x, (int)px[1].y, 2);
+        TestContext.WriteLine($"overview: 5 km out {shelf} (luma {Luma(shelf):0.000}, at {px[0]}), 25 km out {deep} (luma {Luma(deep):0.000}, at {px[1]})");
+        Assert.Greater(Luma(shelf), Luma(deep) + OverviewShelfOverDeep, "the coastal shelf is lighter than the deep sea at the overview");
+    }
+
+    /// <summary>Bound for TheOverviewSeaIsLighterAlongTheCoast.</summary>
+    const float OverviewShelfOverDeep = 0.07f;
+
     /// <summary>Rendered: the Dead Sea is pale turquoise, much lighter than the open Mediterranean.</summary>
     [UnityTest]
     public IEnumerator TheDeadSeaIsPalerThanTheOpenSea()

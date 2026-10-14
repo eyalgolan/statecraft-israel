@@ -6,7 +6,8 @@ using UnityEngine.Rendering;
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Builds the art spike's procedural layer under a returned "Kits" root: one static mesh per settlement (its
-    /// buildings, merged: one draw each, culled by its bounds) drawn with the editor-made Kit.mat, and the instanced trees
+    /// buildings, merged: one draw each, culled by its bounds) drawn with the editor-made Kit.mat, the boats
+    /// (<see cref="SeaCraft"/>, one more mesh with the same material), and the instanced trees
     /// (<see cref="VegetationLayer"/>) drawn with Tree.mat. Meshes are owned by the map's MapRuntimeAssets, so a rebuild
     /// frees them. Hides the marker boxes under <paramref name="markers"/> while the kits show. Registers the "kits" and
         /// "trees" visual toggles, so the frame-time profile prices each ("kits" off shows the markers again). Fills
@@ -14,16 +15,16 @@ namespace Statecraft.Game.Map.Kits
     /// 1948 localities' included.</summary>
     public static class KitLayer
     {
-        public const string RootName = "Kits", VegetationName = "Vegetation";
+        public const string RootName = "Kits", VegetationName = "Vegetation", SeaCraftName = "SeaCraft";
 
         public sealed class Stats
         {
-            public int Buildings, Vertices, Triangles, Trees, CorridorSegments, Localities, LocalityBuildings, Camps, Tents, Draws; public float BuildMs, PlantMs;
+            public int Buildings, Vertices, Triangles, Trees, CorridorSegments, Localities, LocalityBuildings, Camps, Tents, Draws, Boats; public float BuildMs, PlantMs;
             /// <summary>Every footprint the build claimed (towns, localities, camps), in claim order (MapScene.KitFootprints).</summary>
             public IReadOnlyList<(Vector2 centre, float radius, string id)> Footprints = System.Array.Empty<(Vector2, float, string)>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
-                $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} draws={Draws}";
+                $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} boats={Boats} draws={Draws}";
         }
 
         public static GameObject Build(IReadOnlyList<Settlement> settlements, Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM,
@@ -49,7 +50,7 @@ namespace Statecraft.Game.Map.Kits
             stats.CorridorSegments = ground.CorridorSegments;
             if (tokens != null) ground.Tokens.AddRange(tokens);
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            var built = SettlementKits.Build(settlements, localities, camps, ground, columns);   // columns: the labels' kit footprints (issue #214)
+            var built = SettlementKits.Build(settlements, localities, camps, ground, out var placed, columns);   // columns: the labels' kit footprints (issue #214)
             foreach (var l in built.Claimed) ground.Lots.Add((l.centre, l.radius));
             stats.Footprints = new List<(Vector2, float, string)>(ground.Footprints);
             void Add(string name, Mesh mesh)
@@ -65,6 +66,15 @@ namespace Statecraft.Game.Map.Kits
             }
             foreach (var (s, mesh, n) in built.Towns) { Add(s.Id, mesh); stats.Buildings += n; }
             foreach (var (name, mesh) in built.Tiles) Add(name, mesh);
+            // The boats (SeaCraft): off the coast and moored in the harbours the kits recorded.
+            var crafts = SeaCraft.Place(ground, placed);
+            if (crafts.Count > 0)
+            {
+                var km = new KitMesh();
+                SeaCraft.Draw(crafts, ground, km);
+                Add(SeaCraftName, km.ToMesh(SeaCraftName));
+            }
+            stats.Boats = crafts.Count;
             stats.Localities = localities.Count; stats.LocalityBuildings = built.LocalityBuildings; stats.Camps = built.Camps; stats.Tents = built.Tents;
             stats.Buildings += built.LocalityBuildings + built.Tents;
             stats.BuildMs = (float)clock.Elapsed.TotalMilliseconds;

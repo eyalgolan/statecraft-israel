@@ -85,9 +85,13 @@ namespace Statecraft.Game.Map.Kits
         }
 
         /// <summary>A flat-shaded triangle, clockwise seen from its front.</summary>
-        public void Triangle(Vector3 a, Vector3 b, Vector3 c, Color32 colour)
+        public void Triangle(Vector3 a, Vector3 b, Vector3 c, Color32 colour) => Triangle(a, b, c, colour, Vector3.Cross(b - a, c - a));
+
+        /// <summary>A triangle, clockwise seen from its front, lit as if it faced <paramref name="normal"/> (normalised here):
+        /// a boat's sail is lit as cloth that catches the sky, not as a flat plate turned from the sun (SeaCraft).</summary>
+        public void Triangle(Vector3 a, Vector3 b, Vector3 c, Color32 colour, Vector3 normal)
         {
-            var n = Vector3.Cross(b - a, c - a).normalized;
+            var n = normal.normalized;
             int i = V(a, n, colour, Vector2.zero); V(b, n, colour, Vector2.zero); V(c, n, colour, Vector2.zero);
             tri.Add(i); tri.Add(i + 1); tri.Add(i + 2);
         }
