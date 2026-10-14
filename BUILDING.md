@@ -24,7 +24,7 @@ python3 -m http.server 8000 --directory unity/Builds/Web-disabled   # then open 
 ```
 
 Desktop players (macOS IL2CPP; Linux and Windows on Mono, built from the Mac) and their build record come from
-`uv run tools/release_build.py`; see "Desktop builds" in [`docs/RELEASING.md`](docs/RELEASING.md).
+`uv run tools/release_build.py`; see "Desktop builds" in step 5 of [`docs/RELEASING.md`](docs/RELEASING.md).
 
 A build rewrites some cached settings. Drop them afterwards with
 `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`.

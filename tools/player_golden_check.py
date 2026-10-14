@@ -6,7 +6,7 @@
 docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sections 2.2 and 6.3; decision O7).
 
   uv run tools/player_golden_check.py plan --tag vX.Y.Z --event release|workflow_dispatch --output FILE [--summary FILE] < release.json
-  uv run tools/player_golden_check.py run --platform windows|linux|macos [--arch arm64|x86_64] --archive FILE --sha256 HEX --manifest manifest.txt
+  uv run tools/player_golden_check.py run --platform windows|linux|macos [--arch arm64|x86_64 (macos)] --archive FILE --sha256 HEX --manifest manifest.txt
       --work DIR
 
 `plan` reads `gh release view --json tagName,isDraft,assets` on stdin, checks the tag's form and that the release is
@@ -51,7 +51,7 @@ ASSETS = {
 # The GitHub-hosted runners each player is checked on (standard runners, free and unlimited for a public repository,
 # plan 6.1): (runner label, the CPU architecture it must report). The Universal Mac app runs twice, so each of its two
 # native IL2CPP slices is checked on its own CPU: macos-15 is Apple silicon, macos-15-intel is x86_64 (GitHub offers it
-# until August 2027, runner-images#13045). An empty architecture is not checked.
+# until August 2027, runner-images#13045; what replaces it is issue #548). An empty architecture is not checked.
 RUNNERS = {
     "windows": [("windows-2025", "")],
     "linux": [("ubuntu-24.04", "")],
@@ -123,7 +123,9 @@ def expected_lines(manifest: dict[str, str]) -> list[str]:
 
 
 def check_log(log: str, expected: list[str], exit_code: int | None) -> list[str]:
-    """The problems with a player run: empty when it passed."""
+    """The problems with a player run: empty when it passed. The player prints each GOLDEN line bare on its own line
+    (GameBoot.cs Debug.Log; the Mac player log of the #542 release-script run shows exactly that), so a line must equal
+    the expected text after stripping: no prefix, and no extra character (one more hex digit is a different hash)."""
     lines = [l.strip() for l in log.splitlines()]
     problems = []
     if exit_code is None:
@@ -245,7 +247,9 @@ def cmd_run(a) -> int:
         if got != a.sha256:
             raise ValueError(f"{archive.name} has SHA-256 {got}, but GitHub's digest for the asset is {a.sha256!r}; "
                              "it was replaced after the plan job: run the workflow again")
-        work = Path(a.work)
+        if (a.platform == "macos") != bool(a.arch):
+            raise ValueError("--arch (arm64 or x86_64) is required for macos and only for macos")
+        work = Path(a.work).resolve()   # the player runs with cwd at its folder, so every path must be absolute
         unpack(archive, work / "player")
         exe = find_player(work / "player", a.platform)
         if a.arch:
@@ -259,9 +263,14 @@ def cmd_run(a) -> int:
         print(f"PLAYER GOLDEN ERROR {a.platform}")
         return 2
     log = work / "player.log"
-    code = run_player(exe, log, a.timeout)
+    try:
+        code = run_player(exe, log, a.timeout)
+    except OSError as e:   # the player could not be started at all (for example: Exec format error)
+        code, start_error = -1, f"the player could not be started: {e}"
+    else:
+        start_error = ""
     text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-    problems = check_log(text, expected, code)
+    problems = ([start_error] if start_error else []) + check_log(text, expected, code)
     if not problems:
         for line in expected:
             print(line)
@@ -287,8 +296,9 @@ def main(argv=None) -> int:
     r = sub.add_parser("run")
     r.add_argument("--platform", required=True, choices=sorted(ASSETS))
     r.add_argument("--archive", required=True)
-    r.add_argument("--arch", default="", choices=["", "arm64", "x86_64"],
-                   help="macOS: the slice to check; the runner must be that CPU and the app must carry it")
+    r.add_argument("--arch", choices=["arm64", "x86_64"],
+                   help="macos only, and required there: the slice to check; the runner must be that CPU and the app "
+                        "must carry it")
     r.add_argument("--sha256", required=True, help="the asset's SHA-256 from GitHub (hex), from plan")
     r.add_argument("--manifest", required=True)
     r.add_argument("--work", required=True)

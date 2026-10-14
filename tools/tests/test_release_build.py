@@ -788,3 +788,13 @@ def test_every_shipped_fonts_licence_is_a_required_notice():
     for name in rb.FONT_LICENCES:
         assert name in rb.REQUIRED_NOTICES
     assert rb.FONT_LICENCES == FONT_SOURCES, "the names site/public/fonts already uses"
+
+
+def test_the_golden_rule_wants_the_exact_bare_lines_the_player_prints():
+    """Review T53 S-B: the real Mac player log (the #542 run) has the GOLDEN lines bare, one per line. A prefixed line is
+    not that format, and a hash with one more hex character is a different hash; both fail, as in CI (#533)."""
+    expected = {"1950": H1950, "1952": H1952}
+    assert rb.golden_status(f"Initialize engine\nGOLDEN OK 1950 {H1950}\r\nGOLDEN OK 1952 {H1952}\n", 0, expected) == "pass"
+    assert rb.golden_status(f"12:00:01 GOLDEN OK 1950 {H1950}\n12:00:02 GOLDEN OK 1952 {H1952}\n", 0, expected) == "fail"
+    assert rb.golden_status(f"GOLDEN OK 1950 {H1950}a\nGOLDEN OK 1952 {H1952}\n", 0, expected) == "fail"
+    assert rb.golden_lines(f"GOLDEN OK 1950 {H1950}a\n") == [f"GOLDEN OK 1950 {H1950}a"], "the record shows what was printed"

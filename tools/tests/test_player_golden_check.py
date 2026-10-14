@@ -40,7 +40,7 @@ def test_asset_names_are_the_release_script_contract():
 TAGS = {"v0.2.0": True, "v10.20.30": True, "v0.2.0-rc.1": True, "v1.0.0-beta.2.x9": True,
         "0.2.0": False, "v0.2": False, "v0.2.0 ": False, "v0.2.0;id": False, "v0.2.0/../x": False, "main": False, "": False,
         "v1.2.3-": False, "v1.2.3-rc..1": False, "v1.0.0\nmatrix=x": False, "v1.0.0\n": False, "v\u0661.0.0": False,
-        "v1.0.0-r\u00e9": False, "V1.0.0": False}
+        "v1.0.0-r\u00e9": False, "V1.0.0": False, "xv1.0.0": False, "refs/tags/v1.0.0": False}
 
 
 def test_the_workflows_shell_tag_check_accepts_exactly_what_the_python_one_does():
@@ -126,9 +126,14 @@ def test_no_player_fails_a_manual_run_but_a_web_only_release_passes_unchecked(tm
     assert summary.read_text().startswith("## Player golden v0.2.0: UNCHECKED")
 
 
-def test_drafts_and_mismatched_releases_are_refused():
+def test_drafts_and_mismatched_releases_are_refused(tmp_path, monkeypatch):
     assert pg.plan("v0.2.0", release("v0.2.0", draft=True), "release")[2] is False
     assert pg.plan("v0.2.0", release("v0.1.0"), "release")[2] is False
+    # The command exits 1 on a refusal and writes no matrix, so the player jobs are skipped behind a failed job.
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(release("v0.2.0", *players("v0.2.0"), draft=True))))
+    out = tmp_path / "out"
+    assert pg.main(["plan", "--tag", "v0.2.0", "--event", "release", "--output", str(out)]) == 1
+    assert not out.exists()
 
 
 def test_plan_command_writes_the_matrix_to_the_github_output(tmp_path, monkeypatch, capsys):
@@ -266,3 +271,73 @@ def test_a_mac_app_zipped_with_ditto_comes_back_runnable(tmp_path):
     found = pg.find_player(tmp_path / "out", "macos")
     assert found == tmp_path / "out" / "Statecraft.app" / "Contents" / "MacOS" / "Statecraft Israel"
     assert found.stat().st_mode & 0o111
+
+
+def test_the_pass_rule_matches_the_real_player_log_format():
+    # Review T53 S-B: the #542 run's Mac player log carries the GOLDEN lines bare. A prefixed line, or a hash with one
+    # more hex digit, is not the expected line.
+    assert pg.check_log("Loading content\n" + "\n".join(EXPECTED) + "\n", EXPECTED, 0) == []
+    assert pg.check_log("\n".join("12:00:01 " + l for l in EXPECTED), EXPECTED, 0) == [f"missing line: {l}" for l in EXPECTED]
+    assert pg.check_log(EXPECTED[0] + "a\n" + EXPECTED[1], EXPECTED, 0) == [f"missing line: {EXPECTED[0]}"]
+
+
+def test_the_release_script_shares_the_asset_names_the_tag_rule_and_the_pass_rule():
+    # Issue #546: tools/release_build.py takes all three from this module, so the build record and CI cannot disagree.
+    import release_build as rb
+    assert rb.ARCHIVES == {"mac": pg.ASSETS["macos"], "linux": pg.ASSETS["linux"], "windows": pg.ASSETS["windows"]}
+    assert rb.TAG is pg.TAG
+    expected = {"1950": H50, "1952": H52}
+    logs = ["\n".join(EXPECTED), "\n".join("12:00:01 " + l for l in EXPECTED), EXPECTED[0] + "a\n" + EXPECTED[1],
+            "\n".join(EXPECTED) + "\nBOOT FAIL x", EXPECTED[0], ""]
+    for log in logs:
+        for code in (0, 1, None):
+            assert (rb.golden_status(log, code, expected) == "pass") is (pg.check_log(log, EXPECTED, code) == []), (log, code)
+
+
+def fake_linux_player(tmp_path, body: bytes, name="p.tar.gz"):
+    exe = tmp_path / "Statecraft.x86_64"
+    exe.write_bytes(body)
+    exe.chmod(0o755)
+    path = tmp_path / name
+    with tarfile.open(path, "w:gz") as t:
+        t.add(exe, arcname="statecraft/Statecraft.x86_64")
+    return path
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="exec format errors are POSIX")
+def test_a_player_that_cannot_start_fails_cleanly(tmp_path, capsys):
+    (tmp_path / "manifest.txt").write_text(MANIFEST)
+    arc = fake_linux_player(tmp_path, b"\x00\x01 not an executable")
+    code = pg.main(["run", "--platform", "linux", "--manifest", str(tmp_path / "manifest.txt"), "--archive", str(arc),
+                    "--sha256", pg.sha256(arc), "--work", str(tmp_path / "w")])
+    out = capsys.readouterr().out
+    assert code == 1 and "::error::linux: the player could not be started" in out and "PLAYER GOLDEN FAIL linux" in out
+
+
+def test_arch_is_required_for_macos_and_refused_elsewhere(tmp_path, capsys):
+    (tmp_path / "manifest.txt").write_text(MANIFEST)
+    arc = fake_linux_player(tmp_path, b"#!/bin/sh\n")
+    base = ["run", "--manifest", str(tmp_path / "manifest.txt"), "--archive", str(arc), "--sha256", pg.sha256(arc)]
+    assert pg.main(base + ["--platform", "linux", "--arch", "x86_64", "--work", str(tmp_path / "w1")]) == 2
+    assert pg.main(base + ["--platform", "macos", "--work", str(tmp_path / "w2")]) == 2
+    assert capsys.readouterr().out.count("--arch (arm64 or x86_64) is required for macos and only for macos") == 2
+    with pytest.raises(SystemExit):
+        pg.main(base + ["--platform", "macos", "--arch", "", "--work", str(tmp_path / "w3")])
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="needs ditto, lipo and uname")
+def test_run_refuses_a_mac_runner_of_the_other_architecture_before_running(tmp_path, capsys):
+    # Review T53 nit: pins the call into check_arch (the `if a.arch:` wiring), not only check_arch itself.
+    (tmp_path / "manifest.txt").write_text(MANIFEST)
+    macos = tmp_path / "build" / "Statecraft.app" / "Contents" / "MacOS"
+    macos.mkdir(parents=True)
+    shutil.copy("/usr/bin/true", macos / "Statecraft Israel")
+    z = tmp_path / "statecraft-israel-v0.2.0-macos-universal.zip"
+    subprocess.run(["ditto", "-c", "-k", "--norsrc", "--keepParent", str(tmp_path / "build" / "Statecraft.app"), str(z)],
+                   check=True)
+    here = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
+    other = "x86_64" if here == "arm64" else "arm64"
+    code = pg.main(["run", "--platform", "macos", "--arch", other, "--manifest", str(tmp_path / "manifest.txt"),
+                    "--archive", str(z), "--sha256", pg.sha256(z), "--work", str(tmp_path / "w")])
+    out = capsys.readouterr().out
+    assert code == 2 and f"the runner is {here}, not {other}: check the runner label" in out and "RUN " not in out

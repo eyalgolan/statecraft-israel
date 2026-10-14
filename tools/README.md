@@ -40,7 +40,7 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   refuses a build that is missing one.
 - `release_build.py [--platform mac|linux|windows|all] [--out DIR] [--tag vX.Y.Z] [--dev] [--dry-run] [--unity PATH]`
   builds the desktop players under the machine lock, runs the macOS player's golden check and writes a build record
-  outside every checkout (`docs/RELEASING.md`, "Desktop builds"). A release must be `main` at its tag; `--dev` builds
+  outside every checkout (`docs/RELEASING.md`, step 5, "Desktop builds"). A release must be `main` at its tag; `--dev` builds
   anywhere under a `-dev.<commit>` name. It never commits, pushes or uploads.
 - `preview_map.py` renders the geography check image `tools/.cache/map-preview.png`.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO

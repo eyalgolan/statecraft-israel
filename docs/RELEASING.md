@@ -43,29 +43,54 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    trims the least recently used above 1 GiB (`MaximumCacheSize=1073741824` in the 6000.3 loader). With hashed names,
    every build with the same `bundleVersion` adds one more `.data` there until that cap; the version bump in step 2
    clears them at each release.
-6. **Tag and publish (owner):**
+
+   **Desktop builds (macOS, Linux, Windows).** Desktop players are built on the owner's Mac (decisions O7 and O8 in
+   `docs/oss/DECISIONS.md`; plan in `docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`). On the merged `main`, tag `HEAD` first
+   (`git tag -a vX.Y.Z -m "Statecraft: Israel vX.Y.Z"`; step 6 pushes it), then:
 
    ```bash
-   git tag -a vX.Y.Z -m "Statecraft: Israel vX.Y.Z" && git push origin vX.Y.Z
-   gh release create vX.Y.Z unity/Builds/statecraft-israel-vX.Y.Z-web.zip --title "vX.Y.Z" --notes-file <(awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md)
+   uv run tools/release_build.py --platform all --tag vX.Y.Z   # or mac, linux, windows; --dry-run prints the commands
    ```
 
-   Paste the SHA-256 from step 5 into the release notes.
+   Before building anything it refuses: a dirty tree; a branch other than `main`, or a `HEAD` that your last
+   `git fetch origin` did not show on `origin/main` (the script never fetches); a tag that is not `v` plus `bundleVersion`
+   (a `-suffix` is allowed; it is the default) or does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
+   `--out` inside any checkout or worktree of the repository (ignored folders too: a build empties
+   `StreamingAssets/content`), or one that is not empty. It also stops if Unity Hub lacks a module the platforms need: Mac
+   Build Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the
+   Hub command. `--dev` makes a test build from any branch: not `-shareable`, no `--tag`, and archives named
+   `vX.Y.Z-dev.<commit>` so they cannot pass for a release.
 
-   **A release with desktop players** (decisions O1, O7 and O9 in `docs/oss/DECISIONS.md`) attaches all three player
-   archives in the **same** `gh release create` call as the web zip, as a pre-release, with "unchecked" in its notes:
+   Each build runs under `tools/machine_lock.py --shared --wait-unity`. The script runs the `-golden` check on the macOS
+   player, the only one the Mac can run; the Linux and Windows players are recorded as unchecked until the CI player check
+   runs them. It archives each player under the names that check expects (`statecraft-israel-vX.Y.Z-macos-universal.zip`,
+   made with `ditto`; `-linux-x64.tar.gz`; `-windows-x64.zip`), each with `LICENSE`, `NOTICE`, `THIRD-PARTY-NOTICES.md`,
+   the two font licences (`OFL-EBGaramond.txt`, `OFL-FrankRuhlLibre.txt`) and `LICENSES/` beside the player (it lists the
+   archive to check), and writes `build-record.json`, `build-record.md`, a `files-<platform>.sha256` list of each
+   archive's files and the build's `event-photos-<platform>.json` to `~/statecraft-release/v<version>-<commit>-<UTC time>/`
+   (or `--out`), and prints the path. It never commits, pushes or uploads: copy the record files to the build records
+   repository by hand. Signing and Steam upload are later steps, not yet scripted.
+6. **Tag and publish (owner), in one `gh release create`.** The release carries the web zip and, once desktop players
+   ship (decisions O1, O7 and O9 in `docs/oss/DECISIONS.md`), all three desktop archives from "Desktop builds" above, as
+   a pre-release with "unchecked" in its notes. Never publish first and upload the players afterwards:
 
    ```bash
-   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file <notes saying "unchecked"> \
-     unity/Builds/statecraft-israel-vX.Y.Z-web.zip statecraft-israel-vX.Y.Z-windows-x64.zip \
-     statecraft-israel-vX.Y.Z-linux-x64.tar.gz statecraft-israel-vX.Y.Z-macos-universal.zip
+   git tag -a vX.Y.Z -m "Statecraft: Israel vX.Y.Z"   # skip if "Desktop builds" already made it
+   git push origin vX.Y.Z
+   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file <notes from CHANGELOG.md, saying "unchecked"> \
+     unity/Builds/statecraft-israel-vX.Y.Z-web.zip <out>/statecraft-israel-vX.Y.Z-windows-x64.zip \
+     <out>/statecraft-israel-vX.Y.Z-linux-x64.tar.gz <out>/statecraft-israel-vX.Y.Z-macos-universal.zip
    ```
+
+   `<out>` is the folder `tools/release_build.py` printed. The notes are the version's CHANGELOG section
+   (`awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md`), the SHA-256 from step 5, and "unchecked".
 
    Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). It downloads each player,
    checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on GitHub's
    Windows and Linux machines, and the Mac app twice: on Apple silicon (`macos-15`, its arm64 slice) and on Intel
-   (`macos-15-intel`, its x86_64 slice). It fails when only one or two of the three archives are attached. A release with
-   none passes, but its run summary says UNCHECKED.
+   (`macos-15-intel`, its x86_64 slice; issue #548 tracks its end in August 2027). It fails when only one or two of the
+   three archives are attached. A release with none (a web-only release, before desktop players ship) passes, but its
+   run summary says UNCHECKED.
    - **The release stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release
      as soon as it is published, so do not announce it before then. Then remove "unchecked" from the notes.
    - **Uploading or replacing an archive later** (`gh release upload`, with or without `--clobber`) starts no run. After
@@ -77,35 +102,6 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    for the Linux `.tar.gz`,
    `tar -tzf <archive> | grep -E '^(\./)?(LICENSE|NOTICE|THIRD-PARTY-NOTICES.md|OFL-EBGaramond.txt|OFL-FrankRuhlLibre.txt)$'`.
    It must print five lines for each archive.
-
-## Desktop builds (macOS, Linux, Windows)
-
-Desktop players are built on the owner's Mac (decisions O7 and O8 in `docs/oss/DECISIONS.md`; plan in
-`docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`). On the merged `main`, after the tag
-(step 6's `git tag -a vX.Y.Z`, not yet pushed if you like) is on `HEAD`:
-
-```bash
-uv run tools/release_build.py --platform all --tag vX.Y.Z   # or mac, linux, windows; --dry-run prints the commands
-```
-
-Before building anything it refuses: a dirty tree; a branch other than `main`, or a `HEAD` that your last
-`git fetch origin` did not show on `origin/main` (the script never fetches); a tag that is not `v` plus `bundleVersion`
-(a `-suffix` is allowed; it is the default) or does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
-`--out` inside any checkout or worktree of the repository (ignored folders too: a build empties
-`StreamingAssets/content`), or one that is not empty. It also stops if Unity Hub lacks a module the platforms need: Mac
-Build Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the
-Hub command. `--dev` makes a test build from any branch: not `-shareable`, no `--tag`, and archives named
-`vX.Y.Z-dev.<commit>` so they cannot pass for a release.
-
-Each build runs under `tools/machine_lock.py --shared --wait-unity`. The script runs the `-golden` check on the macOS
-player, the only one the Mac can run; the Linux and Windows players are recorded as unchecked until the CI player check
-runs them. It archives each player under the names that check expects (`statecraft-israel-vX.Y.Z-macos-universal.zip`,
-made with `ditto`; `-linux-x64.tar.gz`; `-windows-x64.zip`), each with `LICENSE`, `NOTICE`, `THIRD-PARTY-NOTICES.md`, the two font
-licences (`OFL-EBGaramond.txt`, `OFL-FrankRuhlLibre.txt`) and `LICENSES/` beside the player (it lists the archive to check), and writes `build-record.json`, `build-record.md`, a
-`files-<platform>.sha256` list of each archive's files and the build's `event-photos-<platform>.json` to
-`~/statecraft-release/v<version>-<commit>-<UTC time>/` (or `--out`), and prints the path. It never commits, pushes or
-uploads: copy the record files to the build records repository by hand. Signing and Steam upload are later steps, not yet
-scripted.
 
 ## Refreshing the README screenshots
 

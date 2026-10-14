@@ -64,6 +64,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+import player_golden_check as pgc   # tools/: the one asset-name contract, tag rule and golden pass rule (issue #546)
+
 REPO = Path(__file__).resolve().parents[1]
 LOCK_TIMEOUT = 30 * 24 * 3600   # machine_lock's own default gives up after an hour; a release waits for the machine
 HUB = "/Applications/Unity Hub.app/Contents/MacOS/Unity Hub"
@@ -80,14 +82,10 @@ FONT_LICENCES = {"OFL-EBGaramond.txt": "unity/Assets/UI/Fonts/OFL.txt",
                  "OFL-FrankRuhlLibre.txt": "unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt"}
 NOTICE_TOPS = {"LICENSE", "LICENSES", "NOTICE", "THIRD-PARTY-NOTICES.md", *FONT_LICENCES}
 PHOTOS = "event-photos.json"   # Build.PhotoManifestName: written beside every player, read by packaging, not the player
-# The release asset names: a contract with the CI player golden check (tools/player_golden_check.py, PR #533), in the
-# form of the web zip (statecraft-israel-vX.Y.Z-web.zip, docs/RELEASING.md). {tag} carries the v.
-ARCHIVES = {
-    "mac": "statecraft-israel-{tag}-macos-universal.zip",
-    "linux": "statecraft-israel-{tag}-linux-x64.tar.gz",
-    "windows": "statecraft-israel-{tag}-windows-x64.zip",
-}
-TAG = re.compile(r"v\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?", re.ASCII)   # ASCII: \d must not match other digits
+# The release asset names and the tag rule are the CI player golden check's (tools/player_golden_check.py), so the two
+# cannot drift (issue #546). {tag} carries the v. The CI check names the Mac "macos".
+ARCHIVES = {"mac": pgc.ASSETS["macos"], "linux": pgc.ASSETS["linux"], "windows": pgc.ASSETS["windows"]}
+TAG = pgc.TAG
 
 
 @dataclass(frozen=True)
@@ -263,16 +261,17 @@ def golden_command(player: Path, log: Path) -> list[str]:
 # --- results -------------------------------------------------------------------------------------------------------------
 
 def golden_lines(log_text: str) -> list[str]:
-    return [m.group(0) for m in re.finditer(r"GOLDEN (?:OK|FAIL) \d{4} [0-9a-f]{64}(?: expected [0-9a-f]{64})?", log_text)]
+    """The GOLDEN lines as the player printed them (stripped), for the build record."""
+    return [l.strip() for l in log_text.splitlines() if l.strip().startswith(("GOLDEN OK ", "GOLDEN FAIL "))]
 
 
 def golden_status(log_text: str, exit_code: int, expected: dict[str, str]) -> str:
-    """pass only on exit 0, both `GOLDEN OK <year> <pinned hash>` lines, and no GOLDEN FAIL or BOOT FAIL line (the same
-    rule as the CI player check of PR #533)."""
-    lines = set(golden_lines(log_text))
-    ok = exit_code == 0 and all(f"GOLDEN OK {year} {h}" in lines for year, h in expected.items())
-    failed = re.search(r"\b(GOLDEN FAIL|BOOT FAIL)\b", log_text) is not None
-    return "pass" if ok and len(expected) == 2 and not failed else "fail"
+    """pass only on exit 0, both `GOLDEN OK <year> <pinned hash>` lines exactly as the player prints them (bare, one per
+    line), and no GOLDEN FAIL or BOOT FAIL line: player_golden_check.check_log, the rule CI applies (issue #546)."""
+    if sorted(expected) != [year for year, _ in pgc.GOLDENS]:
+        return "fail"
+    wanted = [f"GOLDEN OK {year} {expected[year]}" for year, _ in pgc.GOLDENS]
+    return "pass" if not pgc.check_log(log_text, wanted, exit_code) else "fail"
 
 
 def archive_name(tag: str, platform: str) -> str:
