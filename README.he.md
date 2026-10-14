@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 <div dir="rtl">
 
-##### [דיווח על באג](https://github.com/eyalgolan/statecraft-israel/issues/new?template=bug_report.yml) | [דיווח על טעות היסטורית](https://github.com/eyalgolan/statecraft-israel/issues/new?template=historical_accuracy.yml) | [דיונים](https://github.com/eyalgolan/statecraft-israel/discussions) | [יומן שינויים](CHANGELOG.md)
+##### [דיווח על באג](https://github.com/eyalgolan/statecraft-israel/issues/new?template=bug_report.yml) | [דיווח על טעות היסטורית](https://github.com/eyalgolan/statecraft-israel/issues/new?template=historical_accuracy.yml) | [דיונים](https://github.com/eyalgolan/statecraft-israel/discussions) | [מפת דרכים](#מפת-דרכים) | [יומן שינויים](CHANGELOG.md)
 
 ## על מה המשחק?
 
@@ -60,6 +60,45 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 ***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** עדיין אין גרסה שאפשר לשחק בה בדפדפן בלחיצה אחת; גרסה מתארחת מתוכננת לאבן הדרך M4. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
 
 מסמך התכנון המחייב הוא עכשיו [<span dir="ltr">docs/GDD.md</span>](docs/GDD.md) (12 באוקטובר 2026, באנגלית): תורות של חודש, שבהם בונים ומגינים על ישראל בשנים 1948 עד 1951 בעזרת יחידות, ערים ובנייה, ובוחרים שרים. המשחק שאפשר לשחק היום הוא המשחק שמתואר למעלה. התכנון החדש עוד לא ניתן למשחק, ו[תוכנית הבנייה](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) מכניסה אותו בשלבים.
+
+## מפת דרכים
+
+המעקב החי הוא [#374](https://github.com/eyalgolan/statecraft-israel/issues/374). התוכנית שמאחוריו היא [תוכנית הבנייה של GDD v0.1](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) (באנגלית). מפת הדרכים אינה קובעת תאריכים.
+
+### המסלול הראשי: ה־MVP של 1948 עד 1951
+
+```mermaid
+flowchart RL
+  V["Visual v1"]:::done --> P0["0 · החלטות"]:::now
+  P0 --> P1["1 · פרוסה ראשונה"]:::now
+  P1 --> P2["2 · תורות חודשיים"]:::next
+  P2 --> P3["3 · ערים"]:::next
+  P3 --> P4["4 · חלוצים"]:::next
+  P4 --> P5["5 · יחידות וקרב"]:::next
+  P5 --> P6["6 · שליטה ביישובים"]:::next
+  P6 --> P7["7 · ה־MVP המלא"]:::next
+  classDef done fill:#e3f1e8,stroke:#2f7d4f,color:#1c2430
+  classDef now fill:#f8eedb,stroke:#b7791f,color:#1c2430
+  classDef next fill:#eceff3,stroke:#8792a2,color:#1c2430
+```
+
+| שלב | מה הוא מוסיף | מצב | Issue |
+|---|---|---|---|
+| 0 | החלטות הבעלים בסעיפים הפתוחים ב־GDD | בתהליך: ההחלטות של שלב 1 התקבלו | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
+| 1 | פרוסה ראשונה מאחורי מתג: עיר אחת (תל אביב), אימון, יישוב חדש אחד וכרטיס יעד אחד | בתהליך: 2 מתוך 8 PRs מוזגו | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
+| 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | הבא | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
+| 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | בהמשך | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
+| 4 | חלוצים, אתרי בנייה, כבישים ומסילות ברזל | בהמשך | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
+| 5 | יחידות צבאיות, תנועה וקרב | בהמשך | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | שליטה ביישובים, לפי [מדיניות התוכן](docs/CONTENT_POLICY.md) | בהמשך | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | שרים, אירועים והמשחק המלא בן 48 תורות | בהמשך | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+
+### מסלולים נוספים
+
+- **אמנות:** יישובים, צמחייה ויחידות בתלת־ממד הנאמנים לתקופה, לעבר תמונת הקונספט.
+- **הפצה (M4):** סקירה של היסטוריונים וגרסה מתארחת בדפדפן.
+- **פלטפורמות:** גרסאות למחשב ו־Steam ([#54](https://github.com/eyalgolan/statecraft-israel/issues/54)).
+- **תקופות מאוחרות:** תקופת היישוב שלפני 1948 והשנים שאחרי 1956 מושהות עד שה־MVP יושלם ([#49](https://github.com/eyalgolan/statecraft-israel/issues/49) עד [#53](https://github.com/eyalgolan/statecraft-israel/issues/53)).
 
 ## פתיחה ראשונה ב־Unity
 

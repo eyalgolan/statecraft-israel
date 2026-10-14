@@ -49,6 +49,7 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 6. **Changelog.** If you change `sim/`, `content/` or `unity/` (tests excepted), add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md). CI's `Changelog` job checks it; the maintainer can add the `no-changelog` label to a change no player would notice.
 7. **Rule IDs.** A rule that has an ID (`R-ECON-014`, defined in `docs/rules/`, see [docs/rules/README.md](docs/rules/README.md)) is cited by that ID in the test that checks it (`// R-ECON-014`), in YAML comments that depend on it, and in the PR body ("implements R-ECON-014"). `uv run scripts/oss/rule_ids.py` fails on a rule with no citing test and on a citation of an ID that does not exist.
 8. **Provenance.** Every new image, video, font, audio, 3D-model or map-data file gets a row in [ASSETS.yaml](ASSETS.yaml) with its source, licence and status. CI's `Repo policy` job fails on a file with no row.
+9. **Roadmap status.** If your PR finishes a Phase 1 PR or a whole phase of [#374](https://github.com/eyalgolan/statecraft-israel/issues/374), update the Roadmap table in [README.md](README.md#roadmap) and the same table in [README.he.md](README.he.md), and tick the item in #374 if you can (otherwise ask the maintainer in the PR). The Phase 1 count must match in both files; `test_readme.py` checks it.
 
 ## History and content rules
 

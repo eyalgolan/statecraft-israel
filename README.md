@@ -16,7 +16,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 > [!NOTE]
 > This is an independent open-source project. A commercial edition is planned. It is not affiliated with or endorsed by Firaxis, 2K, the State of Israel or any person depicted. The game deals with war, terror and the Holocaust as historical events. Its framing is Israeli, every fact cites a source, and no quotes are invented. See [Historical content](#history-sources-and-accuracy).
 
-##### [Report a bug](https://github.com/eyalgolan/statecraft-israel/issues/new?template=bug_report.yml) | [Report a historical error](https://github.com/eyalgolan/statecraft-israel/issues/new?template=historical_accuracy.yml) | [Discussions](https://github.com/eyalgolan/statecraft-israel/discussions) | [Changelog](CHANGELOG.md)
+##### [Report a bug](https://github.com/eyalgolan/statecraft-israel/issues/new?template=bug_report.yml) | [Report a historical error](https://github.com/eyalgolan/statecraft-israel/issues/new?template=historical_accuracy.yml) | [Discussions](https://github.com/eyalgolan/statecraft-israel/discussions) | [Roadmap](#roadmap) | [Changelog](CHANGELOG.md)
 
 ## What is this?
 
@@ -81,10 +81,42 @@ It is an early, honest prototype.
 
 ## Roadmap
 
-- **Visual v1 (done):** shadows at map scale, a two-band tilt-shift, a stylised terrain shader, a graded sea, a cleaner hex grid and serif labels.
-- **GDD v0.1 (next):** the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md), in phases: a first slice with one city, training and one new settlement, then monthly turns and the five resources, cities, pioneers and construction, military units and combat, settlement control, and the 48-turn 1948–1951 game.
-- **M4:** a historian review and a hosted browser build.
-- **Art track:** era-correct 3D settlements, vegetation and units, toward the concept image.
+The live tracker is [#374](https://github.com/eyalgolan/statecraft-israel/issues/374). The plan behind it is the [GDD v0.1 build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md). The roadmap sets no dates.
+
+### Main track: the 1948 to 1951 MVP
+
+```mermaid
+flowchart LR
+  V["Visual v1"]:::done --> P0["0 · Decisions"]:::now
+  P0 --> P1["1 · Vertical slice"]:::now
+  P1 --> P2["2 · Monthly turns"]:::next
+  P2 --> P3["3 · Cities"]:::next
+  P3 --> P4["4 · Pioneers"]:::next
+  P4 --> P5["5 · Units and combat"]:::next
+  P5 --> P6["6 · Settlement control"]:::next
+  P6 --> P7["7 · Full MVP"]:::next
+  classDef done fill:#e3f1e8,stroke:#2f7d4f,color:#1c2430
+  classDef now fill:#f8eedb,stroke:#b7791f,color:#1c2430
+  classDef next fill:#eceff3,stroke:#8792a2,color:#1c2430
+```
+
+| Phase | What it adds | Status | Issue |
+|---|---|---|---|
+| 0 | Owner decisions on the open GDD items | In progress: the Phase 1 decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
+| 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | In progress: 2 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
+| 2 | Monthly turns for the real game, and the five resources | Next | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
+| 3 | Every city, with housing, jobs and immigrant absorption | Later | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
+| 4 | Pioneers, building sites, roads and railways | Later | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
+| 5 | Military units, movement and combat | Later | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | Later | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | Ministers, events and the full 48-turn game | Later | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+
+### Other tracks
+
+- **Art:** era-correct 3D settlements, vegetation and units, toward the concept image.
+- **Release (M4):** a historian review and a hosted browser build.
+- **Platforms:** desktop builds and Steam ([#54](https://github.com/eyalgolan/statecraft-israel/issues/54)).
+- **Later eras:** the Yishuv before 1948, and the years after 1956, are paused until the MVP is done ([#49](https://github.com/eyalgolan/statecraft-israel/issues/49) to [#53](https://github.com/eyalgolan/statecraft-israel/issues/53)).
 
 ## Play
 

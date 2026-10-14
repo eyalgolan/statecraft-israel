@@ -22,6 +22,7 @@
 - [ ] Every fact added or changed in `content/` has `sources:` with a checked date (`docs/CONTENT_POLICY.md`).
 - [ ] No quote is attributed to a real person unless it is sourced verbatim.
 - [ ] Every new image, video, font, audio or map-data file has an `ASSETS.yaml` row.
+- [ ] If this finishes a Phase 1 PR or a phase of #374, the Roadmap table is updated in `README.md` and `README.he.md` (`CONTRIBUTING.md`, rule 9).
 - [ ] If `unity/` changed: Unity edit-mode tests ran locally, and their result is pasted above (CI does not run them).
 - [ ] Nothing in the diff contains a credential, a Unity Cloud id or personal data.
 - [ ] AI-assisted parts are disclosed under "AI assistance", and I can defend every line (`CONTRIBUTING.md`).

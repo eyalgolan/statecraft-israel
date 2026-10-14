@@ -132,6 +132,11 @@ def test_pr_template_asks_for_ai_disclosure_issue_link_and_goldens():
     assert "## [Unreleased]" in text
 
 
+def test_pr_template_asks_for_the_roadmap_status():
+    text = read(".github/pull_request_template.md")
+    assert "Roadmap" in text and "README.md" in text and "README.he.md" in text and "#374" in text
+
+
 def test_content_policy_claims_no_mechanism_that_does_not_exist():
     # Review I1: living-people exclusion, share-alike refusal and a claim verifier have no code behind them.
     text = " ".join(read("docs/CONTENT_POLICY.md").split())

@@ -72,6 +72,26 @@ def test_history_section_is_accurate():
     assert "DRAFT" not in read("README.md")  # review I3: no such stamp exists
 
 
+# The live tracker (#374) and one issue per GDD phase, 0 to 7 (docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md, §6).
+ROADMAP_ISSUES = (374, 375, 382, 383, 384, 385, 386, 387)
+
+
+def test_roadmap_links_the_tracker_and_every_phase_in_both_readmes():
+    for rel, heading, anchor in (("README.md", "## Roadmap", "#roadmap"), ("README.he.md", "## מפת דרכים", "#מפת-דרכים")):
+        road = section(read(rel), heading)
+        assert "```mermaid" in road, rel
+        for n in ROADMAP_ISSUES:
+            assert f"https://github.com/eyalgolan/statecraft-israel/issues/{n})" in road, (rel, n)
+        assert f"]({anchor})" in read(rel).split(heading, 1)[0], (rel, "the link bar points at the roadmap")
+
+
+def test_roadmap_phase_1_progress_matches_in_both_readmes():
+    # The status is updated by hand (PR template); this catches one README moving without the other.
+    en = re.search(r"(\d+) of (\d+) PRs merged", section(read("README.md"), "## Roadmap"))
+    he = re.search(r"(\d+) מתוך (\d+) PRs", section(read("README.he.md"), "## מפת דרכים"))
+    assert en and he and en.groups() == he.groups()
+
+
 def test_play_is_run_locally_with_hosted_build_planned_for_m4():
     play = section(read("README.md"), "## Play")
     assert "planned for M4" in play and "BUILDING.md" in play and "TODO" not in read("README.md")
