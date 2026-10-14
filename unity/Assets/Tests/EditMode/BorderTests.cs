@@ -469,12 +469,14 @@ public class BorderTests
         yield return null;
         RenderSample.TiltShift(false);
         PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+        // Steady frames: the moved count must be 0, and the in-map sea is the terrain pass's pixel plus the additive
+        // TerrainWater, so the terrain pass's rare transient pixels (#440) reach it (RenderSample.RenderSteady).
         VisualToggles.Set(MapBorders.ToggleName, false);
-        var off = RenderSample.Render(cam, 1920, 1080);
+        var off = RenderSample.RenderSteady(cam, 1920, 1080);
         VisualToggles.Set(MapBorders.ToggleName, true);
         BorderProof.Show(map);
         Camera.main.transform.Find("BorderBanner").gameObject.SetActive(false);   // the label is not a band
-        var on = RenderSample.Render(cam, 1920, 1080);
+        var on = RenderSample.RenderSteady(cam, 1920, 1080);
         int water = 0, moved = 0, changed = 0;
         for (int i = 0; i < on.Pixels.Length; i++)
         {

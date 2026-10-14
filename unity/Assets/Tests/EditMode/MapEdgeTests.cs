@@ -59,9 +59,11 @@ public class MapEdgeTests
             {
                 rig.LookAt = new Vector3(corner.x, 0, corner.y); rig.Distance = CameraController.MinDistance; rig.Yaw = 0; rig.TopInset = 0;
                 for (int i = 0; i < 20; i++) CameraController.Step(rig, new CameraInput { Pan = push }, CameraController.MaxFrameSeconds, bounds, ground, top);
-                var with = RenderSample.Render(cam, W, H);
+                // Steady frames: the frame count must be 0, and the terrain pass's rare transient pixels (#440) reach past
+                // Differs' 2.5/255 (RenderSample.RenderSteady).
+                var with = RenderSample.RenderSteady(cam, W, H);
                 frame.enabled = false;
-                var without = RenderSample.Render(cam, W, H);
+                var without = RenderSample.RenderSteady(cam, W, H);
                 frame.enabled = true;
                 map.Terrain.enabled = false;
                 var noTerrain = RenderSample.Render(cam, W, H);
@@ -123,7 +125,7 @@ public class MapEdgeTests
                 pose.Apply(rig, map.Frame); rig.TopInset = 0;
                 CameraController.Step(rig, new CameraInput(), 0f, bounds, ground, top);
                 // Steady frames: at gameplay03 the count must be 0, and the terrain pass's rare transient pixels (#440)
-                // reach 8/255, past Differs' 2.5/255 (RenderSample.RenderSteady).
+                // reach 26/255, past Differs' 2.5/255 (RenderSample.RenderSteady).
                 var with = RenderSample.RenderSteady(cam, W, H);
                 frame.enabled = false;
                 var without = RenderSample.RenderSteady(cam, W, H);
