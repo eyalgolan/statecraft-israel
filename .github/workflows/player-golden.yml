@@ -3,7 +3,8 @@ name: Player golden
 # The licence-free golden check of the released desktop players (plan
 # docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sections 2.2 and 6.3; decision O7 in
 # docs/oss/DECISIONS.md). The players are built on the owner's Mac and attached to a GitHub Release; this workflow only
-# downloads them and runs `-batchmode -nographics -golden` on clean GitHub-hosted machines (docs/determinism.md). No
+# downloads them and runs `-batchmode -nographics -golden` on clean GitHub-hosted machines (docs/determinism.md), the
+# Linux player under `xvfb-run -a` because it needs a display even headless (issue #533). No
 # Unity install, no Unity licence and no secret: the only credential is the default token, read-only, which
 # `gh release download` uses.
 #
@@ -126,6 +127,11 @@ jobs:
           TAG: ${{ needs.plan.outputs.tag }}
           ASSET: ${{ matrix.asset }}
         run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$ASSET" --dir "$RUNNER_TEMP/download"
+      # The Linux player crashes with no display at all, -nographics or not (issue #533), so player_golden_check.py runs
+      # it under xvfb-run (DISPLAY_WRAPPER). The image usually has xvfb already; this makes it explicit.
+      - name: Install a virtual X display (Linux)
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends xvfb xauth
       - name: Run the player's golden check
         env:
           PLATFORM: ${{ matrix.platform }}

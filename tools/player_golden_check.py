@@ -18,7 +18,8 @@ manual run; on a release event it passes (a web-only release) but writes an "UNC
 `run` checks the archive's SHA-256 against that digest (so a re-uploaded asset fails until it is re-planned), unpacks it
 into an empty folder, finds the player, checks the layout (the notices of REQUIRED_NOTICES at the top level beside the
 player or the .app), runs it with
-`-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md) and passes only when it exits 0 and its log
+`-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md), the Linux player under `xvfb-run -a`
+(DISPLAY_WRAPPER: it crashes with no display at all), and passes only when it exits 0 and its log
 holds `GOLDEN OK 1950 <hash1950>` and `GOLDEN OK 1952 <hash1952>` from the golden manifest, and no FAIL line. On failure
 it prints the whole player log. With --arch (the Mac app, run once per slice) the runner's `uname -m` must be that
 architecture and `lipo -archs` must list it. Exit 0 when the check passes, 1 when it fails, 2 on bad input.
@@ -31,6 +32,8 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import signal
 import subprocess
 import sys
 import tarfile
@@ -66,6 +69,14 @@ REQUIRED_NOTICES = ["LICENSE", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.
                     "LICENSES/YamlDotNet-MIT.txt", "NOTICE", "OFL-EBGaramond.txt", "OFL-FrankRuhlLibre.txt",
                     "THIRD-PARTY-NOTICES.md"]
 NOTICE_TOPS = {n.split("/")[0] for n in REQUIRED_NOTICES}
+
+# What the player is started behind, by platform. Linux: a virtual X display. Unity 6's Linux player picks its window
+# backend (x11 or wayland) at start-up, and with neither DISPLAY nor WAYLAND_DISPLAY set it picks none ("Selected window
+# backend: (null)") and segfaults in PlayerMain after loading the first scene, with -batchmode -nographics or without them
+# (issue #533: the v0.1.0-rc.0 run on ubuntu-24.04, reproduced in an ubuntu:24.04 x86_64 container). Under xvfb-run it
+# selects x11 and passes; -nographics still keeps the Null graphics device, so the runner needs no GPU.
+# A test pins this command.
+DISPLAY_WRAPPER = {"linux": ["xvfb-run", "-a"]}
 
 GOLDENS = (("1950", "hash1950"), ("1952", "hash1952"))
 FAIL = re.compile(r"\b(GOLDEN FAIL|BOOT FAIL)\b")
@@ -219,17 +230,31 @@ def check_arch(exe: Path, arch: str, machine: str, archs: str) -> list[str]:
     return problems
 
 
-def run_player(exe: Path, log: Path, timeout: int) -> int | None:
+def player_command(exe: Path, log: Path, platform: str) -> list[str]:
+    """The golden run's command line: the player with -batchmode -nographics -golden and an absolute -logFile, behind
+    the platform's DISPLAY_WRAPPER if it has one."""
+    return [*DISPLAY_WRAPPER.get(platform, []), str(exe), "-batchmode", "-nographics", "-golden", "-logFile",
+            str(log.resolve())]
+
+
+def run_player(exe: Path, log: Path, timeout: int, platform: str) -> int | None:
     """Runs the golden check; the exit code, or None on timeout. subprocess waits for a Windows GUI-subsystem player
-    too, which a plain PowerShell call would not."""
+    too, which a plain PowerShell call would not. On POSIX the run gets its own process group and a timeout kills the
+    whole group: xvfb-run starts the player and Xvfb as its children, and killing only xvfb-run would leave them."""
     if os.name != "nt":
         exe.chmod(exe.stat().st_mode | 0o111)
-    cmd = [str(exe), "-batchmode", "-nographics", "-golden", "-logFile", str(log.resolve())]
+    cmd = player_command(exe, log, platform)
     print("RUN", " ".join(cmd), flush=True)
-    try:
-        return subprocess.run(cmd, cwd=exe.parent, timeout=timeout).returncode
-    except subprocess.TimeoutExpired:
-        return None
+    with subprocess.Popen(cmd, cwd=exe.parent, start_new_session=os.name != "nt") as proc:
+        try:
+            return proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if os.name != "nt":
+                os.killpg(proc.pid, signal.SIGKILL)
+            else:
+                proc.kill()
+            proc.wait()
+            return None
 
 
 def summary(tag: str, include: list[dict], ok: bool) -> str:
@@ -285,13 +310,16 @@ def cmd_run(a) -> int:
             print(f"ARCH runner {machine}, player slices {archs.strip()}", flush=True)
             if problems := check_arch(exe, a.arch, machine, archs):
                 raise ValueError("; ".join(problems))
+        if (wrapper := DISPLAY_WRAPPER.get(a.platform)) and not shutil.which(wrapper[0]):
+            raise ValueError(f"{wrapper[0]} is not installed: the {a.platform} player needs a virtual display "
+                             "(apt-get install xvfb; the workflow installs it)")
     except (OSError, ValueError, subprocess.CalledProcessError, tarfile.TarError, zipfile.BadZipFile) as e:
         print(f"::error::{a.platform}: {e}")
         print(f"PLAYER GOLDEN ERROR {a.platform}")
         return 2
     log = work / "player.log"
     try:
-        code = run_player(exe, log, a.timeout)
+        code = run_player(exe, log, a.timeout, a.platform)
     except OSError as e:   # the player could not be started at all (for example: Exec format error); it has no exit code
         code, start_error = None, f"the player could not be started: {e}"
     else:

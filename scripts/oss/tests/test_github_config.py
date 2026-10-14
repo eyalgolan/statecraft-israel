@@ -170,6 +170,12 @@ def test_player_golden_runs_only_the_repositorys_own_released_players():
     assert '--sha256 "$SHA256"' in run_step["run"] and run_step["env"]["SHA256"] == "${{ matrix.sha256 }}"
     assert '${ARCH:+--arch "$ARCH"}' in run_step["run"] and run_step["env"]["ARCH"] == "${{ matrix.arch }}"
     assert golden["name"] == "Player golden (${{ matrix.label }})" and golden["runs-on"] == "${{ matrix.runner }}"
+    # #533 (P62): the Linux player needs an X display even with -nographics; player_golden_check.py runs it under
+    # xvfb-run, so the Linux job installs xvfb before that step, and only the Linux job.
+    names = [s.get("name", "") for s in golden["steps"]]
+    xvfb = next(s for s in golden["steps"] if "xvfb" in s.get("run", ""))
+    assert xvfb["if"] == "matrix.platform == 'linux'" and "apt-get install" in xvfb["run"]
+    assert names.index(xvfb["name"]) < names.index(run_step["name"])
     downloads = [s["run"] for s in steps(wf) if "gh release download" in s.get("run", "")]
     assert downloads and all('--repo "$GITHUB_REPOSITORY"' in r for r in downloads)
     assert "curl" not in text and "wget" not in text and "download-artifact" not in text

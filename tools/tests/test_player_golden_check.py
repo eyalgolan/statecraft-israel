@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -30,6 +31,20 @@ def add_notices_to_tar(t):
         data = f"{n}\n".encode()
         info.size = len(data)
         t.addfile(info, io.BytesIO(data))
+
+
+@pytest.fixture
+def fake_xvfb_run(tmp_path, monkeypatch):
+    """A stand-in for xvfb-run on PATH: it records its arguments, then runs the command as its child, as xvfb-run does
+    (so a timeout must stop a grandchild). The file it records to is returned."""
+    calls = tmp_path / "xvfb-run-calls.txt"
+    bin_dir = tmp_path / "fakebin"
+    bin_dir.mkdir()
+    fake = bin_dir / "xvfb-run"
+    fake.write_text(f'#!/bin/sh\necho "$@" >> "{calls}"\n[ "$1" = -a ] || exit 99\nshift\n"$@"\n')
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    return calls
 
 
 def release(tag, *names, draft=False):
@@ -227,8 +242,44 @@ def test_unpack_keeps_the_executable_bit_and_refuses_paths_that_leave_the_folder
         pg.unpack(tmp_path / "good.7z", tmp_path / "out4")
 
 
+def test_the_linux_player_runs_under_a_virtual_x_display_and_the_others_run_bare(tmp_path):
+    # #533 (P62): with no X or Wayland display, Unity 6's Linux player selects no window backend ("Selected window
+    # backend: (null)") and segfaults in PlayerMain, -batchmode -nographics or not. xvfb-run gives it one; -nographics
+    # still keeps the Null graphics device, so the runner needs no GPU.
+    exe, log = tmp_path / "Statecraft.x86_64", tmp_path / "player.log"
+    args = [str(exe), "-batchmode", "-nographics", "-golden", "-logFile", str(log.resolve())]
+    assert pg.player_command(exe, log, "linux") == ["xvfb-run", "-a", *args]
+    assert pg.player_command(exe, log, "windows") == args
+    assert pg.player_command(exe, log, "macos") == args
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="the fake player is a shell script")
-def test_run_passes_a_player_that_prints_the_goldens_and_prints_the_log_when_it_does_not(tmp_path, capsys):
+def test_a_linux_run_without_xvfb_run_is_refused_before_the_player_runs(tmp_path, capsys, monkeypatch):
+    (tmp_path / "manifest.txt").write_text(MANIFEST)
+    arc = fake_linux_player(tmp_path, b"#!/bin/sh\n")
+    monkeypatch.setenv("PATH", str(tmp_path / "nothing-here"))
+    code = pg.main(["run", "--platform", "linux", "--manifest", str(tmp_path / "manifest.txt"), "--archive", str(arc),
+                    "--sha256", pg.sha256(arc), "--work", str(tmp_path / "w")])
+    out = capsys.readouterr().out
+    assert code == 2 and "xvfb-run is not installed" in out and "RUN " not in out
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the fake player and xvfb-run are shell scripts")
+def test_a_timeout_also_stops_what_xvfb_run_started(tmp_path, fake_xvfb_run):
+    # xvfb-run runs the player as its child; killing only xvfb-run would leave the player running.
+    exe = tmp_path / "Statecraft.x86_64"
+    pid_file = tmp_path / "player.pid"
+    exe.write_text(f'#!/bin/sh\necho $$ > "{pid_file}"\nexec sleep 30\n')
+    exe.chmod(0o755)
+    assert pg.run_player(exe, tmp_path / "player.log", 2, "linux") is None
+    pid = int(pid_file.read_text())
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the fake player is a shell script")
+def test_run_passes_a_player_that_prints_the_goldens_and_prints_the_log_when_it_does_not(tmp_path, capsys,
+                                                                                          fake_xvfb_run):
     (tmp_path / "manifest.txt").write_text(MANIFEST)
 
     def archive(name, script):
@@ -254,7 +305,9 @@ def test_run_passes_a_player_that_prints_the_goldens_and_prints_the_log_when_it_
     assert "but GitHub's digest for the asset is" in out and not (tmp_path / "w0").exists()
     assert pg.main(args + ["--archive", str(ok), *sha(ok), "--work", str(tmp_path / "w1")]) == 0
     out = capsys.readouterr().out
-    assert "PLAYER GOLDEN OK linux" in out and "ARCHIVE ok.tar.gz sha256 " in out and "-batchmode -nographics -golden -logFile" in out
+    assert "PLAYER GOLDEN OK linux" in out and "ARCHIVE ok.tar.gz sha256 " in out
+    assert "RUN xvfb-run -a " in out and "-batchmode -nographics -golden -logFile" in out
+    assert fake_xvfb_run.read_text().startswith("-a ") and "Statecraft.x86_64 -batchmode -nographics" in fake_xvfb_run.read_text()
 
     bad = archive("bad.tar.gz", "for a; do log=$a; done\necho 'GOLDEN FAIL 1950 x expected y' >> \"$log\"\nexit 1\n")
     assert pg.main(args + ["--archive", str(bad), *sha(bad), "--work", str(tmp_path / "w2")]) == 1
@@ -316,7 +369,10 @@ def fake_linux_player(tmp_path, body: bytes, name="p.tar.gz"):
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="exec format errors are POSIX")
-def test_a_player_that_cannot_start_fails_cleanly(tmp_path, capsys):
+def test_a_player_that_cannot_start_fails_cleanly(tmp_path, capsys, monkeypatch):
+    # The player started directly (as on Windows and macOS): under xvfb-run an unstartable Linux player is xvfb-run's
+    # exit code 126 instead, which the exit-code rule already fails.
+    monkeypatch.setattr(pg, "DISPLAY_WRAPPER", {})
     (tmp_path / "manifest.txt").write_text(MANIFEST)
     arc = fake_linux_player(tmp_path, b"\x00\x01 not an executable")
     code = pg.main(["run", "--platform", "linux", "--manifest", str(tmp_path / "manifest.txt"), "--archive", str(arc),
