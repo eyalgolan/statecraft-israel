@@ -57,6 +57,9 @@ public class UnitPlinthTests
             Assert.AreEqual(UnitFlags.MeshName(side), flag.GetComponent<MeshFilter>().sharedMesh.name, $"{what}: the flag is {side}'s");
         }
         else Assert.IsNull(flag, $"{what}: {side} has no sourced flag, so none is drawn");
+        var badge = token.Find("Badge");
+        if (flag != null && badge != null)   // the flag flies clear of the badge over the trio (a compact token's too)
+            Assert.Greater(flag.position.x - badge.position.x, UnitBadge.SizeM / 2f, $"{what}: the flag's pole stands clear of the badge");
         foreach (var f in token.Cast<Transform>().Where(t => t.name.StartsWith("Rifleman")))
             Assert.AreEqual(plinth.position.y, f.position.y, 0.5f, $"{what}/{f.name}: stands on the plinth's top");
     }

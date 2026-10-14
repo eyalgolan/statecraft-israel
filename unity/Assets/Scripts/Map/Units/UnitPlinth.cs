@@ -21,8 +21,10 @@ namespace Statecraft.Game.Map.Units
         /// radius.</summary>
         public const float ThicknessShare = 0.06f, RimHeightShare = 0.022f, RimInner = 0.915f, RimOuter = 0.985f;
         /// <summary>Where the flag's pole stands, as shares of the radius: back (north, away from the camera) and to the
-        /// east, so the flag flies clear of the badge over the trio's middle.</summary>
+        /// east, so the flag flies clear of the badge over the trio's middle; never nearer the middle than half the badge's
+        /// width and <see cref="FlagClearOfBadgeM"/> (a compact token's plinth is half the size, its badge is not).</summary>
         public static readonly Vector2 FlagAt = new Vector2(0.45f, 0.55f);
+        public const float FlagClearOfBadgeM = 150f;
         public const int RimSlot = UnitPalette.RoundelWhite;
         const int Segments = 28;
 
@@ -74,7 +76,8 @@ namespace Statecraft.Game.Map.Units
             }
             if (UnitFlags.Has(side))
             {
-                var foot = at + new Vector3(FlagAt.x, 0f, FlagAt.y) * radius;
+                float east = Mathf.Max(FlagAt.x * radius, UnitBadge.SizeM / 2f + FlagClearOfBadgeM);
+                var foot = at + new Vector3(east, 0f, FlagAt.y * radius);
                 UnitShowcase.Piece(token, FlagName, mesh("unit-flag-" + side, () => UnitFlags.Build(side)!), paint, foot, Quaternion.identity,
                     UnitBadge.FigureHeightM * UnitShowcase.FigureScale);
             }
