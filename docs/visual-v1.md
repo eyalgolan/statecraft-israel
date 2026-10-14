@@ -1782,7 +1782,7 @@ Colour (WebGL `?shot`, checkpoint `promo-land-r5` against `promo-sea-r2`): gamep
 diorama02 saturation 0.4183 -> 0.4164 (bar <= 0.48), warmth 0.1171 -> 0.1154 (bar 0.087-0.145), palette distance
 0.5869 -> 0.5868. Open item 3: the land lowers gameplay03 saturation by 0.011. Open item 5: the olive plain / gold hills
 seam is now fields against garrigue, a softer step (owner to judge).
-Licence: the texture is `owner-verify` in `ASSETS.yaml` pending decision D13 (`docs/oss/DECISIONS.md`).
+Licence: CC BY-SA 4.0, decided by the owner on 2026-10-14 (D13 in `docs/oss/DECISIONS.md`).
 Still different from the promo: soft at close zoom (rows, hedges and bushes read at the gameplay zoom, blur at 15-20 km
 and closer); terraces read faintly; the orchard ground and promo-art's groves follow separate rules; the promo's ground is warmer and browner under
 its grade.
