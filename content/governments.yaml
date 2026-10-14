@@ -35,9 +35,23 @@ governments:
     # Approved 69-42 with 2 abstentions on 1 November 1950. Resigned 14 February 1951 and served as a transitional
     # government until the Third Government was sworn in on 8 October 1951. From 20 August 1951 its parties are measured
     # against the Second Knesset, where the United Religious Front and the Democratic List of Nazareth held no seats.
+    # Their MKs sat there for the lists that join on that day (Knesset faction records, #315): the Front's for Hapoel
+    # HaMizrachi, Mizrachi, Agudat Yisrael and Poalei Agudat Yisrael (Shapira's and Levin's Second Knesset rows are 25993
+    # and 25938), and Seif el-Din el-Zoubi of the Nazareth list for the Democratic List for Israeli Arabs (row 25856).
+    # The two old lists stay, as for the Sixth Government: each list has seats in only one of the two Knessets. That makes
+    # 69 of 120.
     from: 1950-11-01
     to: 1951-10-08
     coalition: [mapai, united_religious_front, progressive, sephardim, democratic_list_nazareth]
+    coalition_changes:
+      - date: 1951-08-20
+        joins: [hapoel_hamizrachi, mizrachi, agudat_yisrael, poalei_agudat_yisrael, democratic_list_israeli_arabs]
+        sources:
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Faction?$filter=KnessetNum%20eq%202", checked: 2026-10-14 }
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=FactionID%20eq%20131", checked: 2026-10-14 }
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=FactionID%20eq%20111", checked: 2026-10-14 }
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=KnessetNum%20eq%202", checked: 2026-10-14 }
+          - { url: "https://web.archive.org/web/20160522174905/https://www.knesset.gov.il/history/eng/eng_hist2_s.htm", checked: 2026-10-14 }
     sources:
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%202", checked: 2026-10-14 }
       - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250247.pdf", checked: 2026-10-14 }

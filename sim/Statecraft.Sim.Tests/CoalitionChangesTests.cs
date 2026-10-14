@@ -188,6 +188,51 @@ public class CoalitionChangesTests
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
     [Fact]
+    public void TheSecondGovernmentFacesTheSecondKnessetThroughItsListsSuccessors()
+    {
+        // #315: from 20 August 1951 the transitional Second Government is measured against the Second Knesset, where
+        // the United Religious Front's MKs sat as four lists and the Democratic List of Nazareth's as the Democratic
+        // List for Israeli Arabs (Knesset faction records). Without them it read 51 of 120.
+        var second = Real.Governments.Single(g => g.Id == "second_government");
+        Assert.Equal(second.Coalition, second.CoalitionOn(new DateTime(1951, 8, 19)));
+        Assert.Equal(new[] { "mapai", "united_religious_front", "progressive", "sephardim", "democratic_list_nazareth" }, second.CoalitionOn(new DateTime(1951, 8, 19)));
+        var change = second.CoalitionChanges.Single();
+        Assert.Equal(new DateTime(1951, 8, 20), change.Date);
+        Assert.Empty(change.Leaves);
+        Assert.Equal(new[] { "hapoel_hamizrachi", "mizrachi", "agudat_yisrael", "poalei_agudat_yisrael", "democratic_list_israeli_arabs" }, change.Joins);
+        foreach (var party in new[] { "mapai", "hapoel_hamizrachi", "agudat_yisrael" })
+            Assert.Contains(party, second.CoalitionOn(new DateTime(1951, 8, 20)));
+        Assert.Equal((73, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1951, 8, 19)));   // the First Knesset
+        Assert.Equal((69, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1951, 8, 20)));   // 45 + 8 + 2 + 3 + 2 + 3 + 4 + 2
+        Assert.Equal((69, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1951, 10, 7)));
+        Assert.True(PoliticsSystem.HasMajority(Real, new DateTime(1951, 8, 20)));
+    }
+
+    [Fact]
+    public void ThePlayerCanReappointShapiraAndLevinInTheSecondKnesset()
+    {
+        // Their Second Government terms take their Second Knesset factions from 20 August 1951 (#457), so those
+        // factions must be in the coalition for the cabinet's party rule.
+        var s = new GameState { Date = new DateTime(1951, 9, 1) };
+        Assert.Equal("hapoel_hamizrachi", Offices.PartyOf(Real, Real.People.Single(p => p.Id == "shapira"), s.Date));
+        Assert.Equal("agudat_yisrael", Offices.PartyOf(Real, Real.People.Single(p => p.Id == "levin"), s.Date));
+        Assert.Null(Cabinet.Check(Real, s, "welfare_minister", "shapira"));
+        Assert.Null(Cabinet.Check(Real, s, "health_minister", "levin"));
+        Assert.Null(Cabinet.Check(Real, s, "health_minister", "sheetrit"));   // Mapai from that day
+        var before = new GameState { Date = new DateTime(1951, 8, 19) };
+        Assert.Null(Cabinet.Check(Real, before, "welfare_minister", "shapira"));   // still the United Religious Front
+    }
+
+    [Fact]
+    public void ARealRunReportsTheSecondGovernmentsListsJoiningWithTheSecondKnesset()
+    {
+        var why = new List<Cause>();
+        PoliticsSystem.ReportChanges(Real, new DateTime(1951, 8, 18), new DateTime(1951, 8, 22), why);
+        Assert.Contains(why, w => w.Message == "Second Knesset convened (120 seats, elected 30 July 1951); coalition holds 69/120");
+        Assert.Contains(why, w => w.Message == "Hapoel HaMizrachi, Mizrachi, Agudat Yisrael, Poalei Agudat Yisrael, Democratic List for Israeli Arabs joined the coalition (coalition holds 69/120)");
+    }
+
+    [Fact]
     public void TheThirdGovernmentLosesTheAgudotIn1952AndHasNoMajorityUntilTheFourth()
     {
         Assert.Equal((65, 120), PoliticsSystem.CoalitionSeats(Real, new DateTime(1952, 9, 17)));
