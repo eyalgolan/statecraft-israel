@@ -64,14 +64,34 @@ def test_plan_lists_all_three_players_with_githubs_digests():
     r = release("v0.2.0", "statecraft-israel-v0.2.0-web.zip", *players("v0.2.0"))
     include, msgs, ok = pg.plan("v0.2.0", r, "release")
     assert ok and msgs == []
+    win, lin, mac = players("v0.2.0")
     assert include == [
-        {"platform": "windows", "runner": "windows-2025", "asset": "statecraft-israel-v0.2.0-windows-x64.zip",
-         "sha256": digest("statecraft-israel-v0.2.0-windows-x64.zip")[7:]},
-        {"platform": "linux", "runner": "ubuntu-24.04", "asset": "statecraft-israel-v0.2.0-linux-x64.tar.gz",
-         "sha256": digest("statecraft-israel-v0.2.0-linux-x64.tar.gz")[7:]},
-        {"platform": "macos", "runner": "macos-15", "asset": "statecraft-israel-v0.2.0-macos-universal.zip",
-         "sha256": digest("statecraft-israel-v0.2.0-macos-universal.zip")[7:]},
+        {"platform": "windows", "label": "windows", "runner": "windows-2025", "arch": "", "asset": win,
+         "sha256": digest(win)[7:]},
+        {"platform": "linux", "label": "linux", "runner": "ubuntu-24.04", "arch": "", "asset": lin,
+         "sha256": digest(lin)[7:]},
+        {"platform": "macos", "label": "macos arm64", "runner": "macos-15", "arch": "arm64", "asset": mac,
+         "sha256": digest(mac)[7:]},
+        {"platform": "macos", "label": "macos x86_64", "runner": "macos-15-intel", "arch": "x86_64", "asset": mac,
+         "sha256": digest(mac)[7:]},
     ]
+
+
+def test_the_mac_player_runs_on_apple_silicon_and_on_intel():
+    # Review S3: the Universal app has two native IL2CPP slices; each is run on its own CPU, never under Rosetta.
+    assert pg.RUNNERS["macos"] == [("macos-15", "arm64"), ("macos-15-intel", "x86_64")]
+    include, _, ok = pg.plan("v0.2.0", release("v0.2.0", *players("v0.2.0")), "workflow_dispatch")
+    assert ok and [(e["runner"], e["arch"]) for e in include if e["platform"] == "macos"] == [
+        ("macos-15", "arm64"), ("macos-15-intel", "x86_64")]
+    assert len({e["label"] for e in include}) == len(include)   # the job names differ
+
+
+def test_the_arch_check_catches_a_wrong_runner_or_a_missing_slice():
+    exe = Path("Statecraft Israel")
+    assert pg.check_arch(exe, "x86_64", "x86_64", "x86_64 arm64\n") == []
+    assert pg.check_arch(exe, "arm64", "arm64", "x86_64 arm64\n") == []
+    assert pg.check_arch(exe, "x86_64", "arm64", "x86_64 arm64") == ["the runner is arm64, not x86_64: check the runner label"]
+    assert pg.check_arch(exe, "x86_64", "x86_64", "arm64") == ["Statecraft Israel has no x86_64 slice (lipo -archs: arm64)"]
 
 
 @pytest.mark.parametrize("event", ["release", "workflow_dispatch"])
@@ -117,8 +137,8 @@ def test_plan_command_writes_the_matrix_to_the_github_output(tmp_path, monkeypat
     assert pg.main(["plan", "--tag", "v1.0.0", "--event", "release", "--output", str(out)]) == 0
     lines = out.read_text().splitlines()
     matrix = json.loads(lines[0].removeprefix("matrix="))
-    assert [e["platform"] for e in matrix["include"]] == ["windows", "linux", "macos"]
-    assert lines[1] == "count=3"
+    assert [e["label"] for e in matrix["include"]] == ["windows", "linux", "macos arm64", "macos x86_64"]
+    assert lines[1] == "count=4"
 
 
 def test_expected_lines_come_from_the_manifest_and_the_real_manifest_has_them():

@@ -62,8 +62,9 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    ```
 
    Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). It downloads each player,
-   checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on a GitHub
-   Windows, Linux and macOS machine. It fails when only one or two of the three archives are attached. A release with
+   checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on GitHub's
+   Windows and Linux machines, and the Mac app twice: on Apple silicon (`macos-15`, its arm64 slice) and on Intel
+   (`macos-15-intel`, its x86_64 slice). It fails when only one or two of the three archives are attached. A release with
    none passes, but its run summary says UNCHECKED.
    - **The release stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release
      as soon as it is published, so do not announce it before then. Then remove "unchecked" from the notes.

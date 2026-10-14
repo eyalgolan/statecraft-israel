@@ -6,7 +6,8 @@
 docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sections 2.2 and 6.3; decision O7).
 
   uv run tools/player_golden_check.py plan --tag vX.Y.Z --event release|workflow_dispatch --output FILE [--summary FILE] < release.json
-  uv run tools/player_golden_check.py run --platform windows|linux|macos --archive FILE --sha256 HEX --manifest manifest.txt --work DIR
+  uv run tools/player_golden_check.py run --platform windows|linux|macos [--arch arm64|x86_64] --archive FILE --sha256 HEX --manifest manifest.txt
+      --work DIR
 
 `plan` reads `gh release view --json tagName,isDraft,assets` on stdin, checks the tag's form and that the release is
 published, and appends to FILE (the job's $GITHUB_OUTPUT) `matrix=` the GitHub Actions matrix of the players and
@@ -17,7 +18,8 @@ manual run; on a release event it passes (a web-only release) but writes an "UNC
 `run` checks the archive's SHA-256 against that digest (so a re-uploaded asset fails until it is re-planned), unpacks it into an empty folder, finds the player, runs it with
 `-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md) and passes only when it exits 0 and its log
 holds `GOLDEN OK 1950 <hash1950>` and `GOLDEN OK 1952 <hash1952>` from the golden manifest, and no FAIL line. On failure
-it prints the whole player log. Exit 0 when the check passes, 1 when it fails, 2 on bad input.
+it prints the whole player log. With --arch (the Mac app, run once per slice) the runner's `uname -m` must be that
+architecture and `lipo -archs` must list it. Exit 0 when the check passes, 1 when it fails, 2 on bad input.
 
 The release asset names are a contract with the release script (tools/release_build.py): see ASSETS.
 Stdlib only.
@@ -46,8 +48,15 @@ ASSETS = {
     "linux": "statecraft-israel-{tag}-linux-x64.tar.gz",
     "macos": "statecraft-israel-{tag}-macos-universal.zip",
 }
-# The GitHub-hosted runner each player is checked on (free and unlimited for a public repository, plan 6.1).
-RUNNERS = {"windows": "windows-2025", "linux": "ubuntu-24.04", "macos": "macos-15"}
+# The GitHub-hosted runners each player is checked on (standard runners, free and unlimited for a public repository,
+# plan 6.1): (runner label, the CPU architecture it must report). The Universal Mac app runs twice, so each of its two
+# native IL2CPP slices is checked on its own CPU: macos-15 is Apple silicon, macos-15-intel is x86_64 (GitHub offers it
+# until August 2027, runner-images#13045). An empty architecture is not checked.
+RUNNERS = {
+    "windows": [("windows-2025", "")],
+    "linux": [("ubuntu-24.04", "")],
+    "macos": [("macos-15", "arm64"), ("macos-15-intel", "x86_64")],
+}
 
 GOLDENS = (("1950", "hash1950"), ("1952", "hash1952"))
 FAIL = re.compile(r"\b(GOLDEN FAIL|BOOT FAIL)\b")
@@ -70,15 +79,19 @@ def plan(tag: str, release: dict, event: str) -> tuple[list[dict], list[str], bo
         return [], [f"::error::release {tag} is a draft; only published releases are checked"], False
     digests = {a.get("name"): a.get("digest") for a in release.get("assets", [])}
     include, missing, msgs = [], [], []
-    for platform, runner in RUNNERS.items():
+    found = 0
+    for platform, runners in RUNNERS.items():
         name = asset_name(tag, platform)
         if name not in digests:
             missing.append(f"{platform} ({name})")
             continue
+        found += 1
         m = DIGEST.fullmatch(digests[name] or "")
         if not m:
             msgs.append(f"::error::asset {name} has no SHA-256 digest from GitHub ({digests[name]!r})")
-        include.append({"platform": platform, "runner": runner, "asset": name, "sha256": m.group(1) if m else ""})
+        for runner, arch in runners:
+            include.append({"platform": platform, "label": f"{platform} {arch}".strip(), "runner": runner, "arch": arch,
+                            "asset": name, "sha256": m.group(1) if m else ""})
     if not include:
         if event == "workflow_dispatch":
             return [], [f"::error::release {tag} has none of the player assets"], False
@@ -86,7 +99,7 @@ def plan(tag: str, release: dict, event: str) -> tuple[list[dict], list[str], bo
         return [], [f"::warning::UNCHECKED: release {tag} has no desktop player. If players are uploaded later, run "
                     f"gh workflow run player-golden.yml -f tag={tag} (docs/RELEASING.md, step 6)"], True
     if missing:
-        msgs.append(f"::error::release {tag} has {len(include)} of the 3 desktop players; missing: {', '.join(missing)}. "
+        msgs.append(f"::error::release {tag} has {found} of the 3 desktop players; missing: {', '.join(missing)}. "
                     "Attach all three in the same gh release create (docs/RELEASING.md, step 6)")
     if msgs:
         return [], msgs, False
@@ -168,6 +181,17 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def check_arch(exe: Path, arch: str, machine: str, archs: str) -> list[str]:
+    """Problems with running exe's `arch` slice here: this machine must be that CPU (`uname -m`), and the executable
+    must carry the slice (`lipo -archs`), so a wrong runner label cannot quietly check the other slice."""
+    problems = []
+    if machine != arch:
+        problems.append(f"the runner is {machine}, not {arch}: check the runner label")
+    if arch not in archs.split():
+        problems.append(f"{exe.name} has no {arch} slice (lipo -archs: {archs.strip() or 'nothing'})")
+    return problems
+
+
 def run_player(exe: Path, log: Path, timeout: int) -> int | None:
     """Runs the golden check; the exit code, or None on timeout. subprocess waits for a Windows GUI-subsystem player
     too, which a plain PowerShell call would not."""
@@ -187,8 +211,9 @@ def summary(tag: str, include: list[dict], ok: bool) -> str:
     if not include:
         return (f"## Player golden {tag}: UNCHECKED\n\nThe release has no desktop player, so none was run. If players "
                 f"are uploaded later, run `gh workflow run player-golden.yml -f tag={tag}` and wait for it to pass.\n")
-    rows = "".join(f"| {e['platform']} | `{e['asset']}` | `{e['sha256']}` |\n" for e in include)
-    return f"## Player golden {tag}\n\n| Platform | Asset | SHA-256 (GitHub digest) |\n| --- | --- | --- |\n{rows}"
+    rows = "".join(f"| {e['label']} | `{e['runner']}` | `{e['asset']}` | `{e['sha256']}` |\n" for e in include)
+    return (f"## Player golden {tag}\n\n| Player | Runner | Asset | SHA-256 (GitHub digest) |\n| --- | --- | --- | --- |\n"
+            f"{rows}")
 
 
 def cmd_plan(a) -> int:
@@ -223,6 +248,12 @@ def cmd_run(a) -> int:
         work = Path(a.work)
         unpack(archive, work / "player")
         exe = find_player(work / "player", a.platform)
+        if a.arch:
+            machine = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
+            archs = subprocess.run(["lipo", "-archs", str(exe)], capture_output=True, text=True, check=True).stdout
+            print(f"ARCH runner {machine}, player slices {archs.strip()}", flush=True)
+            if problems := check_arch(exe, a.arch, machine, archs):
+                raise ValueError("; ".join(problems))
     except (OSError, ValueError, subprocess.CalledProcessError, tarfile.TarError, zipfile.BadZipFile) as e:
         print(f"::error::{a.platform}: {e}")
         print(f"PLAYER GOLDEN ERROR {a.platform}")
@@ -256,6 +287,8 @@ def main(argv=None) -> int:
     r = sub.add_parser("run")
     r.add_argument("--platform", required=True, choices=sorted(ASSETS))
     r.add_argument("--archive", required=True)
+    r.add_argument("--arch", default="", choices=["", "arm64", "x86_64"],
+                   help="macOS: the slice to check; the runner must be that CPU and the app must carry it")
     r.add_argument("--sha256", required=True, help="the asset's SHA-256 from GitHub (hex), from plan")
     r.add_argument("--manifest", required=True)
     r.add_argument("--work", required=True)
