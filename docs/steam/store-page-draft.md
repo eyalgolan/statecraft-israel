@@ -34,7 +34,7 @@ Updated for the Coming Soon kit (P57, [coming-soon-kit.md](coming-soon-kit.md)) 
 changed from the first draft: the map now colours areas by who held them from 11 June 1948 and ends in a wooden frame
 (#555, #36); boats sail off Jaffa, Tel Aviv and Haifa (#388); the archival recording of the Declaration shipped (#465);
 three historical orders now play a short outcome clip at End Turn; and the desktop builds for Windows, macOS and Linux
-exist (M2). The text still separates what the build does today from what is designed for launch, because Steam asks
+exist (M2; Windows and macOS passed the player check, Linux is pending). The text still separates what the build does today from what is designed for launch, because Steam asks
 the page to show launch content and the launch (O10) is the GDD's MVP, which is not playable yet. Open decision 2 in
 section 8 (which game the page leads with) still applies.
 
@@ -62,7 +62,7 @@ released.
 >
 > **In the build today**
 >
-> - Play from 15 May 1948 to the end of 1951, on Windows, macOS or Linux.
+> - Play from 15 May 1948 to the end of 1951, on Windows or macOS.
 > - Appoint and replace real ministers, such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real
 >   coalition.
 > - Divide a small budget between security, immigrant absorption, the ma'abarot transit camps and austerity.
@@ -103,7 +103,7 @@ Notes on this text:
   "In development" restates only what the GDD fixes, plus G1 (the Burma Road joins objective 3). It leaves out
   everything the GDD marks Open, Proposal or TBD: costs, durations, point values, how ministers are chosen and what
   they do, the role of the coalition, combat rules, and the whole settlement-control system.
-- "on Windows, macOS or Linux" stands only for the platforms that pass M2 (section 9). Cut the platforms that do not.
+- The platforms follow M2: Windows and macOS passed. Linux has not passed in CI yet, so it is not named (see To confirm 12).
 - The sentence about concept-art captions was dropped: this kit's capsules and screenshots are all real engine
   output, so no image on the page is concept art unless the owner adds one (section 7).
 - The GDD says "Liberation War". README.md says "the 1948 war". The text keeps README.md's term **[confirm]**.
@@ -140,7 +140,7 @@ the Burma Road); the added sentences need the same native-speaker review.
 >
 > **מה יש בגרסה היום**
 >
-> - משחקים מ־15 במאי 1948 ועד סוף 1951, ב־Windows, ב־macOS או ב־Linux.
+> - משחקים מ־15 במאי 1948 ועד סוף 1951, ב־Windows או ב־macOS.
 > - ממנים ומחליפים שרים אמיתיים, כמו דוד בן־גוריון, אליעזר קפלן ומשה שרת, בתוך קואליציה אמיתית.
 > - מחלקים תקציב זעום בין ביטחון, קליטת עלייה, המעברות והצנע.
 > - מנהלים את הביטחון על סולם הסלמה של חמש דרגות, מאיום שגרתי ועד מלחמה כוללת, ומגייסים מילואים.
@@ -257,8 +257,9 @@ Facts this draft could not settle. Each is flagged above instead of being assert
 10. **"1948 war" or "Liberation War"** in English, and **"מלחמת השחרור" or "מלחמת העצמאות"** in Hebrew.
 11. **The Hebrew wording** listed at the end of section 3, and the whole Hebrew text, by a native speaker.
 12. **Platform.** The desktop builds (O1, O7) were made on the owner's Mac for M2 on 14 October 2026 (`v0.1.0-rc.0`).
-    The supported-OS list in section 9 names only the platforms whose build passes M2; until the coordinator records
-    that result, it is marked "pending M2 result".
+    M2's CI player golden check ([run 38637103937](https://github.com/eyalgolan/statecraft-israel/actions/runs/38637103937))
+    passed Windows and both macOS slices; the Linux player crashed headless on CI (fix PR #581), so Linux stays pending
+    until a CI run passes. The OS list is in [coming-soon-kit.md, section 6](coming-soon-kit.md#6-tags-languages-and-platforms).
 13. **The store text is itself AI-drafted.** Sections 1 to 3 were written by an AI agent for the owner to edit. Whether
     that needs a line in the disclosure is the owner's call once the text is final.
 

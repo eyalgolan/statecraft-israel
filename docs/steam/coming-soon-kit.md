@@ -90,8 +90,13 @@ ministers in text only.
 
 Seven are marked suitable for all ages, above Valve's "at least four". Valve: "Suitable screenshots should not contain
 gore, violence, or suggestive themes" ([store/assets/standard](https://partner.steamgames.com/doc/store/assets/standard),
-read 14 October 2026). The flags are this kit's proposal; the owner sets them in Steamworks. Screenshots 3 to 5 show
-miniature soldier figures and front lines, with no fighting: the owner may prefer to unflag them.
+read 14 October 2026). The flags are this kit's proposal; the owner sets them in Steamworks. For the owner's
+all-ages call:
+
+- Screenshots 3 to 5 show miniature soldier figures and front lines, with no fighting. The owner may prefer to unflag
+  them.
+- Screenshot 7 (the "Why?" panel) lists "New: The Altalena" under Events. It is only the event's title, with no image
+  or text from the card, but the Altalena event carries the sensitive `war-casualties` tag.
 
 ## 3. Media manifest (files outside git)
 
@@ -260,16 +265,18 @@ Sim (the first tags shown carry the most weight).
 **Languages:** English (interface and subtitles; there is no voice-over). Hebrew only if the owner accepts the report's
 "Game Support Only" idea; the in-game Hebrew UI is a hand-asked preview and the content text is English (#193, #55).
 
-**Supported OS: pending M2 result.** Candidates, from the M2 release builds of `v0.1.0-rc.0` (14 October 2026):
+**Supported OS: Windows and macOS. Linux pending.** This follows M2's real run, the `Player golden` workflow on the
+pre-release `v0.1.0-rc.0` (commit `411b1124`, built 2026-10-14T19:54:20Z):
+[run 38637103937](https://github.com/eyalgolan/statecraft-israel/actions/runs/38637103937), with its result in a comment
+on #533 (issuecomment-6178471285).
 
-| Platform | M2 build (`v0.1.0-rc.0`, commit `411b1124`, built 2026-10-14T19:54:20Z) | Golden check | Steam OS box |
+| Platform | M2 archive | Player golden check on CI | Steam OS box |
 | --- | --- | --- | --- |
-| Windows (64-bit) | `statecraft-israel-v0.1.0-rc.0-windows-x64.zip`, Mono | unchecked on the Mac; the CI `Player golden` workflow runs it | **pending M2 result** |
-| macOS (Universal: Apple silicon arm64 and Intel x86_64) | `statecraft-israel-v0.1.0-rc.0-macos-universal.zip`, IL2CPP | pass on the Mac (both `GOLDEN OK` lines); CI runs both slices | **pending M2 result** |
-| Linux (x64; SteamOS + Linux on the form) | `statecraft-israel-v0.1.0-rc.0-linux-x64.tar.gz`, Mono | unchecked on the Mac; the CI `Player golden` workflow runs it | **pending M2 result** |
+| Windows (64-bit) | `statecraft-israel-v0.1.0-rc.0-windows-x64.zip`, Mono | **pass** (windows-2025: both `GOLDEN OK` lines, `PLAYER GOLDEN OK windows`) | **List** |
+| macOS (Universal: Apple silicon arm64 and Intel x86_64) | `statecraft-israel-v0.1.0-rc.0-macos-universal.zip`, IL2CPP | **pass** on both slices (arm64 on macos-15, x86_64 on macos-15-intel: both `GOLDEN OK` lines, `PLAYER GOLDEN OK macos`); also passed on the owner's Mac | **List** |
+| Linux (x64; "SteamOS + Linux" on the form) | `statecraft-israel-v0.1.0-rc.0-linux-x64.tar.gz`, Mono | **fail**: the player crashed at startup on the headless ubuntu-24.04 runner (`signo:11`, no window backend) | **Pending.** A container repro shows the crash happens only headless (the player runs with a display), and fix PR #581 is open, but the Linux player has not yet passed in CI. List Linux only after a CI run passes. |
 
-The coordinator fills the last column from M2's real run: tick a platform only if its player passes. Signing: none
-(O4 for Windows; the macOS build is not yet notarized), which the owner should weigh before listing macOS.
+Signing: none (O4 for Windows; the macOS build is not yet notarized), which the owner should weigh before listing macOS.
 
 ## 7. Owner checklist: the Steamworks steps, in order
 
@@ -281,7 +288,7 @@ None of these is done. Each is the owner's action.
 2. **App.** Pay the Steam Direct fee (US$100 per app, per #424's research) and create the app named "Statecraft: Israel"
    (D8). Set "This is a free product" (O2).
 3. **Store page, Basic Info.** Name, developer and publisher (the owner), the website (the project site or the GitHub
-   repository; no links in the description), "Coming Soon" with no date, the supported OS from section 6, languages from
+   repository; no links in the description), "Coming Soon" with no date, the supported OS from section 6 (Windows and macOS; Linux only after a CI pass), languages from
    section 6, and the system requirements (from the M2 build record).
 4. **Store page, Description.** Short description (store-page-draft.md section 1; check the field's character limit),
    "About this game" (section 2; Hebrew from section 3 only after a native speaker's review), the mature-content
