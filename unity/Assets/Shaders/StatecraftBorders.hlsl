@@ -7,16 +7,19 @@
 // nothing is drawn. Included at the end of StatecraftMap.hlsl; the terrain calls ScBorderApply last.
 
 TEXTURE2D(_ScRegionTex);  // one texel per hex, linear RGBA8: r + 256 g the region id (0 = none), b's low two bits the style
-                          // (0 = none, 1, 2) and its upper six which border edges the neighbour also draws in the same style (a
+                          // (0 = none, 1, 2, 3) and its upper six which border edges the neighbour also draws in the same style (a
                           // shared edge: each side draws ScSharedBand of the band, so the two make one band centred on the edge), a's low
                           // six bits which edges border another region (MapBorders.Use bakes them; issue #195)
 float4 _ScRegionInfo;     // x q of texel column 0, y r of texel row 0, z width, w height (texels)
 float4 _ScBorders;        // x least band width (px), y widest band (+ wash) as a share of the hex's inradius,
                           // z 1 = no early-out (tests prove the early-out exact), w 1 = on
-// Per style (1 primary, 2 secondary): Colour rgb the edge stripe (linear); Light rgb the inner stripe; Shape x the band's
-// width (m; colour + light stripes), y the colour stripe's share of it, z the wash's width (times the band's), w its strength.
+// Per style (1 primary: the Israeli side, 2 secondary: the other side, 3 neutral: contested, no-man's land, a
+// demilitarized zone, or the 1947 sub-districts before any side is sourced): Colour rgb the edge stripe (linear); Light rgb
+// the inner stripe; Shape x the band's width (m; colour + light stripes), y the colour stripe's share of it, z the wash's
+// width (times the band's), w its strength.
 float4 _ScBorderColour1, _ScBorderLight1, _ScBorderShape1;
 float4 _ScBorderColour2, _ScBorderLight2, _ScBorderShape2;
+float4 _ScBorderColour3, _ScBorderLight3, _ScBorderShape3;
 
 // The outward unit normals of a hex's edges (p space: x east, y south), in tools/hexgrid.py's NEIGHBOURS order (axial
 // steps (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1): MapBorders.NeighbourSteps). Bit i of a hex's edge mask is edge i.
@@ -71,8 +74,8 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
         // segment is never less than to its line), so most pixels fetch no texel at all (review: 7 fetches on every land
         // pixel cost 3.3 ms at gameplay03).
         float footprint = max(length(px), length(py));
-        float washMul = 1.0 + max(_ScBorderShape1.z, _ScBorderShape2.z);
-        float reach = max(max(_ScBorderShape1.x, _ScBorderShape2.x), 1.5 * _ScBorders.x * footprint) * washMul + 1.5 * footprint;
+        float washMul = 1.0 + max(max(_ScBorderShape1.z, _ScBorderShape2.z), _ScBorderShape3.z);
+        float reach = max(max(max(_ScBorderShape1.x, _ScBorderShape2.x), _ScBorderShape3.x), 1.5 * _ScBorders.x * footprint) * washMul + 1.5 * footprint;
         reach = _ScBorders.z > 0.5 ? 1e9 : reach;
         float edge = inradius - max(abs(v.x), max(abs(0.5 * v.x + 0.8660254 * v.y), abs(0.5 * v.x - 0.8660254 * v.y)));
         float4 own = edge < reach && water < 1.0 ? ScRegionAt(qr) : float4(0.0, 0.0, 0.0, 0.0);
@@ -104,10 +107,10 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
                     if (d / aa / share < bestPx / bestHalf) { bestPx = d / aa; bestAa = aa; bestHalf = share; }
                 }
             }
-            bool primary = own.y < 1.5;
-            float4 colour = primary ? _ScBorderColour1 : _ScBorderColour2;
-            float4 light = primary ? _ScBorderLight1 : _ScBorderLight2;
-            float4 shape = primary ? _ScBorderShape1 : _ScBorderShape2;
+            bool primary = own.y < 1.5, neutral = own.y > 2.5;
+            float4 colour = primary ? _ScBorderColour1 : (neutral ? _ScBorderColour3 : _ScBorderColour2);
+            float4 light = primary ? _ScBorderLight1 : (neutral ? _ScBorderLight3 : _ScBorderLight2);
+            float4 shape = primary ? _ScBorderShape1 : (neutral ? _ScBorderShape3 : _ScBorderShape2);
             // The band is shape.x metres wide (it grows towards the camera, like the promo's), never thinner than the least
             // width, and the band plus its wash never wider than _ScBorders.y of the inradius (far zooms: a hex stays a hex).
             float widest = _ScBorders.y * inradius / bestAa;

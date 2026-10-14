@@ -211,13 +211,17 @@ namespace Statecraft.Game.UI
             var names = SettlementPlacer.Parse(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);
             // The 1948 sub-districts, outlined on the map, and each front's 1949 armistice line from its agreement's date
             // where the line exists (display only: the sim never reads them; docs/visual-v1.md, owner rulings 2026-10-11).
+            // Since the owner's rulings of 2026-10-14 the areas are coloured by side from 11 June 1948 (control_hexes_1948_49.yaml),
+            // with the legend in the label.
             var regions = new MapRegions(Subdistricts1948.Parse(inputs.Map.RegionsYaml),
-                string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.Parse(inputs.Map.ArmisticeYaml));
+                string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.Parse(inputs.Map.ArmisticeYaml),
+                string.IsNullOrWhiteSpace(inputs.Map.ControlYaml) ? null : Control1948.Parse(inputs.Map.ControlYaml));
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
                 regions.Apply(bridge.State.Date);
-                layerLabel.text = regions.Label(bridge.State.Date, text["map.layer_with_armistice"], text["map.layer_front_no_data"],
+                layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
+                    ?? regions.Label(bridge.State.Date, text["map.layer_with_armistice"], text["map.layer_front_no_data"],
                     text["map.layer_front_low"], text["map.layer_front_note"]);
                 layerLabel.style.display = regions.Shown ? DisplayStyle.Flex : DisplayStyle.None;
             };

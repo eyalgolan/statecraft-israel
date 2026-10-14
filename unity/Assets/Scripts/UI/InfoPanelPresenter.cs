@@ -119,6 +119,8 @@ namespace Statecraft.Game.UI
         public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date)
         {
             var parts = new List<string>();
+            var control = ControlText(regions, text, q, r, date);
+            if (control != "") parts.Add(control);
             var zone = regions.ZoneAt(q, r, date);
             var sub = regions.Subdistricts.ShowsOn(date) ? regions.Subdistricts.SubdistrictAt(q, r) : null;   // only while the map shows the layer
             if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, MapRegions.DateText(zone.Signed)));
@@ -127,6 +129,33 @@ namespace Statecraft.Game.UI
                     parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, MapRegions.DateText(l.Signed)));
             return string.Join("\n", parts);
         }
+
+        /// <summary>Who held the hex on a date (owner rulings 2026-10-14; the colours claim military control, nothing else):
+        /// "Held by Israel", "Held by Arab forces (Egypt)" while the period's legend is the 1948 one, the side of the armistice
+        /// line where that hex's front has switched; "" with no side data or before the first period.</summary>
+        public static string ControlText(MapRegions regions, UiText text, int q, int r, System.DateTime date)
+        {
+            var p = regions.ControlPeriod(date);
+            if (p == null || regions.Control == null) return "";
+            var (side, holder) = regions.Control.At(q, r, date);
+            bool armistice = p.Legend == Control1948.Legend.Armistice || (p.Legend == Control1948.Legend.Mixed && ArmisticeHere(p, side, holder));
+            string By(string plain, string by) => holder == null ? text[plain] : text.Format(by, text["control.holder_" + holder]);
+            return side switch
+            {
+                Control1948.Side.Israel => text[armistice ? "info.control_side_israel" : "info.control_israel"],
+                Control1948.Side.Arab => armistice ? By("info.control_side_arab", "info.control_side_arab_by") : By("info.control_arab", "info.control_arab_by"),
+                Control1948.Side.Contested => text["info.control_contested"],
+                Control1948.Side.NoMansLand => text["info.control_no_mans_land"],
+                Control1948.Side.Dmz => text["info.control_dmz"],
+                _ => text["info.control_none"],
+            };
+        }
+
+        /// <summary>In a period where only some fronts have switched, the armistice wording is used for the other side when its
+        /// holder's front has switched (Egypt, Jordan, Syria, Lebanon); the Israeli side keeps "held by" (which front faces a
+        /// hex is not in the data).</summary>
+        static bool ArmisticeHere(Control1948.Period p, Control1948.Side side, string? holder) =>
+            side == Control1948.Side.Arab && holder != null && p.Fronts.Contains(holder);
 
         /// <summary>The "1948 localities" line for a hex: each place's 1948 name, with today's name where Localities.TodayName
         /// allows ("Beisan (today: Beit She'an)"); empty for a hex with none.</summary>

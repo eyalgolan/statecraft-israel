@@ -196,6 +196,56 @@ public class GradeTests
         finally { MapShaderGlobals.PinWaterTime(null); }
     }
 
+    /// <summary>Two-colour borders (owner ruling 2026-10-14): the grey Neutral band (contested, no-man's land, a demilitarized
+    /// zone) reads apart from both sides' bands and against the land for colour-blind players, on the same two grounds and
+    /// with the same bounds as ColourBlindPlayersTellTheBorderStylesApart: neutral against blue and against red-orange >= 15
+    /// apart, the neutral band's stronger stripe >= 15 from the land, its two stripes >= 20 apart.</summary>
+    [UnityTest]
+    public IEnumerator ColourBlindPlayersTellTheNeutralBandFromBothSides()
+    {
+        var (map, cam, rig) = BorderTests.Open();
+        yield return null;
+        try
+        {
+            VisualToggles.Set("tiltshift", false);
+            BorderProof.Show(map);
+            // the grey stripe is the band's darkest pixel (its pale stripe the lightest, which Read takes separately)
+            float Greyness(Color c) => -RenderSample.Luma(c);
+            // the edges are found on the proof's checker before its styles are swapped below
+            var edges = new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) }
+                .Select(e => (e.Item1, BorderTests.ProofEdge(map, e.Item2, e.Item3, e.Item1))).ToList();
+            foreach (var (biome, (inner, outer)) in edges)
+            {
+                BorderTests.LookAtEdge(map, rig, inner);
+                // the proof's primary blocks (inner side) against neutral blocks, then neutral against secondary
+                MapBorders.Use(BorderTests.Blocks(map, primary => primary ? BorderStyle.Primary : BorderStyle.Neutral));
+                var a = BorderTests.WalkEdge(map, cam, inner, outer, 5, 1920, 1080);
+                MapBorders.Use(BorderTests.Blocks(map, primary => primary ? BorderStyle.Neutral : BorderStyle.Secondary));
+                var b = BorderTests.WalkEdge(map, cam, inner, outer, 5, 1920, 1080);
+                for (int i = 0; i < a.Count; i++)
+                {
+                    var p = BorderTests.Read(a[i], -1, BorderTests.Blueness, 0.45f); var n = BorderTests.Read(a[i], +1, Greyness, 0.02f);
+                    var s = BorderTests.Read(b[i], +1, BorderTests.Redness);
+                    TestContext.WriteLine($"{biome}: neutral stripe {n.Stripe} light {n.Light} land {n.Land}");
+                    foreach (var kind in new[] { RenderSample.Cvd.Deuteranopia, RenderSample.Cvd.Protanopia })
+                    {
+                        Color Sim(Color c) => RenderSample.SimulateCvd(c, kind);
+                        float np = RenderSample.DeltaE(Sim(n.Stripe), Sim(p.Stripe)), ns = RenderSample.DeltaE(Sim(n.Stripe), Sim(s.Stripe));
+                        float nColour = RenderSample.DeltaE(Sim(n.Stripe), Sim(n.Land)), nLight = RenderSample.DeltaE(Sim(n.Light), Sim(n.Land));
+                        float nPair = RenderSample.DeltaE(Sim(n.Stripe), Sim(n.Light));
+                        TestContext.WriteLine($"{biome} {kind}: neutral-blue {np:0.0}, neutral-orange {ns:0.0}; neutral colour-land {nColour:0.0}, light-land {nLight:0.0}, colour-light {nPair:0.0}");
+                        string at = $"{biome} {kind}";
+                        Assert.GreaterOrEqual(np, 15f, $"{at}: neutral against the Israeli side's blue");
+                        Assert.GreaterOrEqual(ns, 15f, $"{at}: neutral against the other side's red-orange");
+                        Assert.GreaterOrEqual(Mathf.Max(nColour, nLight), 15f, $"{at}: the neutral band on land");
+                        Assert.GreaterOrEqual(nPair, 20f, $"{at}: the neutral band's two stripes");
+                    }
+                }
+            }
+        }
+        finally { MapShaderGlobals.PinWaterTime(null); }
+    }
+
     /// <summary>Review I9: with the Neutral tonemapper the sunlit desert does not clip: in the Negev (34.9 E, 30.8 N, 60 km)
     /// and at the gameplay pose, under 1% of pixels have any channel at the top 8-bit step. The control: with the grade's
     /// tonemapper set to None (which also overrides the pipeline profile's Neutral) the graded Negev does clip.</summary>

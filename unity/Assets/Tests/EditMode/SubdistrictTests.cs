@@ -158,7 +158,7 @@ public class SubdistrictTests
         Boot(saveDir);
         var current = MapBorders.Current;
         Assert.IsNotNull(current, "play draws a region layer without any flag");
-        Assert.AreEqual("subdistricts_1948", current!.Name);
+        StringAssert.StartsWith("subdistricts_1948", current!.Name, "the 1947 sub-districts, in the neutral grey before any side is sourced");
         var label = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer");
         Assert.AreEqual("Mandate sub-districts, 1947", label.text, "labelled on screen");
         Assert.AreEqual(DisplayStyle.Flex, label.style.display.value, "shown while the layer is drawn");

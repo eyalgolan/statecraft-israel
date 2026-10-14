@@ -383,7 +383,7 @@ public class BorderTests
 
     /// <summary>The proof's checker blocks with every block in one region, styled by <paramref name="style"/> from its
     /// checker parity (true: the proof's primary blocks): for the shared-edge test below.</summary>
-    static RegionLayer Blocks(MapScene map, System.Func<bool, BorderStyle> style)
+    internal static RegionLayer Blocks(MapScene map, System.Func<bool, BorderStyle> style)
     {
         var regions = new Dictionary<(int q, int r), int>(); var styles = new Dictionary<int, BorderStyle>();
         foreach (var h in map.Hexes.hexes)

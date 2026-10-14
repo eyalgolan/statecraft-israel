@@ -33,6 +33,9 @@ namespace Statecraft.Game.Boot
         /// <summary>content/map/armistice_hexes_1949.yaml: the 1949 armistice lines drawn over it from their dates (display
         /// only; "" when absent: no armistice layer, like the other cosmetic map inputs).</summary>
         public string ArmisticeYaml = "";
+        /// <summary>content/map/control_hexes_1948_49.yaml: who held which areas, 1948-49, by period (display only; "" when
+        /// absent: the older drawing, sub-districts with the armistice zones over them).</summary>
+        public string ControlYaml = "";
         /// <summary>heightmap.r16z as read: packed (HeightmapCodec); HeightmapLoader decodes it when the map is built.</summary>
         public byte[] HeightmapR16z = new byte[0];
     }
@@ -59,6 +62,7 @@ namespace Statecraft.Game.Boot
                 ? File.ReadAllText(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName)) : "",
             LocalitiesTsv = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Kits.Localities.RuntimeFileName)),
             ArmisticeYaml = ReadIfExists(Path.Combine(contentDir, "map", Armistice1949.FileName)),
+            ControlYaml = ReadIfExists(Path.Combine(contentDir, "map", Control1948.FileName)),
         };
 
         /// <summary>A map-only, cosmetic input: "" when the file is missing (the map then skips that layer with a warning).</summary>
@@ -86,6 +90,7 @@ namespace Statecraft.Game.Boot
                     PopulationYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Kits.KitPopulation.FileName, out var pop) ? pop : "",
                     LocalitiesTsv = texts.TryGetValue("map/" + Statecraft.Game.Map.Kits.Localities.RuntimeFileName, out var loc) ? loc : "",
                     ArmisticeYaml = texts.TryGetValue("map/" + Armistice1949.FileName, out var armistice) ? armistice : "",
+                    ControlYaml = texts.TryGetValue("map/" + Control1948.FileName, out var control) ? control : "",
                 },
             };
         }

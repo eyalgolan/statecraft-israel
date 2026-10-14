@@ -7,10 +7,12 @@ using UnityEngine;
 
 namespace Statecraft.Game.Map
 {
-    /// <summary>How a region is outlined: the promo's blue band with a white inner stripe (Primary), its red-orange band with
-    /// a cream inner stripe (Secondary), or not at all (None: a region that only stops its neighbours' bands from running on,
-    /// e.g. the land past a border that is not drawn from its side).</summary>
-    public enum BorderStyle : byte { None = 0, Primary = 1, Secondary = 2 }
+    /// <summary>How a region is outlined: the promo's deeper blue band with a white inner stripe (Primary: the Israeli side),
+    /// its red-orange band with a cream inner stripe (Secondary: the other side), a grey band (Neutral: contested, no-man's
+    /// land, a demilitarized zone, or the 1947 sub-districts before any side is sourced; owner ruling 2026-10-14), or not at
+    /// all (None: a region that only stops its neighbours' bands from running on, e.g. the land past a border that is not
+    /// drawn from its side).</summary>
+    public enum BorderStyle : byte { None = 0, Primary = 1, Secondary = 2, Neutral = 3 }
 
     /// <summary>Which region each hex belongs to, and how each region is outlined: what the border renderer draws. A hex not
     /// listed belongs to no region, and no band is drawn against it (the coast, the edge of the data). Region ids run from 1
@@ -67,7 +69,8 @@ namespace Statecraft.Game.Map
         static readonly int RegionTex = Shader.PropertyToID("_ScRegionTex"), RegionInfo = Shader.PropertyToID("_ScRegionInfo"),
             Borders = Shader.PropertyToID("_ScBorders"),
             Colour1 = Shader.PropertyToID("_ScBorderColour1"), Light1 = Shader.PropertyToID("_ScBorderLight1"), Shape1 = Shader.PropertyToID("_ScBorderShape1"),
-            Colour2 = Shader.PropertyToID("_ScBorderColour2"), Light2 = Shader.PropertyToID("_ScBorderLight2"), Shape2 = Shader.PropertyToID("_ScBorderShape2");
+            Colour2 = Shader.PropertyToID("_ScBorderColour2"), Light2 = Shader.PropertyToID("_ScBorderLight2"), Shape2 = Shader.PropertyToID("_ScBorderShape2"),
+            Colour3 = Shader.PropertyToID("_ScBorderColour3"), Light3 = Shader.PropertyToID("_ScBorderLight3"), Shape3 = Shader.PropertyToID("_ScBorderShape3");
 
         /// <summary>One style's look. Colours are sRGB (above 1: brighter than white before the grade), measured on
         /// promo/final/03-gameplay-1936.png (2752 px wide) and set so the graded game matches them (docs/visual-v1.md, "Region borders"). BandM is the coloured plus light stripe in metres,
@@ -80,13 +83,18 @@ namespace Statecraft.Game.Map
             { Colour = colour; Light = light; BandM = bandM; ColourShare = colourShare; Wash = wash; WashStrength = washStrength; }
         }
 
-        /// <summary>The promo's blue line (6 + 6 px of blue and white with a 10 px wash at 2752 px; 125,140,182 and
-        /// 251,251,248): the heavier of the two.</summary>
-        public static readonly Style Primary = new Style(new Color(0.40f, 0.50f, 0.80f), new Color(1.08f, 1.08f, 1.06f), 230f, 0.5f, 0.9f, 0.40f);
+        /// <summary>The promo's blue line (6 + 6 px of blue and white with a 10 px wash at 2752 px; white 251,251,248), the
+        /// heavier of the two, in the deeper blue of the owner's ruling (2026-10-14): about 89,119,156 on screen after the
+        /// grade (promo 03's Israeli side), against main's lighter 120,142,192.</summary>
+        public static readonly Style Primary = new Style(new Color(0.29f, 0.40f, 0.56f), new Color(1.08f, 1.08f, 1.06f), 230f, 0.5f, 0.9f, 0.40f);
         /// <summary>The promo's red-orange line (4 + 3 px with an 8 px wash; 176,93,61 and 246,188,124), a little more
         /// saturated than the promo's so it keeps a contrast against both olive and dry-grass ground for colour-blind players
         /// (GradeTests).</summary>
         public static readonly Style Secondary = new Style(new Color(0.75f, 0.31f, 0.13f), new Color(1.05f, 0.76f, 0.48f), 200f, 0.6f, 1.0f, 0.18f);
+        /// <summary>A grey line with a pale inner stripe and a faint wash, the width of the red-orange: neither side's colour
+        /// (contested, no-man's land, a demilitarized zone, the 1947 sub-districts before any side is sourced). Its lightness sits
+        /// between the two sides' so colour-blind players still tell it from both (GradeTests).</summary>
+        public static readonly Style Neutral = new Style(new Color(0.46f, 0.46f, 0.44f), new Color(0.98f, 0.97f, 0.93f), 200f, 0.6f, 0.8f, 0.14f);
         /// <summary>The band draws at least MinBandPx wide (the overview), unless that would make it, with its wash, wider than
         /// MaxShareOfInradius of a hex's inradius: that cap wins (below about 8 px of inradius on screen the band goes under
         /// 2 px), so a far hex is never filled by its outline.</summary>
@@ -128,6 +136,7 @@ namespace Statecraft.Game.Map
             Shader.SetGlobalVector(RegionInfo, new Vector4(qMin, rMin, w, h));
             SetStyle(Colour1, Light1, Shape1, Primary);
             SetStyle(Colour2, Light2, Shape2, Secondary);
+            SetStyle(Colour3, Light3, Shape3, Neutral);
             Push();
             assets.OnTeardown(VisualToggles.Register(ToggleName, on => { toggleOn = on; Push(); }));
             assets.OnTeardown(() => { texture = null; owner = null; banner = null; Current = null; hasLayer = false; noEarlyOut = false; Push(); });

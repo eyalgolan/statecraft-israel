@@ -15,6 +15,11 @@ namespace Statecraft.Game.Map
     /// line) and the map label names the front; the sub-district bands themselves stay as the base. A front without line data keeps the Mandate layer, and the map label says so; a low-accuracy front
     /// (Jordan) is labelled so. The layer as a whole leaves the map only on the sub-district layer's own end
     /// (<see cref="Subdistricts1948.ShownUntil"/>), null until the armistice lines enclose each side's area. Display only: reads no sim state but the date it is given.</summary>
+    /// <remarks>Since the owner's rulings of 2026-10-14, when the side data is given (<see cref="Control"/>), the map colours
+    /// areas by side from its first period (11 June 1948, the first sourced line) instead: the Israeli side blue, the other
+    /// side orange-red, contested, no-man's land and demilitarized zones grey (<see cref="Control1948"/>); before that the
+    /// 1947 sub-districts are drawn in the neutral grey, since no side is sourced for 15 May 1948 and blue now means the
+    /// Israeli side. The label then carries the legend (<see cref="ControlLabel"/>).</remarks>
     public sealed class MapRegions
     {
         /// <summary>Zones are region ids ZoneIdBase + zone id in the composed layer, apart from the sub-districts' ids.</summary>
@@ -22,12 +27,34 @@ namespace Statecraft.Game.Map
 
         public readonly Subdistricts1948 Subdistricts;
         public readonly Armistice1949? Armistice;
+        /// <summary>Who held which areas (null: the older drawing, sub-districts with the armistice zones over them).</summary>
+        public readonly Control1948? Control;
         readonly Dictionary<string, RegionLayer> composed = new Dictionary<string, RegionLayer>();
+        RegionLayer? neutralSubdistricts;
 
-        public MapRegions(Subdistricts1948 subdistricts, Armistice1949? armistice)
+        public MapRegions(Subdistricts1948 subdistricts, Armistice1949? armistice, Control1948? control = null)
         {
             Subdistricts = subdistricts ?? throw new ArgumentNullException(nameof(subdistricts));
             Armistice = armistice;
+            Control = control;
+            if (control != null)
+            {
+                var layer = subdistricts.Layer;
+                control.SetOutside(layer.Hexes.Where(h => layer.StyleOf(layer.RegionOf(h.q, h.r)) == BorderStyle.None));
+            }
+        }
+
+        /// <summary>The control period on <paramref name="date"/> (null: none, or no side data).</summary>
+        public Control1948.Period? ControlPeriod(DateTime date) => Control?.PeriodOn(date);
+
+        /// <summary>The sub-district layer with every drawn region in the neutral style (before any side is sourced).</summary>
+        RegionLayer NeutralSubdistricts()
+        {
+            if (neutralSubdistricts != null) return neutralSubdistricts;
+            var l = Subdistricts.Layer;
+            var hexes = l.Hexes.ToDictionary(h => h, h => l.RegionOf(h.q, h.r));
+            var styles = hexes.Values.Distinct().ToDictionary(id => id, id => l.StyleOf(id) == BorderStyle.None ? BorderStyle.None : BorderStyle.Neutral);
+            return neutralSubdistricts = new RegionLayer(l.Name + ":neutral", hexes, styles);
         }
 
         /// <summary>Whether <paramref name="front"/>'s armistice line has replaced the Mandate layer there on
@@ -59,6 +86,11 @@ namespace Statecraft.Game.Map
         /// over it (one composed layer per set of zones, built once).</summary>
         public RegionLayer? LayerOn(DateTime date)
         {
+            if (Control != null)
+            {
+                if (Control.PeriodOn(date) != null) return Control.LayerOn(date);
+                return Subdistricts.ShowsOn(date) ? NeutralSubdistricts() : null;
+            }
             if (!Subdistricts.ShowsOn(date)) return null;
             var zones = ZonesOn(date);
             if (zones.Count == 0) return Subdistricts.Layer;
@@ -119,6 +151,28 @@ namespace Statecraft.Game.Map
             var text = string.Format(CultureInfo.InvariantCulture, withLines, Subdistricts.Label, Armistice.Label, string.Join(", ", on.Select(Name)));
             foreach (var f in none) text += string.Format(CultureInfo.InvariantCulture, noData, f.Name);
             return text;
+        }
+
+        /// <summary>The map label while sides are drawn: the legend for the period and a caption naming the source line.
+        /// <paramref name="text"/> gives a UI string by key: map.legend_held, map.legend_armistice, map.caption_held ({0} the
+        /// source line's date), map.caption_mixed ({0} the fronts whose armistice line is in force, {1} the date of the front
+        /// lines elsewhere), map.front_egypt, map.front_lebanon, map.front_jordan, map.front_syria. Null before the first
+        /// period (the sub-district label stands).</summary>
+        public string? ControlLabel(DateTime date, Func<string, string> text)
+        {
+            var p = ControlPeriod(date);
+            if (p == null) return null;
+            var lineDate = Control1948.LineDateText(p.LineDate);
+            switch (p.Legend)
+            {
+                case Control1948.Legend.Held:
+                    return text("map.legend_held") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_held"), lineDate);
+                case Control1948.Legend.Mixed:
+                    var fronts = string.Join(", ", p.Fronts.Select(f => text("map.front_" + f)));
+                    return text("map.legend_armistice") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_mixed"), fronts, lineDate);
+                default:
+                    return text("map.legend_armistice");
+            }
         }
 
         /// <summary>The agreement's date as players read it ("24 February 1949").</summary>

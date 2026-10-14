@@ -211,7 +211,7 @@ public class ArmisticeTests
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(saveDir);
         root.Begin(Inputs, 0);
-        Assert.AreEqual("subdistricts_1948", MapBorders.Current!.Name);
+        StringAssert.StartsWith("subdistricts_1948", MapBorders.Current!.Name, "the 1947 sub-districts, in the neutral grey before any side is sourced");
         Assert.AreEqual("Mandate sub-districts, 1947", Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer").text);
     }
 
