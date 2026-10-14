@@ -154,7 +154,7 @@ namespace Statecraft.Game.Map
         /// <summary>The map's unit spots when <paramref name="units"/> is the list the map
         /// placed and <paramref name="hexes"/> match the hexes it placed them on (q, r, lon, lat and land, in order): the same
         /// ground, so the same spots. Null otherwise: the caller places them itself.</summary>
-        public IReadOnlyDictionary<Units.UnitAnchor, Units.AnchorSpot>? UnitSpotsFor(
+        public IReadOnlyDictionary<Units.UnitAnchor, Units.AnchorSpot> UnitSpotsFor(
             IReadOnlyList<Units.UnitEntry> units, IReadOnlyList<Statecraft.Sim.MapHex> hexes)
         {
             if (unitsYamlRead == null || !ReferenceEquals(units, UnitEntries) || hexes == null || hexes.Count != UnitHexes.Count) return null;
