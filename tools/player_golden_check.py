@@ -37,6 +37,7 @@ import signal
 import subprocess
 import sys
 import tarfile
+import time
 import zipfile
 from pathlib import Path
 
@@ -77,6 +78,9 @@ NOTICE_TOPS = {n.split("/")[0] for n in REQUIRED_NOTICES}
 # selects x11 and passes; -nographics still keeps the Null graphics device, so the runner needs no GPU.
 # A test pins this command.
 DISPLAY_WRAPPER = {"linux": ["xvfb-run", "-a"]}
+
+# Seconds a timed-out run gets between SIGTERM and SIGKILL (stop_group).
+TERM_GRACE = 5
 
 GOLDENS = (("1950", "hash1950"), ("1952", "hash1952"))
 FAIL = re.compile(r"\b(GOLDEN FAIL|BOOT FAIL)\b")
@@ -239,7 +243,7 @@ def player_command(exe: Path, log: Path, platform: str) -> list[str]:
 
 def run_player(exe: Path, log: Path, timeout: int, platform: str) -> int | None:
     """Runs the golden check; the exit code, or None on timeout. subprocess waits for a Windows GUI-subsystem player
-    too, which a plain PowerShell call would not. On POSIX the run gets its own process group and a timeout kills the
+    too, which a plain PowerShell call would not. On POSIX the run gets its own process group and a timeout stops the
     whole group: xvfb-run starts the player and Xvfb as its children, and killing only xvfb-run would leave them."""
     if os.name != "nt":
         exe.chmod(exe.stat().st_mode | 0o111)
@@ -249,12 +253,43 @@ def run_player(exe: Path, log: Path, timeout: int, platform: str) -> int | None:
         try:
             return proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
-            if os.name != "nt":
-                os.killpg(proc.pid, signal.SIGKILL)
-            else:
-                proc.kill()
-            proc.wait()
+            stop_group(proc, TERM_GRACE)
             return None
+
+
+def stop_group(proc: subprocess.Popen, grace: float) -> None:
+    """Stops a timed-out run. POSIX: SIGTERM to its process group, so the player and Xvfb can shut down, then SIGKILL to
+    whatever is left after `grace` seconds. The run may exit just as the timeout fires: signalling a group that is gone
+    raises ProcessLookupError, which ends the stop. macOS can also answer PermissionError, for a gone group or for a
+    group that still holds a zombie, so that answer never escapes but also never cuts the grace short or skips the
+    SIGKILL."""
+    if os.name == "nt":
+        proc.kill()
+        proc.wait()
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        proc.wait()
+        return
+    except PermissionError:
+        pass   # macOS: a zombie in the group answers EPERM, and the rest may still be running
+    deadline = time.monotonic() + grace
+    while time.monotonic() < deadline:
+        proc.poll()   # reaps the group leader, so a zombie leader does not keep the group "alive"
+        try:
+            os.killpg(proc.pid, 0)
+        except ProcessLookupError:
+            break
+        except PermissionError:
+            pass   # the same macOS answer: not proof that the group is gone, so the grace runs on
+        time.sleep(0.1)
+    else:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    proc.wait()
 
 
 def summary(tag: str, include: list[dict], ok: bool) -> str:

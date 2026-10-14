@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
 import zipfile
 from pathlib import Path
 
@@ -45,6 +46,19 @@ def fake_xvfb_run(tmp_path, monkeypatch):
     fake.chmod(0o755)
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
     return calls
+
+
+def gone_soon(pid, seconds=3.0):
+    """Whether pid is gone within `seconds`. A killed orphan lingers for some milliseconds until init (launchd on
+    macOS) reaps it, so a check made at once can still find it."""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.01)
+    return False
 
 
 def release(tag, *names, draft=False):
@@ -272,9 +286,45 @@ def test_a_timeout_also_stops_what_xvfb_run_started(tmp_path, fake_xvfb_run):
     exe.write_text(f'#!/bin/sh\necho $$ > "{pid_file}"\nexec sleep 30\n')
     exe.chmod(0o755)
     assert pg.run_player(exe, tmp_path / "player.log", 2, "linux") is None
-    pid = int(pid_file.read_text())
-    with pytest.raises(ProcessLookupError):
-        os.kill(pid, 0)
+    assert gone_soon(int(pid_file.read_text()))
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the fake player and xvfb-run are shell scripts")
+def test_a_timeout_asks_the_player_to_stop_before_killing_it(tmp_path, fake_xvfb_run):
+    # Review #581 nit 1: SIGTERM first, so the player (and Xvfb) can shut down cleanly; SIGKILL only after the grace.
+    exe = tmp_path / "Statecraft.x86_64"
+    termed = tmp_path / "termed"
+    exe.write_text(f"#!/bin/sh\ntrap 'echo yes > \"{termed}\"; exit 0' TERM\nsleep 30 &\nwait\n")
+    exe.chmod(0o755)
+    assert pg.run_player(exe, tmp_path / "player.log", 1, "linux") is None
+    assert termed.read_text().strip() == "yes"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the fake player and xvfb-run are shell scripts")
+def test_a_player_that_ignores_sigterm_is_killed_after_the_grace(tmp_path, fake_xvfb_run, monkeypatch):
+    monkeypatch.setattr(pg, "TERM_GRACE", 1)
+    exe = tmp_path / "Statecraft.x86_64"
+    pid_file = tmp_path / "player.pid"
+    exe.write_text(f"#!/bin/sh\ntrap '' TERM\necho $$ > \"{pid_file}\"\nwhile :; do sleep 1; done\n")
+    exe.chmod(0o755)
+    assert pg.run_player(exe, tmp_path / "player.log", 1, "linux") is None
+    assert gone_soon(int(pid_file.read_text()))
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="process groups are POSIX")
+@pytest.mark.parametrize("error", [ProcessLookupError, PermissionError])
+def test_stopping_a_run_that_already_exited_is_not_an_error(monkeypatch, error):
+    # Review #581 nit 2: the player can exit just as the timeout fires. Signalling its gone group raises
+    # ProcessLookupError, or PermissionError on macOS; neither may escape.
+    proc = subprocess.Popen(["true"], start_new_session=True)
+    proc.wait()
+    pg.stop_group(proc, 1)   # the real race: the group is gone
+
+    def gone(pid, sig):
+        raise error()
+
+    monkeypatch.setattr(pg.os, "killpg", gone)
+    pg.stop_group(proc, 1)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="the fake player is a shell script")
