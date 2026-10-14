@@ -52,7 +52,6 @@ public class ProjectsTests
         new object[] { "not a yishuv site", "Site B is not a site for a new yishuv" },
         new object[] { "being built", "Site A is already being built" },
         new object[] { "built", "Site A is already built" },
-        new object[] { "short Treasury", "Building a yishuv costs IL 1.5m and the Treasury holds IL 1.4m" },
     };
 
     /// <summary>Site B, on (3, 0), for the refusals that need a second site; <paramref name="kinds"/> its kinds.</summary>
@@ -78,23 +77,35 @@ public class ProjectsTests
             case "not a yishuv site": order = Build(id, "site_b"); break;
             case "being built": s.Sites["site_a"] = new SiteWork("site_a", other, 2, null); break;   // question 15: one unit per site
             case "built": s.Sites["site_a"] = SiteWork.Built("site_a", new DateTime(1948, 8, 15)); break;
-            case "short Treasury": s.Treasury = 1.4; break;
         }
         var r = Step(c, s, order);
         Assert.Equal(reason, Assert.Single(r.Rejected).Reason);
         Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
     }
 
-    // R-SITE-001: refused only when the Treasury holds less than the cost (question 13: refuse, as training does).
+    // R-SITE-001: a short Treasury borrows the shortfall, as map actions do (question 13, owner decision "Allow borrowing",
+    // 2026-10-15); a Treasury of exactly the cost borrows nothing.
     [Fact]
-    public void ATreasuryOfExactlyTheCostPaysIt()
+    public void AShortTreasuryBorrowsTheShortfall()
     {
         var c = Town();
         var s = WithHalutz(c, out var id);
-        s.Treasury = 1.5;
-        Assert.Null(Projects.Start(c, s, id, Projects.BuildYishuv, "site_a", new List<Cause>()));
+        s.Treasury = 1.4;
+        s.Debt = 3;
+        var why = new List<Cause>();
+        Assert.Null(Projects.Start(c, s, id, Projects.BuildYishuv, "site_a", why));
         Assert.Equal(0, s.Treasury);
+        Assert.Equal(3.1, s.Debt, 9);
         Assert.Single(s.Sites);
+        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.1m to build a yishuv");
+
+        var exact = WithHalutz(c, out var other);
+        exact.Treasury = 1.5;
+        exact.Debt = 3;
+        var none = new List<Cause>();
+        Assert.Null(Projects.Start(c, exact, other, Projects.BuildYishuv, "site_a", none));
+        Assert.Equal((0.0, 3.0), (exact.Treasury, exact.Debt));
+        Assert.DoesNotContain(none, x => x.System == "economy");
     }
 
     // R-SITE-001, R-SITE-002

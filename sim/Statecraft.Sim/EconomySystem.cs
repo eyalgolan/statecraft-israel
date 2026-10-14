@@ -34,6 +34,18 @@ namespace Statecraft.Sim
         /// the one rule Flows and the Defence screen both use (M3 final review M5).</summary>
         public static double MobilizationCost(Content c, DateTime date, double level, double yearFraction = 1.0) => c.RulesAt(date).MobilizationCostPerYear * level * yearFraction;
 
+        /// <summary>Pays <paramref name="cost"/> from the Treasury, borrowing what it lacks: the shortfall goes to Debt and the
+        /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the cause ("for training").
+        /// The GDD orders pay through it (owner decision "Allow borrowing", 2026-10-15; R-TRAIN-001, R-SITE-001).</summary>
+        public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why)
+        {
+            s.Treasury -= cost;
+            if (s.Treasury >= 0) return;
+            s.Debt += -s.Treasury;
+            why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} {purpose}"));
+            s.Treasury = 0;
+        }
+
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
         {
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;

@@ -77,17 +77,24 @@ public class TrainingTests
         Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
     }
 
-    // R-TRAIN-001: no borrowing for training (a choice flagged for the owner).
+    // R-TRAIN-001: training borrows the shortfall, as map actions do (owner decision "Allow borrowing", 2026-10-15, #468).
     [Fact]
-    public void AShortTreasuryRefusesAndChangesNothing()
+    public void AShortTreasuryBorrowsTheShortfall()
     {
         var c = Town();
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         s.Treasury = 1.4;
-        var r = Step(c, s, new Train("town_a", "recruit", 3));
-        Assert.Equal("Training costs IL 1.5m and the Treasury holds IL 1.4m", Assert.Single(r.Rejected).Reason);
-        Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
-        Assert.Empty(Step(c, s, new Train("town_a", "recruit", 2)).Rejected);   // IL 1.0m is affordable
+        s.Debt = 3;
+        var after = s.Clone();
+        var why = new List<Cause>();
+        Assert.Null(Training.Start(c, after, "town_a", "recruit", 3, why));
+        Assert.Equal(0, after.Treasury);
+        Assert.Equal(3.1, after.Debt, 9);   // the IL 0.1m the Treasury lacked
+        Assert.Single(after.Cohorts);
+        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.1m for training");
+        var none = s.Clone();
+        none.Treasury = 0;
+        Assert.Empty(Step(c, none, new Train("town_a", "recruit", 3)).Rejected);   // an empty Treasury trains too
     }
 
     // R-TRAIN-001: refused only when the Treasury holds less than the cost, so a Treasury of exactly the cost pays it.
@@ -100,6 +107,7 @@ public class TrainingTests
         var after = s.Clone();
         Assert.Null(Training.Start(c, after, "town_a", "recruit", 3, new List<Cause>()));
         Assert.Equal(0, after.Treasury);
+        Assert.Equal(s.Debt, after.Debt);   // nothing borrowed
         Assert.Single(after.Cohorts);
     }
 

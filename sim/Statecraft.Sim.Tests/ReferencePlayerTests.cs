@@ -27,9 +27,9 @@ public class ReferencePlayerTests
     }
 
     // R-TRAIN-001: the stated policy trains a halutz group only when there is none, none in training, a civilian without
-    // work, and the Treasury and Attention to pay.
+    // work, and the Attention to pay. Training borrows, so Money does not hold it back (owner decision, 2026-10-15).
     [Fact]
-    public void ItTrainsNoHalutzWhenOneExistsOrTrainsOrNobodyIsFreeOrMoneyIsShort()
+    public void ItTrainsNoHalutzWhenOneExistsOrTrainsOrNobodyIsFreeButDoesWithNoMoney()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         var training = Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).State;
@@ -47,12 +47,12 @@ public class ReferencePlayerTests
         busy.Cities["tel_aviv"] = busy.Cities["tel_aviv"].WithCounts(90, 80, 0);   // 90 jobs: all of them filled
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, busy), x => x is Train);
         var poor = s.Clone();
-        poor.Treasury = 0.4;
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, poor), x => x is Train);
+        poor.Treasury = 0;   // training borrows (owner decision, 2026-10-15): an empty Treasury does not hold it back
+        Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is Train);
     }
 
-    // R-SITE-001: the stated policy sends each idle halutz group, in id order, to the first available yishuv site in id order,
-    // when the Treasury can pay (question 13: no borrowing).
+    // R-SITE-001: the stated policy sends each idle halutz group, in id order, to the first available yishuv site in id order.
+    // Pioneer work borrows (question 13, owner decision 2026-10-15), so an empty Treasury does not hold it back.
     [Fact]
     public void ItSendsAnIdleHalutzToTheFirstAvailableSite()
     {
@@ -72,9 +72,7 @@ public class ReferencePlayerTests
         built.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, built), x => x is PioneerWork);
         var poor = s.Clone();
-        poor.Treasury = 1.9;   // the slice's placeholder cost is IL 2m
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);
-        poor.Treasury = 2.0;
+        poor.Treasury = 0;
         Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);
     }
 

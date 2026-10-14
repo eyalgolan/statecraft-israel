@@ -23,10 +23,10 @@ namespace Statecraft.Sim
         static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
 
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as
-        /// <paramref name="track"/>, a unit type with a facility. The Treasury pays count * training_cost now; training does not
-        /// borrow. The trainees leave the civilians at once, and the cohort takes the next id. Refused, state untouched, when the
-        /// city or track is unknown, the count is below 1, the city has no such facility, it has fewer civilians without work,
-        /// or the Treasury holds less than the cost. Step has already refused it in the legacy loop.</summary>
+        /// <paramref name="track"/>, a unit type with a facility. The Treasury pays count * training_cost now and borrows what it
+        /// lacks. The trainees leave the civilians at once, and the cohort takes the next id. Refused, state untouched, when the
+        /// city or track is unknown, the count is below 1, the city has no such facility, or it has fewer civilians without
+        /// work. Step has already refused it in the legacy loop.</summary>
         public static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why)
         {
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
@@ -38,10 +38,8 @@ namespace Statecraft.Sim
             var idle = x.Civilians - x.Employed;
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             var cost = count * type.TrainingCost;
-            // PLACEHOLDER (owner question, #377): a short Treasury refuses training, where map actions borrow instead.
-            if (cost > s.Treasury)
-                return $"Training costs {PlayerText.Money(c, "treasury", cost)} and the Treasury holds {PlayerText.Money(c, "treasury", s.Treasury)}";
-            s.Treasury -= cost;
+            // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.
+            EconomySystem.PayOrBorrow(c, s, cost, "for training", why);
             // PLACEHOLDER (owner question, #377): trainees leave the civilians, and housing (R-CITY-004) counts civilians only,
             // so their places are free for waiting refugees while they train. Social cohesion (R-CITY-005) also moves: its
             // employed share is employed over civilians, so it rises when civilians without work leave for training.

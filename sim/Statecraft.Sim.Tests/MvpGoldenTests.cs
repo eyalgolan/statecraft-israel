@@ -10,8 +10,11 @@ public class MvpGoldenTests
     public void TheSliceMatchesItsGolden()
     {
         var s = MvpGolden.Play(Mvp);
-        Assert.Equal(new DateTime(1949, 1, 15), s.Date);
-        Assert.Equal(8, s.Turn);
+        Assert.Equal(new DateTime(1949, 3, 15), s.Date);
+        Assert.Equal(10, s.Turn);
+        // R-SITE-001, R-SITE-003: the reference player's halutz group is ready on 15 September 1948, starts Mefalsim that turn
+        // (borrowing the cost) and builds it at the end of the sixth turn, on 15 March 1949: the last turn the golden plays.
+        Assert.Equal(new DateTime(1949, 3, 15), s.Sites["mefalsim"].BuiltOn);
         var expected = GoldenManifest.UpdateRequested ? GoldenManifest.Read().GetValueOrDefault("mvp-slice", "") : GoldenManifest.Expected("mvp-slice");
         GoldenSnapshot.Check("mvp-slice", s, expected);
     }

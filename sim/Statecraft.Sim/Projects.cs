@@ -8,7 +8,7 @@ namespace Statecraft.Sim
     /// designated site (sites.yaml) over several turns (D-A3), one project per unit (D-D6). Runs only when eras.yaml
     /// systems.loop is gdd. The answers to #378's open questions are the plan's recommendations, which the owner took on
     /// 14 October 2026: the unit works from where it stands (9), stays a halutz unit when the yishuv is founded (10), the
-    /// founding changes no city (11), the cost is paid in full at the start (12), a short Treasury refuses (13), stopping loses
+    /// founding changes no city (11), the cost is paid in full at the start (12), a short Treasury borrows (13, the owner's decision of 15 October 2026), stopping loses
     /// the progress (14), and one unit builds a site (15). Its causes go to the "map" group of the Why screen ("Building").</summary>
     public static class Projects
     {
@@ -21,9 +21,9 @@ namespace Statecraft.Sim
         public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
 
         /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
-        /// record. The Treasury pays build_yishuv_cost now and does not borrow; the site gets build_yishuv_turns to go; the unit
+        /// record. The Treasury pays build_yishuv_cost now and borrows what it lacks; the site gets build_yishuv_turns to go; the unit
         /// does not move. Refused, state untouched, for an unknown unit, a unit that is not a halutz or is busy, an unknown
-        /// action or site, a site that is not for a yishuv, is being built or is built, or a Treasury short of the cost. Step
+        /// action or site, a site that is not for a yishuv, or is being built or is built. Step
         /// has already refused it in the legacy loop.</summary>
         public static string? Start(Content c, GameState s, int unit, string action, string site, List<Cause> why)
         {
@@ -38,11 +38,8 @@ namespace Statecraft.Sim
             if (s.Sites.TryGetValue(site, out var work))
                 return work.BuiltOn == null ? $"{place.Name} is already being built" : $"{place.Name} is already built";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
-            // PLACEHOLDER (owner question, #378 question 13 and #377): a short Treasury refuses, as training does, until the
-            // owner answers whether training may borrow; the answer applies to both.
-            if (r.BuildYishuvCost > s.Treasury)
-                return $"Building a yishuv costs {PlayerText.Money(c, "treasury", r.BuildYishuvCost)} and the Treasury holds {PlayerText.Money(c, "treasury", s.Treasury)}";
-            s.Treasury -= r.BuildYishuvCost;
+            // Owner decision "Allow borrowing" (2026-10-15, #378 question 13): a short Treasury borrows, as map actions do.
+            EconomySystem.PayOrBorrow(c, s, r.BuildYishuvCost, "to build a yishuv", why);
             // The same reading of D-A6 as training's: the turn of the order is the first build turn, so with
             // build_yishuv_turns 6 an order on turn T is built at the end of T+5
             // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).

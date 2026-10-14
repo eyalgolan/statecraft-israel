@@ -7,8 +7,8 @@ As a player of the MVP, I want to send Tel Aviv's civilians without work to basi
 ## Rules
 
 - One military camp and one Hakhshara exist in Tel Aviv at the start. This is a design assumption, not a claim about the city, and pioneers will build more in Phase 4 (D-D5 [S2]). The GDD leaves training capacity open, so there is no capacity limit (unitless).
-- `Train(city, track, n)` takes civilians without a job into training as recruits (military camp) or halutzim (Hakhshara). It costs 1 Attention and IL 0.5m per group, both placeholders, paid at once and never borrowed (R-TRAIN-001).
-- It is refused, with the state unchanged, for fewer than 1 group (unitless), more than the city's civilians without a job, an unknown city or track, a city without the facility, a Treasury short of the cost, or the legacy loop (R-TRAIN-001).
+- `Train(city, track, n)` takes civilians without a job into training as recruits (military camp) or halutzim (Hakhshara). It costs 1 Attention and IL 0.5m per group, both placeholders, paid at once. A short Treasury borrows the rest, as map actions do (owner decision on #468) (R-TRAIN-001).
+- It is refused, with the state unchanged, for fewer than 1 group (unitless), more than the city's civilians without a job, an unknown city or track, a city without the facility, or the legacy loop (R-TRAIN-001).
 - People in training are neither civilians nor recruits: they hold no job and are not counted by housing or Social cohesion while they train.
 - `CancelTraining(cohort)` returns the people as civilians without a job; the Money spent is not returned (D-A3 [S2]). It costs 0.5 Attention, a placeholder (R-TRAIN-002).
 - Training resolves before production in each turn, in the order the owner approved (D-A6, #456 [S2][S3]). A cohort ordered this turn counts this turn: basic training takes 3 turns and pioneer training 4 turns, both placeholders (R-TRAIN-003).
@@ -39,7 +39,6 @@ As a player of the MVP, I want to send Tel Aviv's civilians without work to basi
 ## Open questions
 
 - The placeholder values (training turns, cost per group, the two Attention costs) wait for the owner.
-- Whether training may borrow from the Treasury, as map actions do. This PR refuses it.
 - Whether people in training, and recruits, take up the city's housing. Housing counts civilians only (R-CITY-004), so a group in training frees a place that a waiting refugee then takes.
 - Whether the turn of the order counts as a training turn. This is the plan's reading of D-A6, not part of the owner's ruling. The other reading adds a turn.
 - Social cohesion's employed share rises while civilians without work are in training, because they leave the civilians (R-CITY-005).

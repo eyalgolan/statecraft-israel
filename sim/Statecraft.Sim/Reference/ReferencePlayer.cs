@@ -7,7 +7,7 @@ namespace Statecraft.Sim.Reference
     /// <summary>Test policy for the GDD goldens (D-A7): a stated simple policy, not game AI and not historical. It sends
     /// HistoricalAI's orders, then fills each city's jobs with as many civilians as there are jobs, then sends each idle halutz
     /// unit to the first available yishuv site, then, when there is no halutz and none in training, trains one halutz group in
-    /// the first city with a Hakhshara and a civilian left without work, while the turn's Attention and the Treasury last. It lives in Statecraft.Sim only so Unity can replay the MVP goldens (#394); no game mode or UI may reach it
+    /// the first city with a Hakhshara and a civilian left without work, while the turn's Attention lasts (both orders borrow). It lives in Statecraft.Sim only so Unity can replay the MVP goldens (#394); no game mode or UI may reach it
     /// (ReferencePlayerTests.NoGameModeOrUiReachesIt).</summary>
     public static class ReferencePlayer
     {
@@ -29,7 +29,7 @@ namespace Statecraft.Sim.Reference
             Build(c, s, list, ref left);
             if (s.Units.Values.Any(u => u.Type == halutz.Id) || s.Cohorts.Values.Any(k => k.Type == halutz.Id)) return list;
             var trainCost = AttentionSystem.Cost(c, s, Training.TrainKind);
-            if (trainCost > left + 1e-9 || halutz.TrainingCost > s.Treasury) return list;
+            if (trainCost > left + 1e-9) return list;   // training borrows, so the Treasury does not hold it back
             foreach (var city in s.Cities.Values)
             {
                 var employed = list.OfType<AssignWorkers>().Where(a => a.City == city.Id).Select(a => a.Count).DefaultIfEmpty(city.Employed).Last();
@@ -41,21 +41,18 @@ namespace Statecraft.Sim.Reference
         }
 
         /// <summary>Sends each idle halutz unit, in id order, to the first yishuv site without a record, in ordinal id order,
-        /// while the turn's Attention and the Treasury pay for it (pioneer work does not borrow).</summary>
+        /// while the turn's Attention lasts. Pioneer work borrows, so the Treasury does not hold it back.</summary>
         static void Build(Content c, GameState s, List<Command> list, ref double left)
         {
             var cost = AttentionSystem.Cost(c, s, Projects.PioneerKind);
-            var money = s.Treasury;
             var taken = new HashSet<string>(s.Sites.Keys, StringComparer.Ordinal);
-            var price = c.RulesAt(s.Date).Mvp!.BuildYishuvCost;
             foreach (var u in s.Units.Values.Where(u => u.Type == "halutz" && !Projects.IsBusy(s, u.Id)))
             {
                 var site = c.Sites.Where(x => x.Kinds.Contains("yishuv") && !taken.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault();
-                if (site == null || cost > left + 1e-9 || price > money) return;
+                if (site == null || cost > left + 1e-9) return;
                 list.Add(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id));
                 taken.Add(site.Id);
                 left -= cost;
-                money -= price;
             }
         }
     }

@@ -1,28 +1,28 @@
-1949-01-15;1948;Historical;8;
+1949-03-15;1948;Historical;10;
 ind{
   food_supply=0.4 [3FD999999999999A]
-  housing=0.42228343009948727 [3FDB06B1147AE147]
-  intl_standing=0.53 [3FE0F5C28F5C28F6]
-  morale=0.6085614645767212 [3FE37955E47ECFEA]
-  security=0.48869177246093765 [3FDF46B9DB22D0E8]
+  housing=0.4258016169309616 [3FDB40556CD35A85]
+  intl_standing=0.56 [3FE1EB851EB851EC]
+  morale=0.6429967672448158 [3FE4936DF4D801B4]
+  security=0.5103316220092775 [3FE054A2FB549F96]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
   maabarot=0 [0000000000000000]
   rationing=0 [0000000000000000]
 eff{
-  border_villages_secure=0.033691772460937505 [3FA1400C49BA5E36]
-  building_houses=0.0722834300994873 [3FB2812AB851EB85]
-  homes_lift_morale=0.06197826633453369 [3FAFBB9D85F06F69]
+  border_villages_secure=0.03533162200927735 [3FA216FC8216C616]
+  building_houses=0.0758016169309616 [3FB367BC19B3D07C]
+  homes_lift_morale=0.06315223190546035 [3FB02ABEA2B40F66]
   rationing_feeds=0 [0000000000000000]
   rationing_grates=0 [0000000000000000]
-  safety_lifts_morale=0.04658319824218751 [3FA7D9C0C1FC8F34]
+  safety_lifts_morale=0.049844535339355484 [3FA9853912556D1C]
 shift{
   food_supply=0 [0000000000000000]
   housing=0 [0000000000000000]
-  intl_standing=0.030000000000000027 [3F9EB851EB851EC0]
-  morale=-0.050000000000000044 [BFA99999999999A0]
-  security=0.15500000000000014 [3FC3D70A3D70A3DC]
+  intl_standing=0.06000000000000005 [3FAEB851EB851EC0]
+  morale=-0.020000000000000018 [BF947AE147AE1480]
+  security=0.17500000000000016 [3FC666666666666C]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -33,23 +33,25 @@ bud{
   labour_minister=0.1 [3FB999999999999A]
   prime_minister=0.15 [3FC3333333333333]
 pop{
-  africa=9739.110001692712 [40C3058E1489145A]
-  america_oceania=535.0499244151753 [4080B8663EC59399]
-  asia=7512.155402122331 [40BD5827C86EF924]
-  europe=81633.61444656934 [40F3EE19D4C5ED07]
-  unknown=12145.947428858311 [40C7B8F945594CDE]
-  veterans=656752.739703733 [41240AE17ABA729C]
+  africa=16110.114738040149 [40CF770EAFBC7106]
+  america_oceania=766.5856652505514 [4087F4AF71434C2D]
+  asia=19124.004078920254 [40D2AD0042D43B46]
+  europe=101592.86638564836 [40F8CD8DDCB73297]
+  unknown=13102.557782002037 [40C9974765669086]
+  veterans=658603.8958591067 [41241957CAAE0B7A]
 sit[
 treasury=0 [0000000000000000]
-debt=23.248732976636184 [40373FACF6E016D2]
-fx=80.85238326859616 [4054368D728D91CC]
-rung=5;cf=40;
+debt=37.47911574995227 [4042BD53AA368592]
+fx=87.53820941589427 [4055E27205E7EA92]
+rung=5;cf=32;
 mob=0.8 [3FE999999999999A]
-stab=0.6151384263401847 [3FE3AF36C7F49BA2]
+stab=0.5886393017596533 [3FE2D62216C655E7]
 att=4 [4010000000000000]
 fired[
   altalena
+  armistice_egypt
   bernadotte_assassination
+  elections_1949
   first_truce
   idf_founding
   jerusalem_ceasefire
@@ -61,16 +63,18 @@ fired[
   second_truce
   ten_days
 pending[
-  operation_horev
+  armistice_egypt
 chosen{
   altalena=enforce
   bernadotte_assassination=outlaw
+  elections_1949=hold
   first_truce=accept
   idf_founding=one_army
   jerusalem_ceasefire=sign
   jerusalem_military_government=military_government
   latrun_proposal=accept_vote
   operation_hiram=launch
+  operation_horev=launch
   operation_yoav=stop_at_ceasefire
   second_truce=comply
   ten_days=central_front
@@ -80,8 +84,10 @@ map[
 mapturn=0001-01-01:0;
 over=
 city{
-  tel_aviv=120,90,120,90,90
-coh=0.685880829015544 [3FE5F2BC5A326776]
+  tel_aviv=120,90,120,90,128
+coh=0.6358695652173914 [3FE4590B21642C86]
 units[
   1:halutz@-3,19
+site{
+  mefalsim=done,1949-03-15
 next=2

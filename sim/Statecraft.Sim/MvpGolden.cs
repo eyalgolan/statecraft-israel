@@ -8,8 +8,9 @@ namespace Statecraft.Sim
     /// reference player (D-A7: HistoricalAI's orders, then the jobs filled), until Until.</summary>
     public static class MvpGolden
     {
-        /// <summary>Eight monthly turns from 15 May 1948. A test choice, not a balance value.</summary>
-        public static readonly DateTime Until = new DateTime(1949, 1, 15);
+        /// <summary>Ten monthly turns from 15 May 1948: long enough for the reference player's build at Mefalsim, started on
+        /// 15 September 1948, to finish on 15 March 1949 (GDD Phase 1 PR 5). A test choice, not a balance value.</summary>
+        public static readonly DateTime Until = new DateTime(1949, 3, 15);
 
         public static GameState Play(Content c)
         {

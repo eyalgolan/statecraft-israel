@@ -8,8 +8,8 @@ As a player of the MVP, I want to send a group of halutzim to build a new yishuv
 
 - Building is allowed only at designated sites, listed with their sources in `content/sites.yaml`. The slice has one: Mefalsim, founded on 12 June 1949, the day of the ceremony of going onto the land [S4][S5]. The owner chose it on #378 [S3].
 - A site is available from the game's start. It may sit on an armistice line hex, as Mefalsim's hex does [S3].
-- `PioneerWork(unit, build_yishuv, site)` sends an idle halutz unit to build. It costs IL 2m, a placeholder paid in full at once and never borrowed, and no Attention, because unit orders are free (D-A6). The unit works from where it stands (R-SITE-001).
-- It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), a short Treasury, or the legacy loop (R-SITE-001).
+- `PioneerWork(unit, build_yishuv, site)` sends an idle halutz unit to build. It costs IL 2m, a placeholder paid in full at once, borrowing what the Treasury lacks (owner decision on #378 [S3]), and no Attention, because unit orders are free (D-A6). The unit works from where it stands (R-SITE-001).
+- It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), or the legacy loop (R-SITE-001).
 - `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
 - Construction resolves after training and before production in each turn (D-A6). A build ordered this turn counts this turn: it takes 6 turns, a placeholder (R-SITE-003).
 - When the build finishes, the site is marked built on the turn's end date and the unit is idle again. It stays a halutz unit. Nothing else changes yet: no city, housing, jobs, population or Social cohesion. The objective and its card come with the objective PR (R-SITE-003).
@@ -41,4 +41,3 @@ As a player of the MVP, I want to send a group of halutzim to build a new yishuv
 ## Open questions
 
 - The placeholder values (6 turns, IL 2m) wait for the owner.
-- Whether pioneer work may borrow from the Treasury. It refuses until the owner answers the same question for training (#377). With today's economy the Treasury is empty from September 1948, so the reference player never builds and the `mvp-slice` golden does not show a build.
