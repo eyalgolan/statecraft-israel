@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -74,6 +75,50 @@ public class ReferencePlayerTests
         var poor = s.Clone();
         poor.Treasury = 0;
         Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);
+    }
+
+    /// <summary>The GDD fixture with two yishuv sites, site_a on (2, 0) and site_b on (3, 0), and pioneer_work priced at
+    /// <paramref name="cost"/> Attention.</summary>
+    static Content TwoSites(int cost) => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+    {
+        ["sites.yaml"] = Fixture.GddSites + Fixture.GddSites.Replace("sites:\n", "").Replace("site_a", "site_b").Replace("Site A", "Site B").Replace("q: 2", "q: 3"),
+        ["rules.yaml"] = Fixture.Files["rules.yaml"].Replace("map_action: 1 }", Fixture.GddCosts.Replace("pioneer_work: 0", "pioneer_work: " + cost)) + Fixture.GddRules,
+    })));
+
+    static GameState TwoHalutzim(Content c)
+    {
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        for (int i = 0; i < 2; i++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "halutz", 1, 0)); }
+        return s;
+    }
+
+    // R-SITE-001: a busy unit is not sent again, even when another site is free; the idle one takes it.
+    [Fact]
+    public void ItSendsNoBusyUnit()
+    {
+        var c = TwoSites(0);
+        var s = TwoHalutzim(c);
+        var (busy, idle) = (s.Units.Keys[0], s.Units.Keys[1]);
+        s.Sites["site_a"] = new SiteWork("site_a", busy, 2, null);
+        var build = Assert.Single(ReferencePlayer.Commands(c, s).OfType<PioneerWork>());
+        Assert.Equal((idle, "site_b"), (build.Unit, build.Site));
+    }
+
+    // R-SITE-001: the policy sends builds only while the turn's Attention lasts (the slice prices them at 0; this fixture at 1).
+    [Fact]
+    public void ItSendsNoMoreBuildsThanAttentionPays()
+    {
+        var c = TwoSites(1);
+        var s = TwoHalutzim(c);
+        s.Cities["town_a"] = s.Cities["town_a"].WithCounts(8, 8, 0);   // the jobs are filled: no AssignWorkers takes Attention
+        var history = HistoricalAI.Commands(c, s).Sum(x => AttentionSystem.Cost(c, s, x.Kind));
+        var price = AttentionSystem.Cost(c, s, Projects.PioneerKind);
+        Assert.True(price > 0);
+        s.Attention = history + price * 1.5;   // one build, not two
+        var build = Assert.Single(ReferencePlayer.Commands(c, s).OfType<PioneerWork>());
+        Assert.Equal((s.Units.Keys[0], "site_a"), (build.Unit, build.Site));
+        s.Attention = history + price * 0.5;
+        Assert.DoesNotContain(ReferencePlayer.Commands(c, s), x => x is PioneerWork);
     }
 
     [Fact]
