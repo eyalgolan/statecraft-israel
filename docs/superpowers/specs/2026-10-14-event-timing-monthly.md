@@ -1,7 +1,7 @@
 # Event timing under monthly turns (2026-10-14)
 
-- **Status:** analysis and proposal for the cutover PR (#382). No content, sim or golden change is made here. The window
-  edits below are proposals for the owner to accept or refuse; the cutover PR makes them.
+- **Status:** analysis for the cutover PR (#382), with the owner's decisions of 15 October 2026 (§4). No content, sim or
+  golden change is made here; the content edits land with the cutover (Phase 2 PR 1).
 - **Read against:** `origin/main` at `37fb6843` (14 October 2026).
 - **Context:** the impact plan's §3, cutover step 2 ("Re-time the 31 event windows"), and its risk "Re-timed windows read
   wrong historically" ([impact plan](2026-10-12-gdd-v0.1-impact-and-plan.md)). Monthly turns: [monthly-turns.md](../../gdd/monthly-turns.md).
@@ -26,7 +26,8 @@
     fighting, and the same card batch brings the truce that ends it.
 - **Six `from` edits fix six of these, and through them the two broken events** (§4). They are proposed below and were
   tested on the sim. They leave **7 cards late**, and no window edit can fix those on the 15th-of-the-month grid: no turn
-  date falls between the fact a card states and the decision it asks for. These need an owner call (§4, Q1).
+  date falls between the fact a card states and the decision it asks for. The owner decided them on 15 October 2026
+  (§4): two stay late, five are rewritten.
 - **Counts for the current content on monthly turns:**
   - 18 fine: 9 on time, and 9 late "on or after" by design but better than today;
   - 6 need a window edit;
@@ -61,7 +62,8 @@ moves:
   does. The game then runs on the 15th of each month: 15 June 1948, 15 July 1948, and so on, to 15 January 1952 (44
   turns). There is one era (`founding`, to 1957), so no turn is adjusted before then. The rung no longer changes the turn
   length. The first truce's "do not fix to 4" comment and the "monthly grid of the second truce" timing notes become moot.
-- **The grid can still move.** D-E5 is open: the MVP may move to a grid on the 1st. §5 compares the two grids.
+- **The grid stays on the 15th.** The owner decided the MVP ends on 15 January 1952 (§4, D-E5), so the grid on the 1st
+  is not used. §5 keeps the comparison that informed the decision.
 
 ## 2. Method
 
@@ -164,7 +166,7 @@ A small Python model of the trigger rule reproduced run 3 event for event. It wa
   turns bring 3 hard cards: 15 July 1948, 15 October 1948, 15 January 1949 after the edits, and 15 March 1951 with two
   soft ones. `HistoricalAI` had no order refused in any run.
 
-## 4. Proposed content edits and owner questions
+## 4. Content edits and owner decisions
 
 **Edits, all tested together on the sim.** Each moves the window's `from` to the 15th on or before the decision, so the
 card opens on the turn before it. That is the same convention as today, re-based from weekly turns to monthly ones. No
@@ -182,11 +184,12 @@ card opens on the turn before it. That is the same convention as today, re-based
    truce", or (in `first_truce.yaml`) "do not fix it to 4": rewrite them for monthly turns.
 8. **Tests:**
    - `WarEvents1948Tests`: re-base it on monthly turns.
-   - Its `LateByDesign` map: widen it, or replace it, by the answer to Q1.
+   - Its `LateByDesign` map: add `first_truce` and `rhodes_talks` (Q1, decided).
    - A new test for the cutover: every event fires in the historical monthly run. Today `RealContentTests` checks only
      1950–51, and `WarEvents1948Tests` only the war cards. A check like this would have caught the two broken events.
 
-**Owner questions.**
+**Owner decisions, 15 October 2026.** The owner answered the questions below in the coordinator's session; they are
+recorded in the comments on #568. Each question keeps its options for the record.
 
 - **Q1. Seven cards cannot be placed between their fact and their decision on the 15th grid.** They are `first_truce`,
   `ten_days`, `bernadotte_assassination`, `operation_hiram`, `jerusalem_ceasefire`, `sinai_withdrawal` and
@@ -200,14 +203,19 @@ card opens on the turn before it. That is the same convention as today, re-based
   - (c) **A sim change:** run `Trigger` once more right after the turn's commands, so that a follower fires in the same
     turn its parent is answered. This helps only the chained cards (#4, #13 and #14), and it moves every golden.
 
-  **Recommendation:** (a) for `first_truce` (+5 d) and `rhodes_talks` (+2 d); (b) for the rest.
+  **Decided (owner, 15 October 2026): "Mixed, as recommended".** (a) for `first_truce` (+5 d) and `rhodes_talks`
+  (+2 d), which arrive late by design; (b) for the other five: `ten_days`, `bernadotte_assassination`, `operation_hiram`,
+  `jerusalem_ceasefire` and `sinai_withdrawal` are rewritten as decisions taken during, or after, the fact.
 - **Q2. Altalena.** Is there a source for when the ship's arrival was expected? If not, should the card stay at 15 July
   (+25 d, after the shelling) with its text reworked as the aftermath, the Irgun units in the IDF dispersed?
+  **Open:** not answered on 15 October. The window edit (§4, edit 2) waits for a source.
 - **Q3. Ten Days.** On the 15th grid the card cannot come before 15 July while it `requires` the first truce. The parent
   is answered during the turn that ends on 15 July. Options:
   - (a) drop `requires`, open on 15 June and keep the text: the truce is in force and "due to end on 9 July". But a
     player who refused the first truce would then read about a truce that never happened.
   - (b) keep `requires` and rewrite the card as a decision during the fighting.
+
+  **Decided (owner, 15 October 2026): "Rewrite it"**, option (b).
 - **Q4. Gaps between events.** The m3 ruling allows "at most a 4-turn gap with no events" in the historical run
   ([m3-rulings](../../m3-rulings.md)). It was written for quarterly turns, where 4 turns meant a year. On monthly turns:
   - June to October 1951 (turns 37 to 41) is a 5-turn gap, which breaks the ruling as worded;
@@ -215,6 +223,11 @@ card opens on the turn before it. That is the same convention as today, re-based
 
   Restate the rule in months, or add a sourced 1951 event? (`WarEvents1948Tests.MaxEmptyTurns = 4` covers only the war
   period, and it holds: the longest gap there is 1 turn.)
+
+  **Decided (owner, 15 October 2026): "Restate the rule in months".** The m3 ruling and the tests that pin it are
+  restated with the cutover.
+- **D-E5. The MVP's end and the grid** (§5). **Decided (owner, 15 October 2026): "End on 15 Jan 1952".** The turns stay
+  on the 15th, and the edits above stand as written.
 
 ## 5. The grid on the 1st (D-E5)
 
@@ -234,5 +247,5 @@ the card states and the decision it asks for:
 1st grid, `second_truce` and `operation_yoav`, both on time today on the 15th grid, would arrive after the truce took
 effect and after the Yoav cease-fire.
 
-**Recommendation:** for event timing alone, keep the 15th grid, and end the MVP on 15 January 1952. The edits in §4 are
-written for the 15th grid. If D-E5 picks the 1st, they must be redone.
+**Recommendation:** for event timing alone, keep the 15th grid, and end the MVP on 15 January 1952. **Decided (owner,
+15 October 2026): "End on 15 Jan 1952".** The edits in §4 are written for the 15th grid.
