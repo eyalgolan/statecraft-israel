@@ -23,7 +23,7 @@ namespace Statecraft.Sim
     ///   turn                       starts the next turn's command list (one per Simulation.Step)
     ///   &lt;command&gt; ...              policy ID LEVEL | budget OFFICE=SHARE,... | event ID OPTION | mobilize LEVEL |
     ///                              security DELTA | appoint OFFICE PERSON | map ACTION Q R | work CITY ROLE N |
-    ///                              train CITY TRACK N | untrain COHORT
+    ///                              train CITY TRACK N | untrain COHORT | pioneer UNIT ACTION SITE | stop UNIT
     ///   end &lt;hex&gt;                 GameState.Hash() after the last turn (checks the replay)
     /// Doubles are IEEE bit patterns in hex, so replays are exact; strings are percent-escaped (Uri.EscapeDataString).
     /// </summary>
@@ -105,6 +105,8 @@ namespace Statecraft.Sim
             AssignWorkers w => $"work {Esc(w.City)} {Esc(w.Role)} {Int(w.Count)}",
             Train t => $"train {Esc(t.City)} {Esc(t.Track)} {Int(t.Count)}",
             CancelTraining t => $"untrain {Int(t.Cohort)}",
+            PioneerWork p => $"pioneer {Int(p.Unit)} {Esc(p.Action)} {Esc(p.Site)}",
+            StopWork w => $"stop {Int(w.Unit)}",
             _ => throw new ArgumentException($"Cannot save command kind '{cmd.Kind}'", nameof(cmd)),
         };
 
@@ -194,6 +196,8 @@ namespace Statecraft.Sim
                 case "work": Arity(4); return new AssignWorkers(Str(f[1]), Str(f[2]), I(f[3]));
                 case "train": Arity(4); return new Train(Str(f[1]), Str(f[2]), I(f[3]));
                 case "untrain": Arity(2); return new CancelTraining(I(f[1]));
+                case "pioneer": Arity(4); return new PioneerWork(I(f[1]), Str(f[2]), Str(f[3]));
+                case "stop": Arity(2); return new StopWork(I(f[1]));
                 default: throw new SaveException(line, $"unknown command '{f[0]}'");
             }
         }

@@ -38,6 +38,9 @@ namespace Statecraft.Sim
         /// <summary>The display name of a settlement (map/settlements_1948.yaml name), such as a GDD city.</summary>
         public static string Settlement(Content c, string id) => c.SettlementNames.TryGetValue(id, out var name) ? name : throw Unknown("settlement", id);
 
+        /// <summary>The display name of a designated site (sites.yaml name), never its id.</summary>
+        public static string Site(Content c, string id) => c.Sites.FirstOrDefault(x => x.Id == id)?.Name ?? throw Unknown("site", id);
+
         /// <summary>The display name of what a cause changes: an indicator or policy (model.yaml names), or money
         /// (model.yaml money).</summary>
         public static string Target(Content c, string id) =>

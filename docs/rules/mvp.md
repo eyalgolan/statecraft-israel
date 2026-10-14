@@ -43,3 +43,13 @@ R-TRAIN-001: `Train(city, track, n)` takes `n` of the city's civilians without a
 R-TRAIN-002: `CancelTraining(cohort)` returns the cohort's people to its city as civilians without a job and refunds none of the Money paid (D-A3). A cohort that does not exist, or has finished, is refused with the state unchanged.
 
 R-TRAIN-003: Each turn, in ascending id, every cohort has one turn less to go. A cohort that reaches 0 ends: recruits are added to the city's count of recruits (a count until Phase 5), and halutzim become one movable unit per group at the city's settlement hex, taking the next ids in turn. A city's recruits and the cohorts are written into the state hash only when there are some.
+
+## Sites
+
+Construction is step 5 of the turn in the approved order (§2.3, D-A6): after training, before production. The designated sites are sourced facts in `content/sites.yaml`; Phase 1 has one, Mefalsim (owner decision on #378). The answers below are the plan's recommendations, which the owner took on 14 October 2026 (#378).
+
+R-SITE-001: `PioneerWork(unit, build_yishuv, site)` starts building a yishuv at a designated site whose kinds include `yishuv` and which is neither being built nor built, with a halutz unit that has no other project (D-D6: one project per unit). The Treasury pays `build_yishuv_cost` at once and pioneer work does not borrow. The site has `build_yishuv_turns` to go, counting the turn of the order. The unit does not move. It is refused, with the state unchanged and the Attention refunded, for an unknown unit, a unit that is not a halutz or is busy, an unknown action or site, a site that is not for a yishuv, a site being built or built (one unit per site), or a Treasury that holds less than the cost. The legacy loop refuses it before charging Attention. Its Attention cost is 0 (D-A6: unit orders are free).
+
+R-SITE-002: `StopWork(unit)` ends the unit's build: the site is available again, the unit is idle, and the progress and the Money paid are lost (D-A3). A unit that does not exist or is not building is refused with the state unchanged. Its Attention cost is 0.
+
+R-SITE-003: Each turn, in ordinal site id order, every site being built has one turn less to go. A site that reaches 0 is built, on the turn's end date, and its unit is idle again. The unit stays a halutz unit, and no city, housing, job, population or Social cohesion changes. Sites being built or built are written into the state hash only when there are some.

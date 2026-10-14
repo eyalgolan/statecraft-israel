@@ -85,6 +85,24 @@ namespace Statecraft.Sim
         public CancelTraining(int cohort) { Cohort = cohort; }
     }
 
+    /// <summary>Sends halutz unit <see cref="Unit"/> to do pioneer work <see cref="Action"/> (build_yishuv) at designated site
+    /// <see cref="Site"/> (Projects.Start, R-SITE-001). GDD v0.1 loop only.</summary>
+    public sealed class PioneerWork : Command
+    {
+        public override string Kind => Projects.PioneerKind;
+        public int Unit { get; } public string Action { get; } public string Site { get; }
+        public PioneerWork(int unit, string action, string site) { Unit = unit; Action = action; Site = site; }
+    }
+
+    /// <summary>Stops unit <see cref="Unit"/>'s pioneer work: the site is available again, and the progress and the Money spent
+    /// are lost (Projects.Stop, R-SITE-002, D-A3). GDD v0.1 loop only.</summary>
+    public sealed class StopWork : Command
+    {
+        public override string Kind => Projects.StopKind;
+        public int Unit { get; }
+        public StopWork(int unit) { Unit = unit; }
+    }
+
     public sealed class Rejection
     {
         public Command Command { get; } public string Reason { get; }
@@ -116,6 +134,8 @@ namespace Statecraft.Sim
                     case AssignWorkers w: Text(w.City, "City"); Text(w.Role, "Role"); break;
                     case Train t: Text(t.City, "City"); Text(t.Track, "Track"); break;
                     case CancelTraining _: break;
+                    case PioneerWork p: Text(p.Action, "Action"); Text(p.Site, "Site"); break;
+                    case StopWork _: break;
                     case SetMobilization _: case SecurityOrder _: break;
                     default: throw new ArgumentException("unknown command type " + cmd.GetType().Name, "commands");
                 }

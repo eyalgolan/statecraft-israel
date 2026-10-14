@@ -51,6 +51,33 @@ public class ReferencePlayerTests
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, poor), x => x is Train);
     }
 
+    // R-SITE-001: the stated policy sends each idle halutz group, in id order, to the first available yishuv site in id order,
+    // when the Treasury can pay (question 13: no borrowing).
+    [Fact]
+    public void ItSendsAnIdleHalutzToTheFirstAvailableSite()
+    {
+        var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
+        s.Units.Add(7, new Unit(7, "halutz", -3, 19));
+        s.Units.Add(8, new Unit(8, "halutz", -3, 19));
+        s.NextId = 9;
+        s.Treasury = 10;
+        var build = Assert.Single(ReferencePlayer.Commands(Mvp, s).OfType<PioneerWork>());   // one site: the second group waits
+        Assert.Equal((7, "build_yishuv", "mefalsim"), (build.Unit, build.Action, build.Site));
+        Assert.Empty(Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).Rejected);
+
+        var building = s.Clone();
+        building.Sites["mefalsim"] = new SiteWork("mefalsim", 7, 3, null);
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, building), x => x is PioneerWork);
+        var built = s.Clone();
+        built.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, built), x => x is PioneerWork);
+        var poor = s.Clone();
+        poor.Treasury = 1.9;   // the slice's placeholder cost is IL 2m
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);
+        poor.Treasury = 2.0;
+        Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);
+    }
+
     [Fact]
     public void ItSendsNoOrderWhenTheJobsAreFilledOrAttentionIsShort()
     {

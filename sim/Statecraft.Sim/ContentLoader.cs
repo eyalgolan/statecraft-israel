@@ -47,6 +47,7 @@ namespace Statecraft.Sim
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
+        sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
 
         public const string HexesFile = "map/hexes.json";
         public const string SettlementHexesFileName = "map/settlement_hexes.yaml";
@@ -258,6 +259,7 @@ namespace Statecraft.Sim
                 // the legacy content needs neither file.
                 c.Cities = Read<CitiesFile>(readFile, "cities.yaml").Cities;
                 c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
+                c.Sites = Read<SitesFile>(readFile, "sites.yaml").Sites;   // sourced facts (Phase 1 PR 5)
                 ValidateGdd(c, settlementIds);
             }
             c.BuildWindows();
@@ -905,6 +907,44 @@ namespace Statecraft.Sim
                 if (Math.Abs(m.CohesionHousingWeight + m.CohesionJobsWeight - 1) > 1e-9)
                     throw new ContentException(file, "mvp.cohesion_jobs_weight", "the two cohesion weights must sum to 1");
                 if (!cities.Contains(m.ArrivalsCity)) throw new ContentException(file, "mvp.arrivals_city", $"'{m.ArrivalsCity}' is not a city in cities.yaml");
+                if (m.BuildYishuvTurns < 1) throw new ContentException(file, "mvp.build_yishuv_turns", "must be >= 1");
+                if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
+            }
+            ValidateSites(c);
+        }
+
+        /// <summary>What a designated site may be built as (sites.yaml kinds). Phase 1 has "build yishuv" only.</summary>
+        static readonly string[] SiteKinds = { "yishuv" };
+
+        /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement,
+        /// founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file is display only, and a
+        /// site may sit on a line hex (#378, question 2).</summary>
+        static void ValidateSites(Content c)
+        {
+            const string sf = "sites.yaml";
+            Unique(sf, "sites", c.Sites.Select(x => x.Id));
+            var from = new DateTime(1948, 5, 15);
+            var to = new DateTime(1952, 1, 1);
+            foreach (var x in c.Sites)
+            {
+                var at = $"sites[{x.Id}]";
+                Named(sf, at + ".name", x.Name);
+                Named(sf, at + ".name_he", x.NameHe);
+                var hex = c.HexAt(x.Q, x.R);
+                if (hex == null || !hex.Land)
+                    throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
+                var settled = c.SettlementHexes.FirstOrDefault(h => h.Q == x.Q && h.R == x.R);
+                if (settled != null)
+                    throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} holds the 1948 settlement {settled.Id} ({SettlementHexesFileName})"));
+                foreach (var k in x.Kinds)
+                    if (!SiteKinds.Contains(k)) throw new ContentException(sf, at + ".kinds", $"unknown kind '{k}' (yishuv)");
+                if (x.Founded < from || x.Founded >= to)
+                    throw new ContentException(sf, at + ".founded", "required, between 15 May 1948 and 31 December 1951 (the MVP's years, D-B1)");
+                if (x.Sources.Count == 0) throw new ContentException(sf, at + ".sources", "required: a designated site is a historical fact");
+                for (int i = 0; i < x.Sources.Count; i++)
+                    if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)
+                        throw new ContentException(sf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
+                Status(sf, at + ".status", x.Status);
             }
         }
 

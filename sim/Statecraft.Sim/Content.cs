@@ -324,6 +324,27 @@ namespace Statecraft.Sim
         public double CohesionJobsWeight { get; set; }
         /// <summary>The city every arrival lands in (Phase 1 has one city; R-CITY-003).</summary>
         public string ArrivalsCity { get; set; } = "";
+        /// <summary>Turns a "build yishuv" takes, counting the turn it was ordered in (R-SITE-003).</summary>
+        public int BuildYishuvTurns { get; set; }
+        /// <summary>IL millions a "build yishuv" costs, paid in full when it starts (R-SITE-001).</summary>
+        public double BuildYishuvCost { get; set; }
+    }
+
+    /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
+    /// new yishuv takes its site's name). Sourced facts only: the balance values of building are rules (MvpRules).</summary>
+    public sealed class Site
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string NameHe { get; set; } = "";
+        public int Q { get; set; }
+        public int R { get; set; }
+        /// <summary>What pioneers may build here (yishuv).</summary>
+        public List<string> Kinds { get; set; } = new List<string>();
+        /// <summary>The historical founding date: the objective card's reference date (PR 6).</summary>
+        public DateTime Founded { get; set; }
+        public List<Source> Sources { get; set; } = new List<Source>();
+        public string Status { get; set; } = "";
     }
 
     /// <summary>A city's start values (cities.yaml, GDD "Cities and construction"). Counts are population units (D-A1).</summary>
@@ -577,6 +598,8 @@ namespace Statecraft.Sim
         public List<CityStart> Cities = new List<CityStart>();
         /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>
         public List<UnitType> UnitTypes = new List<UnitType>();
+        /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
+        public List<Site> Sites = new List<Site>();
         /// <summary>SHA-256 (lowercase hex) over every file the loader read, in read order, with CRLF read as LF. A save
         /// records it; loading a save made with other content shows a warning (spec section 7).</summary>
         public string Hash = "";

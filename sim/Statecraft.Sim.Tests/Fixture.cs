@@ -203,13 +203,17 @@ series:
         var o = new Dictionary<string, string>
         {
             ["eras.yaml"] = Files["eras.yaml"] + "    systems: { loop: gdd }\n",
-            ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1 }") + GddRules,
+            ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", GddCosts) + GddRules,
             ["cities.yaml"] = GddCities,
             ["unit_types.yaml"] = GddUnitTypes,
+            ["sites.yaml"] = GddSites,
         };
         if (extra != null) foreach (var kv in extra) o[kv.Key] = kv.Value;
         return o;
     }
+
+    /// <summary>The fixture's attention_cost line with the GDD command kinds added (replaces "map_action: 1 }").</summary>
+    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, pioneer_work: 0, stop_work: 0 }";
 
     public const string GddRules = @"
 mvp:
@@ -218,6 +222,8 @@ mvp:
   cohesion_housing_weight: 0.5
   cohesion_jobs_weight: 0.5
   arrivals_city: town_a
+  build_yishuv_turns: 3
+  build_yishuv_cost: 1.5
 ";
 
     public const string GddCities = @"
@@ -231,6 +237,21 @@ types:
   - { id: refugee, kind: population }
   - { id: recruit, kind: population, facility: military_camp, training_turns: 2, training_cost: 0.5 }
   - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: 0.25 }
+";
+
+    /// <summary>One designated site on a land hex next to town_a, with no settlement on it. Fixture values, not history.</summary>
+    public const string GddSites = @"
+sites:
+  - id: site_a
+    name: Site A
+    name_he: אתר א
+    q: 2
+    r: 0
+    kinds: [yishuv]
+    founded: 1949-06-12
+    sources:
+      - { url: ""https://example.org/site_a"", checked: 2026-10-14 }
+    status: fact-checked
 ";
 
     public static string Write(Dictionary<string, string>? overrides = null, Dictionary<string, string>? events = null)

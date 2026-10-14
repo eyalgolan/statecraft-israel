@@ -84,12 +84,17 @@ cities:
                             ["cohesion_housing_weight"] = 0.5,     // PLACEHOLDER (D-C1 open)
                             ["cohesion_jobs_weight"] = 0.5,        // PLACEHOLDER (D-C1 open; the two weights sum to 1)
                             ["arrivals_city"] = "tel_aviv",        // Phase 1 has one city: every arrival lands there
+                            ["build_yishuv_turns"] = 6,            // PLACEHOLDER: owner sets (D-A3: durations are the owner's)
+                            ["build_yishuv_cost"] = 2,             // PLACEHOLDER: owner sets (IL millions, paid at the start)
                         };
                     if (root.TryGetValue("attention_cost", out var ac) && ac is Dictionary<object, object> costs)
                     {
                         if (!costs.ContainsKey("assign_workers")) costs["assign_workers"] = 0.5;         // PLACEHOLDER: owner sets
                         if (!costs.ContainsKey("train")) costs["train"] = 1;                             // PLACEHOLDER: owner sets
                         if (!costs.ContainsKey("cancel_training")) costs["cancel_training"] = 0.5;       // PLACEHOLDER: owner sets
+                        // D-A6 (#456): "unit orders free". The plan's reading of a decided answer, not a placeholder (#378).
+                        if (!costs.ContainsKey("pioneer_work")) costs["pioneer_work"] = 0;
+                        if (!costs.ContainsKey("stop_work")) costs["stop_work"] = 0;
                     }
                     return Writer.Serialize(root);
                 }

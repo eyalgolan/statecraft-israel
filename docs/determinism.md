@@ -71,8 +71,10 @@ later era makes, so they move only when a 1948 rule or event does.
 **MVP goldens (GDD v0.1, before cutover).** `mvp-slice` plays `MvpSlice.Load`, the real content with the loop switch on and
 monthly turns (spec 2026-10-12 section 2.1, R-LOOP-003), from the golden seed in Historical mode with the reference player until
 `MvpGolden.Until` (15 January 1949, eight monthly turns). The reference player (`Statecraft.Sim.Reference.ReferencePlayer`, decision
-D-A7) is a stated test policy, not game AI and not history: `HistoricalAI`'s orders, then each city's jobs filled, then one
-halutz group trained when there is none and none in training. No game mode or UI
+D-A7) is a stated test policy, not game AI and not history: `HistoricalAI`'s orders, then each city's jobs filled, then each
+idle halutz group sent to the first available designated site while the Treasury can pay, then one halutz group trained when
+there is none and none in training. In GDD Phase 1 PR 5 the slice's Treasury is empty from September 1948, when its halutz group
+finishes training, so it never builds and `mvp-slice` did not move for that PR. No game mode or UI
 reaches it (`ReferencePlayerTests`). `MvpGoldenTests` checks it against the manifest line `mvp-slice` and the
 snapshot `golden/mvp-slice.txt`, and the update command re-pins it like the others. It is not shown in this file's table or in
 `tools/web_check.py`, because the players run only the legacy goldens until cutover. A Phase 1 PR that adds a GDD rule the slice

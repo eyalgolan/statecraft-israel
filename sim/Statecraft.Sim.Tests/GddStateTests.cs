@@ -20,7 +20,7 @@ public class GddStateTests
     public void AnEmptyStateWritesNoNewSection()
     {
         var text = new GameState().Describe();
-        foreach (var label in new[] { "city{", "coh=", "units[", "train[", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, text);
+        foreach (var label in new[] { "city{", "coh=", "units[", "train[", "site{", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, text);
         Assert.EndsWith("over=", text);
     }
 
@@ -48,6 +48,7 @@ public class GddStateTests
             ("city{", x => x.Cities["tel_aviv"] = new City("tel_aviv", 10, 4, 6, 3, 2)),
             ("units[", x => x.Units.Add(1, new Unit(1, "halutz", -3, 19))),
             ("train[", x => x.Cohorts.Add(2, new Cohort(2, "recruit", "tel_aviv", 3, 2))),
+            ("site{", x => x.Sites["mefalsim"] = new SiteWork("mefalsim", 1, 5, null)),
             ("next=", x => x.NextId = 2),
             ("obj{", x => x.Objectives["first_new_yishuv"] = new DateTime(1949, 3, 15)),
             ("score=", x => x.Score = 5),
@@ -76,6 +77,18 @@ public class GddStateTests
         var cohorts = new[] { new Cohort(1, "recruit", "a", 1, 1), new Cohort(2, "recruit", "a", 1, 1), new Cohort(1, "halutz", "a", 1, 1),
                               new Cohort(1, "recruit", "b", 1, 1), new Cohort(1, "recruit", "a", 2, 1), new Cohort(1, "recruit", "a", 1, 2) };
         Assert.Equal(cohorts.Length, new HashSet<string>(Array.ConvertAll(cohorts, K)).Count);
+        string W(SiteWork w) { var s = new GameState(); s.Sites[w.Site] = w; return s.Hash(); }
+        var works = new[] { new SiteWork("a", 1, 1, null), new SiteWork("b", 1, 1, null), new SiteWork("a", 2, 1, null), new SiteWork("a", 1, 2, null),
+                            SiteWork.Built("a", new DateTime(1949, 1, 15)), SiteWork.Built("a", new DateTime(1949, 2, 15)), SiteWork.Built("b", new DateTime(1949, 1, 15)) };
+        Assert.Equal(works.Length, new HashSet<string>(Array.ConvertAll(works, W)).Count);
+    }
+
+    // R-LOOP-002, R-SITE-001, R-SITE-003: a site being built and a built site, as the hash writes them.
+    [Fact]
+    public void ASiteIsHashedAsBuildingOrBuilt()
+    {
+        Assert.Equal("mefalsim=b,4,5", new SiteWork("mefalsim", 4, 5, null).Canonical());
+        Assert.Equal("mefalsim=done,1949-06-15", SiteWork.Built("mefalsim", new DateTime(1949, 6, 15)).Canonical());
     }
 
     // R-LOOP-002, R-TRAIN-003: a city's recruits reach the hash, and a city with none hashes as it did before PR 4, so
@@ -96,13 +109,14 @@ public class GddStateTests
         a.Cities["x"] = new City("x", 1, 1, 1, 0, 0);
         a.Units.Add(1, new Unit(1, "halutz", 0, 0));
         a.Cohorts.Add(2, new Cohort(2, "recruit", "x", 1, 1));
+        a.Sites["s"] = new SiteWork("s", 1, 1, null);
         a.Objectives["o"] = new DateTime(1949, 1, 1);
         a.NextId = 2; a.Score = 3;
         var before = a.Hash();
         var b = a.Clone();
-        b.Cities["y"] = a.Cities["x"]; b.Units.Add(2, a.Units[1]); b.Cohorts.Clear(); b.Objectives.Clear(); b.NextId = 9; b.Score = 9;
+        b.Cities["y"] = a.Cities["x"]; b.Units.Add(2, a.Units[1]); b.Cohorts.Clear(); b.Sites.Clear(); b.Objectives.Clear(); b.NextId = 9; b.Score = 9;
         Assert.Equal(before, a.Hash());
-        Assert.Single(a.Cities); Assert.Single(a.Units); Assert.Single(a.Cohorts); Assert.Single(a.Objectives);
+        Assert.Single(a.Cities); Assert.Single(a.Units); Assert.Single(a.Cohorts); Assert.Single(a.Sites); Assert.Single(a.Objectives);
     }
 
     [Fact]

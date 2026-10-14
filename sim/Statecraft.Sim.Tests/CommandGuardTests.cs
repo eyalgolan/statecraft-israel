@@ -21,6 +21,8 @@ public class CommandGuardTests
         [typeof(AssignWorkers)] = new AssignWorkers("tel_aviv", "job", 1),
         [typeof(Train)] = new Train("tel_aviv", "halutz", 1),
         [typeof(CancelTraining)] = new CancelTraining(1),
+        [typeof(PioneerWork)] = new PioneerWork(1, "build_yishuv", "mefalsim"),
+        [typeof(StopWork)] = new StopWork(1),
     };
 
     static IEnumerable<Type> CommandTypes() =>

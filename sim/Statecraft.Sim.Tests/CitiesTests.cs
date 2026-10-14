@@ -170,7 +170,7 @@ public class CitiesTests
     static Content Unequal() => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
     {
         ["cities.yaml"] = "cities:\n  - { id: town_a, housing_capacity: 12, job_slots: 20, civilians: 10, employed: 6, facilities: [] }\n",
-        ["rules.yaml"] = Fixture.Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1 }")
+        ["rules.yaml"] = Fixture.Files["rules.yaml"].Replace("map_action: 1 }", Fixture.GddCosts)
             + Fixture.GddRules.Replace("cohesion_housing_weight: 0.5", "cohesion_housing_weight: 0.8").Replace("cohesion_jobs_weight: 0.5", "cohesion_jobs_weight: 0.2"),
     })));
 

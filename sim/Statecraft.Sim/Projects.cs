@@ -1,0 +1,80 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Statecraft.Sim
+{
+    /// <summary>The GDD v0.1 pioneer work (docs/GDD.md "Pioneer work"; Phase 1 PR 5): a halutz unit builds a yishuv at a
+    /// designated site (sites.yaml) over several turns (D-A3), one project per unit (D-D6). Runs only when eras.yaml
+    /// systems.loop is gdd. The answers to #378's open questions are the plan's recommendations, which the owner took on
+    /// 14 October 2026: the unit works from where it stands (9), stays a halutz unit when the yishuv is founded (10), the
+    /// founding changes no city (11), the cost is paid in full at the start (12), a short Treasury refuses (13), stopping loses
+    /// the progress (14), and one unit builds a site (15). Its causes go to the "map" group of the Why screen ("Building").</summary>
+    public static class Projects
+    {
+        public const string PioneerKind = "pioneer_work";
+        public const string StopKind = "stop_work";
+        /// <summary>The one pioneer action Phase 1 has (GDD "Pioneer work": "Build yishuv").</summary>
+        public const string BuildYishuv = "build_yishuv";
+
+        /// <summary>Whether a site being built names <paramref name="unit"/>: the unit has a project (D-D6).</summary>
+        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
+
+        /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
+        /// record. The Treasury pays build_yishuv_cost now and does not borrow; the site gets build_yishuv_turns to go; the unit
+        /// does not move. Refused, state untouched, for an unknown unit, a unit that is not a halutz or is busy, an unknown
+        /// action or site, a site that is not for a yishuv, is being built or is built, or a Treasury short of the cost. Step
+        /// has already refused it in the legacy loop.</summary>
+        public static string? Start(Content c, GameState s, int unit, string action, string site, List<Cause> why)
+        {
+            if (!s.Units.TryGetValue(unit, out var u)) return "There is no such unit";
+            if (u.Type != "halutz") return "Only halutzim do pioneer work";
+            var busy = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
+            if (busy != null) return $"That group of halutzim is already building {PlayerText.Site(c, busy.Site)}";
+            if (action != BuildYishuv) return "There is no such pioneer work";
+            var place = c.Sites.FirstOrDefault(x => x.Id == site);
+            if (place == null) return "There is no such site";
+            if (!place.Kinds.Contains("yishuv")) return $"{place.Name} is not a site for a new yishuv";
+            if (s.Sites.TryGetValue(site, out var work))
+                return work.BuiltOn == null ? $"{place.Name} is already being built" : $"{place.Name} is already built";
+            var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
+            // PLACEHOLDER (owner question, #378 question 13 and #377): a short Treasury refuses, as training does, until the
+            // owner answers whether training may borrow; the answer applies to both.
+            if (r.BuildYishuvCost > s.Treasury)
+                return $"Building a yishuv costs {PlayerText.Money(c, "treasury", r.BuildYishuvCost)} and the Treasury holds {PlayerText.Money(c, "treasury", s.Treasury)}";
+            s.Treasury -= r.BuildYishuvCost;
+            // The same reading of D-A6 as training's: the turn of the order is the first build turn, so with
+            // build_yishuv_turns 6 an order on turn T is built at the end of T+5
+            // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).
+            s.Sites[site] = new SiteWork(site, unit, r.BuildYishuvTurns, null);
+            why.Add(new Cause("map", site, 1, $"{place.Name}: a group of halutzim began building a yishuv, cost {PlayerText.Money(c, "treasury", r.BuildYishuvCost)}"));
+            return null;
+        }
+
+        /// <summary>R-SITE-002 (D-A3): the unit's site loses its record, so it is available again and the unit is idle. The
+        /// progress and the Money spent are lost. Refused, state untouched, for an unknown unit or one with no work. Step has
+        /// already refused it in the legacy loop.</summary>
+        public static string? Stop(Content c, GameState s, int unit, List<Cause> why)
+        {
+            if (!s.Units.ContainsKey(unit)) return "There is no such unit";
+            var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
+            if (work == null) return "That group of halutzim is not building anything";
+            s.Sites.Remove(work.Site);
+            why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned"));
+            return null;
+        }
+
+        /// <summary>R-SITE-003, step 5 of the turn (spec 2026-10-12 section 2.3, D-A6): in ordinal site id order, each site being
+        /// built has one turn less to go. One that reaches 0 is built on <paramref name="next"/>, the turn's end date, and its
+        /// unit is idle again. Nothing else changes: the unit stays a halutz unit, and no city is founded (Phase 1).</summary>
+        public static void Advance(Content c, GameState s, DateTime next, List<Cause> why)
+        {
+            foreach (var w in s.Sites.Values.Where(x => x.BuiltOn == null).ToList())
+            {
+                if (w.TurnsLeft > 1) { s.Sites[w.Site] = w.WithTurnsLeft(w.TurnsLeft - 1); continue; }
+                s.Sites[w.Site] = SiteWork.Built(w.Site, next);
+                why.Add(new Cause("map", w.Site, 1, $"{PlayerText.Site(c, w.Site)} founded"));
+            }
+        }
+    }
+}

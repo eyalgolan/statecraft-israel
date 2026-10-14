@@ -1,0 +1,31 @@
+# GDD v0.1 designated sites (docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a new yishuv
+# takes its site's name). Phase 1 has one site (owner decision D-A4; the owner chose Mefalsim on #378, 14 October 2026).
+# Sourced facts only: the build turns and cost are balance values, set in MvpSlice.Overlay until the owner sets them
+# (ruling 2). The loader reads this file only when eras.yaml systems.loop is gdd. Research: #459,
+# research_notes/GDD objectives/designated-site-1.md.
+sites:
+  - id: mefalsim
+    name: Mefalsim
+    name_he: מפלסים
+    # The hex of the present kibbutz: 31.5019 N, 34.5644 E (Wikidata; the Hebrew and English Wikipedia coordinates, about
+    # 240 m apart, fall in the same hex). The 1949 site was on a kurkar hill facing the Gaza Strip; the kibbutz moved to its
+    # present site about a year later, in 1950, because of fire from Gaza (Yad Ben-Zvi). No coordinates were found for the
+    # 1949 site (#378, question 3). The hex is an Egypt-Israel armistice line hex in map/armistice_hexes_1949.yaml (display
+    # only); a site may sit on one (#378, question 2).
+    q: -10
+    r: 27
+    kinds: [yishuv]
+    # The ceremony of going onto the land, 12 June 1949 (#378, question 5). Gvati's list gives 12.6.49; the Yad Ben-Zvi page
+    # gives the ceremony on Jewish National Fund land on 12 June 1949. An advance party arrived on 8 June 1949 (one source,
+    # not used). Gaps: no 1949 newspaper was read, and the check for a depopulated locality rests on Wikipedia naming none;
+    # a gazetteer check comes before the PR 6 card text is written (#378, question 7).
+    founded: 1949-06-12
+    sources:
+      # Haim Gvati, 100 Years of Settlement, vol. 2, list of all Jewish rural settlements: Mefalsim, South, 12.6.49.
+      - { url: "https://benyehuda.org/read/14684", checked: 2026-10-14 }
+      # Yad Ben-Zvi, "Israel Revealed to the Eye", Kibbutz Mefalsim: the ceremony on 12 June 1949, the Dror garin from
+      # Latin America, the move in 1950.
+      - { url: "https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%9E%D7%A4%D7%9C%D7%A1%D7%99%D7%9D/", checked: 2026-10-14 }
+      # Wikidata Q2890190: the names (Mefalsim, מפלסים) and the coordinates the hex is computed from (tools/hexgrid.py).
+      - { url: "https://www.wikidata.org/wiki/Q2890190", checked: 2026-10-14 }
+    status: fact-checked

@@ -1,0 +1,44 @@
+# Build yishuv: one designated site
+
+## Player story
+
+As a player of the MVP, I want to send a group of halutzim to build a new yishuv at a designated site, so that the place is founded under its historical name (GDD "Pioneer work" [S1]; decisions D-A3, D-A4, D-D6 [S2]).
+
+## Rules
+
+- Building is allowed only at designated sites, listed with their sources in `content/sites.yaml`. The slice has one: Mefalsim, founded on 12 June 1949, the day of the ceremony of going onto the land [S4][S5]. The owner chose it on #378 [S3].
+- A site is available from the game's start. It may sit on an armistice line hex, as Mefalsim's hex does [S3].
+- `PioneerWork(unit, build_yishuv, site)` sends an idle halutz unit to build. It costs IL 2m, a placeholder paid in full at once and never borrowed, and no Attention, because unit orders are free (D-A6). The unit works from where it stands (R-SITE-001).
+- It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), a short Treasury, or the legacy loop (R-SITE-001).
+- `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
+- Construction resolves after training and before production in each turn (D-A6). A build ordered this turn counts this turn: it takes 6 turns, a placeholder (R-SITE-003).
+- When the build finishes, the site is marked built on the turn's end date and the unit is idle again. It stays a halutz unit. Nothing else changes yet: no city, housing, jobs, population or Social cohesion. The objective and its card come with the objective PR (R-SITE-003).
+
+## Data touched
+
+- `content/sites.yaml` (new; sourced facts: id, names, hex, kinds, founding date, sources, status). The loader reads it only in the GDD loop, so the legacy content hash does not move.
+- `rules.yaml` `mvp.build_yishuv_turns` and `mvp.build_yishuv_cost`, and `attention_cost.pioneer_work` and `stop_work`: supplied by `MvpSlice.Overlay`, never under `content/` (ruling 2 [S3]).
+- `GameState.Sites`, hashed as `site{...}` when there are some; `Treasury`.
+- Save files: the `pioneer UNIT ACTION SITE` and `stop UNIT` lines. Scenarios: `pioneer_work` and `stop_work`.
+
+## Done when
+
+- `dotnet test sim/Statecraft.sln` passes, including `ProjectsTests`, `SitesContentTests`, `GddStateTests` and `ReferencePlayerTests`.
+- `hash1950`, `hash1952`, `smoke5`, `scenario-cautious`, `scenario-reckless` and `scenario-mvp-absorb-first` do not move.
+
+## Out of scope
+
+- The objective, its card and the score (PR 6), the build button and the built yishuv on the map (PRs 7 and 8), movement (Phase 5), other pioneer work and other kinds of site, and more sites.
+
+## Sources
+
+- [S1] The game design of record, docs/GDD.md
+- [S2] GDD v0.1 impact analysis and phased plan, section 5, docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md
+- [S3] GDD Phase 1 plan for PR 5 and the owner's decisions, https://github.com/eyalgolan/statecraft-israel/issues/378, checked 2026-10-14
+- [S4] Haim Gvati, 100 Years of Settlement, vol. 2, list of all Jewish rural settlements, https://benyehuda.org/read/14684, checked 2026-10-14
+- [S5] Yad Ben-Zvi, "Israel Revealed to the Eye", Kibbutz Mefalsim, https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%9E%D7%A4%D7%9C%D7%A1%D7%99%D7%9D/, checked 2026-10-14
+
+## Open questions
+
+- The placeholder values (6 turns, IL 2m) wait for the owner.
+- Whether pioneer work may borrow from the Treasury. It refuses until the owner answers the same question for training (#377). With today's economy the Treasury is empty from September 1948, so the reference player never builds and the `mvp-slice` golden does not show a build.

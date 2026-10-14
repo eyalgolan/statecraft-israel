@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 
 namespace Statecraft.Sim
@@ -73,5 +74,32 @@ namespace Statecraft.Sim
 
         /// <summary>The record as the state hash writes it.</summary>
         public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2}x{3}/{4}", Id, Type, City, Count, TurnsLeft);
+    }
+
+    /// <summary>Pioneer work at a designated site (sites.yaml; R-SITE-001 to R-SITE-003): <see cref="Unit"/> building it with
+    /// <see cref="TurnsLeft"/> more turns to go, or, once <see cref="BuiltOn"/> is set, built on that date. Only sites being
+    /// built or built have a record; an available site has none. A unit is busy while a record names it (D-D6: one project per
+    /// unit), so Unit itself holds no order. Immutable; a change replaces the record.</summary>
+    public sealed class SiteWork
+    {
+        public string Site { get; }
+        /// <summary>The halutz unit building the site; 0 once it is built.</summary>
+        public int Unit { get; }
+        public int TurnsLeft { get; }
+        /// <summary>The end date of the turn the site was built on; null while it is being built.</summary>
+        public DateTime? BuiltOn { get; }
+
+        public SiteWork(string site, int unit, int turnsLeft, DateTime? builtOn) { Site = site; Unit = unit; TurnsLeft = turnsLeft; BuiltOn = builtOn; }
+
+        /// <summary>The site built on <paramref name="on"/>, with no unit on it.</summary>
+        public static SiteWork Built(string site, DateTime on) => new SiteWork(site, 0, 0, on);
+
+        /// <summary>The same work with <paramref name="turnsLeft"/> turns to go.</summary>
+        public SiteWork WithTurnsLeft(int turnsLeft) => new SiteWork(Site, Unit, turnsLeft, BuiltOn);
+
+        /// <summary>The record as the state hash writes it: "id=b,UNIT,TURNSLEFT" while building, "id=done,yyyy-MM-dd" once built.</summary>
+        public string Canonical() => BuiltOn is DateTime on
+            ? Site + "=done," + on.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : string.Format(CultureInfo.InvariantCulture, "{0}=b,{1},{2}", Site, Unit, TurnsLeft);
     }
 }

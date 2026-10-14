@@ -7,11 +7,11 @@ namespace Statecraft.Sim
     public static class AttentionSystem
     {
         static readonly HashSet<string> Kinds = new HashSet<string>
-            { "set_policy", "allocate_budget", "choose_event_option", "set_mobilization", "security_order", "appoint", "map_action", "assign_workers", "train", "cancel_training" };
+            { "set_policy", "allocate_budget", "choose_event_option", "set_mobilization", "security_order", "appoint", "map_action", "assign_workers", "train", "cancel_training", "pioneer_work", "stop_work" };
 
         /// <summary>The kinds only the GDD v0.1 loop runs. Rules price them only when systems.loop is gdd, and the legacy loop
         /// refuses them before charging Attention.</summary>
-        static readonly HashSet<string> GddKinds = new HashSet<string> { "assign_workers", "train", "cancel_training" };
+        static readonly HashSet<string> GddKinds = new HashSet<string> { "assign_workers", "train", "cancel_training", "pioneer_work", "stop_work" };
 
         public static IReadOnlyCollection<string> CommandKinds => Kinds;
 

@@ -67,7 +67,7 @@ public class CitiesContentTests
     const string City = "  - { id: town_a, housing_capacity: 12, job_slots: 8, civilians: 10, employed: 6, facilities: [] }\n";
 
     static string Cities(string row) => "cities:\n" + row;
-    static string Rules(string mvp) => Fixture.Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1 }") + mvp;
+    static string Rules(string mvp) => Fixture.Files["rules.yaml"].Replace("map_action: 1 }", Fixture.GddCosts) + mvp;
     static string Types(string row) => "types:\n  - { id: civilian, kind: population }\n" + row;
 
     public static IEnumerable<object[]> BadRows() => new List<object[]>

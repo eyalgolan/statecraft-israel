@@ -25,6 +25,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   records an explicit Cc-by-sa-4.0 file as `CC-BY-SA-4.0`, verified only with a named artist and a `NOTICE` entry, with a
   share-alike note; `PortraitImport` accepts CC BY-SA 4.0. Kaplan, Gruenbaum, Bernstein, Zisling, Rosen and Sheetrit stay
   on GPO photographs for now.
+- GDD v0.1 Phase 1, build yishuv at one designated site (refs #378), behind the `systems.loop` switch: `content/sites.yaml`
+  holds Mefalsim (founded 12 June 1949; Gvati's settlement list and Yad Ben-Zvi), read only by the GDD loop.
+  `PioneerWork(build_yishuv)` sends an idle halutz unit to build there, paid at once without borrowing; `StopWork` frees the
+  unit and the site and keeps the Money spent (D-A3). Construction is step 5 of the GDD turn (D-A6) (R-SITE-001 to
+  R-SITE-003). The build turns and cost are placeholders in `MvpSlice.Overlay`, never under `content/`; both orders cost 0
+  Attention (D-A6: unit orders free). No golden moves: the slice's Treasury is empty when its halutz group is ready.
 - Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
   `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
   setting back afterwards, and
