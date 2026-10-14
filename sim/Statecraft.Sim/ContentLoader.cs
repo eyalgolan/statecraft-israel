@@ -874,7 +874,22 @@ namespace Statecraft.Sim
             }
             Unique(uf, "types", c.UnitTypes.Select(x => x.Id));
             foreach (var x in c.UnitTypes)
-                if (x.Kind != "population" && x.Kind != "unit") throw new ContentException(uf, $"types[{x.Id}].kind", "must be population or unit");
+            {
+                var at = $"types[{x.Id}]";
+                if (x.Kind != "population" && x.Kind != "unit") throw new ContentException(uf, at + ".kind", "must be population or unit");
+                if (x.Facility == "")
+                {
+                    // Training (R-TRAIN-001) needs a place to train; values without one would be read by nothing.
+                    if (x.TrainingTurns != 0) throw new ContentException(uf, at + ".training_turns", "only a type with a facility trains");
+                    if (x.TrainingCost != 0) throw new ContentException(uf, at + ".training_cost", "only a type with a facility trains");
+                    continue;
+                }
+                if (!Facilities.Contains(x.Facility)) throw new ContentException(uf, at + ".facility", $"unknown facility '{x.Facility}' (military_camp or hakhshara)");
+                if (x.TrainingTurns < 1) throw new ContentException(uf, at + ".training_turns", "must be >= 1");
+                if (!(x.TrainingCost >= 0 && IsFinite(x.TrainingCost))) throw new ContentException(uf, at + ".training_cost", "must be a finite number >= 0");
+                // A trained count lands in City.Recruits (R-TRAIN-003); other trained counts wait for their decisions (D-D4).
+                if (x.Kind == "population" && x.Id != "recruit") throw new ContentException(uf, at + ".kind", "only recruit is a trained count until Phase 5");
+            }
             var cities = new HashSet<string>(c.Cities.Select(x => x.Id));
             foreach (var (file, r) in new[] { ("rules.yaml", c.Rules) }.Concat(c.EraRules.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => ("rules/" + kv.Key + ".yaml", kv.Value))))
             {

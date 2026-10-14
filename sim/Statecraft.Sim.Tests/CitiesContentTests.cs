@@ -16,7 +16,10 @@ public class CitiesContentTests
         var c = Load();
         var city = Assert.Single(c.Cities);
         Assert.Equal(("town_a", 12, 8, 10, 6), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed));
-        Assert.Equal(new[] { "civilian", "refugee" }, c.UnitTypes.Select(t => t.Id));
+        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz" }, c.UnitTypes.Select(t => t.Id));
+        var halutz = c.UnitTypes.Single(t => t.Id == "halutz");
+        Assert.Equal(("unit", "hakhshara", 3, 0.25), (halutz.Kind, halutz.Facility, halutz.TrainingTurns, halutz.TrainingCost));
+        Assert.Equal("", c.UnitTypes.Single(t => t.Id == "civilian").Facility);
         var mvp = c.RulesAt(c.Eras[0].From).Mvp!;
         Assert.Equal((10, 1.2, 0.5, 0.5, "town_a"), (mvp.PeoplePerUnit, mvp.IncomePerJobPerYear, mvp.CohesionHousingWeight, mvp.CohesionJobsWeight, mvp.ArrivalsCity));
         Assert.Equal("Town A", c.SettlementNames["town_a"]);
@@ -39,6 +42,10 @@ public class CitiesContentTests
         Assert.Equal("tel_aviv", Assert.Single(c.Cities).Id);
         Assert.Equal("tel_aviv", c.RulesAt(c.Eras[0].From).Mvp!.ArrivalsCity);
         Assert.True(c.Rules.AttentionCost.ContainsKey("assign_workers"));
+        Assert.Equal(new[] { "military_camp", "hakhshara" }, c.Cities[0].Facilities);   // D-D5: one of each at the start
+        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara") },
+                     c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.Facility)));
+        Assert.True(c.Rules.AttentionCost.ContainsKey("train") && c.Rules.AttentionCost.ContainsKey("cancel_training"));
     }
 
     [Fact]
@@ -53,13 +60,15 @@ public class CitiesContentTests
             var text = File.ReadAllText(Path.Combine(root, f));
             Assert.DoesNotContain("mvp:", text);
             Assert.DoesNotContain("assign_workers", text);
+            Assert.DoesNotMatch(@"\btrain:|cancel_training|training_turns|training_cost", text);
         }
     }
 
     const string City = "  - { id: town_a, housing_capacity: 12, job_slots: 8, civilians: 10, employed: 6, facilities: [] }\n";
 
     static string Cities(string row) => "cities:\n" + row;
-    static string Rules(string mvp) => Fixture.Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1 }") + mvp;
+    static string Rules(string mvp) => Fixture.Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1 }") + mvp;
+    static string Types(string row) => "types:\n  - { id: civilian, kind: population }\n" + row;
 
     public static IEnumerable<object[]> BadRows() => new List<object[]>
     {
@@ -82,6 +91,14 @@ public class CitiesContentTests
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("arrivals_city: town_a", "arrivals_city: nowhere")), "mvp.arrivals_city", "is not a city in cities.yaml" },
         new object[] { "rules.yaml", Rules(""), "mvp", "required when eras.yaml systems.loop is gdd" },
         new object[] { "rules.yaml", Fixture.Files["rules.yaml"] + Fixture.GddRules, "attention_cost.assign_workers", "missing cost" },
+        new object[] { "rules.yaml", Rules(Fixture.GddRules).Replace(", train: 1", ""), "attention_cost.train", "missing cost" },
+        new object[] { "rules.yaml", Rules(Fixture.GddRules).Replace(", cancel_training: 1", ""), "attention_cost.cancel_training", "missing cost" },
+        new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, facility: winery, training_turns: 3, training_cost: 0.25 }\n"), "types[halutz].facility", "unknown facility 'winery'" },
+        new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, facility: hakhshara, training_turns: 0, training_cost: 0.25 }\n"), "types[halutz].training_turns", "must be >= 1" },
+        new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: -1 }\n"), "types[halutz].training_cost", "must be a finite number >= 0" },
+        new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, training_turns: 3 }\n"), "types[halutz].training_turns", "only a type with a facility trains" },
+        new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, training_cost: 0.5 }\n"), "types[halutz].training_cost", "only a type with a facility trains" },
+        new object[] { "unit_types.yaml", Types("  - { id: craftsman, kind: population, facility: hakhshara, training_turns: 3, training_cost: 0.5 }\n"), "types[craftsman].kind", "only recruit is a trained count" },
     };
 
     [Theory]

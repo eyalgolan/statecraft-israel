@@ -9,6 +9,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ### Added
 - 3D models on the map (Tripo Studio, `unity/Assets/Art/Settlements/Prototype/`): groups of new building modules beside the towns (Tel Aviv, Jerusalem, Haifa, Netanya, a moshava, a wine moshava, a kibbutz, a moshav, a stone village), a shikun block, barracks and the Latrun fort; characters, vehicles, ships, the C-54 and animals as map props; and the army tokens' riflemen drawn as the new characters through `UnitShowcase`'s authored-model hook. The towns keep their first models. Characters, the sheep and the horse play their idle clip; everything else stands still. The WebGL data file grows from about 91 MB to 136 MB. No simulation change.
+- GDD v0.1 Phase 1, training (refs #377), behind the `systems.loop` switch: `Train` sends a city's civilians without work
+  to basic training in a military camp (recruits, a count) or pioneer training in a Hakhshara (halutzim, movable units at
+  the city's hex), paid from the Treasury without borrowing; `CancelTraining` returns the people but not the Money (D-A3).
+  Cohorts progress as step 4 of the GDD turn (D-A6) (R-TRAIN-001 to R-TRAIN-003). One camp and one Hakhshara at the start
+  is a labelled design assumption (D-D5); training turns, costs and Attention costs are placeholders in `MvpSlice.Overlay`,
+  never under `content/`. `mvp-slice` moves (the reference player trains one halutz group); the legacy goldens and
+  `scenario-mvp-absorb-first` do not.
 - GDD v0.1 Phase 1, one city (refs #376), behind the `systems.loop` switch: Tel Aviv with housing, jobs, civilians and
   refugees as counts; `AssignWorkers` (Attention, refused in the legacy loop); and a `TurnResolver` that runs, in the
   approved order (D-A6), Money from jobs, housing, Social cohesion and arrivals from the CBS series as refugees, housed on
@@ -222,6 +229,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (refs #34): over the wet hill country where the land use is garrigue and terraces, outside the groves, the towns'
   footprints and the hex-edge midpoints. The olives already planted stay where they are; the map has about 20,000 trees
   instead of 8,400.
+- Map roads read as wide, pale dirt tracks at the gameplay zoom, as in promo 03 (refs #35): 420 m wide (was 300 m), cream
+  dirt varied in patches, softer verges. The pale band is a median 9 px at gameplay03 (was 4) and 19 px at 30 km (was
+  7). The route ribbons are re-baked; no route was added.
 - The trees are warm olive-brown instead of bright green, like the groves in promo 03 (refs #34): citrus groves, olive
   crowns, palms and cypresses. Only the leaf colours change; the fruit, meshes and frame cost are the same.
 - Map: settlement quick wins (refs #31). The White City's blocks are lime white, with a solid-parapet balcony on each

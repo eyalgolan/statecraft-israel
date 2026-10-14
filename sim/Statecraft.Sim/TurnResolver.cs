@@ -14,7 +14,9 @@ namespace Statecraft.Sim
         {
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
-            // 1-3. Enemy orders, combat, capture: Phase 5. 4. Training: PR 4. 5. Construction: PR 5.
+            // 1-3. Enemy orders, combat, capture: Phase 5.
+            Training.Progress(c, s, why);                 // 4. training
+            // 5. Construction: PR 5.
             Cities.Produce(c, s, r, yearFraction, why);   // 6. production
             // 7. Consumption: Phase 2.
             Cities.House(c, s, why);                      // 8. housing, then Social cohesion

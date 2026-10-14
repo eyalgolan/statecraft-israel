@@ -63,7 +63,9 @@ namespace Statecraft.Sim
         public double Cohesion;
         /// <summary>The movable units by id.</summary>
         public SortedList<int, Unit> Units = new SortedList<int, Unit>();
-        /// <summary>The next id a new unit takes. Ids are never reused.</summary>
+        /// <summary>The groups in training by id (R-TRAIN-001). A cohort leaves when it finishes or is cancelled.</summary>
+        public SortedList<int, Cohort> Cohorts = new SortedList<int, Cohort>();
+        /// <summary>The next id a new unit or training cohort takes (they share it). Ids are never reused.</summary>
         public int NextId;
         /// <summary>The date each completed objective was completed, by objective id (ordinal).</summary>
         public SortedDictionary<string, DateTime> Objectives = new SortedDictionary<string, DateTime>(StringComparer.Ordinal);
@@ -90,6 +92,7 @@ namespace Statecraft.Sim
             c.Placements = new List<Placement>(Placements);
             c.Cities = new SortedDictionary<string, City>(Cities, StringComparer.Ordinal);
             c.Units = new SortedList<int, Unit>(Units);
+            c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
             return c;
         }
@@ -183,6 +186,7 @@ namespace Statecraft.Sim
                 else sb.Append(bits);
             }
             if (Units.Count > 0) Section("units", '[', ']', Units.Values.Select(x => x.Canonical()));
+            if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));

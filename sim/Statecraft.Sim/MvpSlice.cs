@@ -7,7 +7,8 @@ namespace Statecraft.Sim
 {
     /// <summary>The GDD v0.1 slice before cutover (spec 2026-10-12 section 2.1): the real content with the loop switch on
     /// (eras.yaml systems.loop: gdd in every era), monthly turns (rules.yaml turn_lengths all month) and the slice's city data
-    /// (cities.yaml, unit_types.yaml, rules.yaml mvp and the GDD command kinds' attention_cost), all placeholders. Tests, the MVP
+    /// (cities.yaml, unit_types.yaml, rules.yaml mvp and the GDD command kinds' attention_cost), all placeholders, and the
+    /// design assumption D-D5 (one military camp and one Hakhshara at the start). Tests, the MVP
     /// goldens and the dev flag load it; the real eras.yaml and rules.yaml keep the defaults until cutover. It edits YAML
     /// nodes, not text, so a comment or the key order in the real files cannot break it. Balance values the owner has not set
     /// may live here, and never under content/ (controller ruling 2, 12 October 2026). R-LOOP-003.</summary>
@@ -25,13 +26,26 @@ cities:
     job_slots: 90           # PLACEHOLDER: owner sets
     civilians: 100          # PLACEHOLDER: owner sets
     employed: 80            # PLACEHOLDER: owner sets
-    facilities: []          # PR 4 adds military_camp and hakhshara (D-D5: one of each at start)
+    # PLACEHOLDER: owner sets (D-D5: one of each exists at start; a design assumption, not a claim about 1948).
+    # More are built by pioneers (Phase 4).
+    facilities: [military_camp, hakhshara]
 ";
 
-        /// <summary>The slice's population types (D-A2: civilians and refugees are counts per city).</summary>
+        /// <summary>The slice's population types (D-A2: civilians and refugees are counts per city; halutzim are movable
+        /// units) and their training (GDD "Progression").</summary>
         public const string UnitTypes = @"types:
   - { id: civilian, kind: population }
   - { id: refugee, kind: population }
+  - id: recruit                  # civilian to recruit, through basic training (GDD ""Progression"")
+    kind: population             # a count per city until Phase 5
+    facility: military_camp
+    training_turns: 3            # PLACEHOLDER: owner sets
+    training_cost: 0.5           # PLACEHOLDER: owner sets (IL millions per group)
+  - id: halutz                   # civilian to Halutz, through pioneer training in a Hakhshara (GDD ""Progression"")
+    kind: unit                   # a movable unit (D-A2)
+    facility: hakhshara
+    training_turns: 4            # PLACEHOLDER: owner sets
+    training_cost: 0.5           # PLACEHOLDER: owner sets (IL millions per group)
 ";
 
         /// <summary>Wraps <paramref name="readFile"/> (the loader's file reader): eras.yaml and rules.yaml come back with the
@@ -71,8 +85,12 @@ cities:
                             ["cohesion_jobs_weight"] = 0.5,        // PLACEHOLDER (D-C1 open; the two weights sum to 1)
                             ["arrivals_city"] = "tel_aviv",        // Phase 1 has one city: every arrival lands there
                         };
-                    if (root.TryGetValue("attention_cost", out var ac) && ac is Dictionary<object, object> costs && !costs.ContainsKey("assign_workers"))
-                        costs["assign_workers"] = 0.5;             // PLACEHOLDER: owner sets
+                    if (root.TryGetValue("attention_cost", out var ac) && ac is Dictionary<object, object> costs)
+                    {
+                        if (!costs.ContainsKey("assign_workers")) costs["assign_workers"] = 0.5;         // PLACEHOLDER: owner sets
+                        if (!costs.ContainsKey("train")) costs["train"] = 1;                             // PLACEHOLDER: owner sets
+                        if (!costs.ContainsKey("cancel_training")) costs["cancel_training"] = 0.5;       // PLACEHOLDER: owner sets
+                    }
                     return Writer.Serialize(root);
                 }
                 return text;

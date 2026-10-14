@@ -140,6 +140,10 @@ namespace Statecraft.Sim
                     return MapActions.Apply(c, s, m.Action, m.Q, m.R, why);
                 case AssignWorkers w:
                     return Cities.Assign(c, s, w.City, w.Role, w.Count, why);
+                case Train t:
+                    return Training.Start(c, s, t.City, t.Track, t.Count, why);
+                case CancelTraining t:
+                    return Training.Cancel(c, s, t.Cohort, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

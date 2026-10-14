@@ -471,6 +471,11 @@ public class RouteTests
             // Plus one segment per unit clearing (a unit token in a town: docs/units.md, "Placement").
             Assert.AreEqual(corridors.Sum(c => c.line.Count - 1) + map.UnitClearings.Count, map.KitStats.CorridorSegments, "the map hands every route to the kits");
             Assert.IsTrue(routes.Any(r => r.Id == "burma_road"), "the dated Burma Road keeps its corridor from the start");
+            // Every corridor clears its drawn ribbon by at least the roads' margin, and the roads' stays main's 250 m (so the
+            // wider road moves no town kit).
+            for (int i = 0; i < routes.Count; i++)
+                Assert.GreaterOrEqual(corridors[i].halfWidth, RouteLayer.WidthOf(routes[i].Kind) / 2f + RouteLayer.RoadCorridorMarginM, routes[i].Id);
+            Assert.AreEqual(250f, RouteLayer.RoadWidthM / 2f + RouteLayer.RoadCorridorMarginM, "the roads' kit corridor");
 
             // The same placement the map runs, with the same corridors.
             var g = new Statecraft.Game.Map.Kits.KitGround(map.Terrain, map.Frame, map.Hexes, HeightmapLoader.Load(Paths.StreamingMap).meta.elev_min_m);
@@ -667,7 +672,7 @@ public class RouteTests
 
     /// <summary>A walk across a route at gameplay03's pose: the pixels from -<paramref name="halfM"/> to +halfM across the
     /// line at the line point nearest (lon, lat), with the routes on and off, and each pixel's offset (m) from the line.</summary>
-    sealed class Across { public readonly List<Color> On = new List<Color>(), Off = new List<Color>(); public readonly List<float> M = new List<float>(); }
+    sealed class Across { public readonly List<Color> On = new List<Color>(), Off = new List<Color>(); public readonly List<float> M = new List<float>(); public readonly List<Vector2> P = new List<Vector2>(); }
 
     static List<Across> WalkAcross(MapScene map, Camera cam, List<Vector2> line, IEnumerable<int> at, float halfM, float stepM)
     {
@@ -695,7 +700,7 @@ public class RouteTests
         {
             int x = Mathf.FloorToInt(px[k].x), y = Mathf.FloorToInt(px[k].y);
             if (!seen.Add((offs[k].walk, x, y))) continue;
-            var w = walks[offs[k].walk]; w.On.Add(on.At(x, y)); w.Off.Add(off.At(x, y)); w.M.Add(offs[k].m);
+            var w = walks[offs[k].walk]; w.On.Add(on.At(x, y)); w.Off.Add(off.At(x, y)); w.M.Add(offs[k].m); w.P.Add(px[k]);
         }
         return walks;
     }
@@ -775,9 +780,10 @@ public class RouteTests
     /// <summary>Bound for the rail test, set from its log.</summary>
     const float RailContrast = 0.15f;   // measured 0.18-0.21 (main's shader: 0.10-0.11)
 
-    /// <summary>Promo 03's dirt tracks read on any ground by their darker worn edges. On the palest ground a road crosses in
-    /// the gameplay03 frame (the sand and dry grass, where a pale road alone melts in), across the road the verges are
-    /// darker than its core by VergeStep, and darker than the ground beside them with the routes off.</summary>
+    /// <summary>Promo 03's dirt tracks read on any ground. On the palest ground a road crosses in the gameplay03 frame (the
+    /// sand and dry grass, where a pale road alone could melt in), across the road the verges are darker than its core by
+    /// VergeStep, and either darker than the ground beside them with the routes off, or the core is paler than the ground
+    /// under it by CoreAboveGround (the wide pale tracks, where the verges are soft and no longer a dark line).</summary>
     [Test]
     public void RoadsReadOnPaleGroundByTheirVerges()
     {
@@ -796,9 +802,9 @@ public class RouteTests
                 var line = RouteLayer.World(map.Frame, r);
                 var at = InFrame(map, cam, line, 6);
                 if (at == null) continue;
-                foreach (var w in WalkAcross(map, cam, line, at, 300f, 5f))
+                foreach (var w in WalkAcross(map, cam, line, at, Road, 5f))
                 {
-                    var g = w.M.Select((m, k) => (m, k)).Where(x => Mathf.Abs(x.m) > 200f).Select(x => RenderSample.Luma(w.Off[x.k])).ToList();
+                    var g = w.M.Select((m, k) => (m, k)).Where(x => Mathf.Abs(x.m) > 0.67f * Road).Select(x => RenderSample.Luma(w.Off[x.k])).ToList();
                     if (g.Count > 0) walks.Add((r.Id, w, g.Average()));
                 }
             }
@@ -808,14 +814,18 @@ public class RouteTests
             foreach (var (id, w, ground) in pale)
             {
                 float Mean(float lo, float hi, List<Color> c) { var v = w.M.Select((m, k) => (m, k)).Where(x => Mathf.Abs(x.m) >= lo && Mathf.Abs(x.m) <= hi).Select(x => RenderSample.Luma(c[x.k])).ToList(); return v.Count == 0 ? float.NaN : v.Average(); }
-                float core = Mean(0f, 30f, w.On);
-                // The verge's darkest pixel on each side.
-                float VergeSide(int sign) { var v = w.M.Select((m, k) => (m, k)).Where(x => Mathf.Sign(x.m) == sign && Mathf.Abs(x.m) >= 60f && Mathf.Abs(x.m) <= 130f).Select(x => RenderSample.Luma(w.On[x.k])).ToList(); return v.Count == 0 ? float.NaN : v.Min(); }
+                float core = Mean(0f, 0.1f * Road, w.On);
+                // The verge's darkest pixel on each side (the verges lie about a third of the width out from the line).
+                float VergeSide(int sign) { var v = w.M.Select((m, k) => (m, k)).Where(x => Mathf.Sign(x.m) == sign && Mathf.Abs(x.m) >= VergeFrom * Road && Mathf.Abs(x.m) <= VergeTo * Road).Select(x => RenderSample.Luma(w.On[x.k])).ToList(); return v.Count == 0 ? float.NaN : v.Min(); }
                 float verge = Mathf.Max(VergeSide(-1), VergeSide(+1));   // the weaker side
-                float off = Mean(60f, 130f, w.Off);
-                bool ok = core - verge >= VergeStep && verge < off - VergeBelowGround;
+                float off = Mean(VergeFrom * Road, VergeTo * Road, w.Off), under = Mean(0f, 0.1f * Road, w.Off);
+                // It reads when the verges outline the core (darker than the core) and either the verges are darker than
+                // the ground beside them (main's dark-verge look, #404) or the core is clearly paler than the ground under it
+                // (the wide pale track's look).
+                bool outlined = core - verge >= VergeStep;
+                bool ok = outlined && (verge < off - VergeBelowGround || core - under >= CoreAboveGround);
                 if (ok) read++;
-                TestContext.WriteLine($"{id}: ground {ground:0.000} core {core:0.000} verge {verge:0.000} (off {off:0.000}) -> {(ok ? "reads" : "melts")}");
+                TestContext.WriteLine($"{id}: ground {ground:0.000} core {core:0.000} (under {under:0.000}) verge {verge:0.000} (off {off:0.000}) -> {(ok ? "reads" : "melts")}");
             }
             TestContext.WriteLine($"{read} of {pale.Count} pale-ground walks read");
             Assert.GreaterOrEqual(read / (float)pale.Count, PaleReadShare, "roads read on pale ground");
@@ -824,7 +834,58 @@ public class RouteTests
     }
 
     /// <summary>Bounds for the road test, set from its log.</summary>
-    const float VergeStep = 0.04f, VergeBelowGround = 0.01f, PaleReadShare = 0.6f;
+    const float VergeStep = 0.04f, VergeBelowGround = 0.01f, CoreAboveGround = 0.08f, PaleReadShare = 0.6f;
+    /// <summary>The road's width, and where its verges lie across it (shares of the width from the line; 60-130 m when the
+    /// road was 300 m wide).</summary>
+    const float Road = RouteLayer.RoadWidthM, VergeFrom = 0.2f, VergeTo = 0.43f;
+
+    /// <summary>Promo 03's roads are wide, pale dirt tracks (about 8 px at 1920 px); main's 300 m road drew a pale core of
+    /// about 4 px between dark verges that almost vanished at gameplay03. Across every road in the frame's middle (6 points
+    /// each, tilt-shift off, the train hidden), the pale band is the run of pixels the routes make paler than the ground
+    /// (luma up by PaleStep), from the line out, measured on screen; its median width in pixels must reach RoadPalePx at gameplay03 (60 km) and more at close30
+    /// (30 km). Logged per pose, with the median contrast of the band's core over the ground.</summary>
+    [TestCase("gameplay03", 34.86, 32.00, 60000f, RoadPalePx)]
+    [TestCase("close30", 34.83, 32.00, 30000f, 2 * RoadPalePx)]
+    public void RoadsReadAsWidePaleTracks(string pose, double lon, double lat, float distance, float minPx)
+    {
+        var map = BuildMap();
+        try
+        {
+            RenderSample.TiltShift(false);
+            VisualToggles.Set(RouteLayer.TrainToggle, false);
+            var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+            new PromoPose(pose, lon, lat, distance, 10f).Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+            var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+            var widths = new List<float>(); var lifts = new List<float>();
+            foreach (var r in routes.Where(r => r.Kind == RoutePaths.Road))
+            {
+                var line = RouteLayer.World(map.Frame, r);
+                var at = InFrame(map, cam, line, 6);
+                if (at == null) continue;
+                foreach (var w in WalkAcross(map, cam, line, at, Road, 2f))
+                {
+                    // The run of pale samples around the line (the walk is in order across it), measured on screen.
+                    bool Pale(int k) => RenderSample.Luma(w.On[k]) - RenderSample.Luma(w.Off[k]) >= PaleStep;
+                    int mid = Enumerable.Range(0, w.M.Count).OrderBy(k => Mathf.Abs(w.M[k])).First(), lo = mid, hi = mid;
+                    if (!Pale(mid)) { widths.Add(0f); continue; }
+                    while (lo > 0 && Pale(lo - 1)) lo--;
+                    while (hi + 1 < w.M.Count && Pale(hi + 1)) hi++;
+                    widths.Add((w.P[hi] - w.P[lo]).magnitude + 1f);
+                    var coreLift = Enumerable.Range(0, w.M.Count).Where(k => Mathf.Abs(w.M[k]) <= 0.1f * Road).Select(k => RenderSample.Luma(w.On[k]) - RenderSample.Luma(w.Off[k])).ToList();
+                    if (coreLift.Count > 0) lifts.Add(coreLift.Average());
+                }
+            }
+            Assert.GreaterOrEqual(widths.Count, 12, "roads cross the frame");
+            float Median(List<float> v) { var o = v.OrderBy(x => x).ToList(); return o[o.Count / 2]; }
+            float px = Median(widths), lift = Median(lifts);
+            TestContext.WriteLine($"{pose}: {widths.Count} walks, pale band median {px:0} px (p25 {widths.OrderBy(x => x).ElementAt(widths.Count / 4):0}), core over ground median {lift:+0.000}");
+            Assert.GreaterOrEqual(px, minPx, $"{pose}: the roads read as wide pale tracks");
+        }
+        finally { VisualToggles.SetAll(true); Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Bounds for the road width test, set from its log.</summary>
+    const float PaleStep = 0.03f, RoadPalePx = 6f;
 
     /// <summary>Issue #321: the baked ribbons (RouteRibbonFile.AssetPath, Editor RouteRibbonBake.Bake) are what the shipped
     /// heightmap and route file give now, byte for byte; the map scene places them without deriving; and what it places

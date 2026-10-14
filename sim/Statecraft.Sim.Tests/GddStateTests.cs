@@ -20,7 +20,7 @@ public class GddStateTests
     public void AnEmptyStateWritesNoNewSection()
     {
         var text = new GameState().Describe();
-        foreach (var label in new[] { "city{", "coh=", "units[", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, text);
+        foreach (var label in new[] { "city{", "coh=", "units[", "train[", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, text);
         Assert.EndsWith("over=", text);
     }
 
@@ -47,6 +47,7 @@ public class GddStateTests
         {
             ("city{", x => x.Cities["tel_aviv"] = new City("tel_aviv", 10, 4, 6, 3, 2)),
             ("units[", x => x.Units.Add(1, new Unit(1, "halutz", -3, 19))),
+            ("train[", x => x.Cohorts.Add(2, new Cohort(2, "recruit", "tel_aviv", 3, 2))),
             ("next=", x => x.NextId = 2),
             ("obj{", x => x.Objectives["first_new_yishuv"] = new DateTime(1949, 3, 15)),
             ("score=", x => x.Score = 5),
@@ -71,6 +72,21 @@ public class GddStateTests
         Assert.Equal(cities.Length, new HashSet<string>(Array.ConvertAll(cities, H)).Count);
         var units = new[] { new Unit(1, "halutz", 0, 0), new Unit(2, "halutz", 0, 0), new Unit(1, "recruit", 0, 0), new Unit(1, "halutz", 1, 0), new Unit(1, "halutz", 0, 1) };
         Assert.Equal(units.Length, new HashSet<string>(Array.ConvertAll(units, U)).Count);
+        string K(Cohort k) { var s = new GameState(); s.Cohorts.Add(k.Id, k); return s.Hash(); }
+        var cohorts = new[] { new Cohort(1, "recruit", "a", 1, 1), new Cohort(2, "recruit", "a", 1, 1), new Cohort(1, "halutz", "a", 1, 1),
+                              new Cohort(1, "recruit", "b", 1, 1), new Cohort(1, "recruit", "a", 2, 1), new Cohort(1, "recruit", "a", 1, 2) };
+        Assert.Equal(cohorts.Length, new HashSet<string>(Array.ConvertAll(cohorts, K)).Count);
+    }
+
+    // R-LOOP-002, R-TRAIN-003: a city's recruits reach the hash, and a city with none hashes as it did before PR 4, so
+    // scenario-mvp-absorb-first (no training) does not move.
+    [Fact]
+    public void RecruitsReachTheHashOnlyWhenThereAreSome()
+    {
+        var none = new City("a", 1, 2, 3, 1, 0);
+        Assert.Equal("a=1,2,3,1,0", none.Canonical());
+        Assert.Equal("a=1,2,3,1,0,4", none.WithRecruits(4).Canonical());
+        Assert.Equal(4, none.WithRecruits(4).WithCounts(5, 1, 0).Recruits);   // a change of counts keeps the recruits
     }
 
     [Fact]
@@ -79,13 +95,14 @@ public class GddStateTests
         var a = new GameState();
         a.Cities["x"] = new City("x", 1, 1, 1, 0, 0);
         a.Units.Add(1, new Unit(1, "halutz", 0, 0));
+        a.Cohorts.Add(2, new Cohort(2, "recruit", "x", 1, 1));
         a.Objectives["o"] = new DateTime(1949, 1, 1);
         a.NextId = 2; a.Score = 3;
         var before = a.Hash();
         var b = a.Clone();
-        b.Cities["y"] = a.Cities["x"]; b.Units.Add(2, a.Units[1]); b.Objectives.Clear(); b.NextId = 9; b.Score = 9;
+        b.Cities["y"] = a.Cities["x"]; b.Units.Add(2, a.Units[1]); b.Cohorts.Clear(); b.Objectives.Clear(); b.NextId = 9; b.Score = 9;
         Assert.Equal(before, a.Hash());
-        Assert.Single(a.Cities); Assert.Single(a.Units); Assert.Single(a.Objectives);
+        Assert.Single(a.Cities); Assert.Single(a.Units); Assert.Single(a.Cohorts); Assert.Single(a.Objectives);
     }
 
     [Fact]

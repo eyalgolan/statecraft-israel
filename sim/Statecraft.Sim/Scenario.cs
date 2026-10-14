@@ -22,7 +22,7 @@ namespace Statecraft.Sim
     /// </code>
     /// Kinds: set_policy (policy, level), allocate_budget (shares: {office: share}), choose_event_option (event, option),
     /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r), assign_workers
-    /// (city, role, count; GDD content only). A turn with no
+    /// (city, role, count), train (city, track, count), cancel_training (cohort; GDD content only). A turn with no
     /// scripted command passes; events nobody answered are delegated, as in the game. A command the sim rejects fails the run.</summary>
     public sealed class Scenario
     {
@@ -67,6 +67,7 @@ namespace Statecraft.Sim
             ["choose_event_option"] = new[] { "event", "option" }, ["set_mobilization"] = new[] { "level" },
             ["security_order"] = new[] { "delta" }, ["appoint"] = new[] { "office", "person" },
             ["map_action"] = new[] { "action", "q", "r" }, ["assign_workers"] = new[] { "city", "role", "count" },
+            ["train"] = new[] { "city", "track", "count" }, ["cancel_training"] = new[] { "cohort" },
         };
 
         public static IReadOnlyCollection<string> Kinds => Allowed.Keys;
@@ -92,6 +93,8 @@ namespace Statecraft.Sim
                 case "appoint": return new Appoint(Str(c, "office"), Str(c, "person"));
                 case "map_action": return new MapAction(Str(c, "action"), Whole(c, "q"), Whole(c, "r"));
                 case "assign_workers": return new AssignWorkers(Str(c, "city"), Str(c, "role"), Whole(c, "count"));
+                case "train": return new Train(Str(c, "city"), Str(c, "track"), Whole(c, "count"));
+                case "cancel_training": return new CancelTraining(Whole(c, "cohort"));
                 default: throw new InvalidDataException($"command kind '{kind}' has no builder");
             }
         }
@@ -129,7 +132,8 @@ namespace Statecraft.Sim
         {
             SetPolicy p => $"{p.Policy} {p.Level}", ChooseEventOption e => $"{e.EventId}/{e.OptionId}", SetMobilization m => m.Level.ToString(CultureInfo.InvariantCulture),
             SecurityOrder o => o.Delta.ToString(CultureInfo.InvariantCulture), Appoint a => $"{a.Office} {a.Person}", MapAction m => $"{m.Action} {m.Q},{m.R}",
-            AssignWorkers w => $"{w.City} {w.Role} {w.Count}", _ => c.Kind,
+            AssignWorkers w => $"{w.City} {w.Role} {w.Count}", Train t => $"{t.City} {t.Track} {t.Count}", CancelTraining t => t.Cohort.ToString(CultureInfo.InvariantCulture),
+            _ => c.Kind,
         };
     }
 
