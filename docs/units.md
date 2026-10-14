@@ -29,7 +29,8 @@ Code: `unity/Assets/Scripts/Map/Units/`. The materials are made by `UnitMaterial
 
 ## Owner rulings (2026-10-11)
 
-1. **Units are Civ-style tokens at about 2,000x real size** (see "Scale"; 1,400x since demo2 T29, refs #197).
+1. **Units are Civ-style tokens at symbolic scale** (see "Scale"). The 11 October ruling said about 2,000x; the owner's
+   decision of 14 October supersedes it: figures at 1.8 times a block, as T29 (1,400x).
 2. **Promo-quality close-zoom models come from a separate track:** a cloud-GPU AI-3D pipeline (TRELLIS, MIT). The
    code-built miniatures here stay as the far-zoom and fallback version.
 
@@ -301,11 +302,11 @@ gameplay03 pose frames the same hex count as the promo (about 9 across: see `Pro
 drew our riflemen 113 px tall, so the first round used 2000x. The ring is at 0.66 of a hex's circumradius. The aircraft
 (x420, a 4.7 km span) and the ship (x95, 6.0 km) are sized against the figures, as Civ sizes them, not against each other.
 
-**Owner ruling (2026-10-11): units stay Civ-style tokens at about 2,000x.** This is far above the 10–25x ruling for
+**Owner ruling (2026-10-11), superseded on 14 October (below): units stay Civ-style tokens at about 2,000x.** This is far above the 10–25x ruling for
 buildings and trees. At 10–25x a man is 18–45 m tall, which is under one pixel at 60 km. The promo, which wins over strict
 scale by the owner's ruling, draws units as tokens. The scale is one constant.
 
-**Demo2 T29 (owner's reference, 14 Oct; refs #197): 1,400x.** T29's figures stand about 1.8 times a house. At 2000x ours
+**Owner decision (2026-10-14): figures at 1.8 times a block, as T29; it supersedes the 11 October ~2,000x ruling. 1,400x (refs #197).** T29's figures stand about 1.8 times a house. At 2000x ours
 stood about 2.5 times the White City blocks beside the showcase trio at close30 (the T54 audit's measure). The block is the
 kit's seven-storey heart block, 7 x 3.3 m at the city blocks' 60x, about 1.4 km; on the close30 render it measures about
 1.3 km against the figure. So `UnitShowcase.FigureScale = 1400`: a man about 2.5 km tall, 1.8 times that block
