@@ -208,7 +208,7 @@ namespace Statecraft.Game.UI
             Own(new BudgetPresenter(root, bridge, text));
             Own(new WhyPresenter(root, bridge, text));
             Own(new CabinetPresenter(root, bridge, text, portraits));
-            var names = SettlementPlacer.Parse(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);
+            var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The 1948 sub-districts, outlined on the map, and each front's 1949 armistice line from its agreement's date
             // where the line exists (display only: the sim never reads them; docs/visual-v1.md, owner rulings 2026-10-11).
             // Since the owner's rulings of 2026-10-14 the areas are coloured by side from 11 June 1948 (control_hexes_1948_49.yaml),

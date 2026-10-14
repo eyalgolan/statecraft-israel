@@ -27,6 +27,13 @@ namespace Statecraft.Game.Map
         public Material MarkerMaterial => markerMaterial;
         /// <summary>The settlements the last Build placed (settlements_1948.yaml), for the UI's map labels.</summary>
         public IReadOnlyList<Settlement> Settlements { get; private set; } = new List<Settlement>();
+        string settlementsYamlRead;   // null before a build
+
+        /// <summary>The settlements for <paramref name="yaml"/>: the list the last Build parsed when it read the same text
+        /// (issue #321: GameRoot parsed the file again at boot only for the names), else a parse of it.</summary>
+        public IReadOnlyList<Settlement> SettlementsFor(string yaml) =>
+            settlementsYamlRead != null && string.Equals(yaml, settlementsYamlRead, StringComparison.Ordinal)
+                ? Settlements : SettlementPlacer.Parse(yaml);
         /// <summary>The 1948 localities the last Build drew with the kits (content/map/localities_1948.yaml; empty without the
         /// kits), for the map labels: 1948 name, today's name. Presentation only, never in the sim.</summary>
         public IReadOnlyList<Kits.Localities.Place> Localities { get; private set; } = new List<Kits.Localities.Place>();
@@ -219,7 +226,7 @@ namespace Statecraft.Game.Map
             Hexes = MapBuilder.LoadHexes(inputs.HexesJson, HexesPath);
             DiagLog.BootPhase("hexes parsed");
             var list = SettlementPlacer.Parse(inputs.SettlementsYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), SettlementsPath);
-            Settlements = list;
+            Settlements = list; settlementsYamlRead = inputs.SettlementsYaml;
             bool kitsOn = kitMaterial != null && treeMaterial != null;
             var localities = new Kits.Localities.Doc();
             if (kitsOn)
@@ -441,6 +448,7 @@ namespace Statecraft.Game.Map
             }
             Terrain = null;
             Hexes = null;
+            settlementsYamlRead = null;
             UnitEntries = Array.Empty<Units.UnitEntry>(); unitsYamlRead = null;
             UnitSpots = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>(); UnitHexes = Array.Empty<Statecraft.Sim.MapHex>();
         }

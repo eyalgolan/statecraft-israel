@@ -41,6 +41,10 @@ namespace Statecraft.Game.Map
 
         static readonly Regex IdRule = new Regex(@"^[a-z][a-z0-9_]*\z");
 
+        /// <summary>How many times <see cref="Parse"/> has run in this domain (a test aid: SettlementsOnceTests counts the
+        /// parses of one boot, issue #321).</summary>
+        public static int Parses { get; private set; }
+
         /// <summary>Parses settlements_1948.yaml. Every malformed input throws InvalidDataException naming
         /// <paramref name="file"/>, and for content errors the settlement id and the field: YAML syntax, duplicate keys,
         /// unknown keys or bad scalars (with the id of the settlement they sit in); empty id or name; an id that is not
@@ -50,6 +54,7 @@ namespace Statecraft.Game.Map
         public static List<Settlement> Parse(string yaml, (double lon0, double lon1, double lat0, double lat1)? bounds = null,
             string file = DefaultFileName)
         {
+            Parses++;
             SettlementFile doc;
             try { doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).WithDuplicateKeyChecking().Build().Deserialize<SettlementFile>(yaml); }
             catch (YamlException e)

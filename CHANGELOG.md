@@ -279,6 +279,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- The settlements file is parsed once at boot instead of twice: the info panel's settlement names come from the map's
+  own parse (refs #321). The names are unchanged. Presentation only.
 - The units layer takes the unit spots the map placed instead of placing every unit again (refs #321), when it draws
   the same units on the same hexes; otherwise it places them as before. Every token stands where it stood, and the
   anchors with no clear spot are reported as before. Presentation only.
