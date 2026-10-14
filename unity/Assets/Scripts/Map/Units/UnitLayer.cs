@@ -218,10 +218,16 @@ namespace Statecraft.Game.Map.Units
                 var go = new GameObject(t.Unit.Id);
                 go.transform.SetParent(tokensRoot, false);
                 var centre = Centre(p.Spot);
+                var foot = centre;   // where the badge's height is measured from
                 float top;
                 switch (t.Unit.Service)
                 {
                     case UnitData.Army:
+                        // Demo2 T29's token: the figures stand together on one earth plinth with a white rim, under the
+                        // side's flag (refs #197).
+                        float plinth = UnitPlinth.RadiusShare * hex * Scale(p.Spot);
+                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, MeshFor, paint);
+                        treeHoles.Add((new Vector2(centre.x, centre.z), plinth));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float k = UnitShowcase.TrioSpread * hex * Scale(p.Spot);
                         for (int i = 0; i < offsets.Length; i++)
@@ -230,11 +236,10 @@ namespace Statecraft.Game.Map.Units
                             var (_, _, pose, faded, _, heading) = UnitShowcase.Trio[i];
                             var hat = Hat(t.Headgear[i]);
                             var type = UnitRoster.RiflemanType(t.Headgear[i]);
-                            var at = UnitShowcase.Stand(map, centre + new Vector3(offsets[i].x, 0, offsets[i].y) * k);
-                            var figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
+                            var at = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * k;
+                            at.y = foot.y;
+                            UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
                                 paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _);
-                            UnitShowcase.AddBase(map, figure.transform, at, MeshFor("figure-base", () => UnitShowcase.BaseMesh("UnitFigureBase")), paint);
-                            treeHoles.Add(UnitShowcase.TreeHole(at));
                         }
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
                         break;
@@ -250,7 +255,7 @@ namespace Statecraft.Game.Map.Units
                 }
                 var badge = new GameObject("Badge");
                 badge.transform.SetParent(go.transform, false);
-                badge.transform.position = centre + Vector3.up * (top + UnitBadge.LiftM);
+                badge.transform.position = foot + Vector3.up * (top + UnitBadge.LiftM);
                 badge.transform.localScale = Vector3.one * UnitBadge.SizeM;
                 badge.AddComponent<UnitBadge>();
                 badges.Add(badge.transform);

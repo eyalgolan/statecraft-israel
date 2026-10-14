@@ -17,7 +17,7 @@ namespace Statecraft.Game.Map.Units
         public const int Skin = 0, Shirt = 1, Trousers = 2, Webbing = 3, Helmet = 4, SlouchHat = 5, WoolCap = 6, Boots = 7,
             RifleWood = 8, RifleMetal = 9, Hair = 10, ShirtFaded = 11,
             CamoGrey = 12, CamoGreen = 13, Underside = 14, RoundelWhite = 15, RoundelBlue = 16, PropBlack = 17, Glass = 18,
-            HullGrey = 19, Deck = 20, Waterline = 21, Funnel = 22, MarkingRed = 23, AviaGreen = 24, Dust = 25, Count = 26;
+            HullGrey = 19, Deck = 20, Waterline = 21, Funnel = 22, MarkingRed = 23, AviaGreen = 24, Earth = 25, Count = 26;
 
         /// <summary>Texels per slot along u: the sample at a slot's centre never reaches its neighbours (bilinear, no mips).</summary>
         public const int SlotWidth = 4, Rows = 32;
@@ -49,7 +49,7 @@ namespace Statecraft.Game.Map.Units
             new Color(0.30f, 0.31f, 0.32f),   // Funnel top
             new Color(0.72f, 0.12f, 0.10f),   // MarkingRed: 101 Squadron's spinner and rudder stripes
             new Color(0.47f, 0.45f, 0.32f),   // AviaGreen: the S-199's one khaki green on all surfaces, about RAL 6013 (Efrati pp. 8 and 11: confirmed from an Avia fuel cap; Eduard Info 11/2025 pp. 53-54)
-            new Color(0.80f, 0.71f, 0.54f),   // Dust: the trodden earth a figure's base is painted in, so it reads as the promo's worn patch, not a dark disc
+            new Color(0.72f, 0.56f, 0.37f),   // Earth: a token's plinth, the warm tan earth of demo2 T29's bases, well lighter than the uniforms so the figures read on it
         };
 
         /// <summary>u of a slot's column centre.</summary>

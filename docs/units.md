@@ -29,7 +29,7 @@ Code: `unity/Assets/Scripts/Map/Units/`. The materials are made by `UnitMaterial
 
 ## Owner rulings (2026-10-11)
 
-1. **Units are Civ-style tokens at about 2,000x real size** (see "Scale").
+1. **Units are Civ-style tokens at about 2,000x real size** (see "Scale"; 1,400x since demo2 T29, refs #197).
 2. **Promo-quality close-zoom models come from a separate track:** a cloud-GPU AI-3D pipeline (TRELLIS, MIT). The
    code-built miniatures here stay as the far-zoom and fallback version.
 
@@ -195,17 +195,17 @@ checks every anchor and logs each spot and its distance.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
   aircraft or a ship). It is turned to face each camera as it renders.
 - **Ring:** the white ring appears only on selection.
-- **Slopes (owner question, 2026-10-11).** Each rifleman stands on the highest ground under its boots
-  (`UnitShowcase.Stand`: the centre plus 48 points on three rings out to the boots' 400 m radius), so no boot sinks into
-  a hill. Where the ground under the boots falls more than 20 m, the figure stands on a base, as a painted miniature
-  does. The base is a disc of trodden earth (the palette's `Dust`) of the boots' radius, reaching down to the lowest ground, so the
-  downhill boot never floats.
-  - **Steepest spots:** the worst drop is about 0.6–1 km, against a 3.6 km figure, on the 3x relief of the Jerusalem
-    hills.
-  - **Tests:** `AFigureStandsOnASteepSlopeWithoutSinking` and `NoRiflemanSinksIntoTheHillsOfTheMap`.
-  - **Close-ups** (`MapCapture.Promo -units -extraPose …`, at 12 and 20 km): at 6 km the camera sees only boots.
-- **Trees (#249).** The kit trees whose crowns reach a drawn figure's boots (its 400 m foot radius, which is also its
-  base's) are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
+- **Plinth and flag (demo2 T29, refs #197).** An army token's figures stand together on one round earth plinth with a
+  white rim (`UnitPlinth`), and the side's flag flies on a pole at its back (`UnitFlags`). See "The plinth and the flag".
+- **Slopes (owner question, 2026-10-11).** The plinth's top is level at the highest ground under it (`UnitPlinth.GroundRange`:
+  the centre plus six rings of 36 points out to its edge), so no boot sinks into a hill. Where the ground falls below the
+  plinth's own thickness, an earth skirt reaches down to the lowest ground, as a painted miniature's base does, so nothing
+  floats.
+  - **Steepest spots:** the plinth's top stands up to about 1 km over the ground at a figure's boots, on the 3x relief
+    of the Jerusalem hills (Harel).
+  - **Tests:** `APlinthStandsOnASteepSlopeWithoutSinking`, `NoRiflemanSinksIntoTheHillsOfTheMap` and
+    `APlinthNeverSinksOrFloatsOnTheHills`.
+- **Trees (#249).** The kit trees whose crowns reach a drawn token's plinth are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
   that day clear trees, and they come back when the figure goes. With the `units` toggle off, as in a plain `?shot` run,
   every tree is drawn. The planting, and so the kits' layout, never changes. Tests:
   `NoKitTreeGrowsThroughAShownFiguresFeet` and `OnlyTheShownFiguresTreesGoAndTheToggleBringsThemBack`.
@@ -295,13 +295,42 @@ which plugs authored models in through the art hook above.
 
 Measured on the promo scaled to 1920 px wide: a rifleman is about 87 px tall, inside a ring about 190 px across. Our
 gameplay03 pose frames the same hex count as the promo (about 9 across: see `PromoPose`). The first checkpoint, at 2600x,
-drew our riflemen 113 px tall. So the slice uses `UnitShowcase.FigureScale = 2000`: a man about 3.6 km tall on 5 km
-hexes, with the ring at 0.66 of a hex's circumradius. The aircraft (x420, a 4.7 km span) and the ship (x95, 6.0 km) are
-sized against the figures, as Civ sizes them, not against each other.
+drew our riflemen 113 px tall, so the first round used 2000x. The ring is at 0.66 of a hex's circumradius. The aircraft
+(x420, a 4.7 km span) and the ship (x95, 6.0 km) are sized against the figures, as Civ sizes them, not against each other.
 
 **Owner ruling (2026-10-11): units stay Civ-style tokens at about 2,000x.** This is far above the 10–25x ruling for
 buildings and trees. At 10–25x a man is 18–45 m tall, which is under one pixel at 60 km. The promo, which wins over strict
 scale by the owner's ruling, draws units as tokens. The scale is one constant.
+
+**Demo2 T29 (owner's reference, 14 Oct; refs #197): 1,400x.** T29's figures stand about 1.8 times a house. At 2000x ours
+stood about 2.5 times the White City blocks beside the showcase trio at close30 (the T54 audit's measure). The block is the
+kit's seven-storey heart block, 7 x 3.3 m at the city blocks' 60x, about 1.4 km; on the close30 render it measures about
+1.3 km against the figure. So `UnitShowcase.FigureScale = 1400`: a man about 2.5 km tall, 1.8 times that block
+(`UnitShowcase.HouseRatio`, pinned to 1.6–2.0 by `TheFiguresStandAbout1Point8TimesAHouse`). A one- or two-storey village
+house (100x) is 0.33–0.66 km, so against those the figures still stand about 4–7 times as tall. The token's spacing, its
+ring and its spot are unchanged, so no unit moved and no kit clearing changed.
+
+## The plinth and the flag
+
+Demo2 T29 (owner's reference) stands every unit on a round earth base with a white rim and flies the side's flag on a
+pole. `UnitPlinth` and `UnitFlags` draw the same from code:
+- **Plinth:** one earth disc per army token, 0.52 of a hex's circumradius (halved for a compact token in a town, with its
+  trio), 6% of its radius thick, with a raised white rim near its edge. It sits inside the selection ring, which still
+  appears only on selection. The figures stand on its top. The earth is the palette's `Earth`, a warm brown lighter than
+  the uniforms.
+- **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row today; the Arab states' sides are known to the
+  loader for #226). Only a side whose 1948 flag is sourced here gets one, so no flag is invented:
+  - Israel: the flag of the Provisional Council of State's proclamation of 28 October 1948 (220 by 160, two sky-blue
+    stripes 25 broad at 15 from the top and the bottom, a Star of David of six stripes 5.5 broad;
+    https://en.wikipedia.org/wiki/Flag_of_Israel, checked 2026-10-14). The same flag hung at the declaration on
+    14 May 1948 (https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence, checked 2026-10-14), so it flies
+    from the game's first day. The law does not give the star's size; it is drawn 69 across, as the article's
+    construction drawing. Pinned by `TheIsraeliFlagFollowsTheSpecification`.
+  - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag yet, so a token of theirs flies none
+    (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
+- **Aircraft and ships** have no plinth and no flag: they fly or float, and carry their own sourced markings.
+- **Cost:** three shared low-poly meshes (plinth about 340 triangles, flag and pole about 250, skirt), in the units'
+  one palette material. No texture, no new shader, no per-pixel cost (docs/visual-v1.md, #391), and no per-frame code.
 
 ## Colour at map scale
 
@@ -311,9 +340,8 @@ are black and white, and the kit itself (khaki drill, 37-pattern webbing, the th
 below. Measured on editor renders of both tiers (gameplay03, the showcase trio at 20 km, the 7th Brigade at 15 km,
 Golani at 12 km, Harel at 15 km in the Judean hills and Etzioni at 30 km), a figure was 0.68–0.82 of the surrounding
 ground's luminance with the old, lighter khaki, and blended into it; it is now 0.50–0.57, and warm (red above green).
-Promo 03's figures are about 0.45 (figures round 1, refs #197). The webbing stays pale, as the promo's straps do. A
-slope base is painted trodden earth (`Dust`), within 7% of the ground's luminance where measured, so it reads as the
-promo's worn patch rather than a dark disc. The aircraft and ship colours are untouched.
+Promo 03's figures are about 0.45 (figures round 1, refs #197). The webbing stays pale, as the promo's straps do. The
+token's plinth is painted earth (`Earth`), lighter than the uniforms (it replaced round 1's per-figure slope base). The aircraft and ship colours are untouched.
 
 ## Sources (checked 2026-10-11)
 

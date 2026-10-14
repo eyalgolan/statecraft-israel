@@ -136,10 +136,11 @@ public class UnitShowcaseTests
             Assert.Greater(c.r / c.g, 1.24f, $"slot {slot}: warm brown, not olive khaki");
         }
         Assert.Less(Luma(UnitPalette.Shade(UnitPalette.Trousers, 0.5f)), Luma(UnitPalette.Shade(UnitPalette.Shirt, 0.5f)), "the trousers read darker than the shirt");
-        Assert.Greater(Luma(UnitPalette.Shade(UnitPalette.Dust, 0.5f)), 1.5f * Luma(UnitPalette.Shade(UnitPalette.Shirt, 0.5f)), "the base is earth, well lighter than the figure");
-        Assert.Greater(Luma(UnitPalette.Shade(UnitPalette.Dust, 0.5f)), Luma(UnitPalette.Shade(UnitPalette.Deck, 0.5f)) + 0.1f, "not the old dark deck-grey disc");
-        var disc = UnitShowcase.BaseMesh("base");
-        Assert.IsTrue(disc.uv.All(uv => Mathf.Abs(uv.x - UnitPalette.U(UnitPalette.Dust)) < 1e-4f), "the base is painted in the dust");
+        Assert.Greater(Luma(UnitPalette.Shade(UnitPalette.Earth, 0.5f)), 1.5f * Luma(UnitPalette.Shade(UnitPalette.Shirt, 0.5f)), "the plinth is earth, well lighter than the figure");
+        Assert.Greater(Luma(UnitPalette.Shade(UnitPalette.Earth, 0.5f)), Luma(UnitPalette.Shade(UnitPalette.Deck, 0.5f)), "not the old dark deck-grey disc");
+        Assert.Greater(UnitPalette.Shade(UnitPalette.Earth, 0.5f).r / UnitPalette.Shade(UnitPalette.Earth, 0.5f).g, 1.15f, "warm earth");
+        var disc = UnitPlinth.SkirtMesh("skirt");
+        Assert.IsTrue(disc.uv.All(uv => Mathf.Abs(uv.x - UnitPalette.U(UnitPalette.Earth)) < 1e-4f), "the skirt is painted in the earth");
         Object.DestroyImmediate(disc);
     }
 
@@ -183,7 +184,7 @@ public class UnitShowcaseTests
         return list;
     }
 
-    /// <summary>Issue #249: the showcase trio leaves out the kit trees under its boots, and its toggle gives them back.</summary>
+    /// <summary>Issue #249: the showcase trio leaves out the kit trees under its plinth, and its toggle gives them back.</summary>
     [Test]
     public void TheShowcaseTrioStandsClearOfTheTrees()
     {
@@ -195,13 +196,19 @@ public class UnitShowcaseTests
             var veg = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
             Assert.IsNotNull(veg, "the kits and their trees are on");
             var root = UnitShowcase.Spawn(map, still: true);
-            var feet = Enumerable.Range(0, 3).Select(i => root.transform.Find("Rifleman" + i).position).Select(p => new Vector2(p.x, p.z)).ToList();
+            var plinth = root.transform.Find(UnitPlinth.PlinthName);
+            var centre = new Vector2(plinth.position.x, plinth.position.z);
+            foreach (var i in new[] { 0, 1, 2 })
+            {
+                var f = root.transform.Find("Rifleman" + i).position;
+                Assert.Less((new Vector2(f.x, f.z) - centre).magnitude + 0.2f * UnitShowcase.FigureScale, plinth.localScale.x, $"Rifleman{i}'s boots are on the plinth");
+            }
             bool Under(Statecraft.Game.Map.Kits.TreeKind k, Matrix4x4 m)
             {
-                var p = m.GetColumn(3); float reach = UnitShowcase.FootRadiusM + Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(k, m);
-                return feet.Any(f => (f - new Vector2(p.x, p.z)).sqrMagnitude < reach * reach);
+                var p = m.GetColumn(3); float reach = plinth.localScale.x + Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(k, m);
+                return (centre - new Vector2(p.x, p.z)).sqrMagnitude < reach * reach;
             }
-            Assert.IsFalse(veg.Drawable().Any(t => Under(t.kind, t.m)), "no drawn tree reaches the trio's boots");
+            Assert.IsFalse(veg.Drawable().Any(t => Under(t.kind, t.m)), "no drawn tree reaches the trio's plinth");
             Assert.AreEqual(veg.Planted().Count(t => Under(t.kind, t.m)), veg.Hidden, "only the trio's trees are left out");
             VisualToggles.Set(UnitShowcase.ToggleName, false);
             Assert.AreEqual(0, veg.Hidden, "the showcase off gives them back");
@@ -223,9 +230,11 @@ public class UnitShowcaseTests
             Assert.IsNotNull(root.transform.Find("Spitfire1948/Propeller"));
             var plane = root.GetComponentInChildren<ShowcaseFlight>();
             Assert.AreEqual(UnitShowcase.StillPhase, plane.StillPhase);
-            // Each figure stands on the highest ground under its boots (UnitShowcase.Stand).
+            // Each figure stands on the plinth, level at the highest ground under it (UnitPlinth.Build).
+            var plinth = root.transform.Find(UnitPlinth.PlinthName);
+            Assert.IsNotNull(plinth, "the trio stands on a plinth");
             foreach (var f in root.GetComponentsInChildren<MeshFilter>().Where(f => f.name.StartsWith("Rifleman")))
-                Assert.AreEqual(UnitShowcase.Stand(map, f.transform.position).y, f.transform.position.y, 1f, f.name);
+                Assert.AreEqual(plinth.position.y, f.transform.position.y, 1f, f.name);
             // The aircraft clears the highest ground under its loop.
             var loop = map.Frame.ToWorld(UnitShowcase.LoopCentre.lon, UnitShowcase.LoopCentre.lat, 0);
             Assert.Greater(plane.transform.position.y, UnitShowcase.LoopFloor(map, loop, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM * 0.99f);

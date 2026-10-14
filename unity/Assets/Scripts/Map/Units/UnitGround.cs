@@ -16,7 +16,8 @@ namespace Statecraft.Game.Map.Units
         /// <summary>A footprint's buildings and tinted ground reach 1.1 of its radius (SettlementKits.PaintGround).</summary>
         public const float FootprintMargin = 1.1f;
         /// <summary>Clearance (m) between a figure's centre and a railway's or road's corridor: about half a figure's width
-        /// at <see cref="UnitShowcase.FigureScale"/> (0.6 m x 2000 = 1.2 km across) plus a margin.</summary>
+        /// at the first round's 2000x (0.6 m x 2000 = 1.2 km across) plus a margin. Kept when the figures went to 1400x
+        /// (refs #197), so no token's spot moved.</summary>
         public const float FigureClearanceM = 700f;
         /// <summary>A compact token (beside or in a town) draws its ring and trio at this share of the full size.</summary>
         public const float CompactScale = 0.5f;

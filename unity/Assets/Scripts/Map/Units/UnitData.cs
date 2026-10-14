@@ -80,6 +80,9 @@ namespace Statecraft.Game.Map.Units
         public string Name { get; set; } = "";
         public string Number { get; set; } = "";
         public string Service { get; set; } = "";
+        /// <summary>Whose formation it is (<see cref="UnitData.Sides"/>): the token flies that side's flag where one is
+        /// sourced (<see cref="UnitFlags"/>).</summary>
+        public string Side { get; set; } = "";
         public string? Formed { get; set; }
         public string? FirstCommander { get; set; }
         public string Sector { get; set; } = "";
@@ -127,6 +130,11 @@ namespace Statecraft.Game.Map.Units
     {
         public const string DefaultFileName = "units_1948.yaml";
         public const string Army = "army", Air = "air", Navy = "navy";
+        /// <summary>The sides of 1948 a unit can belong to: Israel and the Arab states whose armies entered the war (the
+        /// fronts of <see cref="FrontArmistice"/>, and Iraq). Only Israel's formations are in the file today (#226 adds the
+        /// Arab forces).</summary>
+        public const string Israel = "israel";
+        public static readonly IReadOnlyList<string> Sides = new[] { Israel, "egypt", "jordan", "syria", "iraq", "lebanon" };
         public const string AviaS199 = "avia-s199", Spitfire = "spitfire";
         public const string EndBySource = "source", EndByFrontArmistice = "front_armistice";
         public const string SlouchHat = "slouch_hat", SteelHelmet = "steel_helmet", WoolCap = "wool_cap";
@@ -166,7 +174,7 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>Parses and checks the file. Every problem throws InvalidDataException naming the file and the unit: YAML
-        /// syntax, unknown or duplicate keys, a bad or duplicate id, an unknown service or aircraft type, a missing name or
+        /// syntax, unknown or duplicate keys, a bad or duplicate id, an unknown service, side or aircraft type, a missing name or
         /// sector, a bad date or an empty window, an anchor off the globe or without a source, a source without url or
         /// check date, a drawn unit with no anchors, or an air unit without aircraft.</summary>
         public static List<UnitEntry> Parse(string yaml, string file = DefaultFileName)
@@ -187,6 +195,7 @@ namespace Statecraft.Game.Map.Units
                 if (!IdRule.IsMatch(u.Id)) throw new InvalidDataException($"{at} id must be lower snake_case");
                 if (!ids.Add(u.Id)) throw new InvalidDataException($"{at} duplicate id");
                 if (!Services.Contains(u.Service)) throw new InvalidDataException($"{at} has unknown service '{u.Service}' (army, air or navy)");
+                if (!((IList<string>)Sides).Contains(u.Side)) throw new InvalidDataException($"{at} has unknown side '{u.Side}' ({string.Join(", ", Sides)})");
                 if (string.IsNullOrWhiteSpace(u.Name) || string.IsNullOrWhiteSpace(u.Sector)) throw new InvalidDataException($"{at} needs a name and a sector");
                 var signOff = Statecraft.Sim.ReviewRecord.Problem(u.ReviewedByGiven, u.ReviewedBy, u.ReviewedOnGiven, u.ReviewedOn);
                 if (signOff != null) throw new InvalidDataException($"{at} {signOff.Value.field}: {signOff.Value.message}");

@@ -105,10 +105,12 @@ public class UnitsInPlayTests
     }
 
     const string Anchor = "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}";
-    const string Unit = "units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, wikipedia_only: true, anchors: [";
+    const string Unit = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: [";
 
     [TestCase("units: []", "no units")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: cavalry, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown service 'cavalry'")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: cavalry, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown service 'cavalry'")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown side ''")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: atlantis, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown side 'atlantis'")]
     [TestCase(Unit + "]}", "'a' has no anchors")]
     [TestCase(Unit + "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: []}]}", "has no source")]
     [TestCase(Unit + "{place: P, lon: 34.8, lat: 32.0, from: '1948-06-01', to: '1948-05-15', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}]}", "to must be after from")]
@@ -120,15 +122,15 @@ public class UnitsInPlayTests
     [TestCase(Unit + "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}]}", "no end_note")]
     [TestCase(Unit + "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1949-07-20', end_basis: front_armistice, front: egypt, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}]}", "must end on the egypt armistice, 1949-02-24")]
     [TestCase(Unit + "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1949-02-24', end_basis: front_armistice, front: iraq, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}]}", "needs a front")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, wikipedia_only: true, disbanded: {date: '1948-05-20', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}, anchors: [" + Anchor + "]}", "runs past the unit's disbandment")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, wikipedia_only: true, headgear: [wool_cap, wool_cap, wool_cap], anchors: [" + Anchor + "]}", "headgear has no source")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: air, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "without aircraft")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, colour: red, sector: s, status: draft, wikipedia_only: true, anchors: []}", "colour")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, disbanded: {date: '1948-05-20', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}, anchors: [" + Anchor + "]}", "runs past the unit's disbandment")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, headgear: [wool_cap, wool_cap, wool_cap], anchors: [" + Anchor + "]}", "headgear has no source")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: air, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "without aircraft")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, colour: red, sector: s, status: draft, wikipedia_only: true, anchors: []}", "colour")]
     // A person's sign-off (#375): both or neither, a GitHub handle (never an email), a day.
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: eyalgolan, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: a@example.org, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: eyalgolan, reviewed_on: soon, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
-    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: '', reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: eyalgolan, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: a@example.org, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: eyalgolan, reviewed_on: soon, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: '', reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
     public void BadUnitFilesNameTheFileAndTheProblem(string yaml, string expected)
     {
         var e = Assert.Throws<InvalidDataException>(() => UnitData.Parse(yaml, "u.yaml"));
@@ -393,20 +395,22 @@ public class UnitsInPlayTests
         Assert.Greater(outside, 0);
     }
 
-    /// <summary>Owner question (units on hard terrain): on a steep slope a figure stands on the highest ground under its
-    /// boots, so no boot sinks into the hill, and the downhill boot floats by no more than the slope's rise.</summary>
+    /// <summary>Owner question (units on hard terrain): on a steep slope a token's plinth is level at the highest ground
+    /// under it, so no boot sinks into the hill, and its skirt reaches the lowest (UnitPlinth.GroundRange).</summary>
     [Test]
-    public void AFigureStandsOnASteepSlopeWithoutSinking()
+    public void APlinthStandsOnASteepSlopeWithoutSinking()
     {
-        const float slope = 0.6f, r = UnitShowcase.FootRadiusM;   // a 31-degree hillside (steeper than the 3x relief's hills)
+        const float slope = 0.6f, r = UnitPlinth.RadiusShare * 5000f;   // a 31-degree hillside (steeper than the 3x relief's hills)
         float H(float x, float z) => 100f + slope * x + 0.2f * z;
-        float y = UnitShowcase.StandHeight(H, 1000f, 2000f, r);
-        for (int k = 0; k < 16; k++)
+        var (y, low) = UnitPlinth.GroundRange(H, 1000f, 2000f, r);
+        for (int k = 0; k < 48; k++)
         {
-            float a = Mathf.PI / 8f * k;
-            Assert.GreaterOrEqual(y + 0.01f, H(1000f + Mathf.Cos(a) * r * 0.99f, 2000f + Mathf.Sin(a) * r * 0.99f), "no boot sinks into the slope");
+            float a = Mathf.PI / 24f * k;
+            float h = H(1000f + Mathf.Cos(a) * r * 0.99f, 2000f + Mathf.Sin(a) * r * 0.99f);
+            Assert.GreaterOrEqual(y + 0.01f, h, "no point of the plinth sinks into the slope");
+            Assert.LessOrEqual(low - 0.01f, h, "the skirt reaches the lowest ground");
         }
-        Assert.LessOrEqual(y - H(1000f, 2000f), Mathf.Sqrt(slope * slope + 0.04f) * r / Mathf.Cos(Mathf.PI / 16f) + 0.01f, "the float is bounded by the slope over the foot");
+        Assert.LessOrEqual(y - H(1000f, 2000f), Mathf.Sqrt(slope * slope + 0.04f) * r / Mathf.Cos(Mathf.PI / 36f) + 0.01f, "the rise is bounded by the slope over the plinth");
     }
 
     /// <summary>Review of #518: the tokens' keep-clear boxes (what the map's names keep clear of) are right even when the
@@ -445,8 +449,8 @@ public class UnitsInPlayTests
         finally { if (VisualToggles.Names.Contains(UnitLayer.ToggleName)) VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands no lower than the
-    /// ground anywhere under its boots.</summary>
+    /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands on its token's
+    /// plinth, no lower than the ground anywhere under its boots (UnitPlinthTests checks the plinth reaches the ground).</summary>
     [Test]
     public void NoRiflemanSinksIntoTheHillsOfTheMap()
     {
@@ -461,26 +465,22 @@ public class UnitsInPlayTests
                 foreach (var f in map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetComponentsInChildren<Transform>().Where(t => t.name.StartsWith("Rifleman")))
                 {
                     var p = f.position; float lowest = float.MaxValue;
-                    for (int k = 0; k < 24; k++)   // between the stand's sample directions, at 0.9 of the foot radius
+                    for (int k = 0; k < 24; k++)   // round its boots (0.2 m from its centre), at 0.9 of their radius
                     {
                         float a = Mathf.PI / 12f * k + 0.1f;
-                        var q = UnitShowcase.Ground(map, p + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * UnitShowcase.FootRadiusM * 0.9f);
+                        var q = UnitShowcase.Ground(map, p + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 0.2f * UnitShowcase.FigureScale * 0.9f);
                         Assert.LessOrEqual(q.y, p.y + 25f, $"{f.parent.name}/{f.name} on {d:yyyy-MM-dd}: a boot sinks into the ground");
                         lowest = Mathf.Min(lowest, q.y);
                     }
                     worstFloat = Mathf.Max(worstFloat, p.y - lowest);
-                    if (p.y - lowest > UnitShowcase.BaseFromRiseM + 25f)
-                    {
-                        var b = f.parent.Find("Base" + f.name);
-                        Assert.IsNotNull(b, $"{f.parent.name}/{f.name}: a figure on a slope stands on a base");
-                        Assert.LessOrEqual(b.position.y - b.localScale.y, lowest + 1f, $"{f.parent.name}/{f.name}: the base reaches the ground downhill");
-                    }
+                    var plinth = f.parent.Find(UnitPlinth.PlinthName);
+                    Assert.IsNotNull(plinth, $"{f.parent.name}: the figures stand on a plinth");
+                    Assert.AreEqual(plinth.position.y, p.y, 0.5f, $"{f.parent.name}/{f.name}: on the plinth's top");
                     checkedFigures++;
                 }
             }
-            Debug.Log($"UNITS slope: {checkedFigures} riflemen, worst float {worstFloat:0} m");
+            Debug.Log($"UNITS slope: {checkedFigures} riflemen, worst plinth top over the ground at the boots {worstFloat:0} m");
             Assert.Greater(checkedFigures, 40);
-            Assert.Less(worstFloat, 1000f, "the ground under a figure's boots drops less than a quarter of its height");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -498,15 +498,16 @@ public class UnitsInPlayTests
         return map;
     }
 
-    static List<Vector2> FigureFeet(MapScene map) =>
+    /// <summary>The shown army tokens' plinths, as discs (the figures' boots are all on them).</summary>
+    static List<(Vector2 centre, float radius)> FigureFeet(MapScene map) =>
         map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetComponentsInChildren<Transform>()
-            .Where(t => t.name.StartsWith("Rifleman")).Select(t => new Vector2(t.position.x, t.position.z)).ToList();
+            .Where(t => t.name == UnitPlinth.PlinthName).Select(t => (new Vector2(t.position.x, t.position.z), t.localScale.x)).ToList();
 
-    static bool UnderAFigure(Statecraft.Game.Map.Kits.TreeKind kind, Matrix4x4 m, List<Vector2> feet)
+    static bool UnderAFigure(Statecraft.Game.Map.Kits.TreeKind kind, Matrix4x4 m, List<(Vector2 centre, float radius)> plinths)
     {
         var p = m.GetColumn(3); var at = new Vector2(p.x, p.z);
-        float reach = UnitShowcase.FootRadiusM + Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(kind, m);
-        return feet.Any(f => (f - at).sqrMagnitude < reach * reach);
+        float crown = Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(kind, m);
+        return plinths.Any(f => (f.centre - at).sqrMagnitude < (f.radius + crown) * (f.radius + crown));
     }
 
     /// <summary>Issue #249: on every date the units are checked on, no kit tree that is drawn has its crown within a shown
@@ -581,7 +582,7 @@ public class UnitsInPlayTests
         var o = UnitShowcase.FigureOffsets(3);
         for (int i = 0; i < 3; i++)
             for (int j = i + 1; j < 3; j++)
-                Assert.GreaterOrEqual((o[i] - o[j]).magnitude * step, 1800f, "a figure is about 1.2 km wide at 2,000x: keep a gap");
+                Assert.GreaterOrEqual((o[i] - o[j]).magnitude * step, 1800f, "a figure is about 0.85 km wide at 1,400x: keep a gap");
         Assert.Less(o.Max(v => v.magnitude) * step + 600f, UnitShowcase.RingRadius * 5000f, "the figures stay inside the ring");
     }
 
