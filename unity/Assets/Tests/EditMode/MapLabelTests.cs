@@ -505,7 +505,100 @@ public class MapLabelTests
         finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>Issue #197 (audit 2026-10-13, webunits-gameplay03): in normal play at the gameplay03 pose (its yaw, with
+    /// the game's top-bar inset) the Tel Aviv pill keeps clear of the Kiryati Brigade standing in Tel Aviv: it overlaps
+    /// neither the brigade's badge nor its figures, and it still hangs above the town (over its kit's width, not beside
+    /// it); no shown pill overlaps any token's badge. The rectangles are measured
+    /// independently of the presenter: the badge plate's corners as it faces the camera, the figures' renderer bounds,
+    /// both through the camera's pixels.</summary>
+    [UnityTest]
+    public IEnumerator PillsKeepClearOfTheUnitTokens()
+    {
+        var layer = StartUnits();
+        HdPanel hd = new HdPanel(cam);   // typed, not var: the local functions below capture it
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => layer.KeepClear);
+        var inset = new TopBarInset(hd.Root, rig);
+        try
+        {
+            var pose = PromoPose.Gameplay03;
+            rig.LookAt = map.Frame.ToWorld(pose.Lon, pose.Lat, 0); rig.Distance = pose.Distance; rig.Yaw = pose.Yaw; rig.Apply();
+            yield return null;
+            inset.Update();
+            yield return Settle(labels);
+            var tokens = GameObject.Find(Statecraft.Game.Map.Units.UnitLayer.RootName).transform.Find("Tokens");
+            Rect Hull(System.Collections.Generic.IEnumerable<Vector3> points)
+            {
+                float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+                foreach (var w in points)
+                {
+                    var p = hd.ToPanel(w, out bool inFront); Assert.IsTrue(inFront);
+                    x0 = Mathf.Min(x0, p.x); y0 = Mathf.Min(y0, p.y); x1 = Mathf.Max(x1, p.x); y1 = Mathf.Max(y1, p.y);
+                }
+                return Rect.MinMaxRect(x0, y0, x1, y1);
+            }
+            Rect BadgeRect(Transform token)
+            {
+                var badge = token.Find("Badge"); var turn = cam.transform.rotation;   // the plate faces the camera as it renders
+                float half = Statecraft.Game.Map.Units.UnitBadge.SizeM / 2f;
+                return Hull(new[] { new Vector3(-half, -half, 0), new Vector3(half, -half, 0), new Vector3(-half, half, 0), new Vector3(half, half, 0) }
+                    .Select(c => badge.position + turn * c));
+            }
+            Rect FiguresRect(Transform token) => Hull(token.GetComponentsInChildren<Renderer>().Where(r => r.name.StartsWith("Rifleman"))
+                .SelectMany(r => { var b = r.bounds; return Enumerable.Range(0, 8).Select(c => new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z)); }));
+
+            var kiryati = layer.Tokens.Single(t => t.Token.Unit.Id == "kiryati");
+            Assert.AreEqual("Tel Aviv", kiryati.Token.Anchor.Place, "the brigade stands in Tel Aviv on the first turn");
+            var token = tokens.Find("kiryati");
+            Rect badgeRect = BadgeRect(token), figuresRect = FiguresRect(token);
+            var tlv = labels.Slots.Single(s => s.name == "slot-tel_aviv");
+            Assert.IsTrue(Shown(tlv), "Tel Aviv is named at gameplay03");
+            var pill = tlv.Q<Label>().worldBound;
+            TestContext.WriteLine($"gameplay03: Tel Aviv pill {pill}, Kiryati badge {badgeRect}, figures {figuresRect}");
+            Assert.IsFalse(pill.Overlaps(badgeRect), $"the Tel Aviv pill {pill} overlaps the Kiryati badge {badgeRect}");
+            Assert.IsFalse(pill.Overlaps(figuresRect), $"the Tel Aviv pill {pill} overlaps the Kiryati figures {figuresRect}");
+            var kit = KitRectOf(hd, "tel_aviv");
+            Assert.LessOrEqual(pill.yMax, kit.yMin + 1f, $"the pill {pill} still hangs above Tel Aviv's kit {kit}");
+            Assert.IsTrue(pill.center.x >= kit.xMin && pill.center.x <= kit.xMax, $"over the town, not beside it: pill {pill}, kit {kit}");
+            var badges = layer.Tokens.Select(t => (id: t.Token.Unit.Id, rect: BadgeRect(tokens.Find(t.Token.Unit.Id)))).ToList();
+            foreach (var slot in labels.Slots.Concat(labels.LocalitySlots).Where(Shown))
+                foreach (var (id, rect) in badges)
+                    Assert.IsFalse(slot.Q<Label>().worldBound.Overlaps(rect), $"{slot.name} {slot.Q<Label>().worldBound} overlaps {id}'s badge {rect}");
+
+            // The units off: with no camera move, the plain refresh re-places Tel Aviv's pill at its home above the kit.
+            VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, false);
+            Assert.AreEqual(0, layer.KeepClear.Count, "a hidden layer asks no pill to keep clear");
+            labels.Refresh(); yield return null;
+            var home = tlv.Q<Label>().worldBound;
+            TestContext.WriteLine($"units off: Tel Aviv pill {home}, kit {kit}");
+            Assert.Greater(home.yMax, pill.yMax + 20f, $"the pill {home} came back down from {pill}");
+            Assert.That(kit.yMin - home.yMax, Is.InRange(MapLabelsPresenter.LiftPx - 1f, 30f), $"back just above its kit: pill {home}, kit {kit}");
+            // And on again: it goes back above the brigade.
+            VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, true);
+            labels.Refresh(); yield return null;
+            Assert.AreEqual(pill.yMax, tlv.Q<Label>().worldBound.yMax, 0.5f, "the units on again: above the brigade again");
+        }
+        finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
+    }
+
     static readonly string[] Occluders = { "top-bar", "info-panel", "minimap" };
+
+    /// <summary>The units in play as a new game starts (golden seed, historical mode), as the game draws them.</summary>
+    Statecraft.Game.Map.Units.UnitLayer StartUnits()
+    {
+        var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
+        var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, units, content.Hexes, still: true);
+        layer.Show(content, Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical));
+        return layer;
+    }
+
+    /// <summary>The presenter, keeping clear of the units in play as the game does (GameRoot), or without them.</summary>
+    MapLabelsPresenter Labels(HdPanel hd, bool units)
+    {
+        if (!units) return new MapLabelsPresenter(hd.Root, map, cam);
+        var layer = StartUnits();
+        return new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => layer.KeepClear);
+    }
 
     /// <summary>Marker tops on screen and not under a panel, in panel coordinates (independent of the presenter).</summary>
     static System.Collections.Generic.Dictionary<string, Vector2> VisibleMarkerTops(HdPanel hd, MapScene map)
@@ -529,10 +622,17 @@ public class MapLabelTests
     /// (well apart from any other marker), with a lower bound on the count; and at the overview a coastal town between
     /// Haifa and Tel Aviv is labelled. The full shown set is logged, for a new baseline.</summary>
     [UnityTest]
-    public IEnumerator ShownPillsNeverOverlapAndEachReadsAsItsOwn()
+    public IEnumerator ShownPillsNeverOverlapAndEachReadsAsItsOwn() => NeverOverlapAndOwn(false);
+
+    /// <summary>The same with the units in play on the map (review of #518): the tokens move pills, and a city with tokens
+    /// on it (Tel Aviv, Jerusalem) keeps its name; each pill still reads as its own town's, measured from the kit.</summary>
+    [UnityTest]
+    public IEnumerator ShownPillsNeverOverlapAndEachReadsAsItsOwnWithTheUnits() => NeverOverlapAndOwn(true);
+
+    IEnumerator NeverOverlapAndOwn(bool units)
     {
         var hd = new HdPanel(cam);
-        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        var labels = Labels(hd, units);
         try
         {
             foreach (var (name, lon, lat, distance, pinned, atLeast) in new[]
@@ -675,10 +775,16 @@ public class MapLabelTests
     /// a new view, after one sweep that lets the presenter's lists reach their size). Counted by the profiler, so it does
     /// not depend on the machine's load (#322).</summary>
     [UnityTest]
-    public IEnumerator RefreshWhileTheCameraMovesAllocatesNothing()
+    public IEnumerator RefreshWhileTheCameraMovesAllocatesNothing() => AllocatesNothing(false);
+
+    /// <summary>The same with the unit tokens to keep clear of (the game's path).</summary>
+    [UnityTest]
+    public IEnumerator RefreshWhileTheCameraMovesAllocatesNothingWithTheUnits() => AllocatesNothing(true);
+
+    IEnumerator AllocatesNothing(bool units)
     {
         var hd = new HdPanel(cam);
-        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        var labels = Labels(hd, units);
         try
         {
             yield return Settle(labels);
@@ -732,6 +838,48 @@ public class MapLabelTests
                 $"LABELS refresh moving median_us={best:0} sweeps_us={string.Join(",", medians.Select(m => m.ToString("0", System.Globalization.CultureInfo.InvariantCulture)))} moved={moved}"));
             Assert.Greater(moved, Sweeps * Steps / 2, "the refreshes did work: Tel Aviv's pill moved");
             Assert.Less(best, LimitUs, $"median refresh of the quickest sweep under {LimitUs} us (editor Mono)");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>Keeping clear of the unit tokens (#197) costs little next to placing the pills: one presenter, whose
+    /// keep-clear list is switched between the units in play and none, runs interleaved sweeps (off, on, off, on, ...) of
+    /// 240 refreshes along the same camera path; the median refresh with the units is at most 1.25 times the median without,
+    /// both taken from the same run, so the machine's load cancels out (the absolute bound stays on the test above).</summary>
+    [UnityTest]
+    public IEnumerator KeepingClearOfTheUnitsIsCheap()
+    {
+        const int Pairs = 5, Steps = 240;
+        const double MaxRatio = 1.25;
+        var layer = StartUnits();
+        bool on = false;
+        var hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => on ? layer.KeepClear : System.Array.Empty<Bounds[]>());
+        try
+        {
+            yield return Settle(labels);
+            var times = new double[Steps];
+            var off = new System.Collections.Generic.List<double>(); var with = new System.Collections.Generic.List<double>();
+            var watch = new System.Diagnostics.Stopwatch();
+            for (int s = 0; s < 2 * Pairs; s++)
+            {
+                on = s % 2 == 1;
+                for (int i = 0; i < Steps; i++)
+                {
+                    SweepStep(i);
+                    watch.Restart(); labels.Refresh(); watch.Stop();
+                    times[i] = watch.Elapsed.TotalMilliseconds * 1000.0;
+                }
+                System.Array.Sort(times);
+                (on ? with : off).Add((times[Steps / 2 - 1] + times[Steps / 2]) / 2.0);
+            }
+            Assert.Greater(layer.KeepClear.Count, 0, "the units were on the map");
+            double Median(System.Collections.Generic.List<double> xs) { xs.Sort(); return xs.Count % 2 == 1 ? xs[xs.Count / 2] : (xs[xs.Count / 2 - 1] + xs[xs.Count / 2]) / 2.0; }
+            double mOff = Median(off), mOn = Median(with);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            TestContext.WriteLine(System.FormattableString.Invariant(
+                $"LABELS keep-clear cost off_us={mOff:0} on_us={mOn:0} ratio={mOn / mOff:0.00} off={string.Join(",", off.Select(m => m.ToString("0", inv)))} on={string.Join(",", with.Select(m => m.ToString("0", inv)))}"));
+            Assert.LessOrEqual(mOn, MaxRatio * mOff, $"keeping clear of the units: {mOn:0} us against {mOff:0} us without them");
         }
         finally { labels.Dispose(); hd.Dispose(); }
     }

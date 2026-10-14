@@ -51,13 +51,13 @@ def test_real_dated_screenshots_in_a_one_plus_two_plus_two_grid():
     assert re.search(r"Real screenshots from build \d+\.\d+\.\d+ \(M3\), \d{4}-\d{2}-\d{2}\.", text)
 
 
-def test_note_says_independent_and_planned_commercial_before_what_is_this():
+def test_note_says_independent_free_and_non_commercial_before_what_is_this():
     text = read("README.md")
     note = text.index("> [!NOTE]")
     assert note < text.index("## What is this?")
     block = text[note:note + 600]
     assert "not affiliated with or endorsed by" in block and "any person depicted" in block
-    assert "commercial edition is planned" in block and "non-commercial" not in text
+    assert "free and non-commercial" in block and "commercial edition" not in text
 
 
 def test_link_bar_routes_errors_to_the_form():
@@ -155,7 +155,7 @@ def test_hebrew_readme_keeps_the_english_facts():
     for fact in ("15 במאי 1948", "M3", "0.1.0", shot_date, "M4", "CC BY-SA 4.0", "CC0", "Firaxis", "2K", "1936",
                  "6000.3.25f1", "docs/CONTENT_POLICY.md", "historical_accuracy.yml", "SECURITY.md"):
         assert fact in he, fact
-    assert "מסחרית" in he  # a commercial edition is planned
+    assert "חינמי ולא מסחרי" in he and "גרסה מסחרית" not in he  # free and non-commercial
     assert "אינו ניטרלי" in he or "לא ניטרלי" in he  # "not neutral"
 
 

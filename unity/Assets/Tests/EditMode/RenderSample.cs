@@ -34,6 +34,23 @@ public sealed class RenderSample
         }
     }
 
+    /// <summary>The per-pixel, per-channel median of <paramref name="renders"/> (odd) renders of the same frame, for tests that
+    /// compare two frames pixel for pixel at a zero threshold. With every input pinned (the water's clock too), about 1 in
+    /// 100 editor renders of the map still differs from the one before it by 1-11/255 on up to about 50 of 129,600 pixels,
+    /// all in the terrain's pass, and the next render matches again (issue #440: no CPU-side state changes; URP's own
+    /// Terrain/Lit material on the same terrain never does it). A transient pixel loses the vote, so the comparison can
+    /// stay exact: a change that is really in the frame is in every render and still counts.</summary>
+    public static RenderSample RenderSteady(Camera cam, int width, int height, int renders = 5)
+    {
+        var all = new RenderSample[renders];
+        for (int k = 0; k < renders; k++) all[k] = Render(cam, width, height);
+        var pixels = new Color[all[0].Pixels.Length];
+        var v = new float[renders];
+        float Median(int i, int ch) { for (int k = 0; k < renders; k++) v[k] = all[k].Pixels[i][ch]; System.Array.Sort(v); return v[renders / 2]; }
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color(Median(i, 0), Median(i, 1), Median(i, 2), 1f);
+        return new RenderSample(width, height, pixels);
+    }
+
     public Color At(int x, int y) => Pixels[Mathf.Clamp(y, 0, Height - 1) * Width + Mathf.Clamp(x, 0, Width - 1)];
 
     /// <summary>The mean colour of the (2 radius + 1)² patch around (cx, cy).</summary>

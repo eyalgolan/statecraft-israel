@@ -100,30 +100,48 @@ namespace Statecraft.Game.UI
             bridge.Queue(new AllocateBudget(new Dictionary<string, double>(draft)));
         }
 
+        /// <summary>One budget line's row: the ministry and its minister, -, the share, +, and the effect multiplier.</summary>
+        VisualElement Row(string office)
+        {
+            var row = new VisualElement { name = "budget-" + office };
+            row.AddToClassList("row");
+            var name = new Label { name = "budget-" + office + "-name" };
+            name.AddToClassList("grow");
+            name.AddToClassList("budget-office");   // wraps in its column, so a long office never widens the row
+            row.Add(name);
+            row.Add(new Button(() => Change(office, -Step)) { name = "budget-" + office + "-down", text = "-" });
+            row.Add(new Label { name = "budget-" + office + "-share" });
+            row.Add(new Button(() => Change(office, +Step)) { name = "budget-" + office + "-up", text = "+" });
+            var factor = new Label { name = "budget-" + office + "-factor" };
+            factor.AddToClassList("muted");
+            row.Add(factor);
+            return row;
+        }
+
         public void Render()
         {
             var c = bridge.Content; var s = bridge.State;
             var rows = screen.Q<ScrollView>("budget-rows");
-            rows.Clear();
-            // A budget line is keyed by its own id; the office that owns it today can change (rules.yaml budget_owners, #108).
-            foreach (var office in c.Rules.BudgetStart.Keys)
+            // The rows are made once per set of lines and updated in place, so the + or - button that has the keyboard focus
+            // keeps it across a step (accessibility audit #41, H2), as CabinetPresenter does for its cards.
+            var lines = c.Rules.BudgetStart.Keys.ToList();
+            if (rows.childCount != lines.Count || lines.Where((office, i) => rows[i].name != "budget-" + office).Any())
             {
+                rows.Clear();
+                foreach (var office in lines) rows.Add(Row(office));
+            }
+            // A budget line is keyed by its own id; the office that owns it today can change (rules.yaml budget_owners, #108).
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var office = lines[i]; var row = rows[i];
                 var o = c.Offices.First(x => x.Id == (Offices.BudgetOwner(c, office, s.Date) ?? office));
                 var share = draft.TryGetValue(office, out var v) ? v : 0;
-                var row = new VisualElement { name = "budget-" + office };
-                row.AddToClassList("row");
                 // A budget line can run before its ministry exists (Education from 10 March 1949): say so, not "vacant".
                 var who = o.From.HasValue && s.Date < o.From.Value ? text.Format("budget.not_established", PlayerText.Date(o.From.Value))
                     : Cabinet.Holder(c, s, o.Id)?.Name ?? text["budget.vacant"];
-                row.Add(new Label(text.Format("budget.office", o.Title, who)) { name = "budget-" + office + "-name" });
-                row[0].AddToClassList("grow");
-                row.Add(new Button(() => Change(office, -Step)) { name = "budget-" + office + "-down", text = "-" });
-                row.Add(new Label(text.Format("budget.share", PlayerText.Percent(share))) { name = "budget-" + office + "-share" });
-                row.Add(new Button(() => Change(office, +Step)) { name = "budget-" + office + "-up", text = "+" });
-                var factor = EffectsSystem.BudgetFactor(draft, office);
-                row.Add(new Label(text.Format("budget.factor", PlayerText.Percent(factor))) { name = "budget-" + office + "-factor" });
-                row[4].AddToClassList("muted");
-                rows.Add(row);
+                ((Label)row[0]).text = text.Format("budget.office", o.Title, who);
+                ((Label)row[2]).text = text.Format("budget.share", PlayerText.Percent(share));
+                ((Label)row[4]).text = text.Format("budget.factor", PlayerText.Percent(EffectsSystem.BudgetFactor(draft, office)));
             }
             var leg = Offices.Legislature(c, s.Date);
             var (seats, size) = PoliticsSystem.CoalitionSeats(c, s.Date);

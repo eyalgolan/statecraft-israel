@@ -136,14 +136,16 @@ public class PromoHudTests
     [UnityTest]
     public IEnumerator EveryWindowShapeFitsTheBarAfterATurn()
     {
-        // (window, icons, stacked changes, two rows): 16:9 fullscreen; a 16:9 window; a 16:10 MacBook browser (~1911
-        // logical); 16:10 fullscreen (~1821) keeps the icons on the stacked bar; 4:3 and 5:4 drop them; square and narrower wrap.
-        foreach (var (w, h, icons, narrow, twoRow) in new[] { (1920, 1080, true, false, false), (1280, 720, true, false, false),
-                                                              (1366, 768, true, false, false), (1760, 1000, true, false, false),
-                                                              (1920, 1200, true, true, false), (1440, 900, true, true, false),
-                                                              (1024, 768, false, true, false), (1280, 1024, false, true, false),
-                                                              (1024, 1024, false, true, true), (960, 1080, false, true, true),
-                                                              (800, 1000, false, true, true) })
+        // (window, icons, stacked changes, two rows, three rows): 16:9 fullscreen; a 16:9 window; a 16:10 MacBook browser
+        // (~1911 logical); 21:9 ultrawide (~2217); 16:10 fullscreen (~1821) keeps the icons on the stacked bar; 4:3 and 5:4
+        // drop them; square and narrower wrap; a phone upright (390x844, ~790) takes three rows (#398).
+        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, false, false, false),
+                                                              (1366, 768, true, false, false, false), (1760, 1000, true, false, false, false),
+                                                              (2560, 1080, true, false, false, false),
+                                                              (1920, 1200, true, true, false, false), (1440, 900, true, true, false, false),
+                                                              (1024, 768, false, true, false, false), (1280, 1024, false, true, false, false),
+                                                              (1024, 1024, false, true, true, false), (960, 1080, false, true, true, false),
+                                                              (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -165,17 +167,18 @@ public class PromoHudTests
                 hud = new HudPresenter(root, bridge, Text);
                 bridge.EndTurn();                                       // real changes on every meter that moved
                 for (int i = 0; i < 6; i++) yield return null;
-                if (w == 1920 && h == 1080)
+                if ((w, h) == (1920, 1080) || (w, h) == (2560, 1080))
                 {
-                    // Review P1: with typical (turn-1) values at 16:9 the bar has room for the promo's sizes.
-                    Assert.IsTrue(root.Q("top-bar").ClassListContains(HudPresenter.RoomyClass), "1920x1080: roomy with typical values");
+                    // Review P1: with typical (turn-1) values at 16:9, and at 21:9 (#398), the bar has room for the promo's sizes.
+                    var at = $"{w}x{h}";
+                    Assert.IsTrue(root.Q("top-bar").ClassListContains(HudPresenter.RoomyClass), at + ": roomy with typical values");
                     foreach (var icon in root.Q("meters").Query<UiIcon>().ToList())
-                        Assert.GreaterOrEqual(icon.worldBound.width, 36f, $"1920x1080: the {icon.Glyph} icon is promo-sized");
+                        Assert.GreaterOrEqual(icon.worldBound.width, 36f, $"{at}: the {icon.Glyph} icon is promo-sized");
                     foreach (var v in root.Q("meters").Query<Label>(className: "meter-value").ToList())
-                        Assert.GreaterOrEqual(v.resolvedStyle.fontSize, 24f, $"1920x1080: '{v.text}' is promo-sized");
+                        Assert.GreaterOrEqual(v.resolvedStyle.fontSize, 24f, $"{at}: '{v.text}' is promo-sized");
                     // Integration bug B8: on the roomy bar every caption keeps one line, as in the promo.
                     foreach (var c in root.Q("meters").Query<Label>(className: "meter-name").ToList().Where(c => c.name != "security-level"))
-                        Assert.Less(c.worldBound.height, c.resolvedStyle.fontSize * 2f, $"1920x1080: '{c.text}' wraps");
+                        Assert.Less(c.worldBound.height, c.resolvedStyle.fontSize * 2f, $"{at}: '{c.text}' wraps");
                 }
                 // The widest realistic changes, formatted as HudModel formats them, and the widest date line.
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", Text.Format("hud.delta_people", 12345.0)),
@@ -194,6 +197,7 @@ public class PromoHudTests
                 Assert.AreEqual(!icons, bar.ClassListContains(HudPresenter.CompactClass), where + ": compact (no icons)");
                 Assert.AreEqual(narrow, root.Q("root").ClassListContains(HudPresenter.NarrowClass), where + ": narrow");
                 Assert.AreEqual(twoRow, root.Q("root").ClassListContains(HudPresenter.TwoRowClass), where + ": two rows");
+                Assert.AreEqual(threeRow, root.Q("root").ClassListContains(HudPresenter.ThreeRowClass), where + ": three rows");
                 foreach (var icon in root.Q("meters").Query<UiIcon>().ToList())
                     Assert.AreEqual(icons ? DisplayStyle.Flex : DisplayStyle.None, icon.resolvedStyle.display, $"{where}: {icon.Glyph}");
                 var badge = root.Q(className: "date-box");

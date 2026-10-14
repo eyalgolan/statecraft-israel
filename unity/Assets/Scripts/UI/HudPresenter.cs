@@ -11,6 +11,9 @@ namespace Statecraft.Game.UI
         readonly Button endTurn; readonly System.Action onEndTurn;
         readonly VisualElement bar, hudRoot, nav;
         readonly System.Collections.Generic.List<VisualElement> meters;
+        /// <summary>Each meter's element and its caption in the UI's language, for the words in its tooltip (#398).</summary>
+        readonly System.Collections.Generic.Dictionary<string, (VisualElement element, string caption)> said =
+            new System.Collections.Generic.Dictionary<string, (VisualElement, string)>();
 
         // Three tiers by the bar's logical width (1080p reference, match 0.5: logical width = sqrt(aspect x 1920 x 1080)).
         // Each threshold sits well clear of a common window shape, so a small window change does not flip a tier:
@@ -64,6 +67,8 @@ namespace Statecraft.Game.UI
             meters = root.Q<VisualElement>("meters").Children().ToList();
             nav = root.Q<VisualElement>("nav");
             foreach (var m in meters) m.RegisterCallback<GeometryChangedEvent>(OnMeterGeometry);
+            foreach (var id in new[] { "treasury", "immigration", "security", "support", "standing", "fx" })
+                said[id] = (root.Q<VisualElement>("meter-" + id), text["hud.caption." + id]);
             SetCompact(bar.layout.width);   // the bar may already be laid out (the loading screen shows it) and never resize
             bridge.Changed += Render;
             Render();
@@ -127,7 +132,8 @@ namespace Statecraft.Game.UI
         static void PaintHourglass(MeshGenerationContext m)
         {
             if (!m.visualElement.enabledInHierarchy) return;   // no bright sign on a disabled End Turn (game over)
-            UiIcon.Paint(m, "hourglass", new UnityEngine.Rect(10f, (m.visualElement.layout.height - 22f) / 2f, 22f, 22f), UiIcon.IsFocused(m.visualElement));
+            UiIcon.Paint(m, "hourglass", new UnityEngine.Rect(UiLanguage.Within(m.visualElement) ? m.visualElement.layout.width - 32f : 10f,
+                (m.visualElement.layout.height - 22f) / 2f, 22f, 22f), UiIcon.IsFocused(m.visualElement));   // the right side in Hebrew (#193)
         }
 
         void Set(string name, string value) => root.Q<Label>(name).text = value;
@@ -139,6 +145,9 @@ namespace Statecraft.Game.UI
             delta.text = m.Delta;
             delta.EnableInClassList("delta-up", m.Sign > 0);
             delta.EnableInClassList("delta-down", m.Sign < 0);
+            // The meter in words, under its caption in the UI's language (#398).
+            var (element, caption) = said[meter];
+            element.tooltip = HudModel.Spoken(text, caption, m);
         }
 
         public void Render()

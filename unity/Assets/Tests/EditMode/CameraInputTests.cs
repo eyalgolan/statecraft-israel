@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
@@ -196,7 +197,7 @@ public class CameraInputTests
     }
 
     /// <summary>Issue #174: panning past a corner at gameplay zoom stops where the view's edges meet the map's, at every
-    /// yaw and with the top bar's inset, so the border skirt never shows. (The look-at clamp alone left 3/4 of the view on it.)</summary>
+    /// yaw and with the top bar's inset, so nothing past the map's edge (since #36 the frame) shows. (The look-at clamp alone left 3/4 of the view on it.)</summary>
     [Test]
     public void PanningPastACornerKeepsTheViewOnTheMap()
     {
@@ -387,6 +388,119 @@ public class CameraInputTests
             rig.Distance = 120000f;
             CameraController.Step(rig, c.Gather(Vector2.zero, Vector2.zero, 1f, 0, false, null), 0.016f, Map);
             Assert.AreEqual(108000f, rig.Distance, 1f);
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    /// <summary>Issue #43 (T45): in WebGL the zoom counts the browser's wheel events itself. Unity's player took the smallest
+    /// delta seen since load as one notch, so one 0.5 px touchpad event made every later frame zoom the clamped 27%. A
+    /// mouse notch is still one step: 100 px, three lines, one page, or a macOS mouse tick (4.000244140625 px).</summary>
+    [Test]
+    public void AMouseNotchIsOneStepInEveryMode()
+    {
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-100f, CameraController.WheelPixels), 1e-5, "100 px up");
+        Assert.AreEqual(-1f, CameraController.WheelEventNotches(100f, CameraController.WheelPixels), 1e-5, "100 px down");
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-3f, CameraController.WheelLines), 1e-5, "3 lines");
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-1f, CameraController.WheelPages), 1e-5, "1 page");
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-4.000244140625f, CameraController.WheelPixels), 1e-5, "macOS tick");
+        Assert.AreEqual(-1f, CameraController.WheelEventNotches(8.00048828125f, CameraController.WheelPixels), 1e-5,
+            "an accelerated macOS tick (two ticks' worth) is still one notch");
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-13 * 4.000244140625f, CameraController.WheelPixels), 1e-5,
+            "a fast-spun macOS tick above the threshold is one notch");
+        foreach (var mode in new[] { CameraController.WheelPixels, CameraController.WheelLines, CameraController.WheelPages })
+            Assert.AreEqual(float.PositiveInfinity, 1f / CameraController.WheelEventNotches(0f, mode), $"0 in mode {mode} is +0, not -0");
+    }
+
+    /// <summary>#528 review: one discrete pixel notch is one step whatever its size. Chrome's synthetic 100 px notch
+    /// arrives as 200 px, and display scaling or page zoom gives 80, 120, 125 or 150 px; every pixel event of
+    /// MouseNotchMinPixels (50) or more is exactly one notch in its direction (DOM deltaY below zero = in = positive).</summary>
+    [Test]
+    public void APixelNotchIsOneStepWhateverItsSize()
+    {
+        foreach (var px in new[] { 50f, 80f, 100f, 120f, 125f, 150f, 200f, 360f })
+        {
+            Assert.AreEqual(1f, CameraController.WheelEventNotches(-px, CameraController.WheelPixels), 1e-6, $"-{px} px is one notch in");
+            Assert.AreEqual(-1f, CameraController.WheelEventNotches(px, CameraController.WheelPixels), 1e-6, $"+{px} px is one notch out");
+        }
+        Assert.AreEqual(CameraController.MouseNotchMinPixels, 50f, "the threshold these cases assume");
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-50f, CameraController.WheelPixels), 1e-6, "at the threshold: a notch");
+        Assert.AreEqual(0.4999f, CameraController.WheelEventNotches(-49.99f, CameraController.WheelPixels), 1e-5, "just below: proportional");
+        Assert.AreEqual(-0.49f, CameraController.WheelEventNotches(49f, CameraController.WheelPixels), 1e-6);
+        Assert.AreEqual(2f, CameraController.WheelEventNotches(-6f, CameraController.WheelLines), 1e-6, "lines stay as they were: 6 are 2 notches");
+        var rig = NewRig();
+        try
+        {
+            rig.Distance = 120000f;
+            CameraController.Step(rig, new CameraInput { Zoom = CameraController.WheelNotches(new[] { -200f }, new[] { 0 }, 1) }, 0.016f, Map);
+            Assert.AreEqual(108000f, rig.Distance, 1f, "Chrome's synthetic 200 px notch zooms 10%");
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>#528 review: a fast trackpad flick can send events of 50 to 100 px, which MouseNotchMinPixels counts as a
+    /// whole notch each, up to twice their length. The over-count is bounded per frame by Gather's clamp: one 60 px event
+    /// is one notch (proportional would be 0.6), and five in one frame are five notches, clamped to three (27%).</summary>
+    [Test]
+    public void A60PxFlickEventIsOneNotchAndAFrameOfThemIsClampedToThree()
+    {
+        Assert.AreEqual(1f, CameraController.WheelEventNotches(-60f, CameraController.WheelPixels), 1e-6, "one 60 px event");
+        var frame = new[] { -60f, -60f, -60f, -60f, -60f };
+        Assert.AreEqual(5f, CameraController.WheelNotches(frame, new int[frame.Length], frame.Length), 1e-6, "before the clamp");
+        var c = NewController(out var go);
+        try
+        {
+            var inp = c.Gather(Vector2.zero, Vector2.zero, CameraController.WheelNotches(frame, new int[frame.Length], frame.Length), 0, false,
+                new Vector2(500, 0));
+            Assert.AreEqual(3f, inp.Zoom, 1e-6, "clamped to three notches a frame");
+            var rig = go.GetComponent<CameraRig>();
+            rig.Distance = 120000f;
+            CameraController.Step(rig, inp, 0.016f, Map);
+            Assert.AreEqual(120000f * 0.729f, rig.Distance, 1f, "27.1% in that frame, no more");
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    [Test]
+    public void TouchpadPixelsZoomInProportionAndNothingIsLearned()
+    {
+        Assert.AreEqual(0.005f, CameraController.WheelEventNotches(-0.5f, CameraController.WheelPixels), 1e-6);
+        Assert.AreEqual(0.04f, CameraController.WheelEventNotches(-4f, CameraController.WheelPixels), 1e-6, "4 px is not a tick");
+        Assert.AreEqual(0.07f, CameraController.WheelEventNotches(-7f, CameraController.WheelPixels), 1e-6);
+        // A swipe of many small deltas, then a mouse notch: the swipe zooms by its length, and the notch is still one step.
+        var swipe = new float[] { -0.5f, -1, -2, -4, -6, -8, -8, -8, -6.2f, -4.8f, -3.1f, -1.4f, -0.6f };
+        var modes = new int[swipe.Length];
+        Assert.AreEqual(-swipe.Sum() / 100f, CameraController.WheelNotches(swipe, modes, swipe.Length), 1e-5);
+        Assert.AreEqual(1f, CameraController.WheelNotches(new[] { -100f }, new[] { 0 }, 1), 1e-5);
+        Assert.AreEqual(1f, CameraController.WheelNotches(new[] { -3f }, new[] { CameraController.WheelLines }, 1), 1e-5);
+        Assert.AreEqual(0.4f, CameraController.WheelNotches(new[] { -40f, -100f }, new[] { 0, 0 }, 1), 1e-5, "only count events");
+        // The swipe the browser runs use (tools/headed.py pad_swipe: a ramp, a hold, momentum decaying 12% an event).
+        var pad = new List<float> { -0.5f, -1, -2, -4, -6, -8, -8, -8, -8, -8 };
+        for (int k = 1; 8 * Mathf.Pow(0.88f, k) >= 0.5f; k++) pad.Add(-(float)System.Math.Round(8 * System.Math.Pow(0.88, k), 2));
+        Assert.AreEqual(31, pad.Count);
+        Assert.AreEqual(1.082f, CameraController.WheelNotches(pad.ToArray(), new int[pad.Count], pad.Count), 1e-3, "108.2 px is 1.08 notches");
+    }
+
+    [Test]
+    public void ATouchpadSwipeZoomsSmoothlyAndStaysOffPanels()
+    {
+        var c = NewController(out var go);
+        try
+        {
+            var rig = go.GetComponent<CameraRig>();
+            rig.Distance = 120000f;
+            foreach (var px in new[] { 0.5f, 2f, 8f, 8f, 4f, 1f })   // one frame's events each
+            {
+                var before = rig.Distance;
+                var notches = CameraController.WheelNotches(new[] { -px }, new[] { 0 }, 1);
+                CameraController.Step(rig, c.Gather(Vector2.zero, Vector2.zero, notches, 0, false, new Vector2(500, 0)), 0.016f, Map);
+                Assert.AreEqual(before * Mathf.Pow(0.9f, px / 100f), rig.Distance, 1f, $"{px} px");
+            }
+            var held = rig.Distance;
+            var swipe = new[] { -0.5f, -2f, -8f, -8f, -4f, -1f, -100f };   // a swipe and a mouse notch, over the panel
+            var overPanel = CameraController.WheelNotches(swipe, new int[swipe.Length], swipe.Length);
+            Assert.Greater(overPanel, 1f);
+            CameraController.Step(rig, c.Gather(Vector2.zero, Vector2.zero, overPanel, 0, false, new Vector2(50, 0)), 0.016f, Map);
+            Assert.AreEqual(held, rig.Distance, 1e-3, "no zoom over a panel");
         }
         finally { Object.DestroyImmediate(go); }
     }

@@ -203,7 +203,7 @@ series:
         var o = new Dictionary<string, string>
         {
             ["eras.yaml"] = Files["eras.yaml"] + "    systems: { loop: gdd }\n",
-            ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1 }") + GddRules,
+            ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1 }") + GddRules,
             ["cities.yaml"] = GddCities,
             ["unit_types.yaml"] = GddUnitTypes,
         };
@@ -222,13 +222,15 @@ mvp:
 
     public const string GddCities = @"
 cities:
-  - { id: town_a, housing_capacity: 12, job_slots: 8, civilians: 10, employed: 6, facilities: [] }
+  - { id: town_a, housing_capacity: 12, job_slots: 8, civilians: 10, employed: 6, facilities: [military_camp, hakhshara] }
 ";
 
     public const string GddUnitTypes = @"
 types:
   - { id: civilian, kind: population }
   - { id: refugee, kind: population }
+  - { id: recruit, kind: population, facility: military_camp, training_turns: 2, training_cost: 0.5 }
+  - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: 0.25 }
 ";
 
     public static string Write(Dictionary<string, string>? overrides = null, Dictionary<string, string>? events = null)

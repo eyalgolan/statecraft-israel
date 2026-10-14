@@ -130,7 +130,7 @@ public class MapSceneTests
     static string RealYamlPath => Path.Combine(Paths.Content, "map", "settlements_1948.yaml");
 
     const string TerrainMatPath = "Assets/Materials/Terrain.mat",
-        MarkerMatPath = "Assets/Materials/SettlementMarker.mat", SelectionMatPath = "Assets/Materials/HexSelection.mat", SeaMatPath = "Assets/Materials/Sea.mat", BorderLandMatPath = "Assets/Materials/BorderLand.mat";
+        MarkerMatPath = "Assets/Materials/SettlementMarker.mat", SelectionMatPath = "Assets/Materials/HexSelection.mat", SeaMatPath = "Assets/Materials/Sea.mat", FrameMatPath = "Assets/Materials/MapFrame.mat";
 
     [SetUp] public void FreshScene() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -143,7 +143,7 @@ public class MapSceneTests
     {
         if (withCamera) new GameObject("TestMainCamera") { tag = "MainCamera" }.AddComponent<Camera>();
         var map = new GameObject("MapScene").AddComponent<MapScene>();
-        map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), Load(SeaMatPath), Load(BorderLandMatPath));
+        map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), Load(SeaMatPath), Load(FrameMatPath));
         return map;
     }
 
@@ -180,52 +180,73 @@ public class MapSceneTests
             Assert.Less(cam.ViewportPointToRay(new Vector3(x, 1f, 0)).direction.y, 0f, $"top edge at x={x} looks down");
     }
 
-    /// <summary>Fix round 2 (R2-1, N1): outside the heightmap's bbox each side continues the terrain edge next to it: sea
-    /// where the edge is sea (Sea.mat), muted land where it is land (BorderLand.mat), so Sinai, Jordan and Lebanon do not
-    /// read as sea. The skirt lies entirely outside the terrain's footprint, so nothing covers land below sea level.</summary>
+    /// <summary>Issue #36 (it replaces fix round 2's skirt, R2-1 and N1): the map is a board in a wooden frame on a table.
+    /// The frame's mesh lies entirely outside the terrain's footprint (nothing covers land below sea level), its inner edge
+    /// meets the terrain's edge at every heightmap sample (no sliver), and all of it lies between the terrain's lowest
+    /// (world y 0) and highest points, where the camera's fit keeps it off the screen whenever the view fits the map (#174).
+    /// The bevel is cut earth where the edge stands above the frame (the Jordanian plateau) and the frame's lip where it lies
+    /// below (the sea); the table reaches TableReachM past the frame on every side. Every face is seen from above or, for
+    /// the frame's outer face, from outside.</summary>
     [Test]
-    public void TheBorderSkirtContinuesEachEdgeOutsideTheMap()
+    public void TheFrameRimsTheMapAndTheTableLiesBeyond()
     {
         var map = NewMap(); map.Build();
         Assert.IsNull(map.Terrain.transform.Find("SeaPlane"), "no plane over the terrain (fix round 2, N1)");
-        var skirt = map.Terrain.transform.Find(MapScene.BorderSkirtName);
-        Assert.IsNotNull(skirt, "the border skirt exists");
-        var mr = skirt.GetComponent<MeshRenderer>();
-        CollectionAssert.AreEqual(new[] { Load(SeaMatPath), Load(BorderLandMatPath) }, mr.sharedMaterials, "sea, then land: editor-made");
-        Assert.AreEqual("Universal Render Pipeline/Lit", Load(BorderLandMatPath).shader.name);
-        var mesh = skirt.GetComponent<MeshFilter>().sharedMesh;
-        var verts = mesh.vertices;
+        var frame = map.Terrain.transform.Find(MapScene.FrameName);
+        Assert.IsNotNull(frame, "the frame exists");
+        var mr = frame.GetComponent<MeshRenderer>();
+        CollectionAssert.AreEqual(new[] { Load(FrameMatPath) }, mr.sharedMaterials, "one editor-made material");
+        Assert.AreEqual("Statecraft/MapFrame", Load(FrameMatPath).shader.name);
+        Assert.IsFalse(ShaderUtil.ShaderHasError(Load(FrameMatPath).shader));
+        CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(Load(FrameMatPath).shader), "compiles for WebGL 2");
+        Assert.AreEqual(ShadowCastingMode.Off, mr.shadowCastingMode);
+        Assert.IsNull(frame.GetComponent<Collider>(), "clicks pick the terrain only");
+        var mesh = frame.GetComponent<MeshFilter>().sharedMesh;
+        Assert.AreEqual(1, mesh.subMeshCount);
+        var verts = mesh.vertices; var colours = mesh.colors; var tris = mesh.triangles;
         var size = map.Terrain.terrainData.size;
-        // Which submesh covers a point (world x, z) just outside the map, from lon/lat.
-        int Cover(double lat, double lon)
+        // Nothing of the frame lies over the terrain (N1): every triangle is outside the footprint.
+        for (int k = 0; k < tris.Length; k += 3)
         {
-            var p = map.Frame.ToWorld(lon, lat, 0);
-            for (int sm = 0; sm < mesh.subMeshCount; sm++)
-            {
-                var t = mesh.GetTriangles(sm);
-                for (int k = 0; k < t.Length; k += 3)
-                    if (Inside(new Vector2(p.x, p.z), verts[t[k]], verts[t[k + 1]], verts[t[k + 2]])) return sm;
-            }
-            return -1;
+            var c = (verts[tris[k]] + verts[tris[k + 1]] + verts[tris[k + 2]]) / 3;
+            Assert.IsFalse(c.x > 1f && c.x < size.x - 1f && c.z > 1f && c.z < size.z - 1f, $"frame triangle over the terrain at {c}");
         }
-        Assert.AreEqual(1, Cover(31.95, 36.05), "east of the map at Amman's latitude: Jordan, land");
-        Assert.AreEqual(1, Cover(29.30, 34.50), "south of the map: Sinai, land");
-        Assert.AreEqual(0, Cover(32.00, 34.05), "west of the map off the coast: sea");
-        Assert.AreEqual(1, Cover(33.50, 35.60), "north of the map inland: Lebanon, land");
-        Assert.AreEqual(0, Cover(33.50, 34.50), "north-west of the map: sea");
-        Assert.AreEqual(1, Cover(29.40, 34.30), "south-west corner: Sinai, land");
-        // Nothing of the skirt lies over the terrain (N1): every triangle is outside the footprint.
-        for (int sm = 0; sm < mesh.subMeshCount; sm++)
+        // Nor any vertex (review S3: a bevel inset 100 m into the map keeps every centroid outside the 1 m margin).
+        foreach (var v in verts)
+            Assert.IsFalse(v.x > 0.5f && v.x < size.x - 0.5f && v.z > 0.5f && v.z < size.z - 0.5f, $"frame vertex over the terrain at {v}");
+        // Inside the camera's fit (#174): between the terrain's lowest and highest points.
+        float top = CameraController.GroundTopOf(map.Terrain);
+        foreach (var v in verts)
         {
-            var t = mesh.GetTriangles(sm);
-            for (int k = 0; k < t.Length; k += 3)
-            {
-                var c = (verts[t[k]] + verts[t[k + 1]] + verts[t[k + 2]]) / 3;
-                Assert.IsFalse(c.x > 1f && c.x < size.x - 1f && c.z > 1f && c.z < size.z - 1f, $"skirt triangle over the terrain at {c}");
-            }
+            var w = frame.TransformPoint(v);
+            Assert.That(w.y, Is.InRange(ShadowFit.GroundY - 0.01f, top), $"frame vertex {w} within the ground's height range");
         }
-        // Fix round 3 (m-4): on all four edges, at every heightmap sample (the terrain's own vertices), the skirt's inner edge
-        // is at the terrain's height: no sliver between them. The skirt's inner height between its ring-0 vertices is linear.
+        // The table reaches TableReachM past the frame on every side.
+        var b = mesh.bounds; float reach = MapBuilder.FrameBevelM + MapBuilder.FrameWidthM + MapBuilder.TableReachM - 1f;
+        Assert.LessOrEqual(b.min.x, -reach); Assert.GreaterOrEqual(b.max.x, size.x + reach);
+        Assert.LessOrEqual(b.min.z, -reach); Assert.GreaterOrEqual(b.max.z, size.z + reach);
+        // Every face is seen from above, or (the frame's outer face, vertical) from outside: the winding Unity culls by.
+        var centre = new Vector3(size.x / 2, 0, size.z / 2);
+        for (int k = 0; k < tris.Length; k += 3)
+        {
+            Vector3 p0 = verts[tris[k]], p1 = verts[tris[k + 1]], p2 = verts[tris[k + 2]];
+            var n = Vector3.Cross(p1 - p0, p2 - p0);
+            var c = (p0 + p1 + p2) / 3 - centre;
+            bool up = n.y > 1e-3f * n.magnitude, outward = Mathf.Abs(n.y) <= 1e-3f * n.magnitude && n.x * c.x + n.z * c.z > 0;
+            Assert.IsTrue(up || outward, $"triangle {k / 3} at {c + centre} faces {n}");
+        }
+        // Cut earth above the frame's top (east, at Amman's latitude: the plateau), the frame's lip below it (west, the sea).
+        float KindAt(double lat, double lon)
+        {
+            var p = map.Frame.ToWorld(lon, lat, 0); int best = -1;
+            for (int i = 0; i < verts.Length; i++)
+                if (colours[i].a < 0.75f && (best < 0 || (new Vector2(verts[i].x - p.x, verts[i].z - p.z)).sqrMagnitude < (new Vector2(verts[best].x - p.x, verts[best].z - p.z)).sqrMagnitude)) best = i;
+            return colours[best].a;
+        }
+        Assert.AreEqual(MapBuilder.FrameKind.Earth, KindAt(31.95, 35.9), "the plateau's edge: cut earth");
+        Assert.AreEqual(MapBuilder.FrameKind.Wood, KindAt(32.0, 34.2), "the sea's edge: the frame's lip");
+        // Fix round 3 (m-4), kept: on all four edges, at every heightmap sample (the terrain's own vertices), the frame's
+        // inner edge is at the terrain's height: no sliver between them. Its height between its inner vertices is linear.
         var data = map.Terrain.terrainData;
         int res = data.heightmapResolution;
         var ring0 = System.Array.FindAll(verts, v => v.x <= 0.5f || v.x >= size.x - 0.5f || v.z <= 0.5f || v.z >= size.z - 0.5f);
@@ -236,7 +257,10 @@ public class MapSceneTests
             ("east", v => Mathf.Abs(v.x - size.x) < 0.5f, v => v.z, t => new Vector2(size.x, t)) })
         {
             var line = System.Array.FindAll(ring0, v => onEdge(v)); System.Array.Sort(line, (p, q) => along(p).CompareTo(along(q)));
-            float worst = 0; float worstAt = 0;
+            // Review S3: with no vertex on the edge line the loop below checked nothing and passed. One inner vertex per
+            // heightmap sample, and every sample but the last bracketed by two of them.
+            Assert.GreaterOrEqual(line.Length, res, $"{name} edge: the frame's inner vertices lie on the map's edge");
+            float worst = 0; float worstAt = 0; int checkedSamples = 0;
             for (int i = 0; i < res; i++)
             {
                 float t = (name == "south" || name == "north" ? size.x : size.z) * i / (res - 1);
@@ -248,27 +272,17 @@ public class MapSceneTests
                 float terrain = data.GetInterpolatedHeight(p2.x / size.x, p2.y / size.z);
                 float d = Mathf.Abs(Mathf.Lerp(a0.y, a1.y, f) - terrain);
                 if (d > worst) { worst = d; worstAt = t; }
+                checkedSamples++;
             }
+            Assert.GreaterOrEqual(checkedSamples, res - 1, $"{name} edge: samples checked");
             TestContext.WriteLine($"{name} edge: largest gap to the terrain {worst:0.00} m (at {worstAt:0} m)");
             Assert.Less(worst, 0.5f, $"{name} edge: a sliver of {worst:0.00} m at {worstAt:0} m along it");
         }
-        // Facing up (seen from the camera's side).
-        var used = new HashSet<int>();
-        for (int sm = 0; sm < mesh.subMeshCount; sm++) used.UnionWith(mesh.GetTriangles(sm));
-        var normals = mesh.normals;
-        foreach (var i in used) Assert.Greater(normals[i].y, 0f, $"vertex {i} faces up");
-    }
-
-    static bool Inside(Vector2 p, Vector3 a, Vector3 b, Vector3 c)
-    {
-        float Side(Vector2 p1, Vector3 p2, Vector3 p3) => (p1.x - p3.x) * (p2.z - p3.z) - (p2.x - p3.x) * (p1.y - p3.z);
-        float d1 = Side(p, a, b), d2 = Side(p, b, c), d3 = Side(p, c, a);
-        bool neg = d1 < 0 || d2 < 0 || d3 < 0, pos = d1 > 0 || d2 > 0 || d3 > 0;
-        return !(neg && pos);
     }
 
     /// <summary>Renders the real scene (Map.unity's light, rig and post-processing) looking at <paramref name="look"/> and
-    /// returns the pixel colour of each world point.</summary>
+    /// returns the pixel colour of each world point: with <paramref name="radius"/> over 0, the darkest pixel of the
+    /// (2 radius + 1)-square around it when <paramref name="darkest"/>, else that square's mean.</summary>
     static System.Collections.IEnumerator RenderAt(Vector3 look, float distance, Vector3[] points, Color[] colours, int radius = 0, bool darkest = false)
     {
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
@@ -285,14 +299,15 @@ public class MapSceneTests
             for (int i = 0; i < points.Length; i++)
             {
                 var p = cam.WorldToScreenPoint(points[i]);   // while the camera still renders into the texture
-                var best = tex.GetPixel((int)p.x, (int)p.y);
+                var best = tex.GetPixel((int)p.x, (int)p.y); var sum = Color.clear;
                 for (int dx = -radius; dx <= radius; dx++)
                     for (int dy = -radius; dy <= radius; dy++)
                     {
                         var c = tex.GetPixel((int)p.x + dx, (int)p.y + dy);
                         if (darkest && c.r + c.g + c.b < best.r + best.g + best.b) best = c;
+                        sum += c;
                     }
-                colours[i] = best;
+                colours[i] = darkest ? best : sum / ((2 * radius + 1) * (2 * radius + 1));
             }
         }
         finally
@@ -305,23 +320,33 @@ public class MapSceneTests
     static bool LandColour(Color c) => c.r > c.b + 0.05f;
     static bool SeaColour(Color c) => c.b > c.r + 0.15f;
 
-    /// <summary>Fix round 2 (R2-1), rendered: just past the east (Amman's latitude) and south (Sinai) edges the backdrop is
-    /// land-coloured, past the west edge sea-coloured.</summary>
+    /// <summary>Issue #36, rendered (it replaces fix round 2's land-or-sea backdrop): 15 km past each edge the table shows,
+    /// dark warm wood (red over green over blue, darker than the board's sand next to it), and the frame's top between them is
+    /// lighter than the table.</summary>
     [UnityTest]
-    public System.Collections.IEnumerator TheBackdropIsLandWhereTheNeighboursAreLand()
+    public System.Collections.IEnumerator TheTableLiesBeyondTheFrameOnEverySide()
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = Object.FindFirstObjectByType<MapScene>();
         map.Build();
-        foreach (var (name, lat, lon, land) in new[] { ("east (Jordan)", 31.95, 36.0, true), ("south (Sinai)", 29.38, 34.5, true), ("west (sea)", 32.0, 34.12, false), ("north (Lebanon)", 33.42, 35.6, true) })
+        // The middle of the frame's crown (its rounded top's flat, 0.3-0.7 of its width: MapBuilder.BuildFrame's profile), at
+        // its own height (sea level in world y, plus the frame's rise and crown: review S2), and a point on the table 15 km
+        // out, at world y 0. Each is the mean of a 5 x 5 pixel patch (about 0.4 km at 90 km, well inside the crown's 2.4 km).
+        float seaY = (0f - Meta.elev_min_m) * MapBuilder.VerticalExaggeration;
+        float crown = MapBuilder.FrameBevelM + 0.5f * MapBuilder.FrameWidthM, past = 15000f;
+        float topY = seaY + MapBuilder.FrameRiseM + MapBuilder.FrameCrownM;
+        foreach (var (name, lat, lon, outward) in new[] { ("east", 31.95, 35.9, Vector3.right), ("south", 29.45, 34.6, Vector3.back), ("west", 32.0, 34.2, Vector3.left), ("north (the sea off Tyre)", 33.35, 34.9, Vector3.forward) })
         {
-            var at = map.Frame.ToWorld(lon, lat, 0);
-            var edge = map.Frame.ToWorld(System.Math.Min(System.Math.Max(lon, 34.2), 35.9), System.Math.Min(System.Math.Max(lat, 29.45), 33.35), 0);
-            at.y = edge.y = map.Terrain.SampleHeight(edge);
-            var colours = new Color[1];
-            yield return RenderAt(edge, 90000f, new[] { at }, colours);
-            TestContext.WriteLine($"{name}: {colours[0]}");
-            Assert.IsTrue(land ? LandColour(colours[0]) : SeaColour(colours[0]), $"{name}: {(land ? "land" : "sea")} expected, rendered {colours[0]}");
+            var edge = map.Frame.ToWorld(lon, lat, 0); edge.y = map.Terrain.SampleHeight(edge);
+            var table = edge + outward * past; table.y = 0f;
+            var top = edge + outward * crown; top.y = topY;
+            var colours = new Color[2];
+            yield return RenderAt(edge, 90000f, new[] { table, top }, colours, 2);
+            Color t = colours[0], f = colours[1];
+            TestContext.WriteLine($"{name}: table {t}, frame {f}");
+            Assert.IsTrue(t.r > t.g && t.g > t.b, $"{name}: warm wood, rendered {t}");
+            Assert.Less(RenderSample.Luma(t), 0.3f, $"{name}: a dark table, rendered {t}");
+            Assert.Greater(RenderSample.Luma(f), RenderSample.Luma(t) + 0.03f, $"{name}: the frame ({f}) reads against the table ({t})");
         }
     }
 
@@ -383,80 +408,6 @@ public class MapSceneTests
             seen++;
         }
         Assert.Greater(seen, 0, "the rift has settlement markers to check");
-    }
-
-    /// <summary>Fix round 1 (the sea seam), rendered: at the west and north-west edges of the map, the sea on the terrain and
-    /// the sea beyond it come out the same colour under the scene's own light and camera rig, measured before the grade
-    /// (0.012): the grade is a per-pixel LUT (and a vignette that is flat this close to the centre), so it cannot open a
-    /// seam, only scale one (Task 4). The shipped, graded frame is checked too, with the bound scaled by the grade's
-    /// chroma gain of about 2 (0.024).</summary>
-    [UnityTest]
-    public System.Collections.IEnumerator TheSeaBeyondTheEdgeMatchesTheTerrainSea()
-    {
-        // Visual v1 Task 7: both sides now shade with StatecraftMap.hlsl ScWaterShade, whose waves vary over a few hundred
-        // metres, so 7x7-pixel patch means are compared (still 0.012), at four yaws (Review Focus 1). Task 7 fix round 1 (M1):
-        // a close pair at +-600 m straddles the edge too, so a step at the edge is told from a view-dependent gradient. Each
-        // side of the close pair is the mean of five such patches 2 km apart along the edge: a step at the edge runs along
-        // all of it, while a single 1 km patch still carries one wave cell or glint sparkle (up to 0.012 on its own).
-        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
-        var map = Object.FindFirstObjectByType<MapScene>();
-        map.Build();
-        yield return null;
-        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
-        var size = map.Terrain.terrainData.size;
-        // Visual v1 Task 8 (review I3): both sides draw the same hex grid; the lattice runs on past the edge and is
-        // mirror-symmetric about it. Every pair is checked with the grid off and on, at four yaws. Task 8 fix round 1 (M1):
-        // the close strips are centred on even hex rows, where x = 0 is a hex centre, so their +-600 m patches (five, 2 km
-        // apart along the edge) all lie over 2.2 km from any line; on an odd row the x = 0 hex line itself fell unequally
-        // into the two foreshortened patches at yaw 90/270.
-        float rowM = 1.5f * map.Hexes.hex_size_km * 1000f;
-        float EvenRowZ(float fromNorthM) => size.z - 2f * Mathf.Round(fromNorthM / rowM / 2f) * rowM;
-        float midZ = EvenRowZ(0.45f * size.z), northZ = EvenRowZ(2f * rowM);
-        // (The plan's one-row hex-centre pairs at x = +-4330 m were tried and dropped: at yaw 180 the middle-row pair differs
-        // by 0.027 with the grid off too, a warm view-dependent sun glint on the terrain side, not a grid or seam effect.)
-        try
-        {
-            // Visual v1 Task 4 (kept at the merge point): measured before the grade against 0.012 and on the shipped, graded
-            // frame against 0.024 (the grade scales the sea's chroma by about 2). Tilt-shift off: a colour test whose close
-            // strips lie in the blurred bands at some yaws (task-3 carry m6).
-            RenderSample.TiltShift(false);
-            // Sea round 2 (#388): the far sea's texture (a 2.5 km mottle) varies by itself between points 5 km apart, so it
-            // is off here; SeaTests.TheFarSeaTextureHasNoStepAtTheMapEdge checks the edge with it on, as a step.
-            VisualToggles.Set("seatexture", false);
-            foreach (var graded in new[] { false, true })
-            foreach (var grid in new[] { false, true })
-            {
-                VisualToggles.Set("grade", graded);
-                VisualToggles.Set("grid", grid);
-                var cases = new[] {
-                    (new Vector3(3000, 0, size.z * 0.55f), new Vector3(2500, 0, size.z * 0.55f), new Vector3(-2500, 0, size.z * 0.55f)),
-                    (new Vector3(3000, 0, size.z - 3000), new Vector3(2500, 0, size.z - 2500), new Vector3(-2500, 0, size.z + 2500)),
-                    (new Vector3(3000, 0, midZ), new Vector3(600, 0, midZ), new Vector3(-600, 0, midZ)),
-                    (new Vector3(3000, 0, northZ), new Vector3(600, 0, northZ), new Vector3(-600, 0, northZ)) };
-                foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
-                    foreach (var (look, inside, beyond) in cases)
-                    {
-                        rig.LookAt = look; rig.Distance = 120000f; rig.Yaw = yaw; rig.TopInset = 0; rig.Apply();
-                        var y = map.Terrain.SampleHeight(inside);
-                        bool close = Mathf.Abs(inside.x) < 1000f;
-                        int rows = close ? 5 : 1;
-                        var world = new Vector3[2 * rows]; var px = new Vector2[2 * rows];
-                        for (int r = 0; r < rows; r++)
-                        {
-                            float dz = (r - (rows - 1) / 2f) * 2000f;
-                            world[2 * r] = new Vector3(inside.x, y, inside.z + dz); world[2 * r + 1] = new Vector3(beyond.x, y, beyond.z + dz);
-                        }
-                        var s = RenderSample.Render(cam, 1600, 900, world, px);
-                        Color a = Color.clear, b = Color.clear;
-                        for (int r = 0; r < rows; r++) { a += s.Mean((int)px[2 * r].x, (int)px[2 * r].y, 3) / rows; b += s.Mean((int)px[2 * r + 1].x, (int)px[2 * r + 1].y, 3) / rows; }
-                        var diff = Mathf.Abs(a.r - b.r) + Mathf.Abs(a.g - b.g) + Mathf.Abs(a.b - b.b);
-                        float bound = graded ? 0.024f : 0.012f;
-                        TestContext.WriteLine($"seam graded={graded} grid={grid} at {look}, x +-{inside.x:0} m, yaw {yaw}: terrain sea {a}, beyond {b}, difference {diff:0.000} (bound {bound})");
-                        Assert.Less(diff, bound, $"seam graded={graded} grid={grid} at {look}, x +-{inside.x:0} m, yaw {yaw}: terrain sea {a}, beyond {b}");
-                    }
-            }
-        }
-        finally { VisualToggles.Set("grid", true); VisualToggles.Set("grade", true); VisualToggles.Set("seatexture", true); RenderSample.TiltShift(true); }
     }
 
     /// <summary>Playtest 1, item 3: with the top bar covering the top <c>TopInset</c> of the screen, the look-at point is
@@ -541,18 +492,18 @@ public class MapSceneTests
     public void BuildWithoutMaterialsNamesTheMissingField()
     {
         var map = new GameObject("MapScene").AddComponent<MapScene>();
-        map.Configure(Load(TerrainMatPath), null, Load(SelectionMatPath), Load(SeaMatPath), Load(BorderLandMatPath));
+        map.Configure(Load(TerrainMatPath), null, Load(SelectionMatPath), Load(SeaMatPath), Load(FrameMatPath));
         var ex = Assert.Throws<System.InvalidOperationException>(() => map.Build());
         StringAssert.Contains("markerMaterial", ex.Message);
-        map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), null, Load(SeaMatPath), Load(BorderLandMatPath));
+        map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), null, Load(SeaMatPath), Load(FrameMatPath));
         ex = Assert.Throws<System.InvalidOperationException>(() => map.Build());
         StringAssert.Contains("selectionMaterial", ex.Message);
-        map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), null, Load(BorderLandMatPath));
+        map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), null, Load(FrameMatPath));
         ex = Assert.Throws<System.InvalidOperationException>(() => map.Build());
         StringAssert.Contains("seaMaterial", ex.Message);
         map.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), Load(SeaMatPath), null);
         ex = Assert.Throws<System.InvalidOperationException>(() => map.Build());
-        StringAssert.Contains("borderLandMaterial", ex.Message);
+        StringAssert.Contains("frameMaterial", ex.Message);
     }
 
     [Test]
@@ -579,7 +530,7 @@ public class MapSceneTests
         var map = NewMap(); map.Build();
         var go = map.gameObject; Object.DestroyImmediate(map);
         var fresh = go.AddComponent<MapScene>();
-        fresh.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), Load(SeaMatPath), Load(BorderLandMatPath));
+        fresh.Configure(Load(TerrainMatPath), Load(MarkerMatPath), Load(SelectionMatPath), Load(SeaMatPath), Load(FrameMatPath));
         fresh.Build();
         AssertOneOfEach();
     }

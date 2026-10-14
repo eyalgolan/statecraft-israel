@@ -20,7 +20,7 @@ public class LocalityNameTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     MapScene map = null!;
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings.Replace("strings.en.yaml", "strings.he.yaml")).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
 
     [SetUp]
     public void Open() { EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single); map = Object.FindFirstObjectByType<MapScene>(); map.Build(); }

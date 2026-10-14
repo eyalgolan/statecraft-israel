@@ -11,17 +11,20 @@ serves a WebGL build with web_check's handler, and drives it over one browser-le
   navpairs  pairs of clicks on a screen button and a second target, d ms apart or in one frame, under ?navlog
   loadshot  screenshots during the load and once ready (the loading line, or the boot-failure line)
   profile   visual v1's ?vprofile in a headed 1920x1080 window at --dpr (frame rate uncapped)
+  wheel     wheel zoom under ?camlog (#43): a touchpad-like swipe, mouse notches in pixels and lines, over the map and a panel
 
 Run from the repo root, e.g.:
   uv run tools/headed.py boot --build unity/Builds/Web-disabled --cpu 8
   uv run tools/headed.py navpairs --build unity/Builds/Web-disabled --cpu 20
   uv run tools/headed.py boot --build unity/Builds/Web-disabled --runs 3 --baseline 450 --baseline-first-frame 9000
+  uv run tools/headed.py wheel --build unity/Builds/Web-disabled
 Coordinates are CSS pixels for a 1568x752 window (the playtest window). Used for playtest 2 (P2-1, P2-4) and the final
 review evidence; the EditMode tests are the regression guard, this is the in-browser check.
 """
 import argparse
 import asyncio
 import base64
+import math
 import statistics
 import json
 import re
@@ -41,6 +44,65 @@ WINDOW = (1568, 752)
 # the open Why screen, clear of the card (the card hides under a screen and its backdrop blocks the map; #434). All four
 # measured on a WebGL capture of the playtest window, this branch at 1a0c3a7 (WHY had moved with the HUD round 1 bar).
 END_TURN, WHY, OPTION, MAP_UNDER_WHY = (1516, 42), (1389, 32), (608, 520), (1180, 300)
+
+
+# For `wheel`, in a fixed 1568x752 CSS viewport (Playwright's, from the #43 browser runs): START_NEW, the start screen's
+# New Game button; MAP, open map clear of the HUD; PANEL, the End Turn button in the top bar.
+WHEEL_VIEWPORT, START_NEW, MAP, PANEL = (1568, 752), (784, 693), (300, 400), (1500, 44)
+
+
+def pad_swipe() -> list[float]:
+    """A touchpad swipe in wheel pixels (zoom in: negative deltaY): a ramp up, a hold, then momentum decaying 12% an
+    event down to half a pixel; 31 events, 108.2 px."""
+    ramp = [0.5, 1, 2, 4, 6, 8, 8, 8, 8, 8]
+    decay = [round(8 * 0.88 ** k, 2) for k in range(1, 40) if 8 * 0.88 ** k >= 0.5]
+    return [-d for d in ramp + decay]
+
+
+# Each gesture: (deltaY list, deltaMode, ms between events). out_ = the same zooming out.
+GESTURES = {"pad": (pad_swipe(), 0, 16), "px100": ([-100.0], 0, 0), "lines3": ([-3.0], 1, 0),
+            "out_px100": ([100.0], 0, 0), "out_lines3": ([3.0], 1, 0), "px150": ([-150.0], 0, 0), "px200": ([-200.0], 0, 0),
+            "px49": ([-49.0], 0, 0)}
+# (label, [(gesture, where)]): each case runs on a fresh page.
+WHEEL_CASES = [("pad", [("pad", "map")]), ("px100,pad", [("px100", "map"), ("pad", "map")]),
+               ("lines3,pad", [("lines3", "map"), ("pad", "map")]),
+               ("pad,out_px100", [("pad", "map"), ("out_px100", "map")]), ("pad,out_lines3", [("pad", "map"), ("out_lines3", "map")]),
+               ("pad,px100@panel", [("pad", "panel"), ("px100", "panel")]), ("cdp100", [("cdp100", "map")]),
+               ("pad,cdp100", [("pad", "map"), ("cdp100", "map")]),
+               ("px150,px200,px49", [("px150", "map"), ("px200", "map"), ("px49", "map")])]
+WHEEL_STREAM = """async ([x, y, deltas, mode, gap]) => { const c = document.querySelector('canvas');
+    for (const d of deltas) { c.dispatchEvent(new WheelEvent('wheel', {deltaY: d, deltaMode: mode, clientX: x, clientY: y,
+        bubbles: true, cancelable: true})); if (gap) await new Promise(r => setTimeout(r, gap)); } }"""
+# Records what the page sees of every wheel event (deltaMode read first, as WheelInput.jslib does).
+WHEEL_SEEN_SCRIPT = """window.__wheelSeen = []; window.addEventListener('wheel', e => { const m = e.deltaMode;
+    window.__wheelSeen.push([e.deltaY, m, e.isTrusted]); }, {capture: true, passive: true});"""
+CAMERA = re.compile(r"^CAMERA distance=(\d+)")
+
+
+MOUSE_NOTCH_MIN_PX = 50   # CameraController.MouseNotchMinPixels
+
+
+def ideal_notches(gesture: str) -> float:
+    """What the gesture should zoom, in notches (positive = in): lines / 3; a pixel event of 50 px or more is one notch;
+    smaller pixels count 100 to the notch. (Chrome's trusted 100 px notch, cdp100, arrives as 200 px: one notch.)"""
+    if gesture == "cdp100":
+        return 1.0
+    deltas, mode, _ = GESTURES[gesture]
+    if mode == 1:
+        return -sum(deltas) / 3
+    return sum(-math.copysign(1, d) if abs(d) >= MOUSE_NOTCH_MIN_PX else -d / 100 for d in deltas)
+
+
+def gesture_notches(d0: float, distances: list[float]) -> tuple[float, float]:
+    """(total, largest single frame) in notches (one notch is 10%: d1 = d0 * 0.9^n) from the start distance and the
+    distance logged in each frame that changed it."""
+    total, largest, prev = 0.0, 0.0, d0
+    for d in distances:
+        step = math.log(d / prev) / math.log(0.9)
+        largest, prev = max(largest, abs(step)), d
+    if distances:
+        total = math.log(distances[-1] / d0) / math.log(0.9)
+    return total, largest
 
 
 def burst_events(points):
@@ -314,9 +376,48 @@ async def loadshot(args):
         print(await b.shot(sid, args.out + "-after.png"))
 
 
+async def wheel(args):
+    """Each WHEEL_CASES case on a fresh page under ?camlog: returns {label: [(gesture, total, largest frame, seen)]},
+    printing a line per gesture. Gestures are sent to the canvas by dispatchEvent (cdp100: one trusted 100 px notch
+    through CDP's mouseWheel); "seen" is what the page saw of them ([deltaY, deltaMode, trusted] per event)."""
+    results = {}
+    for label, steps in WHEEL_CASES:
+        async with Browser(args.build, viewport=WHEEL_VIEWPORT) as b:
+            sid = await b.open("camlog", init_script=WHEEL_SEEN_SCRIPT)
+            await b.wait_for(sid, r"^GAME OK")
+            await asyncio.sleep(3)
+            await b.click(sid, *START_NEW)
+            await b.wait_for(sid, r"^CAMERA ")
+            await asyncio.sleep(2)
+            out = []
+            for gesture, where in steps:
+                x, y = MAP if where == "map" else PANEL
+                await b.send("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y}, session=sid)
+                await asyncio.sleep(1)
+                await b.send("Runtime.evaluate", {"expression": "window.__wheelSeen.length = 0"}, session=sid)
+                cams = [CAMERA.match(t) for t in b.lines(sid)]
+                d0 = float([m for m in cams if m][-1].group(1))
+                n = len(b.lines(sid))
+                if gesture == "cdp100":
+                    await b.send("Input.dispatchMouseEvent", {"type": "mouseWheel", "x": x, "y": y, "deltaX": 0, "deltaY": -100}, session=sid)
+                else:
+                    deltas, mode, gap = GESTURES[gesture]
+                    expr = f"({WHEEL_STREAM})({json.dumps([x, y, deltas, mode, gap])})"
+                    await b.send("Runtime.evaluate", {"expression": expr, "awaitPromise": True}, session=sid)
+                await asyncio.sleep(1.5)
+                seen = (await b.send("Runtime.evaluate", {"expression": "window.__wheelSeen", "returnByValue": True}, session=sid))["result"]["value"]
+                frames = [float(m.group(1)) for m in (CAMERA.match(t) for t in b.lines(sid)[n:]) if m]
+                total, largest = gesture_notches(d0, frames)
+                out.append((gesture, total, largest, seen))
+                print(f"WHEEL {label} | {gesture}@{where}: {total:+.2f} notches over {len(frames)} frames, largest frame {largest:.2f}"
+                      + f" (ideal {ideal_notches(gesture):+.2f})" + (f" (seen {seen})" if gesture == "cdp100" else ""))
+            results[label] = out
+    return results
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["boot", "navpairs", "loadshot", "profile"])
+    p.add_argument("command", choices=["boot", "navpairs", "loadshot", "profile", "wheel"])
     p.add_argument("--build", default=str(REPO / "unity/Builds/Web-disabled"))
     p.add_argument("--cpu", type=float, default=1.0, help="CPU throttling rate (1 = none)")
     p.add_argument("--out", default="headed", help="screenshot path prefix (loadshot)")
@@ -328,7 +429,7 @@ def main(argv=None):
     p.add_argument("--dpr", type=float, default=1.0, help="profile: device pixel ratio (2 = the fill-rate stress proxy)")
     p.add_argument("--timeout", type=float, default=1800, help="profile: seconds to wait for PROFILE visual done")
     args = p.parse_args(argv)
-    result = asyncio.run({"boot": boot, "navpairs": navpairs, "loadshot": loadshot, "profile": profile}[args.command](args))
+    result = asyncio.run({"boot": boot, "navpairs": navpairs, "loadshot": loadshot, "profile": profile, "wheel": wheel}[args.command](args))
     return result if isinstance(result, int) else 0
 
 

@@ -48,6 +48,7 @@ namespace Statecraft.Game.UI
         /// <summary>Events whose clip failed this session: they show the photograph and no switch.</summary>
         readonly System.Collections.Generic.HashSet<string> failed = new System.Collections.Generic.HashSet<string>();
         readonly System.Action onSwitch;
+        readonly PressSource presses;
         /// <summary>The event the player collapsed the card on (Hide), or null; a different event opens the card again.</summary>
         string? collapsedFor;
         /// <summary>The event whose first option last took the focus, so an event already open never takes it again.</summary>
@@ -92,6 +93,7 @@ namespace Statecraft.Game.UI
             foreach (var e in new[] { band, credit, head, scroll, options }) e.RegisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
             layer.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
             card.RegisterCallback<GeometryChangedEvent>(OnCardGeometry);
+            presses = new PressSource(options);
             bridge.Changed += Render;
             Render();
         }
@@ -109,6 +111,7 @@ namespace Statecraft.Game.UI
             foreach (var e in new[] { band, credit, head, scroll, options }) e.UnregisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
             layer.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
             card.UnregisterCallback<GeometryChangedEvent>(OnCardGeometry);
+            presses.Dispose();
             card.Q<VisualElement>("event-options")?.Clear(); card.style.display = DisplayStyle.None;
             reopen.style.display = DisplayStyle.None;
             hudRoot.RemoveFromClassList(OpenClass);
@@ -356,16 +359,24 @@ namespace Statecraft.Game.UI
         public string? PhotoAlt { get; private set; }
 
         /// <summary>The round sign in an option's left padding (Statecraft.uss .event-option), painted into the button so it
-        /// stays a leaf whose wrapped text Yoga measures (UiIcon.Paint).</summary>
+        /// stays a leaf whose wrapped text Yoga measures (UiIcon.Paint). In the Hebrew UI it sits in the right padding and
+        /// points left (#193).</summary>
         const float SignRadius = 15f, SignLeft = 9f;
 
-        static void PaintSign(MeshGenerationContext m) =>
-            UiIcon.PaintDisc(m, "chevron", new UnityEngine.Vector2(SignLeft + SignRadius, m.visualElement.layout.height / 2f), SignRadius);
+        static void PaintSign(MeshGenerationContext m)
+        {
+            var e = m.visualElement;
+            bool rtl = UiLanguage.Within(e);
+            var x = rtl ? e.layout.width - SignLeft - SignRadius : SignLeft + SignRadius;
+            UiIcon.PaintDisc(m, rtl ? "chevron-back" : "chevron", new UnityEngine.Vector2(x, e.layout.height / 2f), SignRadius);
+        }
 
         void Choose(GameEvent e, EventOption o)
         {
-            // The bridge raises Refused (the toast shows it) or Changed (the toast clears); nothing more to do here.
+            // The bridge raises Refused (the toast shows it) or Changed (the toast clears and Render shows the next event,
+            // which takes the focus). Answered from the keyboard with no event left, the focus goes to End Turn (#41 M1).
             bridge.Queue(new ChooseEventOption(e.Id, o.Id));
+            if (Shown == null && presses.ByKeyboard) FocusReturn.To(hudRoot.Q<Button>("end-turn"));
         }
     }
 }

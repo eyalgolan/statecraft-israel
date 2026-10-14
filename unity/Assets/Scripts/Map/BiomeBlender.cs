@@ -6,7 +6,9 @@ namespace Statecraft.Game.Map
 {
     /// <summary>Blended biome weights (spec §6): every hex centre within <see cref="BlendRadiusHexes"/> hex radii of a point
     /// contributes 1 - smoothstep(distance / radius); weights are normalised to sum to 1. A point no centre reaches (map
-    /// edge, beyond the outermost centres) takes the nearest centre's biome. Deterministic: fixed iteration order.</summary>
+    /// edge, beyond the outermost centres) takes the nearest centre's biome. Deterministic: fixed iteration order.
+    /// The biome colours are baked from it (BiomeColourFile): a change to the weights needs a re-bake and a bump of
+    /// BiomeColourFile.Version (tools/tests/test_biome_colour_bake.py fails until then).</summary>
     public sealed class BiomeBlender
     {
         /// <summary>Falloff radius in hex radii. Neighbouring centres are sqrt(3) = 1.732 radii apart, so 1.72 keeps every

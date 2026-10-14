@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 
 /// <summary>Issue #174 (integration bug B11): panning past the terrain's edge filled the view with flat fills and a hard
-/// seam. Two causes: the look-at clamp let the view run off the map onto the border skirt (a flat slab), and at the high
+/// seam. Two causes: the look-at clamp let the view run off the map onto the border skirt (a flat slab; since #36 the frame), and at the high
 /// north-east corner (the ground about 6 km up at 3x relief) the hero-zoom camera, 4.6 km above the look-at plane y = 0,
 /// sat inside the hills and showed only haze. Rendered at the worst pan pose: the hero zoom pushed into each corner of the
 /// map, through the same CameraController.Step the game runs every frame, with the bounds and ground GameRoot gives it.</summary>
@@ -37,14 +37,14 @@ public class MapEdgeTests
         var map = Object.FindFirstObjectByType<MapScene>();
         map.Build();
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
-        var skirt = map.Terrain.transform.Find(MapScene.BorderSkirtName).GetComponent<MeshRenderer>();
+        var frame = map.Terrain.transform.Find(MapScene.FrameName).GetComponent<MeshRenderer>();
         var bounds = Bounds(map); var ground = CameraController.GroundOf(map.Terrain); var top = CameraController.GroundTopOf(map.Terrain);
         var rt = new RenderTexture(W, H, 24);
         Directory.CreateDirectory(ShotDir);
         RenderSample.TiltShift(false);   // a colour test: the blur spreads pixels across the frame
         // The water moves between the renders compared below (waves, breakers and, since sea round 2, the far sea's ripple),
         // which changed a few pixels of the north-west corner's coast at random (0-14 a run, skirt or not): its clock is
-        // pinned, so the comparison sees only the skirt.
+        // pinned, so the comparison sees only the frame.
         MapShaderGlobals.PinWaterTime(100f);
         try
         {
@@ -60,29 +60,29 @@ public class MapEdgeTests
                 rig.LookAt = new Vector3(corner.x, 0, corner.y); rig.Distance = CameraController.MinDistance; rig.Yaw = 0; rig.TopInset = 0;
                 for (int i = 0; i < 20; i++) CameraController.Step(rig, new CameraInput { Pan = push }, CameraController.MaxFrameSeconds, bounds, ground, top);
                 var with = RenderSample.Render(cam, W, H);
-                skirt.enabled = false;
+                frame.enabled = false;
                 var without = RenderSample.Render(cam, W, H);
-                skirt.enabled = true;
+                frame.enabled = true;
                 map.Terrain.enabled = false;
                 var noTerrain = RenderSample.Render(cam, W, H);
                 map.Terrain.enabled = true;
                 File.WriteAllBytes(Path.Combine(ShotDir, $"edge-{name}.png"), Png(with));
 
-                // 1. The skirt draws no pixel of the view: hiding it changes nothing.
+                // 1. The frame (and the table) draws no pixel of the view: hiding it changes nothing.
                 // 2. No flat fill: the terrain draws (nearly) every pixel, so hiding it changes them. Before the fix, at the
                 //    north-east corner the camera sat inside the hills and nothing drew: 0% (haze over the clear colour). Kits
                 //    and trees standing in front of the ground are the only pixels allowed to stay.
-                int skirtPixels = 0, terrainPixels = 0;
+                int framePixels = 0, terrainPixels = 0;
                 for (int i = 0; i < with.Pixels.Length; i++)
                 {
-                    if (Differs(with.Pixels[i], without.Pixels[i])) skirtPixels++;
+                    if (Differs(with.Pixels[i], without.Pixels[i])) framePixels++;
                     if (Differs(with.Pixels[i], noTerrain.Pixels[i])) terrainPixels++;
                 }
                 float terrainShare = (float)terrainPixels / with.Pixels.Length;
                 TestContext.WriteLine($"{name}: look-at ({rig.LookAt.x:0}, {rig.LookAt.y:0}, {rig.LookAt.z:0}) of ({bounds.xMax:0}, {bounds.yMax:0}); " +
                     $"camera {rig.transform.position.y:0} over ground {ground(new Vector2(rig.transform.position.x, rig.transform.position.z)):0}; " +
-                    $"skirt pixels {skirtPixels}; terrain {100f * terrainShare:0.00}% of the view");
-                if (skirtPixels > 0) failures.Add($"{name} corner: the border skirt shows in {skirtPixels} pixels");
+                    $"frame pixels {framePixels}; terrain {100f * terrainShare:0.00}% of the view");
+                if (framePixels > 0) failures.Add($"{name} corner: the frame shows in {framePixels} pixels");
                 if (terrainShare <= MinTerrainShare) failures.Add($"{name} corner: the terrain draws only {100f * terrainShare:0.0}% of the view (a flat fill)");
             }
             Assert.IsEmpty(failures, string.Join("; ", failures));   // every corner checked and written before failing
@@ -90,7 +90,59 @@ public class MapEdgeTests
         finally
         {
             RenderSample.TiltShift(true); MapShaderGlobals.PinWaterTime(null);
-            skirt.enabled = true; map.Terrain.enabled = true;
+            frame.enabled = true; map.Terrain.enabled = true;
+            cam.targetTexture = null; rt.Release(); Object.DestroyImmediate(rt);
+        }
+    }
+
+    /// <summary>Issue #36: the frame and table show at the overview, where the view is wider than the map (diorama02, fitted
+    /// by the same CameraController.Step the game runs), on both sides of the board; at gameplay03 they draw no pixel. The
+    /// render is 16:9 (W x H), which the split at 100 km assumes: wider windows show the frame from nearer (32:9 from about
+    /// 53 km). What each half covers: the overview half fails if the frame does not draw (renderer off, nothing written);
+    /// the gameplay half only shows that the frame stays out of gameplay03's view, about 17 km off every edge, so a frame
+    /// raised above the ground's top or reaching into the map is caught by PanningIntoACornerShowsNoSkirtSeamOrFlatFill and
+    /// MapSceneTests.TheFrameRimsTheMapAndTheTableLiesBeyond instead.</summary>
+    [UnityTest]
+    public IEnumerator TheFrameShowsAtTheOverviewOnly()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build();
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        var frame = map.Terrain.transform.Find(MapScene.FrameName).GetComponent<MeshRenderer>();
+        var bounds = Bounds(map); var ground = CameraController.GroundOf(map.Terrain); var top = CameraController.GroundTopOf(map.Terrain);
+        var rt = new RenderTexture(W, H, 24);
+        RenderSample.TiltShift(false);
+        MapShaderGlobals.PinWaterTime(100f);
+        try
+        {
+            cam.targetTexture = rt;
+            yield return null;
+            foreach (var pose in PromoPose.All)
+            {
+                pose.Apply(rig, map.Frame); rig.TopInset = 0;
+                CameraController.Step(rig, new CameraInput(), 0f, bounds, ground, top);
+                var with = RenderSample.Render(cam, W, H);
+                frame.enabled = false;
+                var without = RenderSample.Render(cam, W, H);
+                frame.enabled = true;
+                int left = 0, right = 0;
+                for (int i = 0; i < with.Pixels.Length; i++)
+                    if (Differs(with.Pixels[i], without.Pixels[i])) { if (i % W < W / 2) left++; else right++; }
+                float share = (float)(left + right) / with.Pixels.Length;
+                TestContext.WriteLine($"{pose.Name}: the frame draws {100f * share:0.00}% of the view ({left} px left, {right} px right)");
+                if (pose.Distance < 100000f) Assert.AreEqual(0, left + right, $"{pose.Name}: the frame stays off the screen");
+                else
+                {
+                    Assert.Greater(left, with.Pixels.Length / 50, $"{pose.Name}: the frame shows west of the board");
+                    Assert.Greater(right, with.Pixels.Length / 50, $"{pose.Name}: the frame shows east of the board");
+                }
+            }
+        }
+        finally
+        {
+            RenderSample.TiltShift(true); MapShaderGlobals.PinWaterTime(null);
+            frame.enabled = true;
             cam.targetTexture = null; rt.Release(); Object.DestroyImmediate(rt);
         }
     }

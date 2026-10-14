@@ -27,8 +27,12 @@ namespace Statecraft.Game.UI
         public static readonly Color CoalitionColour = new Color32(92, 138, 200, 255), OppositionColour = new Color32(186, 180, 168, 255);
 
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
-        readonly Button pmCard; readonly System.Action onPm;
+        readonly Button pmCard; readonly System.Action onPm; readonly EventCallback<GeometryChangedEvent> onPmGeometry;
+        string? pmId; VisualElement? pmPortrait;
         readonly ScrollView list, candidates; readonly VisualElement pmOffices, chips; readonly Hemicycle hemicycle;
+        readonly VisualElement side, pick, status; readonly EventCallback<GeometryChangedEvent> onSideGeometry;
+        /// <summary>The candidate list's floor where the side column has room: its heading and two rows (#41 M7).</summary>
+        public const float PickFloor = 220f;
         readonly Dictionary<string, Button> cards = new Dictionary<string, Button>();
         List<string> cardOrder = new List<string>(), pmOrder = new List<string>();
         readonly Dictionary<string, (Button appoint, Label reason)> rows = new Dictionary<string, (Button, Label)>();
@@ -42,11 +46,16 @@ namespace Statecraft.Game.UI
             list = screen.Q<ScrollView>("cabinet-seats"); candidates = screen.Q<ScrollView>("cabinet-candidates");
             pmOffices = screen.Q<VisualElement>("cabinet-pm-offices"); chips = screen.Q<VisualElement>("cabinet-parties");
             hemicycle = screen.Q<Hemicycle>("cabinet-hemicycle");
+            hemicycle.Mirrored = text["ui.lang"] == UiLanguage.Hebrew;   // the coalition from the right in a right-to-left UI
             onPm = () => Select(PrimeMinister);
             pmCard.clicked += onPm;
+            onPmGeometry = _ => FramePm();
             screen.Q<Label>("cabinet-house-unit").text = text["cabinet.members_unit"];
             bridge.Changed += OnChanged;
             ScreenNav.OnOpened(screen, () => { if (dirty) Render(); });
+            side = screen.Q<VisualElement>("cabinet-side"); pick = screen.Q<VisualElement>("cabinet-pick"); status = screen.Q<VisualElement>("cabinet-status");
+            onSideGeometry = _ => FitPick();
+            foreach (var e in new[] { side, pmOffices, status }) e.RegisterCallback(onSideGeometry);
             Render();
         }
 
@@ -55,6 +64,8 @@ namespace Statecraft.Game.UI
         {
             bridge.Changed -= OnChanged;
             pmCard.clicked -= onPm;
+            pmPortrait?.UnregisterCallback(onPmGeometry); pmPortrait = null;
+            foreach (var e in new[] { side, pmOffices, status }) e.UnregisterCallback(onSideGeometry);
             if (screen.userData is System.Action) screen.userData = null;
             list.Clear(); candidates.Clear(); pmOffices.Clear(); chips.Clear(); PersonCard.Clear(pmCard);
             cards.Clear(); rows.Clear(); cardOrder.Clear(); pmOrder.Clear(); pickFor = null; chipsFor = "";
@@ -120,6 +131,8 @@ namespace Statecraft.Game.UI
                 var offices = pm == null ? pmSeat.Office.Title
                     : string.Join(text["card.offices_separator"], lineup.Where(x => x.Office.Id == PrimeMinister || HeldByPm(x)).Select(x => x.Office.Title));
                 PersonCard.Fill(pmCard, "seat-" + PrimeMinister, c, s, pm, offices, pmSeat.Appointed, text, portraits, PmPortrait, partyLabel: true);
+                pmId = pm?.Id;
+                FramePm();
             }
             var pmHeld = lineup.Where(HeldByPm).ToList();
             if (!pmHeld.Select(x => x.Office.Id).SequenceEqual(pmOrder))
@@ -164,6 +177,40 @@ namespace Statecraft.Game.UI
             var queued = bridge.Queued.OfType<Appoint>().Select(a =>
                 text.Format("cabinet.queued", c.People.First(p => p.Id == a.Person).Name, c.Offices.First(o => o.Id == a.Office).Title));
             screen.Q<Label>("cabinet-status").text = string.Join("\n", queued);
+        }
+
+        /// <summary>The candidate list's floor (#41 M7): PickFloor where the side column has room; on a shorter one (32:9 is
+        /// 764 logical px), whatever the Prime Minister's card at its smallest (its text, Statecraft.uss .pm-card min-height),
+        /// his other offices and the orders line leave, so the orders line is never pushed out of the screen. Above the floor
+        /// the portrait gives way first (Statecraft.uss). Setting it moves only the list and the card, never the column, the
+        /// offices or the orders line, so it cannot loop.</summary>
+        void FitPick()
+        {
+            var h = side.contentRect.height;
+            if (float.IsNaN(h) || h <= 0) return;
+            static float Outer(VisualElement e) => e.resolvedStyle.display == DisplayStyle.None || float.IsNaN(e.layout.height) ? 0f
+                : e.layout.height + e.resolvedStyle.marginTop + e.resolvedStyle.marginBottom;
+            var card = pmCard.resolvedStyle.minHeight.value + pmCard.resolvedStyle.marginTop + pmCard.resolvedStyle.marginBottom;
+            var floor = Mathf.Clamp(h - card - Outer(pmOffices) - Outer(status), 0f, PickFloor);
+            if (Mathf.Abs(pick.resolvedStyle.minHeight.value - floor) > 0.5f) pick.style.minHeight = floor;
+        }
+
+        /// <summary>The Prime Minister's portrait gives way on a short window (Statecraft.uss, #41 M7), so its framing follows
+        /// the box it has now and the face stays in view. It listens on the portrait itself: the box also changes when the
+        /// card's text gains or loses a line inside a card of the same height.</summary>
+        void FramePm()
+        {
+            var portrait = pmCard.Q("seat-" + PrimeMinister + "-portrait");
+            if (portrait != pmPortrait)
+            {
+                pmPortrait?.UnregisterCallback(onPmGeometry);
+                pmPortrait = portrait;
+                pmPortrait?.RegisterCallback(onPmGeometry);
+            }
+            var entry = portraits?.Find(pmId);
+            if (portrait == null || entry == null) return;
+            var size = portrait.layout.size;
+            PersonCard.Frame(portrait, entry.Value, float.IsNaN(size.x) || size.x <= 0 || size.y <= 0 ? PmPortrait : size);
         }
 
         /// <summary>One card per holder: an office with several holders today (#277: Minister without Portfolio) gets a card for

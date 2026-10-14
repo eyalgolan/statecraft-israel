@@ -42,7 +42,7 @@ namespace Statecraft.Game.UI
         {
             ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote,
             ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["restart"] = Restart,
-            ["chevron"] = Chevron, ["hourglass"] = Hourglass,
+            ["chevron"] = Chevron, ["chevron-back"] = ChevronBack, ["hourglass"] = Hourglass,
             ["region"] = Region, ["house"] = House, ["village"] = Village, ["flag"] = Flag,
             ["biome-sea"] = Waves, ["biome-lake"] = Waves, ["biome-coastal_plain"] = Plain, ["biome-hills"] = Hills,
             ["biome-mountains"] = Mountains, ["biome-valley"] = Valley, ["biome-lowland"] = Plain, ["biome-desert"] = Dunes,
@@ -247,6 +247,13 @@ namespace Statecraft.Game.UI
         {
             p.strokeColor = gold; p.lineWidth = 2.2f * s;
             p.BeginPath(); p.MoveTo(at(9.6f, 6.4f)); p.LineTo(at(15.2f, 12)); p.LineTo(at(9.6f, 17.6f)); p.Stroke();
+        }
+
+        /// <summary>The chevron mirrored, pointing left: the option sign in the Hebrew UI.</summary>
+        static void ChevronBack(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
+        {
+            p.strokeColor = gold; p.lineWidth = 2.2f * s;
+            p.BeginPath(); p.MoveTo(at(14.4f, 6.4f)); p.LineTo(at(8.8f, 12)); p.LineTo(at(14.4f, 17.6f)); p.Stroke();
         }
 
         static void Hourglass(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)

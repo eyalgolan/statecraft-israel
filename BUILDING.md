@@ -16,7 +16,7 @@ Hub install command, is in [`docs/dev-setup.md`](docs/dev-setup.md).
 
 ```bash
 git clone https://github.com/eyalgolan/statecraft-israel.git && cd statecraft-israel
-tools/build_sim_for_unity.sh                     # the sim DLLs Unity loads (build output, not committed)
+uv run tools/build_sim_for_unity.py              # the sim DLLs Unity loads (build output, not committed)
 export UNITY="/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity"   # macOS path
 # Windows: "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"; Linux: ~/Unity/Hub/Editor/6000.3.25f1/Editor/Unity
 "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression disabled -logFile "$PWD/unity-build-web.log"
@@ -28,7 +28,8 @@ A build rewrites some cached settings. Drop them afterwards with
 
 ## In the editor
 
-Unity Hub → **Add** → select `unity/`. Run `tools/build_sim_for_unity.sh` again after every change under `sim/`.
+Unity Hub → **Add** → select `unity/`. Run `uv run tools/build_sim_for_unity.py` again after every change under `sim/`.
+`tools/build_sim_for_unity.sh` is a thin wrapper that runs the same script.
 
 ### First open in Unity
 

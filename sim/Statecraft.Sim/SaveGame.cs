@@ -22,7 +22,8 @@ namespace Statecraft.Sim
     ///   ruleset legacy|gdd-0.1     the rules it was played under (Content.Ruleset); another ruleset refuses it (R-SAVE-001)
     ///   turn                       starts the next turn's command list (one per Simulation.Step)
     ///   &lt;command&gt; ...              policy ID LEVEL | budget OFFICE=SHARE,... | event ID OPTION | mobilize LEVEL |
-    ///                              security DELTA | appoint OFFICE PERSON | map ACTION Q R | work CITY ROLE N
+    ///                              security DELTA | appoint OFFICE PERSON | map ACTION Q R | work CITY ROLE N |
+    ///                              train CITY TRACK N | untrain COHORT
     ///   end &lt;hex&gt;                 GameState.Hash() after the last turn (checks the replay)
     /// Doubles are IEEE bit patterns in hex, so replays are exact; strings are percent-escaped (Uri.EscapeDataString).
     /// </summary>
@@ -102,6 +103,8 @@ namespace Statecraft.Sim
             Appoint a => $"appoint {Esc(a.Office)} {Esc(a.Person)}",
             MapAction m => $"map {Esc(m.Action)} {Int(m.Q)} {Int(m.R)}",
             AssignWorkers w => $"work {Esc(w.City)} {Esc(w.Role)} {Int(w.Count)}",
+            Train t => $"train {Esc(t.City)} {Esc(t.Track)} {Int(t.Count)}",
+            CancelTraining t => $"untrain {Int(t.Cohort)}",
             _ => throw new ArgumentException($"Cannot save command kind '{cmd.Kind}'", nameof(cmd)),
         };
 
@@ -189,6 +192,8 @@ namespace Statecraft.Sim
                 case "appoint": Arity(3); return new Appoint(Str(f[1]), Str(f[2]));
                 case "map": Arity(4); return new MapAction(Str(f[1]), I(f[2]), I(f[3]));
                 case "work": Arity(4); return new AssignWorkers(Str(f[1]), Str(f[2]), I(f[3]));
+                case "train": Arity(4); return new Train(Str(f[1]), Str(f[2]), I(f[3]));
+                case "untrain": Arity(2); return new CancelTraining(I(f[1]));
                 default: throw new SaveException(line, $"unknown command '{f[0]}'");
             }
         }

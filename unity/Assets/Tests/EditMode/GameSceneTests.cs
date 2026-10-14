@@ -60,7 +60,7 @@ public class GameSceneTests
         var root = Object.FindFirstObjectByType<GameRoot>();
         Assert.IsNotNull(root, "GameRoot");
         var so = new SerializedObject(root);
-        foreach (var field in new[] { "boot", "document", "strings", "portraits", "map", "placements", "pointer", "cameraController" })
+        foreach (var field in new[] { "boot", "document", "strings", "stringsHe", "portraits", "map", "placements", "pointer", "cameraController" })
             Assert.IsNotNull(so.FindProperty(field).objectReferenceValue, field);
         var boot = Object.FindFirstObjectByType<GameBoot>();
         Assert.IsNotNull(boot);
@@ -76,6 +76,32 @@ public class GameSceneTests
         Assert.IsNotNull(Object.FindFirstObjectByType<PlacementLayer>());
         Assert.IsNotNull(Object.FindFirstObjectByType<MapPointer>());
         Assert.IsNull(GameObject.Find("EventSystem"), "UI Toolkit reads the Input System directly; an EventSystem would take over");
+    }
+
+    /// <summary>The game as automated runs boot it (no start screen): no DeclarationRecording is built, so the
+    /// "Play the recording" row keeps the stylesheet's display: none and its button is never set up.</summary>
+    [Test]
+    public void WithoutTheStartScreenThereIsNoRecording()
+    {
+        Boot();
+        Assert.AreEqual(StyleKeyword.Null, Ui.Q("start-recording").style.display.keyword, "nothing shows the row");
+        Assert.AreEqual("", Ui.Q<Button>("start-listen").text, "the button was never set up");
+        Assert.AreEqual(StyleKeyword.Null, Ui.Q("start-caption").style.display.keyword);
+    }
+
+    /// <summary>The booted game (video on in an edit-mode run): the End Turn outcome clips have their own player, so the
+    /// decision card's Render can never stop or replace one (review of #466, finding 1).</summary>
+    [Test]
+    public void TheOutcomeClipsHaveTheirOwnPlayer()
+    {
+        var root = Boot();
+        Assert.IsFalse(CardVideo.ForcedOff(), "precondition: an edit-mode run has video");
+        object? Field(object o, string name) => o.GetType().GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(o);
+        var outcomes = Field(root, "outcomes"); var card = Field(root, "card");
+        Assert.IsNotNull(outcomes); Assert.IsNotNull(card);
+        var outcomePlayer = Field(outcomes!, "video"); var cardPlayer = Field(card!, "video");
+        Assert.IsNotNull(outcomePlayer); Assert.IsNotNull(cardPlayer);
+        Assert.AreNotSame(cardPlayer, outcomePlayer);
     }
 
     [Test]
@@ -379,8 +405,8 @@ public class GameSceneTests
         Assert.AreEqual(1, Listeners(old), "subscribed while enabled");
         var so = new SerializedObject(root);
         Object R(string f) => so.FindProperty(f).objectReferenceValue;
-        root.Configure(other, (UIDocument)R("document"), (TextAsset)R("strings"), (PortraitCatalog)R("portraits"), (MapScene)R("map"),
-            (PlacementLayer)R("placements"), (MapPointer)R("pointer"), (CameraController)R("cameraController"));
+        root.Configure(other, (UIDocument)R("document"), (TextAsset)R("strings"), (TextAsset)R("stringsHe"), (PortraitCatalog)R("portraits"),
+            (MapScene)R("map"), (PlacementLayer)R("placements"), (MapPointer)R("pointer"), (CameraController)R("cameraController"));
         Assert.AreEqual(0, Listeners(old));
         Assert.AreEqual(1, Listeners(other));
         root.enabled = false;

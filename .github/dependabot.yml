@@ -20,3 +20,16 @@ updates:
       default-days: 14
     commit-message:
       prefix: "repo"
+  # Keeps the website's npm dependencies current (site/package.json pins exact versions; site/package-lock.json carries
+  # the hashes). site/ is not a user-visible path for the changelog check, and the Site workflow builds every such
+  # pull request. NuGet (sim/) is left out on purpose: YamlDotNet's version is also the YamlDotNet.dll copied into Unity
+  # by tools/build_sim_for_unity.py and the version named in LICENSES/YamlDotNet-MIT.txt, so it is bumped by hand.
+  # Python dependencies are pinned inline (uv run --with x==y, # /// script headers), which Dependabot does not read.
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: "site"

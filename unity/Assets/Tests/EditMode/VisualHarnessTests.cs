@@ -71,6 +71,23 @@ public class VisualHarnessTests
         Assert.AreEqual("grade again True", log.Last());
     }
 
+    /// <summary>Audit 2026-10-13: the close checks look at the ground, so the shots turn the haze and the settlement trees
+    /// off for them (a kit tree's crown had filled hero06judea) and back on after; other toggles and unregistered names are
+    /// left alone.</summary>
+    [Test]
+    public void TheCloseChecksAreShotWithoutHazeOrTrees()
+    {
+        var state = new Dictionary<string, bool>();
+        foreach (var n in new[] { "haze", "trees", "kits", "grade" }) { var name = n; state[name] = true; VisualToggles.Register(name, on => state[name] = on); }
+        CollectionAssert.AreEquivalent(new[] { "haze", "trees" }, VisualShots.OffForCloseChecks);
+        var off = VisualShots.TurnOff(VisualShots.OffForCloseChecks.Append("fog"));
+        CollectionAssert.AreEquivalent(new[] { "haze", "trees" }, off, "only registered toggles are turned off");
+        Assert.IsFalse(state["haze"]); Assert.IsFalse(state["trees"]);
+        Assert.IsTrue(state["kits"], "the kits stay"); Assert.IsTrue(state["grade"]);
+        VisualShots.TurnOn(off);
+        Assert.IsTrue(state.Values.All(on => on), "all back on after the close checks");
+    }
+
     [Test]
     public void ShotsSplitIntoNumberedChunksAfterAHashedHeader()
     {

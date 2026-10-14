@@ -13,6 +13,10 @@ namespace Statecraft.Sim
         public GameState? Previous { get; private set; }
         /// <summary>The last step's result (null before the first): its Why and Rejected lists.</summary>
         public StepResult? Last { get; private set; }
+        /// <summary>The step before Last (null before the second step), for a change that compares two steps' results (the
+        /// top bar's arrivals). A loaded session has it from its replay, like Previous and Last. Not part of the state or
+        /// the save.</summary>
+        public StepResult? BeforeLast { get; private set; }
         public SaveGame Save { get; }
 
         GameSession(Content c, GameState s, SaveGame save) { Content = c; State = s; Save = save; }
@@ -29,7 +33,7 @@ namespace Statecraft.Sim
         {
             var r = Simulation.Step(Content, State, commands);
             Save.Record(commands, r.State);
-            Previous = State; State = r.State; Last = r;
+            Previous = State; State = r.State; BeforeLast = Last; Last = r;
             return r;
         }
 

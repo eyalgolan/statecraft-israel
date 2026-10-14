@@ -16,7 +16,9 @@ def test_every_row_names_a_promo_shot_by_sha256_and_is_marked_ai():
     assert len(rows) >= 10
     for r in rows:
         assert r["source"].startswith("promo/") and len(r["source_sha256"]) == 64
-        assert r["file"] == r["event"] + ".mp4" and r["ai_generated"] is True
+        assert r["file"] == r["event"] + ("-outcome.mp4" if "option" in r else ".mp4") and r["ai_generated"] is True
+        if "option" in r:   # an outcome clip keeps a recorded 3.5 s window of its shot
+            assert r["frames"] == 84 and r["start_frame"] >= 0
         assert (ev.OUT / r["file"]).is_file()
 
 
@@ -47,7 +49,39 @@ def test_problems_refuses_audio_and_the_wrong_size(tmp_path):
 @needs_ffmpeg
 def test_every_shipped_clip_passes():
     for r in ev.load_rows():
-        assert ev.problems(ev.OUT / r["file"]) == [], r["file"]
+        assert ev.problems(ev.OUT / r["file"], r.get("frames")) == [], r["file"]
+
+
+@needs_ffmpeg
+def test_problems_refuses_an_outcome_clip_of_the_wrong_length(tmp_path):
+    clip = tmp_path / "c.mp4"
+    make(clip, audio=False)   # 24 frames
+    assert ev.problems(clip, 24) == []
+    assert any("24 frames, not 84" in p for p in ev.problems(clip, 84))
+
+
+@needs_ffmpeg
+def test_steadiest_skips_a_morph_at_the_start(tmp_path):
+    """A shot whose first second churns (a morph) and then settles: the steadiest 1 s window starts after the churn."""
+    import numpy as np
+    w, h, rng = 192, 108, np.random.default_rng(7)
+    frames = [rng.integers(0, 255, (h, w), dtype=np.uint8) for _ in range(30)]
+    frames += [np.full((h, w), 100 + i // 8, np.uint8) for i in range(66)]   # still, with a slow drift
+    src = tmp_path / "shot.mp4"
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "gray",
+                    "-s", f"{w}x{h}", "-r", "24", "-i", "-", "-c:v", "libx264", "-qp", "0", "-pix_fmt", "yuv420p", str(src)],
+                   input=b"".join(f.tobytes() for f in frames), check=True)
+    start, numbers = ev.steadiest(src, seconds=1.0)
+    assert start >= 30, (start, numbers)
+
+
+def test_only_selects_a_loop_or_an_outcome_by_its_file(monkeypatch, tmp_path, capsys):
+    rows = [{"event": "e", "file": "e.mp4", "source": "promo/x.mp4", "source_sha256": "0" * 64},
+            {"event": "e", "option": "o", "file": "e-outcome.mp4", "source": "promo/y.mp4", "source_sha256": "0" * 64}]
+    monkeypatch.setattr(ev, "load_rows", lambda mapping=ev.MAPPING: rows)
+    monkeypatch.setattr(ev.shutil, "which", lambda name: "/usr/bin/" + name)
+    assert ev.main(["--root", str(tmp_path), "--only", "e-outcome"]) == 1
+    assert "y.mp4" in capsys.readouterr().out, "only the outcome row is looked at"
 
 
 def test_a_source_with_the_wrong_sha256_is_refused(tmp_path, capsys, monkeypatch):
@@ -61,3 +95,9 @@ def test_a_source_with_the_wrong_sha256_is_refused(tmp_path, capsys, monkeypatch
     assert ev.main(["--root", str(tmp_path), "--out", str(tmp_path / "out")]) == 1
     assert "SHA-256 MISMATCH" in capsys.readouterr().out
     assert not (tmp_path / "out").exists() or not any((tmp_path / "out").iterdir())
+
+
+def test_an_outcome_row_cuts_its_recorded_window_and_decimates_a_dreamina_shot():
+    graph = ev.filter_graph({"start_frame": 5, "frames": 84, "decimate": True})
+    assert graph.startswith("[0:v]mpdecimate") and "trim=start_frame=5:end_frame=89" in graph
+    assert "trim" not in ev.filter_graph() and "mpdecimate" not in ev.filter_graph(), "the card loops are cut as before"

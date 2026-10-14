@@ -12,15 +12,43 @@ public class ReferencePlayerTests
     static readonly Content Mvp = MvpSlice.Load(RealContentTests.ContentRoot());
 
     [Fact]
-    public void ItSendsHistoricalAIsOrdersThenFillsTheJobs()
+    public void ItSendsHistoricalAIsOrdersThenFillsTheJobsThenTrainsOneHalutzGroup()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         var orders = ReferencePlayer.Commands(Mvp, s);
         var history = HistoricalAI.Commands(Mvp, s);
         Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
-        var assign = Assert.IsType<AssignWorkers>(orders.Last());
+        Assert.Equal(history.Count + 2, orders.Count);
+        var assign = Assert.IsType<AssignWorkers>(orders[history.Count]);
         Assert.Equal(("tel_aviv", "job", 90), (assign.City, assign.Role, assign.Count));   // min(90 jobs, 100 civilians)
+        var train = Assert.IsType<Train>(orders.Last());
+        Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 10 civilians left without work
         Assert.Empty(Simulation.Step(Mvp, s, orders).Rejected);
+    }
+
+    // R-TRAIN-001: the stated policy trains a halutz group only when there is none, none in training, a civilian without
+    // work, and the Treasury and Attention to pay.
+    [Fact]
+    public void ItTrainsNoHalutzWhenOneExistsOrTrainsOrNobodyIsFreeOrMoneyIsShort()
+    {
+        var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
+        var training = Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).State;
+        Assert.Single(training.Cohorts);
+        training.Treasury = 100;   // only the cohort in training holds it back: Money, Attention and free civilians are there
+        training.Attention = 10;
+        Assert.True(training.Cities["tel_aviv"].Civilians > training.Cities["tel_aviv"].Employed);
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, training), x => x is Train);
+        training.Cohorts.Clear();
+        Assert.Contains(ReferencePlayer.Commands(Mvp, training), x => x is Train);
+        var trained = s.Clone();
+        trained.Units.Add(1, new Unit(1, "halutz", -3, 19));
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, trained), x => x is Train);
+        var busy = s.Clone();
+        busy.Cities["tel_aviv"] = busy.Cities["tel_aviv"].WithCounts(90, 80, 0);   // 90 jobs: all of them filled
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, busy), x => x is Train);
+        var poor = s.Clone();
+        poor.Treasury = 0.4;
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, poor), x => x is Train);
     }
 
     [Fact]

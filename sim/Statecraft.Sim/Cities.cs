@@ -49,6 +49,7 @@ namespace Statecraft.Sim
         /// a placeholder: what happens to people beyond it is D-D1, still open.</summary>
         public static void House(Content c, GameState s, List<Cause> why)
         {
+            // PLACEHOLDER (owner question, #377): only civilians take housing; people in training and recruits do not.
             foreach (var x in s.Cities.Values.ToList())
             {
                 var moved = Math.Min(x.Refugees, Math.Max(0, x.HousingCapacity - x.Civilians));

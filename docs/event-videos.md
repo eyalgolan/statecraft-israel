@@ -1,4 +1,4 @@
-# Decision-card illustration loops
+# Decision-card video: illustration loops and outcome clips
 
 On some decision cards, an **Illustration** switch over the photograph's top right corner plays a short, silent,
 AI-generated loop in the 16:9 media header. Owner rulings of 2026-10-13 cover it (`reports/Video at decision
@@ -15,8 +15,9 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
   - The file carries a small burned-in label, "AI-generated · נוצר בבינה מלאכותית", so it says what it is even when it
     is downloaded on its own. The Dreamina shots also keep Dreamina's own "AI" badge (D-D).
 - **Silent.** The clips have no audio stream (`tools/encode_event_videos.py` refuses one).
-- **Opt-in.** Nothing plays until the player presses the switch, so the loop needs no separate pause button and no
-  reduced-motion setting. Pressing the switch again stops it.
+- **Opt-in.** A card's loop plays only after the player presses the switch, so it needs no separate pause button and no
+  reduced-motion setting. Pressing the switch again stops it. (The outcome clips below play at End Turn without a
+  switch, once, for 3.5 s: a click, Enter or Space skips one, and Esc skips them all.)
   - The choice holds for the session: later cards open on their clip until the player switches back.
   - It is not saved, and every launch starts on the photograph.
 - **Deport never gets any video** (GDD owner ruling 1). `EventVideoMapping.Problems` refuses a row for an event with a
@@ -24,18 +25,49 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
 - **No recognisable real person** in any clip. Every frame sheet was checked before the clip was committed.
 - **Sensitive events.** A clip on an event with a sensitive tag is `sensitive: true`. A `-shareable` build refuses it
   until the owner sets `sensitivity_reviewed: true` (`Build.ShareableRefusal`). Today that applies to `ten_days` (J09)
-  and `operation_yoav` (W04a).
+  and `operation_yoav` (W04a), and to the `operation_horev` outcome clip (A05).
 - **Rights:** owner ruling D-V (`docs/oss/DECISIONS.md`, merged in #449), "no need to check, just use them". Every clip has an
   `ASSETS.yaml` row with `ai_generated: true`, the generator and the date, and those rows feed `docs/ai-disclosure.md`.
+
+## Outcome clips at End Turn (phase 3)
+
+When a turn runs, every event the player answered with its **historical** option, if the turn applied the order and the
+event has an outcome clip, plays that clip once, in the middle of the screen, before the game goes on (`OutcomePresenter`).
+
+- **Only for an order.** A clip plays only for the historical option the player chose. A delegated answer gets none,
+  and so does a counterfactual option (there is no footage of what did not happen). `EventVideoMapping.OutcomeProblems`
+  refuses a row for a non-historical option, and any row that involves Deport.
+- **3.5 s, silent.** The caption is worded as the order, "Your order: …", because the clip illustrates the order and
+  does not show its outcome.
+  - A click, Enter or Space (or a gamepad's Submit) skips the clip. Esc (or Cancel) skips all of the turn's clips.
+  - A screen open at End Turn (Cabinet, Budget, Defence, Why) closes when the clip starts. The clip is drawn over
+    everything but the toast, and while it plays the decision card, the top bar and the panels wait, so no order can be
+    given under it.
+  - It has its own player, separate from the card's loop.
+  - The keyboard focus goes to the clip while it plays, then back to the open decision card, or to where it was.
+- **The steadiest window.** AI shots often morph in their first frames, so each clip keeps the steadiest 3.5 s of its
+  shot, not the first 3.5 s. "Steadiest" means the least frame-to-frame change, and above all no sudden jump in it. The
+  search is `tools/encode_event_videos.py --steadiest`, and the row records `start_frame` and `frames` so the cut
+  reproduces. The 60 fps Dreamina files repeat frames, so they are decimated first (`decimate: true`).
+- **The clips:**
+  - maabarot_policy / maabarot: A08, a transit camp;
+  - hula_drainage / continue_works: W08, the drained valley;
+  - operation_horev / launch: A05, jeeps and an armoured carrier crossing the Negev. This one is sensitive and not yet
+    reviewed, so a shareable build refuses it. Its vehicles (jeeps, a tracked carrier) match the 8th Brigade's tanks,
+    jeeps and APCs (en.wikipedia "8th Armored Brigade (Israel)", checked 2026-10-14), and it shows no flag or marking.
+- **Dropped in review (2026-10-14):** first_truce / accept (A02, the Burma Road convoy of June 1948, a poor picture for
+  a truce whose terms bar bringing in men and materiel) and law_of_return / enact (K04b, not in the plan's list and with
+  no recorded ruling). A replacement needs the owner's word before anything new is generated.
 
 ## Where things are
 
 | What | Where |
 |---|---|
-| The mapping: event, file, promo shot and its SHA-256, generator, date, alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
-| The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4` |
+| The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
+| The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips |
 | The encode, pinned, and the burned-in label | `tools/encode_event_videos.py`, `tools/event_videos/ai-bug.png` |
-| The player: one lazy VideoPlayer playing a URL into one 960x540 RenderTexture | `CardVideo` |
+| The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop and one for the outcome clips | `CardVideo` |
+| The outcome clips at End Turn | `OutcomePresenter` |
 | The switch | `EventCardPresenter.ApplyIllustration` |
 
 The mapping is **not game content**: the sim never reads it, and the goldens and the content hash cannot move for it

@@ -18,8 +18,14 @@ namespace Statecraft.Game.UI
         public Content Content => Session.Content;
         public GameState State => Session.State;
         public IReadOnlyList<Command> Queued => queue;
-        /// <summary>The step before Session.Last (null until two turns have run), for "change since last turn".</summary>
-        public StepResult? BeforeLast { get; private set; }
+        /// <summary>The orders the last turn ran with (empty until a turn has run, and after a refused batch): what the player
+        /// chose, as against what the turn delegated (OutcomePresenter plays a clip only for a choice).</summary>
+        public IReadOnlyList<Command> LastBatch { get; private set; } = Array.Empty<Command>();
+        /// <summary>The game date when the last turn's orders were given (the date before that turn ran).</summary>
+        public DateTime LastBatchDate { get; private set; }
+        /// <summary>The step before Session.Last (null until two turns have run), for "change since last turn". The session
+        /// keeps it, so a loaded save has it from its replay (#398).</summary>
+        public StepResult? BeforeLast => Session.BeforeLast;
         /// <summary>Raised after every change the screens show: an order queued or withdrawn, a turn, a load.</summary>
         public event Action? Changed;
         /// <summary>Raised after End Turn with the orders the simulation refused (possibly none).</summary>
@@ -112,8 +118,8 @@ namespace Statecraft.Game.UI
         public StepResult EndTurn()
         {
             StepResult r;
-            var before = Session.Last;
             var batch = queue.ToList();
+            var date = State.Date;
             try { r = step(Session, batch); }
             catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
             {
@@ -121,13 +127,14 @@ namespace Statecraft.Game.UI
                 if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
                 else UnityEngine.Debug.LogException(e);
                 queue.Clear();
+                LastBatch = Array.Empty<Command>();
                 var reason = text.Format("order.failed", e.Message);
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
                 Changed?.Invoke();
                 TurnEnded?.Invoke(failed.Rejected);
                 return failed;
             }
-            BeforeLast = before;
+            LastBatch = batch; LastBatchDate = date;
             queue.Clear();
             Changed?.Invoke();
             TurnEnded?.Invoke(r.Rejected);
@@ -138,7 +145,7 @@ namespace Statecraft.Game.UI
         public void Replace(GameSession session)
         {
             Session = session ?? throw new ArgumentNullException(nameof(session));
-            BeforeLast = null;
+            LastBatch = Array.Empty<Command>();
             queue.Clear();
             Changed?.Invoke();
         }

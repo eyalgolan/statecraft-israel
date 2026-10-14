@@ -1,27 +1,29 @@
 # yaml-language-server: $schema=./schema/offices.schema.json
 offices:
-  - { id: prime_minister, title: Prime Minister }
+  # `from: 1948-05-14` is the state's founding (issue #80). For the deputy titles and any post created later (some date from
+  # 1951) it is a design floor, not the day the post was created.
+  - { id: prime_minister, title: Prime Minister, from: 1948-05-14 }
   # Spelling is deliberate, do not "fix" it (playtest 1, item 8): the office title keeps Israel's official English,
   # "Ministry of Defense" / "Minister of Defense", because it is a proper noun. The UI is otherwise British English, so
   # the screen and its button say "Defence".
-  - { id: defense_minister, title: Minister of Defense }
-  - { id: finance_minister, title: Minister of Finance }
-  - { id: foreign_minister, title: Minister of Foreign Affairs }
-  - { id: health_minister, title: Minister of Health }
+  - { id: defense_minister, title: Minister of Defense, from: 1948-05-14 }
+  - { id: finance_minister, title: Minister of Finance, from: 1948-05-14 }
+  - { id: foreign_minister, title: Minister of Foreign Affairs, from: 1948-05-14 }
+  - { id: health_minister, title: Minister of Health, from: 1948-05-14 }
   # No Immigration or War Victims portfolio in the Third Government (8 Oct 1951): research_notes/M3 content 1950-51/facts.md,
   # Addendum (2026-10-10) (a) and (b), after en.wiki, he.wiki and JVL. Re-add a term if a source shows the portfolio.
-  - { id: immigration_minister, title: Minister of Immigration, until: 1951-10-08 }
-  - { id: interior_minister, title: Minister of Internal Affairs }
-  - { id: justice_minister, title: Minister of Justice }
-  - { id: agriculture_minister, title: Minister of Agriculture }
-  - { id: labour_minister, title: Minister of Labour }
-  - { id: police_minister, title: Minister of Police }
-  - { id: minority_affairs_minister, title: Minister of Minority Affairs }
-  - { id: religions_minister, title: Minister of Religions }
-  - { id: war_victims_minister, title: Minister of War Victims, until: 1951-10-08 }
-  - { id: trade_minister, title: Minister of Trade and Industry }
-  - { id: transportation_minister, title: Minister of Transportation }
-  - { id: welfare_minister, title: Minister of Welfare }
+  - { id: immigration_minister, title: Minister of Immigration, until: 1951-10-08, from: 1948-05-14 }
+  - { id: interior_minister, title: Minister of Internal Affairs, from: 1948-05-14 }
+  - { id: justice_minister, title: Minister of Justice, from: 1948-05-14 }
+  - { id: agriculture_minister, title: Minister of Agriculture, from: 1948-05-14 }
+  - { id: labour_minister, title: Minister of Labour, from: 1948-05-14 }
+  - { id: police_minister, title: Minister of Police, from: 1948-05-14 }
+  - { id: minority_affairs_minister, title: Minister of Minority Affairs, from: 1948-05-14 }
+  - { id: religions_minister, title: Minister of Religions, from: 1948-05-14 }
+  - { id: war_victims_minister, title: Minister of War Victims, until: 1951-10-08, from: 1948-05-14 }
+  - { id: trade_minister, title: Minister of Trade and Industry, from: 1948-05-14 }
+  - { id: transportation_minister, title: Minister of Transportation, from: 1948-05-14 }
+  - { id: welfare_minister, title: Minister of Welfare, from: 1948-05-14 }
   # The Ministry of Postal Services (renamed Communications in 1970). Its first minister, Mordechai Nurock, took office
   # on 3 November 1952 (Knesset records and plenum record, he.wiki Third Government, en.wiki "Ministry of Communications
   # (Israel)", checked 2026-10-12).
@@ -48,7 +50,11 @@ offices:
   # in en.wiki "Rationing and Supply Minister of Israel" and he.wiki "משרד האספקה והקיצוב" is when rationing was decided
   # (the austerity event), not when the office began (issue #225).
   - { id: rationing_minister, title: Minister responsible for rationing, from: 1949-03-10 }
-  - { id: chief_of_staff, title: IDF Chief of the General Staff }
+  # Before the state the chief of staff led the Haganah (Yaakov Dori, from 1 June 1947), so the same post is split at the
+  # state's founding (issue #80; sources on Dori's two terms in people.yaml). 14 May 1948 is the design's date; the IDF Ordinance
+  # followed on 26 May 1948. Do not "correct" it to 26 May in a fact-check: it would move the goldens.
+  - { id: haganah_chief_of_staff, title: Haganah Chief of the General Staff, until: 1948-05-14 }
+  - { id: chief_of_staff, title: IDF Chief of the General Staff, from: 1948-05-14 }
   # The role first appeared in the Third Government (Peretz Naphtali, 8 October 1951): he.wiki "שר בלי תיק"; the
   # Provisional, First and Second Governments' tables on en.wiki list none (checked 2026-10-11).
   - { id: minister_without_portfolio, title: Minister without Portfolio, from: 1951-10-08, several_holders: true }
@@ -58,11 +64,11 @@ offices:
   - { id: president, title: President of Israel, from: 1949-02-16 }
   # Historical deputy titles: dated lookup/text only, never playable Cabinet seats or gameplay owners.
   # Sources and the start-date conflict are in research_notes/M3 content 1950-51/deputy-titles.md.
-  - { id: deputy_agriculture_minister, title: Deputy Minister of Agriculture, historical_only: true }
-  - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, historical_only: true }
-  - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, historical_only: true, several_holders: true }
-  - { id: deputy_prime_minister, title: Deputy Prime Minister, historical_only: true }
+  - { id: deputy_agriculture_minister, title: Deputy Minister of Agriculture, historical_only: true, from: 1948-05-14 }
+  - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, historical_only: true, from: 1948-05-14 }
+  - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, historical_only: true, several_holders: true, from: 1948-05-14 }
+  - { id: deputy_prime_minister, title: Deputy Prime Minister, historical_only: true, from: 1948-05-14 }
   # Deputy ministers of 1953-1956 (#26): dates from the Knesset records (KNS_PersonToPosition), see people.yaml.
-  - { id: deputy_religions_minister, title: Deputy Minister of Religions, historical_only: true }
-  - { id: deputy_welfare_minister, title: Deputy Minister of Welfare, historical_only: true }
-  - { id: deputy_trade_minister, title: Deputy Minister of Trade and Industry, historical_only: true }
+  - { id: deputy_religions_minister, title: Deputy Minister of Religions, historical_only: true, from: 1948-05-14 }
+  - { id: deputy_welfare_minister, title: Deputy Minister of Welfare, historical_only: true, from: 1948-05-14 }
+  - { id: deputy_trade_minister, title: Deputy Minister of Trade and Industry, historical_only: true, from: 1948-05-14 }

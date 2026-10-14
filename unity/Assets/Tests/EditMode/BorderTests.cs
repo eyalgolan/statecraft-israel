@@ -170,19 +170,20 @@ public class BorderTests
         CollectionAssert.Contains(VisualToggles.Names, MapBorders.ToggleName);
         Assert.IsNull(MapBorders.Current);
         PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
-        var on = RenderSample.Render(cam, 480, 270);
+        // Exact comparisons of steady frames (RenderSample.RenderSteady: the terrain pass's rare transient pixels, #440).
+        var on = RenderSample.RenderSteady(cam, 480, 270);
         VisualToggles.Set(MapBorders.ToggleName, false);
-        var off = RenderSample.Render(cam, 480, 270);
+        var off = RenderSample.RenderSteady(cam, 480, 270);
         Assert.AreEqual(0f, Changed(on, off, 0f), "no layer: the toggle changes nothing");
         VisualToggles.Set(MapBorders.ToggleName, true);
         BorderProof.Show(map);
         var proof = RenderSample.Render(cam, 480, 270);
         Assert.Greater(Changed(proof, off, 0.02f), 0.002f, "the proof draws");
         VisualToggles.Set(MapBorders.ToggleName, false);
-        Assert.AreEqual(0f, Changed(RenderSample.Render(cam, 480, 270), off, 0f), "the toggle removes a layer in use");
+        Assert.AreEqual(0f, Changed(RenderSample.RenderSteady(cam, 480, 270), off, 0f), "the toggle removes a layer in use");
         VisualToggles.Set(MapBorders.ToggleName, true);
         MapBorders.Use(new RegionLayer("empty", new Dictionary<(int q, int r), int>(), new Dictionary<int, BorderStyle>()));
-        Assert.AreEqual(0f, Changed(RenderSample.Render(cam, 480, 270), off, 0f), "an empty layer draws nothing");
+        Assert.AreEqual(0f, Changed(RenderSample.RenderSteady(cam, 480, 270), off, 0f), "an empty layer draws nothing");
     }
 
     /// <summary>Share of pixels whose largest channel differs by more than <paramref name="by"/>.</summary>
@@ -441,10 +442,10 @@ public class BorderTests
             foreach (var pose in PromoPose.All)
             {
                 pose.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
-                var fast = RenderSample.Render(cam, 960, 540);
-                var again = RenderSample.Render(cam, 960, 540);   // control: the same settings twice
+                var fast = RenderSample.RenderSteady(cam, 960, 540);   // steady frames: #440
+                var again = RenderSample.RenderSteady(cam, 960, 540);   // control: the same settings twice
                 MapBorders.NoEarlyOut = true;
-                var full = RenderSample.Render(cam, 960, 540);
+                var full = RenderSample.RenderSteady(cam, 960, 540);
                 MapBorders.NoEarlyOut = false;
                 float control = Changed(fast, again, 0f), exact = Changed(fast, full, 0f), maxDiff = 0f;
                 for (int i = 0; i < fast.Pixels.Length; i++)
@@ -570,8 +571,8 @@ public class BorderTests
             PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
             BorderProof.Show(map);
             RenderSample.Render(cam, 480, 270);   // warm-up: the banner's glyphs and every variant in place
-            var a = RenderSample.Render(cam, 480, 270);
-            var b = RenderSample.Render(cam, 480, 270);
+            var a = RenderSample.RenderSteady(cam, 480, 270);   // steady frames: the terrain pass's transient pixels are not the borders' (#440)
+            var b = RenderSample.RenderSteady(cam, 480, 270);
             Assert.AreEqual(0f, Changed(a, b, 0f));
         }
         finally { UnityEditor.ShaderUtil.allowAsyncCompilation = async; }

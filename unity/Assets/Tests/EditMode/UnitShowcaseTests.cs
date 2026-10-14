@@ -167,7 +167,7 @@ public class UnitShowcaseTests
     {
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         var map = new GameObject("MapScene").AddComponent<MapScene>();
-        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("BorderLand"));
+        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
         map.Build();
         return map;
     }

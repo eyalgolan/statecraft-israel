@@ -246,7 +246,7 @@ public class UnitsInPlayTests
     {
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         var map = new GameObject("MapScene").AddComponent<MapScene>();
-        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("BorderLand"));
+        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
         // The towns' footprints as the game sizes them (its kits read the 1945 populations), whatever an earlier test left.
         Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
             File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
@@ -391,6 +391,42 @@ public class UnitsInPlayTests
             Assert.GreaterOrEqual(y + 0.01f, H(1000f + Mathf.Cos(a) * r * 0.99f, 2000f + Mathf.Sin(a) * r * 0.99f), "no boot sinks into the slope");
         }
         Assert.LessOrEqual(y - H(1000f, 2000f), Mathf.Sqrt(slope * slope + 0.04f) * r / Mathf.Cos(Mathf.PI / 16f) + 0.01f, "the float is bounded by the slope over the foot");
+    }
+
+    /// <summary>Review of #518: the tokens' keep-clear boxes (what the map's names keep clear of) are right even when the
+    /// tokens are built while the "units" toggle hides the layer, as a ?shot run without &amp;units does before the first
+    /// Show: once the layer is shown again, each token's pieces box is the hull of its drawn pieces (Renderer.bounds, now
+    /// that they are active), not a box stretched to the world origin; and a hidden layer hands out no boxes.</summary>
+    [Test]
+    public void KeepClearBoxesBuiltWhileTheLayerIsHiddenHoldTheirToken()
+    {
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            VisualToggles.Set(UnitLayer.ToggleName, false);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));   // built inactive
+            Assert.AreEqual(0, layer.KeepClear.Count, "a hidden layer hands out no boxes");
+            VisualToggles.Set(UnitLayer.ToggleName, true);
+            Assert.AreEqual(layer.Tokens.Count, layer.KeepClear.Count, "one entry per token");
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            int pieces = 0;
+            for (int i = 0; i < layer.Tokens.Count; i++)
+            {
+                var token = tokens.Find(layer.Tokens[i].Token.Unit.Id);
+                var drawn = token.GetComponentsInChildren<Renderer>().Where(r => r.GetComponentInParent<UnitBadge>() == null && r.GetComponentInParent<ShowcaseFlight>() == null).ToList();
+                var boxes = layer.KeepClear[i];
+                if (drawn.Count == 0) { Assert.AreEqual(1, boxes.Length, $"{token.name}: only its badge"); continue; }
+                Assert.AreEqual(2, boxes.Length, $"{token.name}: its badge and its pieces");
+                var hull = drawn[0].bounds; foreach (var r in drawn) hull.Encapsulate(r.bounds);
+                Assert.AreEqual(hull.min.x, boxes[1].min.x, 1f, token.name); Assert.AreEqual(hull.max.x, boxes[1].max.x, 1f, token.name);
+                Assert.AreEqual(hull.min.y, boxes[1].min.y, 1f, token.name); Assert.AreEqual(hull.max.y, boxes[1].max.y, 1f, token.name);
+                Assert.AreEqual(hull.min.z, boxes[1].min.z, 1f, token.name); Assert.AreEqual(hull.max.z, boxes[1].max.z, 1f, token.name);
+                pieces++;
+            }
+            Assert.Greater(pieces, 5, "brigades and ships were checked");
+        }
+        finally { if (VisualToggles.Names.Contains(UnitLayer.ToggleName)) VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands no lower than the

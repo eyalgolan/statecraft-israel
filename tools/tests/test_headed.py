@@ -95,3 +95,43 @@ def test_the_viewport_is_set_before_the_page_loads(tmp_path):
     import shutil
     for browser in (b, plain):
         shutil.rmtree(browser.profile, ignore_errors=True)
+
+
+def test_the_pad_swipe_is_many_small_deltas():
+    swipe = headed.pad_swipe()
+    assert len(swipe) == 31 and all(-8 <= d <= -0.5 for d in swipe)
+    assert headed.ideal_notches("pad") == pytest.approx(1.082, abs=1e-3)
+    assert headed.ideal_notches("lines3") == 1 and headed.ideal_notches("out_px100") == -1
+    assert headed.ideal_notches("px200") == 1 and headed.ideal_notches("px150") == 1 and headed.ideal_notches("cdp100") == 1
+    assert headed.ideal_notches("px49") == pytest.approx(0.49)
+
+
+def test_gesture_notches_reads_the_camera_log():
+    assert headed.gesture_notches(120000, [108000]) == pytest.approx((1.0, 1.0))
+    total, largest = headed.gesture_notches(120000, [120000 * 0.9 ** 0.5, 120000 * 0.9 ** 0.7])
+    assert total == pytest.approx(0.7) and largest == pytest.approx(0.5)
+    assert headed.gesture_notches(120000, []) == (0.0, 0.0)
+
+
+@pytest.mark.headed
+@pytest.mark.skipif(not BUILD.exists(), reason="needs unity/Builds/Web-disabled")
+def test_wheel_zoom_follows_a_swipe_and_keeps_a_notch_at_one_step():
+    """#43 in a real browser (WheelInput.jslib and CameraController.WheelOr): a touchpad swipe zooms by its length with
+    no frame near the clamp, before or after a mouse notch; a notch in pixels or lines is one step; nothing over a panel."""
+    r = {label: {g: (total, largest) for g, total, largest, _ in steps} for label, steps in
+         asyncio.run(headed.wheel(argparse.Namespace(build=str(BUILD)))).items()}
+    pad = headed.ideal_notches("pad")
+    for label in ("pad", "px100,pad", "lines3,pad", "pad,out_px100", "pad,out_lines3"):
+        total, largest = r[label]["pad"]
+        assert total == pytest.approx(pad, abs=0.05), label
+        assert largest < 0.25, label
+    assert r["px100,pad"]["px100"][0] == pytest.approx(1, abs=0.02)
+    assert r["lines3,pad"]["lines3"][0] == pytest.approx(1, abs=0.02)
+    assert r["pad,out_px100"]["out_px100"][0] == pytest.approx(-1, abs=0.02)
+    assert r["pad,out_lines3"]["out_lines3"][0] == pytest.approx(-1, abs=0.02)
+    assert r["pad,px100@panel"] == {"pad": (0.0, 0.0), "px100": (0.0, 0.0)}
+    for label in ("cdp100", "pad,cdp100"):   # Chrome's own 100 px notch, which arrives as 200 px: one step, not two
+        assert r[label]["cdp100"][0] == pytest.approx(1, abs=0.02), label
+    assert r["px150,px200,px49"]["px150"][0] == pytest.approx(1, abs=0.02)
+    assert r["px150,px200,px49"]["px200"][0] == pytest.approx(1, abs=0.02)
+    assert r["px150,px200,px49"]["px49"][0] == pytest.approx(0.49, abs=0.02)

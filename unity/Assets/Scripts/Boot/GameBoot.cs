@@ -49,7 +49,7 @@ namespace Statecraft.Game.Boot
         }
 
         static async Awaitable<GameInputs> LoadAsync() => Application.platform == RuntimePlatform.WebGLPlayer
-            ? await GameInputs.FetchAsync(GameInputs.StreamingUrl())
+            ? await GameInputs.FetchAsync(GameInputs.StreamingUrl(), Application.buildGUID)
             : GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
 
         /// <summary>The boot Start runs, with the loader passed in so a test can drive the real failure path.</summary>

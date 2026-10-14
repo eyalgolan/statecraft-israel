@@ -31,7 +31,7 @@ public static class MapCapture
         var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         var controller = Camera.main.gameObject.AddComponent<CameraController>();   // adds the CameraRig it requires
         var map = new GameObject("MapScene").AddComponent<MapScene>();
-        map.Configure(Load(MapMaterials.TerrainPath), Load(MapMaterials.MarkerPath), Load(MapMaterials.SelectionPath), Load(MapMaterials.SeaPath), Load(MapMaterials.BorderLandPath));
+        map.Configure(Load(MapMaterials.TerrainPath), Load(MapMaterials.MarkerPath), Load(MapMaterials.SelectionPath), Load(MapMaterials.SeaPath), Load(MapMaterials.FramePath));
         map.ConfigureKits(Load(MapMaterials.KitPath), Load(MapMaterials.TreePath));
         var boot = new GameObject("Boot").AddComponent<GameBoot>();
         boot.Configure(map);
@@ -41,7 +41,7 @@ public static class MapCapture
         var doc = ui.AddComponent<UIDocument>();
         doc.panelSettings = Asset<PanelSettings>(UiPaths.Panel);
         doc.visualTreeAsset = Asset<VisualTreeAsset>(UiPaths.GameUxml);
-        ui.AddComponent<GameRoot>().Configure(boot, doc, Asset<TextAsset>(UiPaths.Strings),
+        ui.AddComponent<GameRoot>().Configure(boot, doc, Asset<TextAsset>(UiPaths.Strings), Asset<TextAsset>(UiPaths.StringsHebrew),
             Asset<PortraitCatalog>(PortraitImport.CatalogPath), map, placements, pointer, controller);
         EditorSceneManager.SaveScene(scene, ScenePath);
     }

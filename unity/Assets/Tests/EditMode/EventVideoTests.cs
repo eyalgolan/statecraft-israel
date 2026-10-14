@@ -36,7 +36,8 @@ public class EventVideoTests
         Assert.IsNotEmpty(EventVideoMapping.Load(), "the game finds the mapping in Resources");
         // Every file in the folder has a row (no stray clip ships).
         var files = Directory.GetFiles(EventVideoMapping.ClipFolder, "*.mp4").Select(Path.GetFileName).OrderBy(x => x).ToArray();
-        CollectionAssert.AreEqual(rows.Select(r => r.File).OrderBy(x => x).ToArray(), files);
+        var outcomes = EventVideoMapping.ParseOutcomes(File.ReadAllText(EventVideoMapping.Path));   // the End Turn clips (OutcomeClipTests)
+        CollectionAssert.AreEqual(rows.Concat(outcomes).Select(r => r.File).OrderBy(x => x).ToArray(), files);
     }
 
     [Test]

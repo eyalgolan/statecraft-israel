@@ -22,6 +22,9 @@ namespace Statecraft.Game.EditorTools
             PlayerSettings.WebGL.template = WebTemplate;
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.decompressionFallback = false;
+            // Issue #437: the files under Build/ are named by their content hash, so a browser that cached an earlier build
+            // cannot mix its files into this one; the build's index.html names its own files.
+            PlayerSettings.WebGL.nameFilesAsHashes = true;
             // Debug.Log lines (GAME OK, TURN, PROFILE) without a script stack trace; warnings and errors keep theirs (Task 24 review M9).
             PlayerSettings.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
             var player = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);

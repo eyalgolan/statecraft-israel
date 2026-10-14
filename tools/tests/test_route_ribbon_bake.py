@@ -6,7 +6,12 @@ the bake's version) and then derives the ribbons at boot, which is slower. CI ru
 header here, with the constants read from the C# source: a change to any of them without a re-bake
 (RouteRibbonBake.Bake) fails CI, as the water's bake does. It also walks the meshes and their route index (route id, vertex
 and index range) for the GDD Phase 4 corridors (#384). Unity's RouteTests.TheBakedRibbonsMatchTheRoutes compares the
-whole meshes."""
+whole meshes.
+
+The header holds the ribbons' data and constants, not the code that drapes them. A fingerprint of that code (RouteLayer.Plan,
+RouteLayer.Derive and what they call; comments and whitespace left out) covers it (issue #535, as #529 did for the biome
+colours): an edit to it fails here until the ribbons are re-baked, RouteRibbonFile.Version is bumped and the fingerprint
+is re-pinned. There is no numpy port: the ribbons drape on Unity's terrain sampling (GetInterpolatedHeight and Normal)."""
 import codecs
 import re
 import struct
@@ -15,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from test_terrain_water_bake import MAP, heights_check, unity_heights
+from test_terrain_water_bake import MAP, csharp, fingerprint, heights_check, method, unity_heights
 
 ROOT = Path(__file__).resolve().parents[2]
 BAKE = ROOT / "unity/Assets/Resources/Routes/RouteRibbons.bytes"
@@ -131,3 +136,42 @@ def test_the_check_is_fnv1a():
     assert fnv1a(b"") == struct.unpack("<i", struct.pack("<I", 2166136261))[0]
     assert fnv1a(b"a") == struct.unpack("<i", struct.pack("<I", 0xE40C292C))[0]   # the FNV-1a 32-bit test vector
     assert fnv1a(b"ab") != fnv1a(b"ba")
+
+
+# The fingerprint of the ribbons' C# code (code_fingerprint), and the RouteRibbonFile.Version it was pinned at. Re-pin both
+# together, only after re-baking (RouteRibbonBake.Bake) with Version bumped.
+PINNED_VERSION, PINNED_CODE = 1, "533ef09adbfaf34c768842be54486f6370eb938456b1bcb069bc482dd43dae68"
+
+
+def code_fingerprint() -> str:
+    """The code between the inputs and the bake: RouteRibbonFile.Bake (the terrain and frame it builds), the plans and
+    their routes' windows, and RouteLayer's geometry. Its constants are left out: the header holds them (FLOATS, INTS)."""
+    layer = csharp("Scripts/Map/Routes/RouteLayer.cs")
+    paths = csharp("Scripts/Map/Routes/RoutePaths.cs")
+    return fingerprint([
+        method(csharp("Scripts/Map/Routes/RouteRibbonFile.cs"), "public static byte[] Bake("),
+        method(csharp("Scripts/Map/MapBuilder.cs"), "public static Vector3 TerrainSize("),
+        method(csharp("Scripts/Map/GeoFrame.cs"), "public Vector3 ToWorld("),
+        method(paths, "public static DateTime Bound("),
+        method(paths, "public static RouteWindow WindowOf("),
+        method(layer, "public static float WidthOf("),
+        method(layer, "public sealed class RibbonPlan"),
+        method(layer, "public static List<RibbonPlan> Plan("),
+        method(layer, "public static RibbonGeometry Derive("),
+        method(layer, "public static List<Vector2> World("),
+        method(layer, "public static (List<Vector2> points, List<float> along) Resample("),
+        method(layer, "public static float GradeHeight("),
+        method(layer, "public static float FlatHalfWidth("),
+        method(layer, "static bool OutOfTolerance("),
+        method(layer, "public static float Ground("),
+        method(layer, "public static float DrapeHeight("),
+        method(layer, "public static float[] RailHalfWidths("),
+        method(layer, "public static RibbonGeometry Geometry("),
+    ])
+
+
+def test_the_ribbon_code_is_the_one_the_bake_was_made_with():
+    assert (bake_version(), code_fingerprint()) == (PINNED_VERSION, PINNED_CODE), (
+        f"the C# that makes the route ribbons changed (version {bake_version()}, fingerprint {code_fingerprint()}): "
+        f"{BAKE.relative_to(ROOT)} is stale until you {REBAKE} after bumping RouteRibbonFile.Version, then re-pin PINNED_VERSION and PINNED_CODE in "
+        "tools/tests/test_route_ribbon_bake.py")

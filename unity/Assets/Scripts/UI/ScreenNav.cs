@@ -27,30 +27,33 @@ namespace Statecraft.Game.UI
         /// open screen covers the decision layer (it sits where the card does), and in the two-row HUD also the minimap
         /// column and the info panel; a wide screen covers the info panel; the open decision card's backdrop
         /// (EventCardPresenter.OpenClass, with no start screen or screen over it: ModalClass, set here) covers the minimap
-        /// column and the info panel. Called wherever one of those classes changes (StartScreenPresenter, Open,
-        /// HudPresenter's tier, EventCardPresenter), so no caller re-enables a panel another still covers.</summary>
+        /// column and the info panel; an End Turn outcome clip (OutcomePresenter.OpenClass) covers the top bar, the minimap
+        /// column, the info panel and the decision layer. Called wherever one of those classes changes (StartScreenPresenter,
+        /// Open, HudPresenter's tier, EventCardPresenter, OutcomePresenter), so no caller re-enables a panel another still
+        /// covers.</summary>
         public static void DisableCovered(VisualElement root)
         {
             var r = root.Q("root") ?? root;
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass);
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
-            bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen;
+            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
+            bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
-            r.Q("top-bar")?.SetEnabled(!start);
-            r.Q("right-column")?.SetEnabled(!(start || full || modal));
-            r.Q("info-panel")?.SetEnabled(!(start || full || modal || r.ClassListContains(WideOpenClass)));
+            r.Q("top-bar")?.SetEnabled(!(start || outcome));
+            r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome));
+            r.Q("info-panel")?.SetEnabled(!(start || full || modal || outcome || r.ClassListContains(WideOpenClass)));
             var layer = r.Q("event-layer");
             if (layer != null)
             {
-                bool was = layer.enabledSelf, now = !(start || screen);
+                bool was = layer.enabledSelf, now = !(start || screen || outcome);
                 layer.SetEnabled(now);
                 if (!was && now) (layer.userData as System.Action)?.Invoke();   // EventCardPresenter: the open card takes the focus
             }
         }
 
-        /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen or a
-        /// screen (DisableCovered enables it again); null stops it.</summary>
+        /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen, a
+        /// screen or an outcome clip (DisableCovered enables it again); null stops it.</summary>
         public static void OnUncovered(VisualElement layer, System.Action? action) => layer.userData = action;
 
         /// <summary>Asks to be told, synchronously, whenever <paramref name="screen"/> is opened (a presenter that skips
@@ -93,11 +96,17 @@ namespace Statecraft.Game.UI
             DisableCovered(root);
         }
 
-        /// <summary>Closes the open screen (Escape); false when none was open.</summary>
+        /// <summary>Closes the open screen (Escape); false when none was open. When the focus was on the screen's contents it
+        /// goes to the screen's top-bar button, so the next Tab carries on from there (#41 M1); an open decision card
+        /// takes it instead (EventCardPresenter, when its cover closes).</summary>
         public bool Close()
         {
             if (Current == null) return false;
+            var screen = root.Q<VisualElement>("screen-" + Current); var button = root.Q<Button>("nav-" + Current);
+            var focused = root.panel?.focusController?.focusedElement as VisualElement;
+            var inside = focused != null && (focused == screen || screen.Contains(focused));
             Open(null);
+            if (inside && !(root.Q("root") ?? root).ClassListContains(EventCardPresenter.ModalClass)) FocusReturn.To(button);
             return true;
         }
 

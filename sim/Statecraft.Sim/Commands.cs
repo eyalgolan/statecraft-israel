@@ -67,6 +67,24 @@ namespace Statecraft.Sim
         public AssignWorkers(string city, string role, int count) { City = city; Role = role; Count = count; }
     }
 
+    /// <summary>Starts <see cref="Count"/> of <see cref="City"/>'s civilians without work training as <see cref="Track"/> (a
+    /// unit type with a facility: recruit or halutz; Training.Start, R-TRAIN-001). GDD v0.1 loop only.</summary>
+    public sealed class Train : Command
+    {
+        public override string Kind => Training.TrainKind;
+        public string City { get; } public string Track { get; } public int Count { get; }
+        public Train(string city, string track, int count) { City = city; Track = track; Count = count; }
+    }
+
+    /// <summary>Ends training cohort <see cref="Cohort"/> early: its people return as civilians and the Money spent is not
+    /// returned (Training.Cancel, R-TRAIN-002, D-A3). GDD v0.1 loop only.</summary>
+    public sealed class CancelTraining : Command
+    {
+        public override string Kind => Training.CancelKind;
+        public int Cohort { get; }
+        public CancelTraining(int cohort) { Cohort = cohort; }
+    }
+
     public sealed class Rejection
     {
         public Command Command { get; } public string Reason { get; }
@@ -96,6 +114,8 @@ namespace Statecraft.Sim
                     case Appoint a: Text(a.Office, "Office"); Text(a.Person, "Person"); break;
                     case MapAction m: Text(m.Action, "Action"); break;
                     case AssignWorkers w: Text(w.City, "City"); Text(w.Role, "Role"); break;
+                    case Train t: Text(t.City, "City"); Text(t.Track, "Track"); break;
+                    case CancelTraining _: break;
                     case SetMobilization _: case SecurityOrder _: break;
                     default: throw new ArgumentException("unknown command type " + cmd.GetType().Name, "commands");
                 }

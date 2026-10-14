@@ -28,7 +28,8 @@ public class MvpSliceTests
         Assert.Equal(Real.Events.Select(e => e.Id), Mvp.Events.Select(e => e.Id));
         Assert.Equal(Real.Rules.Start, Mvp.Rules.Start);
         // The slice adds the GDD command kinds' costs (placeholders) and keeps every other cost.
-        Assert.Equal(Real.Rules.AttentionCost.Append(new KeyValuePair<string, double>("assign_workers", 0.5)).OrderBy(kv => kv.Key, StringComparer.Ordinal),
+        Assert.Equal(Real.Rules.AttentionCost.Append(new KeyValuePair<string, double>("assign_workers", 0.5))
+                     .Append(new KeyValuePair<string, double>("train", 1)).Append(new KeyValuePair<string, double>("cancel_training", 0.5)).OrderBy(kv => kv.Key, StringComparer.Ordinal),
                      Mvp.Rules.AttentionCost.OrderBy(kv => kv.Key, StringComparer.Ordinal));
         Assert.Equal(Real.Rules.BudgetStart, Mvp.Rules.BudgetStart);
         Assert.Equal(Real.Rules.CapitalInflowPerYear, Mvp.Rules.CapitalInflowPerYear);

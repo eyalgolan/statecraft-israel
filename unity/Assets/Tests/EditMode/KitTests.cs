@@ -586,6 +586,68 @@ public class KitTests
         Assert.AreEqual(0, inTown, "patch trees inside a town");
     }
 
+    /// <summary>Issue #34, vegetation round 2: promo 03's hills carry a loose scatter of single olives and low scrub between
+    /// the olive clumps. Over the wet hill country (KitGround.HillCountry, 120-950 m) the map as built has at least
+    /// <see cref="HillCrownsPer100Km2"/> olive crowns per 100 km², about <see cref="Vegetation.ScrubShare"/> of the scatter
+    /// low scrub (a squat olive); no scrub crown reaches a town's or village's footprint or a grove's tree; and the scrub is
+    /// spread loosely, neither clumped nor in rows: the Clark-Evans ratio of its nearest-neighbour distances (1 for random
+    /// points, under 1 clumped, about 2 on a grid) stays within <see cref="ScrubSpread"/>.</summary>
+    [Test]
+    public void TheHillsCarryALooseScatterOfOlivesAndScrub()
+    {
+        var map = OpenMap();
+        var g = Ground(map);
+        var veg = map.GetComponentInChildren<VegetationLayer>(); Assert.IsNotNull(veg);
+        bool Hill(float x, float z) { float e = g.ElevM(x, z); return e >= 120f && e <= 950f && g.HillCountry(x, z); }
+        int hillKm2 = 0;
+        for (float z = 500f; z < g.Length; z += 1000f) for (float x = 500f; x < g.Width; x += 1000f) if (Hill(x, z)) hillKm2++;
+        var olives = veg.Planted().Where(t => t.kind == TreeKind.Olive).Select(t => t.m).Where(m => Hill(m.m03, m.m23)).ToList();
+        static bool Squat(Matrix4x4 m) => ((Vector3)m.GetColumn(1)).magnitude < 0.8f * ((Vector3)m.GetColumn(0)).magnitude;
+        var scrubM = olives.Where(Squat).ToList();
+        var scrub = scrubM.Select(m => new Vector2(m.m03, m.m23)).ToList();
+        float per100 = olives.Count * 100f / hillKm2;
+        // Nearest neighbours, footprints and grove trees through a 5 km grid.
+        static Dictionary<(int, int), List<Vector2>> Grid(IEnumerable<Vector2> ps)
+        {
+            var d = new Dictionary<(int, int), List<Vector2>>();
+            foreach (var p in ps) { var k = (Mathf.FloorToInt(p.x / 5000f), Mathf.FloorToInt(p.y / 5000f)); if (!d.TryGetValue(k, out var l)) d[k] = l = new List<Vector2>(); l.Add(p); }
+            return d;
+        }
+        static IEnumerable<Vector2> Near(Dictionary<(int, int), List<Vector2>> d, Vector2 p)
+        {
+            int cx = Mathf.FloorToInt(p.x / 5000f), cz = Mathf.FloorToInt(p.y / 5000f);
+            for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) if (d.TryGetValue((cx + dx, cz + dz), out var l)) foreach (var q in l) yield return q;
+        }
+        var scrubGrid = Grid(scrub);
+        double nn = 0; int nnCount = 0;
+        foreach (var p in scrub)
+        {
+            float best = float.MaxValue;
+            foreach (var q in Near(scrubGrid, p)) if (q != p) best = Mathf.Min(best, (q - p).magnitude);
+            if (best < 5000f) { nn += best; nnCount++; }
+        }
+        float spread = nnCount == 0 ? 0f : (float)(nn / nnCount) / (0.5f * Mathf.Sqrt(hillKm2 * 1e6f / Mathf.Max(1, scrub.Count)));
+        // A crown is its kind's real crown times the instance's scale (NoTreeGrowsThroughABuildingOrLandmark).
+        static float Crown(TreeKind k, Matrix4x4 m) => Vegetation.CrownRadiusM(k) * ((Vector3)m.GetColumn(0)).magnitude;
+        int inTown = scrubM.Count(m => map.KitFootprints.Any(f => (new Vector2(m.m03, m.m23) - f.centre).magnitude < f.radius + Crown(TreeKind.Olive, m)));
+        var groveTrees = veg.Planted().Where(t => t.kind == TreeKind.Citrus || t.kind == TreeKind.CitrusPatch).ToList();
+        var groveGrid = Grid(groveTrees.Select(t => new Vector2(t.m.m03, t.m.m23)));
+        float groveCrownMax = groveTrees.Count == 0 ? 0f : groveTrees.Max(t => Crown(t.kind, t.m));
+        int inGrove = scrubM.Count(m => { var p = new Vector2(m.m03, m.m23); return Near(groveGrid, p).Any(q => (q - p).magnitude < Crown(TreeKind.Olive, m) + groveCrownMax); });
+        TestContext.WriteLine($"hill country {hillKm2} km²: {olives.Count} olives ({per100:0.0} per 100 km²), {scrub.Count} of them scrub; " +
+                              $"scrub spread (Clark-Evans) {spread:0.00}; trees {veg.Count}; scrub reaching a footprint {inTown}, a grove tree {inGrove}");
+        Assert.GreaterOrEqual(per100, HillCrownsPer100Km2, "olive crowns over the hill country");
+        Assert.Greater(scrub.Count, 0.25f * olives.Count * Vegetation.ScrubShare, "low scrub among them");
+        Assert.That(spread, Is.InRange(ScrubSpread.x, ScrubSpread.y), "the scrub is spread loosely, not clumped or in rows");
+        Assert.AreEqual(0, inTown, "scrub reaching a town's or village's footprint");
+        Assert.AreEqual(0, inGrove, "scrub reaching a grove's tree");
+    }
+
+    /// <remarks>Measured 2026-10-14 over 11,285 km² of hill country: main 3,480 olives (30.8 per 100 km²), no scrub; with the
+    /// scatter 15,165 (134.4), 4,234 of them scrub, Clark-Evans 1.08.</remarks>
+    public const float HillCrownsPer100Km2 = 120f;
+    public static readonly Vector2 ScrubSpread = new Vector2(0.8f, 1.3f);
+
     /// <summary>The WebGL checkpoint drew every palm black: a frond's tip quad collapsed to a point, its edge-based normal was
     /// zero and normalize(0) is NaN on WebGL 2 (the tilt-shift then smeared it into black blocks). No part may have one.</summary>
     [Test]

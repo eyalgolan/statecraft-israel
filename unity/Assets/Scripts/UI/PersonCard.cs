@@ -57,8 +57,7 @@ namespace Statecraft.Game.UI
             if (tex != null)
             {
                 portrait.style.backgroundImage = new StyleBackground(tex);
-                portrait.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Top,
-                    new Length(PortraitFraming.PositionYPercent(tex.width, tex.height, portraitSize.x, portraitSize.y, entry!.Value.focusY), LengthUnit.Percent));
+                Frame(portrait, entry!.Value, portraitSize);
             }
             else portrait.style.backgroundImage = StyleKeyword.None;
             portrait.style.display = tex != null ? DisplayStyle.Flex : DisplayStyle.None;   // never an invented portrait
@@ -83,6 +82,11 @@ namespace Statecraft.Game.UI
             SetStat(card, prefix + "-competence", person.Competence);
             SetStat(card, prefix + "-loyalty", person.Loyalty);
         }
+
+        /// <summary>Keeps the face in view in a portrait box of <paramref name="size"/> logical pixels (PortraitFraming).</summary>
+        public static void Frame(VisualElement portrait, PortraitCatalog.Entry entry, Vector2 size) =>
+            portrait.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Top,
+                new Length(PortraitFraming.PositionYPercent(entry.image.width, entry.image.height, size.x, size.y, entry.focusY), LengthUnit.Percent));
 
         /// <summary>Empties a card (a disposed screen keeps no stale person or texture).</summary>
         public static void Clear(VisualElement card) => card.Clear();

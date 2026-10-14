@@ -112,6 +112,11 @@ namespace Statecraft.Game.EditorTools
             IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null) =>
             Array.IndexOf(args, "-shareable") >= 0 ? ShareableRefusal(c, photos, catalogFileExists, mapping, clips) : null;
 
+        /// <summary>The clips a shareable build is gated on, from the mapping's text: the card loops and the End Turn outcome
+        /// clips.</summary>
+        public static List<EventVideoMapping.Row> GatedClips(string yaml) =>
+            EventVideoMapping.Parse(yaml).Concat(EventVideoMapping.ParseOutcomes(yaml)).ToList();
+
         /// <summary>Logs "BUILD REFUSED ..." and exits 1 when the gate refuses this build; true if it did. The photographs
         /// checked are the catalog the build ships (Resources/EventImageCatalog.asset), cross-checked against the mapping.</summary>
         static bool RefuseUnlessShareable()
@@ -123,7 +128,8 @@ namespace Statecraft.Game.EditorTools
             try
             {
                 var mapping = EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
-                var clips = EventVideoMapping.Parse(File.ReadAllText(EventVideoMapping.Path));   // fails closed: a missing file is a refusal
+                var videos = File.ReadAllText(EventVideoMapping.Path);   // fails closed: a missing file is a refusal
+                var clips = GatedClips(videos);
                 refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos, File.Exists(EventImageImport.CatalogPath), mapping, clips);
             }
             catch (Exception e) when (e is IOException || e is InvalidOperationException || e is UnauthorizedAccessException)

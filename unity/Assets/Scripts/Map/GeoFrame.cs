@@ -2,7 +2,9 @@ using UnityEngine;
 
 namespace Statecraft.Game.Map
 {
-    /// <summary>Equirectangular lon/lat -> world metres. x = east, z = north, origin = south-west corner.</summary>
+    /// <summary>Equirectangular lon/lat -> world metres. x = east, z = north, origin = south-west corner. The biome colours
+    /// are baked from ToWorld's hex centres (BiomeColourFile): a change to it needs a re-bake and a bump of
+    /// BiomeColourFile.Version (tools/tests/test_biome_colour_bake.py fails until then).</summary>
     public readonly struct GeoFrame
     {
         public readonly double Lon0, Lon1, Lat0, Lat1; public readonly float WidthM, LengthM;

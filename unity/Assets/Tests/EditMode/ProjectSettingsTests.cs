@@ -18,6 +18,14 @@ public class ProjectSettingsTests
         Assert.AreEqual(new[] { "Assets/Map.unity" }, EditorBuildSettings.scenes.Select(s => s.path).ToArray());
     }
 
+    /// <summary>Issue #437: every WebGL build names the files under Build/ by their content hash, so a browser that cached
+    /// an earlier build cannot mix its files into a newer one; index.html names the files of its own build.</summary>
+    [Test]
+    public void WebBuildFilesAreNamedByTheirContentHash()
+    {
+        Assert.IsTrue(PlayerSettings.WebGL.nameFilesAsHashes);
+    }
+
     [Test]
     public void TheNewSceneTemplateDoesNotPointAtTheDeletedSampleScene()
     {

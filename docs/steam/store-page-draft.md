@@ -1,12 +1,12 @@
 # Steam "Coming Soon" page: text draft (issue #424)
 
 **DRAFT. Nothing here is published.** No Steamworks account, app, store page or Content Survey answer exists for this
-game. This file is text for the owner to edit. It clears nothing: not the name, not an asset, not the content.
+game. This file is text for the owner to edit. It clears nothing: not an asset, not the content.
 
-**The name is provisional.** "Statecraft: Israel" is used below only because it is the repository's name. Owner
-decision D8 in [docs/oss/DECISIONS.md](../oss/DECISIONS.md) (name clearance) is open, and
-[docs/RELEASING.md](../RELEASING.md) says not to use the name commercially until it is resolved. If the name changes,
-every section below changes with it.
+**The name is "Statecraft: Israel".** Owner decision D8 in [docs/oss/DECISIONS.md](../oss/DECISIONS.md) was decided on
+14 October 2026: "keep the games name as is", with the trademark and Steam-name findings recorded there accepted as a
+risk. The same day the owner decided the game is free (O2), and that the launch is a fully working MVP from 15 May 1948 to
+January 1952 that looks like demo2 (O10). Both are in DECISIONS.md, under "Desktop builds and the release pipeline".
 
 Built from:
 
@@ -229,21 +229,21 @@ Facts this draft could not settle. Each is flagged above instead of being assert
 5. **Demo2's voices and score.** This draft did not read the production files under `promo/`. "AI video, voice and
    music tools" comes from the report, which says demo2 uses ElevenLabs premade voices and ElevenLabs Music. Confirm
    against the final cut.
-6. **The demo 1 score's source.** `docs/ai-disclosure.md` and LICENSING.md still say the owner is to confirm the
-   source of the cinematic trailer's music. D-M settles the licence, not that note. It matters only for the website
-   and README, since demo 1 stays off Steam.
+6. **The demo 1 score's source.** Settled (owner, 2026-10-14): the cinematic trailer's music is AI-generated, made
+   with ElevenLabs Music, and D-M covers its licence (#521 records it). Demo 1 stays off Steam.
 7. **What image 01 shows.** Its generation logs under `promo/` are named `keyart_2026`, which suggests the key art
    shows the country in 2026. The report clears 01 for the capsules but rules out 02, 06 and 07 for showing years
    outside 1948 to 1951. The owner should look at 01 with the launch-content rule in mind.
 8. **Capsule art and the name.** Whether 01 has the title painted into it was not checked. Capsules need a readable
    logo, and no logo or wordmark file exists (TRADEMARK.md: "when there is one").
-9. **Start-screen painting in a paid release.** D-D's recorded recommendation is that a paid release needs confirmed
+9. **Start-screen painting in a paid release.** The game is free (O2), so this matters only if that changes. D-D's
+   recorded recommendation is that a paid release needs confirmed
    commercial rights for the Dreamina plan used, or a replacement image. The current painting was made on ElevenLabs
    but used the Dreamina painting as its composition reference, and is recorded under the same open sign-off.
 10. **"1948 war" or "Liberation War"** in English, and **"מלחמת השחרור" or "מלחמת העצמאות"** in Hebrew.
 11. **The Hebrew wording** listed at the end of section 3, and the whole Hebrew text, by a native speaker.
-12. **Platform.** The game ships only as a browser (WebGL) build. The report says a desktop build is needed for a
-    Steam release, though not for a Coming Soon page, and marks that as unverified. The draft names no platform.
+12. **Platform.** The game ships only as a browser (WebGL) build today. The owner decided on 14 October 2026 (O1, O7) that
+    release builds are made on the owner's Mac for Windows, macOS and Linux. None exists yet, so the draft names no platform.
 13. **The store text is itself AI-drafted.** Sections 1 to 3 were written by an AI agent for the owner to edit. Whether
     that needs a line in the disclosure is the owner's call once the text is final.
 
@@ -280,7 +280,7 @@ in the research report. Files under `promo/demo*` are local, not in the reposito
 
 | Slot | Upload size | Asset | State |
 | --- | --- | --- | --- |
-| Header capsule | 920 x 430 | Crop of `promo/final/01-key-art.png` (2048 x 1152, AI) with the title | Not made. Blocked by D8. See To confirm 7 and 8 |
+| Header capsule | 920 x 430 | Crop of `promo/final/01-key-art.png` (2048 x 1152, AI) with the title | Not made. The name is settled (D8); see To confirm 7 and 8 |
 | Small capsule | 462 x 174 | Same source | Not made. Check it at 120 x 45 and 184 x 69 (RELEASING.md) |
 | Main capsule | 1232 x 706 | Same source | Not made |
 | Vertical capsule | 748 x 896 | Same source, portrait crop | Not made |
@@ -323,11 +323,13 @@ No AI image can go in a screenshot slot: not `promo/final/01` to `08`, and not `
 
 ## 8. Open decisions for the owner
 
-1. **D8, the name.** Open. A live USPTO class-9 registration for STATECRAFT and two games named "Statecraft" on
-   Steam are recorded in DECISIONS.md. Every capsule and every line above depends on it.
+1. **D8, the name.** Decided (owner, 2026-10-14): "keep the games name as is". The live USPTO class-9 registration for
+   STATECRAFT and the two games named "Statecraft" on Steam, recorded in DECISIONS.md, are accepted as a risk.
 2. **Which game the page describes.** The current build (the Cabinet, Budget and Defence prototype) or the GDD game
    (units, cities, construction, objectives), which is not playable yet. Steam wants the page to show launch content.
-   Section 2 separates the two so either answer is an edit, not a rewrite.
+   Section 2 separates the two so either answer is an edit, not a rewrite. The owner's O10 answer (2026-10-14) sets the
+   launch as a fully working MVP from 15 May 1948 to January 1952 that looks like demo2. That points to the GDD game, but
+   which game the page shows before that build exists is still the owner's call.
 3. **Whether the page may open before the release gates.** RELEASING.md's checklist says to finish the gates first.
    Opening earlier is an amendment the owner records.
 4. **Whether an AI cinematic may be the second trailer.** RELEASING.md says trailers come from the real build only.
@@ -335,11 +337,12 @@ No AI image can go in a screenshot slot: not `promo/final/01` to `08`, and not `
 5. **D-P, the portraits.** Open. It blocks `promo/final/04` and `08`, and it bears on Steam's requirement that the
    developer holds rights to everything shown, including the in-game portraits still marked `owner-verify`.
 6. **D-D, the start-screen painting.** Open. It decides whether the painting can ship in a paid build.
-7. **Free or paid.** The issue and the report treat the Steam release as free. README.md says a commercial edition is
-   planned, and TRADEMARK.md says the maintainer intends to sell the game. The answer changes D-D's weight and the
-   Steam setup ("This is a free product").
+7. **Free or paid.** Decided (owner, 2026-10-14, O2): "free". The Steam setup is "This is a free product". README.md
+   and TRADEMARK.md say the game is free and non-commercial (#521).
 8. **Languages.** English only, or Hebrew listed as "Game Support Only" as the report suggests, given that Hebrew is
    not enabled in the build.
-9. **Desktop build.** Needed for a Steam release, not for the page. No plan for one is recorded.
+9. **Desktop build.** Needed for a Steam release, not for the page. The plan is
+   `docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md` (issue #482). Its decisions are in
+   DECISIONS.md; O9 (how testers get builds) and O11 (the Steamworks wrapper) are still open.
 10. **Other open lines in DECISIONS.md** that the release gate refuses on: D13 (land-use texture licence) and D-A
     (armistice lines). They do not touch the store text, but they hold the release.

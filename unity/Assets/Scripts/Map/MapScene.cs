@@ -12,7 +12,7 @@ namespace Statecraft.Game.Map
     /// component calls Build(inputs) once the inputs are loaded (fetched on WebGL); editor tools call Build().</summary>
     public sealed class MapScene : MonoBehaviour
     {
-        [SerializeField] Material terrainMaterial, markerMaterial, selectionMaterial, seaMaterial, borderLandMaterial;
+        [SerializeField] Material terrainMaterial, markerMaterial, selectionMaterial, seaMaterial, frameMaterial;
         /// <summary>The art spike's procedural settlement kits and trees (Kit.mat, Tree.mat: Statecraft/Kit). Optional: without
         /// them the map keeps the placeholder marker boxes.</summary>
         [SerializeField] Material kitMaterial, treeMaterial;
@@ -41,8 +41,8 @@ namespace Statecraft.Game.Map
 
         /// <summary>The selected hex's outline: a child of the terrain (so a rebuild destroys it).</summary>
         public const string SelectionName = "HexSelection";
-        /// <summary>The land and sea past the map's edge: a child of the terrain (so a rebuild destroys it).</summary>
-        public const string BorderSkirtName = "BorderSkirt";
+        /// <summary>The frame round the map and the table beyond it (issue #36): a child of the terrain (so a rebuild destroys it).</summary>
+        public const string FrameName = "MapFrame";
         /// <summary>The water inside the map: a mesh over the water and its shore, a child of the terrain (issue #195).</summary>
         public const string TerrainWaterName = "TerrainWater";
         /// <summary>The terrain water's render queue: after the terrain (Terrain.mat, one queue earlier: MapMaterials) and
@@ -118,10 +118,10 @@ namespace Statecraft.Game.Map
             mr.enabled = true;
         }
 
-        public void Configure(Material terrain, Material marker, Material selection, Material sea, Material borderLand)
+        public void Configure(Material terrain, Material marker, Material selection, Material sea, Material frame)
         {
             terrainMaterial = terrain; markerMaterial = marker; selectionMaterial = selection;
-            seaMaterial = sea; borderLandMaterial = borderLand;
+            seaMaterial = sea; frameMaterial = frame;
         }
 
         /// <summary>The settlement kits' and trees' materials (null, null: placeholder markers only).</summary>
@@ -170,7 +170,7 @@ namespace Statecraft.Game.Map
             if (markerMaterial == null) throw new InvalidOperationException("MapScene: markerMaterial is not assigned");
             if (selectionMaterial == null) throw new InvalidOperationException("MapScene: selectionMaterial is not assigned");
             if (seaMaterial == null) throw new InvalidOperationException("MapScene: seaMaterial is not assigned");
-            if (borderLandMaterial == null) throw new InvalidOperationException("MapScene: borderLandMaterial is not assigned");
+            if (frameMaterial == null) throw new InvalidOperationException("MapScene: frameMaterial is not assigned");
             var cam = Camera.main;
             if (cam == null) throw new InvalidOperationException("MapScene needs a camera tagged MainCamera");
 
@@ -231,12 +231,12 @@ namespace Statecraft.Game.Map
                     var tint = System.Diagnostics.Stopwatch.StartNew();
                     Kits.SettlementKits.PaintGround(px, res, frame, painted, hexSizeM);
                     Debug.Log(FormattableString.Invariant($"KITS ground_tint_ms={tint.Elapsed.TotalMilliseconds:0.0} places={painted.Count}"));
-                } : null);
+                } : null, bakedBiome: true);   // the biome colours from their bake (issue #321: boot time)
             terrainGo.transform.SetParent(transform, true);
             Terrain = terrainGo.GetComponent<Terrain>();
             var size = Terrain.terrainData.size;
-            AddBorderSkirt(terrainGo, meta.elev_min_m);
-            DiagLog.BootPhase("border skirt");
+            AddFrame(terrainGo, meta.elev_min_m);
+            DiagLog.BootPhase("frame");
             AddTerrainWater(terrainGo, heights, meta.elev_min_m);
             DiagLog.BootPhase("terrain water");
             Frame = new GeoFrame(meta.lon0, meta.lon1, meta.lat0, meta.lat1, size.x, size.z);
@@ -269,6 +269,7 @@ namespace Statecraft.Game.Map
                 }
             }
             UnitClearings = clearings;
+            DiagLog.BootPhase("units placed");   // issue #321: the routes' corridors, the footprints and the unit spots
             if (kitsOn)
             {
                 // ?kitscale=, ?housescale=, ?treescale= in the WebGL player: the same layout at another symbolic scale (city
@@ -313,16 +314,17 @@ namespace Statecraft.Game.Map
             rig.TeardownActions.Clear();
         }
 
-        /// <summary>The land and sea past the map's edge (MapBuilder.BuildBorderSkirt), drawn with the editor-made Sea.mat and
-        /// BorderLand.mat; no collider, so clicks still pick only the terrain. It lies outside the terrain's footprint only.</summary>
-        void AddBorderSkirt(GameObject terrainGo, float elevMinM)
+        /// <summary>The frame round the map and the table beyond it (MapBuilder.BuildFrame), drawn with the editor-made
+        /// MapFrame.mat; no collider, so clicks still pick only the terrain, and no shadow. It lies outside the terrain's
+        /// footprint only.</summary>
+        void AddFrame(GameObject terrainGo, float elevMinM)
         {
-            var skirt = new GameObject(BorderSkirtName);
-            skirt.transform.SetParent(terrainGo.transform, false);
-            skirt.AddComponent<MeshFilter>().sharedMesh =
-                MapBuilder.BuildBorderSkirt(Terrain.terrainData, elevMinM, terrainGo.GetComponent<MapRuntimeAssets>());
-            var renderer = skirt.AddComponent<MeshRenderer>();
-            renderer.sharedMaterials = new[] { seaMaterial, borderLandMaterial };
+            var frame = new GameObject(FrameName);
+            frame.transform.SetParent(terrainGo.transform, false);
+            frame.AddComponent<MeshFilter>().sharedMesh =
+                MapBuilder.BuildFrame(Terrain.terrainData, elevMinM, terrainGo.GetComponent<MapRuntimeAssets>());
+            var renderer = frame.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = frameMaterial;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 

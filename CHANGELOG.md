@@ -8,6 +8,22 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- The map's frame (refs #36, promo 02): at the overview the board now ends in a walnut frame on a dark wooden table,
+  with a bevel of cut earth where the relief stands above the frame and the frame's lip where the sea and low coast meet
+  it. It replaces the border skirt's flat tan slab and the sea past the map's edge. At 16:9 only the overview shows it (the
+  camera fit of #174 keeps it off screen wherever the view is no wider than the map: below about 106 km at 16:9, 53 km
+  at 32:9; a portrait window never shows it); one draw call, no shadow pass, no golden moves.
+- GDD v0.1 Phase 1, training (refs #377), behind the `systems.loop` switch: `Train` sends a city's civilians without work
+  to basic training in a military camp (recruits, a count) or pioneer training in a Hakhshara (halutzim, movable units at
+  the city's hex), paid from the Treasury without borrowing; `CancelTraining` returns the people but not the Money (D-A3).
+  Cohorts progress as step 4 of the GDD turn (D-A6) (R-TRAIN-001 to R-TRAIN-003). One camp and one Hakhshara at the start
+  is a labelled design assumption (D-D5); training turns, costs and Attention costs are placeholders in `MvpSlice.Overlay`,
+  never under `content/`. `mvp-slice` moves (the reference player trains one halutz group); the legacy goldens and
+  `scenario-mvp-absorb-first` do not.
+- The records that only make sense in a state now carry dates (refs #80): three policies, three effects and nine actors from
+  15 May 1948, the United Nations from 24 October 1945, the state offices from 14 May 1948. Yaakov Dori's chief-of-staff
+  term is split at 14 May 1948 into a new `haganah_chief_of_staff` office and `chief_of_staff`. A Founding start holds the
+  same records and the goldens are unchanged. `rationing` and `rationing_feeds` stay windowless (their office begins in 1949).
 - GDD v0.1 Phase 1, one city (refs #376), behind the `systems.loop` switch: Tel Aviv with housing, jobs, civilians and
   refugees as counts; `AssignWorkers` (Attention, refused in the legacy loop); and a `TurnResolver` that runs, in the
   approved order (D-A6), Money from jobs, housing, Social cohesion and arrivals from the CBS series as refugees, housed on
@@ -16,6 +32,28 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   goldens (`Statecraft.Sim.Reference`, D-A7) is test policy that no game mode or UI reaches. New scenario golden
   `scenario-mvp-absorb-first`. The real game is unchanged: `hash1950`, `hash1952`, `smoke5` and the two 1948 scenarios do
   not move.
+- The start screen can play David Ben-Gurion's reading of the sentence that proclaims the state, from the recording
+  of the ceremony of 14 May 1948 (Israel State Archives). It plays only from a "Play the recording" button, over the
+  still painting. The declaration's own Hebrew and English words show as captions once the audio is heard, and the
+  credit "Recording: Ralph Hellinger, Israel State Archives" is on screen. It never plays on its own, never on Continue
+  or New Game, and not in automated runs. A slow or failed load says so. The file is a cut of the archive's own upload,
+  decoded to WAV with no other processing (1.8 MB), and fetched only when asked for.
+- Decision videos, phase 3: outcome clips at End Turn. When the player has ordered the historical option of one of three
+  events (the transit camps, the Hula works, Operation Horev) and the turn applies it, a 3.5 s silent AI-generated clip
+  plays once, captioned "Your order: ...". It is drawn over any open screen, which closes, and holds the keyboard focus:
+  a click, Enter or Space skips it, and Esc skips them all. A counterfactual option, a delegated answer, a refused order
+  and Deport get none, and there is none in automated runs. The Horev clip waits for the owner's sensitivity review
+  before a shareable build. Presentation only: no golden moves.
+- Top bar (refs #398): each meter's tooltip holds its value and the change since last turn in words, for example
+  "Treasury: IL 18.6 million, down IL 1.4 million since last turn", with captions from the strings (English and Hebrew).
+  It is kept for a later accessibility layer: no screen reader reads a runtime tooltip yet. A resumed game now shows
+  the same changes as before the reload on all six meters: `GameSession` keeps the step before the last
+  (`BeforeLast`), so Immigration's change survives a load too. Not part of the state or the save: no golden moves.
+- A Hebrew UI preview, asked for by hand: "?lang=he" in the page URL or "-lang he" on the desktop command line (#193).
+  The UI loads `strings.he.yaml`, sets every text in Frank Ruhl Libre through the advanced text generator, gives each
+  text the direction of its own words (dates, money and names are still English, #55), and mirrors the layout: rows,
+  bars, the hemicycle, the option signs and End Turn's hourglass. English stays the default and has no visible switch.
+  A long Budget office name now wraps in its column, so no row is wider than the screen.
 - Decision videos, phase 2 (#434 follow-up). On 11 decision cards an Illustration switch over the photograph plays a
   short, silent AI-generated loop. It is labelled "AI-generated illustration" in place of the credit and carries a small
   burned-in bilingual label. The photograph always shows first; nothing plays until the player asks, and the choice holds
@@ -212,11 +250,27 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- CI checks the water and route-ribbon bakes against the code that makes them (#535), as it does the biome colours'
+  (#529): a pinned fingerprint of `MapBuilder.WaterMeshGrid` and of `RouteLayer.Plan` and `Derive`, and a numpy port of
+  the water mesh. Doc comments in `MapBuilder`, `RouteLayer` and `RouteRibbonFile` point to the checks. No change in the
+  game.
+- The map's biome colours are read from a bake at boot instead of being blended (refs #321), as the routes' ribbons
+  and the water's mesh are. The map looks the same: the bake holds the same texels, and a stale or missing bake is
+  refused with a warning and the colours are blended at load as before. The map build takes about 310 ms less at
+  `--cpu 4` (3050 to 2745 ms under load). `?bootlog` has three more phases: `terrain object created`, `units placed`
+  and `kit buildings built`. Presentation only.
 - The map's near (bottom) tilt-shift band is lighter, as on promo 03: gently soft at the play zoom and almost none at the
   wide overview, where the foreground is now sharp as on promo 02. On the owner's ruling of 2026-10-14; the far band is
   unchanged (#390). Presentation only (#458).
 - The `mvp-slice` golden is re-pinned (`0451920a` to `f6931e24`): the slice now has its city and the GDD turn, and the
   reference player fills the jobs (GDD Phase 1 PR 3, refs #376). The legacy goldens do not move.
+- The hills carry a loose, uneven scatter of single olives and low scrub between the olive clumps, like promo 03's hills
+  (refs #34): over the wet hill country where the land use is garrigue and terraces, outside the groves, the towns'
+  footprints and the hex-edge midpoints. The olives already planted stay where they are; the map has about 20,000 trees
+  instead of 8,400.
+- Map roads read as wide, pale dirt tracks at the gameplay zoom, as in promo 03 (refs #35): 420 m wide (was 300 m), cream
+  dirt varied in patches, softer verges. The pale band is a median 9 px at gameplay03 (was 4) and 19 px at 30 km (was
+  7). The route ribbons are re-baked; no route was added.
 - The trees are warm olive-brown instead of bright green, like the groves in promo 03 (refs #34): citrus groves, olive
   crowns, palms and cypresses. Only the leaf colours change; the fruit, meshes and frame cost are the same.
 - Map: settlement quick wins (refs #31). The White City's blocks are lime white, with a solid-parapet balcony on each
@@ -259,6 +313,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   brighter, so they stand out at the gameplay zoom; the sleepers run every 100 m, a fine texture instead of a coarse ladder; the
   ballast is a cooler stone grey; roads have darker worn verges, so they read on pale ground. No mesh, data or boot change
   (refs #35).
+- The Unity sim build helper is now `uv run tools/build_sim_for_unity.py`, usable on Windows, macOS and Linux without
+  a shell. It preserves the Release publish and required DLL checks. `tools/build_sim_for_unity.sh` stays as a thin
+  wrapper that runs the Python script.
 - Land round 2 (refs #33): the ground's colours move from yellow-olive and gold to promo 03's warm dry ground, in the
   biome palette and the land-use bake. Hedges, tree lines and farm tracks are drawn about 150 m wide, so the fields read
   at the gameplay zoom. The hills get round bushes with a soft shadow, a stronger garrigue and clearer terraces. It is a
@@ -334,6 +391,34 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- Keyboard play, small fixes from the accessibility audit (refs #41): a Budget + or - keeps the focus on its button, as
+  the rows are now updated in place (H2). Closing the start screen, answering the last open event and Escape from a
+  screen no longer leave nothing focused: the focus goes to End Turn, End Turn, and the screen's top-bar button (M1).
+  Text on the keyboard focus fill is a warm near-white, 5.7:1 where the gold was 3.7:1 (M3). The lit escalation rung's
+  turn line is ink, 6.4:1 where it was 3.3:1, and the plain rungs' a lighter muted, 6.3:1 where it was 5.0:1 (M4). The
+  Cabinet's "Ordered:" line wraps, and on short windows the Prime Minister's portrait gives way, framed again for its new
+  height, so the candidate list keeps two rows; at 32:9 the list's floor follows the room left (M7). Presentation only:
+  no golden moves.
+- Keyboard focus that lands on something scrolled out of view, such as a Cabinet card below the first row or a
+  candidate far down the list, now scrolls its list to it (accessibility audit H1, refs #41). Focus that follows a mouse
+  press leaves the list where it is. Presentation only: no golden moves.
+- Wheel zoom in the web build: one small wheel delta, such as a touchpad's half pixel, made every later frame zoom 27%,
+  since Unity's player takes the smallest delta it has seen as one notch. The camera now counts the browser's wheel
+  events itself (`WheelInput.jslib`): a touchpad's small pixel deltas zoom by how far the fingers move (100 px to a
+  notch), and a mouse notch zooms 10% whatever its size: any pixel event of 50 px or more, a macOS mouse tick, three
+  lines or one page is one notch. The listener asks for the mode first so that Firefox keeps a mouse notch in lines
+  (refs #43).
+- "The Mediator Assassinated" cites the Official Gazette text of the Prevention of Terrorism Ordinance for its number,
+  No. 33 of 1948, which no source on the card gave. Comment and source row only (refs #442).
+- Five recorded contradictions settled from primary sources. "The Second Truce": the Acting Mediator's report of
+  18 October 1948 (S/1042) puts the Negev fighting on 15 October, against S/1357's 14 October. "Talks at Rhodes":
+  Israel's reply to the British protest (JTA, 19 January 1949) agrees with the British statement that the RAF planes
+  were shot down on 7 January. "Jerusalem": the Mediator's report of 12 July (S/888) has the demilitarisation proposal
+  made in early July, and Shertok read Israel's rejection to the Provisional State Council on 29 July, before the
+  proclamation of 2 August. "Electing the Constituent Assembly": the minutes' Hebrew date confirms the 25th sitting on
+  4 November 1948 (the Knesset's database has a Saturday, 6 November), and CBS's figures give turnout 86.88%, so 86.9%,
+  not 87.0%. "The Mediator Assassinated": the Official Gazette dates the ordinance 23 September and prints it on
+  29 September. Comments and source rows only; text, dates, options and effects are unchanged (refs #442).
 - Four 1948 localities corrected against the Village Statistics 1945 scan (#200): Ijzim is 2,970, not 4,280 (the
   transcription's "Ijzim (Nazareth subdistrict)" is 'Ilut, a different village); Ilar's Wikidata item is the place's
   main item, "Illar, Tulkarm"; Beit Nuba's row reads 'Ajanjul; Zakariya's article is now Zekharia. The rows stay
@@ -377,6 +462,20 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   to the Education Department, both already in the Education Ministry. Moshe Sharett's birth date is 16 October 1894,
   from the Knesset member pages (Wikipedia gave 15 October); the sim reads `born` only to validate content. The items
   that would move a golden wait for the GDD rebaseline (#315).
+- The browser build names the files under `Build/` by their content hash (Unity's Name Files As Hashes), so the names
+  change with every build and a browser that cached an earlier build can no longer mix its loader, code or data into a
+  newer one (the startup failure "InternalError: too much recursion" without a hard refresh). Found by @Chaiky3 (#437,
+  reported in #43). `tools/package_release.py` now zips exactly the `Build/` files the build's `index.html` names, and
+  refuses a folder that is missing one.
+- The browser page itself can still come from the browser's cache after an update (a server that sends no
+  Cache-Control, such as `python3 -m http.server`, allows it), and it then named the previous build's files, which are
+  gone: the start failed with "Unknown data format". The page now asks the server for its current copy and loads the
+  files that copy names, keeping its own names only when it cannot (offline, `file://`). Refs #437.
+- The files the browser build fetches from StreamingAssets (the content, the heightmap, the event clips and the start
+  screen's recording) keep fixed
+  names, so a returning browser could pair new code with the previous build's cached content. Every such URL now
+  carries the build's id (`?b=<Application.buildGUID>`), so each build fetches its own copies; desktop file paths are
+  unchanged. Refs #437.
 - The Provisional Government, the first three governments, the Provisional State Council and the First and Second
   Knessets now cite the Knesset's records: its position, faction and session data, the plenum minutes of each opening
   sitting and confidence vote, the 1951 transition and election-day laws, its make-up pages for the First and Second
@@ -387,6 +486,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   records and member pages (Internet Archive copies) and, for Weizmann and Shazar, the President's Office pages, in
   place of Wikipedia. Wikipedia stays only where those records give no value or a different one. No value changed
   (refs #457).
+- The art checkpoint's close checks (`hero06judea`, `hero06negev`) are shot with the settlement trees off, as the haze
+  already was: one tree's crown had filled `hero06judea`, so it no longer showed the ground it is there to check
+  (audit 2026-10-13). The game itself is unchanged.
+- Settlement names keep clear of the unit tokens in normal play (refs #197). The Tel Aviv name no longer sits on the
+  Kiryati Brigade's badge and figures at the gameplay zoom: a token standing in a town counts as part of it, so the
+  name hangs just above the brigade, and a name keeps clear of any other token as it does of a panel. Presentation
+  only: no golden moves.
 - The Unity build has no compiler warnings again. The panel trim's corner ornament no longer uses
   `MeshWriteData.uvRegion`, which Unity 6000.3 marks obsolete (CS0618); the renderer now maps texture coordinates itself.
   The pixels are unchanged.

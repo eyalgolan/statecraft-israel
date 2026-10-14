@@ -27,7 +27,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `web_check.py` serves a WebGL build on http://localhost and opens it in headless Chrome for Testing (Playwright's
   cache; macOS only, arm64 or x64); it passes when the console shows the expected lines (`GOLDEN OK ...`, `SMOKE OK ...`).
 - `package_release.py` zips a Brotli WebGL build for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses
-  (exit 1) until every sensitive event is `sensitivity-reviewed` (docs/m3-release.md).
+  (exit 1) until every sensitive event is `sensitivity-reviewed` (docs/m3-release.md). The files under `Build/` are
+  named by their content hash (issue #437); it reads their names from the build's `index.html`, zips only those and
+  refuses a build that is missing one.
 - `preview_map.py` renders the geography check image `tools/.cache/map-preview.png`.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO
   alone, imported uncompressed) and `coast.png`
@@ -57,7 +59,7 @@ Run from the repo root; this installs every pinned dependency (rasterio included
 uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q
 ```
 
-Expected: `718 passed, 4 skipped` (one waits for `content/sites.yaml`, two need skimage and scipy, and one is the headed browser check; add `--headed` and `--with websockets==15.0.1` to run it). Omitting a dependency (e.g. rasterio) silently drops tests or fails collection.
+Expected: `722 passed, 4 skipped` (one waits for `content/sites.yaml`, two need skimage and scipy, and one is the headed browser check; add `--headed` and `--with websockets==15.0.1` to run it). Omitting a dependency (e.g. rasterio) silently drops tests or fails collection.
 
 ## Required attribution (Copernicus DEM licence, modified data)
 

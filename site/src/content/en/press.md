@@ -3,7 +3,7 @@
 - **Developer:** Eyal Golan and the Statecraft: Israel contributors. An independent open-source project.
 - **Status:** an early prototype, 0.1.0 (M3), 11 October 2026. Playable from 1948 to 1951 when built from source. No hosted build yet; one is planned for M4.
 - **Platform:** web browser (WebGL), built with Unity 6000.3.25f1.
-- **Price:** free and open source. A commercial edition is planned.
+- **Price:** free and open source. The game is non-commercial.
 - **Licences:** code MIT; original art and docs CC BY 4.0; game content CC BY-SA 4.0; AI-generated images CC0, with no rights claimed.
 - **Languages:** the game is in English. Hebrew interface text exists but is not switched on yet. This website is in English and Hebrew.
 - **Source code:** [github.com/eyalgolan/statecraft-israel](https://github.com/eyalgolan/statecraft-israel)

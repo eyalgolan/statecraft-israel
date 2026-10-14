@@ -19,6 +19,8 @@ public class CommandGuardTests
         [typeof(Appoint)] = new Appoint("prime_minister", "pm_one"),
         [typeof(MapAction)] = new MapAction("housing", 1, 2),
         [typeof(AssignWorkers)] = new AssignWorkers("tel_aviv", "job", 1),
+        [typeof(Train)] = new Train("tel_aviv", "halutz", 1),
+        [typeof(CancelTraining)] = new CancelTraining(1),
     };
 
     static IEnumerable<Type> CommandTypes() =>

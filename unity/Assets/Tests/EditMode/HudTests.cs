@@ -372,6 +372,7 @@ public class HudTests
         ("MapShaderGlobals.cs", "RiftHazeTopM = -100f", "a real elevation in metres for the rift haze (shader input, not a displayed number)"),
         ("SettlementKits.cs", "DefaultHouses = 100f", "the owner's symbolic scale for houses and trees (100x real size), not a displayed number"),
         ("RouteLayer.cs", "CorridorMarginM = 100f", "a clearance in map metres that kit buildings and trees keep from a route (geometry, not a displayed number)"),
+        ("CameraController.cs", "PixelsPerNotch = 100f", "wheel pixels in one mouse notch, to scale the browser's wheel events (input, not a displayed number)"),
     };
 
     [Test]
@@ -450,5 +451,128 @@ public class HudTests
         Assert.AreEqual("63%", m.Security.Value);
         Assert.AreEqual("+1%", m.Security.Delta);
         Assert.AreEqual(1, m.Security.Sign);
+    }
+
+    static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "standing", "fx" };
+    static string Inv(System.FormattableString f) => System.FormattableString.Invariant(f);
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings.Replace("strings.en.yaml", "strings.he.yaml")).text, "strings.he.yaml");
+
+    /// <summary>Ends turns until Immigration shows a change (it compares two turns' arrivals), so every meter can show one.
+    /// Fails if none comes within 30 turns, so a test built on it never passes by checking nothing.</summary>
+    static void PlayUntilImmigrationChanges(SimBridge bridge)
+    {
+        for (int i = 0; i < 30 && HudModel.From(bridge, Text).Immigration.Sign == 0; i++) bridge.EndTurn();
+        Assert.AreNotEqual(0, HudModel.From(bridge, Text).Immigration.Sign, "no Immigration change within 30 turns");
+    }
+
+    /// <summary>#398: each meter's tooltip says its value and the change since last turn in words: money in millions
+    /// with its currency, the 0-100 meters in points, a count as shown; with no change (turn 0, or one that rounds to
+    /// zero) only the caption and the value. The caption is the strings file's (the UI's language).</summary>
+    [Test]
+    public void EachMeterSaysItsValueAndTheChangeSinceLastTurn()
+    {
+        using var ui = new UiTestKit();
+        var bridge = NewBridge();
+        var hud = new HudPresenter(ui.Root, bridge, Text);
+        Assert.AreEqual("Treasury: IL 20.0 million", ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
+        Assert.AreEqual("Foreign Currency: $40.0 million", ui.Q<VisualElement>("meter-fx").tooltip);
+        Assert.AreEqual("Security: 30%", ui.Q<VisualElement>("meter-security").tooltip);
+        bridge.EndTurn();
+        var prev = bridge.Session.Previous!; var now = bridge.State;
+        prev.Treasury = now.Treasury - now.Debt + prev.Debt + 1.4;            // down by 1.4
+        prev.FxReserves = now.FxReserves - 2;                                // up by 2
+        prev.Indicators["security"] = now.Indicators["security"] - 0.05;    // up 5 points
+        prev.Indicators["intl_standing"] = now.Indicators["intl_standing"] + 0.01;   // down 1 point
+        hud.Render();
+        var net = System.Math.Round(now.Treasury - now.Debt, 1, System.MidpointRounding.AwayFromZero);
+        Assert.Greater(net, 0, "the test expects a positive net position after one turn");
+        Assert.AreEqual(Inv($"Treasury: IL {net:0.0} million, down IL 1.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
+        Assert.AreEqual(Inv($"Foreign Currency: ${now.FxReserves:0.0} million, up $2.0 million since last turn"), ui.Q<VisualElement>("meter-fx").tooltip);
+        Assert.AreEqual($"Security: {ui.Q<Label>("security-value").text}, up 5 points since last turn", ui.Q<VisualElement>("meter-security").tooltip);
+        Assert.AreEqual($"International Standing: {ui.Q<Label>("standing-value").text}, down 1 point since last turn", ui.Q<VisualElement>("meter-standing").tooltip);
+        // Immigration after one turn has no change yet (it needs two turns of arrivals): the caption and the count only.
+        Assert.AreEqual($"Immigration: {ui.Q<Label>("immigration-value").text}", ui.Q<VisualElement>("meter-immigration").tooltip);
+        // Every tooltip agrees with the meter's shown change: "up" with a gain, "down" with a loss, neither without one.
+        foreach (var id in MeterIds)
+        {
+            var tip = ui.Q<VisualElement>("meter-" + id).tooltip; var delta = ui.Q<Label>(id + "-delta");
+            StringAssert.StartsWith(Text["hud.caption." + id] + ": ", tip, id);
+            Assert.AreEqual(delta.ClassListContains("delta-up"), tip.Contains(", up "), id + ": " + tip);
+            Assert.AreEqual(delta.ClassListContains("delta-down"), tip.Contains(", down "), id + ": " + tip);
+        }
+    }
+
+    /// <summary>#398 review S3: the spoken captions are strings (so a Hebrew UI says Hebrew captions), and the English ones
+    /// are the captions the bar shows, so the two cannot drift apart.</summary>
+    [Test]
+    public void TheSpokenCaptionsAreTheBarsCaptions()
+    {
+        using var ui = new UiTestKit();
+        foreach (var id in MeterIds)
+            Assert.AreEqual(ui.Q<VisualElement>("meter-" + id).Q<Label>(className: "meter-name").text, Text["hud.caption." + id], id);
+    }
+
+    /// <summary>#398: a negative net position, a people count and a Hebrew UI, each through the real path (the
+    /// presenter with the UI's own strings). Hebrew uses neutral words for a rise and a fall: on Immigration "עלייה"
+    /// and "ירידה" would read as aliyah and emigration (review S2).</summary>
+    [Test]
+    public void TheSpokenTextCoversNegativeMoneyCountsAndHebrew()
+    {
+        var bridge = NewBridge();
+        PlayUntilImmigrationChanges(bridge);
+        var m = HudModel.From(bridge, Text);
+        Assert.AreEqual(m.Immigration.Value, m.Immigration.SayValue, "a count is said as shown");
+        Assert.AreEqual(m.Immigration.Delta.Substring(1), m.Immigration.SayChange, "a count's change is said without its sign");
+        var prev = bridge.Session.Previous!; var now = bridge.State;
+        now.Debt = now.Treasury + 3;                                         // net -3.0
+        prev.Debt = prev.Treasury - 1;                                       // net +1.0 before: down by 4
+        m = HudModel.From(bridge, Text);
+        Assert.AreEqual("Treasury: -IL 3.0 million, down IL 4.0 million since last turn", HudModel.Spoken(Text, "Treasury", m.Treasury));
+        using var ui = new UiTestKit();
+        var he = He;
+        new HudPresenter(ui.Root, bridge, he);
+        var said = ui.Q<VisualElement>("meter-treasury").tooltip;
+        Assert.AreEqual("אוצר: -IL 3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said);
+        foreach (var id in MeterIds)
+        {
+            var tip = ui.Q<VisualElement>("meter-" + id).tooltip;
+            StringAssert.StartsWith(he["hud.caption." + id] + ": ", tip, id);
+            Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(tip, "[A-Za-z]{3,}"), $"{id}: English words in the Hebrew text: {tip}");
+            Assert.IsFalse(tip.Contains("עלייה של") || tip.Contains("ירידה של"), $"{id}: {tip}");
+        }
+    }
+
+    /// <summary>#398 review S1: a resumed game shows the changes the player saw before the reload, on all six meters.
+    /// GameSession.Load replays the save's own commands and checks the hash, so the replay's last two steps are the
+    /// player's; Immigration needs the step before the last, which the session now keeps. Both ways a save arrives: at
+    /// start (a new bridge) and through Replace.</summary>
+    [Test]
+    public void AResumedGameShowsTheChangesOfTheSessionThatSavedIt()
+    {
+        var played = NewBridge();
+        PlayUntilImmigrationChanges(played);
+        using var saved = new UiTestKit();
+        new HudPresenter(saved.Root, played, Text);
+        var saveText = played.Session.Save.Write();
+        foreach (var how in new[] { "start", "replace" })
+        {
+            using var ui = new UiTestKit();
+            var loaded = GameSession.Load(C, saveText, out var warnings);
+            Assert.IsEmpty(warnings, how);
+            SimBridge bridge;
+            if (how == "start") bridge = new SimBridge(loaded, Text);
+            else { bridge = NewBridge(); bridge.EndTurn(); bridge.EndTurn(); bridge.Replace(loaded); }
+            new HudPresenter(ui.Root, bridge, Text);
+            Assert.AreEqual(played.State.Turn, bridge.State.Turn, how);
+            foreach (var id in MeterIds)
+            {
+                var before = saved.Q<Label>(id + "-delta"); var after = ui.Q<Label>(id + "-delta");
+                Assert.AreEqual(before.text, after.text, $"{how}: {id}");
+                Assert.AreEqual(before.ClassListContains("delta-up"), after.ClassListContains("delta-up"), $"{how}: {id}");
+                Assert.AreEqual(before.ClassListContains("delta-down"), after.ClassListContains("delta-down"), $"{how}: {id}");
+                Assert.AreEqual(saved.Q<VisualElement>("meter-" + id).tooltip, ui.Q<VisualElement>("meter-" + id).tooltip, $"{how}: {id}");
+            }
+            Assert.AreNotEqual("", ui.Q<Label>("immigration-delta").text, how + ": Immigration's change survives the reload");
+        }
     }
 }

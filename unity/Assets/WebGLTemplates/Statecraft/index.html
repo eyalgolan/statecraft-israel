@@ -20,10 +20,10 @@
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading">Statecraft: Israel<div id="bar"><div id="fill"></div></div></div>
     <div id="error"></div>
-    <script src="Build/{{{ LOADER_FILENAME }}}"></script>
     <script>
       // Full-window canvas: Unity keeps the render size matched to the canvas's CSS size, so the UI Toolkit panel
       // (ScaleWithScreenSize, 1920x1080, match 0.5) rescales on every browser resize.
+      var loaderUrl = "Build/{{{ LOADER_FILENAME }}}";
       var config = {
         arguments: [],
         dataUrl: "Build/{{{ DATA_FILENAME }}}",
@@ -44,16 +44,48 @@
         // Persist writes under /idbfs to IndexedDB when a file is closed (tech notes section 3): saves need no manual sync.
         autoSyncPersistentDataPath: true,
       };
-      createUnityInstance(document.querySelector("#unity-canvas"), config, function (progress) {
-        document.getElementById("fill").style.width = (100 * progress) + "%";
-      }).then(function () {
-        document.getElementById("loading").style.display = "none";
-      }).catch(function (message) {
+      // Issue #437: the Build/ files are named by their content hash, and this page names its build's files. A browser may
+      // show this page from its cache after a newer build replaced them (a server that sends no Cache-Control, such as
+      // python3 -m http.server, lets it), so ask the server for the current page and load the files that one names. The
+      // fetch skips the cache and stores the copy it gets ("reload"), so the next visit runs the current page. When it
+      // fails (file://, offline, or not this template), keep this page's own names.
+      var FRESH_KEYS = ["loaderUrl", "dataUrl", "frameworkUrl", "workerUrl", "codeUrl", "symbolsUrl"];
+      function useCurrentPage(html) {
+        var found = {};
+        FRESH_KEYS.forEach(function (key) {
+          var m = html.match(new RegExp("\\b" + key + '\\s*[:=]\\s*"(Build/[^"]+)"'));
+          if (m) found[key] = m[1];
+        });
+        if (!found.loaderUrl || !found.dataUrl) return;
+        loaderUrl = found.loaderUrl;
+        FRESH_KEYS.slice(1).forEach(function (key) {
+          if (found[key]) config[key] = found[key]; else delete config[key];
+        });
+      }
+      function fail(message) {
         var e = document.getElementById("error");
         e.textContent = "Statecraft could not start:\n" + message;
         e.style.display = "block";
         console.error("BOOT FAIL " + message);
-      });
+      }
+      function start() {
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onerror = function () { fail("could not load " + loaderUrl); };
+        script.onload = function () {
+          createUnityInstance(document.querySelector("#unity-canvas"), config, function (progress) {
+            document.getElementById("fill").style.width = (100 * progress) + "%";
+          }).then(function () {
+            document.getElementById("loading").style.display = "none";
+          }).catch(fail);
+        };
+        document.body.appendChild(script);
+      }
+      fetch(location.href.split("#")[0], { cache: "reload" })
+        .then(function (r) { return r.ok ? r.text() : ""; })
+        .then(useCurrentPage)
+        .catch(function () {})
+        .then(start);
     </script>
   </body>
 </html>

@@ -31,6 +31,18 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    so) or that carries an unreviewed sensitive event photograph. It then lists the zip, and prints the SHA-256 and `OK: notices inside …`. If it prints anything
    else, stop. This one zip is the file for GitHub Releases and for the M4 itch.io upload (`docs/m3-release.md`); never
    zip a build by hand.
+
+   The files under `Build/` are named by their content hash (`webGLNameFilesAsHashes: 1`, set by `ProjectSetup.Apply`;
+   issue #437), so their names change with every build that changes them. Only the build's `index.html` says which ones
+   belong to it: never refer to them by a fixed name. Unity empties `Build/` on each build; `package_release.py` zips
+   only the `Build/` files `index.html` names (it prints `LEFT OUT Build/<name>` for any other) and refuses the folder
+   when one of them is missing.
+
+   With `webGLDataCaching: 1`, Unity's loader also keeps each build's `.data` in the browser's IndexedDB (UnityCache),
+   keyed by its URL. Its clean-up drops entries made under another `productVersion` (`bundleVersion`), and otherwise
+   trims the least recently used above 1 GiB (`MaximumCacheSize=1073741824` in the 6000.3 loader). With hashed names,
+   every build with the same `bundleVersion` adds one more `.data` there until that cap; the version bump in step 2
+   clears them at each release.
 6. **Tag and publish (owner):**
 
    ```bash

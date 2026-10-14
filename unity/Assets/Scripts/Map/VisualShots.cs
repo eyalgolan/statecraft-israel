@@ -35,15 +35,32 @@ namespace Statecraft.Game.Map
                 yield return $"SHOT {name} {i + 1}/{n} {b64.Substring(i * ChunkChars, Math.Min(ChunkChars, b64.Length - i * ChunkChars))}";
         }
 
+        /// <summary>The visual toggles that are off for the close checks, which look at the ground itself (the baked
+        /// shading's steps): the haze, and the settlement trees, since one kit tree's crown filled hero06judea once the 1948
+        /// localities had trees (audit 2026-10-13).</summary>
+        public static readonly string[] OffForCloseChecks = { "haze", "trees" };
+
         public static IEnumerator Run(CameraRig rig, GeoFrame frame, Action<string> log)
         {
             foreach (var pose in PromoPose.All) yield return Shoot(rig, frame, pose, log);
-            // The close checks look at the ground itself, so the haze (if registered) is off for them and restored after.
-            bool haze = VisualToggles.Names.Contains("haze");
-            if (haze) VisualToggles.Set("haze", false);
+            var off = TurnOff(OffForCloseChecks);
             try { foreach (var pose in PromoPose.CloseChecks) yield return Shoot(rig, frame, pose, log); }
-            finally { if (haze && VisualToggles.Names.Contains("haze")) VisualToggles.Set("haze", true); }
+            finally { TurnOn(off); }
             log("SHOT done");
+        }
+
+        /// <summary>Turns off each of <paramref name="names"/> that is registered and returns those (TurnOn puts them back).</summary>
+        public static List<string> TurnOff(IEnumerable<string> names)
+        {
+            var off = names.Where(n => VisualToggles.Names.Contains(n)).ToList();
+            foreach (var n in off) VisualToggles.Set(n, false);
+            return off;
+        }
+
+        /// <summary>Turns on each of <paramref name="names"/> that is still registered.</summary>
+        public static void TurnOn(IEnumerable<string> names)
+        {
+            foreach (var n in names) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, true);
         }
 
         static IEnumerator Shoot(CameraRig rig, GeoFrame frame, PromoPose pose, Action<string> log)

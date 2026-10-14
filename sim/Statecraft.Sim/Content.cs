@@ -346,6 +346,13 @@ namespace Statecraft.Sim
     {
         public string Id { get; set; } = "";
         public string Kind { get; set; } = "";
+        /// <summary>Where a civilian trains to become this type (military_camp or hakhshara; GDD "Progression"), or "" for a
+        /// type nobody trains into (R-TRAIN-001).</summary>
+        public string Facility { get; set; } = "";
+        /// <summary>Turns a cohort trains, counting the turn it was ordered in (R-TRAIN-003). Only with a facility.</summary>
+        public int TrainingTurns { get; set; }
+        /// <summary>IL millions per population unit trained, paid when training starts (R-TRAIN-001). Only with a facility.</summary>
+        public double TrainingCost { get; set; }
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>

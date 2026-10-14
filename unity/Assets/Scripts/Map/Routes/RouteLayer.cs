@@ -12,8 +12,8 @@ namespace Statecraft.Game.Map.Routes
     /// shows only while the game date is inside its window (RoutePath.From/To; review C1: the Burma Road from 14 June
     /// 1948): routes are grouped by window, one ribbon pair per group, and <see cref="ShowAt"/> switches the groups. A
     /// steam train on the Jaffa–Jerusalem line is a showcase, never normal play (review I1, <see cref="ModeFor"/>). Widths are symbolic, measured on the
-    /// promo's gameplay frame like the settlements and units (docs/routes.md): a road about 8 px and the railway about
-    /// 16 px wide at 1920 px (the soft edges take about a sixth of the railway's width, so its bed is drawn 680 m), so they read at the gameplay zoom as the promo draws them. Registers the "routes" (ribbons)
+    /// promo's gameplay frame like the settlements and units (docs/routes.md): a road's pale core about 8 px and the railway
+    /// about 16 px wide at 1920 px (the soft edges take about a sixth of the railway's width, so its bed is drawn 680 m), so they read at the gameplay zoom as the promo draws them. Registers the "routes" (ribbons)
     /// and "train" visual toggles, so the frame profile prices each. Pure geometry from the data: the same file gives the
     /// same meshes, vertex for vertex.</summary>
     public static class RouteLayer
@@ -22,8 +22,10 @@ namespace Statecraft.Game.Map.Routes
         public const string RailMaterialResource = "Routes/Rail", RoadMaterialResource = "Routes/Road";
         public const string Folder = "Assets/Resources/Routes";
 
-        /// <summary>Full ribbon widths (m), soft edges included (the shader fades the outer 16-30%).</summary>
-        public const float RailWidthM = 680f, RoadWidthM = 300f, TrackWidthM = 200f;
+        /// <summary>Full ribbon widths (m), soft edges included (the shader fades the outer 16-30%). A road is 420 m: its pale
+        /// core, inside the verges, is about 280 m, about 8 px at the gameplay zoom, as promo 03's dirt tracks (at 300 m the
+        /// core was about 4 px, a thin line between dark verges); still well under the railway's bed.</summary>
+        public const float RailWidthM = 680f, RoadWidthM = 420f, TrackWidthM = 200f;
         /// <summary>Spacing (m) of the ribbon's cross-sections along its line: under the heightmap's 211 m N-S spacing, so
         /// every terrain row gets a section; about 3 px at the gameplay zoom.</summary>
         public const float StepM = 120f;
@@ -74,12 +76,17 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Clearance (m) beyond a ribbon's drawn half-width that kit buildings and trees keep from it, so a lot's or
         /// crown's edge never touches the soft edge of the road or the ballast.</summary>
         public const float CorridorMarginM = 100f;
+        /// <summary>The roads' clearance (m) beyond their drawn half-width: 40 m, so their corridor stays the 250 m half-width
+        /// it had when roads were 300 m wide. A wider corridor pushed town kits off the roads that run through the towns
+        /// (Jerusalem's Haram al-Sharif, Beersheba's houses: TownCensusTests). The road's outer 22% is its soft edge, so a
+        /// lot or crown still keeps about 130 m from the visible dirt.</summary>
+        public const float RoadCorridorMarginM = 40f;
 
         /// <summary>Every route's line (world x, z) with the half-width kits must keep clear of: half the drawn width plus
-        /// <see cref="CorridorMarginM"/>. All routes, whatever their window: the kits are built once, not per date, so a route
-        /// that appears later (the Burma Road) has its corridor from the start.</summary>
+        /// <see cref="CorridorMarginM"/> (<see cref="RoadCorridorMarginM"/> for roads). All routes, whatever their window: the
+        /// kits are built once, not per date, so a route that appears later (the Burma Road) has its corridor from the start.</summary>
         public static List<(List<Vector2> line, float halfWidth)> Corridors(GeoFrame frame, IEnumerable<RoutePath> routes) =>
-            routes.Select(r => (World(frame, r), WidthOf(r.Kind) / 2f + CorridorMarginM)).ToList();
+            routes.Select(r => (World(frame, r), WidthOf(r.Kind) / 2f + (r.Kind == RoutePaths.Road ? RoadCorridorMarginM : CorridorMarginM))).ToList();
 
         public static float WidthOf(string kind) => kind switch
         {
@@ -101,7 +108,9 @@ namespace Statecraft.Game.Map.Routes
         }
 
         /// <summary>The ribbons Build draws, in its order: the windows in the order they open, and in each the rail, then the
-        /// roads, where the window has any. The bake (RouteRibbonFile) stores its meshes in this order.</summary>
+        /// roads, where the window has any. The bake (RouteRibbonFile) stores its meshes in this order. A change to it, to
+        /// Derive or to what Derive calls needs a re-bake (RouteRibbonBake.Bake) and a bump of RouteRibbonFile.Version
+        /// (tools/tests/test_route_ribbon_bake.py fails until then, issue #535).</summary>
         public static List<RibbonPlan> Plan(IReadOnlyList<RoutePath> routes)
         {
             var plans = new List<RibbonPlan>();
@@ -114,7 +123,8 @@ namespace Statecraft.Game.Map.Routes
             return plans;
         }
 
-        /// <summary>A plan's ribbon, derived from the terrain (what the bake stores).</summary>
+        /// <summary>A plan's ribbon, derived from the terrain (what the bake stores). A change to it or to what it calls
+        /// (World, Geometry and their helpers) needs a re-bake and a bump of RouteRibbonFile.Version (see Plan).</summary>
         public static RibbonGeometry Derive(RibbonPlan plan, GeoFrame frame, TerrainData data, Vector3 origin) =>
             Geometry(plan.Routes.Select(r => (r.Id, World(frame, r), WidthOf(r.Kind))), data, origin, plan.RailGrade);
 

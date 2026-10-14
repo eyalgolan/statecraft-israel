@@ -41,6 +41,7 @@ namespace Statecraft.Game.UI
         List<Vector2> boundary = new List<Vector2>();
         float[] cuts = Array.Empty<float>();
         float dot;
+        bool mirrored;
 
         public Hemicycle()
         {
@@ -49,6 +50,13 @@ namespace Statecraft.Game.UI
         }
 
         public IReadOnlyList<Group> Groups => groups;
+        /// <summary>Drawn right to left (the Hebrew UI; #193): the first block starts at the right end and the majority line
+        /// is counted from the right. The seats and the line are the same picture, mirrored.</summary>
+        public bool Mirrored
+        {
+            get => mirrored;
+            set { if (mirrored == value) return; mirrored = value; MarkDirtyRepaint(); }
+        }
         /// <summary>The number of seats in the body.</summary>
         public int Size => size;
         /// <summary>Seats needed for a majority: more than half.</summary>
@@ -195,6 +203,10 @@ namespace Statecraft.Game.UI
             return Mathf.Min(box.x / (2f + 2f * m), box.y / (1f + 2f * m));
         }
 
+        /// <summary>A point of the unit half circle (y up) in panel pixels (y down), mirrored about the centre line when asked.</summary>
+        public static Vector2 ToBox(Vector2 unit, Vector2 centre, float scale, bool mirrored) =>
+            centre + new Vector2(mirrored ? -unit.x : unit.x, -unit.y) * scale;
+
         void Draw(MeshGenerationContext mgc)
         {
             var box = contentRect;
@@ -203,7 +215,7 @@ namespace Statecraft.Game.UI
             var margin = Margin(size);
             var scale = ScaleFor(box.size, size);
             var centre = new Vector2(box.center.x, box.yMax - margin * scale);
-            Vector2 At(Vector2 unit) => centre + new Vector2(unit.x, -unit.y) * scale;
+            Vector2 At(Vector2 unit) => ToBox(unit, centre, scale, mirrored);
             var p = mgc.painter2D;
             for (int i = 0; i < size; i++)
             {

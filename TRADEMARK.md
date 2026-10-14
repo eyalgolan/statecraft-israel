@@ -9,7 +9,7 @@ suggests your thing is this project, or is endorsed by it.
 ## The mark
 
 "Statecraft: Israel" and its logo and wordmark (when there is one) are unregistered marks of Eyal Golan, the maintainer.
-No registration is claimed. The maintainer intends to sell the game, for example on Steam, under this name.
+No registration is claimed. The game is free and non-commercial, and the maintainer intends to publish it under this name, for example on Steam.
 
 ## What you may do without asking
 

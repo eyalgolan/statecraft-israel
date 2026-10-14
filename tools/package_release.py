@@ -11,9 +11,15 @@ The event-card photographs are packed into Unity's data files, where this script
 what it carries into event-photos.json (Build.PhotoManifestName, review I1). The zip is refused when that file is
 missing or unreadable, when the build was not made with -shareable, or when any photograph in it is sensitive and not
 sensitivity-reviewed (docs/event-images.md).
+
+Build.Web names the files under Build/ by their content hash (issue #437), so their names change from build to build and
+index.html is what says which ones belong to this build. The zip carries exactly the Build/ files index.html names: it
+is refused when one is missing, and a file it does not name (an earlier build's, left in the folder) is left out with a
+"LEFT OUT Build/<name>" line.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 import zipfile
@@ -55,6 +61,14 @@ def photo_refusal(build: Path):
     return None
 
 
+BUILD_FILE = re.compile(r'"Build/([^"/]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
+
+
+def build_files(build: Path) -> list[str]:
+    """The names of the files under Build/ that the build's index.html loads, sorted."""
+    return sorted(set(BUILD_FILE.findall((build / "index.html").read_text(encoding="utf-8"))))
+
+
 def package(build: Path, zip_path: Path) -> int:
     if not (build / "index.html").is_file():
         print(f"PACKAGE REFUSED: {build} has no index.html (not a WebGL build folder)")
@@ -63,6 +77,11 @@ def package(build: Path, zip_path: Path) -> int:
     if not content.is_dir():
         print(f"PACKAGE REFUSED: {build} has no StreamingAssets/content")
         return 1
+    named = build_files(build)
+    if missing := [n for n in named if not (build / "Build" / n).is_file()]:
+        print("PACKAGE REFUSED: index.html names files that are not in the build: " + ", ".join("Build/" + n for n in missing))
+        return 1
+    stale = {p for p in (build / "Build").glob("*") if p.is_file() and p.name not in named}
     if (photos := photo_refusal(build)) is not None:
         print(f"PACKAGE REFUSED: {photos}")
         return 1
@@ -73,8 +92,10 @@ def package(build: Path, zip_path: Path) -> int:
         return 1
     zip_path.unlink(missing_ok=True)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:   # index.html at the zip root, as itch.io needs
-        for f in sorted(p for p in build.rglob("*") if p.is_file()):
+        for f in sorted(p for p in build.rglob("*") if p.is_file() and p not in stale):
             z.write(f, f.relative_to(build).as_posix())
+    for f in sorted(stale):
+        print(f"LEFT OUT Build/{f.name} (index.html does not name it: a file of an earlier build)")
     print(f"PACKAGED {zip_path} {zip_path.stat().st_size} bytes")
     return 0
 

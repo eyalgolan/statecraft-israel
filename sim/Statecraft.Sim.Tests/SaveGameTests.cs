@@ -28,7 +28,8 @@ public class SaveGameTests
             new Command[] { new Appoint("finance_minister", "pm_one"), new MapAction("housing", 2, 0) },
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
             new Command[] { new AssignWorkers("town_a", "job", 1) },   // a GDD order: the legacy fixture refuses it
-            new Command[0], new Command[] { new SecurityOrder(1) }, new Command[0], new Command[0],
+            new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1) },   // GDD orders too
+            new Command[] { new SecurityOrder(1) }, new Command[0], new Command[0],
         };
         foreach (var o in orders) g.Step(o);
         return g;
@@ -46,6 +47,27 @@ public class SaveGameTests
         Assert.Equal(10, loaded.Save.Turns.Count);
         Assert.Equal(text, loaded.Save.Write());                         // writing the loaded save gives the same text
         Assert.Equal(played.Previous!.Hash(), loaded.Previous!.Hash());  // "since last turn" survives a load
+    }
+
+    /// <summary>#398 review S1: a load also keeps the step before the last, so a change that compares two steps (the top
+    /// bar's arrivals) is the one the player saw before the reload. A new session and one step have none.</summary>
+    [Fact]
+    public void ALoadKeepsTheStepBeforeTheLast()
+    {
+        var c = Fixture1();
+        var played = Played(c);
+        var loaded = GameSession.Load(c, played.Save.Write(), out _);
+        Assert.NotNull(played.BeforeLast);
+        Assert.Equal(played.BeforeLast!.State.Hash(), loaded.BeforeLast!.State.Hash());
+        Assert.Equal(played.BeforeLast.Why.Select(w => (w.System, w.Delta)), loaded.BeforeLast.Why.Select(w => (w.System, w.Delta)));
+        Assert.Equal(played.Last!.State.Hash(), loaded.Last!.State.Hash());
+        var fresh = GameSession.New(c, 99, Mode.Historical);
+        Assert.Null(fresh.BeforeLast);
+        fresh.Step(new Command[0]);
+        Assert.Null(fresh.BeforeLast);
+        var first = fresh.Last;
+        fresh.Step(new Command[0]);
+        Assert.Same(first, fresh.BeforeLast);
     }
 
     [Fact]

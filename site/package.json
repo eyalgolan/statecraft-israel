@@ -15,6 +15,6 @@
   "dependencies": {
     "astro": "7.3.5",
     "sharp": "0.35.5",
-    "yaml": "2.8.4"
+    "yaml": "2.9.1"
   }
 }

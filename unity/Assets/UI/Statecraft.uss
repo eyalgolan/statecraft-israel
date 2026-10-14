@@ -14,6 +14,7 @@
     --up: rgb(126, 196, 120);
     --down: rgb(222, 120, 104);
     --focus: rgb(120, 98, 58);       /* keyboard focus fill: >= 3:1 against --navy-deep (WCAG 2.4.13) */
+    --focus-ink: rgb(255, 252, 244); /* text on the focus fill: 5.7:1 on it (ink is 4.6, gold-light 3.7; #41 M3) */
 }
 
 .root {
@@ -60,7 +61,7 @@
 }
 Button:hover { border-color: var(--gold); background-color: var(--navy-raised); }
 /* Keyboard focus shows as a bright gold edge (navigation with Tab and the arrow keys). */
-Button:focus { border-color: var(--gold-light); background-color: var(--focus); }
+Button:focus { border-color: var(--gold-light); background-color: var(--focus); color: var(--focus-ink); }
 Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4); background-color: var(--navy-deep); }
 /* A screen button stays transparent around its disc in every state. */
 .nav-button:disabled, .nav-button:focus { background-color: rgba(0, 0, 0, 0); border-width: 0; }
@@ -213,6 +214,17 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     display: none; height: 540px; min-height: 0; flex-shrink: 1000; margin-bottom: 4px; overflow: hidden;
     justify-content: flex-end; background-size: cover; background-color: var(--navy-deep); border-width: 1px; border-color: var(--gold);
 }
+/* The End Turn outcome clip (decision videos, phase 3; OutcomePresenter): over everything but the toast while it plays,
+   a dim backdrop that takes the pointer (a click skips) and the clip in a 16:9 frame in the middle (OutcomePresenter sizes
+   it from its width), its order under it. */
+.outcome-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.72); padding: 16px; }
+.outcome-open .outcome-layer { display: flex; }
+.outcome-open .event-layer { display: none; }
+.outcome-frame { width: 1000px; max-width: 100%; padding: 16px 20px 12px 20px; align-items: stretch; }
+.outcome-media { width: 100%; height: 540px; justify-content: flex-end; background-color: var(--navy-deep); background-size: cover; border-width: 1px; border-color: var(--gold); }
+.outcome-label { font-size: 13px; -unity-font-style: italic; -unity-text-align: middle-center; margin: 0; padding: 2px 8px 3px 8px; color: var(--ink); background-color: rgba(5, 9, 18, 0.92); }
+.outcome-caption { font-size: 26px; white-space: normal; -unity-text-align: middle-center; margin: 10px 0 2px 0; color: var(--gold-light); }
+.outcome-hint { font-size: 15px; -unity-text-align: middle-center; margin: 0; }
 /* The Illustration switch (decision videos): over the media header's top right corner (the card's padding plus 8 px; it
    is the card's last child, for the focus order); hidden unless the event has a clip (EventCardPresenter.ApplyIllustration). */
 .hud-two-row .event-illustration { right: 24px; }
@@ -350,8 +362,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .seat-selected { border-color: var(--gold-light); background-color: var(--navy-raised); }
 .seat-vacant .card-name { color: var(--ink-dim); }
 .appointed { color: var(--gold); }
-/* A keyboard-focused card takes the warm focus fill (Button:focus); its dim and gold text turn ink to stay legible on it. */
-.seat:focus .card-name, .seat:focus .card-office, .seat:focus .card-party, .seat:focus .card-stat-name, .seat:focus .card-initials { color: var(--ink); }
+/* A keyboard-focused card takes the warm focus fill (Button:focus); its dim and gold text turn light to stay legible on it. */
+.seat:focus .card-name, .seat:focus .card-office, .seat:focus .card-party, .seat:focus .card-stat-name, .seat:focus .card-stat-value,
+.seat:focus .card-initials { color: var(--focus-ink); }
 
 /* The Cabinet: the Prime Minister's card and the appointment list at the side; the house and the cards in the main column. */
 .cabinet-side { width: 300px; flex-shrink: 0; margin-right: 14px; }
@@ -364,10 +377,18 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .pm-card .card-stat { height: 26px; padding: 0 16px; }
 .pm-card .card-stat-name { font-size: 16px; width: 96px; }
 .pm-card .ui-bar { height: 10px; }
-#cabinet-pick { flex-shrink: 1; min-height: 0; }
+/* On a short window (1568x752 is 997 logical px tall) the side column is full. The orders line wraps and is never
+   squeezed; the candidate list keeps its heading and two rows (220 px), and the Prime Minister's portrait gives way,
+   down to the card's text. On a shorter one (32:9 is 764 px) CabinetPresenter.FitPick lowers the list's floor to the room
+   left (#41 M7). */
+.pm-card { flex-shrink: 1; min-height: 160px; }
+.pm-card > * { flex-shrink: 0; }
+.pm-card .card-plate { flex-shrink: 1; min-height: 0; }
+#cabinet-pick { flex-grow: 1; flex-shrink: 1; min-height: 220px; }
+#cabinet-status { white-space: normal; flex-shrink: 0; }
 /* The Appoint heading wraps rather than run past the 300 px side column (B5; PromoHudTests.TheAppointHeadingHasRoom). */
 #cabinet-pick-title { white-space: normal; }
-.pm-offices { flex-direction: row; flex-wrap: wrap; margin: -2px 0 8px 0; }
+.pm-offices { flex-direction: row; flex-wrap: wrap; margin: -2px 0 8px 0; flex-shrink: 0; }
 .pm-office { font-size: 15px; padding: 3px 10px; margin: 0 6px 4px 0; border-color: rgba(196, 160, 92, 0.6); }
 .cabinet-house {
     flex-direction: row; flex-wrap: wrap; align-items: center; flex-shrink: 0; margin: 0 5px 8px 5px; padding: 10px 14px;
@@ -411,8 +432,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .rung { flex-direction: row; align-items: center; padding: 8px 10px; margin: 2px 0; border-left-width: 3px; border-color: rgba(0, 0, 0, 0); background-color: rgba(255, 255, 255, 0.03); }
 .rung-name { white-space: normal; font-size: 18px; flex-shrink: 1; min-width: 0; }
 .rung-turn { font-size: 15px; margin-left: 8px; flex-shrink: 0; }
+/* The turn length is a lighter muted than --ink-dim: 15 px text loses about a fifth of its contrast to anti-aliasing, and
+   ink-dim's 5.0:1 on a plain rung measured 4.0 to 4.2:1 (#41 re-check). This is 6.3:1, still quieter than ink. */
+.rung .rung-turn { color: rgb(190, 184, 170); }
 .rung-current { border-color: var(--gold-light); background-color: rgba(196, 160, 92, 0.20); }
 .rung-current .rung-name { color: var(--gold-light); }
+/* The muted turn length is 3.3:1 on the lit rung; ink is 6.4:1 (#41 M4). */
+.rung-current .rung-turn { color: var(--ink); }
 /* The level an order will move to at End Turn: a dashed-looking ink edge, distinct from the lit current level. */
 .rung-target { border-color: var(--ink); border-left-width: 3px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; }
 .big-figure { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 44px; color: var(--ink); padding: 0; margin: 0 0 4px 0; }
@@ -420,6 +446,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .defence-budget { flex-direction: row; align-items: center; }
 .budget-title { margin: 0 18px 0 0; }
 .budget-share { margin-left: 16px; font-size: 18px; }
+/* A Budget row's office name wraps within the room its buttons leave, so no row is wider than the screen (the
+   longest, "Minister of Education and Culture (no office until 10 March 1949)", in either language). */
+.budget-office { white-space: normal; flex-shrink: 1; min-width: 0; }
 /* A wide screen's header wraps its subtitle under the title when the window is narrow. */
 /* Square and narrower windows: a slimmer side column leaves room for two columns of cards. */
 .hud-two-row .cabinet-side { width: 250px; }
@@ -523,5 +552,75 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
     font-size: 24px; min-width: 220px; margin: 4px 10px; padding: 8px 24px; -unity-text-align: middle-center;
 }
+/* The recording (DeclarationRecording): a quiet button and its credit under the source line; while it plays, its words as
+   captions in a dark strip just above the panel, over the painting (the panel is the strip's positioned parent, so the
+   strip follows it in every layout). */
+.start-recording { display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 8px; }
+.start-listen { font-size: 18px; padding: 4px 16px; margin: 2px 10px; -unity-text-align: middle-center; }
+.start-recording-credit { font-size: 15px; color: var(--ink-dim); margin: 2px 6px; }
+.start-caption {
+    display: none; position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 12px; padding: 8px 20px 10px 20px;
+    align-items: center; background-color: rgba(9, 14, 26, 0.88); border-radius: 3px;
+}
+.start-caption-he { font-size: 30px; margin: 0; }
+.start-caption-en { font-size: 19px; color: var(--ink); white-space: normal; -unity-text-align: middle-center; margin: 4px 0 0 0; }
 /* New Game's prompt (the toast) shows at the top of the start screen, clear of the panel. */
 .start-open .toast { top: 24px; left: 25%; right: 25%; width: auto; }
+
+/* --- The Hebrew UI (#193; UiLanguage, "?lang=he") -------------------------------------------------------------------
+   GameRoot puts .lang-he on the root. Every text is then set in Frank Ruhl Libre (EB Garamond has no Hebrew; one weight,
+   so headings lose the semi-bold) through the advanced text generator, which orders right-to-left text and the numbers
+   in it. Each rule above that names EB Garamond is listed here; HebrewUiTests fails for one that is missed, including the
+   classes only presenters add (it gives a label each). */
+.lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
+.lang-he .why-group, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
+.lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
+    -unity-text-generator: advanced;
+}
+/* Mirrored for a right-to-left reader: text is set from the right, every row runs right to left (so a caption's value,
+   a card's bars and a button's neighbours follow it on its left), and the side margins swap. What is placed by the map
+   stays where it is: the minimap column, the info panel, the toast and the screens' position. Each text's paragraph
+   direction is set in code from its own words (UiDirection), because dates, money and names are still English (#55). */
+.lang-he { -unity-text-align: upper-right; }
+.lang-he .button, .lang-he Button, .lang-he #event-options Button { -unity-text-align: middle-right; }
+/* The buttons and cards whose text is centred stay centred (the rule above is the more specific one). */
+.lang-he .nav-button, .lang-he .seat { -unity-text-align: upper-center; }
+.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen { -unity-text-align: middle-center; }
+.lang-he .card-stat-name { -unity-text-align: middle-right; }
+.lang-he .card-stat-value { -unity-text-align: middle-left; }
+.lang-he .top-bar, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
+.lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
+.lang-he .cabinet-house, .lang-he .party-chips, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
+.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container { flex-direction: row-reverse; }
+.lang-he.hud-narrow .meter-row { flex-direction: column; align-items: flex-end; }
+.lang-he .turn-box { align-items: flex-start; }
+.lang-he .top-bar { padding: 0 8px 0 14px; }
+.lang-he .date-box { margin-right: 0; margin-left: 10px; padding: 0 12px 0 10px; }
+.lang-he .date-row Label { margin-right: 0; margin-left: 8px; }
+.lang-he .meter { border-right-width: 0; border-left-width: 1px; padding: 0 6px 0 7px; }
+.lang-he .meter-icon { margin-right: 0; margin-left: 5px; }
+.lang-he .meter-delta { margin-left: 0; margin-right: 7px; }
+.lang-he.hud-narrow .meter-delta { margin-right: 0; }
+.lang-he .event-hide { margin: 2px 12px 0 0; }
+.lang-he .event-image { margin-right: 0; margin-left: 12px; }
+.lang-he .info-thumb { margin-right: 0; margin-left: 14px; }
+.lang-he .info-row-sign { margin: 3px 0 0 10px; }
+.lang-he .info-body > .row Button { margin-right: 0; margin-left: 6px; }
+.lang-he .why-line { padding-left: 0; padding-right: 12px; }
+.lang-he .section-title { margin: 0 2px 8px 0; }
+.lang-he .cabinet-side { margin-right: 0; margin-left: 14px; }
+.lang-he .pm-office { margin: 0 0 4px 6px; }
+.lang-he .hemicycle-box { margin-right: 0; margin-left: 18px; }
+.lang-he .party-chip { margin: 0 0 2px 12px; }
+.lang-he .party-swatch { margin-right: 0; margin-left: 5px; }
+.lang-he .rung { border-left-width: 0; border-right-width: 3px; }
+.lang-he .rung-target { border-left-width: 1px; border-right-width: 3px; }
+.lang-he .rung-turn { margin-left: 0; margin-right: 8px; }
+.lang-he .budget-title { margin: 0 0 0 18px; }
+.lang-he .budget-share { margin-left: 0; margin-right: 16px; }
+/* The option's round sign and End Turn's hourglass are painted on the right in Hebrew (EventCardPresenter, HudPresenter). */
+.lang-he .event-option { padding: 5px 46px 5px 12px; }
+.lang-he .end-turn { padding: 4px 40px 4px 14px; }
+/* A bar fills from the right: the whole bar is flipped, so its fill and its mark (placed from the left in code) follow. */
+.lang-he .ui-bar { scale: -1 1; }

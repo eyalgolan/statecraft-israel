@@ -102,3 +102,16 @@ def test_removed_path_must_not_be_tracked(make_repo, capsys):
     root = make_repo({"ASSETS.yaml": rules, "img/a.png": b"\x89PNG"})
     assert run(root) == 1
     assert "img/a.png: removed-but-tracked" in capsys.readouterr().out
+
+
+def test_the_israel_state_archives_terms_are_an_allowed_licence_but_owner_verify_blocks_a_release(make_repo, capsys):
+    rules = """rules:
+  - glob: "audio/*.wav"
+    licence: Israel State Archives terms of use
+    source: Israel State Archives item
+    status: owner-verify
+removed: []
+"""
+    root = make_repo({"ASSETS.yaml": rules, "audio/a.wav": b"RIFF"})
+    assert run(root) == 0
+    assert run(root, "--release") == 1

@@ -6,20 +6,24 @@ indicators:
   - { id: housing, base: 0.35, name: Housing }
   - { id: security, base: 0.30, name: Security }
   - { id: intl_standing, base: 0.50, name: International standing }
+# Windows (issue #80, Yishuv design 5.1 and 5.5; the dates are game design, not historical facts): the policies, effects and
+# actors that only make sense in a state begin on 15 May 1948, the Founding start, so a Founding start holds the same
+# records as before. `rationing` and `rationing_feeds` stay windowless because their office, rationing_minister, only
+# exists from 10 March 1949 and the loader needs an office to cover its policy's whole window.
 policies:
   - { id: rationing, default: 0.0, office: rationing_minister, name: Rationing }
-  - { id: housing_construction, default: 0.3, office: labour_minister, name: Housing construction }
-  - { id: border_settlement, default: 0.2, office: agriculture_minister, name: Border settlement }
+  - { id: housing_construction, from: 1948-05-15, default: 0.3, office: labour_minister, name: Housing construction }
+  - { id: border_settlement, from: 1948-05-15, default: 0.2, office: agriculture_minister, name: Border settlement }
   # 1 = transit camps (ma'abarot) where residents earn their own living replace the free-board immigrant camps.
   # Transit-camp map actions need it at 0.5 or above (MapActions). The event maabarot_policy sets it. Office: the Prime
   # Minister, who decided it with the Jewish Agency (and the Ministry of Immigration ends on 1951-10-08).
-  - { id: maabarot, default: 0.0, office: prime_minister, name: Transit camps (ma'abarot) }
+  - { id: maabarot, from: 1948-05-15, default: 0.0, office: prime_minister, name: Transit camps (ma'abarot) }
 effects:
   - { id: rationing_feeds, source: rationing, target: food_supply, k: 0.40, inertia: 2, office: rationing_minister, name: Rations share out food }
-  - { id: rationing_grates, source: rationing, target: morale, k: -0.15, inertia: 1, name: Rationing wears on morale }
-  - { id: building_houses, source: housing_construction, target: housing, k: 0.35, inertia: 4, office: labour_minister, name: New housing }
+  - { id: rationing_grates, from: 1948-05-15, source: rationing, target: morale, k: -0.15, inertia: 1, name: Rationing wears on morale }
+  - { id: building_houses, from: 1948-05-15, source: housing_construction, target: housing, k: 0.35, inertia: 4, office: labour_minister, name: New housing }
   - { id: homes_lift_morale, source: housing, target: morale, k: 0.15, inertia: 2, name: Homes lift morale }
-  - { id: border_villages_secure, source: border_settlement, target: security, k: 0.30, inertia: 4, office: agriculture_minister, name: Border villages }
+  - { id: border_villages_secure, from: 1948-05-15, source: border_settlement, target: security, k: 0.30, inertia: 4, office: agriculture_minister, name: Border villages }
   - { id: safety_lifts_morale, source: security, target: morale, k: 0.10, inertia: 2, name: Safety lifts morale }
 situations:
   - { id: food_crisis, indicator: food_supply, on_below: 0.30, off_above: 0.45, name: Food crisis }
@@ -34,17 +38,20 @@ voter_groups:
   - { id: new_immigrants, weights: { housing: 0.5, food_supply: 0.5 } }
   - { id: religious, weights: { morale: 0.7, security: 0.3 } }
   - { id: labour_movement, weights: { morale: 0.5, housing: 0.5 } }
+# The UN begins on its founding day (below); the state-era actors begin on 15 May 1948. Actors are not in the game state.
 actors:
   - { id: usa, name: United States, standing: 0.6 }
-  - { id: ussr, name: Soviet Union, standing: 0.6 }
+  - { id: ussr, from: 1948-05-15, name: Soviet Union, standing: 0.6 }
   - { id: france, name: France, standing: 0.5 }
   - { id: uk, name: United Kingdom, standing: 0.3 }
-  - { id: west_germany, name: West Germany, standing: 0.0 }
-  - { id: un, name: United Nations, standing: 0.5 }
-  - { id: egypt, name: Egypt, standing: 0.0 }
-  - { id: jordan, name: Jordan, standing: 0.1 }
-  - { id: syria, name: Syria, standing: 0.0 }
-  - { id: lebanon, name: Lebanon, standing: 0.1 }
-  - { id: iraq, name: Iraq, standing: 0.0 }
-  - { id: arab_refugees, name: Arab refugees, standing: 0.0 }
-  - { id: arab_citizens, name: Arab citizens of Israel, standing: 0.3 }
+  - { id: west_germany, from: 1948-05-15, name: West Germany, standing: 0.0 }
+  # The UN came into existence on 24 October 1945, when the Charter was ratified by the five permanent members and a
+  # majority of the other signatories (https://www.un.org/en/about-us/history-of-the-un, checked 2026-10-13).
+  - { id: un, from: 1945-10-24, name: United Nations, standing: 0.5 }
+  - { id: egypt, from: 1948-05-15, name: Egypt, standing: 0.0 }
+  - { id: jordan, from: 1948-05-15, name: Jordan, standing: 0.1 }
+  - { id: syria, from: 1948-05-15, name: Syria, standing: 0.0 }
+  - { id: lebanon, from: 1948-05-15, name: Lebanon, standing: 0.1 }
+  - { id: iraq, from: 1948-05-15, name: Iraq, standing: 0.0 }
+  - { id: arab_refugees, from: 1948-05-15, name: Arab refugees, standing: 0.0 }
+  - { id: arab_citizens, from: 1948-05-15, name: Arab citizens of Israel, standing: 0.3 }

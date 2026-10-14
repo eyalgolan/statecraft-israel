@@ -1,8 +1,10 @@
 # Desktop builds and the release pipeline (issue #54)
 
 - **Date:** 14 October 2026.
-- **Status: PROPOSED.** Nothing here is decided. Every purchase, account, signature and store action below is the
-  owner's, and none has been taken. Section 9 lists the decisions as questions.
+- **Status: PROPOSED.** Every purchase, account, signature and store action below is the owner's, and none has been
+  taken. Section 9 lists the decisions as questions. On 14 October 2026 the owner answered all of them except O6 (the
+  bundle ID), O9 and O11; the answers are under each question and in `docs/oss/DECISIONS.md`. Sections 1 to 8 are the
+  plan as written before those answers. Where an answer differs from the plan's recommendation, the answer wins.
 - **Read against:** `origin/main` at `e77f402` (14 October 2026). Claims about the repository cite the file. PRs #465 (the
   1948 recording) and #466 (outcome clips) were open on that date and are described from their PR text and diff.
 - **Scope:** a plan only. No code, settings, content or golden changes. Unity was not run for this document.
@@ -644,12 +646,14 @@ Each phase is shippable on its own and needs nothing from a later one.
 Each is a question with its options and what each costs. Recommended defaults are marked; the owner decides.
 
 **O1. Which platforms at the first public release?**
+- **Decided (owner, 2026-10-14), with O7:** "ok lets do it - windows, mac and linux". Windows, macOS and Linux, built on the Mac (O7).
 - (a) Windows only. Cost: no Apple account; the Mac audience waits.
 - (b) Windows and macOS. Cost: the Apple Developer Program (99 USD a year) and notarization work; required for Mac on Steam.
 - (c) Also native Linux. Cost: another build and test target; Deck already runs Windows builds through Proton.
 - Recommended: (a) for the first Steam release, with unsigned Mac builds to testers in parallel; (b) once O3 is yes.
 
 **O2. Free or paid on Steam?**
+- **Decided (owner, 2026-10-14):** "free". (a).
 - (a) Free. Cost: the 100 USD Steam Direct fee is never recouped; D-D's paid-release condition does not apply; the
   question of the #465 recording's commercial terms is softer but not gone.
 - (b) Paid. Cost: pricing work; D-D needs commercial rights or a new painting; the #465 recording's terms ("except
@@ -658,12 +662,14 @@ Each is a question with its options and what each costs. Recommended defaults ar
   as free.
 
 **O3. Join the Apple Developer Program?**
+- **Decided (owner, 2026-10-14):** "we have apple development". The owner already has an account, and only the owner acts on it.
 - (a) Yes, as an individual. Cost: 99 USD a year (local currency may differ); 2FA Apple Account in the legal name; the
   owner keeps the Developer ID certificate.
 - (b) Yes, as an organisation. Cost: as (a), plus a legal entity, a D-U-N-S Number and a public website.
 - (c) No. Cost: Mac only as unsigned tester builds; no Mac on Steam.
 
 **O4. Sign Windows builds, and how?**
+- **Decided (owner, 2026-10-14):** "no windows signing for now". (a).
 - (a) Not for now. Cost: "Windows protected your PC" on direct downloads; nothing extra on Steam is required by Valve.
 - (b) Azure Artifact Signing. Cost: 9.99 USD a month (Basic); individuals only in the US or Canada.
 - (c) An OV certificate. Cost: about 150-300 USD a year (Microsoft's range) and a hardware token or cloud HSM.
@@ -671,18 +677,21 @@ Each is a question with its options and what each costs. Recommended defaults ar
 - Recommended: (a) until a public direct download is planned.
 
 **O5. Open a Steamworks account, when, and as whom?**
+- **Decided (owner, 2026-10-14):** "lets open the steamworks account as an individual". (a), an owner action.
 - (a) Now, as an individual (#424's research assumed a sole proprietorship). Cost: 100 USD, the tax and bank forms, 15-30
   days of verification; the 30-day clock starts with the fee.
 - (b) Later, after Phase 2. Cost: the Coming Soon page waits.
 - (c) As a company. Cost: a company and its bank account first.
 
 **O6. The name (D8) and the identity fields.**
+- **D8 decided (owner, 2026-10-14):** "keep the games name as is". The bundle ID is still open.
 - (a) Settle D8 before the first tester build and set `productName`, `companyName` and the bundle ID once. Cost: the
   decision now; no migration later.
 - (b) Ship testers under the current names and rename later. Cost: a save migration, or testers lose saves.
 - Recommended: (a), or at least freeze the desktop names now.
 
 **O7. CI or local builds?**
+- **Decided (owner, 2026-10-14):** (a), local builds on the Mac. The owner first chose cloud builds; Unity's pages then ruled that out for a Personal licence (see O7 in `docs/oss/DECISIONS.md` for the quotes, including Editor Software Terms §2.5), and the owner chose "Build on this Mac". GitHub runners run only the licence-free player golden check (6.3).
 - (a) Local on the owner's Mac (recommended). Cost: the owner's machine time; the release depends on that Mac.
 - (b) GitHub Actions with GameCI and a Personal `.ulf`. Cost: no money; a route Unity does not document for Personal;
   the owner's Unity password in GitHub secrets; no runs on fork PRs.
@@ -692,29 +701,34 @@ Each is a question with its options and what each costs. Recommended defaults ar
 - Add-on, any option: the licence-free player golden job (6.3). Cost: none.
 
 **O8. Windows backend?**
+- **Decided (owner, 2026-10-14):** first "use the best windows build type" (b), then, with O7's local builds, (a) Mono built on the Mac. IL2CPP would need a Windows PC.
 - (a) Mono, built on the Mac. Cost: the Windows Build Support (Mono) module; a Windows machine only to run the check.
 - (b) IL2CPP, built on a Windows PC. Cost: a Windows machine with Visual Studio C++ tools; a second build host.
 
 **O9. How do testers get unsigned builds?**
+- **Open.**
 - (a) A GitHub pre-release. Cost: public to anyone; every `docs/RELEASING.md` gate applies (`-shareable`, the sensitivity
   review, notices).
 - (b) Private links to named testers. Cost: manual; the same gates still apply, since the build leaves the machine.
 
 **O10. Steam features at launch?**
+- **Decided (owner, 2026-10-14):** "steam features at luanch are fully working 1948-1956 mvp that looks like demo2", then "1956 was meant loosely and launch stays at 1948–51". The launch is a fully working MVP from 15 May 1948 to January 1952 that looks like demo2, with no Steam-only feature named. The GDD MVP and the 1952-56 pause are unchanged.
 - (a) None (recommended). Cost: none.
 - (b) Auto-Cloud. Cost: configuration only; the save folder must be final.
 - (c) Achievements. Cost: a wrapper, design work, a define per build.
 - (d) A Deck review. Cost: controller support first, or accept "Playable"/"Unsupported".
 
 **O11. Which Steamworks wrapper, when one is needed?**
+- **Open.**
 - (a) Steamworks.NET (recommended): MIT, one-to-one with Valve's API, UPM install.
 - (b) Facepunch.Steamworks: MIT, idiomatic C#.
 
 **O12. Where do build records live?**
+- **Decided (owner, 2026-10-14):** "build records will leave in a seperate repo". A separate repository, neither (a) nor (b).
 - (a) The GitHub Release only (asset and notes). Cost: none; depends on the Releases page.
 - (b) Also committed under `docs/releases/`. Cost: one file per release in the version-bump PR.
 
-The existing open lines in `docs/oss/DECISIONS.md` also block any release through the gate: D8, D-D, D-P, D13 and D-A.
+The existing open lines in `docs/oss/DECISIONS.md` also block any release through the gate: D-D, D-P, D13, D-A and D-R (D8 was decided on 2026-10-14).
 
 ---
 

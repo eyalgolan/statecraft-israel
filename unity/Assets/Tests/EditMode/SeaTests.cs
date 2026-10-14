@@ -9,7 +9,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-/// <summary>Plan Task 7: the water, inside the map and past its edge, and the plateau skirt.</summary>
+/// <summary>Plan Task 7: the water inside the map (since issue #36 a frame, not a skirt of sea, lies past its edge).</summary>
 public class SeaTests
 {
     const string SeaMatPath = "Assets/Materials/Sea.mat";
@@ -137,55 +137,6 @@ public class SeaTests
             File.ReadAllText("Assets/Shaders/StatecraftTerrain.hlsl"), "//[^\n]*", "");   // comments may name them
         foreach (var call in new[] { "ScWaterShade", "ScBreakers", "ScHazeWater", "ddx(", "ddy(" })
             StringAssert.DoesNotContain(call, src);
-    }
-
-    /// <summary>The controller's known gap: at the Jordanian plateau the land skirt holds the edge's height for 20 km (at
-    /// least 80% of its height above the sea) and reaches sea level only at the last ring.</summary>
-    [Test]
-    public void TheLandSkirtHoldsThePlateauThenEasesToSeaLevel()
-    {
-        var map = OpenMap();
-        var size = map.Terrain.terrainData.size;
-        var verts = map.Terrain.transform.Find(MapScene.BorderSkirtName).GetComponent<MeshFilter>().sharedMesh.vertices;
-        var meta = HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta;
-        float seaY = (0f - meta.elev_min_m) * MapBuilder.VerticalExaggeration;
-        float zAmman = map.Frame.ToWorld(35.9, 31.95, 0).z;
-        int best = -1;
-        for (int i = 0; i < verts.Length; i++)
-            if (Mathf.Abs(verts[i].x - size.x) < 0.5f && (best < 0 || Mathf.Abs(verts[i].z - zAmman) < Mathf.Abs(verts[best].z - zAmman))) best = i;
-        Assert.GreaterOrEqual(best, 0, "an east-edge spoke");
-        float edge = verts[best].y - seaY;
-        Assert.Greater(edge, 1500f, "the plateau stands well above the sea (about 900 m, exaggerated 3x)");
-        Assert.AreEqual(size.x + MapBuilder.SkirtRings[2], verts[best + 2].x, 1f, "ring 2 of the same spoke");
-        Assert.GreaterOrEqual(verts[best + 2].y - seaY, 0.8f * edge, "held 20 km out");
-        Assert.AreEqual(seaY, verts[best + MapBuilder.SkirtRings.Length - 1].y, 1f, "at sea level at the last ring");
-    }
-
-    /// <summary>Task 7 checkpoint finding: holding each edge vertex's own height for 20 km drew the edge's ridges out as long
-    /// stripes across the Jordan skirt. Along the east edge, the held ring 2 is far smoother from spoke to spoke than the
-    /// edge (ring 0, which meets the terrain exactly). Fix round 1 (review M4): the hold is a running mean over the edge's
-    /// own samples, not 17 taps 1 km apart that undersampled ridges shorter than about 2 km: under 18% of the edge's step.
-    /// What a +-8 km mean keeps is the plateau's own trend along the edge (about 400 m of exaggerated height over 16 km, over
-    /// a 77-sample window: 5.2 m per spoke); the 17 taps added their aliasing on top (8.5 m).</summary>
-    [Test]
-    public void TheHeldSkirtCarriesThePlateauNotTheEdgesRidges()
-    {
-        var map = OpenMap();
-        var size = map.Terrain.terrainData.size;
-        var verts = map.Terrain.transform.Find(MapScene.BorderSkirtName).GetComponent<MeshFilter>().sharedMesh.vertices;
-        int rings = MapBuilder.SkirtRings.Length;
-        float edge = 0f, held = 0f; int pairs = 0, prev = -1;
-        for (int i = 0; i + rings <= verts.Length; i += rings)
-        {
-            bool east = Mathf.Abs(verts[i].x - size.x) < 0.5f && verts[i].z > 0.3f * size.z && verts[i].z < 0.9f * size.z
-                && Mathf.Abs(verts[i + 2].x - (size.x + MapBuilder.SkirtRings[2])) < 1f;
-            if (!east) { prev = -1; continue; }
-            if (prev >= 0) { edge += Mathf.Abs(verts[i].y - verts[prev].y); held += Mathf.Abs(verts[i + 2].y - verts[prev + 2].y); pairs++; }
-            prev = i;
-        }
-        TestContext.WriteLine($"east edge: {pairs} spoke pairs, mean step at the edge {edge / pairs:0.0} m, held 20 km out {held / pairs:0.0} m");
-        Assert.Greater(pairs, 500);
-        Assert.Less(held, 0.18f * edge, "the held rings carry the plateau's broad height, not the edge's ridges (no aliasing)");
     }
 
     static float Luma(Color c) => RenderSample.Luma(c);
@@ -454,78 +405,6 @@ public class SeaTests
                 }
             TestContext.WriteLine($"block-edge energy: {log}worst {worst:0.000}");
             Assert.Less(worst, 0.25f, "no lattice of block edges in the sea's shading");
-        }
-        finally { Object.DestroyImmediate(go); }
-    }
-
-    /// <summary>Sea round 2 (#388): the far sea's texture (the "seatexture" toggle: StatecraftMap.hlsl's mottle, ripple and
-    /// whitecaps) leaves no step where the terrain's water meets the skirt's sea at the map's west edge. The seam test
-    /// (SettlementTests.TheSeaBeyondTheEdgeMatchesTheTerrainSea) compares points 5 km apart, across which a 2.5 km mottle
-    /// varies by itself, so it pins the texture off; this one looks for a step, not a difference. Rendered straight down
-    /// (orthographic) at the seam test's pixel size (110 m, so the ripple and whitecaps have faded and the mottle is what
-    /// is on), over a 40 km strip of the edge with the water's clock pinned. Per row, the change between the two pixel
-    /// columns either side of x = 0 is compared with the change between neighbouring columns elsewhere in the strip: the
-    /// RMS across the edge may exceed the RMS elsewhere by at most the seam test's own pre-grade bound (0.012), which catches
-    /// a texture that does not continue; and the mean change across the edge, summed over r, g and b, stays under the same
-    /// bound, which catches a uniform step (an RMS adds a uniform step in quadrature with the texture's own change). (Fitting a
-    /// line either side and extrapolating was tried: over the whole strip a mismatched texture's steps cancel, and per
-    /// 880 m segment the texture's own variation swamped the fit, 0.049 with no seam against 0.059 with one.) The grade
-    /// is a per-pixel LUT, so it can
-    /// scale a step but not make one (the seam test's argument), and this test's own camera renders without it. The
-    /// texture must be there to be tested: the strip's luma varies more with it on than off.</summary>
-    [UnityTest]
-    public IEnumerator TheFarSeaTextureHasNoStepAtTheMapEdge()
-    {
-        var map = OpenMap();
-        yield return null;
-        VisualToggles.Set("grid", false);
-        MapShaderGlobals.PinWaterTime(100f);
-        var size = map.Terrain.terrainData.size; var origin = map.Terrain.transform.position;
-        const int w = 64, h = 364; const float metresPerPixel = 110f;
-        var go = new GameObject("TopEdge"); var cam = go.AddComponent<Camera>();
-        try
-        {
-            cam.orthographic = true; cam.orthographicSize = h * metresPerPixel / 2f; cam.aspect = (float)w / h;
-            // Centred on the west edge (map x = 0), so the edge falls on the boundary between columns w/2 - 1 and w/2.
-            cam.transform.position = new Vector3(origin.x, 20000f, origin.z + 0.55f * size.z); cam.transform.rotation = Quaternion.Euler(90, 0, 0);
-            cam.nearClipPlane = 100f; cam.farClipPlane = 60000f;
-            float Std(RenderSample r)
-            {
-                double sum = 0, sq = 0; int k = 0;
-                for (int j = 0; j < h; j++) for (int i = 0; i < w; i++) { double l = Luma(r.At(i, j)); sum += l; sq += l * l; k++; }
-                return (float)System.Math.Sqrt(sq / k - (sum / k) * (sum / k));
-            }
-            VisualToggles.Set("seatexture", false);
-            float plain = Std(RenderSample.Render(cam, w, h));
-            VisualToggles.Set("seatexture", true);
-            var r = RenderSample.Render(cam, w, h);
-            float textured = Std(r);
-            // The change between neighbouring pixel columns, |dr| + |dg| + |db| per row: across the edge (columns w/2 - 1
-            // and w/2, each 110 m wide, one either side of x = 0) and, as the control, between neighbours 4-12 columns out on
-            // either side, inside one mesh. A continuous texture changes as little across the edge as anywhere else; a
-            // mismatched one (or a step in the inputs) changes there by about its whole range. The RMS over the rows at the
-            // edge may exceed the control's by at most the seam test's bound.
-            double Pair(int i, int j) { var a = r.At(i, j); var b = r.At(i + 1, j); return Mathf.Abs(a.r - b.r) + Mathf.Abs(a.g - b.g) + Mathf.Abs(a.b - b.b); }
-            double edgeSq = 0, controlSq = 0; int controlN = 0;
-            var signedEdge = Vector3.zero;   // the mean change across the edge per channel: a uniform step (an input mismatch)
-            for (int j = 0; j < h; j++)
-            {
-                double e = Pair(w / 2 - 1, j); edgeSq += e * e;
-                var ea = r.At(w / 2 - 1, j); var eb = r.At(w / 2, j); signedEdge += new Vector3(eb.r - ea.r, eb.g - ea.g, eb.b - ea.b) / h;
-                for (int k = 4; k <= 12; k++)
-                {
-                    double c1 = Pair(w / 2 - 1 - k, j), c2 = Pair(w / 2 - 1 + k, j);
-                    controlSq += c1 * c1 + c2 * c2; controlN += 2;
-                }
-            }
-            float edgeRms = (float)System.Math.Sqrt(edgeSq / h), controlRms = (float)System.Math.Sqrt(controlSq / controlN);
-            float step = edgeRms - controlRms;
-            float offset = Mathf.Abs(signedEdge.x) + Mathf.Abs(signedEdge.y) + Mathf.Abs(signedEdge.z);
-            const float bound = 0.012f;
-            TestContext.WriteLine($"neighbour change: across the edge RMS {edgeRms:0.0000}, elsewhere {controlRms:0.0000}, excess {step:0.0000}; mean change across the edge {offset:0.0000} (bound {bound} each); strip luma std {textured:0.0000} with the texture, {plain:0.0000} without");
-            Assert.Greater(textured, plain + 0.004f, "the far sea's texture shows at 110 m a pixel");
-            Assert.Less(step, bound, "the texture does not continue across the edge (a mismatch between the terrain's water and the skirt's sea)");
-            Assert.Less(offset, bound, "a uniform step where the terrain's water meets the skirt's sea");
         }
         finally { Object.DestroyImmediate(go); }
     }

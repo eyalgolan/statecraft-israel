@@ -311,6 +311,9 @@ starts. The outline:
 
 - **The file is not altered.** No trim, fade, denoise or loudness change.
   - Copy it byte for byte to `unity/Assets/Audio/declaration-1948-isa-00113hj.wav`.
+  - *Superseded (review of #465):* that WAV was itself an ffmpeg decode, so "byte for byte" could not be claimed. What
+    ships is a stream-copy cut of the archive's upload, decoded to PCM WAV with no other processing, fetched from
+    StreamingAssets; the chain is in `docs/declaration-recording.md`.
   - Import it as an AudioClip with **PCM** compression, so Unity doesn't transcode it. The cost of PCM is about 9.29 s ×
     rate × channels × 2 bytes; I'll measure it.
   - Check: the imported clip's sample count and rate match the WAV.

@@ -1,5 +1,5 @@
 // The 1948 railways and roads (issue #35, RouteLayer): ribbons draped on the terrain at the promo's symbolic width. One
-// shader for both looks, chosen by _Kind (a material value, so a uniform branch): 0 a pale dirt road with faint wheel ruts,
+// shader for both looks, chosen by _Kind (a material value, so a uniform branch): 0 a pale dirt road with faint wheel ruts and patchy colour,
 // 1 a railway (a ballast bed, sleepers and two rails). The mesh gives u across the ribbon (0..1) and v along it (metres),
 // so the sleepers repeat at a fixed spacing; every pattern is box-filtered to the pixel (fwidth), so it fades to its mean
 // instead of shimmering as the camera pulls back. Lit like the ground beside it: the sun with its shadows plus the ambient
@@ -26,12 +26,17 @@ Shader "Statecraft/Route"
             float _Opacity;
         CBUFFER_END
 
-        // Colours (sRGB) after the promo's gameplay frame (promo/final/03): pale packed dirt with darker worn verges that
-        // outline it on pale ground, as the promo's tracks read; a cool grey stone ballast bed with dark timber sleepers and
+        // Colours (sRGB) after the promo's gameplay frame (promo/final/03): a wide, pale packed-dirt track with soft,
+        // slightly darker worn verges, as the promo's tracks read; a cool grey stone ballast bed with dark timber sleepers and
         // bright steel rails (promo video 0:21).
-        static const float3 RoadSrgb = float3(0.86, 0.78, 0.62);
-        static const float3 RutSrgb = float3(0.72, 0.63, 0.48);
-        static const float3 VergeSrgb = float3(0.42, 0.35, 0.26);
+        // The road: pale packed dirt (promo 03's tracks render about (0.97, 0.84, 0.74) after its grade), varied between a
+        // cream and a warmer, darker dust in patches hundreds of metres long (RoadPatchM: a few pixels at the gameplay zoom,
+        // so the variation never shimmers), so a long road does not read as one flat painted stripe.
+        static const float3 RoadSrgb = float3(0.98, 0.92, 0.80);
+        static const float3 RoadDustSrgb = float3(0.92, 0.83, 0.68);
+        static const float RoadPatchM = 900.0;
+        static const float3 RutSrgb = float3(0.82, 0.73, 0.59);
+        static const float3 VergeSrgb = float3(0.46, 0.39, 0.29);
         static const float3 BallastSrgb = float3(0.56, 0.54, 0.50);
         static const float3 BankSrgb = float3(0.44, 0.42, 0.39);     // the embankment's shoulders, darker
         static const float3 SleeperSrgb = float3(0.30, 0.22, 0.15);
@@ -47,10 +52,10 @@ Shader "Statecraft/Route"
         // A rail is drawn at least RailMinPx wide, so at the gameplay zoom (its true 0.036 of the bed is under a pixel) it
         // still reads as a bright line; the rails fade out where the two would merge (under RailFadeToPx apart).
         static const float RailMinPx = 0.8, RailFadeFromPx = 1.5, RailFadeToPx = 3.0;
-        static const float RutOffset = 0.16, RutHalfWidth = 0.05;
-        // The verges: a darker worn strip either side of the dirt, just inside the soft edge (RoadEdge), where the road is
-        // still nearly opaque, so the dark line outlines the pale core on pale ground.
-        static const float VergeOffset = 0.31, VergeHalfWidth = 0.09, VergeStrength = 0.9, RoadEdge = 0.18;
+        static const float RutOffset = 0.12, RutHalfWidth = 0.035, RutStrength = 0.4;
+        // The verges: a narrow, softer darker worn strip either side of the dirt, where the soft edge (RoadEdge) begins, so
+        // it outlines the wide pale core on pale ground without reading as a dark line of its own.
+        static const float VergeOffset = 0.33, VergeHalfWidth = 0.07, VergeStrength = 0.6, RoadEdge = 0.22;
 
         struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
         struct Varyings { float4 positionCS : SV_POSITION; float3 positionWS : TEXCOORD0; float3 normalWS : TEXCOORD1; float2 uv : TEXCOORD2; };
@@ -111,9 +116,11 @@ Shader "Statecraft/Route"
             }
             else
             {
-                albedo = SRGBToLinear(RoadSrgb);
+                // Two octaves of value noise on the map position: low frequency, so its box filter is not needed.
+                float patch = 0.65 * ScNoise(mapM / RoadPatchM) + 0.35 * ScNoise(mapM / (0.37 * RoadPatchM) + 17.0);
+                albedo = lerp(SRGBToLinear(RoadSrgb), SRGBToLinear(RoadDustSrgb), smoothstep(0.3, 0.75, patch));
                 float ruts = saturate(Band(u, 0.5 - RutOffset, RutHalfWidth, du) + Band(u, 0.5 + RutOffset, RutHalfWidth, du));
-                albedo = lerp(albedo, SRGBToLinear(RutSrgb), 0.6 * ruts);
+                albedo = lerp(albedo, SRGBToLinear(RutSrgb), RutStrength * ruts);
                 float verges = saturate(Band(u, 0.5 - VergeOffset, VergeHalfWidth, du) + Band(u, 0.5 + VergeOffset, VergeHalfWidth, du));
                 albedo = lerp(albedo, SRGBToLinear(VergeSrgb), VergeStrength * verges);
                 albedo = lerp(albedo, SRGBToLinear(RoadFarSrgb), smoothstep(FarFromM, FarToM, dv));

@@ -256,6 +256,18 @@
             <ui:ScrollView name="why-rows" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
+        <!-- The End Turn outcome clip (OutcomePresenter): the historical order the player gave, as a 3.5 s silent clip in the
+             middle, captioned as the order; a click, Enter or Space skips it, Esc skips them all. After the screens, so it
+             is drawn over them (an open screen is also closed when a clip starts); only the start screen and the toast come
+             later. -->
+        <ui:VisualElement name="outcome-layer" class="outcome-layer">
+            <ui:VisualElement name="outcome-frame" class="panel outcome-frame" picking-mode="Ignore">
+                <ui:VisualElement name="outcome-media" class="outcome-media" picking-mode="Ignore"><ui:Label name="outcome-label" class="outcome-label" picking-mode="Ignore" /></ui:VisualElement>
+                <ui:Label name="outcome-caption" class="title outcome-caption" picking-mode="Ignore" />
+                <ui:Label name="outcome-hint" class="muted outcome-hint" picking-mode="Ignore" />
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <!-- The start screen (StartScreenPresenter): shown over the started game before its first turn (never in automated
              runs). The painting is AI-generated concept art (ASSETS.yaml), with no identifiable person. The two quotations
              are the Declaration of the Establishment of the State of Israel, word for word: the official Hebrew (Iton
@@ -273,9 +285,20 @@
                     <ui:Label name="start-he-date" text="בעיר תל־אביב, היום הזה, ערב שבת, ה׳ אייר תש״ח, 14 במאי 1948." class="start-he start-he-date" language-direction="RTL" />
                     <ui:Label name="start-en-date" text="IN THE CITY OF TEL-AVIV, ON THIS SABBATH EVE, THE 5TH DAY OF IYAR, 5708 (14TH MAY, 1948)." class="start-en" />
                     <ui:Label name="start-source" text="From the Declaration of the Establishment of the State of Israel (Official Gazette No. 1, 14 May 1948) and its official English translation. Painting: AI-generated." class="start-source" />
+                    <!-- Ben-Gurion's reading of the proclaiming sentence, 14 May 1948, recorded by Ralph Hellinger of Radio Doctor, Israel
+                         State Archives ISA-Collections-Recordings-00113hj (DeclarationRecording): it plays
+                         only from this button, over the still painting, with its words as captions above the panel. -->
+                    <ui:VisualElement name="start-recording" class="start-recording">
+                        <ui:Button name="start-listen" class="start-listen" />
+                        <ui:Label name="start-recording-credit" text="Recording: Ralph Hellinger, Israel State Archives" class="start-recording-credit" />
+                    </ui:VisualElement>
                     <ui:VisualElement name="start-actions" class="start-actions">
                         <ui:Button name="start-continue" text="Continue" class="start-button" />
                         <ui:Button name="start-new-game" text="New Game" class="start-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="start-caption" class="start-caption" picking-mode="Ignore">
+                        <ui:Label name="start-caption-he" text="…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל." class="start-he start-caption-he" language-direction="RTL" picking-mode="Ignore" />
+                        <ui:Label name="start-caption-en" text="…HEREBY DECLARE THE ESTABLISHMENT OF A JEWISH STATE IN ERETZ-ISRAEL, TO BE KNOWN AS THE STATE OF ISRAEL." class="start-caption-en" picking-mode="Ignore" />
                     </ui:VisualElement>
                     <Statecraft.Game.UI.UiFrame />
                 </ui:VisualElement>

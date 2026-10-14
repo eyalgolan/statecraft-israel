@@ -68,6 +68,7 @@ namespace Statecraft.Game.Map.Kits
             stats.Localities = localities.Count; stats.LocalityBuildings = built.LocalityBuildings; stats.Camps = built.Camps; stats.Tents = built.Tents;
             stats.Buildings += built.LocalityBuildings + built.Tents;
             stats.BuildMs = (float)clock.Elapsed.TotalMilliseconds;
+            Boot.DiagLog.BootPhase("kit buildings built");   // issue #321: the buildings, apart from the trees
             clock.Restart();
             var all = new List<Settlement>(settlements); all.AddRange(localities);
             var trees = Vegetation.Plant(all, ground);

@@ -140,7 +140,7 @@ measurement in `docs/units.md`:
 |---|---|---|
 | Railway bed | about 16 px | 680 m (its soft edges take about a sixth) |
 | Sleeper spacing | about 4 px | 150 m |
-| Dirt road | about 8 px | 300 m |
+| Dirt road | about 8 px | 420 m (its pale core, inside the soft verges, about 280 m) |
 | Burma Road | (not in the promo) | 200 m |
 | Train (six cars) | about 250 px, about 8.8 km | 8.8 km: locomotive, tender and four coaches at 80x real length and 1.5x stockier across (at a uniform 65x the first checkpoint drew a thin dark line) |
 
@@ -198,10 +198,22 @@ measurement in `docs/units.md`:
 - u runs across the ribbon and v along it, in metres.
 
 **The shader** (`Statecraft/Route`). It is transparent and has no new keywords; the shadow keywords are the terrain's.
-- The road is pale dirt with faint wheel ruts and darker worn verges (0.32 of the width either side of the line, about
-  1 px each at gameplay03), so it reads on pale sand and dry grass by its edges, as promo 03's tracks do. At the
-  country-wide pose (a pixel over 60–150 m), it darkens to a grey-brown line, so it reads as the promo diorama's roads
-  do instead of vanishing on pale ground.
+- The road is a wide, pale dirt track (refs #35, `roads-dirt`): cream dirt, varied with a warmer dust in patches
+  hundreds of metres long (two octaves of map-position noise, `RoadPatchM` 900 m, a few pixels at gameplay03, so it does
+  not shimmer), faint wheel ruts, and narrow soft verges (0.33 of the width either side of the line, strength 0.6)
+  where the soft edge begins. At the country-wide pose (a pixel over 60–150 m), it darkens to a grey-brown line, so it
+  reads as the promo diorama's roads do instead of vanishing on pale ground.
+  - **Why.** At 300 m with dark verges (#404), the pale core was about 4 px at gameplay03, a thin line between two dark
+    ones that almost vanished; promo 03's tracks are about 8 px of pale dirt with soft edges.
+  - **Measured** (`RoadsReadAsWidePaleTracks`): across every road in the frame's middle (6 points each, tilt-shift off),
+    the run of pixels from the line out that the routes make paler than the ground by 0.03 luma, measured on screen.
+    Median at gameplay03: 4 px on main, 9 px here (bound 6); at close30 (30 km): 7 px on main, 19 px here (bound 12).
+    The core stands a median 0.19 luma over the ground (main 0.15).
+  - It stays under the railway (680 m, dark ballast and bright rails) and the region borders (saturated blue).
+  - The kits' corridor along a road stays 250 m either side of the line, as on main: half the 420 m width plus
+    `RoadCorridorMarginM` (40 m, other routes keep 100 m). The road's outer 22% is its soft edge, so lots and crowns
+    still keep about 130 m from the visible dirt. With 100 m (a 310 m corridor) the kits lost Jerusalem's Haram
+    al-Sharif landmarks and Beersheba's houses (`TownCensusTests`).
 - The railway is a cool grey stone ballast bed with darker shoulders, dark sleepers every 100 m and two bright steel
   rails, after promo 03 and the video's 0:21 close-up (refs #35, `.superpowers/borders-routes-r1/PLAN.md` R1 and R2).
   - A rail is 0.036 of the 680 m bed, about 0.7 px at gameplay03, so its box filter left it faint: averaged along the
@@ -209,8 +221,10 @@ measurement in `docs/units.md`:
     the bed beside it. It is now drawn at least 0.8 px wide (`RailMinPx`) and brighter, and stands 0.18–0.21 above it
     (bound 0.15). The two fade out where they would merge, under 3 px apart (the overview).
   - Roads: on the eight palest-ground road crossings in the gameplay03 frame (`RoadsReadOnPaleGroundByTheirVerges`),
-    the verges are darker than the core by at least 0.04 and darker than the ground beside them on 6 of 8 (bound 5);
-    with main's shader on 0 of 8.
+    the verges are darker than the core by at least 0.04, and either darker than the ground beside them (#404's dark
+    verges) or the core is paler than the ground under it by 0.08 (the wide pale track): 7 of 8 (bound 5). The verge
+    windows scale with the road's width (0.2–0.43 of it, 60–130 m at 300 m). With the soft verges alone and #404's
+    rule, 1 of 8 read; the pale core is what carries them now.
   - The sleepers were every 150 m at a duty of 0.4: a dark bar of about 1.7 px every 4.3 px, a coarse ladder. At 100 m
     and 0.35 they are a fine texture, as the promo's.
   - The ballast was a grey-brown (0.50, 0.46, 0.41) close to the land's ochre; it is now a stone grey (0.56, 0.54, 0.50),
@@ -276,7 +290,7 @@ does (#320, docs/visual-v1.md).
 
 **Kits keep off the routes** (settlement kits and trees, #179).
 - `MapScene` reads the routes before building the kits, and hands `KitLayer.Build` every route's corridor
-  (`RouteLayer.Corridors`): half the drawn width plus `CorridorMarginM` (100 m).
+  (`RouteLayer.Corridors`): half the drawn width plus `CorridorMarginM` (100 m; 40 m for roads, `RoadCorridorMarginM`).
 - `KitGround.OnRoute` (a 2 km segment grid) keeps building lots, landmarks and tree crowns out of these corridors.
   B9 still keeps trees out of building lots.
 - Every route gets its corridor, whatever its date: the kits are built once, not per date, so the Burma Road's corridor
@@ -298,7 +312,8 @@ All of these are on `promo-roads`.
 
 **Look test** (`RouteTests.AtTheGameplayPoseTheRailwayIsDarkAndTheRoadPale`, gameplay03, editor, review round):
 - the railway renders RGB (0.46, 0.40, 0.31) over ground (0.62, 0.59, 0.33);
-- the road renders (0.81, 0.71, 0.50) over ground (0.60, 0.57, 0.32).
+- the road renders (0.81, 0.71, 0.50) over ground (0.60, 0.57, 0.32); with the wide pale track (`roads-dirt`, a later
+  point of the frame) (0.86, 0.75, 0.55) over (0.50, 0.51, 0.29), main (0.77, 0.67, 0.47) at the same point.
 
 **Frame time.** Headless `?vprofile`, 1920x1080 at DPR 1, `machine_lock.py --exclusive`.
 - These numbers come from the first round, with the train shown in the profile.

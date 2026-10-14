@@ -36,6 +36,7 @@ namespace Statecraft.Game.Map.Units
         Transform tokensRoot = null!;
         readonly List<Transform> badges = new List<Transform>();
         readonly List<(Vector2 centre, float radius)> treeHoles = new List<(Vector2, float)>();
+        List<Bounds[]> keepClear = new List<Bounds[]>();
         GameObject? ring;
         bool still;
 
@@ -45,6 +46,11 @@ namespace Statecraft.Game.Map.Units
         public IReadOnlyDictionary<UnitAnchor, AnchorSpot> Spots => spots;
         /// <summary>The ground the anchors were placed on.</summary>
         public UnitGround PlacementGround => ground;
+        /// <summary>The world boxes the map's name pills keep clear of (issue #197), one entry per drawn token: its standing
+        /// pieces (the figures on their bases, a parked aircraft, the ship; not a flying aircraft, which moves) and its
+        /// badge, which MapLabelsPresenter projects to one screen rectangle, so no pill sits on a token or between its badge
+        /// and its figures. A new list whenever the tokens are rebuilt, and empty while the "units" toggle hides the layer.</summary>
+        public IReadOnlyList<Bounds[]> KeepClear => gameObject.activeInHierarchy ? keepClear : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
         /// <summary>The selected unit's id, or null.</summary>
         public string? Selected { get; private set; }
 
@@ -195,6 +201,7 @@ namespace Statecraft.Game.Map.Units
             }
             badges.Clear();
             treeHoles.Clear();
+            keepClear = new List<Bounds[]>();   // a new list, so the labels see the change
             float hex = map.Hexes.hex_size_km * 1000f;
             foreach (var p in placed)
             {
@@ -242,8 +249,31 @@ namespace Statecraft.Game.Map.Units
                 if (cam != null) badge.transform.rotation = cam.transform.rotation;
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
+                keepClear.Add(KeepClearOf(go.transform, badge.transform.position));
             }
             HideTrees();
+        }
+
+        /// <summary>A token's keep-clear boxes: the bounds of its pieces that stand still (a flying aircraft is left out)
+        /// and a cube of the badge's width round the badge's centre, which holds the plate however it is turned. The pieces'
+        /// bounds come from their meshes and transforms, not Renderer.bounds, which is empty while the layer is inactive (the
+        /// "units" toggle off when the tokens are built; review of #518).</summary>
+        static Bounds[] KeepClearOf(Transform token, Vector3 badgeCentre)
+        {
+            var boxes = new List<Bounds> { new Bounds(badgeCentre, Vector3.one * UnitBadge.SizeM) };
+            bool any = false; var pieces = default(Bounds);
+            foreach (var f in token.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null || f.GetComponentInParent<UnitBadge>(true) != null || f.GetComponentInParent<ShowcaseFlight>(true) != null) continue;
+                var b = f.sharedMesh.bounds; var m = f.transform.localToWorldMatrix;
+                for (int c = 0; c < 8; c++)
+                {
+                    var w = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+                    if (any) pieces.Encapsulate(w); else { pieces = new Bounds(w, Vector3.zero); any = true; }
+                }
+            }
+            if (any) boxes.Add(pieces);
+            return boxes.ToArray();
         }
 
         static void AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)

@@ -70,8 +70,16 @@ namespace Statecraft.Sim
         /// <summary>An amount in millions with its currency: "IL 18.6m", "-IL 3.0m", "$41.5m"; zero is "IL 0.0m".</summary>
         public static string Money(Content c, string id, double millions)
         {
+            var (sign, prefix, amount) = MoneyParts(c, id, millions);
+            return sign + prefix + amount + "m";
+        }
+
+        /// <summary>The parts Money is built from, rounded as it rounds: the sign ("-", or "" for a value that rounds to zero
+        /// or above), the currency prefix from content, and the amount ("18.6"). The top bar says them in words.</summary>
+        public static (string Sign, string Prefix, string Amount) MoneyParts(Content c, string id, double millions)
+        {
             var r = Math.Round(Finite(millions, nameof(millions)), 1, MidpointRounding.AwayFromZero);
-            return Signed(r, Account(c, id).Prefix, Fixed(Math.Abs(r), 1) + "m", signed: false);
+            return (r < 0 ? "-" : "", Account(c, id).Prefix, Fixed(Math.Abs(r), 1));
         }
 
         /// <summary>A change in millions with its currency, sign first: "+IL 1.2m", "-$0.4m"; zero is "IL 0.0m".</summary>

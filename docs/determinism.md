@@ -71,7 +71,8 @@ later era makes, so they move only when a 1948 rule or event does.
 **MVP goldens (GDD v0.1, before cutover).** `mvp-slice` plays `MvpSlice.Load`, the real content with the loop switch on and
 monthly turns (spec 2026-10-12 section 2.1, R-LOOP-003), from the golden seed in Historical mode with the reference player until
 `MvpGolden.Until` (15 January 1949, eight monthly turns). The reference player (`Statecraft.Sim.Reference.ReferencePlayer`, decision
-D-A7) is a stated test policy, not game AI and not history: `HistoricalAI`'s orders, then each city's jobs filled. No game mode or UI
+D-A7) is a stated test policy, not game AI and not history: `HistoricalAI`'s orders, then each city's jobs filled, then one
+halutz group trained when there is none and none in training. No game mode or UI
 reaches it (`ReferencePlayerTests`). `MvpGoldenTests` checks it against the manifest line `mvp-slice` and the
 snapshot `golden/mvp-slice.txt`, and the update command re-pins it like the others. It is not shown in this file's table or in
 `tools/web_check.py`, because the players run only the legacy goldens until cutover. A Phase 1 PR that adds a GDD rule the slice
@@ -116,7 +117,7 @@ compare against it. These places must agree with it, and `GoldenManifestTests` f
 `tools/art_checkpoint.sh` reads its expected hashes from the manifest, so it needs no edit.
 
 `unity/Assets/Tests/EditMode/SimSmokeTests.cs` runs the same playthroughs inside Unity against `GoldenRun`'s constants
-(run `tools/build_sim_for_unity.sh` first so Unity has the current DLLs).
+(run `uv run tools/build_sim_for_unity.py` first so Unity has the current DLLs).
 
 Verified on .NET, Unity editor Mono, a macOS IL2CPP player (Apple clang, no `-ffp-contract=off` needed) and a WebGL
 IL2CPP player in Chrome (M3 Task 22). The platform checks below used the prior `73590e32` 1952 baseline. The issue #2
@@ -189,3 +190,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | playtest 1 E fix 1 | 1952 | `73590e32` | same; still ends 1952-02-27, turn 43 |
 | Issue #2 | 1952 | `62f8ec61` | sourced Yosef food-supply/rationing responsibility from 8 October 1951 replaces a vacancy and changes late-1951 rationing competence; 1950 and five-turn smoke unchanged |
 | GDD Phase 1 PR 3 | mvp-slice | `f6931e24` | the slice gains its city (placeholder values) and the GDD turn: Money from jobs, housing, Social cohesion and arrivals, with the reference player filling the jobs (was `0451920a`); the legacy goldens do not move |
+| GDD Phase 1 PR 4 | mvp-slice | `6343eee8` | training runs in the slice (step 4 of the GDD turn) and the reference player trains one halutz group on the first turn: it becomes a unit at Tel Aviv's hex on the fourth, its IL 0.5m adds to the debt, and the civilian it took frees a place that one more refugee is housed in (was `f6931e24`); the legacy goldens and `scenario-mvp-absorb-first` do not move |

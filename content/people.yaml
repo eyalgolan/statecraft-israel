@@ -1010,7 +1010,8 @@ people:
     competence: 7
     loyalty: 8
     offices:
-      - { office: chief_of_staff, from: 1947-06-01, to: 1949-11-09, sources: &cos [{ url: "https://en.wikipedia.org/wiki/Chief_of_the_General_Staff_(Israel)", checked: 2026-10-09 }] }
+      - { office: haganah_chief_of_staff, from: 1947-06-01, to: 1948-05-14, sources: &cos [{ url: "https://en.wikipedia.org/wiki/Chief_of_the_General_Staff_(Israel)", checked: 2026-10-09 }] }
+      - { office: chief_of_staff, from: 1948-05-14, to: 1949-11-09, sources: *cos }
     portrait: { file: promo/ref/people/Yaakov_Dori_CC0.jpg, license: CC0, source: "https://commons.wikimedia.org/wiki/File:Stafchef_Dori_houdt_toespraak_tijdens_de_militaire_parade_bij_gelegenheid_van_de,_Bestanddeelnr_255-0981.jpg", focus_y: 0.3 }
     status: fact-checked
   - id: yadin

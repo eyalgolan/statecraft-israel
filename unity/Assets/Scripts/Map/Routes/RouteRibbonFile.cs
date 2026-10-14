@@ -61,7 +61,8 @@ namespace Statecraft.Game.Map.Routes
         public const string Resource = "Routes/RouteRibbons";
         public const string AssetPath = RouteLayer.Folder + "/RouteRibbons.bytes";
         /// <summary>Bump it when RouteLayer.Geometry's rule changes (the constants are checked on their own), so CI fails a
-        /// bake made by the old rule.</summary>
+        /// bake made by the old rule. tools/tests/test_route_ribbon_bake.py pins it with a fingerprint of that code
+        /// (RouteLayer.Plan, Derive and what they call, and Bake below) and fails on an edit until both are re-pinned.</summary>
         public const int Version = 1;
         const int Magic = 0x31524353;   // "SCR1"
 

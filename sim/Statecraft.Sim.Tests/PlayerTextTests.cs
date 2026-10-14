@@ -374,6 +374,10 @@ public class PlayerTextTests
         Assert.Equal("0%", PlayerText.PercentChange(-0.004, 0));
         Assert.Equal("-IL 3.0m", PlayerText.Money(Real, "treasury", -3));
         Assert.Equal("IL 0.0m", PlayerText.Money(Real, "treasury", -0.04));
+        // #398 review N2: the parts Money is built from, for the top bar's words ("IL 18.6 million").
+        Assert.Equal(("-", "IL ", "3.0"), PlayerText.MoneyParts(Real, "treasury", -3));
+        Assert.Equal(("", "IL ", "0.0"), PlayerText.MoneyParts(Real, "treasury", -0.04));
+        Assert.Equal(("", "$", "41.5"), PlayerText.MoneyParts(Real, "fx_reserves", 41.46));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
         Assert.Equal("+IL 1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
         Assert.Equal("-$0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));

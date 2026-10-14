@@ -5,6 +5,14 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
 
 ## What ships
 - **Folder and zip:** `unity/Builds/Web-brotli/` uses Brotli compression with no decompression fallback. It is zipped as `unity/Builds/statecraft-m3-web.zip`, with `index.html` at the zip root. Both are build output and are not committed.
+- **File names:** the files under `Build/` are named by their content hash (issue #437), for example
+  `Build/814d5f9032ce4b5847cf75e492700bbb.loader.js`, so a browser that cached an earlier build cannot mix its files into
+  this one. The build's `index.html` names them; nothing else may assume a name. `index.html` keeps its fixed name and
+  a browser may show a cached copy of it (no host this project uses is known to forbid that), so the page asks the
+  server for its current copy (`fetch` with `cache: "reload"`, which also stores that copy for the next visit) and loads the files that copy names. The StreamingAssets
+  files (`content/`, `map/`, `video/` and the start screen's recording) keep their names; the player adds the build's
+  id to every URL it fetches them by (`?b=<Application.buildGUID>`,
+  `GameInputs.WithBuildId`), so a browser cannot serve one build's cached content to another.
 - **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed, and when the build's `event-photos.json` is missing, says the build was not `-shareable`, or lists an unreviewed sensitive event photograph). Never zip by hand.
 - **After building:** drop the build's rewrites of the settings with
   `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset` (as in `dev-setup.md`), so no
@@ -105,7 +113,117 @@ Each step below passed:
 | (d) IndexedDB | Database `/idbfs`, store `FILE_DATA`, keys `/idbfs/statecraft-saves` and `/idbfs/statecraft-saves/autosave.txt`. No `JS_FileSystem_Sync` deprecation message. |
 | (e) A private browser context (`Target.createBrowserContext`) | The game starts (a new game) and plays a turn. A second private context starts a new game again; no persistence is expected there. |
 
-Firefox is not installed on the development Mac, so the Firefox check is open.
+Firefox is not installed on the development Mac. A Firefox result from a contributor, and the WebKit check, are in the
+next section.
+
+## Other browsers (#43), 2026-10-14
+Build: main `04bf7cb`, WebGL, `-compression disabled`, served with web_check's handler on `http://localhost`. Mac: Apple
+M5 Pro, macOS 27.0.1. Chromium ran through `tools/web_check.py` as it is. WebKit and Firefox are Playwright's builds
+(Playwright 1.64.0, from `~/Library/Caches/ms-playwright`): Playwright's WebKit is the engine Safari uses, not Safari
+itself, and its Firefox is a patched Firefox. Chromium in the headed run is the same Chrome for Testing, driven by
+Playwright. The headed run is scripted: it starts a new game, zooms with the wheel, orbits with Q, plays four
+turns answering each event with its first option, opens Cabinet, Budget, Defence and Why? and closes each with Escape,
+turns on the First Truce card's Illustration, then reloads the page and restarts the browser on the same profile.
+
+| | Chrome for Testing 149.0.7827.55 | WebKit 27.2 (Playwright) | Firefox 157.0 (Playwright) |
+|---|---|---|---|
+| `golden&smoke=5` | PASS: both goldens and the smoke value from `docs/determinism.md`. 11 s for the whole `web_check` run; in a Playwright run of the same check the goldens arrive 5.5 s after the page opens, the smoke line at 9.3 s | PASS, headless. Goldens at 10.3 s, smoke at 19.3 s | Not run: the browser does not start on macOS 27 (below) |
+| WebGL renderer | ANGLE Metal, Apple M5 Pro | "Apple GPU" | - |
+| Start screen, map, HUD, panels, fonts | Correct | Same as Chromium; the screenshots match apart from the small difference in camera angle left by the Q orbit | - |
+| Hebrew lines on the start screen | Right to left, correct | Same (Unity draws the text, so the browser does not lay it out) | - |
+| Wheel, one notch (100 px) | 120000 m to 108000 m (10%) | Same | - |
+| Wheel over a panel | No zoom | No zoom | - |
+| Q held 0.6 s | Orbits to yaw 323.5 | Orbits to yaw 323.7 | - |
+| Mouse clicks: New Game, End Turn, options, the four screens, Continue | All work | All work | - |
+| Event card video (`first_truce.mp4`) | `VIDEO playing`, the clip shows | `VIDEO playing`, the clip shows | - |
+| Audio | The game has no sound (the card clips are silent), so there is nothing to play. Chrome warns "The AudioContext was not allowed to start" until the first click | No warning | - |
+| Save: four turns, then reload, then Continue | Same date, turn and hash (turn 4, 1948-06-12) | Same | - |
+| Save: browser closed and restarted on the same profile | Same date, turn and hash | Same | - |
+| IndexedDB databases | `/idbfs`, `UnityCache` | `/idbfs`, `UnityCache` | - |
+| Console warnings | Six "WebGL: INVALID_ENUM: getInternalformatParameter" per load; the AudioContext warning above | One "WebGL: non-portable extension enabled: WEBGL_polygon_mode" per load | - |
+| Console errors | None | None | - |
+
+Contributor result (Chaiky3, in #43): **Firefox 157.0, Windows 11 at 125% scale, main `fa10633`: pass.** It loads and
+renders, the start screen's Hebrew shows, a touchpad zoom step is 10%, and Continue after a reload returns to the same
+turn. Without a hard refresh Firefox mixed cached files from an older build ("too much recursion"); that is #437.
+
+Differences and notes:
+- **Firefox does not start here.** Playwright's Firefox 157.0 build exits with "Could not find profile folder" headless,
+  and fails to start headed, on macOS 27.0.1, so this Mac has no Firefox result. The Windows result above is the Firefox
+  evidence so far.
+- **Wheel in lines: no bug (T41).** The first run had three lines (`deltaMode` 1, sent to the canvas by script) zoom
+  0.16% in Chrome and 0.32% in WebKit instead of 10%. That came from the order of the test, not from the line mode.
+  Unity's web player hands the browser's raw `deltaY` and `deltaMode` to its engine code (the wheel handler in
+  `*.framework.js` copies both), and the engine counts the smallest wheel delta it has seen since the page loaded as one
+  notch, whatever the mode. C# sees only the result in `Mouse.scroll`; the Input System package only turns the engine's
+  scaling on or off (`scrollDeltaBehavior`, left at `UniformAcrossAllPlatforms`). Measured on the same build, each case
+  from a fresh page, events sent to the canvas by script, the same in Chrome and WebKit:
+
+  | Wheel events, in order | Zoom from each, in notches (one notch is 10%) |
+  |---|---|
+  | 3 lines | 1 |
+  | 1 line, or 1 page, or 3 px | 1 |
+  | 3 lines, 3 lines (also 10 s apart) | 1, 1 |
+  | 100 px, 3 lines | 1, 0.03 |
+  | 3 lines, 100 px | 1, 3 (33, clamped) |
+  | 100 px, 50 px, 100 px | 1, 0.5, 2 |
+  | 100 px, 200 px, 100 px | 1, 2, 1 |
+  | 0.5 px, 4 px, 100 px | 1, 3, 3 (8 and 200, clamped) |
+
+  So a mouse that always sends three lines a notch zooms 10% a notch, as one that sends 100 px does. The earlier run
+  sent a 100 px notch first (in Chrome, Playwright's 100 px notch counts as 200: a 100 px event after it zooms half a
+  notch), so the three lines after it counted as 3/100 (3/200 in Chrome). Nothing in the game's code was changed for
+  this.
+
+  What the measurements did show is a different risk: one small delta sets the notch for the rest of the session.
+  **Fixed (T45).** A scripted swipe of 31 events, 0.5 to 8 px about 16 ms apart (108 px in all, a trackpad's ramp and
+  momentum), zoomed 95% (28 notches, three a frame, stopped by the 6 km limit) in Chrome and WebKit, on its own or after a
+  mouse notch; after it, one 100 px notch out zoomed three notches. The camera now counts the browser's wheel events
+  itself (`WheelInput.jslib` queues each event's `deltaY` and `deltaMode`, and `CameraController.WheelEventNotches`
+  scales them):
+  - a pixel event of 50 px or more is one notch, whatever its size. A mouse sends one event a notch, but its size
+    varies: 100 px in Chrome and Edge on Windows, more with display scaling (125 or 150 px at 125% or 150%, if Chrome
+    scales it; not measured), less at a page zoom above 100% (80 px at 125%), and 200 px from Chrome's synthetic
+    wheel (Playwright and CDP send 100 and the page sees 200, at `devicePixelRatio` 1). The threshold is half of
+    Chrome's 100 px notch, so a page zoom up to 200% still gives a notch;
+  - a whole number of macOS mouse ticks (4.000244140625 px, what Chrome and Safari send on a Mac; an accelerated tick
+    is several ticks' worth) is one notch;
+  - three lines, or one page, is one notch;
+  - smaller pixel events, as touchpads send, count 100 px to the notch. The measured swipe's events are 0.5 to 8 px.
+    There is no documented ceiling for a real trackpad's events, and a fast flick can send events of tens of pixels or
+    more; one of 50 px or more counts as one notch, so an event between 50 and 100 px zooms up to twice what its length
+    would, and a bigger one less. Each frame is still clamped to three notches.
+
+  The same swipe now zooms 1.08 notches (10.8%) over 30 or 31 frames, never more than 0.15 in a frame, and a notch of
+  100, 150 or 200 px or three lines, before or after it, zooms 10%. `uv run tools/headed.py wheel` repeats these cases
+  in Chrome, and `pytest tools/tests/test_headed.py --headed` checks them, including Chrome's own 100 px notch.
+
+  Firefox 88 and later report a mouse notch in lines only to a script that reads `deltaMode` before `deltaY`, and in
+  pixels (three line heights) otherwise; Unity's own handler reads `deltaY` first. So the listener sits on `window` in
+  the capture phase, ahead of Unity's handler, and reads the mode first; Firefox then keeps the notch in lines for
+  both. That listener is what handles Firefox; the 50 px rule is only a backstop in case a notch still arrives in
+  pixels. Not measured: Playwright's Firefox does not start on this Mac (headless: "Failed to launch the browser
+  process"; headed and with a persistent profile: no window within 60 s). Were the notch to arrive in pixels after
+  all, three line heights of 50 px or more would still be one notch. With a default font of 14 px or less, three line
+  heights come to about 48 px, so such a notch would zoom about 0.48 of a step: too little, never too much.
+
+  Known limits: a mouse notch below 50 px that is not a whole macOS tick counts in proportion, for instance a Mac mouse
+  tick at 110% page zoom (3.64 px, 3.6%), a notch at a page zoom of 200% or more, or a Firefox notch in pixels with a
+  default font of 14 px or less (about 48 px, 0.48 of a step). Still to be tried by hand: a Mac
+  trackpad (including fast flicks) and a Mac mouse in Chrome and Safari, a mouse in Firefox (Windows, Linux, Mac),
+  Chrome or Edge on Windows at 125% and 150% display scale (one notch), and a mouse on Linux.
+- **Aborted requests in Chrome.** At each start Chrome lists about 30 of the 51 content files (and the map files) as
+  `net::ERR_ABORTED` in its network log. The files arrive whole: both browsers log the same `BOOT OK content` hash and
+  the goldens pass. WebKit lists none. Not a console error, so it is left as it is.
+- **Known warnings, nothing to fix.** On every load Chrome logs six "WebGL: INVALID_ENUM: getInternalformatParameter"
+  warnings and, until the first click, "The AudioContext was not allowed to start"; WebKit logs one "WebGL: non-portable
+  extension enabled: WEBGL_polygon_mode". With the aborted requests above, these are the expected console noise of this
+  build: none is an error, and the game runs the same with them.
+- Input in these runs is synthetic (Playwright's mouse, wheel and keys), not a physical mouse or touchpad.
+
+Still open: Safari itself (only its engine was run here), Firefox on a Mac, Chrome and Edge on Windows, a real mouse wheel
+in Firefox, a real touchpad and a Mac mouse (above), and the two-upload itch.io save test below. Each needs the owner's
+machines or the project's itch.io account.
 
 ## OWNER STEP: sensitivity review before any shared build
 Spec section 5.5 requires a recorded sensitivity review for events with sensitive tags (holocaust, terror, massacre,
@@ -192,7 +310,10 @@ Published at: (owner fills in)
      Re-uploading the same build is enough to isolate the changed upload URL. Record both upload/build IDs. Confirm B has
      a different upload URL but the same actual game-frame origin. If its origin differs, record that separately: this
      fixed-folder test cannot prove persistence between origins, because IndexedDB is origin-scoped.
-  4. Open B with a hard reload. **Pass** only if date, turn and full state hash match the baseline. Copy the complete
+  4. First open B with a normal load, not a hard reload (issue #437: a returning player's browser has A cached). It must
+     start and print `GAME OK`, and DevTools' Network panel must show the `Build/` file names that B's `index.html`
+     names, not A's. Record the result, and any `BOOT FAIL` line, as a separate row. Then open B with a hard reload.
+     **Pass** only if date, turn and full state hash match the baseline. Copy the complete
      `GAME OK` line, the old `TURN` line and any load warning/error. A date/turn match alone is not a pass. Reload B once
      more and check the same tuple, so a one-time replay is not mistaken for a durable save.
   5. If B starts again on 15 May 1948, or the state hash differs with unchanged content, record fail with both build IDs,
@@ -221,6 +342,7 @@ Result: not run on itch.io (owner step).
 | State hash after | pending |
 | Full TURN / GAME OK lines and warnings | pending |
 | Reload B result | pending |
+| B opened without a hard reload: `GAME OK`, and B's `Build/` names (issue #437) | pending |
 | Pass / fail and fallback issue if needed | pending |
 
 Review basis: `unity/Assets/Scripts/SaveStore.cs` fixes the WebGL directory; `sim/Statecraft.Sim/SaveGame.cs` records the

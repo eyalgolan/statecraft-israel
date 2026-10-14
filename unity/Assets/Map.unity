@@ -383,7 +383,7 @@ MonoBehaviour:
   markerMaterial: {fileID: 2100000, guid: 7c65bbd4355344f1990495c458323a4e, type: 2}
   selectionMaterial: {fileID: 2100000, guid: 6116b1f8c72b244e0a9556c2cdb6b1c5, type: 2}
   seaMaterial: {fileID: 2100000, guid: 5bb451931546c49d6b2fe35726d07cfd, type: 2}
-  borderLandMaterial: {fileID: 2100000, guid: ed41bb6e0c8274066b408da9b1f5bef2, type: 2}
+  frameMaterial: {fileID: 2100000, guid: 556bff8d7fd140779e0903044df5cd10, type: 2}
   kitMaterial: {fileID: 2100000, guid: 24c1cceae1b22492e9c9f2be7c1a6b5e, type: 2}
   treeMaterial: {fileID: 2100000, guid: 2dd15539298814dafa803cdbc57e2426, type: 2}
   terrainWaterMesh: {fileID: 4900000, guid: 51f85aaa1270842658cbc02738ff8df2, type: 3}
@@ -435,6 +435,7 @@ MonoBehaviour:
   boot: {fileID: 309119767}
   document: {fileID: 1912926282}
   strings: {fileID: 4900000, guid: 1c2724b5422584e3dbeef4ab44d2e9da, type: 3}
+  stringsHe: {fileID: 4900000, guid: 27f3faa05a8e4dbab9c8563cd9461548, type: 3}
   portraits: {fileID: 11400000, guid: 57539449dae8640c6b6848f8c1e433ff, type: 2}
   map: {fileID: 1195372452}
   placements: {fileID: 1128708372}

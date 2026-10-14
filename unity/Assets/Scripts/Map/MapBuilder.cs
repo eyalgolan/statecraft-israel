@@ -25,8 +25,6 @@ namespace Statecraft.Game.Map
         /// capture, the 90 km flythrough) a coarse surface that rises above the draped hex outlines in valleys (K2).</summary>
         public const float TerrainPixelError = 1f;
 
-        /// <summary>The muted land tone of neighbouring land past the map's edge (BorderLand.mat).</summary>
-        public static readonly Color BorderLandColour = new Color(0.60f, 0.56f, 0.46f);
 
         /// <summary>Biome colours of the terrain layers (the minimap uses the same ones).</summary>
         public static IReadOnlyDictionary<string, Color> BiomeColours => Biome;
@@ -60,7 +58,12 @@ namespace Statecraft.Game.Map
         /// <see cref="BiomeTextureResolution"/> square over the map) before they are uploaded, so the settlement kits can tint
         /// the ground of their footprints (art spike) at no cost per frame.</summary>
         public static GameObject Build(HeightmapMeta meta, float[,] heights, HexFile hexFile, Material terrainMaterial,
-            Action<Color32[], int, GeoFrame> paintGround)
+            Action<Color32[], int, GeoFrame> paintGround) => Build(meta, heights, hexFile, terrainMaterial, paintGround, false);
+
+        /// <summary>As Build; with <paramref name="bakedBiome"/> the biome colours are read from their bake
+        /// (BiomeColourFile, issue #321: boot time) when it was made from these inputs, else blended here.</summary>
+        public static GameObject Build(HeightmapMeta meta, float[,] heights, HexFile hexFile, Material terrainMaterial,
+            Action<Color32[], int, GeoFrame> paintGround, bool bakedBiome)
         {
             if (meta == null) throw new ArgumentNullException(nameof(meta));
             if (heights == null) throw new ArgumentNullException(nameof(heights));
@@ -86,7 +89,8 @@ namespace Statecraft.Game.Map
             terrain.basemapDistance = NoBasemapDistanceM;
             data.terrainLayers = new[] { NeutralLayer(assets) };   // one layer, one pass: the graph paints from the biome texture
             data.alphamapResolution = 16;
-            MapShaderGlobals.Apply(terrain, meta, hexFile.hex_size_km * 1000f, BakeBiomeTexture(frame, hexFile, assets, paintGround), assets);
+            Boot.DiagLog.BootPhase("terrain object created");   // issue #321: splits the terrain object from the biome colours
+            MapShaderGlobals.Apply(terrain, meta, hexFile.hex_size_km * 1000f, BakeBiomeTexture(frame, hexFile, assets, paintGround, bakedBiome), assets);
             Boot.DiagLog.BootPhase("biome texture baked");
             MapBorders.Apply(hexFile, assets);   // region borders: none drawn until a layer is given (MapBorders.Use)
             return terrainGo;
@@ -139,12 +143,27 @@ namespace Statecraft.Game.Map
 
         /// <summary>The ground colour of every point, blended from the biomes of nearby hex centres (BiomeBlender) in the
         /// MapPalette.Ground colours, baked once into an sRGB texture over the whole map (texel row 0 = south) that the
-        /// terrain shader samples as _ScBiomeTex. Owned by the map.</summary>
-        static Texture2D BakeBiomeTexture(GeoFrame frame, HexFile hexes, MapRuntimeAssets assets, Action<Color32[], int, GeoFrame> paint)
+        /// terrain shader samples as _ScBiomeTex. Owned by the map. With <paramref name="baked"/> the colours come from
+        /// BiomeColourFile when it matches these inputs.</summary>
+        static Texture2D BakeBiomeTexture(GeoFrame frame, HexFile hexes, MapRuntimeAssets assets, Action<Color32[], int, GeoFrame> paint, bool baked)
+        {
+            int res = BiomeTextureResolution;
+            var tex = assets.Own(new Texture2D(res, res, TextureFormat.RGBA32, true, false)
+                { name = "BiomeColour", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear });
+            var px = baked ? BiomeColourFile.Load(frame, hexes) : null;
+            px ??= BiomePixels(frame, hexes);
+            paint?.Invoke(px, res, frame);
+            tex.SetPixels32(px); tex.Apply(true, true);   // no CPU copy: nothing reads the pixels back (about 5.6 MB on the heap)
+            return tex;
+        }
+
+        /// <summary>The biome colour texels (<see cref="BiomeTextureResolution"/> square, row 0 = south) before the ground
+        /// tint: every texel centre's BiomeBlender weights over the MapPalette.Ground colours. Editor BiomeColourBake bakes
+        /// them (BiomeColourFile).</summary>
+        public static Color32[] BiomePixels(GeoFrame frame, HexFile hexes)
         {
             var names = new List<string>(Biome.Keys);
-            var colours = new Color[names.Count];
-            for (int i = 0; i < names.Count; i++) colours[i] = MapPalette.Ground[names[i]];
+            var colours = BiomeLayerColours();
             var centres = new List<Vector2>(hexes.hexes.Length); var layerOf = new List<int>(hexes.hexes.Length);
             foreach (var h in hexes.hexes)
             {
@@ -152,8 +171,6 @@ namespace Statecraft.Game.Map
             }
             var blender = new BiomeBlender(centres, layerOf, hexes.hex_size_km * 1000f, names.Count);
             int res = BiomeTextureResolution;
-            var tex = assets.Own(new Texture2D(res, res, TextureFormat.RGBA32, true, false)
-                { name = "BiomeColour", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear });
             var px = new Color32[res * res]; var wts = new float[names.Count];
             for (int y = 0; y < res; y++)
                 for (int x = 0; x < res; x++)
@@ -164,86 +181,61 @@ namespace Statecraft.Game.Map
                     c.a = 1f;
                     px[y * res + x] = c;
                 }
-            paint?.Invoke(px, res, frame);
-            tex.SetPixels32(px); tex.Apply(true, true);   // no CPU copy: nothing reads the pixels back (about 5.6 MB on the heap)
-            return tex;
+            return px;
         }
 
-        /// <summary>Distances (m) of the border skirt's rings from the map's edge: land holds the edge's height across the
-        /// first rings and reaches sea level only at the last, beyond anything the camera can see (SkirtFall).</summary>
-        public static readonly float[] SkirtRings = { 0f, 4000f, 20000f, 60000f, 600000f };
-        /// <summary>Share of the fall to sea level reached at each ring (land samples only). Visual v1 Task 7: the edge's height
-        /// is held for 20 km (the Jordanian plateau, about 900 m, continues past the edge instead of sagging at once) and
-        /// eases to sea level by the last ring, beyond anything the camera sees.</summary>
-        public static readonly float[] SkirtFall = { 0f, 0.05f, 0.15f, 0.45f, 1f };
-        /// <summary>Half-width (m) of the along-edge average the land skirt holds past its inner ring (Task 7): holding each
-        /// edge vertex's own height for 20 km drew its ridges and gullies out as long stripes across the skirt, so the rings
-        /// past the edge hold the edge's broad height (the plateau) and only ring 0 follows the terrain's edge exactly.</summary>
-        public const float SkirtHoldSmoothingM = 8000f;
+        /// <summary>The ground colour of each biome layer, in the order of <see cref="BiomeColours"/>' keys (the blend's
+        /// layer indices).</summary>
+        public static Color[] BiomeLayerColours()
+        {
+            var names = new List<string>(Biome.Keys);
+            var colours = new Color[names.Count];
+            for (int i = 0; i < names.Count; i++) colours[i] = MapPalette.Ground[names[i]];
+            return colours;
+        }
+
         /// <summary>A heightmap sample this close to 0 m is sea (tools/dem_to_heightmap.py writes open sea as exactly 0 m).</summary>
         public const float SeaToleranceM = 0.5f;
 
-        /// <summary>The land and sea past the map's edge (fix round 2, R2-1 and N1). Each edge sample continues outward: a sea
-        /// sample stays flat at sea level (submesh 0, Sea.mat: the unlit Statecraft/Sea, shaded by the same ScWaterShade as the
-        /// terrain's own water, so no seam shows); a land sample meets the terrain's edge at ring 0, then holds the along-edge
-        /// mean of the edge's height (SkirtHoldSmoothingM) and eases to sea level by the last ring (SkirtFall; submesh 1, a
-        /// muted land tone), so Sinai, Jordan and Lebanon read as land. A segment with a land end is land. Corner fans close the four corners. Every triangle lies outside the
-        /// terrain's footprint, so nothing covers the map (the old full sea plane hid all land below about -10 m).</summary>
-        public static Mesh BuildBorderSkirt(TerrainData data, float elevMinM, MapRuntimeAssets assets)
+        /// <summary>The diorama's frame (issue #36, promo 02): the map is a relief board in a wooden picture frame on a dark
+        /// table. Horizontal run (m) of the bevel from the terrain's edge to the frame's top: where the edge stands higher than
+        /// the frame (the Jordanian plateau, the Lebanon hills) it is the board's cut earth falling to the frame; where it is
+        /// lower (the sea, the Sinai coast) it is the frame's inner lip rising from it.</summary>
+        public const float FrameBevelM = 1500f;
+        /// <summary>Width (m) of the frame's top, from the bevel's outer end to the frame's outer face.</summary>
+        public const float FrameWidthM = 6000f;
+        /// <summary>Height (world m, exaggerated like the relief) of the frame's top above sea level, and of its rounded
+        /// crown above that.</summary>
+        public const float FrameRiseM = 1500f, FrameCrownM = 300f;
+        /// <summary>How far (m) the table runs past the frame: beyond anything the camera sees at its farthest zoom.</summary>
+        public const float TableReachM = 600000f;
+        /// <summary>sRGB albedos: the frame's walnut, the table's darker wood, and the board's cut earth.</summary>
+        public static readonly Color FrameWood = new Color(0.44f, 0.26f, 0.15f), TableWood = new Color(0.21f, 0.14f, 0.10f),
+            CutEarth = new Color(0.64f, 0.49f, 0.33f);
+        /// <summary>Which surface a frame vertex belongs to, carried in its colour's alpha (MapFrame.shader picks the grain).</summary>
+        public static class FrameKind { public const float Earth = 0f, Wood = 0.5f, Table = 1f; }
+
+        /// <summary>The frame round the map (issue #36; it replaces the border skirt, whose flat land slab and sea ran 600 km
+        /// past the edge). Three parts, all outside the terrain's footprint and all at or below the terrain's highest point
+        /// and at or above its lowest (world y 0), so the camera's fit (CameraController.ViewFootprint, issue #174) keeps
+        /// every one of them off the screen wherever the view fits the map; they show only at the overview, where the view
+        /// is wider than the map:
+        /// - the bevel: one spoke per terrain vertex along each edge, from the edge's own height (ring 0 meets the terrain
+        ///   exactly) to the frame's top FrameBevelM out (cut earth above the frame's top, the frame's inner lip below it);
+        /// - the frame: a mitred walnut moulding FrameWidthM wide with a rounded crown, and its outer face down to the table;
+        /// - the table: dark wood at world y 0 out to TableReachM (the shader darkens it next to the frame and away from it).
+        /// One submesh, one material (MapFrame.mat): vertex colour = sRGB albedo, alpha = FrameKind, uv0 = (along the side,
+        /// out from the frame's outer edge) in metres. The table and frame faces carry their own vertices, so their creases stay
+        /// sharp; the bevel is smooth along each edge.</summary>
+        public static Mesh BuildFrame(TerrainData data, float elevMinM, MapRuntimeAssets assets)
         {
             var size = data.size;
-            float seaY = (0f - elevMinM) * VerticalExaggeration;
-            // One spoke per terrain vertex along each edge (the heightmap's own resolution), so the skirt's inner edge follows
-            // the terrain's edge exactly; sampling every second vertex left slivers up to 36 m (fix round 3, m-4).
+            float seaY = (0f - elevMinM) * VerticalExaggeration, topY = seaY + FrameRiseM, tableY = 0f;
             int samples = data.heightmapResolution - 1;
-            var verts = new List<Vector3>(); var sea = new List<int>(); var land = new List<int>();
-            bool IsLand(float h) => Mathf.Abs(h / VerticalExaggeration + elevMinM) > SeaToleranceM;
-            // The edge's heights and their running mean over +-SkirtHoldSmoothingM of the edge's own samples (prefix sums; the
-            // window is cut short at the edge's ends). Every sample counts, so no ridge between taps aliases (fix round 1, M4).
-            float[] HeldAlong(Vector2 a, Vector2 b, float[] h)
-            {
-                for (int i = 0; i <= samples; i++) h[i] = Height(Vector2.Lerp(a, b, (float)i / samples));
-                var sum = new double[samples + 2];
-                for (int i = 0; i <= samples; i++) sum[i + 1] = sum[i] + h[i];
-                int w = Mathf.Max(1, Mathf.RoundToInt(SkirtHoldSmoothingM / ((b - a).magnitude / samples)));
-                var held = new float[samples + 1];
-                for (int i = 0; i <= samples; i++)
-                {
-                    int lo = Mathf.Max(0, i - w), hi = Mathf.Min(samples, i + w);
-                    held[i] = (float)((sum[hi + 1] - sum[lo]) / (hi - lo + 1));
-                }
-                return held;
-            }
-            // One ring of vertices outward from an edge point (h its height, held the height the rings past it hold); returns
-            // the index of its first vertex.
-            int Spoke(Vector2 p, float h, float held, Vector2 outward, bool isLand, Vector2? outward2 = null)
-            {
-                int first = verts.Count;
-                for (int k = 0; k < SkirtRings.Length; k++)
-                {
-                    var q = p + (outward + (outward2 ?? Vector2.zero)) * SkirtRings[k];
-                    float y = isLand ? Mathf.Lerp(held, seaY, SkirtFall[k]) : seaY;
-                    if (k == 0) y = h;                                     // meets the terrain's edge exactly
-                    verts.Add(new Vector3(q.x, y, q.y));
-                }
-                return first;
-            }
-            void Quad(List<int> into, int a0, int b0)                   // the band between two spokes
-            {
-                for (int k = 0; k + 1 < SkirtRings.Length; k++)
-                {
-                    int a = a0 + k, a1 = a0 + k + 1, b = b0 + k, b1 = b0 + k + 1;
-                    Tri(into, a, b, b1); Tri(into, a, b1, a1);
-                }
-            }
-            void Tri(List<int> into, int i, int j, int l)               // wound to face up
-            {
-                var n = Vector3.Cross(verts[j] - verts[i], verts[l] - verts[i]);
-                if (n.y < 0) { var t = j; j = l; l = t; }
-                if (Mathf.Abs(n.y) > 1e-3f) { into.Add(i); into.Add(j); into.Add(l); }   // drops the degenerate corner centre
-            }
+            var verts = new List<Vector3>(); var colours = new List<Color>(); var uvs = new List<Vector2>(); var tris = new List<int>();
             float Height(Vector2 p) => data.GetInterpolatedHeight(Mathf.Clamp01(p.x / size.x), Mathf.Clamp01(p.y / size.z));
-            // The four edges, walked along: (start, end, outward).
+            Color Of(Color albedo, float kind) => new Color(albedo.r, albedo.g, albedo.b, kind);
+            // The four edges, walked along: (start, end, outward). Each corner's mitre runs along the sum of its two normals.
             var edges = new (Vector2 a, Vector2 b, Vector2 n)[]
             {
                 (new Vector2(0, 0), new Vector2(size.x, 0), Vector2.down),                 // south
@@ -251,35 +243,66 @@ namespace Statecraft.Game.Map
                 (new Vector2(size.x, size.z), new Vector2(0, size.z), Vector2.up),          // north
                 (new Vector2(0, size.z), new Vector2(0, 0), Vector2.left),                  // west
             };
-            var heights = new float[edges.Length][]; var helds = new float[edges.Length][];
-            for (int e = 0; e < edges.Length; e++) { heights[e] = new float[samples + 1]; helds[e] = HeldAlong(edges[e].a, edges[e].b, heights[e]); }
+            // A quad (a, b, c, d in order round it), wound to face up, or outward where it is vertical.
+            void Quad(int a, int b, int c, int d, Vector2 outward)
+            {
+                var n = Vector3.Cross(verts[b] - verts[a], verts[c] - verts[a]);
+                bool flip = Mathf.Abs(n.y) > 1e-3f * n.magnitude ? n.y < 0 : n.x * outward.x + n.z * outward.y < 0;
+                if (flip) tris.AddRange(new[] { a, c, b, a, d, c });
+                else tris.AddRange(new[] { a, b, c, a, c, d });
+            }
+            int Add(Vector2 p, float y, Color colour, Vector2 uv) { verts.Add(new Vector3(p.x, y, p.y)); colours.Add(colour); uvs.Add(uv); return verts.Count - 1; }
+            // The frame's profile past the bevel: (offset from the map's edge, height). The crown sits a little nearer the map,
+            // as on a picture frame's moulding; the last ring drops the outer face to the table.
+            var profile = new (float o, float y)[]
+            {
+                (FrameBevelM, topY), (FrameBevelM + 0.3f * FrameWidthM, topY + FrameCrownM),
+                (FrameBevelM + 0.7f * FrameWidthM, topY + FrameCrownM), (FrameBevelM + FrameWidthM, topY), (FrameBevelM + FrameWidthM, tableY),
+            };
+            float outer = FrameBevelM + FrameWidthM;
             for (int e = 0; e < edges.Length; e++)
             {
                 var (a, b, n) = edges[e];
-                int prev = -1; bool prevLand = false;
+                Vector2 ma = n + edges[(e + edges.Length - 1) % edges.Length].n, mb = n + edges[(e + 1) % edges.Length].n;
+                var dir = (b - a).normalized;
+                float Along(Vector2 p) => Vector2.Dot(p - a, dir);
+                // The bevel: inner vertex on the terrain's edge, outer on the frame's top inner edge (mitred at the corners).
+                int prev = -1;
                 for (int i = 0; i <= samples; i++)
                 {
-                    var p = Vector2.Lerp(a, b, (float)i / samples);
-                    bool isLand = IsLand(heights[e][i]);
-                    int spoke = Spoke(p, heights[e][i], helds[e][i], n, isLand);
-                    if (prev >= 0) Quad(prevLand || isLand ? land : sea, prev, spoke);
-                    prev = spoke; prevLand = isLand;
+                    float t = (float)i / samples;
+                    Vector2 p = Vector2.Lerp(a, b, t), q = Vector2.Lerp(a + ma * FrameBevelM, b + mb * FrameBevelM, t);
+                    float h = Height(p);
+                    var colour = h > topY ? Of(CutEarth, FrameKind.Earth) : Of(FrameWood, FrameKind.Wood);
+                    int inner = Add(p, h, colour, new Vector2(Along(p), -outer));
+                    Add(q, topY, colour, new Vector2(Along(q), FrameBevelM - outer));
+                    if (prev >= 0) Quad(prev, inner, inner + 1, prev + 1, n);
+                    prev = inner;
+                }
+                // The frame's faces, each with its own four vertices (sharp creases).
+                for (int k = 0; k + 1 < profile.Length; k++)
+                {
+                    var (o0, y0) = profile[k]; var (o1, y1) = profile[k + 1];
+                    var colour = Of(FrameWood, FrameKind.Wood);
+                    Vector2 a0 = a + ma * o0, b0 = b + mb * o0, a1 = a + ma * o1, b1 = b + mb * o1;
+                    int v0 = Add(a0, y0, colour, new Vector2(Along(a0), o0 - outer)), v1 = Add(b0, y0, colour, new Vector2(Along(b0), o0 - outer));
+                    int v2 = Add(b1, y1, colour, new Vector2(Along(b1), o1 - outer)), v3 = Add(a1, y1, colour, new Vector2(Along(a1), o1 - outer));
+                    Quad(v0, v1, v2, v3, n);
+                }
+                // The table, out to the reach (uv.y = metres out from the frame).
+                {
+                    var colour = Of(TableWood, FrameKind.Table);
+                    float far = outer + TableReachM;
+                    Vector2 a0 = a + ma * outer, b0 = b + mb * outer, a1 = a + ma * far, b1 = b + mb * far;
+                    int v0 = Add(a0, tableY, colour, new Vector2(Along(a0), 0f)), v1 = Add(b0, tableY, colour, new Vector2(Along(b0), 0f));
+                    int v2 = Add(b1, tableY, colour, new Vector2(Along(b1), TableReachM)), v3 = Add(a1, tableY, colour, new Vector2(Along(a1), TableReachM));
+                    Quad(v0, v1, v2, v3, n);
                 }
             }
-            // Corners: a fan between the two edges' outward spokes and the diagonal, in the corner sample's kind.
-            for (int e = 0; e < edges.Length; e++)
-            {
-                var corner = edges[e].b; var n1 = edges[e].n; var n2 = edges[(e + 1) % edges.Length].n;
-                int e2 = (e + 1) % edges.Length;
-                float h = heights[e][samples], held1 = helds[e][samples], held2 = helds[e2][0];   // the corner ends edge e, starts e2
-                bool isLand = IsLand(h);
-                int s1 = Spoke(corner, h, held1, n1, isLand), sd = Spoke(corner, h, 0.5f * (held1 + held2), n1, isLand, n2), s2 = Spoke(corner, h, held2, n2, isLand);
-                Quad(isLand ? land : sea, s1, sd); Quad(isLand ? land : sea, sd, s2);
-            }
-            var mesh = assets.Own(new Mesh { name = "BorderSkirt", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 });
-            mesh.SetVertices(verts);
-            mesh.subMeshCount = 2;
-            mesh.SetTriangles(sea, 0); mesh.SetTriangles(land, 1);
+            // About 16.5k vertices at the 2049 heightmap: 16-bit indices, unless a finer heightmap needs more.
+            var mesh = assets.Own(new Mesh { name = "MapFrame", indexFormat = verts.Count > 65535 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 });
+            mesh.SetVertices(verts); mesh.SetColors(colours); mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(tris, 0);
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             return mesh;
         }
@@ -312,7 +335,9 @@ namespace Statecraft.Game.Map
 
         /// <summary>BuildWaterMesh's geometry as heightmap samples: each vertex is sample (x, y) packed as x | y << 16, and
         /// the triangles index them (three a triangle, facing up). Baked into terrain_water.bytes (WaterMeshBytes) so a
-        /// player only places the vertices (issue #195: boot time).</summary>
+        /// player only places the vertices (issue #195: boot time). The bake has no version: a change to this method (or to
+        /// TerrainSize, WaterMeshBytes) needs a re-bake (TerrainWaterBake.Bake) and a re-pin of PINNED_CODE in
+        /// tools/tests/test_terrain_water_bake.py, which fails until then (issue #535).</summary>
         public static (int[] grid, int[] indices) WaterMeshGrid(int res, Vector3 size, float[,] heights, float elevMinM)
         {
             int cells = res - 1;

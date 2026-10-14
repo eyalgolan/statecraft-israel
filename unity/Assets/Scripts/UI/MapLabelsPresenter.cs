@@ -33,11 +33,22 @@ namespace Statecraft.Game.UI
     /// (OccluderNames: the top bar, the info panel, the minimap and its map-layer caption, the event card), does not
     /// overlap an already placed pill (its last laid-out size plus MarginPx), covers at most MaxKitCover of its own kit's
     /// rectangle and of every other visible kit's, and is more than twice as far from every other visible marker's top as
-    /// from its own kit, plus MarginPx, so no name reads as a neighbour's. A city whose spots all crowd a neighbour keeps
-    /// the first that is clear of panels, pills and its own kit. A pill hidden in the last refresh needs HysteresisPx more
+    /// from its own kit (the kit alone, not the tokens on it), plus MarginPx, so no name reads as a neighbour's. A city
+    /// that finds no such spot never loses its name: it takes, in this order, the first spot round its kit alone that
+    /// still reads as its own (over a unit token if need be), then the first clear of panels, pills, tokens and its own
+    /// kit, then the first clear of panels, pills and its own kit. A pill hidden in the last refresh needs HysteresisPx more
     /// room to come back, so it does not blink at a threshold. Refresh allocates nothing. The dense Tel Aviv - Lod cluster
     /// keeps M2's anchor classes. The kits' bounds are read once, when the presenter is created (a later MapScene.Build
     /// needs a new presenter; GameRoot makes one per Begin).
+    ///
+    /// Units (issue #197): a pill also keeps clear of the unit tokens (UnitLayer.KeepClear, passed in as keepClear): each
+    /// token's boxes (its standing figures, aircraft or ship, and its badge) are projected to one screen rectangle, and a
+    /// spot that overlaps one, grown by MarginPx, does not fit, as a spot under a panel does not. A token that stands on a
+    /// settlement's kit (its rectangle overlaps the kit's) counts as part of it for the spots: they are placed round the
+    /// kit and that token together, so a town's name hangs just above the brigade standing in it rather than beside the
+    /// whole town; how far the name is from its own town is still measured from the kit alone. A token is no settlement's marker, so it never hides a marker the way a panel does. The rectangles are
+    /// re-read when the camera moves and whenever the layer hands over a new list (the tokens were rebuilt, or the "units"
+    /// toggle changed).
     ///
     /// The 1948 localities (MapScene.Localities, owner rulings 2026-10-11) get smaller pills with their 1948 names, placed
     /// after every game settlement by the same rules and only nearer than LocalityDistanceM (farther out they are skipped
@@ -78,7 +89,7 @@ namespace Statecraft.Game.UI
         {
             public Settlement Settlement = null!; public Vector3 MarkerTop; public Bounds[] Kit = null!, Marker = null!; public VisualElement Slot = null!;
             public Label Label = null!; public Spot First; public bool IsCity, IsLocality, TopVisible, KitInFront, ShownLast = true;
-            public Vector2 TopPanel; public Rect KitPanel, Placed; public string? Tip;
+            public Vector2 TopPanel; public Rect KitPanel, Around, Placed; public string? Tip;
         }
 
         readonly VisualElement container;
@@ -91,6 +102,9 @@ namespace Statecraft.Game.UI
         readonly List<VisualElement> occluders = new List<VisualElement>();
         readonly List<Rect> occluderRects = new List<Rect>();  // in the layer's coordinates
         readonly List<Rect> placed = new List<Rect>();
+        readonly Func<IReadOnlyList<Bounds[]>?>? keepClear;     // the unit tokens' world boxes (UnitLayer.KeepClear), or none
+        readonly List<Rect> keepClearRects = new List<Rect>(); // their screen rectangles, in the layer's coordinates
+        IReadOnlyList<Bounds[]>? lastKeepClear;
         Rect layerRect;                                        // the panel in the layer's coordinates: a pill stays inside it
         readonly EventCallback<GeometryChangedEvent> onOccluderGeometry, onContainerGeometry;
         Matrix4x4 lastViewProjection; Rect lastCameraRect; Vector2 lastPanelSize, lastOrigin; float lastZoom = float.NaN;
@@ -125,9 +139,11 @@ namespace Statecraft.Game.UI
             return lines.Count == 0 ? null : string.Join("\n", lines);
         }
 
-        public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null)
+        public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null,
+            Func<IReadOnlyList<Bounds[]>?>? keepClear = null)
         {
             var tip = tipText ?? DefaultTip;
+            this.keepClear = keepClear;
             container = root.Q<VisualElement>(ContainerName) ?? throw new InvalidOperationException($"Game.uxml has no '{ContainerName}' element");
             this.camera = camera;
             this.map = map;
@@ -285,13 +301,16 @@ namespace Statecraft.Game.UI
             int mask = OccluderMask();
             float labelSizes = 0f;   // a pill that grows or shrinks (a late font, a new text) is re-placed (re-review N2)
             bool localities = distance <= LocalityDistanceM;   // farther out the localities are skipped outright (cost)
+            var tokens = keepClear?.Invoke();
             for (int i = 0; i < items.Count; i++)
             {
                 if (items[i].IsLocality && !localities) continue;
                 var st = items[i].Label.resolvedStyle; if (!float.IsNaN(st.width) && !float.IsNaN(st.height)) labelSizes += st.width + st.height;
             }
             if (!force && sizesKnown && !geometryDirty && labelSizes == lastLabelSizes && viewProjection == lastViewProjection && cameraRect == lastCameraRect
-                && screen == lastPanelSize && origin == lastOrigin && distance == lastZoom && mask == lastOccluderMask && kitsShown == lastKitsShown) return;
+                && screen == lastPanelSize && origin == lastOrigin && distance == lastZoom && mask == lastOccluderMask && kitsShown == lastKitsShown
+                && tokens == lastKeepClear) return;
+            lastKeepClear = tokens;
             lastViewProjection = viewProjection; lastCameraRect = cameraRect; lastPanelSize = screen; lastOrigin = origin;
             lastZoom = distance; lastOccluderMask = mask; lastKitsShown = kitsShown; lastLabelSizes = labelSizes; geometryDirty = false;
             sizesKnown = true;
@@ -307,6 +326,10 @@ namespace Statecraft.Game.UI
                         var b = occluders[i].worldBound;
                         if (!float.IsNaN(b.x) && b.width > 0f) occluderRects.Add(new Rect(b.position - origin, b.size));
                     }
+            keepClearRects.Clear();
+            if (tokens != null)
+                for (int i = 0; i < tokens.Count; i++)
+                    if (ProjectBoxes(tokens[i], viewProjection, cameraRect, screen, origin, out var r)) keepClearRects.Add(r);
 
             for (int i = 0; i < items.Count; i++)
             {
@@ -316,6 +339,10 @@ namespace Statecraft.Game.UI
                 it.TopPanel = ToPanel(t, cameraRect, screen, origin);
                 it.TopVisible = t.z > 0f && t.x >= 0f && t.x <= 1f && t.y >= 0f && t.y <= 1f && !UnderAPanel(it.TopPanel);   // a marker under a panel is no one's neighbour
                 it.KitInFront = ProjectBoxes(kitsShown ? it.Kit : it.Marker, viewProjection, cameraRect, screen, origin, out it.KitPanel);
+                it.Around = it.KitPanel;   // the kit, and every token that stands on it: the spots are placed round both
+                for (int k = 0; k < keepClearRects.Count; k++)
+                    if (keepClearRects[k].Overlaps(it.KitPanel)) it.Around = Rect.MinMaxRect(Mathf.Min(it.Around.xMin, keepClearRects[k].xMin),
+                        Mathf.Min(it.Around.yMin, keepClearRects[k].yMin), Mathf.Max(it.Around.xMax, keepClearRects[k].xMax), Mathf.Max(it.Around.yMax, keepClearRects[k].yMax));
             }
 
             placed.Clear();
@@ -338,14 +365,17 @@ namespace Statecraft.Game.UI
                     {
                         float extra = it.ShownLast ? 0f : HysteresisPx;
                         var home = SpotRect(it.First, it.KitPanel, it.TopPanel, size);   // where the USS anchor class draws it
-                        bool found = TryPlace(it, size, home, it.First, extra, true, ref shift);
+                        bool found = TryPlace(it, size, home, it.First, extra, true, true, ref shift);
                         for (int k = 0; !found && k < Fallbacks.Length; k++)
-                            if (Fallbacks[k] != it.First) found = TryPlace(it, size, home, Fallbacks[k], extra, true, ref shift);
-                        if (!found && it.IsCity)
+                            if (Fallbacks[k] != it.First) found = TryPlace(it, size, home, Fallbacks[k], extra, true, true, ref shift);
+                        // A city keeps its name (review of #518): next round its kit alone, still reading as its own but
+                        // over a token if need be; then clear of the tokens but not of its neighbours; last, neither.
+                        for (int pass = 0; !found && it.IsCity && pass < 3; pass++)
                         {
-                            found = TryPlace(it, size, home, it.First, extra, false, ref shift);
+                            bool neighbours = pass == 0, avoidTokens = pass == 1;
+                            found = TryPlace(it, size, home, it.First, extra, neighbours, avoidTokens, ref shift);
                             for (int k = 0; !found && k < Fallbacks.Length; k++)
-                                if (Fallbacks[k] != it.First) found = TryPlace(it, size, home, Fallbacks[k], extra, false, ref shift);
+                                if (Fallbacks[k] != it.First) found = TryPlace(it, size, home, Fallbacks[k], extra, neighbours, avoidTokens, ref shift);
                         }
                         shown = found;
                     }
@@ -357,19 +387,21 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Whether the pill fits at <paramref name="spot"/>; if so records it as placed and sets the shift from
-        /// its USS anchor's rectangle <paramref name="home"/>.</summary>
-        bool TryPlace(Item it, Vector2 size, Rect home, Spot spot, float extra, bool clearOfNeighbours, ref Vector2 shift)
+        /// its USS anchor's rectangle <paramref name="home"/>. With <paramref name="clearOfTokens"/> the spot is placed
+        /// round the kit and the tokens on it and keeps clear of every token; without, round the kit alone.</summary>
+        bool TryPlace(Item it, Vector2 size, Rect home, Spot spot, float extra, bool clearOfNeighbours, bool clearOfTokens, ref Vector2 shift)
         {
-            var r = SpotRect(spot, it.KitPanel, it.TopPanel, size);
+            var r = SpotRect(spot, clearOfTokens ? it.Around : it.KitPanel, it.TopPanel, size);
             float m = MarginPx + extra;
             var grown = new Rect(r.x - m, r.y - m, r.width + 2f * m, r.height + 2f * m);
             if (r.xMin < layerRect.xMin || r.yMin < layerRect.yMin || r.xMax > layerRect.xMax || r.yMax > layerRect.yMax) return false;
             for (int i = 0; i < occluderRects.Count; i++) if (occluderRects[i].Overlaps(r)) return false;
+            if (clearOfTokens) for (int i = 0; i < keepClearRects.Count; i++) if (keepClearRects[i].Overlaps(grown)) return false;
             for (int i = 0; i < placed.Count; i++) if (placed[i].Overlaps(grown)) return false;
             if (Cover(r, it.KitPanel) > MaxKitCover) return false;
             if (clearOfNeighbours)
             {
-                float need = 2f * Gap(r, it.KitPanel) + MarginPx + extra;
+                float need = 2f * Gap(r, it.KitPanel) + MarginPx + extra;   // owned by the town itself, never by the tokens on it
                 for (int i = 0; i < items.Count; i++)
                 {
                     var other = items[i];

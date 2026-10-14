@@ -13,7 +13,7 @@ namespace Statecraft.Game.EditorTools
         public const string MarkerPath = Folder + "/SettlementMarker.mat";
         public const string SelectionPath = Folder + "/HexSelection.mat";
         public const string SeaPath = Folder + "/Sea.mat";
-        public const string BorderLandPath = Folder + "/BorderLand.mat";
+        public const string FramePath = Folder + "/MapFrame.mat";
         public const string KitPath = Folder + "/Kit.mat";
         public const string TreePath = Folder + "/Tree.mat";
 
@@ -36,16 +36,13 @@ namespace Statecraft.Game.EditorTools
             EditorUtility.SetDirty(marker);
             // The selected hex's outline: its own shader (Assets/Shaders/HexSelection.shader) with a depth offset (fix round 1, M2).
             Make(SelectionPath, "Statecraft/HexSelection", Statecraft.Game.Map.MapScene.SelectionColour);
-            // The skirt's sea past the map's edge: the terrain's own water shading (StatecraftMap.hlsl ScWaterShade), so no seam.
+            // The water: MapScene's TerrainWater draws with a copy of it (StatecraftMap.hlsl ScWaterShade).
             var sea = Make(SeaPath, "Statecraft/Sea", null);
             sea.SetTexture("_ScCoastTex", Tex(Statecraft.Game.Map.MapTexturePaths.Coast));
             EditorUtility.SetDirty(sea);
-            // Neighbouring land past the map's edge (Sinai, Jordan, Lebanon): one muted land tone, lit and matte like the sea
-            // (fix round 2, R2-1).
-            var land = Make(BorderLandPath, "Universal Render Pipeline/Lit", Statecraft.Game.Map.MapBuilder.BorderLandColour);
-            land.SetFloat("_Smoothness", 0f); land.SetFloat("_Metallic", 0f);
-            land.SetFloat("_SpecularHighlights", 1f); land.SetFloat("_EnvironmentReflections", 1f);
-            EditorUtility.SetDirty(land);
+            // The frame round the map and the table beyond it (issue #36): Assets/Shaders/MapFrame.shader, its albedos in the
+            // mesh's vertex colours (MapBuilder.BuildFrame).
+            Make(FramePath, "Statecraft/MapFrame", null);
             // Settlement kits and trees (art spike): Assets/Shaders/Kit.shader. Buildings are merged static meshes (no tint
             // jitter: each building's colour is in its vertices); trees are GPU-instanced and get a per-instance tint.
             var kit = Make(KitPath, "Statecraft/Kit", Color.white);

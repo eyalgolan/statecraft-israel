@@ -105,7 +105,7 @@ These are the decisions made while building M3 where the spec or plan was silent
   - The Mac IL2CPP player prints the same golden lines.
   - The brotli build is checked with web_check at release.
   - Cost if wrong: WebGL parity regressions go unnoticed.
-- **Content ships through ContentSync.** Content goes to git-ignored StreamingAssets, verified against the manifest. WebGL fetch uses a 60 s wall-clock wait in tests, never a frame count. The original 600-frame wait was flaky.
+- **Content ships through ContentSync.** Content goes to git-ignored StreamingAssets, verified against the manifest. WebGL fetch waits in tests on the wall clock, never a frame count. The original 600-frame wait was flaky. The fixed 60 s wait that replaced it also failed under load (#503), so the tests now fail a fetch only after 60 s without progress, with a 600 s cap on the whole wait and a test timeout above that cap.
 - **Build safety.**
   - Settings changes are staged before any build, because `git checkout --` restores from the index and would discard unstaged settings.
   - Build logs use the `unity-*.log` names that are already git-ignored.

@@ -8,13 +8,13 @@ The owner's game design of record, verbatim from the original document ([GDD-v0.
 
 The MVP tells the story of the Liberation War, the austerity period (תקופת הצנע), and immigration during 1948-1951.
 
-Each turn advances history by one month. The MVP targets approximately 48 turns, giving the player time to finish the war, house and employ immigrants, construct the Tel-Aviv to Haifa railway, and establish new yishuvim.
+Each turn advances history by one month. The MVP targets approximately 48 turns, giving the player time to finish the war, house and employ immigrants, construct the Tel-Aviv to Haifa railway and the Burma Road, and establish new yishuvim.
 
 ### Objectives
 
 1. Survive the Liberation War. Earn bonus points for finishing the war earlier than its historical end and for capturing enemy soldiers.
 2. Absorb immigrants. Provide immigrants with housing and employment.
-3. Establish key infrastructure. Complete the Tel-Aviv to Haifa railway and establish new yishuvim at designated sites.
+3. Establish key infrastructure. Complete the Tel-Aviv to Haifa railway and the Burma Road corridor to Jerusalem, and establish new yishuvim at designated sites.
 
 ### Historical events on objective completion
 

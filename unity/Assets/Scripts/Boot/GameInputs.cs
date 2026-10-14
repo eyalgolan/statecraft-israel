@@ -158,14 +158,22 @@ namespace Statecraft.Game.Boot
             finally { Release(r); }
         }
 
+        /// <summary>Issue #437: <paramref name="url"/> with b=<paramref name="buildId"/> added to its query when it is an
+        /// http(s) URL and the id is not empty; a file path or file:// URI (desktop, the editor) is returned unchanged.
+        /// StreamingAssets keep fixed names, so without it a browser could serve this build a previous build's cached file.</summary>
+        public static string WithBuildId(string url, string buildId) =>
+            buildId.Length == 0 || !(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                ? url : url + (url.IndexOf('?') >= 0 ? "&" : "?") + "b=" + Uri.EscapeDataString(buildId);
+
         /// <summary>Fetches the manifest, then starts every download before awaiting any (parallel), then loads. A transient
-        /// failure is retried (Done). When one download fails for good, the others still running are aborted and disposed.</summary>
-        public static async Awaitable<GameInputs> FetchAsync(string baseUrl)
+        /// failure is retried (Done). When one download fails for good, the others still running are aborted and disposed.
+        /// Every URL carries <paramref name="buildId"/> (WithBuildId; the player passes Application.buildGUID).</summary>
+        public static async Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId = "")
         {
-            var manifest = ContentManifest.Parse(await Text(Start(baseUrl + "/content/" + ContentManifest.FileName), ContentManifest.FileName));
-            var requests = manifest.Select(f => (file: f, request: Start(baseUrl + "/content/" + f))).ToList();
-            var meta = Start(baseUrl + "/map/heightmap.json");
-            var r16z = Start(baseUrl + "/map/" + HeightmapCodec.FileName);
+            var manifest = ContentManifest.Parse(await Text(Start(WithBuildId(baseUrl + "/content/" + ContentManifest.FileName, buildId)), ContentManifest.FileName));
+            var requests = manifest.Select(f => (file: f, request: Start(WithBuildId(baseUrl + "/content/" + f, buildId)))).ToList();
+            var meta = Start(WithBuildId(baseUrl + "/map/heightmap.json", buildId));
+            var r16z = Start(WithBuildId(baseUrl + "/map/" + HeightmapCodec.FileName, buildId));
             try
             {
                 var texts = new Dictionary<string, string>();

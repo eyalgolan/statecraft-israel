@@ -72,6 +72,12 @@ namespace Statecraft.Game.Map.Kits
             TreeKind.Palm => 4.6f, _ => 1.2f,
         };
 
+        /// <summary>The hills' scatter (Plant): one try per cell this wide (m), kept at about this share (a broad noise
+        /// takes it from 0.4 to 1.6 times), this share of it low scrub (a small, squat olive), the rest single olives.</summary>
+        public const float ScatterCellM = 800f, ScatterShare = 0.85f, ScrubShare = 0.35f;
+        /// <summary>The widest crown (m) the grove index is asked about (its query reach past a grove's disc).</summary>
+        const float ScatterKeepM = 1500f;
+
         /// <summary>Real metres between the trees of a grove's rows.</summary>
         public const float GroveStepM = 4.9f;
 
@@ -94,7 +100,7 @@ namespace Statecraft.Game.Map.Kits
             // Counts fall with the square of the tree scale (k = 1 at the default), so a larger tree covers the same ground
             // with fewer instances instead of burying the towns.
             float ks = s / KitScale.CountReference;
-            void Add(TreeKind k, float x, float z, ref KitRandom rnd, float size = 1f, float yawDeg = float.NaN)
+            void Add(TreeKind k, float x, float z, ref KitRandom rnd, float size = 1f, float yawDeg = float.NaN, float squash = 1f)
             {
                 // The tree's own numbers first, whether it stands or not: a tree left out for a lot or a route then never
                 // shifts the trees drawn after it (towns round 2: a town's new lots no longer reshuffle every grove).
@@ -107,10 +113,12 @@ namespace Statecraft.Game.Map.Kits
                 if (ground.OnLot(x, z, crown) || ground.OnRoute(new Vector2(x, z), crown)) return;
                 float y = ground.Y(x, z);
                 float yaw = float.IsNaN(yawDeg) ? spin : yawDeg;
-                trees.Add((k, Matrix4x4.TRS(new Vector3(x, y, z), Quaternion.Euler(0, yaw, 0), new Vector3(scale, scale * stretch, scale))));
+                trees.Add((k, Matrix4x4.TRS(new Vector3(x, y, z), Quaternion.Euler(0, yaw, 0), new Vector3(scale, scale * stretch * squash, scale))));
             }
 
-            // Citrus groves round the coastal-plain towns: rectangular blocks of rows, each grove on its own angle.
+            // Citrus groves round the coastal-plain towns: rectangular blocks of rows, each grove on its own angle. Each grove's
+            // disc (centre; half its diagonal plus a patch's crown) is kept, so the hills' scatter below stays out of it.
+            var groveDiscs = new DiscIndex(1f, ScatterKeepM);
             foreach (var st in settlements)
             {
                 var c3 = ground.Frame.ToWorld(st.Lon, st.Lat, 0); var c = new Vector2(c3.x, c3.z);
@@ -132,6 +140,7 @@ namespace Statecraft.Game.Map.Kits
                     // Grove sizes grow with the square root of the tree scale, so a bigger tree means fewer, not only larger, rows.
                     float grow = Mathf.Sqrt(s / KitScale.CountReference);
                     float w = rnd.Range(1300f, 3000f) * grow, d = rnd.Range(900f, 2000f) * grow, step = 2f * GroveStepM * s;   // one 2 x 2 patch per step
+                    groveDiscs.Add((gc, 0.5f * Mathf.Sqrt(w * w + d * d) + CrownRadiusM(TreeKind.CitrusPatch) * s * 1.15f));   // to its edge rows' crowns
                     // A ragged block: each row stops at its own length, and some groves lose a corner (an L shape).
                     bool notch = rnd.Chance(0.3f); float nu = rnd.Range(0.1f, 0.3f) * w, nv = rnd.Range(0.1f, 0.3f) * d;
                     for (float v = -d / 2; v <= d / 2; v += step)
@@ -188,6 +197,43 @@ namespace Statecraft.Game.Map.Kits
                             if (!ground.Water(tx, tz) && !ground.InTown(tx, tz, 0.85f)) Add(TreeKind.Olive, tx, tz, ref rnd);
                         }
                     }
+            }
+
+            // The hills' loose scatter between the olive clumps (promo 03's hills, and the demo video at 23 s): single olives
+            // and low scrub over the wet hill country, where the land-use bake paints garrigue, terraces and scrub
+            // (tools/land_bake.py: wild ground above 80 m, none on the steep faces the shader draws as rock). One try per
+            // ScatterCellM cell, anywhere in it, kept at a share that a broad noise makes uneven (no clumps, no rows). Each
+            // cell draws from its own stream, seeded by its place in the grid, so the olives above never move, a tree left out
+            // for a town or a route never shifts another, and only the cells over the hill country are visited.
+            {
+                ulong seed = KitRandom.Fnv1a("hill-scatter");
+                var hills = ground.HillCountryBounds;
+                int i0 = Mathf.Max(0, Mathf.FloorToInt(hills.xMin / ScatterCellM)), i1 = Mathf.Min(Mathf.CeilToInt(ground.Width / ScatterCellM), Mathf.CeilToInt(hills.xMax / ScatterCellM));
+                int j0 = Mathf.Max(0, Mathf.FloorToInt(hills.yMin / ScatterCellM)), j1 = Mathf.Min(Mathf.CeilToInt(ground.Length / ScatterCellM), Mathf.CeilToInt(hills.yMax / ScatterCellM));
+                for (int j = j0; j < j1; j++)
+                    for (int i = i0; i < i1; i++)
+                    {
+                        var rnd = new KitRandom(new KitRandom(seed ^ ((ulong)j << 32 | (uint)i)).Next());
+                        float x = (i + 0.5f) * ScatterCellM, z = (j + 0.5f) * ScatterCellM;
+                        float px = x + rnd.Range(-0.5f, 0.5f) * ScatterCellM, pz = z + rnd.Range(-0.5f, 0.5f) * ScatterCellM;
+                        float uneven = 0.4f + 1.2f * Mathf.PerlinNoise(px / 23000f + 3.7f, pz / 23000f + 1.9f);
+                        if (!rnd.Chance(ScatterShare * uneven)) continue;
+                        bool scrub = rnd.Chance(ScrubShare);
+                        float size = scrub ? rnd.Range(0.5f, 0.7f) : rnd.Range(0.9f, 1.2f);
+                        float e = ground.ElevM(px, pz);
+                        if (e < 120f || e > 950f || !ground.HillCountry(px, pz) || ground.Water(px, pz) || ground.Slope(px, pz, 600f) > 0.37f) continue;
+                        var p = new Vector2(px, pz); float crown = CrownRadiusM(TreeKind.Olive) * s * size * 1.15f;
+                        // No crown reaches into a town's or village's footprint (the footprint index finds a disc up to 1.7 of its
+                        // radius away: a crown wider than 0.7 of a footprint's radius is still kept off its lots by Add) or a grove.
+                        if (Reaches(ground.Footprints, p, crown) || Reaches(groveDiscs, p, crown) || ground.OnGridMark(p, crown)) continue;
+                        Add(TreeKind.Olive, px, pz, ref rnd, size, float.NaN, scrub ? 0.7f : 1f);
+                    }
+                static bool Reaches(DiscIndex discs, Vector2 p, float r)
+                {
+                    var near = discs.Near(p);
+                    for (int k = 0; k < near.Count; k++) { var (c, dr, _) = discs[near[k]]; if ((p - c).sqrMagnitude < (dr + r) * (dr + r)) return true; }
+                    return false;
+                }
             }
 
             // Palms by the shore of the coastal towns and in their streets; cypress windbreaks by villages and moshavot.

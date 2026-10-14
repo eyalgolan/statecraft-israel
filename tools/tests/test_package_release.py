@@ -89,3 +89,51 @@ def test_a_malformed_photo_manifest_is_refused(tmp_path, capsys):
     for bad in ["{", '{"shareable": true}', '{"shareable": "yes", "photos": []}', '{"shareable": true, "photos": [{"event_id": "x"}]}']:
         (build / package_release.PHOTO_MANIFEST).write_text(bad)
         assert "not a valid photo manifest" in refused(build, tmp_path, capsys)
+
+
+# Issue #437: Build.Web names the files under Build/ by their content hash, so the names differ from build to build and
+# index.html is the only place that says which files belong to this build.
+HASHED = ["0a1b2c3d4e5f60718293a4b5c6d7e8f9.loader.js", "11112222333344445555666677778888.framework.js.br",
+          "9999aaaabbbbccccddddeeeeffff0000.data.br", "abcdefabcdefabcdefabcdefabcdefab.wasm.br"]
+
+
+def hashed_build(tmp_path):
+    """fake_build with a Build/ folder of hashed names and an index.html that names them, as the template writes it."""
+    build = fake_build(tmp_path, reviewed=True)
+    loader, framework, data, code = HASHED
+    (build / "index.html").write_text(
+        f'<html><script src="Build/{loader}"></script><script>var config = {{\n  dataUrl: "Build/{data}",\n'
+        f'  frameworkUrl: "Build/{framework}",\n  codeUrl: "Build/{code}",\n  streamingAssetsUrl: "StreamingAssets",\n}};'
+        "</script></html>")
+    (build / "Build").mkdir()
+    for name in HASHED:
+        (build / "Build" / name).write_bytes(b"\x00")
+    return build
+
+
+def test_the_build_files_are_read_from_index_html(tmp_path):
+    assert package_release.build_files(hashed_build(tmp_path)) == sorted(HASHED)
+    assert package_release.build_files(fake_build(tmp_path / "plain", reviewed=True)) == []
+
+
+def test_the_zip_carries_the_hashed_files_index_html_names(tmp_path, capsys):
+    build, zip_path = hashed_build(tmp_path), tmp_path / "out.zip"
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert sorted(n for n in z.namelist() if n.startswith("Build/")) == sorted("Build/" + n for n in HASHED)
+
+
+def test_files_of_an_earlier_build_are_left_out_of_the_zip(tmp_path, capsys):
+    """A second build into the same folder leaves the earlier build's files beside the new ones under other names."""
+    build, zip_path = hashed_build(tmp_path), tmp_path / "out.zip"
+    (build / "Build" / "ffffffffffffffffffffffffffffffff.data.br").write_bytes(b"old")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert sorted(n for n in z.namelist() if n.startswith("Build/")) == sorted("Build/" + n for n in HASHED)
+    assert "LEFT OUT Build/ffffffffffffffffffffffffffffffff.data.br" in capsys.readouterr().out
+
+
+def test_a_build_missing_a_file_index_html_names_is_refused(tmp_path, capsys):
+    build = hashed_build(tmp_path)
+    (build / "Build" / HASHED[3]).unlink()
+    assert "Build/" + HASHED[3] in refused(build, tmp_path, capsys)

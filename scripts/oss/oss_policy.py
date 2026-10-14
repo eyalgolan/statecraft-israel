@@ -66,8 +66,11 @@ BINARY_EXTENSIONS = frozenset({
 })
 PROVENANCE_GLOBS: tuple[str, ...] = ("content/map/*", "unity/Assets/StreamingAssets/map/*")
 
+# "Israel State Archives terms of use": the archive's own licence for its catalogue items (Ben-Gurion's 1948 recording,
+# unity/Assets/StreamingAssets/audio/; ASSETS.yaml records the terms and their open questions; the row stays owner-verify).
 ALLOWED_LICENCES = frozenset({"MIT", "CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0", "OFL-1.1", "Public-Domain",
-                              "Copernicus-DEM", "IMS-data.gov.il", "Unity-Companion-License", "unknown"})
+                              "Copernicus-DEM", "IMS-data.gov.il", "Unity-Companion-License",
+                              "Israel State Archives terms of use", "unknown"})
 STATUSES = frozenset({"verified", "owner-verify"})
 RULE_KEYS = ("glob", "licence", "source", "status")
 
