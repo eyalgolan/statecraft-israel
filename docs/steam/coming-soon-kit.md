@@ -100,42 +100,63 @@ all-ages call:
 
 ## 3. Media manifest (files outside git)
 
-Folder: `~/statecraft-release/steam-kit/` on the owner's Mac. Licences: the screenshots and capsule art are original
-captures of the game, **CC BY 4.0** (as the README screenshots, `docs/images/build-*.jpg` in ASSETS.yaml); the map in
-them is derived from Copernicus DEM (NOTICE), and, under D13 (PR #565), the land-use, biome and route bakes they show are
-CC BY-SA 4.0, so the owner may prefer to mark the images **CC BY-SA 4.0** **[confirm]**. The title is set in EB Garamond
-(OFL-1.1; the font is credited, the images are not under the OFL). The scripts in `sources/` are MIT. Sources per file:
-capsules and library art from `sources/PC-telaviv40.png` (hero: `sources/PC-galilee90.png`); screenshots as in section 2.
+Folder: `~/statecraft-release/steam-kit/` on the owner's Mac.
 
-| File | Bytes | Pixels | SHA-256 |
-| --- | --- | --- | --- |
-| capsules/header_capsule_920x430.png | 681357 | 920x430 | e2d4522ce4a0c7615eeb0a77d55e2abbcc94b62b3c566b3f09043b73f0bb43a8 |
-| capsules/main_capsule_1232x706.png | 1342138 | 1232x706 | 18b6e75f5319fa49931029b42b695a41c122d4a7448083c59f714cbe1ff44a48 |
-| capsules/preview_small_120x45.png | 13021 | 120x45 | 60f209b338a474870ecf1cf4c46c1f3f4176777972e3c28579e73cd7a787cfb7 |
-| capsules/preview_small_184x69.png | 28120 | 184x69 | 63adcfa8ad2c1959a0e39fd13ffa7146169ea3cd7f8c24b21bc1c6fa963efde6 |
-| capsules/small_capsule_462x174.png | 128087 | 462x174 | a9b73f184e0cc0372a27aea0a3daa4c4b95bda293bf0c7a1c35e963c96d0020d |
-| capsules/vertical_capsule_748x896.png | 992268 | 748x896 | b424b64c7161ba9910d906e3ad4a8d6e7c9ec45e62dab808ba96c656c0483230 |
-| library/library_capsule_600x900.png | 801421 | 600x900 | 125f5dbfbe5244852e4c23f30a0be363ff5fe9a837df13d9a2ecf55e0a153a93 |
-| library/library_header_920x430.png | 681357 | 920x430 | e2d4522ce4a0c7615eeb0a77d55e2abbcc94b62b3c566b3f09043b73f0bb43a8 |
-| library/library_hero_3840x1240.png | 6265271 | 3840x1240 | 5efbb2ba94696be086211924ad80e6304778417ecf866eea9c2a0147a640bb5b |
-| library/library_logo_1280w.png | 77557 | 1280x183 | a5b86daedadd99f451b9ca2e0dcc2148bdc607ff11e2a8758cd90e97224d5c59 |
-| screenshots/01-gameplay03-tel-aviv-1948-05-15.png | 2747348 | 1920x1080 | 3e1ffab19fefae4f80958676114ac068a354cf28a52a85728de41d3f56158b6d |
-| screenshots/02-diorama02-country-1948-05-15.png | 2049721 | 1920x1080 | 28506228c0c88e4e6d9186acc5f43771123ea1fb9fb1a176f31d76723a282326 |
-| screenshots/03-central-front-1948-06-19.png | 3082435 | 1920x1080 | ac1333a46303d2fa78091b915d9caa543038d33ec120effca2bcbb8ae874d0bd |
-| screenshots/04-jaffa-boats-borders-close.png | 2642788 | 1920x1080 | 9478704ab7f12b0fcfa0ea5d09415648232b85c5a73ba32c3bbeea8d4d3f1419 |
-| screenshots/05-front-lines-ramle-close.png | 2600200 | 1920x1080 | 7f341613dab8a90d052f671733ebf1a8fb1a5cee8087f8148f72a699c9276355 |
-| screenshots/06-ui-budget.png | 1772390 | 1920x1080 | dbc7c4ac27d3cefdcb075b84704a42379987e3b452b9e62622246d034ccb764d |
-| screenshots/07-ui-why-panel.png | 1748909 | 1920x1080 | fda7a8284471202368abd34dd9be6727661aeb0a92d40b476a1b122a005dae94 |
-| screenshots/08-ui-defence.png | 1415159 | 1920x1080 | 7fc20e61c366a344f27764be2f5b1b26b17a92fa2768b2bb4a063a25baafb63c |
-| sources/PC-galilee90.png | 11835372 | 3840x2160 | 7d87b0beb822d0d724748f72a8ff13d964b4ef47083ea4ff111360e012008b11 |
-| sources/PC-telaviv40.png | 9851346 | 3840x2160 | 7101093fbf6348a9e588f0b6446217832d6f8540aa8fd13e25f04c6d5d4f9de5 |
-| sources/SteamKitCapture.cs | 2635 | - | a57eb366b8e38b0f9eeb253cb92b886310c483ac17c26ca0d45f007c37a33f68 |
-| sources/capsules.py | 5999 | - | 2f79346dc4d426da74b882b52708b1e5baf47c46f107f78d7f7eab869b14ec3d |
-| sources/capture.py | 4367 | - | 728275b9bc35436264897bf9fd3904059c4c0d9401fd4e37a4a1c465900d02f9 |
-| sources/steps1.json | 393 | - | c1d6f57eda508aa0f6900ce24077980d7cc198f01ca6b7e8fa16dfb9ce32e057 |
-| sources/steps5.json | 208 | - | 6eea8d0e91be8ae415cf706ddee31b57b9b6cede5370970fb0a2cb8315ad9422 |
-| sources/steps6.json | 209 | - | 716a73fa69e13a4b94ae09870273ad0ed80ee1db8e73b6b5a338a838f4a1c4c8 |
-| OFL-EBGaramond.txt | 4454 | - | 058611bd968817d532cedeab6acaa055e882d365a88523df00e7917ad7a0f704 |
+**Licences.** Every file derived from an engine render (the capsules, the library capsule, header and hero, the
+small-capsule previews, the screenshots and the two source renders) is **CC BY-SA 4.0**. That is a licence fact, not a
+choice (coordinator ruling, 15 October 2026): the renders show the land-use, biome and route bakes
+(`unity/Assets/Textures/Map/landuse.png`, `unity/Assets/Resources/Map/BiomeColours.bytes`,
+`unity/Assets/Resources/Routes/RouteRibbons.bytes`), which D13 (PR #565) made CC BY-SA 4.0. The library logo has no
+render in it: it is the title set in EB Garamond on transparency, so it is **CC BY 4.0**. The font is OFL-1.1; it is
+credited, and the images are not under the OFL. The scripts in `sources/` are MIT.
+
+CC BY-SA 4.0 asks two things of anyone who shares these images, Valve's store included:
+
+- **Attribution**, with the licence and a link to it, and a note that the images are adapted from the game. Text to use,
+  in the store page's legal notes and wherever the images are shared outside Steam:
+
+  > Store images: in-game captures and renders of Statecraft: Israel, (c) 2026 Eyal Golan and Statecraft: Israel
+  > contributors, licensed CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Map terrain produced using
+  > Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under
+  > COPERNICUS by the European Union and ESA; all rights reserved. Title set in EB Garamond (SIL Open Font License 1.1).
+
+- **Share-alike**: anyone who adapts the images (a cropped capsule, a press kit, a fan edit) must license the result
+  under CC BY-SA 4.0 too. Uploading them unchanged to Steam is sharing, not adapting; the attribution line above
+  covers it. Steam's own resized copies (the 120 x 45 and 184 x 69 small capsules, the half-size library art) are
+  technical resizes by the platform.
+
+Sources per file: capsules and library art from `sources/PC-telaviv40.png` (hero: `sources/PC-galilee90.png`);
+screenshots as in section 2.
+
+| File | Bytes | Pixels | SHA-256 | Licence |
+| --- | --- | --- | --- | --- |
+| capsules/header_capsule_920x430.png | 681357 | 920x430 | e2d4522ce4a0c7615eeb0a77d55e2abbcc94b62b3c566b3f09043b73f0bb43a8 | CC BY-SA 4.0 |
+| capsules/main_capsule_1232x706.png | 1342138 | 1232x706 | 18b6e75f5319fa49931029b42b695a41c122d4a7448083c59f714cbe1ff44a48 | CC BY-SA 4.0 |
+| capsules/preview_small_120x45.png | 13021 | 120x45 | 60f209b338a474870ecf1cf4c46c1f3f4176777972e3c28579e73cd7a787cfb7 | CC BY-SA 4.0 |
+| capsules/preview_small_184x69.png | 28120 | 184x69 | 63adcfa8ad2c1959a0e39fd13ffa7146169ea3cd7f8c24b21bc1c6fa963efde6 | CC BY-SA 4.0 |
+| capsules/small_capsule_462x174.png | 128087 | 462x174 | a9b73f184e0cc0372a27aea0a3daa4c4b95bda293bf0c7a1c35e963c96d0020d | CC BY-SA 4.0 |
+| capsules/vertical_capsule_748x896.png | 992268 | 748x896 | b424b64c7161ba9910d906e3ad4a8d6e7c9ec45e62dab808ba96c656c0483230 | CC BY-SA 4.0 |
+| library/library_capsule_600x900.png | 801421 | 600x900 | 125f5dbfbe5244852e4c23f30a0be363ff5fe9a837df13d9a2ecf55e0a153a93 | CC BY-SA 4.0 |
+| library/library_header_920x430.png | 681357 | 920x430 | e2d4522ce4a0c7615eeb0a77d55e2abbcc94b62b3c566b3f09043b73f0bb43a8 | CC BY-SA 4.0 |
+| library/library_hero_3840x1240.png | 6265271 | 3840x1240 | 5efbb2ba94696be086211924ad80e6304778417ecf866eea9c2a0147a640bb5b | CC BY-SA 4.0 |
+| library/library_logo_1280w.png | 77557 | 1280x183 | a5b86daedadd99f451b9ca2e0dcc2148bdc607ff11e2a8758cd90e97224d5c59 | CC BY 4.0 (font OFL-1.1, credited) |
+| screenshots/01-gameplay03-tel-aviv-1948-05-15.png | 2747348 | 1920x1080 | 3e1ffab19fefae4f80958676114ac068a354cf28a52a85728de41d3f56158b6d | CC BY-SA 4.0 |
+| screenshots/02-diorama02-country-1948-05-15.png | 2049721 | 1920x1080 | 28506228c0c88e4e6d9186acc5f43771123ea1fb9fb1a176f31d76723a282326 | CC BY-SA 4.0 |
+| screenshots/03-central-front-1948-06-19.png | 3082435 | 1920x1080 | ac1333a46303d2fa78091b915d9caa543038d33ec120effca2bcbb8ae874d0bd | CC BY-SA 4.0 |
+| screenshots/04-jaffa-boats-borders-close.png | 2642788 | 1920x1080 | 9478704ab7f12b0fcfa0ea5d09415648232b85c5a73ba32c3bbeea8d4d3f1419 | CC BY-SA 4.0 |
+| screenshots/05-front-lines-ramle-close.png | 2600200 | 1920x1080 | 7f341613dab8a90d052f671733ebf1a8fb1a5cee8087f8148f72a699c9276355 | CC BY-SA 4.0 |
+| screenshots/06-ui-budget.png | 1772390 | 1920x1080 | dbc7c4ac27d3cefdcb075b84704a42379987e3b452b9e62622246d034ccb764d | CC BY-SA 4.0 |
+| screenshots/07-ui-why-panel.png | 1748909 | 1920x1080 | fda7a8284471202368abd34dd9be6727661aeb0a92d40b476a1b122a005dae94 | CC BY-SA 4.0 |
+| screenshots/08-ui-defence.png | 1415159 | 1920x1080 | 7fc20e61c366a344f27764be2f5b1b26b17a92fa2768b2bb4a063a25baafb63c | CC BY-SA 4.0 |
+| sources/PC-galilee90.png | 11835372 | 3840x2160 | 7d87b0beb822d0d724748f72a8ff13d964b4ef47083ea4ff111360e012008b11 | CC BY-SA 4.0 |
+| sources/PC-telaviv40.png | 9851346 | 3840x2160 | 7101093fbf6348a9e588f0b6446217832d6f8540aa8fd13e25f04c6d5d4f9de5 | CC BY-SA 4.0 |
+| sources/SteamKitCapture.cs | 2635 | - | a57eb366b8e38b0f9eeb253cb92b886310c483ac17c26ca0d45f007c37a33f68 | MIT |
+| sources/capsules.py | 5999 | - | 2f79346dc4d426da74b882b52708b1e5baf47c46f107f78d7f7eab869b14ec3d | MIT |
+| sources/capture.py | 4367 | - | 728275b9bc35436264897bf9fd3904059c4c0d9401fd4e37a4a1c465900d02f9 | MIT |
+| sources/steps1.json | 393 | - | c1d6f57eda508aa0f6900ce24077980d7cc198f01ca6b7e8fa16dfb9ce32e057 | MIT |
+| sources/steps5.json | 208 | - | 6eea8d0e91be8ae415cf706ddee31b57b9b6cede5370970fb0a2cb8315ad9422 | MIT |
+| sources/steps6.json | 209 | - | 716a73fa69e13a4b94ae09870273ad0ed80ee1db8e73b6b5a338a838f4a1c4c8 | MIT |
+| OFL-EBGaramond.txt | 4454 | - | 058611bd968817d532cedeab6acaa055e882d365a88523df00e7917ad7a0f704 | OFL-1.1 (licence text) |
 
 The committed previews in [kit/](kit/) are byte-identical copies of `capsules/header_capsule_920x430.png`,
 `capsules/small_capsule_462x174.png` and `library/library_logo_1280w.png`, plus `screenshots-contact-sheet.jpg` (the
@@ -293,7 +314,8 @@ None of these is done. Each is the owner's action.
 4. **Store page, Description.** Short description (store-page-draft.md section 1; check the field's character limit),
    "About this game" (section 2; Hebrew from section 3 only after a native speaker's review), the mature-content
    description (section 6), and the legal line: the Copernicus DEM notice from NOTICE, which `tools/README.md` says must
-   appear in the Steam page legal notes, with the CHELSA, IMS and Israel State Archives credits.
+   appear in the Steam page legal notes, with the CHELSA, IMS and Israel State Archives credits, and the CC BY-SA 4.0
+   attribution for the store images (section 3).
 5. **Tags** from section 6.
 6. **Graphical assets.** Upload the capsules and library art from section 1 (header, small, main, vertical, library
    capsule, library header, library hero, library logo); place the logo on the hero with Steam's preview tool. The
