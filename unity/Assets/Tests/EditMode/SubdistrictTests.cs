@@ -177,7 +177,8 @@ public class SubdistrictTests
         var map = Object.FindFirstObjectByType<MapScene>();
         var cam = Camera.main!; var rig = cam.GetComponent<CameraRig>();
         PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
-        var on = RenderSample.Render(cam, 480, 270);
+        // Steady frames where they are compared exactly (RenderSample.RenderSteady: the terrain pass's rare transient pixels, #440).
+        var on = RenderSample.RenderSteady(cam, 480, 270);
         VisualToggles.Set(MapBorders.ToggleName, false);
         var off = RenderSample.Render(cam, 480, 270);
         var share = BorderTests.Changed(on, off, 0.02f);
@@ -185,7 +186,7 @@ public class SubdistrictTests
         Assert.Greater(share, 0.002f, "the 1948 sub-district borders are drawn");
         Assert.Less(share, 0.15f, "outlines, not fills");
         VisualToggles.Set(MapBorders.ToggleName, true);
-        Assert.AreEqual(0f, BorderTests.Changed(RenderSample.Render(cam, 480, 270), on, 0f), "renders repeat exactly");
+        Assert.AreEqual(0f, BorderTests.Changed(RenderSample.RenderSteady(cam, 480, 270), on, 0f), "renders repeat exactly");
     }
 
     [Test]
