@@ -40,3 +40,30 @@ def test_notice_carries_the_required_attributions():
     assert "produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014" in text
     for s in ("CHELSA V2.1", "Israel Meteorological Service", "SIL Open Font License", "Wikipedia", "YamlDotNet"):
         assert s in text, s
+
+
+def test_every_repo_path_licensing_names_exists():
+    """Every backticked repo path in LICENSING.md names something tracked, so the table never licenses a file that is
+    gone (the decision clips' old label, tools/event_videos/ai-bug.png, was deleted in #551).
+    What counts as a repo path: a backticked token with a "/" whose first segment is a tracked top-level entry
+    (`unity/...`, `promo/...`, `.github/`). Skipped as not repo paths: URLs, placeholders such as `<name>`, and tokens
+    with no "/" or a relative first segment (`*.md`, `.meta`, `link.xml`, `FrankRuhlLibre/`, `08`), which name a kind of
+    file or a file inside a folder the row names. A token with * or ? must match at least one tracked file; any other
+    token must be a tracked file or the start of one's path (a folder, or `promo/final/01` for the file 01-key-art.png)."""
+    import fnmatch
+    import re
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.splitlines()
+    top = {p.split("/", 1)[0] for p in tracked}
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    missing = []
+    for token in sorted(set(re.findall(r"`([^`\n]+)`", text))):
+        if "://" in token or "<" in token or "/" not in token or token.split("/", 1)[0] not in top:
+            continue
+        if any(c in token for c in "*?"):
+            ok = any(fnmatch.fnmatchcase(p, token) for p in tracked)
+        else:
+            ok = any(p == token or p.startswith(token) for p in tracked)
+        if not ok:
+            missing.append(token)
+    assert missing == [], f"LICENSING.md names paths that are not in the repository: {missing}"
