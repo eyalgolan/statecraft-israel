@@ -84,21 +84,26 @@ public class MapActionUiTests
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
     }
 
+    /// <summary>The minimap's painted relief (tools/minimap_bake.py) is north up over the hex grid's bounds: sea off Tel Aviv
+    /// and in the Gulf of Aqaba, land in the hills and the Negev. Read from the PNG itself (the imported texture is not
+    /// readable on the CPU).</summary>
     [Test]
-    public void TheMinimapPaintsLandAndSeaNorthUp()
+    public void TheMinimapReliefHasLandAndSeaNorthUp()
     {
-        var tex = MinimapPresenter.Paint(Hexes, 128, 342);
+        var tex = new Texture2D(2, 2);
         try
         {
-            // RGB24 stores 8 bits per channel, so compare within one step.
-            void Is(Color expected, double lon, double lat)
-            {
-                var c = tex.GetPixel((int)((lon - 34.2) / 1.7 * 128), (int)((lat - 29.45) / 3.9 * 342));
-                Assert.AreEqual(expected.r, c.r, 1f / 255); Assert.AreEqual(expected.g, c.g, 1f / 255); Assert.AreEqual(expected.b, c.b, 1f / 255);
-            }
-            Is(MapBuilder.BiomeColours["coastal_plain"], 34.80, 32.10);   // just inland of Tel Aviv
-            Is(MinimapPresenter.Sea, 34.30, 32.60);                       // the Mediterranean
-            Is(MapBuilder.BiomeColours["desert"], 34.90, 30.50);          // the Negev
+            Assert.IsTrue(tex.LoadImage(File.ReadAllBytes(Path.Combine(Paths.RepoRoot, "unity", MinimapPresenter.AssetPath))), MinimapPresenter.AssetPath);
+            var b = Hexes.bounds;
+            Color At(double lon, double lat) =>
+                tex.GetPixel((int)((lon - b.lon0) / (b.lon1 - b.lon0) * tex.width), (int)((lat - b.lat0) / (b.lat1 - b.lat0) * tex.height));
+            void Sea(double lon, double lat, string where) { var c = At(lon, lat); Assert.Greater(c.b, c.r + 0.1f, $"{where} is sea: {c}"); }
+            void Land(double lon, double lat, string where) { var c = At(lon, lat); Assert.Greater(c.r, c.b, $"{where} is land: {c}"); }
+            Sea(34.30, 32.60, "the Mediterranean off Tel Aviv");
+            Sea(34.98, 29.48, "the Gulf of Aqaba");
+            Land(35.21, 31.77, "Jerusalem");
+            Land(34.90, 30.50, "the Negev");
+            Land(35.10, 32.95, "the Galilee");
         }
         finally { UnityEngine.Object.DestroyImmediate(tex); }
     }
@@ -347,7 +352,7 @@ public class MapActionUiTests
     }
 
     [Test]
-    public void ADisposedMinimapDestroysItsTextureAndADisposedPanelHearsNothing()
+    public void ADisposedMinimapLetsGoOfItsPictureAndADisposedPanelHearsNothing()
     {
         using var ui = new UiTestKit();
         var bridge = At(new DateTime(1950, 8, 1));
@@ -361,7 +366,9 @@ public class MapActionUiTests
         var mini = new MinimapPresenter(ui.Root, Hexes);
         var tex = mini.Texture;
         mini.Dispose();
-        Assert.IsTrue(tex == null, "the texture is destroyed");
+        // The picture is the shared baked asset: the presenter lets go of it and does not destroy it.
+        Assert.IsTrue(ui.Q<VisualElement>("minimap-image").style.backgroundImage.keyword == StyleKeyword.Null, "nothing draws the picture after Dispose");
+        Assert.IsTrue(tex != null, "the baked picture is an asset and stays loaded");
     }
 
     [Test]

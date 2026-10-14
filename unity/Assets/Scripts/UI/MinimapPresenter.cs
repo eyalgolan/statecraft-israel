@@ -1,38 +1,60 @@
 #nullable enable
 using System;
+using System.Linq;
 using Statecraft.Game.Map;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Object = UnityEngine.Object;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The minimap (bottom-right): every hex in its biome colour, north up, the camera's view as a frame, and a
-    /// click to move the camera there. The texture is made at runtime and destroyed by Dispose.</summary>
+    /// <summary>The minimap (bottom-right, promo/final/03's): the painted relief picture, north up, the camera's view as a
+    /// frame, and a click to move the camera there; beside it three round buttons: the whole map, the settlement names and
+    /// the region borders. The picture is a bake (tools/minimap_bake.py, Resources/Map/MinimapRelief.png), drawn by the GPU
+    /// as the element's background: nothing is painted at boot or per frame. It is a shared asset, so Dispose lets go of it
+    /// and does not destroy it. The picture takes no focus (accessibility audit B1d); the buttons do.</summary>
     public sealed class MinimapPresenter : IDisposable
     {
-        public const int Width = 128;
-        public static readonly Color Sea = MapBuilder.BiomeColours["sea"];
-        readonly VisualElement box, image, view; readonly HexFile hexes;
+        /// <summary>The bake, as Resources.Load finds it, and as the editor and the tests find the file.</summary>
+        public const string Resource = "Map/MinimapRelief", AssetPath = "Assets/Resources/Map/MinimapRelief.png";
+        /// <summary>On a switch button while its layer is off: the disc dims.</summary>
+        public const string OffClass = "minimap-off";
+        /// <summary>The switches the two layer buttons work (MapLabelsPresenter's names, MapBorders' borders).</summary>
+        public const string LabelsToggle = "labels";
+
+        readonly VisualElement box, frame, image, view; readonly HexFile hexes;
+        readonly Button overview, labels, borders;
         readonly double widthKm, lengthKm;
 
         public Texture2D Texture { get; }
         /// <summary>Raised with the lon/lat the player clicked.</summary>
         public event Action<double, double>? Clicked;
+        /// <summary>Raised by the whole-map button: GameRoot zooms the camera all the way out.</summary>
+        public event Action? Overview;
+        /// <summary>Raised when the borders button switches the borders (the border layer's caption follows them).</summary>
+        public event Action? BordersChanged;
+        public bool LabelsShown { get; private set; } = true;
+        public bool BordersShown { get; private set; } = true;
 
-        public MinimapPresenter(VisualElement root, HexFile hexes)
+        public MinimapPresenter(VisualElement root, HexFile hexes, UiText? text = null)
         {
             this.hexes = hexes;
             var b = hexes.bounds;
             widthKm = (b.lon1 - b.lon0) * HexPicker.KmPerDegLon(b.lat0, b.lat1);
             lengthKm = (b.lat1 - b.lat0) * HexPicker.KmPerDegLat;
-            Texture = Paint(hexes, Width, (int)Math.Round(Width * lengthKm / widthKm));
+            Texture = Resources.Load<Texture2D>(Resource) ?? throw new InvalidOperationException($"Resources/{Resource} is missing (uv run tools/minimap_bake.py)");
             box = root.Q<VisualElement>("minimap");
+            frame = box.Q<VisualElement>("minimap-map");
             image = box.Q<VisualElement>("minimap-image");
             view = box.Q<VisualElement>("minimap-view");
             image.style.backgroundImage = new StyleBackground(Texture);
             image.RegisterCallback<PointerDownEvent>(OnPointerDown);
-            box.RegisterCallback<GeometryChangedEvent>(OnBoxGeometry);
+            frame.RegisterCallback<GeometryChangedEvent>(OnBoxGeometry);
+            overview = box.Q<Button>("minimap-overview"); labels = box.Q<Button>("minimap-labels"); borders = box.Q<Button>("minimap-borders");
+            overview.clicked += OnOverview; labels.clicked += OnLabels; borders.clicked += OnBorders;
+            if (text != null)
+            {
+                overview.tooltip = text["minimap.overview"]; labels.tooltip = text["minimap.labels"]; borders.tooltip = text["minimap.borders"];
+            }
             FitImage();
         }
 
@@ -49,7 +71,7 @@ namespace Statecraft.Game.UI
         // The picture's element is exactly as big as the picture, so (0..1, 0..1) in the element is the whole map.
         void FitImage()
         {
-            var size = Fit(box.contentRect.width, box.contentRect.height, (float)Texture.width / Texture.height);
+            var size = Fit(frame.contentRect.width, frame.contentRect.height, (float)Texture.width / Texture.height);
             if (size == Vector2.zero) return;
             image.style.width = size.x; image.style.height = size.y;
         }
@@ -62,24 +84,26 @@ namespace Statecraft.Game.UI
             Clicked?.Invoke(lon, lat);
         }
 
-        /// <summary>One pixel per ~1.3 km: each pixel takes the biome of the hex its centre falls in (sea off the grid).
-        /// Row 0 of a Texture2D is the bottom, so it is the south edge.</summary>
-        public static Texture2D Paint(HexFile hexes, int width, int height)
+        void OnOverview() => Overview?.Invoke();
+
+        void OnLabels()
         {
-            var biome = new System.Collections.Generic.Dictionary<(int, int), string>();
-            foreach (var h in hexes.hexes) biome[(h.q, h.r)] = h.biome;
-            var b = hexes.bounds;
-            var tex = new Texture2D(width, height, TextureFormat.RGB24, false) { name = "Minimap", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            var pixels = new Color[width * height];
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                {
-                    double lon = b.lon0 + (x + 0.5) / width * (b.lon1 - b.lon0), lat = b.lat0 + (y + 0.5) / height * (b.lat1 - b.lat0);
-                    var hex = HexPicker.FromLonLat(lon, lat, b, hexes.hex_size_km);
-                    pixels[y * width + x] = biome.TryGetValue(hex, out var name) ? MapBuilder.BiomeColours[name] : Sea;
-                }
-            tex.SetPixels(pixels); tex.Apply();
-            return tex;
+            LabelsShown = !LabelsShown;
+            Switch(LabelsToggle, LabelsShown, labels);
+        }
+
+        void OnBorders()
+        {
+            BordersShown = !BordersShown;
+            Switch(MapBorders.ToggleName, BordersShown, borders);
+            BordersChanged?.Invoke();
+        }
+
+        // The map registers its switches when it is built; with no map (a test, or before the map) the button keeps its state.
+        static void Switch(string name, bool on, Button button)
+        {
+            if (VisualToggles.Names.Contains(name)) VisualToggles.Set(name, on);
+            button.EnableInClassList(OffClass, !on);
         }
 
         /// <summary>(u, v) in the image, top-left origin, 0..1 -> lon/lat.</summary>
@@ -88,6 +112,9 @@ namespace Statecraft.Game.UI
             var b = hexes.bounds;
             return (b.lon0 + Mathf.Clamp01(u) * (b.lon1 - b.lon0), b.lat1 - Mathf.Clamp01(v) * (b.lat1 - b.lat0));
         }
+
+        /// <summary>The middle of the map's bounds (the whole-map view looks at it).</summary>
+        public (double lon, double lat) Centre => ToLonLat(0.5f, 0.5f);
 
         /// <summary>Frames the area the camera looks at: about one and a half view distances wide, centred on lookAt.</summary>
         public void SetView(GeoFrame frame, Vector3 lookAt, float distanceM)
@@ -105,9 +132,9 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             image.UnregisterCallback<PointerDownEvent>(OnPointerDown);
-            box.UnregisterCallback<GeometryChangedEvent>(OnBoxGeometry);
-            image.style.backgroundImage = StyleKeyword.Null;   // nothing may keep drawing a destroyed texture
-            if (Texture != null) Object.DestroyImmediate(Texture);
+            frame.UnregisterCallback<GeometryChangedEvent>(OnBoxGeometry);
+            overview.clicked -= OnOverview; labels.clicked -= OnLabels; borders.clicked -= OnBorders;
+            image.style.backgroundImage = StyleKeyword.Null;   // the shared picture stays loaded; this element lets go of it
         }
     }
 }

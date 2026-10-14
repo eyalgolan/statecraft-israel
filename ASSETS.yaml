@@ -237,6 +237,11 @@ rules:
     source: "The biome ground colours (issue #321, #529), baked by Editor BiomeColourBake from the biomes and centres of content/map/hexes.json, the heightmap's bounds (unity/Assets/StreamingAssets/map/heightmap.json) and this project's MapPalette.Ground colours. The biomes are derived by tools/hexgrid.py from the Copernicus DEM GLO-30-derived heightmap (Copernicus-DEM), CHELSA V2.1 bio12 rainfall (CC0-1.0) and the IMS station normals of content/map/precip_stations.json (data.gov.il dataset 481, decision D6); no new facts; attribution in NOTICE"
     status: verified
     note: "Decision D13 decided (owner, 2026-10-14, docs/oss/DECISIONS.md): CC BY-SA 4.0, the most restrictive input (the map content in content/map/); the DEM, CHELSA and IMS findings accepted as recorded."
+  - glob: "unity/Assets/Resources/Map/MinimapRelief.png"
+    licence: CC-BY-SA-4.0
+    source: "The minimap's painted relief (HUD round 2, #398), made by tools/minimap_bake.py from files already in this repository: a hill shade of the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*, Copernicus-DEM), the biome colour bake (Resources/Map/BiomeColours.bytes), the land-use and coast textures (Textures/Map/landuse.png, coast.png) and the sub-district hexes of content/map/subdistrict_hexes_1948.yaml (this project's own content, CC-BY-SA-4.0) for the rim of Mandatory Palestine. Procedural, not AI-generated; no new facts; attribution in NOTICE"
+    status: owner-verify
+    note: "Recorded by decision D13's rule (docs/oss/DECISIONS.md: a derived map bake takes its most restrictive input, CC BY-SA 4.0 from content/map/ and the D13 bakes it reads). D13 named three files; the owner confirms this fourth."
   - glob: "unity/Assets/Textures/*"
     licence: Copernicus-DEM
     source: "tools/terrain_bake.py from the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*): AO, curvature, sky-view (Map/terrain_bake.png), coast distance (Map/coast.png) and the AO copy (Map/ao.png); the terrain water's mesh samples (Map/terrain_water.bytes, Editor TerrainWaterBake from the same heightmap); attribution in NOTICE"

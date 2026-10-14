@@ -266,16 +266,30 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-row-sign { width: 22px; height: 22px; flex-shrink: 0; margin: 3px 10px 0 0; }
 .info-row-text { flex-grow: 1; flex-shrink: 1; min-width: 0; }
 .info-unit .info-row-sign { display: none; }
-/* Narrow, as the country is: the frame hugs the tall map picture (MinimapPresenter fits it to the content box). */
 /* The border layer's label, beside the minimap's lower left: what the outlines are (MapRegions.Label). Out of the column's
    flex flow (absolute), so it takes no height from the event card at any HUD tier (armistice review I-4). */
-.map-layer { display: none; position: absolute; right: 168px; bottom: 0; max-width: 312px; padding: 5px 8px; font-size: 15px; white-space: normal; -unity-text-align: middle-center; color: var(--ink); background-color: rgba(9, 14, 26, 0.9); border-radius: 3px; }
+.map-layer { display: none; position: absolute; right: 230px; bottom: 0; max-width: 250px; padding: 5px 8px; font-size: 15px; white-space: normal; -unity-text-align: middle-center; color: var(--ink); background-color: rgba(9, 14, 26, 0.9); border-radius: 3px; }
 /* A phone upright (three-row bar): the info panel spans the bottom left, beside the minimap, but the column is tall, so the
    label goes back above the minimap, in the column's flow. */
 .hud-three-row .map-layer { position: relative; right: auto; bottom: auto; align-self: flex-end; max-width: 480px; margin-bottom: 6px; }
-.minimap { align-self: flex-end; flex-shrink: 0; width: 160px; height: 340px; padding: 12px; background-color: rgba(9, 14, 26, 0.97); }
-.minimap-image { align-self: center; -unity-background-scale-mode: stretch-to-fill; }   /* the element is sized to the picture's aspect by MinimapPresenter */
+/* HUD round 2 (#398): promo 03's minimap, the painted relief picture with three round buttons beside it, in one frame. The
+   picture's box is as wide as the tall picture needs at this height (MinimapPresenter fits the picture to it). */
+.minimap { align-self: flex-end; flex-shrink: 0; flex-direction: row; width: 222px; height: 380px; padding: 12px; background-color: rgba(9, 14, 26, 0.97); }
+.minimap-map { width: 134px; flex-shrink: 0; justify-content: center; }
+.minimap-image { align-self: center; -unity-background-scale-mode: stretch-to-fill; }   /* sized to the picture's aspect by MinimapPresenter */
 .minimap-view { position: absolute; border-color: var(--ink); border-width: 1.5px; }
+.minimap-buttons { flex-grow: 1; margin-left: 10px; justify-content: space-around; align-items: center; }
+.minimap-button { width: 50px; height: 50px; margin: 0; padding: 0; border-width: 0; border-radius: 25px; background-color: rgba(0, 0, 0, 0); }
+.minimap-disc {
+    position: absolute; left: 0; top: 0; width: 50px; height: 50px; padding: 11px;
+    border-radius: 25px; border-width: 1.5px; border-color: var(--gold-dim); background-color: var(--navy-deep);
+}
+.minimap-button:hover { background-color: rgba(0, 0, 0, 0); }
+.minimap-button:hover .minimap-disc { border-color: var(--gold); background-color: var(--navy-raised); }
+.minimap-button:focus { background-color: rgba(0, 0, 0, 0); border-width: 0; }
+.minimap-button:focus .minimap-disc { border-color: var(--ink); background-color: var(--focus); }
+/* A layer switched off (the names or the borders): the disc goes dim, as a lamp turned off. */
+.minimap-off .minimap-disc { opacity: 0.45; }
 
 /* Full screens (Cabinet, Budget, Defence, Why) open in the centre, one at a time. */
 /* Hidden until ScreenNav opens one (never visible while loading; playtest 2, P2-1). Right edge clear of the 480px column. */

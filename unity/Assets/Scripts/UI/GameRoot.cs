@@ -230,8 +230,10 @@ namespace Statecraft.Game.UI
                 regions.Apply(bridge.State.Date);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
                     ?? regions.Label(bridge.State.Date, text.Format);
-                layerLabel.style.display = regions.Shown ? DisplayStyle.Flex : DisplayStyle.None;
+                ShowLayerLabel();
             };
+            // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.
+            void ShowLayerLabel() => layerLabel.style.display = regions.Shown && minimap?.BordersShown != false ? DisplayStyle.Flex : DisplayStyle.None;
             onDate();
             bridge.Changed += onDate;
             owned.Add(new Undo(() => bridge.Changed -= onDate));
@@ -289,11 +291,19 @@ namespace Statecraft.Game.UI
             pointer.HexClicked += onHex;
             var camRig = rig = cameraController.GetComponent<CameraRig>();
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
-            var mini = minimap = Own(new MinimapPresenter(root, map.Hexes));
+            var mini = minimap = Own(new MinimapPresenter(root, map.Hexes, text));
             labels = Own(new MapLabelsPresenter(root, map, cameraController.GetComponent<Camera>(), null,
                 p => MapLabelsPresenter.TipOf(p, n => text.Format("map.today", n), text["map.mixed"], hebrew),
                 () => unitLayer != null ? unitLayer.KeepClear : null));   // the names keep clear of the unit tokens (issue #197)
             mini.Clicked += (lon, lat) => { camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); cameraController.Settle(); SyncMinimap(); labels?.Refresh(); };   // the click may come after LateUpdate (review M6)
+            // The minimap's whole-map button: the camera's own farthest zoom, over the middle of the map (no new rule).
+            mini.Overview += () =>
+            {
+                var (lon, lat) = mini.Centre;
+                camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); camRig.Distance = CameraController.MaxDistance;
+                cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+            };
+            mini.BordersChanged += ShowLayerLabel;
             Action onChanged = RenderPlacementsIfChanged;
             bridge.Changed += onChanged;
             // One console line per turn, so a browser run (reload, Continue) can be checked against the hash.

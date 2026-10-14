@@ -83,9 +83,19 @@
             <ui:VisualElement class="right-gap" picking-mode="Ignore" />
             <!-- What the map's region borders show while they are drawn (owner ruling 2026-10-11: "Mandate sub-districts, 1947"). -->
             <ui:Label name="map-layer" class="map-layer" picking-mode="Ignore" />
+            <!-- The painted relief picture (a bake: tools/minimap_bake.py) and, beside it, promo 03's three round buttons:
+                 the whole map, the settlement names, the region borders (MinimapPresenter). The picture takes no focus (the
+                 accessibility audit's B1d); the buttons do, after End Turn. -->
             <ui:VisualElement name="minimap" class="panel minimap">
-                <ui:VisualElement name="minimap-image" class="minimap-image">
-                    <ui:VisualElement name="minimap-view" class="minimap-view" picking-mode="Ignore" />
+                <ui:VisualElement name="minimap-map" class="minimap-map" picking-mode="Ignore">
+                    <ui:VisualElement name="minimap-image" class="minimap-image">
+                        <ui:VisualElement name="minimap-view" class="minimap-view" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="minimap-buttons" class="minimap-buttons" picking-mode="Ignore">
+                    <ui:Button name="minimap-overview" class="minimap-button"><Statecraft.Game.UI.UiIcon glyph="peaks" class="minimap-disc" picking-mode="Ignore" /></ui:Button>
+                    <ui:Button name="minimap-labels" class="minimap-button"><Statecraft.Game.UI.UiIcon glyph="skyline" class="minimap-disc" picking-mode="Ignore" /></ui:Button>
+                    <ui:Button name="minimap-borders" class="minimap-button"><Statecraft.Game.UI.UiIcon glyph="region" class="minimap-disc" picking-mode="Ignore" /></ui:Button>
                 </ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
