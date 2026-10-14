@@ -8,6 +8,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Sourced Hebrew names in content (refs #558, #193), data only (no screen shows them yet): `title_he` for 30 of 31
+  offices, plus `title_he_f` where a woman held the office (Labour, Foreign Affairs), `name_he` for 25 of 26 parties,
+  the 8 governments and the 25 game settlements, `body_he` for the 4 legislatures, each with its own `*_he_sources`
+  (Knesset records or Hebrew Wikipedia, checked 14 October 2026); the loader and `SettlementPlacer` refuse a Hebrew name
+  without a source. Places take their 1948 form (Tel Aviv, Beisan, Kfar Ata, Pardes Hanna, Tarshiha), and the localities'
+  runtime file carries `name_he`. The content hash moves; the goldens do not.
 - Two-colour borders (refs #196, owner rulings 2026-10-14): from 11 June 1948 the map colours areas by side, as promo 03 does:
   the Israeli side in a deeper blue, the other side orange-red, and a dashed grey for contested ground (only for the days an
   operation ran there), no-man's land and the demilitarized zones. The sides come from the front lines of Israel State

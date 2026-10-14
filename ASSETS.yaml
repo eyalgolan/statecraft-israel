@@ -189,7 +189,7 @@ rules:
     note: "Presentation only (settlement kit footprints); the sim never reads it. To be checked against a scan of the 1945 publication."
   - glob: "content/map/localities_1948.*"
     licence: CC-BY-SA-4.0
-    source: "1948 localities of 1,000+ people and Bedouin camp totals: populations and 1948 names from Village Statistics, 1945 (Government of Palestine) as transcribed on Wikipedia, revision 1359600351 (CC BY-SA 4.0, attribution in each row's sources); coordinates, today's names and Hebrew/Arabic labels from Wikidata (CC0); camp areas read at load from content/map/subdistrict_hexes_1948.yaml. Read 2026-10-11; per-row sources in the YAML. localities_1948.tsv is its baked runtime form (tools/localities_bake.py), with the same rows and no new facts"
+    source: "1948 localities of 1,000+ people and Bedouin camp totals: populations and 1948 names from Village Statistics, 1945 (Government of Palestine) as transcribed on Wikipedia, revision 1359600351 (CC BY-SA 4.0, attribution in each row's sources); coordinates, today's names and Hebrew/Arabic labels from Wikidata (CC0); camp areas read at load from content/map/subdistrict_hexes_1948.yaml. Read 2026-10-11; per-row sources in the YAML. Five 1948 Hebrew names (Beisan, Kfar Ata, Pardes Hanna, Tarshiha, Majdal) from Hebrew Wikipedia (CC BY-SA 4.0), read 2026-10-14, cited in each row's name_he_sources (#558). localities_1948.tsv is its baked runtime form (tools/localities_bake.py), with the same rows and no new facts"
     status: owner-verify
     note: "Presentation only (map kits and labels); the sim never reads it. Rows with match low or manual need the owner's check; VS figures not yet checked against a scan."
   - glob: "content/map/route*_1948.yaml"

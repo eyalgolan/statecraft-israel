@@ -1,6 +1,13 @@
 legislatures:
+  # body_he (#558): the Knesset's name for the body (KNS_KnessetDates) and its he.wiki title. The First Knesset mirrors
+  # its English name, "Constituent Assembly (First Knesset)" (owner, 2026-10-14): he.wiki's "האספה המכוננת" (the
+  # election's title; the page redirects to the First Knesset) with the First Knesset's title.
   - id: provisional_state_council
     body: Provisional State Council
+    body_he: "מועצת המדינה הזמנית"
+    body_he_sources:
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
+      - { url: "https://he.wikipedia.org/wiki/מועצת_המדינה_הזמנית", checked: 2026-10-14 }
     # from: the Declaration of Independence (clause 12, minutes of 14 May 1948, 0_ptm_258580) has the People's Council
     # act as the Provisional State Council "from the termination of the Mandate, being tonight, the eve of Sabbath" (15
     # May 1948), and the Knesset's KNS_KnessetDates gives Knesset 0 a PlenumStart of 15 May 1948. The proclamation
@@ -45,6 +52,10 @@ legislatures:
     status: fact-checked
   - id: first_knesset
     body: Constituent Assembly (First Knesset)
+    body_he: "האספה המכוננת (הכנסת הראשונה)"
+    body_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/הכנסת_הראשונה", checked: 2026-10-14 }
+      - { url: "https://he.wikipedia.org/wiki/הבחירות_לאספה_המכוננת", checked: 2026-10-14 }
     # en.wiki's Knesset article gives "20 January" for the election, which conflicts; the Knesset's First Knesset page gives 25 January 1949, which is used.
     elected: 1949-01-25
     from: 1949-02-14
@@ -86,6 +97,10 @@ legislatures:
     status: fact-checked
   - id: second_knesset
     body: Second Knesset
+    body_he: "הכנסת השנייה"
+    body_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/הכנסת_השנייה", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
     elected: 1951-07-30
     # Convening date from the Knesset's session dates (KNS_KnessetDates) and the record of the first sitting, 20 August 1951.
     from: 1951-08-20
@@ -131,6 +146,10 @@ legislatures:
     status: fact-checked
   - id: third_knesset
     body: Third Knesset
+    body_he: "הכנסת השלישית"
+    body_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/הכנסת_השלישית", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
     elected: 1955-07-26
     # Convening date from he.wiki (the Third Knesset began its term on 15 August 1955) and Open Knesset's member
     # records (Efrati: Third Knesset from 15/08/1955); the Knesset's own pages could not be opened. Ahdut HaAvoda

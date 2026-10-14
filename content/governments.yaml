@@ -1,7 +1,11 @@
 # Periods are [from, to): a government's `to` is the day its successor was sworn in.
+# name_he (#558): the government's he.wiki article title (the Knesset's OData has no government table).
 governments:
   - id: provisional_government
     name: Provisional Government
+    name_he: "הממשלה הזמנית"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/הממשלה_הזמנית", checked: 2026-10-14 }
     from: 1948-05-14
     to: 1949-03-10
     coalition: [mapai, mapam, general_zionists, new_aliyah, mizrachi, hapoel_hamizrachi, agudat_yisrael, sephardim, ahdut_haavoda_poalei_tzion, poale_zion_left, independent]
@@ -15,6 +19,9 @@ governments:
     status: fact-checked
   - id: first_government
     name: First Government
+    name_he: "ממשלת ישראל הראשונה"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הראשונה", checked: 2026-10-14 }
     # Sources differ (8 vs 10 March 1949); 10 March is the Knesset confidence vote recorded in Ben-Gurion's diary.
     from: 1949-03-10
     # Ben-Gurion resigned 15 October 1950 (some pages give 16 October); the en.wiki infobox gives 30 October as the
@@ -32,6 +39,9 @@ governments:
     status: fact-checked
   - id: second_government
     name: Second Government
+    name_he: "ממשלת ישראל השנייה"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השנייה", checked: 2026-10-14 }
     # Approved 69-42 with 2 abstentions on 1 November 1950. Resigned 14 February 1951 and served as a transitional
     # government until the Third Government was sworn in on 8 October 1951. From 20 August 1951 its parties are measured
     # against the Second Knesset, where the United Religious Front and the Democratic List of Nazareth held no seats.
@@ -62,6 +72,9 @@ governments:
     status: fact-checked
   - id: third_government
     name: Third Government
+    name_he: "ממשלת ישראל השלישית"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-14 }
     # Coalition of 65 seats per he.wiki. Democratic List for Israeli Arabs, Progress and Work and Agriculture and
     # Development were Mapai-affiliated minority lists without ministers. The Progressive Party and the General Zionists
     # were in opposition. Investiture vote 56-40 (he.wiki citing Haaretz, 9 October 1951). Agudat Yisrael and Poalei
@@ -96,6 +109,9 @@ governments:
   # query per government), checked against he.wiki and en.wiki and against the plenum record of each formation.
   - id: fourth_government
     name: Fourth Government
+    name_he: "ממשלת ישראל הרביעית"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-14 }
     # Ben-Gurion named the ministers on 22 December 1952, won the confidence vote on 23 December (63 to 24), and the
     # ministers were sworn in on 24 December, when Hapoel HaMizrachi's Shapira and Burg joined (plenum records). The
     # General Zionists' 20 seats count with the Sephardim (2) and the Yemenite Association (1): those three MKs sat in
@@ -135,6 +151,9 @@ governments:
     status: fact-checked
   - id: fifth_government
     name: Fifth Government
+    name_he: "ממשלת ישראל החמישית"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-14 }
     # Sharett's first government, approved 75 to 23 on 26 January 1954, with the same parties as the Fourth. The
     # Progressives had not decided on 25 January 1954 and joined on 1 February (#278). On 1 February the Prime Minister
     # told the Knesset that the Progressive Party had decided to return to the coalition and that the government had
@@ -160,6 +179,9 @@ governments:
     status: fact-checked
   - id: sixth_government
     name: Sixth Government
+    name_he: "ממשלת ישראל השישית"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השישית", checked: 2026-10-14 }
     # Formed on 29 June 1955 without the General Zionists. Sharett told the Knesset that day that Mapai, Mizrachi,
     # Hapoel HaMizrachi and the Progressive Party had agreed to support it (plenum record); he.wiki agrees. en.wiki's
     # text says the Progressives were dropped, though Rosen stayed at Justice; the plenum record is used. It stayed in
@@ -178,6 +200,9 @@ governments:
     status: fact-checked
   - id: seventh_government
     name: Seventh Government
+    name_he: "ממשלת ישראל השביעית"
+    name_he_sources:
+      - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-14 }
     # Ben-Gurion named the ministers on 2 November 1955 and won the confidence vote on 3 November, 73 to 32 (plenum
     # records). 80 of 120 seats with the three Arab lists (he.wiki; IDI per research_notes/M4 content
     # 1952-56/election-1955.md). It served until 7 January 1958, after the content range, so it has no end date.

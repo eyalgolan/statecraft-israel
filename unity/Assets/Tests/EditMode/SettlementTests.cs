@@ -116,6 +116,23 @@ public class SettlementTests
     {
         var list = SettlementPlacer.Parse(File.ReadAllText(RealYamlPath), Bounds);
         Assert.AreEqual(25, list.Count);
+        // #558: every game settlement has its sourced 1948 Hebrew name (presentation only; the UI wiring comes later).
+        foreach (var s in list) { Assert.IsNotEmpty(s.NameHe, s.Id); Assert.IsNotEmpty(s.NameHeSources, s.Id); }
+        Assert.AreEqual("תל אביב", list.Find(s => s.Id == "tel_aviv").NameHe);
+    }
+
+    /// <summary>#558: name_he reads with its own sources; a Hebrew name without sources, or sources without the name, is an error
+    /// naming the id and the field.</summary>
+    [Test]
+    public void HebrewNameReadsWithItsSources()
+    {
+        var ok = SettlementPlacer.Parse("settlements:\n" + Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{url: u, checked: x}], " + Src), Bounds);
+        Assert.AreEqual("\u05D0", ok[0].NameHe);
+        Assert.AreEqual("u", ok[0].NameHeSources[0].Url);
+        Assert.AreEqual("", SettlementPlacer.Parse("settlements:\n" + Entry("e"), Bounds)[0].NameHe, "absent: the English stays");
+        AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", " + Src)), "h", "name_he_sources");
+        AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he_sources: [{url: u, checked: x}], " + Src)), "h", "name_he");
+        AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{url: u}], " + Src)), "h", "name_he_sources[0].checked");
     }
 
 }

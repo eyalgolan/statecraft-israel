@@ -13,6 +13,14 @@ namespace Statecraft.Sim
     {
         public string Id { get; set; } = "";
         public string Title { get; set; } = "";
+        /// <summary>The Hebrew title (#558), sourced in <see cref="TitleHeSources"/>; empty when no source gives one (the UI then
+        /// keeps the English).</summary>
+        public string TitleHe { get; set; } = "";
+        public List<Source> TitleHeSources { get; set; } = new List<Source>();
+        /// <summary>The feminine Hebrew title, only where a woman held the office (the Knesset records write שרת העבודה);
+        /// sourced in <see cref="TitleHeFSources"/>. Needs <see cref="TitleHe"/>.</summary>
+        public string TitleHeF { get; set; } = "";
+        public List<Source> TitleHeFSources { get; set; } = new List<Source>();
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
@@ -59,7 +67,14 @@ namespace Statecraft.Sim
         public string Loop { get; set; } = Legacy;
     }
 
-    public sealed class Party { public string Id { get; set; } = ""; public string Name { get; set; } = ""; }
+    public sealed class Party
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
+        public string NameHe { get; set; } = "";
+        public List<Source> NameHeSources { get; set; } = new List<Source>();
+    }
 
     public sealed class OfficeTerm
     {
@@ -104,6 +119,9 @@ namespace Statecraft.Sim
     {
         public string Id { get; set; } = "";
         public string Body { get; set; } = "";
+        /// <summary>The Hebrew name of the body (#558), sourced in <see cref="BodyHeSources"/>; empty when no source gives one.</summary>
+        public string BodyHe { get; set; } = "";
+        public List<Source> BodyHeSources { get; set; } = new List<Source>();
         public DateTime? Elected { get; set; }
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
@@ -120,6 +138,9 @@ namespace Statecraft.Sim
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
+        /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
+        public string NameHe { get; set; } = "";
+        public List<Source> NameHeSources { get; set; } = new List<Source>();
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
         /// <summary>The parties in the coalition when the government took office. Parties that join or leave later are

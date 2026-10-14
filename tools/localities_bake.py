@@ -8,11 +8,12 @@ content/map/localities_1948.tsv, the compact runtime form the player reads at bo
 The boot budget is the reason (docs/visual-v1.md, "Boot"): scanning the 176k-character YAML cost about 170 ms of the
 map build at cpu 4. The runtime file keeps only the fields the map draws and checks, one row per line, tab-separated:
 
-  place  id name today today_he lon lat type landmark mixed population status checked sources
+  place  id name name_he today today_he lon lat type landmark mixed population status checked sources
   camp   subdistrict population status checked sources
 
-`today` and `today_he` are empty for a place with no living successor; `mixed` is 1 for a mixed locality (kind
-mixed_locality); `sources` is the row's number of sources (the URLs stay in the YAML). Lines starting with '#' are
+`name_he` is the 1948 Hebrew name, empty where the YAML has none (#558; its sources stay in the YAML); `today` and
+`today_he` are empty for a place with no living successor; `mixed` is 1 for a mixed locality (kind mixed_locality);
+`sources` is the row's number of sources (the URLs stay in the YAML). Lines starting with '#' are
 comments. No field may hold a tab, a carriage return or a newline: the bake refuses such a row, naming it.
 
 Usage: uv run tools/localities_bake.py [--check]
@@ -28,8 +29,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "content" / "map" / "localities_1948.yaml"
 RUNTIME = ROOT / "content" / "map" / "localities_1948.tsv"
-PLACE_COLUMNS = ["place", "id", "name", "today", "today_he", "lon", "lat", "type", "landmark", "mixed", "population",
-                 "status", "checked", "sources"]
+PLACE_COLUMNS = ["place", "id", "name", "name_he", "today", "today_he", "lon", "lat", "type", "landmark", "mixed",
+                 "population", "status", "checked", "sources"]
 CAMP_COLUMNS = ["camp", "subdistrict", "population", "status", "checked", "sources"]
 
 
@@ -58,7 +59,7 @@ def bake(text: str) -> str:
     for p in doc["places"]:
         where = f"place '{p.get('id')}'"
         today = p.get("today") or {}
-        row = ["place", p["id"], p["name"], today.get("name", ""), today.get("name_he", ""),
+        row = ["place", p["id"], p["name"], p.get("name_he") or "", today.get("name", ""), today.get("name_he", ""),
                _number(p["lon"], where), _number(p["lat"], where), p["type"], p["landmark"],
                "1" if p.get("kind") == "mixed_locality" else "0", _number(p["population"], where),
                p["status"], p["checked"], str(len(p.get("sources") or []))]

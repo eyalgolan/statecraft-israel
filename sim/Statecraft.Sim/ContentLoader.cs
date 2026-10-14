@@ -65,13 +65,35 @@ namespace Statecraft.Sim
             {
                 var file = new DeserializerBuilder().Build().Deserialize<Dictionary<string, List<Dictionary<string, object>>>>(text);
                 if (file == null || !file.TryGetValue("settlements", out var rows)) throw new ContentException(SettlementsFileName, "settlements", "required");
-                return rows.Select((r, i) => (
-                    r.TryGetValue("id", out var id) && id is string sid && sid != ""
-                        ? sid : throw new ContentException(SettlementsFileName, $"settlements[{i}].id", "required"),
-                    r.TryGetValue("name", out var name) && name is string sname && !string.IsNullOrWhiteSpace(sname)
-                        ? sname : throw new ContentException(SettlementsFileName, $"settlements[{i}].name", "required (the name shown to the player)"))).ToList();
+                return rows.Select((r, i) =>
+                {
+                    var sid = r.TryGetValue("id", out var id) && id is string s0 && s0 != ""
+                        ? s0 : throw new ContentException(SettlementsFileName, $"settlements[{i}].id", "required");
+                    var sname = r.TryGetValue("name", out var name) && name is string n0 && !string.IsNullOrWhiteSpace(n0)
+                        ? n0 : throw new ContentException(SettlementsFileName, $"settlements[{i}].name", "required (the name shown to the player)");
+                    HebrewName(SettlementsFileName, $"settlements[{sid}]", "name_he", r.TryGetValue("name_he", out var he) && he is string hs ? hs : "",
+                        SettlementSources(r, $"settlements[{sid}].name_he_sources"));
+                    return (sid, sname);
+                }).ToList();
             }
             catch (YamlException e) { throw new ContentException(SettlementsFileName, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
+        }
+
+        /// <summary>A settlement row's name_he_sources, read from the untyped row: a list of { url, checked } maps.</summary>
+        static List<Source> SettlementSources(Dictionary<string, object> row, string field)
+        {
+            var list = new List<Source>();
+            if (!row.TryGetValue("name_he_sources", out var v) || v == null) return list;
+            if (!(v is List<object> items)) throw new ContentException(SettlementsFileName, field, "must be a list");
+            for (int i = 0; i < items.Count; i++)
+            {
+                var m = items[i] as Dictionary<object, object>;
+                var url = m != null && m.TryGetValue("url", out var u) && u is string us ? us : "";
+                var day = m != null && m.TryGetValue("checked", out var d) && d is string ds
+                    && DateTime.TryParseExact(ds, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt) ? dt : default;
+                list.Add(new Source { Url = url, Checked = day });
+            }
+            return list;
         }
 
         static readonly IDeserializer Yaml = new DeserializerBuilder()
@@ -190,6 +212,22 @@ namespace Statecraft.Sim
         static void Encodable(string file, string field, string s)
         {
             if (!SaveText.IsEncodable(s)) throw new ContentException(file, field, "must be valid text (no lone surrogate)");
+        }
+
+        /// <summary>A Hebrew display name (#558): when set it holds Hebrew letters and has at least one source, each an https URL
+        /// with its checked date; sources without a name are an error. Empty means no sourced Hebrew name (the UI keeps the English).</summary>
+        static void HebrewName(string file, string at, string key, string value, List<Source> sources)
+        {
+            if (value == "")
+            {
+                if (sources.Count > 0) throw new ContentException(file, $"{at}.{key}", $"required: {key}_sources is set but the name is empty");
+                return;
+            }
+            if (!value.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(file, $"{at}.{key}", "must be the Hebrew name, in Hebrew letters");
+            if (sources.Count == 0) throw new ContentException(file, $"{at}.{key}_sources", "required: a Hebrew name needs a source (url and checked)");
+            for (int i = 0; i < sources.Count; i++)
+                if (!sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || sources[i].Checked == default)
+                    throw new ContentException(file, FormattableString.Invariant($"{at}.{key}_sources[{i}]"), "needs an https url and a checked date");
         }
 
         static bool IsContentType(Type t) => t.IsClass && t != typeof(string) && t.Namespace == typeof(Content).Namespace;
@@ -574,6 +612,16 @@ namespace Statecraft.Sim
             foreach (var e in c.Effects) Named("model.yaml", $"effects[{e.Id}].name", e.Name);
             foreach (var s in c.Situations) Named("model.yaml", $"situations[{s.Id}].name", s.Name);
             foreach (var g in c.Regions) Named("aliyah.yaml", $"regions[{g.Id}].name", g.Name);
+            // Hebrew display names (#558): each value carries its own sources, and sources need a value.
+            foreach (var o in c.Offices)
+            {
+                HebrewName("offices.yaml", $"offices[{o.Id}]", "title_he", o.TitleHe, o.TitleHeSources);
+                HebrewName("offices.yaml", $"offices[{o.Id}]", "title_he_f", o.TitleHeF, o.TitleHeFSources);
+                if (o.TitleHeF != "" && o.TitleHe == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he", "required: a feminine title_he_f needs the title_he beside it");
+            }
+            foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources);
+            foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources);
+            foreach (var g in c.Governments) HebrewName("governments.yaml", $"governments[{g.Id}]", "name_he", g.NameHe, g.NameHeSources);
             foreach (var a in c.Money)
             {
                 if (Array.IndexOf(PlayerText.MoneyIds, a.Id) < 0)

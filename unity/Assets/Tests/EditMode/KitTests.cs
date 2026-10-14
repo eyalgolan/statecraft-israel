@@ -434,13 +434,15 @@ public class KitTests
             string id = y.Settlement.Id;
             Assert.AreEqual((id, y.Settlement.Name, y.Settlement.Type, y.Settlement.Lon, y.Settlement.Lat),
                 (t.Settlement.Id, t.Settlement.Name, t.Settlement.Type, t.Settlement.Lon, t.Settlement.Lat), id);
-            Assert.AreEqual((y.Today, y.TodayHe, y.Population, y.Landmark, y.Mixed, y.Sources), (t.Today, t.TodayHe, t.Population, t.Landmark, t.Mixed, t.Sources), id);
+            Assert.AreEqual((y.NameHe, y.Today, y.TodayHe, y.Population, y.Landmark, y.Mixed, y.Sources), (t.NameHe, t.Today, t.TodayHe, t.Population, t.Landmark, t.Mixed, t.Sources), id);
             Assert.Greater(t.Sources, 0, id);
         }
         Assert.AreEqual(yaml.Encampments.Select(a => (a.Subdistrict, a.Population, a.Sources)).ToList(),
             tsv.Encampments.Select(a => (a.Subdistrict, a.Population, a.Sources)).ToList());
         Assert.AreEqual("Sha'ab", tsv.Places.Single(p => p.Settlement.Id == "shaab").Today, "owner rule: Sha'ab is a living local council");
         Assert.IsTrue(tsv.Places.Single(p => p.Settlement.Id == "nesher").Mixed);
+        Assert.AreEqual("ביסאן", tsv.Places.Single(p => p.Settlement.Id == "beit_shean").NameHe, "#558: the 1948 form, as the English shows it");
+        Assert.IsNull(tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#558: no sourced Hebrew name, so none");
     }
 
     /// <summary>A malformed runtime row is an error naming the file and the line.</summary>
@@ -449,7 +451,7 @@ public class KitTests
     {
         var b = (34.2, 35.9, 29.45, 33.35);
         var reserved = new[] { "tel_aviv" };
-        const string ok = "place\ta\tA\t\t\t35.0\t32.0\tvillage\tmosque\t0\t1200\tdraft\t2026-10-11\t3";
+        const string ok = "place\ta\tA\t\t\t\t35.0\t32.0\tvillage\tmosque\t0\t1200\tdraft\t2026-10-11\t3";
         Assert.AreEqual(1, Localities.ParseRuntime("# header\n" + ok + "\n", b, reserved, "loc.tsv").Places.Count);
         void Bad(string tsv, string expect)
         {
@@ -457,7 +459,7 @@ public class KitTests
             StringAssert.Contains(expect, ex.Message);
         }
         Bad("# header\n" + ok.Replace("\t35.0\t", "\t35,0\t") + "\n", "loc.tsv:2: lon '35,0' is not a number");
-        Bad("# header\n" + ok + "\n" + ok.Substring(0, ok.LastIndexOf('\t')) + "\n", "loc.tsv:3: a place row has 13 fields");
+        Bad("# header\n" + ok + "\n" + ok.Substring(0, ok.LastIndexOf('\t')) + "\n", "loc.tsv:3: a place row has 14 fields");
         Bad("# header\n" + ok.Replace("\t1200\t", "\t0\t") + "\n", "loc.tsv:2: 'a' population 0");
         Bad("# header\n" + ok.Replace("\t2026-10-11\t3", "\t2026-10-11\t0") + "\n", "loc.tsv:2: 'a' sources is empty");
         Bad("# header\n" + ok.Replace("\tmosque\t0\t", "\tmosque\t2\t") + "\n", "loc.tsv:2: mixed '2'");
@@ -489,6 +491,12 @@ public class KitTests
         Bad("places:\n" + Place("a").Replace("https://example.org/x", "example.org/x"), "URL");
         Bad("places:\n" + Place("a", "  fate: x\n"), "fate");
         Bad("places:\n" + Place("a", "  today:\n    name: Y\n") , "today");
+        // #558: name_he_sources need the name, and each source an https url and a checked date.
+        Bad("places:\n" + Place("a", "  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x', checked: '2026-10-14'}\n"), "name_he_sources without a name_he");
+        Bad("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x'}\n"), "name_he_sources[0]");
+        Bad("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://x', when: y}\n"), "unknown key 'when'");
+        Assert.AreEqual("\u05D0", Localities.Parse("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x', checked: '2026-10-14'}\n"),
+            b, reserved, "loc.yaml").Places[0].NameHe);
         Bad("places:\n" + Place("a") + "encampments:\n- subdistrict: gaza\n  population: 0\n" + src, "population");
         Bad("places:\n" + Place("a") + "encampments:\n- subdistrict: gaza\n  population: 500\n  name: Camp\n" + src, "name");
         Bad("places:\n" + Place("a") + "encampments:\n- subdistrict: gaza\n  population: 500\n  hexes: [[1, 2]]\n" + src, "hexes");

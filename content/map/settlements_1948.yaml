@@ -1,9 +1,15 @@
 # Key places that existed in May 1948 (M2 map seed). Coordinates: Wikipedia API prop=coordinates;
 # founding years: the cited article's text. founded: null + pre_modern: true = pre-19th-century city.
 # Naming follows the spec's Israeli-perspective rule.
+# name_he (#558): the place's 1948 Hebrew name, matching the English (owner, 2026-10-14), from the he.wiki article the
+# row's English source links to. Tel Aviv: the article is the merged city of 1950, "תל אביב-יפו"; its lead gives "תל אביב".
 settlements:
 - id: jerusalem
   name: Jerusalem
+  name_he: ירושלים
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/ירושלים
+    checked: '2026-10-14'
   lon: 35.2256
   lat: 31.7789
   type: city
@@ -14,6 +20,10 @@ settlements:
     checked: '2026-10-09'
 - id: tel_aviv
   name: Tel Aviv
+  name_he: תל אביב
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/תל_אביב-יפו
+    checked: '2026-10-14'
   lon: 34.78
   lat: 32.08
   type: city
@@ -23,6 +33,10 @@ settlements:
     checked: '2026-10-09'
 - id: jaffa
   name: Jaffa
+  name_he: יפו
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/יפו
+    checked: '2026-10-14'
   lon: 34.7531
   lat: 32.0522
   type: arab_town
@@ -33,6 +47,10 @@ settlements:
     checked: '2026-10-09'
 - id: haifa
   name: Haifa
+  name_he: חיפה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/חיפה
+    checked: '2026-10-14'
   lon: 34.9992
   lat: 32.8192
   type: city
@@ -43,6 +61,10 @@ settlements:
     checked: '2026-10-09'
 - id: acre
   name: Acre
+  name_he: עכו
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/עכו
+    checked: '2026-10-14'
   lon: 35.0817
   lat: 32.9278
   type: arab_town
@@ -53,6 +75,10 @@ settlements:
     checked: '2026-10-09'
 - id: tiberias
   name: Tiberias
+  name_he: טבריה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/טבריה
+    checked: '2026-10-14'
   lon: 35.5333
   lat: 32.7944
   type: town
@@ -63,6 +89,10 @@ settlements:
     checked: '2026-10-09'
 - id: safed
   name: Safed
+  name_he: צפת
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/צפת
+    checked: '2026-10-14'
   lon: 35.4983
   lat: 32.9658
   type: town
@@ -73,6 +103,10 @@ settlements:
     checked: '2026-10-09'
 - id: nazareth
   name: Nazareth
+  name_he: נצרת
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/נצרת
+    checked: '2026-10-14'
   lon: 35.3033
   lat: 32.7019
   type: arab_town
@@ -83,6 +117,10 @@ settlements:
     checked: '2026-10-09'
 - id: lod
   name: Lydda
+  name_he: לוד
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/לוד
+    checked: '2026-10-14'
   lon: 34.8881
   lat: 31.9519
   type: arab_town
@@ -95,6 +133,10 @@ settlements:
     checked: '2026-10-12'
 - id: ramla
   name: Ramle
+  name_he: רמלה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/רמלה
+    checked: '2026-10-14'
   lon: 34.8625
   lat: 31.9275
   type: arab_town
@@ -107,6 +149,10 @@ settlements:
     checked: '2026-10-12'
 - id: gaza
   name: Gaza
+  name_he: עזה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/עזה
+    checked: '2026-10-14'
   lon: 34.4597
   lat: 31.5075
   type: arab_town
@@ -117,6 +163,10 @@ settlements:
     checked: '2026-10-09'
 - id: beersheba
   name: Beersheba
+  name_he: באר שבע
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/באר_שבע
+    checked: '2026-10-14'
   lon: 34.7867
   lat: 31.2522
   type: arab_town
@@ -126,6 +176,10 @@ settlements:
     checked: '2026-10-09'
 - id: petah_tikva
   name: Petah Tikva
+  name_he: פתח תקווה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/פתח_תקווה
+    checked: '2026-10-14'
   lon: 34.8864
   lat: 32.0889
   type: town
@@ -135,6 +189,10 @@ settlements:
     checked: '2026-10-09'
 - id: rishon_lezion
   name: Rishon LeZion
+  name_he: ראשון לציון
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/ראשון_לציון
+    checked: '2026-10-14'
   lon: 34.8
   lat: 31.95
   type: town
@@ -144,6 +202,10 @@ settlements:
     checked: '2026-10-09'
 - id: zikhron_yaakov
   name: Zikhron Ya'akov
+  name_he: זכרון יעקב
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/זכרון_יעקב
+    checked: '2026-10-14'
   lon: 34.9517
   lat: 32.5708
   type: town
@@ -153,6 +215,10 @@ settlements:
     checked: '2026-10-09'
 - id: rosh_pinna
   name: Rosh Pinna
+  name_he: ראש פינה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/ראש_פינה
+    checked: '2026-10-14'
   lon: 35.5422
   lat: 32.97
   type: town
@@ -162,6 +228,10 @@ settlements:
     checked: '2026-10-09'
 - id: rehovot
   name: Rehovot
+  name_he: רחובות
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/רחובות
+    checked: '2026-10-14'
   lon: 34.8167
   lat: 31.8969
   type: town
@@ -171,6 +241,10 @@ settlements:
     checked: '2026-10-09'
 - id: hadera
   name: Hadera
+  name_he: חדרה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/חדרה
+    checked: '2026-10-14'
   lon: 34.9167
   lat: 32.45
   type: town
@@ -180,6 +254,10 @@ settlements:
     checked: '2026-10-09'
 - id: netanya
   name: Netanya
+  name_he: נתניה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/נתניה
+    checked: '2026-10-14'
   lon: 34.8567
   lat: 32.3286
   type: town
@@ -189,6 +267,10 @@ settlements:
     checked: '2026-10-09'
 - id: degania_alef
   name: Degania Alef
+  name_he: "דגניה א'"
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/דגניה_א'
+    checked: '2026-10-14'
   lon: 35.5747
   lat: 32.7081
   type: kibbutz
@@ -198,6 +280,10 @@ settlements:
     checked: '2026-10-09'
 - id: ein_harod
   name: Ein Harod
+  name_he: עין חרוד
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/עין_חרוד
+    checked: '2026-10-14'
   lon: 35.3908
   lat: 32.5603
   type: kibbutz
@@ -207,6 +293,10 @@ settlements:
     checked: '2026-10-09'
 - id: nahalal
   name: Nahalal
+  name_he: נהלל
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/נהלל
+    checked: '2026-10-14'
   lon: 35.1967
   lat: 32.69
   type: moshav
@@ -216,6 +306,10 @@ settlements:
     checked: '2026-10-09'
 - id: hanita
   name: Hanita
+  name_he: חניתה
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/חניתה
+    checked: '2026-10-14'
   lon: 35.1736
   lat: 33.0875
   type: kibbutz
@@ -225,6 +319,10 @@ settlements:
     checked: '2026-10-09'
 - id: revivim
   name: Revivim
+  name_he: רביבים
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/רביבים
+    checked: '2026-10-14'
   lon: 34.7211
   lat: 31.0436
   type: kibbutz
@@ -234,6 +332,10 @@ settlements:
     checked: '2026-10-09'
 - id: yad_mordechai
   name: Yad Mordechai
+  name_he: יד מרדכי
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/יד_מרדכי
+    checked: '2026-10-14'
   lon: 34.5583
   lat: 31.5886
   type: kibbutz

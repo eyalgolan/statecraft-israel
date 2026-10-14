@@ -28,6 +28,9 @@ namespace Statecraft.Game.Map.Kits
         {
             /// <summary>The kit's and label's settlement record: id, the 1948 name, the repo type, coordinates.</summary>
             public Settlement Settlement = null!;
+            /// <summary>The 1948 Hebrew name (#558: the form matching the English name, sourced in the YAML); null where the file
+            /// gives none (thirteen villages), when the map keeps the English. Data only until the UI wiring reads it.</summary>
+            public string? NameHe;
             /// <summary>The living place's name today (and in Hebrew), only where one carries on (owner ruling 2026-10-12);
             /// null for a place that did not: then no tooltip.</summary>
             public string? Today, TodayHe;
@@ -155,6 +158,7 @@ namespace Statecraft.Game.Map.Kits
         {
             public string Id { get; set; } = ""; public string Name { get; set; } = ""; public string NameBasis { get; set; } = "";
             public TodayRow? Today { get; set; } public string? NameHe { get; set; } public string? NameAr { get; set; }
+            public List<SourceRow> NameHeSources { get; set; } = new List<SourceRow>();
             public double Lon { get; set; } = double.NaN; public double Lat { get; set; } = double.NaN;
             public string Kind { get; set; } = ""; public string Type { get; set; } = ""; public string Landmark { get; set; } = "";
             public int Population { get; set; } = -1; public List<string> ListedAs { get; set; } = new List<string>();
@@ -230,14 +234,15 @@ namespace Statecraft.Game.Map.Kits
                 var c = text.Split('\t');
                 if (c[0] == "place")
                 {
-                    if (c.Length != 14) throw new InvalidDataException($"{file}:{line}: a place row has {c.Length} fields, not 14");
+                    if (c.Length != 15) throw new InvalidDataException($"{file}:{line}: a place row has {c.Length} fields, not 15");
                     f.Places.Add(new PlaceRow
                     {
-                        Id = c[1], Name = c[2], Today = c[3].Length == 0 ? null : new TodayRow { Name = c[3], NameHe = c[4] },
-                        Lon = Num(c[5], "lon", line), Lat = Num(c[6], "lat", line), Type = c[7], Landmark = c[8],
-                        Kind = c[9] == "1" ? "mixed_locality" : c[9] == "0" ? "" : throw new InvalidDataException($"{file}:{line}: mixed '{c[9]}' is not 0 or 1"),
-                        Population = Int(c[10], "population", line), Status = c[11], Checked = c[12],
-                        SourceCount = Int(c[13], "sources", line), Line = line,
+                        Id = c[1], Name = c[2], NameHe = c[3].Length == 0 ? null : c[3],
+                        Today = c[4].Length == 0 ? null : new TodayRow { Name = c[4], NameHe = c[5] },
+                        Lon = Num(c[6], "lon", line), Lat = Num(c[7], "lat", line), Type = c[8], Landmark = c[9],
+                        Kind = c[10] == "1" ? "mixed_locality" : c[10] == "0" ? "" : throw new InvalidDataException($"{file}:{line}: mixed '{c[10]}' is not 0 or 1"),
+                        Population = Int(c[11], "population", line), Status = c[12], Checked = c[13],
+                        SourceCount = Int(c[14], "sources", line), Line = line,
                     });
                 }
                 else if (c[0] == "camp")
@@ -275,9 +280,14 @@ namespace Statecraft.Game.Map.Kits
                     throw new InvalidDataException($"{at} lon/lat {p.Lon}, {p.Lat} missing or outside the map");
                 if (p.Population < 1) throw new InvalidDataException($"{at} population {p.Population} is not a count of people");
                 CheckSourced(at, p.Status, p.Checked, p.Sources, runtime ? p.SourceCount : p.Sources.Count);
+                if (p.NameHeSources.Count > 0 && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_sources without a name_he");
+                for (int i = 0; i < p.NameHeSources.Count; i++)
+                    if (!p.NameHeSources[i].Url.StartsWith("https://") || string.IsNullOrWhiteSpace(p.NameHeSources[i].Checked))
+                        throw new InvalidDataException($"{at} name_he_sources[{i}] needs an https url and a checked date");
                 doc.Places.Add(new Place
                 {
                     Settlement = new Settlement { Id = p.Id, Name = p.Name, Type = p.Type, Lon = p.Lon, Lat = p.Lat, PreModern = true },
+                    NameHe = string.IsNullOrEmpty(p.NameHe) ? null : p.NameHe,
                     Today = p.Today?.Name, TodayHe = p.Today?.NameHe, Population = p.Population, Landmark = landmark,
                     Mixed = p.Kind == "mixed_locality", Sources = runtime ? p.SourceCount : p.Sources.Count,
                 });
@@ -303,8 +313,9 @@ namespace Statecraft.Game.Map.Kits
         static readonly HashSet<string> PlaceKeys = new HashSet<string>
         {
             "id", "name", "name_basis", "today", "name_he", "name_ar", "lon", "lat", "kind", "type", "landmark", "population",
-            "listed_as", "match", "owner_verify", "wikidata", "draft_id", "note", "checked", "status", "sources",
+            "listed_as", "match", "owner_verify", "wikidata", "draft_id", "note", "checked", "status", "sources", "name_he_sources",
         };
+        static readonly HashSet<string> NameSourceKeys = new HashSet<string> { "url", "checked" };
         static readonly HashSet<string> AreaKeys = new HashSet<string> { "subdistrict", "population", "listed_as", "note", "checked", "status", "sources" };
         static readonly HashSet<string> TodayKeys = new HashSet<string> { "name", "name_he", "source" };
 
@@ -326,7 +337,7 @@ namespace Statecraft.Game.Map.Kits
                 if (t != null) Keys(t, TodayKeys, at + " today");
                 f.Places.Add(new PlaceRow
                 {
-                    Id = Str(m, "id"), Name = Str(m, "name"), Kind = Str(m, "kind"), Type = Str(m, "type"), Landmark = Str(m, "landmark"),
+                    Id = Str(m, "id"), Name = Str(m, "name"), NameHe = Str(m, "name_he"), NameHeSources = NameSources(m, at), Kind = Str(m, "kind"), Type = Str(m, "type"), Landmark = Str(m, "landmark"),
                     Lon = Num(m, "lon", at), Lat = Num(m, "lat", at), Population = (int)Num(m, "population", at, -1),
                     Today = t == null ? null : new TodayRow { Name = Str(t, "name"), NameHe = Str(t, "name_he"), Source = Str(t, "source") },
                     Checked = Str(m, "checked"), Status = Str(m, "status"), Sources = Sources(m, at), Line = m.Line,
@@ -407,6 +418,19 @@ namespace Statecraft.Game.Map.Kits
             var list = new List<SourceRow>();
             foreach (var o in List(m, "sources", at))
                 list.Add(new SourceRow { Url = o as string ?? throw new InvalidDataException($"{at} a source is not a URL"), Checked = Str(m, "checked") });
+            return list;
+        }
+
+        /// <summary>A place's name_he_sources (#558): a list of { url, checked } mappings, each read on its own date.</summary>
+        static List<SourceRow> NameSources(YMap m, string at)
+        {
+            var list = new List<SourceRow>();
+            foreach (var o in List(m, "name_he_sources", at))
+            {
+                var s = Map(o, at + " a name_he source");
+                Keys(s, NameSourceKeys, at + " name_he_sources");
+                list.Add(new SourceRow { Url = Str(s, "url"), Checked = Str(s, "checked") });
+            }
             return list;
         }
 
