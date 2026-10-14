@@ -36,17 +36,28 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Whether a text is laid out right to left: its first letter is Hebrew or Arabic. A text with no letter
-        /// (a number, a percentage) is not.</summary>
+        /// (a number, a percentage) is not. The direction marks (U+200E, U+200F) are not letters and are passed over, so a
+        /// line that starts with a value UiText.Format has put between marks takes its direction from the value.</summary>
         public static bool RightToLeft(string? text)
         {
             if (text == null) return false;
             foreach (var c in text)
             {
-                if (c >= '֐' && c <= 'ࣿ' || c >= 'יִ' && c <= '﷿' || c >= 'ﹰ' && c <= '﻿') return true;
+                if (IsRightToLeft(c)) return true;
                 if (char.IsLetter(c)) return false;
             }
             return false;
         }
+
+        /// <summary>Whether a text has a Hebrew or Arabic character anywhere in it.</summary>
+        public static bool HasRightToLeft(string? text)
+        {
+            if (text == null) return false;
+            foreach (var c in text) if (IsRightToLeft(c)) return true;
+            return false;
+        }
+
+        static bool IsRightToLeft(char c) => c >= '֐' && c <= 'ࣿ' || c >= 'יִ' && c <= '﷿' || c >= 'ﹰ' && c <= '﻿';
 
         static void Apply(TextElement t, string? text)
         {

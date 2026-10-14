@@ -424,6 +424,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- Hebrew UI preview (refs #543, #193): a value inserted into a Hebrew line keeps its own order. `UiText.Format` puts a
+  left-to-right mark (U+200E) on each side of each value with no Hebrew in it that it inserts into a Hebrew template, so
+  negative foreign currency reads "-$4.2m" (not "$4.2m-") and "15 May 1948" in the Why screen's turn line stays one
+  run. English templates, and templates with no letter of their own, format as before.
 - Keyboard play, small fixes from the accessibility audit (refs #41): a Budget + or - keeps the focus on its button, as
   the rows are now updated in place (H2). Closing the start screen, answering the last open event and Escape from a
   screen no longer leave nothing focused: the focus goes to End Turn, End Turn, and the screen's top-bar button (M1).
