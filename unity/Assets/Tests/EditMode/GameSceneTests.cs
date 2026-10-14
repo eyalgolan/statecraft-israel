@@ -293,8 +293,8 @@ public class GameSceneTests
         Assert.IsNull(camera.IsOverUi);
         Assert.IsNull(pointer.Map, "the pointer no longer picks on this map");
         Assert.AreEqual(float.MaxValue, camera.Bounds.width, "the camera bounds are restored");
-        Assert.IsTrue(texture == null, "the minimap texture is destroyed");
-        Assert.AreEqual(StyleKeyword.Null, image.style.backgroundImage.keyword, "nothing draws the destroyed texture");
+        Assert.IsTrue(texture != null, "the minimap's picture is the shared baked asset: let go of, not destroyed");
+        Assert.AreEqual(StyleKeyword.Null, image.style.backgroundImage.keyword, "nothing draws the minimap's picture");
         foreach (var label in Watched)
             Ui.Q<Label>(label).text = "untouched";
         var turn = bridge.State.Turn;

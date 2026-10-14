@@ -20,6 +20,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - GDD v0.1 Phase 1, a dev flag and the score (refs #380): `?mvp=1` in the WebGL page's URL loads the content through
   `MvpSlice.Overlay` (the GDD slice) for playtests. The golden check and the smoke run ignore it, and a slice game never
   reads, sets aside or writes the player's autosave (and has no New Game). In the GDD loop the top bar shows the score.
+- The minimap as promo 03's (HUD round 2, part 1, refs #398): a painted relief of the country, baked once from the map's
+  own heightmap, ground colours, land use and coast (`tools/minimap_bake.py`, `Resources/Map/MinimapRelief.png`, checked
+  fresh in CI) in place of the 128-pixel hex strip painted at boot, and beside it promo 03's three round buttons: zoom all
+  the way out, show or hide the settlement names, show or hide the region borders (and their caption). The picture stays
+  mouse-only (accessibility audit B1d); the buttons take Tab after End Turn. Presentation only: no golden moves.
 - Sourced Hebrew names in content (refs #558, #193), data only (no screen shows them yet): `title_he` for 30 of 31
   offices, plus `title_he_f` where a woman held the office (Labour, Foreign Affairs), `name_he` for 25 of 26 parties,
   the 8 governments and the 25 game settlements, `body_he` for the 4 legislatures, each with its own `*_he_sources`

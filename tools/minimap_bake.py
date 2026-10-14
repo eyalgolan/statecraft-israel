@@ -40,13 +40,15 @@ OUT = ROOT / "unity" / "Assets" / "Resources" / "Map" / "MinimapRelief.png"
 WIDTH, HEIGHT = 320, 856        # the frame is 161.5 x 431.2 km (aspect 0.3746); both sides a multiple of 4
 SUPER = 2                       # samples per pixel per axis, box-filtered
 COAST_RANGE_M = 12000.0         # coast.png: 0.5 + d / (2 COAST_RANGE_M), d < 0 in water
-EXAGGERATION = 9.0              # relief for a 0.5 km pixel: the hills must read at minimap size
+EXAGGERATION = 12.0             # relief for a 0.5 km pixel: the hills must read at minimap size
+RELIEF_SMOOTH = 3               # heights averaged over 3 x 3 samples first: promo 03's broad ridges, not every gully
 SUN_AZIMUTH, SUN_ALTITUDE = 315.0, 38.0   # the cartographer's light, from the north-west
 LANDUSE_WEIGHT = 0.55           # the fields and orchards, softened: a painting, not the ground texture
 PARCHMENT = np.array([196, 178, 142], np.float32) / 255   # the promo's dry land between the tinted areas
 PARCHMENT_MIX = 0.30
 BRUSH = 6                       # the land colour is averaged over BRUSH x BRUSH samples (3 x 3 pixels, about 1.5 km)
-SATURATION = 0.80
+SATURATION = 1.10
+LAND_TONE = 0.86                # the land a little darker, toward promo 03 minimap's mean (luma about 0.47)
 SHADOW = np.array([0.66, 0.60, 0.62], np.float32)         # warm-cool split: shadows a little violet,
 LIGHT = np.array([1.10, 1.06, 0.96], np.float32)          # lit slopes a little warm
 SEA_DEEP = np.array([17, 41, 66], np.float32) / 255       # promo 03 minimap's open sea
@@ -129,6 +131,7 @@ def smooth(t: np.ndarray, a: float, b: float) -> np.ndarray:
 def bake() -> np.ndarray:
     w, h = WIDTH * SUPER, HEIGHT * SUPER
     z, dx, dy = heights(w, h)
+    z = resize(resize(z, w // RELIEF_SMOOTH, h // RELIEF_SMOOTH), w, h)
     shade = hillshade(z, dx, dy)
     flat = math.sin(math.radians(SUN_ALTITUDE))       # the shade of level ground
     ground = biome_rgb(w, h)
@@ -138,7 +141,7 @@ def bake() -> np.ndarray:
     land = resize_rgb(resize_rgb(land, w // BRUSH, h // BRUSH), w, h)   # broad strokes: no field speckle at minimap size
     grey = land.mean(axis=-1, keepdims=True)
     land = grey + (land - grey) * SATURATION
-    land = land * (1 - PARCHMENT_MIX) + PARCHMENT * PARCHMENT_MIX
+    land = (land * (1 - PARCHMENT_MIX) + PARCHMENT * PARCHMENT_MIX) * LAND_TONE
     rel = np.clip((shade - flat) / (1 - flat), -1, 1)[..., None]   # < 0 turned away, > 0 towards the light
     land = np.where(rel < 0, land * (1 + (SHADOW - 1) * -rel), land * (1 + (LIGHT - 1) * rel))
     out = outside(w, h)[..., None]
