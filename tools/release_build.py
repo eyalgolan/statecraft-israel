@@ -11,7 +11,8 @@ Usage: uv run tools/release_build.py [--platform mac|linux|windows|all] [--out D
 
 - Refuses, before anything is built (spec 6.4 step 1):
   - a dirty working tree (tracked changes or untracked files);
-  - a release (no --dev) unless HEAD is on main and the tag (--tag, default v<bundleVersion>) points at HEAD;
+  - a release (no --dev) unless HEAD is on main and contained in refs/remotes/origin/main (as last fetched; the script
+    never fetches), and the tag (--tag, default v<bundleVersion>) is v<bundleVersion>[-suffix] and points at HEAD;
   - an editor whose version (its Info.plist) is not the one in unity/ProjectSettings/ProjectVersion.txt;
   - an --out inside any checkout of the repository (the main one and every worktree, ignored paths included, compared
     after resolving symlinks, .. and case), or an --out that exists and is not empty.
@@ -28,7 +29,7 @@ Usage: uv run tools/release_build.py [--platform mac|linux|windows|all] [--out D
   `GOLDEN OK` lines carrying the hashes pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt. The Linux and Windows
   players are recorded as unchecked, for the CI player check (spec 6.3).
 - Archives each player under the asset name the CI player check expects (PR #533's contract; ARCHIVES below):
-  statecraft-israel-<tag>-macos-universal.zip (ditto, the .app alone), statecraft-israel-<tag>-linux-x64.tar.gz and
+  statecraft-israel-<tag>-macos-universal.zip (ditto --norsrc, the .app alone), statecraft-israel-<tag>-linux-x64.tar.gz and
   statecraft-israel-<tag>-windows-x64.zip. It checks first that the folder holds exactly one player executable. An
   archive holds the player only: not Unity's *_DoNotShip folders, and not event-photos.json, the build's photo manifest
   (packaging evidence the player never reads), which is copied beside the record as event-photos-<platform>.json.
@@ -202,14 +203,8 @@ def checkouts() -> list[Path]:
 
 
 def canonical(path: Path) -> str:
-    """The path with symlinks, .. and (for APFS, which ignores case) case resolved: the nearest existing ancestor's
-    realpath, then the rest, all case-folded."""
-    path = Path(os.path.abspath(path))
-    rest: list[str] = []
-    while not path.exists() and path != path.parent:
-        rest.insert(0, path.name)
-        path = path.parent
-    return os.path.normpath(os.path.join(os.path.realpath(path), *rest)).casefold()
+    """The path with symlinks (dangling ones included), .. and, for APFS, which ignores case, case resolved."""
+    return os.path.realpath(os.path.abspath(path)).casefold()
 
 
 def inside_a_checkout(out: Path) -> Path | None:
@@ -274,7 +269,8 @@ def make_archive(p: Platform, folder: Path, target: Path, dest: Path) -> None:
     """The release archive of one player folder. macOS: ditto keeps the bundle (modes, links), and the zip holds the
     .app alone. Linux: tar keeps the executable bit. Windows: a zip of the folder."""
     if p.name == "mac":
-        if run(["ditto", "-c", "-k", "--keepParent", str(target), str(dest)]).returncode != 0:
+        # --norsrc: no AppleDouble ._* entries, which unzip would leave as files the file list does not name.
+        if run(["ditto", "-c", "-k", "--norsrc", "--keepParent", str(target), str(dest)]).returncode != 0:
             raise SystemExit(f"ditto failed for {target}")
     elif p.name == "linux":
         with tarfile.open(dest, "w:gz") as t:
@@ -322,7 +318,7 @@ def shipped(folder: Path) -> list[Path]:
 
 def tree_manifest(folder: Path) -> tuple[str, int, int]:
     """`shasum -a 256` lines for every file under folder, sorted by path; a symlink is listed by its target, not
-    followed; the do-not-ship folders are left out. Returns the text, the number of entries and the bytes of the regular files."""
+    followed (`shasum -c` skips such a line with a warning); the do-not-ship folders are left out. Returns the text, the number of entries and the bytes of the regular files."""
     rows, size = [], 0
     for path in shipped(folder):
         rel = path.relative_to(folder).as_posix()
@@ -361,7 +357,7 @@ def markdown(r: dict) -> str:
         out.extend(f"  - `{line}`" for line in g["lines"])
     out += ["", "The archive is the release asset. Each file list (`" + "`, `".join(a["file_list"] for a in r["artifacts"])
             + "`) names exactly the files its archive holds; `shasum -a 256 -c` on it, run where the archive was "
-            "unpacked, checks every file. The build's photo manifest is kept beside the record "
+            "unpacked, checks every regular file (it skips `symlink` lines, which give a link's target instead). The build's photo manifest is kept beside the record "
             "(`event-photos-<platform>.json`), not in the archive.",
             "Steam build ID: (added by the owner after an upload).", ""]
     return "\n".join(out)
@@ -408,9 +404,20 @@ def main(argv: list[str] | None = None) -> int:
         if not TAG.fullmatch(tag):
             print(f"REFUSED: {tag!r} is not a release tag (vX.Y.Z)", file=sys.stderr)
             return 1
-        if branch != "main":
-            print(f"REFUSED: a release is built on main, not {branch!r} (spec 6.4 step 1). Use --dev for a test build.",
+        if tag != f"v{vers['bundle_version']}" and not tag.startswith(f"v{vers['bundle_version']}-"):
+            print(f"REFUSED: the tag {tag} is not bundleVersion {vers['bundle_version']} (v{vers['bundle_version']}, "
+                  "optionally with a -suffix); the archives would name a version the player does not carry.",
                   file=sys.stderr)
+            return 1
+        if branch != "main":
+            where = "HEAD is detached; check out main" if branch == "HEAD" else f"not on {branch!r}"
+            print(f"REFUSED: a release is built on main ({where}; spec 6.4 step 1). Use --dev for a test build.",
+                  file=sys.stderr)
+            return 1
+        if git("merge-base", "--is-ancestor", "HEAD", "refs/remotes/origin/main").returncode != 0:
+            print(f"REFUSED: HEAD ({commit[:8]}) is not on origin/main as this checkout last saw it; a release is a "
+                  "reviewed commit on GitHub's main. Run `git fetch origin` (this script never does) and check that "
+                  "your main matches origin/main.", file=sys.stderr)
             return 1
         if tag not in git("tag", "--points-at", "HEAD").stdout.split():
             print(f"REFUSED: the tag {tag} does not point at HEAD ({commit[:8]}); tag the release commit first, or use "

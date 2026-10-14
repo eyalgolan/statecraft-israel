@@ -65,8 +65,9 @@ Desktop players are built on the owner's Mac (decisions O7 and O8 in `docs/oss/D
 uv run tools/release_build.py --platform all --tag vX.Y.Z   # or mac, linux, windows; --dry-run prints the commands
 ```
 
-Before building anything it refuses: a dirty tree; a branch other than `main`, or a tag (default `v` plus
-`bundleVersion`) that does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
+Before building anything it refuses: a dirty tree; a branch other than `main`, or a `HEAD` that your last
+`git fetch origin` did not show on `origin/main` (the script never fetches); a tag that is not `v` plus `bundleVersion`
+(a `-suffix` is allowed; it is the default) or does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
 `--out` inside any checkout or worktree of the repository (ignored folders too: a build empties
 `StreamingAssets/content`), or one that is not empty. It also stops if Unity Hub lacks a module the platforms need: Mac
 Build Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the

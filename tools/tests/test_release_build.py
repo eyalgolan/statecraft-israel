@@ -51,11 +51,12 @@ class Fake:
     """Records every command and plays git, Unity and the player."""
 
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
-                 build_raises=None, dirty_after=""):
+                 build_raises=None, dirty_after="", on_origin_main=True):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
         self.branch, self.tags, self.worktrees = branch, tags, worktrees
         self.build_raises, self.dirty_after, self.built = build_raises, dirty_after, False
+        self.on_origin_main = on_origin_main
 
     def __call__(self, cmd, **kw):
         cmd = [str(c) for c in cmd]
@@ -65,6 +66,8 @@ class Fake:
             out = self.dirty_after if self.built else self.dirty
         elif cmd[:2] == ["git", "rev-parse"]:
             out = self.branch + "\n" if "--abbrev-ref" in cmd else SHA + "\n"
+        elif cmd[:2] == ["git", "merge-base"]:
+            code = 0 if self.on_origin_main else 1
         elif cmd[:3] == ["git", "tag", "--points-at"]:
             out = "".join(t + "\n" for t in self.tags)
         elif cmd[:3] == ["git", "worktree", "list"]:
@@ -79,18 +82,17 @@ class Fake:
                 raise self.build_raises
             target = Path(cmd[cmd.index("-out") + 1])
             log = Path(cmd[cmd.index("-logFile") + 1])
-            if True:
-                if target.suffix == ".app":
-                    (target / "Contents/MacOS").mkdir(parents=True)
-                    (target / "Contents/Info.plist").write_bytes(
-                        b'<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>'
-                        b"<key>CFBundleExecutable</key><string>Statecraft Israel</string></dict></plist>")
-                    (target / "Contents/MacOS/Statecraft Israel").write_bytes(b"player")
-                else:
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(b"player " + target.name.encode())
-                (target.parent / "event-photos.json").write_text("{}\n")
-                log.write_text("BUILD Succeeded StandaloneOSX -> x: 1.0 MB on disk, 0 errors, 321s\n")
+            if target.suffix == ".app":
+                (target / "Contents/MacOS").mkdir(parents=True)
+                (target / "Contents/Info.plist").write_bytes(
+                    b'<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>'
+                    b"<key>CFBundleExecutable</key><string>Statecraft Israel</string></dict></plist>")
+                (target / "Contents/MacOS/Statecraft Israel").write_bytes(b"player")
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(b"player " + target.name.encode())
+            (target.parent / "event-photos.json").write_text("{}\n")
+            log.write_text("BUILD Succeeded StandaloneOSX -> x: 1.0 MB on disk, 0 errors, 321s\n")
             if not self.build_ok:   # Unity failed, but a (partial or older) player is still there
                 log.write_text("BUILD Failed StandaloneOSX -> x: 0.0 MB on disk, 3 errors, 12s\n")
                 code = 1
@@ -208,25 +210,25 @@ def test_a_non_empty_output_folder_is_refused(repo, editor, monkeypatch, tmp_pat
 # --- a release is main at its tag (spec 6.4 step 1) -------------------------------------------------------------------
 
 def test_a_release_off_main_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
-    fake = Fake(branch="tools/feature", tags=("v1.0.0",))
-    assert run_main(["--platform", "mac", "--tag", "v1.0.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    fake = Fake(branch="tools/feature", tags=("v0.1.0",))
+    assert run_main(["--platform", "mac", "--tag", "v0.1.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
     assert unity_calls(fake) == [] and "main" in capsys.readouterr().err
 
 
 def test_a_release_whose_tag_is_not_at_head_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
-    fake = Fake(branch="main", tags=("v0.9.0",))
-    assert run_main(["--platform", "mac", "--tag", "v1.0.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
-    assert unity_calls(fake) == [] and "v1.0.0" in capsys.readouterr().err
+    fake = Fake(branch="main", tags=("v0.0.9",))
+    assert run_main(["--platform", "mac", "--tag", "v0.1.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and "v0.1.0" in capsys.readouterr().err
     fake = Fake(branch="main", tags=())
     assert run_main(["--platform", "mac", "--out", str(tmp_path / "p")], repo, editor, fake, monkeypatch) == 1, \
         "the default tag v<bundleVersion> must be at HEAD too"
 
 
 def test_a_release_on_main_at_its_tag_runs(repo, editor, monkeypatch, tmp_path):
-    fake = Fake(branch="main", tags=("v1.0.0", "other"))
+    fake = Fake(branch="main", tags=("v0.1.0-rc.2", "other"))
     out = tmp_path / "o"
-    assert run_main(["--platform", "mac", "--tag", "v1.0.0", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
-    assert (out / "statecraft-israel-v1.0.0-macos-universal.zip").exists()
+    assert run_main(["--platform", "mac", "--tag", "v0.1.0-rc.2", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
+    assert (out / "statecraft-israel-v0.1.0-rc.2-macos-universal.zip").exists()
 
 
 def test_a_dev_build_runs_anywhere_under_a_dev_marked_name(repo, editor, monkeypatch, tmp_path):
@@ -414,8 +416,9 @@ def test_no_push_upload_commit_or_network(repo, editor, monkeypatch, tmp_path):
     run_main(["--platform", "all", "--out", str(tmp_path / "out")], repo, editor, fake, monkeypatch)
     for c in fake.calls:
         if c[0] == "git":
-            assert c[1] in {"status", "rev-parse", "describe", "checkout", "tag", "worktree"}, c
+            assert c[1] in {"status", "rev-parse", "describe", "checkout", "tag", "worktree", "merge-base"}, c
         assert c[0] not in {"gh", "curl", "wget", "scp", "rsync", "steamcmd", "xcrun"}, c
+        assert c[:2] not in (["git", "fetch"], ["git", "pull"], ["git", "ls-remote"]), "no network, not even a fetch"
         assert "push" not in c and "commit" not in c
         if c[:2] == ["git", "tag"]:
             assert c[2] == "--points-at", "tags are only read"
@@ -547,13 +550,13 @@ def test_archive_names_follow_the_ci_contract():
 
 
 def test_the_mac_archive_is_made_with_ditto_keeping_the_bundle(repo, editor, monkeypatch, tmp_path):
-    fake = Fake(tags=("v0.2.0",))
+    fake = Fake(tags=("v0.1.0",))
     out = tmp_path / "out"
-    run_main(["--platform", "mac", "--tag", "v0.2.0", "--out", str(out)], repo, editor, fake, monkeypatch)
+    run_main(["--platform", "mac", "--tag", "v0.1.0", "--out", str(out)], repo, editor, fake, monkeypatch)
     ditto = next(c for c in fake.calls if c[0] == "ditto")
-    assert ditto[1:4] == ["-c", "-k", "--keepParent"]
+    assert ditto[1:5] == ["-c", "-k", "--norsrc", "--keepParent"], "no AppleDouble ._* entries the file list lacks"
     assert ditto[-2] == str(out / "players/mac/Statecraft.app")
-    assert ditto[-1] == str(out / "statecraft-israel-v0.2.0-macos-universal.zip")
+    assert ditto[-1] == str(out / "statecraft-israel-v0.1.0-macos-universal.zip")
 
 
 def test_the_linux_and_windows_archives_hold_the_player_folder(repo, editor, monkeypatch, tmp_path):
@@ -615,3 +618,50 @@ def test_unitys_do_not_ship_folders_are_left_out_of_the_list_and_the_archives(tm
     assert text.splitlines() == [f"{hashlib.sha256(b'exe').hexdigest()}  Statecraft.exe"] and (files, size) == (1, 3)
     rb.make_archive(rb.PLATFORMS["windows"], folder, folder / "Statecraft.exe", tmp_path / "w.zip")
     assert zipfile.ZipFile(tmp_path / "w.zip").namelist() == ["Statecraft.exe"]
+
+
+# --- review of #542, round 3 ----------------------------------------------------------------------------------------------
+
+def test_a_release_tag_must_be_the_bundle_version(repo, editor, monkeypatch, tmp_path, capsys):
+    """A v2.0.0 tag at HEAD with bundleVersion 0.1.0 would name archives after a version the player does not have."""
+    fake = Fake(tags=("v2.0.0",))
+    assert run_main(["--platform", "mac", "--tag", "v2.0.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and "0.1.0" in capsys.readouterr().err
+    fake = Fake(tags=("v0.1.0-rc.1",))
+    assert run_main(["--platform", "mac", "--tag", "v0.1.0-rc.1", "--out", str(tmp_path / "p")], repo, editor, fake, monkeypatch) == 0, \
+        "a pre-release suffix on the bundle version is a release of that version"
+
+
+def test_a_malformed_tag_at_head_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
+    """Pins the tag-format check itself: this tag is at HEAD and starts with v<bundleVersion>-."""
+    fake = Fake(tags=("v0.1.0-rc_1",))
+    assert run_main(["--platform", "mac", "--tag", "v0.1.0-rc_1", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and "not a release tag" in capsys.readouterr().err
+
+
+def test_a_release_must_be_on_origin_main(repo, editor, monkeypatch, tmp_path, capsys):
+    """A local main with commits GitHub's main lacks is not a release; the script reads origin/main and never fetches."""
+    fake = Fake(on_origin_main=False)
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    err = capsys.readouterr().err
+    assert unity_calls(fake) == [] and "origin/main" in err and "git fetch" in err
+    check = next(c for c in fake.calls if c[:2] == ["git", "merge-base"])
+    assert check == ["git", "merge-base", "--is-ancestor", "HEAD", "refs/remotes/origin/main"]
+    fake = Fake(on_origin_main=False, branch="tools/x", tags=())
+    assert run_main(["--platform", "mac", "--dev", "--out", str(tmp_path / "d")], repo, editor, fake, monkeypatch) == 0, \
+        "a dev build may be anywhere"
+
+
+def test_a_detached_head_says_so(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(branch="HEAD")
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert "HEAD is detached" in capsys.readouterr().err
+
+
+def test_a_dangling_symlink_into_the_repository_is_refused(repo, editor, monkeypatch, tmp_path):
+    link = tmp_path / "dangling"
+    link.symlink_to(repo / "unity/Assets/NotYetThere")
+    for extra in ([], ["--dry-run"]):
+        fake = Fake()
+        assert run_main(["--platform", "mac", "--dev", *extra, "--out", str(link / "x")], repo, editor, fake, monkeypatch) == 1
+        assert unity_calls(fake) == []
