@@ -63,11 +63,14 @@ public class SimBridgeGddTests
         Assert.AreEqual(1, b.Queued.Count);
         Assert.AreEqual(20, ((AssignWorkers)b.Queued[0]).Count);
 
-        b.Queue(new Train("tel_aviv", "halutz", 1));
-        b.Queue(new Train("tel_aviv", "halutz", 2));
-        b.Queue(new Train("tel_aviv", "recruit", 1));   // another track: its own order
-        Assert.AreEqual(3, b.Queued.Count);
-        Assert.AreEqual(2, b.Queued.OfType<Train>().Single(x => x.Track == "halutz").Count);
+        // A fresh bridge, so the Attention the work order took cannot refuse a training order.
+        var t = Bridge(Slice);
+        Assert.IsNull(t.Queue(new Train("tel_aviv", "halutz", 1)));
+        Assert.IsNull(t.Queue(new Train("tel_aviv", "halutz", 2)));
+        Assert.AreEqual(1, t.Queued.Count);
+        Assert.AreEqual(2, ((Train)t.Queued[0]).Count);
+        Assert.IsNull(t.QueuedLike(new Train("tel_aviv", "recruit", 1)), "another track is its own order");
+        Assert.IsNull(t.QueuedLike(new AssignWorkers("tel_aviv", "job", 1)), "work and training orders do not share a key");
 
         var (withCohort, id) = WithACohort();
         withCohort.Queue(new CancelTraining(id));
