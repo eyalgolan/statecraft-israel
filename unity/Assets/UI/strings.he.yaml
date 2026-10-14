@@ -35,7 +35,10 @@ defence.raise: "העלאת הדרגה"
 why.title: "למה זה קרה?"
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
-start.recording_credit: "הקלטה: Ralph Hellinger, ארכיון המדינה"
+# The recordist's name as the Israel State Archives spells it in its own description of item
+# ISA-Collections-Recordings-00113hj ("הוקלט ע"י ראלף הלינגר בעל אולפן רדיו דוקטור"), on its upload
+# https://www.youtube.com/watch?v=K5Q6Mrv4fGw, read 2026-10-14 (#558; docs/declaration-recording.md).
+start.recording_credit: "הקלטה: ראלף הלינגר, ארכיון המדינה"
 start.continue: "המשך"
 start.new_game: "משחק חדש"
 boot.loading: "טוען את מפת 1948…"

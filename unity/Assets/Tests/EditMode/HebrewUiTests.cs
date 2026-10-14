@@ -230,10 +230,6 @@ public class HebrewUiTests
     /// official English translation under each Hebrew line. ("-5%" and "+5%" have no letters and need no string.)</summary>
     static readonly string[] NotTranslated = { "start-title", "start-en-proclamation", "start-en-date", "start-caption-en" };
 
-    /// <summary>Names a Hebrew static text keeps in Latin letters: the recording's engineer (names stay as the sources
-    /// spell them until #55).</summary>
-    static readonly string[] LatinNames = { "Ralph Hellinger" };
-
     static TextElement Static(VisualElement ui, string where)
     {
         var parts = where.Split('/');
@@ -283,8 +279,9 @@ public class HebrewUiTests
         {
             var e = Static(Ui, where);
             Assert.AreEqual(He[key], e.text, $"{where}: {key}");
-            var rest = LatinNames.Aggregate(e.text, (s, n) => s.Replace(n, ""));
-            Assert.IsFalse(latin.IsMatch(rest), $"{where}: Latin letters in '{e.text}'");
+            // No Latin letters, names included: the recording's engineer is ראלף הלינגר, as the Israel State Archives' own
+            // description spells him (#558).
+            Assert.IsFalse(latin.IsMatch(e.text), $"{where}: Latin letters in '{e.text}'");
             Assert.AreEqual(LanguageDirection.RTL, e.languageDirection, $"{where}: {e.text}");
         }
         foreach (var name in NotTranslated) Assert.AreEqual(LanguageDirection.LTR, Ui.Q<TextElement>(name).languageDirection, name);
