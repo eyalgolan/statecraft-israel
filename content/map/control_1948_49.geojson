@@ -66,7 +66,7 @@
   "south_limit_km_n": 60.0,
   "known_staleness": [
    "the October 1948 line is shown until the Egypt agreement (24 February 1949), since no source gives a later line: Isdud (taken 28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then; the caption names the source line's date",
-   "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns)"
+   "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns). A known limit of the periods: the pin covers whole periods inside its window, so the Yoav period (15-29 October) shows the hex Israeli from 15 October, four days before its capture"
   ],
   "pinned_towns": [
    {
@@ -87,7 +87,7 @@
     "from": "1949-04-03",
     "until": null,
     "source": "https://en.wikipedia.org/wiki/Qalqilya",
-    "why": "read 2026-10-14: en.wiki (quoting Sami Hadawi) says the 1949 armistice lines severed the town's orange groves in favour of Israel, leaving it its rocky land to the east, so the town stayed on the Jordanian side; on the signed map 1 of the Jordan-Israel agreement (the UNISPAL copy D-A traced, 51 m a pixel) the pen line runs along the town's western edge, its symbol on or just east of the line, which that resolution cannot settle; D-A's trace of it puts the town 2 km to the Israeli side from 8 May 1949"
+    "why": "read 2026-10-14: en.wiki quotes Sami Hadawi, who argues that the 1949 armistice lines severed the town's orange groves in favour of Israel, leaving it its rocky land to the east, which implies the town stayed on the Jordanian side (an inference, not a statement of the source); on the signed map 1 of the Jordan-Israel agreement (the UNISPAL copy D-A traced, 51 m a pixel) the pen line runs along the town's western edge, its symbol on or just east of the line, which that resolution cannot settle; D-A's trace of it puts the town 2 km to the Israeli side from 8 May 1949"
    },
    {
     "place": "Huleiqat",
@@ -19882,7 +19882,7 @@
     [35.64951,33.08729],
     [35.64957,33.1039]]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-04-03:israel","kind":"area","snapshot":"arm_1949-04-03","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-04-03:israel","kind":"area","snapshot":"arm_1949-04-03","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":"partly: its boundary with Jordan's side"},
   "geometry":{"type":"Polygon","coordinates":[
    [[35.58712,33.26427],
     [35.57756,33.27171],
@@ -22226,7 +22226,7 @@
     [35.59053,33.25969],
     [35.58712,33.26427]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-04-03:arab:egypt","kind":"area","snapshot":"arm_1949-04-03","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-04-03:arab:egypt","kind":"area","snapshot":"arm_1949-04-03","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"Polygon","coordinates":[
    [[34.57841,31.55641],
     [34.58088,31.56092],
@@ -23077,7 +23077,7 @@
     [35.22438,31.77467],
     [35.22169,31.77356]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-04-03:arab:unspecified","kind":"area","snapshot":"arm_1949-04-03","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-04-03:arab:unspecified","kind":"area","snapshot":"arm_1949-04-03","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"MultiPolygon","coordinates":[
    [[[35.5516,31.79575],
     [35.55158,31.78945],
@@ -23210,7 +23210,7 @@
     [35.64951,33.08729],
     [35.64957,33.1039]]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-05-08:israel","kind":"area","snapshot":"arm_1949-05-08","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-05-08:israel","kind":"area","snapshot":"arm_1949-05-08","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":"partly: its boundary with Jordan's side"},
   "geometry":{"type":"Polygon","coordinates":[
    [[35.57756,33.27171],
     [35.57893,33.27229],
@@ -25555,7 +25555,7 @@
     [35.58712,33.26427],
     [35.57756,33.27171]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-05-08:arab:egypt","kind":"area","snapshot":"arm_1949-05-08","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-05-08:arab:egypt","kind":"area","snapshot":"arm_1949-05-08","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"Polygon","coordinates":[
    [[34.57841,31.55641],
     [34.58088,31.56092],
@@ -26407,7 +26407,7 @@
     [35.22438,31.77467],
     [35.22169,31.77356]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-05-08:arab:unspecified","kind":"area","snapshot":"arm_1949-05-08","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-05-08:arab:unspecified","kind":"area","snapshot":"arm_1949-05-08","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"MultiPolygon","coordinates":[
    [[[35.5516,31.79575],
     [35.55158,31.78945],
@@ -26540,7 +26540,7 @@
     [35.64951,33.08729],
     [35.64957,33.1039]]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-05-22:israel","kind":"area","snapshot":"arm_1949-05-22","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-05-22:israel","kind":"area","snapshot":"arm_1949-05-22","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":"partly: its boundary with Jordan's side"},
   "geometry":{"type":"Polygon","coordinates":[
    [[35.57756,33.27171],
     [35.57893,33.27229],
@@ -28885,7 +28885,7 @@
     [35.58712,33.26427],
     [35.57756,33.27171]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-05-22:arab:egypt","kind":"area","snapshot":"arm_1949-05-22","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-05-22:arab:egypt","kind":"area","snapshot":"arm_1949-05-22","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"Polygon","coordinates":[
    [[34.57841,31.55641],
     [34.58088,31.56092],
@@ -29737,7 +29737,7 @@
     [35.22438,31.77467],
     [35.22169,31.77356]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-05-22:arab:unspecified","kind":"area","snapshot":"arm_1949-05-22","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-05-22:arab:unspecified","kind":"area","snapshot":"arm_1949-05-22","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"MultiPolygon","coordinates":[
    [[[35.5516,31.79575],
     [35.55158,31.78945],
@@ -29870,7 +29870,7 @@
     [35.64951,33.08729],
     [35.64957,33.1039]]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-07-17:israel","kind":"area","snapshot":"arm_1949-07-17","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-07-17:israel","kind":"area","snapshot":"arm_1949-07-17","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":"partly: its boundary with Jordan's side"},
   "geometry":{"type":"Polygon","coordinates":[
    [[35.58712,33.26427],
     [35.57756,33.27171],
@@ -32206,7 +32206,7 @@
     [35.59053,33.25969],
     [35.58712,33.26427]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-07-17:arab:egypt","kind":"area","snapshot":"arm_1949-07-17","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-07-17:arab:egypt","kind":"area","snapshot":"arm_1949-07-17","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"Polygon","coordinates":[
    [[34.57841,31.55641],
     [34.58088,31.56092],
@@ -33050,7 +33050,7 @@
     [35.22438,31.77467],
     [35.22169,31.77356]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-07-17:arab:unspecified","kind":"area","snapshot":"arm_1949-07-17","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-07-17:arab:unspecified","kind":"area","snapshot":"arm_1949-07-17","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"MultiPolygon","coordinates":[
    [[[35.5516,31.79575],
     [35.55158,31.78945],
@@ -33183,7 +33183,7 @@
     [35.64951,33.08729],
     [35.64957,33.1039]]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-07-20:israel","kind":"area","snapshot":"arm_1949-07-20","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-07-20:israel","kind":"area","snapshot":"arm_1949-07-20","side":"israel","holder":"israel","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":"partly: its boundary with Jordan's side"},
   "geometry":{"type":"Polygon","coordinates":[
    [[35.21434,31.80157],
     [35.20828,31.80159],
@@ -35559,7 +35559,7 @@
     [35.22173,31.79595],
     [35.21434,31.80157]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-07-20:arab:egypt","kind":"area","snapshot":"arm_1949-07-20","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-07-20:arab:egypt","kind":"area","snapshot":"arm_1949-07-20","side":"arab","holder":"egypt","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"Polygon","coordinates":[
    [[34.57841,31.55641],
     [34.58088,31.56092],
@@ -36403,7 +36403,7 @@
     [35.22438,31.77467],
     [35.22169,31.77356]]]}},
 {"type":"Feature",
-  "properties":{"id":"arm_1949-07-20:arab:unspecified","kind":"area","snapshot":"arm_1949-07-20","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":true},
+  "properties":{"id":"arm_1949-07-20:arab:unspecified","kind":"area","snapshot":"arm_1949-07-20","side":"arab","holder":"unspecified","neutral_kind":null,"accuracy":"the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)","source_quality":"low_res_scan","sources":["armistice_lines_1949.geojson","https://treaties.un.org/doc/publication/UNTS/Volume%2042/v42.pdf","https://archive.nyu.edu/bitstream/2451/72921/1/R0005czg.pdf"],"checked":"2026-10-14","status":"draft","review":"owner-verify","legend":"armistice","low_accuracy":false},
   "geometry":{"type":"MultiPolygon","coordinates":[
    [[[35.5516,31.79575],
     [35.55158,31.78945],

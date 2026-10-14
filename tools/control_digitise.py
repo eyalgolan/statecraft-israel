@@ -242,8 +242,9 @@ PINNED = [
      "taken by the Syrian army in June 1948 and back in Israel's control on 20 July 1949 (en.wiki); the bridgehead is "
      "narrower than ISA 6158/1's accuracy, so its lines put the moshava on the Israeli side"),
     ("Qalqilya", 34.9685, 32.1904, "jordan", "1949-04-03", None, WIKI + "Qalqilya",
-     "read 2026-10-14: en.wiki (quoting Sami Hadawi) says the 1949 armistice lines severed the town's orange groves in favour "
-     "of Israel, leaving it its rocky land to the east, so the town stayed on the Jordanian side; on the signed map 1 of the "
+     "read 2026-10-14: en.wiki quotes Sami Hadawi, who argues that the 1949 armistice lines severed the town's orange groves "
+     "in favour of Israel, leaving it its rocky land to the east, which implies the town stayed on the Jordanian side (an "
+     "inference, not a statement of the source); on the signed map 1 of the "
      "Jordan-Israel agreement (the UNISPAL copy D-A traced, 51 m a pixel) the pen line runs along the town's western edge, its "
      "symbol on or just east of the line, which that resolution cannot settle; D-A's trace of it puts the town 2 km to the "
      "Israeli side from 8 May 1949"),
@@ -824,12 +825,14 @@ def build(isa_pdf: Path, log=print) -> dict:
         date = spans.get(sid, (sid[4:], None))[0]
         arm = sid.startswith("arm_")
         legend = "armistice" if arm else "held"
-        kw = {"sources": [ARMISTICE.name, ad.UNTS["url"], ISA_MAP["url"]], "accuracy": ARMISTICE_ACCURACY,
-              "extra_flags": {"low_accuracy": "jordan" in s["switched"]}} if arm else {}
-        flags = kw.pop("extra_flags", {})
-        feats.append(area_feature(f"{sid}:israel", sid, "israel", s["areas"]["israel"], "israel", extra={"legend": legend, **flags}, **kw))
+        kw = {"sources": [ARMISTICE.name, ad.UNTS["url"], ISA_MAP["url"]], "accuracy": ARMISTICE_ACCURACY} if arm else {}
+        # D-A ruling 2: only what the Jordan line bounds is low accuracy: Jordan's side, and the Israeli side along it
+        jordan_in = arm and "jordan" in s["switched"]
+        israel_flag = {"low_accuracy": "partly: its boundary with Jordan's side" if jordan_in else False} if arm else {}
+        feats.append(area_feature(f"{sid}:israel", sid, "israel", s["areas"]["israel"], "israel", extra={"legend": legend, **israel_flag}, **kw))
         for h, g in sorted(split_holders(s["areas"]["arab"], date).items()):
-            feats.append(area_feature(f"{sid}:arab:{h}", sid, "arab", g, h, extra={"legend": legend, **flags}, **kw))
+            flag = {"low_accuracy": jordan_in and h == "jordan"} if arm else {}
+            feats.append(area_feature(f"{sid}:arab:{h}", sid, "arab", g, h, extra={"legend": legend, **flag}, **kw))
     for oid, (g, kind, (f, u), srcs, acc, sq, why) in overlays.items():
         if g.is_empty:
             continue
@@ -872,7 +875,7 @@ def build(isa_pdf: Path, log=print) -> dict:
                        "the 1950 modus vivendi line: it does not change either side's position (S/1471 Art. III)"],
         "south_limit_km_n": SOUTH_N,
         "known_staleness": ["the October 1948 line is shown until the Egypt agreement (24 February 1949), since no source gives a later line: Isdud (taken 28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then; the caption names the source line's date",
-                            "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns)"],
+                            "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns). A known limit of the periods: the pin covers whole periods inside its window, so the Yoav period (15-29 October) shows the hex Israeli from 15 October, four days before its capture"],
         "pinned_towns": [{"place": n, "lon": x, "lat": y, "holder": h, "from": f, "until": u, "source": src, "why": w} for n, x, y, h, f, u, src, w in PINNED],
         "georeference": fit["diag"],
         "conversion": "Palestine Grid (EPSG:28191) to WGS84 by the EPSG Helmert transformation (tools/armistice_digitise.py, PG_PIPELINE)",

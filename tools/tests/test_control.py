@@ -142,7 +142,13 @@ def test_each_area_cites_the_source_it_comes_from_with_that_sources_accuracy():
         if p.get("neutral_kind") == "contested":
             assert any("wikipedia.org" in s for s in p["sources"]), p["id"]
     arm = [f["properties"] for f in SOURCE["features"] if (f["properties"].get("snapshot") or "").startswith("arm_")]
-    assert all(p["low_accuracy"] == ("jordan" in p["snapshot"] or p["snapshot"] >= "arm_1949-04-03") for p in arm)
+    for p in arm:   # D-A ruling 2: low accuracy only where the Jordan line bounds the area
+        jordan_in = p["snapshot"] >= "arm_1949-04-03"
+        if p["side"] == "arab":
+            assert p["low_accuracy"] == (jordan_in and p["holder"] == "jordan"), p["id"]
+        else:
+            assert bool(p["low_accuracy"]) == jordan_in, p["id"]
+    assert not next(p for p in arm if p["id"] == "arm_1949-07-20:arab:egypt")["low_accuracy"], "Egypt's Strip is not Jordan-derived"
 
 
 # The tests' own table, independent of the tool's anchors (review: mutation 7): the side each town's hex must show, from
@@ -245,6 +251,7 @@ def test_the_ten_days_start_on_8_july_1948():
     """Review N1, pinned against the source's date, not the tool's constant."""
     by = {p["id"]: p for p in BAKED["periods"]}
     assert str(by["ten_days"]["from"]) == "1948-07-08" and str(by["truce1"]["until"]) == "1948-07-08"
+    assert META["operations"]["ten_days"]["from"] == str(by["ten_days"]["from"]), "the overlay's window and the period agree"
 
 
 def test_the_uncoloured_closure_strip_is_at_most_3_km_wide():
