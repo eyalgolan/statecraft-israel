@@ -256,9 +256,14 @@ people:
       - { office: interior_minister, from: 1949-03-10, to: 1950-11-01, party: united_religious_front, sources: *shapira_1 }
       # en.wiki lists all three portfolios in the Second Government; the he.wiki extract did not clearly show Interior
       # and Immigration (research notes 1c). en.wiki is used.
-      - { office: health_minister, from: 1950-11-01, to: 1951-10-08, party: united_religious_front, sources: &second_urf [*gov2_k, *second_en, *second_he] }
-      - { office: immigration_minister, from: 1950-11-01, to: 1951-10-08, party: united_religious_front, sources: *second_urf }
-      - { office: interior_minister, from: 1950-11-01, to: 1951-10-08, party: united_religious_front, sources: *second_urf }
+      # Second Knesset from 20 August 1951: the Knesset faction records put him in the Hapoel HaMizrachi faction
+      # (row 25993); to then, the United Religious Front (row 25848). Issue #457.
+      - { office: health_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: &second_urf [*gov2_k, *second_en, *second_he] }
+      - { office: immigration_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: *second_urf }
+      - { office: interior_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: *second_urf }
+      - { office: health_minister, from: 1951-08-20, to: 1951-10-08, party: hapoel_hamizrachi, sources: &shapira_k2 [*gov2_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition(25993)", checked: 2026-10-14 }] }
+      - { office: immigration_minister, from: 1951-08-20, to: 1951-10-08, party: hapoel_hamizrachi, sources: *shapira_k2 }
+      - { office: interior_minister, from: 1951-08-20, to: 1951-10-08, party: hapoel_hamizrachi, sources: *shapira_k2 }
       # The United Religious Front dissolved in 1951; Shapira sat for Hapoel HaMizrachi (the person's party). The Third
       # Government had no Immigration portfolio (notes, Addendum (a)): offices.yaml ends that office on 1951-10-08.
       - { office: interior_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
@@ -362,7 +367,10 @@ people:
       - { office: police_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: minority_affairs_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: police_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
-      - { office: police_minister, from: 1950-11-01, to: 1951-10-08, sources: *gov2 }
+      # Second Knesset from 20 August 1951: Mapai faction (Knesset faction records, row 25992); to then, the Sephardim
+      # list (row 25845), his person party. Issue #457.
+      - { office: police_minister, from: 1950-11-01, to: 1951-08-20, sources: *gov2 }
+      - { office: police_minister, from: 1951-08-20, to: 1951-10-08, party: mapai, sources: [*gov2_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition(25992)", checked: 2026-10-14 }] }
       # He was elected in 1949 for the Sephardim list; the Knesset faction records put him in Mapai from the Second
       # Knesset (20 August 1951), as both Wikipedias and JVL do for 1951 (Addendum (d)).
       - { office: police_minister, from: 1951-10-08, to: 1952-12-24, party: mapai, sources: [*gov3, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202639%20and%20KnessetNum%20eq%202", checked: 2026-10-14 }, { url: "https://www.jewishvirtuallibrary.org/third-government-of-israel", checked: 2026-10-10 }] }
@@ -468,7 +476,10 @@ people:
     offices:
       - { office: welfare_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: welfare_minister, from: 1949-03-10, to: 1950-11-01, party: united_religious_front, sources: [*gov1_k, *bga, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%202427%20and%20KnessetNum%20eq%201", checked: 2026-10-14 }] }
-      - { office: welfare_minister, from: 1950-11-01, to: 1951-10-08, party: united_religious_front, sources: *second_urf }
+      # Second Knesset from 20 August 1951: Agudat Yisrael faction (Knesset faction records, row 25938); to then, the
+      # United Religious Front (row 25797). Issue #457.
+      - { office: welfare_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: *second_urf }
+      - { office: welfare_minister, from: 1951-08-20, to: 1951-10-08, party: agudat_yisrael, sources: [*gov2_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition(25938)", checked: 2026-10-14 }] }
       # Resigned on 18 September 1952, when Agudat Yisrael left the coalition (Knesset records; en.wiki and he.wiki
       # Third Government; he.wiki's text gives 23 September for the party's exit). No successor until Shapira took
       # Welfare in the Fourth Government, so the office is vacant from 18 September to 24 December 1952.

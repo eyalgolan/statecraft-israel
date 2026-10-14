@@ -488,6 +488,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   adds Hansard for the RAF clash of 7 January 1949, and "Education in the Immigrant Camps" adds the JTA's report of
   the commission's findings, completed on 9 May 1950. Wikipedia stays only for lines these sources do not cover. Text,
   dates and effects are unchanged (refs #442).
+- Second Government ministers take their Second Knesset factions from 20 August 1951, per the Knesset faction records:
+  Haim-Moshe Shapira Hapoel HaMizrachi and Yitzhak-Meir Levin Agudat Yisrael (both United Religious Front before), and
+  Bechor-Shalom Sheetrit Mapai (Sephardim before). Each term is split on that date (refs #457). No golden moves.
 - Contradictions flagged in #457 and #442 that cannot move a golden. YAML comments: the Provisional State Council last
   met on 10 February 1949, not 3 February; the 120-seat ordinance passed on 18 November 1948 and the 25 January vote
   was fixed on 25 November 1948 (Harpaz, Kesher 61); the 57-36 vote of 8 August 1950 was for the coalition's motion,

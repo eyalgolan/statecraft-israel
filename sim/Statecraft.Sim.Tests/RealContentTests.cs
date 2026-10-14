@@ -308,6 +308,15 @@ public class RealContentTests
         var sheetrit = C.People.Single(p => p.Id == "sheetrit");
         Assert.Equal("sephardim", Offices.PartyOf(C, sheetrit, new DateTime(1951, 1, 1)));
         Assert.Equal("mapai", Offices.PartyOf(C, sheetrit, new DateTime(1951, 10, 8)));
+        // Second Knesset factions from 20 August 1951 (Knesset faction records, #457).
+        Assert.Equal("mapai", Offices.PartyOf(C, sheetrit, new DateTime(1951, 8, 20)));
+        Assert.Equal("sephardim", Offices.PartyOf(C, sheetrit, new DateTime(1951, 8, 19)));
+        var shapira = C.People.Single(p => p.Id == "shapira");
+        Assert.Equal("united_religious_front", Offices.PartyOf(C, shapira, new DateTime(1951, 8, 19)));
+        Assert.Equal("hapoel_hamizrachi", Offices.PartyOf(C, shapira, new DateTime(1951, 8, 20)));
+        var levin = C.People.Single(p => p.Id == "levin");
+        Assert.Equal("united_religious_front", Offices.PartyOf(C, levin, new DateTime(1951, 8, 19)));
+        Assert.Equal("agudat_yisrael", Offices.PartyOf(C, levin, new DateTime(1951, 8, 20)));
         Assert.Equal("", Offices.PartyOf(C, C.People.Single(p => p.Id == "geri"), new DateTime(1951, 1, 1)));
     }
 
