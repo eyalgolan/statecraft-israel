@@ -2621,3 +2621,29 @@ The units' span goes from about 300 to 90 ms. The map build is at least 165 ms s
 rounds differ by 165 ms, and the two base rounds spread by 128 ms, so the mean difference (about 240 ms) is not a firm
 figure.
 `start screen shown` falls by about 120 ms, since the units layer places the tokens again there.
+
+### #321 round 3: the units file parsed once (T52)
+
+`units_1948.yaml` was parsed at boot by the map (`unit data read`, for the unit spots) and again by `GameRoot` for the
+units layer. Three `?bootlog` markers round the layer (`screens wired`, `units layer data read`, `units layer built`),
+one `--exclusive` run of 3 cold loads at `--cpu 4` on main `4875d0e` plus the markers, median ms: the map's parse 31,
+the layer's parse 25, the layer's build 62 (its own run of the unit placer included), and `screens wired` 272.
+
+The map now keeps its parse (`MapScene.UnitEntries`) and `GameRoot` takes it through `MapScene.UnitEntriesFor`, which
+hands back the same list when the text is the one the map read and parses otherwise. `UnitDataOnceTests` checks that
+the layer's list is the map's (it failed with the old second parse), that it holds the same units as a fresh parse,
+field for field, and that a rebuild or other text never hands on a stale parse. New Game replaces only the session;
+the units are content, read once for the layer's life as before.
+
+Base `4875d0e` against the branch, base, branch, branch, base under one `--exclusive` hold (load 2.8-11.9; the first
+base round stalled after one cold load when another process loaded the machine, so the base has four loads):
+
+| | base | branch round 1 | branch round 2 |
+|---|---|---|---|
+| `units layer data read` | (25, the split) | 1 | 1 |
+| map built to start screen shown, per load | 437, 444, 445, 456 | 417, 422, 434 | 415, 416, 419 |
+| `map_build_ms` (median) | 2221 | 2206 | 2214 |
+
+About 25 ms off the time from the map to the start screen; the map build is unchanged, since the parse that stays is the
+map's. Not done: the layer's second run of the unit placer (about 40 ms of `units layer built`) could take the map's
+spots too, and `screens wired` (about 270 ms) is not split yet.

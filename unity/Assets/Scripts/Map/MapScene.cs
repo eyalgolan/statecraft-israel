@@ -137,6 +137,18 @@ namespace Statecraft.Game.Map
         /// their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
+        /// <summary>The units of content/map/units_1948.yaml as the last Build read them (empty before a build, or when the
+        /// file is missing or malformed). Read only: the units layer draws from this same list (UnitEntriesFor).</summary>
+        public IReadOnlyList<Units.UnitEntry> UnitEntries { get; private set; } = Array.Empty<Units.UnitEntry>();
+        string unitsYamlRead;   // null before a build
+
+        /// <summary>The units for <paramref name="yaml"/>: the list the last Build parsed when it read the same text (issue
+        /// #321: the file was parsed twice at boot, here and for the units layer), else a parse of it (UnitData.ReadOrNone,
+        /// warning through <paramref name="warn"/>).</summary>
+        public IReadOnlyList<Units.UnitEntry> UnitEntriesFor(string yaml, Action<string> warn) =>
+            unitsYamlRead != null && string.Equals(yaml, unitsYamlRead, StringComparison.Ordinal)
+                ? UnitEntries : Units.UnitData.ReadOrNone(yaml, warn);
+
         /// <summary>Where the kits keep their buildings and trees off the units (centre x, z; radius m): the spot of a unit that
         /// stands in a town (UnitPlacer's last round, UnitGround.ClearingRadius), so no token stands in a building. Empty before
         /// Build or without the unit file.</summary>
@@ -257,6 +269,7 @@ namespace Statecraft.Game.Map
             // a unit placed in a town gets a clearing the kits keep free (UnitLayer places it the same way).
             DiagLog.BootPhase("footprints");
             var unitData = Units.UnitData.ReadOrNone(inputs.UnitsYaml, Debug.LogWarning);
+            UnitEntries = unitData; unitsYamlRead = inputs.UnitsYaml ?? "";
             DiagLog.BootPhase("unit data read");
             var unitHexes = Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Lon = h.lon, Lat = h.lat, ElevM = h.elev_m, Land = h.land, Biome = h.biome }).ToList();
             var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
@@ -400,6 +413,7 @@ namespace Statecraft.Game.Map
             }
             Terrain = null;
             Hexes = null;
+            UnitEntries = Array.Empty<Units.UnitEntry>(); unitsYamlRead = null;
         }
     }
 }

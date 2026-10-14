@@ -26,6 +26,8 @@ namespace Statecraft.Game.Map.Units
 
         MapScene map = null!;
         IReadOnlyList<UnitEntry> units = Array.Empty<UnitEntry>();
+        /// <summary>The unit data the layer draws from (read only; MapScene.UnitEntries when it read the same file).</summary>
+        public IReadOnlyList<UnitEntry> Units => units;
         UnitGround ground = null!;
         Dictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;

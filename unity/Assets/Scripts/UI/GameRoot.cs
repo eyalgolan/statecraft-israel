@@ -190,8 +190,12 @@ namespace Statecraft.Game.UI
             owned.Add(new Undo(() => bridge.Changed -= onDate));
             // The units in play (docs/units.md): drawn from the state and the sourced unit data, before the info panel so
             // the layer has followed a change before the panel renders the selected unit's card.
+            DiagLog.BootPhase("screens wired");   // issue #321: the splits of the units layer
+            // The map's own parse of the unit file when it read this text (issue #321: it was parsed twice at boot).
+            var unitData = map.UnitEntriesFor(inputs.Map.UnitsYaml, Debug.LogWarning);
+            DiagLog.BootPhase("units layer data read");
             var unitLayer = units = Statecraft.Game.Map.Units.UnitLayer.Create(map,
-                Statecraft.Game.Map.Units.UnitData.ReadOrNone(inputs.Map.UnitsYaml, Debug.LogWarning), inputs.Content.Hexes,
+                unitData, inputs.Content.Hexes,
                 Statecraft.Game.Map.Units.UnitShowcase.StillRequested(Application.absoluteURL, Environment.GetCommandLineArgs(),
                     Application.platform == RuntimePlatform.WebGLPlayer));
             // A screenshot run (?shot) leaves the units out unless it also asks for them (&units), so the art log's plain
@@ -203,6 +207,7 @@ namespace Statecraft.Game.UI
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
+            DiagLog.BootPhase("units layer built");
             var localitiesAt = LocalitiesAt(map);
             var info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,

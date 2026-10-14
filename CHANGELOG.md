@@ -256,6 +256,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- The units file (`units_1948.yaml`) is parsed once at boot instead of twice: the map keeps its parse and the units
+  layer draws from the same list (refs #321). The units and where they stand are unchanged. The second parse cost about
+  25 ms at `--cpu 4` between the map and the start screen; the map build itself is unchanged. `?bootlog` has three more
+  phases round the units layer. Presentation only.
 - Tel Aviv's 1948 localities (Sheikh Muwannis, Jammasin, Salama, Ramat Gan, Givatayim, Bnei Brak and the rest inside its
   footprint) keep their mosques and water towers, at a quarter and three tenths of their size elsewhere, at the street
   crossing nearest their hearts (refs #318, owner ruling 2026-10-12). The city's blocks keep their plots round them: core
