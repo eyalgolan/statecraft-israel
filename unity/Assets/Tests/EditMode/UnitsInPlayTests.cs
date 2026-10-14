@@ -640,7 +640,7 @@ public class UnitsInPlayTests
         StringAssert.Contains("At Hulda (headquarters for the Latrun attacks) since 24 May 1948", UnitCard.For(Token("brigade_7", latrun), latrun, text).Body);
         var ship = UnitCard.For(Token("ins_haganah", start), start, text);
         StringAssert.Contains("commissioned 1948", ship.Subtitle);
-        StringAssert.Contains("Wikipedia only", kiryati.Note);
+        StringAssert.Contains("Wikipedia only", UnitCard.For(Token("golani", start), start, text).Note, "Golani is still Wikipedia only; Kiryati cites the Haganah lexicon (P66)");
         var hatzor = StateAt(new DateTime(1948, 12, 1), 5, 0.8);
         StringAssert.DoesNotContain("Wikipedia only", UnitCard.For(Token("squadron_101", hatzor), hatzor, text).Note,
             "Hatzor's position cites Eduard (review M8: the note is per position)");
