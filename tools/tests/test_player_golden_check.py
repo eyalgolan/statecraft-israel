@@ -1,5 +1,9 @@
+import hashlib
 import io
 import json
+import re
+import shutil
+import subprocess
 import sys
 import tarfile
 import zipfile
@@ -15,8 +19,16 @@ MANIFEST = f"# comment\nhash1950 {H50}\nhash1952 {H52}\nsmoke5 {'c' * 64}\n"
 EXPECTED = [f"GOLDEN OK 1950 {H50}", f"GOLDEN OK 1952 {H52}"]
 
 
+def digest(name):
+    return "sha256:" + hashlib.sha256(name.encode()).hexdigest()
+
+
 def release(tag, *names, draft=False):
-    return {"tagName": tag, "isDraft": draft, "assets": [{"name": n} for n in names]}
+    return {"tagName": tag, "isDraft": draft, "assets": [{"name": n, "digest": digest(n)} for n in names]}
+
+
+def players(tag):
+    return [pg.asset_name(tag, p) for p in ("windows", "linux", "macos")]
 
 
 def test_asset_names_are_the_release_script_contract():
@@ -25,7 +37,22 @@ def test_asset_names_are_the_release_script_contract():
     assert pg.asset_name("v0.2.0-rc.1", "macos") == "statecraft-israel-v0.2.0-rc.1-macos-universal.zip"
 
 
-@pytest.mark.parametrize("tag", ["0.2.0", "v0.2", "v0.2.0 ", "v0.2.0;id", "v0.2.0/../x", "main", "", "v1.2.3-"])
+TAGS = {"v0.2.0": True, "v10.20.30": True, "v0.2.0-rc.1": True, "v1.0.0-beta.2.x9": True,
+        "0.2.0": False, "v0.2": False, "v0.2.0 ": False, "v0.2.0;id": False, "v0.2.0/../x": False, "main": False, "": False,
+        "v1.2.3-": False, "v1.2.3-rc..1": False, "v1.0.0\nmatrix=x": False, "v1.0.0\n": False, "v\u0661.0.0": False,
+        "v1.0.0-r\u00e9": False, "V1.0.0": False}
+
+
+def test_the_workflows_shell_tag_check_accepts_exactly_what_the_python_one_does():
+    text = (REPO / ".github/workflows/player-golden.yml").read_text(encoding="utf-8")
+    shell_re = re.search(r"^\s*re='([^']+)'$", text, re.M).group(1)
+    for tag, want in TAGS.items():
+        assert bool(pg.TAG.fullmatch(tag)) is want, tag
+        r = subprocess.run(["bash", "-c", 're=$1; [[ $2 =~ $re ]]', "_", shell_re, tag], env={"LC_ALL": "C"})
+        assert (r.returncode == 0) is want, tag
+
+
+@pytest.mark.parametrize("tag", [t for t, ok in TAGS.items() if not ok])
 def test_anything_but_a_release_tag_is_refused(tag):
     with pytest.raises(ValueError):
         pg.asset_name(tag, "linux")
@@ -33,23 +60,50 @@ def test_anything_but_a_release_tag_is_refused(tag):
     assert not ok and include == [] and msgs[0].startswith("::error::")
 
 
-def test_plan_lists_the_attached_players_and_warns_for_the_rest():
-    r = release("v0.2.0", "statecraft-israel-v0.2.0-web.zip", "statecraft-israel-v0.2.0-windows-x64.zip",
-                "statecraft-israel-v0.2.0-linux-x64.tar.gz")
+def test_plan_lists_all_three_players_with_githubs_digests():
+    r = release("v0.2.0", "statecraft-israel-v0.2.0-web.zip", *players("v0.2.0"))
     include, msgs, ok = pg.plan("v0.2.0", r, "release")
-    assert ok
+    assert ok and msgs == []
     assert include == [
-        {"platform": "windows", "runner": "windows-2025", "asset": "statecraft-israel-v0.2.0-windows-x64.zip"},
-        {"platform": "linux", "runner": "ubuntu-24.04", "asset": "statecraft-israel-v0.2.0-linux-x64.tar.gz"},
+        {"platform": "windows", "runner": "windows-2025", "asset": "statecraft-israel-v0.2.0-windows-x64.zip",
+         "sha256": digest("statecraft-israel-v0.2.0-windows-x64.zip")[7:]},
+        {"platform": "linux", "runner": "ubuntu-24.04", "asset": "statecraft-israel-v0.2.0-linux-x64.tar.gz",
+         "sha256": digest("statecraft-israel-v0.2.0-linux-x64.tar.gz")[7:]},
+        {"platform": "macos", "runner": "macos-15", "asset": "statecraft-israel-v0.2.0-macos-universal.zip",
+         "sha256": digest("statecraft-israel-v0.2.0-macos-universal.zip")[7:]},
     ]
-    assert msgs == ["::warning::release v0.2.0 has no macos player (statecraft-israel-v0.2.0-macos-universal.zip); "
-                    "it is not checked"]
 
 
-def test_no_player_fails_a_manual_run_but_not_a_web_only_release():
+@pytest.mark.parametrize("event", ["release", "workflow_dispatch"])
+def test_a_partial_set_of_players_fails_and_runs_none(event):
+    # Review M1: a release with only the Mac zip (already checked on the owner's Mac) must not pass green.
+    r = release("v0.2.0", "statecraft-israel-v0.2.0-web.zip", players("v0.2.0")[2])
+    include, msgs, ok = pg.plan("v0.2.0", r, event)
+    assert not ok and include == []
+    assert msgs == ["::error::release v0.2.0 has 1 of the 3 desktop players; missing: windows "
+                    "(statecraft-israel-v0.2.0-windows-x64.zip), linux (statecraft-israel-v0.2.0-linux-x64.tar.gz). "
+                    "Attach all three in the same gh release create (docs/RELEASING.md, step 6)"]
+
+
+@pytest.mark.parametrize("bad", [None, "", "sha1:" + "a" * 40, "sha256:" + "A" * 64, "sha256:" + "a" * 63])
+def test_an_asset_without_a_sha256_digest_fails(bad):
+    r = release("v0.2.0", *players("v0.2.0"))
+    r["assets"][1]["digest"] = bad
+    include, msgs, ok = pg.plan("v0.2.0", r, "release")
+    assert not ok and include == [] and "has no SHA-256 digest" in msgs[0]
+
+
+def test_no_player_fails_a_manual_run_but_a_web_only_release_passes_unchecked(tmp_path, monkeypatch):
     r = release("v0.2.0", "statecraft-israel-v0.2.0-web.zip")
-    assert pg.plan("v0.2.0", r, "release")[2] is True
+    include, msgs, ok = pg.plan("v0.2.0", r, "release")
+    assert ok and include == [] and msgs[0].startswith("::warning::UNCHECKED: release v0.2.0 has no desktop player")
+    assert "gh workflow run player-golden.yml -f tag=v0.2.0" in msgs[0]
     assert pg.plan("v0.2.0", r, "workflow_dispatch")[2] is False
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(r)))
+    out, summary = tmp_path / "out", tmp_path / "summary"
+    assert pg.main(["plan", "--tag", "v0.2.0", "--event", "release", "--output", str(out), "--summary", str(summary)]) == 0
+    assert out.read_text().splitlines()[1] == "count=0"
+    assert summary.read_text().startswith("## Player golden v0.2.0: UNCHECKED")
 
 
 def test_drafts_and_mismatched_releases_are_refused():
@@ -58,13 +112,13 @@ def test_drafts_and_mismatched_releases_are_refused():
 
 
 def test_plan_command_writes_the_matrix_to_the_github_output(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(release("v1.0.0", "statecraft-israel-v1.0.0-macos-universal.zip"))))
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(release("v1.0.0", *players("v1.0.0")))))
     out = tmp_path / "github_output"
     assert pg.main(["plan", "--tag", "v1.0.0", "--event", "release", "--output", str(out)]) == 0
     lines = out.read_text().splitlines()
-    assert json.loads(lines[0].removeprefix("matrix=")) == {"include": [
-        {"platform": "macos", "runner": "macos-15", "asset": "statecraft-israel-v1.0.0-macos-universal.zip"}]}
-    assert lines[1] == "count=1"
+    matrix = json.loads(lines[0].removeprefix("matrix="))
+    assert [e["platform"] for e in matrix["include"]] == ["windows", "linux", "macos"]
+    assert lines[1] == "count=3"
 
 
 def test_expected_lines_come_from_the_manifest_and_the_real_manifest_has_them():
@@ -155,15 +209,40 @@ def test_run_passes_a_player_that_prints_the_goldens_and_prints_the_log_when_it_
     # The fake player writes its log where -logFile says (the last argument), as the Unity player does.
     ok = archive("ok.tar.gz", "for a; do log=$a; done\n" + "".join(f"echo '{l}' >> \"$log\"\n" for l in EXPECTED))
     args = ["run", "--platform", "linux", "--manifest", str(tmp_path / "manifest.txt")]
-    assert pg.main(args + ["--archive", str(ok), "--work", str(tmp_path / "w1")]) == 0
+
+    def sha(p):
+        return ["--sha256", pg.sha256(p)]
+
+    # Review S2: an archive that is not the one GitHub's digest names is refused before it is unpacked or run.
+    assert pg.main(args + ["--archive", str(ok), "--sha256", "0" * 64, "--work", str(tmp_path / "w0")]) == 2
+    out = capsys.readouterr().out
+    assert "but GitHub's digest for the asset is" in out and not (tmp_path / "w0").exists()
+    assert pg.main(args + ["--archive", str(ok), *sha(ok), "--work", str(tmp_path / "w1")]) == 0
     out = capsys.readouterr().out
     assert "PLAYER GOLDEN OK linux" in out and "ARCHIVE ok.tar.gz sha256 " in out and "-batchmode -nographics -golden -logFile" in out
 
     bad = archive("bad.tar.gz", "for a; do log=$a; done\necho 'GOLDEN FAIL 1950 x expected y' >> \"$log\"\nexit 1\n")
-    assert pg.main(args + ["--archive", str(bad), "--work", str(tmp_path / "w2")]) == 1
+    assert pg.main(args + ["--archive", str(bad), *sha(bad), "--work", str(tmp_path / "w2")]) == 1
     out = capsys.readouterr().out
     assert "----- player log" in out and "GOLDEN FAIL 1950 x expected y" in out and "PLAYER GOLDEN FAIL linux" in out
 
     slow = archive("slow.tar.gz", "sleep 30\n")
-    assert pg.main(args + ["--archive", str(slow), "--work", str(tmp_path / "w3"), "--timeout", "1"]) == 1
+    assert pg.main(args + ["--archive", str(slow), *sha(slow), "--work", str(tmp_path / "w3"), "--timeout", "1"]) == 1
     assert "did not exit before the timeout" in capsys.readouterr().out
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="the macOS zip is unpacked with ditto")
+def test_a_mac_app_zipped_with_ditto_comes_back_runnable(tmp_path):
+    # The release script zips the app with ditto -c -k --norsrc --keepParent; unpack() uses ditto -x -k on macOS.
+    macos = tmp_path / "build" / "Statecraft.app" / "Contents" / "MacOS"
+    macos.mkdir(parents=True)
+    exe = macos / "Statecraft Israel"
+    exe.write_text("#!/bin/sh\n")
+    exe.chmod(0o755)
+    z = tmp_path / "statecraft-israel-v0.2.0-macos-universal.zip"
+    subprocess.run(["ditto", "-c", "-k", "--norsrc", "--keepParent", str(tmp_path / "build" / "Statecraft.app"), str(z)],
+                   check=True)
+    pg.unpack(z, tmp_path / "out")
+    found = pg.find_player(tmp_path / "out", "macos")
+    assert found == tmp_path / "out" / "Statecraft.app" / "Contents" / "MacOS" / "Statecraft Israel"
+    assert found.stat().st_mode & 0o111

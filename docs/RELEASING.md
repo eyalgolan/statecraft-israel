@@ -51,6 +51,25 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    ```
 
    Paste the SHA-256 from step 5 into the release notes.
+
+   **A release with desktop players** (decisions O1, O7 and O9 in `docs/oss/DECISIONS.md`) attaches all three player
+   archives in the **same** `gh release create` call as the web zip, as a pre-release, with "unchecked" in its notes:
+
+   ```bash
+   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file <notes saying "unchecked"> \
+     unity/Builds/statecraft-israel-vX.Y.Z-web.zip statecraft-israel-vX.Y.Z-windows-x64.zip \
+     statecraft-israel-vX.Y.Z-linux-x64.tar.gz statecraft-israel-vX.Y.Z-macos-universal.zip
+   ```
+
+   Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). It downloads each player,
+   checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on a GitHub
+   Windows, Linux and macOS machine. It fails when only one or two of the three archives are attached. A release with
+   none passes, but its run summary says UNCHECKED.
+   - **The release stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release
+     as soon as it is published, so do not announce it before then. Then remove "unchecked" from the notes.
+   - **Uploading or replacing an archive later** (`gh release upload`, with or without `--clobber`) starts no run. After
+     any such upload, run `gh workflow run player-golden.yml -f tag=vX.Y.Z` and wait for it to pass
+     (`gh run watch`). A run that started before the replacement fails on the digest; run it again.
 7. **Check every published artefact:** download each uploaded archive (GitHub Releases, and itch.io once used) into an
    empty folder, then list it and look for the notices: for a `.zip` (the web zip, the macOS and Windows players),
    `unzip -Z1 <zip> | grep -E '^(LICENSE|NOTICE|THIRD-PARTY-NOTICES.md|OFL-EBGaramond.txt|OFL-FrankRuhlLibre.txt)$'`;

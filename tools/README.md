@@ -29,8 +29,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   and prints the accuracy table of `docs/routes.md`.
 - `web_check.py` serves a WebGL build on http://localhost and opens it in headless Chrome for Testing (Playwright's
   cache; macOS only, arm64 or x64); it passes when the console shows the expected lines (`GOLDEN OK ...`, `SMOKE OK ...`).
-- `player_golden_check.py` is the logic of `.github/workflows/player-golden.yml`: `plan` lists which desktop players a
-  GitHub Release carries (their asset names are the contract with the release script), and `run` unpacks one, runs it
+- `player_golden_check.py` is the logic of `.github/workflows/player-golden.yml`: `plan` lists the desktop players a
+  GitHub Release carries (their asset names are the contract with the release script) and refuses a partial set, and
+  `run` checks one against GitHub's SHA-256 digest for the asset, unpacks it, runs it
   with `-batchmode -nographics -golden` and passes only on exit 0 with both `GOLDEN OK` lines from the golden manifest,
   printing the player log otherwise. Stdlib only; no Unity and no licence needed.
 - `package_release.py` zips a Brotli WebGL build for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses

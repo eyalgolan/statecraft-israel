@@ -19,7 +19,10 @@ name: Player golden
 #   statecraft-israel-<tag>-linux-x64.tar.gz       Linux x64 (tar keeps the executable bit)
 #   statecraft-israel-<tag>-macos-universal.zip    macOS Universal (IL2CPP), the .app inside
 # <tag> is the release tag with its v (statecraft-israel-v0.2.0-windows-x64.zip), like the web zip in docs/RELEASING.md.
-# A platform whose asset is missing is skipped with a warning.
+# A release with desktop players must carry all three, attached in the same `gh release create` (docs/RELEASING.md,
+# step 6): one or two fails the run. A release with none (web only) passes, with an UNCHECKED warning in the summary.
+# Uploading or replacing an asset later fires no event: dispatch this workflow for the tag again. Each download is
+# checked against the SHA-256 digest GitHub records for the asset, so a replaced asset fails until it is re-run.
 
 on:
   release:
@@ -59,7 +62,9 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "$EVENT" = release ]; then tag="$REF_NAME"; else tag="$INPUT_TAG"; fi
-          if ! printf '%s' "$tag" | grep -Eqx 'v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?'; then
+          # The same pattern as TAG in tools/player_golden_check.py (tools/tests/test_player_golden_check.py pins them).
+          re='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$'
+          if [[ ! $tag =~ $re ]]; then
             echo "::error::not a release tag (expected vX.Y.Z)"; exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -80,7 +85,7 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,assets > "$RUNNER_TEMP/release.json"
-          uv run --no-project tools/player_golden_check.py plan --tag "$TAG" --event "$EVENT" --output "$GITHUB_OUTPUT" < "$RUNNER_TEMP/release.json"
+          uv run --no-project tools/player_golden_check.py plan --tag "$TAG" --event "$EVENT" --output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/release.json"
 
   golden:
     name: Player golden (${{ matrix.platform }})
@@ -122,7 +127,8 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           ASSET: ${{ matrix.asset }}
+          SHA256: ${{ matrix.sha256 }}
         run: >-
           uv run --no-project tools/player_golden_check.py run --platform "$PLATFORM"
-          --archive "$RUNNER_TEMP/download/$ASSET" --manifest released/sim/Statecraft.Sim.Tests/golden/manifest.txt
+          --archive "$RUNNER_TEMP/download/$ASSET" --sha256 "$SHA256" --manifest released/sim/Statecraft.Sim.Tests/golden/manifest.txt
           --work "$RUNNER_TEMP/golden" --timeout 900

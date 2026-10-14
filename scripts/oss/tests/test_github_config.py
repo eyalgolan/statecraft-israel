@@ -160,6 +160,14 @@ def test_player_golden_runs_only_the_repositorys_own_released_players():
         if s.get("uses", "").startswith("actions/checkout@"):
             assert s.get("with", {}).get("persist-credentials") is False, s
         assert "${{" not in s.get("run", ""), s   # inputs and event fields reach the shell only through env:
+    # An empty matrix is a workflow error, so the player jobs need the guard; one platform's failure must not cancel the
+    # others' runs (review N2).
+    golden = wf["jobs"]["golden"]
+    assert golden["needs"] == "plan" and golden["if"] == "needs.plan.outputs.count != '0'"
+    assert golden["strategy"]["fail-fast"] is False
+    assert golden["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    run_step = next(s for s in golden["steps"] if "player_golden_check.py run" in s.get("run", ""))
+    assert '--sha256 "$SHA256"' in run_step["run"] and run_step["env"]["SHA256"] == "${{ matrix.sha256 }}"
     downloads = [s["run"] for s in steps(wf) if "gh release download" in s.get("run", "")]
     assert downloads and all('--repo "$GITHUB_REPOSITORY"' in r for r in downloads)
     assert "curl" not in text and "wget" not in text and "download-artifact" not in text

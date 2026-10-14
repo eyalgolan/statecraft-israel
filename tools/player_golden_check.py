@@ -5,15 +5,16 @@
 """The licence-free golden check of a released desktop player (.github/workflows/player-golden.yml; plan
 docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sections 2.2 and 6.3; decision O7).
 
-  uv run tools/player_golden_check.py plan --tag vX.Y.Z --event release|workflow_dispatch --output FILE < release.json
-  uv run tools/player_golden_check.py run --platform windows|linux|macos --archive FILE --manifest manifest.txt --work DIR
+  uv run tools/player_golden_check.py plan --tag vX.Y.Z --event release|workflow_dispatch --output FILE [--summary FILE] < release.json
+  uv run tools/player_golden_check.py run --platform windows|linux|macos --archive FILE --sha256 HEX --manifest manifest.txt --work DIR
 
 `plan` reads `gh release view --json tagName,isDraft,assets` on stdin, checks the tag's form and that the release is
-published, and appends to FILE (the job's $GITHUB_OUTPUT) `matrix=` the GitHub Actions matrix of the platforms whose
-player is attached and `count=` their number. A missing
-player is a warning; no player at all fails a manual run, and is only a notice on a release (a web-only release).
+published, and appends to FILE (the job's $GITHUB_OUTPUT) `matrix=` the GitHub Actions matrix of the players and
+`count=` their number. Each entry carries the SHA-256 GitHub records for the asset (its `digest`). A release with desktop
+players must carry all three: one or two fails, and so does an asset without a SHA-256 digest. No player at all fails a
+manual run; on a release event it passes (a web-only release) but writes an "UNCHECKED" warning to the run summary.
 
-`run` prints the archive's SHA-256, unpacks it into an empty folder, finds the player, runs it with
+`run` checks the archive's SHA-256 against that digest (so a re-uploaded asset fails until it is re-planned), unpacks it into an empty folder, finds the player, runs it with
 `-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md) and passes only when it exits 0 and its log
 holds `GOLDEN OK 1950 <hash1950>` and `GOLDEN OK 1952 <hash1952>` from the golden manifest, and no FAIL line. On failure
 it prints the whole player log. Exit 0 when the check passes, 1 when it fails, 2 on bad input.
@@ -34,7 +35,9 @@ from pathlib import Path
 
 # A release tag: vMAJOR.MINOR.PATCH, optionally with a pre-release suffix (v0.2.0-rc.1). Nothing else reaches a path,
 # a download or a checkout.
-TAG = re.compile(r"v\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?")
+# re.ASCII: \d must not accept other scripts' digits. The workflow's shell check is the same pattern (a test pins them).
+TAG = re.compile(r"v\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?", re.ASCII)
+DIGEST = re.compile(r"sha256:([0-9a-f]{64})", re.ASCII)
 
 # The asset names the release script must attach to the GitHub Release, by platform (the web zip already follows this
 # form: statecraft-israel-vX.Y.Z-web.zip, docs/RELEASING.md). {tag} is the release tag, v included.
@@ -57,25 +60,36 @@ def asset_name(tag: str, platform: str) -> str:
 
 
 def plan(tag: str, release: dict, event: str) -> tuple[list[dict], list[str], bool]:
-    """(matrix include list, messages as workflow commands, ok) for a release's JSON from gh."""
+    """(matrix include list, messages as workflow commands, ok) for a release's JSON from gh
+    (`gh release view --json tagName,isDraft,assets`; each asset has `name` and `digest`)."""
     if not TAG.fullmatch(tag):
         return [], [f"::error::not a release tag: {tag!r} (expected vX.Y.Z)"], False
     if release.get("tagName") != tag:
         return [], [f"::error::the release is for {release.get('tagName')!r}, not {tag!r}"], False
     if release.get("isDraft"):
         return [], [f"::error::release {tag} is a draft; only published releases are checked"], False
-    names = {a.get("name") for a in release.get("assets", [])}
-    include, msgs = [], []
+    digests = {a.get("name"): a.get("digest") for a in release.get("assets", [])}
+    include, missing, msgs = [], [], []
     for platform, runner in RUNNERS.items():
         name = asset_name(tag, platform)
-        if name in names:
-            include.append({"platform": platform, "runner": runner, "asset": name})
-        else:
-            msgs.append(f"::warning::release {tag} has no {platform} player ({name}); it is not checked")
+        if name not in digests:
+            missing.append(f"{platform} ({name})")
+            continue
+        m = DIGEST.fullmatch(digests[name] or "")
+        if not m:
+            msgs.append(f"::error::asset {name} has no SHA-256 digest from GitHub ({digests[name]!r})")
+        include.append({"platform": platform, "runner": runner, "asset": name, "sha256": m.group(1) if m else ""})
     if not include:
         if event == "workflow_dispatch":
-            return [], msgs + [f"::error::release {tag} has none of the player assets"], False
-        msgs.append(f"::notice::release {tag} has no desktop player; nothing to check")
+            return [], [f"::error::release {tag} has none of the player assets"], False
+        # A web-only release is valid; failing it would make red runs routine. The summary says it loudly instead.
+        return [], [f"::warning::UNCHECKED: release {tag} has no desktop player. If players are uploaded later, run "
+                    f"gh workflow run player-golden.yml -f tag={tag} (docs/RELEASING.md, step 6)"], True
+    if missing:
+        msgs.append(f"::error::release {tag} has {len(include)} of the 3 desktop players; missing: {', '.join(missing)}. "
+                    "Attach all three in the same gh release create (docs/RELEASING.md, step 6)")
+    if msgs:
+        return [], msgs, False
     return include, msgs, True
 
 
@@ -167,6 +181,16 @@ def run_player(exe: Path, log: Path, timeout: int) -> int | None:
         return None
 
 
+def summary(tag: str, include: list[dict], ok: bool) -> str:
+    if not ok:
+        return f"## Player golden {tag}: REFUSED\n\nNo player was run; see the plan job's errors.\n"
+    if not include:
+        return (f"## Player golden {tag}: UNCHECKED\n\nThe release has no desktop player, so none was run. If players "
+                f"are uploaded later, run `gh workflow run player-golden.yml -f tag={tag}` and wait for it to pass.\n")
+    rows = "".join(f"| {e['platform']} | `{e['asset']}` | `{e['sha256']}` |\n" for e in include)
+    return f"## Player golden {tag}\n\n| Platform | Asset | SHA-256 (GitHub digest) |\n| --- | --- | --- |\n{rows}"
+
+
 def cmd_plan(a) -> int:
     try:
         release = json.load(sys.stdin)
@@ -176,6 +200,9 @@ def cmd_plan(a) -> int:
     include, msgs, ok = plan(a.tag, release, a.event)
     for m in msgs:
         print(m)
+    if a.summary:
+        with open(a.summary, "a", encoding="utf-8") as f:
+            f.write(summary(a.tag, include, ok))
     matrix = json.dumps({"include": include}, separators=(",", ":"))
     print(f"MATRIX {matrix}")
     if ok:
@@ -188,12 +215,17 @@ def cmd_run(a) -> int:
     try:
         expected = expected_lines(read_manifest(Path(a.manifest).read_text(encoding="utf-8")))
         archive = Path(a.archive)
-        print(f"ARCHIVE {archive.name} sha256 {sha256(archive)}", flush=True)
+        got = sha256(archive)
+        print(f"ARCHIVE {archive.name} sha256 {got}", flush=True)
+        if got != a.sha256:
+            raise ValueError(f"{archive.name} has SHA-256 {got}, but GitHub's digest for the asset is {a.sha256!r}; "
+                             "it was replaced after the plan job: run the workflow again")
         work = Path(a.work)
         unpack(archive, work / "player")
         exe = find_player(work / "player", a.platform)
     except (OSError, ValueError, subprocess.CalledProcessError, tarfile.TarError, zipfile.BadZipFile) as e:
-        print(f"PLAYER GOLDEN ERROR {e}")
+        print(f"::error::{a.platform}: {e}")
+        print(f"PLAYER GOLDEN ERROR {a.platform}")
         return 2
     log = work / "player.log"
     code = run_player(exe, log, a.timeout)
@@ -220,9 +252,11 @@ def main(argv=None) -> int:
     p.add_argument("--tag", required=True)
     p.add_argument("--event", required=True, choices=["release", "workflow_dispatch"])
     p.add_argument("--output", required=True, help="the file to append matrix= and count= to ($GITHUB_OUTPUT)")
+    p.add_argument("--summary", help="the file to append a Markdown summary to ($GITHUB_STEP_SUMMARY)")
     r = sub.add_parser("run")
     r.add_argument("--platform", required=True, choices=sorted(ASSETS))
     r.add_argument("--archive", required=True)
+    r.add_argument("--sha256", required=True, help="the asset's SHA-256 from GitHub (hex), from plan")
     r.add_argument("--manifest", required=True)
     r.add_argument("--work", required=True)
     r.add_argument("--timeout", type=int, default=900)
