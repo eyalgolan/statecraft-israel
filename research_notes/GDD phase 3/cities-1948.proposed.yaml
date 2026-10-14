@@ -1,0 +1,115 @@
+# PROPOSAL, not content. Sourced start values for the MVP's twelve Jewish cities and towns (issue #383; research note
+# city-start-values-1948-cbs.md, next to this file). Nothing loads this file: it is outside content/, so the content hash
+# and the goldens do not depend on it.
+#
+# Why it is not content/cities.yaml yet:
+# - The sim's cities.yaml (CityStart in sim/Statecraft.Sim/Content.cs) holds counts in population units of
+#   mvp.people_per_unit people (D-A1), not people, and has no sources field. Turning people into units, and setting
+#   housing_capacity and job_slots, are balance values the owner sets (D-D1 to D-D4 are still open).
+# - MvpSlice.Overlay uses content/cities.yaml as soon as it exists, so adding one would replace the slice's placeholder
+#   Tel Aviv and move the MVP goldens. Controller ruling 2 (12 October 2026) keeps unset balance values out of content/.
+#
+# Field meanings:
+# - population: residents on the day of the first Israeli count (8 November 1948, the Registration of Population), all
+#   groups, as the CBS gives them. It is not a 15 May 1948 value; no per-city source for that day was reached.
+# - population_series: CBS end-of-year estimates, for the calibration check against content/population.yaml.
+# - employed: people in the working population on 8 November 1948, derived as the CBS city share times the population.
+#   Mobilised soldiers are counted in their civilian occupation (CBS note). Only five cities have a CBS city share.
+# - unemployed: the same method, the CBS unemployed share.
+# - housing: no per-city housing stock was found for 1948. Left empty on purpose.
+# A null value is a gap, listed in the note. Never fill it with a guess.
+
+sources:
+  sa14: &sa14
+    title: "CBS, Statistical Abstract of Israel No. 14 (1963), Table 11: Population in settlements numbering above 5,000 inhabitants on 31 XII 1962 (1948-1962), pp. 30-31"
+    url: https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf
+    checked: 2026-10-15
+  sa1: &sa1
+    title: "CBS, Statistical Abstract of Israel No. 1 (1949/50), Registration of Population (8 XI 1948), Table 9: Jewish population by occupational status and sex (%), p. 26"
+    url: https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf
+    checked: 2026-10-15
+  he_zikhron: &he_zikhron
+    title: "Hebrew Wikipedia, Zikhron Ya'akov, population timeline (1948 = 1,900); its source is not named"
+    url: https://he.wikipedia.org/wiki/%D7%96%D7%9B%D7%A8%D7%95%D7%9F_%D7%99%D7%A2%D7%A7%D7%91
+    checked: 2026-10-14
+  he_rosh_pinna: &he_rosh_pinna
+    title: "Hebrew Wikipedia, Rosh Pinna, text: about 350 people in May 1948"
+    url: https://he.wikipedia.org/wiki/%D7%A8%D7%90%D7%A9_%D7%A4%D7%99%D7%A0%D7%94
+    checked: 2026-10-14
+
+cities:
+  - id: jerusalem
+    population: { value: 83984, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 103900, 1950-12-31: 123000, 1951-12-31: 140700 }
+    employed: { value: 28700, share: 0.342, method: "34.2% (sum of the six working-population rows, both sexes) x 83,984, rounded to 100", status: derived, sources: [*sa1, *sa14] }
+    unemployed: { value: 760, share: 0.009, status: derived, sources: [*sa1, *sa14] }
+    housing: null
+  - id: tel_aviv
+    # CBS row "Tel Aviv-Yafo": includes Jaffa (settlements_1948.yaml has jaffa as its own place). Tel Aviv and Jaffa
+    # merged in 1950; the table does not say whether the 1948 figure uses the 1948 or the later boundary.
+    population: { value: 248459, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 311000, 1950-12-31: 335000, 1951-12-31: 345600 }
+    employed: { value: 105800, share: 0.426, method: "42.6% x 248,459, rounded to 100", status: derived, sources: [*sa1, *sa14] }
+    unemployed: { value: 1990, share: 0.008, status: derived, sources: [*sa1, *sa14] }
+    housing: null
+  - id: haifa
+    population: { value: 98618, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 131500, 1950-12-31: 140000, 1951-12-31: 147500 }
+    employed: { value: 42300, share: 0.429, method: "42.9% x 98,618, rounded to 100", status: derived, sources: [*sa1, *sa14] }
+    unemployed: { value: 300, share: 0.003, status: derived, sources: [*sa1, *sa14] }
+    housing: null
+  - id: tiberias
+    population: { value: 5555, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 7700, 1950-12-31: 12200, 1951-12-31: 16000 }
+    employed: { value: 1900, share: 0.334, method: "33.4% x 5,555, rounded to 100", status: derived, sources: [*sa1, *sa14] }
+    unemployed: { value: 40, share: 0.008, status: derived, sources: [*sa1, *sa14] }
+    housing: null
+  - id: safed
+    population: { value: 2317, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 4000, 1950-12-31: 5500, 1951-12-31: 7000 }
+    employed: { value: 800, share: 0.345, method: "34.5% x 2,317, rounded to 100", status: derived, sources: [*sa1, *sa14] }
+    unemployed: { value: 30, share: 0.013, status: derived, sources: [*sa1, *sa14] }
+    housing: null
+  - id: petah_tikva
+    population: { value: 21879, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 24800, 1950-12-31: 31800, 1951-12-31: 40000 }
+    employed: null
+    unemployed: null
+    housing: null
+  - id: rishon_lezion
+    # CBS 2006 media release gives 11,100 for the same day; the 1963 table gives 10,433 (conflict, see the note).
+    population: { value: 10433, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 15000, 1950-12-31: 18000, 1951-12-31: 20000 }
+    employed: null
+    unemployed: null
+    housing: null
+  - id: zikhron_yaakov
+    population: { value: 1900, date: 1948, status: wikipedia-only, sources: [*he_zikhron] }
+    population_series: null
+    employed: null
+    unemployed: null
+    housing: null
+  - id: rosh_pinna
+    population: { value: 350, date: 1948-05, status: wikipedia-only, sources: [*he_rosh_pinna] }
+    population_series: null
+    employed: null
+    unemployed: null
+    housing: null
+  - id: rehovot
+    population: { value: 12522, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 14800, 1950-12-31: 18200, 1951-12-31: 21200 }
+    employed: null
+    unemployed: null
+    housing: null
+  - id: hadera
+    population: { value: 11811, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 12000, 1950-12-31: 15000, 1951-12-31: 19000 }
+    employed: null
+    unemployed: null
+    housing: null
+  - id: netanya
+    population: { value: 11589, date: 1948-11-08, status: sourced, sources: [*sa14] }
+    population_series: { 1949-12-31: 15200, 1950-12-31: 23000, 1951-12-31: 26000 }
+    employed: null
+    unemployed: null
+    housing: null
