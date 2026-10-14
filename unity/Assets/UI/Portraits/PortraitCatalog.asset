@@ -27,7 +27,7 @@ MonoBehaviour:
     focusY: 0.3
   - personId: shapira
     image: {fileID: 2800000, guid: 01b0755a76e4d4a23843d26ac45b200f, type: 3}
-    focusY: 0.42
+    focusY: 0.37
   - personId: gruenbaum
     image: {fileID: 2800000, guid: d570b912751fc4c1cb3fd166a568ee10, type: 3}
     focusY: 0.3
@@ -36,13 +36,13 @@ MonoBehaviour:
     focusY: 0.36
   - personId: bentov
     image: {fileID: 2800000, guid: 8a07543ce92e7451c9496ba142d9ddad, type: 3}
-    focusY: 0.28
+    focusY: 0.5
   - personId: sheetrit
     image: {fileID: 2800000, guid: ac4fafd5b03774d24a8771d87b31f392, type: 3}
     focusY: 0.18
   - personId: maimon
     image: {fileID: 2800000, guid: 485b4273ede0249908e89cc3b2945bb7, type: 3}
-    focusY: 0.26
+    focusY: 0.6
   - personId: bernstein
     image: {fileID: 2800000, guid: 0a41c67eb7f774a0f896da33c391417a, type: 3}
     focusY: 0.28

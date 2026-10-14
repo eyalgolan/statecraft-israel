@@ -32,8 +32,9 @@ namespace Statecraft.Game.EditorTools
             // Validate everything first, so a bad record leaves nothing half-imported.
             foreach (var p in people)
             {
-                if (p.Portrait!.License != "Public domain" && p.Portrait.License != "CC0" && p.Portrait.License != "CC BY 4.0")
-                    throw new System.InvalidOperationException($"people.yaml: {p.Id} portrait licence '{p.Portrait.License}' is not public domain, CC0 or CC BY 4.0");
+                if (p.Portrait!.License != "Public domain" && p.Portrait.License != "CC0" && p.Portrait.License != "CC BY 4.0"
+                    && p.Portrait.License != "CC BY-SA 4.0")
+                    throw new System.InvalidOperationException($"people.yaml: {p.Id} portrait licence '{p.Portrait.License}' is not public domain, CC0, CC BY 4.0 or CC BY-SA 4.0");
                 var source = Path.Combine(Paths.RepoRoot, p.Portrait.File);
                 if (!File.Exists(source)) throw new FileNotFoundException($"people.yaml: {p.Id} portrait file missing", source);
             }
@@ -53,7 +54,7 @@ namespace Statecraft.Game.EditorTools
             foreach (var stale in Directory.GetFiles(Folder, "*.jpg").Select(f => f.Replace('\\', '/')).Where(f => !wanted.Contains(f)).ToList())
                 AssetDatabase.DeleteAsset(stale);
 
-            var credits = new StringBuilder("# Portraits shipped in the build (copied from people.yaml portrait records; public domain, CC0 and CC BY 4.0 (attribution in NOTICE)).\n");
+            var credits = new StringBuilder("# Portraits shipped in the build (copied from people.yaml portrait records; public domain, CC0, CC BY 4.0 and CC BY-SA 4.0 (attribution in NOTICE)).\n");
             var catalog = AssetDatabase.LoadAssetAtPath<PortraitCatalog>(CatalogPath);
             if (catalog == null) { catalog = ScriptableObject.CreateInstance<PortraitCatalog>(); AssetDatabase.CreateAsset(catalog, CatalogPath); }
             catalog.entries.Clear();

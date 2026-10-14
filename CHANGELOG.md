@@ -18,6 +18,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   unchanged. New data `content/map/control_1948_49.geojson` and `control_hexes_1948_49.yaml` (draft, owner-verify; licence
   basis decision D-C), tools `control_digitise.py` and `control_bake.py`, a third (neutral, dashed) border style in the
   shader. Presentation only: no golden moves.
+- Portraits for Maimon, Bentov and Shapira (refs #30, D-P): their Government Press Office photographs, which Commons
+  marks PD-Israel only, are replaced by Knesset Archives portraits under CC BY-SA 4.0 (Maimon, Bentov) and a Meitar
+  Collection photograph by Benno Rothenberg, 23 October 1952, under CC BY 4.0 (Shapira, cropped from a group shot), each
+  cropped and downscaled to 512 px tall with no upscaling, credited in `NOTICE`. `scripts/oss/commons_licences.py` now
+  records an explicit Cc-by-sa-4.0 file as `CC-BY-SA-4.0`, verified only with a named artist and a `NOTICE` entry, with a
+  share-alike note; `PortraitImport` accepts CC BY-SA 4.0. Kaplan, Gruenbaum, Bernstein, Zisling, Rosen and Sheetrit stay
+  on GPO photographs for now.
 - Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
   `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
   setting back afterwards, and

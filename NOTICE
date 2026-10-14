@@ -43,7 +43,7 @@ and the Lebanon line the sub-district data's Mandate frontier; the Jordan map is
 (only the agreements' line positions are taken); town coordinates for georeferencing from Wikidata (CC0)
 and Wikipedia. Decision D-A.
 
-Portraits: public-domain, CC0 and CC BY 4.0 photographs from Wikimedia Commons; per-file records in
+Portraits: public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 photographs from Wikimedia Commons; per-file records in
 ASSETS.portraits.yaml. CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), Meitar Collection / National Library of
 Israel / The Pritzker Family National Photography Collection, via Wikimedia Commons; each is cropped and resized, nothing
 else changed:
@@ -53,6 +53,16 @@ else changed:
   https://commons.wikimedia.org/wiki/File:Yitzhak-Meir_Levin_(997008137163805171).jpg
 - dov_yosef.jpg: Benno Rothenberg, 1949, CC BY 4.0, cropped.
   https://commons.wikimedia.org/wiki/File:Dov_Yosef_(997008137381905171).jpg
+- shapira.jpg: Benno Rothenberg, 23 October 1952, CC BY 4.0, cropped.
+  https://commons.wikimedia.org/wiki/File:Haim-Moshe_Shapira_(997008137213005171).jpg
+CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/), Knesset photographer / Knesset Archives, via Wikimedia
+Commons (Knesset Archives donation, VRTS ticket 2024112910006311); each is cropped and resized, nothing else changed.
+Share-alike: these cropped portraits, and the matching files in promo/ref/people/, are adaptations and are released
+under CC BY-SA 4.0:
+- maimon.jpg: Knesset photographer / Knesset Archives, 1949-1951, CC BY-SA 4.0, cropped.
+  https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon_(00320507).jpg
+- bentov.jpg: Knesset photographer / Knesset Archives, 1949-1965, CC BY-SA 4.0, cropped.
+  https://commons.wikimedia.org/wiki/File:Mordechai_Bentov_(00330019).jpg
 
 Event-card photographs (unity/Assets/UI/EventImages/; per-file records in ASSETS.yaml). Each is adapted: graded and
 cropped (shown in black and white with a navy-sepia tone, cropped and resized; nothing else changed).

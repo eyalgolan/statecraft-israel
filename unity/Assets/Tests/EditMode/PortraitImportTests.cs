@@ -15,7 +15,8 @@ public class PortraitImportTests
     const string Folder = "Assets/UI/Portraits";
 
     static int ExpectedCount() => ContentLoader.Load(Paths.Content).People.Count(p => p.Portrait != null && p.Portrait.File != ""
-        && (p.Portrait.License == "Public domain" || p.Portrait.License == "CC0" || p.Portrait.License == "CC BY 4.0"));
+        && (p.Portrait.License == "Public domain" || p.Portrait.License == "CC0" || p.Portrait.License == "CC BY 4.0"
+            || p.Portrait.License == "CC BY-SA 4.0"));
 
     static void RunImport()
     {

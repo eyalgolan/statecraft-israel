@@ -18,10 +18,10 @@ def test_cc0_is_verified():
     assert r["licence"] == "CC0-1.0" and r["status"] == "verified"
 
 
-def test_share_alike_is_recorded_as_unknown_licence():
-    r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 4.0", ["Template:Cc-by-sa-4.0"], "")
+def test_an_older_share_alike_version_is_recorded_as_unknown_licence():
+    r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 3.0", ["Template:Cc-by-sa-3.0"], "Knesset photographer", attributed=True)
     assert r["licence"] == "unknown" and r["status"] == "owner-verify"
-    assert "not public domain, CC0 or CC BY 4.0" in r["note"]
+    assert "not public domain, CC0, CC BY 4.0 or CC BY-SA 4.0" in r["note"]
 
 
 def test_explicit_us_restoration_warning_cannot_be_verified_by_nested_pd_text():
@@ -118,4 +118,36 @@ def test_cc_by_text_without_the_template_is_unknown():
 def test_cc_by_4_0_is_not_an_older_or_share_alike_version():
     for short in ("CC BY 3.0", "CC BY-SA 4.0"):
         r = cl.rule_for("p/a.jpg", "s", short, CC_BY, "Boris Carmi", attributed=True)
+        assert r["licence"] == "unknown"
+
+
+CC_BY_SA = ["Template:Cc-by-sa-4.0", "Template:Cc-by-sa-layout"]
+
+
+def test_cc_by_sa_with_artist_and_notice_entry_is_verified_with_a_share_alike_note():
+    # Owner ruling (2026-10-14, D-P): CC BY-SA 4.0 is accepted for portraits on the CC BY 4.0 terms, plus share-alike.
+    r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 4.0", CC_BY_SA, "Knesset photographer", attributed=True)
+    assert r["licence"] == "CC-BY-SA-4.0" and r["status"] == "verified" and r["artist"] == "Knesset photographer"
+    assert "share-alike" in r["note"] and "CC BY-SA 4.0" in r["note"]
+
+
+def test_cc_by_sa_without_notice_entry_needs_the_owner():
+    r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 4.0", CC_BY_SA, "Knesset photographer")
+    assert r["licence"] == "CC-BY-SA-4.0" and r["status"] == "owner-verify" and "NOTICE" in r["note"]
+
+
+def test_cc_by_sa_without_artist_needs_the_owner():
+    r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 4.0", CC_BY_SA, "", attributed=True)
+    assert r["status"] == "owner-verify" and "artist" in r["note"]
+
+
+def test_cc_by_sa_text_without_the_template_is_unknown():
+    for templates in ([], CC_BY):
+        r = cl.rule_for("p/a.jpg", "s", "CC BY-SA 4.0", templates, "Knesset photographer", attributed=True)
+        assert r["licence"] == "unknown" and r["status"] == "owner-verify"
+
+
+def test_cc_by_sa_template_does_not_make_a_cc_by_or_older_file_share_alike():
+    for short in ("CC BY 4.0", "CC BY-SA 3.0"):
+        r = cl.rule_for("p/a.jpg", "s", short, CC_BY_SA, "Knesset photographer", attributed=True)
         assert r["licence"] == "unknown"

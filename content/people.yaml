@@ -246,7 +246,7 @@ people:
     party: hapoel_hamizrachi
     competence: 7
     loyalty: 7
-    portrait: { file: promo/ref/people/Haim-Moshe_Shapira.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Moshe_Shapira.jpg", focus_y: 0.42 }
+    portrait: { file: promo/ref/people/Haim-Moshe_Shapira_CCBY_1952.jpg, license: CC BY 4.0, source: "https://commons.wikimedia.org/wiki/File:Haim-Moshe_Shapira_(997008137213005171).jpg", focus_y: 0.37 }
     offices:
       - { office: health_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: immigration_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
@@ -344,7 +344,7 @@ people:
     party: mapam
     competence: 7
     loyalty: 5
-    portrait: { file: promo/ref/people/Mordechai_Bentov.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:MordechaiBentov.jpg", focus_y: 0.28 }
+    portrait: { file: promo/ref/people/Mordechai_Bentov_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Mordechai_Bentov_(00330019).jpg", focus_y: 0.5 }
     offices:
       - { office: labour_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: development_minister, from: 1955-11-03, sources: *gov7 }
@@ -394,7 +394,7 @@ people:
     party: mizrachi
     competence: 6
     loyalty: 7
-    portrait: { file: promo/ref/people/Yehuda_Leib_Maimon.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon.jpg", focus_y: 0.26 }
+    portrait: { file: promo/ref/people/Yehuda_Leib_Maimon_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon_(00320507).jpg", focus_y: 0.6 }
     offices:
       - { office: religions_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: war_victims_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }

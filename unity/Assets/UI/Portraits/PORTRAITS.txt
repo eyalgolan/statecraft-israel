@@ -1,14 +1,14 @@
-# Portraits shipped in the build (copied from people.yaml portrait records; public domain, CC0 and CC BY 4.0 (attribution in NOTICE)).
+# Portraits shipped in the build (copied from people.yaml portrait records; public domain, CC0, CC BY 4.0 and CC BY-SA 4.0 (attribution in NOTICE)).
 ben_gurion | Public domain | https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
 zisling | Public domain | https://commons.wikimedia.org/wiki/File:Aharon_Zisling.jpg
 kaplan | Public domain | https://commons.wikimedia.org/wiki/File:Eliezer_Kaplan.jpg
 sharett | CC0 | https://commons.wikimedia.org/wiki/File:Moshe_Sharett,_de_eerste_minister_van_buitenlandse_zaken_van_de_staat_Israel,_tu,_Bestanddeelnr_255-1438.jpg
-shapira | Public domain | https://commons.wikimedia.org/wiki/File:Moshe_Shapira.jpg
+shapira | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:Haim-Moshe_Shapira_(997008137213005171).jpg
 gruenbaum | Public domain | https://commons.wikimedia.org/wiki/File:Yitzhak_Gruenbaum_1948.jpg
 rosen | Public domain | https://commons.wikimedia.org/wiki/File:Pinchas_Rosen.jpg
-bentov | Public domain | https://commons.wikimedia.org/wiki/File:MordechaiBentov.jpg
+bentov | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Mordechai_Bentov_(00330019).jpg
 sheetrit | Public domain | https://commons.wikimedia.org/wiki/File:Bechor-Shalom_Shitreet.jpg
-maimon | Public domain | https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon.jpg
+maimon | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon_(00320507).jpg
 bernstein | Public domain | https://commons.wikimedia.org/wiki/File:Peretz_Bernstein.jpg
 remez | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:David_Remez_(997009452176205171).jpg
 levin | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:Yitzhak-Meir_Levin_(997008137163805171).jpg

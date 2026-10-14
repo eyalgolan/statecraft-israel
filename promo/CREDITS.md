@@ -9,8 +9,8 @@ not final game art. Steam requires disclosure of AI-generated marketing assets.
 Public domain: David Ben-Gurion (D597-087), Eliezer Kaplan, Moshe Sharett (Portrait), Haim-Moshe Shapira
 (Moshe_Shapira.jpg), Yitzhak Gruenbaum (1948), Pinchas Rosen, Aharon Zisling, Mordechai Bentov,
 Bechor-Shalom Sheetrit (Shitreet), Yehuda Leib Maimon, Peretz Bernstein, David Remez (cropped),
-Yitzhak Meir Levin. The GPO photographs of Remez and Levin are still in promo/ref/cabinet-1948-sheet.jpg; their
-in-game portraits are replaced below.
+Yitzhak Meir Levin. The GPO photographs of Remez, Levin, Shapira, Bentov and Maimon are still in
+promo/ref/cabinet-1948-sheet.jpg; their in-game portraits are replaced below.
 CC0: "Moshe Dayan met mgr. A.C. Ramselaar (cropped).jpg" (1962).
 
 ## In-game portraits from US-safe sources (licence checked on 2026-10-11)
@@ -60,6 +60,33 @@ CC0: "Moshe Dayan met mgr. A.C. Ramselaar (cropped).jpg" (1962).
   https://commons.wikimedia.org/wiki/File:Dov_Yosef_(997008137381905171).jpg
   Identity: NLI record 997008137381905171, «דב יוסף, שר האספקה והקיצוב». Single-subject photograph. Likeness check by
   the maintainer still needed.
+
+### D-P replacements, 14 October 2026 (licence and artist re-checked on Commons that day; owner rulings in D-P)
+Each crop is taken from the full-resolution Commons original, downscaled to 512 px tall and never upscaled
+(crop box in the original's pixels; x, y is the top-left corner).
+- Haim-Moshe Shapira: crop of Benno Rothenberg / Meitar Collection / National Library of Israel, 23 October 1952,
+  CC BY 4.0 (attribution in NOTICE):
+  https://commons.wikimedia.org/wiki/File:Haim-Moshe_Shapira_(997008137213005171).jpg
+  Identity: NLI record 997008137213005171 (archive ARC. 4* 2068 / 8979), «בתצלום: טקס חלוקת פרס יעול ע"י משרד הפנים.
+  בימת הנואמים וביניהם שר הפנים משה שפירא.» The seated, moustached man on the right of the frame; not the standing
+  speaker in glasses, and not the men on the far left. Identity confirmed by the owner (D-P, 14 October 2026).
+  Original 1330 x 1889; crop box x=640, y=900, w=540, h=684; output 404 x 512 (scale 0.749).
+- Mordechai Bentov: crop of Knesset photographer / Knesset Archives, between 14 February 1949 and 22 November 1965 (the
+  file's date range, his Knesset membership), CC BY-SA 4.0 (attribution in NOTICE; share-alike, so this crop is
+  CC BY-SA 4.0 too):
+  https://commons.wikimedia.org/wiki/File:Mordechai_Bentov_(00330019).jpg
+  Identity: Knesset Archives member portrait (Knesset member code 305), donated to Commons, VRTS ticket
+  2024112910006311. Studio profile in round glasses. Original 736 x 995 (a scanned print with a white border);
+  crop box x=30, y=26, w=684, h=918, the print inside its border; output 381 x 512 (scale 0.558).
+- Yehuda Leib Maimon: crop of Knesset photographer / Knesset Archives, between 14 February 1949 and 20 August 1951 (the
+  file's date range, his Knesset membership), CC BY-SA 4.0 (attribution in NOTICE; share-alike, so this crop is
+  CC BY-SA 4.0 too):
+  https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon_(00320507).jpg
+  Identity: Knesset Archives member portrait (Knesset member code 503), donated to Commons, VRTS ticket
+  2024112910006311. Frontal head portrait in a hat and round glasses. Original 1059 x 1393 (a scanned print with a
+  white border); crop box x=32, y=60, w=956, h=1290, the print inside its border; output 379 x 512 (scale 0.397).
+Each replaces a Government Press Office photograph (PD-Israel only, no US status). Likeness check by the maintainer
+still needed for Bentov and Maimon.
 
 ## Facts shown (verified 2026-10-09)
 - Provisional Government (May 1948): 13 ministers and portfolios; Provisional State Council 37 members,

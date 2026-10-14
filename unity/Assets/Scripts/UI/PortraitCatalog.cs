@@ -7,7 +7,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>Person id -> portrait texture (tech notes section 7): imported assets referenced from a scene object, so
     /// they ship in the build's data file and need no runtime loading. Built by the editor tool PortraitImport from the
-    /// public-domain, CC0 and CC BY 4.0 files people.yaml names (portrait.file, licence and source recorded there).</summary>
+    /// public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 files people.yaml names (portrait.file, licence and source
+    /// recorded there).</summary>
     [CreateAssetMenu(menuName = "Statecraft/Portrait Catalog")]
     public sealed class PortraitCatalog : ScriptableObject
     {
