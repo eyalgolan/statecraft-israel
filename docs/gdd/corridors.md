@@ -10,6 +10,7 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - The MVP's corridors are the Tel Aviv-Haifa railway and two to three roads (unitless) (the plan [S2]). The corridor list is the owner's decision D-D7 [S2].
 - Corridor work is multi-turn, with one project per pioneer unit at a time (D-D6 [S2]). Segment counts, costs and durations are balance values the owner sets; until then they are placeholders in the dev and test overlay, never in `content/` [S2].
 - Completing the Tel Aviv-Haifa railway completes the railway half of objective 3 (unitless), "Establish key infrastructure" (GDD "MVP scope" [S1]). The completion card's reference date is the opening of passenger service on 20 September 1949 [S3].
+- The Burma Road corridor to Jerusalem is the other half of objective 3 (unitless): the owner decided on 14 October 2026 that it is in the MVP (G1 [S5], GDD "MVP scope" [S1]). Its completion card's reference date is the road's opening on 7 December 1948 [S4].
 - One military camp and one Hakhshara exist at the start, and pioneers build further camps (D-D5 [S2]); building a camp is one of the six pioneer actions (unitless) (the plan [S2]).
 
 ## Data touched
@@ -26,8 +27,7 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 
 ## Out of scope
 
-- The corridor list itself (D-D7), segment costs and durations, and road effects on unit movement (D-G2).
-- Whether the Road of Valour (Burma Road) is an MVP corridor: scope question #531.
+- The corridor list itself beyond the Burma Road (D-D7), segment costs and durations, and road effects on unit movement (D-G2).
 
 ## Sources
 
@@ -35,9 +35,10 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - [S2] GDD v0.1 impact analysis and phased plan, sections 5 and 6, docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md
 - [S3] Haboker, 14 September 1949: the Tel Aviv-Haifa line opens to passengers on the 20th of the month, "next Tuesday", https://www.nli.org.il/he/newspapers/hbkr/1949/09/14/01/article/70 (OCR), checked 2026-10-14
 - [S4] Hayom (Jerusalem), 8 December 1948: the Road of Valour was opened "yesterday", 7 December 1948, https://www.nli.org.il/he/newspapers/hayomjlm/1948/12/08/01/article/2 (OCR), checked 2026-10-14
+- [S5] Owner decisions, G1 (the Burma Road in the MVP, 14 October 2026), docs/oss/DECISIONS.md
 
 ## Open questions
 
-- The corridor list: which 2 to 3 roads (unitless) join the railway (D-D7). The Road of Valour, opened 7 December 1948 [S4], is a candidate; its place in the MVP is #531.
+- The corridor list: which roads join the railway and the Burma Road, if any (D-D7).
 - Segment counts, costs and durations: owner balance values.
 - Whether roads affect unit movement (D-G2) or only settlement founding.
