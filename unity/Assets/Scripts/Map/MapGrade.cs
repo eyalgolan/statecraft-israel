@@ -7,25 +7,37 @@ namespace Statecraft.Game.Map
 {
     /// <summary>The map's colour grade (research notes §1, §2.2 "Colour grading"): a Neutral tonemapper owned by the map (the
     /// pipeline assets' template profile already applied one; without any, the graded Negev clips about 2.5% of its
-    /// pixels: GradeTests.TheSunlitDesertDoesNotClip), slightly brighter, more contrast (saturation neutral since the merge point), a warm white balance, teal shadows against amber
-    /// highlights (the promo's complementary sea and land), and a gentle dark-navy vignette. LDR grading on both tiers: the
-    /// tonemapper and one LUT in the uber pass.</summary>
+    /// pixels: GradeTests.TheSunlitDesertDoesNotClip), brighter, more contrast with darker shadows, saturation about
+    /// neutral, a warm white balance, cool slate shadows against amber highlights (the promo's complementary sea and land),
+    /// and a dark-navy vignette. LDR grading on both tiers: the tonemapper and one LUT in the uber pass.
+    ///
+    /// Issue #38 retune (docs/visual-v1.md, "Issue #38: grade retune"): fitted on WebGL frames to bring the land towards
+    /// promo 03's land (p5 luma, contrast, saturation, warmth, luma) while the sea stays as blue as before. One global grade
+    /// cannot do both fully; this is the closest land match that keeps the sea tests (SeaTests, BorderTests) passing.</summary>
     public static class MapGrade
     {
         /// <summary>Neutral, not ACES: it only rolls off highlights, so the sea's blue and the amber land keep their hue (plan Task 4).</summary>
         public const TonemappingMode Tonemapper = TonemappingMode.Neutral;
-        /// <summary>Temperature 5, not the plan's 9 (Task 4 merge arithmetic, docs/visual-v1.md "Task 4: grade"): at 9 the t04
+        /// <summary>Temperature 7 since issue #38 (was 5): the cooler highlights and slate shadows take some frame warmth,
+        /// and this gives it back (gameplay03 frame warmth 0.05-0.07). History: Temperature 5, not the plan's 9 (Task 4 merge arithmetic, docs/visual-v1.md "Task 4: grade"): at 9 the t04
         /// diorama warmth was 0.118, and Track B's land (+0.021 before the grade, about +0.027 after it) would put the merged
         /// diorama at the promo's 0.145 with nothing left for Track B's later haze and palette work. Each unit is about 0.003
         /// of frame warmth, so 5 aims the merge at about 0.133.</summary>
-        public const float Temperature = 5f;
-        /// <summary>Saturation 0, not Task 4's 16 (merge-point carry, review I1): with Track B's palette the merged WebGL
+        public const float Temperature = 7f;
+        /// <summary>Saturation -4 since issue #38 (offsets part of what Contrast 18 adds). Before: 0, not Task 4's 16 (merge-point carry, review I1): with Track B's palette the merged WebGL
         /// diorama02 measured 0.53 against the promo's 0.43 at 16; the bar is promo + 0.05 (docs/visual-v1.md "Merge point").</summary>
-        public const float Saturation = 0f;
-        public const float PostExposure = 0.15f, Contrast = 14f, Tint = 2f;
-        public const float SplitBalance = -15f, VignetteIntensity = 0.26f, VignetteSmoothness = 0.45f;
-        public static readonly Color SplitShadows = new Color(0.36f, 0.52f, 0.60f);
-        public static readonly Color SplitHighlights = new Color(0.96f, 0.78f, 0.55f);
+        public const float Saturation = -4f;
+        /// <summary>Issue #38: Contrast 18 (was 14) and PostExposure 0.55 (was 0.15). The darker shadow tone and the stronger
+        /// vignette below pull the low end down; the exposure keeps the land's mean luma close to where it was.</summary>
+        public const float PostExposure = 0.55f, Contrast = 18f, Tint = 2f;
+        /// <summary>Issue #38: balance -31 (was -15) and a stronger, softer vignette, 0.34 and 0.84 (was 0.26 and 0.45), which
+        /// darkens the frame's edges as the promo's does and carries diorama02's contrast.</summary>
+        public const float SplitBalance = -31f, VignetteIntensity = 0.34f, VignetteSmoothness = 0.84f;
+        /// <summary>Issue #38: cool slate shadows (0.45, 0.45, 0.53), under neutral in red and green so they darken the low
+        /// end. They were teal (0.36, 0.52, 0.60); warm shadows would match the land better (#391) but turn the sea grey.</summary>
+        public static readonly Color SplitShadows = new Color(0.45f, 0.45f, 0.53f);
+        /// <summary>Issue #38: blue 0.62 (was 0.55), a little less amber, so the land's warmth stays near the promo's.</summary>
+        public static readonly Color SplitHighlights = new Color(0.96f, 0.78f, 0.62f);
         public static readonly Color VignetteColour = new Color(0.05f, 0.06f, 0.10f);
 
         public static void Apply(VolumeProfile profile)
