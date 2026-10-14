@@ -288,6 +288,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   encode otherwise; the card still says "AI-generated illustration" while a clip plays, every row keeps
   `ai_generated: true`, and the four Dreamina shots keep their own "AI" badge (owner: "Keep the badge"; DECISIONS G4, G5). The owner also reviewed the three sensitive
   clips (operation_yoav, ten_days, the operation_horev outcome), so a shareable build may carry them. No golden moves.
+- The event photo catalog (`EventImageCatalog`, with its 24 crunched photographs) loads in the background a second after
+  the game starts, while the start screen is up, instead of in `GameRoot.Begin` (refs #321). The "screens wired" step is
+  about 80 ms shorter at `--cpu 4`. The first event card shows its photograph as before, in a frame no longer than with
+  the old load; a card that comes before the load ends waits for it. `?bootlog` logs when the card first gets the
+  catalog. Presentation only.
 - The units file (`units_1948.yaml`) is parsed once at boot instead of twice: the map keeps its parse and the units
   layer draws from the same list (refs #321). The units and where they stand are unchanged. The second parse cost about
   25 ms at `--cpu 4` between the map and the start screen; the map build itself is unchanged. `?bootlog` has three more

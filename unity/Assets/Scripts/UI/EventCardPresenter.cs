@@ -30,6 +30,8 @@ namespace Statecraft.Game.UI
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
+        /// <summary>The catalog when the first event shows (EventPhotos.Get: off the boot path, issue #321), when photos is null.</summary>
+        readonly System.Func<EventImageCatalog?>? photosLater;
         readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit;
         readonly Button hide, reopen, illustrationSwitch;
         readonly System.Action onHide, onReopen, onUncovered;
@@ -58,11 +60,12 @@ namespace Statecraft.Game.UI
         /// <param name="video">The illustration loop's player, or null when video is off (CardVideo.ForcedOff): then the
         /// card never offers the Illustration switch.</param>
         /// <param name="clipFor">An event's clip (event-videos.yaml), or null when it has none.</param>
+        /// <param name="photosLater">With no <paramref name="photos"/>: gives the catalog, asked only once an event shows.</param>
         public EventCardPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits, EventImageCatalog? photos = null,
-            CardVideo? video = null, System.Func<string, EventVideoMapping.Row?>? clipFor = null)
+            CardVideo? video = null, System.Func<string, EventVideoMapping.Row?>? clipFor = null, System.Func<EventImageCatalog?>? photosLater = null)
         {
             this.video = clipFor == null ? null : video; this.clipFor = clipFor;
-            card = root.Q<VisualElement>("event-card"); this.bridge = bridge; this.text = text; this.portraits = portraits; this.photos = photos;
+            card = root.Q<VisualElement>("event-card"); this.bridge = bridge; this.text = text; this.portraits = portraits; this.photos = photos; this.photosLater = photosLater;
             band = card.Q<VisualElement>("event-photo"); credit = card.Q<Label>("event-photo-credit");
             // The band and its credit settle the drop (FitPhoto); the column, which only the window sizes, brings a dropped
             // photograph back when the window grows. A hidden element keeps its old layout, so a band shown again at the
@@ -173,7 +176,7 @@ namespace Statecraft.Game.UI
             var date = EventSystem.FillDate(e, s.Date);
             var holder = e.Office == "" ? null : Cabinet.Holder(c, s, e.Office, date);
             // The header photograph when the event has one; otherwise the minister's portrait plate (the fallback).
-            var photo = photos?.Find(e.Id);
+            var photo = (photos ?? photosLater?.Invoke())?.Find(e.Id);
             var row = video != null && photo != null && !failed.Contains(e.Id) ? clipFor!(e.Id) : null;
             clip = row == null ? null : CardVideo.Url(row.File); clipAlt = row?.Alt;
             ShowPhoto(photo);
