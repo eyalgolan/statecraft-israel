@@ -33,9 +33,10 @@ namespace Statecraft.Game.UI
         public List<Entry> entries = new List<Entry>();
 
         /// <summary>The catalog the game ships, or null when there is none (the card then shows the minister's portrait).
-        /// Memory (review M10): loading the catalog pulls in all its textures at start and they are never unloaded. At 25
-        /// pictures of 720x320, DXT1, crunched, no mipmaps, that is about 115 KB each and 2.9 MB in all, which is fine. If
-        /// the count grows past about 100, keep a Resources path per entry instead and load each event's texture on demand.</summary>
+        /// Memory (review M10): loading the catalog pulls in all its textures at start and they are never unloaded. At 24
+        /// pictures of at most 960x540 (the 16:9 media header), DXT1, crunched, no mipmaps, that is at most about 260 KB each
+        /// and 6.2 MB in all, which is fine. If the count grows past about 50, keep a Resources path per entry instead and
+        /// load each event's texture on demand.</summary>
         public static EventImageCatalog? Load() => Resources.Load<EventImageCatalog>(ResourcePath);
 
         /// <summary>The event's entry, or null when the event has no picture.</summary>

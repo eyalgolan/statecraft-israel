@@ -75,7 +75,7 @@ public class EventImageMappingTests
     }
 
     [Test]
-    public void EveryPictureIsAShippedNineByFourFileAndEveryFileHasARow()
+    public void EveryPictureIsAShippedSixteenByNineFileAndEveryFileHasARow()
     {
         var rows = Rows;
         var files = Directory.GetFiles(EventImageMapping.Folder, "*.jpg").Select(f => Path.GetFileName(f)).OrderBy(x => x).ToArray();
@@ -83,12 +83,12 @@ public class EventImageMappingTests
         foreach (var r in rows)
         {
             var path = $"{EventImageMapping.Folder}/{r.File}";
-            Assert.LessOrEqual(new FileInfo(path).Length, 200 * 1024, path);
+            Assert.LessOrEqual(new FileInfo(path).Length, 450 * 1024, path);   // tools/event_images.py MAX_BYTES
             var tex = new Texture2D(2, 2);
             try
             {
                 Assert.IsTrue(ImageConversion.LoadImage(tex, File.ReadAllBytes(path)), path);
-                Assert.AreEqual(tex.width * 4, tex.height * 9, $"{path}: 9:4 ({tex.width}x{tex.height})");
+                Assert.AreEqual(tex.width * 9, tex.height * 16, $"{path}: 16:9, the media header ({tex.width}x{tex.height})");
                 Assert.AreEqual(0, tex.width % 4 + tex.height % 4, $"{path}: multiples of 4 for block compression");
                 Assert.GreaterOrEqual(tex.width, 600, path);
             }
@@ -116,7 +116,7 @@ public class EventImageMappingTests
         }
         var importer = (TextureImporter)AssetImporter.GetAtPath($"{EventImageMapping.Folder}/{rows[0].File}");
         Assert.IsFalse(importer.mipmapEnabled);
-        Assert.AreEqual(TextureImporterNPOTScale.None, importer.npotScale, "kept at 9:4");
+        Assert.AreEqual(TextureImporterNPOTScale.None, importer.npotScale, "kept at 16:9");
     }
 
     /// <summary>Every picture has its own ASSETS.yaml row with the same licence, source page and credit, still owner-verify

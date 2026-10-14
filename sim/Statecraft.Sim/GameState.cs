@@ -58,6 +58,9 @@ namespace Statecraft.Sim
         // GDD v0.1 state (spec 2026-10-12 section 2.2). Empty in the legacy loop, and then left out of the hash (R-LOOP-002).
         /// <summary>The cities by id (ordinal).</summary>
         public SortedDictionary<string, City> Cities = new SortedDictionary<string, City>(StringComparer.Ordinal);
+        /// <summary>Social cohesion, 0 to 1, from the cities' housing and jobs (R-CITY-005). A placeholder while D-C1 is open:
+        /// no other system reads it and nothing shows it. Hashed only when the state has cities.</summary>
+        public double Cohesion;
         /// <summary>The movable units by id.</summary>
         public SortedList<int, Unit> Units = new SortedList<int, Unit>();
         /// <summary>The next id a new unit takes. Ids are never reused.</summary>
@@ -170,7 +173,15 @@ namespace Statecraft.Sim
                 foreach (var i in items) { Entry(); sb.Append(i); Sep(); }
                 Close(close);
             }
-            if (Cities.Count > 0) Section("city", '{', '}', Cities.Values.Select(x => x.Canonical()));
+            if (Cities.Count > 0)
+            {
+                Section("city", '{', '}', Cities.Values.Select(x => x.Canonical()));
+                Sep();
+                var bits = BitConverter.DoubleToInt64Bits(Cohesion == 0.0 ? 0.0 : Cohesion).ToString("X16", CultureInfo.InvariantCulture);
+                Nl(); sb.Append("coh=");
+                if (readable) sb.Append((Cohesion == 0.0 ? 0.0 : Cohesion).ToString("R", CultureInfo.InvariantCulture)).Append(" [").Append(bits).Append(']');
+                else sb.Append(bits);
+            }
             if (Units.Count > 0) Section("units", '[', ']', Units.Values.Select(x => x.Canonical()));
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)

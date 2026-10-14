@@ -47,6 +47,7 @@ namespace Statecraft.Game.UI
         MapLabelsPresenter? labels;
         ScreenNav? nav;
         StartScreenPresenter? start;
+        EventCardPresenter? card;
         CameraRig? rig;
         List<(string, int, int, DateTime)>? drawn;
 
@@ -145,7 +146,11 @@ namespace Statecraft.Game.UI
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new NavigationGuard(root));                                // the camera keys (WASD, arrows) never move UI focus (B6)
             if (DiagLog.Nav) Own(new NavEventLog(root));                   // ?navlog: every UI pointer/submit event (playtest 2, P2-4)
-            var card = Own(new EventCardPresenter(root, bridge, text, portraits, EventImageCatalog.Load()));   // event photos: Resources, no scene field
+            // The Illustration switch's silent loops (event-videos.yaml, Resources): none in the automated runs (CardVideo.ForcedOff).
+            var video = CardVideo.ForcedOff() ? null : Own(new CardVideo());
+            var clips = video == null ? null : EventVideoMapping.Load().ToDictionary(r => r.Event);
+            card = Own(new EventCardPresenter(root, bridge, text, portraits, EventImageCatalog.Load(), video,
+                clips == null ? null : id => clips.TryGetValue(id, out var r) ? r : null));   // event photos: Resources, no scene field
             Own(new DefencePresenter(root, bridge, text, portraits));
             Own(new BudgetPresenter(root, bridge, text));
             Own(new WhyPresenter(root, bridge, text));
@@ -252,7 +257,7 @@ namespace Statecraft.Game.UI
             Debug.Log(FormattableString.Invariant($"GAME OK {bridge.State.Date:yyyy-MM-dd} turn {bridge.State.Turn} hash {bridge.State.Hash()}"));
             if (smoke > 0)
             {
-                if (Application.isPlaying) StartCoroutine(Smoke(root, bridge, card, smoke, Debug.Log));
+                if (Application.isPlaying) StartCoroutine(Smoke(root, bridge, card!, smoke, Debug.Log));
                 else Debug.LogWarning("SMOKE FAIL the smoke run needs play mode or a player");
             }
             if (Application.isPlaying && PixelErrorProfile.Requested()) StartCoroutine(PixelErrorProfile.Run(map.Terrain));
@@ -303,7 +308,7 @@ namespace Statecraft.Game.UI
             StopAllCoroutines();
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
-            minimap = null; labels = null; nav = null; start = null; rig = null; drawn = null; units = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; rig = null; drawn = null; units = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -357,7 +362,9 @@ namespace Statecraft.Game.UI
             // Escape closes the open screen even when no element has the keyboard focus (ScreenNav also takes the UI
             // Cancel event from a focused element; closing twice is harmless). On the start screen it withdraws an open New
             // Game request (StartScreenPresenter.Escape; idempotent too).
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true) { start?.Escape(); nav?.Close(); }
+            // With nothing else to close, Escape on the open decision card is Hide (EventCardPresenter.Escape; the card itself
+            // takes the Cancel event when it has the focus).
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true) { bool done = start?.Escape() == true; done |= nav?.Close() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null) card?.Escape(); }
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;
             loggedDistance = rig.Distance; loggedYaw = rig.Yaw;

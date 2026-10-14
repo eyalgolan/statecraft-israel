@@ -5,9 +5,12 @@ text: '{defense_minister} proposes an offensive against the Egyptian army in the
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
-# Start [C]: 22 December 1948 (en.wiki "Operation Horev"; JVL [S]), used here, vs 27 December (en.wiki "1948 in Israel",
-# the date of the attack on al-Auja). Ended 7 January 1949. Commander Yigal Allon, five brigades. Research notes
-# facts-1948.md section 9.
+# Start [C]: 22 December 1948 (the IDF Archives; Security Council resolution 66 dates the hostilities from 22 December;
+# JVL [S]), used here, vs 27 December (en.wiki "1948 in Israel", the date of the attack on al-Auja). The IDF Archives
+# add that D-day, first set for 20 December, was put back 48 hours by rain to the night of 22-23 December. Ended
+# 7 January 1949 (the IDF Archives: cease-fire at 14:00; the cease-fire agreement of 24 January: effective 7 January
+# at 12:00 GMT). Commander Yigal Allon, five brigades (the IDF Archives: three brigades moved south to reinforce two
+# southern ones). Research notes facts-1948.md section 9.
 # The window opens on 19 December, the turn date before the launch (game timing).
 from: 1948-12-19
 to: 1948-12-23
@@ -25,6 +28,17 @@ options:
     effects:
       - { target: security, delta: -0.01 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/Operation_Horev", checked: 2026-10-10 }
   - { url: "https://www.jewishvirtuallibrary.org/jsource/History/horev.html", checked: 2026-10-10 }
+  # IDF and Defence Establishment Archives (Ministry of Defence), "Operation Horev - Operation Ayin", 5 January 2015:
+  # the operation began on 22 December 1948 and ended on 7 January 1949; three brigades from the north and centre were
+  # moved south to reinforce two southern brigades; the commander was Yigal Allon as head of the Southern Front; the
+  # forces were Golani, Harel, the 8th, the Negev and an artillery brigade; the cease-fire took effect on 7 January 1949
+  # at 14:00. The page lists Wikipedia among its sources beside IDF Archives files.
+  - { url: "https://archives.mod.gov.il/FocusOn/Pages/050115.aspx", checked: 2026-10-14 }
+  # Security Council resolution 66 (S/1169), 29 December 1948: "the hostilities which broke out in southern Palestine on
+  # 22 December 1948"; it calls for an immediate cease-fire.
+  - { url: "https://avalon.law.yale.edu/20th_century/scres066.asp", checked: 2026-10-14 }
+  # S/1225, the Acting Mediator's cable of 25 January 1949: the Egyptian-Israeli cease-fire agreement signed at Rhodes
+  # on 24 January confirms the general cease-fire "which became effective on 7 January 1949 at 1200 GMT".
+  - { url: "https://www.un.org/unispal/document/auto-insert-210639/", checked: 2026-10-14 }
 status: sensitivity-reviewed

@@ -4,12 +4,21 @@ title: Electing the Constituent Assembly
 text: 'The Provisional State Council has set the Constituent Assembly at 120 seats, elected nationwide by proportional representation, and a national registration taken under curfew on 8 November built the voters'' roll. Postponed because of the war, the vote is set for 25 January.'
 anchor: hard
 office: prime_minister
-# The Declaration of Independence required elected institutions by 1 October 1948; the vote was postponed twice because
-# of the war (the dates of those decisions are a gap). 5 November 1948: the Provisional State Council set the assembly at
-# 120 seats with nationwide PR (en.wiki and he.wiki election pages). Registration date [C]: 8 November 1948 (CBS,
-# population.yaml; en.wiki and he.wiki election pages) vs "8 or 11" (en.wiki "1948 in Israel"); it ran under a seven-hour
-# curfew (he.wiki). The vote: 25 January 1949, turnout 86.9% (en.wiki). When 25 January was fixed is a gap; the card
-# comes on 23 January, by when the date was set. Research notes sections 10 and 11.
+# The Declaration of Independence required elected institutions by 1 October 1948 (quoted by Harpaz, p. 187); the vote
+# was postponed twice because of the war (the dates of those decisions are a gap). The Provisional State Council voted
+# 16 to 14 to set the assembly at 120 seats at its 25th sitting on 4 November 1948 (the minutes' heading: 4.11.1948 and
+# 2 Heshvan 5709, which agree; [C] the Knesset's OData has 6 November, a Saturday, the only Saturday among its
+# council sittings from September 1948 to February 1949) and adopted the election ordinance's final text at its 27th
+# sitting on 18 November 1948, with 120 seats, general, direct, equal, secret and proportional elections, and the whole
+# area counted as one district (the minutes of both sittings; Harpaz, Kesher 61, p. 187, who also quotes the election
+# committee's chairman on a nationwide proportional system). Registration date
+# [C]: 8 November 1948 (CBS, population.yaml; Harpaz, p. 188) vs "8 or 11" (en.wiki "1948 in Israel"); it ran under a
+# curfew from 5 pm to midnight, seven hours (Harpaz, p. 188). The vote: 25 January 1949, turnout 86.9% (CBS, from the
+# Central Elections Committee: 440,095 voters of 506,567, which is 86.88%; the Official Gazette's notice of the results
+# gives 5,411 invalid votes, which with CBS's 434,684 valid votes makes the same 440,095; the IDI's Hebrew page also
+# gives 86.9%; [C] its English page 87.0%, a rounding the figures do not support). 25 January was fixed on
+# 25 November 1948 (Harpaz, p. 187); the card comes on 23 January, by when the date was set. Research notes sections
+# 10 and 11.
 # One option (review I3): legislatures.yaml fixes the election and the First Knesset's sitting, so a "postpone" option
 # could not change anything. The window opens on 17 January, so the card comes in the week of the vote.
 from: 1949-01-17
@@ -23,10 +32,29 @@ options:
       - { target: morale, delta: 0.03 }
       - { target: intl_standing, delta: 0.03 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/1949_Israeli_Constituent_Assembly_election", checked: 2026-10-14 }
-  - { url: "https://he.wikipedia.org/wiki/הבחירות_לאספה_המכוננת", checked: 2026-10-14 }
+  # Harpaz, Kesher 61: p. 187, the Declaration's 1 October 1948 deadline, the 120 seats and the choice of a nationwide
+  # proportional system; p. 188, the registration of 8 November 1948 under a curfew from 5 pm to midnight.
   - { url: "https://dacenter.tau.ac.il/sites/abraham.tau.ac.il/files/media_server/daniel%20abraham/kesher/61/08_Kesher61_Harpaz.pdf", checked: 2026-10-14 }
   - { url: "https://www.cbs.gov.il/he/publications/doclib/2023/2.shnatonpopulation/st02_01.pdf", checked: 2026-10-14 }
+  # IDI results page: 506,567 eligible voters, 434,684 valid votes, turnout 87.0% (the Hebrew page below gives 86.9%).
   - { url: "https://en.idi.org.il/israeli-elections-and-parties/elections/1949/", checked: 2026-10-14 }
+  - { url: "https://www.idi.org.il/policy/parties-and-elections/elections/1949/", checked: 2026-10-14 }
+  # Official Gazette (Iton Rishmi) No. 49, 7 February 1949, special issue, the Central Elections Committee's copy: the
+  # notice of the results of the elections to the Constituent Assembly, with the valid votes and seats of each list,
+  # the members elected and 5,411 votes found invalid.
   - { url: "https://www.gov.il/BlobFolder/guide/election-committee-history/en/history_election-dates_knesset1-results.pdf", checked: 2026-10-14 }
+  # Provisional State Council, 25th sitting (minutes dated 4 November 1948): Warhaftig proposed 120 as a compromise
+  # between 101 and 171, after the Great Assembly; the council voted 16 to 14 to set the Constituent Assembly at 120.
+  # The minutes are headed 4.11.1948, 2 Heshvan 5709.
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249993.pdf", checked: 2026-10-14 }
+  # The Knesset's OData record of the council's 25th sitting: start date 6 November 1948. The minutes above give
+  # 4 November, and the 24th and 26th sittings are on 28 October and 11 November in the same table.
+  - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PlenumSession(489501)", checked: 2026-10-14 }
+  # Provisional State Council, 27th sitting, 18 November 1948: the end of the debate on the election ordinance and the
+  # vote adopting it as a whole. The text read in: elections general, direct, equal, secret and proportional (section
+  # 3); the whole area one district for counting the votes (section 2); 120 members (section 9).
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249995.pdf", checked: 2026-10-14 }
+  # CBS Statistical Abstract 2023, table 27.2 (source: the Central Elections Committee): 25 January 1949, 506,567
+  # eligible voters, 440,095 voters, turnout 86.9%, 434,684 valid votes.
+  - { url: "https://www.cbs.gov.il/he/publications/DocLib/2023/ShnatonElectionsTheKnessetandGovernment.27/st27_02.pdf", checked: 2026-10-14 }
 status: fact-checked

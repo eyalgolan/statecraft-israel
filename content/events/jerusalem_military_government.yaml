@@ -5,12 +5,19 @@ text: 'Count Bernadotte''s proposals would put Jerusalem under UN authority, and
 anchor: hard
 tags: [security]
 office: prime_minister
-# Bernadotte's proposals of 28 June 1948 put Jerusalem under UN authority (notes section 1, JVL/IDF). On 2 August 1948 the
-# government rejected his suggestion to demilitarise Jerusalem, declared the Jerusalem area under its control
-# Israel-occupied territory (the proclamation's own words) and appointed Dov Yosef Military Governor (Official Gazette
-# No. 12; JVL, en.wiki "Dov Yosef"). The date of the demilitarisation suggestion is a gap in the notes. Research notes
-# sections 5 (companion events) and 13b. The window opens on 17 July, the turn date before 2 August on the monthly grid of
-# the second truce (game timing).
+# Bernadotte's proposals of 28 June 1948 put Jerusalem under UN authority (notes section 1, JVL/IDF; his progress report
+# says he presented them on 28 and 29 June under cover of a letter of 27 June). On 2 August 1948 the government
+# declared the Jerusalem area under its control Israel-occupied territory (the proclamation's own words) and appointed
+# Dov Yosef Military Governor (Official Gazette No. 12; JVL; JTA calls him military governor of Jerusalem in September).
+# The rejection of his demilitarisation plan came before that: Shertok read the government's reply, an absolute
+# rejection, to the Provisional State Council on 29 July, and the progress report has Shertok's letter of 28 July
+# reaffirming the rejection ([C] JVL's introduction puts the rejection on 2 August). The demilitarisation
+# suggestion was first made in early July: the Mediator's report of 12 July (S/888) has it presented in the last week
+# of the first truce, and his progress report has it sent to Cairo and Tel Aviv on 3 July, with a working paper after
+# 15 July; Shertok told the council Israel had agreed to explore the first proposal, not to accept it, and rejected the
+# detailed one outright ([C] JVL dates the suggestion to 26 July, the day he met Shertok, as JTA reports). Research
+# notes sections 5 (companion events) and 13b. The window opens on 17 July, the turn date before 2 August on the
+# monthly grid of the second truce (game timing).
 from: 1948-07-17
 to: 1948-08-03
 # Effects of both options are game assumptions: the notes give none for this event.
@@ -29,6 +36,25 @@ options:
       - { target: intl_standing, delta: 0.02 }
 sources:
   - { url: "https://www.jewishvirtuallibrary.org/jerusalem-declared-israel-occupied-city-government-proclamation", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/Dov_Yosef", checked: 2026-10-10 }
   - { url: "https://www.jewishvirtuallibrary.org/the-first-truce-1948", checked: 2026-10-10 }
+  # The Mediator's progress report of 16 September 1948 (A/648), part one, chapters III and IV: his suggestions presented
+  # on 28 and 29 June under cover of his letter of 27 June; the demilitarisation proposal presented in Cairo and sent to
+  # Tel Aviv on 3 July; a working paper after the Council's resolution of 15 July; Shertok's letter of 28 July
+  # reaffirming the rejection of the plan and Dov Joseph's reply of 3 August that he could not negotiate a plan.
+  - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-14 }
+  # S/888, the Mediator's report to the Security Council of 12 July 1948: during the last week of the truce he proposed
+  # the demilitarisation of Jerusalem and, should the truce not be prolonged, an immediate cease-fire in the city; the
+  # Jewish Government was prepared to discuss demilitarisation under certain assumptions, the Arab states rejected it.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/888&l=en&t=pdf", checked: 2026-10-14 }
+  # Provisional State Council, 12th sitting, 29 July 1948 (Knesset minutes), Shertok's review: Israel did not agree to
+  # the Mediator's proposal to demilitarise Jerusalem during the transition but agreed to explore it; it rejected his
+  # later, detailed proposal outright; he read the reply given to the Mediator, that the Provisional Government repeats
+  # and rejects absolutely the demilitarisation proposal, that its attitude is affected by his proposal to hand
+  # Jerusalem to Arab rule, and that it remains ready to discuss any reasonable plan to protect the city. This is the
+  # government's account.
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249980.pdf", checked: 2026-10-14 }
+  # JTA, 27 July 1948: Bernadotte conferred with Shertok "today"; the demilitarisation of Jerusalem was on the agenda.
+  - { url: "https://www.jta.org/archive/bernadotte-confers-with-shertok-on-armistice-demilitarizing-jerusalem-immigration", checked: 2026-10-14 }
+  # JTA, 15 September 1948: "Dr. Bernard Joseph, Israeli military governor [of] Jerusalem".
+  - { url: "https://www.jta.org/archive/representatives-meet-with-israeli-governor-of-jerusalem-on-truce-problems", checked: 2026-10-14 }
 status: fact-checked

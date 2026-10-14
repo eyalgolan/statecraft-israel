@@ -346,7 +346,7 @@ public class StartScreenTests
             owned.Add(new HudPresenter(ui.Root, bridge, Text));
             owned.Add(new ScreenNav(ui.Root));
             var info = new InfoPanelPresenter(ui.Root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
-            owned.Add(new EventCardPresenter(ui.Root, bridge, Text, null));
+            var card = new EventCardPresenter(ui.Root, bridge, Text, null); owned.Add(card);
             var toast = new ToastPresenter(ui.Root, bridge, Text); owned.Add(toast);
             var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL); owned.Add(newGame);
             var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
@@ -360,7 +360,7 @@ public class StartScreenTests
             Assert.IsNotNull(ui.Root.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
             void NoneReachable(string where)
             {
-                foreach (var region in new[] { "top-bar", "right-column", "info-panel" })
+                foreach (var region in new[] { "top-bar", "right-column", "info-panel", "event-layer" })
                     foreach (var b in ui.Root.Q(region).Query<Button>().ToList())
                     {
                         Assert.IsFalse(b.canGrabFocus, $"{where}: {region} {b.name} cannot take the focus under the start screen");
@@ -371,7 +371,15 @@ public class StartScreenTests
             NoneReachable("under the start screen");
             ui.Press("start-continue");
             yield return null; yield return null;
-            Assert.IsTrue(build.canGrabFocus, "the build button is back once the screen closes");
+            // The waiting event's card opens in the middle (decision cards) and takes the focus (review S1); its options are
+            // in reach, the panels under its backdrop are not; Hide gives them back.
+            yield return null;
+            Assert.AreSame(ui.Root.Q("event-card"), ui.Root.panel.focusController.focusedElement, "the event card has the focus once the screen closes");
+            Assert.IsTrue(ui.Root.Q("event-options").Q<Button>().canGrabFocus, "the event's options are in reach once the screen closes");
+            Assert.IsFalse(build.canGrabFocus, "the info panel waits under the decision card's backdrop");
+            card.Collapse();
+            yield return null;
+            Assert.IsTrue(build.canGrabFocus, "the build button is back once the card is hidden");
         }
         finally { for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose(); }
     }

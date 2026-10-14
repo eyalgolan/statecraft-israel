@@ -585,7 +585,7 @@ public class MapLabelTests
         var labels = new MapLabelsPresenter(hd.Root, map, cam);
         try
         {
-            Pose(34.43, 31.95, 90000f);   // Tel Aviv on the right, where the event card opens
+            Pose(34.78, 32.08, 90000f);   // Tel Aviv in the middle, where the decision card opens
             yield return Settle(labels);
             var tlv = labels.Slots.Single(s => s.name == "slot-tel_aviv");
             var before = tlv.Q<Label>().worldBound;

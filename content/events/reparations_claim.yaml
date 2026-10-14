@@ -5,7 +5,13 @@ text: '{foreign_minister} proposes a note to the four occupying powers claiming 
 anchor: hard
 tags: [holocaust]
 office: foreign_minister
-# The note is dated 12 March 1951 (en.wiki "1951 in Israel" gives 13 March).
+# The note is dated 12 March 1951 (en.wiki "1951 in Israel" gives 13 March). FRUS has the note of 12 March delivered
+# by the Israeli embassy in Washington on 12 March; Sharett told the Knesset on 13 March that it was handed to the four
+# powers "yesterday"; JTA's bulletin of 14 March has identical notes delivered "yesterday" in London, Paris and
+# Washington and to the Soviet minister in Tel Aviv. The claim, 1.5 billion dollars for the absorption of about 500,000
+# immigrants from lands under Nazi rule, is in the note's text as Sharett read it to the Knesset; 3,000 dollars each is
+# JVL's figure (and the quotient). The government's earlier note of 16 January 1951 to the same four powers dealt with
+# compensation and the restitution of property owed to Jews under existing laws.
 from: 1951-03-01
 to: 1951-03-13
 options:
@@ -20,6 +26,21 @@ options:
     effects:
       - { target: intl_standing, delta: 0 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/Reparations_Agreement_between_Israel_and_the_Federal_Republic_of_Germany", checked: 2026-10-10 }
   - { url: "https://www.jewishvirtuallibrary.org/german-holocaust-reparations", checked: 2026-10-10 }
+  # First Knesset, 237th sitting, 13 March 1951: Foreign Minister Sharett's statement. On 16 January 1951 the government
+  # sent the United States, the Soviet Union, the United Kingdom and France a note on compensation and restitution owed
+  # to Jews; the second note, on reparations owed to the Jewish people as a whole, was handed "yesterday" to the four
+  # great powers. It claims 1.5 billion dollars, calculated on the cost of absorbing half a million survivors of the
+  # Holocaust; he read the note into the record: Jewish property seized estimated at 6 billion dollars, and the cost of
+  # absorbing Jewish immigrants from lands under Nazi rule, numbering some 500,000, 1.5 billion dollars.
+  - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250159.pdf", checked: 2026-10-14 }
+  # JTA, 14 March 1951: identical notes delivered "yesterday" in London, Paris and Washington and to the Soviet minister
+  # in Tel Aviv claim 1.5 billion dollars as a "minimum claim", for the resettlement of 500,000 immigrants, and ask that
+  # full powers not be handed to any German government without a reservation for reparations.
+  - { url: "https://www.jta.org/archive/israel-seeks-1500000000-reparations-from-germany-delivers-note-to-four-powers", checked: 2026-10-14 }
+  # FRUS 1951 v.V doc 296, 19 March 1951 (footnote): the Israeli note of 12 March asked US support for a claim of
+  # 1,500,000,000 dollars in reparations from the German Federal Republic.
+  - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d296", checked: 2026-10-14 }
+  # FRUS 1951 v.V doc 297, Acheson's memorandum of 22 March 1951: Eban said the embassy delivered the note on 12 March.
+  - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d297", checked: 2026-10-14 }
 status: sensitivity-reviewed

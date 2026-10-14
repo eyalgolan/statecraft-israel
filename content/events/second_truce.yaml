@@ -4,10 +4,15 @@ title: The Second Truce
 text: 'The Security Council has found a threat to the peace under Article 39 of the Charter and ordered a cease-fire within three days, and an immediate cease-fire in Jerusalem. {prime_minister} must decide whether Israel complies.'
 anchor: hard
 office: prime_minister
-# Security Council Resolution 54, 15 July 1948 (S/902), 7-1 with 3 abstentions. The truce took effect at 19:00 on 18 July
-# and lasted until 15 October (en.wiki "1948 Arab-Israeli War"; he.wiki gives 18.7-15.10). The date of Israel's acceptance
-# is a gap in the notes. Research notes facts-1948.md section 5. The text does not mention Latrun: a player who chose the
-# southern front never attacked it.
+# Security Council Resolution 54, 15 July 1948 (S/902), 7-1 with 3 abstentions (the resolution as published by the UN).
+# The truce took effect at 19:00 on 18 July (the IDF account; 1500 GMT in A/648) and lasted until 15 October (the IDF
+# accounts and the Knesset's war summary date Operation Yoav from 15 October; the Acting Mediator's contemporaneous
+# report of 18 October, S/1042, supports 15 October for the fighting: Israel's account of an all-out attack on its
+# convoy on 15 October, and the observers' reports of attacks on 15 and 16 October; its one earlier item is an Egyptian
+# complaint of an Israeli break-through at 2300 GMT on 14 October, and it asks both sides to return to the positions of
+# 1200 GMT on 14 October; [C] S/1357, the Acting Mediator's report of July 1949, dates the clash from 14 October). The
+# date of Israel's acceptance is a gap in the notes. Research notes facts-1948.md section 5. The text does not mention
+# Latrun: a player who chose the southern front never attacked it.
 from: 1948-07-15
 to: 1948-07-19
 options:
@@ -26,9 +31,25 @@ options:
       - { target: intl_standing, delta: -0.10 }
       - { target: security, delta: 0.01 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/United_Nations_Security_Council_Resolution_54", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/1948_Arab–Israeli_War", checked: 2026-10-10 }
   - { url: "https://avalon.law.yale.edu/20th_century/scres054.asp", checked: 2026-10-14 }
+  # The UN's published text of resolution 54, with the vote: 7 to 1 (Syria), 3 abstentions.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/RES/54(1948)&l=en&t=pdf", checked: 2026-10-14 }
   - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-14 }
+  # S/1357, the Acting Mediator's letter of 21 July 1949 on the armistice negotiations and the truce: "the clash in the
+  # Negeb which began on 14 October 1948".
   - { url: "https://www.un.org/unispal/document/auto-insert-210876/", checked: 2026-10-14 }
+  # IDF accounts, republished by the Jewish Virtual Library: the second truce from 1900 hours on 18 July; Operation Yoav
+  # launched after the convoy was fired on on 15 October.
+  - { url: "https://jewishvirtuallibrary.org/jsource/History/truce2.html", checked: 2026-10-14 }
+  - { url: "https://jewishvirtuallibrary.org/jsource/History/Yoav.html", checked: 2026-10-14 }
+  # S/1042, the Acting Mediator's report of 18 October 1948 on the Negev: the Egyptian commander's complaints that
+  # Israeli forces broke through east of al-Majdal at 2300 GMT on 14 October and attacked from Karatiya at 0400 GMT on
+  # 15 October; Israel's complaint at 1400 GMT on 15 October of Egyptian planes attacking trucks; the observers with the
+  # Egyptian forces confirming attacks on 15 and 16 October; the Chief of Staff's call of 16 October to cease fire and
+  # return to the positions of 1200 GMT on 14 October; Israel's reply citing an all-out attack on its convoy on the
+  # Karatiya road on 15 October.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/1042&l=en&t=pdf", checked: 2026-10-14 }
+  # The Knesset's summary of the War of Independence: the truce took effect on 18 July; Yoav opened the road on
+  # 15 October.
+  - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-14 }
 status: fact-checked

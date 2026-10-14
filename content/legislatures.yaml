@@ -1,13 +1,21 @@
 legislatures:
   - id: provisional_state_council
     body: Provisional State Council
-    # from/to are derived handover dates: independence (14 May 1948) and the first convening of the Knesset (14 February 1949).
-    # Per its article the council was founded 12 April 1948 and last met 3 February 1949.
-    from: 1948-05-14
+    # from: the Declaration of Independence (clause 12, minutes of 14 May 1948, 0_ptm_258580) has the People's Council
+    # act as the Provisional State Council "from the termination of the Mandate, being tonight, the eve of Sabbath" (15
+    # May 1948), and the Knesset's KNS_KnessetDates gives Knesset 0 a PlenumStart of 15 May 1948. The proclamation
+    # adopted at the same sitting says the council was established by the Declaration of 14 May (issue #457). to: the
+    # first convening of the Knesset (14 February 1949). Per its article the council was founded 12 April 1948. It last
+    # met on 10 February 1949, its 40th sitting (minutes, https://fs.knesset.gov.il/0/Plenum/0_ptm_250008.pdf; the
+    # article gives 3 February).
+    from: 1948-05-15
     to: 1949-02-14
     size: 37
-    budget_approval: false
-    open_questions: [budget_approval]
+    # The Law and Administration Ordinance, 1948, section 5, has the Provisional Government's budget fixed by an
+    # ordinance of the council. The council adopted the January 1949 Budget Ordinance unanimously (sitting 33, 30
+    # December 1948, printed page 20) and the January-March 1949 Budget Ordinance 21-1 (sitting 38, 27 January 1949,
+    # printed page 11). research_notes/budget-approval-1948-56.md (#3).
+    budget_approval: true
     seats:
       mapai: 10
       mapam: 3
@@ -27,18 +35,27 @@ legislatures:
       yemenite_association: 1
     sources:
       - { url: "https://en.wikipedia.org/wiki/Provisional_State_Council", checked: 2026-10-09 }
+      - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_258580.pdf", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250172.pdf", checked: 2026-10-14 }
+      # budget_approval.
+      - { url: "https://fs.knesset.gov.il/0/law/0_lsr_312670.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_250001.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_250006.pdf", checked: 2026-10-14 }
     status: fact-checked
   - id: first_knesset
     body: Constituent Assembly (First Knesset)
-    # The Knesset article gives "20 January" for the election, which conflicts; the election article (25 January 1949) is the source used.
+    # en.wiki's Knesset article gives "20 January" for the election, which conflicts; the Knesset's First Knesset page gives 25 January 1949, which is used.
     elected: 1949-01-25
     from: 1949-02-14
     # Sat until the Second Knesset convened. The government resigned on 14 February 1951; in April 1951 the Knesset
-    # passed the Transition to the Second Knesset Law and fixed the election for 30 July 1951 (he.wiki First Knesset).
+    # passed the Transition to the Second Knesset Law (4 April) and the law fixing the election for 30 July 1951 (12 April),
+    # as published in Sefer HaChukim 73 and 74.
     to: 1951-08-20
     size: 120
+    # The 1949/50 Budget Law passed 60-25 (sitting 74, 31 August 1949, printed page 1508) and the 1950/51 Budget Law
+    # 44-25 (sitting 159, 29 June 1950, printed page 1977). research_notes/budget-approval-1948-56.md (#3).
     budget_approval: true
-    open_questions: [budget_approval]
     seats:
       mapai: 46
       mapam: 19
@@ -53,23 +70,34 @@ legislatures:
       wizo: 1
       yemenite_association: 1
     sources:
-      - { url: "https://en.wikipedia.org/wiki/1949_Israeli_Constituent_Assembly_election", checked: 2026-10-09 }
-      - { url: "https://en.wikipedia.org/wiki/Knesset", checked: 2026-10-09 }
-      - { url: "https://he.wikipedia.org/wiki/הכנסת_הראשונה", checked: 2026-10-10 }
+      - { url: "https://web.archive.org/web/20160303211859/http://www.knesset.gov.il/history/eng/eng_hist1_s.htm", checked: 2026-10-14 }
+      - { url: "https://www.gov.il/BlobFolder/guide/election-committee-history/en/history_election-dates_knesset1-results.pdf", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=KnessetNum%20eq%201", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250172.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250266.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/law/1_lsr_208917.PDF", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/law/1_lsr_208021.PDF", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250280.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250609.pdf", checked: 2026-10-14 }
+      # budget_approval.
+      - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250028.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250044.pdf", checked: 2026-10-14 }
     status: fact-checked
   - id: second_knesset
     body: Second Knesset
     elected: 1951-07-30
-    # Convening date from he.wiki only (single source; not confirmed elsewhere).
+    # Convening date from the Knesset's session dates (KNS_KnessetDates) and the record of the first sitting, 20 August 1951.
     from: 1951-08-20
     # Sat until the Third Knesset convened on 15 August 1955 (he.wiki; Open Knesset lists Efrati's Second Knesset
     # service to 15/08/1955 and his Third Knesset service from 15/08/1955).
     to: 1955-08-15
     size: 120
+    # The 1951/52 Budget Law passed 50-38 (sitting 37, 31 December 1951, printed page 878) and the 1952/53 Budget Law
+    # 48-36 (sitting 75, 1 April 1952, printed page 1858). research_notes/budget-approval-1948-56.md (#3).
     budget_approval: true
-    open_questions: [budget_approval]
-    # Election results, identical in en.wiki, IDI and JVL. The United Religious Front ran as four lists (Hapoel
-    # HaMizrachi, Mizrachi, Agudat Yisrael, Poalei Agudat Yisrael). he.wiki's composition table reflects later mergers.
+    # Election results, identical in the Knesset's Second Knesset page, its faction records on 20 August 1951, IDI and JVL.
+    # The United Religious Front ran as four lists (Hapoel HaMizrachi, Mizrachi, Agudat Yisrael, Poalei Agudat Yisrael).
     seats:
       mapai: 45
       general_zionists: 20
@@ -87,13 +115,19 @@ legislatures:
       yemenite_association: 1
       agriculture_and_development: 1
     sources:
-      - { url: "https://en.wikipedia.org/wiki/1951_Israeli_legislative_election", checked: 2026-10-10 }
       - { url: "https://en.idi.org.il/israeli-elections-and-parties/elections/1951/", checked: 2026-10-10 }
       - { url: "https://www.jewishvirtuallibrary.org/elections-to-the-2nd-knesset-july-1951", checked: 2026-10-10 }
-      - { url: "https://he.wikipedia.org/wiki/הכנסת_השנייה", checked: 2026-10-10 }
+      - { url: "https://web.archive.org/web/20160522174905/https://www.knesset.gov.il/history/eng/eng_hist2_s.htm", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/1/law/1_lsr_208021.PDF", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=KnessetNum%20eq%202", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250609.pdf", checked: 2026-10-14 }
       # The end date (to: 1955-08-15).
       - { url: "https://he.wikipedia.org/wiki/הכנסת_השלישית", checked: 2026-10-11 }
       - { url: "https://oknesset.org/members/268.html", checked: 2026-10-11 }
+      # budget_approval.
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250393.pdf", checked: 2026-10-14 }
+      - { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250298.pdf", checked: 2026-10-14 }
     status: fact-checked
   - id: third_knesset
     body: Third Knesset
@@ -103,6 +137,9 @@ legislatures:
     # and Mapam are the two parts of the 1951 Mapam list, which split.
     from: 1955-08-15
     size: 120
+    # The 1956/57 Budget Law passed 53-24, 5 abstaining (sitting 111, 22 March 1956, printed page 1612).
+    # research_notes/budget-approval-1948-56.md (#3). Open: the 1956/57 law is read, but this Knesset sat until 1959
+    # and its 1957-59 budget laws are not.
     budget_approval: true
     open_questions: [budget_approval]
     # Election results, identical in the IDI table and the Jewish Virtual Library table (which cites the Knesset).
@@ -125,4 +162,6 @@ legislatures:
       - { url: "https://www.jewishvirtuallibrary.org/elections-to-the-3rd-knesset-july-1955", checked: 2026-10-11 }
       - { url: "https://oknesset.org/members/268.html", checked: 2026-10-11 }
       - { url: "https://he.wikipedia.org/wiki/הכנסת_השלישית", checked: 2026-10-11 }
+      # budget_approval.
+      - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251023.pdf", checked: 2026-10-14 }
     status: fact-checked

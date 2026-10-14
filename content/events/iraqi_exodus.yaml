@@ -25,4 +25,9 @@ sources:
   - { url: "https://in.bgu.ac.il/bgi/iyunim/40/Meir-Glitzenstein.pdf", checked: 2026-10-10 }
   - { url: "https://www.un.org/unispal/document/auto-insert-211728", checked: 2026-10-13 }
   - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d340", checked: 2026-10-13 }
+  # JTA, 15 March 1951: Iraqi banks reopened after two days' closure following the government's proclamation freezing
+  # Jewish accounts and its decision to sequester the property of all Jews registered to emigrate to Israel; in
+  # practice the freeze was reported extended to all Jews in Iraq; the airlift was speeded up, with "54,000 Jews
+  # awaiting transfer" (the card's text has some 64,000).
+  - { url: "https://www.jta.org/archive/anti-jewish-terror-continues-in-baghdad-airlift-of-jews-from-iraq-is-speeded-up", checked: 2026-10-14 }
 status: fact-checked

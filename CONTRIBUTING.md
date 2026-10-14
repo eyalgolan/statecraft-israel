@@ -28,7 +28,7 @@ There is no CLA and no sign-off. By opening a pull request you agree that your c
 Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 
 - **Sim and tools only:** .NET SDK 10 and `uv`. Unity is not needed.
-- **Unity work:** Unity 6000.3.25f1 (6.3 LTS) with Web Build Support, a free Unity account, and running `tools/build_sim_for_unity.sh` before you open `unity/`.
+- **Unity work:** Unity 6000.3.25f1 (6.3 LTS) with Web Build Support, a free Unity account, and running `uv run tools/build_sim_for_unity.py` before you open `unity/`.
 
 ## Rules every change follows
 

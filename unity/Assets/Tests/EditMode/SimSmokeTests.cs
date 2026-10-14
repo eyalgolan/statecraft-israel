@@ -19,7 +19,7 @@ public class SimSmokeTests
 
     /// <summary>The golden playthroughs of docs/determinism.md, run on the Unity editor's Mono runtime. The constants are
     /// GoldenRun's, which sim/Statecraft.Sim.Tests/DeterminismTests.cs pins on .NET; rebuild the DLLs
-    /// (tools/build_sim_for_unity.sh) after changing them.</summary>
+    /// (uv run tools/build_sim_for_unity.py) after changing them.</summary>
     [Test]
     public void GoldenPlaythroughTo1950MatchesDotNet()
     {

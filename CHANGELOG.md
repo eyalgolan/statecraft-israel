@@ -9,6 +9,20 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ### Added
 - 3D models on the map (Tripo Studio, `unity/Assets/Art/Settlements/Prototype/`): groups of new building modules beside the towns (Tel Aviv, Jerusalem, Haifa, Netanya, a moshava, a wine moshava, a kibbutz, a moshav, a stone village), a shikun block, barracks and the Latrun fort; characters, vehicles, ships, the C-54 and animals as map props; and the army tokens' riflemen drawn as the new characters through `UnitShowcase`'s authored-model hook. The towns keep their first models. Characters, the sheep and the horse play their idle clip; everything else stands still. The WebGL data file grows from about 91 MB to 136 MB. No simulation change.
+- GDD v0.1 Phase 1, one city (refs #376), behind the `systems.loop` switch: Tel Aviv with housing, jobs, civilians and
+  refugees as counts; `AssignWorkers` (Attention, refused in the legacy loop); and a `TurnResolver` that runs, in the
+  approved order (D-A6), Money from jobs, housing, Social cohesion and arrivals from the CBS series as refugees, housed on
+  the next turn (R-CITY-001 to R-CITY-005); `people_per_unit` must be the same in every era. Every balance value is a placeholder in `MvpSlice.Overlay`, never under
+  `content/`; Social cohesion feeds nothing else and is not shown while D-C1 is open. The reference player for the GDD
+  goldens (`Statecraft.Sim.Reference`, D-A7) is test policy that no game mode or UI reaches. New scenario golden
+  `scenario-mvp-absorb-first`. The real game is unchanged: `hash1950`, `hash1952`, `smoke5` and the two 1948 scenarios do
+  not move.
+- Decision videos, phase 2 (#434 follow-up). On 11 decision cards an Illustration switch over the photograph plays a
+  short, silent AI-generated loop. It is labelled "AI-generated illustration" in place of the credit and carries a small
+  burned-in bilingual label. The photograph always shows first; nothing plays until the player asks, and the choice holds
+  for the session. Clips stream from StreamingAssets only when asked for, so boot is unchanged, and video is off in every
+  automated run. A clip that fails puts the photograph back. Deport never gets any video. The two clips on war-casualty
+  events wait for the owner's sensitivity review before a shareable build. Presentation only: no golden moves.
 - Portrait for Dov Yosef (refs #6): a Meitar Collection photograph (Benno Rothenberg, National Library of Israel, 1949) under CC BY 4.0, cropped, with its credit in `NOTICE`, on the extended `commons_licences.py` path from #30. Likeness check and the NLI confirmation before a paid release stay with the maintainer. Unity not run.
 - Portraits for Remez and Levin (refs #30): Government Press Office photographs, which Commons marks PD-Israel only, are replaced by Meitar Collection photographs (National Library of Israel, 1950 and 1949) under CC BY 4.0, cropped, with per-photo credits in `NOTICE`. `scripts/oss/commons_licences.py` now records an explicit Cc-by-4.0 file as `CC-BY-4.0` and marks it verified only with a named artist and a `NOTICE` entry; public domain, CC0 and the PD-Israel-only refusal are unchanged. Likeness check and the NLI confirmation before a paid release stay with the maintainer. Unity not run.
 - The website (`site/`, refs #393): a static Astro site in English (`/en/`) and Hebrew (`/he/`, right to left) with Home, Play, History, Sources, Media, Devlog, Contributors, How we make it, Press, Contribute and Privacy. Every image and video carries a visible label (in-engine capture with build and date, AI-generated concept art, or AI cinematic promo, not gameplay); the History and Sources pages show the events and sources from `content/` as they are. The in-engine images are the README's screenshots, read from `docs/images/build-*.jpg` and described in `docs/images/captures.yaml`, so retaking them updates the site. The cinematic trailer is hosted as one 720p H.264 encode, shown behind a click with captions in its own labelled section after the gameplay; a real gameplay clip listed in `captures.yaml` becomes the home page's muted hero loop, with a pause button. Self-hosted fonts and images, no analytics, no cookies and nothing loaded from another site. A `Site` workflow builds and checks it on pull requests; deploying to GitHub Pages waits for the owner.
@@ -199,8 +213,22 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- The map's near (bottom) tilt-shift band is lighter, as on promo 03: gently soft at the play zoom and almost none at the
+  wide overview, where the foreground is now sharp as on promo 02. On the owner's ruling of 2026-10-14; the far band is
+  unchanged (#390). Presentation only (#458).
+- The `mvp-slice` golden is re-pinned (`0451920a` to `f6931e24`): the slice now has its city and the GDD turn, and the
+  reference player fills the jobs (GDD Phase 1 PR 3, refs #376). The legacy goldens do not move.
+- The hills carry a loose, uneven scatter of single olives and low scrub between the olive clumps, like promo 03's hills
+  (refs #34): over the wet hill country where the land use is garrigue and terraces, outside the groves, the towns'
+  footprints and the hex-edge midpoints. The olives already planted stay where they are; the map has about 20,000 trees
+  instead of 8,400.
 - The trees are warm olive-brown instead of bright green, like the groves in promo 03 (refs #34): citrus groves, olive
   crowns, palms and cypresses. Only the leaf colours change; the fruit, meshes and frame cost are the same.
+- Map: settlement quick wins (refs #31). The White City's blocks are lime white, with a solid-parapet balcony on each
+  upper storey, deep windows and more roof rooms. The old towns' and villages' houses step back (the top storey a smaller
+  block on the lower roof), have roof rooms and grey-buff limestone walls under lime roofs. Domes stay on hill houses only,
+  fewer (old towns 22% to 8%, hill villages 7%; plain villages none, as their mud-brick houses had flat roofs) and low.
+  Every house stands where it did: same lots, trees and building count (docs/visual-v1.md, "Settlement quick wins").
 - HUD round 1, the info panel and the trim (promo look, refs #398). Before a hex is chosen, the info panel is a one-line
   hint, not an empty block. A hex's facts (region, settlements, 1948 localities, placements) are rows with a gold sign,
   with no yields and no land-use name. When both map actions are refused for the same reason, the reason shows once,
@@ -209,6 +237,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Map: the unit figures' uniforms are darker and warmer, so a trio stands out against the sunlit ground as promo 03's
   does instead of khaki on khaki; a figure's slope base is painted trodden earth instead of a dark grey disc. A
   readability choice at map scale; the sourced kit is unchanged (refs #197).
+- The decision card opens in the middle of the screen (decision cards, 2026-10-13): up to 1040 px wide, with a 16:9 media
+  header that shows the event's archival photograph at up to 960x540 (the 24 photographs re-cropped from the same originals
+  to 16:9). While it is open the map is blocked: a dim backdrop takes map clicks, and the info panel and the minimap are
+  out of reach, while the top bar stays usable. Hide (or Escape) collapses it to a "Decision waiting" button that brings
+  it back, and a new event opens it again with the keyboard focus on the card (Tab reaches the options; none is lit before
+  the player picks). Any open screen hides it until it closes. Presentation only: no golden moves.
 - The scenario runner (`Scenario`) and the `mvp-slice` golden's player (`MvpGolden`) move from the tests into `Statecraft.Sim`,
   next to `GoldenRun`, so Unity can play those goldens too (step 1 of #394). Same code, same hashes; no golden moves.
 - The map's railways and roads are placed from a bake at boot instead of being built (refs #321), as the water's
@@ -230,6 +264,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   brighter, so they stand out at the gameplay zoom; the sleepers run every 100 m, a fine texture instead of a coarse ladder; the
   ballast is a cooler stone grey; roads have darker worn verges, so they read on pale ground. No mesh, data or boot change
   (refs #35).
+- The Unity sim build helper is now `uv run tools/build_sim_for_unity.py`, usable on Windows, macOS and Linux without
+  a shell. It preserves the Release publish and required DLL checks. `tools/build_sim_for_unity.sh` stays as a thin
+  wrapper that runs the Python script.
 - Land round 2 (refs #33): the ground's colours move from yellow-olive and gold to promo 03's warm dry ground, in the
   biome palette and the land-use bake. Hedges, tree lines and farm tracks are drawn about 150 m wide, so the fields read
   at the gameplay zoom. The hills get round bushes with a soft shadow, a stronger garrigue and clearer terraces. It is a
@@ -305,16 +342,129 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- "The Mediator Assassinated" cites the Official Gazette text of the Prevention of Terrorism Ordinance for its number,
+  No. 33 of 1948, which no source on the card gave. Comment and source row only (refs #442).
+- Five recorded contradictions settled from primary sources. "The Second Truce": the Acting Mediator's report of
+  18 October 1948 (S/1042) puts the Negev fighting on 15 October, against S/1357's 14 October. "Talks at Rhodes":
+  Israel's reply to the British protest (JTA, 19 January 1949) agrees with the British statement that the RAF planes
+  were shot down on 7 January. "Jerusalem": the Mediator's report of 12 July (S/888) has the demilitarisation proposal
+  made in early July, and Shertok read Israel's rejection to the Provisional State Council on 29 July, before the
+  proclamation of 2 August. "Electing the Constituent Assembly": the minutes' Hebrew date confirms the 25th sitting on
+  4 November 1948 (the Knesset's database has a Saturday, 6 November), and CBS's figures give turnout 86.88%, so 86.9%,
+  not 87.0%. "The Mediator Assassinated": the Official Gazette dates the ordinance 23 September and prints it on
+  29 September. Comments and source rows only; text, dates, options and effects are unchanged (refs #442).
+- Four 1948 localities corrected against the Village Statistics 1945 scan (#200): Ijzim is 2,970, not 4,280 (the
+  transcription's "Ijzim (Nazareth subdistrict)" is 'Ilut, a different village); Ilar's Wikidata item is the place's
+  main item, "Illar, Tulkarm"; Beit Nuba's row reads 'Ajanjul; Zakariya's article is now Zekharia. The rows stay
+  `owner_verify`. The map's localities are outside the content hash, so no golden moves.
+- "The Altalena" also cites the Provisional State Council's sixth sitting, 24 June 1948: the council approved the
+  government's action against the Irgun's arms ship 24 to 4, with 5 abstaining, and a committee to secure a single army.
+  Source rows and comments only (refs #442).
+- "Transit Camps" opens on 1 April 1950, not 1 March: Eshkol raised the camps' crisis at the Jewish Agency executive
+  on 27 March 1950 and proposed transit housing two weeks later (Kachansky, Yad Ben-Zvi 1987). Wikipedia's March date
+  is kept in the event's comment. In the golden run the card first shows on 27 May 1950 with either date, so no golden
+  moves (refs #442).
+- A player's budget before the First Knesset now goes to the Provisional State Council's vote (`budget_approval: true`,
+  refs #3), the same mechanic every Knesset already uses. The council fixed the budget by ordinance under the Law and
+  Administration Ordinance, and adopted the January 1949 Budget Ordinance unanimously and the January-March 1949
+  ordinance 21-1, from the protocols in `research_notes/budget-approval-1948-56.md`. The `budget_approval` open questions
+  on the council and the First and Second Knessets are closed, each with its protocol sources. The Third Knesset's stays
+  open: its 1956/57 law is read, its 1957-59 laws are not. No golden moves: the historical runs and the scenarios submit
+  no budget.
+- The Provisional State Council's window opens on 15 May 1948, the end of the Mandate, as the Declaration of
+  Independence (clause 12) and the Knesset's dates table give it, not 14 May (refs #457). The game starts on 15 May, so
+  nothing in play changes and no golden moves.
+- The Rhodes talks card no longer says Israel accepted the cease-fire on 7 January: by 6 January both Egypt and Israel
+  had notified the Acting Mediator of their acceptance (S/1187, FRUS 1949 vol. VI doc. 362), and the cease-fire took
+  effect at 1200 GMT on 7 January (refs #457). Text only; no golden moves.
+- Yehuda Leib Maimon holds Religions and War Victims to 8 October 1951, not 14 February 1951: the Knesset position
+  records run both Second Government terms to the Third Government, and the plenum of 17 July 1951 has him answering as
+  Minister of Religions (refs #457). The two offices are no longer vacant from February 1951. No golden moves.
+- Six 1948-1950 cards cite more primary sources in place of Wikipedia. "The Second Truce" drops Wikipedia: the UN's
+  published text of resolution 54 gives the 7-1-3 vote, and the IDF accounts and the Knesset's War of Independence
+  summary date the truce from 19:00 on 18 July to Operation Yoav on 15 October. "Operation Yoav" drops the "1948
+  Arab-Israeli War" article, as the Knesset summary dates Beersheba to 21 October. "The Ten Days" adds the IDF account
+  of Operation Danny, the Knesset summary and the Palmach archive's pages for Allon and Rabin. "Rationing Clothes and
+  Shoes" cites the JTA's reports of the merchants' strike in place of the "1950 in Israel" article. "Talks at Rhodes"
+  adds Hansard for the RAF clash of 7 January 1949, and "Education in the Immigrant Camps" adds the JTA's report of
+  the commission's findings, completed on 9 May 1950. Wikipedia stays only for lines these sources do not cover. Text,
+  dates and effects are unchanged (refs #442).
+- Contradictions flagged in #457 and #442 that cannot move a golden. YAML comments: the Provisional State Council last
+  met on 10 February 1949, not 3 February; the 120-seat ordinance passed on 18 November 1948 and the 25 January vote
+  was fixed on 25 November 1948 (Harpaz, Kesher 61); the 57-36 vote of 8 August 1950 was for the coalition's motion,
+  not against a no-confidence motion. The Frumkin inquiry option now moves camp education from the Culture Department
+  to the Education Department, both already in the Education Ministry. Moshe Sharett's birth date is 16 October 1894,
+  from the Knesset member pages (Wikipedia gave 15 October); the sim reads `born` only to validate content. The items
+  that would move a golden wait for the GDD rebaseline (#315).
+- The Provisional Government, the first three governments, the Provisional State Council and the First and Second
+  Knessets now cite the Knesset's records: its position, faction and session data, the plenum minutes of each opening
+  sitting and confidence vote, the 1951 transition and election-day laws, its make-up pages for the First and Second
+  Knessets, and the Official Gazette notice of the 1949 results. Wikipedia stays only for the council's party split, the
+  Provisional Government's smaller coalition groups and lines the YAML comments cite it for. Values are unchanged
+  (refs #457).
+- The Hebrew names and birth and death dates of the people in office from 1948 to 1952 now cite the Knesset's person
+  records and member pages (Internet Archive copies) and, for Weizmann and Shazar, the President's Office pages, in
+  place of Wikipedia. Wikipedia stays only where those records give no value or a different one. No value changed
+  (refs #457).
 - The Unity build has no compiler warnings again. The panel trim's corner ornament no longer uses
   `MeshWriteData.uvRegion`, which Unity 6000.3 marks obsolete (CS0618); the renderer now maps texture coordinates itself.
   The pixels are unchanged.
 - "Operation Yoav" now dates the attack on the supply convoy to 15 October 1948, not 14 October, as Israel's own reply in
   the Acting Mediator's report S/1042 and the IDF account of the operation both give it. The rest of the card is
   unchanged (refs #442).
+- The office terms of the people in office from 1948 to early 1952 (the Provisional Government, the first three
+  governments, President Weizmann and the deputy ministers) now cite the Knesset's position records and, for the
+  presidency, the Knesset sittings that elected and mourned Weizmann, in place of Wikipedia. Wikipedia stays for
+  Ben-Gurion's 1951 Education term, Maimon's Second Government terms, Shapira's and Levin's United Religious Front
+  party in the Second Government, Lavon's rationing term and the Chiefs of Staff. No value changed (refs #457).
 - Six society events (austerity, clothing rationing, the transit-camp schools, the Law of Return, the transit camps and
   closing the Ministry of Rationing) now cite the Knesset records: plenum minutes for 1949-1951, the Law of Return as
   published in Sefer HaChukim, and the Knesset position data. Wikipedia stays only for lines no Knesset record covers.
   Text, dates and effects are unchanged (refs #442).
+- Four more cards cite primary and scholarly sources in place of Wikipedia. "Operation Hiram" adds the Acting
+  Mediator's report S/1071 (the Arab Liberation Army's positions near Manara from the night of 21-22 October; its
+  refusal to withdraw on 28 October), Ben-Gurion's diary for 22-31 October 1948, the Ministry of Defense's Izkor page on
+  Sheikh Abd and the Knesset's War of Independence summary. "Operation Yoav" adds Ben-Gurion's diary for the cabinet
+  vote of 6 October 1948. "Transit Camps" adds the Central Zionist Archives and Miriam Kachansky's Yad Ben-Zvi study
+  (Eshkol's proposal; Kesalon in May 1950). "Closing the Ministry of Rationing" drops Wikipedia: the Knesset's review of
+  the First Knesset records the crisis in Mapai. The comment on "Austerity" now says the rationing plan was presented to
+  the Knesset on 26 April 1949, already decided by the cabinet, citing the plenum and the JTA. Wikipedia stays only for
+  lines these sources do not cover. Text, dates and effects are unchanged (refs #442).
+- "The Altalena" cites the Provisional State Council's minutes of 23 June 1948 (Ben-Gurion's statement and reply, also
+  on Project Ben-Yehuda), the Ministry of Defense's Izkor page on the Altalena monument and the Ministry of Education's
+  page on Rabin in place of the "1948 in Israel" article. The source comments record that Ben-Gurion told the council
+  there was no agreement to give the Irgun part of the arms for Jerusalem, against the Irgun's account that he agreed.
+  "Altalena Affair" stays for the dispersal of the Irgun units in the IDF. Text, dates, options and effects are
+  unchanged (refs #442).
+- Seven more 1948-1950 cards cite primary sources. "Electing the Constituent Assembly" drops both Wikipedia articles:
+  the Provisional State Council's minutes of its 25th sitting (the 16 to 14 vote for 120 seats) and of 18 November 1948
+  (the ordinance adopted: proportional, one district), Harpaz for the curfew, and the CBS table from the Central Elections
+  Committee for the 86.9% turnout. "The First Truce" cites Resolution 50 and S/834 in place of the Resolution 50 article;
+  "One Army" cites the Knesset's law record and the council's minutes of 23 June 1948 in place of "1948 in Israel";
+  "Jerusalem" cites the Mediator's progress report and the JTA in place of "Dov Yosef", and its comment records that the
+  report dates the demilitarisation proposal to 3 July against 26 July in the JVL. "The Ten Days", "The Mediator
+  Assassinated" (the council's minutes of 23 September 1948, the JTA, the Knesset's law record) and "Education in the
+  Immigrant Camps" (the Knesset of 17 January 1950, the JTA) add sources and keep Wikipedia for the lines they do not
+  cover; the commission's first session on 25 January still rests on Hebrew Wikipedia, against the JTA's hearings from
+  2 February. Text, dates, options and effects are unchanged (refs #442).
+- Four cards from 1948 and 1951 cite primary sources. "Operation Horev" drops its Wikipedia article for the IDF
+  Archives' page on the operation (22 December to 7 January, Allon, five brigades), Security Council resolution 66 and
+  the Egyptian-Israeli cease-fire agreement (S/1225). "A Claim on Germany" drops its Wikipedia article for Sharett's
+  statement to the Knesset of 13 March 1951, which reads the note into the record, FRUS 1951 and the JTA; FRUS and the
+  Knesset date the note to 12 March. "Israel Bonds" adds the Knesset's vote of 27 February 1951, the law record, the JTA
+  and Israel Bonds' own history, and keeps Wikipedia for the 25 million dollar goal; its comment records that the JTA
+  has the sale starting across the United States before the 10 May rally. "Foreign Currency Runs Out" adds FRUS and the
+  JTA and keeps Wikipedia for the banks' and oil companies' refusal of credit. Text, dates, options and effects are
+  unchanged (refs #442).
+- "The Mediator Assassinated" drops two Wikipedia articles ("Folke Bernadotte" and "Prevention of Terror Ordinance")
+  for Bunche's cable of 17 September 1948 (S/1004, the murder in Katamon) and Israel's report to the Security Council
+  (S/1315: the regulations of 20 September, the ordinance of 23 September, the leaders' arrest on 29 September); its
+  comment records that S/1315 has 82 arrests outside Jerusalem against Ben-Gurion's 62 in the Tel Aviv district.
+  "Talks at Rhodes" adds the Acting Mediator's report of 6 January 1949 (S/1187), "Operation Yoav" the IDF History
+  Department's study of the Hebron hills, "Education in the Immigrant Camps" Levitan's study of the Frumkin
+  commission, "Foreign Currency Runs Out" FRUS 1951, "The Jews of Iraq" the JTA on the freeze of March 1951, and
+  "Austerity" a comment on the Knesset sitting of 26 April 1949; each keeps Wikipedia for the lines these do not cover.
+  Text, dates, options and effects are unchanged (refs #442).
 - The four armistice cards cite the signed texts (Avalon Project) and the Acting Mediator's cables to the Security
   Council (S/1264, S/1296, S/1302, S/1353) in place of Wikipedia. "Electing the Constituent Assembly" adds Harpaz's
   study in Kesher 61, the CBS registration date, the IDI results page and the Official Gazette's notice of the results.

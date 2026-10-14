@@ -45,14 +45,16 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
+        sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
+        sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
 
         public const string HexesFile = "map/hexes.json";
         public const string SettlementHexesFileName = "map/settlement_hexes.yaml";
         public const string SettlementsFileName = "map/settlements_1948.yaml";
 
-        /// <summary>The ids of settlements_1948.yaml, which the tools own (its other keys are not the sim's business), so it is
-        /// read as plain maps rather than through the strict content types.</summary>
-        static List<string> ReadSettlementIds(Func<string, string?> readFile)
+        /// <summary>The ids and names of settlements_1948.yaml, which the tools own (its other keys are not the sim's business),
+        /// so it is read as plain maps rather than through the strict content types.</summary>
+        static List<(string id, string name)> ReadSettlements(Func<string, string?> readFile)
         {
             string? text;
             try { text = readFile(SettlementsFileName); }
@@ -63,8 +65,11 @@ namespace Statecraft.Sim
             {
                 var file = new DeserializerBuilder().Build().Deserialize<Dictionary<string, List<Dictionary<string, object>>>>(text);
                 if (file == null || !file.TryGetValue("settlements", out var rows)) throw new ContentException(SettlementsFileName, "settlements", "required");
-                return rows.Select((r, i) => r.TryGetValue("id", out var id) && id is string sid && sid != ""
-                    ? sid : throw new ContentException(SettlementsFileName, $"settlements[{i}].id", "required")).ToList();
+                return rows.Select((r, i) => (
+                    r.TryGetValue("id", out var id) && id is string sid && sid != ""
+                        ? sid : throw new ContentException(SettlementsFileName, $"settlements[{i}].id", "required"),
+                    r.TryGetValue("name", out var name) && name is string sname && !string.IsNullOrWhiteSpace(sname)
+                        ? sname : throw new ContentException(SettlementsFileName, $"settlements[{i}].name", "required (the name shown to the player)"))).ToList();
             }
             catch (YamlException e) { throw new ContentException(SettlementsFileName, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
         }
@@ -224,7 +229,9 @@ namespace Statecraft.Sim
             c.PopulationAnchors = Read<PopulationFile>(readFile, "population.yaml").Anchors;
             c.Hexes = Read<MapFile>(readFile, HexesFile).Hexes;
             c.SettlementHexes = Read<SettlementHexesFile>(readFile, SettlementHexesFileName).Settlements;
-            var settlementIds = ReadSettlementIds(readFile);
+            var settlements = ReadSettlements(readFile);
+            var settlementIds = settlements.Select(x => x.id).ToList();
+            foreach (var (id, name) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
             // Event files (content/events/*.yaml), one GameEvent each. Keys, for content authors:
             //   id, title, text            text may name office holders only through {office_id} placeholders, which
             //                              must have a holder on every day of the window
@@ -245,6 +252,14 @@ namespace Statecraft.Sim
                 c.Events.Add(e);
             }
             Validate(c, settlementIds);
+            if (c.IsGdd)
+            {
+                // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so
+                // the legacy content needs neither file.
+                c.Cities = Read<CitiesFile>(readFile, "cities.yaml").Cities;
+                c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
+                ValidateGdd(c, settlementIds);
+            }
             c.BuildWindows();
             c.Hash = HashOf(read);
             return c;
@@ -366,7 +381,8 @@ namespace Statecraft.Sim
             foreach (var k in r.AttentionCost.Keys)
                 if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
             foreach (var k in AttentionSystem.CommandKinds)
-                if (!r.AttentionCost.ContainsKey(k)) throw new ContentException(file, $"attention_cost.{k}", "missing cost");
+                if ((c.IsGdd || !AttentionSystem.IsGddKind(k)) && !r.AttentionCost.ContainsKey(k))   // a GDD kind is priced only where it can run
+                    throw new ContentException(file, $"attention_cost.{k}", "missing cost");
             if (r.RungMinMobilization.Count != 5) throw new ContentException(file, "rung_min_mobilization", "needs exactly 5 values (rungs 1-5)");
             for (int i = 0; i < 5; i++)
             {
@@ -826,6 +842,54 @@ namespace Statecraft.Sim
                     throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"overlaps {prev.Id} (ends {prev.To:yyyy-MM-dd})"));
                 if (e.From > prev.To)
                     throw new ContentException("eras.yaml", at + ".from", FormattableString.Invariant($"leaves a gap after {prev.Id}: must equal its end ({prev.To:yyyy-MM-dd})"));
+            }
+        }
+
+        /// <summary>Facilities a city may have (cities.yaml facilities): the GDD's training places (D-D5).</summary>
+        static readonly string[] Facilities = { "military_camp", "hakhshara" };
+
+        static void NotNegative(string file, string field, int v)
+        {
+            if (v < 0) throw new ContentException(file, field, "must be >= 0");
+        }
+
+        /// <summary>The GDD v0.1 city data and rules (Phase 1 PR 3), checked only when systems.loop is gdd.</summary>
+        static void ValidateGdd(Content c, List<string> settlementIds)
+        {
+            const string cf = "cities.yaml", uf = "unit_types.yaml";
+            Unique(cf, "cities", c.Cities.Select(x => x.Id));
+            var known = new HashSet<string>(settlementIds);
+            foreach (var x in c.Cities)
+            {
+                var at = $"cities[{x.Id}]";
+                if (!known.Contains(x.Id)) throw new ContentException(cf, at + ".id", $"is not in {SettlementsFileName}");
+                NotNegative(cf, at + ".housing_capacity", x.HousingCapacity);
+                NotNegative(cf, at + ".job_slots", x.JobSlots);
+                NotNegative(cf, at + ".civilians", x.Civilians);
+                NotNegative(cf, at + ".employed", x.Employed);
+                if (x.Employed > x.Civilians) throw new ContentException(cf, at + ".employed", "cannot be more than civilians");
+                if (x.Employed > x.JobSlots) throw new ContentException(cf, at + ".employed", "cannot be more than job_slots");
+                foreach (var f in x.Facilities)
+                    if (!Facilities.Contains(f)) throw new ContentException(cf, at + ".facilities", $"unknown facility '{f}' (military_camp or hakhshara)");
+            }
+            Unique(uf, "types", c.UnitTypes.Select(x => x.Id));
+            foreach (var x in c.UnitTypes)
+                if (x.Kind != "population" && x.Kind != "unit") throw new ContentException(uf, $"types[{x.Id}].kind", "must be population or unit");
+            var cities = new HashSet<string>(c.Cities.Select(x => x.Id));
+            foreach (var (file, r) in new[] { ("rules.yaml", c.Rules) }.Concat(c.EraRules.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => ("rules/" + kv.Key + ".yaml", kv.Value))))
+            {
+                var m = r.Mvp ?? throw new ContentException(file, "mvp", "required when eras.yaml systems.loop is gdd");
+                if (m.PeoplePerUnit < 1) throw new ContentException(file, "mvp.people_per_unit", "must be >= 1");
+                // Arrivals are counted from the game's start in units of one size (R-CITY-003): another size in a later era
+                // would lose or double-count units at its boundary.
+                if (m.PeoplePerUnit != c.Rules.Mvp!.PeoplePerUnit)
+                    throw new ContentException(file, "mvp.people_per_unit", "must be the same in every era (arrivals are counted in one unit size)");
+                if (!(m.IncomePerJobPerYear >= 0 && IsFinite(m.IncomePerJobPerYear))) throw new ContentException(file, "mvp.income_per_job_per_year", "must be a finite number >= 0");
+                Unit(file, "mvp.cohesion_housing_weight", m.CohesionHousingWeight);
+                Unit(file, "mvp.cohesion_jobs_weight", m.CohesionJobsWeight);
+                if (Math.Abs(m.CohesionHousingWeight + m.CohesionJobsWeight - 1) > 1e-9)
+                    throw new ContentException(file, "mvp.cohesion_jobs_weight", "the two cohesion weights must sum to 1");
+                if (!cities.Contains(m.ArrivalsCity)) throw new ContentException(file, "mvp.arrivals_city", $"'{m.ArrivalsCity}' is not a city in cities.yaml");
             }
         }
 

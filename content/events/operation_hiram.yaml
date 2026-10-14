@@ -5,11 +5,15 @@ text: 'In breach of the truce, the Arab Liberation Army has attacked the Sheikh 
 anchor: soft
 tags: [security, war-casualties]
 office: defense_minister
-# Trigger: the attack on 22 October 1948 and sniping at Manara on 24-25 October (en.wiki "Operation Hiram"). Dates [C]:
-# 29-31 October, launched on the night of 28-29 October (en.wiki "Operation Hiram", used here); 28-31 October per PalQuest
-# and the original order of 28 October [S]; en.wiki "1948 Arab-Israeli War" gives 24 October, an outlier not used.
-# Cease-fire 31 October at 11:00. Ben-Gurion declined to authorise an advance further into Lebanon, fearing international
-# condemnation (same page): the third option. Owner ruling: the text stays military. Research notes facts-1948.md section 8.
+# Trigger: the attack on 22 October 1948 and sniping at Manara on 24-25 October (en.wiki "Operation Hiram"; the Acting
+# Mediator's report S/1071 dates the attack to the night of 21-22 October and the return to the hills to the night of
+# 24-25 October; Ben-Gurion's diary, 22 and 24 October). Dates [C]: 29-31 October, launched on the night of 28-29
+# October (en.wiki "Operation Hiram", used here; the Knesset's war summary gives 29-31 October; Ben-Gurion's diary of 28
+# October and S/1071 have the attack begin that night); 28-31 October per PalQuest and the original order of 28 October
+# [S]; en.wiki "1948 Arab-Israeli War" gives 24 October, an outlier not used. Cease-fire 31 October at 11:00
+# (Ben-Gurion's diary, 31 October; S/1071 has the Israeli cease-fire order effective at 0600 GMT). Ben-Gurion declined
+# to authorise an advance further into Lebanon, fearing international condemnation (en.wiki "Operation Hiram"): the
+# third option. Owner ruling: the text stays military. Research notes facts-1948.md section 8.
 from: 1948-10-24
 to: 1948-10-29
 options:
@@ -36,4 +40,24 @@ sources:
   - { url: "https://www.un.org/unispal/document/auto-insert-211203/", checked: 2026-10-14 }
   - { url: "https://history.state.gov/historicaldocuments/frus1948v05p2/d728", checked: 2026-10-14 }
   - { url: "https://www.un.org/unispal/document/auto-insert-193573/", checked: 2026-10-14 }
+  # The Acting Mediator's report of 6 November 1948 (S/1071): the Arab Liberation Army took hill positions inside the
+  # Israeli truce lines near Manara on the night of 21-22 October; on 28 October Qawuqji's chief of staff told the UN
+  # observers his forces would not be withdrawn; on 23 October the Israeli commander said they would be driven out if
+  # not removed, and on 29 October Israel told the UN its action was defensive.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/1071&l=en&t=pdf", checked: 2026-10-14 }
+  # Ben-Gurion's diary (Ben-Gurion Archives): 22 October, Moshe Carmel reports that Qawuqji has taken positions near
+  # Manara; 24 October, Qawuqji holds the area and the road to Metulla; 28 October, the operation in the north begins
+  # that evening; 29 October, Israel answers the UN observers that it cannot stop while Manara is in danger and Qawuqji
+  # has not left the positions; 31 October, at Northern Front headquarters, the order to cease fire at 11 and "Abid"
+  # (indexed by the archive as Sheikh Abd) retaken.
+  - { url: "https://bengurionarchive.bgu.ac.il/node/7062", checked: 2026-10-14 }
+  - { url: "https://bengurionarchive.bgu.ac.il/node/6631", checked: 2026-10-14 }
+  - { url: "https://bengurionarchive.bgu.ac.il/node/5661", checked: 2026-10-14 }
+  - { url: "https://bengurionarchive.bgu.ac.il/node/12460", checked: 2026-10-14 }
+  - { url: "https://bengurionarchive.bgu.ac.il/node/12338", checked: 2026-10-14 }
+  # Izkor, the Ministry of Defense memorial site: Sheikh Abd, the summit above Kibbutz Manara, taken by Qawuqji's
+  # forces; fighting there on 22 October 1948; Manara relieved in Operation Hiram.
+  - { url: "https://www.izkor.gov.il/%D7%99%D7%A2%D7%A7%D7%91%20%D7%91%D7%95%D7%91%D7%A8/en_7ff130c52733b6aa60625807a0342f08", checked: 2026-10-14 }
+  # The Knesset's summary of the War of Independence: Operation Hiram, 29-31 October 1948, took the Upper Galilee.
+  - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-14 }
 status: sensitivity-reviewed

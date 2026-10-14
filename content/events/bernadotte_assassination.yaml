@@ -5,13 +5,29 @@ text: 'Lehi gunmen have assassinated the UN mediator, Count Folke Bernadotte, in
 anchor: hard
 tags: [security, terror]
 office: prime_minister
-# Assassinated 17 September 1948 in Katamon, Jerusalem, by Lehi (en.wiki "Folke Bernadotte", "1948 in Israel"; a footnote
-# on en.wiki "Lehi" gives 16 September, an outlier). His second plan was completed on 16 September. About 200 Lehi members
-# were arrested; Yellin-Mor and Shmuelevitz on 29 September. Dates [C]: emergency regulations about 20 September (a UN cable
-# of 21 September; an en.wiki photo caption), the Prevention of Terrorism Ordinance No. 33 on 23 September (en.wiki "Prevention
-# of Terror Ordinance", used here; en.wiki "Lehi" says three days after). The IDF gave the Jerusalem Irgun 24 hours to disband
-# from 12:00 on 20 September (daat.ac.il [S]); JVL says its battalions disbanded on 20 September, a US consul's report says
-# the Irgun agreed on 21 September (FRUS [S]). Research notes facts-1948.md section 6.
+# Assassinated 17 September 1948 in Katamon, Jerusalem, by Lehi (Bunche's cable of 17 September, S/1004: the murder
+# "in Katamon quarter of Jerusalem today by Jewish assailants"; Israel's report to the Security Council, S/1315, dates
+# it 17 September; en.wiki "1948 in Israel"; a footnote on en.wiki "Lehi" gives 16 September, an outlier; Ben-Gurion
+# told the Provisional State Council on 23 September that the killing was on the Friday, in Jerusalem, and that Lehi
+# men had apparently done it; JTA reports the claim by a group calling itself the Fatherland Front, which the
+# government called a Lehi splinter and a Lehi source said it did not know). His second plan was completed on
+# 16 September (the date of his progress report). About 200 Lehi members were arrested (Ben-Gurion: 184 in Jerusalem
+# and 62 in the Tel Aviv district; S/1315: 184 in Jerusalem and 82 in Tel Aviv and other parts of the country by
+# 23 September; JTA: hundreds, 200 moved to Jaffa); Yellin-Mor and Shmuelevitz on 29 September (S/1315, found hiding
+# in Haifa; en.wiki "Lehi"; JTA's bulletin of 1 October has them taken in Haifa "today"). Dates [C]: emergency
+# regulations about 20 September (a UN cable of 21 September; S/1315 has them promulgated on 20 September, with the
+# proclamation of Lehi and the Fatherland Front as terrorist organisations in the Official Gazette that day;
+# Ben-Gurion told the council the cabinet approved them in principle on the Saturday night, 18 September; JTA's
+# bulletins of 20 and 21 September, without datelines, have them promulgated and then signed), the Prevention of
+# Terrorism Ordinance No. 33 (its number as the Official Gazette prints it, below) on 23 September (the council's
+# minutes, used here, have it adopted on 23 September by 34 votes; S/1315 has the council re-enact the regulations as an
+# ordinance that day; the Official Gazette, No. 24 of 29 September, prints it dated 19 Elul 5708, 23 September 1948,
+# which supports 23 September for the ordinance and 29 September for its publication, as the Knesset's law database
+# has it; [C] en.wiki "Lehi" says three days after). The IDF gave the Jerusalem Irgun 24 hours to disband
+# from 12:00 on 20 September (daat.ac.il [S]; Ben-Gurion read the ultimatum to the council on 23 September and said the
+# Irgun accepted within the 24 hours); JVL says its battalions disbanded on 20 September, a US consul's report says the
+# Irgun agreed on 21 September (FRUS [S]).
+# Research notes facts-1948.md section 6.
 from: 1948-09-17
 to: 1948-09-24
 options:
@@ -30,8 +46,48 @@ options:
       - { target: intl_standing, delta: -0.05 }   # the killing itself, shared by both options (notes section 6)
       - { target: intl_standing, delta: -0.10 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/Folke_Bernadotte", checked: 2026-10-10 }
+  # Kept for the two dates the comment above gives it: a footnote's 16 September for the killing and "three days after"
+  # for the ordinance. The 29 September arrests are also in S/1315 below.
   - { url: "https://en.wikipedia.org/wiki/Lehi_(militant_group)", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/Prevention_of_Terror_Ordinance", checked: 2026-10-10 }
   - { url: "https://jewishvirtuallibrary.org/the-founding-of-the-israel-defense-forces", checked: 2026-10-10 }
+  # Provisional State Council, 19th sitting, 23 September 1948 (Knesset minutes). Ben-Gurion's statement: the murder of
+  # Bernadotte and Colonel Serot in Jerusalem the previous Friday; inquiries pointed to Lehi, not the Irgun; arrests of
+  # all Lehi men ordered, 184 arrested in Jerusalem and 62 in the Tel Aviv district without resistance; on the Saturday
+  # night the government approved in principle emergency regulations against terrorist organisations, to be published in
+  # the Official Gazette and brought to the council to become an ordinance; the ultimatum handed to the Irgun in Jerusalem on
+  # the morning of Monday 20 September, 24 hours from 12:00, and the Irgun's acceptance. The council then adopted the
+  # Prevention of Terrorism Ordinance by 34 votes. This is the government's account.
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249987.pdf", checked: 2026-10-14 }
+  # The ordinance as published in the Official Gazette (Iton Rishmi 1948, Supplement A, p. 73; the Knesset's copy):
+  # "Prevention of Terrorism Ordinance No. 33 of 5708-1948", enacted by the Provisional State Council. The pages are
+  # headed Iton Rishmi No. 24, Supplement A, 25 Elul 5708 (29 September 1948); the ordinance is dated 19 Elul 5708
+  # (23 September 1948) over Ben-Gurion's name as Prime Minister and Minister of Defence, and its section 22 repeals the
+  # Emergency Regulations for the Prevention of Terrorism, 5708-1948.
+  - { url: "https://fs.knesset.gov.il/0/law/0_lsr_312695.pdf", checked: 2026-10-14 }
+  # The Knesset's law database (OData): the Prevention of Terrorism Ordinance, 5708-1948, publication date 29 September 1948.
+  - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_IsraelLaw(2000941)", checked: 2026-10-14 }
+  # The Mediator's progress report, dated 16 September 1948 (A/648): the conclusions and proposals of his second plan.
+  - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-14 }
+  # JTA, 20 September 1948: emergency regulations outlawing terrorist organisations promulgated after a four-hour cabinet
+  # meeting; hundreds of Lehi members rounded up, 200 moved to Jaffa; a confession sent to the consulates by a group
+  # signing itself the Fatherland Front, which the government called a Lehi splinter and a Lehi source said it had never
+  # heard of; Bunche's note holding the Provisional Government responsible, and the government's reply.
+  - { url: "https://www.jta.org/archive/israeli-government-outlaws-terrorist-groups-hundreds-of-sternists-rounded-up", checked: 2026-10-14 }
+  # JTA, 21 September 1948: the ultimatum handed to the Irgun in Jerusalem "today"; an Irgun spokesman said it would
+  # accept; the regulations, approved by the cabinet, signed "tonight" by Ben-Gurion.
+  - { url: "https://www.jta.org/archive/irgun-accepts-govt-ultimatum-to-disband-israel-erects-detention-camp-for-terrorists", checked: 2026-10-14 }
+  # JTA bulletin of 1 October 1948: Nathan Friedman-Yellin and Matityahu Shmuelevitz captured in Haifa "today".
+  - { url: "https://www.jta.org/archive/sternist-leader-and-deputy-arrested-in-haifa-found-in-possession-of-forged-documents", checked: 2026-10-14 }
+  # S/1004, Bunche's cablegram of 17 September 1948 to the Israeli Foreign Minister: the murder of Count Bernadotte and
+  # Colonel Serot "in Katamon quarter of Jerusalem today by Jewish assailants".
+  - { url: "https://www.un.org/unispal/document/auto-insert-210428/", checked: 2026-10-14 }
+  # S/1315, Israel's report to the Security Council on the assassination (covering letter of 3 May 1949): the murder in
+  # Jerusalem on 17 September 1948; Lehi camps in Jerusalem occupied; Emergency Regulations for the Prevention of
+  # Terrorism promulgated on 20 September, with the proclamation of Lehi and the Fatherland Front as terrorist
+  # organisations in the Official Gazette; on 23 September the council, at its 19th session, re-enacted the regulations
+  # as an ordinance; by 23 September 184 Lehi members arrested in Jerusalem and 82 in Tel Aviv and other parts of the
+  # country; on 29 September Shmuelevitz and Friedman-Yellin found hiding in Haifa and arrested. This is the
+  # government's account; the military court's judgment it quotes names the Katamon and Rehavia quarters in its
+  # account of the attack at 17:20.
+  - { url: "https://www.un.org/unispal/document/auto-insert-178527/", checked: 2026-10-14 }
 status: sensitivity-reviewed

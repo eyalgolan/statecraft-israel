@@ -50,16 +50,20 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
         /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), and so does every
-        /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md). See
+        /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md), and every sensitive
+        /// illustration clip (<paramref name="clips"/>, event-videos.yaml; docs/event-videos.md). See
         /// <see cref="EventImageRefusal"/> for <paramref name="catalogFileExists"/> and <paramref name="mapping"/>.</summary>
         public static string? ShareableRefusal(Statecraft.Sim.Content c, EventImageCatalog? photos, bool catalogFileExists = false,
-            IReadOnlyList<EventImageMapping.Row>? mapping = null)
+            IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null)
         {
             var open = Statecraft.Sim.ReleaseGate.SensitiveUnreviewed(c);
             var reasons = new List<string>();
             if (open.Count > 0)
                 reasons.Add("a shareable build needs the owner's sensitivity review of: " + string.Join(", ", open) + " (set status: sensitivity-reviewed; see docs/m3-release.md)");
             if (EventImageRefusal(photos, catalogFileExists, mapping) is string pictures) reasons.Add(pictures);
+            if (clips != null && EventVideoMapping.SensitiveUnreviewed(clips) is { Count: > 0 } openClips)
+                reasons.Add("a shareable build needs the owner's sensitivity review of the illustration clips: " + string.Join(", ", openClips)
+                    + " (set sensitivity_reviewed: true in " + EventVideoMapping.Path + "; see docs/event-videos.md)");
             return reasons.Count == 0 ? null : string.Join("; ", reasons);
         }
 
@@ -105,8 +109,8 @@ namespace Statecraft.Game.EditorTools
         /// <summary>The gate for a build made with these command-line args: a -shareable build (Web or Mac) is refused
         /// until the reviews are done; a dev build is never gated (web_check and the golden checks need them).</summary>
         public static string? GateRefusal(string[] args, Statecraft.Sim.Content c, EventImageCatalog? photos, bool catalogFileExists = false,
-            IReadOnlyList<EventImageMapping.Row>? mapping = null) =>
-            Array.IndexOf(args, "-shareable") >= 0 ? ShareableRefusal(c, photos, catalogFileExists, mapping) : null;
+            IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null) =>
+            Array.IndexOf(args, "-shareable") >= 0 ? ShareableRefusal(c, photos, catalogFileExists, mapping, clips) : null;
 
         /// <summary>Logs "BUILD REFUSED ..." and exits 1 when the gate refuses this build; true if it did. The photographs
         /// checked are the catalog the build ships (Resources/EventImageCatalog.asset), cross-checked against the mapping.</summary>
@@ -119,11 +123,12 @@ namespace Statecraft.Game.EditorTools
             try
             {
                 var mapping = EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
-                refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos, File.Exists(EventImageImport.CatalogPath), mapping);
+                var clips = EventVideoMapping.Parse(File.ReadAllText(EventVideoMapping.Path));   // fails closed: a missing file is a refusal
+                refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos, File.Exists(EventImageImport.CatalogPath), mapping, clips);
             }
             catch (Exception e) when (e is IOException || e is InvalidOperationException || e is UnauthorizedAccessException)
             {
-                refusal = "cannot read the event photograph mapping " + EventImageMapping.Path + ": " + e.Message;
+                refusal = "cannot read the event photograph or clip mapping (" + EventImageMapping.Path + ", " + EventVideoMapping.Path + "): " + e.Message;
             }
             if (refusal == null) return false;
             Debug.LogError("BUILD REFUSED " + refusal);

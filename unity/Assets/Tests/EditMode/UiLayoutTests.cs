@@ -13,10 +13,11 @@ using UnityEngine.UIElements;
 
 /// <summary>The screen layout at 1920x1080 and 1280x720 (the panel scales with the screen against a 1080p reference,
 /// so both resolve to the same logical layout): no fixed region overlaps another, no centre screen covers a fixed region,
-/// and the six top-bar meters fit before the screen buttons at their minimum width.</summary>
+/// and the six top-bar meters fit before the screen buttons at their minimum width. The decision card is not a fixed
+/// region: it opens in the middle over a backdrop that covers the others (DecisionCardTests).</summary>
 public class UiLayoutTests
 {
-    static readonly string[] Fixed = { "top-bar", "event-card", "info-panel", "minimap" };
+    static readonly string[] Fixed = { "top-bar", "info-panel", "minimap" };
     static readonly string[] Screens = { "screen-cabinet", "screen-budget", "screen-defence", "screen-why" };
 
     [UnityTest]
@@ -42,7 +43,7 @@ public class UiLayoutTests
                     foreach (var b in Fixed)
                         if (string.CompareOrdinal(a, b) < 0) Assert.IsFalse(R(a).Overlaps(R(b)), $"{w}x{h}: {a} {R(a)} overlaps {b} {R(b)}");
                 // A wide screen (Cabinet, Defence: promo 04 and 08) opens over the info panel, drawn above it; no screen
-                // covers the top bar, the event card or the minimap.
+                // covers the top bar or the minimap.
                 foreach (var s in Screens)
                     foreach (var f in Fixed)
                     {
@@ -135,11 +136,12 @@ public class UiLayoutTests
         finally { nav.Dispose(); info.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
     }
 
-    /// <summary>#400: in the two-row HUD every open screen takes the full width, and the stylesheet hides the event column and
-    /// the info panel under it (.hud-two-row.screen-open). In August 1950, with a hex selected and an event waiting, their
-    /// buttons are live, and none may take the focus while hidden: when Budget opens in two rows, and when a window already
-    /// showing Budget beside the panels narrows into two rows (the tier changes under the open screen). Widening again, or
-    /// closing the screen, brings them back.</summary>
+    /// <summary>#400: in the two-row HUD every open screen takes the full width, and the stylesheet hides the minimap column
+    /// and the info panel under it (.hud-two-row.screen-open). In August 1950, with a hex selected and an event waiting (its
+    /// card collapsed, so its backdrop covers nothing), their buttons are live, and none may take the focus while hidden:
+    /// when Budget opens in two rows, and when a window already showing Budget beside the panels narrows into two rows (the
+    /// tier changes under the open screen). Widening again, or closing the screen, brings them back. Any open screen covers
+    /// the decision layer: its "Decision waiting" button is out of reach until the screen closes.</summary>
     [UnityTest]
     public IEnumerator TheTwoRowHudKeepsWhatAScreenCoversOutOfReach()
     {
@@ -164,25 +166,32 @@ public class UiLayoutTests
             owned.Add(new HudPresenter(root, bridge, Text));
             var nav = new ScreenNav(root); owned.Add(nav);
             var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
-            owned.Add(new EventCardPresenter(root, bridge, Text, null));
+            var card = new EventCardPresenter(root, bridge, Text, null); owned.Add(card);
             var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
             info.Show(tlv.Q, tlv.R);
             for (int i = 0; i < 4; i++) yield return null;
-            var build = root.Q<Button>("build-camp");
-            Assert.IsTrue(build.enabledSelf && build.style.display.value == DisplayStyle.Flex, "precondition: build-camp is live: " + root.Q<Label>("info-reason").text);
             Assert.IsNotNull(root.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
+            card.Collapse();
+            for (int i = 0; i < 2; i++) yield return null;
+            var build = root.Q<Button>("build-camp");
+            var waiting = root.Q<Button>("event-reopen");
+            Assert.IsTrue(build.enabledSelf && build.style.display.value == DisplayStyle.Flex, "precondition: build-camp is live: " + root.Q<Label>("info-reason").text);
             var covered = new[] { "right-column", "info-panel" };
             List<Button> Buttons() => covered.SelectMany(r => root.Q(r).Query<Button>().ToList()).ToList();
+            void Out(Button b, string where)
+            {
+                Assert.IsFalse(b.canGrabFocus, $"{where}: {b.name} cannot take the focus");
+                b.Focus();
+                Assert.AreNotSame(b, b.focusController?.focusedElement, $"{where}: {b.name} is not focused");
+            }
             void Reach(bool expected, string where)
             {
-                // In reach: the two buttons known to be shown. Out of reach: every button in the covered panels.
-                foreach (var b in expected ? new[] { build, root.Q("event-options").Q<Button>() }.ToList() : Buttons())
-                {
-                    Assert.AreEqual(expected, b.canGrabFocus, $"{where}: {b.name} can take the focus");
-                    if (expected) continue;
-                    b.Focus();
-                    Assert.AreNotSame(b, b.focusController?.focusedElement, $"{where}: {b.name} is not focused");
-                }
+                // In reach: the button known to be shown. Out of reach: every button in the covered panels.
+                if (expected) Assert.IsTrue(build.canGrabFocus, $"{where}: {build.name} can take the focus");
+                else foreach (var b in Buttons()) Out(b, where);
+                // Under any open screen the decision layer is hidden and out of reach; with none, "Decision waiting" is live.
+                if (nav.Current != null) Out(waiting, where);
+                else Assert.IsTrue(waiting.canGrabFocus, $"{where}: Decision waiting can take the focus");
             }
 
             // Budget, a narrow screen, at 1080p: the panels stay beside it, in reach.
@@ -390,7 +399,8 @@ public class UiLayoutTests
                 foreach (var l in bar.Query<VisualElement>().ToList().Where(e => e != bar && e.resolvedStyle.display == DisplayStyle.Flex))
                     if (!Inside(R(l), R(bar))) problems.Add($"{w}x{h}: top bar child {l.name}/{(l as Label)?.text ?? l.GetClasses().FirstOrDefault()} {R(l)} leaves the bar {R(bar)}");
                 var card = root.Q("event-card");
-                if (R(card).Overlaps(R(root.Q("minimap")))) problems.Add($"{w}x{h}: event card {R(card)} overlaps the minimap {R(root.Q("minimap"))}");
+                if (!Inside(R(card), R(root.Q("event-layer")))) problems.Add($"{w}x{h}: event card {R(card)} leaves the decision layer {R(root.Q("event-layer"))}");
+                if (R(card).yMin < R(bar).yMax - 0.5f) problems.Add($"{w}x{h}: event card {R(card)} starts over the top bar {R(bar)}");
                 foreach (var s in ScreenNav.Screens)
                 {
                     nav.Open(s);
@@ -421,13 +431,24 @@ public class UiLayoutTests
         return wrapped.y <= box.height + 1f;
     }
 
-    /// <summary>Task 24 review I2: every real event, the tallest included, fits its card above the minimap at every window
-    /// shape, wide and short ones included: the card never overlaps the minimap and its option buttons stay inside it.</summary>
+    /// <summary>The window shapes the HUD supports (PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn: one row, the
+    /// stacked bar, two rows), a phone upright (three rows), a small laptop, the playtest's wide-and-short browser windows
+    /// and 21:9.</summary>
+    static readonly (int w, int h)[] CardWindows =
+    {
+        (1920, 1080), (1280, 720), (1366, 768), (1760, 1000), (1920, 1200), (1440, 900), (1024, 768), (1280, 1024),
+        (1024, 1024), (960, 1080), (800, 1000), (390, 844), (960, 600), (1531, 784), (1568, 752), (2560, 1080), (1920, 900), (1366, 657),
+    };
+
+    /// <summary>Decision cards (2026-10-13), after Task 24 review I2: every real event, the tallest included, fits the
+    /// decision layer at every window shape, the narrow two- and three-row HUDs included: the card is centred, at most
+    /// 1040 px wide, below the top bar and inside the layer; its option buttons stay inside it with their text; and its
+    /// media header is 16:9 whenever the card has the height for it (on a full card it gives way first, as before).</summary>
     [UnityTest]
-    public IEnumerator EveryEventCardStaysAboveTheMinimap()
+    public IEnumerator EveryEventCardFitsTheDecisionLayer()
     {
         var problems = new List<string>();
-        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1568, 752), (2560, 1080), (1920, 900), (1366, 657), (1280, 1024) })
+        foreach (var (w, h) in CardWindows)
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -446,6 +467,7 @@ public class UiLayoutTests
             // And the real event photographs: a photograph card adds the 200 px header band and its credit line.
             var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
             Assert.IsNotNull(photos);
+            var hud = new HudPresenter(root, bridge, Text);   // the bar's tier (one, two or three rows) sets the layer's top
             var card = new EventCardPresenter(root, bridge, Text, portraits, photos);
             float tallest = 0; string tallestId = "";
             try
@@ -459,11 +481,9 @@ public class UiLayoutTests
                     bridge.Replace(g);
                     for (int i = 0; i < 4; i++) yield return null;   // the fourth: a photograph dropped for height settles
                     CheckPhoto($"{w}x{h}: {e.Id}", root, card, problems);
+                    CheckCard($"{w}x{h}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
-                    var mini = root.Q("minimap").worldBound;
                     if (c.height > tallest) { tallest = c.height; tallestId = e.Id; }
-                    if (c.yMax > mini.yMin + 0.5f && c.xMax > mini.xMin && c.xMin < mini.xMax)
-                        problems.Add($"{w}x{h}: {e.Id}: card {c} overlaps the minimap {mini}");
                     foreach (var b in root.Q("event-options").Query<Button>().ToList())
                     {
                         if (b.worldBound.yMax > c.yMax + 0.5f || b.worldBound.yMin < c.yMin - 0.5f || b.worldBound.xMax > c.xMax + 0.5f || b.worldBound.xMin < c.xMin - 0.5f)
@@ -480,16 +500,45 @@ public class UiLayoutTests
                         problems.Add($"{w}x{h} (logical height {logicalHeight:0}): {e.Id}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px)");
                 }
                 Debug.Log($"I2 {w}x{h}: tallest card {tallestId} {tallest:0} px");
-                Assert.Greater(tallest, 400f, $"{w}x{h}: the cards were laid out (a short window shrinks the tallest to fit)");
+                Assert.Greater(tallest, 300f, $"{w}x{h}: the cards were laid out (a short window shrinks the tallest to fit)");
             }
             finally
             {
-                card.Dispose();
+                card.Dispose(); hud.Dispose();
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    /// <summary>The decision card's place: in the decision layer, centred across it, at most CardMaxWidth logical px wide and
+    /// below the top bar, Hide inside it; a shown media header is 16:9 unless the card is as tall as the layer (then it gave
+    /// way first), and while it shows the body does not scroll.</summary>
+    // Tolerances: whole pixels at the panel's scale (2/3 at 1280x720; about 2 logical px per pixel at 390x844).
+    static void CheckCard(string where, VisualElement root, List<string> problems)
+    {
+        var card = root.Q("event-card"); var layer = root.Q("event-layer"); var bar = root.Q("top-bar");
+        var c = card.worldBound; var l = layer.worldBound;
+        if (!Inside(c, l)) problems.Add($"{where}: the card {c} leaves the decision layer {l}");
+        if (Mathf.Abs((c.xMin - l.xMin) - (l.xMax - c.xMax)) > 1f) problems.Add($"{where}: the card {c} is not centred in the layer {l}");
+        if (c.width > CardMaxWidth + 1.5f) problems.Add($"{where}: the card is {c.width:0} px wide, over {CardMaxWidth}");
+        if (c.yMin < bar.worldBound.yMax - 0.5f) problems.Add($"{where}: the card {c} starts over the top bar {bar.worldBound}");
+        var hide = root.Q("event-hide").worldBound;
+        if (!Inside(hide, c)) problems.Add($"{where}: Hide {hide} is cut off by the card {c}");
+        // The header gives way before the text on every window: while a photograph shows, the body never scrolls.
+        var scroll = root.Q<ScrollView>("event-scroll");
+        if (root.Q("event-photo").resolvedStyle.display == DisplayStyle.Flex && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
+            problems.Add($"{where}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px) while the photograph shows");
+        var band = root.Q("event-photo");
+        if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < l.height - 1f)
+        {
+            var want = band.layout.width / EventCardPresenter.MediaAspect;
+            if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare");
+        }
+    }
+
+    /// <summary>The card's largest width (Statecraft.uss .event-card), logical px.</summary>
+    const float CardMaxWidth = 1040f;
 
     /// <summary>Review I2 and I6: a shown photograph keeps at least MinPhotoHeight of picture above its whole credit line
     /// (CC BY 4.0 needs the credit), the credit's text fits the strip, and PhotoAlt says whether it is shown.</summary>
@@ -509,10 +558,11 @@ public class UiLayoutTests
         if (!TextFits(credit)) problems.Add($"{where}: the credit '{credit.text}' does not fit its strip {credit.contentRect}");
     }
 
-    /// <summary>Review I6 and the re-review's ultrawide finding: on a short window (logically under
-    /// EventCardPresenter.ScrollFallbackHeight) a photograph is either shown whole with its credit, the body scrolling for
-    /// it as it may there, or dropped rather than squeezed (PhotoAlt is null); the credit is never cut and the card clears
-    /// the minimap with its options inside it. An ultrawide 2560x1080 window shows photographs.</summary>
+    /// <summary>Review I6 and the re-review's ultrawide finding, for the 16:9 header: on a short window (logically under
+    /// EventCardPresenter.ScrollFallbackHeight) a photograph is either shown with its whole credit (the header shorter,
+    /// cropped, the body not scrolling) or dropped rather than squeezed (PhotoAlt is null); the credit is never cut and the
+    /// card stays in the decision layer with its options and Hide inside it. An ultrawide 2560x1080 window shows
+    /// photographs.</summary>
     [UnityTest]
     public IEnumerator AShortWindowShowsThePhotographWholeOrDropsIt()
     {
@@ -546,10 +596,8 @@ public class UiLayoutTests
                     for (int i = 0; i < 4; i++) yield return null;
                     CheckPhoto($"{w}x{h}: {e.Id}", root, card, problems);
                     if (card.PhotoAlt == null) dropped++; else shown++;
+                    CheckCard($"{w}x{h}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
-                    var mini = root.Q("minimap").worldBound;
-                    if (c.yMax > mini.yMin + 0.5f && c.xMax > mini.xMin && c.xMin < mini.xMax)
-                        problems.Add($"{w}x{h}: {e.Id}: card {c} overlaps the minimap {mini}");
                     foreach (var b in root.Q("event-options").Query<Button>().ToList())
                         if (!Inside(b.worldBound, c)) problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
                 }
@@ -567,7 +615,7 @@ public class UiLayoutTests
     }
 
     /// <summary>Review I2: a photograph dropped because the window got shorter comes back when it grows again, without a
-    /// new event (the card listens to the right-hand column's size, which only the window changes).</summary>
+    /// new event (the card listens to the decision layer's size, which only the window changes).</summary>
     [UnityTest]
     public IEnumerator ADroppedPhotographReturnsWhenTheWindowGrows()
     {
@@ -586,13 +634,13 @@ public class UiLayoutTests
         g.State.Date = C.Events.First(e => e.Id == "armistice_egypt").From;
         g.State.PendingEvents.Clear(); g.State.PendingEvents.Add("armistice_egypt");
         var card = new EventCardPresenter(root, new SimBridge(g, Text), Text, null, photos);
-        var column = root.Q("right-column");
+        var column = root.Q("event-layer");
         try
         {
             for (int i = 0; i < 20 && float.IsNaN(root.Q("minimap").worldBound.width); i++) yield return null;
             for (int i = 0; i < 3; i++) yield return null;
             Assert.IsNotNull(card.PhotoAlt, "1080p has room for the photograph");
-            column.style.bottom = 560;                    // as a much shorter window would leave the column
+            column.style.bottom = 700;                    // as a much shorter window would leave the layer (268 px)
             for (int i = 0; i < 4; i++) yield return null;
             Assert.IsNull(card.PhotoAlt, "a short column drops the photograph");
             Assert.AreEqual(DisplayStyle.None, root.Q("event-photo").resolvedStyle.display);

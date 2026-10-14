@@ -1,13 +1,16 @@
 # yaml-language-server: $schema=../schema/event.schema.json
 id: rhodes_talks
 title: Talks at Rhodes
-text: 'Egypt announced on 6 January that it will negotiate, and Israel accepted the cease-fire on 7 January. The talks are to open at Rhodes. {foreign_minister} must decide whether Israel sends a delegation.'
+text: 'By 6 January Egypt and Israel had both accepted a cease-fire followed by direct talks under UN chairmanship, and the cease-fire took effect on 7 January. The talks are to open at Rhodes. {foreign_minister} must decide whether Israel sends a delegation.'
 anchor: hard
 tags: [security]
 office: foreign_minister
-# Egypt announced on 6 January 1949 that it would negotiate; Israel accepted the cease-fire on 7 January (en.wiki
-# "Operation Horev"); the Rhodes talks opened on 13 January 1949 (FRUS 1949 vol. VI doc. 389). The RAF clash of 7 January [C]
-# (6 January on en.wiki "Operation Horev") is left out of the text. Research notes facts-1948.md section 9 (aftermath).
+# Bunche reported on 6 January 1949 (S/1187) that Egypt and Israel had notified their unconditional acceptance of a
+# cease-fire followed by direct negotiations; the cease-fire took effect at 1200 GMT on 7 January (FRUS 1949 vol. VI
+# doc. 362; the Rhodes cease-fire agreement of 24 January confirms the time, UNISPAL). The Rhodes talks opened on 13
+# January 1949 (FRUS 1949 vol. VI doc. 389). The RAF clash was on 7 January: the British statement of 8 January
+# (Hansard) and Israel's reply to the British protest (JTA, 19 January 1949) both give that date ([C] 6 January on
+# en.wiki "Operation Horev"); it is left out of the text. Research notes facts-1948.md section 9 (aftermath).
 # Only a player who launched Operation Horev sees this card (the cease-fire it names ends that operation).
 from: 1949-01-09
 to: 1949-01-13
@@ -25,8 +28,24 @@ options:
     effects:
       - { target: intl_standing, delta: -0.05 }
 sources:
+  # Kept for one side of the RAF clash [C] in the comment above: it gives 6 January, against the 7 January of the
+  # British statement (Hansard) and of Israel's reply (JTA), both below. The other lines rest on the UN and FRUS
+  # sources.
   - { url: "https://en.wikipedia.org/wiki/Operation_Horev", checked: 2026-10-10 }
   - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d362", checked: 2026-10-14 }
   - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d389", checked: 2026-10-14 }
   - { url: "https://www.un.org/unispal/document/auto-insert-210639/", checked: 2026-10-14 }
+  # S/1187, the Acting Mediator's report of 6 January 1949 on the cease-fire agreement in the Negev: Egypt and the
+  # Provisional Government of Israel notified his representatives in Cairo and Tel Aviv of their unconditional
+  # acceptance of a cease-fire to be followed immediately by direct negotiations under UN chairmanship; Israel's
+  # acceptance reached him on 6 January; communication delays had the cease-fire fixed at 1200 hours on 7 January 1949
+  # (the scan blots part of that line).
+  - { url: "https://documents.un.org/api/symbol/access?s=S/1187&l=en&t=pdf", checked: 2026-10-14 }
+  # Hansard, 11 May 1949: the British statement of 8 January 1949 dates the RAF clash to the morning of 7 January.
+  - { url: "https://api.parliament.uk/historic-hansard/commons/1949/may/11/israel-attacked-british-aircraft", checked: 2026-10-14 }
+  # JTA, 19 January 1949: the Israeli Government "today" rejected, in a note routed through the UN Secretary-General,
+  # the British protest against the shooting down of five RAF planes "over Israeli positions on Jan. 7", denying that
+  # they were downed over Egyptian territory. This is Israel's account of where the planes were; on the date both
+  # governments agree.
+  - { url: "https://www.jta.org/archive/israel-rejects-british-protest-on-downing-of-five-r-a-f-planes-over-israeli-territory", checked: 2026-10-14 }
 status: fact-checked

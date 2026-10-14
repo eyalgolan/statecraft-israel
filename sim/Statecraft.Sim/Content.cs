@@ -306,6 +306,46 @@ namespace Statecraft.Sim
         /// office with the line's own id. A listed line is owned by each term's office from that term's day to the next
         /// term's day. Read through <see cref="Offices.BudgetOwner"/> and <see cref="Offices.BudgetLineOf"/>. Start-only, like budget_start.</summary>
         public Dictionary<string, List<BudgetOwnerTerm>> BudgetOwners { get; set; } = new Dictionary<string, List<BudgetOwnerTerm>>();
+        /// <summary>The GDD v0.1 rules (docs/rules/mvp.md). Required, and read, only when eras.yaml systems.loop is gdd; null
+        /// otherwise. Its values are the owner's to set: until then they live in MvpSlice.Overlay or a test fixture.</summary>
+        public MvpRules? Mvp { get; set; }
+    }
+
+    /// <summary>rules.yaml mvp: the GDD v0.1 slice's city rules (Phase 1 PR 3).</summary>
+    public sealed class MvpRules
+    {
+        /// <summary>People in one population unit (D-A1: a unit is a group).</summary>
+        public int PeoplePerUnit { get; set; }
+        /// <summary>Money each employed unit earns a year, in IL millions (R-CITY-002).</summary>
+        public double IncomePerJobPerYear { get; set; }
+        /// <summary>Social cohesion's weight on the housed share (R-CITY-005). A placeholder while D-C1 is open.</summary>
+        public double CohesionHousingWeight { get; set; }
+        /// <summary>Social cohesion's weight on the employed share (R-CITY-005). A placeholder while D-C1 is open.</summary>
+        public double CohesionJobsWeight { get; set; }
+        /// <summary>The city every arrival lands in (Phase 1 has one city; R-CITY-003).</summary>
+        public string ArrivalsCity { get; set; } = "";
+    }
+
+    /// <summary>A city's start values (cities.yaml, GDD "Cities and construction"). Counts are population units (D-A1).</summary>
+    public sealed class CityStart
+    {
+        /// <summary>A settlement id of map/settlements_1948.yaml.</summary>
+        public string Id { get; set; } = "";
+        public int HousingCapacity { get; set; }
+        public int JobSlots { get; set; }
+        public int Civilians { get; set; }
+        /// <summary>The civilians in jobs at the start: part of <see cref="Civilians"/>.</summary>
+        public int Employed { get; set; }
+        /// <summary>Training facilities in the city (military_camp, hakhshara). PR 4 uses them (D-D5).</summary>
+        public List<string> Facilities { get; set; } = new List<string>();
+    }
+
+    /// <summary>A population or unit type (unit_types.yaml, GDD "Population and units"). `population`: a count per city;
+    /// `unit`: a movable unit (D-A2).</summary>
+    public sealed class UnitType
+    {
+        public string Id { get; set; } = "";
+        public string Kind { get; set; } = "";
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
@@ -524,6 +564,12 @@ namespace Statecraft.Sim
             }
         }
         public List<SettlementHex> SettlementHexes = new List<SettlementHex>();
+        /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>
+        public Dictionary<string, string> SettlementNames = new Dictionary<string, string>();
+        /// <summary>The GDD cities' start values (cities.yaml), in file order. Empty in the legacy loop.</summary>
+        public List<CityStart> Cities = new List<CityStart>();
+        /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>
+        public List<UnitType> UnitTypes = new List<UnitType>();
         /// <summary>SHA-256 (lowercase hex) over every file the loader read, in read order, with CRLF read as LF. A save
         /// records it; loading a save made with other content shows a warning (spec section 7).</summary>
         public string Hash = "";

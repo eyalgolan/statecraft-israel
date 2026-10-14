@@ -5,10 +5,15 @@ text: 'The first truce is due to end on 9 July. Where should the main effort go 
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
-# The truce was due to expire on 9 July; Egypt renewed fighting on 8 July, one day early (en.wiki "1948 Arab-Israeli War";
-# JVL/IDF). Start [C]: 8 July (en.wiki, "8-18 July") vs 9 July (en.wiki "Operation Danny", he.wiki). Operation Dani ran
-# 9-19 July 1948 under Yigal Allon, Yitzhak Rabin his deputy; Lydda airport was taken on 10 July; the attacks on Latrun on
-# 15-16 and 18 July failed. Owner ruling: the text describes the military operation only. Research notes section 4.
+# The truce was due to expire on 9 July (the Mediator's report S/888); Egypt renewed fighting on 8 July, one day early
+# (en.wiki "1948 Arab-Israeli War"; JVL/IDF; JTA reports the Defense Ministry's account of an Egyptian attack on the
+# southern front before the truce ended; S/888 has hostilities resume on 9 July at the truce's end). Start [C]: 8 July
+# (en.wiki, "8-18 July"; the Knesset's war summary has fighting resume on 8 July) vs 9 July (en.wiki "Operation Danny",
+# he.wiki). Operation Dani ran 9-19 July 1948 (en.wiki; JVL/IDF gives 9-18 July, the Knesset summary's table 9-17 July)
+# under Yigal Allon, Yitzhak Rabin his deputy; Lydda airport was taken on 10 July (en.wiki; JTA's bulletin of 12 July
+# has it taken "yesterday", without a dateline); the attacks on Latrun on 15-16 and 18 July failed (en.wiki for the
+# dates; the Knesset summary for the failure of the second phase). Owner ruling: the text describes the military
+# operation only. Research notes section 4.
 # The window opens on 3 July, the turn date before the truce ends (game timing). Only a player who accepted the first
 # truce sees this card (its text is about the truce ending).
 from: 1948-07-03
@@ -35,4 +40,26 @@ sources:
   - { url: "https://en.wikipedia.org/wiki/1948_in_Israel", checked: 2026-10-10 }
   - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-14 }
   - { url: "https://history.state.gov/historicaldocuments/frus1948v05p2/d486", checked: 2026-10-14 }
+  # IDF account, republished by the Jewish Virtual Library: Operation Danny, 9-18 July, to relieve Jerusalem; Lod airport
+  # taken.
+  - { url: "https://jewishvirtuallibrary.org/jsource/History/Danny.html", checked: 2026-10-14 }
+  # The Knesset's summary of the War of Independence: fighting resumed on 8 July; Dani took Ramle and Lydda with the
+  # airport.
+  - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-14 }
+  # Palmach veterans' archive pages: Allon commanded Operation Dani; Rabin was his deputy on the central front.
+  - { url: "https://palmach.org.il/veterans/veteranpage/?itemId=84187", checked: 2026-10-14 }
+  - { url: "https://www.palmach.org.il/veterans/veteranpage/?itemId=85256", checked: 2026-10-14 }
+  # The Mediator's report to the Security Council of 12 July 1948 (S/888): the resumption of hostilities on 9 July at
+  # the end of the truce; his demilitarisation proposal of 3 July; his appeal of 9 July, shortly after the truce expired,
+  # for a cease-fire from noon GMT on 10 July.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/888&l=en&t=pdf", checked: 2026-10-14 }
+  # JTA bulletin of 11 July 1948: the truce expired "this morning"; the Defense Ministry said Israeli forces on the
+  # southern front had "yesterday" repulsed an Egyptian attack before the truce officially ended, from Isdud toward Beer
+  # Tuvia, and that captured orders set an attack for the night of 7 July. This is the Israeli account.
+  - { url: "https://www.jta.org/archive/palestine-war-resumes-tel-aviv-bombed-haifa-alerted-arabs-shell-petach-tikvah", checked: 2026-10-14 }
+  # JTA, 9 July 1948: Israel's representative in Washington met Under-Secretary Lovett on the Egyptian violation of the
+  # truce.
+  - { url: "https://www.jta.org/archive/israeli-minister-to-u-s-confers-with-lovett-on-egyptian-violation-of-truce", checked: 2026-10-14 }
+  # JTA bulletin of 12 July 1948: Israeli forces in the streets of Ramleh after "yesterday's capture of the Lydda airport".
+  - { url: "https://www.jta.org/archive/israeli-forces-fighting-in-streets-of-ramleh-jews-massing-for-several-offensives", checked: 2026-10-14 }
 status: sensitivity-reviewed

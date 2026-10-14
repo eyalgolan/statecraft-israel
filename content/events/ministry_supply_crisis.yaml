@@ -19,9 +19,12 @@ options:
     effects:
       - { target: morale, delta: -0.03 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/Rationing_and_Supply_Minister_of_Israel", checked: 2026-10-10 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250243.pdf", checked: 2026-10-14 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250245.pdf", checked: 2026-10-14 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250246.pdf", checked: 2026-10-14 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250247.pdf", checked: 2026-10-14 }
+  # The Knesset's review of the First Knesset (archived copy; the live page returns a bot check): the first government
+  # fell partly over an internal crisis in Mapai about closing the Ministry of Rationing and Supply and appointing a
+  # businessman as Minister of Trade and Industry.
+  - { url: "https://web.archive.org/web/20120307095248/http://www.knesset.gov.il/review/ReviewPage.aspx?kns=1&lng=3", checked: 2026-10-14 }
 status: fact-checked

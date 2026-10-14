@@ -6,7 +6,8 @@ using YamlDotNet.Serialization;
 namespace Statecraft.Sim
 {
     /// <summary>The GDD v0.1 slice before cutover (spec 2026-10-12 section 2.1): the real content with the loop switch on
-    /// (eras.yaml systems.loop: gdd in every era) and monthly turns (rules.yaml turn_lengths all month). Tests, the MVP
+    /// (eras.yaml systems.loop: gdd in every era), monthly turns (rules.yaml turn_lengths all month) and the slice's city data
+    /// (cities.yaml, unit_types.yaml, rules.yaml mvp and the GDD command kinds' attention_cost), all placeholders. Tests, the MVP
     /// goldens and the dev flag load it; the real eras.yaml and rules.yaml keep the defaults until cutover. It edits YAML
     /// nodes, not text, so a comment or the key order in the real files cannot break it. Balance values the owner has not set
     /// may live here, and never under content/ (controller ruling 2, 12 October 2026). R-LOOP-003.</summary>
@@ -15,14 +16,35 @@ namespace Statecraft.Sim
         static readonly IDeserializer Reader = new DeserializerBuilder().WithDuplicateKeyChecking().Build();
         static readonly ISerializer Writer = new SerializerBuilder().Build();
 
+        /// <summary>The slice's city (D-A4: Tel Aviv). Design values, not historical figures: none is a claim about Tel Aviv
+        /// in 1948. Counts are population units of mvp.people_per_unit people (D-A1).</summary>
+        public const string Cities = @"# PLACEHOLDER: owner sets every value below (MvpSlice.Overlay; never under content/ until the owner sets them).
+cities:
+  - id: tel_aviv
+    housing_capacity: 120   # PLACEHOLDER: owner sets
+    job_slots: 90           # PLACEHOLDER: owner sets
+    civilians: 100          # PLACEHOLDER: owner sets
+    employed: 80            # PLACEHOLDER: owner sets
+    facilities: []          # PR 4 adds military_camp and hakhshara (D-D5: one of each at start)
+";
+
+        /// <summary>The slice's population types (D-A2: civilians and refugees are counts per city).</summary>
+        public const string UnitTypes = @"types:
+  - { id: civilian, kind: population }
+  - { id: refugee, kind: population }
+";
+
         /// <summary>Wraps <paramref name="readFile"/> (the loader's file reader): eras.yaml and rules.yaml come back with the
-        /// slice's switches, every other file unchanged.</summary>
+        /// slice's switches and its rules, cities.yaml and unit_types.yaml with the slice's city when the content has none, and
+        /// every other file unchanged.</summary>
         public static Func<string, string?> Overlay(Func<string, string?> readFile)
         {
             if (readFile == null) throw new ArgumentNullException(nameof(readFile));
             return rel =>
             {
                 var text = readFile(rel);
+                if (text == null && rel == "cities.yaml") return Cities;
+                if (text == null && rel == "unit_types.yaml") return UnitTypes;
                 if (text == null) return null;
                 if (rel == "eras.yaml")
                 {
@@ -40,6 +62,17 @@ namespace Statecraft.Sim
                 {
                     var root = Reader.Deserialize<Dictionary<object, object>>(text) ?? new Dictionary<object, object>();
                     root["turn_lengths"] = new List<object> { "month", "month", "month", "month", "month" };
+                    if (!root.ContainsKey("mvp"))
+                        root["mvp"] = new Dictionary<object, object>
+                        {
+                            ["people_per_unit"] = 1000,            // PLACEHOLDER: owner sets (D-A1 scale)
+                            ["income_per_job_per_year"] = 0.06,    // PLACEHOLDER: owner sets (IL millions per employed unit a year; D-C6)
+                            ["cohesion_housing_weight"] = 0.5,     // PLACEHOLDER (D-C1 open)
+                            ["cohesion_jobs_weight"] = 0.5,        // PLACEHOLDER (D-C1 open; the two weights sum to 1)
+                            ["arrivals_city"] = "tel_aviv",        // Phase 1 has one city: every arrival lands there
+                        };
+                    if (root.TryGetValue("attention_cost", out var ac) && ac is Dictionary<object, object> costs && !costs.ContainsKey("assign_workers"))
+                        costs["assign_workers"] = 0.5;             // PLACEHOLDER: owner sets
                     return Writer.Serialize(root);
                 }
                 return text;

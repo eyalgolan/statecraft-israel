@@ -13,6 +13,7 @@ namespace Statecraft.Sim
     /// <code>
     /// name: reckless
     /// seed: 1948          # optional, default GoldenRun.Seed
+    /// content: mvp        # optional: the GDD slice (MvpSlice.Load) instead of the real content
     /// until: 1949-01-01   # the run stops when the date reaches it
     /// steps:
     ///   - on: 1948-05-15  # the commands go in on the first turn that starts on or after this date, once
@@ -20,12 +21,16 @@ namespace Statecraft.Sim
     ///       - { kind: set_policy, policy: rationing, level: 1.0 }
     /// </code>
     /// Kinds: set_policy (policy, level), allocate_budget (shares: {office: share}), choose_event_option (event, option),
-    /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r). A turn with no
+    /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r), assign_workers
+    /// (city, role, count; GDD content only). A turn with no
     /// scripted command passes; events nobody answered are delegated, as in the game. A command the sim rejects fails the run.</summary>
     public sealed class Scenario
     {
         public string Name { get; set; } = "";
         public ulong? Seed { get; set; }
+        /// <summary>"" for the real content, or <see cref="MvpContent"/> for the GDD slice. The caller loads the content it names.</summary>
+        public string Content { get; set; } = "";
+        public const string MvpContent = "mvp";
         public string Until { get; set; } = "";
         public List<ScenarioStep> Steps { get; set; } = new List<ScenarioStep>();
 
@@ -34,6 +39,7 @@ namespace Statecraft.Sim
             var d = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
             var s = d.Deserialize<Scenario>(yaml) ?? throw new InvalidDataException("the scenario file is empty");
             if (string.IsNullOrWhiteSpace(s.Name)) throw new InvalidDataException("a scenario needs a name");
+            if (s.Content != "" && s.Content != MvpContent) throw new InvalidDataException($"'content' must be mvp or left out, got '{s.Content}'");
             s.UntilDate = Date(s.Until, "until");
             foreach (var step in s.Steps)
             {
@@ -60,7 +66,7 @@ namespace Statecraft.Sim
             ["set_policy"] = new[] { "policy", "level" }, ["allocate_budget"] = new[] { "shares" },
             ["choose_event_option"] = new[] { "event", "option" }, ["set_mobilization"] = new[] { "level" },
             ["security_order"] = new[] { "delta" }, ["appoint"] = new[] { "office", "person" },
-            ["map_action"] = new[] { "action", "q", "r" },
+            ["map_action"] = new[] { "action", "q", "r" }, ["assign_workers"] = new[] { "city", "role", "count" },
         };
 
         public static IReadOnlyCollection<string> Kinds => Allowed.Keys;
@@ -85,6 +91,7 @@ namespace Statecraft.Sim
                 case "security_order": return new SecurityOrder(Whole(c, "delta"));
                 case "appoint": return new Appoint(Str(c, "office"), Str(c, "person"));
                 case "map_action": return new MapAction(Str(c, "action"), Whole(c, "q"), Whole(c, "r"));
+                case "assign_workers": return new AssignWorkers(Str(c, "city"), Str(c, "role"), Whole(c, "count"));
                 default: throw new InvalidDataException($"command kind '{kind}' has no builder");
             }
         }
@@ -121,7 +128,8 @@ namespace Statecraft.Sim
         static string Describe(Command c) => c switch
         {
             SetPolicy p => $"{p.Policy} {p.Level}", ChooseEventOption e => $"{e.EventId}/{e.OptionId}", SetMobilization m => m.Level.ToString(CultureInfo.InvariantCulture),
-            SecurityOrder o => o.Delta.ToString(CultureInfo.InvariantCulture), Appoint a => $"{a.Office} {a.Person}", MapAction m => $"{m.Action} {m.Q},{m.R}", _ => c.Kind,
+            SecurityOrder o => o.Delta.ToString(CultureInfo.InvariantCulture), Appoint a => $"{a.Office} {a.Person}", MapAction m => $"{m.Action} {m.Q},{m.R}",
+            AssignWorkers w => $"{w.City} {w.Role} {w.Count}", _ => c.Kind,
         };
     }
 

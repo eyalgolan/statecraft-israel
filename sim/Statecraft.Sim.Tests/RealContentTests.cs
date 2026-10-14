@@ -56,7 +56,7 @@ public class RealContentTests
             Assert.All(p.BiographySources[key], source =>
             {
                 Assert.True(Uri.TryCreate(source.Url, UriKind.Absolute, out var uri) && (uri.Scheme == "https" || uri.Scheme == "http"));
-                Assert.Equal(new DateTime(2026, 10, 11), source.Checked);
+                Assert.True(source.Checked >= new DateTime(2026, 10, 11), $"{key}: {source.Url} checked before the 11 October review");
             });
         }
     }
@@ -145,8 +145,22 @@ public class RealContentTests
     [Fact]
     public void OpenQuestionsAreExactlyTheKnownOnes()
     {
+        // #3: research_notes/budget-approval-1948-56.md answers budget_approval for the council and the First and Second
+        // Knessets. The Third Knesset's stays open: its 1956/57 law is read, its 1957-59 laws are not.
         var open = C.Legislatures.SelectMany(l => l.OpenQuestions.Select(q => $"{l.Id}.{q}")).OrderBy(x => x).ToArray();
-        Assert.Equal(new[] { "first_knesset.budget_approval", "provisional_state_council.budget_approval", "second_knesset.budget_approval", "third_knesset.budget_approval" }, open);
+        Assert.Equal(new[] { "third_knesset.budget_approval" }, open);
+    }
+
+    [Fact]
+    public void TheProvisionalStateCouncilApprovedTheBudget()
+    {
+        // #3: the council adopted the January 1949 Budget Ordinance unanimously (sitting 33, 30 December 1948) and the
+        // January-March 1949 Budget Ordinance 21-1 (sitting 38, 27 January 1949).
+        var council = C.Legislatures.Single(l => l.Id == "provisional_state_council");
+        Assert.True(council.BudgetApproval);
+        foreach (var url in new[] { "https://fs.knesset.gov.il/0/law/0_lsr_312670.pdf", "https://fs.knesset.gov.il/0/Plenum/0_ptm_250001.pdf", "https://fs.knesset.gov.il/0/Plenum/0_ptm_250006.pdf" })
+            Assert.Contains(council.Sources, s => s.Url == url);
+        Assert.True(PoliticsSystem.BudgetNeedsVote(C, new DateTime(1948, 6, 1)));
     }
 
     [Fact]
@@ -298,15 +312,27 @@ public class RealContentTests
     }
 
     [Fact]
+    public void TheTransitCampCardOpensInTheMonthEshkolProposedTheCamps()
+    {
+        // Kachansky, "The Ma'abarot" (Yad Ben-Zvi, 1987): Eshkol raised the camps' crisis at the Jewish Agency executive on
+        // 27 March 1950 and proposed transit housing two weeks later, so in April; the card opens at the start of that
+        // month (#442). Wikipedia's "March 1950" is recorded in the event's comment.
+        var e = C.Events.Single(x => x.Id == "maabarot_policy");
+        Assert.Equal(new DateTime(1950, 4, 1), e.From);
+    }
+
+    [Fact]
     public void PresidencyAndMaimonsTermsEnd()
     {
         Assert.Equal("weizmann", Offices.Holder(C, "president", new DateTime(1950, 1, 1))!.Id);
         Assert.Null(Offices.Holder(C, "president", new DateTime(1949, 2, 16)));
         var maimon = C.People.Single(p => p.Id == "maimon");
+        // Knesset position records run both Second Government terms to 8 October 1951 (#457).
         foreach (var office in new[] { "religions_minister", "war_victims_minister" })
         {
-            Assert.Equal(new DateTime(1951, 2, 14), maimon.Offices.Single(t => t.Office == office && t.From == new DateTime(1950, 11, 1)).To);
-            Assert.Null(Offices.Holder(C, office, new DateTime(1951, 3, 1)));
+            Assert.Equal(new DateTime(1951, 10, 8), maimon.Offices.Single(t => t.Office == office && t.From == new DateTime(1950, 11, 1)).To);
+            Assert.Equal("maimon", Offices.Holder(C, office, new DateTime(1951, 3, 1))!.Id);
+            Assert.Equal("maimon", Offices.Holder(C, office, new DateTime(1951, 10, 7))!.Id);
         }
     }
 

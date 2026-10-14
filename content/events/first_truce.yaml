@@ -4,10 +4,12 @@ title: The First Truce
 text: 'The Security Council has called for a four-week cease-fire, supervised by the UN mediator, Count Folke Bernadotte. Neither side may bring fighting men or war material into Palestine or the Arab states, and the Council has warned of Chapter VII action if the terms are broken. {prime_minister} must decide whether Israel accepts.'
 anchor: hard
 office: prime_minister
-# Security Council Resolution 50, 29 May 1948. Israel's acceptance went to the UN on 10 June (Eban's letter, S/834), with
-# reservations on immigration, food for Jerusalem and blockades; the truce took effect on 11 June and lasted 28 days.
-# End date [C]: 8 July (en.wiki "1948 Arab-Israeli War") vs 9 July (JVL/IDF, he.wiki); both agree Egypt renewed fighting
-# on 8 July. Research notes facts-1948.md section 1.
+# Security Council Resolution 50, 29 May 1948 (the resolution's text). Israel's acceptance went to the UN on 10 June
+# (Eban's letter, S/834), with reservations on immigration, food for Jerusalem and blockades; the truce took effect on 11
+# June and lasted 28 days (S/834: four weeks from 06:00 GMT on 11 June; the Mediator's progress report: 11 June to 9
+# July). End date [C]: 8 July (en.wiki "1948 Arab-Israeli War") vs 9 July (JVL/IDF, he.wiki; the Mediator's report S/888
+# and his progress report); both agree Egypt renewed fighting on 8 July (JTA reports the Defense Ministry's account of an
+# Egyptian attack the day before the truce ended; see ten_days.yaml). Research notes facts-1948.md section 1.
 # By design, accepting leaves the security level at 5 (full war, weekly turns); do not "fix" it to 4. The truce lasted
 # four weeks: at level 4 the turns would be monthly from 5 June, and the Ten Days and the second truce would both reach the
 # player on 5 August, after the fact. The Defence screen shows full war during the truce as a result.
@@ -30,7 +32,22 @@ options:
       - { target: intl_standing, delta: -0.08 }
       - { target: morale, delta: -0.03 }
 sources:
-  - { url: "https://en.wikipedia.org/wiki/United_Nations_Security_Council_Resolution_50", checked: 2026-10-10 }
   - { url: "https://www.jewishvirtuallibrary.org/israel-accepts-the-truce-letter-from-ambassador-eban-to-the-secretary-general-s-834", checked: 2026-10-10 }
   - { url: "https://www.jewishvirtuallibrary.org/the-first-truce-1948", checked: 2026-10-10 }
+  # Resolution 50 (1948) of 29 May 1948 (S/801), as printed in the Council's resolutions: a cessation of all acts of
+  # armed force for four weeks; no fighting personnel and no war material into Palestine, Egypt, Iraq, Lebanon, Saudi
+  # Arabia, Syria, Transjordan or Yemen; the Mediator, with the Truce Commission, to supervise; if rejected or violated,
+  # the situation to be reconsidered with a view to action under Chapter VII.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/RES/50(1948)&l=en&t=pdf", checked: 2026-10-14 }
+  # S/834, Eban's letter to the Secretary-General conveying Shertok's acceptance: a cease-fire for four weeks from
+  # 06:00 GMT on Friday 11 June 1948, with observations on the entry of immigrants of military age, food and safe
+  # passage for Jewish Jerusalem, and any Arab commercial blockade.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/834&l=en&t=pdf", checked: 2026-10-14 }
+  # The Mediator's progress report of 16 September 1948 (A/648): "the four-week truce from 11 June to 9 July 1948".
+  - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-14 }
+  # The Mediator's report of 12 July 1948 (S/888): the resumption of hostilities on 9 July at the end of the truce.
+  - { url: "https://documents.un.org/api/symbol/access?s=S/888&l=en&t=pdf", checked: 2026-10-14 }
+  # JTA bulletin of 11 July 1948: the truce expired that morning; the Defense Ministry reported an Egyptian attack on the
+  # southern front "yesterday", before the truce officially ended.
+  - { url: "https://www.jta.org/archive/palestine-war-resumes-tel-aviv-bombed-haifa-alerted-arabs-shell-petach-tikvah", checked: 2026-10-14 }
 status: fact-checked

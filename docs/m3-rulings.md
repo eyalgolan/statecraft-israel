@@ -38,7 +38,7 @@ These are the decisions made while building M3 where the spec or plan was silent
 ## Content and history
 
 - **Pro-Israeli framing, real names, nothing contested shown.** Lydda and Ramle appear as military events only. This follows the owner's earlier "no contested narratives shown" decision. Cost if wrong: one text edit.
-- **Conflicting dates follow the majority or primary source.** The other date goes in a comment. Examples: the first truce ends 9 July (UN), Operation Horev is 22 December, and the RAF clash is 7 January. Weizmann's term starts 17 February 1949, although the MFA says 16. His second term starts 19 November 1951 (the election date), with a comment on the 25 November swearing-in. Maimon runs to 1951-02-14, the latest possible date, with an honest comment.
+- **Conflicting dates follow the majority or primary source.** The other date goes in a comment. Examples: the first truce ends 9 July (UN), Operation Horev is 22 December, and the RAF clash is 7 January. Weizmann's term starts 17 February 1949, although the MFA says 16. His second term starts 19 November 1951 (the election date), with a comment on the 25 November swearing-in. Maimon runs to 1951-10-08, following the Knesset position records over he.wiki's undated resignation (corrected 2026-10-14, #457).
 - **No invented alternatives.** Where no advocate is sourced, the alternative option is labelled a game assumption in a comment.
 - **The 1948 war period has sourced events (15 events after review).**
   - The playtest found no events between 15 May 1948 and 24 February 1949, about 40 turns.

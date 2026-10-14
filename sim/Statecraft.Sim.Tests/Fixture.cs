@@ -195,6 +195,42 @@ series:
 ",
     };
 
+    /// <summary>The fixture with the GDD loop on (eras.yaml systems.loop: gdd) and the files and keys that loop needs: the
+    /// mvp: rules block, the GDD command kinds' attention_cost, cities.yaml and unit_types.yaml. Every value is a fixture
+    /// value (PLACEHOLDER: owner sets). <paramref name="extra"/> replaces or adds files on top.</summary>
+    public static Dictionary<string, string> Gdd(Dictionary<string, string>? extra = null)
+    {
+        var o = new Dictionary<string, string>
+        {
+            ["eras.yaml"] = Files["eras.yaml"] + "    systems: { loop: gdd }\n",
+            ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", "map_action: 1, assign_workers: 1 }") + GddRules,
+            ["cities.yaml"] = GddCities,
+            ["unit_types.yaml"] = GddUnitTypes,
+        };
+        if (extra != null) foreach (var kv in extra) o[kv.Key] = kv.Value;
+        return o;
+    }
+
+    public const string GddRules = @"
+mvp:
+  people_per_unit: 10
+  income_per_job_per_year: 1.2
+  cohesion_housing_weight: 0.5
+  cohesion_jobs_weight: 0.5
+  arrivals_city: town_a
+";
+
+    public const string GddCities = @"
+cities:
+  - { id: town_a, housing_capacity: 12, job_slots: 8, civilians: 10, employed: 6, facilities: [] }
+";
+
+    public const string GddUnitTypes = @"
+types:
+  - { id: civilian, kind: population }
+  - { id: refugee, kind: population }
+";
+
     public static string Write(Dictionary<string, string>? overrides = null, Dictionary<string, string>? events = null)
     {
         var dir = Path.Combine(Path.GetTempPath(), "statecraft-fixture-" + Guid.NewGuid().ToString("N"));
@@ -202,6 +238,9 @@ series:
         Directory.CreateDirectory(Path.Combine(dir, "map"));
         foreach (var kv in Files)
             File.WriteAllText(Path.Combine(dir, kv.Key), overrides != null && overrides.TryGetValue(kv.Key, out var o) ? o : kv.Value);
+        if (overrides != null)
+            foreach (var kv in overrides)
+                if (!Files.ContainsKey(kv.Key)) File.WriteAllText(Path.Combine(dir, kv.Key), kv.Value);   // a file only some content has (cities.yaml)
         if (events != null)
             foreach (var kv in events) File.WriteAllText(Path.Combine(dir, "events", kv.Key), kv.Value);
         return dir;

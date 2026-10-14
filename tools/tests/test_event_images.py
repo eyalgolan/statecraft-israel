@@ -1,4 +1,4 @@
-"""tools/event_images.py: the event-card photographs are cropped to 9:4, resized, graded (luminance, levels, the
+"""tools/event_images.py: the event-card photographs are cropped to 16:9, resized, graded (luminance, levels, the
 navy-sepia tone) and nothing else; downloads are checked by SHA-1 before they are read."""
 import hashlib
 import io
@@ -9,12 +9,12 @@ from PIL import Image
 import event_images as ei
 
 
-def test_the_crop_box_is_nine_by_four_and_inside_the_picture():
+def test_the_crop_box_is_sixteen_by_nine_and_inside_the_picture():
     for size, crop in [((2000, 1334), [0.5, 0.5, 1.0]), ((686, 1200), [0.5, 0.52, 0.94]), ((1476, 932), [0.38, 0.6, 0.7]),
                        ((1000, 300), [0.5, 0.5, 1.0]), ((1000, 1000), [0.0, 1.0, 0.5])]:
         left, top, right, bottom = ei.crop_box(size, crop)
         assert 0 <= left < right <= size[0] and 0 <= top < bottom <= size[1]
-        assert abs((right - left) / (bottom - top) - 9 / 4) < 0.02
+        assert abs((right - left) / (bottom - top) - 16 / 9) < 0.02
     assert ei.crop_box((1000, 300), [0.5, 0.5, 1.0])[3] - ei.crop_box((1000, 300), [0.5, 0.5, 1.0])[1] == 300   # too short: full height
     with pytest.raises(ValueError):
         ei.crop_box((100, 100), [0.5, 0.5, 1.5])
@@ -24,7 +24,7 @@ def test_the_grade_is_a_tone_of_the_luminance_only():
     src = Image.new("RGB", (1800, 1200))
     src.putdata([((x * 7) % 256, (y * 3) % 256, 128) for y in range(1200) for x in range(1800)])
     out = ei.grade(src, [0.5, 0.5, 1.0])
-    assert out.size == (720, 320) and out.size[0] % 4 == 0 and out.size[1] % 4 == 0
+    assert out.size == (960, 540) and out.size[0] % 4 == 0 and out.size[1] % 4 == 0
     lut = ei.tone_lut()
     tones = {(lut[v], lut[256 + v], lut[512 + v]) for v in range(256)}
     assert set(out.get_flattened_data()) <= tones   # every pixel is a tone of one grey level: no colour added
@@ -33,11 +33,11 @@ def test_the_grade_is_a_tone_of_the_luminance_only():
 
 def test_a_small_original_is_not_enlarged_and_stays_block_aligned():
     out = ei.grade(Image.new("L", (686, 1200), 90), [0.5, 0.52, 0.94])
-    assert out.size == (612, 272)                          # 645 px wide crop -> 612 (a multiple of 36), never upscaled
+    assert out.size == (640, 360)                          # 645 px wide crop -> 640 (a multiple of 64), never upscaled
 
 
 def test_encode_stays_under_the_size_cap():
-    noisy = Image.effect_noise((720, 320), 120).convert("RGB")
+    noisy = Image.effect_noise((960, 540), 120).convert("RGB")
     data = ei.encode(noisy)
     assert len(data) <= ei.MAX_BYTES
     assert Image.open(io.BytesIO(data)).info.get("exif") is None
@@ -102,4 +102,4 @@ def test_every_row_has_a_shipped_file_and_a_crop():
         assert (ei.FOLDER / r["file"]).is_file()
         assert len(r["crop"]) == 3 and len(r["sha1"]) == 40
         with Image.open(ei.FOLDER / r["file"]) as im:
-            assert im.size[0] * 4 == im.size[1] * 9
+            assert im.size[0] * 9 == im.size[1] * 16

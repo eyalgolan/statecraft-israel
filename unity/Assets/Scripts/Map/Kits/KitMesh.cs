@@ -146,8 +146,9 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
-        /// <summary>A smooth hemisphere (a mosque's or a house's dome) of radius r standing on y.</summary>
-        public void Dome(float x, float z, float y, float r, Color32 colour, int segments = 10, int rings = 4)
+        /// <summary>A smooth dome (a mosque's or a house's) of radius r standing on y: a hemisphere, or, with
+        /// <paramref name="rise"/> under 1, a lower cap rising rise x r (a village house's shallow vault).</summary>
+        public void Dome(float x, float z, float y, float r, Color32 colour, int segments = 10, int rings = 4, float rise = 1f)
         {
             colour.a = 0;
             int first = pos.Count;
@@ -158,7 +159,9 @@ namespace Statecraft.Game.Map.Kits
                 {
                     float th = 2f * Mathf.PI * i / segments;
                     var n = new Vector3(Mathf.Cos(phi) * Mathf.Cos(th), Mathf.Sin(phi), Mathf.Cos(phi) * Mathf.Sin(th));
-                    V(new Vector3(x, y, z) + n * r, n, colour, Vector2.zero);
+                    // An ellipsoid's normal: the sphere's with its height scaled by 1 / rise (unchanged for a hemisphere).
+                    var nn = rise == 1f ? n : new Vector3(n.x * rise, n.y, n.z * rise).normalized;
+                    V(new Vector3(x, y, z) + new Vector3(n.x * r, n.y * r * rise, n.z * r), nn, colour, Vector2.zero);
                 }
             }
             for (int j = 0; j < rings; j++)

@@ -23,6 +23,9 @@ namespace Statecraft.Sim
             Id = id; HousingCapacity = housingCapacity; JobSlots = jobSlots; Civilians = civilians; Employed = employed; Refugees = refugees;
         }
 
+        /// <summary>The same city with new population counts.</summary>
+        public City WithCounts(int civilians, int employed, int refugees) => new City(Id, HousingCapacity, JobSlots, civilians, employed, refugees);
+
         /// <summary>The record as the state hash writes it.</summary>
         public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}={1},{2},{3},{4},{5}", Id, HousingCapacity, JobSlots, Civilians, Employed, Refugees);
     }

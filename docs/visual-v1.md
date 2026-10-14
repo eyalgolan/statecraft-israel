@@ -7,6 +7,21 @@ it east to west wherever the view is wider than the map. In the player, which ru
 shift by up to a few hundred metres from its pose. The controller accepted this (owner-delegated). The other poses do
 not move.
 
+## Art direction (owner ruling, 14 October 2026)
+
+The owner ruled "this is the art direction" on four references (Slack, #visual-design-art-techart, 14 October 2026):
+
+- demo2 shot T29, "26 May 1948: one army": the coast-to-Jordan diorama, units on white ring bases, Arab armour with
+  flags (`promo/demo2/out/demo2-final-16x9.mp4`, about 1:11);
+- demo2 shot L14, "Latrun is captured by the enemy": a low-angle close-up of the fortress (same file, about 0:32);
+- demo2 shot D15, "20 May: Degania stops the Syrian tanks": a close-up at the kibbutz gate (same file, about 0:36);
+- `promo/final/03-gameplay-1936.png`.
+
+The shot ids are those of `promo/demo2/SHOTLIST-v2.md` and `shots-v2.py`; demo2's files are local to the promo work and
+not in the repository. Two rules from that thread: lock the visual language before more models are made ("it's a
+question of visual language, not quality"), and the next step is a vertical slice of a few terrain hexes with the
+models on them. New models and visual PRs are judged against these four references.
+
 ## How to measure
 - Frame time: `?vprofile` (WebGL) or `-vprofile` (desktop player, quits when done), always under
   `uv run tools/machine_lock.py --exclusive --wait-unity -- ...` (no other Unity job on the machine). Per pose, every
@@ -231,6 +246,8 @@ Two bands, blurred by a half-resolution render-graph pass (`TiltShiftFeature` on
 - the focus sits at the middle of the map area below the top bar;
 - the blur weakens to 35% between 60 km and the 250 km overview.
 - since issue #390, the far (top) band is lighter at the gameplay zoom (see "Issue #390" below).
+- since issue #458 (the owner's ruling of 2026-10-14), the near (bottom) band is lighter at the gameplay zoom and about
+  gone at the overview (see "Issue #458" below).
 
 URP's far-only Gaussian DoF is retired. Toggle: `tiltshift`; the URL flag `notiltshift` (desktop: `-notiltshift`) boots with
 it off.
@@ -721,7 +738,7 @@ beyond budget + the larger spread.
 | Boot | `BOOT map_build_ms median=432 runs=3 cpu=1`<br>`BOOT first_frame_ms median=3563 runs=3 cpu=1`<br>`BOOT map_build_ms median=1751 runs=3 cpu=4`<br>`BOOT first_frame_ms median=6797 runs=3 cpu=4`<br>`BOOT map_build_ms median=426 runs=3 cpu=1`<br>`BOOT first_frame_ms median=3477 runs=3 cpu=1`<br>`BOOT map_build_ms median=1746 runs=3 cpu=4`<br>`BOOT first_frame_ms median=6696 runs=3 cpu=4` (Step 1, then final) | — | each within max(300 ms, 50%) of its Task 1 baseline (443 / 3547; 1813 / 6963 ms); both runs exit 0 |
 | Shadows | 1 cascade, 2048, hard | 4 cascades, 2048, soft | `-shadows` at diorama02: Step 1 headless 10.32 - 7.36 = **2.96 ms** (spread 0.32: over 2.82), headed 2.90 (0.41: within), DPR 2 4.99 (0.23); final headless 2.89 (0.41: within 2.91), headed 2.92 (0.29: **over** 2.79), DPR 2 4.80. A 1024 build measured 2.84 (headless, spread 0.09), 2.94 (headed) and 5.03 (DPR 2): (1024 lines, headless: `PROFILE summary visual=all pose=diorama02 runs=3 median_avg_ms=10.08 spread_ms=0.09 median_p95_ms=11.00`<br>`PROFILE summary visual=-shadows pose=diorama02 runs=3 median_avg_ms=7.24 spread_ms=0.03 median_p95_ms=9.00`<br>headed: `PROFILE summary visual=all pose=diorama02 runs=3 median_avg_ms=10.20 spread_ms=0.28 median_p95_ms=11.00`<br>`PROFILE summary visual=-shadows pose=diorama02 runs=3 median_avg_ms=7.26 spread_ms=0.13 median_p95_ms=9.00`<br>DPR 2: `PROFILE summary visual=all pose=diorama02 runs=3 median_avg_ms=18.34 spread_ms=0.21 median_p95_ms=19.00`<br>`PROFILE summary visual=-shadows pose=diorama02 runs=3 median_avg_ms=13.31 spread_ms=0.10 median_p95_ms=14.00`): the map's resolution is not the cost (the caster pass redraws the whole map's geometry at the overview), so 1024 would blur the relief for nothing. **2048 kept; the overrun (about 0.1-0.4 ms beyond budget + spread at the 250 km overview only) is named here.** gameplay03: 0.33 ms final |
 | Tilt-shift | downsample 2 | downsample 2 | `-tiltshift` cost: Step 1 headless 0.09 / 0.09 ms (gameplay03 / diorama02), final headless 0.03 / -0.04, DPR 2 0.29 / -0.04: far under 1.5 ms |
-| Tilt-shift bottom band | unchanged (HalfWidth 0.13 / Feather 0.17) | same | final gameplay03 shot against `?notiltshift`, gradient energy per 1% row band (columns 30-80%): fully blurred (ratio <= 0.05-0.09) from under the bar to about 26% and from about 78-83% to the bottom, so the bottom band is 17-22% against the promo's ~15%. The 2-7 point gap is the one Task 3 offered the owner (bottom-only 0.16 / 0.19). Owner's ruling (2026-10-13, issue #390): the bands stay as they are, except that the far band is lighter at the gameplay zoom ("Issue #390"); the bottom band is not changed |
+| Tilt-shift bottom band | unchanged (HalfWidth 0.13 / Feather 0.17) | same | final gameplay03 shot against `?notiltshift`, gradient energy per 1% row band (columns 30-80%): fully blurred (ratio <= 0.05-0.09) from under the bar to about 26% and from about 78-83% to the bottom, so the bottom band is 17-22% against the promo's ~15%. The 2-7 point gap is the one Task 3 offered the owner (bottom-only 0.16 / 0.19). Owner's ruling (2026-10-13, issue #390): the bands stay as they are, except that the far band is lighter at the gameplay zoom ("Issue #390"); the bottom band is not changed. Owner's ruling (2026-10-14, issue #458): the bottom band's height stays, but it is lighter at the gameplay zoom and about gone at the overview ("Issue #458") |
 | Bloom | off (was the URP template's 0.25 above 1) | off | rendered on both tiers at both poses it changed at most 2/255 of any pixel (mean 0.25/255 at diorama02, warmth +0.0003, measured with a temporary `bloom` toggle, commit `8d45a93`, removed in fix round 1 once bloom shipped off); `-bloom` cost Step 1 headless 0.37 ms (diorama02), headed 0.18, macOS 0.17 / 0.13. Off in the pipeline profile (`Settings/SampleSceneProfile`), which keeps its Neutral tonemapper (the stripping guarantee, GradeTests) |
 | SSAO | none | off (was on) | metre radius cannot reach km relief; baked AO replaces it (Tasks 5-6) |
 | Grade, vignette, haze, grid, water, labels | on | on | Step 1 headless costs (gameplay03 / diorama02, ms): grade -0.02 / 0.27, haze 0.08 / 0.11, grid 0.07 / -0.14, water 0.04 / 0.14, labels -0.14 / -0.02; final headless: grade 0.00 / -0.03, haze -0.03 / -0.10, grid 0.00 / -0.01, water -0.05 / -0.06, labels -0.01 / 0.01; all within budget. The grid, unmeasured on a quiet machine since Task 8, costs nothing measurable |
@@ -2166,6 +2183,92 @@ blocks, village houses, red-roofed villas), Jaffa 6 → 7, Tel Aviv 8 → 7.
 - Ramla:
   - White Tower (square, five storeys, 27 m; rebuilt after the 1318 earthquake; 31.9275 N, 34.8661 E): https://en.wikipedia.org/wiki/White_Tower_(Ramla)
 
+## Settlement quick wins (branch `art/settlements-quickwins`, refs #31)
+The 2026-10-13 gap audit (`.superpowers/audit-2026-10-13/renders`: `measure.py`, `metrics.json`) ranked the settlements
+the biggest gap to promo 03. Measured with its crops and poses: editor renders (`MapCapture.Promo`, Mobile tier, with
+`-extraPose close30:34.83:32.00:30000:10`) and the WebGL `?shot` of gameplay03. Main is `7aeec3f`.
+
+**Changes.**
+- **White City** (`Style.WhiteBlock`):
+  - Walls are lime-white plaster (0.94, 0.945, 0.94; was 0.94, 0.92, 0.87), with 8% of blocks cream (was 12%).
+  - Roofs are paler (0.90, 0.89, 0.86).
+  - Each upper storey has a balcony with a solid plastered parapet on the street side, and on most blocks the back too
+    (`WhiteBlockDetail`). Each balcony stays inside the plot's lot.
+  - Roof rooms are on 80% of blocks (was 50%), and a second room is on 45% of the blocks that do not step.
+  - `Kit.shader`, White City walls only: discrete windows with plaster piers between them, the glass near black
+    (`_CityWindowDark` 0.95; the other styles keep `_WindowDark` 0.55), and a darker band under the balcony slab. The
+    storey pattern holds until a storey is about two pixels (was three), so the 30 km look keeps its window rows.
+- **Old towns, Arab towns and villages** (`Style.OldHouse`, `Style.Village`, `Archetype.OldTown`, `Archetype.ArabTown`;
+  `StoneHouse`):
+  - Three in four houses of two storeys or more step back: the top storey is a smaller block on one corner of the lower
+    roof. Single-storey houses often have a roof room.
+  - Walls are grey-buff limestone (0.77, 0.70, 0.60, jittered from grey to buff) and roofs lime plaster.
+  - A village below 120 m (the coastal plain and the valleys) is mud brick (0.78, 0.69, 0.56) with flat roofs.
+  - Domes are fewer and lower: a cap rising 0.6 of its radius, not a hemisphere, in the roof's lime colour, not white.
+    - Old towns: 8% of flat-roofed houses (was 22%).
+    - Hill villages: 7% (was 10% of every village).
+    - Plain villages: none.
+  - The mosques' and landmarks' domes are unchanged.
+- **Historical basis.** The owner's ruling (m3-rulings, "Owner rulings"): where the promo departs from the era, the promo
+  wins, but the architecture stays plausible for 1948. Domes are reduced, not removed.
+  - The hill country built in limestone, and its houses were roofed with stone vaults and cupolas.
+  - The coastal plain and the valleys built in mud brick, with flat roofs of beams and earth.
+  - So domes stay on hill houses only, as the low cap a vault shows from outside.
+  - Sources are under "Sources" below.
+- **Layout unchanged.** A 1948 locality's houses share the locality's random stream with its spots. `Emit(Archetype.ArabTown)`
+  still draws exactly five numbers from it (wall, roof, the dome roll), and each house's detail comes from a stream seeded
+  off it. The lattice towns' houses already had a stream of their own.
+  - Every building stands where it did: same lots, same trees, buildings 1954 (WebGL) / 1953 (editor), locality buildings
+    1339, trees 8358, draws 63.
+  - So #318 (the localities' landmark lots in Tel Aviv) and #249 (tree holes under the figures) are untouched.
+
+**Result** (main → branch; promo in brackets):
+
+| | main | branch | promo 03 | target |
+|---|---|---|---|---|
+| gameplay03 white share (V > 0.72, S < 0.28; WebGL shot, map area) | 2.49% | 6.55% | 7.46% (audit) | >= 4.5%: met |
+| gameplay03 white share (editor, Mobile) | 2.36% | 6.84% | | |
+| close30 Tel Aviv edge density (crop 0.32-0.58 x 0-0.30, 600x400) | 0.038 | 0.054 | 0.114 | >= 0.07: not met |
+| close30 Tel Aviv p5 / p95 | 0.241 / 0.753 | 0.221 / 0.787 | 0.136 / 0.896 | p5 <= 0.18: not met |
+| close30 Tel Aviv warmth | 0.131 | 0.114 | 0.090 | <= 0.09: not met |
+| close30 Jaffa edge / warmth | 0.041 / 0.141 | 0.047 / 0.112 | 0.100 / 0.107 | |
+| close30 village crop edge / warmth | 0.035 / 0.222 | 0.036 / 0.198 | 0.071 / 0.132 | |
+
+- **Why Tel Aviv's edge, p5 and warmth fall short.**
+  - At close30 a storey is about three pixels. The crop's top third lies in the far tilt-shift band: the edge per band
+    rose from 0.031-0.046 to 0.039-0.058, against the promo's 0.05-0.16.
+  - About half the crop is the town's sand ground. Its tint comes from `PaintGround`, and
+    `SeaTests.TheBeachBesideTelAvivStaysSandWithTheKitsOn` pins it.
+  - The walls are already near-neutral white; the remaining yellow is the sun and the grade.
+  - Closing the gap needs denser, smaller blocks (a layout change that meets #318), palms between the buildings (the
+    vegetation) and a ground or light change. None is a quick win, so they are left as follow-ups.
+- **Kit numbers** (WebGL `KITS` line, main → branch): buildings 1954 → 1954, vertices 85,401 → 99,131, triangles
+  66,436 → 68,366, draws 63 → 63.
+- **Boot** (`tools/headed.py boot --runs 3 --cpu 4`, three rounds, order rotated, each round under one exclusive
+  `machine_lock`, 2026-10-14; builds of main `7aeec3f` and this branch; 9 cold loads each):
+
+  | | map_build median (range) | `kits built` phase median | first_frame median |
+  |---|---|---|---|
+  | main | 3067 ms (3042-3085) | 747 ms | 11075 ms |
+  | branch | 3055 ms (3036-3077) | 743 ms | 11081 ms |
+
+  - Within noise: the per-round medians alternate (+19, -26, -16 ms), and the kit phase is unchanged.
+  - The machine was loaded (other sessions' jobs), so both sides sit over the 2720 ms budget. Main does too; that is
+    #321's margin, not this change.
+- **Goldens:** the WebGL `golden&smoke=5` run shows `GOLDEN OK 1950 71e9904d`, `GOLDEN OK 1952 62f8ec61` and
+  `SMOKE OK 5 turns 1948-06-19 d3fdd459`, unchanged.
+- **Tests:** EditMode passes 768/768 with 0 `warning CS`, on the branch and on main `7aeec3f` alike. An earlier run on
+  the old base lost 52 UI, label and border coroutine tests to destroyed scene objects. It did not reproduce: all 768
+  pass on both.
+
+### Sources (checked 2026-10-13)
+- Stone in the mountains, mud brick and wood on the coast and in the valleys: Palestine Ministry of Tourism and Antiquities,
+  virtual museum, "Traditional Palestinian House - Al Hosh - The Courtyard":
+  https://virtualmuseum.tourism.ps/en/article/72/Traditional-Palestinian-House---Al-Hosh---The-Courtyard
+- Vaults, cupolas and roofing of the Palestinian traditional house: M. Abuarkub, "Traditional Building Materials and
+  Techniques in Palestine", Prostor 25 (2017) 140-153, https://doi.org/10.31522/p.25.1(53).9
+- The White City (1930s International Style, flat roofs, balconies): https://en.wikipedia.org/wiki/White_City,_Tel_Aviv
+
 ## Issue #195: the water and the border lookups out of the terrain's fragment shader
 - **Why.** promo-sea (#138) put the water shading (`ScWaterShade`, the breakers' `fwidth`, the footprint) in the terrain
   graph's function, and promo-borders (#206) six neighbour fetches in `ScBorderApply`'s loop. Either one makes the shader
@@ -2267,6 +2370,49 @@ blocks, village houses, red-roofed villas), Jaffa 6 → 7, Tel Aviv 8 → 7.
   strength is 1 and the frame is pixel-identical, so it is the extra uniform read and compare per tilt-shift pixel or
   build-to-build noise, within the tilt-shift's 1.5 ms budget.
 
+## Issue #458: a lighter near tilt-shift band, by distance
+- **Owner's ruling (2026-10-14).** The near (bottom) band should match promo 03: less blur at the gameplay zoom and almost
+  none at the overview. The far band stays as ruled for #390 (`FarGameplayStrength` 0.35). This replaces the 2026-10-13
+  note above that the bottom band is not changed.
+- **The gap** (the 2026-10-13 audit, `.superpowers/audit-2026-10-13/renders/measure.py`): mean |Laplacian| of the luma
+  in rows 80-95% from the top, columns 30-75%, on the WebGL `?shot`. Main had 0.0056 at gameplay03 against promo 03's
+  0.021, and 0.0064 at diorama02 against promo 02's 0.077: the near band drew in full at every distance.
+- **What changed.** `TiltShift.NearStrength(distance)` scales the near band's radius and its blend, as `FarStrength` does
+  the far band's: `NearGameplayStrength` (0.75) up to 150 km (`NearLightBelowM`, the far band's breakpoint), falling to 0
+  at the 250 km overview. One global, `_ScTiltShiftNear`, set with the others in `TiltShift.Apply`; no new keyword or
+  variant. The band's height (HalfWidth 0.13, Feather 0.17) is unchanged.
+- **Why 0.75, not 0.35-0.5.** The ruling's brief guessed 0.35-0.5. The half-resolution copy the blur composites is softer
+  than the frame on its own, so the blend, not the radius, sets most of the measure. A model of the pass in numpy, checked
+  against main (it gives 0.0050 for main's 0.0056), puts 0.4 at about 0.046 (twice promo 03's sharpness), 0.5 at 0.039, 0.7
+  at 0.024, 0.75 at 0.021 and 0.8 at 0.018. Scaling the radius alone cannot reach the target: a zero radius at full blend
+  still measures only 0.023. 0.75 is the value that matches promo 03.
+- **Measured** (WebGL `?shot`, main `88787ab` against the branch, same machine):
+
+  | pose | main | branch | promo | target |
+  |---|---|---|---|---|
+  | gameplay03 | 0.0056 | **0.0195** | 0.021 (promo 03) | 0.015-0.025 |
+  | diorama02 | 0.0064 | **0.0575** | 0.077 (promo 02) | at least 0.05 |
+
+  diorama02's `?notiltshift` shot measures 0.0575 too: the overview's foreground is now as sharp as the frame. Above the
+  focus, main and the branch differ less than two `?shot` runs of main do (gameplay03: 7346 pixels more than 2 levels
+  apart against 14749 run to run, all on the animated sea), so the far band is unchanged.
+- **Tests.** `TheNearBandIsGentleAtTheGameplayZoomAndGoneAtTheOverview` covers the curve. At the gameplay pose the near
+  band now keeps 30-80% of its gradient energy (`TheBottomBlurs...`, `TheFarBandStaysReadable...`; it kept about 20-25%
+  before), and `TheDioramaKeepsTheFarBandAndASharpForeground` asks for at least 95% of the near band at diorama02 (main:
+  33%) with the far band still at most 30%. Measured: near 0.37 / 0.39 (Mobile / PC, no bar), 0.41 at 60 km
+  and 0.35 at 120 km under the web bar, 1.00 at diorama02; far unchanged (0.71, 0.68, 0.20). Mutants killed: a shader
+  that ignores `_ScTiltShiftNear` (near 0.19-0.33: the three render tests) and the near strength applied to both bands
+  (far 0.34 at 60 km, 1.00 at diorama02: three render tests); the C# curve held at 1, or not reaching 0 at the
+  overview, fails the unit test.
+- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so the fallback's last step still turns
+  both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even where the near
+  band is 0, so frame time does not depend on the new strength.
+- **Fill rate.** Headed `?vprofile` at DPR 2 (`headed.py profile --dpr 2`), main, branch, branch, main under one
+  `machine_lock.py --exclusive --wait-unity`, 2026-10-14. The machine was loaded by other sessions (load 6-13), so the
+  spreads are 1.5-7 ms. diorama02 `all`: main 41.81 / 33.81 ms, branch 41.09 / 39.46; `none`: main 28.02 / 23.97, branch
+  26.36 / 24.83. gameplay03 `all`: main 11.95 / 13.99, branch 13.27 / 12.40. The branch sits inside main's range in
+  every row: within noise, as expected for one more uniform in an unchanged pass.
+
 ## HUD round 1: the info panel and the gilt trim (#398, #397)
 
 Art-track gap 4, first step. The gap list and the later steps (the minimap and settlement badges; the top bar and card
@@ -2335,3 +2481,40 @@ branch (avg ms, then p95):
 The fix's diorama02 `all` p95 (33, 34) is back at or under main's (35, 36). In round 1, gameplay03 `all` was disturbed
 for both branch builds in the same stretch: spreads 1.36 and 1.68 against main's 0.01, and the old branch's `none` was
 up too. Round 2 is clean, with all three at p95 18. `golden&smoke=5` is unchanged on the fix build.
+
+## Issue #391: the terrain shader's frame-time cliff (warm land shade, not shipped)
+#391 asked for the shaded hill ground to read warm brown, as promo 03's does (about (67, 53, 46)), rather than olive-grey.
+The look was solved; the cost was not, so nothing shipped. What was measured is a constraint on any future addition to
+`StatecraftTerrain.hlsl`.
+
+**Diagnosis (main, editor, Mobile tier).** On bare terrain (kits, trees, routes, borders and tilt-shift off) the shaded
+ground at `hills12a` (35.05, 31.76, 12 km) measured (71, 62, 55): hue 27 degrees, G/R 0.87. Most of the olive cast in the
+full frame comes from tree crowns and kit shadows, which belong to vegetation round 2 (#34). The grade's split toning
+cannot fix the ground's part: every shadow-colour candidate also moved the sea at gameplay03 by 4-18/255.
+
+**The look that worked.** Scaling green by 0.87 and blue by 0.76 against red, weighted by 1 - smoothstep(0, 1, N.L) for the
+fixed sun, gave on bare terrain: hue 24.0 / 25.7 / 27.0 degrees and G/R 0.845 / 0.847 / 0.838 at hills12a, judea30 and
+gameplay03, sea drift 0.00-0.01/255, palette distance 0.463 -> 0.454 (gameplay03) and 0.581 -> 0.558 (diorama02), and
+WebGL diorama02 warmth 0.121 -> 0.127. Baked into `terrain_bake.png`'s R (unread at run time) it cost 120 KB of
+`data.unity3d` under LZ4.
+
+**The cost.** Headless `?vprofile`, 1920x1080, DPR 1, interleaved under `--exclusive`, median avg ms, main `7040351`:
+
+| Shader change | `all` gameplay03 | `none` gameplay03 | `all` diorama02 | `none` diorama02 |
+|---|---|---|---|---|
+| main | 8.23-8.42 | 4.98-5.07 | 19.3-21.6 | 12.6-13.2 |
+| no-op function call (control) | 8.05 | 4.86 | 22.55 | 14.67 |
+| `GetMainLight()`, dot, smoothstep, lerp | 14.96 | 13.23 | 21.4 | 16.8 |
+| `_MainLightPosition` uniform, dot, smoothstep, lerp | 12.59 | 11.71 | 25.26 | 17.46 |
+| baked mask: `bake.r` kept, one constant lerp | 14.87 | 12.55 | 22.09 | 17.35 |
+| baked mask used at once, AO sampled after it | 16.72 | 13.72 | 21.22 | 18.06 |
+
+Every variant that adds work to the function costs 4-8 ms at gameplay03, and as much with every visual toggle off as on:
+the toggles do not remove shader code. The no-op control matches main, so the build and the call itself are free.
+
+**Constraint.** Treat the terrain fragment shader as at a cliff: one extra lerp of a value already in a register cost as
+much as per-pixel lighting. The likely cause is register pressure or occupancy in the WebGL (ANGLE/Metal) compile of the
+whole function, not the arithmetic, as #195 found for the water (3 ms from its size alone). Shortening a value's live
+range did not help. Before adding anything to `StatecraftTerrain.hlsl`, profile it as above against main; prefer changing
+baked data the shader already reads in its existing operations (land colours in `tools/land_bake.py`, `MapPalette`), or
+moving work out of the function as #195 did.

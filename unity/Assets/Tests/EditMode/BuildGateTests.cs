@@ -14,7 +14,7 @@ public class BuildGateTests
     {
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor");
         Assert.IsNotNull(t, "Build exists");
-        return (string?)t!.GetMethod("ShareableRefusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object?[] { c, null, false, null });   // event content only
+        return (string?)t!.GetMethod("ShareableRefusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object?[] { c, null, false, null, null });   // event content only
     }
 
     [Test]
@@ -38,10 +38,10 @@ public class BuildGateTests
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
         var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         var c = ContentLoader.Load(Paths.Content);
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null }), "a dev build is not gated");
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null }), "all seven are sensitivity-reviewed (D11)");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null, null }), "a dev build is not gated");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }), "all seven are sensitivity-reviewed (D11)");
         foreach (var e in c.Events) if (e.Id == "reparations_claim") e.Status = "fact-checked";
-        StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null }));
+        StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
         var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
         foreach (var method in new[] { "public static void Web()", "public static void Mac()" })
         {
@@ -84,20 +84,20 @@ public class BuildGateTests
         try
         {
             CollectionAssert.IsEmpty(photos.SensitiveUnreviewed(), "the owner signed off all six on 2026-10-11");
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping }), "the shipped catalog and mapping pass");
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null }), "the shipped catalog and mapping pass");
             Unreview(photos);
             CollectionAssert.AreEqual(SensitivePhotos, photos.SensitiveUnreviewed(), "exactly the owner's list");
-            var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null });
+            var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null });
             Assert.IsNotNull(refusal, "unreviewed sensitive photographs block a shareable build");
             foreach (var id in SensitivePhotos) StringAssert.Contains(id, refusal);
             StringAssert.Contains("event photographs", refusal);
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Web" }, c, photos, false, null }),
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Web" }, c, photos, false, null, null }),
                 "a dev build still carries them (the owner reviews them in one)");
             for (int i = 0; i < photos.entries.Count; i++)                       // as the owner's sign-off would
             {
                 var e = photos.entries[i]; e.sensitivityReviewed = e.sensitive; photos.entries[i] = e;
             }
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null }), "all reviewed: the build may be shared");
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null }), "all reviewed: the build may be shared");
         }
         finally { UnityEngine.Object.DestroyImmediate(photos); }
     }
@@ -123,11 +123,11 @@ public class BuildGateTests
     public void TheGateFailsClosedWhenTheCatalogDoesNotLoad()
     {
         var c = ContentLoader.Load(Paths.Content);
-        var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, null });
+        var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, null, null });
         Assert.IsNotNull(refusal, "an existing catalog that did not load is a refusal");
         StringAssert.Contains("did not load", refusal);
-        Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, null, false, null }), "no catalog file and no mapping: no photographs ship");
-        var fromMapping = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, UnreviewedMapping });
+        Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, null, false, null, null }), "no catalog file and no mapping: no photographs ship");
+        var fromMapping = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, UnreviewedMapping, null });
         foreach (var id in SensitivePhotos) StringAssert.Contains(id, fromMapping, "the mapping's own sensitive rows refuse");
     }
 
@@ -140,20 +140,20 @@ public class BuildGateTests
         var photos = ShippedPhotos();
         try
         {
-            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping }), "the shipped catalog matches the mapping");
+            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "the shipped catalog matches the mapping");
             Unreview(photos);
             for (int i = 0; i < photos.entries.Count; i++)                       // a hand edit, not the owner's sign-off
             {
                 var e = photos.entries[i]; e.sensitivityReviewed = e.sensitive; photos.entries[i] = e;
             }
-            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, null }), "the catalog alone would pass");
-            var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, UnreviewedMapping });
+            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, null, null }), "the catalog alone would pass");
+            var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, UnreviewedMapping, null });
             Assert.IsNotNull(refusal, "the mapping still says unreviewed");
             StringAssert.Contains("does not match", refusal);
             foreach (var id in SensitivePhotos) StringAssert.Contains(id, refusal);
             var j = photos.entries.FindIndex(e => e.eventId == "maabarot_policy");
             var m = photos.entries[j]; m.credit = "someone else"; photos.entries[j] = m;
-            StringAssert.Contains("maabarot_policy", (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping }), "a changed credit");
+            StringAssert.Contains("maabarot_policy", (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "a changed credit");
         }
         finally { UnityEngine.Object.DestroyImmediate(photos); }
     }

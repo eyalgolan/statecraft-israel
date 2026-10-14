@@ -58,6 +58,15 @@ namespace Statecraft.Sim
         public MapAction(string action, int q, int r) { Action = action; Q = q; R = r; }
     }
 
+    /// <summary>Sets how many of <see cref="City"/>'s civilians work in <see cref="Role"/> (`job`), a standing order
+    /// (Cities.Assign, R-CITY-001). GDD v0.1 loop only.</summary>
+    public sealed class AssignWorkers : Command
+    {
+        public override string Kind => Cities.Kind;
+        public string City { get; } public string Role { get; } public int Count { get; }
+        public AssignWorkers(string city, string role, int count) { City = city; Role = role; Count = count; }
+    }
+
     public sealed class Rejection
     {
         public Command Command { get; } public string Reason { get; }
@@ -86,6 +95,7 @@ namespace Statecraft.Sim
                     case ChooseEventOption e: Text(e.EventId, "EventId"); Text(e.OptionId, "OptionId"); break;
                     case Appoint a: Text(a.Office, "Office"); Text(a.Person, "Person"); break;
                     case MapAction m: Text(m.Action, "Action"); break;
+                    case AssignWorkers w: Text(w.City, "City"); Text(w.Role, "Role"); break;
                     case SetMobilization _: case SecurityOrder _: break;
                     default: throw new ArgumentException("unknown command type " + cmd.GetType().Name, "commands");
                 }

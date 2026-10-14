@@ -15,6 +15,7 @@ The rules live in `docs/CONTENT_POLICY.md` (section 1 framing, section 2 sources
 
 - The Israeli sources named in `docs/CONTENT_POLICY.md` section 1 (the Central Bureau of Statistics, the IDF, the Foreign Ministry, the State Archives) and the Knesset's own records, then mainstream Israeli historiography.
 - English and Hebrew Wikipedia are accepted cited sources here. Cite the exact article and, for a number or date, the footnote it rests on, and say so if it rests on one secondary source.
+- When you add primary or official sources to a record that cites Wikipedia, drop a Wikipedia article only if the new sources cover every line it supported. Otherwise keep it, and say in the PR which lines still rest on it.
 - Knesset plenary records and laws are PDFs on `fs.knesset.gov.il`.
 
 ## When you cannot reach a source

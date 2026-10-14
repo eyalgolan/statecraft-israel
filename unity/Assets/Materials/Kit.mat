@@ -25,6 +25,7 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _CityWindowDark: 0.95
     - _Jitter: 0
     - _WindowDark: 0.55
     m_Colors:

@@ -9,7 +9,10 @@ office: defense_minister
 # battalion), rejected his second as an army within an army, demanded all the weapons and empowered the army to use force
 # if necessary. 21 June: Dan Even's ultimatum and fighting at Kfar Vitkin; the ship ran aground off Tel Aviv. 22 June:
 # Ben-Gurion ordered it shelled; Yitzhak Rabin commanded on shore. 16 Irgun and 3 IDF dead; Irgun units in the IDF were
-# disbanded and their men dispersed (en.wiki "Altalena Affair" and "1948 in Israel" agree). Research notes section 2.
+# disbanded and their men dispersed (en.wiki "Altalena Affair"; the Etzel account and the Izkor page give the 16 and 3
+# dead; the Etzel account gives the agreement to the first request and Ben-Gurion's order to shell, and Ben-Gurion told
+# the Provisional State Council on 23 June that there was no such agreement: both below; the Ministry of Education has
+# Rabin commanding the IDF force off Tel Aviv; the dispersal rests on en.wiki alone). Research notes section 2.
 # The window opens on 19 June, the turn date before the arrival (game timing), so the card comes before 20-22 June.
 from: 1948-06-19
 to: 1948-06-23
@@ -22,15 +25,40 @@ options:
       - { target: security, delta: 0.015 }
       - { target: morale, delta: -0.05 }
   - id: compromise
-    # Begin's second request, put on the table and rejected (en.wiki "Altalena Affair").
+    # Begin's second request, put on the table and rejected (en.wiki "Altalena Affair"; the Etzel account; the Izkor page
+    # records the dispute over whether the arms went to the IDF as a whole or mainly to Irgun units).
     text: Grant both requests, arming Irgun battalions inside the IDF
     effects:
       - { target: security, delta: -0.025 }
       - { target: morale, delta: 0.02 }
 sources:
   - { url: "https://en.wikipedia.org/wiki/Altalena_Affair", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/1948_in_Israel", checked: 2026-10-10 }
   # The Irgun's own account (Etzel history): Begin's two requests, the fifth for Jerusalem and the rest for the IDF battalions.
   - { url: "https://daat.ac.il/etzel/english/ac20.htm", checked: 2026-10-14 }
   - { url: "https://www.jta.org/archive/hull-of-altalena-sunk-vessel-destroyed-in-1948-when-irgun-tried-to-land-munitions", checked: 2026-10-14 }
+  # Provisional State Council, fifth sitting, 23 June 1948 (Knesset minutes). Ben-Gurion: on 1 June the Irgun's head
+  # signed that its arms would go to the IDF; the Irgun refused to put the ship at the government's disposal; the
+  # government, unanimously, had the army concentrate force to stop the unloading; the rebels at Kfar Vitkin surrendered
+  # their arms to the Alexandroni commander; the ship went to Tel Aviv and, in his words, deliberately grounded on the
+  # sand; a special government meeting ordered it handed over or force used, and an IDF gun hit it ("yesterday"). In
+  # reply to Pinkas he said there was no agreement to give the Irgun part of the arms for Jerusalem or anywhere else.
+  # Weinstein (Revisionists) and Pinkas (Mizrachi) had asked whether 20% for Jerusalem was agreed and whether the
+  # dispute was over the other 80%. This is the government's account; the Etzel account above differs.
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249973.pdf", checked: 2026-10-14 }
+  # Provisional State Council, sixth sitting, 24 June 1948 (Knesset minutes), the end of that debate and the documented
+  # outcome of enforcing the order: by roll call the council approved the government's action in preventing the Irgun
+  # from bringing in arms without the state's authority, as an attack on the state's sovereignty and a breach of the
+  # Irgun's written undertaking of 1 June 1948 (24 for, 4 against, 5 abstaining, 4 absent); and it approved a
+  # committee of ministers and council members to secure a single army under one authority (22 for, 8 abstaining).
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249974.pdf", checked: 2026-10-14 }
+  # The same statement and reply, as Ben-Gurion republished them in his collected speeches (Bahilahem Israel, 1951), on
+  # Project Ben-Yehuda: a readable copy if the Knesset PDF does not open.
+  - { url: "https://benyehuda.org/read/56639", checked: 2026-10-14 }
+  # Izkor, the Ministry of Defense memorial site, on the Altalena monument: the ship anchored off Kfar Vitkin on 20 June
+  # 1948; there were sharp disagreements over whether its arms went to the whole IDF or mainly to Irgun units,
+  # including those in Jerusalem; it was hit by an IDF artillery shell off central Tel Aviv on the afternoon of 22 June;
+  # 16 Irgun men and 3 IDF soldiers were killed.
+  - { url: "https://www.izkor.gov.il/monument/en_fad2775fa80e5dc770a8f8652d44ecbf/", checked: 2026-10-14 }
+  # Ministry of Education page on Yitzhak Rabin: he commanded the IDF force in the Altalena affair off Tel Aviv.
+  - { url: "https://pop.education.gov.il/tchumey_daat/moledet_hevra_ezrahut/yesodi/noseem_nilmadim/itzhak_rabin/", checked: 2026-10-14 }
 status: sensitivity-reviewed

@@ -1,0 +1,135 @@
+# Decision-card illustration loops: silent AI-generated clips behind the card's Illustration switch (decision videos, owner
+# rulings 2026-10-13; docs/event-videos.md). The archival photograph always shows first; a clip is never the only picture
+# of a real event, and an event without a photograph gets no clip.
+# This file maps event ids to clips for the Unity card only. It is NOT game content: content/events/*.yaml feed the content
+# hash and save compatibility, and this file must never move there (EventVideoMappingTests).
+# Each row: the event id; the shipped file (unity/Assets/StreamingAssets/video/); the promo shot it is made from (a path
+# under promo/, which is not in the repository) and its SHA-256; the generator; the date the shot was made (its file date);
+# what it shows (the alt text, the switch's tooltip); and the sensitivity flags.
+# sensitive: true rows may not ship in a -shareable build until sensitivity_reviewed: true (an OWNER step; Build.cs).
+# Rights: owner ruling D-V (docs/oss/DECISIONS.md), "no need to check, just use them"; ai_generated: true on every row.
+# Deport never gets a clip (GDD owner ruling 1): EventVideoMapping refuses a row for an event with a deport option.
+# tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, the burned-in label.
+checked: 2026-10-14
+clips:
+  - event: latrun_proposal
+    file: latrun_proposal.mp4
+    shot: L14
+    source: promo/demo2/clips-v2/L14.mp4
+    source_sha256: f1e6c57c01ee4665c4e3948172c749973a2d335f83c65f8d8522f6f72706751b
+    generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
+    generated: 2026-10-12
+    alt: "Illustration: the police fort at Latrun on its hill above the road, smoke drifting across."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: first_truce
+    file: first_truce.mp4
+    shot: K03a
+    source: promo/demo3/clips/K03a.mp4
+    source_sha256: 75156139ee81c1d6962d593e3f55a4f9233d9d2a0955b1d1dff5e7dc62431dcd
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: besieged Jerusalem, a water cart and a queue of people seen from behind."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: jerusalem_ceasefire
+    file: jerusalem_ceasefire.mp4
+    shot: K03b
+    source: promo/demo3/clips/K03b.mp4
+    source_sha256: a6a63909bd06e13a263de2d340552f6e5ee66d7b1f567335df7bc469c152f691
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: a ration of water drawn from a cart's tap into a tin in a Jerusalem street."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: operation_yoav
+    file: operation_yoav.mp4
+    shot: W04a
+    source: promo/demo3/clips/W04a.mp4
+    source_sha256: 26bf28dae5b96170057a5b4b894eff2d80c5f81503d53f4affad228055393d91
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: a shell-holed water tower over a Negev kibbutz, smoke on the horizon."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: false
+  - event: maabarot_policy
+    file: maabarot_policy.mp4
+    shot: W05a
+    source: promo/demo3/clips/W05a.mp4
+    source_sha256: b3cd6cf07004c80ee89bf679ac89608ae6edd594a172b36b566a239e983bfecc
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: a transit camp in the rain, a queue at the tap seen from behind."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: frumkin_commission
+    file: frumkin_commission.mp4
+    shot: W05b
+    source: promo/demo3/clips/W05b.mp4
+    source_sha256: ea1b9fdce8f9499dec68a3d3cc61195e5ccea0156229e8fcd51f5abc44354461
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: a jerrycan filled at a tap in a muddy transit camp, tents behind."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: law_of_return
+    file: law_of_return.mp4
+    shot: K04a
+    source: promo/demo3/clips/K04a.mp4
+    source_sha256: 5bb6e584eb57771bef155f4dcf2be847d1a8f50302b8dbffd30723806ab4a2b9
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: an immigrant ship crowded with passengers entering Haifa bay."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: hula_drainage
+    file: hula_drainage.mp4
+    shot: W06
+    source: promo/demo3/clips/W06.mp4
+    source_sha256: 39ea857ef8927780bb6fa874df72ef38450bb7f11e1b9b786f5db20cbecce379
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-12
+    alt: "Illustration: the Hula marsh at dawn, a dragline cutting a new channel."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: austerity_1949
+    file: austerity_1949.mp4
+    shot: A09
+    source: promo/demo2/clips/A09.mp4
+    source_sha256: 79ab0b07145177d9899e1c39136e5e04c3f7ca8f0a310a7c905042fab1dc6cd2
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    alt: "Illustration: a queue at a grocer's in a seaside town, as under rationing."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: iraqi_exodus
+    file: iraqi_exodus.mp4
+    shot: A07
+    source: promo/demo2/clips/A07.mp4
+    source_sha256: 8b3fc06d8a7836e82896a9fd09a3b874dbfdd7f9eca9e7be63f70202630af783
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    alt: "Illustration: an airliner on the apron at Lydda at dusk, families coming down the steps with suitcases."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: ten_days
+    file: ten_days.mp4
+    shot: J09
+    source: promo/demo2/clips-v2/J09.mp4
+    source_sha256: 7a1242da163d3fae432889643a64abf7fd9eff73d700cad978d30c0c32b6c571
+    generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
+    generated: 2026-10-13
+    alt: "Illustration: armoured cars of the Arab Legion climbing a road in the hills."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: false

@@ -4,12 +4,16 @@ title: Education in the Immigrant Camps
 text: 'Religious Yemenite parents report coercion in the immigrant-camp schools, which the uniform system put under the Culture Department, including the cutting of sidelocks. The religious parties demand action. {prime_minister} must decide whether to appoint an inquiry.'
 anchor: soft
 office: prime_minister
-# Commission appointed January 1950 (first session 25 January); report submitted 9 May 1950.
+# Commission appointed January 1950 (first session 25 January, he.wiki; JTA reported on 2 February that a cabinet
+# committee of inquiry began hearing witnesses "today", and on 19 January that the government had appointed a
+# committee of five cabinet members; in the Knesset on 17 January Gury said the Education Ministry was in the middle of
+# its own inquiry, and on 31 January that the commission appointed by the government was at work and had not yet
+# reported); report submitted 9 May 1950 (JTA).
 from: 1950-01-01
 to: 1950-05-09
 options:
   - id: inquiry
-    text: Appoint a commission of inquiry and move camp education to the Education Ministry
+    text: Appoint a commission of inquiry and move camp education from the Culture Department to the Education Department
     historical: true
     recommended: true
     effects:
@@ -19,7 +23,29 @@ options:
     effects:
       - { target: morale, delta: -0.04 }
 sources:
+  # Kept for the commission's first session on 25 January 1950, which the sources below do not give.
   - { url: "https://he.wikipedia.org/wiki/ועדת_פרומקין", checked: 2026-10-14 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250034.pdf", checked: 2026-10-14 }
+  # First Knesset, 111th sitting, 31 January 1950: Gury (Mapai), opposing Rokach's motion, said the commission of inquiry
+  # appointed by the government was at work and had not yet finished.
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250129.pdf", checked: 2026-10-14 }
+  # First Knesset, 107th sitting, 17 January 1950: Gury, opposing Idov Cohen's motion, said the Ministry of Education
+  # and Culture was in the middle of its inquiry into education in the camps.
+  - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250126.pdf", checked: 2026-10-14 }
+  # JTA, 19 January 1950: the government "today" appointed a committee of five cabinet members to investigate complaints
+  # that religious edicts were violated in the immigrant camps, to report to the cabinet the next Wednesday.
+  - { url: "https://www.jta.org/archive/israel-government-appoints-committee-to-investigate-violations-of-religious-edicts", checked: 2026-10-14 }
+  # JTA, 2 February 1950: a cabinet committee of inquiry "today began hearing witnesses" on religious education in the
+  # immigrant camps.
+  - { url: "https://www.jta.org/archive/government-inquiry-committee-opens-hearings-on-religious-education-in-israel-camps", checked: 2026-10-14 }
+  # Dov Levitan, "The First State Commission of Inquiry: Education in the Immigrant Camps", Niv HaMidrasha 20-21
+  # (5747-5748), pp. 290-306, on Da'at (printed without notes): complaints from Yemenite immigrants, among them the
+  # cutting of children's sidelocks; camp education run by Nahum Levin's department for language and cultural
+  # absorption; the cabinet decided on a commission of inquiry on 17 January 1950 and it received its letter of
+  # appointment on 21 January; chaired by the former Supreme Court judge G. Frumkin, with MKs Elmaleh, Ben-Zvi and
+  # Kahana and Rabbi Shear; 33 sessions and 101 witnesses; the compromise of 21 February 1950 that brought the religious
+  # ministers back to the cabinet.
+  - { url: "https://www.daat.ac.il/daat/kitveyet/niv/levitan-1.htm", checked: 2026-10-14 }
+  # JTA, 13 June 1950: the commission's report was completed on 9 May, after 101 witnesses at 33 sessions.
+  - { url: "https://www.jta.org/archive/inquiry-commission-on-religious-education-in-camps-publishes-report-exonerates-govt", checked: 2026-10-14 }
 status: fact-checked

@@ -27,5 +27,26 @@ options:
       - { target: morale, delta: -0.04 }
 sources:
   - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d513", checked: 2026-10-10 }
+  # FRUS 1951 v.V doc 514, Davis to the State Department, 21 October 1951: the Israeli Treasury's figures put foreign
+  # exchange obligations maturing October to 31 December 1951 at 45.0 million dollars (import credits 32.8, bilateral
+  # trade swings 2.0, defence import credits 9.0, oil 1.2) against 26.0 million of expected earnings; it supports
+  # Kaplan's request of 19 October for immediate aid.
+  - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d514", checked: 2026-10-14 }
+  # FRUS 1951 v.V doc 511, Davis, 13 October 1951: the Finance Ministry's secretary-general said reserves were nil and
+  # about 15 million dollars was needed to clear arrears; he did not think the government's credit seriously impaired
+  # yet, nor short-term commercial credit significantly shut down, but the banks' attitude showed widespread concern.
+  - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d511", checked: 2026-10-14 }
+  # JTA, 23 October 1951, citing the London Times from Tel Aviv: Finance Ministry officials blamed the crisis on last
+  # winter's drought, estimated to have cost 20 to 30 million dollars; and the New York Times, that the government had
+  # cut import licences and refused to extend expired but unused credits.
+  - { url: "https://www.jta.org/archive/u-s-credits-will-check-foreign-currency-crisis-in-israel", checked: 2026-10-14 }
+  # FRUS 1951 v.V doc 515, Kopper to McGhee, 22 October 1951: Israel's reserves nil and about 15 million dollars needed
+  # to clear arrears; Israeli officials did not think the government's credit yet seriously impaired, though the banks'
+  # attitude showed widespread concern; Manufacturers Trust and National City had formed a consortium and were viewing
+  # favourably a loan of upwards of 10 million dollars to Israel.
+  - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d515", checked: 2026-10-14 }
+  # Kept for one line of the comment above: that foreign banks and oil companies refused to expand credit at the end of
+  # 1951. The FRUS and JTA sources here do not say so, and the article's footnote, Seidman (Southern California
+  # Interdisciplinary Law Journal 18, 2008), was read and does not say so either.
   - { url: "https://en.wikipedia.org/wiki/Austerity_in_Israel", checked: 2026-10-10 }
 status: fact-checked

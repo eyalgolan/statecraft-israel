@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Sim;
 
@@ -26,7 +27,9 @@ public class MvpSliceTests
     {
         Assert.Equal(Real.Events.Select(e => e.Id), Mvp.Events.Select(e => e.Id));
         Assert.Equal(Real.Rules.Start, Mvp.Rules.Start);
-        Assert.Equal(Real.Rules.AttentionCost, Mvp.Rules.AttentionCost);
+        // The slice adds the GDD command kinds' costs (placeholders) and keeps every other cost.
+        Assert.Equal(Real.Rules.AttentionCost.Append(new KeyValuePair<string, double>("assign_workers", 0.5)).OrderBy(kv => kv.Key, StringComparer.Ordinal),
+                     Mvp.Rules.AttentionCost.OrderBy(kv => kv.Key, StringComparer.Ordinal));
         Assert.Equal(Real.Rules.BudgetStart, Mvp.Rules.BudgetStart);
         Assert.Equal(Real.Rules.CapitalInflowPerYear, Mvp.Rules.CapitalInflowPerYear);
         Assert.Equal(Real.Eras.Select(e => (e.Id, e.Name, e.From, e.To, e.Systems.Legislature, string.Join(",", e.Systems.MapActions))),
@@ -59,7 +62,7 @@ public class MvpSliceTests
     [Fact]
     public void LoadKeepsTheLoadersDirectoryChecks()
     {
-        var dir = Fixture.Write();
+        var dir = Fixture.Write(Fixture.Gdd());
         System.IO.Directory.CreateDirectory(System.IO.Path.Combine(dir, "rules"));
         System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "rules", "nosuchera.yaml"), "attention_per_turn: 5\n");
         var ex = Assert.Throws<ContentException>(() => MvpSlice.Load(dir));

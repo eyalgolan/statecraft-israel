@@ -1,11 +1,11 @@
 using System;
+using Statecraft.Sim.Reference;
 
 namespace Statecraft.Sim
 {
     /// <summary>The GDD slice's golden (spec 2026-10-12 section 3; docs/determinism.md, "MVP goldens"): MvpSlice (the real content
-    /// with the loop switch on and monthly turns), the golden seed, Historical mode and HistoricalAI, until Until. It covers only
-    /// what is built: no GDD order is issued, so it needs no reference player (decision D-A7, with the owner) and no resolution
-    /// order (D-A6).</summary>
+    /// with the loop switch on, monthly turns and the slice's placeholder city), the golden seed, Historical mode and the
+    /// reference player (D-A7: HistoricalAI's orders, then the jobs filled), until Until.</summary>
     public static class MvpGolden
     {
         /// <summary>Eight monthly turns from 15 May 1948. A test choice, not a balance value.</summary>
@@ -15,7 +15,7 @@ namespace Statecraft.Sim
         {
             var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
             for (int turn = 0; turn < 1000 && s.Date < Until && s.GameOver == null; turn++)
-                s = Simulation.Step(c, s, HistoricalAI.Commands(c, s)).State;
+                s = Simulation.Step(c, s, ReferencePlayer.Commands(c, s)).State;
             return s;
         }
     }

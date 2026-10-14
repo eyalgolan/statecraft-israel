@@ -30,7 +30,6 @@ place	herzliya	Herzliya	Herzliya	הרצליה	34.8422	32.1556	town	water_tower	0
 place	sepphoris	Saffuriya			35.2792	32.7531	village	mosque	0	4330	draft	2026-10-11	3
 place	kfar_saba	Kfar Saba	Kfar Saba	כפר סבא	34.9077	32.1858	town	water_tower	0	4320	draft	2026-10-11	3
 place	taibe_2	Taiyiba	Tayibe	טייבה	35	32.2667	village	mosque	0	4290	draft	2026-10-11	3
-place	ijzim	Ijzim			34.9881	32.6447	village	mosque	0	4280	draft	2026-10-11	3
 place	balad_al_sheikh	Balad esh Sheikh			35.0421	32.7716	village	mosque	0	4120	draft	2026-10-11	3
 place	yazur	Yazur			34.7994	32.0289	village	mosque	0	4030	draft	2026-10-11	3
 place	jenin	Jenin	Jenin	ג'נין	35.3	32.4611	arab_town	mosque	0	3990	draft	2026-10-11	3
@@ -57,6 +56,7 @@ place	anabta	Anabta	Anabta	ענבתא	35.1169	32.3072	village	mosque	0	3120	draf
 place	al_safiriyya	Safiriya			34.8509	31.9934	village	mosque	0	3070	draft	2026-10-11	3
 place	kafr_ana	Kafr 'Ana			34.8681	32.0272	village	mosque	0	3020	draft	2026-10-11	3
 place	jericho	Jericho	Jericho	יריחו	35.4631	31.8561	village	mosque	0	3010	draft	2026-10-11	3
+place	ijzim	Ijzim			34.9881	32.6447	village	mosque	0	2970	draft	2026-10-11	3
 place	al_bassa	Bassa			35.1408	33.0761	village	church	0	2950	draft	2026-10-11	3
 place	al_bireh	Bira	Al-Bireh	אל-בירה	35.215	31.9051	arab_town	mosque	0	2920	draft	2026-10-11	3
 place	deir_al_ghusun	Deir el Ghusun	Deir al-Ghusun	דיר אל-ע'וסון	35.077	32.3531	village	mosque	0	2860	draft	2026-10-11	3
@@ -170,7 +170,7 @@ place	awarta	Awarta	Awarta	עוורתא	35.2864	32.1614	village	mosque	0	1470	dr
 place	umm_az_zinat	Umm ez Zinat			35.0633	32.6472	village	mosque	0	1470	draft	2026-10-11	3
 place	al_birwa	Birwa			35.1802	32.9052	village	mosque	0	1460	draft	2026-10-11	3
 place	kafr_qasim	Kafr Qasim	Kafr Qasim	כפר קאסם	34.9772	32.1142	village	mosque	0	1460	draft	2026-10-11	3
-place	ilar	Ilar	'Illar		35.1071	32.3702	village	mosque	0	1450	draft	2026-10-11	2
+place	ilar	Ilar	Illar, Tulkarm	עילאר	35.1071	32.3702	village	mosque	0	1450	draft	2026-10-11	3
 place	imwas	Imwas			34.9927	31.842	village	mosque	0	1450	draft	2026-10-11	3
 place	nahariya	Nahariya	Nahariya	נהריה	35.0925	33.0036	town	water_tower	0	1440	draft	2026-10-11	3
 place	al_khayriyya	Kheiriya			34.828	32.0371	village	mosque	0	1420	draft	2026-10-11	3

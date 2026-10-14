@@ -10,8 +10,8 @@ it reads it, so a wrong or tampered download is refused. Downloads are untrusted
   uv run --with pillow==12.3.0 --with pyyaml==6.0.3 python -I tools/event_images.py --originals DIR
 
 The adaptation, recorded as "graded and cropped" in each credit (CC BY 4.0 asks for it), is exactly this and nothing
-else: the picture is read as luminance (a colour slide becomes black and white), cropped to the row's 9:4 box, resized
-to at most WIDTH pixels wide (a multiple of 36, so both sides are multiples of 4), its levels stretched between the 0.5
+else: the picture is read as luminance (a colour slide becomes black and white), cropped to the row's 16:9 box, resized
+to at most WIDTH pixels wide (a multiple of 64, so both sides are multiples of 4), its levels stretched between the 0.5
 and 99.5 percentiles, and toned from navy shadows through sepia mid-tones to warm highlights. No retouching, no colourising, nothing added or removed."""
 from __future__ import annotations
 
@@ -27,15 +27,15 @@ from PIL import Image
 REPO = Path(__file__).resolve().parents[1]
 FOLDER = REPO / "unity/Assets/UI/EventImages"
 MAPPING = FOLDER / "event-images.yaml"
-ASPECT = 9 / 4                     # the card header's width : height (Statecraft.uss .event-photo)
-WIDTH = 720                        # about 1.5x the 456 px header, so it stays sharp on larger windows
-MAX_BYTES = 200 * 1024
+ASPECT = 16 / 9                    # the card's media header, width : height (EventCardPresenter.MediaAspect)
+WIDTH = 960                        # the header's width at the 1080p reference (a 1040 px card less its padding)
+MAX_BYTES = 450 * 1024            # 200 KB at the old 720x320, scaled with the pixel count (x2.25)
 # The grade: luminance 0 -> navy, 128 -> sepia, 255 -> warm paper (the promo's navy and gold palette).
 SHADOW, MID, HIGHLIGHT = (14, 18, 30), (126, 117, 104), (238, 232, 218)
 
 
 def crop_box(size: tuple[int, int], crop: list[float]) -> tuple[int, int, int, int]:
-    """The 9:4 box for a row's crop [centre x, centre y, width] (shares of the original), kept inside the picture.
+    """The 16:9 box for a row's crop [centre x, centre y, width] (shares of the original), kept inside the picture.
     If the picture is too short for that width, the width shrinks to fit the full height."""
     w, h = size
     cx, cy, share = crop
@@ -80,8 +80,8 @@ def stretch(im: Image.Image) -> Image.Image:
 def grade(original: Image.Image, crop: list[float]) -> Image.Image:
     """The shipped picture for one row (see the module docstring for the full list of changes)."""
     gray = original.convert("L").crop(crop_box(original.size, crop))
-    width = min(WIDTH, gray.width) // 36 * 36       # 9:4 in whole pixels, both sides multiples of 4 (block compression)
-    gray = gray.resize((width, width * 4 // 9), Image.Resampling.LANCZOS)
+    width = min(WIDTH, gray.width) // 64 * 64       # 16:9 in whole pixels, both sides multiples of 4 (block compression)
+    gray = gray.resize((width, width * 9 // 16), Image.Resampling.LANCZOS)
     return stretch(gray).convert("RGB").point(tone_lut())
 
 

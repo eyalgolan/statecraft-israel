@@ -236,7 +236,7 @@ public class PromoHudTests
                 }
                 foreach (var e in new[] { root.Q("nav"), root.Q(className: "turn-box"), badge })
                     Assert.LessOrEqual(e.worldBound.yMax, barRect.yMax + 0.5f, $"{where}: {e.name}{string.Join(".", e.GetClasses())} leaves the bar");
-                Assert.GreaterOrEqual(root.Q("right-column").worldBound.yMin, barRect.yMax, where + ": the event column starts under the bar");
+                Assert.GreaterOrEqual(root.Q("right-column").worldBound.yMin, barRect.yMax, where + ": the minimap column starts under the bar");
                 var screen = root.Q("screen-why");
                 screen.style.display = DisplayStyle.Flex;                // opened, as ScreenNav does
                 for (int i = 0; i < 2; i++) yield return null;
@@ -475,7 +475,7 @@ public class PromoHudTests
         }
     }
 
-    /// <summary>Integration bug B7: the toast is opaque and never covers an open screen or the event column.</summary>
+    /// <summary>Integration bug B7: the toast is opaque and never covers an open screen or the minimap column.</summary>
     [UnityTest]
     public IEnumerator TheToastIsOpaqueAndClearOfTheScreens()
     {
@@ -493,7 +493,7 @@ public class PromoHudTests
                 for (int i = 0; i < 3; i++) yield return null;
                 Assert.AreEqual(1f, toast.resolvedStyle.backgroundColor.a, 1e-3f, "opaque");
                 Assert.IsFalse(toast.worldBound.Overlaps(ui.Q<VisualElement>("screen-" + s).worldBound), $"the toast {toast.worldBound} covers {s}");
-                Assert.IsFalse(toast.worldBound.Overlaps(ui.Q<VisualElement>("right-column").worldBound), "the toast covers the event column");
+                Assert.IsFalse(toast.worldBound.Overlaps(ui.Q<VisualElement>("right-column").worldBound), "the toast covers the minimap column");
                 Assert.GreaterOrEqual(toast.worldBound.yMin, ui.Q<VisualElement>("top-bar").worldBound.yMax, "the toast starts under the bar");
             }
         }

@@ -158,11 +158,14 @@ public class TerrainShaderTests
     /// frame's luma spread: this view takes in the Dead Sea (about 7% of the frame), whose land-to-sea step is about a
     /// quarter to a third of the frame's variance and shrinks as the AO darkens the land, cancelling the relief's gain
     /// (LumaStd measured 0.0830 -> 0.0827 while the gradient rose 13%).
-    /// Terrain.mat is changed in memory only and restored.</summary>
+    /// Terrain.mat is changed in memory only and restored. The trees are off: their crowns add the same detail to both
+    /// renders and dilute the bakes' share (2026-10-14: 10.0% with main's trees, 6.9% with the hills' scatter of #34, 12.3%
+    /// without trees).</summary>
     [UnityTest]
     public IEnumerator TheBakesCarveTheRelief()
     {
         var map = OpenMap();
+        VisualToggles.Set("trees", false);
         yield return null;
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         rig.LookAt = map.Frame.ToWorld(35.25, 31.70, 0); rig.Distance = 45000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();

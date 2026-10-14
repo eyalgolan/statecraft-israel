@@ -7,8 +7,8 @@ tags: [security, war-casualties]
 office: defense_minister
 # Approved at the cabinet session of 6 October 1948; launched after a supply convoy was fired on as it passed Egyptian
 # positions on 15 October (Israel's reply in S/1042; the IDF account); English Wikipedia gives 14 October. 15-22 October
-# 1948; Beersheba taken by the Negev Brigade on 21 October; cease-fire 22 October
-# (en.wiki "Operation Yoav", "1948 Arab-Israeli War"). At the end Allon asked to push into the Hebron hills and the Jericho
+# 1948; Beersheba taken by the Negev Brigade on 21 October; cease-fire 22 October (en.wiki "Operation Yoav"; the IDF
+# account; the Knesset's war summary; FRUS doc. 705). At the end Allon asked to push into the Hebron hills and the Jericho
 # valley; Ben-Gurion refused, mainly fearing British involvement (en.wiki "Operation Yoav"). This card is that decision
 # (yoav_hebron in notes section 7). The window is the operation, 15-22 October; on the monthly grid of the second truce
 # the card comes on 17 October, and the turn it opens covers Allon's request.
@@ -29,11 +29,25 @@ options:
       - { target: security, delta: 0.03 }
       - { target: intl_standing, delta: -0.08 }
 sources:
+  # Kept for Allon's request to push into the Hebron hills and the Jericho valley and Ben-Gurion's refusal, mainly for
+  # fear of British involvement, and for the 14 October start; the IDF History Department study below has the
+  # political level restrain Allon over Hebron but gives the Arab Legion and a wider war as the reason.
   - { url: "https://en.wikipedia.org/wiki/Operation_Yoav", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/1948_Arab–Israeli_War", checked: 2026-10-10 }
   - { url: "https://documents.un.org/api/symbol/access?s=S/1042&l=en&t=pdf", checked: 2026-10-14 }
   - { url: "https://www.un.org/unispal/document/auto-insert-210876/", checked: 2026-10-14 }
+  # Ben-Gurion's diary, 6 October 1948 (Ben-Gurion Archives): the cabinet adopted his proposal to break a road through
+  # to the Negev by force, 8 in favour.
+  - { url: "https://bengurionarchive.bgu.ac.il/node/10786", checked: 2026-10-14 }
   - { url: "https://history.state.gov/historicaldocuments/frus1948v05p2/d705", checked: 2026-10-14 }
   # IDF account, republished by the Jewish Virtual Library.
   - { url: "https://jewishvirtuallibrary.org/jsource/History/Yoav.html", checked: 2026-10-14 }
+  # Benny Gshur, "Mount Hebron in the War of Independence", Yesodot 4 (IDF History Department, 2022): Yoav ran 15-22
+  # October 1948; in Har-El, alongside it, Harel was stopped at Husan by order of the political level, through the
+  # General Staff, despite its commander's protests (p. 8); the leadership held back commanders such as Allon and
+  # Yosef Tabenkin who disagreed with the policy of not fighting the Legion for the Hebron hills, and Ben-Gurion wrote
+  # that "a war on Hebron is a war on the Legion, and it will widen the war wherever it is" (p. 24, citing his war
+  # diary, vol. III, p. 819). It does not date Allon's request or mention the Jericho valley or Britain.
+  - { url: "https://www.idf.il/media/rccdyzpl/%D7%94%D7%A8-%D7%97%D7%91%D7%A8%D7%95%D7%9F-%D7%91%D7%9E%D7%9C%D7%97%D7%9E%D7%AA-%D7%94%D7%A2%D7%A6%D7%9E%D7%90%D7%95%D7%AA-%D7%90%D7%97%D7%A8%D7%99-%D7%A2%D7%99%D7%9E%D7%95%D7%93-1.pdf", checked: 2026-10-14 }
+  # The Knesset's summary of the War of Independence: Yoav, 15-22 October 1948; Beersheba taken on 21 October.
+  - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-14 }
 status: sensitivity-reviewed

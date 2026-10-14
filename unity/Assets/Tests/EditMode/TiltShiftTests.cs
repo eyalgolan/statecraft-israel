@@ -98,8 +98,21 @@ public class TiltShiftTests
         Assert.AreEqual(1f, TiltShift.FarStrength(CameraController.MaxDistance), 1e-6f, "the overview keeps it in full");
         Assert.Less(TiltShift.FarStrength(200000f), 1f); Assert.Greater(TiltShift.FarStrength(200000f), TiltShift.FarGameplayStrength);
         var p = TiltShift.Params(0.09f, 60000f);
-        Assert.AreEqual(1f, TiltShift.BandStrength(0.1f, p, 0.35f), "the near band is unchanged");
-        Assert.AreEqual(0.35f, TiltShift.BandStrength(0.9f, p, 0.35f));
+        Assert.AreEqual(0.35f, TiltShift.BandStrength(0.9f, p, 0.35f, 0.4f), "the far band above the focus");
+        Assert.AreEqual(0.4f, TiltShift.BandStrength(0.1f, p, 0.35f, 0.4f), "the near band below it");
+    }
+
+    /// <summary>The owner's ruling (2026-10-14): the near (bottom) band as on promo 03, gentle at the gameplay zoom and
+    /// about none at the overview, where promo 02's foreground is sharp. The far band keeps its own curve (issue #390).</summary>
+    [Test]
+    public void TheNearBandIsGentleAtTheGameplayZoomAndGoneAtTheOverview()
+    {
+        Assert.That(TiltShift.NearGameplayStrength, Is.InRange(0.5f, 0.9f), "lighter than before, but a tilt-shift");
+        Assert.AreEqual(TiltShift.NearGameplayStrength, TiltShift.NearStrength(PromoPose.Gameplay03.Distance), 1e-6f);
+        Assert.AreEqual(TiltShift.NearGameplayStrength, TiltShift.NearStrength(120000f), 1e-6f, "CameraRig's starting zoom");
+        Assert.AreEqual(0f, TiltShift.NearStrength(CameraController.MaxDistance), 1e-6f, "none at the overview");
+        Assert.Less(TiltShift.NearStrength(200000f), TiltShift.NearGameplayStrength); Assert.Greater(TiltShift.NearStrength(200000f), 0f);
+        Assert.AreEqual(0.35f, TiltShift.FarGameplayStrength, "the far band is the #390 ruling's");
     }
 
     [Test]
@@ -126,9 +139,10 @@ public class TiltShiftTests
     public void TheTiltShiftShaderCompilesForWebGL2() =>
         CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(Shader.Find("Statecraft/TiltShift")));
 
-    /// <summary>Rendered on both tiers at the gameplay pose: local contrast in the bottom (near) band falls by at least
-    /// 40%, the middle band keeps at least 95% of it. (Thresholds leave room for the terrain and grade tracks: a blur
-    /// lowers gradient energy whatever the texture.) The top (far) band is lighter at this zoom since issue #390:
+    /// <summary>Rendered on both tiers at the gameplay pose: the bottom (near) band keeps 28-60% of its local contrast
+    /// (gently soft since the owner's ruling of 2026-10-14, as on promo 03: main's full band kept about 20%), the middle
+    /// band at least 95%. (Thresholds leave room for the terrain and grade tracks: a blur lowers gradient energy whatever
+    /// the texture.) The top (far) band is lighter at this zoom since issue #390:
     /// TheFarBandStaysReadableAtTheGameplayZoom.</summary>
     [UnityTest]
     public IEnumerator TheBottomBlursAndTheMiddleStaysSharpOnBothTiers()
@@ -151,8 +165,8 @@ public class TiltShiftTests
                 float bottom = Ratio(0.02f, 0.10f), middle = Ratio(0.46f, 0.54f);
                 float bottomInner = Ratio(0.13f, 0.19f);   // review I2: the bands are tall
                 TestContext.WriteLine($"{QualitySettings.names[level]}: bottom {bottom:0.00}, middle {middle:0.00}, bottom 0.13-0.19 {bottomInner:0.00}");
-                Assert.Less(bottom, 0.6f, "bottom band blurred");
-                Assert.Less(bottomInner, 0.6f, "fully blurred 13-19% above the bottom");
+                Assert.That(bottom, Is.InRange(0.28f, 0.6f), "bottom band gently soft");
+                Assert.That(bottomInner, Is.InRange(0.28f, 0.6f), "13-19% above the bottom too (review I2: the bands are tall)");
                 Assert.Greater(middle, 0.95f, "middle band sharp");
                 // Review N6: the same blur at twice the resolution (the radius is a share of the picture's height).
                 TiltShift.Enabled = false; var sharpBig = RenderSample.Render(cam, 1920, 1080);
@@ -189,18 +203,20 @@ public class TiltShiftTests
                 TestContext.WriteLine($"{distance / 1000f:0} km: far band 0.78-0.90 {far:0.00}, near band {near:0.00}");
                 Assert.GreaterOrEqual(far, 0.6f, $"far band readable at {distance / 1000f:0} km");
                 Assert.Less(far, 0.95f, "but still gently soft (a tilt-shift, not none)");
-                Assert.Less(near, 0.6f, "the near band keeps its blur");
+                Assert.That(near, Is.InRange(0.28f, 0.6f), "the near band gently soft (the 2026-10-14 ruling)");
             }
         }
         finally { rig.TopInset = 0f; }
     }
 
-    /// <summary>Issue #390: the overview (diorama02, CameraController.MaxDistance) keeps both bands in full, as before the
-    /// ruling: the far band keeps at most 30% of its local contrast (21% measured) and the near band at most 45% (33%).</summary>
+    /// <summary>The overview (diorama02, CameraController.MaxDistance) keeps the far band in full (issue #390): at most 30%
+    /// of its local contrast (21% measured). Its near band is about gone since the owner's ruling of 2026-10-14, so the
+    /// foreground is sharp as on promo 02: at least 95% (main kept 33%).</summary>
     [UnityTest]
-    public IEnumerator TheDioramaKeepsBothBands()
+    public IEnumerator TheDioramaKeepsTheFarBandAndASharpForeground()
     {
         Assert.AreEqual(1f, TiltShift.FarStrength(CameraController.MaxDistance), "full far band at the overview");
+        Assert.AreEqual(0f, TiltShift.NearStrength(CameraController.MaxDistance), "no near band at the overview");
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = Object.FindFirstObjectByType<MapScene>(); map.Build();
         yield return null;
@@ -214,7 +230,7 @@ public class TiltShiftTests
             float far = Ratio(0.78f, 0.90f), near = Ratio(0.02f, 0.10f), middle = Ratio(0.43f, 0.48f);
             TestContext.WriteLine($"diorama02: far {far:0.00}, near {near:0.00}, middle {middle:0.00}");
             Assert.Less(far, 0.3f, "far band blurred in full");
-            Assert.Less(near, 0.45f, "near band blurred in full");
+            Assert.Greater(near, 0.95f, "near band about gone: a sharp foreground");
             Assert.Greater(middle, 0.95f, "middle band sharp");
         }
         finally { rig.TopInset = 0f; }

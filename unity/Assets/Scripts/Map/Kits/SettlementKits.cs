@@ -696,10 +696,16 @@ namespace Statecraft.Game.Map.Kits
                 case Style.WhiteBlock:
                 case Style.TownBlock:
                 {
-                    var wall = rnd.Chance(st == Style.TownBlock ? 0.3f : 0.12f) ? Jitter(C(0.90f, 0.84f, 0.72f), ref rnd, 0.04f) : Jitter(C(0.94f, 0.92f, 0.87f), ref rnd, 0.035f);
-                    var roof = Jitter(C(0.80f, 0.78f, 0.74f), ref rnd, 0.05f);
+                    bool white = st == Style.WhiteBlock;
+                    // The White City's lime-white plaster (settlements quick wins, #31: promo 03's Tel Aviv reads white, not cream; a
+                    // few blocks keep the cream render). The moshava centres keep their warmer plaster.
+                    var wall = white
+                        ? (rnd.Chance(0.08f) ? Jitter(C(0.93f, 0.90f, 0.83f), ref rnd, 0.03f) : Jitter(WhitePlaster, ref rnd, 0.025f))
+                        : rnd.Chance(0.3f) ? Jitter(C(0.90f, 0.84f, 0.72f), ref rnd, 0.04f) : Jitter(C(0.94f, 0.92f, 0.87f), ref rnd, 0.035f);
+                    var roof = white ? Jitter(C(0.90f, 0.89f, 0.86f), ref rnd, 0.03f) : Jitter(C(0.80f, 0.78f, 0.74f), ref rnd, 0.05f);
                     // A third of the blocks step down at one end: a lower wing within the plot (L and stepped massing).
-                    if (b.storeys >= 3 && rnd.Chance(0.33f))
+                    bool stepped = b.storeys >= 3 && rnd.Chance(0.33f);
+                    if (stepped)
                     {
                         float a = yaw * Mathf.Deg2Rad, share = rnd.Range(0.58f, 0.72f), side = rnd.Chance(0.5f) ? 1f : -1f;
                         float w1 = b.w * share, w2 = b.w - w1, d2 = b.d * rnd.Range(0.7f, 1f), h2 = b.h - storey * rnd.Range(1, 3);
@@ -708,19 +714,30 @@ namespace Statecraft.Game.Map.Kits
                         var c2 = p + new Vector2(u2 * Mathf.Cos(a) - v2 * Mathf.Sin(a), u2 * Mathf.Sin(a) + v2 * Mathf.Cos(a));
                         km.Box(c1.x, c1.y, yaw, w1, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m);
                         km.Box(c2.x, c2.y, yaw, w2 * 1.01f, d2, bottom, top, h2, wall, roof, Facade.WhiteCity, m);
+                        if (white) WhiteBlockDetail(km, c1, u1, b.lotR, yaw, w1, b.d, top, b.h, wall, roof, m, ref rnd);
                         Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                         Record(id, "wing", c2, yaw, w2, d2, h2, wall);
                     }
                     else
                     {
                         km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m);
+                        if (white) WhiteBlockDetail(km, p, 0f, b.lotR, yaw, b.w, b.d, top, b.h, wall, roof, m, ref rnd);
                         Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     }
-                    // A stair tower or roof room on many Bauhaus blocks.
-                    if (rnd.Chance(0.5f))
+                    // A stair tower or roof room on many Bauhaus blocks (the White City's roofs: most have one).
+                    if (rnd.Chance(white ? 0.8f : 0.5f))
                     {
                         float rw = b.w * rnd.Range(0.22f, 0.36f), rd = b.d * rnd.Range(0.3f, 0.45f);
                         km.Box(p.x + b.w * rnd.Range(-0.15f, 0.15f), p.y + b.d * rnd.Range(-0.12f, 0.12f), yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                    }
+                    // Many White City roofs carry a second room (the shared laundry room beside the stair head), at the
+                    // block's other end, inside its footprint (not on a stepped block, whose ends differ in height).
+                    if (white && !stepped && rnd.Chance(0.45f))
+                    {
+                        float rw = b.w * rnd.Range(0.16f, 0.24f), rd = b.d * rnd.Range(0.25f, 0.35f), a = yaw * Mathf.Deg2Rad;
+                        float u = (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * b.w - 0.6f * rw), v = rnd.Range(-0.2f, 0.2f) * b.d;
+                        km.Box(p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a), yaw, rw, rd, top + b.h - 2f, top + b.h,
+                            2.4f * m, wall, roof, Facade.Plain, m);
                     }
                     break;
                 }
@@ -738,24 +755,25 @@ namespace Statecraft.Game.Map.Kits
                 }
                 case Style.OldHouse:
                 {
-                    var wall = Jitter(C(0.83f, 0.72f, 0.54f), ref rnd, 0.06f);
-                    var roof = Jitter(C(0.86f, 0.77f, 0.60f), ref rnd, 0.05f);
+                    var wall = StoneWall(ref rnd);
+                    var roof = Jitter(LimeRoof, ref rnd, 0.04f);
                     // Outside the core, some Ottoman-era houses have red tiled roofs (Jaffa's Ajami, Haifa's lower town).
                     bool tiled = rnd.Chance(t > 0.6f ? 0.14f : 0.03f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: tiled);
-                    if (tiled) km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
-                    else if (rnd.Chance(0.22f)) km.Dome(p.x, p.y, top + b.h - 1f, Mathf.Min(b.w, b.d) * 0.33f, Jitter(C(0.88f, 0.84f, 0.76f), ref rnd, 0.05f));
-                    else if (b.storeys >= 2 && rnd.Chance(0.3f))   // a roof room on the flat roof
-                        km.Box(p.x + b.w * 0.2f, p.y - b.d * 0.15f, yaw, b.w * 0.45f, b.d * 0.5f, top + b.h - 2f, top + b.h, storey * 0.9f, wall, roof, Facade.Stone, m);
+                    if (tiled)
+                    {
+                        km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: true);
+                        km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
+                    }
+                    else StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Stone, m, rnd.Chance(OldHouseDome), ref rnd);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
                 case Style.Village:
                 {
-                    var wall = Jitter(C(0.80f, 0.70f, 0.53f), ref rnd, 0.07f);
-                    var roof = Jitter(C(0.84f, 0.75f, 0.59f), ref rnd, 0.06f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Village, m);
-                    if (rnd.Chance(0.10f)) km.Dome(p.x, p.y, top + b.h - 1f, Mathf.Min(b.w, b.d) * 0.3f, roof);
+                    bool hill = ground.ElevM(p.x, p.y) >= HillVillageM;
+                    var wall = hill ? StoneWall(ref rnd) : Jitter(MudBrick, ref rnd, 0.06f);
+                    var roof = Jitter(LimeRoof, ref rnd, 0.05f);
+                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Village, m, hill && rnd.Chance(VillageDome), ref rnd);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
@@ -776,6 +794,89 @@ namespace Statecraft.Game.Map.Kits
                     km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
+                }
+            }
+        }
+
+        // ---- Stone houses: the old towns and the Arab towns and villages (settlements quick wins, #31) -------------------
+        // Promo 03's Qalqilya and Jaffa are layered stone houses: stepped storeys, roof rooms, few domes, grey-buff stone. The
+        // 1948 basis: the hill country built in limestone and the coastal plain and valleys in mud brick (Palestine Ministry of
+        // Tourism, "Traditional Palestinian House - Al Hosh", https://virtualmuseum.tourism.ps/en/article/72, checked
+        // 2026-10-13); the hill house's roof was a stone vault or cupola, the plain's a flat roof of beams and earth (Abuarkub,
+        // "Traditional Building Materials and Techniques in Palestine", Prostor 25 (2017) 140-153,
+        // https://doi.org/10.31522/p.25.1(53).9). So domes stay, but only on hill houses, fewer and lower (a vault's low
+        // cap, not a white hemisphere), and every flat roof is lime plaster.
+
+        /// <summary>A village above this elevation (m) is a hill village: limestone walls, some domed roofs. Below it, the coastal
+        /// plain's and the valleys' mud-brick houses with flat roofs.</summary>
+        const float HillVillageM = 120f;
+        /// <summary>Share of an old town's flat-roofed houses with a dome (was 22%: promo 03's Jaffa shows few).</summary>
+        const float OldHouseDome = 0.08f;
+        /// <summary>Share of a hill village's houses with a dome (was 10% of every village's).</summary>
+        const float VillageDome = 0.07f;
+        /// <summary>Grey-buff limestone, lime-plastered roofs and the plain's mud brick (sRGB).</summary>
+        static readonly Color32 LimeRoof = C(0.86f, 0.83f, 0.77f), MudBrick = C(0.78f, 0.69f, 0.56f);
+
+        /// <summary>A limestone wall colour, from grey to buff (exactly two draws, as one Jitter: the villages' streams rely on it).</summary>
+        static Color32 StoneWall(ref KitRandom rnd) => Jitter(C(0.77f, 0.70f, 0.60f), ref rnd, 0.07f);
+
+        /// <summary>A stone or mud-brick house of <paramref name="b"/>'s footprint: of two storeys or more, most step back, the top
+        /// storey a smaller block on one corner of the lower roof (the lower roof its terrace); a one-storey house often has a
+        /// roof room (an upper room). <paramref name="dome"/> puts a low dome on the topmost roof. All of it stands
+        /// inside the footprint, so the lot is unchanged.</summary>
+        static void StoneHouse(KitMesh km, Vector2 p, float yaw, Spec b, float bottom, float top, Color32 wall, Color32 roof, Facade facade,
+            float m, bool dome, ref KitRandom rnd)
+        {
+            float storey = 3.3f * m, a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            Vector2 At(float u, float v) => p + new Vector2(u * ca - v * sa, u * sa + v * ca);
+            // The upper block: 50-75% of the footprint each way, pushed to a seeded corner.
+            float uw = b.w * rnd.Range(0.5f, 0.75f), ud = b.d * rnd.Range(0.5f, 0.75f);
+            float su = rnd.Chance(0.5f) ? 1f : -1f, sv = rnd.Chance(0.5f) ? 1f : -1f;
+            var uc = At(su * 0.5f * (b.w - uw), sv * 0.5f * (b.d - ud));
+            if (b.storeys >= 2 && rnd.Chance(0.75f))
+            {
+                float low = b.h - storey;
+                km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, low, wall, roof, facade, m);
+                km.Box(uc.x, uc.y, yaw, uw, ud, top + low - 0.3f * m, top + low, storey, wall, roof, facade, m);
+                if (dome) km.Dome(uc.x, uc.y, top + b.h - 0.2f * m, Mathf.Min(uw, ud) * 0.4f, roof, rise: 0.6f);
+                return;
+            }
+            km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, facade, m);
+            if (dome) km.Dome(p.x, p.y, top + b.h - 0.2f * m, Mathf.Min(b.w, b.d) * 0.33f, roof, rise: 0.6f);
+            else if (rnd.Chance(0.35f))   // a roof room
+                km.Box(uc.x, uc.y, yaw, uw * 0.8f, ud * 0.8f, top + b.h - 0.3f * m, top + b.h, storey * 0.85f, wall, roof, facade, m);
+        }
+
+        /// <summary>The White City's wall plaster (sRGB): lime white, a touch cool, so the warm sun leaves it white rather than cream.</summary>
+        static readonly Color32 WhitePlaster = C(0.94f, 0.945f, 0.94f);
+
+        /// <summary>A White City block's balconies (settlements quick wins, #31): the International Style's continuous balconies
+        /// with solid plastered parapets, one per upper storey along a long side (most blocks on both), each a white band with
+        /// its shadow under it, as promo 03's Tel Aviv shows. The box is <paramref name="w"/> x <paramref name="d"/> at
+        /// <paramref name="c"/> (w along the yaw, the long side), walls from <paramref name="ground"/> up <paramref name="h"/>.
+        /// Every balcony stays inside the plot's lot (radius <paramref name="lotR"/> round the plot's centre; c lies
+        /// <paramref name="du"/> from it along the yaw), so trees and neighbours, which test the lot, never meet one.</summary>
+        static void WhiteBlockDetail(KitMesh km, Vector2 c, float du, float lotR, float yaw, float w, float d, float ground, float h,
+            Color32 wall, Color32 roof, float m, ref KitRandom rnd)
+        {
+            float storey = 3.3f * m, proj = 1.0f * m, parapet = 1.05f * m, slab = 0.2f * m;
+            int storeys = Mathf.RoundToInt(h / storey);
+            float a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            float reachV = 0.5f * d + proj;
+            var rail = Jitter(wall, ref rnd, 0.015f);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                // The street side always, the back on most blocks.
+                if (side > 0 && !rnd.Chance(0.75f)) continue;
+                float share = rnd.Range(0.5f, 0.85f), u0 = rnd.Range(-0.5f, 0.5f) * (1f - share) * w;
+                float bw = Mathf.Min(share * w, 2f * (Mathf.Sqrt(Mathf.Max(0f, lotR * lotR - reachV * reachV)) - Mathf.Abs(du + u0)));
+                if (bw < 0.25f * w) continue;
+                float v = side * (0.5f * d + 0.5f * proj);
+                float x = c.x + u0 * ca - v * sa, z = c.y + u0 * sa + v * ca;
+                for (int k = 1; k < storeys; k++)
+                {
+                    float floor = ground + k * storey;
+                    km.Box(x, z, yaw, bw, proj, floor - slab, floor - slab, slab + parapet, rail, roof, Facade.Plain, m);
                 }
             }
         }
@@ -988,19 +1089,28 @@ namespace Statecraft.Game.Map.Kits
                 }
                 case Archetype.OldTown:
                 {
-                    var wall = Jitter(C(0.83f, 0.72f, 0.54f), ref rnd, 0.06f);
-                    var roof = Jitter(C(0.86f, 0.77f, 0.60f), ref rnd, 0.05f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m);
-                    if (rnd.Chance(0.22f)) km.Dome(p.x, p.y, top + b.h - 1f, Mathf.Min(b.w, b.d) * 0.33f, Jitter(C(0.88f, 0.84f, 0.76f), ref rnd, 0.05f));
-                    else if (rnd.Chance(0.03f)) km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
+                    // A town's fallback house (#317), on its own stream: drawn as the old town's lattice houses are.
+                    var wall = StoneWall(ref rnd);
+                    var roof = Jitter(LimeRoof, ref rnd, 0.04f);
+                    if (rnd.Chance(0.03f))
+                    {
+                        km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: true);
+                        km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
+                    }
+                    else StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Stone, m, rnd.Chance(OldHouseDome), ref rnd);
                     return wall;
                 }
                 case Archetype.ArabTown:
                 {
-                    var wall = Jitter(C(0.80f, 0.70f, 0.53f), ref rnd, 0.07f);
-                    var roof = Jitter(C(0.84f, 0.75f, 0.59f), ref rnd, 0.06f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Village, m);
-                    if (rnd.Chance(0.10f)) km.Dome(p.x, p.y, top + b.h - 1f, Mathf.Min(b.w, b.d) * 0.3f, roof);
+                    // A 1948 locality's houses share the locality's stream with its spots, so this draws exactly the five numbers
+                    // it always has (wall, roof, the dome roll), and the house's own detail comes from a stream seeded off it: the
+                    // villages keep every house where it was (layout, lots and trees unchanged).
+                    var peek = rnd; var detail = new KitRandom(peek.Next() ^ 0xA5C3F1E2D4B69788UL);
+                    bool hill = ground.ElevM(p.x, p.y) >= HillVillageM;
+                    var wall = hill ? StoneWall(ref rnd) : Jitter(MudBrick, ref rnd, 0.06f);
+                    var roof = Jitter(LimeRoof, ref rnd, 0.05f);
+                    bool dome = rnd.Value() < VillageDome && hill;
+                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Village, m, dome, ref detail);
                     return wall;
                 }
                 default:

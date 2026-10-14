@@ -58,22 +58,24 @@ The README's screenshots are claims about the current build. Re-take them whenev
 4. Rebuild `docs/images/social-preview.jpg` (1280×640) from the new map shot: `sips --resampleWidth 1280 <shot> --out /tmp/sp.jpg` then `sips --padToHeightWidth 640 1280 --padColor 0B1220 /tmp/sp.jpg --out docs/images/social-preview.jpg` (padded, not cropped, so no text is cut off). The owner re-uploads it under Settings →
    General → Social preview. Never use concept art for the social preview.
 
-## Replacing the concept-art hero (planned)
+## The README's hero, concept art and screenshots
 
-The hero at the top of the README is AI concept art of the target look (owner ruling, 2026-10-11). When a build reaches
-that look (the owner judges this at a visual-v1 or later art checkpoint, side by side with
-`promo/final/03-gameplay-1936.png`), a real screenshot takes its place:
+What `README.md` shows at the top, and what `scripts/oss/tests/test_readme.py` checks:
 
-1. Capture the build at the promo pose, 2000 px wide, as `docs/images/hero-build.jpg`. Keep
-   `docs/images/hero-concept-1936.jpg`.
-2. In `README.md` and `README.he.md`, point the hero `<img>` at `hero-build.jpg` with alt text describing the real
-   build, and move the concept art down to a "Where it's going" line under the screenshots, still captioned as concept
-   art.
-3. In `ASSETS.yaml`, add a `docs/images/hero-build.jpg` row (`licence: CC-BY-4.0`, `status: verified`, source: the build
-   version and date).
-4. In `scripts/oss/tests/test_readme.py`, change `HERO` to `docs/images/hero-build.jpg`, and keep the assertion that
-   any concept-art image carries the concept-art caption.
-5. Add a CHANGELOG line, and land it as a normal pull request.
+1. **The hero is the cinematic trailer.** It is a `https://github.com/user-attachments/assets/<id>` URL on its own line
+   above the `# Statecraft: Israel` heading, which GitHub plays in its video player, with a caption saying it was made
+   with AI video tools and is not in-game footage (`test_hero_is_the_trailer_in_githubs_player_disclosed_as_ai`).
+2. **The concept art opens "What is this?"** (`CONCEPT`, `docs/images/hero-concept-1936.jpg`). Its alt text says it is
+   AI-generated concept art and not the current build, and the caption under it says "Concept art (AI-generated)",
+   "set in 1936" and "not the current build" (`test_concept_art_opens_what_is_this_captioned_as_concept_art`).
+3. **Real gameplay comes next:** the clip (`CLIP`) and the five screenshots (`GRID`, one wide over two pairs), with the
+   captions "Real gameplay, build X.Y.Z, YYYY-MM-DD, commit abc1234." and "Real screenshots from build X.Y.Z (M3),
+   YYYY-MM-DD." (`test_real_dated_screenshots_in_a_one_plus_two_plus_two_grid`; refreshing them is the section above).
+
+To change any of these, edit `README.md` and `README.he.md` together (the Hebrew README's tests keep the same facts),
+give a new image an `ASSETS.yaml` row, change `CONCEPT`, `CLIP` or `GRID` in `test_readme.py` if a file name changes,
+and land it as a normal pull request. Whether a real build screenshot later replaces the concept art in "What is
+this?" is not decided.
 
 ## Store-page checklist (issue #45; OWNER STEP)
 

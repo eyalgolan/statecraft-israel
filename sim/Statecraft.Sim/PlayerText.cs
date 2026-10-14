@@ -35,6 +35,9 @@ namespace Statecraft.Sim
         /// <summary>The display name of an aliyah origin group (aliyah.yaml regions).</summary>
         public static string Region(Content c, string id) => c.Regions.FirstOrDefault(r => r.Id == id)?.Name ?? throw Unknown("region", id);
 
+        /// <summary>The display name of a settlement (map/settlements_1948.yaml name), such as a GDD city.</summary>
+        public static string Settlement(Content c, string id) => c.SettlementNames.TryGetValue(id, out var name) ? name : throw Unknown("settlement", id);
+
         /// <summary>The display name of what a cause changes: an indicator or policy (model.yaml names), or money
         /// (model.yaml money).</summary>
         public static string Target(Content c, string id) =>

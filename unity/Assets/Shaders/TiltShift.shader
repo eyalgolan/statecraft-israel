@@ -3,7 +3,9 @@
 // pixel is TiltWeight(y) * _ScTiltShift.w of the picture's height, so the focus band stays sharp and the blur grows
 // smoothly towards the top and bottom. The radius is a share of the picture's height (UV units). No depth texture: it runs on
 // the web tier. The far (top) band is scaled by _ScTiltShiftFar in both its radius and its blend, so at the gameplay zoom
-// the far towns stay readable (issue #390, the owner's ruling) while the overview keeps both bands in full.
+// the far towns stay readable (issue #390, the owner's ruling) while the overview keeps the far band in full. The near
+// (bottom) band is scaled by _ScTiltShiftNear the same way: gentle at the gameplay zoom, about none at the overview (the
+// owner's ruling of 2026-10-14, the near band as on promo 03).
 Shader "Statecraft/TiltShift"
 {
     SubShader
@@ -16,15 +18,16 @@ Shader "Statecraft/TiltShift"
 
         float4 _ScTiltShift;   // x focus centre (viewport y, 0 = bottom), y sharp half-width, z feather, w max radius (share of height)
         float _ScTiltShiftFar; // the far (top) band's strength, 0..1: scales its radius and its blend (TiltShift.FarStrength)
+        float _ScTiltShiftNear; // the near (bottom) band's strength, 0..1: scales its radius and its blend (TiltShift.NearStrength)
 
         float TiltWeight(float y)
         {
             return smoothstep(_ScTiltShift.y, _ScTiltShift.y + _ScTiltShift.z, abs(y - _ScTiltShift.x));
         }
 
-        // The band's own strength: 1 below the focus (the near band), _ScTiltShiftFar above it. Continuous: TiltWeight is 0
-        // within the sharp half-width either side of the focus.
-        float BandStrength(float y) { return y > _ScTiltShift.x ? _ScTiltShiftFar : 1.0; }
+        // The band's own strength: _ScTiltShiftNear below the focus (the near band), _ScTiltShiftFar above it. Continuous:
+        // TiltWeight is 0 within the sharp half-width either side of the focus.
+        float BandStrength(float y) { return y > _ScTiltShift.x ? _ScTiltShiftFar : _ScTiltShiftNear; }
 
         half3 Sample(float2 uv) { return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv).rgb; }
 

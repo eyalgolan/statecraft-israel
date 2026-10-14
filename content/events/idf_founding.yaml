@@ -5,10 +5,11 @@ text: 'Armed forces are being brought into the new Israel Defense Forces, while 
 anchor: hard
 tags: [security]
 office: defense_minister
-# Date of the order [C]: Ben-Gurion signed it on 26 May 1948 (MoD/IDF Archives; en.wiki "1948 in Israel"), the date used
-# here; JVL says it was issued on 28 May 1948. Both agree it was published in Official Gazette No. 3 of 31 May 1948, so the
-# window ends then. The Irgun agreed with the government on 1 June 1948 to dissolve into the IDF, Jerusalem excepted
-# (en.wiki "1948 in Israel" [S]; JVL). Research notes facts-1948.md section 3a.
+# Date of the order [C]: Ben-Gurion signed it on 26 May 1948 (MoD/IDF Archives), the date used here; JVL says it was
+# issued on 28 May 1948. It was published in Official Gazette No. 3 of 31 May 1948 (JVL; the Knesset's law database
+# dates its publication 31 May 1948), so the window ends then. The Irgun agreed with the government on 1 June 1948 to
+# dissolve into the IDF (Ben-Gurion to the Provisional State Council on 23 June 1948, below), Jerusalem excepted (JVL).
+# Research notes facts-1948.md section 3a.
 # The window opens on 22 May, the turn date before the order (game timing), so the card reaches the player in the turn
 # that covers 26 May.
 from: 1948-05-22
@@ -30,5 +31,11 @@ options:
 sources:
   - { url: "https://archives.mod.gov.il/sites/English/Exhibitions/David_Ben_Gurion_and_the_IDF/Pages/The-establishment-of-the-IDF.aspx", checked: 2026-10-10 }
   - { url: "https://jewishvirtuallibrary.org/the-founding-of-the-israel-defense-forces", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/1948_in_Israel", checked: 2026-10-10 }
+  # The Knesset's law database (OData): the Defence Army of Israel Ordinance, 5708-1948, publication date 31 May 1948.
+  - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_IsraelLaw(2001303)", checked: 2026-10-14 }
+  # Provisional State Council, fifth sitting, 23 June 1948 (Knesset minutes). Ben-Gurion: on 1 June the Irgun's head
+  # signed undertakings that its members would enlist in the IDF and take its oath, its arms would be handed to the IDF,
+  # and the Irgun and its command would cease to act and exist as a military body in the State of Israel and the area of
+  # the Government of Israel; he said these were kept only in part. This is the government's account.
+  - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_249973.pdf", checked: 2026-10-14 }
 status: fact-checked

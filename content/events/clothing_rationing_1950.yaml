@@ -4,7 +4,8 @@ title: Rationing Clothes and Shoes
 text: 'Prices on the black market are climbing. {rationing_minister} proposes extending rationing to clothing and footwear and fighting the black market.'
 anchor: hard
 office: rationing_minister
-# Extended on 31 July 1950; retailers' strike 1-14 August; no-confidence motion defeated 57-36 on 8 August.
+# Extended on 31 July 1950; retailers' strike 1-14 August. On 8 August the Knesset passed the coalition parties' motion,
+# which Ben-Gurion made a question of confidence, 57-36; the opposition motions failed (plenum, 1_ptm_250242).
 from: 1950-07-01
 to: 1950-09-01
 options:
@@ -21,8 +22,11 @@ options:
       - { target: fx_reserves, delta: -8 }
 sources:
   - { url: "https://en.wikipedia.org/wiki/Austerity_in_Israel", checked: 2026-10-10 }
-  - { url: "https://en.wikipedia.org/wiki/1950_in_Israel", checked: 2026-10-10 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250056.pdf", checked: 2026-10-14 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250241.pdf", checked: 2026-10-14 }
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250242.pdf", checked: 2026-10-14 }
+  # JTA: the clothing and shoe stores shut on 1 August, the day after the announcement; on 13 August the two-week strike
+  # was to end the next day.
+  - { url: "https://www.jta.org/archive/tel-aviv-merchants-strike-against-rationing-of-clothing-and-shoe-keep-stores-closed", checked: 2026-10-14 }
+  - { url: "https://www.jta.org/archive/strike-of-clothing-and-shoe-storekeepers-in-israel-ends-modified-rationing-seen", checked: 2026-10-14 }
 status: fact-checked

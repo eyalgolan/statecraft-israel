@@ -10,7 +10,10 @@
 - ffmpeg (Homebrew) is used for flythrough videos.
 
 ## After cloning
-- Run `tools/build_sim_for_unity.sh` before opening `unity/`. The sim DLLs are build output and are git-ignored.
+- Run `uv run tools/build_sim_for_unity.py` before opening `unity/`. The sim DLLs are build output and are git-ignored.
+  The helper works on Windows, macOS and Linux; with Python already installed, `python tools/build_sim_for_unity.py`
+  also works without `uv` (use `python3` if that is your interpreter's command).
+  `tools/build_sim_for_unity.sh` is a thin wrapper that runs the same Python script, for older plans and scripts.
 
 ## Without Unity (Linux, a container, a sandbox)
 

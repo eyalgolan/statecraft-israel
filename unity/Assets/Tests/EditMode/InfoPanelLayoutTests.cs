@@ -98,7 +98,8 @@ public class InfoPanelLayoutTests
 
     /// <summary>#397: with Lydda's hex chosen (the longest region line: "Ramle Sub-District, Lydda District (Mandate
     /// sub-districts, 1947)") and an event open, every shown label of the info panel lies inside the panel and its text fits
-    /// its box, the panel lies in the window, and it overlaps neither the event column nor the minimap, at every window size.</summary>
+    /// its box, the panel lies in the window, and it overlaps neither the minimap nor the event card (unless the card's backdrop
+    /// covers it, the panel disabled under it), at every window size.</summary>
     [UnityTest]
     public IEnumerator InfoPanelTextStaysInsideThePanel()
     {
@@ -113,8 +114,12 @@ public class InfoPanelLayoutTests
                 Assert.AreEqual(DisplayStyle.Flex, root.Q("event-card").resolvedStyle.display, $"{w}x{h}: precondition: an event is open");
                 Assert.IsNotEmpty(root.Q<Label>("info-region").text, $"{w}x{h}: precondition: the hex names its region");
                 if (!Inside(panel.worldBound, window)) problems.Add($"{w}x{h}: the panel {panel.worldBound} leaves the window {window}");
-                foreach (var other in new[] { "event-card", "minimap" })
-                    if (panel.worldBound.Overlaps(root.Q(other).worldBound)) problems.Add($"{w}x{h}: the panel {panel.worldBound} overlaps {other} {root.Q(other).worldBound}");
+                if (panel.worldBound.Overlaps(root.Q("minimap").worldBound)) problems.Add($"{w}x{h}: the panel {panel.worldBound} overlaps the minimap {root.Q("minimap").worldBound}");
+                // The open decision card sits in the middle over a backdrop (decision cards, 2026-10-13): the panel may lie
+                // under the card, and then it waits out of reach until the card is hidden or answered.
+                if (panel.worldBound.Overlaps(root.Q("event-card").worldBound)
+                    && !(root.Q("root").ClassListContains(EventCardPresenter.ModalClass) && !panel.enabledInHierarchy))
+                    problems.Add($"{w}x{h}: the panel {panel.worldBound} overlaps the event card {root.Q("event-card").worldBound} with no backdrop over it");
                 foreach (var l in panel.Query<Label>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
                 {
                     if (!Inside(l.worldBound, panel.worldBound)) problems.Add($"{w}x{h}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");

@@ -75,29 +75,8 @@
                 <ui:Button name="end-turn" text="End Turn" class="end-turn" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <!-- The right-hand column (Task 24 review I2): the event card above the minimap, so the two can never overlap; a tall
-             card shrinks its text, which scrolls, and keeps its option buttons. -->
+        <!-- The right-hand column: the minimap, with the border layer's caption beside it. -->
         <ui:VisualElement name="right-column" class="right-column" picking-mode="Ignore">
-            <ui:VisualElement name="event-card" class="panel event-card">
-                <!-- The promo's header picture: an archival photograph of the event (EventImageCatalog), framed in gold, with its
-                     credit line as a caption strip along its bottom edge. Events without one show the minister's portrait in
-                     the head instead. -->
-                <ui:VisualElement name="event-photo" class="event-photo"><ui:Label name="event-photo-credit" class="event-photo-credit" /></ui:VisualElement>
-                <!-- A portrait-shaped thumbnail beside the heading, framed on the face (playtest 2, P2-3 and P2-5). -->
-                <ui:VisualElement class="event-head">
-                    <ui:VisualElement name="event-image" class="event-image" />
-                    <ui:VisualElement class="event-heading">
-                        <ui:Label name="event-draft" text="DRAFT" class="draft" />
-                        <ui:Label name="event-title" class="title event-title" />
-                        <ui:Label name="event-office" class="muted event-office" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement class="gold-rule" />
-                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /></ui:ScrollView>
-                <ui:VisualElement name="event-options" />
-                <ui:Label name="event-count" class="muted" />
-                <Statecraft.Game.UI.UiFrame filigree="true" />
-            </ui:VisualElement>
             <ui:VisualElement class="right-gap" picking-mode="Ignore" />
             <!-- What the map's region borders show while they are drawn (owner ruling 2026-10-11: "Mandate sub-districts, 1947"). -->
             <ui:Label name="map-layer" class="map-layer" picking-mode="Ignore" />
@@ -129,6 +108,42 @@
                 <ui:Label name="info-reason" class="reason" />
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame filigree="true" />
+        </ui:VisualElement>
+        <!-- The decision layer under the top bar (decision cards, 2026-10-13): while an event is open a dim backdrop blocks the
+             map and the panels under it, and the card sits in the middle, up to 1040 px wide, with a 16:9 media header (the
+             event's photograph). Hidden under the start screen and any open screen (ScreenNav.DisableCovered). -->
+        <ui:VisualElement name="event-layer" class="event-layer" picking-mode="Ignore">
+            <ui:VisualElement name="event-scrim" class="event-scrim" />
+            <ui:VisualElement name="event-card" class="panel event-card">
+                <!-- The 16:9 media header: an archival photograph of the event (EventImageCatalog), framed in gold, with its
+                     credit line as a caption strip along its bottom edge, and, for an event with a clip, the Illustration
+                     switch in its top corner (a silent AI-generated loop, labelled so in place of the credit). Events without
+                     a photograph show the minister's portrait in the head instead. -->
+                <ui:VisualElement name="event-photo" class="event-photo"><ui:Label name="event-photo-credit" class="event-photo-credit" /></ui:VisualElement>
+                <!-- A portrait-shaped thumbnail beside the heading, framed on the face (playtest 2, P2-3 and P2-5). -->
+                <ui:VisualElement class="event-head">
+                    <ui:VisualElement name="event-image" class="event-image" />
+                    <ui:VisualElement class="event-heading">
+                        <ui:Label name="event-draft" text="DRAFT" class="draft" />
+                        <ui:Label name="event-title" class="title event-title" />
+                        <ui:Label name="event-office" class="muted event-office" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="gold-rule" />
+                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /></ui:ScrollView>
+                <ui:VisualElement name="event-options" />
+                <!-- The count of other open decisions, and Hide: the card collapses to "Decision waiting" so the map can be
+                     inspected (EventCardPresenter.Collapse); focus order: the options, then Hide. -->
+                <ui:VisualElement name="event-foot" class="event-foot">
+                    <ui:Label name="event-count" class="muted event-count" />
+                    <ui:Button name="event-hide" class="event-hide" />
+                </ui:VisualElement>
+                <!-- The Illustration switch, drawn over the media header's top right corner, last in the card so Tab reaches it
+                     after the options and Hide (#41). -->
+                <ui:Button name="event-illustration" class="event-illustration" />
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
+            <ui:Button name="event-reopen" class="event-reopen" />
         </ui:VisualElement>
         <!-- The Cabinet as promo/final/04 (CabinetPresenter): a wide screen; the Prime Minister's card and the appointment
              list at the side; the legislature's seats (Hemicycle) with its legend above a grid of person cards. -->

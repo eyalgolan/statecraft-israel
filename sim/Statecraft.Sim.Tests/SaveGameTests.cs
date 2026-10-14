@@ -27,7 +27,8 @@ public class SaveGameTests
             new Command[] { new AllocateBudget(new Dictionary<string, double> { ["finance_minister"] = 0.75, ["defense_minister"] = 0.25 }) },
             new Command[] { new Appoint("finance_minister", "pm_one"), new MapAction("housing", 2, 0) },
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
-            new Command[0], new Command[0], new Command[] { new SecurityOrder(1) }, new Command[0], new Command[0],
+            new Command[] { new AssignWorkers("town_a", "job", 1) },   // a GDD order: the legacy fixture refuses it
+            new Command[0], new Command[] { new SecurityOrder(1) }, new Command[0], new Command[0],
         };
         foreach (var o in orders) g.Step(o);
         return g;

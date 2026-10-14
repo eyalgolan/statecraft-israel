@@ -1,0 +1,10 @@
+# A player who puts the slice's people to work first (GDD Phase 1 PR 3): on the first turn it fills Tel Aviv's 90 jobs, then
+# plays on with no other order; events nobody answered are delegated. It runs on the GDD slice (MvpSlice: the real content
+# with the loop switch on and placeholder city values), so it moves whenever a GDD rule or placeholder it reaches changes.
+name: mvp-absorb-first
+content: mvp
+until: 1949-06-15
+steps:
+  - on: 1948-05-15
+    commands:
+      - { kind: assign_workers, city: tel_aviv, role: job, count: 90 }

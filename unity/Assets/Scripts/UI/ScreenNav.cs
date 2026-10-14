@@ -16,25 +16,42 @@ namespace Statecraft.Game.UI
         /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence) is
         /// open: Statecraft.uss hides the info panel it covers, so its buttons take no focus and no clicks.</summary>
         public const string WideOpenClass = "wide-screen-open", WideClass = "screen-wide";
-        /// <summary>The class on the "root" element while any screen is open: in the two-row (narrow) HUD every screen takes
-        /// the full width, so Statecraft.uss hides the event column and the info panel under it (#210).</summary>
+        /// <summary>The class on the "root" element while any screen is open: Statecraft.uss hides the decision layer under it,
+        /// and in the two-row (narrow) HUD, where every screen takes the full width, the minimap column and the info panel
+        /// too (#210).</summary>
         public const string ScreenOpenClass = "screen-open";
 
         /// <summary>Disables each HUD panel that a class on the "root" element hides, and enables it again when none does: a
         /// child of an undisplayed element can still take the keyboard focus, so hiding alone leaves its buttons in Tab's
-        /// reach (#400). The start screen covers the top bar, the event column and the info panel; in the two-row HUD any
-        /// open screen covers the event column and the info panel; a wide screen covers the info panel. Called wherever
-        /// one of those classes changes (StartScreenPresenter, Open, HudPresenter's tier), so no caller re-enables a panel
-        /// another still covers.</summary>
+        /// reach (#400). The start screen covers the top bar, the minimap column, the decision layer and the info panel; any
+        /// open screen covers the decision layer (it sits where the card does), and in the two-row HUD also the minimap
+        /// column and the info panel; a wide screen covers the info panel; the open decision card's backdrop
+        /// (EventCardPresenter.OpenClass, with no start screen or screen over it: ModalClass, set here) covers the minimap
+        /// column and the info panel. Called wherever one of those classes changes (StartScreenPresenter, Open,
+        /// HudPresenter's tier, EventCardPresenter), so no caller re-enables a panel another still covers.</summary>
         public static void DisableCovered(VisualElement root)
         {
             var r = root.Q("root") ?? root;
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass);
-            bool full = r.ClassListContains(ScreenOpenClass) && r.ClassListContains(HudPresenter.TwoRowClass);
+            bool screen = r.ClassListContains(ScreenOpenClass);
+            bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
+            bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen;
+            r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!start);
-            r.Q("right-column")?.SetEnabled(!(start || full));
-            r.Q("info-panel")?.SetEnabled(!(start || full || r.ClassListContains(WideOpenClass)));
+            r.Q("right-column")?.SetEnabled(!(start || full || modal));
+            r.Q("info-panel")?.SetEnabled(!(start || full || modal || r.ClassListContains(WideOpenClass)));
+            var layer = r.Q("event-layer");
+            if (layer != null)
+            {
+                bool was = layer.enabledSelf, now = !(start || screen);
+                layer.SetEnabled(now);
+                if (!was && now) (layer.userData as System.Action)?.Invoke();   // EventCardPresenter: the open card takes the focus
+            }
         }
+
+        /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen or a
+        /// screen (DisableCovered enables it again); null stops it.</summary>
+        public static void OnUncovered(VisualElement layer, System.Action? action) => layer.userData = action;
 
         /// <summary>Asks to be told, synchronously, whenever <paramref name="screen"/> is opened (a presenter that skips
         /// rendering while its screen is hidden catches up then).</summary>

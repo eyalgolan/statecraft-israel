@@ -3,6 +3,7 @@
 A review checklist and record format for [issue #29](https://github.com/eyalgolan/statecraft-israel/issues/29).
 This guide prepares a human review; it does not certify any event or introduce a release gate.
 Read [CONTENT_POLICY.md](CONTENT_POLICY.md) and [WRITING_EVENTS.md](WRITING_EVENTS.md) first.
+A proposal for the M4 process (record files, status rules, the first batch) is in [historian-review-proposal.md](historian-review-proposal.md); it is not in force.
 
 ## Current behavior and the M4 target
 

@@ -434,7 +434,7 @@ public class PromoScreensTests
     }
 
     /// <summary>Both screens at the window shapes the HUD supports (16:9 at 1920x1080 and 1366x768, 16:10, 4:3, 5:4, the
-    /// wide-and-short browser, square and narrower): each opens under the top bar, clear of the event column and the
+    /// wide-and-short browser, square and narrower): each opens under the top bar, clear of the minimap column and the
     /// minimap (over the info panel, which it is drawn above), and nothing on it leaves it or its panel sideways; every
     /// one-line text fits its box.</summary>
     [UnityTest]
@@ -472,9 +472,9 @@ public class PromoScreensTests
                     var screen = root.Q("screen-" + s); var sr = screen.worldBound;
                     if (!(sr.width > 300)) { problems.Add($"{where}: the screen is {sr}"); continue; }
                     if (sr.yMin < root.Q("top-bar").worldBound.yMax - 0.5f) problems.Add($"{where}: starts over the top bar");
-                    // Clear of the event column, or (two-row HUD, #210) full width with the column hidden.
+                    // Clear of the minimap column, or (two-row HUD, #210) full width with the column hidden.
                     var column = root.Q("right-column");
-                    if (column.resolvedStyle.display != DisplayStyle.None && sr.Overlaps(column.worldBound)) problems.Add($"{where}: overlaps the event column {column.worldBound}");
+                    if (column.resolvedStyle.display != DisplayStyle.None && sr.Overlaps(column.worldBound)) problems.Add($"{where}: overlaps the minimap column {column.worldBound}");
                     var parent = root.Q("root");
                     if (parent.IndexOf(screen) < parent.IndexOf(root.Q("info-panel"))) problems.Add($"{where}: drawn under the info panel");
                     // Everything shown stays inside the screen sideways, and inside its panel (a card, a Defence panel, the house).
@@ -683,7 +683,7 @@ public class PromoScreensTests
     }
 
     /// <summary>#210: at a phone-shaped 390x844 and at 960x600 every screen is usable: at least 500 logical px wide and
-    /// 300 tall, under the top bar. In the two-row HUD (390x844) a screen takes the full width, the event column and the
+    /// 300 tall, under the top bar. In the two-row HUD (390x844) a screen takes the full width, the minimap column and the
     /// info panel under it are hidden and ignore map clicks, and the toast sits below the screen.</summary>
     [UnityTest]
     public IEnumerator EveryScreenIsUsableInANarrowWindow()
@@ -742,7 +742,7 @@ public class PromoScreensTests
                         info.Show(tlv.Q, tlv.R);
                         if (info.Selected != before) problems.Add($"{where}: a map click changed the hidden info panel");
                     }
-                    else if (r.Overlaps(root.Q("right-column").worldBound)) problems.Add($"{where}: overlaps the event column");
+                    else if (r.Overlaps(root.Q("right-column").worldBound)) problems.Add($"{where}: overlaps the minimap column");
                 }
                 nav.Open(null);
                 for (int i = 0; i < 3; i++) yield return null;

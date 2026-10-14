@@ -37,7 +37,10 @@ sys.path.insert(0, str(REPO / "tools"))
 import web_check  # noqa: E402  (stdlib only)
 
 WINDOW = (1568, 752)
-END_TURN, WHY, OPTION, MAP_UNDER_WHY = (1516, 42), (1317, 33), (1390, 283), (815, 450)
+# OPTION: the first option of the centred decision card after the first End Turn (One Army); MAP_UNDER_WHY: a map point under
+# the open Why screen, clear of the card (the card hides under a screen and its backdrop blocks the map; #434). All four
+# measured on a WebGL capture of the playtest window, this branch at 1a0c3a7 (WHY had moved with the HUD round 1 bar).
+END_TURN, WHY, OPTION, MAP_UNDER_WHY = (1516, 42), (1389, 32), (608, 520), (1180, 300)
 
 
 def burst_events(points):

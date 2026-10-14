@@ -34,6 +34,18 @@ namespace Statecraft.Game.Map.Kits
                 if (h.biome == "lake")
                     foreach (var (dq, dr) in new[] { (0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1) })
                         lakeZone.Add((h.q + dq, h.r + dr));
+            foreach (var h in hexes.hexes)
+            {
+                bool wetMountain = false;
+                if (h.biome == "mountains")
+                    foreach (var (dq, dr) in Neighbours)
+                        wetMountain |= biome.TryGetValue((h.q + dq, h.r + dr), out var b) && b == "hills";
+                if (h.biome != "hills" && !wetMountain) continue;
+                hillCountry.Add((h.q, h.r));
+                var c = frame.ToWorld(h.lon, h.lat, 0f);
+                hillMin = Vector2.Min(hillMin, new Vector2(c.x, c.z) - Vector2.one * HexSizeM);
+                hillMax = Vector2.Max(hillMax, new Vector2(c.x, c.z) + Vector2.one * HexSizeM);
+            }
             int res = Mathf.Max(2, terrain.terrainData.heightmapResolution);
             sampleX = frame.WidthM / (res - 1); sampleZ = frame.LengthM / (res - 1);
         }
@@ -62,6 +74,18 @@ namespace Statecraft.Game.Map.Kits
         }
 
         readonly HashSet<(int, int)> lakeZone = new HashSet<(int, int)>();
+        readonly HashSet<(int, int)> hillCountry = new HashSet<(int, int)>();
+        static readonly (int, int)[] Neighbours = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };   // axial (tools/hexgrid.py)
+
+        /// <summary>Whether (x, z) lies in the wet hill country, where the land-use bake paints garrigue, terraces and scrub
+        /// (tools/land_bake.py: "wet", 250-600 mm of rain): a "hills" hex (at least 200 mm, below 700 m: tools/hexgrid.py) or
+        /// a "mountains" hex beside one (the Judean and Galilee heights). The mountains of the Negev, Sinai and Edom border
+        /// only desert and stay bare. Hexes carry no rainfall, so this is the neighbour rule; against the CHELSA rain of the
+        /// 130 mountain hexes up to 950 m it takes 36 of the 40 with 250 mm or more and 5 of the 90 drier ones.</summary>
+        public bool HillCountry(float x, float z) => hillCountry.Contains(Hex(x, z));
+        /// <summary>A world rectangle (x, z) that holds all of the hill country.</summary>
+        public Rect HillCountryBounds => hillMax.x < hillMin.x ? Rect.zero : Rect.MinMaxRect(hillMin.x, hillMin.y, hillMax.x, hillMax.y);
+        Vector2 hillMin = Vector2.positiveInfinity, hillMax = Vector2.negativeInfinity;
 
         /// <summary>Open sea (the heightmap writes it as exactly 0 m: MapBuilder.SeaToleranceM), a lake's water, or off the
         /// map. A lake is its water surface, not its hexes (#317): a lake hex also holds its shore (Tiberias stands in one,

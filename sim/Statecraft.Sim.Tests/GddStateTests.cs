@@ -20,8 +20,21 @@ public class GddStateTests
     public void AnEmptyStateWritesNoNewSection()
     {
         var text = new GameState().Describe();
-        foreach (var label in new[] { "city{", "units[", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, text);
+        foreach (var label in new[] { "city{", "coh=", "units[", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, text);
         Assert.EndsWith("over=", text);
+    }
+
+    // R-LOOP-002, R-CITY-005
+    [Fact]
+    public void CohesionIsHashedWithTheCities()
+    {
+        var s = new GameState { Cohesion = 0.5 };
+        Assert.DoesNotContain("coh=", s.Describe());   // no cities: the legacy loop's text is unchanged whatever the field holds
+        s.Cities["x"] = new City("x", 1, 1, 1, 0, 0);
+        Assert.Contains("coh=0.5 [3FE0000000000000]", s.Describe());
+        var before = s.Hash();
+        s.Cohesion = 0.25;
+        Assert.NotEqual(before, s.Hash());
     }
 
     // R-LOOP-002

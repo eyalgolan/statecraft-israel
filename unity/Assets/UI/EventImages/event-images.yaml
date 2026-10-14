@@ -4,7 +4,7 @@
 # Each row: the event id, the shipped file (in this folder), the Commons file page and original (with its SHA-1), the
 # licence (ALLOWED_LICENCES spelling), the artist, the credit line shown under the picture (for CC BY 4.0, the credit
 # line the licensor asks for on Commons, plus the licence and the adaptation), the alt text, the crop (centre x, centre y
-# and width, as shares of the original; the height follows from the 9:4 header) and the sensitivity flags.
+# and width, as shares of the original; the height follows from the 16:9 media header; re-cropped from 9:4 on 2026-10-13) and the sensitivity flags.
 # sensitive: true rows may not ship in a -shareable build until sensitivity_reviewed: true (an OWNER step; Build.cs).
 # Owner ruling 2026-10-11 (summarised in docs/CONTENT_POLICY.md section 4): CC BY 4.0 event photos allowed with a
 # credit line; shown in black and white with a subtle warm grade and the gold frame; no colourising, no change beyond

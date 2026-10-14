@@ -65,15 +65,18 @@ them from a seed (default 1948) in Historical mode until `until:`, and `Scenario
 scripted command passes. A command the sim rejects fails the test with the date, the order and the reason, and a step that never runs
 fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln --filter ScenarioTests` (it adds the
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
-command; its snapshot diff in the PR shows what moved, and the commit message says why. Two ship: `cautious` and `reckless`. They stay in 1948, before any change a
+command; its snapshot diff in the PR shows what moved, and the commit message says why. Two play the real content: `cautious` and `reckless`. They stay in 1948, before any change a
 later era makes, so they move only when a 1948 rule or event does.
 
 **MVP goldens (GDD v0.1, before cutover).** `mvp-slice` plays `MvpSlice.Load`, the real content with the loop switch on and
-monthly turns (spec 2026-10-12 section 2.1, R-LOOP-003), from the golden seed in Historical mode with `HistoricalAI` until
-`MvpGolden.Until` (15 January 1949, eight monthly turns). `MvpGoldenTests` checks it against the manifest line `mvp-slice` and the
+monthly turns (spec 2026-10-12 section 2.1, R-LOOP-003), from the golden seed in Historical mode with the reference player until
+`MvpGolden.Until` (15 January 1949, eight monthly turns). The reference player (`Statecraft.Sim.Reference.ReferencePlayer`, decision
+D-A7) is a stated test policy, not game AI and not history: `HistoricalAI`'s orders, then each city's jobs filled. No game mode or UI
+reaches it (`ReferencePlayerTests`). `MvpGoldenTests` checks it against the manifest line `mvp-slice` and the
 snapshot `golden/mvp-slice.txt`, and the update command re-pins it like the others. It is not shown in this file's table or in
 `tools/web_check.py`, because the players run only the legacy goldens until cutover. A Phase 1 PR that adds a GDD rule the slice
-exercises moves it, re-pins it and says why; the legacy goldens never move for it.
+exercises moves it, re-pins it and says why; the legacy goldens never move for it. A scenario with `content: mvp` plays the
+same slice instead of the real content: `scenario-mvp-absorb-first` (GDD Phase 1 PR 3) fills Tel Aviv's jobs on the first turn.
 
 `Scenario` and `MvpGolden` live in `Statecraft.Sim` next to `GoldenRun`, so Unity, which gets only `Statecraft.Sim.dll` and
 `YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). The scenario files, the manifest and the
@@ -105,7 +108,7 @@ goldens (playtest 2 changed every line's casing with no hash change). They are s
 `FinalWaveTests.AReloadedSaveReproducesTheLastTurnsCauses` checks a reloaded save gives the same last-turn Causes, and
 `TheGoldenRunsCausesAreTheSameInEveryCulture` runs the 1952 golden under de-DE and ar-SA against the invariant culture.
 
-Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `smoke5`). The .NET tests
+Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `smoke5`, and the scenario and MVP lines above). The .NET tests
 compare against it. These places must agree with it, and `GoldenManifestTests` fails naming the one that does not:
 - `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against (the update command rewrites it);
 - this file, `docs/RELEASING.md` and `tools/web_check.py`'s usage example (by hand).
@@ -113,11 +116,12 @@ compare against it. These places must agree with it, and `GoldenManifestTests` f
 `tools/art_checkpoint.sh` reads its expected hashes from the manifest, so it needs no edit.
 
 `unity/Assets/Tests/EditMode/SimSmokeTests.cs` runs the same playthroughs inside Unity against `GoldenRun`'s constants
-(run `tools/build_sim_for_unity.sh` first so Unity has the current DLLs).
+(run `uv run tools/build_sim_for_unity.py` first so Unity has the current DLLs).
 
 Verified on .NET, Unity editor Mono, a macOS IL2CPP player (Apple clang, no `-ffp-contract=off` needed) and a WebGL
 IL2CPP player in Chrome (M3 Task 22). The platform checks below used the prior `73590e32` 1952 baseline. The issue #2
-content correction has been rechecked on .NET only; Unity/WebGL/macOS revalidation is still needed.
+content correction has since been rechecked on .NET, in the Unity EditMode tests and in WebGL (see below and
+`docs/visual-v1.md`); macOS revalidation is still needed.
 
 Re-checked at the M3 merge candidate (2026-10-11, commit a099655):
 - macOS IL2CPP player (`Build.Mac`, then `-batchmode -nographics -golden`): **exit 0**, printing
@@ -184,3 +188,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | playtest 1 E fix 1 | 1950 | `71e9904d` | 1948 war-period events revised after review: windows open on the turn before each decision, Yoav becomes the Hebron-hills decision, follow-ups use `requires`, Bernadotte's shared standing hit, security deltas halved, the elections a one-option card in January, two events added (Jerusalem cease-fire, Rhodes talks); still ends 1950-02-27, turn 35 |
 | playtest 1 E fix 1 | 1952 | `73590e32` | same; still ends 1952-02-27, turn 43 |
 | Issue #2 | 1952 | `62f8ec61` | sourced Yosef food-supply/rationing responsibility from 8 October 1951 replaces a vacancy and changes late-1951 rationing competence; 1950 and five-turn smoke unchanged |
+| GDD Phase 1 PR 3 | mvp-slice | `f6931e24` | the slice gains its city (placeholder values) and the GDD turn: Money from jobs, housing, Social cohesion and arrivals, with the reference player filling the jobs (was `0451920a`); the legacy goldens do not move |

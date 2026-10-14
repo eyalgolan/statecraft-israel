@@ -5,10 +5,14 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The event card (right of the screen): the first pending event the player has not yet answered, with its
-    /// header picture (an archival photograph of the event with its credit line, as the promo's card; EventImageCatalog) or,
-    /// when the event has none, the responsible minister's portrait, the text with today's office holders filled in, and
-    /// one button per option.
+    /// <summary>The decision card, in the middle of the screen under the bar (decision cards, 2026-10-13): the first pending
+    /// event the player has not yet answered, with its 16:9 media header (an archival photograph of the event with its credit
+    /// line, as the promo's card; EventImageCatalog) or, when the event has none, the responsible minister's portrait, the
+    /// text with today's office holders filled in, and one button per option.
+    /// While it shows, the root has OpenClass: a backdrop dims the map and takes the pointer, and ScreenNav.DisableCovered
+    /// takes the panels under it out of reach. Hide collapses it to the "Decision waiting" button, which brings it back; a
+    /// new event opens it again by itself. A new event puts the keyboard focus on the card itself, not on an
+    /// option, so no choice is lit as if recommended; Tab then reaches the options in order.
     /// A choice is an order: it takes effect at End Turn, and an unanswered event is delegated to the minister.</summary>
     public sealed class EventCardPresenter : System.IDisposable
     {
@@ -16,13 +20,47 @@ namespace Statecraft.Game.UI
         public const float PortraitWidth = 96f, PortraitHeight = 128f;
         /// <summary>The class on each option button (Statecraft.uss).</summary>
         public const string OptionClass = "event-option";
+        /// <summary>On the "root" element while the card shows (not collapsed): Statecraft.uss shows the backdrop.</summary>
+        public const string OpenClass = "event-open";
+        /// <summary>On the "root" element while the card shows and no start screen or screen covers it (set by
+        /// ScreenNav.DisableCovered): the panels under the backdrop are disabled and the toast moves clear of the card.</summary>
+        public const string ModalClass = "event-modal";
+        /// <summary>The media header's width over its height (the photographs and the clips are 960x540).</summary>
+        public const float MediaAspect = 16f / 9f;
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
-        readonly VisualElement band, head, scroll, options; readonly Label credit;
+        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit;
+        readonly Button hide, reopen, illustrationSwitch;
+        readonly System.Action onHide, onReopen, onUncovered;
+        readonly EventCallback<PointerDownEvent> onHidePointer;
+        readonly EventCallback<NavigationSubmitEvent> onHideSubmit;
+        readonly EventCallback<NavigationCancelEvent> onCancel;
+        /// <summary>The last Hide came from the pointer (PointerBlur's rule: no focus fill left behind for a mouse click).</summary>
+        bool hideByPointer;
+        /// <summary>The session the card last showed: a new one (New Game, a load) forgets what was collapsed or focused.</summary>
+        GameSession? session;
+        readonly CardVideo? video; readonly System.Func<string, EventVideoMapping.Row?>? clipFor;
+        /// <summary>The shown event's clip URL and its alt text, or null (none, video off, or it failed this session).</summary>
+        string? clip, clipAlt;
+        /// <summary>The player chose Illustration: kept for the session (not saved), so later cards open on their clip too.</summary>
+        bool illustration;
+        /// <summary>Events whose clip failed this session: they show the photograph and no switch.</summary>
+        readonly System.Collections.Generic.HashSet<string> failed = new System.Collections.Generic.HashSet<string>();
+        readonly System.Action onSwitch;
+        /// <summary>The event the player collapsed the card on (Hide), or null; a different event opens the card again.</summary>
+        string? collapsedFor;
+        /// <summary>The event whose first option last took the focus, so an event already open never takes it again.</summary>
+        string? focusedFor;
+        float appliedWidth = float.NaN;
 
-        public EventCardPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits, EventImageCatalog? photos = null)
+        /// <param name="video">The illustration loop's player, or null when video is off (CardVideo.ForcedOff): then the
+        /// card never offers the Illustration switch.</param>
+        /// <param name="clipFor">An event's clip (event-videos.yaml), or null when it has none.</param>
+        public EventCardPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits, EventImageCatalog? photos = null,
+            CardVideo? video = null, System.Func<string, EventVideoMapping.Row?>? clipFor = null)
         {
+            this.video = clipFor == null ? null : video; this.clipFor = clipFor;
             card = root.Q<VisualElement>("event-card"); this.bridge = bridge; this.text = text; this.portraits = portraits; this.photos = photos;
             band = card.Q<VisualElement>("event-photo"); credit = card.Q<Label>("event-photo-credit");
             // The band and its credit settle the drop (FitPhoto); the column, which only the window sizes, brings a dropped
@@ -30,8 +68,30 @@ namespace Statecraft.Game.UI
             // size it was dropped at gets no geometry event of its own; the head below it always moves, so it checks too.
             head = card.Q<VisualElement>(className: "event-head");
             scroll = card.Q<VisualElement>("event-scroll"); options = card.Q<VisualElement>("event-options");
+            layer = card.parent; hudRoot = root.Q("root") ?? root;
+            hide = card.Q<Button>("event-hide"); reopen = layer.Q<Button>("event-reopen");
+            hide.text = text["event.hide"]; reopen.text = text["event.reopen"];
+            onHide = Collapse; onReopen = Reopen;
+            onUncovered = () => { focusedFor = null; if (Shown != null && !Collapsed) FocusCard(Shown.Id, force: true); };
+            onHidePointer = _ => hideByPointer = true;
+            onHideSubmit = _ => hideByPointer = false;
+            onCancel = e => { if (Escape()) e.StopPropagation(); };
+            hide.clicked += onHide; reopen.clicked += onReopen;
+            card.focusable = true; card.tabIndex = 0;   // the card takes the focus itself (FocusCard); Statecraft.uss .event-card:focus
+            // Hide with the pointer leaves no focus fill on "Decision waiting" (PointerBlur's rule); with the keyboard it moves there.
+            hide.RegisterCallback<PointerDownEvent>(onHidePointer, TrickleDown.TrickleDown);
+            hide.RegisterCallback<NavigationSubmitEvent>(onHideSubmit, TrickleDown.TrickleDown);
+            // Escape on the open card is Hide (GameRoot also polls the key when nothing has the focus: Escape()).
+            card.RegisterCallback<NavigationCancelEvent>(onCancel);
+            // A start screen or a screen that covered the layer has closed (ScreenNav.DisableCovered): the open card takes
+            // the focus it could not take under it.
+            ScreenNav.OnUncovered(layer, onUncovered);
+            illustrationSwitch = card.Q<Button>("event-illustration");
+            onSwitch = () => { illustration = !illustration; ApplyIllustration(); };
+            illustrationSwitch.clicked += onSwitch;
             foreach (var e in new[] { band, credit, head, scroll, options }) e.RegisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
-            card.parent?.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            layer.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            card.RegisterCallback<GeometryChangedEvent>(OnCardGeometry);
             bridge.Changed += Render;
             Render();
         }
@@ -40,9 +100,50 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             bridge.Changed -= Render;
+            hide.clicked -= onHide; reopen.clicked -= onReopen;
+            hide.UnregisterCallback(onHidePointer, TrickleDown.TrickleDown); hide.UnregisterCallback(onHideSubmit, TrickleDown.TrickleDown);
+            card.UnregisterCallback(onCancel);
+            ScreenNav.OnUncovered(layer, null);
+            illustrationSwitch.clicked -= onSwitch;
+            video?.Stop();
             foreach (var e in new[] { band, credit, head, scroll, options }) e.UnregisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
-            card.parent?.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            layer.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            card.UnregisterCallback<GeometryChangedEvent>(OnCardGeometry);
             card.Q<VisualElement>("event-options")?.Clear(); card.style.display = DisplayStyle.None;
+            reopen.style.display = DisplayStyle.None;
+            hudRoot.RemoveFromClassList(OpenClass);
+            ScreenNav.DisableCovered(hudRoot);
+        }
+
+        /// <summary>True while the card is collapsed to the "Decision waiting" button (Hide).</summary>
+        public bool Collapsed => Shown != null && collapsedFor == Shown.Id;
+
+        /// <summary>Hide: the card gives the map back and waits behind the "Decision waiting" button, which takes the focus.</summary>
+        public void Collapse()
+        {
+            if (Shown == null) return;
+            collapsedFor = Shown.Id;
+            Render();
+            if (hideByPointer) { hideByPointer = false; return; }
+            reopen.Focus();
+            // Tried again once styles resolve: the button was hidden a moment ago and may not take it yet.
+            reopen.schedule.Execute(() => { if (Collapsed && reopen.focusController?.focusedElement != reopen) reopen.Focus(); });
+        }
+
+        /// <summary>Escape: Hide, when the card is open and in reach. True when it did.</summary>
+        public bool Escape()
+        {
+            if (Shown == null || Collapsed || !layer.enabledInHierarchy) return false;
+            hideByPointer = false;
+            Collapse();
+            return true;
+        }
+
+        /// <summary>"Decision waiting": the card opens again and takes the focus.</summary>
+        public void Reopen()
+        {
+            collapsedFor = null; focusedFor = null;
+            Render();
         }
 
         /// <summary>The event the card shows, or null when every pending event has a queued answer.</summary>
@@ -54,13 +155,23 @@ namespace Statecraft.Game.UI
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
             var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null).ToList();
             Shown = open.FirstOrDefault();
-            card.style.display = Shown == null ? DisplayStyle.None : DisplayStyle.Flex;
-            if (Shown == null) { ShowPhoto(null); return; }
+            if (Shown == null) collapsedFor = null;
+            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; }
+            var shown = Shown != null && !Collapsed;
+            card.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+            card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
+            reopen.style.display = Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
+            hudRoot.EnableInClassList(OpenClass, shown);
+            ScreenNav.DisableCovered(hudRoot);
+            if (Shown == null || Collapsed) video?.Stop();
+            if (Shown == null) { clip = null; clipAlt = null; ShowPhoto(null); return; }
             var e = Shown;
             var date = EventSystem.FillDate(e, s.Date);
             var holder = e.Office == "" ? null : Cabinet.Holder(c, s, e.Office, date);
             // The header photograph when the event has one; otherwise the minister's portrait plate (the fallback).
             var photo = photos?.Find(e.Id);
+            var row = video != null && photo != null && !failed.Contains(e.Id) ? clipFor!(e.Id) : null;
+            clip = row == null ? null : CardVideo.Url(row.File); clipAlt = row?.Alt;
             ShowPhoto(photo);
             var image = card.Q<VisualElement>("event-image");
             var entry = photo == null ? portraits?.Find(holder?.Id) : null;
@@ -85,6 +196,26 @@ namespace Statecraft.Game.UI
                 options.Add(b);
             }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
+            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
+        }
+
+        /// <summary>A newly shown event puts the keyboard focus on the card (keyboard play, #41): the next Tab reaches its
+        /// first option, and no option is lit before the player picks. Not while the layer is out of reach (the start screen
+        /// or a screen covers it): then nothing is recorded, and the card takes the focus when the cover closes
+        /// (onUncovered, <paramref name="force"/>). It is tried again once styles resolve, as a still-hidden card cannot take
+        /// it; that retry takes it from nothing, or, when forced, from whatever the closing cover left focused.</summary>
+        void FocusCard(string id, bool force)
+        {
+            if (!layer.enabledInHierarchy) return;
+            focusedFor = id;
+            card.Focus();
+            card.schedule.Execute(() =>
+            {
+                if (Shown?.Id != id || Collapsed) return;
+                if (!layer.enabledInHierarchy) { if (focusedFor == id) focusedFor = null; return; }   // covered meanwhile: try again when uncovered
+                var now = card.focusController?.focusedElement;
+                if (card.panel != null && now != card && (force || now == null)) card.Focus();
+            });
         }
 
         /// <summary>Shows the event's photograph with its credit line, its alt text as the picture's tooltip, or hides both.</summary>
@@ -104,32 +235,63 @@ namespace Statecraft.Game.UI
             band.style.backgroundImage = photo == null ? (StyleBackground)StyleKeyword.None : new StyleBackground(photo.Value.image);
             band.tooltip = photo?.alt ?? "";
             PhotoAlt = photo?.alt;
-            ApplyPhotoFloor();
+            ApplyMediaHeight();
+            ApplyIllustration();
         }
 
-        /// <summary>The logical window height below which the event body may scroll (UiLayoutTests, playtest 2 P2-3: from
-        /// 990 up, the body and the options fit without scrolling).</summary>
+        /// <summary>The Illustration switch: shown only when the event has a clip and its photograph shows (the clip is never
+        /// the only picture of a real event). On, the header plays the clip, labelled "AI-generated illustration" in place
+        /// of the photograph's credit; off, or when the clip fails, the photograph and its credit come back.</summary>
+        void ApplyIllustration()
+        {
+            var offered = clip != null && PhotoAlt != null && !Collapsed;
+            illustrationSwitch.style.display = offered ? DisplayStyle.Flex : DisplayStyle.None;
+            if (offered && illustration)
+            {
+                illustrationSwitch.text = text["event.photo"];
+                credit.text = text["event.ai_label"];
+                band.tooltip = clipAlt ?? "";
+                if (video!.Current != clip) { var id = Shown!.Id; video.Play(clip!, band, _ => { failed.Add(id); Render(); }); }
+                else video.ShowIn(band);
+                return;
+            }
+            illustrationSwitch.text = text["event.illustration"];
+            if (video?.Current != null)
+            {
+                video.Stop();
+                if (current != null && PhotoAlt != null) band.style.backgroundImage = new StyleBackground(current.Value.image);
+            }
+            if (current != null) { credit.text = current.Value.credit; if (PhotoAlt != null) band.tooltip = current.Value.alt; }
+        }
+
+        /// <summary>True while the header plays the event's clip (or is preparing it).</summary>
+        public bool IllustrationShown => video?.Current != null;
+
+        /// <summary>The playtest 2 P2-3 line (UiLayoutTests): in a window at least this tall (logically) the body and the
+        /// options of every event fit without scrolling. The media header gives way first on every window
+        /// (ApplyMediaHeight), so below it the body scrolls only once the photograph is dropped.</summary>
         public const float ScrollFallbackHeight = 990f;
 
-        /// <summary>True on a window shorter than <see cref="ScrollFallbackHeight"/> (logically), where the body may scroll.</summary>
-        bool ShortWindow
+        /// <summary>The media header's height: 16:9 of the card's content width (the stylesheet's 540 px until the card is laid
+        /// out). On every window the header gives way first when the card is taller than the layer (Statecraft.uss
+        /// flex-shrink 1000; the picture is cropped, background-size cover), so the text and the options show whole; below
+        /// PhotoNeeds it is dropped (FitPhoto), and only then may the body scroll. The 200 px band of the old right-hand
+        /// column needed the body to scroll first on short windows, or 21:9 never showed a photograph; a 16:9 header has
+        /// the room to give.</summary>
+        void ApplyMediaHeight()
         {
-            get
-            {
-                var h = card.panel?.visualTree.layout.height ?? float.NaN;
-                return !float.IsNaN(h) && h > 0 && h < ScrollFallbackHeight;
-            }
+            var w = card.contentRect.width;
+            appliedWidth = w;
+            band.style.height = float.IsNaN(w) || w <= 0 ? (StyleLength)StyleKeyword.Null : new StyleLength(UnityEngine.Mathf.Round(w / MediaAspect));
         }
 
-        /// <summary>On a short window (an ultrawide 2560x1080 is one) the body gives way before the band: it scrolls, as it
-        /// may there, down to its minimum, and only then does the band shrink (and drop below PhotoNeeds). Before this the
-        /// band always gave way first, fell below that height and no photograph ever showed at 21:9. On taller windows the
-        /// band still gives way first (Statecraft.uss flex-shrink 1000), so the body never scrolls for it. The options keep
-        /// flex-shrink 0 either way, so they are never cut.</summary>
-        void ApplyPhotoFloor()
+        /// <summary>The card's width changed (it was first laid out, or the window changed): the media header follows it. The
+        /// card's height changes with the header, so only a new width counts, or the two would chase each other.</summary>
+        void OnCardGeometry(GeometryChangedEvent evt)
         {
-            band.style.flexShrink = PhotoAlt != null && ShortWindow ? new StyleFloat(0.001f) : new StyleFloat(StyleKeyword.Null);
-            band.style.height = StyleKeyword.Null;   // back to the stylesheet's 200 px; FitPhoto trims it again if it must
+            var w = card.contentRect.width;
+            if (float.IsNaN(w) || w <= 0 || UnityEngine.Mathf.Abs(w - appliedWidth) < 0.5f) return;
+            ApplyMediaHeight(); FitPhoto();
         }
 
         /// <summary>The smallest height of the picture left visible above its credit strip (Statecraft.uss .event-photo
@@ -161,41 +323,28 @@ namespace Statecraft.Game.UI
             if (PhotoAlt == null) return;
             var h = band.layout.height; var needs = PhotoNeeds;
             if (float.IsNaN(h) || float.IsNaN(needs)) return;
-            if (h < needs - 0.5f) { SetPhotoShown(false); return; }
-            // On a short window the band hardly shrinks (ApplyPhotoFloor), and Yoga does not hand the body's leftover
-            // shortfall back to it once the body is at its minimum. So when the options would be cut, the band is trimmed
-            // by that much, and dropped if that leaves it short of PhotoNeeds. It only ever shrinks, so this converges.
-            if (!ShortWindow) return;
-            var over = options.worldBound.yMax - card.worldBound.yMax;
-            if (float.IsNaN(over) || over <= 0.5f) return;
-            var target = h - over - 1f;
-            if (target < needs) SetPhotoShown(false);
-            else band.style.height = target;
+            if (h < needs - 0.5f) SetPhotoShown(false);
         }
 
         void OnPhotoGeometry(GeometryChangedEvent evt) => FitPhoto();
 
-        /// <summary>The right-hand column changed size (the window did; the card's content never moves it, as the column is
-        /// pinned to the window by top and bottom). A shown photograph is checked again; a dropped one comes back only when
-        /// the room now free in the column holds it (<see cref="RoomForDroppedPhoto"/>), so it is never shown just to be
-        /// measured (a hidden element keeps its old layout, so a re-shown band may get no new geometry event).</summary>
+        /// <summary>The decision layer changed size (the window did; the card's content never moves it, as the layer is pinned
+        /// to the window on every side). A shown photograph is checked again; a dropped one comes back only when the room now
+        /// free in the layer holds it (<see cref="RoomForDroppedPhoto"/>), so it is never shown just to be measured (a hidden
+        /// element keeps its old layout, so a re-shown band may get no new geometry event).</summary>
         void OnColumnGeometry(GeometryChangedEvent evt)
         {
             if (current != null && PhotoAlt == null) { if (RoomForDroppedPhoto() >= PhotoNeeds) SetPhotoShown(true); }
-            else { ApplyPhotoFloor(); FitPhoto(); }
+            else { ApplyMediaHeight(); FitPhoto(); }
         }
 
-        /// <summary>The band height a dropped photograph would get now (at most; the band itself stops at 200 px): the slack
-        /// of the column's flexible gap above its minimum, capped by the card's max-height, less the band's margins.</summary>
+        /// <summary>The band height a dropped photograph would get now (at most; the band itself stops at 16:9): the layer's
+        /// height the card leaves free (the card's max-height is the layer's), less the band's margins.</summary>
         float RoomForDroppedPhoto()
         {
-            var gap = card.parent?.Q(className: "right-gap");
-            if (gap == null || float.IsNaN(gap.layout.height) || float.IsNaN(card.layout.height)) return 0;
-            var slack = gap.layout.height - gap.resolvedStyle.minHeight.value;
-            // On a short window the body may scroll, so the room it would give up (down to its own minimum) counts too.
-            if (ShortWindow && !float.IsNaN(scroll.layout.height)) slack += System.Math.Max(0f, scroll.layout.height - scroll.resolvedStyle.minHeight.value);
-            var max = card.resolvedStyle.maxHeight;
-            if (max.keyword == StyleKeyword.Undefined && !float.IsNaN(max.value)) slack = System.Math.Min(slack, max.value - card.layout.height);
+            var room = layer.contentRect.height;
+            if (float.IsNaN(room) || float.IsNaN(card.layout.height)) return 0;
+            var slack = room - card.layout.height;
             return slack - band.resolvedStyle.marginTop - band.resolvedStyle.marginBottom;
         }
 

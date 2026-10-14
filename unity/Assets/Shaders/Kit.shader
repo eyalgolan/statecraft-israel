@@ -13,6 +13,7 @@ Shader "Statecraft/Kit"
         _BaseColor ("Tint", Color) = (1, 1, 1, 1)
         _Jitter ("Per-instance tint jitter", Range(0, 0.5)) = 0
         _WindowDark ("Window darkness", Range(0, 1)) = 0.55
+        _CityWindowDark ("White City window darkness", Range(0, 1)) = 0.95
     }
     SubShader
     {
@@ -21,7 +22,7 @@ Shader "Statecraft/Kit"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
-            half _Jitter, _WindowDark;
+            half _Jitter, _WindowDark, _CityWindowDark;
         CBUFFER_END
         ENDHLSL
 
@@ -72,16 +73,19 @@ Shader "Statecraft/Kit"
             // Window mask (1 = glass) and its mean over a whole storey, for each facade style.
             float Windows(float style, float2 uv, float2 fw, out float mean)
             {
-                float storey = 3.3, bay = style > 0.75 ? 1.7 : (style > 0.4 ? 4.2 : 3.0);
+                float storey = 3.3, bay = style > 0.75 ? 2.0 : (style > 0.4 ? 4.2 : 3.0);
                 float wv = fw.y / storey, wu = fw.x / bay;
                 float a0, a1, b0, b1;
-                if (style > 0.75) { a0 = 0.38; a1 = 0.80; b0 = 0.10; b1 = 0.95; }        // white city: ribbon windows
+                if (style > 0.75) { a0 = 0.36; a1 = 0.86; b0 = 0.12; b1 = 0.84; }        // white city: tall wide windows, plaster piers between
                 else if (style > 0.4) { a0 = 0.40; a1 = 0.72; b0 = 0.38; b1 = 0.62; }   // village / moshava: a few small windows
                 else { a0 = 0.36; a1 = 0.74; b0 = 0.34; b1 = 0.64; }                    // stone: arched-height windows
                 mean = (a1 - a0) * (b1 - b0);
                 float m = Band(uv.y / storey, a0, a1, wv) * Band(uv.x / bay, b0, b1, wu);
-                // Fade to the mean once a storey is under about three pixels: no moire at the gameplay zoom.
-                return lerp(mean, m, saturate(1.5 - wv * 3.0)) * step(0.0, uv.y);
+                // Fade to the mean once a storey is under about three pixels: no moire at the gameplay zoom. The White City's
+                // storeys hold until about two pixels (the box filter keeps them clean there), so its 30 km look keeps its
+                // window rows (settlements quick wins, #31).
+                float hold = style > 0.75 ? saturate(2.2 - wv * 4.4) : saturate(1.5 - wv * 3.0);
+                return lerp(mean, m, hold) * step(0.0, uv.y);
             }
 
             half4 Frag(Varyings i) : SV_Target
@@ -103,10 +107,12 @@ Shader "Statecraft/Kit"
                     {
                         float fv = fw.y / 3.3;
                         float slab = Band(i.uv.y / 3.3, 0.28, 0.36, fv), under = Band(i.uv.y / 3.3, 0.36, 0.42, fv);
-                        float fade = saturate(1.5 - fv * 3.0);
-                        albedo *= 1.0 + 0.10 * lerp(0.08, slab, fade) - 0.22 * lerp(0.06, under, fade);
+                        float fade = saturate(2.2 - fv * 4.4);
+                        albedo *= 1.0 + 0.10 * lerp(0.08, slab, fade) - 0.45 * lerp(0.06, under, fade);
                     }
-                    albedo *= 1.0 - _WindowDark * glass;
+                    // The White City's ribbon windows sit deep under the balcony slabs and read near black in promo 03
+                    // (settlements quick wins, #31); the stone and village windows keep the shared darkness.
+                    albedo *= 1.0 - (style > 0.75 ? _CityWindowDark : _WindowDark) * glass;
                     // Contact darkening in the bottom real 3 m of a wall.
                     albedo *= lerp(0.72, 1.0, saturate(i.uv.y / 3.0));
                 }

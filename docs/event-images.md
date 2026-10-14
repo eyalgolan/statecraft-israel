@@ -18,7 +18,7 @@ Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` sectio
 
 | What | Where |
 |---|---|
-| The pictures, at most 720 x 320 JPEG (9:4; `idf_founding` is 612 x 272, as its original is small), each under 200 KB | `unity/Assets/UI/EventImages/<event>.jpg` |
+| The pictures, at most 960 x 540 JPEG (16:9, the centred card's media header; `idf_founding` is 640 x 360, as its original is small), each under 450 KB | `unity/Assets/UI/EventImages/<event>.jpg` |
 | The mapping: event, Commons page, original URL and SHA-1, licence, artist, credit, alt text, crop, sensitivity flags | `unity/Assets/UI/EventImages/event-images.yaml` |
 | The catalog the game loads (`Resources.Load`, so there is no scene field) | `unity/Assets/Resources/EventImageCatalog.asset` |
 | Provenance rows, one per file (`status: verified` once the owner signs off) | `ASSETS.yaml` |
@@ -31,28 +31,29 @@ and `SaveGameTests` stay unchanged.
 
 ## The card
 
-When the event has a picture, it fills the top of the card in a gold frame, as in the promo. Its credit line runs as a
+The card opens in the middle of the screen, up to 1040 px wide, over a dim backdrop (decision cards, 2026-10-13). When the
+event has a picture, it fills the card's 16:9 media header (960x540 at the 1080p reference) in a gold frame, as in the
+promo. Its credit line runs as a
 small italic caption strip along the picture's bottom edge, so the credit is always visible but costs the card no
 height. The minister's portrait is hidden, and the office line still names the minister. The alt text is the picture's
 `tooltip`, and `EventCardPresenter.PhotoAlt` exposes it.
 
-The photograph needs a band at least as tall as its credit line plus 48 px of picture
+The header is 16:9 whenever the card has the height for it. The photograph needs a band at least as tall as its credit line plus 48 px of picture
 (`EventCardPresenter.MinPhotoHeight`). The credit strip never shrinks (`flex-shrink: 0`), so the credit that CC BY 4.0
 requires is never cut.
-- On a window at least 990 px tall (logically; `EventCardPresenter.ScrollFallbackHeight`, the playtest rule that the
-  body never scrolls there) the picture gives way first. If the band would fall below that height, the whole
-  photograph is dropped: picture, credit and tooltip.
-- On a shorter window, the body text may scroll, as it already could. The band keeps the height it needs and the
-  body scrolls for the rest. Without this, an ultrawide 2560x1080 window never showed a photograph. The photograph is
-  dropped only when the options would otherwise be cut.
+- On every window the picture gives way first when the card is taller than the room under the bar: the header gets
+  shorter (the picture is cropped, never squeezed), so the text and the options always show whole. If the band would
+  fall below that height, the whole photograph is dropped: picture, credit and tooltip, and only then may the body
+  scroll. (The old 200 px band in the right-hand column had to let the body scroll first on short windows, or an
+  ultrawide 2560x1080 window never showed a photograph; the 16:9 header has the room to give.)
 - When the window grows again, a dropped photograph comes back without waiting for the next event.
 - A dropped photograph does not bring back the minister's portrait, which is taller still. The office line still names
   the minister.
 - On a short window the card may show the photograph for one frame before it drops.
 
-`UiLayoutTests.EveryEventCardStaysAboveTheMinimap`, `AShortWindowShowsThePhotographWholeOrDropsIt` (1280x600 and
-2560x1080) and `ADroppedPhotographReturnsWhenTheWindowGrows` cover this. The card's height cap rose from 560 to 600 px
-to make room; the right-hand column still bounds it above the minimap.
+`UiLayoutTests.EveryEventCardFitsTheDecisionLayer` (every HUD window shape, the two- and three-row bars included),
+`AShortWindowShowsThePhotographWholeOrDropsIt` (1280x600 and 2560x1080) and `ADroppedPhotographReturnsWhenTheWindowGrows`
+cover this. The decision layer under the top bar bounds the card's height.
 
 ## Adding or replacing a picture
 

@@ -192,7 +192,7 @@ eras:
     [Fact]
     public void TheGddSwitchSetsTheLoopAndTheRuleset()
     {
-        var c = Load("    systems: { loop: gdd }");
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd()));   // the GDD loop also needs its city data (CitiesContentTests)
         Assert.Equal("gdd", c.Loop);
         Assert.True(c.IsGdd);
         Assert.Equal("gdd-0.1", c.Ruleset);

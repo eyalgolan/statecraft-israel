@@ -4,7 +4,11 @@ title: Austerity
 text: 'Food and foreign currency cannot keep pace with the immigrants arriving every week. {rationing_minister}, heading the new Ministry of Rationing and Supply, proposes strict rationing.'
 anchor: hard
 office: rationing_minister
-# Rationing was decided on 26 April 1949 (he.wiki austerity). The ministry and Dov Yosef date from 10 March 1949 (#225).
+# The rationing plan was presented to the Knesset on 26 April 1949, already decided by the cabinet: Dov Yosef told the
+# plenum of 26 April that the government had decided on the plan, and JTA of 26 April reports that the cabinet had
+# already discussed it ("yesterday") and referred it to the Knesset. he.wiki (austerity) dates the decision itself to
+# 26 April and is kept for the lack of foreign-currency reserves. The ministry and Dov Yosef date from 10 March 1949
+# (#225).
 from: 1949-04-26
 to: 1950-01-01
 options:
@@ -22,7 +26,14 @@ options:
       - { target: fx_reserves, delta: -8 }
       - { target: food_supply, delta: -0.05 }
 sources:
+  # Kept for the lack of foreign-currency reserves (the article: Israel had none) and its dating of the cabinet
+  # decision to 26 April; the Knesset minutes below give the aim of saving foreign currency, not the reserves.
   - { url: "https://he.wikipedia.org/wiki/תקופת_הצנע", checked: 2026-10-10 }
+  # First Knesset, 25th sitting, 26 April 1949: Ben-Gurion said more than 210,000 Jews had arrived since the state was
+  # founded, more than 102,000 of them since January, and that an austerity regime would reduce dependence on imports
+  # and foreign currency; Dov Yosef presented the government's plan, saving foreign currency among its principles.
   - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250102.pdf", checked: 2026-10-14 }
   - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%201", checked: 2026-10-14 }
+  # JTA, 26 April 1949: the cabinet had discussed the rationing plan ("yesterday") and referred it to the Knesset.
+  - { url: "https://www.jta.org/archive/israeli-knesseth-to-debate-rationing-program-today-plan-to-be-presented-by-ben-gurion", checked: 2026-10-14 }
 status: fact-checked

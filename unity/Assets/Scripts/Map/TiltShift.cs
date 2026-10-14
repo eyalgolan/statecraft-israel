@@ -14,6 +14,7 @@ namespace Statecraft.Game.Map
     {
         public static readonly int ParamsId = Shader.PropertyToID("_ScTiltShift");
         public static readonly int FarId = Shader.PropertyToID("_ScTiltShiftFar");
+        public static readonly int NearId = Shader.PropertyToID("_ScTiltShiftNear");
         public const float HalfWidth = 0.13f, Feather = 0.17f;
         /// <summary>The largest blur radius as a share of the picture's height: 14 px of a 1080-line picture (tap spacing
         /// 1.75 texels of the half-resolution target, still adequately sampled by the 9 taps).</summary>
@@ -44,15 +45,26 @@ namespace Statecraft.Game.Map
         /// <summary>The far (top) band's strength, scaling its radius and its blend (issue #390, the owner's ruling of
         /// 2026-10-13: a lighter tilt-shift at the gameplay zoom). FarGameplayStrength up to FarLightBelowM, the far edge only
         /// gently soft as on promo 03, so the far towns and tokens stay readable; rising to 1 at the overview
-        /// (CameraController.MaxDistance, diorama02), which keeps both bands in full. The near (bottom) band is unchanged.</summary>
+        /// (CameraController.MaxDistance, diorama02), which keeps the far band in full.</summary>
         public const float FarGameplayStrength = 0.35f, FarLightBelowM = 150000f;
 
         public static float FarStrength(float distance) =>
             Mathf.Lerp(FarGameplayStrength, 1f, Mathf.InverseLerp(FarLightBelowM, CameraController.MaxDistance, distance));
 
-        /// <summary>A band's strength at viewport y: the far band's above the focus, 1 below (mirrors BandStrength in
-        /// TiltShift.shader).</summary>
-        public static float BandStrength(float y, Vector4 p, float far) => y > p.x ? far : 1f;
+        /// <summary>The near (bottom) band's strength, scaling its radius and its blend (the owner's ruling of 2026-10-14: the
+        /// near band as on promo 03). NearGameplayStrength up to NearLightBelowM, falling to 0 at the overview
+        /// (CameraController.MaxDistance, diorama02), where promo 02's foreground is sharp: the opposite of FarStrength,
+        /// which rises there. 0.75 is set by measure, not by eye: the gameplay03 shot's near band (rows 80-95%, columns
+        /// 30-75%) then has promo 03's mean |Laplacian| (0.021; 1 gives 0.0056, 0.4 about 0.046). The half-resolution
+        /// copy alone is softer than the frame, so the blend, not the radius, sets most of the sharpness.</summary>
+        public const float NearGameplayStrength = 0.75f, NearLightBelowM = FarLightBelowM;
+
+        public static float NearStrength(float distance) =>
+            Mathf.Lerp(NearGameplayStrength, 0f, Mathf.InverseLerp(NearLightBelowM, CameraController.MaxDistance, distance));
+
+        /// <summary>A band's strength at viewport y: the far band's above the focus, the near band's below (mirrors
+        /// BandStrength in TiltShift.shader).</summary>
+        public static float BandStrength(float y, Vector4 p, float far, float near) => y > p.x ? far : near;
 
         public static Vector4 Params(float topInset, float distance) =>
             new Vector4(FocusCentre(topInset), HalfWidth, Feather, MaxRadiusUv * Strength(distance));
@@ -61,6 +73,7 @@ namespace Statecraft.Game.Map
         {
             Shader.SetGlobalVector(ParamsId, Params(topInset, distance));
             Shader.SetGlobalFloat(FarId, FarStrength(distance));
+            Shader.SetGlobalFloat(NearId, NearStrength(distance));
         }
 
         /// <summary>No band set: TiltShiftFeature draws nothing until the next Apply (a camera no rig drives, or the map torn
