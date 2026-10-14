@@ -198,9 +198,9 @@ namespace Statecraft.Game.UI
             var video = CardVideo.ForcedOff() ? null : Own(new CardVideo());
             var mapping = video == null ? default : EventVideoMapping.LoadBoth();
             var clips = video == null ? null : mapping.clips.ToDictionary(r => r.Event);
-            // Event photos: Resources, no scene field, loaded off the boot path (issue #321): in the start screen's idle time,
-            // or by the first card if it comes sooner.
-            if (Application.isPlaying) root.schedule.Execute(EventPhotos.Prefetch).StartingIn(EventPhotos.PrefetchDelayMs);
+            // Event photos: Resources, no scene field, loaded off a new game's boot path (issue #321): in the start screen's
+            // idle time, or by the first card if it comes sooner (a Continue with a decision waiting: at once, as before).
+            EventPhotos.ScheduleOn(root);
             card = Own(new EventCardPresenter(root, bridge, text, portraits, null, video,
                 clips == null ? null : id => clips.TryGetValue(id, out var r) ? r : null, EventPhotos.Get));
             // The End Turn outcome clips (decision videos, phase 3): none in the automated runs (no video there). Their own

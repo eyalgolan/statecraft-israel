@@ -150,6 +150,72 @@ public class EventPhotosLoadTests
     }
 
     [Test]
+    public void APrefetchAfterTheCardLoadedTheCatalogItselfLoadsNothingMore()
+    {
+        EventPhotos.StartLoad = () => { starts++; return () => Shipped; };
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, Showing("armistice_egypt"), Text, null, null, photosLater: EventPhotos.Get);
+        var first = EventPhotos.Get();
+        EventPhotos.Prefetch();                                            // the scheduled prefetch, a second later
+        Assert.AreEqual(0, starts, "no second load");
+        Assert.AreSame(first, EventPhotos.Get());
+        Assert.AreEqual(1, EventPhotos.Loads);
+        card.Render();
+        AssertShowsPhoto(ui, "armistice_egypt");
+    }
+
+    [Test]
+    public void ALoadThatGivesNothingLeavesThePortraitAndIsNotRetried([Values(false, true)] bool prefetched)
+    {
+        EventPhotos.LoadNow = () => { loadsNow++; return null; };
+        EventPhotos.StartLoad = () => { starts++; return () => null; };
+        if (prefetched) EventPhotos.Prefetch();
+        var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>("Assets/UI/Portraits/PortraitCatalog.asset");
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, Showing("armistice_egypt"), Text, portraits, null, photosLater: EventPhotos.Get);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-photo").style.display.value, "no photograph");
+        Assert.AreEqual("", ui.Q<Label>("event-photo-credit").text);
+        Assert.AreEqual(portraits.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture, "the portrait instead");
+        card.Render();
+        EventPhotos.Prefetch();
+        Assert.IsNull(EventPhotos.Get());
+        Assert.IsTrue(EventPhotos.Loaded);
+        Assert.AreEqual(1, loadsNow + starts, "one load for the page, no retry");
+    }
+
+    [Test]
+    public void BeginSchedulesThePrefetchASecondLater([Values(false, true)] bool startScreen)
+    {
+        var scheduled = new System.Collections.Generic.List<(VisualElement root, System.Action action, long delay)>();
+        EventPhotos.Schedule = (root, action, delay) => scheduled.Add((root, action, delay));
+        EventPhotos.StartLoad = () => { starts++; return () => Shipped; };
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(inputs, 0, startScreen);
+            root.Begin(inputs, 0, startScreen);                            // New Game
+            Assert.AreEqual(2, scheduled.Count, "one schedule a Begin");
+            var document = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+            foreach (var (on, action, delay) in scheduled)
+            {
+                Assert.AreSame(document, on, "on the game's UI root");
+                Assert.AreEqual(1000, delay, "a second after Begin");
+                Assert.AreEqual(EventPhotos.PrefetchDelayMs, delay);
+            }
+            Assert.AreEqual(0, starts, "nothing loads until the scheduler runs it");
+            foreach (var (_, action, _) in scheduled) action();
+            Assert.AreEqual(1, starts, "the action is the async prefetch, and once");
+            Assert.AreEqual(0, loadsNow, "never the synchronous load");
+            Assert.IsFalse(EventPhotos.Loaded, "the catalog waits for the first card");
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
+    }
+
+    [Test]
     public void GameRootBeginLoadsNoPhotoCatalog([Values(false, true)] bool startScreen)
     {
         EventPhotos.Reset();                                               // the real loads, counted by EventImageCatalog
