@@ -15,7 +15,8 @@ Mandatory Palestine (the sub-district layer's land: its regions but 'outside') t
   1 an overlay containing the centre wins, the later in the period's list first: contested (c), demilitarized zone (z),
     no sourced line (-);
   2 else the snapshot's area containing it: Israel (I), or the other side by its holder (info panel only): Egypt (E),
-    Jordan (J), Iraq (Q), Syria (S), the Arab Liberation Army (V), several (M), not named (A);
+    Jordan's Arab Legion in 1948 (G), Jordan from its agreement (J), Syria (S), the Arab Liberation Army (V), several (M),
+    not named (A);
   3 a shore hex whose centre is in water (tools/borders_bake.py rule 3) takes the code at the nearest land within one hex
     size; a centre outside every polygon takes the commonest code over the hex's area (37 sample points: a frontier hex
     such as Metulla's, whose centre the outline leaves out), and none there means no colour (-: the 60-km northing's
@@ -23,6 +24,9 @@ Mandatory Palestine (the sub-district layer's land: its regions but 'outside') t
   4 Jerusalem (S/1025: an agreed line with a no-man's land between the two lines; from 1949 map 2, not available): a hex
     within 6 km of the city whose own area holds both sides, the smaller at least a fifth of 37 sample points, is
     no-man's land (m).
+  5 a pinned town (the GeoJSON's pinned_towns: a town the sources place on one side that the traced lines, within their
+    accuracy, put on the other) gives its hex (placed as the game places settlements) the sourced holder for every period
+    inside the pin's window, unless the hex is grey;
 Each hex row is [q, r, "codes"]: one character per period, in the periods' order. The sim never reads the output (display
 only: the content hash and the goldens do not move). Status draft, owner-verify (the GeoJSON's).
 """
@@ -36,6 +40,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import borders_bake as bb  # noqa: E402
+import hexgrid  # noqa: E402
 from geo import KM_PER_DEG_LAT, KM_PER_DEG_LON_EQ  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,7 +48,7 @@ MAP = ROOT / "content" / "map"
 SOURCE = MAP / "control_1948_49.geojson"
 SUBDISTRICTS = MAP / "subdistrict_hexes_1948.yaml"
 OUT = MAP / "control_hexes_1948_49.yaml"
-HOLDER_CODE = {"israel": "I", "egypt": "E", "jordan": "J", "iraq": "Q", "syria": "S", "lebanon": "L", "ala": "V", "mixed": "M",
+HOLDER_CODE = {"israel": "I", "egypt": "E", "jordan": "J", "arab_legion": "G", "syria": "S", "ala": "V", "mixed": "M",
                "unspecified": "A"}
 KIND_CODE = {"contested": "c", "dmz": "z", "not_sourced": "-", "no_mans_land": "m"}
 JERUSALEM = (35.2256, 31.7789)
@@ -100,6 +105,7 @@ def samples(lon: float, lat: float, km_lon: float, size_km: float) -> list:
 
 def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list, dict]:
     snaps, overlays, periods = load(source)
+    pins = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("pinned_towns", [])]
     land = mandate_hexes()
     b = hexes["bounds"]
     km_lon = KM_PER_DEG_LON_EQ * math.cos(math.radians((b["lat0"] + b["lat1"]) / 2))
@@ -129,6 +135,9 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
                 n_i = sum(1 for g in got if g == "I"); n_a = sum(1 for g in got if g and g != "I")
                 if min(n_i, n_a) >= JERUSALEM_MIN_SHARE * len(got):
                     c = "m"
+            for pqr, pin in pins:
+                if pqr == qr and c not in "czm" and p["from"] >= pin["from"] and (pin["until"] is None or (p["until"] is not None and p["until"] <= pin["until"])):
+                    c = HOLDER_CODE[pin["holder"]]
             codes.append(c)
         cells[qr] = "".join(codes)
     return drawn, cells
@@ -143,7 +152,7 @@ def render(source: dict, periods: list, cells: dict) -> str:
            f"meaning: {q(meta['meaning'])}\n",
            f"line: {q('The true polygons are content/map/control_1948_49.geojson (status ' + meta['status'] + ', ' + meta['review'] + '); shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line.')}\n",
            f"shown_from: {periods[0]['from']}   # before it the 1947 sub-districts, no side colour (no sourced line for 15 May 1948)\n",
-           "codes: \"I Israel; E Egypt, J Jordan, Q Iraq, S Syria, L Lebanon, V the Arab Liberation Army, M several, A not named "
+           "codes: \"I Israel; E Egypt, G Jordan's Arab Legion (1948), J Jordan, S Syria, V the Arab Liberation Army, M several, A not named "
            "(the other side, by holder); c contested; m no-man's land; z demilitarized zone; - no colour (no sourced line)\"\n",
            "periods:   # legend: held (1948 front lines), armistice (every front's agreement), mixed (some); line_date: the date the source line shows\n"]
     for p in periods:

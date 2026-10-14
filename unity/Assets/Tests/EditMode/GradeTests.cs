@@ -199,7 +199,8 @@ public class GradeTests
     /// <summary>Two-colour borders (owner ruling 2026-10-14): the grey Neutral band (contested, no-man's land, a demilitarized
     /// zone) reads apart from both sides' bands and against the land for colour-blind players, on the same two grounds and
     /// with the same bounds as ColourBlindPlayersTellTheBorderStylesApart: neutral against blue and against red-orange >= 15
-    /// apart, the neutral band's stronger stripe >= 15 from the land, its two stripes >= 20 apart.</summary>
+    /// apart, the neutral band's stronger stripe >= 15 from the land, its two stripes >= 20 apart; and it is dashed, a cue
+    /// that is not colour (review S9 of #555): some walks fall in a gap.</summary>
     [UnityTest]
     public IEnumerator ColourBlindPlayersTellTheNeutralBandFromBothSides()
     {
@@ -214,6 +215,7 @@ public class GradeTests
             // the edges are found on the proof's checker before its styles are swapped below
             var edges = new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) }
                 .Select(e => (e.Item1, BorderTests.ProofEdge(map, e.Item2, e.Item3, e.Item1))).ToList();
+            int gaps = 0, drawn = 0;
             foreach (var (biome, (inner, outer)) in edges)
             {
                 BorderTests.LookAtEdge(map, rig, inner);
@@ -226,6 +228,8 @@ public class GradeTests
                 {
                     var p = BorderTests.Read(a[i], -1, BorderTests.Blueness, 0.45f); var n = BorderTests.Read(a[i], +1, Greyness, 0.02f);
                     var s = BorderTests.Read(b[i], +1, BorderTests.Redness);
+                    if (n.WidthPx < 1f) { gaps++; continue; }   // a walk through a gap between the neutral band's dashes
+                    drawn++;
                     TestContext.WriteLine($"{biome}: neutral stripe {n.Stripe} light {n.Light} land {n.Land}");
                     foreach (var kind in new[] { RenderSample.Cvd.Deuteranopia, RenderSample.Cvd.Protanopia })
                     {
@@ -242,6 +246,9 @@ public class GradeTests
                     }
                 }
             }
+            TestContext.WriteLine($"neutral band: {drawn} walks on a dash, {gaps} in a gap");
+            Assert.Greater(gaps, 0, "the neutral band is dashed (a cue that is not colour)");
+            Assert.GreaterOrEqual(drawn, 4, "enough walks on the dashes to measure them");
         }
         finally { MapShaderGlobals.PinWaterTime(null); }
     }

@@ -8,7 +8,16 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
-- Two-colour borders (refs #196, owner rulings 2026-10-14): from 11 June 1948 the map colours areas by side, as promo 03 does: the Israeli side in a deeper blue, the other side orange-red, and grey for contested ground (only for the days an operation ran there), no-man's land and the demilitarized zones. The sides come from the front lines of Israel State Archives map 6158/1 (9 July, 18 July and end of October 1948), traced from the best public copy (about +-1-2 km), and from each 1949 agreement's date from the sides of its armistice line. Before 11 June 1948 the 1947 sub-districts are drawn in grey (no sourced line). The label carries the approved legend in English and Hebrew and names the source line's date; the info panel says who held the hex. The colours claim military control on a date, nothing else; the 1948 localities are unchanged. New data `content/map/control_1948_49.geojson` and `control_hexes_1948_49.yaml` (draft, owner-verify), tools `control_digitise.py` and `control_bake.py`, a third (neutral) border style in the shader. Presentation only: no golden moves.
+- Two-colour borders (refs #196, owner rulings 2026-10-14): from 11 June 1948 the map colours areas by side, as promo 03 does:
+  the Israeli side in a deeper blue, the other side orange-red, and a dashed grey for contested ground (only for the days an
+  operation ran there), no-man's land and the demilitarized zones. The sides come from the front lines of Israel State
+  Archives map 6158/1 (9 July, 18 July and end of October 1948), traced from the best public copy (about +-1-2 km), and from
+  each 1949 agreement's date from the sides of its armistice line. Before 11 June 1948 the 1947 sub-districts are drawn in
+  grey (no sourced line). The label names each side before its colour, the source line's date and, for Jordan, low accuracy;
+  the info panel says who held the hex. The colours claim military control on a date, nothing else; the 1948 localities are
+  unchanged. New data `content/map/control_1948_49.geojson` and `control_hexes_1948_49.yaml` (draft, owner-verify; licence
+  basis decision D-C), tools `control_digitise.py` and `control_bake.py`, a third (neutral, dashed) border style in the
+  shader. Presentation only: no golden moves.
 - Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
   `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
   setting back afterwards, and

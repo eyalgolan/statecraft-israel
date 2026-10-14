@@ -21,7 +21,9 @@ namespace Statecraft.Game.Map
         public const string FileName = "control_hexes_1948_49.yaml";
 
         /// <summary>What a hex is on a date. Holder: the other side's holder when the sources name one, else null.</summary>
-        public enum Side { None, Israel, Arab, Contested, NoMansLand, Dmz }
+        /// <summary>None: a hex of Mandatory Palestine with no sourced line on the date (no colour); OffData: a hex outside the
+        /// data (beyond the frontier, the sea).</summary>
+        public enum Side { None, Israel, Arab, Contested, NoMansLand, Dmz, OffData }
 
         public enum Legend { Held, Mixed, Armistice }
 
@@ -37,8 +39,8 @@ namespace Statecraft.Game.Map
         public const int IsraelId = 1, ArabId = 2, NeutralId = 3, OutsideId = 4;
         static readonly Dictionary<char, (Side side, string? holder)> CodeOf = new Dictionary<char, (Side, string?)>
         {
-            ['I'] = (Side.Israel, null), ['E'] = (Side.Arab, "egypt"), ['J'] = (Side.Arab, "jordan"), ['Q'] = (Side.Arab, "iraq"),
-            ['S'] = (Side.Arab, "syria"), ['L'] = (Side.Arab, "lebanon"), ['V'] = (Side.Arab, "ala"), ['M'] = (Side.Arab, null),
+            ['I'] = (Side.Israel, null), ['E'] = (Side.Arab, "egypt"), ['J'] = (Side.Arab, "jordan"), ['G'] = (Side.Arab, "arab_legion"),
+            ['S'] = (Side.Arab, "syria"), ['V'] = (Side.Arab, "ala"), ['M'] = (Side.Arab, null),
             ['A'] = (Side.Arab, null), ['c'] = (Side.Contested, null), ['m'] = (Side.NoMansLand, null), ['z'] = (Side.Dmz, null),
             ['-'] = (Side.None, null),
         };
@@ -56,11 +58,13 @@ namespace Statecraft.Game.Map
         /// <summary>The period covering <paramref name="date"/>, or null (before the first: the sub-district layer).</summary>
         public Period? PeriodOn(DateTime date) => Periods.FirstOrDefault(p => p.Covers(date));
 
-        /// <summary>The hex's side and holder on <paramref name="date"/> (Side.None off the data or outside its periods).</summary>
+        /// <summary>The hex's side and holder on <paramref name="date"/> (Side.OffData off the data, Side.None outside its
+        /// periods).</summary>
         public (Side side, string? holder) At(int q, int r, DateTime date)
         {
             int i = Index(date);
-            if (i < 0 || !codes.TryGetValue((q, r), out var c)) return (Side.None, null);
+            if (i < 0) return (Side.None, null);
+            if (!codes.TryGetValue((q, r), out var c)) return (Side.OffData, null);
             return CodeOf[c[i]];
         }
 
@@ -141,10 +145,17 @@ namespace Statecraft.Game.Map
             throw new InvalidDataException($"{FileName}: {key} '{text}' is not a yyyy-MM-dd date");
         }
 
-        /// <summary>The source line's date as players read it: "9 July 1948", or "October 1948" for a month.</summary>
-        public static string LineDateText(string lineDate) =>
-            DateTime.TryParseExact(lineDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d.ToString("d MMMM yyyy", CultureInfo.InvariantCulture)
-            : DateTime.TryParseExact(lineDate, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var m) ? m.ToString("MMMM yyyy", CultureInfo.InvariantCulture)
-            : lineDate;
+        /// <summary>The source line's date as players read it, in the UI's language through <paramref name="text"/>
+        /// (date.day_month_year, date.month_year, date.month_1..12): "9 July 1948" / "9 ביולי 1948", or "October 1948" /
+        /// "אוקטובר 1948" for a month.</summary>
+        public static string LineDateText(string lineDate, Func<string, string> text)
+        {
+            string F(string key, params object[] a) => string.Format(CultureInfo.InvariantCulture, text(key), a);
+            if (DateTime.TryParseExact(lineDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
+                return F("date.day_month_year", d.Day, text("date.month_" + d.Month), d.Year);
+            if (DateTime.TryParseExact(lineDate, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var m))
+                return F("date.month_year", text("date.month_" + m.Month), m.Year);
+            return lineDate;
+        }
     }
 }

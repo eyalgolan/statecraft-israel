@@ -84,13 +84,13 @@ def test_dated_changes_follow_the_sources():
 
 def test_grey_contested_is_only_for_the_days_an_operation_ran():
     contested = {p for p in PERIODS for c in CODES.values() if c[PERIODS.index(p)] == "c"}
-    assert contested <= {"ten_days", "shoter", "yoav", "yoav_hiram", "horev"}, contested
+    assert contested <= {"ten_days", "shoter", "yoav", "yoav_hiram"}, contested
     ops = META["operations"]
     for f in SOURCE["features"]:
         p = f["properties"]
         if p.get("neutral_kind") == "contested":
             op = {"contested_ten_days": "ten_days", "contested_shoter": "shoter", "contested_yoav": "yoav",
-                  "contested_hiram": "hiram", "contested_horev": "horev"}[p["id"]]
+                  "contested_hiram": "hiram"}[p["id"]]
             assert (p["shown_from"], p["shown_until"]) == (ops[op]["from"], ops[op]["until"]), p["id"]
 
 
@@ -122,8 +122,90 @@ def test_every_feature_is_sourced_draft_and_awaits_the_owners_review():
         assert p["status"] == "draft" and p["review"] == "owner-verify", p["id"]
         assert p["sources"] and p["checked"] == cd.CHECKED, p["id"]
         if p["kind"] == "area":
-            assert p["source_quality"] == "low_res_scan" and "1-2 km" in p["accuracy"], p["id"]
             assert p["side"] in ("israel", "arab", "neutral", "unsided"), p["id"]
+
+
+def test_each_area_cites_the_source_it_comes_from_with_that_sources_accuracy():
+    """Review M3: the 1948 snapshots and the operations' grey cite ISA 6158/1 (about +-1-2 km); the 1949 sides, the
+    demilitarized zones and the Egypt closure cite the agreements' lines (D-A) and UNTS, with their own accuracy."""
+    isa = cd.ISA_MAP["url"]
+    for f in SOURCE["features"]:
+        p = f["properties"]
+        if p["kind"] != "area":
+            continue
+        if (p.get("snapshot") or "").startswith("arm_") or p.get("neutral_kind") in ("dmz", "not_sourced"):
+            assert "armistice_lines_1949.geojson" in p["sources"], p["id"]
+            assert any("treaties.un.org" in s for s in p["sources"]), p["id"]
+            assert "ISA 6158/1: a 1:250,000" not in p["accuracy"], p["id"]
+        else:
+            assert p["sources"][0] == isa and "1-2 km" in p["accuracy"], p["id"]
+        if p.get("neutral_kind") == "contested":
+            assert any("wikipedia.org" in s for s in p["sources"]), p["id"]
+    arm = [f["properties"] for f in SOURCE["features"] if (f["properties"].get("snapshot") or "").startswith("arm_")]
+    assert all(p["low_accuracy"] == ("jordan" in p["snapshot"] or p["snapshot"] >= "arm_1949-04-03") for p in arm)
+
+
+# The tests' own table, independent of the tool's anchors (review: mutation 7): the side each town's hex must show, from
+# the sources. "E": Egypt's; "A": the other side, any holder; "I": Israel's. Periods by id; "*" every drawn period.
+GAZA_STRIP = {"Gaza": (34.4597, 31.5075), "Deir al-Balah": (34.3508, 31.4181), "Khan Yunis": (34.3025, 31.3439), "Rafah": (34.2519, 31.2886)}
+
+
+@pytest.mark.parametrize("town", sorted(GAZA_STRIP))
+def test_the_gaza_strip_is_egypts_in_every_period(town):
+    """Review M1, M2: Egypt held the Strip from 1948 to the end of the game; no overlay or box may take its towns away."""
+    lon, lat = GAZA_STRIP[town]
+    c = CODES[hg.settlement_hex(lon, lat, HEXES)]
+    assert set(c) == {"E"}, (town, c)
+
+
+def test_no_assumed_box_overrides_a_source():
+    """Review M2: no feature is a game assumption; Operation Horev is not drawn."""
+    assert "game_assumptions" not in META
+    assert not any("horev" in f["properties"]["id"] for f in SOURCE["features"])
+    assert "horev" not in META["operations"]
+
+
+@pytest.mark.parametrize("town, lon, lat, side, first, last", [
+    ("Qalqilya", 34.9685, 32.1904, "A", "truce1", "arm_1949-07-20"),
+    ("Mishmar HaYarden", 35.5997, 33.0028, "S", "truce1", "arm_1949-07-17"),
+    ("Tulkarm", 35.0308, 32.3111, "A", "truce1", "arm_1949-07-20"),
+    ("Jenin", 35.3, 32.4611, "A", "truce1", "arm_1949-07-20"),
+    ("Hebron", 35.0986, 31.535, "A", "truce1", "arm_1949-07-20"),
+    ("Lydda", 34.8881, 31.9519, "I", "truce2", "arm_1949-07-20"),
+    ("Beersheba", 34.7867, 31.2522, "I", "october", "arm_1949-07-20"),
+])
+def test_named_towns_show_their_sourced_side(town, lon, lat, side, first, last):
+    """Pins (S2, S3) and the towns around them: Qalqilya never Israeli, Mishmar HaYarden Syria's until July 1949."""
+    c = CODES[hg.settlement_hex(lon, lat, HEXES)]
+    for p in PERIODS[PERIODS.index(first):PERIODS.index(last) + 1]:
+        got = c[PERIODS.index(p)]
+        if got == "c":
+            continue
+        assert (got == side) if side in "IS" else (got not in "I-"), (town, p, got)
+
+
+def test_hexes_agree_with_the_true_polygons_at_the_towns():
+    """Review M1: away from the lines, a town's hex shows the side its point has in the true polygons (base snapshot)."""
+    snaps, overlays, periods = cb.load(SOURCE)
+    drawn = [p for p in periods if p["snapshot"]]
+    towns = {**GAZA_STRIP, "Tel Aviv": (34.78, 32.08), "Nablus": (35.2608, 32.2211), "Ramallah": (35.2017, 31.8969),
+             "Haifa": (34.9992, 32.8192), "Bethlehem": (35.2061, 31.7044), "Nazareth": (35.3033, 32.7019), "Majdal": (34.5664, 31.6658)}
+    for name, (lon, lat) in towns.items():
+        c = CODES[hg.settlement_hex(lon, lat, HEXES)]
+        for i, p in enumerate(drawn):
+            truth = cb.code_at(lon, lat, snaps[p["snapshot"]], [])
+            if truth is None or c[i] in "cmz":
+                continue
+            assert (c[i] == "I") == (truth == "I"), (name, p["id"], c[i], truth)
+
+
+def test_the_staleness_and_pins_are_recorded_as_the_sources_say():
+    stale = " ".join(META["known_staleness"])
+    assert "24 February 1949" in stale and "Yad Mordechai" in stale and "Huleiqat" in stale
+    pins = {p["place"]: p for p in META["pinned_towns"]}
+    assert pins["Mishmar HaYarden"]["holder"] == "syria" and pins["Mishmar HaYarden"]["until"] == "1949-07-20"
+    assert pins["Qalqilya"]["holder"] == "jordan"
+    assert all(p["source"].startswith("https://") for p in pins.values())
 
 
 def test_only_the_three_front_lines_are_traced_never_the_partition_or_the_demanded_line():
@@ -134,11 +216,12 @@ def test_only_the_three_front_lines_are_traced_never_the_partition_or_the_demand
     assert any("partition" in t for t in META["not_traced"])
 
 
-def test_the_closure_check_passed_for_every_snapshot():
-    assert set(META["anchors"]) >= {"truce1", "truce2", "truce2b", "october", "arm_1949-04-03", "arm_1949-07-20"}
-    for sid, rows in META["anchors"].items():
-        assert rows and all(r["ok"] for r in rows), sid
-        assert all(r["got"] == r["want"] or r["line_km"] < 3.0 for r in rows), sid
+def test_holders_name_states_after_the_armistice():
+    """Neutrality (review N6): Jordan's force is the Arab Legion in 1948 and the state, Jordan, from its agreement."""
+    holders = {(f["properties"]["snapshot"], f["properties"]["holder"]) for f in SOURCE["features"] if f["properties"].get("side") == "arab"}
+    assert not any(h == "arab_legion" and s.startswith("arm_1949-0") and s >= "arm_1949-04-03" for s, h in holders)
+    assert any(h == "jordan" for s, h in holders if s == "arm_1949-07-20")
+    assert not any(h in ("iraq", "lebanon") for _, h in holders), "no dead holders"
 
 
 def test_the_scan_and_its_georeference_are_recorded():
@@ -151,10 +234,11 @@ def test_a_hex_takes_the_code_at_its_centre():
     snaps, overlays, periods = cb.load(SOURCE)
     drawn = [p for p in periods if p["snapshot"]]
     land = set(cb.mandate_hexes())
+    pinned = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META["pinned_towns"]}
     checked = 0
     for h in HEXES["hexes"]:
         qr = (h["q"], h["r"])
-        if qr not in land or abs(h["lon"] - 35.2256) < 0.1:
+        if qr not in land or qr in pinned or abs(h["lon"] - 35.2256) < 0.1:
             continue
         p = drawn[PERIODS.index("truce2")]
         got = cb.code_at(h["lon"], h["lat"], snaps[p["snapshot"]], [overlays[o] for o in p["overlays"]])

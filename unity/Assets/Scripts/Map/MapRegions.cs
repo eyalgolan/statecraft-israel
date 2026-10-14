@@ -154,24 +154,30 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The map label while sides are drawn: the legend for the period and a caption naming the source line.
-        /// <paramref name="text"/> gives a UI string by key: map.legend_held, map.legend_armistice, map.caption_held ({0} the
-        /// source line's date), map.caption_mixed ({0} the fronts whose armistice line is in force, {1} the date of the front
-        /// lines elsewhere), map.front_egypt, map.front_lebanon, map.front_jordan, map.front_syria. Null before the first
-        /// period (the sub-district label stands).</summary>
+        /// <paramref name="text"/> gives a UI string by key: map.legend_held and map.caption_held ({0} the source line's
+        /// date) in 1948; map.legend_armistice with map.caption_mixed ({0} the fronts whose armistice line is in force, {1}
+        /// the date of the front lines elsewhere) while some fronts have switched, or map.caption_armistice ({0} the fronts)
+        /// once all have; map.front_*; map.layer_front_low ({0} a low-accuracy front: Jordan, D-A ruling 2). Dates through
+        /// date.* (Control1948.LineDateText). Null before the first period (the sub-district label stands).</summary>
         public string? ControlLabel(DateTime date, Func<string, string> text)
         {
             var p = ControlPeriod(date);
             if (p == null) return null;
-            var lineDate = Control1948.LineDateText(p.LineDate);
+            var lineDate = Control1948.LineDateText(p.LineDate, text);
+            string Front(string f)
+            {
+                var name = text("map.front_" + f);
+                return Armistice?.FrontOf(f)?.LowAccuracy == true ? string.Format(CultureInfo.InvariantCulture, text("map.layer_front_low"), name) : name;
+            }
+            var fronts = string.Join(", ", p.Fronts.Select(Front));
             switch (p.Legend)
             {
                 case Control1948.Legend.Held:
                     return text("map.legend_held") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_held"), lineDate);
                 case Control1948.Legend.Mixed:
-                    var fronts = string.Join(", ", p.Fronts.Select(f => text("map.front_" + f)));
                     return text("map.legend_armistice") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_mixed"), fronts, lineDate);
                 default:
-                    return text("map.legend_armistice");
+                    return text("map.legend_armistice") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_armistice"), fronts);
             }
         }
 

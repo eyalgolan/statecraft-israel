@@ -119,10 +119,12 @@ namespace Statecraft.Game.UI
         public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date)
         {
             var parts = new List<string>();
-            var control = ControlText(regions, text, q, r, date);
-            if (control != "") parts.Add(control);
             var zone = regions.ZoneAt(q, r, date);
-            var sub = regions.Subdistricts.ShowsOn(date) ? regions.Subdistricts.SubdistrictAt(q, r) : null;   // only while the map shows the layer
+            var control = ControlText(regions, text, q, r, date);
+            // a demilitarized zone is named by its own line below; the control line would only repeat "Demilitarized zone"
+            if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
+            // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
+            var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
             if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, MapRegions.DateText(zone.Signed)));
             else if (sub != null) parts.Add(text.Format("info.region", sub.Name, sub.District));
             foreach (var l in regions.LinesAt(q, r, date))
@@ -147,6 +149,7 @@ namespace Statecraft.Game.UI
                 Control1948.Side.Contested => text["info.control_contested"],
                 Control1948.Side.NoMansLand => text["info.control_no_mans_land"],
                 Control1948.Side.Dmz => text["info.control_dmz"],
+                Control1948.Side.OffData => "",   // beyond the frontier or the sea: the data says nothing there
                 _ => text["info.control_none"],
             };
         }

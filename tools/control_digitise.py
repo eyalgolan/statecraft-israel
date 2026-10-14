@@ -45,10 +45,12 @@ Method:
     settlements whose holder on the date is sourced) lands on its side, unless it lies within 2 km of a line (the
     accuracy). A failed anchor fails the run.
   7 Contested (grey) only for the days an operation ran there (owner ruling 2026-10-14): where two snapshots differ,
-    during the Ten Days (9-18 July 1948; Lydda and Ramle, Nazareth, the Jenin and Latrun fronts, Tira), Operation
+    during the Ten Days (8-18 July 1948; Lydda and Ramle, Nazareth, the Jenin and Latrun fronts, Tira), Operation
     Shoter (24-26 July), Operations Yoav and Ha-Har and the actions that followed them to the end of October in the south
-    (15-31 October), Operation Hiram in the north (29-31 October); Operation Horev (22 December 1948 - 7 January 1949)
-    in the south-west, after which that area has no sourced line (no colour) until the Egypt agreement.
+    (15-31 October), Operation Hiram in the north (29-31 October). Operation Horev is not drawn (no source gives a line
+    for January 1949, and its fighting lay south of the scan or beyond the frontier): the October line stands until the
+    Egypt agreement. Towns that the sources place on one side but the lines, within their accuracy, put on the other are
+    pinned (PINNED): the bake gives the town's hex the sourced side.
   8 From each armistice agreement's date its front takes the agreement's lines (content/map/armistice_lines_1949.geojson,
     D-A): the 1948 lines of that front leave as the agreement's lines come in (each 1948 piece leaves on the date of the
     nearest line of its front, so line A in the Iraqi sector comes in by Art. VI.3's stages, the earlier lines held until
@@ -98,12 +100,14 @@ S1025 = {"cite": "S/1025, the Mediator's report on the observation of the truce 
                  "of 16 June, an agreed line with a no-man's land between the two lines.",
          "url": "https://www.un.org/unispal/document/auto-insert-184863/", "checked": CHECKED}
 WIKI = "https://en.wikipedia.org/wiki/"
-OPERATIONS = {   # operation: (first day, last day + 1, the source of the dates)
-    "ten_days": ("1948-07-09", "1948-07-18", WIKI + "1948_Arab%E2%80%93Israeli_War"),
-    "shoter": ("1948-07-24", "1948-07-26", WIKI + "Operation_Shoter"),
-    "yoav": ("1948-10-15", "1948-10-31", WIKI + "Operation_Yoav"),
-    "hiram": ("1948-10-29", "1948-10-31", WIKI + "Operation_Hiram"),
-    "horev": ("1948-12-22", "1949-01-07", WIKI + "Operation_Horev"),
+OPERATIONS = {   # operation: (first day, last day + 1, the sources of the dates)
+    # the Ten Days: renewed fighting from 8 July (the Egyptian offensive) to the second truce on 18 July
+    "ten_days": ("1948-07-08", "1948-07-18", [WIKI + "1948_Arab%E2%80%93Israeli_War"]),
+    "shoter": ("1948-07-24", "1948-07-26", [WIKI + "Operation_Shoter"]),
+    # Yoav (15-22 October), then Ha-Har south-west of Jerusalem (end of October) and the capture of Beit Jibrin (27 Oct)
+    # and al-Dawayima (29 Oct) that the October line already shows
+    "yoav": ("1948-10-15", "1948-10-31", [WIKI + "Operation_Yoav", WIKI + "Operation_Ha-Har", WIKI + "Bayt_Jibrin", WIKI + "Al-Dawayima"]),
+    "hiram": ("1948-10-29", "1948-10-31", [WIKI + "Operation_Hiram"]),
 }
 
 # The drawn lines: (colour, waypoints in scan pixels, each snapped to the nearest pen ink of that colour within 12 px and
@@ -214,21 +218,32 @@ CLOSURES = {
                    "3 km of that straight stretch has no colour (no sourced line).",
 }
 ARMISTICE_DATES = ["1949-02-24", "1949-03-23", "1949-04-03", "1949-05-08", "1949-05-22", "1949-07-17", "1949-07-20"]
-# A GAME ASSUMPTION, not a source (coordinator ruling 2026-10-14; an owner question): the box where Operation Horev is taken
-# to have run, the other side's area south of the 90-km northing and west of the 110-km easting (Rafah, Auja).
-HOREV_BOX = (0.0, 0.0, 110.0, 90.0)   # E0, N0, E1, N1 (km)
+# Operation Horev (22 December 1948 - 7 January 1949) is not drawn: its fighting lay south of the scan's 60-km northing or
+# beyond the frontier, and no source gives a line for January 1949, so the October line stands until the Egypt agreement.
 
 # Holders of the other side, for the info panel only: (place, lon, lat, holder, from, until, source).
+# Every row must land on the other side on every snapshot in its window, or the run fails. Jordan's force is named as
+# the Arab Legion in 1948 and as the state, Jordan, from its agreement (as Egypt is named as the state throughout).
 HOLDERS = [
     ("Gaza", 34.4597, 31.5075, "egypt", "1948-06-11", None, WIKI + "Gaza_Strip"),
     ("Faluja", 34.7477, 31.6246, "egypt", "1948-06-11", "1949-02-24", WIKI + "Faluja_pocket"),
-    ("Nablus", 35.2608, 32.2211, "iraq", "1948-06-11", "1949-04-03", WIKI + "Iraqi_involvement_in_the_1948_Arab%E2%80%93Israeli_War"),
+    ("Ramallah", 35.2017, 31.8969, "arab_legion", "1948-06-11", "1949-04-03", WIKI + "Arab_Legion"),
+    ("Ramallah", 35.2017, 31.8969, "jordan", "1949-04-03", None, WIKI + "1949_Armistice_Agreements"),
     ("Nablus", 35.2608, 32.2211, "jordan", "1949-04-03", None, WIKI + "1949_Armistice_Agreements"),
-    ("Ramallah", 35.2017, 31.8969, "jordan", "1948-06-11", None, WIKI + "Arab_Legion"),
     ("Hebron", 35.0986, 31.535, "mixed", "1948-06-11", "1949-04-03", WIKI + "1948_Arab%E2%80%93Israeli_War"),
     ("Tarshiha", 35.2683, 33.009, "ala", "1948-06-11", "1948-10-31", WIKI + "Arab_Liberation_Army"),
     ("Nazareth", 35.3033, 32.7019, "ala", "1948-06-11", "1948-07-18", WIKI + "Operation_Dekel"),
-    ("Mishmar HaYarden", 35.5989, 33.005, "syria", "1948-06-11", "1949-07-20", WIKI + "Mishmar_HaYarden"),
+]
+# Towns the sources place on one side that the traced lines, within their accuracy, put on the other: the hex holding the
+# town takes the sourced side for the periods inside the window (tools/control_bake.py), as the hex of a Gazette-listed
+# place takes its sub-district (D-B). (place, lon, lat, holder, from, until, source, why)
+PINNED = [
+    ("Mishmar HaYarden", 35.5997, 33.0028, "syria", "1948-06-11", "1949-07-20", WIKI + "Mishmar_HaYarden_(moshava)",
+     "taken by the Syrian army in June 1948 and back in Israel's control on 20 July 1949 (en.wiki); the bridgehead is "
+     "narrower than ISA 6158/1's accuracy, so its lines put the moshava on the Israeli side"),
+    ("Qalqilya", 34.9685, 32.1904, "jordan", "1949-04-03", None, WIKI + "Qalqilya",
+     "on the Jordanian side of the armistice line, which severed its groves (en.wiki); the Jordan trace (D-A, low "
+     "accuracy, about +-1-2.5 km) puts it 2 km to the Israeli side from 8 May 1949"),
 ]
 # The closure check's anchors: (place, lon, lat, side, from, until, source). Coordinates: settlements_1948.yaml and
 # localities_1948.tsv; the Wikipedia API (prop=coordinates) for Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim,
@@ -290,7 +305,7 @@ ANCHORS = [
     ("Jenin", 35.3, 32.4611, "arab", "1948-06-11", None, WIKI + "Battle_of_Jenin_(1948)"),
     ("Tulkarm", 35.0308, 32.3111, "arab", "1948-06-11", None, WIKI + "Tulkarm"),
     ("Nablus", 35.2608, 32.2211, "arab", "1948-06-11", None, WIKI + "Nablus"),
-    ("Qalqilya", 34.9685, 32.1904, "arab", "1948-06-11", None, WIKI + "Qalqilya"),
+    ("Qalqilya", 34.9685, 32.1904, "arab", "1948-06-11", None, WIKI + "Qalqilya"),   # pinned from 3 April 1949 (PINNED)
     ("Hebron", 35.0986, 31.535, "arab", "1948-06-11", None, WIKI + "Hebron"),
     ("Bethlehem", 35.2061, 31.7044, "arab", "1948-06-11", None, WIKI + "Bethlehem"),
     ("Ramallah", 35.2017, 31.8969, "arab", "1948-06-11", None, WIKI + "Ramallah"),
@@ -573,6 +588,14 @@ def line_distance_km(snap, lon, lat):
     return unary_union([s for s, _ in snap["pieces"]]).distance(Point(float(e), float(n)))
 
 
+def check_holders(snap, sid, start, until) -> None:
+    """Every HOLDERS row whose window covers the snapshot's span lands on the other side (no tolerance: it names the area)."""
+    for name, lon, lat, h, f, u, src in HOLDERS:
+        if f <= start and (u is None or (until is not None and until <= u)):
+            if side_at(snap, lon, lat) != "arab":
+                raise SystemExit(f"holder check, {sid}: {name} ({h}) is not on the other side ({src})")
+
+
 def check_anchors(snap, sid, start, until, log, tol_km=2.0) -> list:
     """Every anchor whose sourced window covers the snapshot's whole span lands on its side, unless within tol_km of a line
     (the accuracy: 2 km for ISA 6158/1, 3 km once the Jordan line, traced from a low-resolution scan, is in)."""
@@ -601,7 +624,8 @@ def armistice_features():
     lines, zones = [], []
     for f in doc["features"]:
         p = f["properties"]
-        item = {"id": p["id"], "front": p["front"], "from": p["shown_from"], "geom": tr(shape(f["geometry"])), "name": p["name"]}
+        item = {"id": p["id"], "front": p["front"], "from": p["shown_from"], "geom": tr(shape(f["geometry"])), "name": p["name"],
+                "accuracy": p.get("accuracy", ""), "source_quality": p.get("source_quality"), "sources": p.get("sources", [])}
         if p["kind"] == "line":
             if p["id"].startswith("egypt_mv1950"):
                 continue     # the 1950 modus vivendi line does not change either side's position (S/1471 Art. III)
@@ -699,7 +723,14 @@ def km_box(e0, n0, e1, n1):
 
 # --- output -----------------------------------------------------------------------------------------------------------
 
-def area_feature(fid, snapshot, side, geom, holder=None, kind=None, extra=None):
+ISA_ACCURACY = "about +-1-2 km (ISA 6158/1: a 1:250,000 base, pen lines 0.5-0.7 km wide, a 2368 x 4078 px scan)"
+ARMISTICE_ACCURACY = ("the agreements' lines (content/map/armistice_lines_1949.geojson, D-A): about +-0.1-0.3 km for Syria and "
+                      "the Gaza line, the Mandate frontier for Lebanon (about +-1 km), Jordan about +-1-2.5 km (low accuracy, from "
+                      "a low-resolution scan of map 1); where a front has not yet switched, ISA 6158/1's lines (about +-1-2 km)")
+
+
+def area_feature(fid, snapshot, side, geom, holder=None, kind=None, extra=None, sources=None, accuracy=ISA_ACCURACY,
+                 source_quality="low_res_scan"):
     import shapely
     from shapely.geometry import mapping
     g = shapely.set_precision(ad.km_geom_to_lonlat(geom.simplify(0.03)), 1e-5)
@@ -707,8 +738,7 @@ def area_feature(fid, snapshot, side, geom, holder=None, kind=None, extra=None):
     if g.geom_type == "GeometryCollection":
         g = shapely.union_all([x for x in g.geoms if x.geom_type in ("Polygon", "MultiPolygon")])
     props = {"id": fid, "kind": "area", "snapshot": snapshot, "side": side, "holder": holder, "neutral_kind": kind,
-             "accuracy": "about +-1-2 km (ISA 6158/1: a 1:250,000 base, pen lines 0.5-0.7 km wide, a 2368 x 4078 px scan)",
-             "source_quality": "low_res_scan", "sources": [ISA_MAP["url"]], "checked": CHECKED, "status": "draft",
+             "accuracy": accuracy, "source_quality": source_quality, "sources": sources or [ISA_MAP["url"]], "checked": CHECKED, "status": "draft",
              "review": "owner-verify"}
     props.update(extra or {})
     return {"type": "Feature", "properties": props, "geometry": mapping(g)}
@@ -731,12 +761,13 @@ def build(isa_pdf: Path, log=print) -> dict:
         feats.append({"type": "Feature", "properties": {"id": name, "kind": "line", "colour": t["colour"], "legend_he": he,
                       "legend": en, "date": d, "on_ink": t["on_ink"], "sources": [ISA_MAP["url"]], "checked": CHECKED,
                       "status": "draft", "review": "owner-verify"}, "geometry": mapping(g)})
-    spans = {"truce1": ("1948-06-11", "1948-07-09"), "truce2": ("1948-07-18", "1948-07-24"), "truce2b": ("1948-07-26", "1948-10-15"),
-             "october": ("1948-10-31", "1948-12-22")}
+    spans = {"truce1": ("1948-06-11", "1948-07-08"), "truce2": ("1948-07-18", "1948-07-24"), "truce2b": ("1948-07-26", "1948-10-15"),
+             "october": ("1948-10-31", "1949-02-24")}
     for sid, (names, drops, drawn, shown) in SNAPSHOTS.items():
         log(f"snapshot {sid} (lines as drawn {drawn}, shown from {shown}):")
         snaps[sid] = build_snapshot(fit, traced, land_n, names, drops, log)
         anchors[sid] = check_anchors(snaps[sid], sid, *spans[sid], log)
+        check_holders(snaps[sid], sid, *spans[sid])
     fronts, arm_lines, arm_zones = armistice_features()
     prev_key = None; arm_ids = {}
     for d in ARMISTICE_DATES:
@@ -751,7 +782,8 @@ def build(isa_pdf: Path, log=print) -> dict:
         nxt = ARMISTICE_DATES[ARMISTICE_DATES.index(d) + 1] if d != ARMISTICE_DATES[-1] else None
         log(f"armistice {d}: fronts switched {', '.join(s['switched'])}; closures {', '.join(s['closures']) or 'none'}")
         anchors[sid] = check_anchors(s, sid, d, nxt, log, 3.0 if "jordan" in s["switched"] else 2.0)
-    # overlays: contested during operations, no colour after Horev and at uncertain closures, demilitarized zones
+        check_holders(s, sid, d, nxt)
+    # overlays: contested during operations, no colour at the uncertain Egypt closure, demilitarized zones
     south = km_box(0, 0, 400, 160); north = km_box(0, 200, 400, 400)
     ten = xor_israel(snaps["truce1"], snaps["truce2"])
     shoter = xor_israel(snaps["truce2"], snaps["truce2b"])
@@ -759,49 +791,57 @@ def build(isa_pdf: Path, log=print) -> dict:
     mid = octx.difference(south).difference(north)
     if mid.area > 0.5:
         raise SystemExit(f"the October changes include {mid.area:.1f} km2 outside the Yoav (south) and Hiram (north) areas")
-    horev = snaps["october"]["areas"]["arab"].intersection(km_box(*HOREV_BOX))
-    overlays = {
-        "contested_ten_days": (ten, "contested", OPERATIONS["ten_days"], "the Ten Days: where the 9 July and 18 July lines differ"),
-        "contested_shoter": (shoter, "contested", OPERATIONS["shoter"], "Operation Shoter: Ijzim, Jaba and Ein Ghazal"),
-        "contested_yoav": (octx.intersection(south), "contested", OPERATIONS["yoav"],
+    ops = OPERATIONS
+    overlays = {   # id: (geometry, kind, (from, until), sources, accuracy, source_quality, why)
+        "contested_ten_days": (ten, "contested", ops["ten_days"][:2], [ISA_MAP["url"]] + ops["ten_days"][2], ISA_ACCURACY, "low_res_scan",
+                               "the Ten Days: where the 9 July and 18 July lines differ"),
+        "contested_shoter": (shoter, "contested", ops["shoter"][:2], [ISA_MAP["url"]] + ops["shoter"][2], ISA_ACCURACY, "low_res_scan",
+                             "Operation Shoter: Ijzim, Jaba and Ein Ghazal"),
+        "contested_yoav": (octx.intersection(south), "contested", ops["yoav"][:2], [ISA_MAP["url"]] + ops["yoav"][2], ISA_ACCURACY, "low_res_scan",
                            "Operations Yoav and Ha-Har and the actions that followed them to the end of October: where the July and October lines differ in the south"),
-        "contested_hiram": (octx.intersection(north), "contested", OPERATIONS["hiram"], "Operation Hiram: the Galilee pocket"),
-        "contested_horev": (horev, "contested", OPERATIONS["horev"], "Operation Horev: the other side's area in the south-west (the area is a game assumption, HOREV_BOX, not a source)"),
-        "unsourced_after_horev": (horev, "not_sourced", ("1949-01-07", "1949-02-24", OPERATIONS["horev"][2]),
-                                  "after Operation Horev, no sourced line until the Egypt agreement (the area is a game assumption, HOREV_BOX, not a source)"),
+        "contested_hiram": (octx.intersection(north), "contested", ops["hiram"][:2], [ISA_MAP["url"]] + ops["hiram"][2], ISA_ACCURACY, "low_res_scan",
+                            "Operation Hiram: the Galilee pocket"),
     }
     first_egypt = next(sid for d, sid in arm_ids.items() if "egypt" in snaps[sid]["switched"])
+    # the uncertain band is the Israeli side's only: the area the Egypt line and the frontier already give Egypt stays Egypt's
     unc = shapely.union_all([shapely.buffer(u, CLOSURE_UNCERTAIN_KM) for u in snaps[first_egypt]["uncertain"]]).intersection(land_all)
-    overlays["unsourced_egypt_south"] = (unc, "not_sourced", ("1949-02-24", None, ARMISTICE.name), CLOSURES["egypt_south"])
+    unc = unc.difference(snaps[first_egypt]["areas"]["arab"])
+    overlays["unsourced_egypt_south"] = (unc, "not_sourced", ("1949-02-24", None), [ARMISTICE.name, ad.UNTS["url"], ad.EGYPT_TEXT["url"]],
+                                         "the closing stretch is a straight line within Art. VI.3's bounds (about +-3 km); this band, "
+                                         "on the Israeli side of it, is left without colour", None, CLOSURES["egypt_south"])
     for z in arm_zones:
-        overlays["dmz_" + z["id"]] = (z["geom"].intersection(land_all), "dmz", (z["from"], None, ARMISTICE.name), z["name"])
+        overlays["dmz_" + z["id"]] = (z["geom"].intersection(land_all), "dmz", (z["from"], None), [ARMISTICE.name, ad.UNTS["url"]],
+                                      z["accuracy"] or ARMISTICE_ACCURACY, z["source_quality"], z["name"])
     # features
     for sid, s in snaps.items():
         date = spans.get(sid, (sid[4:], None))[0]
-        legend = "armistice" if sid.startswith("arm_") else "held"
-        feats.append(area_feature(f"{sid}:israel", sid, "israel", s["areas"]["israel"], "israel", extra={"legend": legend}))
+        arm = sid.startswith("arm_")
+        legend = "armistice" if arm else "held"
+        kw = {"sources": [ARMISTICE.name, ad.UNTS["url"], ISA_MAP["url"]], "accuracy": ARMISTICE_ACCURACY,
+              "extra_flags": {"low_accuracy": "jordan" in s["switched"]}} if arm else {}
+        flags = kw.pop("extra_flags", {})
+        feats.append(area_feature(f"{sid}:israel", sid, "israel", s["areas"]["israel"], "israel", extra={"legend": legend, **flags}, **kw))
         for h, g in sorted(split_holders(s["areas"]["arab"], date).items()):
-            feats.append(area_feature(f"{sid}:arab:{h}", sid, "arab", g, h, extra={"legend": legend}))
-    for oid, (g, kind, (f, u, src), why) in overlays.items():
+            feats.append(area_feature(f"{sid}:arab:{h}", sid, "arab", g, h, extra={"legend": legend, **flags}, **kw))
+    for oid, (g, kind, (f, u), srcs, acc, sq, why) in overlays.items():
         if g.is_empty:
             continue
         side = "unsided" if kind == "not_sourced" else "neutral"
-        feats.append(area_feature(oid, None, side, g, None, kind, {"shown_from": f, "shown_until": u, "why": why,
-                                                                    "sources": [ISA_MAP["url"], src] if src.startswith("http") else [ISA_MAP["url"]]}))
+        feats.append(area_feature(oid, None, side, g, None, kind, {"shown_from": f, "shown_until": u, "why": why}, sources=srcs,
+                                  accuracy=acc, source_quality=sq))
     periods = [
         {"id": "sub_districts", "from": "1948-05-15", "until": "1948-06-11", "snapshot": None, "overlays": [], "legend": None,
          "why": "15 May 1948 has no sourced line (research note, section 1): the 1947 sub-districts, no side colour"},
-        {"id": "truce1", "from": "1948-06-11", "until": "1948-07-09", "snapshot": "truce1", "overlays": [], "legend": "held",
+        {"id": "truce1", "from": "1948-06-11", "until": "1948-07-08", "snapshot": "truce1", "overlays": [], "legend": "held",
          "line_date": "1948-07-09", "why": "the first truce: the line ISA 6158/1 dates 9 July 1948, the closest sourced line (owner ruling 2026-10-14)"},
-        {"id": "ten_days", "from": "1948-07-09", "until": "1948-07-18", "snapshot": "truce1", "overlays": ["contested_ten_days"], "legend": "held", "line_date": "1948-07-09"},
+        {"id": "ten_days", "from": "1948-07-08", "until": "1948-07-18", "snapshot": "truce1", "overlays": ["contested_ten_days"], "legend": "held", "line_date": "1948-07-09"},
         {"id": "truce2", "from": "1948-07-18", "until": "1948-07-24", "snapshot": "truce2", "overlays": [], "legend": "held", "line_date": "1948-07-18"},
         {"id": "shoter", "from": "1948-07-24", "until": "1948-07-26", "snapshot": "truce2", "overlays": ["contested_shoter"], "legend": "held", "line_date": "1948-07-18"},
         {"id": "truce2b", "from": "1948-07-26", "until": "1948-10-15", "snapshot": "truce2b", "overlays": [], "legend": "held", "line_date": "1948-07-18"},
         {"id": "yoav", "from": "1948-10-15", "until": "1948-10-29", "snapshot": "truce2b", "overlays": ["contested_yoav"], "legend": "held", "line_date": "1948-07-18"},
         {"id": "yoav_hiram", "from": "1948-10-29", "until": "1948-10-31", "snapshot": "truce2b", "overlays": ["contested_yoav", "contested_hiram"], "legend": "held", "line_date": "1948-07-18"},
-        {"id": "october", "from": "1948-10-31", "until": "1948-12-22", "snapshot": "october", "overlays": [], "legend": "held", "line_date": "1948-10"},
-        {"id": "horev", "from": "1948-12-22", "until": "1949-01-07", "snapshot": "october", "overlays": ["contested_horev"], "legend": "held", "line_date": "1948-10"},
-        {"id": "january", "from": "1949-01-07", "until": "1949-02-24", "snapshot": "october", "overlays": ["unsourced_after_horev"], "legend": "held", "line_date": "1948-10"},
+        {"id": "october", "from": "1948-10-31", "until": "1949-02-24", "snapshot": "october", "overlays": [], "legend": "held", "line_date": "1948-10",
+         "why": "the October line stands until the Egypt agreement: no source gives a later line (Operation Horev is not drawn)"},
     ]
     for i, d in enumerate(ARMISTICE_DATES):
         sid = arm_ids[d]; s = snaps[sid]
@@ -824,14 +864,15 @@ def build(isa_pdf: Path, log=print) -> dict:
                        "the Syrian and Israeli truce lines of S/1353/Rev.1: on its colour scan the Israeli line is legible only in parts and the Syrian line cannot be told apart from the zone's outline and the river at that resolution; ISA 6158/1's red and blue cover that front",
                        "the 1950 modus vivendi line: it does not change either side's position (S/1471 Art. III)"],
         "south_limit_km_n": SOUTH_N,
-        "game_assumptions": [f"Operation Horev's area: the other side's area south of N {HOREV_BOX[3]:g} km and west of E {HOREV_BOX[2]:g} km (HOREV_BOX), not a source; an owner question"],
-        "known_staleness": ["the October 1948 line is shown until 22 December 1948, so Isdud (taken 28 October), Majdal (5 November) and Huleiqat (taken 20 October in Yoav, where no later line is drawn) stay on the other side; the caption names the source line's date"],
+        "known_staleness": ["the October 1948 line is shown until the Egypt agreement (24 February 1949), since no source gives a later line: Isdud (taken 28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then; the caption names the source line's date",
+                            "Huleiqat reads Israeli in every period: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, and en.wiki gives its capture by Israel on 13 May 1948 (Operation Barak); its later Egyptian occupation until Operation Yoav is not in the source's lines"],
+        "pinned_towns": [{"place": n, "lon": x, "lat": y, "holder": h, "from": f, "until": u, "source": src, "why": w} for n, x, y, h, f, u, src, w in PINNED],
         "georeference": fit["diag"],
         "conversion": "Palestine Grid (EPSG:28191) to WGS84 by the EPSG Helmert transformation (tools/armistice_digitise.py, PG_PIPELINE)",
         "drops": {sid: [{"stroke": s, "px": [x, y], "why": w} for s, x, y, w in d] for sid, (_, d, _, _) in SNAPSHOTS.items()},
         "closures": CLOSURES,
         "joins": {sid: s["joins"] for sid, s in snaps.items()},
-        "operations": {k: {"from": f, "until": u, "source": src} for k, (f, u, src) in OPERATIONS.items()},
+        "operations": {k: {"from": f, "until": u, "sources": src} for k, (f, u, src) in OPERATIONS.items()},
         "anchors": anchors,
         "periods": periods,
     }

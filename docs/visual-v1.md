@@ -1147,11 +1147,12 @@ measurements and `ColourBlindPlayersTellTheBorderStylesApart` are unchanged.
 **Two colours: who held which areas (owner rulings 2026-10-14, refs #196).** The owner ruled that the borders use promo
 03's two colours: a deeper blue for the Israeli side (about 89,119,156 on screen, against main's lighter 120,142,192) and
 orange-red for the other side, from sourced data only, with grey for contested ground, no-man's land and the demilitarized
-zones. Further rulings the same day: (a) the legend as written below, in English and Hebrew; (b) the localities stay as of
-1948 ("start of game only"): the colour claims military control only; (c) the first-truce snapshot from 11 June may use the
-archive map's line dated 9 July (the closest sourced line, labelled as such), and grey marks areas changing hands only for
-the days an operation ran there; (d) no outward request to the archives: the best public copy of ISA map 6158/1, the
-accuracy (about +-1-2 km) stated in the data. Research note: `research_notes/Map borders/control-areas-1948-49.md`.
+zones. Further rulings the same day: (a) the legend in English and Hebrew; (b) the localities stay as of 1948 ("start of
+game only"): the colour claims military control only; (c) the first-truce snapshot from 11 June may use the archive map's
+line dated 9 July (the closest sourced line, labelled as such), and grey marks areas changing hands only for the days an
+operation ran there; (d) no outward request to the archives: the best public copy of ISA map 6158/1, the accuracy (about
++-1-2 km) stated in the data. Research note: `research_notes/Map borders/control-areas-1948-49.md`. Licence basis: decision
+D-C (owner-verify).
 - *Data:* `content/map/control_1948_49.geojson` (true polygons, status draft, owner-verify), written by
   `tools/control_digitise.py` from Israel State Archives map 6158/1 (1949; the NYU Faculty Digital Archive copy, 2368 x 4078 px:
   the ISA viewer refused a plain client and Commons has no copy, checked 2026-10-14). The scan is georeferenced on its own
@@ -1162,50 +1163,57 @@ accuracy (about +-1-2 km) stated in the data. Research note: `research_notes/Map
   line is drawn only where the front moved, so each snapshot is the earlier lines less the stretches a later line replaces,
   plus enclaves leaving on the dates the sources give (Tira 16 July; Operation Shoter 24-26 July; Operation Hiram). The
   lines and the Mandate outline are polygonised and each face takes a side by parity from Tel Aviv; a face reached both ways
-  fails the run. Closure check: 45-50 sourced anchor places per snapshot land on their side unless within 2 km of a line
-  (3 km once the low-accuracy Jordan line is in). The scan stops at the 60-km northing: south of it nothing is coloured
-  until the Jordan agreement's line d closes the south on 3 April 1949.
+  fails the run. Closure checks: 44-50 sourced anchor places per snapshot land on their side unless within 2 km of a line
+  (3 km once the low-accuracy Jordan line is in), and every holder place (`HOLDERS`) lands on the other side with no
+  tolerance. The scan stops at the 60-km northing: south of it nothing is coloured until the Jordan agreement's line d
+  closes the south on 3 April 1949. Each feature cites the source it comes from, with that source's accuracy: the 1948
+  snapshots and the operations' grey ISA 6158/1 (and the operations' pages); the 1949 sides, the zones and the Egypt
+  closure the agreements' lines (`armistice_lines_1949.geojson`, D-A) and UNTS vol. 42, the Jordan-derived sides flagged
+  low accuracy.
 - *Periods* (`content/map/control_hexes_1948_49.yaml`, `tools/control_bake.py`: each land hex of Mandatory Palestine takes
   the code at its centre, per period): 15 May-11 June 1948 the 1947 sub-districts in grey (no sourced line for 15 May);
-  11 June the 9 July line; 9-18 July (the Ten Days) grey where the 9 and 18 July lines differ; 18 July the blue line; 24-26
-  July grey at Ijzim, Jaba and Ein Ghazal; 15-31 October grey where the July and October lines differ in the south (Yoav,
-  Ha-Har and the actions that followed to the end of October), 29-31 October in the Galilee (Hiram); 31 October the green
-  line; 22 December-7 January grey in the south-west (Horev), then no colour there until the Egypt agreement; from each
-  agreement's date (24 February, 23 March, 3 April with Art. VI.3's stages on 8 May, 22 May and 17 July, 20 July 1949) that
-  front takes its armistice line, each 1948 piece of that front leaving on the date of the nearest line of its front, and the
-  demilitarized zones are grey. Gaps closed: Jerusalem by the 1948 lines within 4.5 km of the city (map 2 is not available);
-  the Egypt line south of Gaza straight to the frontier within Art. VI.3's bounds, the land within 3 km of that stretch
-  left without colour.
+  11 June the 9 July line; 8-18 July (the Ten Days) grey where the 9 and 18 July lines differ; 18 July the blue line;
+  24-26 July grey at Ijzim, Jaba and Ein Ghazal; 15-31 October grey where the July and October lines differ in the south
+  (Yoav, Ha-Har, Beit Jibrin, al-Dawayima), 29-31 October in the Galilee (Hiram); from 31 October the green line, until the
+  Egypt agreement (Operation Horev is not drawn: its fighting lay south of the scan or beyond the frontier, and no source
+  gives a line for January 1949); from each agreement's date (24 February, 23 March, 3 April with Art. VI.3's stages on 8
+  May, 22 May and 17 July, 20 July 1949) that front takes its armistice line, each 1948 piece of that front leaving on the
+  date of the nearest line of its front, and the demilitarized zones are grey. Gaps closed: Jerusalem by the 1948 lines
+  within 4.5 km of the city (map 2 is not available); the Egypt line south of Gaza straight to the frontier within Art.
+  VI.3's bounds, the land within 3 km of that stretch on its Israeli side left without colour (the Strip itself stays
+  Egypt's: Gaza, Deir al-Balah, Khan Yunis and Rafah read Egypt in every period, pinned by `test_control.py`).
+- *Pinned towns* (`pinned_towns`; the bake gives the town's hex the sourced side, as D-B's rule 5 does for Gazette places):
+  Mishmar HaYarden, Syria's from June 1948 to 20 July 1949 (en.wiki), whose bridgehead is narrower than the map's accuracy;
+  Qalqilya, on the Jordanian side from 3 April 1949 (en.wiki), which the low-accuracy Jordan trace puts 2 km to the Israeli
+  side.
 - *Drawing:* `MapRegions` draws `Control1948`'s layer from 11 June 1948: Israel Primary, the other side Secondary,
-  contested, no-man's land and zones the new Neutral style (`BorderStyle.Neutral`, the shader's third style), the land beyond
-  the frontier style none, no colour left out (no band, so the edge of the sourced data is not drawn as a front). Before it the
-  sub-districts are drawn in Neutral, since blue now means the Israeli side. Colours: Primary pre-grade sRGB 0.29, 0.40, 0.56
-  (was 0.40, 0.50, 0.80), Neutral 0.46, 0.46, 0.44 with a pale stripe 0.98, 0.97, 0.93.
-- *Label* (`map-layer`, `MapRegions.ControlLabel`): 1948 periods "Blue: held by Israel · Orange-red: held by Arab forces ·
-  Grey: contested, no-man's land or not held" / "כחול: בשליטת ישראל · כתום-אדום: בשליטת כוחות ערביים · אפור: שטח שבמחלוקת,
-  שטח הפקר או שטח שאינו מוחזק", with the caption "Front lines, {date}, approximate (Israel State Archives)"; once every front
-  has its agreement "Blue: Israeli side of the armistice line · Orange-red: Arab side · Grey: no-man's land or demilitarised
-  zone" / "כחול: הצד הישראלי של קו שביתת הנשק · כתום-אדום: הצד הערבי · אפור: שטח הפקר או אזור מפורז"; while only some fronts
-  have, the armistice legend with the caption "Armistice lines: {fronts}; elsewhere front lines of {date}" (shortened to fit the narrow box; the source is named in the 1948 caption and the data) (that caption's wording, and the info panel's lines, are drafts for the owner). The info panel says who
-  held the hex ("Held by Arab forces (Egypt)"); the holder is named only where every sourced place in that connected area
-  names one.
-- *Coordinator rulings on the deviations (2026-10-14):* accepted as recorded: the Syrian truce lines of S/1353/Rev.1 not
-  traced; the CIA ORE 38-48 map not used as a cross-check (its reading-room copy was unreachable and the map exists online only
-  as a JVL copy; the anchors come from Wikipedia); Jerusalem's line falling between two hexes (the Old City's hex is the other
-  side, the one west of it Israeli; the grey rule for a hex holding both sides does not fire). Known staleness, accepted
-  because the caption names the source line's date: the October 1948 line is shown until 22 December 1948, so Isdud (taken
-  28 October), Majdal (5 November) and Huleiqat (20 October, where no later line is drawn) stay on the other side. Game
-  assumption, not a source (an owner question): Operation Horev's area is taken as the other side's area south of the 90-km
-  northing and west of the 110-km easting (`HOREV_BOX`; the data's `game_assumptions`). Owner question: the ground east of the
-  Beersheba-Hebron front reads as held by Arab forces in 1948, since the source draws only front lines; no "not held" area is
-  invented without a source. The map label may take up to six lines in its narrow box (the approved legend alone is about
-  three); `ControlTests.TheLongestLegendLabelFitsBesideTheEventCard` checks at eleven window shapes, in both languages, that it
-  stays on screen, clear of the card, minimap, info panel and top bar, and is never cut.
-- *Not done, recorded in the data:* the Syrian and Israeli truce lines of S/1353/Rev.1 (on its colour scan the Israeli line
-  is legible only in parts and the Syrian line cannot be told from the zone's outline and the river; ISA 6158/1's red and
-  blue cover that front); January 1949 (no source: the south-west has no colour); the Lebanese villages held from Hiram to the
-  armistice (outside the frontier: not coloured); sub-hex features (Kfar Darom, Mount Scopus, the Faluja pocket's exact edge)
-  kept in the true polygons only.
+  contested, no-man's land and zones the new Neutral style (`BorderStyle.Neutral`, the shader's third style, dashed along
+  its edge every 2 km, 65% drawn: a cue that is not colour), the land beyond the frontier style none, no colour left out (no
+  band, so the edge of the sourced data is not drawn as a front). Before it the sub-districts are drawn in Neutral, since
+  blue now means the Israeli side. Colours: Primary pre-grade sRGB 0.29, 0.40, 0.56 (was 0.40, 0.50, 0.80), measured on
+  screen at deltaE76 0.6 from 89,119,156; Neutral 0.46, 0.46, 0.44 with a pale stripe 0.98, 0.97, 0.93.
+- *Label* (`map-layer`, `MapRegions.ControlLabel`): the legend names each side before its colour, and grey as dashed:
+  1948 "Held by Israel: blue · Held by Arab forces: orange-red · Contested or no-man's land: grey, dashed", with the caption
+  "Front lines, {date}, approximate (Israel State Archives)"; once a front has its agreement "Israeli side of the armistice
+  line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", with "Armistice lines: {fronts}"
+  (all switched) or "Armistice lines: {fronts}; elsewhere front lines of {date}" (some), Jordan named "Jordan (low
+  accuracy)" (D-A ruling 2). Dates in the UI's language (Hebrew month names). The label may take up to six lines in its
+  narrow box; `ControlTests.TheLongestLegendLabelFitsBesideTheEventCard` checks EN and HE at eleven window shapes. The info
+  panel says who held the hex ("Held by Arab forces (Egypt)"; Jordan's force is named as the Arab Legion in 1948 and as the
+  state, Jordan, from its agreement), nothing for a hex beyond the frontier, and no sub-district once its bands are gone.
+- *Known staleness and limits:* the October 1948 line stands until the Egypt agreement (24 February 1949), so Isdud (taken
+  28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then (the caption names the source
+  line's date). Huleiqat reads Israeli in every period: ISA 6158/1's lines put it there, and en.wiki gives its capture by
+  Israel on 13 May 1948 (Operation Barak); its later Egyptian occupation until Yoav is not in the source's lines. The ground
+  east of the Beersheba-Hebron front reads as held by Arab forces in 1948, since the source draws only front lines; no "not
+  held" area is invented. Jerusalem's line falls between two hexes (the Old City's hex is the other side's, the one west of
+  it Israeli; the grey rule for a hex holding both sides does not fire).
+- *Not done, recorded in the data (coordinator rulings, 2026-10-14):* the Syrian and Israeli truce lines of S/1353/Rev.1 (on
+  its colour scan the Israeli line is legible only in parts and the Syrian line cannot be told from the zone's outline and
+  the river; ISA 6158/1's red and blue cover that front, and Mishmar HaYarden is pinned); the CIA ORE 38-48 map as a
+  cross-check (its reading-room copy was unreachable and the map exists online only as a JVL copy; the anchors come from
+  Wikipedia); January 1949; the Lebanese villages held from Hiram to the armistice (outside the frontier: not coloured);
+  sub-hex features (Kfar Darom, Mount Scopus, the Faluja pocket's exact edge) kept in the true polygons only.
 
 **Research item: region data (to source, then the owner's sensitivity review).**
 - *What:* per-hex region labels for (a) the sub-districts of Mandatory Palestine at the end of the Mandate (six districts:

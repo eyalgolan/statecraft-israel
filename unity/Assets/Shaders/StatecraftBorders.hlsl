@@ -26,6 +26,9 @@ float4 _ScBorderColour3, _ScBorderLight3, _ScBorderShape3;
 // The share of its band each side of a shared edge draws. At exactly half, each half loses its partly covered outer pixel
 // and the pair measured 6 px at gameplay03 against a full band's 8 (promo 03: about 8); at 0.6 the two measure as one band.
 static const float ScSharedBand = 0.6;
+// The neutral style is dashed along its edge (a cue that is not colour, for colour-blind players: review S9 of #555):
+// ScNeutralDashM metres a period, the first ScNeutralDashOn of it drawn.
+static const float ScNeutralDashM = 2000.0, ScNeutralDashOn = 0.65;
 
 static const float2 ScHexNormals[6] = { float2(1, 0), float2(0.5, -0.8660254), float2(-0.5, -0.8660254), float2(-1, 0),
                                         float2(-0.5, 0.8660254), float2(0.5, 0.8660254) };
@@ -85,7 +88,7 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
         {
             // bestPx: the distance (px) to the nearest band, measured in units of that edge's band (a shared edge draws
             // ScSharedBand of it on each side), so where a shared and an unshared edge meet at a corner each keeps its own width.
-            float bestPx = 1e9, bestAa = 1.0, bestHalf = 1.0;
+            float bestPx = 1e9, bestAa = 1.0, bestHalf = 1.0, bestAlong = 0.0;
             [unroll] for (int i = 0; i < 6; i++)
             {
                 float2 n = ScHexNormals[i];
@@ -104,7 +107,7 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
                     float2 g = d > 1e-3 ? e / d : -n;
                     float aa = max(length(float2(dot(px, g), dot(py, g))), 1e-3);
                     float share = ((sharedEdges >> i) & 1) != 0 ? ScSharedBand : 1.0;
-                    if (d / aa / share < bestPx / bestHalf) { bestPx = d / aa; bestAa = aa; bestHalf = share; }
+                    if (d / aa / share < bestPx / bestHalf) { bestPx = d / aa; bestAa = aa; bestHalf = share; bestAlong = dot(p, t); }
                 }
             }
             bool primary = own.y < 1.5, neutral = own.y > 2.5;
@@ -130,6 +133,13 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
             float cover = saturate(cBand + wash);
             float3 c = cBand > 0.0 || wash > 0.0 ? (stripe * cBand + colour.rgb * wash) / max(cover, 1e-4) : colour.rgb;
             float a = cover * (1.0 - water);
+            if (neutral)
+            {
+                // box-filtered dash: the share of this pixel's footprint along the edge that falls on a drawn dash
+                float ph = frac(bestAlong / ScNeutralDashM), w = max(footprint / ScNeutralDashM, 1e-4);
+                float on = saturate((ScNeutralDashOn - ph) / w + 0.5) * saturate(ph / w + 0.5);
+                a *= lerp(on, ScNeutralDashOn, saturate(w * 4.0 - 1.0));   // far off, where dashes are sub-pixel: their mean
+            }
             baseColor *= 1.0 - a;
             emission = lerp(emission, c, a);
         }

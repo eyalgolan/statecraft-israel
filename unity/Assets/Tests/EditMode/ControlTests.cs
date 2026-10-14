@@ -118,37 +118,67 @@ public class ControlTests
     }
 
     [Test]
-    public void TheLabelCarriesTheApprovedLegendInEnglishAndHebrew()
+    public void TheLabelNamesTheSidesBeforeTheirColoursWithADashedGreyInEnglishAndHebrew()
     {
         var m = Regions();
         string en = m.ControlLabel(Truce2, k => En[k])!, he = m.ControlLabel(Truce2, k => He[k])!;
-        StringAssert.StartsWith("Blue: held by Israel · Orange-red: held by Arab forces · Grey: contested, no-man's land or not held", en);
+        StringAssert.StartsWith("Held by Israel: blue · Held by Arab forces: orange-red · Contested or no-man's land: grey, dashed", en);
+        StringAssert.DoesNotContain("not held", en, "nothing is ever drawn grey for land held by no one");
         StringAssert.Contains("18 July 1948", en);
         StringAssert.Contains("Israel State Archives", en);
-        StringAssert.StartsWith("כחול: בשליטת ישראל · כתום-אדום: בשליטת כוחות ערביים · אפור: שטח שבמחלוקת, שטח הפקר או שטח שאינו מוחזק", he);
+        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
+        StringAssert.Contains("18 ביולי 1948", he, "the date in Hebrew month names (review S5)");
+        StringAssert.DoesNotContain("July", he);
         StringAssert.Contains("ארכיון המדינה", he);
         StringAssert.Contains("9 July 1948", m.ControlLabel(Truce1, k => En[k]), "the 11 June snapshot is the line dated 9 July, labelled as such");
-        Assert.AreEqual("Blue: Israeli side of the armistice line · Orange-red: Arab side · Grey: no-man's land or demilitarised zone", m.ControlLabel(After, k => En[k]));
-        Assert.AreEqual("כחול: הצד הישראלי של קו שביתת הנשק · כתום-אדום: הצד הערבי · אפור: שטח הפקר או אזור מפורז", m.ControlLabel(After, k => He[k]));
+        var after = m.ControlLabel(After, k => En[k])!;
+        StringAssert.StartsWith("Israeli side of the armistice line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", after);
+        StringAssert.Contains("Jordan (low accuracy)", after, "D-A ruling 2: the Jordan line is labelled low-accuracy on the map");
+        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום-אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
         var mixed = m.ControlLabel(Mixed, k => En[k])!;
-        StringAssert.StartsWith("Blue: Israeli side of the armistice line", mixed);
-        StringAssert.Contains("Egypt, Jordan, Lebanon", mixed);
+        StringAssert.StartsWith("Israeli side of the armistice line", mixed);
+        StringAssert.Contains("Egypt, Jordan (low accuracy), Lebanon", mixed);
         StringAssert.Contains("October 1948", mixed);
+        StringAssert.Contains("אוקטובר 1948", m.ControlLabel(Mixed, k => He[k]));
     }
 
     [Test]
     public void TheInfoPanelSaysWhoHeldTheHexAndClaimsNothingElse()
     {
         var m = Regions();
-        var telAviv = HexOf(34.78, 32.08); var gaza = HexOf(34.4597, 31.5075); var nablus = HexOf(35.2608, 32.2211);
+        var telAviv = HexOf(34.78, 32.08); var gaza = HexOf(34.4597, 31.5075); var nablus = HexOf(35.2608, 32.2211); var nazareth = HexOf(35.3033, 32.7019);
+        var march = new DateTime(1949, 3, 1);   // Egypt's agreement in force, Jordan's not yet
         StringAssert.StartsWith("Held by Israel", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, Truce2));
-        StringAssert.StartsWith("Held by Arab forces", InfoPanelPresenter.ControlText(m, En, gaza.q, gaza.r, Truce2));
+        Assert.AreEqual("Held by Arab forces (Egypt)", InfoPanelPresenter.ControlText(m, En, gaza.q, gaza.r, Truce2));
+        Assert.AreEqual("Contested", InfoPanelPresenter.ControlText(m, En, nazareth.q, nazareth.r, TenDays));
+        Assert.AreEqual("Arab side of the armistice line (Egypt)", InfoPanelPresenter.ControlText(m, En, gaza.q, gaza.r, march), "Egypt has switched");
+        StringAssert.StartsWith("Held by Arab forces", InfoPanelPresenter.ControlText(m, En, nablus.q, nablus.r, march), "Jordan has not");
         Assert.AreEqual("Israeli side of the armistice line", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, After));
-        Assert.AreEqual("Arab side of the armistice line (Jordan's Arab Legion)", InfoPanelPresenter.ControlText(m, En, nablus.q, nablus.r, After));
+        Assert.AreEqual("Arab side of the armistice line (Jordan)", InfoPanelPresenter.ControlText(m, En, nablus.q, nablus.r, After), "the state, not the army, after the armistice");
         Assert.AreEqual("", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, Start), "no side before the first sourced line");
+        var amman = HexOf(35.9, 31.95);
+        Assert.AreEqual("", InfoPanelPresenter.ControlText(m, En, amman.q, amman.r, After), "beyond the frontier the data says nothing");
         StringAssert.StartsWith("Held by Israel", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Truce2));
+        StringAssert.DoesNotContain("Mandate sub-districts", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Truce2), "no sub-district once its bands are gone");
+        StringAssert.Contains("Mandate sub-districts", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Start));
+        // a demilitarized zone hex: the zone's own line, not a second "Demilitarized zone"
+        var dmz = m.Control!.Periods.Count > 0 ? FindHex(m, After, Control1948.Side.Dmz) : default;
+        Assert.AreEqual("Demilitarized zone", InfoPanelPresenter.ControlText(m, En, dmz.q, dmz.r, After));
+        StringAssert.DoesNotContain("Demilitarized zone", InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
+        // no-man's land: no hex of the data has it at this scale (Jerusalem's line falls between two hexes); a file that does
+        var nml = Control1948.Parse("layer: x\nshown_from: 1948-06-11\nperiods:\n  - { id: a, from: 1948-06-11, until: null, legend: held, line_date: '1948-07-09', fronts: [] }\nhexes:\n  - [1, 2, 'm']\n");
+        Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), nml.At(1, 2, Truce1));
+        Assert.AreEqual("No-man's land", InfoPanelPresenter.ControlText(new MapRegions(Subdistricts1948.Parse(SubText), null, nml), En, 1, 2, Truce1));
     }
 
+    static (int q, int r) FindHex(MapRegions m, DateTime d, Control1948.Side side)
+    {
+        var hexes = JsonUtility.FromJson<HexFile>(Inputs.Map.HexesJson).hexes;
+        return hexes.Select(h => (h.q, h.r)).First(h => m.Control!.At(h.q, h.r, d).side == side);
+    }
+
+    /// <summary>The game's own wiring (review S10): boot, then move the session's date through the bridge past 11 June
+    /// 1948. The map draws the side layer and the label carries the legend; at the start, the grey sub-districts.</summary>
     [Test]
     public void ANormalGameSwitchesToSidesOn11June1948AndShowsTheLegend()
     {
@@ -159,9 +189,13 @@ public class ControlTests
         root.Begin(Inputs, 0);
         var label = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer");
         Assert.AreEqual("Mandate sub-districts, 1947", label.text);
-        var m = Regions();
-        m.Apply(Truce1);
-        StringAssert.StartsWith("control_1948_49:truce1", MapBorders.Current!.Name);
+        Assert.AreEqual("subdistricts_1948:neutral", MapBorders.Current!.Name, "the grey sub-districts, drawn from the side data's MapRegions");
+        var g = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = Truce2;
+        root.Bridge!.Replace(g);
+        StringAssert.StartsWith("control_1948_49:truce2", MapBorders.Current!.Name);
+        StringAssert.StartsWith("Held by Israel: blue", label.text);
+        StringAssert.Contains("18 July 1948", label.text);
     }
 
     [Test]
