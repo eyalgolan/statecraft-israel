@@ -146,6 +146,9 @@ namespace Statecraft.Game.Map
         /// anchors), the hexes it placed them on and the anchors it could not place (the placer's messages). The units layer
         /// takes them instead of placing again when it draws the same units on the same hexes (issue #321; UnitSpotsFor).</summary>
         public IReadOnlyDictionary<Units.UnitAnchor, Units.AnchorSpot> UnitSpots { get; private set; } = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>();
+        /// <remarks>Kept for the map's life, not released once a layer has taken the spots: GameRoot.Begin may run again on
+        /// the same map (it shuts the old layer down and makes a new one; the editor tests do), and each layer checks its
+        /// hexes against these. 1,102 small objects; nothing writes to them after Build.</remarks>
         public IReadOnlyList<Statecraft.Sim.MapHex> UnitHexes { get; private set; } = Array.Empty<Statecraft.Sim.MapHex>();
         public IReadOnlyList<string> UnitSkips { get; private set; } = Array.Empty<string>();
 

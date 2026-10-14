@@ -11,6 +11,7 @@ using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 /// <summary>Issue #321 (T57): the units layer placed every anchor again (UnitGround.Place, about 40 ms at cpu 4) on the
@@ -89,6 +90,27 @@ public class UnitSpotsOnceTests
         CollectionAssert.AreEqual(skipped, map.UnitSkips, "the same anchors skipped, with the same messages");
     }
 
+    /// <summary>Review of #563, nit 3: an anchor with no clear spot is still reported when the layer takes the map's spots
+    /// (it logs the map's skips as its own placement did). Golani's first anchor is moved out to sea, where no army token
+    /// can stand within one hex.</summary>
+    [Test]
+    public void TheLayerReportsTheMapsSkippedAnchors()
+    {
+        var inputs = Inputs();
+        const string yavneel = "    lon: 35.49944\n    lat: 32.70944\n";
+        StringAssert.Contains(yavneel, inputs.Map.UnitsYaml, "Golani's first anchor, Yavne'el");
+        inputs.Map.UnitsYaml = inputs.Map.UnitsYaml.Replace(yavneel, "    lon: 34.30000\n    lat: 31.90000\n");
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build(inputs.Map);
+        Assert.IsNotEmpty(map.UnitSkips, "the map could not place the anchor at sea");
+        foreach (var skip in map.UnitSkips) LogAssert.Expect(LogType.Warning, skip);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(inputs, 0);
+        Assert.AreSame(map.UnitSpots, root.Units!.Spots, "taken from the map, so the warnings are the re-logged skips");
+    }
+
     /// <summary>Other hexes, other units or a rebuilt map: no spots handed on, so the layer places its own.</summary>
     [Test]
     public void SpotsAreHandedOnOnlyForTheSameUnitsAndHexes()
@@ -100,9 +122,23 @@ public class UnitSpotsOnceTests
         var units = map.UnitEntries; var hexes = inputs.Content.Hexes;
         Assert.IsNotNull(map.UnitSpotsFor(units, hexes));
         Assert.IsNull(map.UnitSpotsFor(UnitData.Parse(inputs.Map.UnitsYaml), hexes), "a list the map did not place");
-        var moved = hexes.Select(h => new MapHex { Q = h.Q, R = h.R, Lon = h.Lon, Lat = h.Lat, ElevM = h.ElevM, Land = h.Land, Biome = h.Biome }).ToList();
-        moved[100] = new MapHex { Q = moved[100].Q, R = moved[100].R, Lon = moved[100].Lon + 1e-9, Lat = moved[100].Lat, ElevM = moved[100].ElevM, Land = moved[100].Land, Biome = moved[100].Biome };
-        Assert.IsNull(map.UnitSpotsFor(units, moved), "a hex moved");
+        // Each field the guard compares, changed on one hex alone (review of #563: lat, land, q, r, and the last hex, so a
+        // guard that dropped a field or stopped a hex short would hand the spots on).
+        List<MapHex> With(int i, System.Func<MapHex, MapHex> change)
+        {
+            var copy = hexes.Select(h => new MapHex { Q = h.Q, R = h.R, Lon = h.Lon, Lat = h.Lat, ElevM = h.ElevM, Land = h.Land, Biome = h.Biome }).ToList();
+            copy[i] = change(copy[i]);
+            return copy;
+        }
+        MapHex Copy(MapHex h) => new MapHex { Q = h.Q, R = h.R, Lon = h.Lon, Lat = h.Lat, ElevM = h.ElevM, Land = h.Land, Biome = h.Biome };
+        int last = hexes.Count - 1;
+        Assert.IsNotNull(map.UnitSpotsFor(units, With(100, h => { var c = Copy(h); c.ElevM += 10f; return c; })), "elevation is not the placer's input");
+        Assert.IsNull(map.UnitSpotsFor(units, With(100, h => { var c = Copy(h); c.Lon += 1e-9; return c; })), "a hex's lon moved");
+        Assert.IsNull(map.UnitSpotsFor(units, With(100, h => { var c = Copy(h); c.Lat += 1e-9; return c; })), "a hex's lat moved");
+        Assert.IsNull(map.UnitSpotsFor(units, With(100, h => { var c = Copy(h); c.Land = !c.Land; return c; })), "a hex's land flipped");
+        Assert.IsNull(map.UnitSpotsFor(units, With(100, h => { var c = Copy(h); c.Q += 1; return c; })), "a hex's q changed");
+        Assert.IsNull(map.UnitSpotsFor(units, With(100, h => { var c = Copy(h); c.R += 1; return c; })), "a hex's r changed");
+        Assert.IsNull(map.UnitSpotsFor(units, With(last, h => { var c = Copy(h); c.Lat += 1e-9; return c; })), "the last hex moved");
         Assert.IsNull(map.UnitSpotsFor(units, hexes.Take(hexes.Count - 1).ToList()), "a hex missing");
         // A rebuild from other unit text: the old list is no longer the map's, and the new spots are for the new units.
         inputs.Map.UnitsYaml = "";
