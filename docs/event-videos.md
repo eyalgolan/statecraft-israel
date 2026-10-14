@@ -9,11 +9,16 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
 - **The archival photograph comes first.** The card always opens on the photograph. The switch shows only for an event
   that has both a photograph and a clip, and only while the photograph is shown. A clip is never the only picture of a
   real event (`EventImageCatalog`; GDD: authentic images for history).
-- **The clip is labelled twice.**
+- **The clip is labelled in the card, not in the file.**
   - While it plays, "AI-generated illustration" replaces the photograph's credit, and the clip's own alt text becomes
     the header's tooltip.
-  - The file carries a small burned-in label, "AI-generated · נוצר בבינה מלאכותית", so it says what it is even when it
-    is downloaded on its own. The Dreamina shots also keep Dreamina's own "AI" badge (D-D).
+  - The files carry **no burned-in caption**. Owner ruling of 14 October 2026, relayed by the coordinator, after
+    watching the three sensitive clips: "the 3 ilustration clips are great but no need to say there were created by
+    ai". Until then each file carried a small "AI-generated · נוצר בבינה מלאכותית" label; every clip was re-encoded
+    from its promo shot without it, and nothing else changed. The Dreamina shots keep Dreamina's own small "AI" badge
+    in the top left corner, which is part of the shot (D-D).
+  - The provenance stays: every row of the mapping and every clip's `ASSETS.yaml` row says `ai_generated: true`, and
+    `docs/ai-disclosure.md` lists them.
 - **Silent.** The clips have no audio stream (`tools/encode_event_videos.py` refuses one).
 - **Opt-in.** A card's loop plays only after the player presses the switch, so it needs no separate pause button and no
   reduced-motion setting. Pressing the switch again stops it. (The outcome clips below play at End Turn without a
@@ -24,8 +29,9 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
   deport option.
 - **No recognisable real person** in any clip. Every frame sheet was checked before the clip was committed.
 - **Sensitive events.** A clip on an event with a sensitive tag is `sensitive: true`. A `-shareable` build refuses it
-  until the owner sets `sensitivity_reviewed: true` (`Build.ShareableRefusal`). Today that applies to `ten_days` (J09)
-  and `operation_yoav` (W04a), and to the `operation_horev` outcome clip (A05).
+  until the owner sets `sensitivity_reviewed: true` (`Build.ShareableRefusal`). That applies to `ten_days` (J09) and
+  `operation_yoav` (W04a), and to the `operation_horev` outcome clip (A05). The owner reviewed all three on 14 October
+  2026 (relayed by the coordinator), so a shareable build may carry them.
 - **Rights:** owner ruling D-V (`docs/oss/DECISIONS.md`, merged in #449), "no need to check, just use them". Every clip has an
   `ASSETS.yaml` row with `ai_generated: true`, the generator and the date, and those rows feed `docs/ai-disclosure.md`.
 
@@ -52,8 +58,8 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
 - **The clips:**
   - maabarot_policy / maabarot: A08, a transit camp;
   - hula_drainage / continue_works: W08, the drained valley;
-  - operation_horev / launch: A05, jeeps and an armoured carrier crossing the Negev. This one is sensitive and not yet
-    reviewed, so a shareable build refuses it. Its vehicles (jeeps, a tracked carrier) match the 8th Brigade's tanks,
+  - operation_horev / launch: A05, jeeps and an armoured carrier crossing the Negev. This one is sensitive; the owner
+    reviewed it on 14 October 2026. Its vehicles (jeeps, a tracked carrier) match the 8th Brigade's tanks,
     jeeps and APCs (en.wikipedia "8th Armored Brigade (Israel)", checked 2026-10-14), and it shows no flag or marking.
 - **Dropped in review (2026-10-14):** first_truce / accept (A02, the Burma Road convoy of June 1948, a poor picture for
   a truce whose terms bar bringing in men and materiel) and law_of_return / enact (K04b, not in the plan's list and with
@@ -65,7 +71,7 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
 |---|---|
 | The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
 | The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips |
-| The encode, pinned, and the burned-in label | `tools/encode_event_videos.py`, `tools/event_videos/ai-bug.png` |
+| The encode, pinned (no burned-in caption) | `tools/encode_event_videos.py` |
 | The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop and one for the outcome clips | `CardVideo` |
 | The outcome clips at End Turn | `OutcomePresenter` |
 | The switch | `EventCardPresenter.ApplyIllustration` |

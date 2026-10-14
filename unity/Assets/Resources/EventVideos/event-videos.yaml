@@ -7,9 +7,13 @@
 # under promo/, which is not in the repository) and its SHA-256; the generator; the date the shot was made (its file date);
 # what it shows (the alt text, the switch's tooltip); and the sensitivity flags.
 # sensitive: true rows may not ship in a -shareable build until sensitivity_reviewed: true (an OWNER step; Build.cs).
+# Owner ruling of 2026-10-14, relayed by the coordinator, after watching the three sensitive clips (operation_yoav,
+# ten_days and the operation_horev outcome): "the 3 ilustration clips are great but no need to say there were created by
+# ai". So those three rows are sensitivity_reviewed: true, and no clip carries a burned-in caption any more.
 # Rights: owner ruling D-V (docs/oss/DECISIONS.md), "no need to check, just use them"; ai_generated: true on every row.
 # Deport never gets a clip (GDD owner ruling 1): EventVideoMapping refuses a row for an event with a deport option.
-# tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, the burned-in label.
+# tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, no burned-in caption (owner ruling
+# 2026-10-14 above; ai_generated: true stays on every row).
 checked: 2026-10-14
 clips:
   - event: latrun_proposal
@@ -55,7 +59,7 @@ clips:
     alt: "Illustration: a shell-holed water tower over a Negev kibbutz, smoke on the horizon."
     ai_generated: true
     sensitive: true
-    sensitivity_reviewed: false
+    sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
   - event: maabarot_policy
     file: maabarot_policy.mp4
     shot: W05a
@@ -132,7 +136,7 @@ clips:
     alt: "Illustration: armoured cars of the Arab Legion climbing a road in the hills."
     ai_generated: true
     sensitive: true
-    sensitivity_reviewed: false
+    sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
 # Outcome clips (decision videos, phase 3; docs/event-videos.md): played at End Turn, once, when the player queued the
 # event's historical option (historical: true in content) and the turn applied it. 3.5 s, silent, skippable (a click,
 # Esc, Enter or Space; Esc skips them all), captioned as the order ("Your order: ..."), never for a counterfactual option,
@@ -183,4 +187,4 @@ outcomes:
     alt: "Illustration: jeeps and an armoured carrier crossing the Negev."
     ai_generated: true
     sensitive: true
-    sensitivity_reviewed: false
+    sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)

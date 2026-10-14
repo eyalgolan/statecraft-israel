@@ -253,14 +253,18 @@ public class OutcomeClipTests
     }
 
     /// <summary>The build gate reads the outcome clips from the mapping (Build.GatedClips, used by RefuseUnlessShareable):
-    /// the sensitive, unreviewed Horev clip refuses a shareable build.</summary>
+    /// the sensitive Horev clip refuses a shareable build until the owner's review. The owner reviewed it on 14 October 2026
+    /// (relayed by the coordinator), so the shipped mapping passes and the same rows unreviewed refuse.</summary>
     [Test]
     public void TheSensitiveHorevClipWaitsForTheOwnersReview()
     {
         var build = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
         var gated = (IReadOnlyList<EventVideoMapping.Row>)build.GetMethod("GatedClips", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { Yaml })!;
         var gate = build.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
-        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated });
+        Assert.IsTrue(gated.Single(r => r.File == "operation_horev-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-14");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }), "reviewed: the clips may ship");
+        var unreviewed = gated.Select(r => { r.SensitivityReviewed = false; return r; }).ToList();
+        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, unreviewed });
         StringAssert.Contains("illustration clips: operation_horev, operation_yoav, ten_days", refusal ?? "");
     }
 }

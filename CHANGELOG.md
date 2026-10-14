@@ -262,6 +262,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- Decision videos (refs #434): the clips no longer carry the burned-in "AI-generated · נוצר בבינה מלאכותית" caption.
+  Owner ruling of 14 October 2026, relayed by the coordinator: "the 3 ilustration clips are great but no need to say
+  there were created by ai". All 14 clips were re-encoded from their promo shots (each checked by SHA-256) with the same
+  encode otherwise; the card still says "AI-generated illustration" while a clip plays, every row keeps
+  `ai_generated: true`, and the four Dreamina shots keep their own "AI" badge (owner: "Keep the badge"; DECISIONS G4, G5). The owner also reviewed the three sensitive
+  clips (operation_yoav, ten_days, the operation_horev outcome), so a shareable build may carry them. No golden moves.
 - The units file (`units_1948.yaml`) is parsed once at boot instead of twice: the map keeps its parse and the units
   layer draws from the same list (refs #321). The units and where they stand are unchanged. The second parse cost about
   25 ms at `--cpu 4` between the map and the start screen; the map build itself is unchanged. `?bootlog` has three more

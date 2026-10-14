@@ -1,5 +1,6 @@
 """tools/encode_event_videos.py: the decision-card clips are silent 960x540 H.264 with faststart, made only from the
-promo shot each row names (by SHA-256), with the burned-in label; Deport and other content rules live in the Unity-side
+promo shot each row names (by SHA-256), with no burned-in caption (owner ruling of 14 October 2026: "no need to say
+there were created by ai"; the rows keep ai_generated: true); Deport and other content rules live in the Unity-side
 EventVideoMapping tests."""
 import shutil
 import subprocess
@@ -22,12 +23,37 @@ def test_every_row_names_a_promo_shot_by_sha256_and_is_marked_ai():
         assert (ev.OUT / r["file"]).is_file()
 
 
-def test_the_encode_is_pinned_silent_and_labelled():
-    cmd = ev.encode_command(ev.BUG.parent / "in.mp4", ev.BUG.parent / "out.mp4")
+def test_the_encode_is_pinned_silent_and_has_no_burned_in_caption():
+    """Owner ruling of 14 October 2026 (relayed by the coordinator): "the 3 ilustration clips are great but no need to say
+    there were created by ai". The encode lays nothing over the shot: one input, no overlay, no drawtext, no label."""
+    cmd = ev.encode_command(ev.REPO / "in.mp4", ev.REPO / "out.mp4")
     assert "-an" in cmd and "+faststart" in cmd and "libx264" in cmd and "28" in cmd
-    graph = ev.filter_graph()
-    assert "crop=960:540" in graph and f"overlay={ev.SAFE_X}:{ev.SAFE_Y}" in graph
-    assert ev.BUG.is_file()
+    assert cmd.count("-i") == 1, "the shot is the only input (no label image)"
+    for row in (None, {"start_frame": 5, "frames": 84, "decimate": True}):
+        graph = ev.filter_graph(row)
+        assert "crop=960:540" in graph and graph.endswith("[out]")
+        assert "overlay" not in graph and "drawtext" not in graph and "[1:v]" not in graph, graph
+    assert not hasattr(ev, "BUG") and not hasattr(ev, "LABEL_EN"), "no caption is kept in the encoder"
+    assert not (ev.REPO / "tools/event_videos/ai-bug.png").exists(), "the caption image is gone"
+
+
+def test_provenance_stays_ai_generated_on_every_row():
+    """The caption goes; the provenance stays: every row of the mapping, and every clip's ASSETS.yaml row, says
+    ai_generated: true."""
+    import yaml
+    rows = ev.load_rows()
+    assert rows and all(r["ai_generated"] is True for r in rows)
+    assets = {r["glob"]: r for r in yaml.safe_load((ev.REPO / "ASSETS.yaml").read_text(encoding="utf-8"))["rules"]}
+    for r in rows:
+        assert assets["unity/Assets/StreamingAssets/video/" + r["file"]]["ai_generated"] is True, r["file"]
+
+
+def test_the_owner_reviewed_exactly_the_three_sensitive_clips():
+    """Owner ruling of 14 October 2026: the three sensitive clips (operation_yoav, ten_days, the operation_horev outcome)
+    are reviewed; no other row changes."""
+    rows = ev.load_rows()
+    assert sorted(r["file"] for r in rows if r["sensitive"]) == ["operation_horev-outcome.mp4", "operation_yoav.mp4", "ten_days.mp4"]
+    assert all(r["sensitivity_reviewed"] is r["sensitive"] for r in rows)
 
 
 def make(path, audio: bool, size="960x540"):
