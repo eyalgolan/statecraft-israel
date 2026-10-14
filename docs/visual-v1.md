@@ -1457,11 +1457,12 @@ Spread is luma p90 - p10.
 | diorama02 palette distance | 0.563 | **0.534** | - | no worse |
 | diorama02 warmth / saturation | 0.109 / 0.406 | 0.111 / 0.400 | 0.145 / 0.43 | [0.087, 0.145] / <= 0.48 |
 
-The gameplay03 floors above (detail >= 0.035, spread >= 0.15) are superseded by "Sea and boats" below (#388 and #536,
-the maintainer's call). Promo 03's own open sea measures 0.012 in edge density, so the far sea is now calmed on purpose.
-The floors are now:
-- detail >= 0.025 in #388's crop and >= 0.033 in the focus band, just under the branch's 0.028 and 0.036;
-- spread >= 0.09, under the branch's 0.096 and 0.101.
+The gameplay03 floors above (detail >= 0.035, spread >= 0.15) are superseded by "Sea and boats" below (#388 and #536;
+the detail floor was the maintainer's call). Promo 03's own open sea measures 0.012 in edge density, so the far sea is
+now calmed on purpose. The floors are now:
+- detail >= 0.025 in #388's crop and >= 0.033 in the focus band, just under the branch's 0.029 and 0.037;
+- spread >= 0.09, under the branch's 0.096 and 0.104. This one was the author's proposal, recommended by the reviewer and
+  pending the owner (#536, "Changed acceptance criteria").
 
 They are kept so the sea cannot go flat. #388's "Done when" was updated to match.
 

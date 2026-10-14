@@ -39,7 +39,7 @@ public class SeaCraftTests
 
     /// <summary>About ten boats under way (feluccas and cutters, never a steamer) off the coast, two or more moored in or off
     /// each of the three harbours with Haifa's coastal steamer at anchor among them, every hull and its margin in open sea (not a rift lake),
-    /// no two boats overlapping, and promo 03's size: a sailing boat a third to a half of a hex across.</summary>
+    /// no two boats overlapping, and promo 03's size: a sailing boat about a quarter of a hex across (0.15-0.5 allowed).</summary>
     [Test]
     public void TheBoatsSailOffTheCoastAndMoorInTheHarbours()
     {

@@ -536,22 +536,23 @@ public class SeaTests
     }
 
     /// <summary>The largest channel change (0-255) over 3 x 3 pixels round each projected point between a render with the
-    /// "seacalm" toggle on and one with it off (the water's clock pinned, the grid and the tilt-shift off), at a pose.</summary>
-    static float SeaCalmChange(MapScene map, PromoPose pose, Vector3[] points, out int onScreen)
+    /// "seacalm" toggle on and one with it off (the water's clock pinned, the grid and the tilt-shift off), at a pose and
+    /// a resolution.</summary>
+    static float SeaCalmChange(MapScene map, PromoPose pose, Vector3[] points, out int onScreen, int width = 1920, int height = 1080)
     {
         VisualToggles.Set("grid", false);
         MapShaderGlobals.PinWaterTime(100f);
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         pose.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
         var px = new Vector2[points.Length];
-        var on = RenderSample.Render(cam, 1920, 1080, points, px);
+        var on = RenderSample.Render(cam, width, height, points, px);
         VisualToggles.Set("seacalm", false);
-        var off = RenderSample.Render(cam, 1920, 1080, points, px);
+        var off = RenderSample.Render(cam, width, height, points, px);
         VisualToggles.Set("seacalm", true);
         float worst = 0f; onScreen = 0;
         foreach (var p in px)
         {
-            if (p.x < 2 || p.y < 2 || p.x > 1917 || p.y > 1077) continue;
+            if (p.x < 2 || p.y < 2 || p.x > width - 3 || p.y > height - 3) continue;
             onScreen++;
             for (int y = (int)p.y - 1; y <= (int)p.y + 1; y++)
                 for (int x = (int)p.x - 1; x <= (int)p.x + 1; x++)
@@ -579,19 +580,23 @@ public class SeaTests
         Assert.AreEqual(0f, worst, "the near-shore sea is unchanged at the gameplay zoom");
     }
 
-    /// <summary>Review of #536: the overview gets no calm and no broad swells. Past the shelf's reach (ScCoastRangeM, 12 km),
-    /// 15-40 km out, diorama02 renders the open sea the same with "seacalm" on and off. Fails if the calm or the swells lose
-    /// their fade with the zoom.</summary>
+    /// <summary>Review of #536: the overview gets no calm and no broad swells, at any resolution. Past the shelf's reach
+    /// (ScCoastRangeM, 12 km), 15-40 km out, diorama02 renders the open sea the same with "seacalm" on and off, at 1920 x 1080
+    /// and at 3840 x 2160 (a device pixel ratio of 2, where a pixel covers half the metres). Fails if the calm or the swells
+    /// lose their fade with the zoom, or fade with the pixel size instead (then the 2160p render calms).</summary>
     [UnityTest]
     public IEnumerator TheOverviewGetsNoCalmOrSwells()
     {
         var map = OpenMap();
         yield return null;
         var points = OffshorePoints(map, new[] { 15000f, 20000f, 25000f, 30000f, 40000f });
-        float worst = SeaCalmChange(map, PromoPose.Diorama02, points, out int seen);
-        TestContext.WriteLine($"diorama02: {seen} open-sea points on screen, largest change with seacalm off {worst:0.0}/255");
-        Assert.Greater(seen, 20, "enough of the open-sea points are on screen");
-        Assert.AreEqual(0f, worst, "the overview's open sea is unchanged");
+        foreach (var (w, h) in new[] { (1920, 1080), (3840, 2160) })
+        {
+            float worst = SeaCalmChange(map, PromoPose.Diorama02, points, out int seen, w, h);
+            TestContext.WriteLine($"diorama02 at {w}x{h}: {seen} open-sea points on screen, largest change with seacalm off {worst:0.0}/255");
+            Assert.Greater(seen, 20, "enough of the open-sea points are on screen");
+            Assert.AreEqual(0f, worst, $"the overview's open sea is unchanged at {w}x{h}");
+        }
     }
 
     /// <summary>Review of #536: the coastal shelf is the overview's and only the overview's. At diorama02 the water 4-8 km out
