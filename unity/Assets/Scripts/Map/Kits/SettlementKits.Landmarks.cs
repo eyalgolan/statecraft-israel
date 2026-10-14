@@ -130,6 +130,7 @@ namespace Statecraft.Game.Map.Kits
                 var mid = (prev + cur) * 0.5f; var dir = cur - prev;
                 float yaw = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
                 km.Box(mid.x, mid.y, yaw, dir.magnitude * 1.08f, 5f * m, sea - 2f * m, sea, 2.2f * m, stone, stone, Facade.Plain, m);
+                Record("jaffa", "breakwater", mid, yaw, dir.magnitude * 1.08f, 5f * m, 2.2f * m, stone);   // SeaCraft keeps its boats off it
                 prev = cur;
             }
             Record("jaffa", "port", c, 0f, r, r, 2.2f * m, stone);
@@ -316,6 +317,7 @@ namespace Statecraft.Game.Map.Kits
                         var mid = from + d * ((i + 0.5f) / k);
                         if (!ground.Water(mid.x, mid.y)) continue;
                         km.Box(mid.x, mid.y, yaw, d.magnitude / k * 1.04f, 5f * m, sea - 2f * m, sea, 2.4f * m, stone, stone, Facade.Plain, m);
+                        Record(s.Id, "breakwater", mid, yaw, d.magnitude / k * 1.04f, 5f * m, 2.4f * m, stone);   // SeaCraft keeps its boats off it
                         pieces++;
                     }
                 }
@@ -384,6 +386,7 @@ namespace Statecraft.Game.Map.Kits
                     var mid = a + d * ((i + 0.5f) / k);
                     if (!ground.Water(mid.x, mid.y)) continue;
                     km.Box(mid.x, mid.y, yaw, d.magnitude / k * 1.04f, 4.5f * m, y - 2f * m, y, 2.2f * m, stone, stone, Facade.Plain, m);
+                    Record(s.Id, "breakwater", mid, yaw, d.magnitude / k * 1.04f, 4.5f * m, 2.2f * m, stone);   // SeaCraft keeps its boats off it
                     pieces++;
                 }
             }

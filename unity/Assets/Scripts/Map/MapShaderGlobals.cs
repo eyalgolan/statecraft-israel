@@ -12,7 +12,7 @@ namespace Statecraft.Game.Map
             Biome = Shader.PropertyToID("_ScBiomeTex"), Haze = Shader.PropertyToID("_ScHaze"), HazeWater = Shader.PropertyToID("_ScHazeWater"),
             HazeRange = Shader.PropertyToID("_ScHazeRange"), WaterOn = Shader.PropertyToID("_ScWaterOn"), Grid = Shader.PropertyToID("_ScGrid"),
             WaterTime = Shader.PropertyToID("_ScWaterTime"), LandOn = Shader.PropertyToID("_ScLandOn"),
-            SeaTexture = Shader.PropertyToID("_ScSeaTexture");
+            SeaTexture = Shader.PropertyToID("_ScSeaTexture"), SeaCalm = Shader.PropertyToID("_ScSeaCalm");
 
         /// <summary>Pins the water's clock (waves, surf) to the given seconds, or back to Unity's time with null: for tests and
         /// frame captures that must render chosen moments (promo-sea review I2, M5).</summary>
@@ -67,6 +67,10 @@ namespace Statecraft.Game.Map
             // the profile prices it and the seam test can pin it off.
             Shader.SetGlobalFloat(SeaTexture, 1f);
             assets.OnTeardown(VisualToggles.Register("seatexture", on => Shader.SetGlobalFloat(SeaTexture, on ? 1f : 0f)));
+            // Sea boats (#388, StatecraftMap.hlsl): the far sea's calm and broad swells at the gameplay zoom, and the coastal
+            // shelf at the overview; its own toggle, so the profile prices it and the tests can compare with it off.
+            Shader.SetGlobalFloat(SeaCalm, 1f);
+            assets.OnTeardown(VisualToggles.Register("seacalm", on => Shader.SetGlobalFloat(SeaCalm, on ? 1f : 0f)));
             assets.OnTeardown(VisualToggles.Register("haze", on =>
             {
                 Shader.SetGlobalVector(Haze, on ? haze : new Vector4(haze.x, haze.y, haze.z, 0f));

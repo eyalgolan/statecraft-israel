@@ -5,12 +5,11 @@ using UnityEngine;
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>The boats on the Mediterranean, as promo 03 draws them (refs #388): white-sailed craft under way off the coast
-    /// and craft moored inside the harbours of Jaffa, Tel Aviv and Haifa. 1948's own: lateen-rigged feluccas (the Jaffa
-    /// and Gaza fishing boats), gaff-rigged cutters, and a small coastal steamer at Haifa's quays; no motor launches or
-    /// modern craft. Like the buildings, sizes are symbolic: a felucca is drawn about a third of a hex long, as the promo's
-    /// are, so it reads at the gameplay zoom. Positions keep each boat's port or stretch of coast (sourced coordinates
-    /// below); the offsets are placement, not record. One static mesh under the kits' root, drawn with Kit.mat, so the
-    /// "kits" toggle covers it. Seeded: the same map draws the same boats.</summary>
+    /// and craft moored in and off the harbours of Jaffa, Tel Aviv and Haifa. Craft of the period: lateen-rigged and
+    /// gaff-rigged sailing and fishing boats, and a small coastal steamer at anchor off Haifa's breakwater; no motor
+    /// launches or modern craft. Like the buildings, sizes are symbolic: a felucca is drawn about a quarter of a hex across
+    /// (2 km at the default scale), as the promo's boats are, so it reads at the gameplay zoom. One static mesh under the
+    /// kits' root, drawn with Kit.mat, so the "kits" toggle covers it. Seeded: the same map draws the same boats.</summary>
     public static class SeaCraft
     {
         public enum Kind { Felucca, Cutter, Steamer, Moored }
@@ -25,13 +24,13 @@ namespace Statecraft.Game.Map.Kits
         }
 
         /// <summary>Lengths in the kits' landmark metres (x KitScale.Landmarks): a felucca 34, a cutter 30, the steamer 46, a
-        /// moored boat 16. About three times a real boat's length on the landmarks' scale, as the promo draws them.</summary>
+        /// moored boat 16; a felucca is about a quarter of a hex across at the default scale.</summary>
         static float LengthOf(Kind k) => k switch { Kind.Felucca => 34f, Kind.Cutter => 30f, Kind.Steamer => 46f, _ => 16f } * KitScale.Landmarks;
 
-        /// <summary>The coasts the boats under way sail off: a sourced point on the shore (lon, lat), the direction out to sea
-        /// (world x, z) and how many boats. Jaffa's old port (its lighthouse, 34.7505 E 32.0535 N), Tel Aviv's port (1936-65,
-        /// 34.7733 E 32.0965 N), Bat Yam's shore (34.745 E 32.020 N), Haifa's port on the bay (35.0045 E 32.8201 N), Acre's
-        /// fishing harbour (35.0675 E 32.9205 N) and Gaza's shore (34.44 E 31.52 N), where feluccas fished in 1948.</summary>
+        /// <summary>The coasts the boats under way sail off: a point on the shore (lon, lat), the direction out to sea (world
+        /// x, z) and how many boats. Jaffa's, Tel Aviv's and Haifa's are the points the settlement kits build those ports at
+        /// (docs/visual-v1.md, "Towns round 2"); Bat Yam's, Acre's and Gaza's are approximate points on their shores, chosen
+        /// for placement only.</summary>
         static readonly (string place, double lon, double lat, Vector2 seaward, int boats)[] Coasts =
         {
             ("jaffa", 34.7505056, 32.0534583, Vector2.left, 3),
@@ -44,16 +43,21 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Where the boats are: the moored craft in and off each harbour the settlement kits recorded
         /// (<paramref name="placed"/>'s "port" footprints), then those under way off <see cref="Coasts"/>, between
-        /// <see cref="OffshoreNearM"/> and <see cref="OffshoreM"/> out from the shore and clear of it, of the harbour works and
-        /// of each other. Every hull stands in open sea.</summary>
-        public static List<Craft> Place(KitGround ground, IReadOnlyList<SettlementKits.Placed> placed)
+        /// <see cref="OffshoreNearM"/> and <see cref="OffshoreM"/> out from the shore. Every hull stands in open sea, clear of
+        /// the harbour works (the "breakwater" pieces the kits record) and of every other boat. <paramref name="salt"/>
+        /// varies the draw (the tests sweep it); the map uses 0.</summary>
+        public static List<Craft> Place(KitGround ground, IReadOnlyList<SettlementKits.Placed> placed, ulong salt = 0)
         {
             var list = new List<Craft>();
-            var rnd = new KitRandom("sea_craft");
+            var rnd = new KitRandom("sea_craft", salt);
             float m = KitScale.Landmarks / 60f;
-            var ports = new List<SettlementKits.Placed>();
-            foreach (var p in placed) if (p.Kind == "port") ports.Add(p);
-            foreach (var p in ports) Moor(p, ground, list, ref rnd);
+            var ports = new List<SettlementKits.Placed>(); var works = new List<SettlementKits.Placed>();
+            foreach (var p in placed)
+            {
+                if (p.Kind == "port") ports.Add(p);
+                else if (p.Kind == "breakwater") works.Add(p);
+            }
+            foreach (var p in ports) Moor(p, ground, works, list, ref rnd);
             foreach (var (place, lon, lat, seaward, boats) in Coasts)
             {
                 var w = ground.Frame.ToWorld(lon, lat, 0); var at = new Vector2(w.x, w.z);
@@ -67,7 +71,7 @@ namespace Statecraft.Game.Map.Kits
                     float L = LengthOf(kind);
                     var c = s + seaward * rnd.Range(OffshoreNearM, OffshoreM) * m + along * rnd.Range(-2.2f, 2.2f) * L;
                     var craft = new Craft(kind, c, Heading(ref rnd, 35f), L, place);
-                    if (!Clear(craft, ground, list, 0.5f * L) || NearPort(c, ports, 0.8f * L)) continue;
+                    if (!Clear(craft, ground, works, list, 0.5f * L) || NearPort(c, ports, 0.8f * L)) continue;
                     list.Add(craft); put++;
                 }
             }
@@ -100,10 +104,10 @@ namespace Statecraft.Game.Map.Kits
         }
 
         /// <summary>Moored craft in a recorded harbour: in Jaffa's basin inside its curved breakwater, in Tel Aviv's lee of its
-        /// mole and along Haifa's quays, kept off the harbour works. Where the basin has no room at the boats' size, they lie at
-        /// anchor just off the harbour on its seaward side, as ships waited off Haifa and Jaffa: Haifa's coastal steamer among
-        /// them.</summary>
-        static void Moor(SettlementKits.Placed port, KitGround ground, List<Craft> list, ref KitRandom rnd)
+        /// mole and along Haifa's quays, never touching a breakwater piece. Where the basin has no room at the boats' size,
+        /// they lie at anchor just off the harbour on its seaward side (Tel Aviv's south of its mole, clear of Jaffa's label
+        /// to the north-west); Haifa's coastal steamer always does.</summary>
+        static void Moor(SettlementKits.Placed port, KitGround ground, List<SettlementKits.Placed> works, List<Craft> list, ref KitRandom rnd)
         {
             int want = port.Id == "haifa" ? 3 : 2;
             var seaward = port.Id == "haifa" ? Vector2.up : Vector2.left;
@@ -126,9 +130,15 @@ namespace Statecraft.Game.Map.Kits
                     }
                     else c = port.C + new Vector2(rnd.Range(-0.4f, 0.4f) * port.W, rnd.Range(-0.25f, 0.25f) * port.D);
                 }
-                else c = port.C + seaward * (extent + rnd.Range(0.7f, 1.6f) * L) + along * rnd.Range(-1f, 1f) * extent;
+                else
+                {
+                    // At anchor off the harbour. Tel Aviv's lie south of its mole (along is south there): at the gameplay pose
+                    // the labels put Jaffa's name north-west of the mole, over the water there.
+                    float t = port.Id == "tel_aviv" ? rnd.Range(0.3f, 1f) : rnd.Range(-1f, 1f);
+                    c = port.C + seaward * (extent + rnd.Range(0.7f, 1.6f) * L) + along * t * extent;
+                }
                 var craft = new Craft(kind, c, Heading(ref rnd, 15f), L, port.Id);
-                if (!Clear(craft, ground, list, 0.1f * L)) continue;
+                if (!Clear(craft, ground, works, list, 0.1f * L)) continue;
                 list.Add(craft); put++;
             }
         }
@@ -143,9 +153,11 @@ namespace Statecraft.Game.Map.Kits
             return null;
         }
 
-        /// <summary>The hull, and <paramref name="margin"/> round it, lies in open sea (not a lake: the rift lakes are below
-        /// sea level) and keeps a hull's length from every boat already placed.</summary>
-        static bool Clear(Craft c, KitGround ground, List<Craft> list, float margin)
+        /// <summary>The hull's rectangle (its length by <see cref="Beam"/> of it, both grown by <paramref name="margin"/>):
+        /// its samples all lie in open sea (not a lake: the rift lakes are below sea level), it meets no harbour work
+        /// (<paramref name="works"/>, each piece's own rectangle), and its centre keeps clear of every boat already
+        /// placed.</summary>
+        static bool Clear(Craft c, KitGround ground, List<SettlementKits.Placed> works, List<Craft> list, float margin)
         {
             var f = c.Forward; var side = new Vector2(-f.y, f.x);
             float half = 0.5f * c.Length + margin, beam = 0.5f * Beam * c.Length + margin;
@@ -155,8 +167,27 @@ namespace Statecraft.Game.Map.Kits
                     var p = c.At + f * (half * i / 2f) + side * (beam * j);
                     if (!ground.Inside(p.x, p.y) || !ground.Water(p.x, p.y) || ground.ElevM(p.x, p.y) < -50f) return false;
                 }
+            foreach (var w in works)
+                if (Overlap(c.At, c.Yaw, half, beam, w.C, w.Yaw, 0.5f * w.W, 0.5f * w.D)) return false;
             foreach (var o in list)
                 if ((o.At - c.At).magnitude < 0.6f * (o.Length + c.Length)) return false;
+            return true;
+        }
+
+        /// <summary>Whether two rectangles meet (centre, yaw in degrees, half-length along the yaw, half-width across it):
+        /// the separating-axis test on their four edge normals.</summary>
+        public static bool Overlap(Vector2 ca, float yawA, float ha, float wa, Vector2 cb, float yawB, float hb, float wb)
+        {
+            float a = yawA * Mathf.Deg2Rad, b = yawB * Mathf.Deg2Rad;
+            var ax = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); var ay = new Vector2(-ax.y, ax.x);
+            var bx = new Vector2(Mathf.Cos(b), Mathf.Sin(b)); var by = new Vector2(-bx.y, bx.x);
+            var d = cb - ca;
+            foreach (var n in new[] { ax, ay, bx, by })
+            {
+                float ra = ha * Mathf.Abs(Vector2.Dot(ax, n)) + wa * Mathf.Abs(Vector2.Dot(ay, n));
+                float rb = hb * Mathf.Abs(Vector2.Dot(bx, n)) + wb * Mathf.Abs(Vector2.Dot(by, n));
+                if (Mathf.Abs(Vector2.Dot(d, n)) > ra + rb) return false;
+            }
             return true;
         }
 

@@ -515,6 +515,99 @@ public class SeaTests
     /// <summary>Bound for TheOverviewSeaIsLighterAlongTheCoast.</summary>
     const float OverviewShelfOverDeep = 0.07f;
 
+    /// <summary>World points on the water <paramref name="offshoreM"/> due west of the shore, on coast-texture rows from 31.6 to
+    /// 32.4 N every 0.1 degree (south of Gaza's latitude to north of Netanya's): the shore is each row's first water texel
+    /// walking west from 34.95 E.</summary>
+    static Vector3[] OffshorePoints(MapScene map, float[] offshoreM)
+    {
+        var coast = new Texture2D(2, 2);
+        coast.LoadImage(File.ReadAllBytes(MapTexturePaths.Coast));
+        var points = new System.Collections.Generic.List<Vector3>();
+        for (float lat = 31.6f; lat <= 32.41f; lat += 0.1f)
+        {
+            int row = Mathf.FloorToInt((lat - 29.45f) / (33.35f - 29.45f) * coast.height);
+            int col = Mathf.FloorToInt((34.95f - 34.2f) / (35.9f - 34.2f) * coast.width);
+            while (col > 0 && coast.GetPixel(col, row).r >= 0.5f) col--;
+            var shore = map.Frame.ToWorld(34.2 + (col + 0.5) / 2048.0 * (35.9 - 34.2), 29.45 + (row + 0.5) / 2048.0 * (33.35 - 29.45), 0);
+            foreach (var d in offshoreM) { var w = shore + Vector3.left * d; w.y = map.Terrain.SampleHeight(w); points.Add(w); }
+        }
+        Object.DestroyImmediate(coast);
+        return points.ToArray();
+    }
+
+    /// <summary>The largest channel change (0-255) over 3 x 3 pixels round each projected point between a render with the
+    /// "seacalm" toggle on and one with it off (the water's clock pinned, the grid and the tilt-shift off), at a pose.</summary>
+    static float SeaCalmChange(MapScene map, PromoPose pose, Vector3[] points, out int onScreen)
+    {
+        VisualToggles.Set("grid", false);
+        MapShaderGlobals.PinWaterTime(100f);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        pose.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+        var px = new Vector2[points.Length];
+        var on = RenderSample.Render(cam, 1920, 1080, points, px);
+        VisualToggles.Set("seacalm", false);
+        var off = RenderSample.Render(cam, 1920, 1080, points, px);
+        VisualToggles.Set("seacalm", true);
+        float worst = 0f; onScreen = 0;
+        foreach (var p in px)
+        {
+            if (p.x < 2 || p.y < 2 || p.x > 1917 || p.y > 1077) continue;
+            onScreen++;
+            for (int y = (int)p.y - 1; y <= (int)p.y + 1; y++)
+                for (int x = (int)p.x - 1; x <= (int)p.x + 1; x++)
+                {
+                    Color a = on.At(x, y), b = off.At(x, y);
+                    worst = Mathf.Max(worst, 255f * Mathf.Max(Mathf.Abs(a.r - b.r), Mathf.Max(Mathf.Abs(a.g - b.g), Mathf.Abs(a.b - b.b))));
+                }
+        }
+        return worst;
+    }
+
+    /// <summary>Review of #536: at the gameplay zoom nothing of the sea boats' sea changes the water within 3.4 km of the
+    /// shore, the surf, the shallows (whose edge reaches at most 3.5 km) and the near-coast chop: with "seacalm" on and off,
+    /// gameplay03 renders those points the same. Fails if the calm starts at the shore (ScCalmNearM 0) or if the overview's
+    /// shelf reaches the gameplay zoom.</summary>
+    [UnityTest]
+    public IEnumerator TheGameplayZoomKeepsTheNearShoreSea()
+    {
+        var map = OpenMap();
+        yield return null;
+        var points = OffshorePoints(map, new[] { 300f, 900f, 1600f, 2400f, 3000f, 3400f });
+        float worst = SeaCalmChange(map, PromoPose.Gameplay03, points, out int seen);
+        TestContext.WriteLine($"gameplay03: {seen} near-shore points on screen, largest change with seacalm off {worst:0.0}/255");
+        Assert.Greater(seen, 20, "enough of the near-shore points are on screen");
+        Assert.AreEqual(0f, worst, "the near-shore sea is unchanged at the gameplay zoom");
+    }
+
+    /// <summary>Review of #536: the overview gets no calm and no broad swells. Past the shelf's reach (ScCoastRangeM, 12 km),
+    /// 15-40 km out, diorama02 renders the open sea the same with "seacalm" on and off. Fails if the calm or the swells lose
+    /// their fade with the zoom.</summary>
+    [UnityTest]
+    public IEnumerator TheOverviewGetsNoCalmOrSwells()
+    {
+        var map = OpenMap();
+        yield return null;
+        var points = OffshorePoints(map, new[] { 15000f, 20000f, 25000f, 30000f, 40000f });
+        float worst = SeaCalmChange(map, PromoPose.Diorama02, points, out int seen);
+        TestContext.WriteLine($"diorama02: {seen} open-sea points on screen, largest change with seacalm off {worst:0.0}/255");
+        Assert.Greater(seen, 20, "enough of the open-sea points are on screen");
+        Assert.AreEqual(0f, worst, "the overview's open sea is unchanged");
+    }
+
+    /// <summary>Review of #536: the coastal shelf is the overview's and only the overview's. At diorama02 the water 4-8 km out
+    /// changes with "seacalm" (the shelf is on there); TheGameplayZoomKeepsTheNearShoreSea checks the gameplay zoom has none
+    /// of it.</summary>
+    [UnityTest]
+    public IEnumerator TheShelfShowsAtTheOverview()
+    {
+        var map = OpenMap();
+        yield return null;
+        var points = OffshorePoints(map, new[] { 4000f, 6000f, 8000f });
+        float worst = SeaCalmChange(map, PromoPose.Diorama02, points, out int seen);
+        TestContext.WriteLine($"diorama02: {seen} shelf points on screen, largest change with seacalm off {worst:0.0}/255");
+        Assert.Greater(worst, 3f, "the shelf lightens the coastal water at the overview");
+    }
+
     /// <summary>Rendered: the Dead Sea is pale turquoise, much lighter than the open Mediterranean.</summary>
     [UnityTest]
     public IEnumerator TheDeadSeaIsPalerThanTheOpenSea()
