@@ -256,7 +256,7 @@ public class ProjectsTests
         Assert.True(trained >= 0 && founded > trained && paid > founded, string.Join(" | ", why));
     }
 
-    // R-SITE-003 (question 11): in Phase 1 a built site is only marked built. No city, housing, jobs or people change.
+    // R-SITE-003 (question 11): in Phase 1 a built site is only marked built. No city, housing, jobs, people or Money change.
     [Fact]
     public void BuildingChangesNoCity()
     {
@@ -269,6 +269,8 @@ public class ProjectsTests
         Assert.Equal(idle.Cities.Values.Select(x => x.Canonical()), built.Cities.Values.Select(x => x.Canonical()));
         Assert.Equal(idle.Units.Values.Select(x => x.Canonical()), built.Units.Values.Select(x => x.Canonical()));
         Assert.Equal(idle.Cohesion, built.Cohesion);
+        Assert.Equal(idle.Treasury - 1.5, built.Treasury, 9);   // only the cost paid at the start: founding adds no Money
+        Assert.Equal(idle.Debt, built.Debt);
     }
 
     [Fact]
