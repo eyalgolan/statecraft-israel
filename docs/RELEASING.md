@@ -58,23 +58,29 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
 ## Desktop builds (macOS, Linux, Windows)
 
 Desktop players are built on the owner's Mac (decisions O7 and O8 in `docs/oss/DECISIONS.md`; plan in
-`docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`). From a clean checkout of the commit to build:
+`docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`). On the merged `main`, after the tag
+(step 6's `git tag -a vX.Y.Z`, not yet pushed if you like) is on `HEAD`:
 
 ```bash
-uv run tools/release_build.py --platform all        # or mac, linux, windows; --dry-run prints the commands
+uv run tools/release_build.py --platform all --tag vX.Y.Z   # or mac, linux, windows; --dry-run prints the commands
 ```
 
-It refuses a dirty tree, and stops before building anything if Unity Hub lacks a module the platforms need: Mac Build
-Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the Hub
-command. Each build runs under `tools/machine_lock.py --shared --wait-unity` and is `-shareable` (`--dev` makes an
-unshareable test build, and the record says so). It runs the `-golden` check on the macOS player, the only one the Mac can
-run; the Linux and Windows players are recorded as unchecked until the CI player check runs them. It archives each
-player under the names that check expects (`statecraft-israel-vX.Y.Z-macos-universal.zip`, made with `ditto`;
-`-linux-x64.tar.gz`; `-windows-x64.zip`; `--tag` sets the version part, default `v` plus `bundleVersion`) and writes
-`build-record.json`, `build-record.md` and a `files-<platform>.sha256` list per player to
-`~/statecraft-release/v<version>-<commit>-<UTC time>/` (or `--out`), outside the repository, and prints the path. It
-never commits, pushes or uploads: copy the record files to the build records repository by hand. Adding the notices to
-the archives, signing and Steam upload are later steps, not yet scripted.
+Before building anything it refuses: a dirty tree; a branch other than `main`, or a tag (default `v` plus
+`bundleVersion`) that does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
+`--out` inside any checkout or worktree of the repository (ignored folders too: a build empties
+`StreamingAssets/content`), or one that is not empty. It also stops if Unity Hub lacks a module the platforms need: Mac
+Build Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the
+Hub command. `--dev` makes a test build from any branch: not `-shareable`, no `--tag`, and archives named
+`vX.Y.Z-dev.<commit>` so they cannot pass for a release.
+
+Each build runs under `tools/machine_lock.py --shared --wait-unity`. The script runs the `-golden` check on the macOS
+player, the only one the Mac can run; the Linux and Windows players are recorded as unchecked until the CI player check
+runs them. It archives each player under the names that check expects (`statecraft-israel-vX.Y.Z-macos-universal.zip`,
+made with `ditto`; `-linux-x64.tar.gz`; `-windows-x64.zip`) and writes `build-record.json`, `build-record.md`, a
+`files-<platform>.sha256` list of each archive's files and the build's `event-photos-<platform>.json` to
+`~/statecraft-release/v<version>-<commit>-<UTC time>/` (or `--out`), and prints the path. It never commits, pushes or
+uploads: copy the record files to the build records repository by hand. Adding the notices to the archives, signing and
+Steam upload are later steps, not yet scripted.
 
 ## Refreshing the README screenshots
 

@@ -9,28 +9,36 @@ docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sectio
 Usage: uv run tools/release_build.py [--platform mac|linux|windows|all] [--out DIR] [--tag vX.Y.Z] [--dev] [--dry-run]
                                     [--unity PATH]
 
-- Refuses a dirty working tree (tracked changes or untracked files), before anything is built.
+- Refuses, before anything is built (spec 6.4 step 1):
+  - a dirty working tree (tracked changes or untracked files);
+  - a release (no --dev) unless HEAD is on main and the tag (--tag, default v<bundleVersion>) points at HEAD;
+  - an editor whose version (its Info.plist) is not the one in unity/ProjectSettings/ProjectVersion.txt;
+  - an --out inside any checkout of the repository (the main one and every worktree, ignored paths included, compared
+    after resolving symlinks, .. and case), or an --out that exists and is not empty.
+  A --dev build runs on any branch and commit; it takes no --tag, is not -shareable, and its archives are named
+  v<bundleVersion>-dev.<commit8>, so they can never pass for a release's assets.
 - Checks the Unity modules each selected platform needs and fails (exit 2) naming the ones to add in Unity Hub.
 - Builds the sim DLLs (tools/build_sim_for_unity.py), then each player: macOS IL2CPP (Build.Mac), Linux and Windows on
   Mono (Build.LinuxMono, Build.WindowsMono; decisions O7 and O8). Every Unity run goes through
   `uv run tools/machine_lock.py --shared --wait-unity`, never with -nographics, and is followed by
-  `git checkout -- unity/ProjectSettings unity/Assets/Settings` to drop the settings churn. Builds are -shareable (the
-  sensitivity gate) unless --dev is given; the record says which.
+  `git checkout -- unity/ProjectSettings unity/Assets/Settings` to drop the settings churn (also on an exception). Release
+  builds are -shareable (the sensitivity gate).
 - Runs the player golden check (docs/determinism.md) on the macOS player, the only one the Mac can run:
   `-batchmode -nographics -golden -logFile <absolute>`, under the shared lock. It passes only on exit 0 with both
   `GOLDEN OK` lines carrying the hashes pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt. The Linux and Windows
   players are recorded as unchecked, for the CI player check (spec 6.3).
 - Archives each player under the asset name the CI player check expects (PR #533's contract; ARCHIVES below):
   statecraft-israel-<tag>-macos-universal.zip (ditto, the .app alone), statecraft-israel-<tag>-linux-x64.tar.gz and
-  statecraft-israel-<tag>-windows-x64.zip, <tag> being --tag or v<bundleVersion>. It checks first that the folder holds
-  exactly one player executable.
-- Writes build-record.json, build-record.md and files-<platform>.sha256 (one `shasum -a 256` line per file of the
-  player folder; `shasum -a 256 -c` verifies it from inside players/<platform>/), with the SHA-256 and size of each
-  archive and of each file list.
+  statecraft-israel-<tag>-windows-x64.zip. It checks first that the folder holds exactly one player executable. An
+  archive holds the player only: not Unity's *_DoNotShip folders, and not event-photos.json, the build's photo manifest
+  (packaging evidence the player never reads), which is copied beside the record as event-photos-<platform>.json.
+- Writes build-record.json, build-record.md and files-<platform>.sha256: one `shasum -a 256` line per file the archive
+  holds, so `shasum -a 256 -c` run where the archive was unpacked checks every file. The record carries the SHA-256 and
+  size of each archive and file list, and whether the tree was still clean after the builds.
 
 The output folder defaults to ~/statecraft-release/v<version>-<commit>-<UTC stamp>/: outside every worktree, so removing
 a worktree or cleaning unity/Builds cannot take a release with it, and outside git, so nothing in it can be committed
-by accident. An --out inside the repository is refused unless git ignores it. Build records live in the owner's
+by accident. Build records live in the owner's
 separate records repository (decision O12): this script never commits, pushes or uploads anything; it prints where the
 record is, and the owner copies it.
 
@@ -56,6 +64,7 @@ REPO = Path(__file__).resolve().parents[1]
 LOCK_TIMEOUT = 30 * 24 * 3600   # machine_lock's own default gives up after an hour; a release waits for the machine
 HUB = "/Applications/Unity Hub.app/Contents/MacOS/Unity Hub"
 METHOD = "Statecraft.Game.EditorTools.Build."
+PHOTOS = "event-photos.json"   # Build.PhotoManifestName: written beside every player, read by packaging, not the player
 # The release asset names: a contract with the CI player golden check (tools/player_golden_check.py, PR #533), in the
 # form of the web zip (statecraft-israel-vX.Y.Z-web.zip, docs/RELEASING.md). {tag} carries the v.
 ARCHIVES = {
@@ -148,6 +157,17 @@ def expected_goldens() -> dict[str, str]:
     return pins
 
 
+def editor_version(unity: Path) -> tuple[str, str] | None:
+    """(version, revision) from the editor's Info.plist ("Unity version 6000.3.25f1 (e1dba0a9aba4). ..."), or None."""
+    try:
+        with open(unity.parents[1] / "Info.plist", "rb") as f:
+            info = plistlib.load(f).get("CFBundleGetInfoString", "")
+    except (OSError, plistlib.InvalidFileException):
+        return None
+    m = re.search(r"Unity version (\S+) \((\w+)\)", info)
+    return (m.group(1), m.group(2)) if m else None
+
+
 def default_out(commit: str, version: str, stamp: str) -> Path:
     return Path.home() / "statecraft-release" / f"v{version}-{commit[:8]}-{stamp}"
 
@@ -175,12 +195,32 @@ def modules_message(missing: list[Platform], version: str) -> str:
             "Nothing was built.")
 
 
-def inside_repo_and_tracked(out: Path) -> bool:
-    try:
-        out.resolve().relative_to(REPO.resolve())
-    except ValueError:
-        return False
-    return git("check-ignore", "-q", str(out.resolve())).returncode != 0
+def checkouts() -> list[Path]:
+    """This checkout, the main one and every worktree of the repository."""
+    listed = git("worktree", "list", "--porcelain").stdout.splitlines()
+    return [REPO, *(Path(l[len("worktree "):]) for l in listed if l.startswith("worktree "))]
+
+
+def canonical(path: Path) -> str:
+    """The path with symlinks, .. and (for APFS, which ignores case) case resolved: the nearest existing ancestor's
+    realpath, then the rest, all case-folded."""
+    path = Path(os.path.abspath(path))
+    rest: list[str] = []
+    while not path.exists() and path != path.parent:
+        rest.insert(0, path.name)
+        path = path.parent
+    return os.path.normpath(os.path.join(os.path.realpath(path), *rest)).casefold()
+
+
+def inside_a_checkout(out: Path) -> Path | None:
+    """The checkout that contains out, or None. Ignored paths count: ContentSync deletes
+    unity/Assets/StreamingAssets/content on every build, and unity/Library and unity/Builds belong to Unity."""
+    target = canonical(out)
+    for root in checkouts():
+        r = canonical(root)
+        if target == r or target.startswith(r.rstrip(os.sep) + os.sep):
+            return root
+    return None
 
 
 # --- commands ------------------------------------------------------------------------------------------------------------
@@ -273,10 +313,10 @@ def unity_seconds(log_text: str) -> int | None:
 
 def shipped(folder: Path) -> list[Path]:
     """Every path under folder that is part of the player, sorted: Unity's own *_DoNotShip and
-    *_ButDontShipItWithYourGame folders (IL2CPP sources, Burst debug data) are left out."""
+    *_ButDontShipItWithYourGame folders (IL2CPP sources, Burst debug data) and the photo manifest are left out."""
     def skip(path: Path) -> bool:
         top = path.relative_to(folder).parts[0]
-        return top.endswith("_DoNotShip") or top.endswith("_ButDontShipItWithYourGame")
+        return top.endswith("_DoNotShip") or top.endswith("_ButDontShipItWithYourGame") or top == PHOTOS
     return sorted(p for p in folder.rglob("*") if not skip(p))
 
 
@@ -297,7 +337,10 @@ def tree_manifest(folder: Path) -> tuple[str, int, int]:
 
 def markdown(r: dict) -> str:
     out = [f"# Build record: Statecraft: Israel {r['version']['bundle_version']} ({r['commit'][:8]})", "",
-           f"- Commit: `{r['commit']}` ({r['describe']}, branch {r['branch']}); tree clean: {r['tree_clean']}",
+           f"- Commit: `{r['commit']}` ({r['describe']}, branch {r['branch']}); tree clean before the builds: "
+           f"{r['tree_clean']}, after: {r['tree_clean_after_builds']}"
+           + (f" ({'; '.join(r['dirty_after_builds'])})" if r["dirty_after_builds"] else ""),
+           f"- {'Release' if r['release'] else 'Development build, not a release'}: tag `{r['tag']}`",
            f"- Date (UTC): {r['date_utc']}",
            f"- Unity: {r['unity']['version']} ({r['unity']['revision']})",
            f"- Version: bundleVersion {r['version']['bundle_version']}, SimInfo.Version {r['version']['sim_version']}",
@@ -316,9 +359,10 @@ def markdown(r: dict) -> str:
         out.append(f"- {a['platform']}: {g['status']}" + (f", exit {g['exit_code']}" if g["exit_code"] is not None else "")
                    + (f"; {g['note']}" if g.get("note") else ""))
         out.extend(f"  - `{line}`" for line in g["lines"])
-    out += ["", "The archive is the release asset. The file list (`" + "`, `".join(a["file_list"] for a in r["artifacts"])
-            + "`) names every file of the player folder; `shasum -a 256 -c` on a list, run inside the unpacked folder, "
-            "checks every file.",
+    out += ["", "The archive is the release asset. Each file list (`" + "`, `".join(a["file_list"] for a in r["artifacts"])
+            + "`) names exactly the files its archive holds; `shasum -a 256 -c` on it, run where the archive was "
+            "unpacked, checks every file. The build's photo manifest is kept beside the record "
+            "(`event-photos-<platform>.json`), not in the archive.",
             "Steam build ID: (added by the owner after an upload).", ""]
     return "\n".join(out)
 
@@ -334,6 +378,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"NO UNITY EDITOR at {unity}: install Unity {version} ({revision}) through Unity Hub (docs/dev-setup.md)",
               file=sys.stderr)
         return 2
+    found = editor_version(unity)
+    if found != (version, revision):
+        have = f"{found[0]} ({found[1]})" if found else "an unknown version"
+        print(f"REFUSED: {unity} is Unity {have}, but unity/ProjectSettings/ProjectVersion.txt asks for {version} "
+              f"({revision}); the record names the project's version, so build with that editor.", file=sys.stderr)
+        return 1
     editor_root = unity.parents[3]   # <version>/Unity.app/Contents/MacOS/Unity
     missing = missing_modules(names, editor_root)
     if missing:
@@ -348,18 +398,39 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     commit = git("rev-parse", "HEAD").stdout.strip()
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    describe = git("describe", "--tags", "--always", "--dirty").stdout.strip()
     vers = versions()
     started = utc_now()
+    release = not a.dev
+    if release:
+        tag = a.tag or f"v{vers['bundle_version']}"
+        if not TAG.fullmatch(tag):
+            print(f"REFUSED: {tag!r} is not a release tag (vX.Y.Z)", file=sys.stderr)
+            return 1
+        if branch != "main":
+            print(f"REFUSED: a release is built on main, not {branch!r} (spec 6.4 step 1). Use --dev for a test build.",
+                  file=sys.stderr)
+            return 1
+        if tag not in git("tag", "--points-at", "HEAD").stdout.split():
+            print(f"REFUSED: the tag {tag} does not point at HEAD ({commit[:8]}); tag the release commit first, or use "
+                  "--dev for a test build.", file=sys.stderr)
+            return 1
+    else:
+        if a.tag:
+            print("REFUSED: a --dev build takes no --tag; its archives are named v<bundleVersion>-dev.<commit>.",
+                  file=sys.stderr)
+            return 1
+        tag = f"v{vers['bundle_version']}-dev.{commit[:8]}"
     out = (a.out or default_out(commit, vers["bundle_version"] or "0", started.strftime("%Y%m%dT%H%M%SZ"))).absolute()
-    if inside_repo_and_tracked(out):
-        print(f"REFUSED: {out} is inside the repository and not git-ignored; choose a folder outside it (the default "
-              "is ~/statecraft-release/).", file=sys.stderr)
+    if (root := inside_a_checkout(out)) is not None:
+        print(f"REFUSED: {out} is inside the checkout {root}; choose a folder outside every checkout of the repository "
+              "(the default is ~/statecraft-release/).", file=sys.stderr)
         return 1
-    shareable = not a.dev
-    tag = a.tag or f"v{vers['bundle_version']}"
-    if not TAG.fullmatch(tag):
-        print(f"REFUSED: {tag!r} is not a release tag (vX.Y.Z)", file=sys.stderr)
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        print(f"REFUSED: {out} exists and is not empty; a release folder starts empty.", file=sys.stderr)
         return 1
+    shareable = release
     plan = [(PLATFORMS[n], out / "players" / n / PLATFORMS[n].output, out / "logs" / f"unity-build-{n}.log") for n in names]
     sim = [sys.executable, str(REPO / "tools/build_sim_for_unity.py")]
     if a.dry_run:
@@ -395,6 +466,11 @@ def main(argv: list[str] | None = None) -> int:
         text, files, size = tree_manifest(folder)
         listing = out / f"files-{p.name}.sha256"
         listing.write_text(text)
+        photos = None
+        if (folder / PHOTOS).is_file():
+            copy = out / f"event-photos-{p.name}.json"
+            copy.write_bytes((folder / PHOTOS).read_bytes())
+            photos = {"file": copy.name, "sha256": file_sha256(copy)}
         if problem := player_problem(p, folder):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
@@ -418,12 +494,15 @@ def main(argv: list[str] | None = None) -> int:
                           "archive": {"name": archive.name, "bytes": archive.stat().st_size,
                                       "sha256": file_sha256(archive)},
                           "file_list_sha256": file_sha256(listing), "file_list": listing.name,
+                          "photo_manifest": photos,
                           "unity_build_seconds": unity_seconds(log_text), "wall_seconds_with_lock_wait": wall,
                           "unity_log": str(log.relative_to(out)), "golden": golden})
 
+    dirty_after = [l.strip() for l in dirty_lines()]
     record = {"schema": 1, "tool": "tools/release_build.py", "commit": commit,
-              "describe": git("describe", "--tags", "--always", "--dirty").stdout.strip(),
-              "branch": git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip(), "tree_clean": True,
+              "describe": describe, "branch": branch, "release": release,
+              "tree_clean": True,   # checked before the builds: a dirty tree is refused
+              "tree_clean_after_builds": not dirty_after, "dirty_after_builds": dirty_after,
               "date_utc": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "unity": {"version": version, "revision": revision},
               "version": vers, "tag": tag, "shareable": shareable, "signing": "none", "golden_expected": expected,
               "artifacts": artifacts, "steam_build_id": None}

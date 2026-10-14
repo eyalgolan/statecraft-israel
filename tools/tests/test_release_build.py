@@ -35,34 +35,51 @@ def editor(tmp_path):
     exe = root / "Unity.app/Contents/MacOS/Unity"
     exe.parent.mkdir(parents=True)
     exe.write_text("")
+    write_editor_version(exe, "6000.3.25f1 (e1dba0a9aba4)")
     for module in rb.PLATFORMS.values():
         (root / module.module_dir).mkdir(parents=True, exist_ok=True)
     return exe
 
 
+def write_editor_version(exe, version):
+    (exe.parents[1] / "Info.plist").write_bytes(
+        b'<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleGetInfoString</key>'
+        + f"<string>Unity version {version}. (c) 2005-2026 Unity Technologies.</string></dict></plist>".encode())
+
+
 class Fake:
     """Records every command and plays git, Unity and the player."""
 
-    def __init__(self, dirty="", golden_ok=True, build_ok=True):
+    def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
+                 build_raises=None, dirty_after=""):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
+        self.branch, self.tags, self.worktrees = branch, tags, worktrees
+        self.build_raises, self.dirty_after, self.built = build_raises, dirty_after, False
 
     def __call__(self, cmd, **kw):
         cmd = [str(c) for c in cmd]
         self.calls.append(cmd)
         out, code = "", 0
         if cmd[:2] == ["git", "status"]:
-            out = self.dirty
+            out = self.dirty_after if self.built else self.dirty
         elif cmd[:2] == ["git", "rev-parse"]:
-            out = "main\n" if "--abbrev-ref" in cmd else SHA + "\n"
+            out = self.branch + "\n" if "--abbrev-ref" in cmd else SHA + "\n"
+        elif cmd[:3] == ["git", "tag", "--points-at"]:
+            out = "".join(t + "\n" for t in self.tags)
+        elif cmd[:3] == ["git", "worktree", "list"]:
+            out = "".join(f"worktree {w}\nHEAD {SHA}\nbranch refs/heads/x\n\n" for w in self.worktrees or [])
         elif cmd[:2] == ["git", "describe"]:
             out = "v0.1.0-5-g1b7a36cb\n"
         elif cmd[:2] == ["git", "check-ignore"]:
-            code = 1
+            code = 0   # as if git ignored every path: being ignored must not make a folder in a checkout acceptable
         elif "-executeMethod" in cmd:
+            self.built = True
+            if self.build_raises:
+                raise self.build_raises
             target = Path(cmd[cmd.index("-out") + 1])
             log = Path(cmd[cmd.index("-logFile") + 1])
-            if self.build_ok:
+            if True:
                 if target.suffix == ".app":
                     (target / "Contents/MacOS").mkdir(parents=True)
                     (target / "Contents/Info.plist").write_bytes(
@@ -74,7 +91,7 @@ class Fake:
                     target.write_bytes(b"player " + target.name.encode())
                 (target.parent / "event-photos.json").write_text("{}\n")
                 log.write_text("BUILD Succeeded StandaloneOSX -> x: 1.0 MB on disk, 0 errors, 321s\n")
-            else:
+            if not self.build_ok:   # Unity failed, but a (partial or older) player is still there
                 log.write_text("BUILD Failed StandaloneOSX -> x: 0.0 MB on disk, 3 errors, 12s\n")
                 code = 1
         elif "-golden" in cmd:
@@ -92,6 +109,8 @@ class Fake:
 def run_main(argv, repo, editor, fake, monkeypatch):
     monkeypatch.setattr(rb, "REPO", repo)
     monkeypatch.setattr(rb, "run", fake)
+    if fake.worktrees is None:
+        fake.worktrees = [repo]
     return rb.main(["--unity", str(editor), *argv])
 
 
@@ -122,10 +141,164 @@ def test_the_default_output_folder_is_outside_the_repository(repo):
     assert not out.is_relative_to(rb.REPO)
 
 
-def test_an_output_folder_inside_the_repository_is_refused_unless_git_ignores_it(repo, editor, monkeypatch):
+def test_an_output_folder_inside_the_repository_is_refused(repo, editor, monkeypatch):
     fake = Fake()
     assert run_main(["--platform", "mac", "--out", str(repo / "builds")], repo, editor, fake, monkeypatch) == 1
     assert unity_calls(fake) == []
+
+
+@pytest.mark.parametrize("inside", ["unity/Assets/StreamingAssets/content/r", "unity/Library/out", "unity/Builds/r",
+                                    ".worktrees/x/out"])
+def test_an_ignored_folder_inside_the_repository_is_refused_too(repo, editor, monkeypatch, inside):
+    """Ignored is not safe: ContentSync deletes StreamingAssets/content on every build (ContentManifest.cs), which would
+    take an earlier platform's player with it (review of #542, item 2 and mutation M4)."""
+    fake = Fake()
+    assert run_main(["--platform", "all", "--out", str(repo / inside)], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+
+
+def test_the_contentsync_wipe_cannot_reach_the_output(repo, editor, monkeypatch):
+    """--platform all into StreamingAssets/content: refused before the first build, so no later build can wipe it."""
+    fake = Fake()
+    out = repo / "unity/Assets/StreamingAssets/content/r"
+    assert run_main(["--platform", "all", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and not out.exists()
+
+
+def test_a_case_variant_of_the_repository_path_is_refused(repo, editor, monkeypatch):
+    """APFS is case-insensitive: /…/REPO/unity/Assets/out is the repository's own unity/Assets."""
+    fake = Fake()
+    variant = Path(str(repo).upper()) / "unity/Assets/out"
+    assert run_main(["--platform", "mac", "--out", str(variant)], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+
+
+def test_a_dotdot_or_symlink_into_the_repository_is_refused(repo, editor, monkeypatch, tmp_path):
+    link = tmp_path / "link"
+    link.symlink_to(repo / "unity")
+    for out in (link / "Assets/out", tmp_path / "elsewhere/../repo/unity/x"):
+        fake = Fake()
+        assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1, out
+        assert unity_calls(fake) == []
+
+
+def test_every_checkout_of_the_repository_is_refused(repo, editor, monkeypatch, tmp_path):
+    """The main checkout and every other worktree, from `git worktree list --porcelain`, not only the running one."""
+    main, other = tmp_path / "main-checkout", tmp_path / "wt" / "other"
+    for root in (main, other):
+        (root / "unity/Assets").mkdir(parents=True)
+    for out in (main / "unity/Assets/rel", other / "unity/Assets/rel", main / "x"):
+        fake = Fake(worktrees=[main, repo, other])
+        assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1, out
+        assert unity_calls(fake) == []
+
+
+def test_a_non_empty_output_folder_is_refused(repo, editor, monkeypatch, tmp_path):
+    out = tmp_path / "out"
+    (out / "players/linux").mkdir(parents=True)
+    (out / "players/linux/stale.so").write_bytes(b"old")
+    fake = Fake()
+    assert run_main(["--platform", "linux", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert run_main(["--platform", "mac", "--out", str(empty)], repo, editor, Fake(), monkeypatch) == 0
+
+
+# --- a release is main at its tag (spec 6.4 step 1) -------------------------------------------------------------------
+
+def test_a_release_off_main_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(branch="tools/feature", tags=("v1.0.0",))
+    assert run_main(["--platform", "mac", "--tag", "v1.0.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and "main" in capsys.readouterr().err
+
+
+def test_a_release_whose_tag_is_not_at_head_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(branch="main", tags=("v0.9.0",))
+    assert run_main(["--platform", "mac", "--tag", "v1.0.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and "v1.0.0" in capsys.readouterr().err
+    fake = Fake(branch="main", tags=())
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "p")], repo, editor, fake, monkeypatch) == 1, \
+        "the default tag v<bundleVersion> must be at HEAD too"
+
+
+def test_a_release_on_main_at_its_tag_runs(repo, editor, monkeypatch, tmp_path):
+    fake = Fake(branch="main", tags=("v1.0.0", "other"))
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--tag", "v1.0.0", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
+    assert (out / "statecraft-israel-v1.0.0-macos-universal.zip").exists()
+
+
+def test_a_dev_build_runs_anywhere_under_a_dev_marked_name(repo, editor, monkeypatch, tmp_path):
+    """--dev: any branch, no tag needed, never a release name: v<bundleVersion>-dev.<commit8>, and no -shareable."""
+    fake = Fake(branch="tools/feature", tags=())
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--dev", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
+    assert (out / "statecraft-israel-v0.1.0-dev.1b7a36cb-macos-universal.zip").exists()
+    record = json.loads((out / "build-record.json").read_text())
+    assert record["tag"] == "v0.1.0-dev.1b7a36cb" and record["release"] is False and record["branch"] == "tools/feature"
+
+
+def test_a_dev_build_takes_no_release_tag(repo, editor, monkeypatch, tmp_path):
+    fake = Fake(branch="main", tags=("v1.0.0",))
+    assert run_main(["--platform", "mac", "--dev", "--tag", "v1.0.0", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+
+
+# --- the editor must be the project's version -------------------------------------------------------------------------
+
+def test_an_editor_of_another_version_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
+    write_editor_version(editor, "6000.4.1f1 (0123456789ab)")
+    for extra in ([], ["--dev"]):
+        fake = Fake()
+        assert run_main(["--platform", "mac", *extra, "--out", str(tmp_path / f"o{len(extra)}")], repo, editor, fake, monkeypatch) == 1
+        assert unity_calls(fake) == []
+    err = capsys.readouterr().err
+    assert "6000.4.1f1" in err and "6000.3.25f1" in err
+
+
+def test_the_editor_version_is_read_from_its_info_plist(editor):
+    assert rb.editor_version(editor) == ("6000.3.25f1", "e1dba0a9aba4")
+
+
+# --- the mutants that survived the review ------------------------------------------------------------------------------
+
+def test_the_settings_are_restored_when_the_build_call_raises(repo, editor, monkeypatch, tmp_path):
+    """Mutation M2: the try/finally around the build. A Ctrl-C while Unity runs still drops the settings churn."""
+    fake = Fake(build_raises=KeyboardInterrupt())
+    with pytest.raises(KeyboardInterrupt):
+        run_main(["--platform", "mac", "--out", str(tmp_path / "o")], repo, editor, fake, monkeypatch)
+    build = next(i for i, c in enumerate(fake.calls) if "-executeMethod" in c)
+    assert [c for c in fake.calls[build + 1:] if c[:3] == ["git", "checkout", "--"]]
+
+
+def test_a_failed_unity_exit_fails_even_when_a_player_is_left_behind(repo, editor, monkeypatch, tmp_path):
+    """Mutation M1: Unity's exit code counts, not only whether the target exists."""
+    fake = Fake(build_ok=False)
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert (out / "players/mac/Statecraft.app").exists() and not (out / "build-record.json").exists()
+    assert not [c for c in fake.calls if "-golden" in c]
+
+
+def test_a_manifest_missing_one_golden_never_passes():
+    """Mutation M6: both pinned hashes are required, even if the manifest lost one."""
+    assert rb.golden_status(f"GOLDEN OK 1950 {H1950}\n", 0, {"1950": H1950}) == "fail"
+    assert rb.golden_status("", 0, {}) == "fail"
+
+
+# --- the record's tree state ------------------------------------------------------------------------------------------
+
+def test_the_record_says_whether_the_tree_stayed_clean(repo, editor, monkeypatch, tmp_path):
+    fake = Fake(dirty_after=" M unity/Packages/packages-lock.json\n")
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
+    record = json.loads((out / "build-record.json").read_text())
+    assert record["tree_clean"] is True, "checked before the builds"
+    assert record["tree_clean_after_builds"] is False
+    assert record["dirty_after_builds"] == ["M unity/Packages/packages-lock.json"]
+    describe = next(i for i, c in enumerate(fake.calls) if c[:2] == ["git", "describe"])
+    assert describe < next(i for i, c in enumerate(fake.calls) if "-executeMethod" in c), "describe is taken before"
 
 
 # --- what the script reads ------------------------------------------------------------------------------------------------
@@ -241,9 +414,13 @@ def test_no_push_upload_commit_or_network(repo, editor, monkeypatch, tmp_path):
     run_main(["--platform", "all", "--out", str(tmp_path / "out")], repo, editor, fake, monkeypatch)
     for c in fake.calls:
         if c[0] == "git":
-            assert c[1] in {"status", "rev-parse", "describe", "checkout", "check-ignore"}, c
+            assert c[1] in {"status", "rev-parse", "describe", "checkout", "tag", "worktree"}, c
         assert c[0] not in {"gh", "curl", "wget", "scp", "rsync", "steamcmd", "xcrun"}, c
         assert "push" not in c and "commit" not in c
+        if c[:2] == ["git", "tag"]:
+            assert c[2] == "--points-at", "tags are only read"
+        if c[:2] == ["git", "worktree"]:
+            assert c[2] == "list", "worktrees are only read"
     source = Path(rb.__file__).read_text()
     for module in ("urllib", "http.client", "socket", "requests", "ftplib", "smtplib"):
         assert f"import {module}" not in source and f"from {module}" not in source
@@ -289,7 +466,11 @@ def test_the_record_holds_commit_unity_date_hashes_sizes_and_goldens(repo, edito
     lines = manifest.read_text().splitlines()
     exe = out / "players/mac/Statecraft.app/Contents/MacOS/Statecraft Israel"
     assert f"{hashlib.sha256(b'player').hexdigest()}  Statecraft.app/Contents/MacOS/Statecraft Israel" in lines
-    assert any(line.endswith("  event-photos.json") for line in lines)
+    assert not any(line.endswith("event-photos.json") for line in lines), "the list is exactly what the zip holds"
+    assert all(line.split("  ", 1)[1].startswith("Statecraft.app/") for line in lines)
+    photos = out / mac["photo_manifest"]["file"]
+    assert photos.name == "event-photos-mac.json" and photos.read_text() == "{}\n"
+    assert mac["photo_manifest"]["sha256"] == hashlib.sha256(photos.read_bytes()).hexdigest()
     assert lines == sorted(lines, key=lambda l: l.split("  ", 1)[1])
     assert mac["file_list_sha256"] == hashlib.sha256(manifest.read_bytes()).hexdigest()
     for name, asset in (("mac", "statecraft-israel-v0.1.0-macos-universal.zip"),
@@ -299,7 +480,7 @@ def test_the_record_holds_commit_unity_date_hashes_sizes_and_goldens(repo, edito
         assert arts[name]["archive"] == {"name": asset, "bytes": archive.stat().st_size,
                                          "sha256": hashlib.sha256(archive.read_bytes()).hexdigest()}
     assert mac["files"] == len(lines)
-    assert mac["bytes"] == sum(p.stat().st_size for p in (out / "players/mac").rglob("*") if p.is_file())
+    assert mac["bytes"] == sum(p.stat().st_size for p in (out / "players/mac/Statecraft.app").rglob("*") if p.is_file())
     assert exe.is_file()
 
     assert mac["golden"]["status"] == "pass"
@@ -366,7 +547,7 @@ def test_archive_names_follow_the_ci_contract():
 
 
 def test_the_mac_archive_is_made_with_ditto_keeping_the_bundle(repo, editor, monkeypatch, tmp_path):
-    fake = Fake()
+    fake = Fake(tags=("v0.2.0",))
     out = tmp_path / "out"
     run_main(["--platform", "mac", "--tag", "v0.2.0", "--out", str(out)], repo, editor, fake, monkeypatch)
     ditto = next(c for c in fake.calls if c[0] == "ditto")
@@ -381,9 +562,9 @@ def test_the_linux_and_windows_archives_hold_the_player_folder(repo, editor, mon
     out = tmp_path / "out"
     assert run_main(["--platform", "all", "--out", str(out)], repo, editor, Fake(), monkeypatch) == 0
     with tarfile.open(out / "statecraft-israel-v0.1.0-linux-x64.tar.gz") as t:
-        assert sorted(t.getnames()) == ["Statecraft.x86_64", "event-photos.json"]
+        assert t.getnames() == ["Statecraft.x86_64"]
     with zipfile.ZipFile(out / "statecraft-israel-v0.1.0-windows-x64.zip") as z:
-        assert sorted(z.namelist()) == ["Statecraft.exe", "event-photos.json"]
+        assert z.namelist() == ["Statecraft.exe"]
 
 
 def test_the_linux_archive_keeps_the_executable_bit(tmp_path):
