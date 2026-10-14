@@ -122,13 +122,19 @@ compare against it. These places must agree with it, and `GoldenManifestTests` f
 Verified on .NET, Unity editor Mono, a macOS IL2CPP player (Apple clang, no `-ffp-contract=off` needed) and a WebGL
 IL2CPP player in Chrome (M3 Task 22). The platform checks below used the prior `73590e32` 1952 baseline. The issue #2
 content correction has since been rechecked on .NET, in the Unity EditMode tests and in WebGL (see below and
-`docs/visual-v1.md`); macOS revalidation is still needed.
+`docs/visual-v1.md`), and on a macOS IL2CPP player (2026-10-14, below).
 
 Re-checked at the M3 merge candidate (2026-10-11, commit a099655):
 - macOS IL2CPP player (`Build.Mac`, then `-batchmode -nographics -golden`): **exit 0**, printing
   `GOLDEN OK 1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07` and
   `GOLDEN OK 1952 73590e324f19e9959a455a4da79e93d7089dfcf283c13aac02af6b0a624b9767`.
 - WebGL IL2CPP player (Brotli release build, `web_check.py` with the three full values above): PASS.
+
+Re-checked on macOS after the issue #2 correction (2026-10-14, commit `bd683ee0` on the #542 branch, Unity 6000.3.25f1, a
+`--dev` build through `tools/release_build.py --platform mac`, which runs the player with `-batchmode -nographics -golden`):
+**exit 0**, printing `GOLDEN OK 1950 71e9904d0ee48083db9bbba281f3f046136482ba83ee056e48d57b62e76a5b07` and
+`GOLDEN OK 1952 62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8b4c5e8` on an IL2CPP Universal player
+(x86_64 and arm64; this Mac ran the arm64 slice). The run is recorded in #542.
 
 Re-check with:
 
