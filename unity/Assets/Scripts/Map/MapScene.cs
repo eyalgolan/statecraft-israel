@@ -142,6 +142,30 @@ namespace Statecraft.Game.Map
         public IReadOnlyList<Units.UnitEntry> UnitEntries { get; private set; } = Array.Empty<Units.UnitEntry>();
         string unitsYamlRead;   // null before a build
 
+        /// <summary>The unit spots the last Build placed (UnitGround.Place over <see cref="UnitEntries"/>, keyed by their
+        /// anchors), the hexes it placed them on and the anchors it could not place (the placer's messages). The units layer
+        /// takes them instead of placing again when it draws the same units on the same hexes (issue #321; UnitSpotsFor).</summary>
+        public IReadOnlyDictionary<Units.UnitAnchor, Units.AnchorSpot> UnitSpots { get; private set; } = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>();
+        public IReadOnlyList<Statecraft.Sim.MapHex> UnitHexes { get; private set; } = Array.Empty<Statecraft.Sim.MapHex>();
+        public IReadOnlyList<string> UnitSkips { get; private set; } = Array.Empty<string>();
+
+        /// <summary>The map's unit spots (and its skipped anchors' messages) when <paramref name="units"/> is the list the map
+        /// placed and <paramref name="hexes"/> match the hexes it placed them on (q, r, lon, lat and land, in order): the same
+        /// ground, so the same spots. Null otherwise: the caller places them itself.</summary>
+        public (IReadOnlyDictionary<Units.UnitAnchor, Units.AnchorSpot> spots, IReadOnlyList<string> skips)? UnitSpotsFor(
+            IReadOnlyList<Units.UnitEntry> units, IReadOnlyList<Statecraft.Sim.MapHex> hexes)
+        {
+            if (unitsYamlRead == null || !ReferenceEquals(units, UnitEntries) || hexes == null || hexes.Count != UnitHexes.Count) return null;
+            for (int i = 0; i < hexes.Count; i++)
+            {
+                var (a, b) = (hexes[i], UnitHexes[i]);
+                if (a.Q != b.Q || a.R != b.R || a.Land != b.Land
+                    || BitConverter.DoubleToInt64Bits(a.Lon) != BitConverter.DoubleToInt64Bits(b.Lon)
+                    || BitConverter.DoubleToInt64Bits(a.Lat) != BitConverter.DoubleToInt64Bits(b.Lat)) return null;
+            }
+            return (UnitSpots, UnitSkips);
+        }
+
         /// <summary>The units for <paramref name="yaml"/>: the list the last Build parsed when it read the same text (issue
         /// #321: the file was parsed twice at boot, here and for the units layer), else a parse of it (UnitData.ReadOrNone,
         /// warning through <paramref name="warn"/>).</summary>
@@ -276,9 +300,13 @@ namespace Statecraft.Game.Map
                 (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM);
             var clearings = new List<(Vector2 centre, float radius)>();
             var unitRings = new List<(Vector2 centre, float radius)>();
+            UnitHexes = unitHexes;
+            var skips = new List<string>();
+            UnitSkips = skips;
             if (unitData.Count > 0)
             {
-                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null);
+                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, skips.Add);
+                UnitSpots = spots;
                 foreach (var kv in spots.OrderBy(k => k.Value.X).ThenBy(k => k.Value.Z))
                 {
                     var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
@@ -414,6 +442,7 @@ namespace Statecraft.Game.Map
             Terrain = null;
             Hexes = null;
             UnitEntries = Array.Empty<Units.UnitEntry>(); unitsYamlRead = null;
+            UnitSpots = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>(); UnitHexes = Array.Empty<Statecraft.Sim.MapHex>(); UnitSkips = Array.Empty<string>();
         }
     }
 }

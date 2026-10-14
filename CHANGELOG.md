@@ -272,6 +272,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- The units layer takes the unit spots the map placed instead of placing every unit again (refs #321), when it draws
+  the same units on the same hexes; otherwise it places them as before. Every token stands where it stood, and the
+  anchors with no clear spot are reported as before. Presentation only.
 - Decision videos (refs #434): the clips no longer carry the burned-in "AI-generated · נוצר בבינה מלאכותית" caption.
   Owner ruling of 14 October 2026, relayed by the coordinator: "the 3 ilustration clips are great but no need to say
   there were created by ai". All 14 clips were re-encoded from their promo shots (each checked by SHA-256) with the same

@@ -29,7 +29,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The unit data the layer draws from (read only; MapScene.UnitEntries when it read the same file).</summary>
         public IReadOnlyList<UnitEntry> Units => units;
         UnitGround ground = null!;
-        Dictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
+        IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
         Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!;
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
@@ -81,7 +81,14 @@ namespace Statecraft.Game.Map.Units
             layer.map = map; layer.units = units; layer.still = still;
             // The same ground and the same placement as MapScene's (which keeps the kits off a token in a town).
             layer.ground = Ground(map, hexes);
-            layer.spots = layer.ground.Place(units, XZ(map), Debug.LogWarning);
+            // The map's own spots when it placed these units on these hexes (issue #321: the same ground, so the same spots;
+            // UnitSpotsOnceTests), with its skipped anchors' warnings; else placed here.
+            if (map.UnitSpotsFor(units, hexes) is { } mapSpots)
+            {
+                layer.spots = mapSpots.spots;
+                foreach (var skip in mapSpots.skips) Debug.LogWarning(skip);
+            }
+            else layer.spots = layer.ground.Place(units, XZ(map), Debug.LogWarning);
             layer.assets = root.AddComponent<MapRuntimeAssets>();
             var palette = layer.assets.Own(UnitPalette.MakeTexture(readable: false));
             layer.paint = layer.assets.Own(new Material(template) { name = "UnitMiniature (palette)" });
