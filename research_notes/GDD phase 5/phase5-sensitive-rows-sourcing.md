@@ -1,0 +1,57 @@
+# Phase 5 sourcing pass: prisoners, the war-loss total and the starting forces
+
+Researched 2026-10-15. All URLs were checked on that date. Feeds GDD Phase 5 (#385): the prisoner return (impact plan section 4.3, Q-POW-3), the completion card's war-loss figure (Q-CIV-4), and the Arab starting forces for `content/map/units_1948.yaml` (the owner's decision on #570: "The Arab forces go in units_1948.yaml with `side` (including the ALA and the local forces) plus `strength` and `echelon`. The rows stay draft and Wikipedia-only until a sourcing pass against printed histories."). This note is that first pass, with free sources only.
+
+This note is research, not a design. It adds no event text and changes no content file.
+
+## Conventions
+
+- **[V]** verified on a page opened on 2026-10-15, with the URL.
+- **[S]** single source: a Wikipedia-only fact (tier 3) with its citation chain named, or a snippet.
+- **[C]** sources conflict. Every version is listed.
+- **[G]** not found; the searches tried are listed.
+- One value per fact is given for the game rows. Conflicts are recorded next to it.
+- Casualty, capture and strength figures are given only as a source gives them, with the version named. No quotation is reconstructed. Quoted wording below was read on the cited page.
+- The prisoner and capture figures touch people who were held in wartime camps, and the war-loss figure counts the dead. Framing follows `docs/CONTENT_POLICY.md` section 1; any card text built from this note goes through D-F1 review.
+
+## 1. Prisoner returns, per front (Q-POW-3)
+
+The player's soldiers coming home, per front, with the counts both ways. Main source: the Jewish Virtual Library's "Prisoners-of-War and Captive Soldiers Exchanges" page [S, consolidated secondary], https://jewishvirtuallibrary.org/prisoners-of-war-and-captive-soldiers-exchanges, read 2026-10-15.
+
+- **Egypt:** five Israelis held in the Faluja Pocket returned 27 February 1949 as the trapped Egyptian brigade was freed; the main exchanges ran 7 to 9 March 1949 [S]. The Jewish Telegraphic Agency bulletin of 11 March 1949 reports the exchange completed that day, the last party of 144 Israelis crossing in the Negev with a celebration at Nitzanim [V]: https://www.jta.org/archive/israeli-lebanese-armistice-talks-continue-exchange-of-prisoners-of-war-virtually-set. **[C]** completion 9 March (JVL) vs 11 March (JTA). Captured: Egypt 156 Israelis; Israel 1,098 Egyptians [S].
+- **Jordan:** two groups of women taken at Gush Etzion's fall returned in June and November 1948; the POW exchanges ran 2 February to 3 March 1949 [S]. Captured: Jordan 673 Israelis; Israel 17 Jordanians [S].
+- **Lebanon:** all prisoners exchanged 24 March 1949, within 24 hours of the signing as Article VI of the armistice required [V primary]: https://treaties.un.org/doc/Treaties/1949/10/19491006%2004-57%20PM/volume%2042-I-655-English_French.pdf (Israel-Lebanon General Armistice Agreement, Article VI), read 2026-10-15; the JVL page agrees [S]. Captured: Lebanon 8 Israelis; Israel 36 Lebanese [S].
+- **Syria:** six Israelis returned 4 April 1949, others between 2 and 8 May 1949, and the last exchange on 21 July 1949, the day after the armistice was signed [S]. Context [V]: the JTA bulletin of 20 July 1949 says the mixed commission was to take up the prisoner-exchange problem: https://www.jta.org/archive/israeli-syrian-armistice-to-be-signed-today-mixed-commission-will-be-established. Captured: Syria 48 Israelis; Israel 57 Syrians [S].
+- Sensitivity note: the JVL page's counts include "5,021 Palestinians and others" held by Israel. Any use goes through D-F1 review.
+- **[G]** dated JTA reports of the Jordan and Syria exchanges: searched the JTA archive (1949 date-bounded), nothing found beyond the two bulletins above; the JVL page stands as their source.
+
+## 2. The war-loss total (Q-CIV-4)
+
+- **Total: 6,373 fallen out of a population of about 600,000** [V]. Source: the IDF History Department's journal "Yesodot", issue 3 (2022), Ofer Drori's article on the War of Independence decorations committees: "The War of Independence broke out on 30 November 1947 and ended on 17 July 1949; at the war's end 6,373 fallen were counted." https://www.idf.il/media/4zuhclym/yesodot_3_web_8_drorio.pdf, read 2026-10-15.
+- **Breakdown:** 4,795 soldiers fell between 29 November 1947 and 20 July 1949, plus many civilians [V]. Source: Ministry of Defence archives, "The Price of War" exhibition: https://archives.mod.gov.il/sites/English/Exhibitions/David_Ben_Gurion_and_the_IDF/Pages/The-Price-of-War.aspx, read 2026-10-15. Civilians implied by the difference: about 1,578 (derived, not stated).
+- **Framing:** the Knesset's backgrounder gives "more than 6,000 dead, almost 1% of the total population, more than 4,000 soldiers" [V], consistent: https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf, read 2026-10-15.
+- **[C]** war end-date: the IDF article says 17 July 1949; the MOD counts to 20 July 1949 (the Syrian signing day).
+- **[C]** the IDF's English wars page says the loss "amounted to more than 10% of the young country's population" - arithmetically inconsistent with 6,373 of about 600,000 (about 1%, as the Knesset says); treated as an error on the English page: https://www.idf.il/en/mini-sites/wars-and-operations/israels-war-of-independence-1948/, read 2026-10-15.
+- **Window note:** the 6,373 covers the full war from 30 November 1947, while the MVP runs from 15 May 1948. A split for the MVP window was not found broken down by period; if the card wants the window only, that is a follow-up.
+
+## 3. The starting forces, both sides, 15 May 1948 (Q-START-4 pick: armies + ALA + local forces)
+
+**The repo already holds the pass this section set out to do.** `research_notes/GDD phase 5/arab-forces-1948.md` (merged by #419, refs #226) covers both dates (15 May and 11 June 1948), per army, from printed histories read in full (O'Ballance, Dupuy, al-Tall, Qawuqji's memoirs, the CIA weekly summaries and FRUS), with positions, strengths, conflicts and gaps. It supersedes a Wikipedia-level pass, and Phase 5 PR 1 should write its rows from it.
+
+Two cross-checks this pass adds:
+
+- Elhanan Oren's IDF-journal article (section 2's source list): the invading armies totalled only about 30,000 at the invasion; the Haganah had about nine brigades by independence; its mobilized strength grew from about 20,000 (early April) to 36,500 (mid-May) [V]. The repo note's Glubb/Shlaim/Rogan totals (21,500 to under 25,000 on 15 May, regulars) sit below Oren's 30,000, but Oren counts expeditionary combat troops and the note's sources count field armies in Palestine - both are recorded, neither preferred [C].
+- The Israeli 15 May figure: 29,677 (the Wikipedia infobox, citing Gelber 2006 and Morris 2004 [S]) against Oren's 36,500 for mid-May [V] - [C], both recorded.
+
+## 4. Upgrade paths tried and gated (all [G])
+
+(For the starting forces these complement the repo note's own "Not reached" list.)
+
+- Netanel Lorch, "The Edge of the Sword" (1961, the IDF's official history, the target `units_1948.yaml` names): three copies on archive.org (`edgeofsword00lorc`, `edgeofsword0000unse`, `bwb_S0-CBG-479`), but search-inside and the text are gated behind a borrow session; not accessed.
+- Benny Morris, "1948" (2008); Clodfelter; Tucker: Google Books previews did not render.
+- Hughes (JPS 34(2)): paywalled (JSTOR/CIAO).
+- "מאחורי הפרגוד" (the Iraqi parliamentary committee report, 1954 Hebrew translation): not found online.
+
+## 5. Bottom line for Phase 5 PR 1
+
+Write the Arab rows from the repo's own `arab-forces-1948.md`; this note's additions are the Oren cross-checks above. The prisoner dates (section 1) and the war-loss total (section 2) stand on the sources given there, with Lebanon's exchange date and the 6,373 total verified on primary or official Israeli publications [V]. The Israeli rows in `units_1948.yaml` keep their draft status until Lorch or the IDF and Defense Establishment Archives are reached (section 4).
