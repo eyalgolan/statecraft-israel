@@ -3157,7 +3157,7 @@ dark; promo 03 and T29 include a 3 px gold rule):
 | before (#602), gameplay03 and diorama02, EN and HE | 95 px | 8.8% | 95 px | 8.8% | 0 |
 | after, gameplay03 and diorama02, EN and HE | 69 px | 6.4% | 97 px | 9.0% | 28 px |
 
-At 21:9 (2560x1080) the panel scales by the geometric mean of the two ratios, so the 70 px bar is 7.6% of the frame.
+At 21:9 (2560x1080) the panel scales by the plain mean of the two ratios, so the 70 px bar is 7.6% of the frame.
 
 Frame time (`?vprofile` headless 1920x1080 with a temporary, uncommitted all/none-only FrameProfile patch on both builds,
 then a headed DPR 2 pair) and boot (`headed.py boot --runs 3`), one `--exclusive` slot of 8 minutes, interleaved base,

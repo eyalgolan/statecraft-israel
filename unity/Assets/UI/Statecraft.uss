@@ -81,8 +81,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .top-bar Label { padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
 /* The date badge: a raised, trimmed box at the left, as the promo's "1936 / Turn 1 / January 1936" plate. */
 .date-box {
-    flex-shrink: 0; width: 230px; min-height: 98px; align-self: flex-start;   /* hangs 28 px below the 70 px bar, as promo 03's plate; room for a third line (#598's score) */   /* fixed, and wide enough for the widest line ("Turn 120  30 September 1956"),
-                                                     so the meters never shift when the month changes */ justify-content: center;
+    /* A fixed width, wide enough for the widest line ("Turn 120  30 September 1956"), so the meters never shift when the
+       month changes; at least 98 px tall, so it hangs 28 px below the 70 px bar as promo 03's plate does, and grows for a
+       third line (#598's score). */
+    flex-shrink: 0; width: 230px; min-height: 98px; align-self: flex-start; justify-content: center;
     padding: 2px 10px 2px 12px; margin-right: 10px;
     background-color: var(--navy-raised); border-width: 1px; border-color: var(--gold-dim); border-radius: 2px;
 }

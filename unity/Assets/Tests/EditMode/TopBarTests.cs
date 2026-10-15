@@ -38,8 +38,8 @@ public class TopBarTests
         { (1315, 1024, false), (1317, 1024, false), (1389, 1024, true), (1280, 1024, false), (1024, 768, true),
           (1360, 1024, true), (1350, 1024, false), (1024, 1024, false) };
 
-    /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the geometric mean of the
-    /// two ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.)</summary>
+    /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the plain mean of the two
+    /// ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.)</summary>
     static readonly (int w, int h)[] PromoShapes = { (1920, 1080), (1280, 720), (1366, 768) };
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, in English or Hebrew, as the game builds it: the bar laid
