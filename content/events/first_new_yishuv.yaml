@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# The first new yishuv's completion card (objectives.yaml first_new_yishuv; docs/gdd/objective-card.md). It fires only once
+# the objective is completed, in the GDD loop, and never in the legacy loop (R-OBJ-003). The facts are the site's (sites.yaml
+# mefalsim, #378, research_notes/GDD objectives/designated-site-1.md). Claims and their sources:
+# - 12 June 1949, the ceremony of going onto Jewish National Fund land: Yad Ben-Zvi; Gvati's list gives 12.6.49.
+# - A garin of graduates of the Dror youth movement, from Uruguay and Argentina: Yad Ben-Zvi.
+# - HaKibbutz HaMeuhad: Yad Ben-Zvi (the kibbutz counted itself in it); Gvati: a Mefalsim garin of HaKibbutz HaMeuhad set up
+#   a kibbutz in the Negev in Sivan 5709.
+# - First set up facing the Gaza Strip, moved to its present site a year later (1950) because of direct fire from Gaza:
+#   Yad Ben-Zvi.
+# Left out on purpose: the advance party of 8 June 1949 (one source), the Speaker's attendance and the 64 founders (one
+# source each), and 7 October 2023, which is outside the MVP's years (#378, question 4). The gazetteer check (#378, question
+# 7): no 1948 locality in map/localities_1948.yaml (places of 1,000 or more) lies on the Israeli side within 9 km; the
+# nearest depopulated villages, Najd and Dimra, are about 6 km away, and their articles name other kibbutzim and towns on
+# their land, not Mefalsim. Places under 1,000 people were not checked against a gazetteer.
+id: first_new_yishuv
+title: Mefalsim founded
+text: 'On 12 June 1949 a garin of graduates of the Dror youth movement from Argentina and Uruguay went onto Jewish National Fund land in the Negev, facing the Gaza Strip, and founded Kibbutz Mefalsim of HaKibbutz HaMeuhad. Under direct fire from Gaza, the kibbutz moved to its present site a year later, in 1950.'
+anchor: soft
+objective: first_new_yishuv
+# The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.
+from: 1948-05-15
+to: 1957-01-01
+options:
+  - id: continue
+    text: Continue
+    historical: true
+tags: []
+sources:
+  - { url: "https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%9E%D7%A4%D7%9C%D7%A1%D7%99%D7%9D/", checked: 2026-10-15 }
+  - { url: "https://benyehuda.org/read/14684", checked: 2026-10-15 }
+status: fact-checked

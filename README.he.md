@@ -85,7 +85,7 @@ flowchart RL
 | שלב | מה הוא מוסיף | מצב | Issue |
 |---|---|---|---|
 | 0 | החלטות הבעלים בסעיפים הפתוחים ב־GDD | בתהליך: ההחלטות של שלב 1 התקבלו | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
-| 1 | פרוסה ראשונה מאחורי מתג: עיר אחת (תל אביב), אימון, יישוב חדש אחד וכרטיס יעד אחד | בתהליך: 2 מתוך 8 PRs מוזגו | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
+| 1 | פרוסה ראשונה מאחורי מתג: עיר אחת (תל אביב), אימון, יישוב חדש אחד וכרטיס יעד אחד | בתהליך: 6 מתוך 8 PRs מוזגו | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
 | 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | הבא | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | בהמשך | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | חלוצים, אתרי בנייה, כבישים ומסילות ברזל | בהמשך | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |

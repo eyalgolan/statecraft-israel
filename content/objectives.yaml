@@ -1,0 +1,11 @@
+# GDD v0.1 objectives (docs/GDD.md "Objectives" and "Historical events on objective completion"; docs/gdd/objective-card.md).
+# Completing an objective records it, scores it and fires its card (R-OBJ-001 to R-OBJ-003); only the GDD loop completes one.
+# Sourced facts and links only: the points and the timing bonus are balance values in the rules' mvp: block, supplied by
+# MvpSlice.Overlay until cutover (D-B6 and D-B2, #456). Phase 1 has one objective, the first new yishuv (D-A4).
+objectives:
+  - id: first_new_yishuv
+    name: First new yishuv
+    completes_when: { site_built: mefalsim }   # sites.yaml; built by a halutz group's Build yishuv (R-SITE-001 to R-SITE-003)
+    # Mefalsim's founding, the ceremony of 12 June 1949 (sites.yaml has the sources). The loader refuses any other date.
+    reference_date: 1949-06-12
+    card: first_new_yishuv                     # content/events/first_new_yishuv.yaml

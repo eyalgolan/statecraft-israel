@@ -16,6 +16,7 @@
     "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre and war-casualties are sensitive." },
     "anchor": { "enum": ["hard", "soft"], "description": "Default soft. A hard anchor needs a historical option." },
     "office": { "$ref": "#/definitions/id", "description": "The office the event goes to when the player does not answer." },
+    "objective": { "$ref": "#/definitions/id", "description": "The objective (objectives.yaml) whose completion card this is. It fires only once that objective is completed, and has exactly one option." },
     "from": { "$ref": "#/definitions/date", "description": "First day of the window." },
     "to": { "$ref": "#/definitions/date", "description": "End of the window (exclusive). Leave out for an open window." },
     "conditions": {

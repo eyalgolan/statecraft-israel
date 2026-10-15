@@ -24,6 +24,8 @@ namespace Statecraft.Sim
             var eligible = c.Events
                 .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
                 .Where(e => e.Requires == null || (s.ChosenOptions.TryGetValue(e.Requires.Event, out var picked) && picked == e.Requires.Option))
+                // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
+                .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
@@ -80,7 +82,8 @@ namespace Statecraft.Sim
 
         /// <summary>Unanswered events go to the responsible minister: with probability competence/10 they pick the
         /// recommended option (else the first), otherwise a random option. In Historical mode a hard-anchor event
-        /// resolves to its historical option without drawing from the RNG (major anchors happen).</summary>
+        /// resolves to its historical option without drawing from the RNG (major anchors happen). An objective's card has one
+        /// option and resolves to it without a draw (R-OBJ-003: GDD Phase 1 adds no RNG draw).</summary>
         public static void Delegate(Content c, GameState s, List<Cause> why)
         {
             var rng = new Rng(s.RngState);
@@ -88,6 +91,11 @@ namespace Statecraft.Sim
             {
                 var e = Get(c, id);
                 var minister = e.Office == "" ? null : Cabinet.Holder(c, s, e.Office);
+                if (e.Objective != "")
+                {
+                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why);
+                    continue;
+                }
                 var competence = (minister?.Competence ?? 5) / 10.0;
                 var anchored = s.Mode == Mode.Historical && e.Anchor == "hard" ? e.Options.FirstOrDefault(o => o.Historical) : null;
                 var option = anchored ?? (rng.NextDouble() < competence

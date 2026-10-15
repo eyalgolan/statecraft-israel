@@ -67,3 +67,11 @@ R-SITE-001: `PioneerWork(unit, build_yishuv, site)` starts building a yishuv at 
 R-SITE-002: `StopWork(unit)` ends the unit's build: the site is available again, the unit is idle, and the progress and the Money paid are lost (D-A3). A unit that does not exist or is not building is refused with the state unchanged. Its Attention cost is 0.
 
 R-SITE-003: Each turn, in ordinal site id order, every site being built has one turn less to go. A site that reaches 0 is built, on the turn's end date, and its unit is idle again. The unit stays a halutz unit, and no city, housing, job, population or Social cohesion changes. Sites being built or built are written into the state hash only when there are some.
+
+## Objectives
+
+R-OBJ-001: An objective (`objectives.yaml`) names its condition, `completes_when: { site_built: <site> }`, a designated site of kind yishuv whose `founded` date must equal the objective's `reference_date`. In the last step of each GDD turn (spec §2.3, step 11; D-A6), in id order, an objective whose site is built and that is not yet recorded is recorded once, with the turn's end date (the site's `BuiltOn`). Recording it again, or in the legacy loop, changes nothing; a stopped build completes nothing.
+
+R-OBJ-002: Recording an objective adds `objective_points + min(objective_bonus_cap, objective_bonus_per_month * monthsEarly)` to the score, once. `monthsEarly` is `max(0, monthsFromHistory)`, and `monthsFromHistory` counts calendar months from the completion's month to the reference date's month, `(y2 - y1) * 12 + (m2 - m1)`: 0 in the same month ("on time, as in history"), negative when late (owner's card wording, #379, 14 October 2026). Late costs nothing. The owner set 100 points (D-B6) and +5 a month capped at +60 (D-B2) on 14 October 2026 (#456); they are balance values and stay tunable. Until cutover they are in `MvpSlice.Overlay`.
+
+R-OBJ-003: An event with `objective:` is that objective's card. It is eligible only once its objective is recorded, so it fires once, at the end of the turn the objective is completed in, and never in the legacy loop. A card has exactly one option, and an objective and its card name each other (the loader checks both). An unanswered card resolves to its option without drawing from the RNG.

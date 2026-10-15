@@ -38,6 +38,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
 | `requires` | no | Fires only after another event was resolved with a given option. See below. |
+| `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -213,6 +214,9 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `sensitive events cannot reward` | A sensitive-tagged event with a positive `treasury`, `fx_reserves`, `food_supply`, `morale` or `intl_standing` delta. |
 | `must be 1-5` | `set_rung` outside 1 to 5. |
 | `unknown policy` | `set_policy` names a policy that does not exist. |
+| `unknown objective` | `objective` names an objective that is not in `objectives.yaml`. |
+| `has another card` | `objective` names an objective whose `card` is a different event. |
+| `an objective's card has exactly one option` | An objective's card has more than one option. |
 | `must be a list` | A list field (such as `tags:`) written with no value. |
 | `an event cannot require itself` | `requires.event` is the event's own id. |
 | `requirements form a cycle` | Event A needs B and B needs A, directly or through others. |

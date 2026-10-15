@@ -48,6 +48,7 @@ namespace Statecraft.Sim
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
         sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
+        sealed class ObjectivesFile { public List<Objective> Objectives { get; set; } = new List<Objective>(); }
 
         public const string HexesFile = "map/hexes.json";
         public const string SettlementHexesFileName = "map/settlement_hexes.yaml";
@@ -163,6 +164,18 @@ namespace Statecraft.Sim
             foreach (var kv in over)
                 if (into.TryGetValue(kv.Key, out var cur) && cur is Dictionary<object, object> a && kv.Value is Dictionary<object, object> b) MergeNodes(a, b);
                 else into[kv.Key] = kv.Value;
+        }
+
+        internal const string ObjectivesFileName = "objectives.yaml";
+
+        /// <summary>Like <see cref="Read{T}"/>, but a missing file is null, not an error. The file is read once.</summary>
+        static T? ReadOptional<T>(Func<string, string?> readFile, string relPath) where T : class
+        {
+            string? text;
+            try { text = readFile(relPath); }
+            catch (IOException e) { throw new ContentException(relPath, "(file)", e.Message); }
+            catch (UnauthorizedAccessException e) { throw new ContentException(relPath, "(file)", e.Message); }
+            return text == null ? null : Read<T>(_ => text, relPath);
         }
 
         static T Read<T>(Func<string, string?> readFile, string relPath)
@@ -321,12 +334,18 @@ namespace Statecraft.Sim
             //                              requirements cannot form a cycle (EventRules)
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy }]
             //   sources: [{ url, checked }], status
+            //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
+            //                              that objective is recorded, and has exactly one option
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
                 e.File = rel;
                 c.Events.Add(e);
             }
+            // Objectives (GDD v0.1, Phase 1 PR 6). Read in both loops, since their cards are events every loop loads; a content
+            // set without objectives has no file.
+            c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives
+                .OrderBy(o => o.Id, StringComparer.Ordinal).ToList() ?? new List<Objective>();
             Validate(c, settlementIds);
             if (c.IsGdd)
             {
@@ -393,7 +412,7 @@ namespace Statecraft.Sim
         static readonly HashSet<string> Statuses = new HashSet<string> { "draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed" };
 
         /// <summary>A display name: required, and not blank.</summary>
-        static void Named(string file, string field, string name)
+        internal static void Named(string file, string field, string name)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ContentException(file, field, "required (the name shown to the player)");
         }
@@ -1001,11 +1020,38 @@ namespace Statecraft.Sim
                 if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
                 // One game has one last day (R-LOOP-004): an era cannot move it.
                 if (m.End != c.Rules.Mvp!.End) throw new ContentException(file, "mvp.end", "must be the same in every era (the game has one end)");
+                // R-OBJ-002. Required, so a missing key is not read as 0. Zero is allowed (a balance choice); a negative value
+                // would take points away for finishing.
+                foreach (var (key, v) in new[] { ("objective_points", m.ObjectivePoints), ("objective_bonus_per_month", m.ObjectiveBonusPerMonth), ("objective_bonus_cap", m.ObjectiveBonusCap) })
+                {
+                    if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
+                    if (v < 0) throw new ContentException(file, "mvp." + key, "must be >= 0");
+                }
             }
             // Strictly before the last era's end: an end on it is the era's own end, and the game would be over as era_ended.
             if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end >= c.Eras[c.Eras.Count - 1].To))
                 throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and before the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
             ValidateSites(c);
+            ValidateObjectiveSites(c);
+        }
+
+        /// <summary>An objective's site (R-OBJ-001): a designated site of kind yishuv, whose sourced founding date is the
+        /// objective's reference date, so the card and the site cannot disagree. Only the GDD loop reads sites.yaml, so only
+        /// it can check this; EventRules checks the rest of objectives.yaml in both loops.</summary>
+        static void ValidateObjectiveSites(Content c)
+        {
+            foreach (var o in c.Objectives)
+            {
+                var at = $"objectives[{o.Id}]";
+                var id = o.CompletesWhen!.SiteBuilt;   // EventRules requires it
+                var site = c.Sites.FirstOrDefault(x => x.Id == id)
+                    ?? throw new ContentException(ObjectivesFileName, at + ".completes_when.site_built", $"unknown site '{id}' (sites.yaml)");
+                if (!site.Kinds.Contains(Projects.YishuvKind))
+                    throw new ContentException(ObjectivesFileName, at + ".completes_when.site_built", $"site '{id}' cannot be built as a yishuv");
+                if (o.ReferenceDate != site.Founded)
+                    throw new ContentException(ObjectivesFileName, at + ".reference_date",
+                        FormattableString.Invariant($"must be {site.Founded:yyyy-MM-dd}, the founding date of site '{id}' in sites.yaml"));
+            }
         }
 
         /// <summary>What a designated site may be built as (sites.yaml kinds). Phase 1 has "build yishuv" only.</summary>

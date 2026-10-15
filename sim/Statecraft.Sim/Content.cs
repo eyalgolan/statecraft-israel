@@ -473,6 +473,12 @@ namespace Statecraft.Sim
         public int BuildYishuvTurns { get; set; }
         /// <summary>IL millions a "build yishuv" costs, paid in full when it starts (R-SITE-001).</summary>
         public double BuildYishuvCost { get; set; }
+        /// <summary>Points for each completed objective (R-OBJ-002; D-B6, #456).</summary>
+        public int? ObjectivePoints { get; set; }
+        /// <summary>Bonus points for each calendar month an objective is completed before its reference date's month (R-OBJ-002; D-B2, #456).</summary>
+        public int? ObjectiveBonusPerMonth { get; set; }
+        /// <summary>The most bonus points one objective can earn (R-OBJ-002; D-B2, #456).</summary>
+        public int? ObjectiveBonusCap { get; set; }
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
@@ -670,8 +676,34 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
         string? reviewedOn;
+        /// <summary>The objective (objectives.yaml) whose completion card this event is: it fires only once that objective is
+        /// recorded (R-OBJ-003). Empty for every other event.</summary>
+        public string Objective { get; set; } = "";
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
+    }
+
+    /// <summary>An objective (objectives.yaml; docs/GDD.md "Historical events on objective completion"). Completing it records
+    /// it, adds its points to the score and fires its card (R-OBJ-001 to R-OBJ-003). Its reference date is the sourced date of
+    /// the real event the card shows.</summary>
+    public sealed class Objective
+    {
+        public string Id { get; set; } = "";
+        /// <summary>The name the player reads (in the Why list).</summary>
+        public string Name { get; set; } = "";
+        /// <summary>What completes it, checked at the end of every GDD turn (R-OBJ-001).</summary>
+        public ObjectiveCondition? CompletesWhen { get; set; }
+        /// <summary>The date the real event happened: completing earlier earns the timing bonus (R-OBJ-002).</summary>
+        public DateTime ReferenceDate { get; set; }
+        /// <summary>The id of the card event (content/events/), which names this objective back in its `objective` key.</summary>
+        public string Card { get; set; } = "";
+    }
+
+    /// <summary>What completes an objective (objectives.yaml completes_when). Phase 1 has one kind.</summary>
+    public sealed class ObjectiveCondition
+    {
+        /// <summary>A designated site (sites.yaml) of kind yishuv: complete once it is built (R-SITE-003).</summary>
+        public string SiteBuilt { get; set; } = "";
     }
 
     /// <summary>One hex of content/map/hexes.json (written by tools/hexgrid.py; axial q, r, pointy-top).</summary>
@@ -800,6 +832,9 @@ namespace Statecraft.Sim
         public List<UnitType> UnitTypes = new List<UnitType>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
+        /// <summary>The objectives (objectives.yaml), ordered by id. Read in both loops, since their cards are events; only the
+        /// GDD loop completes them. Empty when the content has no objectives.yaml.</summary>
+        public List<Objective> Objectives = new List<Objective>();
         /// <summary>SHA-256 (lowercase hex) over every file the loader read, in read order, with CRLF read as LF. A save
         /// records it; loading a save made with other content shows a warning (spec section 7).</summary>
         public string Hash = "";

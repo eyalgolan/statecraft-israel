@@ -92,6 +92,39 @@ namespace Statecraft.Sim
                 }
             }
             CheckRequirementCycles(c);
+            CheckObjectives(c);
+        }
+
+        /// <summary>Objectives and their cards name each other (R-OBJ-003): an event's `objective` names an objective whose
+        /// `card` is that event, and an objective's card exists, names it back and has exactly one option (the card reports a
+        /// result; there is nothing to choose).</summary>
+        static void CheckObjectives(Content c)
+        {
+            const string file = ContentLoader.ObjectivesFileName;
+            var seen = new HashSet<string>();
+            foreach (var o in c.Objectives)
+            {
+                string F(string field) => $"objectives[{o.Id}].{field}";
+                if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(file, F("id"), ContentLoader.IdRule);
+                if (!seen.Add(o.Id)) throw new ContentException(file, F("id"), "duplicate id");
+                ContentLoader.Named(file, F("name"), o.Name);
+                if (o.CompletesWhen == null || o.CompletesWhen.SiteBuilt == "")
+                    throw new ContentException(file, F("completes_when"), "required: { site_built: <site id> }");
+                if (o.ReferenceDate == default) throw new ContentException(file, F("reference_date"), "required (the sourced date of the real event)");
+                var card = c.Events.FirstOrDefault(e => e.Id == o.Card)
+                    ?? throw new ContentException(file, F("card"), $"unknown event '{o.Card}'");
+                if (card.Objective != o.Id)
+                    throw new ContentException(card.File, $"events[{card.Id}].objective", $"must be '{o.Id}': the event is that objective's card");
+                if (card.Options.Count != 1)
+                    throw new ContentException(card.File, $"events[{card.Id}].options", "an objective's card has exactly one option");
+            }
+            foreach (var e in c.Events.Where(e => e.Objective != ""))
+            {
+                var o = c.Objectives.FirstOrDefault(x => x.Id == e.Objective)
+                    ?? throw new ContentException(e.File, $"events[{e.Id}].objective", $"unknown objective '{e.Objective}'");
+                if (o.Card != e.Id)
+                    throw new ContentException(e.File, $"events[{e.Id}].objective", $"objective '{o.Id}' has another card, '{o.Card}'");
+            }
         }
 
         /// <summary>Re-review N4: a cycle of `requires` (A needs B, B needs A, ...) could never fire. Called after every

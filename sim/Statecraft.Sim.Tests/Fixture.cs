@@ -224,6 +224,9 @@ mvp:
   arrivals_city: town_a
   build_yishuv_turns: 3
   build_yishuv_cost: 1.5
+  objective_points: 100
+  objective_bonus_per_month: 5
+  objective_bonus_cap: 60
 ";
 
     public const string GddCities = @"

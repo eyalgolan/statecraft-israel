@@ -22,7 +22,8 @@ namespace Statecraft.Sim
             Cities.House(c, s, why);                      // 8. housing, then Social cohesion
             Cities.UpdateCohesion(s, r);
             Cities.Arrive(c, s, r, next, why);            // 9. arrivals
-            // 10. Occupation timers: Phase 6. 11. Objectives and score: PR 6.
+            // 10. Occupation timers: Phase 6.
+            Objectives.Complete(c, s, next, why);         // 11. objectives and score
         }
     }
 }
