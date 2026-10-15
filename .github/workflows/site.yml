@@ -9,9 +9,9 @@ name: Site
 on:
   push:
     branches: [main]
-    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "ASSETS.yaml", ".github/workflows/site.yml"]
+    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
   pull_request:
-    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "ASSETS.yaml", ".github/workflows/site.yml"]
+    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
   workflow_dispatch:
 
 permissions:

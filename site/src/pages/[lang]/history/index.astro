@@ -34,6 +34,17 @@ for (const l of ['he', 'en'] as const) {
 }
 
 const host = (u: string) => { try { const x = new URL(u); return x.hostname.replace(/^www\./, '') + decodeURIComponent(x.pathname).replace(/\/$/, ''); } catch { return u; } };
+const yearCount = (y: string) => list.filter((e) => e.from.startsWith(y)).length;
+// The year banner: the first archival photograph of that year's events, darkened under the numeral, with its label
+// and credit like every other photograph on the page.
+const yearBanner = (y: string) => {
+  for (const e of list.filter((x) => x.from.startsWith(y))) {
+    const ph = photos.get(e.id);
+    const img = ph && photoByFile.get(ph.file);
+    if (ph && img) return { ph, img };
+  }
+  return undefined;
+};
 const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').length;
 ---
 <Layout lang={lang} page="history" title={t(lang, 'nav.history')}
@@ -71,14 +82,38 @@ const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').l
       </div>
     </section>
 
+    <div class="chron">
+    {/* Proposal v2: a sticky year rail (a bar on phones) and one collapsible list per year, so the page is no longer one
+        long list. 1948 starts open; a link to a year or an event opens its list (script below, and the browser's own
+        details revealing for find-in-page). */}
     <nav class="years" aria-label={he ? 'שנים' : 'Years'}>
-      {years.map((y) => <a href={`#y${y}`}>{y}</a>)}
-      <a href="#how">{he ? 'איך זה עובד במשחק' : 'How it works in the game'}</a>
+      {years.map((y) => <a href={`#y${y}`} data-year={y}><span class="ry">{y}</span> <span class="rc">{yearCount(y)}</span></a>)}
+      <a href="#how" class="r-how">{he ? 'איך זה עובד במשחק' : 'How it works in the game'}</a>
     </nav>
 
-    {years.map((y) => (
-      <section class="year" aria-labelledby={`y${y}`}>
-        <h2 id={`y${y}`} class="year-title">{y}</h2>
+    <div class="chron-main">
+    {years.map((y, i) => {
+      const banner = yearBanner(y);
+      return (
+      <section class="year" aria-labelledby={`y${y}`} data-year={y}>
+        <header class="year-card seam">
+          {banner && (
+            <figure class="media year-banner" data-kind="archival">
+              <div class="media-frame">
+                <MediaLabel lang={lang} kind="archival" />
+                <Picture src={banner.img} alt="" formats={['avif']} fallbackFormat="webp" widths={[800, 1200]} quality={55}
+                  sizes="(min-width: 76rem) 64rem, 100vw" loading={i === 0 ? 'eager' : 'lazy'} />
+              </div>
+              <figcaption lang="en" dir="ltr">{banner.ph.credit} · <a href={banner.ph.commons}>Wikimedia&nbsp;Commons</a></figcaption>
+            </figure>
+          )}
+          <div class="year-text">
+            <h2 id={`y${y}`} class="year-title plaque plaque-center">{y}</h2>
+            <p class="year-count">{he ? `${yearCount(y)} אירועים` : `${yearCount(y)} events`}</p>
+          </div>
+        </header>
+        <details class="year-events" open={i === 0}>
+          <summary><span class="when-closed">{he ? `להצגת ${yearCount(y)} האירועים של ${y}` : `Show the ${yearCount(y)} events of ${y}`}</span><span class="when-open">{he ? `להסתרת האירועים של ${y}` : `Hide the events of ${y}`}</span></summary>
         {list.filter((e) => e.from.startsWith(y)).map((e) => {
           const ph = photos.get(e.id);
           const img = ph && photoByFile.get(ph.file);
@@ -89,7 +124,7 @@ const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').l
                   <div class="media-frame">
                     <MediaLabel lang={lang} kind="archival" />
                     <Picture src={img} alt={ph.alt} lang="en" formats={['avif']} fallbackFormat="webp" widths={[400, 720]}
-                      sizes="(min-width: 60rem) 22rem, 100vw" loading="lazy" />
+                      sizes="(min-width: 60rem) 26rem, 100vw" loading="lazy" />
                   </div>
                   <figcaption lang="en" dir="ltr">{ph.credit} · <a href={ph.commons}>Wikimedia&nbsp;Commons</a></figcaption>
                 </figure>
@@ -122,8 +157,12 @@ const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').l
             </article>
           );
         })}
+        </details>
       </section>
-    ))}
+      );
+    })}
+    </div>
+    </div>
 
     <section class="how prose" aria-labelledby="how">
       <h2 id="how">{he ? 'איך זה עובד במשחק' : 'How it works in the game'}</h2>
@@ -157,8 +196,40 @@ const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').l
   .note { color: var(--ink-dim); font-size: 0.95em; border-block-start: 1px solid var(--gold-faint); padding-block-start: 0.8rem; }
   .years { position: sticky; inset-block-start: var(--header-h); z-index: 5; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; padding-block: 0.6rem; background: var(--navy-deep); border-block: 1px solid var(--gold-faint); margin-block-end: 1rem; }
   .years a { color: var(--gold-light); text-decoration: none; font-weight: 600; }
-  .year-title { font-size: clamp(2.2rem, 1.6rem + 2vw, 3.2rem); color: var(--gold); margin-block: 2.5rem 1rem; border-block-end: 1px solid var(--gold-faint); padding-block-end: 0.3rem; }
-  .event { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2rem); padding-block: 1.75rem; border-block-end: 1px solid var(--navy-line); }
+  .years .rc { color: var(--ink-dim); font-weight: 400; font-size: 0.85em; }
+  .years a.on .ry { color: var(--ink); }
+  .years a.on { box-shadow: inset 0 -2px 0 var(--gold); }
+  /* Desktop: the rail stands beside the years, like the game's left column. */
+  @media (min-width: 72rem) {
+    .chron { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+    .years { flex-direction: column; flex-wrap: nowrap; gap: 0; padding: 0; border-block: 0; border-inline-end: 1px solid var(--gold-faint); inset-block-start: calc(var(--header-h) + 1.5rem); margin-block-start: 3rem; background: none; }
+    .years a { display: flex; justify-content: space-between; align-items: baseline; padding: 0.55rem 1rem 0.55rem 0; padding-inline: 0 1rem; border-block-end: 1px solid var(--navy-line); }
+    .years .ry { font-size: 1.6rem; line-height: 1; }
+    .years a.on { box-shadow: inset -3px 0 0 var(--gold); }
+    [dir='rtl'] .years a.on { box-shadow: inset 3px 0 0 var(--gold); }
+    .years .r-how { font-size: 0.9rem; font-weight: 500; border-block-end: 0; }
+  }
+  .year-events > summary { cursor: pointer; list-style: none; text-align: center; padding: 0.7rem 1rem; margin-block: 0.75rem 0.5rem; border: 1px solid var(--gold-dim); color: var(--gold-light); font-weight: 600; background: var(--navy-solid); }
+  .year-events > summary::-webkit-details-marker { display: none; }
+  .year-events > summary:hover { border-color: var(--gold); }
+  .year-events[open] .when-closed, .year-events:not([open]) .when-open { display: none; }
+  /* Proposal: each year is a title card, Civ VI's expansion lockup applied to time: a large numeral on the grain
+     texture, with the plaque under it and a gilt seam above. */
+  /* Proposal v2: the year card is a picture band: the year's first archival photograph, darkened, under the numeral. */
+  .year-card { margin-block: 3rem 0; text-align: center; display: grid; }
+  .year-card > * { grid-area: 1 / 1; }
+  .year-banner { margin: 0; }
+  .year-banner .media-frame { block-size: clamp(12rem, 22vw, 17rem); }
+  .year-banner .media-frame :global(picture), .year-banner .media-frame :global(img) { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: 50% 35%; filter: grayscale(0.2) brightness(0.55); }
+  .year-banner .media-frame::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 45% 70% at 50% 50%, rgba(9, 14, 26, 0.88), rgba(9, 14, 26, 0.45) 75%, rgba(9, 14, 26, 0.3)); }
+  .year-banner figcaption { position: absolute; inset-block-end: 0.35rem; inset-inline-end: 0.6rem; font-size: 0.72rem; padding: 0.1rem 0.4rem; background: rgba(9, 14, 26, 0.85); color: var(--ink-dim); }
+  .year-card { position: relative; }
+  .year-text { align-self: center; position: relative; z-index: 2; padding: 1.5rem 1rem; pointer-events: none; }
+  .year-card:not(:has(.year-banner)) .year-text { background-color: var(--navy-solid); background-image: var(--grain); border: 1px solid var(--gold-faint); }
+  .year-title { font-size: clamp(2.8rem, 2rem + 3vw, 4.4rem); color: var(--gold-light); margin: 0; letter-spacing: 0.08em; line-height: 1; }
+  .year-count { margin: 0.6rem 0 0; color: var(--ink); font-size: 0.95rem; }
+  :lang(he) .year-title { letter-spacing: 0; }
+  .event { display: grid; grid-template-columns: minmax(0, 26rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2rem); padding-block: 1.75rem; border-block-end: 1px solid var(--navy-line); }
   .event:not(:has(.event-photo)) .event-body { grid-column: 2; }
   @media (max-width: 60rem) {
     .event { grid-template-columns: 1fr; }
@@ -177,4 +248,28 @@ const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').l
   .sources ul { font-size: 0.9rem; margin-block: 0.6rem; padding-inline-start: 1.1rem; overflow-wrap: anywhere; }
   .sources p { font-size: 0.9rem; }
   .how { margin-block-start: 3rem; }
+  .event-photo :global(img) { inline-size: 100%; }
 </style>
+
+<script>
+  // Open a year's list when a link targets the year or an event inside it, and mark the year in view on the rail.
+  const openFor = (id: string) => {
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    const sec = el.closest<HTMLElement>('section.year');
+    const d = sec?.querySelector<HTMLDetailsElement>('details.year-events');
+    if (d && !d.open) { d.open = true; if (el.closest('details') === d) el.scrollIntoView(); }
+  };
+  openFor(decodeURIComponent(location.hash.slice(1)));
+  window.addEventListener('hashchange', () => openFor(decodeURIComponent(location.hash.slice(1))));
+  const rail = new Map([...document.querySelectorAll<HTMLAnchorElement>('.years a[data-year]')].map((a) => [a.dataset.year!, a]));
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) {
+        for (const a of rail.values()) a.classList.remove('on');
+        rail.get((en.target as HTMLElement).dataset.year!)?.classList.add('on');
+      }
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('section.year').forEach((s) => io.observe(s));
+  }
+</script>

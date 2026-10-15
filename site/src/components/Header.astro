@@ -4,6 +4,7 @@ interface Props { lang: Lang; page: Page }
 const { lang, page } = Astro.props;
 const main: { page: Page; key: Parameters<typeof t>[1] }[] = [
   { page: 'history', key: 'nav.history' },
+  { page: 'cabinet', key: 'nav.cabinet' },
   { page: 'media', key: 'nav.media' },
   { page: 'devlog', key: 'nav.devlog' },
   { page: 'contributors', key: 'nav.contributors' },

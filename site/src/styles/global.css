@@ -21,6 +21,16 @@
   --gutter: clamp(1rem, 4vw, 2.5rem);
   --wide: 76rem;
   --header-h: 3.75rem;
+  /* Ornament (proposal, after Civ VI's gilt rule and plaque, drawn in CSS and inline SVG instead of PNGs).
+     The seam is symmetric, so it needs no RTL variant. */
+  --umber: rgb(104, 62, 22);
+  --gilt-band: linear-gradient(180deg, rgba(255, 244, 214, 0.55), rgba(255, 244, 214, 0) 45%, rgba(0, 0, 0, 0.35)),
+    linear-gradient(90deg, #6e5426, var(--gold) 18%, var(--gold-light) 50%, var(--gold) 82%, #6e5426);
+  --plaque: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 12'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23c4a05c' stop-opacity='0'/%3E%3Cstop offset='.36' stop-color='%23c4a05c'/%3E%3Cstop offset='.5' stop-color='%23e8cc8e'/%3E%3Cstop offset='.64' stop-color='%23c4a05c'/%3E%3Cstop offset='1' stop-color='%23c4a05c' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 6L116 4.2L130 0L144 4.2L260 6L144 7.8L130 12L116 7.8Z' fill='url(%23g)'/%3E%3Cpath d='M130 3.2L132.8 6L130 8.8L127.2 6Z' fill='%23090e1a'/%3E%3C/svg%3E");
+  /* A fine plaster grain in gilt, about 3% over the panel navy. Text on it is checked at its
+     lightest pixel (proposal: 7:1 or better for --ink). A soft lamp-light glow does the mottling; an SVG mottle tiled
+     with visible seams. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .91 0 0 0 0 .8 0 0 0 0 .56 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
 }
 :root:lang(he) { --body: var(--serif-he); }
 
@@ -75,21 +85,28 @@ th { color: var(--gold); font-weight: 600; }
 .prose h3 { margin-block-start: 1.6rem; }
 .prose li + li { margin-block-start: 0.3em; }
 .page { padding-block: clamp(2rem, 5vw, 4rem) 4rem; }
-.page-head { border-block-end: 1px solid var(--gold-faint); padding-block-end: 1.5rem; margin-block-end: 2rem; }
+.page-head { padding-block-end: 1.5rem; margin-block-end: 2rem; }
+/* Proposal: every page title carries the plaque instead of a hairline under the header block. */
+.page-head h1::after { content: ''; display: block; inline-size: min(16.25rem, 70%); block-size: 0.75rem; margin-block-start: 0.6rem; background: var(--plaque) no-repeat center / 100% 100%; }
 .page-head p { color: var(--ink-dim); max-inline-size: var(--measure); margin: 0; }
 .lede { font-size: 1.15em; color: var(--ink); }
 .muted { color: var(--ink-dim); }
 .ltr { direction: ltr; unicode-bidi: isolate; }
 
 /* Buttons: the game's gold-bordered panel buttons. */
+/* Proposal: an engraved double rule, after Civ VI's 3px gold border plus a dark inset line. The outer gold border,
+   a navy gap and a thin inner gilt line on the plain button; a dark inner line on the gold one. Hover turns the gold
+   button burnt umber with cream text (contrast 7.25:1), as Civ VI's gold turns brown. */
 .btn {
   display: inline-flex; align-items: center; gap: 0.5em; min-block-size: 2.75rem; padding: 0.55em 1.3em;
-  border: 1px solid var(--gold); border-radius: 2px; color: var(--ink); background: rgba(9, 14, 26, 0.7);
+  border: 2px solid var(--gold); border-radius: 1px; color: var(--ink); background: rgba(9, 14, 26, 0.7);
+  box-shadow: inset 0 0 0 2px var(--navy-deep), inset 0 0 0 3px var(--gold-dim);
   text-decoration: none; font-weight: 600; letter-spacing: 0.02em; line-height: 1.2;
 }
-.btn:hover { background: var(--navy-raised); color: var(--gold-light); }
-.btn-primary { background: var(--gold); color: var(--navy-deep); border-color: var(--gold); }
-.btn-primary:hover { background: var(--gold-light); color: var(--navy-deep); }
+.btn:hover { background: var(--navy-raised); color: var(--gold-light); box-shadow: inset 0 0 0 2px var(--navy-deep), inset 0 0 0 3px var(--gold); }
+.btn-primary { background: var(--gold); color: var(--navy-deep); border-color: var(--gold); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 3px rgba(9, 14, 26, 0.5); }
+.btn-primary:hover { background: var(--umber); color: var(--ink); box-shadow: inset 0 0 0 2px var(--umber), inset 0 0 0 3px var(--gold-light); }
+:lang(he) .btn { letter-spacing: 0; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
 
 /* Panels with the game's gold corner frame. */
@@ -139,7 +156,7 @@ th { color: var(--gold); font-weight: 600; }
 @media (max-width: 26rem) { .header-actions .btn { display: none; } }
 
 /* Footer */
-.site-footer { border-block-start: 1px solid var(--gold-faint); background: var(--navy-solid); padding-block: 2.5rem; color: var(--ink-dim); font-size: 0.95rem; }
+.site-footer { position: relative; background: var(--navy-solid); padding-block: 2.5rem; color: var(--ink-dim); font-size: 0.95rem; }
 .site-footer .cols { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 .site-footer ul { list-style: none; padding: 0; margin: 0; }
 .site-footer li { margin-block: 0.3rem; }
@@ -148,7 +165,10 @@ th { color: var(--gold); font-weight: 600; }
 
 /* Media labels: on every image and video, in both languages, where it appears. */
 .media { margin: 0; }
-.media-frame { position: relative; background: var(--navy-solid); border: 1px solid var(--gold-dim); overflow: hidden; }
+/* Proposal: a gilt picture frame, so a screenshot reads as one of the game's panels: a gold outer line, a 4px navy mat
+   and the existing dim inner line. Box shadows take no layout space. */
+.media-frame { position: relative; background: var(--navy-solid); border: 1px solid var(--gold-dim); overflow: hidden;
+  box-shadow: 0 0 0 4px var(--navy-deep), 0 0 0 5px var(--gold), 0 6px 18px rgba(0, 0, 0, 0.45); }
 .media-frame img, .media-frame video { inline-size: 100%; }
 .media.portrait .media-frame { aspect-ratio: 16 / 9; }
 .media.portrait .media-frame picture { display: block; block-size: 100%; }
@@ -186,7 +206,26 @@ th { color: var(--gold); font-weight: 600; }
 /* Grids */
 .gallery { display: grid; gap: clamp(1rem, 2.5vw, 1.75rem); grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); }
 .section { padding-block: clamp(3rem, 7vw, 5.5rem); }
-.section + .section { border-block-start: 1px solid var(--gold-faint); }
+/* Proposal: the gilt seam. A 6px bevelled band that straddles the boundary between two sections (Civ VI's
+   full-width divider), with a dark hairline on each side so it reads as metal set into the page. */
+.section + .section, .seam { position: relative; }
+.section + .section::before, .seam::before, .site-footer::before {
+  content: ''; position: absolute; inset-inline: 0; inset-block-start: 0; block-size: 6px; transform: translateY(-50%);
+  background: var(--gilt-band); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(0, 0, 0, 0.6); pointer-events: none; z-index: 1;
+}
+/* Full-width bands: the section spans the page and its content sits in an inner .wrap. */
+.band { padding-block: clamp(3rem, 7vw, 5.5rem); }
+.band-grain { background-color: var(--navy-solid); background-image: var(--grain), radial-gradient(ellipse 70% 90% at 25% 0%, rgba(196, 160, 92, 0.05), transparent 70%), radial-gradient(ellipse 60% 80% at 85% 100%, rgba(196, 160, 92, 0.04), transparent 70%); }
+/* On the texture the dim text and the gold caps step up one shade, so they keep 7:1 at the grain's lightest pixel. */
+.band-grain { --ink-dim: rgb(196, 190, 176); }
+.band-grain .eyebrow { color: var(--gold-light); }
+/* Proposal: the plaque. A tapered gilt bar with the HUD's diamond at its centre, under a section heading. */
+.plaque::after {
+  content: ''; display: block; inline-size: min(16.25rem, 70%); block-size: 0.75rem; margin-block-start: 0.55rem;
+  background: var(--plaque) no-repeat center / 100% 100%;
+}
+.plaque-center { text-align: center; }
+.plaque-center::after { margin-inline: auto; }
 .section-head { max-inline-size: var(--measure); margin-block-end: 2rem; }
 .section-head p { color: var(--ink-dim); }
 

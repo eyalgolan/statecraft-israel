@@ -5,8 +5,11 @@ import Figure from '../../components/Figure.astro';
 import VideoFacade from '../../components/VideoFacade.astro';
 import MediaLabel from '../../components/MediaLabel.astro';
 import { type Lang, languages, href, t, REPO, formatDate, asset } from '../../i18n/ui';
-import { captures, capture, currentBuild, engine, flythrough, trailer, gameplay, captureDateIso } from '../../lib/media';
+import { captures, capture, currentBuild, engine, concept, flythrough, trailer, gameplay, captureDateIso } from '../../lib/media';
 import { posts } from '../../lib/devlog';
+import { roadmap, cabinet as cabinetPeople } from '../../lib/repo';
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
@@ -22,7 +25,19 @@ const heroWidths = [800, 1200, 1568];
 const heroSizes = '100vw';
 const heroAvif = await getImage({ src: heroShot.src, widths: heroWidths, format: 'avif', quality: 70 });
 const heroWebp = await getImage({ src: heroShot.src, widths: heroWidths, format: 'webp', quality: 78 });
-const latest = posts(lang)[0];
+// The heartbeat strip: the release and the two newest devlog posts, from the same data as /devlog (proposal).
+const recent = posts(lang).slice(0, 2);
+const phases = roadmap(lang);
+// Proposal v2: the cabinet strip (archival portraits from the game's own catalogue) and the promo 03 concept band.
+const portraitFiles = import.meta.glob<{ default: ImageMetadata }>('../../../../unity/Assets/UI/Portraits/*.jpg', { eager: true });
+const portraitById = new Map(Object.entries(portraitFiles).map(([f, m]) => [f.split('/').pop()!.replace(/\.jpg$/, ''), m.default]));
+const people = cabinetPeople();
+const cabinetCount = people.length;
+const ministers = people.filter((p) => p.group === 'government' && p.portrait && portraitById.has(p.id)).slice(0, 6).map((p) => ({ p, img: portraitById.get(p.id)! }));
+const target = concept.find((c) => c.id === 'gameplay-1936')!;
+const stateWord = (s: string) => ({
+  done: he ? 'הושלם' : 'Done', now: he ? 'בתהליך' : 'In progress', next: he ? 'הבא' : 'Next', later: he ? 'בהמשך' : 'Later',
+} as Record<string, string>)[s];
 const abs = (p: string) => new URL(p, Astro.site).href;
 const poster = await getImage({ src: flythrough.poster, width: 1280, format: 'jpg' });
 
@@ -129,8 +144,11 @@ const missing = he
     </figure>
     <div class="hero-copy">
       <div class="wrap">
-      <h1 id="hero-title" lang="en">Statecraft: Israel</h1>
-      <p class="hero-pitch">{pitch}</p>
+      <h1 id="hero-title" class="lockup" lang="en">
+        <span class="lk-small">Statecraft<span class="visually-hidden">:</span></span>
+        <span class="lk-big">Israel</span>
+      </h1>
+      <p class="lk-era plaque plaque-center"><span class="ltr">1948–1951</span></p>
       <div class="btn-row">
         <a class="btn btn-primary" href={href(lang, 'play')}>{t(lang, 'cta.play')}</a>
         <a class="btn" href={REPO}>{t(lang, 'cta.github')}</a>
@@ -140,11 +158,23 @@ const missing = he
     </div>
   </section>
 
-  <section class="section wrap" aria-labelledby="what">
+  <aside class="heartbeat seam" aria-label={he ? 'מה חדש' : 'Latest'}>
+    <div class="wrap hb">
+      <p class="hb-item"><span class="hb-k">{he ? 'גרסה' : 'Release'}</span> {t(lang, 'version')}</p>
+      {recent.map((p) => (
+        <p class="hb-item"><span class="hb-k">{he ? 'יומן פיתוח' : 'Devlog'}</span>
+          <time datetime={p.date}>{formatDate(lang, p.date)}</time>{' · '}<a href={`${href(lang, 'devlog')}#${p.slug}`}>{p.title}</a></p>
+      ))}
+      <p class="hb-item"><a href={`${href(lang, 'devlog')}rss.xml`} type="application/rss+xml">RSS</a></p>
+    </div>
+  </aside>
+
+  <section class="section band-grain seam" aria-labelledby="what"><div class="wrap">
+    <p class="pitch">{pitch}</p>
     <div class="split">
       <div class="prose">
         <span class="eyebrow">{he ? 'על מה המשחק' : 'What it is'}</span>
-        <h2 id="what">{he ? 'אתם בכיסא ראש הממשלה מיום הקמת המדינה' : 'You sit in the prime minister’s chair from the founding of the state'}</h2>
+        <h2 id="what" class="plaque">{he ? 'אתם בכיסא ראש הממשלה מיום הקמת המדינה' : 'You sit in the prime minister’s chair from the founding of the state'}</h2>
         {he ? (
           <p>בכל תור אתם ממנים ומחליפים שרים אמיתיים בתוך קואליציה אמיתית, מחלקים תקציב זעום בין ביטחון, קליטת עלייה, המעברות והצנע, מנהלים את הביטחון על סולם הסלמה בן חמש דרגות, מאיומים שגרתיים ועד מלחמה כוללת, ומכריעים בהחלטות אמיתיות במועדן האמיתי.</p>
         ) : (
@@ -162,36 +192,25 @@ const missing = he
         <ul>{missing.map((w) => <li>{w}</li>)}</ul>
       </div>
     </div>
-  </section>
+  </div></section>
 
 {!gameplay && (
-  <section class="section wrap" aria-labelledby="footage">
+  <section class="section" aria-labelledby="footage"><div class="wrap">
     <div class="section-head">
       <span class="eyebrow">{he ? 'צילום מתוך המשחק' : 'In-engine footage'}</span>
-      <h2 id="footage">{he ? 'המפה, מהנגב ועד חיפה' : 'The map, from the Negev to Haifa'}</h2>
+      <h2 id="footage" class="plaque">{he ? 'המפה, מהנגב ועד חיפה' : 'The map, from the Negev to Haifa'}</h2>
       <p>{he
         ? 'הסרטון הראשון באתר מצולם מתוך המשחק עצמו. הטריילר הקולנועי, שנוצר בכלי בינה מלאכותית, מופיע אחריו עם תווית משלו.'
         : 'The first video on this site is recorded in the game itself. The cinematic trailer, made with AI tools, follows below under its own label.'}</p>
     </div>
     <VideoFacade video={flythrough} lang={lang} />
-  </section>
+  </div></section>
 )}
 
-  <section class="section wrap promo" aria-labelledby="promo">
-    <div class="section-head">
-      <span class="label label-cinematic">{t(lang, 'label.cinematic')}</span>
-      <h2 id="promo">{he ? 'הטריילר' : 'The trailer'}</h2>
-      <p>{he
-        ? 'סיפור על התקופה שנוצר בכלי וידאו של בינה מלאכותית מאמנות הקונספט שלנו. זה אינו צילום מהמשחק: את המשחק עצמו רואים בצילומים שלמעלה ובעמוד המדיה.'
-        : 'A story about the era, made with AI video tools from our concept art. It is not gameplay: the game itself is in the captures above and on the Media page.'}</p>
-    </div>
-    <VideoFacade video={trailer} lang={lang} />
-  </section>
-
-  <section class="section wrap" aria-labelledby="features">
+  <section class="section" aria-labelledby="features"><div class="wrap">
     <div class="section-head">
       <span class="eyebrow">{he ? 'במשחק' : 'In the game'}</span>
-      <h2 id="features">{he ? 'מה עושים בכל תור' : 'What you do each turn'}</h2>
+      <h2 id="features" class="plaque">{he ? 'מה עושים בכל תור' : 'What you do each turn'}</h2>
     </div>
     <div class="features">
       {features.map((f) => (
@@ -205,13 +224,61 @@ const missing = he
         </article>
       ))}
     </div>
+  </div></section>
+
+  <section class="section band-grain" aria-labelledby="cabinet"><div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">{he ? 'השרים' : 'The ministers'}</span>
+      <h2 id="cabinet" class="plaque">{he ? 'ממשלה אמיתית, שר אחר שר' : 'A real cabinet, minister by minister'}</h2>
+      <p>{he
+        ? 'צילומי ארכיון של השרים שמהם מרכיבים את הממשלה במשחק. בעמוד הממשלה יש כרטיס לכל אחד: התפקידים והתאריכים עם המקורות, ומה המשחק עושה איתו.'
+        : 'Archival photographs of the ministers you build the government from. The Cabinet page has a card for each: the offices and dates with their sources, and what the game does with them.'}</p>
+    </div>
+    <div class="cab-strip">
+      {ministers.map(({ p, img }) => (
+        <a class="cab-card" href={`${href(lang, 'cabinet')}#${p.id}`}>
+          <figure class="media" data-kind="archival">
+            <div class="media-frame">
+              <MediaLabel lang={lang} kind="archival" />
+              <Picture src={img} alt={he ? `צילום ארכיון של ${p.name_he}` : `Archival photograph of ${p.name}`} formats={['avif']} fallbackFormat="webp"
+                widths={[240, 480].filter((w) => w <= img.width)} sizes="(min-width: 76rem) 14rem, 45vw" loading="lazy"
+                style={`object-position: 50% ${Math.round((p.portrait!.focus_y ?? 0.35) * 100)}%`} />
+            </div>
+            <figcaption><strong>{he ? p.name_he : p.name}</strong><span class="cab-office">{(he && p.terms[0].title_he) || p.terms[0].title}</span></figcaption>
+          </figure>
+        </a>
+      ))}
+    </div>
+    <p class="cab-more"><a class="btn" href={href(lang, 'cabinet')}>{he ? `כל ${cabinetCount} נושאי המשרה` : `All ${cabinetCount} office holders`}</a></p>
+  </div></section>
+
+  <section class="concept-band seam" aria-labelledby="target">
+    <div class="wrap section-head">
+      <span class="label label-concept">{t(lang, 'label.concept')}</span>
+      <h2 id="target" class="plaque">{he ? 'המראה שאליו אנחנו שואפים' : 'The look we are building toward'}</h2>
+      <p>{he
+        ? 'אמנות קונספט שנוצרה בבינה מלאכותית: יעד חזותי, לא הגרסה הנוכחית. יש בה דברים שאין במשחק. את המשחק עצמו רואים בצילומים שלמעלה.'
+        : 'Concept art made with AI: a visual target, not the current build. It shows things the game does not have. The game itself is in the captures above.'}</p>
+    </div>
+    <Figure item={target} lang={lang} sizes="100vw" widths={[800, 1200, 1600, 2400]} class="band-figure" />
   </section>
 
-  <section class="section wrap" aria-labelledby="next">
+  <section class="section promo seam" aria-labelledby="promo"><div class="wrap">
+    <div class="section-head">
+      <span class="label label-cinematic">{t(lang, 'label.cinematic')}</span>
+      <h2 id="promo" class="plaque">{he ? 'הטריילר' : 'The trailer'}</h2>
+      <p>{he
+        ? 'סיפור על התקופה שנוצר בכלי וידאו של בינה מלאכותית מאמנות הקונספט שלנו. זה אינו צילום מהמשחק: את המשחק עצמו רואים בצילומים שלמעלה ובעמוד המדיה.'
+        : 'A story about the era, made with AI video tools from our concept art. It is not gameplay: the game itself is in the captures above and on the Media page.'}</p>
+    </div>
+    <VideoFacade video={trailer} lang={lang} />
+  </div></section>
+
+  <section class="section band-grain" aria-labelledby="next"><div class="wrap">
     <div class="split">
       <div class="prose">
         <span class="eyebrow">{he ? 'לאן זה הולך' : 'Where it is going'}</span>
-        <h2 id="next">{he ? 'עיצוב חדש, עדיין בעבודה' : 'A new design, still in progress'}</h2>
+        <h2 id="next" class="plaque">{he ? 'עיצוב חדש, עדיין בעבודה' : 'A new design, still in progress'}</h2>
         {he ? (
           <>
             <p>מסמך עיצוב המשחק של הבעלים, GDD v0.1 מ־12 באוקטובר 2026, הוא העיצוב המחייב. הוא מתאר תורות חודשיים, יחידות, ערים, עבודת חלוצים ושלוש מטרות לשנים 1948 עד 1951. רבים מהכללים בו עדיין מסומנים כפתוחים, ובגרסה שאפשר לשחק בה הם עוד לא קיימים.</p>
@@ -225,21 +292,28 @@ const missing = he
         )}
         <p><a href={`${REPO}/blob/main/docs/GDD.md`}>{he ? 'מסמך העיצוב (GDD, באנגלית)' : 'The design document (GDD)'}</a></p>
       </div>
-      {latest && (
-        <article class="panel latest">
-          <span class="eyebrow">{he ? 'מיומן הפיתוח' : 'From the devlog'}</span>
-          <h3><a href={`${href(lang, 'devlog')}#${latest.slug}`}>{latest.title}</a></h3>
-          <p class="muted"><time datetime={latest.date}>{formatDate(lang, latest.date)}</time></p>
-          <p>{latest.summary}</p>
-        </article>
-      )}
+      <div class="panel roadmap">
+        <span class="eyebrow">{he ? 'מפת הדרכים' : 'Roadmap'}</span>
+        <h3>{he ? 'ה־MVP של 1948 עד 1951' : 'The 1948 to 1951 MVP'}</h3>
+        <ol class="phases">
+          <li class="ph ph-done"><span class="ph-mark" aria-hidden="true"></span>
+            <span class="ph-what">{t(lang, 'version')}</span><span class="ph-state">{stateWord('done')}</span></li>
+          {phases.map((p) => (
+            <li class={`ph ph-${p.state}`}><span class="ph-mark" aria-hidden="true"></span>
+              <span class="ph-what"><span class="ph-n">{he ? `שלב ${p.n}` : `Phase ${p.n}`}</span> · {p.what.map((w) => w.href ? <a href={w.href}>{w.text}</a> : w.text)}</span>
+              <span class="ph-state">{p.state === 'now' ? p.status : stateWord(p.state)} · <a href={p.url}>{p.issue}</a></span></li>
+          ))}
+        </ol>
+        <p class="muted ph-note">{he ? 'מתוך טבלת מפת הדרכים ב־README. מפת הדרכים אינה קובעת תאריכים.' : 'From the roadmap table in the README. The roadmap sets no dates.'}
+          {' '}<a href={`${REPO}/issues/374`}>#374</a></p>
+      </div>
     </div>
-  </section>
+  </div></section>
 
-  <section class="section wrap honest" aria-labelledby="honest">
+  <section class="section honest" aria-labelledby="honest"><div class="wrap">
     <div class="section-head">
       <span class="eyebrow">{he ? 'בגלוי' : 'In the open'}</span>
-      <h2 id="honest">{he ? 'מה אמיתי ומה לא' : 'What is real and what is not'}</h2>
+      <h2 id="honest" class="plaque">{he ? 'מה אמיתי ומה לא' : 'What is real and what is not'}</h2>
     </div>
     <div class="cards3">
       <div class="panel">
@@ -264,10 +338,10 @@ const missing = he
         <a href={href(lang, 'how-we-make-it')}>{t(lang, 'nav.how')}</a>
       </div>
     </div>
-  </section>
+  </div></section>
 
-  <section class="section wrap closing" aria-labelledby="join">
-    <h2 id="join">{he ? 'להשתתף' : 'Take part'}</h2>
+  <section class="section band-grain closing" aria-labelledby="join"><div class="wrap">
+    <h2 id="join" class="plaque">{he ? 'להשתתף' : 'Take part'}</h2>
     <p class="muted prose">{he
       ? 'שאלות ורעיונות נכנסים לדיונים ב־GitHub, ובאגים וטעויות היסטוריות לרשימת הבעיות. מתכנתים, היסטוריונים, אמנים, מעצבי משחק, כותבים ומתרגמים מוזמנים.'
       : 'Questions and ideas go in GitHub Discussions; bugs and historical errors go in the issue tracker. Programmers, historians, artists, game designers, writers and translators are welcome.'}</p>
@@ -277,13 +351,16 @@ const missing = he
       <a class="btn" href={`${REPO}/discussions`}>{he ? 'דיונים' : 'Discussions'}</a>
       <a class="btn" href={`${REPO}/issues/new?template=historical_accuracy.yml`}>{he ? 'דיווח על טעות היסטורית' : 'Report a historical error'}</a>
     </div>
-  </section>
+  </div></section>
+
 </Layout>
 
 <style>
   .hero { position: relative; background: var(--navy-deep); }
   .hero-media { margin: 0; position: relative; }
-  .hero-media img { inline-size: 100%; block-size: min(calc(100svh - var(--header-h)), 56.25vw); min-block-size: 22rem; object-fit: cover; object-position: 50% 30%; }
+  /* Proposal v2: the key-art hero. The real build fills the first screen, as Civ's key art does, with the lockup centred
+     at the bottom over a gradient to navy and one gold button. The pitch moves to the band below. */
+  .hero-media img { inline-size: 100%; block-size: min(calc(100svh - var(--header-h)), 56.25vw); min-block-size: 30rem; object-fit: cover; object-position: 50% 30%; } /* 16:9 at most, so the game's own HUD is never cut */
   .hero-label { position: absolute; inset-block-end: 1.1rem; inset-inline-end: var(--gutter); padding: 0; z-index: 3; display: flex; gap: 0.5rem; align-items: center; }
   .hero-video { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: 50% 30%; opacity: 0; }
   .hero-video.on { opacity: 1; }
@@ -291,36 +368,96 @@ const missing = he
   .hero-pause:hover { border-color: var(--gold); color: var(--gold-light); }
   .hero-label :global(.label) { background: rgba(9, 14, 26, 0.92); margin: 0; font-size: 0.85rem; }
   .hero-copy {
-    position: absolute; inset-inline: 0; inset-block-end: 0; padding-block: 7rem 3.5rem;
-    background: linear-gradient(to top, rgba(9, 14, 26, 0.97) 0%, rgba(9, 14, 26, 0.9) 45%, rgba(9, 14, 26, 0) 100%);
+    position: absolute; inset-inline: 0; inset-block-end: 0; padding-block: 6rem 3rem;
+    /* The lockup sits higher than the old h1, so the scrim stays dark further up (checked at the brightest sand). */
+    background: linear-gradient(to top, rgba(9, 14, 26, 0.97) 0%, rgba(9, 14, 26, 0.92) 68%, rgba(9, 14, 26, 0.78) 84%, rgba(9, 14, 26, 0) 100%);
   }
-  .hero-copy .wrap > * { max-inline-size: 44rem; }
-  .hero-copy h1 { margin-block-end: 0.35em; letter-spacing: 0.04em; font-family: var(--serif); }
-  .hero-pitch { font-size: clamp(1.15rem, 1rem + 0.6vw, 1.45rem); line-height: 1.5; margin-block-end: 1.25rem; }
+  .hero-copy .wrap { text-align: center; }
+  .hero-copy .wrap > * { max-inline-size: 48rem; margin-inline: auto; }
+  .hero-copy .btn-row { justify-content: center; }
+  .hero-copy .btn { font-size: 1.1rem; padding-inline: 1.8em; min-block-size: 3.1rem; }
+  .hero-label { inset-block-start: auto; }
+  /* Proposal: the title lockup, in live text (Civ sets its lockup as an image inside an h1). STATECRAFT small and
+     spaced above a large ISRAEL in gilt, then the era. The h1 is English on both pages, so its letter-spacing never
+     touches Hebrew; the era line is digits only. */
+  .lockup { margin-block-end: 0.15em; font-family: var(--serif); line-height: 1; }
+  .lk-small { display: block; text-shadow: 0 1px 2px rgba(9, 14, 26, 0.9); font-size: clamp(0.95rem, 0.8rem + 0.6vw, 1.3rem); letter-spacing: 0.42em; text-transform: uppercase; color: var(--ink); font-weight: 600; margin-block-end: 0.2em; }
+  .lk-big {
+    display: block; font-size: clamp(3.1rem, 1.9rem + 5.2vw, 6.4rem); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600;
+    color: var(--gold-light);
+    background: linear-gradient(180deg, var(--gold-light) 0%, #f3e2b4 38%, #d8b874 62%, var(--gold-light) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.55));
+  }
+  @media (forced-colors: active) { .lk-big { background: none; -webkit-text-fill-color: currentColor; filter: none; } }
+  .lk-era { font-size: 1rem; letter-spacing: 0.3em; color: var(--gold-light); font-weight: 600; margin-block-end: 1.1rem; }
+  .lk-era::after { inline-size: min(16.25rem, 60%); }
+  :lang(he) .lk-era { letter-spacing: 0; } /* the rule is no letter-spacing on Hebrew pages; the range is wrapped in .ltr */
+  .pitch { font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem); line-height: 1.45; text-align: center; max-inline-size: 46rem; margin: 0 auto clamp(2.5rem, 5vw, 4rem); color: var(--ink); text-wrap: balance; }
   .hero-version { margin: 1rem 0 0; color: var(--ink-dim); font-size: 0.95rem; }
   .hero-version span { color: var(--gold-light); }
   @media (max-width: 48rem) {
-    .hero-media img { block-size: auto; min-block-size: 0; aspect-ratio: 16 / 9; }
+    .hero-media img { block-size: auto; min-block-size: 0; max-block-size: none; aspect-ratio: 4 / 3; object-position: 38% 50%; }
     .hero-copy { position: static; background: var(--navy-deep); padding-block: 1.5rem 2rem; }
-    .hero-label { inset-block-end: 0.5rem; inset-inline-end: 0.5rem; }
+    /* The label and the pause button leave the picture on phones: a caption bar under it, on one line each,
+       instead of a pill that wrapped into three columns over the video (the 390px bug). */
+    .hero-label { position: static; justify-content: space-between; padding: 0.5rem var(--gutter); background: var(--navy-solid); border-block-end: 1px solid var(--gold-faint); }
+    .hero-label :global(.label) { min-inline-size: 0; }
+    /* The video covers the picture only, not the caption bar now under it. */
+    .hero-video { block-size: auto; aspect-ratio: 4 / 3; inset-block-end: auto; object-position: 38% 50%; }
+    .hero-pause { flex: none; }
+    .hero-label :global(.label) { font-size: 0.8rem; }
   }
+  .heartbeat { background: var(--navy-solid); border-block-end: 0; }
+  .hb { display: flex; flex-wrap: wrap; gap: 0.35rem 1.4rem; padding-block: 0.9rem; font-size: 0.9rem; color: var(--ink-dim); }
+  .hb-item { margin: 0; }
+  .hb-k { color: var(--gold); font-weight: 600; margin-inline-end: 0.4em; }
+  .hb a { color: var(--ink); }
   .split { display: grid; gap: clamp(1.5rem, 4vw, 3.5rem); grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
   @media (max-width: 56rem) { .split { grid-template-columns: 1fr; } }
   .status ul { padding-inline-start: 1.2rem; font-size: 0.97em; }
   .status h3 { font-size: 1.15rem; color: var(--gold-light); }
-  .features { display: grid; gap: clamp(2.5rem, 6vw, 4.5rem); }
-  .feature { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(1.25rem, 4vw, 3rem); align-items: center; }
+  /* Larger imagery: the feature pictures take about two thirds of a wider column. */
+  .features { display: grid; gap: clamp(3rem, 7vw, 6rem); }
+  .feature { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(1.25rem, 4vw, 3.5rem); align-items: center; }
+  .feature-text h3 { font-size: clamp(1.5rem, 1.2rem + 1vw, 2.1rem); }
   .feature:nth-child(even) > :global(figure) { order: 2; }
+  .feature:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
   .feature :global(.crop .media-frame img) { aspect-ratio: 4 / 3; object-fit: cover; }
   .feature-text p { color: var(--ink-dim); }
   @media (max-width: 48rem) {
-    .feature { grid-template-columns: 1fr; }
+    .feature, .feature:nth-child(even) { grid-template-columns: 1fr; }
     .feature:nth-child(even) > :global(figure) { order: 0; }
   }
+  .cab-strip { display: grid; gap: clamp(1rem, 2vw, 1.75rem); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 40rem) { .cab-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 64rem) { .cab-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  .cab-card { text-decoration: none; color: var(--ink); display: block; }
+  .cab-card .media-frame { aspect-ratio: 4 / 5; }
+  .cab-card .media-frame :global(picture), .cab-card .media-frame :global(img) { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
+  .cab-card :global(.label) { font-size: 0.7rem; }
+  .cab-card figcaption { display: grid; color: var(--ink); text-align: center; }
+  .cab-card figcaption strong { font-size: 1.1rem; }
+  .cab-office { color: var(--ink-dim); font-size: 0.9rem; }
+  .cab-card:hover figcaption strong, .cab-card:focus-visible figcaption strong { color: var(--gold-light); text-decoration: underline; }
+  .cab-more { text-align: center; margin-block-start: 2rem; }
+  /* The promo 03 band: once, edge to edge, with its label on the picture and in the heading, and the AI mark. */
+  .concept-band { padding-block: clamp(3rem, 7vw, 5.5rem) 0; background: var(--navy-deep); }
+  .concept-band :global(.band-figure .media-frame) { border-inline: 0; box-shadow: none; border-block: 1px solid var(--gold-dim); }
+  .concept-band :global(.band-figure figcaption) { max-inline-size: var(--wide); margin-inline: auto; padding: 0.6rem var(--gutter) 0; }
   .cards3 { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
   .cards3 p { color: var(--ink-dim); font-size: 0.97em; }
-  .latest h3 a { color: var(--ink); text-decoration: none; }
-  .latest h3 a:hover { color: var(--gold-light); }
+  .phases { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 0.15rem; }
+  .ph { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0 0.5rem; padding-block: 0.4rem; border-block-end: 1px solid var(--navy-line); font-size: 0.95em; }
+  .ph-what { grid-column: 2; }
+  .ph-state { grid-column: 2; font-size: 0.85rem; color: var(--ink-dim); }
+  .ph-n { color: var(--gold-light); font-weight: 600; }
+  .ph-mark { grid-row: 1 / span 2; inline-size: 0.8rem; block-size: 0.8rem; margin-block-start: 0.45rem; transform: rotate(45deg); border: 1.5px solid var(--gold-dim); }
+  .ph-done .ph-mark { background: var(--gold); border-color: var(--gold); }
+  .ph-now .ph-mark { border-color: var(--gold-light); background: linear-gradient(135deg, var(--gold-light) 50%, transparent 50%); }
+  .ph-done .ph-what, .ph-now .ph-what { color: var(--ink); }
+  .ph-next .ph-what, .ph-later .ph-what { color: var(--ink-dim); }
+  .ph-note { font-size: 0.9rem; margin: 0; }
   .closing .btn-row { margin-block-start: 1.25rem; }
 </style>
 

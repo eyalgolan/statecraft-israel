@@ -123,3 +123,86 @@ export function markdownSection(rel: string, heading: string): string {
   const end = lines.findIndex((l, i) => i > start && /^## /.test(l));
   return lines.slice(start + 1, end < 0 ? undefined : end).join('\n').trim();
 }
+
+// The roadmap table in README.md and README.he.md ("| 0 | what it adds | status | [#375](url) |"), read as it is, so the
+// home page never says something the README does not. An unknown status word fails the build instead of guessing.
+export type PhaseState = 'done' | 'now' | 'next' | 'later';
+export interface Phase { n: string; what: { text: string; href?: string }[]; status: string; state: PhaseState; issue: string; url: string }
+const STATES: [RegExp, PhaseState][] = [[/^(Done|הושלם)/, 'done'], [/^(In progress|בתהליך)/, 'now'], [/^(Next|הבא)/, 'next'], [/^(Later|בהמשך)/, 'later']];
+export function roadmap(lang: 'en' | 'he'): Phase[] {
+  const md = read(lang === 'he' ? 'README.he.md' : 'README.md');
+  const rows = [...md.matchAll(/^\| (\d) \| (.+?) \| (.+?) \| \[(#\d+)\]\(([^)]+)\) \|$/gm)];
+  if (rows.length < 8) throw new Error(`site: the roadmap table in ${lang === 'he' ? 'README.he.md' : 'README.md'} has ${rows.length} phase rows, expected 8`);
+  return rows.map(([, n, what, status, issue, url]) => {
+    const state = STATES.find(([re]) => re.test(status))?.[1];
+    if (!state) throw new Error(`site: roadmap phase ${n} has an unknown status: ${status}`);
+    // Markdown links in the cell become links; a repository path is resolved against the repository on GitHub.
+    const parts = what.split(/(\[[^\]]+\]\([^)]+\))/).filter(Boolean).map((seg) => {
+      const m = seg.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      return m ? { text: m[1], href: /^https?:/.test(m[2]) ? m[2] : `https://github.com/eyalgolan/statecraft-israel/blob/main/${m[2]}` } : { text: seg };
+    });
+    return { n, what: parts, status, state, issue, url };
+  });
+}
+
+// The Cabinet page: everyone who held an office in the game's years (15 May 1948 to the end of 1951), read from
+// content/people.yaml, offices.yaml and parties.yaml as they are. Nothing here is written for the website: the tagline
+// is built from the sourced offices and dates, never a quote (content/ holds no sourced quotes).
+export interface Term { office: string; title: string; title_he?: string; from: string; to?: string; sources: Source[] }
+export interface Person {
+  id: string; name: string; name_he: string; born: string; died?: string; party?: string; party_he?: string;
+  status: string; competence: number; loyalty: number; terms: Term[]; group: 'government' | 'state' | 'deputy';
+  portrait?: { file: string; licence: string; source: string; artist?: string; focus_y?: number };
+  bioSources: Source[];
+}
+const GAME_START = '1948-05-14';
+const GAME_END = '1952-01-01';
+export function cabinet(): Person[] {
+  const officeDoc = readYaml('content/offices.yaml').offices as { id: string; title: string; title_he?: string }[];
+  const officeOrder = new Map(officeDoc.map((o, i) => [o.id, i]));
+  const office = new Map(officeDoc.map((o) => [o.id, o]));
+  const parties = new Map((readYaml('content/parties.yaml').parties as { id: string; name: string; name_he?: string }[]).map((p) => [p.id, p]));
+  const credits = new Map((readYaml('ASSETS.portraits.yaml').rules as { glob: string; licence: string; source: string; artist?: string }[]).map((r) => [r.glob, r]));
+  const people = readYaml('content/people.yaml').people as Record<string, any>[];
+  const list: Person[] = [];
+  for (const p of people) {
+    if (p.status === 'draft') continue;
+    const raw = (p.offices as Record<string, any>[])
+      .map((o) => ({ office: o.office as string, from: toIso(o.from), to: o.to ? toIso(o.to) : undefined, sources: o.sources as Source[] }))
+      .filter((o) => o.from < GAME_END && (!o.to || o.to > GAME_START))
+      .sort((a, b) => a.from.localeCompare(b.from));
+    if (!raw.length) continue;
+    // Terms are split per government in content/; join a term to the one before it when the office runs on unbroken.
+    const terms: Term[] = [];
+    for (const o of raw) {
+      const prev = [...terms].reverse().find((t) => t.office === o.office);
+      if (prev && prev.to === o.from) {
+        prev.to = o.to;
+        for (const s of o.sources) if (!prev.sources.some((x) => x.url === s.url)) prev.sources.push(s);
+      } else {
+        const off = office.get(o.office);
+        if (!off) throw new Error(`site: ${p.id} holds an office that offices.yaml does not define: ${o.office}`);
+        terms.push({ office: o.office, title: off.title, title_he: off.title_he, from: o.from, to: o.to, sources: [...o.sources] });
+      }
+    }
+    terms.sort((a, b) => (officeOrder.get(a.office)! - officeOrder.get(b.office)!) || a.from.localeCompare(b.from));
+    const ids = terms.map((t) => t.office);
+    const group = ids.some((i) => i === 'prime_minister' || (i.endsWith('_minister') && !i.startsWith('deputy_')))
+      ? 'government' : ids.some((i) => i.startsWith('deputy_')) ? 'deputy' : 'state';
+    const file = p.portrait ? `unity/Assets/UI/Portraits/${p.id}.jpg` : undefined;
+    const credit = file ? credits.get(file) : undefined;
+    if (file && !credit) throw new Error(`site: portrait ${file} has no row in ASSETS.portraits.yaml`);
+    const party = p.party ? parties.get(p.party) : undefined;
+    const bio = p.biography_sources ?? {};
+    const bioSources: Source[] = [];
+    for (const k of ['born', 'died', 'name_he']) for (const s of (bio[k] ?? []) as Source[]) if (!bioSources.some((x) => x.url === s.url)) bioSources.push(s);
+    list.push({
+      id: p.id, name: p.name, name_he: p.name_he, born: toIso(p.born), died: p.died ? toIso(p.died) : undefined,
+      party: party?.name, party_he: party?.name_he, status: p.status, competence: p.competence, loyalty: p.loyalty,
+      terms, group, bioSources,
+      portrait: file && credit ? { file, licence: credit.licence, source: credit.source, artist: credit.artist, focus_y: p.portrait.focus_y } : undefined,
+    });
+  }
+  const rank = (x: Person) => Math.min(...x.terms.map((t) => officeOrder.get(t.office)!));
+  return list.sort((a, b) => rank(a) - rank(b) || a.terms[0].from.localeCompare(b.terms[0].from) || a.name.localeCompare(b.name));
+}

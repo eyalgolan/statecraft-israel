@@ -30,47 +30,47 @@ const firstSizes = '(min-width: 76rem) 36rem, (min-width: 48rem) 50vw, 100vw';
     <section class="section-g" aria-labelledby="engine">
       <div class="g-head">
         <span class="label label-engine">{t(lang, 'label.engine')}</span>
-        <h2 id="engine">{he ? 'מתוך המשחק' : 'In-engine captures'}</h2>
+        <h2 id="engine" class="plaque">{he ? 'מתוך המשחק' : 'In-engine captures'}</h2>
         <p>{he
           ? 'צילומי מסך והקלטות אמיתיים מהגרסאות של המשחק, עם הגרסה והתאריך. היישובים והעצים הם עדיין אמנות זמנית.'
           : 'Real screenshots and recordings from the game’s builds, with the build and the date. Settlements and trees are still placeholder art.'}</p>
       </div>
       <div class="gallery">
-        {engine.map((item, i) => <Figure item={item} lang={lang} eager={i === 0} />)}
+        {engine.map((item, i) => <Figure item={item} lang={lang} eager={i === 0} sizes={firstSizes} />)}
       </div>
       {gameplayVideo && (
         <div class="video-row">
-          <VideoFacade video={gameplayVideo} lang={lang} sizes="(min-width: 76rem) 48rem, 100vw" />
+          <VideoFacade video={gameplayVideo} lang={lang} sizes="(min-width: 76rem) 64rem, 100vw" />
         </div>
       )}
       <div class="video-row">
-        <VideoFacade video={flythrough} lang={lang} sizes="(min-width: 76rem) 48rem, 100vw" />
+        <VideoFacade video={flythrough} lang={lang} sizes="(min-width: 76rem) 64rem, 100vw" />
       </div>
     </section>
 
     <section class="section-g" aria-labelledby="concept">
       <div class="g-head">
         <span class="label label-concept">{t(lang, 'label.concept')}</span>
-        <h2 id="concept">{he ? 'אמנות קונספט' : 'Concept art'}</h2>
+        <h2 id="concept" class="plaque">{he ? 'אמנות קונספט' : 'Concept art'}</h2>
         <p>{he
           ? 'התמונות האלה נוצרו בבינה מלאכותית (ElevenLabs Image API: ‏GPT Image 2.5 ו־Nano Banana Pro). הן מראות את המראה שאליו אנחנו שואפים, לא את הגרסה הנוכחית, ויש בהן דברים, שנים ומסכים שאין במשחק. בשתיים מהן מופיעות דמויות של שרים אמיתיים שנוצרו בבינה מלאכותית לפי צילומים בנחלת הכלל; הן אינן צילומים, ואינן בשימוש במשחק.'
           : 'These images were made with AI (ElevenLabs Image API: GPT Image 2.5 and Nano Banana Pro). They show the look we are building toward, not the current build, and they show things, years and screens the game does not have. Two show AI likenesses of real ministers made from public-domain photographs; they are not photographs and are not used in the game.'}</p>
       </div>
       <div class="gallery">
-        {concept.map((item) => <Figure item={item} lang={lang} />)}
+        {concept.map((item) => <Figure item={item} lang={lang} sizes={firstSizes} />)}
       </div>
     </section>
 
     <section class="section-g" aria-labelledby="cinematic">
       <div class="g-head">
         <span class="label label-cinematic">{t(lang, 'label.cinematic')}</span>
-        <h2 id="cinematic">{he ? 'פרומו קולנועי' : 'Cinematic promo'}</h2>
+        <h2 id="cinematic" class="plaque">{he ? 'פרומו קולנועי' : 'Cinematic promo'}</h2>
         <p>{he
           ? 'הטריילר נוצר בכלי וידאו של בינה מלאכותית מאמנות הקונספט שלנו. זה סיפור על התקופה, לא תצוגה מקדימה של המשחק: אין בו שום צילום מתוך המשחק.'
           : 'The trailer was made with AI video tools from our concept art. It is a story about the era, not a preview of the game: none of it is in-game footage.'}</p>
       </div>
       <div class="video-row">
-        <VideoFacade video={trailer} lang={lang} sizes="(min-width: 76rem) 48rem, 100vw" />
+        <VideoFacade video={trailer} lang={lang} sizes="(min-width: 76rem) 64rem, 100vw" />
       </div>
     </section>
 
@@ -79,9 +79,13 @@ const firstSizes = '(min-width: 76rem) 36rem, (min-width: 48rem) 50vw, 100vw';
 </Layout>
 <style>
   .section-g { padding-block: 1rem 3rem; }
-  .section-g + .section-g { border-block-start: 1px solid var(--gold-faint); padding-block-start: 2.5rem; }
+  .section-g + .section-g { position: relative; padding-block-start: 3rem; }
+  /* Proposal: the gilt seam between the three galleries. */
+  .section-g + .section-g::before { content: ''; position: absolute; inset-inline: 0; inset-block-start: 0; block-size: 6px; transform: translateY(-50%); background: var(--gilt-band); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(0, 0, 0, 0.6); }
   .g-head { max-inline-size: var(--measure); margin-block-end: 1.5rem; }
   .g-head h2 { margin-block: 0.6rem 0.5rem; }
   .g-head p { color: var(--ink-dim); }
-  .video-row { max-inline-size: 48rem; margin-block-start: 2rem; }
+  .video-row { max-inline-size: 64rem; margin-block-start: 2.5rem; }
+  /* Proposal v2: larger imagery, two pictures a row on a desktop instead of three. */
+  .gallery { grid-template-columns: repeat(auto-fill, minmax(min(100%, 30rem), 1fr)); gap: clamp(1.25rem, 3vw, 2.5rem); }
 </style>

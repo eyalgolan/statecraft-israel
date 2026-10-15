@@ -5,7 +5,7 @@ const { lang, page } = Astro.props;
 const other = otherLang(lang);
 const links: { page: Page; key: Parameters<typeof t>[1] }[] = [
   { page: '', key: 'nav.home' }, { page: 'play', key: 'nav.play' }, { page: 'history', key: 'nav.history' },
-  { page: 'history/sources', key: 'nav.sources' }, { page: 'media', key: 'nav.media' }, { page: 'devlog', key: 'nav.devlog' },
+  { page: 'history/sources', key: 'nav.sources' }, { page: 'cabinet', key: 'nav.cabinet' }, { page: 'media', key: 'nav.media' }, { page: 'devlog', key: 'nav.devlog' },
 ];
 const links2: { page: Page; key: Parameters<typeof t>[1] }[] = [
   { page: 'contributors', key: 'nav.contributors' }, { page: 'how-we-make-it', key: 'nav.how' },

@@ -9,4 +9,4 @@ const text = kind === 'engine' ? t(lang, gameplay ? 'label.gameplay' : 'label.en
   : kind === 'cinematic' ? t(lang, 'label.cinematic')
   : t(lang, 'label.archival');
 ---
-<span class={`label label-${kind}`} data-media-label={kind}>{text}{kind === 'engine' && build && <> — <bdi>{build.id[lang]}</bdi>{lang === 'he' ? ' · ' : ', '}<bdi>{build.date[lang]}</bdi></>}</span>
+<span class={`label label-${kind}`} data-media-label={kind}><span>{text}{kind === 'engine' && build && <> — <bdi>{build.id[lang]}</bdi>{lang === 'he' ? ' · ' : ', '}<bdi>{build.date[lang]}</bdi></>}</span></span>
