@@ -69,6 +69,18 @@ def test_home_path_fails_and_tilde_passes(make_repo, capsys):
     assert "a.md:1: home-path" in out and "c.md:1: home-path" in out and "b.md" not in out
 
 
+def test_home_path_inside_a_binary_fails(make_repo, capsys):
+    # An FBX string property as Blender writes it: length-prefixed, between NUL bytes (issue #659).
+    path = ("/Users/" + "someone/art/tex_0.jpg").encode()
+    blob = b"Kaydara FBX Binary  \x00\x1a\x00" + b"\x00" * 16 + b"S" + len(path).to_bytes(4, "little") + path + b"\x00" * 8
+    scrubbed = blob.replace(path, b"scrubbed-path".ljust(len(path), b"_"))
+    root = make_repo({"m/a.fbx": blob, "m/b.fbx": scrubbed})
+    assert run(root, "--only", "home-paths") == 1
+    out = capsys.readouterr().out
+    assert "home-paths: m/a.fbx: home-path-in-binary" in out and "m/b.fbx" not in out
+    assert "someone" not in out
+
+
 def test_allowlisted_fixture_passes_and_the_same_line_elsewhere_fails(make_repo, capsys):
     line = 'var p = "/Users/' + 'someone/game";\n'
     root = make_repo({"scripts/oss/allow.yaml": ALLOW, "tests/fixtures/a.cs": line, "src/b.cs": line})

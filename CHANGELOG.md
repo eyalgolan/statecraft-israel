@@ -28,6 +28,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Q-CUT-8). Every golden moves; the cutover re-pins them once.
 
 ### Added
+- Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
+  1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
+  animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins
+  these settings. The texture paths from Tal's machine inside each FBX are blanked. Nothing references the models yet,
+  so the game does not change and the WebGL build ships the same assets (its `.data` file differs by 56 bytes).
 - `title_he_form: feminine` in `people.yaml` (refs #558): a person so marked takes the offices' feminine Hebrew title
   (`title_he_f`, שרת העבודה) through `Office.TitleHeFor`, sourced in `biography_sources.title_he_form`. The loader
   refuses any other value, a blank, a missing source, and a marked person holding an office without `title_he_f`.

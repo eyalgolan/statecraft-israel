@@ -47,6 +47,13 @@ rules:
     source: "Dreamina (dreamina.capcut.com), model GPT Image 2.5, 2026-10-12, 1536x864 as downloaded, with promo/final/03-gameplay-1936.png as the style reference; prompts in promo/start-screen/prompt-b.txt and -c.txt"
     status: verified
     note: "Decision D1: AI-only images CC0 / no rights claimed. Two options for the start screen; C is used. Decision D-D decided (owner, 2026-10-14, docs/oss/DECISIONS.md): approved for free, non-commercial distribution and CC0 marking; before any paid release the owner confirms commercial rights for the plan used or replaces the image."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/b*"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio, by Tal (GitHub @pixelrenderai-hash, PR #507). Building modules decimated to 3,608-8,000 triangles in Blender 4.4; colour maps made at 1024 px and committed at 512 px (2x2 box average, JPEG quality 90, issue #659; owner ruling of 15 October 2026: plain git, only what ships, no masters). The masters and per-model records (prompts, task ids, credits) are kept outside the repository. The texture paths from the author's machine inside each FBX are blanked to same-length placeholders (owner ruling, 15 October 2026, PR #675)."
+    status: verified
+    artist: "Tal (@pixelrenderai-hash)"
+    note: "The 23 single-building models of PR #507, brought over on their own in issue #659 (step 1). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issue #659): 'they are ok to use'."
   - glob: "docs/sources/declaration-1948/*.txt"
     licence: Public-Domain
     source: "The Declaration of the Establishment of the State of Israel: the Hebrew as published in Iton Rishmi (Official Gazette) No. 1, 14 May 1948, via https://he.wikisource.org/wiki/הכרזה_על_הקמת_מדינת_ישראל; the English translation via https://avalon.law.yale.edu/20th_century/israel.asp, checked against the Israel MFA's https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel (all 2026-10-12)"
