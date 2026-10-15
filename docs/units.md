@@ -328,7 +328,8 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
 - **Base:** one draped earth disc per army token (see "Slopes"), its ring 1.45 times the full trio's width across
   (`UnitPlinth.BaseToTrio`; 1.42–1.44 measured on the built tokens, pinned to 1.3–1.7 by `TheBaseHugsTheTrioAsInT29`).
   The earth is the palette's `Earth`, dark and warm as T29's, mottled by smooth value noise over the world in its shade
-  rows (no texture).
+  rows (no texture). Owner, 2026-10-15: this base (earth 0.45, 0.33, 0.22), the lighter of the two rendered, over a
+  darker one (0.38, 0.28, 0.18) that brought the ring nearer T29's contrast but left the figures lighter than their base.
 - **Ring:** a band on the ground just outside the base, from 1.02 to 1.10 of its radius, each vertex over the highest ground
   across the band (the selection ring's rule), drawn unlit in white with the selection ring's shader. The selection ring
   is unchanged and still appears only on selection.
