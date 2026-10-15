@@ -41,7 +41,7 @@ public class PlayerTextTests
         Assert.Contains(messages, m => m.EndsWith("immigrants arrived (the Americas and Oceania)", StringComparison.Ordinal));
         Assert.Contains(messages, m => m.EndsWith("immigrants arrived (country of origin not recorded)", StringComparison.Ordinal));
         Assert.Contains(messages, m => m.StartsWith("Morale ", StringComparison.Ordinal) && m.Contains("Homes lift morale"));
-        Assert.Contains(messages, m => m.StartsWith("International standing +5.0% (Armistice with Egypt)", StringComparison.Ordinal));
+        Assert.Contains(messages, m => m.StartsWith("International support +5.0% (Armistice with Egypt)", StringComparison.Ordinal));
         Assert.Contains(messages, m => m.Contains("elected 25 January 1949"));
     }
 

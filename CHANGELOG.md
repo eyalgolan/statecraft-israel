@@ -15,6 +15,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - A turn that could not run says what to do next (refs #622; maintainer, 15 October 2026): "Not done: The turn could
   not run. Your orders were cleared. Give them again.", in English and Hebrew. End turn already clears the orders when
   the turn fails. The Hebrew waits for the native reviewer (#564).
+- The International standing meter is named "International support" (refs #622; maintainer, 15 October 2026), on the
+  top bar, its tooltip and the "Why?" causes; in Hebrew תמיכה בינלאומית, the owner's word (Q-HUD-3, #375). The ids
+  (`intl_standing`, `hud.caption.standing`) stay. No golden moves; the content hash does (the name is in
+  `content/model.yaml`), so an older save loads with the "different game content" warning.
 - Event timing for monthly turns (refs #382; lands with the GDD cutover, Phase 2 PR 1; owner decisions of 15 October 2026
   on #567): six war-period windows open on the monthly turn date before their decision (`idf_founding`,
   `jerusalem_military_government`, `latrun_proposal`, `operation_horev`, `elections_1949`; `operation_horev` also lets

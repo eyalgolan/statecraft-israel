@@ -169,14 +169,14 @@ const sensitiveCount = list.filter((e) => e.status === 'sensitivity-reviewed').l
       {he ? (
         <>
           <p>כל אירוע נפתח בחלון תאריכים. כשהתור מגיע לחלון, המשחק מציג את הכרטיס לשר האחראי, והשחקן בוחר אפשרות. האפשרות שסומנה כאן "מה שקרה בפועל" היא הבחירה ההיסטורית; האפשרויות האחרות הן חלופות שעמדו על הפרק או הנחות של עיצוב המשחק, וההערות בקובץ האירוע מציינות איפה מדובר בהנחה.</p>
-          <p>לכל אפשרות יש השפעות על מדדי המשחק, כמו הביטחון, המורל והמעמד הבין־לאומי. הערכים האלה הם איזון של משחק ולא עובדות היסטוריות, ולוח "למה?" מראה בכל תור מה השתנה ומה גרם לכך.</p>
+          <p>לכל אפשרות יש השפעות על מדדי המשחק, כמו הביטחון, המורל והתמיכה הבין־לאומית. הערכים האלה הם איזון של משחק ולא עובדות היסטוריות, ולוח "למה?" מראה בכל תור מה השתנה ומה גרם לכך.</p>
           <p>{`כל האירועים נבדקו מול המקורות שלהם. ${sensitiveCount} אירועים עם תגיות רגישות (מלחמה ונפגעים, טרור, שואה) עברו גם בדיקת רגישות, וכלי הבנייה מסרבים לארוז גרסה לשיתוף בלעדיה. שום היסטוריון עדיין לא בדק את המשחק; בדיקה כזו מתוכננת לאבן הדרך M4.`}</p>
           <p>מכיוון ש־GDD v0.1 הוא העיצוב המחייב עכשיו, המנגנון הזה ישתנה: לפי ה־GDD, השלמת מטרה תעלה כרטיס על האירוע ההיסטורי שקשור אליה, עם התאריך האמיתי שלו.</p>
         </>
       ) : (
         <>
           <p>Each event opens in a date window. When a turn reaches the window, the game puts the card to the minister in charge, and the player picks an option. The option marked “What happened” here is the historical choice; the others are alternatives that were on the table or design assumptions, and the comments in the event file note where an option is an assumption.</p>
-          <p>Each option has effects on the game’s indicators, such as security, morale and international standing. Those values are game balance, not historical facts, and the “Why?” panel shows each turn what changed and why.</p>
+          <p>Each option has effects on the game’s indicators, such as security, morale and international support. Those values are game balance, not historical facts, and the “Why?” panel shows each turn what changed and why.</p>
           <p>{`Every event has been checked against its sources. ${sensitiveCount} events with sensitive tags (war casualties, terror, the Holocaust) have also had a sensitivity review, and the build tools refuse to package a shareable build without it. No historian has reviewed the game yet; that is planned for M4.`}</p>
           <p>Because GDD v0.1 is now the design of record, this will change: under the GDD, completing an objective brings up a card about the historical event tied to it, with its real date.</p>
         </>

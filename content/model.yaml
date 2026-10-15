@@ -5,7 +5,7 @@ indicators:
   - { id: food_supply, base: 0.40, name: Food supply }
   - { id: housing, base: 0.35, name: Housing }
   - { id: security, base: 0.30, name: Security }
-  - { id: intl_standing, base: 0.50, name: International standing }
+  - { id: intl_standing, base: 0.50, name: International support }
 # Windows (issue #80, Yishuv design 5.1 and 5.5; the dates are game design, not historical facts): the policies, effects and
 # actors that only make sense in a state begin on 15 May 1948, the Founding start, so a Founding start holds the same
 # records as before. `rationing` and `rationing_feeds` stay windowless because their office, rationing_minister, only

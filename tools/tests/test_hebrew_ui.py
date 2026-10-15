@@ -75,12 +75,22 @@ def test_the_top_bar_and_start_labels_are_in_sentence_case():
     en = strings('strings.en.yaml')
     assert [en[k] for k in ('hud.caption.support', 'hud.caption.standing', 'hud.caption.fx', 'hud.new_game',
                             'hud.end_turn', 'start.new_game')] == [
-        'Public support', 'International standing', 'Foreign currency', 'New game', 'End turn', 'New game']
+        'Public support', 'International support', 'Foreign currency', 'New game', 'End turn', 'New game']
     for key, value in en.items():
         assert 'End Turn' not in value and 'New Game' not in value, key
     uxml = (UI / 'Game.uxml').read_text(encoding='utf-8')
-    for title in ('Public Support', 'International Standing', 'Foreign Currency', 'New Game', 'End Turn'):
+    for title in ('Public Support', 'International Standing', 'International standing', 'International Support',
+                  'Foreign Currency', 'New Game', 'End Turn'):
         assert f'text="{title}"' not in uxml, title
+
+
+def test_the_international_meter_is_named_support_in_both_languages():
+    # #622 decision 3 (maintainer, 15 October 2026): "International support". The Hebrew is the owner's word for
+    # International Support, תמיכה בינלאומית (Q-HUD-3, decided 15 October 2026, #375), replacing מעמד בינלאומי.
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    assert en['hud.caption.standing'] == 'International support'
+    assert he['hud.caption.standing'] == 'תמיכה בינלאומית'
+    assert 'text="International support"' in (UI / 'Game.uxml').read_text(encoding='utf-8')
 
 
 HEBREW_ACRONYM_STRAIGHT_QUOTE = re.compile('[א-ת]"[א-ת]')

@@ -25,7 +25,7 @@ hud.caption.treasury: "Treasury"
 hud.caption.immigration: "Immigration"
 hud.caption.security: "Security"
 hud.caption.support: "Public support"
-hud.caption.standing: "International standing"
+hud.caption.standing: "International support"
 hud.caption.fx: "Foreign currency"
 # The other static texts of Game.uxml, each set by the presenter that owns its element (#193). Each English string is
 # the UXML's own text (HebrewUiTests.EachEnglishStaticTextIsTheUxmlsOwnText), so English shows what it always showed.

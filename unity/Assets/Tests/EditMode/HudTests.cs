@@ -554,7 +554,7 @@ public class HudTests
         Assert.AreEqual(Inv($"Treasury: IL {net:0.0} million, down IL 1.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
         Assert.AreEqual(Inv($"Foreign currency: ${now.FxReserves:0.0} million, up $2.0 million since last turn"), ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual($"Security: {ui.Q<Label>("security-value").text}, up 5 points since last turn", ui.Q<VisualElement>("meter-security").tooltip);
-        Assert.AreEqual($"International standing: {ui.Q<Label>("standing-value").text}, down 1 point since last turn", ui.Q<VisualElement>("meter-standing").tooltip);
+        Assert.AreEqual($"International support: {ui.Q<Label>("standing-value").text}, down 1 point since last turn", ui.Q<VisualElement>("meter-standing").tooltip);
         // Immigration after one turn has no change yet (it needs two turns of arrivals): the caption and the count only.
         Assert.AreEqual($"Immigration: {ui.Q<Label>("immigration-value").text}", ui.Q<VisualElement>("meter-immigration").tooltip);
         // Every tooltip agrees with the meter's shown change: "up" with a gain, "down" with a loss, neither without one.
