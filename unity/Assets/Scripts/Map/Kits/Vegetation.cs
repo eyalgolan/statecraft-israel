@@ -203,6 +203,8 @@ namespace Statecraft.Game.Map.Kits
                         {
                             float tx = px + rnd.Range(-0.5f, 0.5f) * cell, tz = pz + rnd.Range(-0.5f, 0.5f) * cell;
                             if (!plain && !rnd.Chance(HillOliveShare)) continue;
+                            // Off the hex-edge midpoints, as the scatter below (the grid guard, L1's G4).
+                            if (ground.OnGridMark(new Vector2(tx, tz), CrownRadiusM(TreeKind.Olive) * s * size * 1.15f)) continue;
                             if (!ground.Water(tx, tz) && !ground.InTown(tx, tz, 0.85f)) Add(TreeKind.Olive, tx, tz, ref rnd, size);
                         }
                     }

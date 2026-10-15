@@ -452,7 +452,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The hill olives are larger and fewer (visual gap L1, refs #34; owner, 15 October 2026: "~1.7x bigger, fewer
   trees"): the olive clumps' trees off the coastal plain and the hill scatter's single olives are 1.7 times the size and
   0.6 of them are kept, so their crowns match promo 03's hand-marked crown size at gameplay03 and cover about as much of
-  the hills, with fewer instances. The scrub, the plain's olives, the mesh, the colours and the cypress rows are unchanged.
+  the hills, with fewer instances. The olive clumps now keep off the hex-edge midpoints as the scatter does (owner: "Yes,
+  add the guard now"). The scrub, the plain's olives, the mesh, the colours and the cypress rows are unchanged.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,

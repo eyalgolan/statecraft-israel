@@ -1199,6 +1199,21 @@ public class KitTests
     /// midpoints (KitGround.OnGridMark, 2026-10-12).</remarks>
     public const float GridReadableShare = 0.75f;
 
+    /// <summary>Visual gap L1's grid guard (G4; owner, 15 Oct 2026: "Yes, add the guard now"): no olive's crown, clump or
+    /// scatter, reaches the midpoint of an edge of its hex (KitGround.OnGridMark), as the 1948 villages' houses and the
+    /// camps' tents already keep off them, so the larger hill crowns never bury the grid where it is easiest to see.</summary>
+    [Test]
+    public void NoOliveCrownCoversAHexEdgeMidpoint()
+    {
+        var map = OpenMap();
+        var g = Ground(map);
+        var olives = Vegetation.Plant(map.Settlements, g).Where(t => t.kind == TreeKind.Olive).ToList();
+        int onMark = olives.Count(t => g.OnGridMark(new Vector2(t.m.m03, t.m.m23), Vegetation.CrownRadiusM(TreeKind.Olive) * ((Vector3)t.m.GetColumn(0)).magnitude));
+        TestContext.WriteLine($"{olives.Count} olives, {onMark} with a crown over a hex-edge midpoint");
+        Assert.Greater(olives.Count, 1000);
+        Assert.AreEqual(0, onMark, "olive crowns over a hex-edge midpoint");
+    }
+
     [UnityTest]
     public IEnumerator TheGridStaysReadableThroughTownsAndGroves()
     {
