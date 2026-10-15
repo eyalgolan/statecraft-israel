@@ -18,9 +18,9 @@ namespace Statecraft.Game.UI
 
         // Three tiers by the bar's logical width (1080p reference, match 0.5: the panel's scale is the plain mean of the two
         // ratios, (w/1920 + h/1080) / 2, so logical width = w / that; TopBarTests logs it). HUD round 2 moved the four screen
-        // buttons to the left column (#602), about 248 px out of the bar, so every tier starts narrower (part 3). Below about
-        // 1640 the one-row bar wraps two captions with the widest values (TopBarTests, review of #624), so a fullscreen 5:4
-        // takes the stacked bar with its icons:
+        // buttons to the left column (#602), about 248 px out of the bar, so every tier starts narrower (part 3). The one-row
+        // edge sits between a fullscreen 5:4 and 4:3 (review of #624): the first run found the one-row bar wrapping two
+        // captions with the widest values at 1563-1612; TopBarTests holds one row at 1642 and the stacked bar at 1635:
         //   16:9 1920, 16:10 ~1819, 4:3 ~1646 | NarrowBelowPx 1640 | 5:4 ~1585 | CompactBelowPx 1452 | square ~1382
         //   | TwoRowBelowPx 1370 | half a 1080p screen (960x1080) ~1280.
         // PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn proves each tier holds the widest late-game values and changes.

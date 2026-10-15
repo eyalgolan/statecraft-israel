@@ -3133,9 +3133,9 @@ T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 
 - End Turn is 20 px with its attention line at 14 px.
 - With the four screen buttons in the left column (#602) the bar needs about 248 px less, so each width tier starts that
   much narrower (`HudPresenter`). Logical width is the window's width over the panel's scale, which is the plain mean of
-  the two ratios, (w/1920 + h/1080) / 2 (logged by `TopBarTests`). The one-row edge is 1640: below it the one-row bar
-  wraps "Public Support" and "International Standing" with the widest values (review of #624 asked whether a fullscreen
-  5:4 could keep it; at 1563-1612 it could not). So 16:10 (~1819) and 4:3 (~1646) keep the one-row bar with its icons,
+  the two ratios, (w/1920 + h/1080) / 2 (logged by `TopBarTests`). The one-row edge is 1640, between a fullscreen 5:4 and
+  4:3 (review of #624 asked whether a fullscreen 5:4 could keep the one-row bar; at 1563-1612 it wrapped "Public Support"
+  and "International Standing" with the widest values, while at 1635 it still fit, so 1640 is a margin, not a limit). So 16:10 (~1819) and 4:3 (~1646) keep the one-row bar with its icons,
   a fullscreen 5:4 (~1585) takes the stacked bar with them, and a square window (~1382) the stacked bar without. The
   taller tiers' heights are unchanged.
 - The panels under the bar keep their 112 px top, which clears the hanging plate. Under a decision card a full-width band

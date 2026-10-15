@@ -32,9 +32,10 @@ public class TopBarTests
     /// <summary>Windows at the one-row tier's edge (review of #624), by their logical width. The panel scales by the plain mean of
     /// the two ratios (match 0.5: scale = (w/1920 + h/1080) / 2, logged by TheOneRowBarReachesFiveByFour), so a fullscreen
     /// 5:4 is 1585, 4:3 is 1646 and a square 1382, not the geometric mean's 1610, 1662 and 1440. Widths 1610, 1612 and 1662,
-    /// fullscreen 5:4 and 4:3, either side of NarrowBelowPx (1642 one row, 1635 stacked), and a square window. Below about
-    /// 1640 the one-row bar wraps "Public Support" and "International Standing" with the widest values (this round's first
-    /// run, at 1563-1612), so 5:4 takes the stacked bar with its icons.</summary>
+    /// fullscreen 5:4 and 4:3, either side of NarrowBelowPx (1642 one row, 1635 stacked), and a square window. At 1563-1612
+    /// the one-row bar wrapped "Public Support" and "International Standing" with the widest values (this round's first
+    /// run), so 5:4 takes the stacked bar with its icons. (With the edge moved back to 1612, the one-row bar still fit at
+    /// 1635: the edge's place between 5:4 and 4:3 is a margin, not a measured limit.)</summary>
     static readonly (int w, int h, bool oneRow)[] Boundary =
         { (1315, 1024, false), (1317, 1024, false), (1389, 1024, true), (1280, 1024, false), (1024, 768, true),
           (1360, 1024, true), (1350, 1024, false), (1024, 1024, false) };
