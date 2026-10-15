@@ -42,8 +42,10 @@ namespace Statecraft.Game.UI
                     // can carry file paths: the full exception (with a replay's inner exception) goes to the log only (#631).
                     UnityEngine.Debug.LogWarning((e is SaveException ? "Autosave rejected: " : "Autosave could not be loaded: ") + e);
                     // A refusal with a code (a save from before the GDD cutover, or from a newer version: R-SAVE-001, R-SAVE-002)
-                    // is said once, in the player's language (N4); anything else gets one short localised reason (#631).
-                    if (e is SaveException refused && refused.Code != null) notes.Add(text["save.refused." + refused.Code]);
+                    // is said once, in the player's language (N4); anything else, and a code with no string, gets one short
+                    // localised reason (#631): this path never throws, so the start is never blocked.
+                    if (e is SaveException refused && refused.Code != null && text.Has("save.refused." + refused.Code))
+                        notes.Add(text["save.refused." + refused.Code]);
                     else notes.Add(text.Format("save.unreadable", text["save.reason_other"]));
                 }
             }

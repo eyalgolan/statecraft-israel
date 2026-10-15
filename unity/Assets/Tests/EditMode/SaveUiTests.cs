@@ -142,6 +142,27 @@ public class SaveUiTests
         Assert.IsTrue(File.Exists(Path.Combine(store.Directory, "autosave.bad.txt")));
     }
 
+    /// <summary>A store whose autosave is refused with a code the strings do not have (a future SaveException code).</summary>
+    sealed class UnknownCodeStore : SaveStore
+    {
+        public UnknownCodeStore(string dir) : base(dir) { }
+        public override string? ReadAutosave() => throw new SaveException(0, "made by a future version", "a_code_with_no_string");
+    }
+
+    /// <summary>The start never blocks: a refusal code with no string falls back to the one short localised reason (#631),
+    /// instead of throwing a missing-key error out of GameStart.Begin.</summary>
+    [Test]
+    public void ARefusalCodeWithNoStringFallsBackToTheShortReason()
+    {
+        var store = new UnknownCodeStore(TempStore().Directory);
+        var notes = new List<string>();
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Autosave rejected"));
+        GameSession? session = null;
+        Assert.DoesNotThrow(() => session = GameStart.Begin(C, store, () => 6UL, notes, Text));
+        Assert.AreEqual(0, session!.State.Turn);
+        Assert.AreEqual(new[] { Unreadable(Text) }, notes.ToArray());
+    }
+
     /// <summary>N4 (R-SAVE-001, R-SAVE-002): a save from before the GDD cutover, or from a newer version, is refused with the
     /// code's own string, in English and in Hebrew, and the player reads "a new game has started" once.</summary>
     [TestCase("ruleset legacy", SaveException.OlderRules, "earlier version of the game's rules")]

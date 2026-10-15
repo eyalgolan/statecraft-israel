@@ -22,7 +22,7 @@ R-LOOP-001: `systems.loop` in eras.yaml is `legacy` (the default) or `gdd`, and 
 
 R-LOOP-002: The GDD state (cities, units, the next unit id, completed objectives, the score) is written into the state hash only when it is set. With the legacy loop the hash text is unchanged, byte for byte.
 
-R-LOOP-004: The GDD game ends on the rules key `mvp.end`, 15 January 1952 in the real content (owner, 15 October 2026, D-E5: "End on 15 Jan 1952"), after 44 monthly turns. The end is a boundary the last turn reaches, like the last era's end; the game is then over (`mvp_ended`) and raises no new event. It is the same in every era, after the start and no later than the last era's end. The eras after it stay in the repository and load (G2).
+R-LOOP-004: The GDD game ends on the rules key `mvp.end`, 15 January 1952 in the real content (owner, 15 October 2026, D-E5: "End on 15 Jan 1952"), after 44 monthly turns. The end is a boundary the last turn reaches, like the last era's end; the game is then over (`mvp_ended`) and raises no new event. It is the same in every era, after the start and before the last era's end (so the game ends as `mvp_ended`, not `era_ended`). The eras after it stay in the repository and load (G2).
 
 R-LOOP-005: Every balance number of the GDD loop (all of `cities.yaml` and `unit_types.yaml`, the rules' `mvp:` block, and the GDD orders' `attention_cost`) carries the tag `# DESIGN VALUE: owner-set balance, not a historical figure` and its decision row on its own line, and `DesignValuesTests` lists every one of them: a number missing from the list, or a listed one without the tag, fails.
 

@@ -1,6 +1,6 @@
 # Game rules. Values are game balance, except where a comment cites a source.
 start: 1948-05-15                 # first day covered by the CBS 1948 immigration series (aliyah.yaml)
-start_rung: 5                     # the war is under way when the slice opens
+start_rung: 5                     # the war is under way when the game opens
 attention_per_turn: 4                    # kept at 4 for monthly turns (owner, 15 October 2026, Q-CUT-5)
 # Attention each order costs. The GDD orders' costs are design values (the owner's balance, not history), docs/rules/mvp.md
 # R-LOOP-005; a unit order will be free (D-A6).

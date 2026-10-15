@@ -33,6 +33,9 @@ namespace Statecraft.Game.UI
             return new UiText(m, file);
         }
 
+        /// <summary>True when the strings have <paramref name="key"/> (a lookup that must not throw, as GameStart's fallback).</summary>
+        public bool Has(string key) => map.ContainsKey(key);
+
         public string this[string key] =>
             map.TryGetValue(key, out var v) ? v : throw new KeyNotFoundException($"{file} has no key '{key}'");
 

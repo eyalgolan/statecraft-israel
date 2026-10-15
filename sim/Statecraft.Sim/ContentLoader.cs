@@ -971,8 +971,9 @@ namespace Statecraft.Sim
                 // One game has one last day (R-LOOP-004): an era cannot move it.
                 if (m.End != c.Rules.Mvp!.End) throw new ContentException(file, "mvp.end", "must be the same in every era (the game has one end)");
             }
-            if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end > c.Eras[c.Eras.Count - 1].To))
-                throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and no later than the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
+            // Strictly before the last era's end: an end on it is the era's own end, and the game would be over as era_ended.
+            if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end >= c.Eras[c.Eras.Count - 1].To))
+                throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and before the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
             ValidateSites(c);
         }
 

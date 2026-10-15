@@ -73,7 +73,8 @@ public class CutoverTests
     // R-LOOP-004
     [Theory]
     [InlineData("1948-05-15", "must be after start")]
-    [InlineData("1957-01-02", "no later than the last era's end")]
+    [InlineData("1957-01-02", "before the last era's end")]
+    [InlineData("1957-01-01", "before the last era's end")]   // equal to the last era's end: the game would end as era_ended
     public void AnEndOutsideThePlayFailsNamingTheField(string end, string message)
     {
         var files = Fixture.Gdd();

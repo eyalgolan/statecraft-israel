@@ -367,6 +367,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   - Every new game now opens on a card (One Army, 15 May 1948), so #620's wait under the start screen covers a new game
     too, and `GameRoot.Shutdown` disposes the card first, so New Game does not load the event photo catalog for the
     game it closes (refs #592, #321). Without a start screen (the automated runs) the visible card loads it at once.
+  - A refused autosave whose code has no string falls back to the short localised reason, so the start never fails on
+    it; `mvp.end` must fall before the last era's end, so the game always ends as `mvp_ended`.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,
