@@ -2702,7 +2702,7 @@ up too. Round 2 is clean, with all three at p95 18. `golden&smoke=5` is unchange
 
 The owner chose all three round-2 pieces (2026-10-14), one PR each: the minimap, the left icon column, the top bar. This is
 the minimap, against promo 03's (T54: "the minimap is a pixelated hex strip").
-- The picture is a bake, `tools/minimap_bake.py` -> `unity/Assets/Resources/Map/MinimapRelief.png` (320 x 856, RGB,
+- The picture is a bake, `tools/minimap_bake.py` -> `unity/Assets/Resources/Map/MinimapRelief.png` (256 x 1024, powers of two so it is block-compressed on the GPU,
   mipmapped, trilinear): a hill shade of the heightmap (heights averaged over 3 x 3 samples, x12, lit from the north-west)
   over the biome colour bake and the land use (softened, a third parchment), the sea from `coast.png` (dark navy, a lighter
   band within 6 km of the shore, a thin pale line at the edge), and land outside Mandatory Palestine greyed with a gold rim.

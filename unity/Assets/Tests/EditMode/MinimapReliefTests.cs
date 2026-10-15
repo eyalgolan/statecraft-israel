@@ -38,7 +38,7 @@ public class MinimapReliefTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, out of its loading state, in English or Hebrew, with the
     /// top bar, the info panel on Lydda's hex (its longest region line), the border layer's caption and the minimap.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, MinimapPresenter> check)
+    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, MinimapPresenter> check, System.Action<VisualElement>? act = null)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -64,6 +64,7 @@ public class MinimapReliefTests
         {
             var lod = C.SettlementHexes.Single(s => s.Id == "lod");
             info.Show(lod.Q, lod.R);
+            act?.Invoke(root);
             for (int i = 0; i < 30 && !(root.Q("minimap-image").layout.width > 0); i++) yield return null;
             for (int i = 0; i < 3; i++) yield return null;   // the picture is fitted after the box's first layout
             check(root, mini);
@@ -88,11 +89,24 @@ public class MinimapReliefTests
         Assert.IsNotNull(baked, $"Resources/{MinimapPresenter.Resource} (tools/minimap_bake.py)");
         Assert.AreSame(baked, mini.Texture, "the presenter shows the baked picture");
         Assert.AreSame(baked, ui.Q<VisualElement>("minimap-image").style.backgroundImage.value.texture);
-        Assert.AreEqual((320, 856), (baked.width, baked.height), "the bake's size (tools/minimap_bake.py WIDTH, HEIGHT)");
+        Assert.AreEqual((256, 1024), (baked.width, baked.height), "the bake's size (tools/minimap_bake.py WIDTH, HEIGHT), powers of two");
         Assert.AreNotEqual(FilterMode.Point, baked.filterMode, "a painting, not pixels");
         var b = Hexes.bounds;
         double widthKm = (b.lon1 - b.lon0) * HexPicker.KmPerDegLon(b.lat0, b.lat1), lengthKm = (b.lat1 - b.lat0) * HexPicker.KmPerDegLat;
-        Assert.AreEqual(widthKm / lengthKm, (double)baked.width / baked.height, 0.005, "the picture has the map's aspect");
+        Assert.AreEqual(widthKm / lengthKm, mini.Aspect, 0.0005, "the picture is drawn at the map's aspect, not the texture's");
+    }
+
+    /// <summary>Review of #584: the relief is block-compressed on the GPU (it was uncompressed RGB, about 1.1-1.5 MB with its
+    /// mipmaps; compressed it is about a tenth of that), with its mipmaps.</summary>
+    [Test]
+    public void TheReliefIsCompressedOnTheGpu()
+    {
+        var tex = Resources.Load<Texture2D>(MinimapPresenter.Resource);
+        long bytes = UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(tex);
+        TestContext.WriteLine($"MinimapRelief: {tex.graphicsFormat}, {tex.mipmapCount} mips, {bytes} bytes");
+        Assert.IsTrue(UnityEngine.Experimental.Rendering.GraphicsFormatUtility.IsCompressedFormat(tex.graphicsFormat), $"{tex.graphicsFormat} is compressed");
+        Assert.Greater(tex.mipmapCount, 1, "mipmapped");
+        Assert.Less(bytes, 400_000, "about a tenth of the uncompressed size");
     }
 
     /// <summary>At every window size, in English and in Hebrew: the minimap lies in the window at its bottom right (the
@@ -208,6 +222,56 @@ public class MinimapReliefTests
                     Assert.AreEqual(PickingMode.Ignore, tip.pickingMode, "the tip takes no clicks");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Review of #584: hover and keyboard focus are tracked apart, and a press hides the tip. The tip names the
+    /// hovered button, else the focused one; a pointer leaving gives the tip back to the focused button, a blur keeps the
+    /// hovered one, and a press hides it until the pointer or the focus comes back.</summary>
+    [UnityTest]
+    public IEnumerator HoverAndFocusAreTrackedApartAndAPressHidesTheTip()
+    {
+        yield return Rendered(1920, 1080, false, (root, mini) =>
+        {
+            var tip = root.Q<Label>(HoverTip.TipName);
+            var b = ButtonNames.Select(n => root.Q<Button>(n)).ToArray();
+            void Enter(Button x) { using var e = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = x.worldBound.center }); e.target = x; x.SendEvent(e); }
+            void Leave(Button x) { using var e = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }); e.target = x; x.SendEvent(e); }
+            void Click(Button x) { using var e = ClickEvent.GetPooled(new Event { type = EventType.MouseUp, mousePosition = x.worldBound.center }); e.target = x; x.SendEvent(e); }
+            string Shown() => tip.style.display.value == DisplayStyle.Flex ? tip.text : "";
+            b[1].Focus();
+            Assert.AreEqual(b[1].tooltip, Shown(), "focus shows its name");
+            Enter(b[2]);
+            Assert.AreEqual(b[2].tooltip, Shown(), "hover wins while the pointer is there");
+            Leave(b[2]);
+            Assert.AreEqual(b[1].tooltip, Shown(), "the pointer leaving gives the tip back to the focused button");
+            Enter(b[2]); b[1].Blur();
+            Assert.AreEqual(b[2].tooltip, Shown(), "a blur does not hide the hovered button's name");
+            Click(b[2]);
+            Assert.AreEqual("", Shown(), "a press hides the tip");
+            Leave(b[2]); Enter(b[2]);
+            Assert.AreEqual(b[2].tooltip, Shown(), "and the pointer coming back shows it again");
+            Leave(b[2]);
+            Assert.AreEqual("", Shown(), "nothing hovered or focused: no tip");
+        });
+    }
+
+    /// <summary>Review of #584: a switched-off layer's button dims, but its glyph keeps at least 3:1 against its disc
+    /// (WCAG 1.4.11): the disc's opacity blends the gold line toward the navy behind it.</summary>
+    [UnityTest]
+    public IEnumerator ASwitchedOffButtonsGlyphKeepsThreeToOne()
+    {
+        yield return Rendered(1920, 1080, false, (root, mini) =>
+        {
+            var disc = root.Q<Button>("minimap-labels").Q(className: "minimap-disc");
+            float a = disc.resolvedStyle.opacity;
+            Assert.Less(a, 1f, "precondition: the off button is dimmed");
+            Color gold = UiIcon.LineColour(false), navy = new Color32(9, 14, 26, 255);
+            var g = Color.Lerp(navy, gold, a);
+            double L(Color c) { double f(float v) => v <= 0.04045f ? v / 12.92 : System.Math.Pow((v + 0.055) / 1.055, 2.4); return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); }
+            double ratio = (L(g) + 0.05) / (L(navy) + 0.05);
+            TestContext.WriteLine($"off opacity {a:0.00}: glyph {ratio:0.00}:1 against the disc");
+            Assert.GreaterOrEqual(ratio, 3.0, $"the off glyph at opacity {a} is {ratio:0.00}:1");
+        }, root => root.Q<Button>("minimap-labels").AddToClassList(MinimapPresenter.OffClass));
     }
 
     /// <summary>The buttons do only what the game already does: the first zooms all the way out (the camera's own limit),

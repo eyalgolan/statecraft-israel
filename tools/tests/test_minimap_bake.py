@@ -27,8 +27,8 @@ def test_the_committed_minimap_is_the_bake_of_its_inputs():
     assert off == 0, f"{off} pixels differ by more than one step (max {int(diff.max())}): {REBAKE}"
 
 
-def test_the_minimap_has_the_maps_aspect_and_sides_a_multiple_of_four():
-    import json
-    meta = json.loads((minimap_bake.MAP_DIR / "heightmap.json").read_text())
-    assert minimap_bake.WIDTH % 4 == 0 and minimap_bake.HEIGHT % 4 == 0
-    assert abs(minimap_bake.WIDTH / minimap_bake.HEIGHT - meta["width_km"] / meta["length_km"]) < 0.005
+def test_the_minimap_sides_are_powers_of_two():
+    """Unity block-compresses a mipmapped texture only with power-of-two sides (review of #584: an NPOT relief stayed
+    uncompressed RGB, about 2.5 MB in the editor); the presenter sizes the picture to the frame's own aspect."""
+    for side in (minimap_bake.WIDTH, minimap_bake.HEIGHT):
+        assert side > 0 and side & (side - 1) == 0, side

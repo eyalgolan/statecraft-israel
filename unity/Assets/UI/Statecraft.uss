@@ -289,7 +289,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .minimap-button:focus { background-color: rgba(0, 0, 0, 0); border-width: 0; }
 .minimap-button:focus .minimap-disc { border-color: var(--ink); background-color: var(--focus); }
 /* A layer switched off (the names or the borders): the disc goes dim, as a lamp turned off. */
-.minimap-off .minimap-disc { opacity: 0.45; }
+.minimap-off .minimap-disc { opacity: 0.6; }   /* the glyph keeps about 4:1 on its disc (MinimapReliefTests) */
 /* An icon-only button's name, beside it while hovered or focused (HoverTip): one line, centred on the button's middle. */
 .hud-tip {
     display: none; position: absolute; translate: 0 -50%; padding: 4px 10px; font-size: 16px; white-space: nowrap;

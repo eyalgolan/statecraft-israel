@@ -27,6 +27,9 @@ namespace Statecraft.Game.UI
         readonly HoverTip? tips;
 
         public Texture2D Texture { get; }
+        /// <summary>The picture's width over its height: the map frame's, in km. The bake's sides are powers of two (so it is
+        /// block-compressed), so its pixels are not square and its own width over height is not the map's.</summary>
+        public float Aspect => (float)(widthKm / lengthKm);
         /// <summary>Raised with the lon/lat the player clicked.</summary>
         public event Action<double, double>? Clicked;
         /// <summary>Raised by the whole-map button: GameRoot zooms the camera all the way out.</summary>
@@ -74,7 +77,7 @@ namespace Statecraft.Game.UI
         // The picture's element is exactly as big as the picture, so (0..1, 0..1) in the element is the whole map.
         void FitImage()
         {
-            var size = Fit(frame.contentRect.width, frame.contentRect.height, (float)Texture.width / Texture.height);
+            var size = Fit(frame.contentRect.width, frame.contentRect.height, Aspect);
             if (size == Vector2.zero) return;
             image.style.width = size.x; image.style.height = size.y;
         }

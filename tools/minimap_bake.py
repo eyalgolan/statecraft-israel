@@ -11,7 +11,7 @@ Reads only files already in the repository, all of them the map's own bakes or d
   unity/Assets/Textures/Map/landuse.png             the fields, orchards and terraces over it (tools/land_bake.py)
   unity/Assets/Textures/Map/coast.png               the signed distance to the shore (tools/terrain_bake.py): the sea and lakes
   content/map/subdistrict_hexes_1948.yaml           which land hexes lie outside Mandatory Palestine (dimmed, with a rim)
-Writes unity/Assets/Resources/Map/MinimapRelief.png, RGB8, WIDTH x HEIGHT, row 0 = north, over the heightmap's bounds
+Writes unity/Assets/Resources/Map/MinimapRelief.png, RGB8, WIDTH x HEIGHT (powers of two), row 0 = north, over the heightmap's bounds
 (the hex grid's bounds, so MinimapPresenter maps a click exactly as before). It is drawn once by the GPU as a UI
 background: no runtime painting, no per-frame cost. Deterministic; tools/tests/test_minimap_bake.py re-bakes it in CI and
 compares the pixels."""
@@ -37,7 +37,9 @@ REGIONS = ROOT / "content" / "map" / "subdistrict_hexes_1948.yaml"
 HEXES = ROOT / "content" / "map" / "hexes.json"
 OUT = ROOT / "unity" / "Assets" / "Resources" / "Map" / "MinimapRelief.png"
 
-WIDTH, HEIGHT = 320, 856        # the frame is 161.5 x 431.2 km (aspect 0.3746); both sides a multiple of 4
+WIDTH, HEIGHT = 256, 1024       # powers of two, so Unity block-compresses it with its mipmaps (an NPOT texture stays
+                                # uncompressed RGB: review of #584). The frame is 161.5 x 431.2 km, so a pixel is about
+                                # 0.63 x 0.42 km; MinimapPresenter sizes the picture to the frame's aspect, not the texture's.
 SUPER = 2                       # samples per pixel per axis, box-filtered
 COAST_RANGE_M = 12000.0         # coast.png: 0.5 + d / (2 COAST_RANGE_M), d < 0 in water
 EXAGGERATION = 12.0             # relief for a 0.5 km pixel: the hills must read at minimap size

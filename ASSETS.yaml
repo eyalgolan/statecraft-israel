@@ -241,7 +241,7 @@ rules:
     licence: CC-BY-SA-4.0
     source: "The minimap's painted relief (HUD round 2, #398), made by tools/minimap_bake.py from files already in this repository: a hill shade of the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*, Copernicus-DEM), the biome colour bake (Resources/Map/BiomeColours.bytes), the land-use and coast textures (Textures/Map/landuse.png, coast.png) and the sub-district hexes of content/map/subdistrict_hexes_1948.yaml (this project's own content, CC-BY-SA-4.0) for the rim of Mandatory Palestine. Procedural, not AI-generated; no new facts; attribution in NOTICE"
     status: verified
-    note: "Decision D13 (owner, 2026-10-14, docs/oss/DECISIONS.md): CC BY-SA 4.0, the most restrictive input; the owner confirmed on #584 (2026-10-15) that this bake of the same D13 inputs follows it and is verified."
+    note: "Decision D13 (owner, 2026-10-14, docs/oss/DECISIONS.md): CC BY-SA 4.0, the most restrictive input; the owner's decision (2026-10-15), relayed by the coordinator, is that this bake of the same D13 inputs follows it and is verified."
   - glob: "unity/Assets/Textures/*"
     licence: Copernicus-DEM
     source: "tools/terrain_bake.py from the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*): AO, curvature, sky-view (Map/terrain_bake.png), coast distance (Map/coast.png) and the AO copy (Map/ao.png); the terrain water's mesh samples (Map/terrain_water.bytes, Editor TerrainWaterBake from the same heightmap); attribution in NOTICE"

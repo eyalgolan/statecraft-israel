@@ -184,10 +184,10 @@ public class MapActionUiTests
         using var ui = new UiTestKit();
         using var mini = new MinimapPresenter(ui.Root, Hexes);
         var image = ui.Q<VisualElement>("minimap-image");
-        for (int i = 0; i < 30 && !(image.layout.width > 0 && Mathf.Abs(image.layout.width / image.layout.height - (float)mini.Texture.width / mini.Texture.height) < 0.01f); i++) yield return null;
+        for (int i = 0; i < 30 && !(image.layout.width > 0 && Mathf.Abs(image.layout.width / image.layout.height - mini.Aspect) < 0.01f); i++) yield return null;
         Assert.Greater(image.layout.width, 0f);
         // the element is exactly as big as the picture (aspect of the texture), so there is no unused strip inside it
-        Assert.AreEqual((float)mini.Texture.width / mini.Texture.height, image.layout.width / image.layout.height, 0.01f);
+        Assert.AreEqual(mini.Aspect, image.layout.width / image.layout.height, 0.01f);
         (double lon, double lat)? clicked = null;
         mini.Clicked += (lon, lat) => clicked = (lon, lat);
         var b = Hexes.bounds;

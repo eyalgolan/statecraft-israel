@@ -311,6 +311,9 @@ The bars are always labelled ("Competence", "Loyalty"), so their colours carry n
 - **Start screen (no save):** New Game only, focused on open; Tab stays on it. Enter starts the game.
 - **Top bar:** Cabinet, Budget, Defence, Why?, New Game, End Turn, then round again (the info panel and the minimap
   column take no focus until a hex is chosen by mouse).
+  - Since HUD round 2 (#584, after this audit): End Turn is followed by the minimap's three buttons (whole map, settlement
+    names, region borders), then round again; the minimap's picture still takes no focus (B1d). Under the open decision
+    card the minimap column is disabled with the info panel, so its buttons leave the order then.
 - **Cabinet:** the top bar first, then the Prime Minister's card, his other office ("Minister of Defense"), the candidate
   list when a seat is selected, then the cards row by row (H1, M2).
 - **Budget:** the top bar, then each line's - and +, then Reset and Submit (Submit is disabled until the draft changes).
