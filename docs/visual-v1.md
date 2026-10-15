@@ -2547,7 +2547,7 @@ hills read as evenly spaced dice, nearly every one with a dome.
 | domed mosques at the localities / village mosques | 234 / 0 | 18 / 216 |
 | Lod / Ramla houses (census) | 11 / 11 | 16 / 16 |
 | WebGL `KITS` line: buildings, vertices, triangles, draws | 1,972, 103,537, 70,572, 64 | 3,632, 167,329, 89,178, 64 |
-| grid readable at gameplay03 (floor 75%) | 80% | 83% (74 of 89) |
+| grid readable at gameplay03 (floor 75%) | 79% (70 of 89) | 83% (74 of 89) |
 
 - The villages under six houses outside the game towns are Yibna, Taibe, Bayt Dajan, al-Bireh (beside Ramallah),
   al-Jura, az-Zeeb, Wadi Hunayn, Tantura, Nazla and al-Jiyya (10 of about 200). The routes, the coast and bigger
@@ -2562,7 +2562,24 @@ hills read as evenly spaced dice, nearly every one with a dome.
     larger village footprint (an owner call).
   - The promo's warmer honey stone and its shading are the palette and `Kit.shader`, out of scope here.
 
-**Frame time** PERF_TBD
+**Frame time** (headless WebGL `?vprofile`, 1920x1080 at DPR 1, each slot under one `machine_lock.py --exclusive
+--wait-unity`, two slots in opposite orders, load 2-4, 2026-10-15; builds of main `c02d4eb0` and this branch before its
+rebase onto #557, which adds the ma'abara kit and no village):
+
+| | gameplay03 all (p95) | gameplay03 all - none | diorama02 all (p95) | diorama02 all - none |
+|---|---|---|---|---|
+| main, slot 1 / 2 | 8.21 / 8.21 ms (10 / 10) | 0.15 / 1.26 ms | 15.92 / 16.29 ms (17 / 17) | 4.98 / 5.28 ms |
+| branch, slot 1 / 2 | 8.23 / 8.23 ms (10 / 10) | 1.25 / 1.24 ms | 16.10 / 15.94 ms (17 / 17) | 4.98 / 5.18 ms |
+
+- Frame time is equal within the runs' spread. Main's 0.15 ms in slot 1 is its noisy `none` row (spread 1.1 ms).
+- The localities stay merged per 30 km tile, so the draws stay at 64. The triangles grow from 70,572 to 89,178.
+- The kits' own cost, all - (-kits), is within noise on both: -0.32 / -0.09 ms on main and -0.05 / -0.11 ms on the branch
+  at gameplay03.
+- **Boot** (`headed.py boot --runs 3 --cpu 4`, in slot 2): map_build median 2147 ms on main against 2293 ms on the
+  branch (+146 ms), and first_frame 7780 against 7906 ms. The map build stays 427 ms under the 2720 ms budget.
+  - The cost is the kit build: the player's `KITS build_ms` is 45 ms on main and 77 ms on the branch at cpu 1.
+  - Most of it is the village lattice's plots and their fits, and the floor's spots for the villages under ten houses.
+  - One round only. A tighter kit phase (fewer floor spots) is the lever if #321 needs the headroom.
 
 ### Sources (checked 2026-10-15)
 - One-room village houses ("from three meters in small houses"), clustered round yards: M. Abuarkub, "Classifications and
