@@ -3152,7 +3152,7 @@ T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 
   its 70 px, so 1366x657 takes the stacked bar. The phone tier (three rows) keeps 15 px: its fixed rows have no room for
   25 px captions (a follow-up, by the owner's answer). The plate's turn and date line takes the same floor (the owner's
   second answer): the plate keeps its 230 px width, the turn and the date take a line each,
-  and the plate grows.
+  and the plate keeps 10 px under them, clear of its gilt frame and corner scrolls, so it grows.
 - In Hebrew the bar's row mirrors (#550): the plate is at the right and End Turn at the left. The left column and the
   minimap keep their corners.
 

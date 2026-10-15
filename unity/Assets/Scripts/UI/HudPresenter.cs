@@ -85,6 +85,8 @@ namespace Statecraft.Game.UI
         /// plate grows.</summary>
         readonly List<Label> plateText;
         readonly VisualElement? dateRow;
+        /// <summary>The plate's bottom padding while the floor raises its text (the stylesheet's is 2 px).</summary>
+        public const float PlateBottomPx = 10f;
         readonly VisualElement turnBox;
         readonly IVisualElementScheduledItem floorCheck;
         float smallTextSize = SmallTextPx;
@@ -149,7 +151,7 @@ namespace Statecraft.Game.UI
             foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
             turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
-            if (dateRow != null) dateRow.style.flexDirection = StyleKeyword.Null;
+            if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) dateRow.parent.style.paddingBottom = StyleKeyword.Null; }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
@@ -247,8 +249,14 @@ namespace Statecraft.Game.UI
                 // At the largest sizes (23 px at 960x600) "30 September 1956" is about the plate's width: it may wrap inside it.
                 l.style.whiteSpace = raised ? new StyleEnum<WhiteSpace>(WhiteSpace.Normal) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
             }
-            // Raised, the turn and the date take a line each (a raised date squeezed beside the turn was clipped in Hebrew).
-            if (dateRow != null) dateRow.style.flexDirection = raised ? new StyleEnum<FlexDirection>(FlexDirection.Column) : new StyleEnum<FlexDirection>(StyleKeyword.Null);
+            // Raised, the turn and the date take a line each (a raised date squeezed beside the turn was clipped in Hebrew),
+            // and the plate keeps PlateBottomPx under them, so the date ends clear of the plate's gilt frame and corner scrolls
+            // (the frame's inner rule is 7 px in; review of #624 in WebGL); the plate grows to hold them.
+            if (dateRow != null)
+            {
+                dateRow.style.flexDirection = raised ? new StyleEnum<FlexDirection>(FlexDirection.Column) : new StyleEnum<FlexDirection>(StyleKeyword.Null);
+                if (dateRow.parent != null) dateRow.parent.style.paddingBottom = raised ? new StyleLength(PlateBottomPx) : new StyleLength(StyleKeyword.Null);
+            }
             var box = TurnBoxPx * smallTextSize / SmallTextPx;
             turnBox.style.width = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
             turnBox.style.minWidth = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
