@@ -318,5 +318,8 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="toast" class="panel toast" />
+        <!-- The name of an icon-only button, beside it on hover and on keyboard focus (HoverTip; UI Toolkit draws `tooltip`
+             only in Editor UI). Last, so it draws over the panels; it takes no clicks. -->
+        <ui:Label name="hud-tip" class="hud-tip" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>

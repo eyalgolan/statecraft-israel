@@ -24,6 +24,7 @@ namespace Statecraft.Game.UI
         readonly VisualElement box, frame, image, view; readonly HexFile hexes;
         readonly Button overview, labels, borders;
         readonly double widthKm, lengthKm;
+        readonly HoverTip? tips;
 
         public Texture2D Texture { get; }
         /// <summary>Raised with the lon/lat the player clicked.</summary>
@@ -55,6 +56,8 @@ namespace Statecraft.Game.UI
             {
                 overview.tooltip = text["minimap.overview"]; labels.tooltip = text["minimap.labels"]; borders.tooltip = text["minimap.borders"];
             }
+            // The buttons are icon-only (owner ruling on #584); their names show beside them, on the picture's side.
+            if (root.Q<Label>(HoverTip.TipName) != null) tips = new HoverTip(root, new VisualElement[] { overview, labels, borders }, () => HoverTip.Side.Left);
             FitImage();
         }
 
@@ -134,6 +137,7 @@ namespace Statecraft.Game.UI
             image.UnregisterCallback<PointerDownEvent>(OnPointerDown);
             frame.UnregisterCallback<GeometryChangedEvent>(OnBoxGeometry);
             overview.clicked -= OnOverview; labels.clicked -= OnLabels; borders.clicked -= OnBorders;
+            tips?.Dispose();
             image.style.backgroundImage = StyleKeyword.Null;   // the shared picture stays loaded; this element lets go of it
         }
     }

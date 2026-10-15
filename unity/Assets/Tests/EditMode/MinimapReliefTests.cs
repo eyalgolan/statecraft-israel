@@ -169,6 +169,47 @@ public class MinimapReliefTests
             });
     }
 
+    /// <summary>Owner ruling on #584: icon-only buttons with tooltips. Each button has a non-empty name in English and Hebrew
+    /// in its <c>tooltip</c> (the meters' mechanism, #523), and since UI Toolkit draws <c>tooltip</c> only in Editor UI, the
+    /// name shows in the visible tip beside the button on hover and on keyboard focus, inside the window, and goes on leave.</summary>
+    [UnityTest]
+    public IEnumerator EachButtonShowsItsNameOnHoverAndOnFocusInEnglishAndHebrew()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1920, 1080), (960, 600), (390, 844) })
+                yield return Rendered(w, h, hebrew, (root, mini) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    var text = hebrew ? He : En;
+                    var tip = root.Q<Label>(HoverTip.TipName);
+                    var keys = new[] { "minimap.overview", "minimap.labels", "minimap.borders" };
+                    for (int i = 0; i < ButtonNames.Length; i++)
+                    {
+                        var bt = root.Q<Button>(ButtonNames[i]);
+                        if (string.IsNullOrWhiteSpace(bt.tooltip)) problems.Add($"{at}: {bt.name} has no tooltip");
+                        if (bt.tooltip != text[keys[i]]) problems.Add($"{at}: {bt.name} tooltip '{bt.tooltip}' is not {keys[i]}");
+                        using (var e = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = bt.worldBound.center }))
+                        { e.target = bt; bt.SendEvent(e); }
+                        if (tip.style.display.value != DisplayStyle.Flex || tip.text != bt.tooltip) problems.Add($"{at}: hovering {bt.name} shows no tip ('{tip.text}')");
+                        // left of the button, as wide as its text: it stays in the window
+                        float width = tip.MeasureTextSize(tip.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x + 22;
+                        float right = root.Q("root").layout.width - tip.style.right.value.value;
+                        if (right > bt.worldBound.xMin + 0.5f) problems.Add($"{at}: the tip of {bt.name} covers its button");
+                        if (right - width < 0) problems.Add($"{at}: the tip of {bt.name} ({width:0} wide, right edge {right:0}) leaves the window");
+                        using (var e = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }))
+                        { e.target = bt; bt.SendEvent(e); }
+                        if (tip.style.display.value != DisplayStyle.None) problems.Add($"{at}: the tip of {bt.name} stays after the pointer leaves");
+                        bt.Focus();
+                        if (tip.style.display.value != DisplayStyle.Flex || tip.text != bt.tooltip) problems.Add($"{at}: focusing {bt.name} shows no tip");
+                        bt.Blur();
+                        if (tip.style.display.value != DisplayStyle.None) problems.Add($"{at}: the tip of {bt.name} stays after blur");
+                    }
+                    Assert.AreEqual(PickingMode.Ignore, tip.pickingMode, "the tip takes no clicks");
+                });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     /// <summary>The buttons do only what the game already does: the first zooms all the way out (the camera's own limit),
     /// the second switches the settlement names, the third the region borders (the map's "labels" and "borders" switches).
     /// A switched-off layer dims its button, and pressing it again switches the layer back on.</summary>

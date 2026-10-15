@@ -290,6 +290,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .minimap-button:focus .minimap-disc { border-color: var(--ink); background-color: var(--focus); }
 /* A layer switched off (the names or the borders): the disc goes dim, as a lamp turned off. */
 .minimap-off .minimap-disc { opacity: 0.45; }
+/* An icon-only button's name, beside it while hovered or focused (HoverTip): one line, centred on the button's middle. */
+.hud-tip {
+    display: none; position: absolute; translate: 0 -50%; padding: 4px 10px; font-size: 16px; white-space: nowrap;
+    color: var(--ink); background-color: var(--navy-solid); border-color: var(--gold); border-width: 1px; border-radius: 3px;
+}
 
 /* Full screens (Cabinet, Budget, Defence, Why) open in the centre, one at a time. */
 /* Hidden until ScreenNav opens one (never visible while loading; playtest 2, P2-1). Right edge clear of the 480px column. */

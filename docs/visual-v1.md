@@ -2739,9 +2739,24 @@ Frame time, `?vprofile` headless 1920x1080 DPR 1, and boot (`headed.py boot --ru
 | diorama02 all / none | 15.96 (0.48) / 11.41 (0.09) | 16.52 (0.73) / 11.99 (0.10) |
 | boot map_build / first_frame, cpu 1 | 565 / 3924 ms | 563 / 3917 ms |
 
-Diorama02 is 0.56 ms higher on the branch in both configurations, outside the `none` spread, while gameplay03 is equal.
-The pair was not interleaved (main always ran first), and the branch adds no per-frame work, so this needs an
-interleaved re-run before it is called noise.
+That first pair was not interleaved. The re-run (one `--exclusive` slot, 10 minutes; both builds with a temporary,
+uncommitted FrameProfile patch that measures only `all` and `none`, in the order base, branch, branch, base; two
+diagnostic branch builds; a headed DPR 2 pair) shows no cost:
+
+| run (order) | diorama02 all | diorama02 none | gameplay03 all | gameplay03 none |
+|---|---|---|---|---|
+| 1 main | 16.64 (0.48) | 11.83 (0.29) | 8.60 (0.61) | 7.12 (0.28) |
+| 2 branch | 16.46 (2.90) | 11.81 (1.21) | 9.92 (0.08) | 8.19 (0.09) |
+| 3 branch | 15.59 (0.44) | 11.24 (0.07) | 8.37 (0.09) | 7.08 (0.05) |
+| 4 main | 15.45 (0.33) | 11.23 (0.06) | 8.25 (0.07) | 7.07 (0.09) |
+| 5 branch, picture without mipmaps | 15.39 (0.42) | 11.20 (0.06) | 8.30 (0.03) | 7.01 (0.03) |
+| 6 branch, main's 160 x 340 panel, no buttons | 15.42 (0.37) | 11.19 (0.15) | 8.30 (0.07) | 7.07 (0.02) |
+| DPR 2 headed, main | 33.73 (0.15) | 27.90 (0.15) | 19.71 (0.94) | 18.33 (0.56) |
+| DPR 2 headed, branch | 33.49 (0.05) | 27.86 (0.10) | 19.34 (0.29) | 17.81 (0.02) |
+
+Runs in the same position agree within 0.1 ms (1 and 2; 3 and 4), and the 0.6 ms step follows the position in the slot,
+not the build: the machine was slower early in the slot (run 2's gameplay03 is the same drift). The variants that remove
+the mipmaps or the larger panel and its buttons cost the same as the branch. The first pair's +0.56 ms was this drift.
 
 ## Issue #391: the terrain shader's frame-time cliff (warm land shade, not shipped)
 #391 asked for the shaded hill ground to read warm brown, as promo 03's does (about (67, 53, 46)), rather than olive-grey.
