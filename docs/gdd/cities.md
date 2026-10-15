@@ -38,7 +38,7 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - The yishuvim part of D-B4: Phase 4.
 - Kit density on the map by housing condition (Q-UI-1): left out of this phase (decided 15 October 2026 [S3]).
 - No text in this phase names abandoned Arab housing; the panel and the absorb card describe housing in general terms, and any later text goes through D-F1 review (Q-SENS-1, owner, 15 October 2026 [S3]).
-- Income and upkeep values (D-C6): neither section owns them yet - the cutover section says upkeep arrives in the third phase, and this section's upkeep values were to come from it. The gap is recorded here for the owner to assign in review.
+- Upkeep (D-C6): Q-MONEY-2 adds no upkeep "until Phase 3 has cities to charge" (the Phase 2 plan's Q-MONEY-2 row [S12]), and `docs/gdd/cutover-resource-layer.md` says the values arrive in Phase 3, but no Phase 3 PR owns them yet; recorded for the owner to assign. Income is owned: Q-MONEY-2 keeps the legacy per-head tax and spending until Phase 3, with job income on top, and `income_per_job_per_year` stays a labelled design value [S12].
 
 ## Sources
 
@@ -53,7 +53,8 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - [S9] Rosh Pinna local council, "The history of Rosh Pinna", http://www.rosh-pina.co.il/%D7%94%D7%99%D7%A1%D7%98%D7%95%D7%A8%D7%99%D7%94, checked 2026-10-15
 - [S10] Village Statistics, April 1945 (Government of Palestine), Safad Sub-District, serial 66, p. 10, https://users.cecs.anu.edu.au/~bdm/yabber/census/VillageStatistics1945orig.pdf, checked 2026-10-15
 - [S11] The owner's decision on #375, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6190619484, checked 2026-10-15
+- [S12] GDD v0.1 Phase 2 plan, docs/superpowers/plans/2026-10-14-gdd-phase-2.md, the Q-MONEY-2 row; and docs/gdd/cutover-resource-layer.md (merged by #580), "Out of scope": "Upkeep: none until the third phase", checked 2026-10-15
 
 ## Open questions
 
-- Zikhron Ya'akov is sourced: 1,935 on 8 November 1948 (CBS Statistical Abstract No. 3, the settlements list, p. 133 [S8]). Rosh Pinna keeps the accepted Hebrew Wikipedia figure, about three hundred and fifty in May 1948, corroborated by the town council's own history: about one hundred and fifty absorbed during the war, reaching five hundred [S9]. The CBS list enters Rosh Pinna with no population (p. 144 [S8]), and the Village Statistics 1945 count of eight hundred and forty at the end of 1944 is logged as a conflict in the research epic [S10].
+- Rosh Pinna's start figure stays open: it keeps the accepted Hebrew Wikipedia figure, about three hundred and fifty in May 1948, corroborated by the town council's own history (about one hundred and fifty absorbed during the war, reaching five hundred [S9]); the CBS list enters Rosh Pinna with no population (p. 144 [S8]), and the Village Statistics 1945 count of eight hundred and forty at the end of 1944 is logged as a conflict in the research epic [S10]. Zikhron Ya'akov is sourced: 1,935 on 8 November 1948 (CBS Statistical Abstract No. 3, the settlements list, p. 133 [S8]).
