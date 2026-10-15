@@ -977,10 +977,11 @@ public class KitTests
 
     /// <summary>Issue #34, vegetation round 2: promo 03's hills carry a loose scatter of single olives and low scrub between
     /// the olive clumps. Over the wet hill country (KitGround.HillCountry, 120-950 m) the map as built has at least
-    /// <see cref="HillCrownsPer100Km2"/> olive crowns per 100 km², about <see cref="Vegetation.ScrubShare"/> of the scatter
-    /// low scrub (a squat olive); no scrub crown reaches a town's or village's footprint or a grove's tree; and the scrub is
-    /// spread loosely, neither clumped nor in rows: the Clark-Evans ratio of its nearest-neighbour distances (1 for random
-    /// points, under 1 clumped, about 2 on a grid) stays within <see cref="ScrubSpread"/>.</summary>
+    /// <see cref="HillCrownShare"/> of the ground under an olive crown (planar, before overlaps), about
+    /// <see cref="Vegetation.ScrubShare"/> of the scatter low scrub (a squat olive); no scrub crown reaches a town's or
+    /// village's footprint or a grove's tree; and the scrub is spread loosely, neither clumped nor in rows: the Clark-Evans
+    /// ratio of its nearest-neighbour distances (1 for random points, under 1 clumped, about 2 on a grid) stays within
+    /// <see cref="ScrubSpread"/>.</summary>
     [Test]
     public void TheHillsCarryALooseScatterOfOlivesAndScrub()
     {
@@ -995,6 +996,8 @@ public class KitTests
         var scrubM = olives.Where(Squat).ToList();
         var scrub = scrubM.Select(m => new Vector2(m.m03, m.m23)).ToList();
         float per100 = olives.Count * 100f / hillKm2;
+        // The share of the hill country under an olive crown, planar and before overlaps (Σ π r² over the area).
+        float crownShare = olives.Sum(m => { float r = Vegetation.CrownRadiusM(TreeKind.Olive) * ((Vector3)m.GetColumn(0)).magnitude; return Mathf.PI * r * r; }) / (hillKm2 * 1e6f);
         // Nearest neighbours, footprints and grove trees through a 5 km grid.
         static Dictionary<(int, int), List<Vector2>> Grid(IEnumerable<Vector2> ps)
         {
@@ -1024,8 +1027,8 @@ public class KitTests
         float groveCrownMax = groveTrees.Count == 0 ? 0f : groveTrees.Max(t => Crown(t.kind, t.m));
         int inGrove = scrubM.Count(m => { var p = new Vector2(m.m03, m.m23); return Near(groveGrid, p).Any(q => (q - p).magnitude < Crown(TreeKind.Olive, m) + groveCrownMax); });
         TestContext.WriteLine($"hill country {hillKm2} km²: {olives.Count} olives ({per100:0.0} per 100 km²), {scrub.Count} of them scrub; " +
-                              $"scrub spread (Clark-Evans) {spread:0.00}; trees {veg.Count}; scrub reaching a footprint {inTown}, a grove tree {inGrove}");
-        Assert.GreaterOrEqual(per100, HillCrownsPer100Km2, "olive crowns over the hill country");
+                              $"crown area {crownShare:0.000} of the hill country; scrub spread (Clark-Evans) {spread:0.00}; trees {veg.Count}; scrub reaching a footprint {inTown}, a grove tree {inGrove}");
+        Assert.GreaterOrEqual(crownShare, HillCrownShare, "olive crown area over the hill country");
         Assert.Greater(scrub.Count, 0.25f * olives.Count * Vegetation.ScrubShare, "low scrub among them");
         Assert.That(spread, Is.InRange(ScrubSpread.x, ScrubSpread.y), "the scrub is spread loosely, not clumped or in rows");
         Assert.AreEqual(0, inTown, "scrub reaching a town's or village's footprint");
@@ -1033,9 +1036,115 @@ public class KitTests
     }
 
     /// <remarks>Measured 2026-10-14 over 11,285 km² of hill country: main 3,480 olives (30.8 per 100 km²), no scrub; with the
-    /// scatter 15,165 (134.4), 4,234 of them scrub, Clark-Evans 1.08.</remarks>
-    public const float HillCrownsPer100Km2 = 120f;
+    /// scatter 15,165 (134.4), 4,234 of them scrub, Clark-Evans 1.08. Visual gap L1 (15 Oct 2026) makes the hill olives
+    /// fewer and larger (Vegetation.HillOliveSize, HillOliveShare), so the floor is now on the crowns' area, not their count:
+    /// main 7cba8a5d measured 15,123 olives (134.0 per 100 km²) under 0.291 of the hill country.</remarks>
+    public const float HillCrownShare = 0.29f;
     public static readonly Vector2 ScrubSpread = new Vector2(0.8f, 1.3f);
+
+    /// <summary>Visual gap L1 (issue #34): promo 03's hill olives are large rounded crowns. At gameplay03 (tilt-shift and top
+    /// inset off), every full-size hill olive (an olive off the coastal plain that is not squat scrub) whose trunk falls in
+    /// a window of the east hills has its crown's vertices projected; its on-screen diameter is their horizontal spread, as
+    /// a share of the frame's width. The median in each window must fall in promo 03's band for that frame height.</summary>
+    /// <remarks>The windows are the plan's OW1 and OW2 frame heights (top-down y 0.269-0.361 and 0.481-0.620) across the east
+    /// hills (x 0.66-0.96). The bands come from 53 crowns hand-marked as circles on promo 03 (2752 px wide), 15 Oct 2026:
+    /// PW2 (x 1880-2280, y 420-620, top-down frame y 0.27-0.40) 33 crowns, median 0.97% of the width (IQR 0.92-1.02); PW3
+    /// (x 2110-2310, y 740-940, y 0.48-0.61) 20 crowns, median 1.21% (IQR 0.97-1.33). Each band is the median ±15%, cut to
+    /// the plan's provisional band (1.0-1.2% and 1.2-1.45%), which the marks may narrow but not move.</remarks>
+    public static readonly Vector2 PromoCrownUpper = new Vector2(0.0100f, 0.0112f), PromoCrownMiddle = new Vector2(0.0120f, 0.0139f);
+
+    static readonly Rect EastHillsUpper = Rect.MinMaxRect(0.66f, 1f - 0.361f, 0.96f, 1f - 0.269f);
+    static readonly Rect EastHillsMiddle = Rect.MinMaxRect(0.66f, 1f - 0.620f, 0.96f, 1f - 0.481f);
+
+    static bool FullHillOlive(KitGround g, TreeKind k, Matrix4x4 m)
+    {
+        if (k != TreeKind.Olive || ((Vector3)m.GetColumn(1)).magnitude < 0.8f * ((Vector3)m.GetColumn(0)).magnitude) return false;
+        var b = g.Biome(m.m03, m.m23);
+        return b != "coastal_plain" && b != "lowland";
+    }
+
+    [UnityTest]
+    public IEnumerator TheHillOlivesMatchPromo03sCrownSize()
+    {
+        var map = OpenMap();
+        yield return null;
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+        var g = Ground(map);
+        var veg = map.GetComponentInChildren<VegetationLayer>(); Assert.IsNotNull(veg);
+        var olive = Vegetation.Build(TreeKind.Olive); var all = new List<Vector3>();
+        olive.Positions(0, olive.VertexCount, all);
+        var crown = all.Where(v => v.y > 1.75f).ToList();   // above the trunk's top (Vegetation.Build)
+        var rt = new RenderTexture(1920, 1080, 24); var old = cam.targetTexture;
+        var upper = new List<float>(); var middle = new List<float>();
+        try
+        {
+            cam.targetTexture = rt;
+            Assert.AreEqual(16f / 9f, cam.aspect, 1e-3f, "the frame is 16:9");
+            foreach (var (k, m) in veg.Planted())
+            {
+                if (!FullHillOlive(g, k, m)) continue;
+                var at = cam.WorldToViewportPoint(m.GetColumn(3));
+                if (at.z <= 0f) continue;
+                var w = EastHillsUpper.Contains(at) ? upper : EastHillsMiddle.Contains(at) ? middle : null;
+                if (w == null) continue;
+                float lo = float.MaxValue, hi = float.MinValue;
+                foreach (var v in crown) { float x = cam.WorldToViewportPoint(m.MultiplyPoint3x4(v)).x; lo = Mathf.Min(lo, x); hi = Mathf.Max(hi, x); }
+                w.Add(hi - lo);
+            }
+        }
+        finally { cam.targetTexture = old; rt.Release(); Object.DestroyImmediate(rt); }
+        static float Median(List<float> l) { l.Sort(); return l.Count == 0 ? 0f : l.Count % 2 == 1 ? l[l.Count / 2] : 0.5f * (l[l.Count / 2 - 1] + l[l.Count / 2]); }
+        float mu = Median(upper), mm = Median(middle);
+        TestContext.WriteLine($"gameplay03 hill olive crowns: upper window {upper.Count} trees, median {mu:P2} of the width (promo {PromoCrownUpper.x:P2}-{PromoCrownUpper.y:P2}); " +
+                              $"middle window {middle.Count} trees, median {mm:P2} (promo {PromoCrownMiddle.x:P2}-{PromoCrownMiddle.y:P2})");
+        Assert.GreaterOrEqual(upper.Count, 15, "enough hill olives in the upper window"); Assert.GreaterOrEqual(middle.Count, 15, "enough in the middle window");
+        Assert.That(mu, Is.InRange(PromoCrownUpper.x, PromoCrownUpper.y), "upper window: hill olive crown size against promo 03");
+        Assert.That(mm, Is.InRange(PromoCrownMiddle.x, PromoCrownMiddle.y), "middle window: hill olive crown size against promo 03");
+    }
+
+    /// <summary>Visual gap L1 (issue #34): the hill olives cover about as much of the hills as promo 03's do. At gameplay03
+    /// (tilt-shift and top inset off), the share of pixels in the plan's windows OW1 and OW2 whose luma changes by more
+    /// than 3/255 when the trees are switched off. With shadows off this is the crowns alone, gated against promo 03's
+    /// hand-marked crown cover; with shadows on (crowns and their shadows) it is reported.</summary>
+    /// <remarks>Promo 03's crown cover, the union of the hand-marked circles (TheHillOlivesMatchPromo03sCrownSize): PW2
+    /// 0.234, PW3 0.412, mean 0.323; the cover here is likewise the mean of OW1's and OW2's shares. The band is 0.323 ±15%.
+    /// OW1 is x 1530-1730, y 290-390 and OW2 x 1540-1740, y 520-670 (top-down) of 1920 x 1080, fixed by the plan.</remarks>
+    public static readonly Vector2 PromoCrownCover = new Vector2(0.275f, 0.371f);
+
+    [UnityTest]
+    public IEnumerator TheHillOlivesCoverPromo03sShareOfTheHills()
+    {
+        var map = OpenMap();
+        yield return null;
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+        RenderSample.TiltShift(false);
+        var windows = new[] { new RectInt(1530, 290, 200, 100), new RectInt(1540, 520, 200, 150) };
+        (float cover, int[] each) Cover(bool shadows)
+        {
+            VisualToggles.Set("shadows", shadows);
+            VisualToggles.Set("trees", true); var on = RenderSample.Render(cam, 1920, 1080);
+            VisualToggles.Set("trees", false); var off = RenderSample.Render(cam, 1920, 1080);
+            VisualToggles.Set("trees", true); VisualToggles.Set("shadows", true);
+            var each = new int[windows.Length];
+            for (int i = 0; i < windows.Length; i++)
+            {
+                var w = windows[i];
+                for (int y = w.yMin; y < w.yMax; y++)
+                    for (int x = w.xMin; x < w.xMax; x++)
+                    {
+                        int row = 1079 - y;   // RenderSample's row 0 is the bottom
+                        if (Mathf.Abs(RenderSample.Luma(on.At(x, row)) - RenderSample.Luma(off.At(x, row))) > 3f / 255f) each[i]++;
+                    }
+            }
+            return (0.5f * (each[0] / 20000f + each[1] / 30000f), each);
+        }
+        var crowns = Cover(false); var withShadows = Cover(true);
+        TestContext.WriteLine($"gameplay03 OW1+OW2 cover: crowns {crowns.cover:0.000} (OW1 {crowns.each[0] / 20000f:0.000}, OW2 {crowns.each[1] / 30000f:0.000}; promo {PromoCrownCover.x:0.00}-{PromoCrownCover.y:0.00}), " +
+                              $"crowns and shadows {withShadows.cover:0.000} (OW1 {withShadows.each[0] / 20000f:0.000}, OW2 {withShadows.each[1] / 30000f:0.000})");
+        Assert.That(crowns.cover, Is.InRange(PromoCrownCover.x, PromoCrownCover.y), "hill olive crown cover against promo 03");
+    }
 
     /// <summary>The WebGL checkpoint drew every palm black: a frond's tip quad collapsed to a point, its edge-based normal was
     /// zero and normalize(0) is NaN on WebGL 2 (the tilt-shift then smeared it into black blocks). No part may have one.</summary>
