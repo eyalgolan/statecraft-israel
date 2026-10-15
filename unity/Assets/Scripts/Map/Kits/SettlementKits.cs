@@ -887,9 +887,10 @@ namespace Statecraft.Game.Map.Kits
         /// draws about twice the houses, so it keeps about the domes it had).</summary>
         const float VillageDome = 0.03f;
         /// <summary>A hill village's terraces (S1): a house whose ground falls more than this (real m, plinth included: 2 m)
-        /// across its footprint stands on a terrace reaching this far (real m) past its walls. The hill villages stood on
-        /// slopes worked in stone terraces (Battir, "on the precipitous slope of a deep valley", its core "surrounded by
-        /// agricultural terraces": https://en.wikipedia.org/wiki/Battir, checked 2026-10-15).</summary>
+        /// across its footprint stands on a terrace reaching this far (real m) past its walls. Hill villages such as Battir
+        /// stood among stone field terraces ("on the precipitous slope of a deep valley", its core "surrounded by agricultural
+        /// terraces": https://en.wikipedia.org/wiki/Battir, checked 2026-10-15); the terrace under a house is a modelling
+        /// choice that carries that stepped look into the village.</summary>
         const float TerraceRiseM = 2.8f, TerraceMarginM = 0.3f;
         /// <summary>The terrace's dry-stone retaining wall and its beaten-earth yard (sRGB).</summary>
         static readonly Color32 TerraceStone = C(0.66f, 0.60f, 0.50f), TerraceYard = C(0.74f, 0.66f, 0.53f);

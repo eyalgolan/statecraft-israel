@@ -67,7 +67,8 @@ public class VillageKitTests
                 if (Mathf.Max(h.W, h.D) > maxSide) { bad.Add($"{s.Id}: a house {h.W:0} x {h.D:0} m, over the village house's size"); break; }
             var c = cc;
             if (g.ElevM(c.x, c.y) < 120f) continue;
-            // A hill village: the share of its inner half radius (on land) under a house or its mosque, sampled every 100 m.
+            // A hill village: the share of its inner half radius (on land) under its houses, sampled every 100 m. Houses only:
+            // the mosque alone covers about a third of the core (review of #647), so counting it would pass with no house.
             float R = SettlementKits.FootprintRadiusM(s, g.HexSizeM);
             int n = Mathf.CeilToInt(R / 100f), cells = 0, hit = 0;
             for (int j = -n; j <= n; j++)
@@ -75,7 +76,7 @@ public class VillageKitTests
                 {
                     var p = c + new Vector2(i, j) * 100f;
                     if ((p - c).magnitude > 0.5f * R || g.Water(p.x, p.y)) continue;
-                    cells++; if (mine.Any(b => Inside(p, b))) hit++;
+                    cells++; if (houses.Any(b => Inside(p, b))) hit++;
                 }
             hillCounts.Add(houses.Count); hillCore.Add(hit / (float)Mathf.Max(1, cells));
         }
@@ -88,7 +89,8 @@ public class VillageKitTests
         TestContext.WriteLine("under six houses: " + string.Join(" ", few));
         Assert.GreaterOrEqual(median, VillageFloor, "the median Arab village draws a dense pack of houses");
         Assert.GreaterOrEqual(hillMedian, VillageFloor, "the median hill village draws a dense pack of houses");
-        Assert.GreaterOrEqual(coreMedian, 0.30f, "a hill village's core is built up");
+        // Measured 17.5% (houses only, 2026-10-15); the floor sits about 15% under it, as the towns' cover floors do.
+        Assert.GreaterOrEqual(coreMedian, 0.15f, "a hill village's core is built up with houses");
         Assert.LessOrEqual(openFew, open / 20, "nearly every village outside the game towns keeps at least six houses");
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} villages with an oversized house");
     }
@@ -117,7 +119,7 @@ public class VillageKitTests
                 villages++;
                 if (mine.Any(p => p.Kind == "mosque")) bad.Add($"{s.Id}: a domed town mosque in a village");
                 var vm = mine.FirstOrDefault(p => p.Kind == "village_mosque");
-                if (vm.Kind == null) continue;
+                if (vm.Kind == null) { bad.Add($"{s.Id}: no village mosque"); continue; }
                 villageMosques++;
                 if (vm.W > 12f * KitScale.Landmarks) bad.Add($"{s.Id}: its village mosque is {vm.W:0} m wide");
             }
@@ -128,7 +130,7 @@ public class VillageKitTests
             }
         }
         TestContext.WriteLine($"{villages} Muslim villages, {villageMosques} village mosques; {towns} Arab towns");
-        Assert.GreaterOrEqual(villageMosques, villages * 9 / 10, "nearly every Muslim village keeps its (village) mosque");
+        Assert.AreEqual(villages, villageMosques, "every Muslim village keeps its (village) mosque (owner: keep, every village)");
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} mosques against the rule");
     }
 }
