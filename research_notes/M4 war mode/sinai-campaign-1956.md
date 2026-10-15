@@ -23,18 +23,18 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 
 | Date | Event | Status and source |
 |---|---|---|
-| 24 Oct 1956 | Decision to launch Kadesh by Ben-Gurion, Chief of Staff Dayan, MoD Director General Peres (exhibition caption). Sèvres signing per Suez note | [V] MODDOCS |
+| 24 Oct 1956 | Decision document (preliminary translation) for Kadesh by its three architects, Ben-Gurion, Chief of Staff Dayan and MoD Director General Peres (exhibition caption). Sèvres signing per Suez note | [V] MODDOCS |
 | 26 Oct | Planning of the Battalion 890 drop at Mitla | [V] MODDOCS caption |
 | 28 Oct | Planning order no. 2; last order, three aims; plan put to the government; reserve mobilisation announced as cover | [V] MOD, MODDOCS |
 | 29 Oct, 17:00 | Battalion 890 drops at the eastern Mitla approaches. MoD says "evening" | [V] GOV1, MOD |
 | night 29/30 Oct | Kuntilla (20 min resistance), Ras al-Naqb (brief), Qusayma (45 min) taken | [V] GOV8, Ben-Gurion |
 | 30 Oct | Anglo-French ultimatum; Security Council meets (749th, 750th). Umm Katef probing attack fails | [V] GOV1, UN; [S] WIKI |
-| 31 Oct | Abu Ageila (Abu Uwayulah) and Ruafa fall; Jebel Heitan battle; destroyer Ibrahim el-Awal surrenders; Anglo-French bombing begins | [V] MODDOCS (destroyer, Mitla entry); [S] rest |
+| 31 Oct | Abu Ageila (Abu Uwayulah) and Ruafa fall; Jebel Heitan battle; destroyer Ibrahim el-Awal surrenders; Anglo-French bombing begins | [V] MODDOCS (destroyer; a caption of the Mitla entry says a paratroop unit from "battalion 88" entered the pass on 31 Oct, number as captioned and not reconciled with Battalion 890 [GAP]); [S] rest |
 | 1 Nov | Rafah taken; Egyptian pullback toward the canal; Hedgehog abandoned in the evening | [S] WIKI |
 | 2 Nov | El Arish taken; Gaza City opposition ends by noon; GA Res 997 | [S] WIKI; [V] UN |
 | 3 Nov | Khan Yunis defences broken; Israel tells the Secretary-General it has complied with the ceasefire call | [S] WIKI; [V] GOV12 |
 | 4 Nov | Res 998, 999; Meir's five questions to Hammarskjold; Sharm night attack near midnight | [V] UN, GOV5; [S] WIKI |
-| 5 Nov | Res 1000; Sharm el-Sheikh surrender 09:30; Bulganin notes; Anglo-French landings. gov.il dates the war 29 Oct to 5 Nov | [S] 09:30; [V] others |
+| 5 Nov | Res 1000; Sharm el-Sheikh surrender 09:30; Bulganin notes; Anglo-French landings. gov.il dates the war 29 Oct to 5 Nov | [S] 09:30 and the Anglo-French landings (JVL); [V] Res 1000 (UN), the Bulganin notes (GOV7) and the 29 Oct to 5 Nov dating (GOV2) |
 | 6 Nov | Anglo-French ceasefire announced, effective midnight GMT 6/7 Nov (2 a.m. Cairo) | [V] FRUS d525 |
 | 7 Nov | Ben-Gurion to the Knesset; Res 1001, 1002; Eisenhower letter (reached Israel 8 Nov) | [V] GOV8, UN, GOV9 |
 | 8 Nov | Cabinet agrees to accept the UN resolution and withdraw after arrangements for the Force | [V] GOV12 |
@@ -47,7 +47,7 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 - Aims (28 Oct): threaten the Suez Canal from nearby objectives; take the Tiran Straits; upset and destroy the Egyptian presence in northern Sinai. [V] MOD
 - gov.il calls the Mitla drop "a political rather than tactical or strategic objective"; the central and southern advances were also diversionary. [V] GOV1
 - Ben-Gurion (7 Nov): forces had strict orders not to cross the Suez Canal or attack Egypt proper; the operation covered "the area from northern Sinai to the tip of the Red Sea". [V] GOV8
-- Sectors for the game: (1) Gaza Strip and Rafah, (2) northern Sinai coast (El Arish), (3) central axis (Abu Ageila/Umm Katef), (4) Mitla and the Heitan defile, (5) Gulf of Aqaba and Sharm el-Sheikh/Tiran, (6) Israeli home front and other borders (Jordan and Syria, reserve battalions mobilised there). [V] GOV8 for (6)
+- Sectors for the game: (1) Gaza Strip and Rafah, (2) northern Sinai coast (El Arish), (3) central axis (Abu Ageila/Umm Katef), (4) Mitla and the Heitan defile, (5) Gulf of Aqaba and Sharm el-Sheikh/Tiran, (6) Israeli home front and other borders (Syria, where reserve battalions were mobilised [V] GOV8; Jordan, where Wikipedia says Israeli soldiers were stationed along the frontier [S] WIKI)
 
 ## 3. Israeli forces
 
@@ -86,7 +86,7 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 | 5th Infantry Brigade | Brig-Gen Jaafar al-Abd | Rafah outskirts |
 | 87th Palestinian Brigade | not named | Rafah |
 | 86th Palestinian Brigade | not named | Khan Yunis |
-| National Guard, about 3,500 | not named | al-Muntar, Gaza |
+| National Guard (strength [GAP]) | not named | al-Muntar, Gaza |
 | Sharm garrison | Col Raouf Mahfouz Zaki | Sharm el-Sheikh |
 
 - Commander in Cairo: Field Marshal Abdel Hakim Amer. [S] WIKI
@@ -99,9 +99,9 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 - **Qusayma.** 45 minutes of resistance (Ben-Gurion). [V] GOV8. Night attack by pincers, 03:00 to sunrise. [S] WIKI. Starting point for Abu Ageila.
 - **Abu Ageila and Umm Katef.** Objective: the central road hub. Egyptians held the "Hedgehog" ridges. 30 Oct armour probe at Umm Katef failed; 31 Oct dawn attack through the al-Dayyiqa gap took Abu Ageila; Ruafa fell that night at the cost of every tank involved; 10th Brigade attacks on Umm Katef failed on 31 Oct and 1 Nov; Egyptians withdrew on the evening of 1 Nov. [S] WIKI
 - **Heitan (Mitla).** Afternoon of 31 Oct. 260 Egyptian and 38 Israeli killed. Sharon was criticised for acting without authorisation. [S] WIKI
-- **Rafah.** Objective: cut Gaza off from Sinai and open the road to El Arish. Crossroads 12 taken after sappers cleared minefields; French cruiser Georges Leygues gave fire support; the garrison left on the morning of 1 Nov. [S] WIKI
+- **Rafah.** Objective: cut Gaza off from Sinai and open the road to El Arish. Crossroads 12 taken after sappers cleared minefields; French cruiser Georges Leygues gave fire support; the garrison left on the morning of 1 Nov. [S] WIKI. Sensitive: the killings in Khan Yunis and Rafah during Kadesh; see `road-to-suez-1956.md` section 6 (D8 rule 4). Not described here.
 - **El Arish.** 27th Armoured Brigade; Jeradi pass fought; the town fell on 2 Nov without a fight. [S] WIKI
-- **Gaza City and Khan Yunis.** Military action only: defences outside Gaza City attacked late 1 Nov, al-Muntar fort taken with about 3,500 prisoners and dead, no organised opposition by noon 2 Nov; 37th Armoured broke the Khan Yunis lines on 3 Nov; the Strip largely held by noon 3 Nov. [S] WIKI
+- **Gaza City and Khan Yunis.** Military action: defences outside Gaza City attacked late 1 Nov, al-Muntar fort taken with 3,500 National Guard troops killed or captured (Wikipedia), no organised opposition by noon 2 Nov; 37th Armoured broke the Khan Yunis lines on 3 Nov; the Strip largely held by noon 3 Nov. [S] WIKI. Sensitive: the killings in Khan Yunis and Rafah during Kadesh; see `road-to-suez-1956.md` section 6 (D8 rule 4). Not described here.
 - **Sharm el-Sheikh and Tiran.** 9th Brigade left Ras al-Naqb on 2 Nov, logistics and vehicle breakdown the main obstacle; paratroops sent to Tor to outflank; night attack near midnight 4 Nov repulsed after four hours; artillery and napalm on the morning of 5 Nov; surrender 09:30. Losses: 10 Israeli killed, about 100 Egyptian killed, 864 prisoners. [S] WIKI. Tiran: Egyptians had garrisoned the island. [V] GOV8
 - **Egyptian withdrawal order.** Nasser ordered a fall back toward the canal; by the morning of 1 Nov the order was known at Rafah. [S] WIKI. Exact date and hour of the order: [GAP].
 
@@ -125,7 +125,7 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 
 - 2 Nov: Res 997 calls for a ceasefire and withdrawal. 3 Nov: Israel tells the Secretary-General it complied; "the cease-fire has in fact been maintained until this moment" (8 Nov). [V] GOV12
 - 4 Nov: Meir asks five questions (Egyptian agreement, state of war, direct talks, boycott and blockade, fedayeen abroad); says Egyptian troops "are continuing to fire". [V] GOV5
-- 7 Nov: Ben-Gurion declares the armistice with Egypt "dead", refuses any foreign force on territory Israel holds. 8 Nov: cabinet accepts the UN resolution; Israel will withdraw "upon conclusion of satisfactory arrangements" for the Force. [V] GOV8, GOV12, GOV9
+- 7 Nov: Ben-Gurion declares the armistice with Egypt "dead", refuses any foreign force on territory Israel holds. 8 Nov: the cabinet agrees to accept the UN resolution and withdraw "after suitable arrangements had been made with the international Force" (GOV12); Ben-Gurion's reply to Eisenhower says "upon conclusion of satisfactory arrangements" with the UN for the Force (GOV9). [V] GOV8, GOV12, GOV9
 - Effective Israeli ceasefire date: [C]. 3 Nov notification (GOV12); "ceased fire... for several days past no armed conflict" (8 Nov letter, GOV7); fighting over 5 Nov (GOV2); "two days after the fighting ceased" at the 7 Nov speech (GOV8 editor); "the fighting ended on 7 November" (GOV15); Sharm surrender 5 Nov 09:30 [S]. Hour of effect: [GAP].
 - Suez note gives Israeli acceptance as 6 to 8 Nov [S]. This note finds 3 Nov (notice of compliance) and 8 Nov (cabinet acceptance of withdrawal); the Suez note should be read with both dates.
 
@@ -145,11 +145,12 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 
 - Israeli dead: about 150 (Ben-Gurion, 7 Nov) [V] GOV8; 231 (gov.il) [V] GOV1; JVL gives the same [S]. [C] 150 early figure against 231 final figure.
 - Battle figures [S] WIKI: Heitan 38 Israeli and 260 Egyptian killed; Sharm 10 Israeli killed, about 100 Egyptian killed, 864 captured; Egyptian jets lost 7 to 9, Israeli 1.
+- Civilian deaths in the Gaza Strip are not in these figures; see the D8 pointer in section 12.
 - Egyptian total dead, wounded and captured; Israeli wounded; tank and aircraft losses: [GAP].
 
 ## 12. Sensitive events (pointer only)
 
-Kafr Qasim (29 Oct), Khan Yunis (3 Nov) and Rafah (12 Nov): see `events-1952-56.md` (B11 for Kafr Qasim) and `road-to-suez-1956.md` section 6 (Khan Yunis and Rafah, which `events-1952-56.md` leaves to the Suez note). Not described here.
+Kafr Qasim (29 Oct 1956) is B11 in `events-1952-56.md`. Sensitive: the killings in Khan Yunis and Rafah during Kadesh; see `road-to-suez-1956.md` section 6 (D8 rule 4). Not described here. `events-1952-56.md` leaves them to the Suez note.
 
 ## 13. What war mode (#21) needs from this note
 
