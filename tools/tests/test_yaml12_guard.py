@@ -3,8 +3,9 @@
 file that must keep a PyYAML load goes in ALLOWED with the reason.
 
 The scan parses each file (ast): it follows `import yaml as y`, `from yaml import (safe_load as parse)` and `from yaml
-import *`, and flags any call through those names whose yaml-side name contains "load" (safe_load, load, full_load,
-*_all, and the SafeLoader classes)."""
+import *`, and flags any reference through those names, called or not (map(yaml.safe_load, xs), parse = yaml.load,
+functools.partial(yaml.load, ...)), whose yaml-side name contains "load" (safe_load, load, full_load, *_all, and the
+SafeLoader classes). yaml.compose, yaml.safe_dump and yaml12 stay allowed."""
 import ast
 import re
 from pathlib import Path
@@ -16,7 +17,7 @@ LOADISH = re.compile("load", re.I)
 
 
 def _calls(tree: ast.AST) -> list[int]:
-    """Line numbers of the calls that reach a PyYAML load function or loader class."""
+    """Line numbers of every reference (a call or not) to a PyYAML load function or loader class."""
     modules: set[str] = set()      # local names bound to the yaml package (or a yaml.* submodule's root)
     functions: set[str] = set()    # local names bound to a load-ish name imported from yaml
     star = False
@@ -32,19 +33,18 @@ def _calls(tree: ast.AST) -> list[int]:
                     star = True
                 elif LOADISH.search(alias.name):
                     functions.add(alias.asname or alias.name)
-    lines = []
+    lines = set()
     for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        f = node.func
-        if isinstance(f, ast.Attribute) and LOADISH.search(f.attr):
-            root = f.value
+        # any reference, called or not: yaml.safe_load(t), map(yaml.safe_load, xs), parse = yaml.load, partial(...)
+        if isinstance(node, ast.Attribute) and LOADISH.search(node.attr):
+            root = node.value
             while isinstance(root, ast.Attribute):
                 root = root.value
             if isinstance(root, ast.Name) and root.id in modules:
-                lines.append(node.lineno)
-        elif isinstance(f, ast.Name) and (f.id in functions or (star and LOADISH.search(f.id))):
-            lines.append(node.lineno)
+                lines.add(node.lineno)
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and (
+                node.id in functions or (star and LOADISH.search(node.id))):
+            lines.add(node.lineno)
     return sorted(lines)
 
 
@@ -100,12 +100,20 @@ EVASIONS = {
     "from_import_star": "from yaml import *\nx = safe_load(t)\n",
     "nested_import": "def f(t):\n    import yaml as yy\n    return yy.safe_load(t)\n",
     "submodule_import": "import yaml.constructor\nx = yaml.safe_load(t)\n",
+    "map_ref": "import yaml\nxs = list(map(yaml.safe_load, texts))\n",
+    "assign_ref": "import yaml\nparse = yaml.safe_load\nx = parse(t)\n",
+    "partial": "import functools\nimport yaml\nparse = functools.partial(yaml.load, Loader=yaml.SafeLoader)\n",
+    "from_import_ref": "from yaml import safe_load\nxs = list(map(safe_load, texts))\n",
+    "loader_ref": "import yaml\nLoader = yaml.SafeLoader\n",
 }
 CLEAN = {
     "helper": "import yaml12\nx = yaml12.load(t)\n",
     "dump": "import yaml\ns = yaml.safe_dump(d)\n",
     "other_load": "import json\nfrom pickle import load\nx = json.load(f)\ny = load(f)\n",
     "yaml12_alias": "import yaml12 as yaml\nx = yaml.load(t)\n",
+    "compose": "import yaml\nnode = yaml.compose(t)\nnodes = list(yaml.compose_all(t))\n",
+    "yaml12_ref": "import yaml12\nxs = list(map(yaml12.load, texts))\n",
+    "dump_ref": "import yaml\nsave = yaml.safe_dump\n",
 }
 
 
