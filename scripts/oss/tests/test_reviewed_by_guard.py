@@ -4,8 +4,19 @@ Runs on throwaway git repositories."""
 import os
 import subprocess
 
+import pytest
+
 import reviewed_by_guard as guard
 from conftest import git
+
+@pytest.fixture(autouse=True)
+def an_explicit_git_identity(monkeypatch):
+    """Every git call here (commits, merges, the guard itself) gets an explicit identity and default branch, so the tests
+    do not lean on a guessed name and email: CI's runner refuses to guess one (#629, Repo policy run 38736960399)."""
+    for k, v in {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@users.noreply.github.com",
+                 "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@users.noreply.github.com"}.items():
+        monkeypatch.setenv(k, v)
+
 
 AI = "\n\nCo-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ROW = "people:\n  - id: a\n    name: A\n    status: fact-checked\n"
