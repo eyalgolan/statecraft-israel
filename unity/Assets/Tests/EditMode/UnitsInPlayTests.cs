@@ -141,7 +141,7 @@ public class UnitsInPlayTests
     [Test]
     public void AUnitSignOffParses()
     {
-        var u = UnitData.Parse("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: eyalgolan, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "u.yaml");
+        var u = UnitData.Parse("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: eyalgolan, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "u.yaml");
         Assert.AreEqual(("eyalgolan", "2026-10-15"), (u[0].ReviewedBy, u[0].ReviewedOn));
     }
 
