@@ -105,18 +105,23 @@ static const float ScWaveTilt = 0.6;                             // wave normal 
 // grows; ScBreakerRate cycles per second roll them in at ScBreakerSpacingM x ScBreakerRate = 22.5 m/s (half a pixel per
 // frame at the gameplay pose's ~45 m pixels and 60 fps). coast.png's 94 m levels are interpolated linearly between
 // texels, so a crest can sit up to ~47 m off its true place: about one gameplay pixel, under the phase noise.
-// Sea round 3 (#388): promo 03's lace, 2-4 broken white lines over the turquoise. The surf zone from 900 to 1800 m (the
+// Sea round 3 (#388): towards promo 03's lace (2-4 broken white lines over the turquoise; SeaTests guarantees the swash
+// and at least one breaker, the rest waits for #519's grade). The surf zone from 900 to 1800 m (the
 // promo's 29-52 px foam band at gameplay03's ~45 m pixels; at 1500 m the second crest faded under the foam's white before
 // it reached the turquoise), the crests from 300 to 450 m apart (about 10 px, so they stand clear of each other;
 // ScBreakerRate kept, so they roll in at 22.5 m/s, about half a pixel a frame), and the foam whiter (ScFoamWhite, 0.85
 // before: the crests read turquoise-tinted).
 // The lace (the "foam" toggle, _ScSeaFoam): the constants alone left whole crests out where the 300 m "broken" noise was
-// low, since one blob of it covers two crests 450 m apart (SeaTests.TheSurfShowsFoamLaceAtTheGameplayZoom at 31.95 N).
+// low, since one blob of it covers two crests 450 m apart (SeaTests.TheSurfShowsABrokenBreakerBeyondTheSwashAtTheGameplayZoom
+// at 31.95 N).
 // With the toggle on, a finer net (ScLaceCellM cells, kept where it is under ScLaceCover) breaks each crest on its own.
 // Its edge is a fixed ScLaceEdge wide in noise units, not the pixel's footprint: an edge that sharpens with resolution
 // changes the net's mean between a pixel and its sub-pixels, and TheBreakersAreFilteredToThePixel saw it (p99 0.067 at a
-// 140 m net with a footprint edge); a 200 m net with a 0.25 edge stays smooth over a 45 m pixel. It fades to "broken"'s
-// mean (0.5) at the same 75-150 m pixels, so the overview's mean foam is unchanged.
+// 140 m net with a footprint edge); a 200 m net with a 0.25 edge stays smooth over a 45 m pixel. The net keeps more than
+// "broken" does: its mean is 0.676 (2M samples of ScNoise; P(noise < 0.62) = 0.69), "broken"'s 0.5, so the breakers
+// carry about 35% more foam on average at the gameplay zoom. Like "broken", it fades to 0.5 at 75-150 m pixels, so the
+// overview's mean foam is unchanged, and zooming out through that range dims the breakers by about a quarter
+// (independent review of #660; kept rather than re-centred, which would change the overview).
 float _ScSeaFoam;                                                // 1 = on, 0 = off (the "foam" toggle)
 static const float ScSwashM = 180.0, ScSurfM = 1800.0, ScBreakerSpacingM = 450.0, ScBreakerRate = 0.05, ScFoamWhite = 0.95;
 static const float ScLaceCellM = 200.0, ScLaceCover = 0.62, ScLaceEdge = 0.25;

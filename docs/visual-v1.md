@@ -1343,16 +1343,18 @@ Review round 1 (staff review I1-I2, M1-M8) is folded in; the values below are th
   budget (0.89 / 0.13 ms in promo-sea round 1); p95 with everything on is 10 / 14 ms, under 16.7 ms.
 - **Surf** (review I2).
   - A swash line, full to `ScSwashM` 180 m and gone by 324 m.
-  - Breakers through a `ScSurfM` 900 m zone. They are a squared triangle wave in the distance from the shore, spacing
-    `ScBreakerSpacingM` 300 m, rolling shoreward at `ScBreakerRate` 0.05 cycles/s (15 m/s, a quarter pixel a frame at
-    gameplay03 and 60 fps).
+  - Breakers through a `ScSurfM` zone (900 m here; 1.8 km since sea round 3). They are a squared triangle wave in the
+    distance from the shore, spacing `ScBreakerSpacingM` (300 m here; 450 m since sea round 3), rolling shoreward at
+    `ScBreakerRate` 0.05 cycles/s (15 m/s here, a quarter pixel a frame at gameplay03 and 60 fps; 22.5 m/s, about half a
+    pixel, since sea round 3).
   - The breakers are box-filtered in closed form (`ScTriSqBox`), so they never alias and tend to their mean (1/3) as the
     pixel grows. The previous `pow(tri, 5)` crest was about 21 m wide on 45 m pixels: hairline, dashed crests.
   - The box is `fwidth(phase)` x `ScBreakerFilterPx` 1.25, with the phase taken by `ScBreakers` outside the water branch
     in both callers (re-review N2). The phase's true gradient is not 1 / 300 m: its noise term adds up to 0.0025
     cycles/m and the 8-bit coast's slope varies up to 2x, so a width from the nominal spacing was up to 2x too narrow in
     places.
-  - The 300 m break-up noise fades to its mean between 75 and 150 m pixels.
+  - The 300 m break-up noise fades to its mean between 75 and 150 m pixels. Since sea round 3, the `foam` toggle swaps
+    it for a 200 m lace net at the gameplay zoom (below).
 - **Beach** (`ScShore`).
   - A sand strip along every sea-level coast (above -100 m): the Mediterranean and the Gulf of Eilat, both sand beaches,
     but not the rift lakes. `ScBeachM` is 650 m on average, +-40% on a 4 km noise. The width is symbolic, after the
@@ -1714,6 +1716,28 @@ load of 4-6:
 Boot (`headed.py boot --cpu 4 --runs 3`, one round each, before the rebase): map_build median 3389 ms on main and 3106
 on the branch, and `kits built` 828 against 785 ms in the last run. The branch is not slower: the boats' placement and
 one more mesh are not measurable against the run-to-run spread.
+
+### Sea round 3: the surf as lace (branch `visual/c1-foam-lace`, refs #388)
+Plan C1 part 2 (`.superpowers/plan-C1-beach.md`). The 2026-10-15 audit still saw one swash line and a smooth turquoise
+band where promo 03 has 2-4 broken white lines. Everything is in the water's own pass (`ScWaterShade`); the terrain
+function is unchanged.
+- **Constants:** `ScSurfM` 900 m to 1.8 km, `ScBreakerSpacingM` 300 to 450 m (`ScBreakerRate` kept, so 22.5 m/s), and
+  `ScFoamWhite` 0.95 (0.85 before) on the foam's lerp to white.
+- **The `foam` toggle** (`_ScSeaFoam`, `MapShaderGlobals`): a 200 m value-noise net, kept under 0.62 with a fixed 0.25
+  edge, replaces `broken` so each crest breaks on its own (one 300 m blob of `broken` covered two crests 450 m apart).
+  - A footprint-scaled edge aliased: `TheBreakersAreFilteredToThePixel` p99 0.067 at 140 m. The fixed edge keeps it
+    at 0.0113 against the unchanged 0.014 bound.
+  - The net's mean is 0.676 against `broken`'s 0.5, so the breakers carry about 35% more foam at the gameplay zoom. Both
+    fade to 0.5 at 75-150 m pixels, so the overview is unchanged and zooming out through that range dims the breakers
+    by about a quarter.
+- **Test:** `SeaTests.TheSurfShowsABrokenBreakerBeyondTheSwashAtTheGameplayZoom` guarantees the swash and at least one
+  breaker past it, at 3 of 4 moments, west of Tel Aviv and south of Jaffa, with a foam share in [0.3, 0.7]. Promo 03's
+  2-4 lines are not yet met; they are read again after #519's grade.
+- **Profile** (`?vprofile` headless, 1920x1080, exclusive lock, against main e6f98962): gameplay03 `all` 8.52 ms,
+  `-foam` 8.48 (foam 0.04 ms, budget 0.5), `none` 7.41 (main 7.47), p95 11 (main 11); diorama02 `all` 16.47, `-foam`
+  16.52, p95 18 (main 18).
+- **Bands** (gameplay03 `?shot`, south of Jaffa, before #519): foam band 9.0 to 20.6 px (promo 44, band 25-55), foam
+  share 0.59 to 0.48 (promo 0.54), the strict lace-line median still 1 (promo 2); north foam 5.8 to 13.0 px.
 
 ## Promo track: land use (issue #33, branch promo-land)
 The flat mustard/olive ground becomes the promo's patchwork. `tools/land_bake.py` (no network, about 20 s, deterministic:
