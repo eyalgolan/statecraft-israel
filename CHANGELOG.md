@@ -405,6 +405,14 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   nowhere in the hex has room (owner, 15 October 2026: "Yes, min 6 plots + a hut"). Gaza's edge has room for 4 tents
   only, so it stays a box. Built on 26 August 1950: 17 camps of 25 are kits (was 15), and Ein Harod's is smaller (6
   tents and 2 huts, was 10 and 2). Every structure still stands wholly inside its hex. No golden moves.
+- Tel Aviv's White City (visual gap S2, refs #31; owner rulings on #652, 15 October 2026). Its blocks are fewer and
+  larger: 27, at 1.67 times main's width (main drew 55). They stand four to eight storeys, in tiers of tall and low blocks,
+  with a height spread of 0.31. Each has ribbon windows along both long sides, a balcony band on every upper storey and a
+  flat roof terrace behind a parapet. A quarter stand on pilotis. 30 palms grow in the streets and in the open plots
+  between the blocks. Tel Aviv's census floors fall to 24 buildings and 24.5% / 21% cover, per the ruling "Lower floor to
+  ~30, wider blocks"; every other town's floor stays. All of it is in Tel Aviv's own kit mesh (no new draw), so a model that
+  replaces the town (#507) hides it whole. Haifa's Hadar keeps its blocks, and `Kit.shader` is not changed. Presentation
+  only.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,

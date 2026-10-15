@@ -21,11 +21,11 @@ public class TownCensusTests
 
     internal sealed class Row
     {
-        public string Id = ""; public int Buildings, Wings; public List<string> Landmarks = new List<string>();
+        public string Id = ""; public int Buildings, Wings, Palms; public List<string> Landmarks = new List<string>();
         public float Radius, Coverage, CoreCoverage; public int LandCells, CoreCells;
         public float HMin, HMedian, HMax, HSpread; public int Colours; public Color MeanWall;
         public override string ToString() =>
-            $"CENSUS {Id} R={Radius:0} buildings={Buildings} wings={Wings} landmarks={Landmarks.Count}[{string.Join(",", Landmarks)}] " +
+            $"CENSUS {Id} R={Radius:0} buildings={Buildings} wings={Wings} palms={Palms} landmarks={Landmarks.Count}[{string.Join(",", Landmarks)}] " +
             $"coverage={Coverage:P1} core={CoreCoverage:P1} land_cells={LandCells} h_min={HMin:0} h_med={HMedian:0} h_max={HMax:0} " +
             $"h_cv={HSpread:0.00} colours={Colours} wall=({MeanWall.r:0.00},{MeanWall.g:0.00},{MeanWall.b:0.00})";
     }
@@ -52,9 +52,11 @@ public class TownCensusTests
         {
             var w = map.Frame.ToWorld(s.Lon, s.Lat, 0); var centre = new Vector2(w.x, w.z);
             float R = SettlementKits.FootprintRadiusM(s, g.HexSizeM);
-            var mine = placed.Where(p => p.Id == s.Id && !Aggregate(p.Kind) && !p.InSea).ToList();
-            var row = new Row { Id = s.Id, Radius = R, Buildings = mine.Count(p => p.Kind == "building"), Wings = mine.Count(p => p.Kind == "wing") };
-            row.Landmarks = placed.Where(p => p.Id == s.Id && p.Kind != "building" && p.Kind != "wing").Select(p => p.Kind).ToList();
+            // Street palms are counted, but are neither built cover nor landmarks.
+            var mine = placed.Where(p => p.Id == s.Id && !Aggregate(p.Kind) && !p.InSea && p.Kind != "palm").ToList();
+            var row = new Row { Id = s.Id, Radius = R, Buildings = mine.Count(p => p.Kind == "building"), Wings = mine.Count(p => p.Kind == "wing"),
+                Palms = placed.Count(p => p.Id == s.Id && p.Kind == "palm") };
+            row.Landmarks = placed.Where(p => p.Id == s.Id && p.Kind != "building" && p.Kind != "wing" && p.Kind != "palm").Select(p => p.Kind).ToList();
             int n = Mathf.CeilToInt(R / cellM);
             int covered = 0, coreCovered = 0;
             for (int j = -n; j <= n; j++)
@@ -193,7 +195,7 @@ public class TownCensusTests
         ["acre"] = 2, ["beersheba"] = 5, ["degania_alef"] = 1, ["ein_harod"] = 1, ["gaza"] = 15, ["hadera"] = 1, ["haifa"] = 30,
         ["hanita"] = 2, ["jaffa"] = 15, ["jerusalem"] = 70, ["lod"] = 5, ["nahalal"] = 1, ["nazareth"] = 5, ["netanya"] = 2,
         ["petah_tikva"] = 2, ["ramla"] = 5, ["rehovot"] = 3, ["revivim"] = 3, ["rishon_lezion"] = 2, ["rosh_pinna"] = 0,
-        ["safed"] = 5, ["tel_aviv"] = 36, ["tiberias"] = 3, ["yad_mordechai"] = 0, ["zikhron_yaakov"] = 2,
+        ["safed"] = 5, ["tel_aviv"] = TelAvivFloor, ["tiberias"] = 3, ["yad_mordechai"] = 0, ["zikhron_yaakov"] = 2,
     };
 
     /// <summary>Floors measured on today's map for the towns whose main count is 0, which floors nothing (review of #570: a
@@ -265,12 +267,19 @@ public class TownCensusTests
     /// "Towns round 2"): Tel Aviv 43 / 17.4% / 18.5%, Jaffa 33 / 32.6% / 31.9%, Haifa 45 / 21.0% / 20.6%, Jerusalem 110 /
     /// 22.7% / 24.9%; main before it had 36, 15, 30 and 70 buildings. The building floors sit above main's counts, so a change
     /// that thins a city back to round 1's sparse handful fails here; the cover floors are about 10% under the measure.
-    /// Tel Aviv's row is #318's (owner ruling 2026-10-12): with its localities' landmarks at its street crossings it draws 55 /
-    /// 25.2% / 25.6%, and its core floor is the ruling's 25%.</summary>
+    /// Tel Aviv's row was #318's (owner ruling 2026-10-12: 55 / 25.2% / 25.6% drawn, core floor 25%). Since the owner's ruling on
+    /// #652 (2026-10-15, "Lower floor to ~30, wider blocks") it is <see cref="TelAvivFloor"/>'s: fewer, larger blocks with
+    /// open plots between them; its localities' landmarks still stand at its street crossings.</summary>
     internal static readonly Dictionary<string, (int buildings, float all, float core)> Floors = new Dictionary<string, (int, float, float)>
     {
-        ["tel_aviv"] = (50, 0.225f, 0.25f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (40, 0.19f, 0.185f), ["jerusalem"] = (95, 0.20f, 0.22f),
+        ["tel_aviv"] = (TelAvivFloor, 0.245f, 0.21f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (40, 0.19f, 0.185f), ["jerusalem"] = (95, 0.20f, 0.22f),
     };
+
+    /// <summary>Tel Aviv's building floor here and in MainBuildings, and its cover floors in Floors (was 50 / 22.5% / 25%
+    /// and MainBuildings 36): owner ruling on #652, 2026-10-15, "Lower floor to ~30, wider blocks". Its blocks are about
+    /// 1.6-2 times main's width, with open plots for palms (visual gap S2). It draws 27 / 27.2% / 23.7%; the floors sit about
+    /// 10% under. Every other town's floor is unchanged.</summary>
+    internal const int TelAvivFloor = 24;
 
     /// <summary>#318 (owner ruling 2026-10-12): Tel Aviv's 1948 localities keep their hearts (#291, review M8). Every locality
     /// whose centre lies inside Tel Aviv's footprint and whose kind has a landmark builds it, before any of the city's blocks.</summary>
@@ -298,6 +307,46 @@ public class TownCensusTests
         Assert.GreaterOrEqual(checkedN, 8, "Sheikh Muwannis, Jammasin, Salama, Ramat Gan, Givatayim, Bnei Brak... lie inside it");
         CollectionAssert.IsEmpty(bad);
     }
+
+    /// <summary>Visual gap S2 (docs/visual-v1.md, "Tel Aviv's White City"; owner ruling on #652): Tel Aviv's blocks stand
+    /// four to eight storeys, with the median in promo 03's five to eight and a height spread (cv) of at least
+    /// <see cref="TelAvivHeightSpread"/> (main 0.30); its median block is at least <see cref="TelAvivMedianWidthM"/> wide (main
+    /// 13.1 m real, about half the promo's on-screen size); it draws at least <see cref="TelAvivPalms"/> street palms, and no
+    /// palm's crown reaches one of its blocks or wings.</summary>
+    [Test]
+    public void TelAvivIsThePromosWhiteCity()
+    {
+        var map = OpenMap();
+        var rows = Census(map, out var placed).ToDictionary(r => r.Id);
+        var ta = rows["tel_aviv"];
+        TestContext.WriteLine(ta);
+        float storey = 3.3f * KitScale.CityBlocks;
+        var blocks = placed.Where(p => p.Id == "tel_aviv" && p.Kind == "building").ToList();
+        var widths = blocks.Select(b => Mathf.Max(b.W, b.D)).OrderBy(w => w).ToList();
+        TestContext.WriteLine($"storeys min {blocks.Min(b => b.H) / storey:0.0} median {ta.HMedian / storey:0.0} max {ta.HMax / storey:0.0}; " +
+            $"median width {widths[widths.Count / 2] / KitScale.CityBlocks:0.0} real m; palms {ta.Palms}");
+        Assert.GreaterOrEqual(blocks.Min(b => b.H), SettlementKits.TelAvivMinStoreys * storey - 1f, "a block under four storeys");
+        Assert.That(ta.HMedian, Is.InRange(5f * storey - 1f, 8f * storey + 1f), "the median block is not five to eight storeys");
+        Assert.GreaterOrEqual(widths[widths.Count / 2], TelAvivMedianWidthM * KitScale.CityBlocks, "the median block's width");
+        Assert.GreaterOrEqual(ta.Palms, TelAvivPalms, "street palms");
+        Assert.GreaterOrEqual(ta.HSpread, TelAvivHeightSpread, "the blocks' height spread (cv)");
+        var bad = new List<string>();
+        var walls = placed.Where(p => p.Id == "tel_aviv" && (p.Kind == "building" || p.Kind == "wing")).ToList();
+        foreach (var palm in placed.Where(p => p.Id == "tel_aviv" && p.Kind == "palm"))
+            foreach (var b in walls)
+            {
+                float a = b.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+                var d = palm.C - b.C;
+                float u = Mathf.Max(0f, Mathf.Abs(d.x * ca + d.y * sa) - 0.5f * b.W), v = Mathf.Max(0f, Mathf.Abs(-d.x * sa + d.y * ca) - 0.5f * b.D);
+                if (u * u + v * v < 0.25f * palm.W * palm.W - 1f) { bad.Add($"a palm at {palm.C} reaches the {b.Kind} at {b.C}"); break; }
+            }
+        CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} palms reach a block");
+    }
+
+    /// <summary>Floors for TelAvivIsThePromosWhiteCity, about 10% under the measure (docs/visual-v1.md, "Tel Aviv's White
+    /// City"): the median block's longer side in real metres (21.9: 1.67 times main's), the street palms (30) and the
+    /// height spread (0.31).</summary>
+    const float TelAvivMedianWidthM = 20.5f, TelAvivHeightSpread = 0.28f; const int TelAvivPalms = 27;
 
     [Test]
     public void TheCitiesCoverTheirGround()

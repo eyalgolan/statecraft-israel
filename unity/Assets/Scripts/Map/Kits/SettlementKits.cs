@@ -62,7 +62,8 @@ namespace Statecraft.Game.Map.Kits
             Build(list, ground, out claimed, out _, columns);
 
         /// <summary>One thing a kit placed, for the tests' and the docs' town census: a building (<see cref="Placed.Kind"/>
-        /// "building", or "wing" for a block's lower part) or a landmark (its name: "mosque", "clock_tower", ...), with its
+        /// "building", or "wing" for a block's lower part), a street palm ("palm": its crown's square, its height) or a
+        /// landmark (its name: "mosque", "clock_tower", ...), with its
         /// world footprint (centre, yaw in degrees, width and depth in m), its wall height (m) and wall colour.</summary>
         public readonly struct Placed
         {
@@ -142,7 +143,7 @@ namespace Statecraft.Game.Map.Kits
             var streams = new Dictionary<string, KitRandom>(); var landmarks = new Dictionary<string, int>();
             var spans = new Dictionary<string, List<(KitMesh km, int from, int to)>>();   // each locality's vertices in its tile
             var townMeshes = new Dictionary<string, KitMesh>();
-            var gameTowns = new List<(Settlement s, KitMesh km, int n, System.Func<int>? scatter)>();
+            var gameTowns = new List<(Settlement s, KitMesh km, int n, System.Func<int>? scatter, System.Func<int>? palms)>();
             // Landmarks first: every game settlement's (largest first), then every locality's, each at its heart, before any
             // houses. A village at a city's edge (Jammasin by Tel Aviv) keeps its heart, and no village takes a game town's
             // landmark spot (review M8).
@@ -188,14 +189,14 @@ namespace Statecraft.Game.Map.Kits
                     // An Arab village or town (S1): a dense pack of small stone houses on the village lattice, as Lod's and
                     // Ramla's. The Jewish localities and mixed Nesher keep their scatter.
                     result.LocalityBuildings += ArchetypeOf(s) == Archetype.ArabTown && !Localities.IsMixed(s.Id)
-                        ? PlaceHouses(s, centres[s.Id], ground, tile, lots, ref rnd, null, out _, locality: true, keepOut: SmallerTowns(s))
+                        ? PlaceHouses(s, centres[s.Id], ground, tile, lots, ref rnd, null, out _, out _, locality: true, keepOut: SmallerTowns(s))
                         : BuildOne(s, centres[s.Id], ground, tile, lots, Phase.Houses, ref rnd, landmarks[s.Id], null);
                     spans[s.Id].Add((tile, from, tile.VertexCount));
                     continue;
                 }
                 var km = townMeshes[s.Id];
-                int n = landmarks[s.Id] + PlaceHouses(s, centres[s.Id], ground, km, lots, ref rnd, merged, out var scatter);   // towns round 2: plot lattices
-                gameTowns.Add((s, km, n, scatter));
+                int n = landmarks[s.Id] + PlaceHouses(s, centres[s.Id], ground, km, lots, ref rnd, merged, out var scatter, out var palms);   // towns round 2: plot lattices
+                gameTowns.Add((s, km, n, scatter, palms));
             }
             foreach (var area in camps)
             {
@@ -204,11 +205,16 @@ namespace Statecraft.Game.Map.Kits
             }
             // Last, the small towns' fallback houses (#317), largest place first: after every place's own houses and the camps,
             // so they take only ground no other place builds on, and every other place draws as it would without them.
-            foreach (var (s, km, n, scatter) in gameTowns)
+            // Before them, Tel Aviv's street palms (SettlementKits.TelAviv.cs), on ground no place's house or camp took, so they
+            // move none of those; the fallback then still moves nothing else (#317).
+            foreach (var t in gameTowns) t.palms?.Invoke();
+            var totals = new List<int>();
+            foreach (var t in gameTowns) totals.Add(t.n + (t.scatter?.Invoke() ?? 0));
+            for (int i = 0; i < gameTowns.Count; i++)
             {
-                int total = n + (scatter?.Invoke() ?? 0);
+                var (s, km, _, _, _) = gameTowns[i];
                 if (columns != null && km.VertexCount > 0) columns[s.Id] = km.Columns();
-                result.Towns.Add((s, km.ToMesh(s.Id + "_kit"), total));
+                result.Towns.Add((s, km.ToMesh(s.Id + "_kit"), totals[i]));
             }
             // A locality's columns, from its own vertices in its tile (read before ToMesh drops the CPU copy).
             if (columns != null)
@@ -326,8 +332,10 @@ namespace Statecraft.Game.Map.Kits
         /// in <see cref="Pick"/>; lattice pitch, density and scale in <see cref="Grid"/>.</summary>
         enum Style
         {
-            /// <summary>Tel Aviv's and Hadar HaCarmel's International Style blocks: white plaster, flat roofs (60x).</summary>
+            /// <summary>Hadar HaCarmel's International Style blocks: white plaster, flat roofs (60x).</summary>
             WhiteBlock,
+            /// <summary>Tel Aviv's White City blocks (60x; SettlementKits.TelAviv.cs, visual gap S2).</summary>
+            TelAviv,
             /// <summary>The plastered two- and three-storey centre of a large moshava (Petah Tikva, Rehovot) (60x).</summary>
             TownBlock,
             /// <summary>Jerusalem's new city: stone-faced blocks, Storrs' 1918 ordinance (60x).</summary>
@@ -356,6 +364,7 @@ namespace Statecraft.Game.Map.Kits
         static (float pu, float pv, float jitter, float scale, float core, float t0, float edge) Grid(Style st) => st switch
         {
             Style.WhiteBlock => (18.5f, 13.5f, 0f, KitScale.CityBlocks, 1.00f, 0.60f, 0.70f),
+            Style.TelAviv => (TelAvivPitchU, TelAvivPitchV, 0f, KitScale.CityBlocks, 1.00f, 0.60f, TelAvivEdge),
             Style.TownBlock => (20f, 16f, 0.03f, KitScale.CityBlocks, 1.00f, 0.30f, 0.80f),
             Style.StoneBlock => (23f, 17.5f, 0.03f, KitScale.CityBlocks, 0.97f, 0.50f, 0.60f),
             Style.OldHouse => (7.2f, 6.8f, 0.05f, KitScale.Houses, 1.00f, 0.60f, 0.75f),
@@ -384,6 +393,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 case "jerusalem": return new List<Lattice> { new Lattice(Style.OldHouse, 0f, 0), new Lattice(Style.StoneBlock, yaw, 1), new Lattice(Style.Village, yaw, 2) };
                 case "haifa": return new List<Lattice> { new Lattice(Style.WhiteBlock, yaw, 0), new Lattice(Style.OldHouse, yaw, 1) };
+                case "tel_aviv": return new List<Lattice> { new Lattice(Style.TelAviv, yaw, 0) };
             }
             switch (arch)
             {
@@ -432,12 +442,13 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Places a town's houses on its lattices, nearest the centre first; returns how many. When the lattice
         /// places fewer than <see cref="SmallTownFloor"/>, <paramref name="scatter"/> is the town's fallback (#317), which
-        /// Build runs after every other place's houses; else null. A 1948 <paramref name="locality"/> (an Arab village or
-        /// town, S1) keeps its houses off the grid's edge midpoints, as its scatter did (review M10), and out of
-        /// <paramref name="keepOut"/> (the smaller game settlements' ground), keeps no beach setback, and fills up to its own
-        /// floor (<see cref="VillageFloor"/>) at once instead of the deferred fallback.</summary>
+        /// Build runs after every other place's houses; else null. <paramref name="palms"/> is Tel Aviv's street palms
+        /// (SettlementKits.TelAviv.cs), which Build runs after every place's houses and the camps; else null. A 1948
+        /// <paramref name="locality"/> (an Arab village or town, S1) keeps its houses off the grid's edge midpoints, as its
+        /// scatter did (review M10), and out of <paramref name="keepOut"/> (the smaller game settlements' ground), keeps no
+        /// beach setback, and fills up to its own floor (<see cref="VillageFloor"/>) at once instead of the deferred fallback.</summary>
         static int PlaceHouses(Settlement s, Vector2 centre, KitGround ground, KitMesh km, Lots lots, ref KitRandom rnd, HashSet<string>? ignoreCellsOf,
-            out System.Func<int>? scatter, bool locality = false, System.Func<Vector2, bool>? keepOut = null)
+            out System.Func<int>? scatter, out System.Func<int>? palms, bool locality = false, System.Func<Vector2, bool>? keepOut = null)
         {
             var arch = ArchetypeOf(s);
             float R = FootprintRadiusM(s, ground.HexSizeM), reach = R * PlotReach;
@@ -507,6 +518,7 @@ namespace Statecraft.Game.Map.Kits
             }
 
             int placed = 0;
+            var blocks = new List<(Vector2 c, float hw, float hd)>();   // Tel Aviv's blocks in its lattice's frame, for its street palms
             foreach (var (d, _, p0, li) in plots)
             {
                 var L = lattices[li]; var g = Grid(L.Style);
@@ -529,7 +541,14 @@ namespace Statecraft.Game.Map.Kits
                 var drnd = new KitRandom(detail);
                 Emit(s.Id, L.Style, q, yaw, b, t, ground, km, ref drnd);
                 placed++;
+                if (L.Style == Style.TelAviv)
+                {
+                    var dq = q - centre;
+                    blocks.Add((new Vector2(dq.x * ca + dq.y * sa, -dq.x * sa + dq.y * ca), 0.5f * b.w, 0.5f * b.d + BalconyM * g.scale));
+                }
             }
+            // Tel Aviv's street palms: Build runs them after every place's houses and the camps.
+            palms = blocks.Count == 0 ? null : () => StreetPalms(s, centre, R, lattices[0].Yaw, blocks, ground, km, lots, Mine, shore);
 
             // A 1948 village's floor (S1): where the routes, a bigger neighbour's lots or the cell's seam take most of its
             // plots, small village houses on free spots over its plot reach, nearest its heart first (KitRandom(id, 3)), at
@@ -701,6 +720,7 @@ namespace Statecraft.Game.Map.Kits
             float w, d; int storeys;
             switch (st)
             {
+                case Style.TelAviv: return PickTelAviv(t, ref rnd, m);
                 case Style.WhiteBlock:
                     w = rnd.Range(12f, 16f); d = rnd.Range(9f, 11.5f);
                     // Taller near the centre, a few taller still: promo 03's five- to eight-storey skyline, above the real White
@@ -758,6 +778,7 @@ namespace Statecraft.Game.Map.Kits
             float storey = 3.3f * m;
             switch (st)
             {
+                case Style.TelAviv: TelAvivBlock(id, p, yaw, b, bottom, top, km, ref rnd); break;
                 case Style.WhiteBlock:
                 case Style.TownBlock:
                 {
@@ -930,6 +951,9 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The White City's wall plaster (sRGB): lime white, a touch cool, so the warm sun leaves it white rather than cream.</summary>
         static readonly Color32 WhitePlaster = C(0.94f, 0.945f, 0.94f);
 
+        /// <summary>How far (real m) a White City balcony stands out from its wall.</summary>
+        const float BalconyM = 1.0f;
+
         /// <summary>A White City block's balconies (settlements quick wins, #31): the International Style's continuous balconies
         /// with solid plastered parapets, one per upper storey along a long side (most blocks on both), each a white band with
         /// its shadow under it, as promo 03's Tel Aviv shows. The box is <paramref name="w"/> x <paramref name="d"/> at
@@ -939,7 +963,7 @@ namespace Statecraft.Game.Map.Kits
         static void WhiteBlockDetail(KitMesh km, Vector2 c, float du, float lotR, float yaw, float w, float d, float ground, float h,
             Color32 wall, Color32 roof, float m, ref KitRandom rnd)
         {
-            float storey = 3.3f * m, proj = 1.0f * m, parapet = 1.05f * m, slab = 0.2f * m;
+            float storey = 3.3f * m, proj = BalconyM * m, parapet = 1.05f * m, slab = 0.2f * m;
             int storeys = Mathf.RoundToInt(h / storey);
             float a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             float reachV = 0.5f * d + proj;
@@ -1110,7 +1134,7 @@ namespace Statecraft.Game.Map.Kits
             readonly Vector2 c; readonly float pu, pv, ca, sa;
             public CityPlots(Vector2 centre, float yawDeg)
             {
-                var g = Grid(Style.WhiteBlock);
+                var g = Grid(Style.TelAviv);
                 c = centre; pu = g.pu * g.scale; pv = g.pv * g.scale;
                 ca = Mathf.Cos(yawDeg * Mathf.Deg2Rad); sa = Mathf.Sin(yawDeg * Mathf.Deg2Rad);
             }

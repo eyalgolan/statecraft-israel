@@ -2600,6 +2600,92 @@ rebase onto #557, which adds the ma'abara kit and no village):
   Harvard Divinity Bulletin (2019), https://bulletin.hds.harvard.edu/a-view-from-the-minaret/
 - Kawfakha's mosque, a "thick square minaret 10-15 meters high" (Petersen 2001, pp. 195-196): https://en.wikipedia.org/wiki/Kawfakha
 
+## Tel Aviv's White City (visual gap S2, branch `visual/telaviv-bauhaus-s2`, refs #31)
+The 2026-10-15 gap audit (`.superpowers/visual-gaps-2026-10-15.md`, S2) found promo 03's Tel Aviv to be white Bauhaus
+blocks of four to eight storeys, with balcony bands, ribbon windows, roof terraces and palms in the streets, about 45-60 px
+wide in a 1920 frame. Main drew white boxes of two to seven storeys, about 25-30 px wide, with no street trees.
+
+**Owner rulings on #652** (2026-10-15):
+- "Lower floor to ~30, wider blocks": blocks about 1.6-2 times main's width, more height variety, and open plots for
+  palms. The first round kept the 50-building floor; its widest block that held it was 15.8 m, 1.2 times main's.
+- "Keep strips (promo look)": the ribbon windows stay.
+
+**Changes** (`SettlementKits.TelAviv.cs`; Tel Aviv only, on its own lattice style `Style.TelAviv`; Haifa's Hadar keeps
+`Style.WhiteBlock`):
+- **Blocks:**
+  - Size: 21-24 x 13-15 m real (main 12-16 x 9-11.5), on a 27 x 19 m pitch (main 18.5 x 13.5).
+  - Plots: every plot is built in the core, and nine in ten at the edge (main seven in ten).
+- **Storeys**, in three tiers as promo 03's skyline (promo over era, owner ruling 2026-10-10):
+  - tall blocks of seven or eight storeys, 60% of the core's and 35% at the edge;
+  - low blocks of four, 36%;
+  - the rest five or six.
+- **Facade:** a dark ribbon window runs along each long side of every storey, above the balcony bands that
+  `WhiteBlockDetail` already drew.
+  - It is geometry: two triangles per storey and side, set a hair proud of the wall.
+  - It is not done in `Kit.shader`, which is unchanged. At gameplay03 a 2 m window bay is under a pixel, so the shader's
+    discrete windows fade to their mean, while a strip stays a band.
+- **Pilotis** under a quarter of the blocks: a recessed, shaded ground storey under the block (the White City's first was
+  Engel House, 1933).
+- **Roof terraces:** a plastered parapet round every flat roof, warmer paving inside it, the stair head and, on four in ten,
+  the laundry room.
+- **Street palms** in Tel Aviv's own mesh:
+  - Where: street crossings, street middles, and a 3 x 3 grove over each plot left open.
+  - Size: each is as large as its spot allows, 0.7-1.6 times the city blocks' scale, with 85% of its crown clear of every
+    block.
+  - Order: they are placed after every place's houses and the camps, and before the small towns' fallback, so they move
+    nothing.
+  - Each claims a lot, so no tree grows through one.
+- **#507:** everything is in `tel_aviv_kit`, so a model that turns the town's kit off hides all of it.
+
+**Result** (editor census, `TownCensusTests`; main 732ceab8 → branch):
+
+| Tel Aviv | main | branch |
+|---|---|---|
+| buildings (+wings) | 55 (+18) | 27 (+4) |
+| cover, whole / core | 25.2% / 25.6% | 27.2% / 23.7% |
+| storeys min / median / max | 2 / 5 / 7 | 4 / 5 / 8 |
+| height spread (cv) | 0.30 | 0.31 |
+| median block width (real m) | 13.1 | 21.9 (1.67x) |
+| street palms | 0 | 30 |
+
+- **Floors:** Tel Aviv's floors follow the ruling: 24 buildings (in `Floors` and `MainBuildings`), and cover 24.5% / 21%.
+  - All are about 10% under the measure.
+  - They were 50 buildings and 22.5% / 25% cover, with a `MainBuildings` row of 36.
+  - Every other town's floor is unchanged.
+- The ruling said about 30 buildings. At 1.6 times main's width the lattice holds 27; the sweep's 29-32-building
+  variants kept median widths of only 15.8-17 m.
+- **Neighbours:**
+  - Jaffa draws 39 buildings (main 38), with cover 39.0% (main 39.0%).
+  - Petah Tikva draws 8 (main 8), with cover 19.2% (main 18.8%).
+  - The 1948 localities draw 1,339 houses (main 1,340).
+  - The other 22 towns are unchanged.
+- **Kit numbers** (editor `KITS` line): vertices 103,419 → 110,819, triangles 70,410 → 74,348, draws 64 → 64.
+- **Frame time:** not re-measured for this round. The vertices rise by 7%, less than the first round's 13%, which measured
+  as below (WebGL `?vprofile`, headless, 1920x1080, DPR 1; main c02d4eb0 and the first round back to back under one
+  exclusive `machine_lock`, 2026-10-15; `PROFILE summary` median avg / p95 in ms):
+
+  | pose, toggles | main c02d4eb0 | first round |
+  |---|---|---|
+  | gameplay03, all | 8.33 / 10 | 8.33 / 10 |
+  | gameplay03, -kits | 8.61 / 10 | 8.39 / 10 |
+  | diorama02, all | 15.65 / 17 | 15.89 / 17 (spread 0.84) |
+  | diorama02, -kits | 15.70 / 17 | 16.05 / 17 |
+
+  - The kits' cost (all minus -kits) is within the spread on both.
+  - The machine was shared with other sessions' jobs between runs. Diorama02's p95 of 17 ms is over the 16.7 ms budget on
+    main as well, so it is not this change.
+
+**Accuracy.** The White City article (https://en.wikipedia.org/wiki/White_City,_Tel_Aviv, checked 2026-10-15) has:
+- pilotis from 1933 (Engel House);
+- long, narrow balconies;
+- flat roofs used as shared space;
+- white and light colours;
+- small parks between the buildings;
+- the Geddes plan, 1925-29.
+
+It describes the windows as small and recessed, not ribbon windows. The strips follow promo 03 (owner ruling on #652,
+"Keep strips (promo look)"), as the storeys do.
+
 ## Issue #195: the water and the border lookups out of the terrain's fragment shader
 - **Why.** promo-sea (#138) put the water shading (`ScWaterShade`, the breakers' `fwidth`, the footprint) in the terrain
   graph's function, and promo-borders (#206) six neighbour fetches in `ScBorderApply`'s loop. Either one makes the shader
