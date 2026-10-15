@@ -121,7 +121,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     position: absolute; top: 2px; left: 5px; width: 50px; height: 50px; padding: 11px;
     border-radius: 25px; border-width: 1.5px; border-color: var(--gold-dim); background-color: var(--navy-deep);
 }
-/* "New Game" is the longest caption: its button is wider, its disc centred (PromoHudTests: every caption fits). */
+/* "New game" is the longest caption: its button is wider, its disc centred (PromoHudTests: every caption fits). */
 #new-game { width: 66px; }
 #new-game .nav-disc { left: 8px; }
 .nav-button:hover { background-color: rgba(0, 0, 0, 0); color: var(--ink); }
