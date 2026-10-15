@@ -145,64 +145,114 @@ export function roadmap(lang: 'en' | 'he'): Phase[] {
   });
 }
 
-// The Cabinet page: everyone who held an office in the game's years (15 May 1948 to the end of 1951), read from
-// content/people.yaml, offices.yaml and parties.yaml as they are. Nothing here is written for the website: the tagline
-// is built from the sourced offices and dates, never a quote (content/ holds no sourced quotes).
-export interface Term { office: string; title: string; title_he?: string; from: string; to?: string; sources: Source[] }
+// The Cabinet page: everyone who held an office in the game's years, read from content/people.yaml, offices.yaml and
+// parties.yaml as they are: terms from the state's founding on 14 May 1948 (the game starts the next day) to the end of
+// 1951. Nothing here is written for the website: the tagline is built from the sourced offices and dates, never a quote
+// (content/ holds no sourced quotes).
+export interface Named { en: string; he?: string }
+export interface Term { office: string; title: Named; party?: Named; from: string; to?: string; sources: Source[] }
+/** A portrait the site may publish: only ASSETS.portraits.yaml rows marked verified (owner, 15 October 2026: the
+ * owner-verify GPO photographs are hidden for now, decision D-P). `credit` is the attribution an open licence requires,
+ * from NOTICE: the photographer and year, the collection, the licence with its link, and that the file was adapted. */
+export interface Portrait {
+  file: string; source: string; focus_y?: number;
+  credit: { who: string; collection?: string; licence: string; licenceUrl?: string; adapted?: string };
+}
 export interface Person {
-  id: string; name: string; name_he: string; born: string; died?: string; party?: string; party_he?: string;
+  id: string; name: string; name_he: string; born: string; died?: string; party?: Named;
   status: string; competence: number; loyalty: number; terms: Term[]; group: 'government' | 'state' | 'deputy';
-  portrait?: { file: string; licence: string; source: string; artist?: string; focus_y?: number };
-  bioSources: Source[];
+  portrait?: Portrait; bioSources: Source[];
 }
 const GAME_START = '1948-05-14';
 const GAME_END = '1952-01-01';
+const PORTRAIT_DIR = 'unity/Assets/UI/Portraits/';
+
+/** The CC BY 4.0 and CC BY-SA 4.0 portrait credits in NOTICE ("Portraits:" paragraph): each licence block names its
+ * collection, and each file line its photographer, year and "cropped". */
+function noticeCredits(): Map<string, { who: string; collection: string; licence: string; licenceUrl: string; adapted: string }> {
+  const text = read('NOTICE');
+  const start = text.indexOf('Portraits:');
+  const end = text.indexOf('\n\n', start);
+  if (start < 0 || end < 0) throw new Error('site: NOTICE has no "Portraits:" paragraph');
+  const para = text.slice(start, end);
+  const out = new Map<string, { who: string; collection: string; licence: string; licenceUrl: string; adapted: string }>();
+  const blocks = [...para.matchAll(/(CC BY(?:-SA)? 4\.0) \((https:\/\/creativecommons\.org\/licenses\/[^)]+)\),([\s\S]*?)via Wikimedia(?:\s|\n)+Commons([\s\S]*?)(?=CC BY(?:-SA)? 4\.0 \(https|$)/g)];
+  for (const [, licence, url, collection, body] of blocks) {
+    for (const m of body.matchAll(/^- ([a-z_]+)\.jpg: (.+?), (CC BY(?:-SA)? 4\.0), cropped\.$/gm)) {
+      if (m[3] !== licence) throw new Error(`site: NOTICE lists ${m[1]}.jpg as ${m[3]} under ${licence}`);
+      out.set(m[1], { who: m[2], collection: collection.replace(/\s+/g, ' ').trim().replace(/,$/, ''), licence, licenceUrl: url, adapted: 'cropped and resized' });
+    }
+  }
+  return out;
+}
+
 export function cabinet(): Person[] {
   const officeDoc = readYaml('content/offices.yaml').offices as { id: string; title: string; title_he?: string }[];
   const officeOrder = new Map(officeDoc.map((o, i) => [o.id, i]));
   const office = new Map(officeDoc.map((o) => [o.id, o]));
   const parties = new Map((readYaml('content/parties.yaml').parties as { id: string; name: string; name_he?: string }[]).map((p) => [p.id, p]));
-  const credits = new Map((readYaml('ASSETS.portraits.yaml').rules as { glob: string; licence: string; source: string; artist?: string }[]).map((r) => [r.glob, r]));
+  const party = (id?: string): Named | undefined => {
+    if (!id) return undefined;
+    const x = parties.get(id);
+    if (!x) throw new Error(`site: party ${id} is not in parties.yaml`);
+    return { en: x.name, he: x.name_he };
+  };
+  const credits = new Map((readYaml('ASSETS.portraits.yaml').rules as { glob: string; licence: string; source: string; artist?: string; status: string }[]).map((r) => [r.glob, r]));
+  const notice = noticeCredits();
   const people = readYaml('content/people.yaml').people as Record<string, any>[];
   const list: Person[] = [];
   for (const p of people) {
     if (p.status === 'draft') continue;
     const raw = (p.offices as Record<string, any>[])
-      .map((o) => ({ office: o.office as string, from: toIso(o.from), to: o.to ? toIso(o.to) : undefined, sources: o.sources as Source[] }))
+      .map((o) => ({ office: o.office as string, party: o.party as string | undefined, from: toIso(o.from), to: o.to ? toIso(o.to) : undefined, sources: o.sources as Source[] }))
       .filter((o) => o.from < GAME_END && (!o.to || o.to > GAME_START))
       .sort((a, b) => a.from.localeCompare(b.from));
     if (!raw.length) continue;
-    // Terms are split per government in content/; join a term to the one before it when the office runs on unbroken.
-    const terms: Term[] = [];
+    // Terms are split per government in content/; join a term to the one before it when the office runs on unbroken
+    // for the same list (a term's own `party` is the list the holder sat for then; otherwise the person's applies).
+    const terms: (Term & { partyId?: string })[] = [];
     for (const o of raw) {
+      const partyId = o.party ?? p.party ?? undefined;
       const prev = [...terms].reverse().find((t) => t.office === o.office);
-      if (prev && prev.to === o.from) {
+      if (prev && prev.to === o.from && prev.partyId === partyId) {
         prev.to = o.to;
         for (const s of o.sources) if (!prev.sources.some((x) => x.url === s.url)) prev.sources.push(s);
       } else {
         const off = office.get(o.office);
         if (!off) throw new Error(`site: ${p.id} holds an office that offices.yaml does not define: ${o.office}`);
-        terms.push({ office: o.office, title: off.title, title_he: off.title_he, from: o.from, to: o.to, sources: [...o.sources] });
+        terms.push({ office: o.office, title: { en: off.title, he: off.title_he }, partyId, party: party(partyId), from: o.from, to: o.to, sources: [...o.sources] });
       }
     }
     terms.sort((a, b) => (officeOrder.get(a.office)! - officeOrder.get(b.office)!) || a.from.localeCompare(b.from));
     const ids = terms.map((t) => t.office);
     const group = ids.some((i) => i === 'prime_minister' || (i.endsWith('_minister') && !i.startsWith('deputy_')))
       ? 'government' : ids.some((i) => i.startsWith('deputy_')) ? 'deputy' : 'state';
-    const file = p.portrait ? `unity/Assets/UI/Portraits/${p.id}.jpg` : undefined;
-    const credit = file ? credits.get(file) : undefined;
-    if (file && !credit) throw new Error(`site: portrait ${file} has no row in ASSETS.portraits.yaml`);
-    const party = p.party ? parties.get(p.party) : undefined;
+    let portrait: Portrait | undefined;
+    if (p.portrait) {
+      const file = `${PORTRAIT_DIR}${p.id}.jpg`;
+      const row = credits.get(file);
+      if (!row) throw new Error(`site: portrait ${file} has no row in ASSETS.portraits.yaml`);
+      if (row.status === 'verified') {
+        const open = /^CC-BY/.test(row.licence);
+        const n = notice.get(p.id);
+        if (open && !n) throw new Error(`site: ${file} is ${row.licence} but NOTICE has no credit line for it`);
+        portrait = {
+          file, source: row.source, focus_y: p.portrait.focus_y,
+          credit: n ? { who: n.who, collection: n.collection, licence: n.licence, licenceUrl: n.licenceUrl, adapted: n.adapted }
+            : { who: row.artist ?? '', licence: row.licence === 'CC0-1.0' ? 'CC0' : 'Public domain' },
+        };
+      }
+    }
     const bio = p.biography_sources ?? {};
     const bioSources: Source[] = [];
     for (const k of ['born', 'died', 'name_he']) for (const s of (bio[k] ?? []) as Source[]) if (!bioSources.some((x) => x.url === s.url)) bioSources.push(s);
     list.push({
       id: p.id, name: p.name, name_he: p.name_he, born: toIso(p.born), died: p.died ? toIso(p.died) : undefined,
-      party: party?.name, party_he: party?.name_he, status: p.status, competence: p.competence, loyalty: p.loyalty,
-      terms, group, bioSources,
-      portrait: file && credit ? { file, licence: credit.licence, source: credit.source, artist: credit.artist, focus_y: p.portrait.focus_y } : undefined,
+      party: party(p.party || undefined), status: p.status, competence: p.competence, loyalty: p.loyalty,
+      terms: terms.map(({ partyId: _x, ...t }) => t), group, bioSources, portrait,
     });
   }
   const rank = (x: Person) => Math.min(...x.terms.map((t) => officeOrder.get(t.office)!));
   return list.sort((a, b) => rank(a) - rank(b) || a.terms[0].from.localeCompare(b.terms[0].from) || a.name.localeCompare(b.name));
 }
+

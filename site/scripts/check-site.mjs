@@ -15,6 +15,8 @@
 //     (and "AI likeness, not a photograph" in 04 and 08, which the README's first line names), and
 //     are linked from the Press page in both languages.
 //  9. the history approach page exists in both languages, links to the two documents it restates, and History links to it.
+// 10. no page publishes a game portrait whose ASSETS.portraits.yaml row is not verified (the owner-verify GPO
+//     photographs are hidden for now: owner, 15 October 2026, decision D-P), and the Cabinet page exists in both languages.
 // Run after `astro build` (npm run build does both). Exit 1 with one line per problem.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -219,9 +221,23 @@ for (const lang of ['en', 'he']) {
   if (!fs.existsSync(index) || !fs.readFileSync(index, 'utf8').includes(`/${lang}/history/approach/"`)) fail(index, 'no link to history/approach/');
 }
 
+// 10. Unverified portraits are never published. A built image keeps its source name (kaplan.<hash>_<hash>.avif), so
+// a page naming /_astro/<id>.<...> for an unverified <id>.jpg publishes it. SITE_PORTRAITS points at a fixture instead.
+{
+  const rows = YAML.parse(fs.readFileSync(process.env.SITE_PORTRAITS ?? path.resolve(dist, '..', '..', 'ASSETS.portraits.yaml'), 'utf8')).rules ?? [];
+  const dir = 'unity/Assets/UI/Portraits/';
+  const hidden = rows.filter((r) => r.glob.startsWith(dir) && r.status !== 'verified').map((r) => r.glob.slice(dir.length).replace(/\.jpg$/, ''));
+  if (!rows.some((r) => r.glob.startsWith(dir))) problems.push('ASSETS.portraits.yaml: no game portrait rows found');
+  for (const f of pages) {
+    const html = fs.readFileSync(f, 'utf8');
+    for (const id of hidden) if (new RegExp(`/_astro/${id}\\.[A-Za-z0-9_-]+\\.(?:avif|webp|jpe?g|png)`).test(html)) fail(f, `publishes the unverified portrait ${id}.jpg (ASSETS.portraits.yaml status is not verified)`);
+  }
+  for (const lang of ['en', 'he']) if (!fs.existsSync(path.join(dist, lang, 'cabinet', 'index.html'))) problems.push(`${lang}/cabinet/index.html: missing`);
+}
+
 if (problems.length) {
   console.error(problems.join('\n'));
   console.error(`check-site: ${problems.length} problem(s)`);
   process.exit(1);
 }
-console.log(`check-site: ${pages.length} pages OK (both languages, labels on every image and video, nothing from other origins, devlog RSS feeds, contributors groups, press zips, history approach page)`);
+console.log(`check-site: ${pages.length} pages OK (both languages, labels on every image and video, nothing from other origins, devlog RSS feeds, contributors groups, press zips, history approach page, no unverified portraits, cabinet page)`);

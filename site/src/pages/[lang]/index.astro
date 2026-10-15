@@ -2,14 +2,13 @@
 import { getImage } from 'astro:assets';
 import Layout from '../../layouts/Layout.astro';
 import Figure from '../../components/Figure.astro';
+import PersonPortrait from '../../components/PersonPortrait.astro';
 import VideoFacade from '../../components/VideoFacade.astro';
 import MediaLabel from '../../components/MediaLabel.astro';
 import { type Lang, languages, href, t, REPO, formatDate, asset } from '../../i18n/ui';
 import { capture, engine, concept, flythrough, trailer, gameplay, gameplayVideo, captureDateIso, heroShot } from '../../lib/media';
 import { posts } from '../../lib/devlog';
 import { roadmap, cabinet as cabinetPeople } from '../../lib/repo';
-import { Picture } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
 
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
@@ -28,11 +27,10 @@ const heroWebp = await getImage({ src: heroShot.src, widths: heroWidths, format:
 const recent = posts(lang).slice(0, 2);
 const phases = roadmap(lang);
 // Proposal v2: the cabinet strip (archival portraits from the game's own catalogue) and the promo 03 concept band.
-const portraitFiles = import.meta.glob<{ default: ImageMetadata }>('../../../../unity/Assets/UI/Portraits/*.jpg', { eager: true });
-const portraitById = new Map(Object.entries(portraitFiles).map(([f, m]) => [f.split('/').pop()!.replace(/\.jpg$/, ''), m.default]));
 const people = cabinetPeople();
 const cabinetCount = people.length;
-const ministers = people.filter((p) => p.group === 'government' && p.portrait && portraitById.has(p.id)).slice(0, 6).map((p) => ({ p, img: portraitById.get(p.id)! }));
+// The first six of the government, by office: a portrait where one may be shown, otherwise the lettered plate.
+const ministers = people.filter((p) => p.group === 'government').slice(0, 6);
 const target = concept.find((c) => c.id === 'gameplay-1936')!;
 const stateWord = (s: string) => ({
   done: he ? 'הושלם' : 'Done', now: he ? 'בתהליך' : 'In progress', next: he ? 'הבא' : 'Next', later: he ? 'בהמשך' : 'Later',
@@ -84,8 +82,8 @@ const features = [
     item: cabinet,
     title: he ? 'שרים אמיתיים, קואליציה אמיתית' : 'Real ministers in a real coalition',
     text: he
-      ? 'ממנים ומחליפים שרים אמיתיים, כמו דוד בן־גוריון, אליעזר קפלן ומשה שרת, בתוך קואליציה אמיתית. הפורטרטים הם צילומים בנחלת הכלל או ברישיון CC0.'
-      : 'Appoint and replace real ministers such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real coalition. The portraits are public-domain or CC0 photographs.',
+      ? 'ממנים ומחליפים שרים אמיתיים, כמו דוד בן־גוריון, אליעזר קפלן ומשה שרת, בתוך קואליציה אמיתית. הפורטרטים הם צילומי ארכיון, כל אחד עם הרישיון והקרדיט שלו.'
+      : 'Appoint and replace real ministers such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real coalition. The portraits are archival photographs, each with its licence and credit.',
   },
   {
     item: mapShot, crop: '100% 0%',
@@ -222,18 +220,12 @@ const missing = he
         : 'Archival photographs of the ministers you build the government from. The Cabinet page has a card for each: the offices and dates with their sources, and what the game does with them.'}</p>
     </div>
     <div class="cab-strip">
-      {ministers.map(({ p, img }) => (
-        <a class="cab-card" href={`${href(lang, 'cabinet')}#${p.id}`}>
-          <figure class="media" data-kind="archival">
-            <div class="media-frame">
-              <MediaLabel lang={lang} kind="archival" />
-              <Picture src={img} alt={he ? `צילום ארכיון של ${p.name_he}` : `Archival photograph of ${p.name}`} formats={['avif']} fallbackFormat="webp"
-                widths={[240, 480].filter((w) => w <= img.width)} sizes="(min-width: 76rem) 14rem, 45vw" loading="lazy"
-                style={`object-position: 50% ${Math.round((p.portrait!.focus_y ?? 0.35) * 100)}%`} />
-            </div>
-            <figcaption><strong>{he ? p.name_he : p.name}</strong><span class="cab-office">{(he && p.terms[0].title_he) || p.terms[0].title}</span></figcaption>
-          </figure>
-        </a>
+      {ministers.map((p) => (
+        <div class="cab-card">
+          <PersonPortrait person={p} lang={lang} sizes="(min-width: 76rem) 14rem, 45vw" />
+          <p class="cab-name"><a href={`${href(lang, 'cabinet')}#${p.id}`}>{he ? p.name_he : p.name}</a>
+            <span class="cab-office">{he && !p.terms[0].title.he ? <span lang="en" dir="ltr">{p.terms[0].title.en}</span> : (he ? p.terms[0].title.he : p.terms[0].title.en)}</span></p>
+        </div>
       ))}
     </div>
     <p class="cab-more"><a class="btn" href={href(lang, 'cabinet')}>{he ? `כל ${cabinetCount} נושאי המשרה` : `All ${cabinetCount} office holders`}</a></p>
@@ -412,14 +404,12 @@ const missing = he
   .cab-strip { display: grid; gap: clamp(1rem, 2vw, 1.75rem); grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (min-width: 40rem) { .cab-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (min-width: 64rem) { .cab-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-  .cab-card { text-decoration: none; color: var(--ink); display: block; }
-  .cab-card .media-frame { aspect-ratio: 4 / 5; }
-  .cab-card .media-frame :global(picture), .cab-card .media-frame :global(img) { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
   .cab-card :global(.label) { font-size: 0.7rem; }
-  .cab-card figcaption { display: grid; color: var(--ink); text-align: center; }
-  .cab-card figcaption strong { font-size: 1.1rem; }
+  .cab-card :global(.credit) { font-size: 0.66rem; }
+  .cab-name { display: grid; text-align: center; margin-block-start: 0.4rem; }
+  .cab-name a { font-size: 1.1rem; color: var(--ink); text-decoration: none; }
+  .cab-name a:hover, .cab-name a:focus-visible { color: var(--gold-light); text-decoration: underline; }
   .cab-office { color: var(--ink-dim); font-size: 0.9rem; }
-  .cab-card:hover figcaption strong, .cab-card:focus-visible figcaption strong { color: var(--gold-light); text-decoration: underline; }
   .cab-more { text-align: center; margin-block-start: 2rem; }
   /* The promo 03 band: once, edge to edge, with its label on the picture and in the heading, and the AI mark. */
   .concept-band { padding-block: clamp(3rem, 7vw, 5.5rem) 0; background: var(--navy-deep); }

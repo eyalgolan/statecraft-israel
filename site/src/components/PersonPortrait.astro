@@ -1,0 +1,52 @@
+---
+// One office holder's portrait: an archival photograph with its label and the credit its licence requires, or, where no
+// photograph may be shown yet, a lettered plate that says so (never a generated picture). Only portraits whose
+// ASSETS.portraits.yaml row is verified reach here (lib/repo.ts cabinet()); check-site fails if any other is published.
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import MediaLabel from './MediaLabel.astro';
+import type { Lang } from '../i18n/ui';
+import type { Person } from '../lib/repo';
+interface Props { person: Person; lang: Lang; sizes: string; credit?: boolean }
+const { person: p, lang, sizes, credit = true } = Astro.props;
+const he = lang === 'he';
+const files = import.meta.glob<{ default: ImageMetadata }>('../../../unity/Assets/UI/Portraits/*.jpg', { eager: true });
+const img = p.portrait && Object.entries(files).find(([f]) => f.endsWith(`/${p.id}.jpg`))?.[1].default;
+const c = p.portrait?.credit;
+const none = he ? 'אין עדיין צילום בנחלת הכלל' : 'No public-domain portrait yet';
+---
+{img && p.portrait && c ? (
+  <figure class="media person-portrait" data-kind="archival">
+    <div class="media-frame">
+      <MediaLabel lang={lang} kind="archival" />
+      <Picture src={img} alt={he ? `צילום ארכיון של ${p.name_he}` : `Archival photograph of ${p.name}`} formats={['avif']} fallbackFormat="webp"
+        widths={[240, 480].filter((w) => w <= img.width)} sizes={sizes} loading="lazy"
+        style={`object-position: 50% ${Math.round((p.portrait.focus_y ?? 0.35) * 100)}%`} />
+    </div>
+    {credit && (
+      <figcaption class="credit" lang="en" dir="ltr">
+        {c.who}{c.collection && !c.who.includes(c.collection) && <> · {c.collection}</>}
+        {' · '}{c.licenceUrl ? <a href={c.licenceUrl}>{c.licence}</a> : c.licence}
+        {c.adapted && <> · {c.adapted}</>}
+        {' · '}<a href={p.portrait.source}>Wikimedia&nbsp;Commons</a>
+      </figcaption>
+    )}
+  </figure>
+) : (
+  <div class="no-portrait" role="img" aria-label={none}>
+    <span aria-hidden="true">{(he ? p.name_he : p.name).split(/[\s-]+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('')}</span>
+    <small>{none}</small>
+  </div>
+)}
+
+<style>
+  .person-portrait .media-frame { aspect-ratio: 4 / 5; }
+  .person-portrait .media-frame :global(picture), .person-portrait .media-frame :global(img) { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
+  .credit { font-size: 0.72rem; line-height: 1.35; overflow-wrap: anywhere; }
+  .no-portrait {
+    aspect-ratio: 4 / 5; display: grid; place-content: center; text-align: center; gap: 0.5rem; padding: 1rem;
+    border: 1px solid var(--gold-dim); box-shadow: 0 0 0 4px var(--navy-deep), 0 0 0 5px var(--gold-dim); background: var(--navy-deep);
+  }
+  .no-portrait span { font-size: 3rem; color: var(--gold); line-height: 1; }
+  .no-portrait small { color: var(--ink-dim); font-size: 0.85rem; }
+</style>

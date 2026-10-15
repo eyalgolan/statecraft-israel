@@ -3,31 +3,44 @@
 // history, then "In the game"). Everything is read from content/people.yaml, offices.yaml and parties.yaml, the game's
 // own portraits and ASSETS.portraits.yaml. No quote appears: content/ holds none, so each card opens with a tagline
 // built from its sourced offices and dates. Portraits are archival photographs only, never generated.
-import { Picture } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
 import Layout from '../../layouts/Layout.astro';
-import MediaLabel from '../../components/MediaLabel.astro';
+import PersonPortrait from '../../components/PersonPortrait.astro';
 import { type Lang, languages, href, t, formatDate, repoFile } from '../../i18n/ui';
-import { cabinet, events, type Person, type Term } from '../../lib/repo';
+import { cabinet, events, type Person, type Term, type Named } from '../../lib/repo';
 
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
 const he = lang === 'he';
 
-const files = import.meta.glob<{ default: ImageMetadata }>('../../../../unity/Assets/UI/Portraits/*.jpg', { eager: true });
-const portraitById = new Map(Object.entries(files).map(([p, m]) => [p.split('/').pop()!.replace(/\.jpg$/, ''), m.default]));
 const people = cabinet();
 const evs = events();
 
-const title = (tm: Term) => (he && tm.title_he) || tm.title;
+// A name in the page's language; where content/ has no Hebrew form, the English, marked as English.
+const hasHe = (n: Named) => !!n.he;
+const label = (n: Named) => (he && n.he) || n.en;
 const year = (iso?: string) => iso?.slice(0, 4);
-// A year range is isolated left to right (U+2066 ... U+2069), or Hebrew text shows 1948–1952 as 1952–1948.
-const span = (tm: Term) => tm.to ? `\u2066${year(tm.from)}–${year(tm.to)}\u2069` : (he ? `מ־${year(tm.from)}` : `from ${year(tm.from)}`);
+// A year range is isolated left to right (U+2066 ... U+2069), or Hebrew text shows 1948–1952 as 1952–1948. One year
+// is written once.
+const span = (tm: Term) => !tm.to ? (he ? `מ־${year(tm.from)}` : `from ${year(tm.from)}`)
+  : year(tm.from) === year(tm.to) ? year(tm.from)! : `\u2066${year(tm.from)}–${year(tm.to)}\u2069`;
 // The tagline: the offices held in the game's years, with their years. Built from the sourced terms, never a quote.
 const tagline = (p: Person) => {
-  const seen = new Map<string, Term[]>();
-  for (const tm of p.terms) seen.set(title(tm), [...(seen.get(title(tm)) ?? []), tm]);
-  return [...seen.entries()].map(([ti, ts]) => `${ti}, ${ts.map(span).join(he ? ' ו־' : ' and ')}`).join(' · ');
+  // Terms split only by a change of list are one stretch in office here: join them before writing the years.
+  const runs: Term[] = [];
+  for (const tm of [...p.terms].sort((a, b) => a.from.localeCompare(b.from))) {
+    const prev = runs.find((r) => r.office === tm.office && r.to === tm.from);
+    if (prev) prev.to = tm.to; else runs.push({ ...tm });
+  }
+  const order = new Map(p.terms.map((t, i) => [t.office, i]));
+  runs.sort((a, b) => order.get(a.office)! - order.get(b.office)! || a.from.localeCompare(b.from));
+  const seen = new Map<string, { t: Term; spans: string[] }>();
+  for (const tm of runs) {
+    const k = label(tm.title);
+    const e = seen.get(k) ?? { t: tm, spans: [] };
+    if (!e.spans.includes(span(tm))) e.spans.push(span(tm));
+    seen.set(k, e);
+  }
+  return [...seen.values()];
 };
 const inGame = (p: Person) => evs.filter((e) => e.office && p.terms.some((tm) => tm.office === e.office && e.from >= tm.from && (!tm.to || e.from < tm.to)));
 const host = (u: string) => { try { const x = new URL(u); return x.hostname.replace(/^www\./, '') + decodeURIComponent(x.pathname).replace(/\/$/, ''); } catch { return u; } };
@@ -43,10 +56,10 @@ const statusText = (s: string) => s === 'fact-checked' || s === 'sensitivity-rev
   <div class="wrap page">
     <header class="page-head">
       <span class="eyebrow">{t(lang, 'nav.cabinet')}</span>
-      <h1>{he ? 'השרים של 1948 עד 1951' : 'The ministers of 1948 to 1951'}</h1>
+      <h1>{he ? 'נושאי המשרה, 1948 עד 1951' : 'Office holders, 1948 to 1951'}</h1>
       <p>{he
-        ? `${people.length} האנשים שכיהנו בתפקיד בשנים של המשחק. בכל כרטיס מופיע קודם מה שקרה, התפקידים והתאריכים עם המקורות שלהם, ואחר כך מה שהמשחק עושה איתם. הנתונים נלקחים כמו שהם מתיקיית content במאגר. הצילומים הם צילומי ארכיון בנחלת הכלל או ברישיון פתוח; אין בעמוד הזה תמונות שנוצרו בבינה מלאכותית.`
-        : `The ${people.length} people who held office in the game’s years. Each card shows first what happened, the offices and dates with their sources, then what the game does with them. The data is taken as it is from the repository’s content folder. The portraits are archival photographs in the public domain or under an open licence; there are no AI-generated images on this page.`}</p>
+        ? `${people.length} האנשים שכיהנו בתפקיד בשנים של המשחק. בכל כרטיס מופיע קודם מה שקרה, התפקידים והתאריכים עם המקורות שלהם, ואחר כך מה שהמשחק עושה איתם. הנתונים נלקחים כמו שהם מתיקיית content במאגר. הצילומים הם צילומי ארכיון בנחלת הכלל או ברישיון פתוח, עם הקרדיט שהרישיון דורש; צילומים שהרישיון שלהם עדיין בבדיקה אינם מוצגים בינתיים. אין בעמוד הזה תמונות שנוצרו בבינה מלאכותית.`
+        : `The ${people.length} people who held office in the game’s years. Each card shows first what happened, the offices and dates with their sources, then what the game does with them. The data is taken as it is from the repository’s content folder. The portraits are archival photographs in the public domain or under an open licence, with the credit the licence asks for; photographs whose licence is still being checked are not shown yet. There are no AI-generated images on this page.`}</p>
       {he && <p class="note">{'שמות התפקידים בעברית נבדקו מול המקורות על ידי סוכן בינה מלאכותית ומחכים לבדיקה של דובר עברית (#564).'}</p>}
     </header>
 
@@ -65,38 +78,25 @@ const statusText = (s: string) => s === 'fact-checked' || s === 'sensitivity-rev
           </div>
           <div class="cards">
             {members.map((p) => {
-              const img = p.portrait && portraitById.get(p.id);
               const games = inGame(p);
               return (
                 <article class="minister" id={p.id}>
-                  {img && p.portrait ? (
-                    <figure class="media portrait-fig" data-kind="archival">
-                      <div class="media-frame">
-                        <MediaLabel lang={lang} kind="archival" />
-                        <Picture src={img} alt={he ? `צילום ארכיון של ${p.name_he}` : `Archival photograph of ${p.name}`} formats={['avif']} fallbackFormat="webp"
-                          widths={[240, 480].filter((w) => w <= img.width)} sizes="15rem" loading="lazy"
-                          style={`object-position: 50% ${Math.round((p.portrait.focus_y ?? 0.35) * 100)}%`} />
-                      </div>
-                      <figcaption lang="en" dir="ltr">{p.portrait.artist ? `${p.portrait.artist} · ` : ''}{p.portrait.licence.replace(/-/g, ' ')} · <a href={p.portrait.source}>Wikimedia&nbsp;Commons</a></figcaption>
-                    </figure>
-                  ) : (
-                    <div class="no-portrait" role="img" aria-label={he ? 'אין עדיין צילום בנחלת הכלל' : 'No public-domain portrait yet'}>
-                      <span aria-hidden="true">{(he ? p.name_he : p.name).split(/[\s-]+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('')}</span>
-                      <small>{he ? 'אין עדיין צילום בנחלת הכלל' : 'No public-domain portrait yet'}</small>
-                    </div>
-                  )}
+                  <PersonPortrait person={p} lang={lang} sizes="13rem" />
                   <div class="body">
-                    <p class="tagline">{tagline(p)}</p>
+                    <p class="tagline">{tagline(p).map((e, i) => <>{i > 0 && ' · '}{he && !hasHe(e.t.title) ? <span lang="en" dir="ltr">{e.t.title.en}</span> : label(e.t.title)}, {e.spans.join(he ? ' ו־' : ' and ')}</>)}</p>
                     <h3>{he ? p.name_he : p.name}</h3>
                     <p class="alt-name" lang={he ? 'en' : 'he'} dir={he ? 'ltr' : 'rtl'}>{he ? p.name : p.name_he}</p>
                     <dl class="facts">
-                      <dt>{he ? 'נולד' : 'Born'}</dt><dd>{formatDate(lang, p.born)}{p.died && <>{he ? '; נפטר ' : '; died '}{formatDate(lang, p.died)}</>}</dd>
-                      {(he ? p.party_he ?? p.party : p.party) && <><dt>{he ? 'מפלגה' : 'Party'}</dt><dd>{he ? p.party_he ?? p.party : p.party}</dd></>}
+                      {/* Neutral Hebrew labels (לידה, פטירה): content/ records no gender, and the cards include women. */}
+                      <dt>{he ? 'לידה' : 'Born'}</dt><dd>{formatDate(lang, p.born)}</dd>
+                      {p.died && <><dt>{he ? 'פטירה' : 'Died'}</dt><dd>{formatDate(lang, p.died)}</dd></>}
+                      {p.party && <><dt>{he ? 'מפלגה' : 'Party'}</dt><dd>{he && !hasHe(p.party) ? <span lang="en" dir="ltr">{p.party.en}</span> : label(p.party)}</dd></>}
                     </dl>
                     <h4>{he ? 'בתפקיד' : 'In office'}</h4>
                     <ul class="terms">
                       {p.terms.map((tm) => (
-                        <li><span class="t-title">{title(tm)}</span>{' '}<span class="t-dates">{formatDate(lang, tm.from)}{' – '}{tm.to ? formatDate(lang, tm.to) : (he ? 'אחרי 1951' : 'beyond 1951')}</span></li>
+                        <li><span class="t-title">{he && !hasHe(tm.title) ? <span lang="en" dir="ltr">{tm.title.en}</span> : label(tm.title)}</span>{' '}<span class="t-dates">{formatDate(lang, tm.from)}{' – '}{tm.to ? formatDate(lang, tm.to) : (he ? 'אחרי 1951' : 'beyond 1951')}</span>
+                          {tm.party && (!p.party || tm.party.en !== p.party.en) && <span class="t-party">{he ? ' · ברשימת ' : ' · for '}{he && !hasHe(tm.party) ? <span lang="en" dir="ltr">{tm.party.en}</span> : label(tm.party)}</span>}</li>
                       ))}
                     </ul>
                     <details class="sources">
@@ -112,14 +112,14 @@ const statusText = (s: string) => s === 'fact-checked' || s === 'sensitivity-rev
                       <h4>{he ? 'במשחק' : 'In the game'}</h4>
                       {games.length ? (
                         <>
-                          <p>{he ? 'האירועים שהמשחק מציב לתפקיד שלו בזמן כהונתו:' : 'The events the game puts to their office while they hold it:'}</p>
+                          <p>{he ? 'האירועים שהמשחק מציב לתפקיד הזה בזמן הכהונה:' : 'The events the game puts to their office while they hold it:'}</p>
                           <ul class="events" lang="en" dir="ltr">
                             {games.slice(0, 5).map((e) => <li><a href={`${href(lang, 'history')}#${e.id}`}>{e.title}</a> <span class="muted">{formatDate('en', e.from)}</span></li>)}
                           </ul>
                           {games.length > 5 && <p><a href={href(lang, 'history')}>{he ? `ועוד ${games.length - 5} בעמוד ההיסטוריה` : `and ${games.length - 5} more on the History page`}</a></p>}
                         </>
                       ) : (
-                        <p>{he ? 'עדיין אין אירוע שמוצב לתפקיד שלו.' : 'No event is put to their office yet.'}</p>
+                        <p>{he ? 'עדיין אין אירוע שמוצב לתפקיד הזה.' : 'No event is put to their office yet.'}</p>
                       )}
                       <p class="ratings">{he
                         ? `יכולת ${p.competence} ונאמנות ${p.loyalty} מתוך 10: ערכי איזון של המשחק, לא עובדות היסטוריות.`
@@ -151,16 +151,8 @@ const statusText = (s: string) => s === 'fact-checked' || s === 'sensitivity-rev
     border: 1px solid var(--gold-dim); background-color: var(--navy-solid); background-image: var(--grain);
     --ink-dim: rgb(196, 190, 176);
   }
-  @media (max-width: 30rem) { .minister { grid-template-columns: 1fr; } .portrait-fig, .no-portrait { max-inline-size: 15rem; } }
-  .portrait-fig .media-frame { aspect-ratio: 4 / 5; }
-  .portrait-fig .media-frame :global(picture), .portrait-fig .media-frame :global(img) { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
-  .portrait-fig figcaption { font-size: 0.72rem; line-height: 1.35; overflow-wrap: anywhere; }
-  .no-portrait {
-    aspect-ratio: 4 / 5; display: grid; place-content: center; text-align: center; gap: 0.5rem; padding: 1rem;
-    border: 1px solid var(--gold-dim); box-shadow: 0 0 0 4px var(--navy-deep), 0 0 0 5px var(--gold-dim); background: var(--navy-deep);
-  }
-  .no-portrait span { font-size: 3rem; color: var(--gold); line-height: 1; }
-  .no-portrait small { color: var(--ink-dim); }
+  @media (max-width: 30rem) { .minister { grid-template-columns: 1fr; } .minister > :first-child { max-inline-size: 15rem; } }
+  .t-party { color: var(--ink-dim); }
   .tagline { color: var(--gold-light); font-size: 0.9rem; font-weight: 600; margin-block-end: 0.3rem; }
   .minister h3 { font-size: clamp(1.4rem, 1.2rem + 0.6vw, 1.75rem); margin-block-end: 0.1rem; }
   .alt-name { color: var(--ink-dim); margin-block-end: 0.6rem; }
