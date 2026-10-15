@@ -299,9 +299,15 @@ namespace Statecraft.Game.UI
             var camRig = rig = cameraController.GetComponent<CameraRig>();
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
             var mini = minimap = Own(new MinimapPresenter(root, map.Hexes, text));
-            labels = Own(new MapLabelsPresenter(root, map, cameraController.GetComponent<Camera>(), null,
+            var labelCamera = cameraController.GetComponent<Camera>();
+            labels = Own(new MapLabelsPresenter(root, map, labelCamera, null,
                 p => MapLabelsPresenter.TipOf(p, n => text.Format("map.today", n), text["map.mixed"], hebrew),
-                () => unitLayer != null ? unitLayer.KeepClear : null));   // the names keep clear of the unit tokens (issue #197)
+                () =>   // the names keep clear of the unit tokens (issue #197), their badges and flags as this camera will draw them
+                {
+                    if (unitLayer == null) return null;
+                    unitLayer.FaceCamera(labelCamera);
+                    return unitLayer.KeepClear;
+                }));
             mini.Clicked += (lon, lat) => { camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); cameraController.Settle(); SyncMinimap(); labels?.Refresh(); };   // the click may come after LateUpdate (review M6)
             // The minimap's whole-map button: the camera's own farthest zoom, over the middle of the map (no new rule).
             mini.Overview += () =>

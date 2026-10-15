@@ -79,9 +79,6 @@ namespace Statecraft.Game.Map.Units
             return Mathf.Lerp(MottleLow, MottleHigh, n);
         }
 
-        /// <summary>The base's top, draped: a polar grid over the unit disc (x, z scaled by the radius on the transform)
-        /// whose every vertex stands <see cref="LipShare"/> of the radius over the ground at its world point, with smooth
-        /// normals (the light follows the ground's shape) and mottled shade rows.</summary>
         /// <summary>The terrain's own sample spacing (m): the finer of its heightmap's steps east-west and north-south.</summary>
         public static float TerrainStepM(MapScene map)
         {

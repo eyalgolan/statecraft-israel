@@ -197,6 +197,10 @@ checks every anchor and logs each spot and its distance.
   aircraft or a ship). It is turned to face each camera as it renders. On an army token it sits above the flag's top, a little
   behind the trio and to the side away from the flag's pole as that camera sees it (`UnitLayer.FaceCamera`; review of #559:
   it covered the middle figure's head once the trio stood shoulder to shoulder, and the flag now turns with the camera).
+  The map's names keep clear of the badge and the flag where the camera draws them: `GameRoot` turns them to the labels'
+  camera before the names are placed, and each token's keep-clear boxes follow (`UnitLayer.KeepClear`). A fixed box round
+  every place the camera's yaw could take the badge, about 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03
+  (`MapLabelTests.PillsKeepClearOfTheUnitTokens`; test `TheKeepClearBoxesFollowTheBadgeAndTheFlagAsTheCameraTurns`).
 - **Ring:** the white ring appears only on selection.
 - **Base and flag (demo2 T29, refs #197).** An army token's figures stand shoulder to shoulder on one round earth base
   ringed by a bright white rim (`UnitPlinth`), and the side's flag flies on a pole at the base's back edge (`UnitFlags`).

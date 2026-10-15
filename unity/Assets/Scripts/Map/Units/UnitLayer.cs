@@ -42,8 +42,10 @@ namespace Statecraft.Game.Map.Units
         readonly List<Transform> badges = new List<Transform>();
         /// <summary>Each badge's home (over the highest figure's feet, at the figures' height and the badge's lift) and how
         /// far behind the trio it sits, away from the camera (review of #559: the badge keeps off the figures' heads from
-        /// any view, the camera's yaw and steepness alike).</summary>
-        readonly List<(Vector3 home, float back, Vector3 pole)> badgeHomes = new List<(Vector3, float, Vector3)>();
+        /// any view, the camera's yaw and steepness alike), its flag's pole from the middle (zero for none), the flag (null for
+        /// none) and the box of the token's pieces that neither turn nor move (null for a flying aircraft alone). In the order
+        /// of <see cref="badges"/> and <see cref="keepClear"/>.</summary>
+        readonly List<(Vector3 home, float back, Vector3 pole, MeshFilter? flag, Bounds? standing)> badgeHomes = new List<(Vector3, float, Vector3, MeshFilter?, Bounds?)>();
         /// <summary>A badge sits this share of its token's base radius behind the trio, seen from the camera, and
         /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
         /// further out than its base's edge).</summary>
@@ -60,9 +62,11 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The ground the anchors were placed on.</summary>
         public UnitGround PlacementGround => ground;
         /// <summary>The world boxes the map's name pills keep clear of (issue #197), one entry per drawn token: its standing
-        /// pieces (the figures on their bases, a parked aircraft, the ship; not a flying aircraft, which moves) and its
-        /// badge, which MapLabelsPresenter projects to one screen rectangle, so no pill sits on a token or between its badge
-        /// and its figures. A new list whenever the tokens are rebuilt, and empty while the "units" toggle hides the layer.</summary>
+        /// pieces (the figures on their bases with the flag, a parked aircraft, the ship; not a flying aircraft, which moves) and
+        /// its badge, which MapLabelsPresenter projects to one screen rectangle, so no pill sits on a token or between its badge
+        /// and its figures. The badge's box and the flag's part follow them as <see cref="FaceCamera"/> turns them to a camera
+        /// (in place: the boxes hold the token as that camera draws it). A new list whenever the tokens are rebuilt, and empty
+        /// while the "units" toggle hides the layer.</summary>
         public IReadOnlyList<Bounds[]> KeepClear => gameObject.activeInHierarchy ? keepClear : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
         /// <summary>The selected unit's id, or null.</summary>
         public string? Selected { get; private set; }
@@ -142,20 +146,31 @@ namespace Statecraft.Game.Map.Units
         /// it behind its trio as that camera sees it. No allocation.</summary>
         void FaceBadges(ScriptableRenderContext _, Camera cam) => FaceCamera(cam);
 
-        /// <summary>As the render callback does: for a still render (the editor's promo captures, the tests).</summary>
+        /// <summary>As the render callback does: for a still render (the editor's promo captures, the tests), and for the map's
+        /// names before they are placed (GameRoot), so the keep-clear boxes hold each badge and flag where this camera draws
+        /// them: the badge's box is its own cube, not a box round every place the camera's yaw could take it (that box, about
+        /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation.</summary>
         public void FaceCamera(Camera cam)
         {
             if (cam == null) return;
-            var rotation = cam.transform.rotation; var away = cam.transform.forward; away.y = 0f;
+            var eye = cam.transform.position; var rotation = cam.transform.rotation; var away = cam.transform.forward; away.y = 0f;
             away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.forward;
             var right = cam.transform.right; right.y = 0f;
             right = right.sqrMagnitude > 1e-6f ? right.normalized : Vector3.right;
             for (int i = 0; i < badges.Count; i++)
             {
                 var b = badges[i]; if (b == null) continue;
-                var (home, back, pole) = badgeHomes[i];
+                var (home, back, pole, flag, standing) = badgeHomes[i];
                 var aside = pole == Vector3.zero ? Vector3.zero : (Vector3.Dot(pole, right) > 0f ? -right : right) * BadgeAsideM;
-                b.SetPositionAndRotation(home + away * back + aside, rotation);
+                var at = home + away * back + aside;
+                b.SetPositionAndRotation(at, rotation);
+                var boxes = keepClear[i];
+                boxes[0] = new Bounds(at, Vector3.one * UnitBadge.SizeM);
+                if (flag != null && standing is Bounds s)
+                {
+                    UnitFlagFacing.Face(flag.transform, eye);   // as it will turn for this camera
+                    s.Encapsulate(WorldBox(flag)); boxes[1] = s;
+                }
             }
         }
 
@@ -307,37 +322,45 @@ namespace Statecraft.Game.Map.Units
                 badge.transform.localScale = Vector3.one * UnitBadge.SizeM;
                 badge.AddComponent<UnitBadge>();
                 var flagT = go.transform.Find(UnitPlinth.FlagName);
+                var flag = flagT != null ? flagT.GetComponent<MeshFilter>() : null;
                 var pole = flagT != null ? new Vector3(flagT.position.x - centre.x, 0f, flagT.position.z - centre.z) : Vector3.zero;
-                badges.Add(badge.transform); badgeHomes.Add((home, back, pole));
+                var standing = StillBox(go.transform, flag);
+                badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing));
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
-                keepClear.Add(KeepClearOf(go.transform, home, back + (pole == Vector3.zero ? 0f : BadgeAsideM)));
+                // The badge's cube and the pieces (the flag as it stands now); FaceCamera moves both with the camera.
+                var pieces = standing;
+                if (flag != null && pieces is Bounds s) { s.Encapsulate(WorldBox(flag)); pieces = s; }
+                keepClear.Add(pieces is Bounds p2 ? new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM), p2 }
+                    : new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM) });
             }
             FaceCamera(Camera.main);   // the badges as the main camera sees them until a render turns them
             HideTrees();
         }
 
-        /// <summary>A token's keep-clear boxes: the bounds of its pieces that stand still (a flying aircraft is left out)
-        /// and a cube of the badge's width round the badge's centre, which holds the plate however it is turned. The pieces'
-        /// bounds come from their meshes and transforms, not Renderer.bounds, which is empty while the layer is inactive (the
-        /// "units" toggle off when the tokens are built; review of #518).</summary>
-        static Bounds[] KeepClearOf(Transform token, Vector3 badgeHome, float back)
+        /// <summary>The world box of a mesh's bounds through its transform. From the mesh and the transform, not
+        /// Renderer.bounds, which is empty while the layer is inactive (the "units" toggle off when the tokens are built;
+        /// review of #518).</summary>
+        static Bounds WorldBox(MeshFilter f)
         {
-            // The badge sits up to `back` from its home in any direction the camera's yaw takes it: a box round them all.
-            var boxes = new List<Bounds> { new Bounds(badgeHome, new Vector3(UnitBadge.SizeM + 2f * back, UnitBadge.SizeM, UnitBadge.SizeM + 2f * back)) };
-            bool any = false; var pieces = default(Bounds);
+            var b = f.sharedMesh.bounds; var m = f.transform.localToWorldMatrix; var box = new Bounds(m.MultiplyPoint3x4(b.min), Vector3.zero);
+            for (int c = 1; c < 8; c++)
+                box.Encapsulate(m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z)));
+            return box;
+        }
+
+        /// <summary>The box of a token's pieces that neither turn nor move (a flying aircraft, the badge and the flag, which
+        /// turns to the camera, are left out), or null when it has none.</summary>
+        static Bounds? StillBox(Transform token, MeshFilter? flag)
+        {
+            Bounds? box = null;
             foreach (var f in token.GetComponentsInChildren<MeshFilter>(true))
             {
-                if (f.sharedMesh == null || f.GetComponentInParent<UnitBadge>(true) != null || f.GetComponentInParent<ShowcaseFlight>(true) != null) continue;
-                var b = f.sharedMesh.bounds; var m = f.transform.localToWorldMatrix;
-                for (int c = 0; c < 8; c++)
-                {
-                    var w = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
-                    if (any) pieces.Encapsulate(w); else { pieces = new Bounds(w, Vector3.zero); any = true; }
-                }
+                if (f.sharedMesh == null || f == flag || f.GetComponentInParent<UnitBadge>(true) != null || f.GetComponentInParent<ShowcaseFlight>(true) != null) continue;
+                var w = WorldBox(f);
+                if (box is Bounds b) { b.Encapsulate(w); box = b; } else box = w;
             }
-            if (any) boxes.Add(pieces);
-            return boxes.ToArray();
+            return box;
         }
 
         static void AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)

@@ -670,6 +670,45 @@ public class UnitPlinthTests
         finally { cam.ResetAspect(); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>Round 4 of #559: the map's names keep clear of each token's badge and flag where the camera draws them. The
+    /// badge moves with the camera's yaw and the flag turns to it, so after FaceCamera at yaw 0, 90, 180 and 270 each token's
+    /// keep-clear boxes hold its badge's own cube (the badge's width, round its centre: not a box round every place the yaw
+    /// could take it, which pushed Tel Aviv's name off its kit at gameplay03) and every vertex of its flag as turned.</summary>
+    [Test]
+    public void TheKeepClearBoxesFollowTheBadgeAndTheFlagAsTheCameraTurns()
+    {
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
+            layer.Show(C, StateAt(Dates[0]));
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var cam = Camera.main; Assert.IsNotNull(cam, "the default scene's camera");
+            int flags = 0;
+            foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
+                for (int i = 0; i < layer.Tokens.Count; i++)
+                {
+                    var token = tokens.Find(layer.Tokens[i].Token.Unit.Id);
+                    cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, yaw, 0f);
+                    cam.transform.position = token.Find(UnitPlinth.PlinthName) is { } plinth ? plinth.position - cam.transform.forward * 30000f
+                        : token.Find("Badge").position - cam.transform.forward * 30000f;   // a 30 km look at the token
+                    layer.FaceCamera(cam);
+                    var boxes = layer.KeepClear[i]; var badge = token.Find("Badge");
+                    Assert.Less((boxes[0].center - badge.position).magnitude, 1f, $"yaw {yaw} {token.name}: the badge's box is round the badge as drawn");
+                    Assert.AreEqual(UnitBadge.SizeM, boxes[0].size.x, 1f, $"yaw {yaw} {token.name}: the badge's box is its own width");
+                    Assert.AreEqual(UnitBadge.SizeM, boxes[0].size.z, 1f, $"yaw {yaw} {token.name}: the badge's box is its own depth");
+                    var flag = token.Find(UnitPlinth.FlagName); if (flag == null) continue;
+                    var grown = boxes[1]; grown.Expand(1f);
+                    var m = flag.localToWorldMatrix;
+                    foreach (var v in flag.GetComponent<MeshFilter>().sharedMesh.vertices)
+                        Assert.IsTrue(grown.Contains(m.MultiplyPoint3x4(v)), $"yaw {yaw} {token.name}: the flag as turned is inside the pieces' box");
+                    flags++;
+                }
+            Assert.Greater(flags, 20, "every flag at every yaw");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
     /// <summary>Owner ruling (2026-10-15): "billboard the flag". At gameplay03 and at a 30 km look at Harel at camera yaw 0,
     /// 90 and 180, each flag turns about its pole as the camera renders: the cloth's normal points at the camera, seen from
     /// above, within 2 degrees; the pole stays upright (the flag's up is the world's); its foot does not move.</summary>
