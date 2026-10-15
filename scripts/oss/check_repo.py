@@ -89,14 +89,14 @@ def _line_check(name: str, fn: Callable[[str], list[str]]):
 
 def check_home_paths(root: Path, files: list[str], release: bool) -> list[Finding]:
     """Home paths in text files, by line, and in binary files too (a model exported on someone's machine keeps the
-    absolute paths of its textures, issue #659). A binary is read as Latin-1, so any byte run can match."""
+    absolute paths of its textures, issue #659), where temp and agent-session paths count too (PR #680) and UTF-16
+    forms are matched as well (`oss_policy.binary_home_path_kinds`)."""
     found = _line_check("home-paths", P.home_path_kinds)(root, files, release)
     for rel in files:
         p = root / rel
         if p.is_symlink() or not p.is_file() or _text(root, rel) is not None:
             continue
-        if P.home_path_kinds(p.read_bytes().decode("latin-1")):
-            found.append(Finding("home-paths", rel, 0, "home-path-in-binary"))
+        found += [Finding("home-paths", rel, 0, k) for k in P.binary_home_path_kinds(p.read_bytes())]
     return found
 
 

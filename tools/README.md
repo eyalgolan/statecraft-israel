@@ -10,6 +10,13 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   writes `content/map/precip_bio12.u16` + `precip_bio12.json` (committed).
 - `ims_normals.py` downloads Israel Meteorological Service rain-gauge records from data.gov.il into `tools/.cache/ims/`
   (not committed) and writes the 1981-2010 station normals `content/map/precip_stations.json` (committed).
+- `slim_collection.py --src DIR --out unity/Assets/Art/Collection` (issue #664) slims the 31 non-building models of The
+  1948 Collection (Tal's Tripo models from PR #507; owner ruling of 15 October 2026: "Plain git, slimmed first") into the
+  files the game ships: per model a far mesh of at most 1,500 triangles (4,500 for vehicles), a near mesh of at most 8,000 (skinned, with only
+  its idle clip, on the 13 models that have one) and a 512 px colour map. It runs Blender as the `bpy` module
+  (`uv run --no-project --python 3.13 --with bpy==5.2.2 --with pillow==12.3.0 python -I tools/slim_collection.py ...`);
+  the source is #507's `Models/` folder at `3ef0a7a5` (the command is in the script). Then run
+  `CollectionImport.Run` in Unity for the import settings and prefabs.
 - `hexgrid.py` writes `content/map/hexes.json` from the heightmap and those committed precipitation inputs (no network).
 - `settlement_hexes.py` writes `content/map/settlement_hexes.yaml` (committed): the hex that owns each settlement, by the
   `hexgrid.settlement_hex` rule. The sim reads it, so it needs no projection maths.

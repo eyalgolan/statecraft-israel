@@ -81,6 +81,32 @@ def test_home_path_inside_a_binary_fails(make_repo, capsys):
     assert "someone" not in out
 
 
+def _fbx(path: bytes) -> bytes:
+    return b"Kaydara FBX Binary  \x00\x1a\x00" + b"\x00" * 16 + b"S" + len(path).to_bytes(4, "little") + path + b"\x00" * 8
+
+
+def test_temp_and_session_paths_inside_a_binary_fail_in_utf8_and_utf16(make_repo, capsys):
+    # The PR #680 shape: a macOS temp folder holding an agent session named after the account, with no "/Users/" in it.
+    leak = "/private/tmp/" + "claude-501/-Users-" + "someone/0f3c/scratchpad/m/m_basecolor.jpg"
+    shapes = {
+        "m/a.fbx": _fbx(leak.encode()),
+        "m/b.fbx": _fbx(leak.encode("utf-16-le")),
+        "m/c.fbx": _fbx(b"\x00" + leak.encode("utf-16-be")),
+        "m/d.fbx": _fbx(("/var/" + "folders/x1/T/m.jpg").encode()),
+        "m/e.fbx": _fbx(("work/" + "claude-501/m.jpg").encode()),
+        "m/f.fbx": _fbx(("C:\\x\\-Users-" + "someone\\m.jpg").encode()),
+        "m/g.fbx": _fbx(("/home/" + "someone/m.jpg").encode("utf-16-le")),
+        "m/ok.fbx": _fbx("m_basecolor.jpg".encode() + "m_basecolor.jpg".encode("utf-16-le")),
+    }
+    root = make_repo(shapes)
+    assert run(root, "--only", "home-paths") == 1
+    out = capsys.readouterr().out
+    for f in shapes:
+        if f != "m/ok.fbx":
+            assert f"home-paths: {f}: home-path-in-binary" in out, f
+    assert "m/ok.fbx" not in out and "someone" not in out
+
+
 def test_allowlisted_fixture_passes_and_the_same_line_elsewhere_fails(make_repo, capsys):
     line = 'var p = "/Users/' + 'someone/game";\n'
     root = make_repo({"scripts/oss/allow.yaml": ALLOW, "tests/fixtures/a.cs": line, "src/b.cs": line})

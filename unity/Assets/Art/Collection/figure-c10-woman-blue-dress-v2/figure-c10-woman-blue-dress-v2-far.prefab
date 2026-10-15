@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3407315079337940595
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.000000004366889
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0000000010115444
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0000000016530929
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071067
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c6d6c6bf8896d483a8b5fa76ba0e8b9f, type: 2}
+    - target: {fileID: 919132149155446097, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}
+      propertyPath: m_Name
+      value: figure-c10-woman-blue-dress-v2-far
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 292a4cf75feeb4fb4ba1138c713cd67f, type: 3}

@@ -45,6 +45,20 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins
   these settings. The texture paths from Tal's machine inside each FBX are blanked. Nothing references the models yet,
   so the game does not change and the WebGL build ships the same assets (its `.data` file differs by 56 bytes).
+- The 1948 Collection's 31 non-building models by Tal (@pixelrenderai-hash, from #507), streamed after the first frame
+  (refs #664, #663): 12 people, 13 vehicles, ships and aircraft and 6 animals in `unity/Assets/Art/Collection/`, slimmed
+  by `tools/slim_collection.py` (owner, 15 October 2026: "Plain git, slimmed first"): a far mesh of at most 1,500
+  triangles (4,500 for vehicles) and a near mesh of at most 8,000 per model, the idle clip kept on the 13 models that have one, colour maps
+  crunched at 512 px. Every `Build.*` player build makes three AssetBundles into `StreamingAssets/collection/`, and
+  `CollectionStream.Request(id, detail, callback)` loads a model after the frame that asks for it. The bundle build
+  writes each bundle's Unity CRC, size and SHA-256 to `collection-checks.txt`; the loader passes the CRC to Unity and,
+  on disk, opens only a file that matches, so a missing or damaged bundle (even one byte inside its data) logs one
+  warning and the map runs on without the models, and an exception from the source or a caller's
+  callback is caught for that request alone (one warning) while the stream keeps serving. The FBX files carry no path
+  from the authoring machine: the tool exports them without material or texture references, overwrites the export path
+  and refuses any file with a home, temp or session path left. Nothing places them yet (#665-#670), so the first
+  download does not grow. `CollectionImportTests` and `CollectionStreamTests` pin the import settings, the bundles and
+  the fail-open paths.
 - `title_he_form: feminine` in `people.yaml` (refs #558): a person so marked takes the offices' feminine Hebrew title
   (`title_he_f`, שרת העבודה) through `Office.TitleHeFor`, sourced in `biography_sources.title_he_form`. The loader
   refuses any other value, a blank, a missing source, and a marked person holding an office without `title_he_f`.
