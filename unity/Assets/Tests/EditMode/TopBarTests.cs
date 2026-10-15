@@ -390,14 +390,23 @@ public class TopBarTests
                         if (onScreen < 12f - 0.05f) problems.Add($"{at}: {l.parent?.parent?.name} {l.name} '{l.text}' is {onScreen:0.0} px on screen, under the 12 px floor");
                         if (w == 1920 && Mathf.Abs(l.resolvedStyle.fontSize - 15f) > 0.01f) problems.Add($"{at}: {l.name} is {l.resolvedStyle.fontSize} px, not the stylesheet's 15");
                     }
-                    // The plate's text keeps clear of its gilt frame (review of #624 in WebGL: the raised date ran into the corner
-                    // scroll): every line ends above the frame's inner rule, the inset plus the filigree's gap, and a pixel.
+                    // The plate's text keeps clear of its gilt frame (reviews of #624 in WebGL: the raised date, then the year,
+                    // ran into the corner scrolls): every line, the score included, is at least the frame's inner rule (the inset
+                    // plus the filigree's gap, and a pixel) from the plate's top and bottom, and outside the four corner zones,
+                    // the scrolls' reach (about 14 px) plus 4.
                     var plate = root.Q("date-plate").worldBound;
-                    float clear = 4f + UiFrame.FiligreeGap + 1f;
-                    foreach (var name in new[] { "year", "turn", "date" })
+                    float clear = 4f + UiFrame.FiligreeGap + 1f, zone = 14f + 4f;
+                    var corners = new[] { new Rect(plate.xMin, plate.yMin, zone, zone), new Rect(plate.xMax - zone, plate.yMin, zone, zone),
+                                          new Rect(plate.xMin, plate.yMax - zone, zone, zone), new Rect(plate.xMax - zone, plate.yMax - zone, zone, zone) };
+                    foreach (var name in new[] { "year", "score", "turn", "date" })
                     {
-                        var r = root.Q<Label>(name).worldBound;
+                        var label = root.Q<Label>(name);
+                        var r = label.worldBound;
+                        if (!(r.height > 0) || string.IsNullOrEmpty(label.text)) { problems.Add($"{at}: precondition: {name} shows"); continue; }
+                        if (r.yMin < plate.yMin + clear - 0.05f) problems.Add($"{at}: {name} {r} starts {r.yMin - plate.yMin:0.0} px below the plate's top {plate.yMin:0.0}, inside its frame (needs {clear})");
                         if (r.yMax > plate.yMax - clear + 0.05f) problems.Add($"{at}: {name} {r} ends {plate.yMax - r.yMax:0.0} px above the plate's bottom {plate.yMax:0.0}, inside its frame (needs {clear})");
+                        foreach (var c in corners)
+                            if (r.Overlaps(c)) problems.Add($"{at}: {name} {r} enters the corner scroll's zone {c} of the plate {plate}");
                     }
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));

@@ -85,8 +85,11 @@ namespace Statecraft.Game.UI
         /// plate grows.</summary>
         readonly List<Label> plateText;
         readonly VisualElement? dateRow;
-        /// <summary>The plate's bottom padding while the floor raises its text (the stylesheet's is 2 px).</summary>
-        public const float PlateBottomPx = 10f;
+        /// <summary>The plate's padding while the floor raises its text (the stylesheet's is 2 px top and bottom, 10-12 at the
+        /// sides): PlateSidePx at both sides keeps every line out of the corner scrolls' reach (about 14 px in) with 4 to
+        /// spare, and PlateEdgePx at the top and bottom keeps it inside the frame's inner rule (7 px in). The plate grows to
+        /// hold them (its height is a minimum), rather than shift its lines.</summary>
+        public const float PlateSidePx = 18f, PlateEdgePx = 9f;
         readonly VisualElement turnBox;
         readonly IVisualElementScheduledItem floorCheck;
         float smallTextSize = SmallTextPx;
@@ -136,6 +139,7 @@ namespace Statecraft.Game.UI
             turnBox = bar.Q<VisualElement>(className: "turn-box");
             dateRow = bar.Q<VisualElement>(className: "date-row");
             plateText = dateRow?.Query<Label>().ToList() ?? new List<Label>();
+            dateRow?.parent?.RegisterCallback<GeometryChangedEvent>(OnPlateGeometry);   // a wider raised plate needs room in the bar
             ApplyTextFloor();
             floorCheck = root.schedule.Execute(ApplyTextFloor).Every(500);
             SetCompact(bar.layout.width);   // the bar may already be laid out (the loading screen shows it) and never resize
@@ -151,9 +155,10 @@ namespace Statecraft.Game.UI
             foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
             turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
-            if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) dateRow.parent.style.paddingBottom = StyleKeyword.Null; }
+            if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
+            dateRow?.parent?.UnregisterCallback<GeometryChangedEvent>(OnPlateGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
             bar.RemoveFromClassList(RoomyClass);
             bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass); hudRoot.RemoveFromClassList(ThreeRowClass);
@@ -162,6 +167,10 @@ namespace Statecraft.Game.UI
 
         // The bar's width does not depend on the class, so this settles in one pass.
         void OnBarGeometry(GeometryChangedEvent e) => SetCompact(e.newRect.width);
+
+        // The raised plate sizes to its widest line (PadPlate), so the tiers re-read the room it takes (FloorGrowth). The
+        // plate's width does not depend on the tier, so this settles in one pass.
+        void OnPlateGeometry(GeometryChangedEvent e) { if (smallTextSize > SmallTextPx && e.oldRect.width != e.newRect.width) SetCompact(bar.layout.width); }
 
         void OnMeterGeometry(GeometryChangedEvent e) => UpdateRoomy();
 
@@ -213,7 +222,7 @@ namespace Statecraft.Game.UI
         /// size), and the turn box widened in step. The one-row and icon tiers read the bar's width less this.</summary>
         float FloorGrowth()
         {
-            float growth = TurnBoxPx * (smallTextSize / SmallTextPx - 1f);
+            float growth = TurnBoxPx * (smallTextSize / SmallTextPx - 1f) + (RaisedPlateWidth() - PlateWidthPx);
             foreach (var l in smallText)
             {
                 if (l.name == "attention" || string.IsNullOrEmpty(l.text)) continue;
@@ -224,11 +233,21 @@ namespace Statecraft.Game.UI
             }
             return UnityEngine.Mathf.Max(0f, growth);
         }
-        const float TurnBoxPx = 150f, CaptionMaxPx = 120f;
+        // Statecraft.uss .turn-box width, .meter .meter-name max-width, .date-box width.
+        const float TurnBoxPx = 150f, CaptionMaxPx = 120f, PlateWidthPx = 230f;
+
+        /// <summary>The raised plate's laid-out width (PadPlate lets it size to its widest line, at least the stylesheet's 230 px;
+        /// at 23 px, 960x600, the date is wider), or 230 before it is laid out.</summary>
+        float RaisedPlateWidth()
+        {
+            var w = dateRow?.parent?.layout.width ?? float.NaN;
+            return w > PlateWidthPx ? w : PlateWidthPx;
+        }
+
         /// <summary>The largest raised small text the 70 px one-row bar holds: the attention line above End Turn is taller with
         /// it, and at 19 px (1366x657) the Hebrew turn box leaves the bar (TopBarTests.TheBarFitsEveryWindowInEnglishAndHebrew),
         /// so above this the bar takes the stacked tier.</summary>
-        public const float OneRowSmallMaxPx = 18f;   // Statecraft.uss .turn-box width, .meter .meter-name max-width
+        public const float OneRowSmallMaxPx = 18f;
 
         /// <summary>Inline styles for the floor, only while it raises the text: its size; the captions on one line on the one-row
         /// and stacked bars (a wrapped caption at the larger size would leave the bar), where FloorGrowth has made room (the
@@ -246,20 +265,30 @@ namespace Statecraft.Game.UI
             foreach (var l in plateText)
             {
                 l.style.fontSize = raised ? new StyleLength(smallTextSize) : new StyleLength(StyleKeyword.Null);
-                // At the largest sizes (23 px at 960x600) "30 September 1956" is about the plate's width: it may wrap inside it.
-                l.style.whiteSpace = raised ? new StyleEnum<WhiteSpace>(WhiteSpace.Normal) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
+                // One line each; the plate widens for them (PadPlate).
+                l.style.whiteSpace = raised ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
             }
             // Raised, the turn and the date take a line each (a raised date squeezed beside the turn was clipped in Hebrew),
-            // and the plate keeps PlateBottomPx under them, so the date ends clear of the plate's gilt frame and corner scrolls
-            // (the frame's inner rule is 7 px in; review of #624 in WebGL); the plate grows to hold them.
+            // and the plate's padding keeps every line clear of its gilt frame and corner scrolls (PlateSidePx, PlateEdgePx;
+            // reviews of #624 in WebGL); the plate grows to hold them.
             if (dateRow != null)
             {
                 dateRow.style.flexDirection = raised ? new StyleEnum<FlexDirection>(FlexDirection.Column) : new StyleEnum<FlexDirection>(StyleKeyword.Null);
-                if (dateRow.parent != null) dateRow.parent.style.paddingBottom = raised ? new StyleLength(PlateBottomPx) : new StyleLength(StyleKeyword.Null);
+                if (dateRow.parent != null) PadPlate(dateRow.parent, raised);
             }
             var box = TurnBoxPx * smallTextSize / SmallTextPx;
             turnBox.style.width = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
             turnBox.style.minWidth = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
+        }
+
+        void PadPlate(VisualElement plate, bool raised)
+        {
+            // Raised, the plate sizes to its widest line (the turn and the date, a line each, never wrapped), at least 230 px.
+            plate.style.width = raised ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
+            plate.style.minWidth = raised ? new StyleLength(PlateWidthPx) : new StyleLength(StyleKeyword.Null);
+            StyleLength Px(float v) => raised ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
+            plate.style.paddingTop = Px(PlateEdgePx); plate.style.paddingBottom = Px(PlateEdgePx);
+            plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
