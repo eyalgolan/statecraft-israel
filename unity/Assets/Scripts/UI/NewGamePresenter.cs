@@ -23,8 +23,9 @@ namespace Statecraft.Game.UI
         }
 
         readonly Button button;
-        /// <summary>A slice game (?mvp=1): New Game never deletes the player's autosave. GameRoot gives a slice game no New
-        /// Game at all; this is the second guard.</summary>
+        /// <summary>A slice game (?mvp=1): New Game never deletes the player's autosave. GameRoot hides the button and builds
+        /// no start screen in a slice game, but builds this presenter with slice: true, so this flag is the guard that stops
+        /// the delete.</summary>
         readonly bool slice;
 
         // Any change (an order, a turn, a new session) means the prompt no longer describes what is on screen.
