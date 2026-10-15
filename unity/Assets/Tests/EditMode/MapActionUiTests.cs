@@ -100,7 +100,7 @@ public class MapActionUiTests
             void Sea(double lon, double lat, string where) { var c = At(lon, lat); Assert.Greater(c.b, c.r + 0.1f, $"{where} is sea: {c}"); }
             void Land(double lon, double lat, string where) { var c = At(lon, lat); Assert.Greater(c.r, c.b, $"{where} is land: {c}"); }
             Sea(34.30, 32.60, "the Mediterranean off Tel Aviv");
-            Sea(34.98, 29.48, "the Gulf of Aqaba");
+            Sea(34.92, 29.47, "the Gulf of Aqaba (its middle: about 34.88-34.96 E at 29.47 N)");
             Land(35.21, 31.77, "Jerusalem");
             Land(34.90, 30.50, "the Negev");
             Land(35.10, 32.95, "the Galilee");
