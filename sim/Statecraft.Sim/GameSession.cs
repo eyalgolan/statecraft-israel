@@ -56,7 +56,7 @@ namespace Statecraft.Sim
             int turnNo = 0;
             try { foreach (var turn in saved.Turns) { session.Step(turn); turnNo++; } }
             catch (SaveException) { throw; }
-            catch (Exception e) { throw new SaveException(0, $"turn {turnNo + 1}: {e.Message}"); }
+            catch (Exception e) { throw new SaveException(FormattableString.Invariant($"turn {turnNo + 1}: {e.Message}"), e); }
             if (session.State.Hash() != saved.FinalHash)
             {
                 if (sameContent) throw new SaveException(0, "The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.");

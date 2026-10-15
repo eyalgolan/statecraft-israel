@@ -508,6 +508,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- An autosave that cannot be continued (refs #631, #622) no longer shows the sim's English reason or a replay's exception
+  message to the player: the note always gives the short reason "the file could not be read or replayed", in English and
+  Hebrew, and the full exception goes to the log. A replay that throws keeps that exception, with its stack, as the
+  SaveException's inner exception. No save format change.
 - UI text from Jeremy Hoover's review (refs #622): a refused order no longer shows a content id or an exception's
   message after "Not done:" ("Unknown policy", "The turn could not run", in English and Hebrew); both stay in the log.
   The six Title Case labels are in sentence case ("Public support", "International standing", "Foreign currency", "End

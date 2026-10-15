@@ -64,7 +64,7 @@ public class SaveUiTests
         var notes = new List<string>();
         var session = GameStart.Begin(C, store, () => 5UL, notes, Text);
         Assert.AreEqual(0, session.State.Turn);
-        StringAssert.StartsWith("Your saved game could not be loaded (line 1: save schema version 9 is newer", notes[0]);
+        Assert.AreEqual(new[] { Unreadable(Text) }, notes.ToArray());   // the sim's English reason goes to the log only (#631)
         Assert.IsFalse(File.Exists(store.AutosavePath));
         Assert.IsTrue(File.Exists(Path.Combine(store.Directory, "autosave.bad.txt")));
     }
@@ -78,7 +78,64 @@ public class SaveUiTests
         var notes = new List<string>();
         var session = GameStart.Begin(C, store, () => 6UL, notes, Text);
         Assert.AreEqual(0, session.State.Turn);
-        StringAssert.StartsWith("Your saved game could not be loaded (line 4: mode Open is not supported)", notes[0]);
+        Assert.AreEqual(new[] { Unreadable(Text) }, notes.ToArray());
+        Assert.IsTrue(File.Exists(Path.Combine(store.Directory, "autosave.bad.txt")));
+    }
+
+    /// <summary>The note the player reads for any autosave that cannot be continued: a short reason in their language.</summary>
+    static string Unreadable(UiText text) => text.Format("save.unreadable", text["save.reason_other"]);
+
+    /// <summary>#631: every way a save is refused (a damaged line, another ruleset, a replay that ends elsewhere, a replay that
+    /// throws) shows the player the same short reason in English and in Hebrew, never the sim's English message; the full
+    /// exception, with the replay's own exception inside it, goes to the log.</summary>
+    [TestCase("strings.en.yaml", "damaged line")]
+    [TestCase("strings.he.yaml", "damaged line")]
+    [TestCase("strings.en.yaml", "other ruleset")]
+    [TestCase("strings.he.yaml", "other ruleset")]
+    [TestCase("strings.en.yaml", "replay differs")]
+    [TestCase("strings.he.yaml", "replay differs")]
+    [TestCase("strings.en.yaml", "replay throws")]
+    [TestCase("strings.he.yaml", "replay throws")]
+    public void AnUnreadableSaveShowsOnlyALocalisedReason(string file, string kind)
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Folder + "/" + file).text, file);
+        var content = C;
+        var played = GameSession.New(C, 9, Mode.Historical);
+        played.Step(new Command[] { new SetMobilization(1.0) });
+        var save = played.Save.Write();
+        string logged;
+        switch (kind)
+        {
+            case "damaged line":
+                save = save.Replace("seed 9", "seed nine");
+                logged = "line 3: bad seed";
+                break;
+            case "other ruleset":
+                var other = C.Ruleset == SaveGame.LegacyRuleset ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+                save = save.Replace("ruleset " + C.Ruleset, "ruleset " + other);
+                logged = "version of the game's rules";
+                break;
+            case "replay differs":
+                save = save.Replace("seed 9", "seed 10");   // the same content, so a replay that ends elsewhere is refused
+                logged = "The replay does not match the saved game";
+                break;
+            default:
+                content = ContentLoader.Load(Paths.Content);   // its own copy: removing a price must not touch C
+                content.Rules.AttentionCost.Remove("set_mobilization");
+                foreach (var r in content.EraRules.Values) r.AttentionCost.Remove("set_mobilization");
+                logged = "turn 1: (.|\\n)*KeyNotFoundException";
+                break;
+        }
+        var store = TempStore();
+        store.WriteAutosave(save);
+        var notes = new List<string>();
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Autosave rejected: (.|\\n)*" + logged));
+        var session = GameStart.Begin(content, store, () => 6UL, notes, text, out var resumed);
+        Assert.IsFalse(resumed);
+        Assert.AreEqual(0, session.State.Turn);
+        Assert.AreEqual(new[] { Unreadable(text) }, notes.ToArray());
+        StringAssert.DoesNotContain("line", notes[0]);
+        StringAssert.DoesNotContain("turn", notes[0]);
         Assert.IsTrue(File.Exists(Path.Combine(store.Directory, "autosave.bad.txt")));
     }
 
@@ -107,7 +164,7 @@ public class SaveUiTests
         Assert.DoesNotThrow(() => session = GameStart.Begin(C, store, () => 6UL, notes, Text));
         Assert.AreEqual(0, session!.State.Turn);
         Assert.AreEqual(1, notes.Count);
-        StringAssert.StartsWith("Your saved game could not be loaded (Not a Statecraft save", notes[0]);
+        Assert.AreEqual(Unreadable(Text), notes[0]);
         Assert.IsTrue(store.SetAsideCalled);
     }
 

@@ -22,7 +22,7 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
     `docs/ai-disclosure.md` lists them.
 - **Silent.** The clips have no audio stream (`tools/encode_event_videos.py` refuses one).
 - **Opt-in.** A card's loop plays only after the player presses the switch, so it needs no separate pause button and no
-  reduced-motion setting. Pressing the switch again stops it. (The outcome clips below play at End Turn without a
+  reduced-motion setting. Pressing the switch again stops it. (The outcome clips below play at End turn without a
   switch, once, for 3.5 s: a click, Enter or Space skips one, and Esc skips them all.)
   - The choice holds for the session: later cards open on their clip until the player switches back.
   - It is not saved, and every launch starts on the photograph.
@@ -36,7 +36,7 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
 - **Rights:** owner ruling D-V (`docs/oss/DECISIONS.md`, merged in #449), "no need to check, just use them". Every clip has an
   `ASSETS.yaml` row with `ai_generated: true`, the generator and the date, and those rows feed `docs/ai-disclosure.md`.
 
-## Outcome clips at End Turn (phase 3)
+## Outcome clips at End turn (phase 3)
 
 When a turn runs, every event the player answered with its **historical** option, if the turn applied the order and the
 event has an outcome clip, plays that clip once, in the middle of the screen, before the game goes on (`OutcomePresenter`).
@@ -47,7 +47,7 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
 - **3.5 s, silent.** The caption is worded as the order, "Your order: …", because the clip illustrates the order and
   does not show its outcome.
   - A click, Enter or Space (or a gamepad's Submit) skips the clip. Esc (or Cancel) skips all of the turn's clips.
-  - A screen open at End Turn (Cabinet, Budget, Defence, Why) closes when the clip starts. The clip is drawn over
+  - A screen open at End turn (Cabinet, Budget, Defence, Why) closes when the clip starts. The clip is drawn over
     everything but the toast, and while it plays the decision card, the top bar and the panels wait, so no order can be
     given under it.
   - It has its own player, separate from the card's loop.
@@ -74,7 +74,7 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
 | The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips |
 | The encode, pinned (no burned-in caption) | `tools/encode_event_videos.py` |
 | The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop and one for the outcome clips | `CardVideo` |
-| The outcome clips at End Turn | `OutcomePresenter` |
+| The outcome clips at End turn | `OutcomePresenter` |
 | The switch | `EventCardPresenter.ApplyIllustration` |
 
 The mapping is **not game content**: the sim never reads it, and the goldens and the content hash cannot move for it

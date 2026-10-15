@@ -11,6 +11,8 @@ namespace Statecraft.Sim
         /// <summary>1-based line of the save text the error is on (0 when it concerns the whole save).</summary>
         public int Line { get; }
         public SaveException(int line, string message) : base(line > 0 ? FormattableString.Invariant($"line {line}: {message}") : message) { Line = line; }
+        /// <summary>A save whose replay threw <paramref name="inner"/>: kept, with its stack, for the log (#631).</summary>
+        public SaveException(string message, Exception inner) : base(message, inner) { }
     }
 
     /// <summary>

@@ -263,7 +263,7 @@ public class SaveGameTests
     }
 
     /// <summary>The replay runs under content whose step throws (a MapAction with no attention cost line): the exception
-    /// must surface as a SaveException that names the turn.</summary>
+    /// must surface as a SaveException that names the turn and keeps the original exception for the log (#631).</summary>
     [Fact]
     public void AReplayThatThrowsIsASaveExceptionNamingTheTurn()
     {
@@ -272,6 +272,9 @@ public class SaveGameTests
         broken.Rules.AttentionCost.Remove("map_action");
         var ex = Assert.Throws<SaveException>(() => GameSession.Load(broken, text, out _));
         Assert.StartsWith("turn 4: ", ex.Message);
+        var inner = Assert.IsType<KeyNotFoundException>(ex.InnerException);
+        Assert.Equal("turn 4: " + inner.Message, ex.Message);
+        Assert.Equal(0, ex.Line);
     }
 
     [Theory]

@@ -41,7 +41,7 @@ The game design of record is now [docs/GDD.md](docs/GDD.md) (12 October 2026): m
 ## What it looks like today
 
 <p align="center">
-  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 22 to 29 May 1948: a pan across Tel Aviv, Jaffa and the coastal plain, a click on a hex that opens its panel, the One Army decision, and End Turn moving the date to 29 May" width="820">
+  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 22 to 29 May 1948: a pan across Tel Aviv, Jaffa and the coastal plain, a click on a hex that opens its panel, the One Army decision, and End turn moving the date to 29 May" width="820">
   <br><em>Real gameplay, build 0.1.0, 2026-10-13, commit f93fd5e.</em>
 </p>
 <p align="center">
