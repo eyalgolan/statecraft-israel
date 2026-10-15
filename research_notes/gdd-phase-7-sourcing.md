@@ -329,8 +329,10 @@ the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 a
 
 - **Velvetta 1:** six Spitfires left Kunovice for Nikšić (Yugoslavia) on **24 September 1948**; one was damaged landing
   there. Five took off for Israel on **27 September 1948**; two put down on Rhodes with fuel-tank trouble; **three**
-  landed at Ramat David that afternoon. [S] 101 Squadron, Spitfires. he.wiki מבצע ולווטה gives the 24 September
-  departure and the landing accident [V for those]; it does not give the 27 September arrival or the count. The first
+  landed at Ramat David that afternoon. [V] 101 Squadron, Spitfires, and he.wiki מבצע ולווטה, which gives the same
+  days, the two Rhodes landings and "שלושת ה'ספיטפייר'ים הנוספים הצליחו לנחות בשלום ברמת דוד" (footnote to Wein, *A
+  History of Czechs and Jews*, 2019, pp. 145-155; not opened). (Corrected: an earlier version of this note said he.wiki
+  did not give the 27 September arrival; a re-read on 2026-10-15 found that it does.) The first
   sourced combat sortie by the Spitfires is 15 October 1948 (Operation Yoav; already in `units_1948.yaml`).
 - **Velvetta 2:** twelve Spitfires flew from Czechoslovakia to Nikšić on **19 December 1948**. The first formation left
   for Israel on **22 December 1948**, the day Operation Horev began; the second on **26 December**; the last two on
@@ -352,7 +354,7 @@ the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 a
 | 65 mm mountain guns | *Borea* 13 May 1948, released 14/15 May | 5 guns, about 50,000 shells | 20 May 1948, Degania (4 guns) | [S] arrival, [V] first use | 15 May 1948 |
 | Avia S-199 | first at Ekron 20 May 1948 | 25 bought; 4 assembled by 29 May | 29 May 1948, Isdud | [V] | 15 May 1948 |
 | Hotchkiss H39 | June 1948 ("early June" or 15 June) | 10 | July 1948, Operation Danny | [C] day | 15 May or 15 June 1948 |
-| Spitfire (Velvetta 1) | 27 September 1948, Ramat David | 3 landed (of 6 sent) | 15 October 1948 | [S] day, [V] departure | 15 September 1948 |
+| Spitfire (Velvetta 1) | 27 September 1948, Ramat David | 3 landed (of 6 sent) | 15 October 1948 | [V] | 15 September 1948 |
 | Spitfire (Velvetta 2) | 22, 26 and 30 December 1948 | 12 sent; landed count [C] | Operation Horev | [V] dates | 15 December 1948 |
 
 The plan's draft answer to Q-HFX-4 is "no grant unless a sourced arrival of named equipment on a dated day is found".
@@ -396,7 +398,7 @@ should state the arrival, not the fighting, or carry the `war-casualties` review
 | Napoleonchik arrival | *Borea*, 13-15 May 1948 (Ben-Tzur) vs a Polish ship, 6-7 May 1948 (*Haaretz*, unread) | 4a |
 | Napoleonchiks at Degania | four vs two | 4a |
 | Hotchkiss arrival | early June vs 15 June 1948 | 4c |
-| Spitfires landed, Velvetta 1 and 2 | three on 27 September (101 Squadron); December counts differ by one or two between he.wiki and 101 Squadron | 4d |
+| Spitfires landed, Velvetta 1 and 2 | three on 27 September (101 Squadron and he.wiki agree); December counts differ by one or two between he.wiki and 101 Squadron | 4d |
 | Day and place of the C-46 crash with the fourth S-199 | 23 May, south of Latrun after diverting to Sde Dov (101 Squadron) vs night of 23-24 May, near Tel Nof/Ekron (he.wiki מבצע בלק) | 4b |
 | S-199 arrivals | one on 20 May, then 21 and 22 May, fourth lost (101 Squadron, he.wiki) vs "The first four arrived on 20 May 1948" (`units_1948.yaml` note) | 4b |
 | Spitfire date in `units_1948.yaml` | `from: '1948-10-15'` (first sourced sortie) vs 27 September arrival (its note, and this note) | 4d |
