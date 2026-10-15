@@ -535,6 +535,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   much of the hills, with fewer instances. The olive clumps now keep off the hex-edge midpoints as the scatter does
   (owner: "Yes, add the guard now"). The scrub, the plain's and the valleys' olives, the mesh, the colours and the
   cypress rows are unchanged.
+- Sea round 3, a wide beach on the dune coasts (refs #388; owner, 15 October 2026: geographic, through the coast map,
+  about 2.5-3 km, trees kept off the sand): from Jaffa south and along Haifa Bay the sand reaches about 2.7 km inland, as
+  promo 03 draws it south of Jaffa; from Tel Aviv north, under the kurkar, it stays 900 m. `tools/terrain_bake.py` bakes
+  the extra width into `coast.png`'s land side past the wet sand, so no shader changes; the water side is unchanged. Citrus
+  groves and olives keep their crowns off the beach's full sand (`BeachBands`, the bake's C# twin). `tools/coast_measure.py`
+  measures beach width, foam and lace on a screenshot against bands set from promo 03.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,

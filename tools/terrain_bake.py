@@ -13,7 +13,9 @@ Reads unity/Assets/StreamingAssets/map/heightmap.r16z (heightmap_codec) + height
   unity/Assets/Textures/Map/coast.png         L8: 0.5 + d / (2 COAST_RANGE_M), clamped; d = signed distance (m) to the
       nearest shoreline, < 0 in water (open sea: |elevation| < SEA_EPS_M and connected to the map's border; lakes: flat
       water below LAKE_BELOW_M covering at least MIN_LAKE_AREA_KM2), the rules tools/hexgrid.py uses for its sea and lake
-      biomes; the area floor drops the Karameh reservoir (0.3 km2, built in the 1990s) and dike slivers between the pans
+      biomes; the area floor drops the Karameh reservoir (0.3 km2, built in the 1990s) and dike slivers between the pans.
+      The land side is beach-scaled, not metres, on the dune coasts (BEACH_BANDS): beach_widened takes BEACH_EXTRA_M out
+      of the distance past the wet sand, so the shader's beach (ScShore) reaches that much further inland there
 Heights are multiplied by VERTICAL_EXAGGERATION (MapBuilder.VerticalExaggeration) so the shading matches the relief the
 game draws. Texel (j, i) is the mean of heightmap samples j..j+1, i..i+1, so its centre sits at terrain UV (j + 0.5) / 2048.
 Distances are exact Euclidean (a Felzenszwalb-Huttenlocher two-pass transform) with each axis' own sample spacing (about
@@ -43,6 +45,20 @@ LAKE_BELOW_M = -150.0
 LAKE_FLAT_M = 0.25             # largest height range in a 3x3 window that is still a water surface
 MIN_LAKE_AREA_KM2 = 1.0        # smaller flat pools are land (Karameh 0.30 km2; the smallest kept pan is 1.05 km2)
 COAST_RANGE_M = 12000.0        # StatecraftMap.hlsl ScCoastRangeM
+# Sea round 3 (#388): a wider beach on the dune coasts, as promo 03 draws south of Jaffa (owner, 15 October 2026: geographic,
+# through the coast map, about 2.5-3 km). The sands lie from Tel Aviv southwards and line Haifa Bay; the kurkar ridges hold
+# the coast from Tel Aviv northwards (Wikipedia: "Kurkar", "Haifa Bay", "Holon", "Nitzanim", retrieved 2026-10-15). The
+# widths are art direction, and the cut-off at Jaffa is interpolated between Jaffa (32.05 N) and Tel Aviv, not a sourced
+# line. Each band is (lon west, lon east, lat south, lat north, ramp in degrees): the extra width is full inside it and
+# falls to 0 over the ramp at each edge. Unity's tree keep-out reads a twin (Kits/BeachBands.cs, pinned by a test).
+BEACH_EXTRA_M = 1800.0         # ScShore's 900 m beach becomes about 2.7 km
+BEACH_BANDS = ((34.0, 34.86, 31.0, 32.07, 0.04),     # Jaffa south to the map's southern coast (full south of 32.03 N)
+               (35.02, 35.2, 32.77, 32.94, 0.02))    # Haifa Bay, from the Kishon's mouth to Acre
+BEACH_KNEE_M = (230.0, 280.0)  # metres past the wet sand (ScShore: 60-160 m) and past a shore texel's diagonal sample
+                               # (hypot(79, 211) m), so every texel the waterline crosses keeps its metric value; the extra
+                               # is gone by 280 m, which encodes as level 130 (235 m) at most, inside ScShore's narrowest
+                               # full sand (0.55 x 0.6 x 900 = 297 m): the squeezed stretch is all full sand, so its 8-bit
+                               # steps never show
 
 
 def load_heightmap(map_dir: Path) -> tuple[np.ndarray, dict]:
@@ -227,6 +243,29 @@ def to_u8(a: np.ndarray) -> np.ndarray:
     return np.clip(np.round(a * 255), 0, 255).astype(np.uint8)
 
 
+def smoothstep01(t: np.ndarray) -> np.ndarray:
+    t = np.clip(t, 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def beach_extra_m(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+    """The extra beach width (m) at each point: BEACH_EXTRA_M inside a band of BEACH_BANDS, ramped to 0 at its edges."""
+    w = np.zeros(np.broadcast(lon, lat).shape)
+    for lon0, lon1, lat0, lat1, ramp in BEACH_BANDS:
+        w = np.maximum(w, smoothstep01((lon - lon0) / ramp) * smoothstep01((lon1 - lon) / ramp)
+                       * smoothstep01((lat - lat0) / ramp) * smoothstep01((lat1 - lat) / ramp))
+    return w * BEACH_EXTRA_M
+
+
+def beach_widened(d: np.ndarray, extra: np.ndarray) -> np.ndarray:
+    """The land side's beach-scaled distance: metres to BEACH_KNEE_M[0] (the waterline's ramps and the wet sand), then
+    squeezed so that BEACH_KNEE_M[1] + extra lands on BEACH_KNEE_M[1], then metres less the extra. Water (d < 0) and
+    extra 0 pass through unchanged."""
+    a, b = BEACH_KNEE_M
+    squeezed = a + (d - a) * (b - a) / (b - a + extra)
+    return np.where((d <= a) | (extra <= 0), d, np.where(d >= b + extra, d - extra, squeezed))
+
+
 def encode_coast(signed_m: np.ndarray, range_m: float = COAST_RANGE_M) -> np.ndarray:
     return to_u8(0.5 + signed_m / (2 * range_m))
 
@@ -236,7 +275,11 @@ def bake(elev: np.ndarray, meta: dict) -> tuple[np.ndarray, np.ndarray]:
     z = elev * np.float32(VERTICAL_EXAGGERATION)
     ao, sky, curv = openness(z, dx, dy, AO_RADIUS_M), openness(z, dx, dy, SKY_RADIUS_M), curvature(z, dx, dy)
     water = water_mask(elev, dx, dy)
-    signed = np.where(water, -distance_to(~water, dx, dy, COAST_RANGE_M), distance_to(water, dx, dy, COAST_RANGE_M))
+    h, w = elev.shape
+    lon = meta["lon0"] + np.arange(w)[None, :] / (w - 1) * (meta["lon1"] - meta["lon0"])
+    lat = meta["lat1"] - np.arange(h)[:, None] / (h - 1) * (meta["lat1"] - meta["lat0"])   # row 0 = north
+    land_m = beach_widened(distance_to(water, dx, dy, COAST_RANGE_M), beach_extra_m(lon, lat))
+    signed = np.where(water, -distance_to(~water, dx, dy, COAST_RANGE_M), land_m)
     rgb = np.stack([to_u8(to_texels(ao)), to_u8(to_texels(curv)), to_u8(to_texels(sky))], axis=-1)
     return rgb, encode_coast(to_texels(signed.astype(np.float32)))
 

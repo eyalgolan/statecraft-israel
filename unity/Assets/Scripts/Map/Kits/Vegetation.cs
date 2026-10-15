@@ -116,6 +116,22 @@ namespace Statecraft.Game.Map.Kits
             // Counts fall with the square of the tree scale (k = 1 at the default), so a larger tree covers the same ground
             // with fewer instances instead of burying the towns.
             float ks = s / KitScale.CountReference;
+            // Sea round 3 (#388): no citrus or olive crown on the beach's full sand (BeachBands; owner: "keep them off the
+            // sand"). Set only round the groves and olive cells near the sea: SeaDistance costs up to 48 height samples.
+            bool nearSand = false;
+            // Sea within r (m) of (x, z): SeaDistance's sea test on its outer ring of 12 directions only (a quarter of its
+            // samples; the boot's trees phase rose 37 ms with all four rings), which finds a straight shore r away by
+            // r / cos 15 degrees.
+            bool SeaWithin(float x, float z, float r)
+            {
+                r *= 1.035f;
+                for (int i = 0; i < 12; i++)
+                {
+                    float px = x + Mathf.Cos(i * Mathf.PI / 6f) * r, pz = z + Mathf.Sin(i * Mathf.PI / 6f) * r;
+                    if (ground.Inside(px, pz) && Mathf.Abs(ground.ElevM(px, pz)) <= MapBuilder.SeaToleranceM + 0.5f) return true;
+                }
+                return false;
+            }
             void Add(TreeKind k, float x, float z, ref KitRandom rnd, float size = 1f, float yawDeg = float.NaN, float squash = 1f)
             {
                 // The tree's own numbers first, whether it stands or not: a tree left out for a lot or a route then never
@@ -126,7 +142,7 @@ namespace Statecraft.Game.Map.Kits
                 // grove rows through blocks).
                 // Nor into a railway's or road's corridor (the routes run through the groves otherwise).
                 float crown = CrownRadiusM(k) * s * size * 1.15f;
-                if (ground.OnLot(x, z, crown) || ground.OnRoute(new Vector2(x, z), crown)) return;
+                if (ground.OnLot(x, z, crown) || ground.OnRoute(new Vector2(x, z), crown) || nearSand && SeaWithin(x, z, BeachBands.FullSandAt(ground.Frame, x, z) + crown)) return;
                 float y = ground.Y(x, z);
                 float yaw = float.IsNaN(yawDeg) ? spin : yawDeg;
                 trees.Add((k, Matrix4x4.TRS(new Vector3(x, y, z), Quaternion.Euler(0, yaw, 0), new Vector3(scale, scale * stretch * squash, scale))));
@@ -156,7 +172,9 @@ namespace Statecraft.Game.Map.Kits
                     // Grove sizes grow with the square root of the tree scale, so a bigger tree means fewer, not only larger, rows.
                     float grow = Mathf.Sqrt(s / KitScale.CountReference);
                     float w = rnd.Range(1300f, 3000f) * grow, d = rnd.Range(900f, 2000f) * grow, step = 2f * GroveStepM * s;   // one 2 x 2 patch per step
-                    groveDiscs.Add((gc, 0.5f * Mathf.Sqrt(w * w + d * d) + CrownRadiusM(TreeKind.CitrusPatch) * s * 1.15f));   // to its edge rows' crowns
+                    float disc = 0.5f * Mathf.Sqrt(w * w + d * d) + CrownRadiusM(TreeKind.CitrusPatch) * s * 1.15f;   // to its edge rows' crowns
+                    groveDiscs.Add((gc, disc));
+                    nearSand = SeaWithin(gc.x, gc.y, BeachBands.MaxFullSandM + disc);
                     // A ragged block: each row stops at its own length, and some groves lose a corner (an L shape).
                     bool notch = rnd.Chance(0.3f); float nu = rnd.Range(0.1f, 0.3f) * w, nv = rnd.Range(0.1f, 0.3f) * d;
                     for (float v = -d / 2; v <= d / 2; v += step)
@@ -210,6 +228,7 @@ namespace Statecraft.Game.Map.Kits
                         float e = ground.ElevM(px, pz);
                         if (e < (plain ? 5f : 40f) || e > 950f || ground.Water(px, pz) || ground.InTown(px, pz, 0.9f) || ground.Slope(px, pz, 600f) > 0.35f) continue;
                         int n = rnd.Range(1, 4);
+                        nearSand = SeaWithin(px, pz, BeachBands.MaxFullSandM + 0.71f * cell + CrownRadiusM(TreeKind.Olive) * s * 1.15f);
                         for (int i = 0; i < n; i++)
                         {
                             float tx = px + rnd.Range(-0.5f, 0.5f) * cell, tz = pz + rnd.Range(-0.5f, 0.5f) * cell;
@@ -219,6 +238,7 @@ namespace Statecraft.Game.Map.Kits
                             if (!ground.Water(tx, tz) && !ground.InTown(tx, tz, 0.85f)) Add(TreeKind.Olive, tx, tz, ref rnd, size);
                         }
                     }
+                nearSand = false;
             }
 
             // The hills' loose scatter between the olive clumps (promo 03's hills, and the demo video at 23 s): single olives

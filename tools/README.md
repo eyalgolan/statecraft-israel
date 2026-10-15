@@ -56,8 +56,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `preview_map.py` renders the geography check image `tools/.cache/map-preview.png`.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO
   alone, imported uncompressed) and `coast.png`
-  (exact signed Euclidean distance to the shoreline; lakes under 1 km2 count as land) from the committed heightmap (no
-  network). Re-run it whenever the heightmap changes; its PNG bytes are reproducible only on the same toolchain.
+  (exact signed Euclidean distance to the shoreline; lakes under 1 km2 count as land; on the dune coasts its land side is
+  beach-scaled for the wider beach, #388) from the committed heightmap (no network). Re-run it whenever the heightmap changes; its PNG bytes are reproducible only on the same toolchain.
 - `land_bake.py` writes `unity/Assets/Textures/Map/landuse.png` (the land-use colour and weight: field parcels with
   farm tracks, garrigue, terraces and scrub, placed by slope, rainfall and towns) from the heightmap, the CHELSA rainfall,
   the hex biomes and the 1948 settlements (no network); `StatecraftLand.hlsl` lays it over the biome ground. Re-run it
