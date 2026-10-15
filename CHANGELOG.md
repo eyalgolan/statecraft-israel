@@ -304,6 +304,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
+  from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
+  localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,
+  cut or missing runtime file is refused with one warning and the YAML is read as before. The borders, the layer
+  labels and the info panel are unchanged. Presentation only.
 - The settlements file is parsed once at boot instead of twice: the info panel's settlement names come from the map's
   own parse (refs #321). The names are unchanged. Presentation only.
 - The units layer takes the unit spots the map placed instead of placing every unit again (refs #321), when it draws
