@@ -265,6 +265,31 @@ public class TopBarTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>tools/headed.py clicks End Turn at a fixed point of its 1568x752 playtest window, and uses another bar point
+    /// as "a panel" for the wheel checks: both must still land on what they name now that the bar is 70 px (part 3).</summary>
+    [UnityTest]
+    public IEnumerator HeadedPyClicksLandOnTheBar()
+    {
+        var src = System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.RepoRoot, "tools", "headed.py"));
+        Vector2 Point(string pattern)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(src, pattern);
+            Assert.IsTrue(m.Success, pattern);
+            return new Vector2(float.Parse(m.Groups[1].Value), float.Parse(m.Groups[2].Value));
+        }
+        var endTurn = Point(@"END_TURN, OPTION, MAP_UNDER_WHY = \((\d+), (\d+)\)");
+        var panel = Point(@"WHEEL_VIEWPORT, START_NEW, MAP, PANEL = \(1568, 752\), \(\d+, \d+\), \(\d+, \d+\), \((\d+), (\d+)\)");
+        yield return Rendered(1568, 752, false, (root, text) =>
+        {
+            float scale = 1568f / root.worldBound.width;
+            Rect Css(VisualElement e) { var r = e.worldBound; return new Rect(r.x * scale, r.y * scale, r.width * scale, r.height * scale); }
+            var button = Css(root.Q("end-turn"));
+            TestContext.WriteLine($"1568x752: End Turn at {button} CSS px, centre {button.center}; the bar {Css(root.Q("top-bar"))}");
+            Assert.IsTrue(button.Contains(endTurn), $"headed.py's END_TURN {endTurn} is not on End Turn {button} (centre {button.center})");
+            Assert.IsTrue(Css(root.Q("top-bar")).Contains(panel), $"headed.py's PANEL {panel} is not on the bar {Css(root.Q("top-bar"))}");
+        }, widest: false);
+    }
+
     /// <summary>The audit's Tab order is kept: Cabinet, Budget, Defence, Why? (the left column), New Game, End Turn, then the
     /// minimap's buttons.</summary>
     [UnityTest]
