@@ -344,9 +344,9 @@ public class TownCensusTests
     }
 
     /// <summary>Floors for TelAvivIsThePromosWhiteCity, about 10% under the measure (docs/visual-v1.md, "Tel Aviv's White
-    /// City"): the median block's longer side in real metres (21.9: 1.67 times main's), the street palms (30) and the
+    /// City"): the median block's longer side in real metres (21.9: 1.67 times main's), the street palms (26) and the
     /// height spread (0.31).</summary>
-    const float TelAvivMedianWidthM = 20.5f, TelAvivHeightSpread = 0.28f; const int TelAvivPalms = 27;
+    const float TelAvivMedianWidthM = 20.5f, TelAvivHeightSpread = 0.28f; const int TelAvivPalms = 23;
 
     [Test]
     public void TheCitiesCoverTheirGround()

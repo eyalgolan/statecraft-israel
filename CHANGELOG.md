@@ -408,7 +408,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Tel Aviv's White City (visual gap S2, refs #31; owner rulings on #652, 15 October 2026). Its blocks are fewer and
   larger: 27, at 1.67 times main's width (main drew 55). They stand four to eight storeys, in tiers of tall and low blocks,
   with a height spread of 0.31. Each has ribbon windows along both long sides, a balcony band on every upper storey and a
-  flat roof terrace behind a parapet. A quarter stand on pilotis. 30 palms grow in the streets and in the open plots
+  flat roof terrace behind a parapet. A quarter stand on pilotis. 26 palms grow in the streets and in the open plots
   between the blocks. Tel Aviv's census floors fall to 24 buildings and 24.5% / 21% cover, per the ruling "Lower floor to
   ~30, wider blocks"; every other town's floor stays. All of it is in Tel Aviv's own kit mesh (no new draw), so a model that
   replaces the town (#507) hides it whole. Haifa's Hadar keeps its blocks, and `Kit.shader` is not changed. Presentation

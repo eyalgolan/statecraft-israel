@@ -2637,16 +2637,16 @@ wide in a 1920 frame. Main drew white boxes of two to seven storeys, about 25-30
   - Each claims a lot, so no tree grows through one.
 - **#507:** everything is in `tel_aviv_kit`, so a model that turns the town's kit off hides all of it.
 
-**Result** (editor census, `TownCensusTests`; main 732ceab8 → branch):
+**Result** (editor census, `TownCensusTests`; main 98515c52 → branch):
 
 | Tel Aviv | main | branch |
 |---|---|---|
 | buildings (+wings) | 55 (+18) | 27 (+4) |
-| cover, whole / core | 25.2% / 25.6% | 27.2% / 23.7% |
+| cover, whole / core | 25.5% / 25.6% | 27.2% / 23.7% |
 | storeys min / median / max | 2 / 5 / 7 | 4 / 5 / 8 |
 | height spread (cv) | 0.30 | 0.31 |
 | median block width (real m) | 13.1 | 21.9 (1.67x) |
-| street palms | 0 | 30 |
+| street palms | 0 | 26 |
 
 - **Floors:** Tel Aviv's floors follow the ruling: 24 buildings (in `Floors` and `MainBuildings`), and cover 24.5% / 21%.
   - All are about 10% under the measure.
@@ -2656,11 +2656,11 @@ wide in a 1920 frame. Main drew white boxes of two to seven storeys, about 25-30
   variants kept median widths of only 15.8-17 m.
 - **Neighbours:**
   - Jaffa draws 39 buildings (main 38), with cover 39.0% (main 39.0%).
-  - Petah Tikva draws 8 (main 8), with cover 19.2% (main 18.8%).
-  - The 1948 localities draw 1,339 houses (main 1,340).
+  - Petah Tikva draws 9 (main 9), with cover 20.7% (main 20.3%).
+  - The 1948 localities draw 2,898 houses (main 2,895).
   - The other 22 towns are unchanged.
-- **Kit numbers** (editor `KITS` line): vertices 103,419 → 110,819, triangles 70,410 → 74,348, draws 64 → 64.
-- **Frame time:** not re-measured for this round. The vertices rise by 7%, less than the first round's 13%, which measured
+- **Kit numbers** (editor `KITS` line): vertices 167,301 → 173,789, triangles 89,166 → 92,616, draws 64 → 64.
+- **Frame time:** not re-measured for this round. The vertices rise by 4%, less than the first round's 13%, which measured
   as below (WebGL `?vprofile`, headless, 1920x1080, DPR 1; main c02d4eb0 and the first round back to back under one
   exclusive `machine_lock`, 2026-10-15; `PROFILE summary` median avg / p95 in ms):
 
