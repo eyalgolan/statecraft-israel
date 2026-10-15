@@ -3125,7 +3125,7 @@ measured on its own), so it is not claimed as a gain.
 
 T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 6.5%. The one-row bar is now 70 px:
 - The date plate hangs below it, as promo 03's "1936 / Turn 1 / January 1936" plate does. It is at least 98 px tall and
-  grows for a third line: #598 puts "Score {n}" in the plate's date row, and the row wraps it to its own line.
+  grows if the date wraps to a third line. #598's "Score {n}" stays at the far end of the year line.
 - The meters keep two lines, caption then value and change. Security's "Level 5 of 5" sits beside its caption; it was a
   third line. Captions are 15 px, values 21 px (24 on the roomy bar), with the icons as before.
 - New Game is a round icon with no caption, as promo 03's bar buttons are. Its name is its text, drawn clear (the event

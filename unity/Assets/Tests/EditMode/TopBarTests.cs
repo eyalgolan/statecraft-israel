@@ -15,7 +15,8 @@ using UnityEngine.UIElements;
 /// it: the date plate hangs below the bar at its start, the meters take one line of caption and one of value and change, New
 /// Game is a round icon named by its tip, and End Turn with the attention line fits the bar. Checked at InfoPanelLayoutTests'
 /// 19 window sizes in English and Hebrew (the Hebrew UI mirrors the bar's row, #550), after a turn, with the widest
-/// late-game values and date, and with a score line in the plate (#598 adds "Score {n}" there; its room is kept).</summary>
+/// late-game values and date, and with the GDD loop's score on the plate's year line (#598), as wide as
+/// TopBarScoreLayoutTests'.</summary>
 public class TopBarTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
@@ -75,15 +76,10 @@ public class TopBarTests
             for (int i = 0; i < 6; i++) yield return null;
             var toast = root.Q<Label>("toast");
             toast.text = text["hud.new_game"]; toast.style.display = DisplayStyle.Flex;   // shown, so its place is checked
-            // The plate's score line (#598): the real label when #598 has landed, a stand-in in its place until then.
+            // The GDD loop's score on the plate's year line (#598), at TopBarScoreLayoutTests' worst case.
             var score = root.Q<Label>("score");
-            if (score == null)
-            {
-                score = new Label { name = "score" };
-                score.AddToClassList("muted");
-                root.Q(className: "date-row").Add(score);
-            }
-            score.text = hebrew ? "ניקוד 9,999" : "Score 9,999";
+            Assert.IsNotNull(score, "the plate has #598's score label");
+            score.text = hebrew ? "ניקוד 99,999" : "Score 99,999";
             score.style.display = DisplayStyle.Flex;
             if (widest)
             {
@@ -100,6 +96,7 @@ public class TopBarTests
             }
             dir?.Apply();
             for (int i = 0; i < 8; i++) yield return null;
+            Assert.AreEqual(DisplayStyle.Flex, score.resolvedStyle.display, "precondition: the score shows, so its room is checked");
             check(root, text);
         }
         finally
