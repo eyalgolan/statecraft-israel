@@ -29,7 +29,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Portraits for eight 1948-1951 office holders who had none (refs #6; owner, 15 October 2026: "Yes, source more"):
   Lavon, Eshkol, Dinur, Burg, Naftali and the deputy ministers Efrati, Shari and Kahana, from Knesset Archives member
   portraits under CC BY-SA 4.0, each cropped and downscaled to 512 px tall with no upscaling and credited in `NOTICE`.
-  Geri, Pinkas and Yadin still have none: no file found meets the portrait licence rules.
+  Geri and Pinkas still have none: no single-subject photograph of them is under an accepted licence. Yadin keeps his
+  lettered plate (owner, 15 October 2026: "Keep the plate"): photographs of him under accepted licences exist, but
+  they are 1977-1981 Knesset portraits or 1950 Meitar Collection group shots, held back for era and composition.
 - A person's sign-off beside a status (refs #375, #564, #611; owner, 15 October 2026: "Yes, humans only"): every status
   row takes `reviewed_by` (the reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither.
   The sim's loader, the map's readers (localities, the 1945 populations, units) and `tools/routes_1948.py` refuse a

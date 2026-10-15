@@ -1,6 +1,7 @@
 """Issue #6, 15 October 2026 (owner: "Yes, source more"): Knesset Archives portraits (CC BY-SA 4.0) for eight 1948-1951
 office holders who had none. Source, runtime crop, credit and licence record stay together; each crop box is recorded
-and was only ever downscaled; and the Knesset member code on each Commons file is the one people.yaml cites."""
+and was only ever downscaled; and people.yaml cites, for each person, the Knesset member page whose code is typed in
+BATCH below. That code was read from the Commons file by hand on 15 October 2026; the test does not read Commons."""
 from pathlib import Path
 import re
 

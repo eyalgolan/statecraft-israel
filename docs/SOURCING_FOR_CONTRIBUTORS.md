@@ -9,7 +9,7 @@ The rules live in `docs/CONTENT_POLICY.md` (section 1 framing, section 2 sources
 - [ ] If the fact is a date, the source gives that date, not a nearby one. A term's `sources:` must support the date the term carries (a source for the announcement does not support the start date).
 - [ ] One value per fact, chosen by the rule in `docs/CONTENT_POLICY.md` section 1. When two sources disagree, record both in the PR and let the maintainer choose.
 - [ ] No quotes unless verbatim and sourced. Paraphrase otherwise.
-- [ ] Images: public domain or CC0 only for portraits (`docs/CONTENT_POLICY.md`, `LICENSING.md`). A file whose only licence is a PD-Israel tag on Wikimedia Commons is refused for event photographs (`docs/CONTENT_POLICY.md` section 4), and for portraits it is an open decision (D-P in `docs/oss/DECISIONS.md`); ask before using one.
+- [ ] Images: portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs; a portrait cropped from a CC BY-SA 4.0 photograph is itself released under CC BY-SA 4.0 and credited in `NOTICE`, and any other licence is refused (`docs/CONTENT_POLICY.md` principle 5, `LICENSING.md`). A file whose only licence is a PD-Israel tag on Wikimedia Commons is refused for event photographs (`docs/CONTENT_POLICY.md` section 4), and for portraits it is an open decision (D-P in `docs/oss/DECISIONS.md`); ask before using one.
 
 ## Where to look
 
