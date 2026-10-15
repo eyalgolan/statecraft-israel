@@ -195,6 +195,10 @@ public class UnitsInPlayTests
     {
         CollectionAssert.AreEqual(new[] { "kiryati", "etzioni", "squadron_101" }, Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1949, 2, 24), 4, 0.4)),
             "the southern brigades and the ships end on the Egypt armistice");
+        CollectionAssert.DoesNotContain(Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1948, 9, 1), 4, 0.4)), "carmeli",
+            "Carmeli's window ends with Operation Brosh and the second truce (18 July 1948): no source keeps it there later");
+        CollectionAssert.DoesNotContain(Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1948, 12, 15), 4, 0.4)), "givati",
+            "Givati moved to the centre in November 1948 (the Haganah lexicon)");
         CollectionAssert.AreEqual(new[] { "squadron_101" }, Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1949, 4, 3), 2, 0.05)),
             "the central and Jerusalem brigades end on the Jordan armistice");
         Assert.IsEmpty(UnitRoster.Build(Units, C.Rules, LastArmistice, 2, 0.05));
@@ -237,8 +241,8 @@ public class UnitsInPlayTests
         Assert.AreEqual(WeeklyGolden, Sha256(all));
     }
 
-    const string RosterGolden1950 = "7d8b27f3cbefc241f17e922376b590939ac027cbc369ee6d7e128c9a26f4d92b";
-    const string WeeklyGolden = "64f86cfb203b0ece170ebd4a52b9c957405b860a2d7ae5bde74aedd4174bc6b6";
+    const string RosterGolden1950 = "f07b1655defbd0299767a2e214bf62558f8c64a37d2e408ecc9ee0ed4ed24c29";
+    const string WeeklyGolden = "323cbe046b9666b1d9ab46abeb139540d6e06e394a65ad03e043aa0912cba96e";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 

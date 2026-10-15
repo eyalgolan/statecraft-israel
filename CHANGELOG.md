@@ -14,9 +14,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Knesset records or Hebrew Wikipedia, checked 14 October 2026); the loader and `SettlementPlacer` refuse a Hebrew name
   without a source. Places take their 1948 form (Tel Aviv, Beisan, Kfar Ata, Pardes Hanna, Tarshiha), and the localities'
   runtime file carries `name_he`. The content hash moves; the goldens do not.
-- Two more brigades on the map (refs #385, #197): Carmeli by Mishmar HaYarden, facing the Syrian bridgehead from the
-  Rosh Pinna side, from Operation Brosh (9 July 1948) to Operation Hiram (29 October 1948), and Alexandroni at its
-  Netanya headquarters (Camp Dora; 15 May to November 1948), each sourced in `content/map/units_1948.yaml`. Carmeli is
+- Two more brigades on the map (refs #385, #197): Carmeli facing the Syrian bridgehead at Mishmar HaYarden, from the
+  Rosh Pinna side, during Operation Brosh (9 to 18 July 1948), and Alexandroni at its Netanya headquarters (Camp Dora;
+  15 May to November 1948), each sourced in `content/map/units_1948.yaml`. Givati's window at Gedera now ends with its
+  sourced move to the centre in November 1948 (it ran to the Egyptian armistice). Carmeli is
   not drawn at Haifa, its sector's place: the map has no clear spot outside the town (#588). The 8th Brigade's position
   (Tel Litvinsky, 24 May to 9 July 1948) is recorded, but it stays hidden: the map has no clear spot for it on its own
   side (#588). Oded stays hidden:

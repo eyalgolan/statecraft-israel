@@ -76,19 +76,19 @@ units:
   number: 2nd Brigade
   service: army
   formed: 22 February 1948
-  sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (13-22 May 1948), led Operation Brosh against the Syrian bridgehead at Mishmar HaYarden (9-18 July 1948) and fought in Operation Hiram."
+  sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (from 13 May 1948; Acre surrendered on the night of 17-18 May), led Operation Brosh against the Syrian bridgehead at Mishmar HaYarden (9-18 July 1948) and fought in Operation Hiram."
   wikipedia_only: false
   status: draft
   anchors:
-  - place: Mishmar HaYarden (the Syrian bridgehead)
+  - place: Facing the Syrian bridgehead at Mishmar HaYarden
     lon: 35.59972
     lat: 33.00278
     from: '1948-07-09'
     since: 9 July 1948
-    to: '1948-10-29'
+    to: '1948-07-19'
     end_basis: source
-    end_note: "Operation Hiram was launched on the night of 28-29 October 1948; in it the brigade crossed into Lebanon (en.wiki Operation Hiram; the lexicon: in Hiram it operated in the Galilee and took the border road)."
-    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands on the Israeli side, by Rosh Pinna. Not drawn before 9 July: its sector place, Haifa, has no clear spot outside the town on the map (coordinator's option (d), 2026-10-15)."
+    end_note: "he.wiki Operation Brosh: the operation ran to 18 July 1948, when the second truce began at 19:00 with the front line unchanged. No source found places the brigade on this line between the truce and Operation Hiram (he.wiki Operation Hiram has Carmeli's tasks in late October mainly defensive against the Syrian army, but no place or earlier date), so the window ends with the operation, as Yiftach's ends with Dani."
+    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands facing it on the Israeli side, by Rosh Pinna. Not drawn before 9 July: its sector place, Haifa, has no clear spot outside the town on the map (coordinator's option (d), 2026-10-15)."
     toward:
       place: Rosh Pinna
       lon: 35.54222
@@ -103,11 +103,11 @@ units:
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47620', checked: '2026-10-15'}
     - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-15'}
     - {url: 'https://en.wikipedia.org/wiki/Mishmar_HaYarden_(moshava)', checked: '2026-10-15'}
-    - {url: 'https://en.wikipedia.org/wiki/Operation_Hiram', checked: '2026-10-15'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%97%D7%99%D7%A8%D7%9D', checked: '2026-10-15'}
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Carmeli_Brigade', checked: '2026-10-11'}
   - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
-  # The sector's place, Haifa (he.wiki Carmeli; the lexicon: organised in the Haifa area and the Western Galilee, operated in Haifa), from 15 May 1948; not drawn there (no clear spot outside the town).
+  # The sector's seat, Haifa (he.wiki Carmeli; the lexicon: organised in the Haifa area and the Western Galilee, operated in Haifa). Not a dated position: in mid-May the lexicon has the brigade in the Western Galilee and at Acre, then at Jenin (2-4 June). Not drawn there (no clear spot outside the town, #588).
   - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
   - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
 - id: alexandroni
@@ -178,14 +178,16 @@ units:
     lon: 34.77722
     lat: 31.81194
     from: '1948-05-15'
-    to: '1949-02-24'
-    end_basis: front_armistice
-    front: egypt
-    note: "One place picked from the sector: the first of the three the source names. The move south is not dated, so the card gives no start. The Haganah Heritage lexicon (Brigade 5 Givati): in Operation Barak (May 1948) the brigade took most of the area from Gedera and Be'er Tuvia south and west. It also says the brigade was moved to the centre of the country in November 1948 (Iraqi attacks on Ramat HaKovesh), while this window runs to the Egyptian armistice (P66 conflict, for the owner)."
+    to: '1948-11-01'
+    precision: month
+    end_basis: source
+    end_note: "The Haganah Heritage lexicon (Brigade 5 Givati): the brigade was moved to the centre of the country in November 1948 (Iraqi attacks on Ramat HaKovesh); he.wiki Alexandroni: in November 1948 the Alexandroni Brigade replaced it at the Faluja pocket."
+    note: "One place picked from the sector: the first of the three the source names. The move south is not dated, so the card gives no start. The Haganah Heritage lexicon (Brigade 5 Givati): in Operation Barak (May 1948) the brigade took most of the area from Gedera and Be'er Tuvia south and west."
     sources:
     - {url: 'https://en.wikipedia.org/wiki/Givati_Brigade', checked: '2026-10-11'}
     # Organisation of Haganah Heritage, Lexicon, "Brigade 5 Givati": Operation Barak took the area from Gedera and Be'er Tuvia south and west; moved to the centre in November 1948.
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47227', checked: '2026-10-15'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%90%D7%9C%D7%9B%D7%A1%D7%A0%D7%93%D7%A8%D7%95%D7%A0%D7%99', checked: '2026-10-15'}
     - {url: 'https://en.wikipedia.org/wiki/Gedera', checked: '2026-10-11'}
 - id: etzioni
   name: Etzioni Brigade
@@ -263,6 +265,7 @@ units:
   wikipedia_only: false
   status: draft
   disbanded: {date: '1949-04-01', precision: month, sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-15'}]}
+  # he.wiki 8th Brigade keeps the brigade's base at Tel Litvinsky until after its disbandment in April 1949 (the base then moved to Jaffa), and the Lehi Heritage page gives no dates: the end at Dani below is the first operation, not a sourced departure. Do not carry it over when #588 lets the row be drawn.
   hidden: "Sourced at Tel Litvinsky (later Tel HaShomer; 34.85623 E, 32.04195 N) from 24 May 1948 to the start of Operation Dani on 9 July 1948 (owner, 2026-10-15: accepted, verify later), but the map has no clear spot for it: within one hex of the camp the placer finds none, and the only clear ground (UnitGround, full map, 2026-10-15) lies among the Arab villages of Fajja, 'Abbasiyya and Safiriya (content/map/localities_1948.yaml), not on the brigade's own side. Hidden until the placer can stand it at the camp; en.wiki (Haganah) has the brigade \"headquartered near Jerusalem\", with no source."
   anchors: []
   sources:
