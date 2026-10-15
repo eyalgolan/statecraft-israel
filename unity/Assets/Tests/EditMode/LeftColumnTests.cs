@@ -31,7 +31,7 @@ public class LeftColumnTests
 
     static readonly (string name, string key, string glyph)[] Rail =
     {
-        ("nav-cabinet", "hud.nav.cabinet", "columns"), ("nav-budget", "hud.nav.budget", "scales"),
+        ("nav-cabinet", "hud.nav.cabinet", "columns"), ("nav-budget", "hud.nav.budget", "ledger"),
         ("nav-defence", "hud.nav.defence", "helmet"), ("nav-why", "hud.nav.why", "question"),
     };
 

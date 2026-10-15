@@ -38,7 +38,7 @@ public class PromoHudTests
     public void EveryScreenButtonIsARoundIconWithItsName()
     {
         using var ui = new UiTestKit();
-        foreach (var (button, name, glyph) in new[] { ("nav-cabinet", "Cabinet", "columns"), ("nav-budget", "Budget", "scales"),
+        foreach (var (button, name, glyph) in new[] { ("nav-cabinet", "Cabinet", "columns"), ("nav-budget", "Budget", "ledger"),
                                                       ("nav-defence", "Defence", "helmet"), ("nav-why", "Why?", "question"), ("new-game", "New Game", "restart") })
         {
             var b = ui.Q<Button>(button);
