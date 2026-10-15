@@ -2788,13 +2788,17 @@ branch, base. Base is #584's head 916cbad. Median avg ms (spread):
 
 | | base | branch | branch | base |
 |---|---|---|---|---|
-| gameplay03 all / none | 8.16 / 7.02 | 8.21 / 6.97 | 8.18 / 7.02 | 8.21 / 6.98 |
-| diorama02 all / none | 15.49 / 11.08 | 15.55 / 10.73 | 15.61 / 10.74 | 15.46 / 11.16 |
+| gameplay03 all | 8.16 (0.05) | 8.21 (0.08) | 8.18 (0.01) | 8.21 (0.04) |
+| gameplay03 none | 7.02 (0.04) | 6.97 (0.04) | 7.02 (0.03) | 6.98 (0.03) |
+| diorama02 all | 15.49 (0.40) | 15.55 (0.43) | 15.61 (0.36) | 15.46 (0.43) |
+| diorama02 none | 11.08 (0.08) | 10.73 (0.09) | 10.74 (0.17) | 11.16 (0.05) |
 | boot map_build / first_frame, cpu 1 | 533 / 3877 ms | 530 / 3866 ms | 532 / 3862 ms | 528 / 3852 ms |
 
-DPR 2 headed, base then branch: gameplay03 19.14 / 19.09 (all), 17.81 / 17.84 (none); diorama02 33.79 / 33.81 (all),
-27.91 / 27.87 (none). The column costs nothing measurable; diorama02 `none` is 0.35-0.4 ms lower on the branch in both
-positions.
+DPR 2 headed, base then branch (spread): gameplay03 all 19.14 (0.29) / 19.09 (0.19), none 17.81 (0.03) / 17.84 (0.05);
+diorama02 all 33.79 (0.21) / 33.81 (0.25), none 27.91 (0.04) / 27.87 (0.01). The column costs nothing measurable.
+Diorama02 `none` is 0.35-0.4 ms lower on the branch in both positions, outside the spreads; at DPR 2 the same cell is
+equal (27.91 / 27.87). It is not explained (the branch draws four fewer captioned buttons in the bar, but that is not
+measured on its own), so it is not claimed as a gain.
 
 ## Issue #391: the terrain shader's frame-time cliff (warm land shade, not shipped)
 #391 asked for the shaded hill ground to read warm brown, as promo 03's does (about (67, 53, 46)), rather than olive-grey.
