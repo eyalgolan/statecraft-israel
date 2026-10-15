@@ -443,6 +443,29 @@ namespace Statecraft.Game.Map.Kits
             return 1;
         }
 
+        /// <summary>A village mosque (S1): a one-storey stone hall with a flat lime roof and a short, thick square minaret at one
+        /// corner, about 14 m tall, inside the hall's footprint, so the lot is the hall's. Village minarets were "chunky" towers
+        /// rising over a one-storey mosque (L. Dittmar, "A View from the Minaret", Harvard Divinity Bulletin, 2019, on
+        /// Qaysaria; https://bulletin.hds.harvard.edu/a-view-from-the-minaret/), and a village's square minaret stood 10-15 m
+        /// (Kawfakha, from Petersen's Gazetteer of Buildings in Muslim Palestine: https://en.wikipedia.org/wiki/Kawfakha;
+        /// both checked 2026-10-15). The domed mosque with its tall round minaret (<see cref="Mosque"/>) stays the towns'.</summary>
+        static int VillageMosque(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, ref KitRandom rnd, float size)
+        {
+            float m = KitScale.Landmarks * size, w = 12f * m, d = 9f * m;
+            if (!Claim(lots, want, 0.5f * Mathf.Sqrt(w * w + d * d), owner, ground, out var p)) return 0;
+            float yaw = rnd.Range(0f, 90f);
+            var (bottom, top) = GroundSpan(p, yaw, w, d, ground, m);
+            var stone = Jitter(C(0.84f, 0.77f, 0.63f), ref rnd, 0.04f);
+            var roof = Jitter(LimeRoof, ref rnd, 0.03f);
+            km.Box(p.x, p.y, yaw, w, d, bottom, top, 5.5f * m, stone, roof, Facade.Stone, m);
+            float a = yaw * Mathf.Deg2Rad, u = 0.5f * w - 1.4f * m, v = -(0.5f * d - 1.4f * m);
+            float mx = p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), mz = p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a);
+            km.Box(mx, mz, yaw, 2.8f * m, 2.8f * m, top + 5.5f * m - 0.3f * m, top + 5.5f * m, 7.9f * m, stone, roof, Facade.Plain, m);
+            km.Box(mx, mz, yaw, 3.3f * m, 3.3f * m, top + 13.4f * m - 0.2f * m, top + 13.4f * m, 0.6f * m, stone, roof, Facade.Plain, m);   // the balcony's parapet
+            Record(owner, "village_mosque", p, yaw, w, d, 14f * m, stone);
+            return 1;
+        }
+
         /// <summary>A stone church with a gabled nave and a belfry topped by a pyramid roof; false, and nothing built, when no
         /// free dry spot is near.</summary>
         static bool Church(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size)
