@@ -47,9 +47,9 @@ transparency; artwork PG-13 (map, towns, boats and unit miniatures).
 | Library header | `library/library_header_920x430.png` | 920 x 430 | 920px x 430px | same two pages |
 | Library hero | `library/library_hero_3840x1240.png` | 3840 x 1240, PNG, no text | 3840px x 1240px .png; safe area 860px x 380px at the centre | same two pages |
 | Library logo | `library/library_logo_1280w.png` | 1280 x 183, PNG with transparency | "Either 1280px wide and/or 720px tall (.png)", transparent background | same two pages |
-| Shortcut icon (Community) | `community/shortcut_icon_256x256.png` | 256 x 256 PNG | 256px x 256px ".ico or .png" ("We will generate a .ico if a png is provided") | [store/assets](https://partner.steamgames.com/doc/store/assets) |
+| Shortcut icon (Community; one field) | `community/shortcut_icon_256x256.png` (alternative: the monogram .ico below) | 256 x 256 PNG | "256px x 256px or 512px x 512px, ICO or PNG"; Steam generates the .ico from a PNG | [store/assets/community](https://partner.steamgames.com/doc/store/assets/community) |
 | App icon (Community) | `community/app_icon_184x184.jpg` | 184 x 184 JPG | 184px x 184px .jpg | same page |
-| Shortcut icon, small sizes (monogram) | `community/monogram/monogram.ico` (16, 24, 32, 48, 64, 128 and 256 px) and `monogram_<n>.png` at each size | 16 to 256 | the shortcut icon may be ".ico or .png" | [store/assets](https://partner.steamgames.com/doc/store/assets) |
+| Shortcut icon, alternative for the same field (monogram) | `community/monogram/monogram.ico` (16, 24, 32, 48, 64, 128 and 256 px; `monogram_<n>.png` at each size) | 16 to 256 | as above: one Shortcut Icon field, ICO or PNG | [store/assets/community](https://partner.steamgames.com/doc/store/assets/community) |
 
 Valve's overview page also says, under "August, 2024", that "Old dimensions are no longer accepted"; the sizes above
 are the current ones on that page. The two Community icons, which Valve lists as Required, are made the same way: a
@@ -64,7 +64,11 @@ is `ScDeepSrgb` (0.27, 0.40, 0.54) in `unity/Assets/Shaders/StatecraftMap.hlsl`,
 is the sea at 70 %. Each size is drawn on its own pixel grid (8x supersampled, then box-reduced), not shrunk from 256.
 Checked at 1:1 on light and dark backgrounds: the "S" reads at 16, 24, 32 and 48 px. Valve lists no small sizes of
 its own beyond the 256 x 256 shortcut icon and says it generates a .ico from a PNG; uploading `monogram.ico` instead
-gives Windows the monogram at every shortcut size. Not in the kit: the optional page background (1438 x 810) and the
+gives Windows the monogram at every shortcut size. Steam has one Shortcut Icon field, so the owner uploads either the
+title PNG or the monogram .ico, not both. **macOS:** Valve's Community assets page (read 15 October 2026) says a
+macOS desktop shortcut needs "an icon file in ICNS format in the 'Mac Icon' asset field", or it shows Steam's default
+icon. The kit has no ICNS yet; `sources/monogram.py` could produce the sizes for one if the owner wants the monogram
+there too. Not in the kit: the optional page background (1438 x 810) and the
 event assets.
 
 **Legibility at the small display sizes.** The small capsule sets the title on two lines so that it nearly fills the
@@ -350,7 +354,9 @@ None of these is done. Each is the owner's action.
    capsule, library header, library hero, library logo); place the logo on the hero with Steam's preview tool. Upload
    the Community icons: for the shortcut icon, `community/monogram/monogram.ico` (the owner's monogram choice: it
    reads at the 32 and 48 px shortcut sizes), or `shortcut_icon_256x256.png` if the title version is wanted at 256 px
-   and Steam's generated .ico is accepted; for the app icon, `app_icon_184x184.jpg` (section 1).
+   and Steam's generated .ico is accepted (one field: upload one of them); for the app icon, `app_icon_184x184.jpg`.
+   The "Mac Icon" field (ICNS) has no file in the kit yet; without one, macOS shortcuts show Steam's default icon
+   (section 1).
 7. **Screenshots.** Upload the screenshots from section 2 and tick "suitable for all ages" only on the ones marked so
    there (at least four).
 8. **Trailer.** A real-build gameplay trailer is still pending (#45). Check in Steamworks whether the Coming Soon
