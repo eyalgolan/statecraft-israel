@@ -490,6 +490,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   sources disagree) instead of "the first four arrived on 20 May"; the Spitfire note names the two sources for the
   27 September 1948 landing of three aircraft at Ramat David. Sources added, checked 15 October 2026. Notes only: no
   date changes, map-only file outside the content hash, no golden moves.
+- Hebrew UI preview (refs #596, #585): the map layer label (`MapRegions.Label`) formats through `UiText.Format`, so the
+  values its Hebrew patterns insert (a front's English name, the "1950 modus vivendi" note) get the same left-to-right
+  marks as the rest of the Hebrew UI and keep their own order. English is unchanged.
 - Hebrew UI preview (refs #543, #193): a value inserted into a Hebrew line keeps its own order. `UiText.Format` puts a
   left-to-right mark (U+200E) on each side of each value with no Hebrew in it that it inserts into a Hebrew template, so
   negative foreign currency reads "-$4.2m" (not "$4.2m-") and "15 May 1948" in the Why screen's turn line stays one

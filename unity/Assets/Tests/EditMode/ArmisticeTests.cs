@@ -135,8 +135,7 @@ public class ArmisticeTests
 
     static string L(MapRegions m, DateTime d)
     {
-        var t = Text;
-        return m.Label(d, t["map.layer_with_armistice"], t["map.layer_front_no_data"], t["map.layer_front_low"], t["map.layer_front_note"]);
+        return m.Label(d, Text.Format);
     }
 
     [Test]
@@ -155,6 +154,43 @@ public class ArmisticeTests
             "  - { key: egypt, name: Egypt, agreement: A, signed: 1949-02-24, shown_from: 1949-02-24, note: '' }\n" +
             "  - { key: jordan, name: Jordan, agreement: B, signed: 1949-04-03, shown_from: null, note: 'no line data' }\n"));
         StringAssert.Contains("Jordan: Mandate sub-districts, no armistice line data", L(noJordan, new DateTime(1949, 8, 1)));
+    }
+
+    static UiText HeText => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    static string LHe(MapRegions m, DateTime d)
+    {
+        return m.Label(d, HeText.Format);
+    }
+
+    /// <summary>The Hebrew map label (#596): a value with no Hebrew in it that a Hebrew pattern inserts (the 1950 note,
+    /// a front's English name) is put between left-to-right marks as UiText.Format does (#585), so the note "1950 modus
+    /// vivendi" keeps its year before its words in the right-to-left line.</summary>
+    [Test]
+    public void TheHebrewLabelMarksTheValuesItsHebrewPatternsInsert()
+    {
+        const string Lrm = "‎";
+        var sub = Subdistricts1948.Parse(SubText.Replace("label: \"Mandate sub-districts, 1947\"", "label: \"נפות המנדט, 1947\""));
+        var arm = ArmText.Replace("label: \"1949 armistice lines\"", "label: \"קווי שביתת הנשק, 1949\"");
+        // The fronts' names as they are today (English), inside the Hebrew line.
+        var m = new MapRegions(sub, Armistice1949.Parse(arm));
+        Assert.AreEqual("נפות המנדט, 1947", LHe(m, Start));
+        var en = LHe(m, new DateTime(1950, 3, 1));
+        Assert.AreEqual("נפות המנדט, 1947 · קווי שביתת הנשק, 1949: " + Lrm + "Egypt" + Lrm + " (וגם " + Lrm + "1950 modus vivendi" + Lrm + "), Lebanon, "
+            + Lrm + "Jordan" + Lrm + " (דיוק נמוך), Syria", en);
+        Assert.IsTrue(UiDirection.RightToLeft(en), en);
+        // Hebrew names: a Hebrew value is left alone, the note is still marked.
+        var heNames = new MapRegions(sub, Armistice1949.Parse(arm.Replace("name: \"Egypt\"", "name: \"מצרים\"").Replace("name: \"Jordan\"", "name: \"ירדן\"")));
+        StringAssert.Contains(": מצרים (וגם " + Lrm + "1950 modus vivendi" + Lrm + "), Lebanon, ירדן (דיוק נמוך), Syria", LHe(heNames, new DateTime(1950, 3, 1)));
+        // A front without line data: its name is marked in the Hebrew note that says so.
+        var noJordan = new MapRegions(sub, Armistice1949.Parse(
+            "layer: x\nlabel: קווי שביתת הנשק, 1949\nfronts:\n" +
+            "  - { key: egypt, name: Egypt, agreement: A, signed: 1949-02-24, shown_from: 1949-02-24, note: '' }\n" +
+            "  - { key: jordan, name: Jordan, agreement: B, signed: 1949-04-03, shown_from: null, note: 'no line data' }\n"));
+        StringAssert.EndsWith(" · " + Lrm + "Jordan" + Lrm + ": נפות המנדט, אין נתוני קו שביתת נשק", LHe(noJordan, new DateTime(1949, 8, 1)));
+        // Taking the marks out gives string.Format's text back.
+        Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, HeText["map.layer_with_armistice"], "נפות המנדט, 1947", "קווי שביתת הנשק, 1949",
+            "Egypt (וגם 1950 modus vivendi), Lebanon, Jordan (דיוק נמוך), Syria"), en.Replace(Lrm, ""));
     }
 
     [Test]

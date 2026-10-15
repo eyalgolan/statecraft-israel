@@ -133,23 +133,24 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The map label: the sub-district layer's, and once a front's line is shown, those fronts and the fronts
-        /// still without line data. <paramref name="withLines"/> formats {0} label, {1} armistice label, {2} front names;
-        /// <paramref name="noData"/> formats {0} a front's name, appended for each front without data; <paramref name="low"/>
-        /// formats {0} a low-accuracy front's name (Jordan, from a low-resolution scan); <paramref name="note"/> formats {0} a
-        /// front's name and {1} the notes of its items shown (the 1950 modus vivendi).</summary>
-        public string Label(DateTime date, string withLines, string noData, string low = "{0}", string note = "{0} ({1})")
+        /// still without line data. <paramref name="format"/> formats a UI string by key, as UiText.Format does, so a value
+        /// inserted into a Hebrew pattern is put between left-to-right marks (#585, #596): map.layer_with_armistice ({0}
+        /// label, {1} armistice label, {2} front names); map.layer_front_no_data ({0} a front's name, appended for each front
+        /// without data); map.layer_front_low ({0} a low-accuracy front's name: Jordan, from a low-resolution scan);
+        /// map.layer_front_note ({0} a front's name and {1} the notes of its items shown: the 1950 modus vivendi).</summary>
+        public string Label(DateTime date, Func<string, object[], string> format)
         {
             var (on, none) = FrontsOn(date);
             if (on.Count == 0 || Armistice == null) return Subdistricts.Label;
             string Name(Armistice1949.Front f)
             {
-                var n = f.LowAccuracy ? string.Format(CultureInfo.InvariantCulture, low, f.Name) : f.Name;
+                var n = f.LowAccuracy ? format("map.layer_front_low", new object[] { f.Name }) : f.Name;
                 var notes = Armistice.Zones.Concat(Armistice.Lines).Where(x => x.Front == f && InForce(x, date) && x.LabelNote != "")
                     .Select(x => x.LabelNote).Distinct().ToList();
-                return notes.Count == 0 ? n : string.Format(CultureInfo.InvariantCulture, note, n, string.Join(", ", notes));
+                return notes.Count == 0 ? n : format("map.layer_front_note", new object[] { n, string.Join(", ", notes) });
             }
-            var text = string.Format(CultureInfo.InvariantCulture, withLines, Subdistricts.Label, Armistice.Label, string.Join(", ", on.Select(Name)));
-            foreach (var f in none) text += string.Format(CultureInfo.InvariantCulture, noData, f.Name);
+            var text = format("map.layer_with_armistice", new object[] { Subdistricts.Label, Armistice.Label, string.Join(", ", on.Select(Name)) });
+            foreach (var f in none) text += format("map.layer_front_no_data", new object[] { f.Name });
             return text;
         }
 

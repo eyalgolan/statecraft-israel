@@ -228,8 +228,7 @@ namespace Statecraft.Game.UI
             {
                 regions.Apply(bridge.State.Date);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
-                    ?? regions.Label(bridge.State.Date, text["map.layer_with_armistice"], text["map.layer_front_no_data"],
-                    text["map.layer_front_low"], text["map.layer_front_note"]);
+                    ?? regions.Label(bridge.State.Date, text.Format);
                 layerLabel.style.display = regions.Shown ? DisplayStyle.Flex : DisplayStyle.None;
             };
             onDate();
