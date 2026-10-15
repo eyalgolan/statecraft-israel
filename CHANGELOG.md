@@ -622,8 +622,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ### Fixed
 - Map labels (refs #599): close over Jaffa's harbour the "Tel Aviv" and "Jaffa" pills no longer read swapped. Every pill
   is now nearer its own settlement's marker than any other visible marker (by more than 4 px), in every placing pass,
-  since two sprawling kits' screen rectangles overlap and a spot against one's edge could sit by the other town. When
-  every spot round a sprawl fails, a pill may also hang just under its marker point, so Tel Aviv keeps its name.
+  since two sprawling kits' screen rectangles overlap and a spot against one's edge could sit by the other town. A city
+  keeps its name: when every spot round its sprawl fails it may hang just under its marker point, its last pass ignores
+  the 1948 localities' markers (Silwan is 1.5 km from Jerusalem), and a kit reaching behind the camera at the closest
+  zoom places its pill round the marker box instead of hiding it.
 - Screenshot runs (`?shot`, `-shot`; `tools/art_checkpoint.sh`) show the map again: since the GDD cutover (#600) the
   opening card, One Army, covered it in every capture. The card, its scrim and "Decision waiting" now stay hidden in a
   screenshot run, as the units do (`EventCardPresenter.HiddenInCaptures`); normal play and the smoke run still show it.

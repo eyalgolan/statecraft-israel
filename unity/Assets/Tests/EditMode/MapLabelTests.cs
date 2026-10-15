@@ -728,6 +728,62 @@ public class MapLabelTests
         finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>Second review of #599: a city keeps its name. At gameplay03, at jaffa30, and over each city
+    /// (from the closest zoom out to 40 km, at five yaws, with the top-bar inset), every city whose marker is visible is named, with the units off and on, and
+    /// its pill is nearer its own marker than any other visible settlement's. Within LocalityDistanceM the 1948 localities'
+    /// markers are on the map too (Silwan is 1.5 km from Jerusalem), and they must not take a city's name away. The towns
+    /// the review named are logged (a town may give way, as before).</summary>
+    [UnityTest]
+    public IEnumerator EveryCityKeepsItsNameCloseUp() => CitiesKeepTheirNames(false);
+
+    [UnityTest]
+    public IEnumerator EveryCityKeepsItsNameCloseUpWithTheUnits() => CitiesKeepTheirNames(true);
+
+    IEnumerator CitiesKeepTheirNames(bool units)
+    {
+        var hd = new HdPanel(cam);
+        var labels = Labels(hd, units);
+        var inset = new TopBarInset(hd.Root, rig);
+        try
+        {
+            var g03 = PromoPose.Gameplay03;
+            var cities = map.Settlements.Where(s => s.Type == "city").ToList();
+            Assert.GreaterOrEqual(cities.Count, 3, "Jerusalem, Tel Aviv and Haifa");
+            var poses = new System.Collections.Generic.List<(PromoPose pose, string? over)> { (g03, null), (new PromoPose("jaffa30", 34.76, 32.05, 0.3f * g03.Distance, g03.Yaw), null) };
+            foreach (var c in cities)
+                foreach (var d in new[] { CameraController.MinDistance, 10000f, 14000f, 18000f, 24000f, 30000f, 40000f })
+                    foreach (var yaw in new[] { 0f, g03.Yaw, 90f, 180f, 270f })
+                        poses.Add((new PromoPose($"{c.Id}{d / 1000f:F0}y{yaw:F0}", c.Lon, c.Lat, d, yaw), c.Id));
+            string[] towns = { "acre", "rosh_pinna", "rishon_lezion", "petah_tikva" };
+            foreach (var (pose, over) in poses)
+            {
+                pose.Apply(rig, map.Frame);
+                if (over != null)   // over a city the look point is on the ground, as the game's pan keeps it (CameraController)
+                {
+                    var at = rig.LookAt; at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+                    rig.LookAt = at; rig.Apply();
+                }
+                yield return null;
+                inset.Update();
+                yield return Settle(labels);
+                var tops = VisibleMarkerTops(hd, map);
+                var shown = labels.Slots.Where(Shown).Select(s => (id: s.name.Substring("slot-".Length), rect: s.Q<Label>().worldBound)).ToList();
+                if (over != null) Assert.IsTrue(tops.ContainsKey(over), $"{pose.Name}: {over}'s marker is on screen, so this pose checks it");
+                TestContext.WriteLine($"{pose.Name} units={units}: " + string.Join(" ", cities.Select(c => c.Id).Concat(towns).Where(tops.ContainsKey)
+                    .Select(id => $"{id}={(shown.Any(x => x.id == id) ? "named" : "HIDDEN")}")));
+                foreach (var c in cities.Where(c => tops.ContainsKey(c.Id)))
+                {
+                    var p = shown.FirstOrDefault(x => x.id == c.Id);
+                    Assert.IsNotNull(p.id, $"{pose.Name}: {c.Id}'s marker {tops[c.Id]} is visible, so it is named");
+                    float own = Gap(p.rect, tops[c.Id]);
+                    foreach (var other in tops.Where(o => o.Key != c.Id))
+                        Assert.Less(own, Gap(p.rect, other.Value), $"{pose.Name}: the {c.Id} pill {p.rect} is {own:F0} px from its own marker but {Gap(p.rect, other.Value):F0} px from {other.Key}'s");
+                }
+            }
+        }
+        finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
+    }
+
     /// <summary>Re-review N1: a panel that appears (the event card) hides the pill it covers when its layout lands, from the
     /// geometry event itself, with no other refresh (in the game that is before the frame is drawn, not one frame later).</summary>
     [UnityTest]
