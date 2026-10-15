@@ -26,6 +26,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   refuses any other value, a blank, a missing source, and a marked person holding an office without `title_he_f`.
   Golda Meir is marked; she is the only woman in the Knesset's government position records for 1948-1956 (KNS_Person,
   checked 15 October 2026). Display only: no golden moves.
+- Portraits for eight 1948-1951 office holders who had none (refs #6; owner, 15 October 2026: "Yes, source more"):
+  Lavon, Eshkol, Dinur, Burg, Naftali and the deputy ministers Efrati, Shari and Kahana, from Knesset Archives member
+  portraits under CC BY-SA 4.0, each cropped and downscaled to 512 px tall with no upscaling and credited in `NOTICE`.
+  Geri, Pinkas and Yadin still have none: no file found meets the portrait licence rules.
 - A person's sign-off beside a status (refs #375, #564, #611; owner, 15 October 2026: "Yes, humans only"): every status
   row takes `reviewed_by` (the reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither.
   The sim's loader, the map's readers (localities, the 1945 populations, units) and `tools/routes_1948.py` refuse a

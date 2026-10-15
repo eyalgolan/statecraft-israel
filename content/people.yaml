@@ -600,6 +600,7 @@ people:
     party: mapai
     competence: 7
     loyalty: 7
+    portrait: { file: promo/ref/people/Pinhas_Lavon_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Pinchas_Lavon_(00010012).jpg", focus_y: 0.58 }
     offices:
       - { office: agriculture_minister, from: 1950-11-01, to: 1951-10-08, sources: *gov2 }
       # Agriculture took most of the rationing and supply functions of the abolished Ministry of Rationing and Supply;
@@ -652,6 +653,7 @@ people:
     party: mapai
     competence: 8
     loyalty: 8
+    portrait: { file: promo/ref/people/Levi_Eshkol_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Levi_Eshkol_(00330374).jpg", focus_y: 0.46 }
     offices:
       - { office: agriculture_minister, from: 1951-10-08, to: 1952-06-25, sources: [*gov3, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }] }
       - { office: finance_minister, from: 1952-06-25, to: 1952-12-24, sources: *june_1952 }
@@ -680,6 +682,7 @@ people:
     party: ""
     competence: 7
     loyalty: 7
+    portrait: { file: promo/ref/people/Ben-Zion_Dinur_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Ben-Zion_Dinur_(00370241).jpg", focus_y: 0.47 }
     offices:
       - { office: education_minister, from: 1951-10-08, to: 1952-12-24, sources: *third }
       - { office: education_minister, from: 1952-12-24, to: 1954-01-26, sources: *gov4 }
@@ -699,6 +702,7 @@ people:
     party: hapoel_hamizrachi
     competence: 7
     loyalty: 7
+    portrait: { file: promo/ref/people/Yosef_Burg_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Joseph_Burg_(00330274).jpg", focus_y: 0.52 }
     offices:
       # Health in the Third Government (Knesset position records; en.wiki, he.wiki and JVL agree). Posts came only in the
       # Fourth Government (24 December 1952), per Addendum (c).
@@ -740,6 +744,7 @@ people:
     party: mapai
     competence: 7
     loyalty: 8
+    portrait: { file: promo/ref/people/Peretz_Naftali_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Peretz_Naftali_(00340281).jpg", focus_y: 0.48 }
     offices:
       - { office: minister_without_portfolio, from: 1951-10-08, to: 1952-06-25, sources: [*gov3, { url: "https://fs.knesset.gov.il/2/Plenum/2_ptm_250662.pdf", checked: 2026-10-11 }] }
       - { office: agriculture_minister, from: 1952-06-25, to: 1952-12-24, sources: *june_1952 }
@@ -1094,6 +1099,7 @@ people:
     party: mapai
     competence: 5
     loyalty: 5
+    portrait: { file: promo/ref/people/Yosef_Efrati_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Joseph_Ephrati_(00330292).jpg", focus_y: 0.47 }
     offices:
       - office: deputy_agriculture_minister
         from: 1951-02-26
@@ -1125,6 +1131,7 @@ people:
     party: mapai
     competence: 5
     loyalty: 5
+    portrait: { file: promo/ref/people/Reuven_Shari_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Reuven_Sheri_(00320123).jpg", focus_y: 0.55 }
     offices:
       # Knesset notification on 2 April, not the role table's 1 April. See deputy-titles.md and the 1951 law.
       - office: deputy_transportation_minister
@@ -1150,6 +1157,7 @@ people:
     party: poalei_agudat_yisrael
     competence: 5
     loyalty: 5
+    portrait: { file: promo/ref/people/Kalman_Kahana_CCBYSA_Knesset.jpg, license: CC BY-SA 4.0, source: "https://commons.wikimedia.org/wiki/File:Kalman_Kahana_(00360304).jpg", focus_y: 0.43 }
     offices:
       - office: deputy_education_minister
         from: 1951-11-04

@@ -61,6 +61,21 @@ MonoBehaviour:
   - personId: golda_meir
     image: {fileID: 2800000, guid: 2aacabec247d446ba42c3c03e852185d, type: 3}
     focusY: 0.3
+  - personId: lavon
+    image: {fileID: 2800000, guid: 5693f214426b84f5ab6a263a7212cf41, type: 3}
+    focusY: 0.58
+  - personId: eshkol
+    image: {fileID: 2800000, guid: 0601452c09bb043e58bd2bd38d85197b, type: 3}
+    focusY: 0.46
+  - personId: dinur
+    image: {fileID: 2800000, guid: 0d6cdd2b829c64ebdb7885b99258c702, type: 3}
+    focusY: 0.47
+  - personId: burg
+    image: {fileID: 2800000, guid: 4ee040c5570e343cfbc510e07f0105e6, type: 3}
+    focusY: 0.52
+  - personId: naftali
+    image: {fileID: 2800000, guid: 2065b4ce7a1e64bd58ccd95a6bdbddb0, type: 3}
+    focusY: 0.48
   - personId: weizmann
     image: {fileID: 2800000, guid: 0c84d13281034087ba62fa4a45d82f6f, type: 3}
     focusY: 0.32
@@ -70,3 +85,12 @@ MonoBehaviour:
   - personId: dori
     image: {fileID: 2800000, guid: 7ec048d34e0e45a7adc5115351c9d4df, type: 3}
     focusY: 0.3
+  - personId: efrati
+    image: {fileID: 2800000, guid: 4dd54ceeb228b42d78fb51f76da9ecc8, type: 3}
+    focusY: 0.47
+  - personId: shari
+    image: {fileID: 2800000, guid: f53a8c78564804862ba2ba5734fe7b58, type: 3}
+    focusY: 0.55
+  - personId: kahana
+    image: {fileID: 2800000, guid: 64f7a21f634f24a538f06c72b9111827, type: 3}
+    focusY: 0.43

@@ -210,6 +210,76 @@ rules:
   status: verified
   commons: CC0; CC-zero, Cc-zero
   artist: Willem van de Poll
+- glob: promo/ref/people/Pinhas_Lavon_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Pinchas_Lavon_(00010012).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/lavon.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Pinchas_Lavon_(00010012).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: promo/ref/people/Levi_Eshkol_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Levi_Eshkol_(00330374).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/eshkol.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Levi_Eshkol_(00330374).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: promo/ref/people/Ben-Zion_Dinur_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Ben-Zion_Dinur_(00370241).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/dinur.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Ben-Zion_Dinur_(00370241).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: promo/ref/people/Yosef_Burg_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Joseph_Burg_(00330274).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/burg.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Joseph_Burg_(00330274).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: promo/ref/people/Peretz_Naftali_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Peretz_Naftali_(00340281).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/naftali.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Peretz_Naftali_(00340281).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
 - glob: promo/ref/people/Chaim_Weizmann_Bain.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:C._(Chaim)_Weizmann_LCCN2014712248.jpg
@@ -246,6 +316,48 @@ rules:
   status: verified
   commons: CC0; CC-zero, Cc-zero
   artist: Willem van de Poll
+- glob: promo/ref/people/Yosef_Efrati_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Joseph_Ephrati_(00330292).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/efrati.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Joseph_Ephrati_(00330292).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: promo/ref/people/Reuven_Shari_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Reuven_Sheri_(00320123).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/shari.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Reuven_Sheri_(00320123).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: promo/ref/people/Kalman_Kahana_CCBYSA_Knesset.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Kalman_Kahana_(00360304).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
+- glob: unity/Assets/UI/Portraits/kahana.jpg
+  licence: CC-BY-SA-4.0
+  source: https://commons.wikimedia.org/wiki/File:Kalman_Kahana_(00360304).jpg
+  status: verified
+  commons: CC BY-SA 4.0; Cc-by-sa-4.0, Cc-by-sa-layout
+  artist: Knesset photographer
+  note: 'share-alike: this cropped portrait is an adaptation, released under CC BY-SA 4.0 like its source (LICENSING.md, NOTICE)'
 - glob: promo/ref/people/Moshe_Dayan_1962_CC0.jpg
   licence: CC0-1.0
   source: https://commons.wikimedia.org/wiki/File:Moshe_Dayan_met_mgr._A.C._Ramselaar_(cropped).jpg

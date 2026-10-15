@@ -31,7 +31,7 @@ public class EventCardTests
         Assert.AreEqual(expected, catalog.entries.Select(e => e.personId).OrderBy(x => x).ToArray());
         Assert.IsNotNull(catalog.Get("ben_gurion"));
         Assert.IsNotNull(catalog.Get("golda_meir"));
-        Assert.IsNull(catalog.Get("lavon"));                          // no public-domain portrait recorded
+        Assert.IsNull(catalog.Get("geri"));                           // no portrait recorded
     }
 
     [Test]

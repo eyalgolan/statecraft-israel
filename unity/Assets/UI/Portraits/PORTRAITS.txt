@@ -15,6 +15,14 @@ levin | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:Yitzhak-Meir_Levin_(
 dov_yosef | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:Dov_Yosef_(997008137381905171).jpg
 shazar | Public domain | https://commons.wikimedia.org/wiki/File:President_Lyndon_B._Johnson_with_President_Zalman_Shazar_of_Israel.jpg
 golda_meir | CC0 | https://commons.wikimedia.org/wiki/File:Golda_Meir%2C_minister_van_buitenlandse_zaken_van_Israel%2C_Bestanddeelnr_255-4314.jpg
+lavon | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Pinchas_Lavon_(00010012).jpg
+eshkol | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Levi_Eshkol_(00330374).jpg
+dinur | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Ben-Zion_Dinur_(00370241).jpg
+burg | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Joseph_Burg_(00330274).jpg
+naftali | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Peretz_Naftali_(00340281).jpg
 weizmann | Public domain | https://commons.wikimedia.org/wiki/File:C._(Chaim)_Weizmann_LCCN2014712248.jpg
 ben_zvi | CC0 | https://commons.wikimedia.org/wiki/File:President_Isaac_Ben_Zwi_,_president_van_Israel_en_echtgenote_ontvangen_door_het_,_Bestanddeelnr_909-7131.jpg
 dori | CC0 | https://commons.wikimedia.org/wiki/File:Stafchef_Dori_houdt_toespraak_tijdens_de_militaire_parade_bij_gelegenheid_van_de,_Bestanddeelnr_255-0981.jpg
+efrati | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Joseph_Ephrati_(00330292).jpg
+shari | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Reuven_Sheri_(00320123).jpg
+kahana | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Kalman_Kahana_(00360304).jpg
