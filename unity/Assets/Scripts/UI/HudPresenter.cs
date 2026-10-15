@@ -66,6 +66,24 @@ namespace Statecraft.Game.UI
             ("nav-why", "hud.nav.why"), ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         };
 
+        /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level
+        /// and the attention line, SmallTextPx in the stylesheet) stays at least this many pixels on screen. The panel scales
+        /// with the window (about 0.67 at 1280x720, 0.62 at 1024x768), so at small windows the text is set larger in panel
+        /// px (SmallTextSize).</summary>
+        public const float TextFloorPx = 12f;
+        /// <summary>The bar's small text in the stylesheet (Statecraft.uss .meter-name, #security-level, #attention).</summary>
+        public const float SmallTextPx = 15f;
+
+        /// <summary>The small text's size in panel px when one panel px is <paramref name="screenPxPerPanelPx"/> pixels on
+        /// screen: the stylesheet's SmallTextPx, or the whole px that keeps it at TextFloorPx on screen if that is larger.</summary>
+        public static float SmallTextSize(float screenPxPerPanelPx) =>
+            screenPxPerPanelPx > 0f ? UnityEngine.Mathf.Max(SmallTextPx, UnityEngine.Mathf.Ceil(TextFloorPx / screenPxPerPanelPx - 0.01f)) : SmallTextPx;
+
+        readonly List<Label> smallText;
+        readonly VisualElement turnBox;
+        readonly IVisualElementScheduledItem floorCheck;
+        float smallTextSize = SmallTextPx;
+
         /// <summary>The left icon column (promo 03): the four screens' buttons.</summary>
         public const string RailName = "left-column";
         readonly HoverTip? railTips, barTips;
@@ -104,6 +122,13 @@ namespace Statecraft.Game.UI
                 meter.Q<Label>(className: "meter-name").text = caption;   // the bar shows the words its tooltip says
                 said[id] = (meter, caption);
             }
+            // The text floor: checked now and twice a second, since a window resized at the same shape changes the panel's
+            // scale without changing its layout (no geometry event).
+            smallText = bar.Query<Label>(className: "meter-name").ToList();   // the six captions and Security's level
+            smallText.Add(root.Q<Label>("attention"));
+            turnBox = bar.Q<VisualElement>(className: "turn-box");
+            ApplyTextFloor();
+            floorCheck = root.schedule.Execute(ApplyTextFloor).Every(500);
             SetCompact(bar.layout.width);   // the bar may already be laid out (the loading screen shows it) and never resize
             bridge.Changed += Render;
             Render();
@@ -113,6 +138,9 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             railTips?.Dispose(); barTips?.Dispose();
+            floorCheck.Pause();
+            foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
+            turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
@@ -153,13 +181,81 @@ namespace Statecraft.Game.UI
             }
         }
 
+        /// <summary>Sets the small text to SmallTextSize for the panel's current scale and re-picks the tier, since larger
+        /// captions need more room (TierWidth).</summary>
+        void ApplyTextFloor()
+        {
+            var p = root.panel;
+            if (p == null) return;
+            var size = SmallTextSize(p.scaledPixelsPerPoint / DevicePixelRatio());
+            if (size == smallTextSize) return;
+            smallTextSize = size;
+            SetCompact(bar.layout.width);
+        }
+
+        /// <summary>Whether the floor raises the text at this bar width. Not on the three-row bar (a phone held upright, about
+        /// 0.49 scale): its fixed rows have no room for 25 px captions, so it keeps the stylesheet's size (an owner question).</summary>
+        bool FloorRaises(float width) => smallTextSize > SmallTextPx && !(width < ThreeRowBelowPx);
+
+        /// <summary>The room the raised text takes beyond what the tiers were set for (the 15 px captions, wrapped at their 120 px
+        /// max-width, and the 150 px turn box): each caption on one line at the larger size (text width scales with font
+        /// size), and the turn box widened in step. The one-row and icon tiers read the bar's width less this.</summary>
+        float FloorGrowth()
+        {
+            float growth = TurnBoxPx * (smallTextSize / SmallTextPx - 1f);
+            foreach (var l in smallText)
+            {
+                if (l.name == "attention" || string.IsNullOrEmpty(l.text)) continue;
+                var current = l.resolvedStyle.fontSize;
+                if (!(current > 0f)) continue;
+                var oneLine = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+                growth += oneLine * smallTextSize / current - UnityEngine.Mathf.Min(oneLine * SmallTextPx / current, CaptionMaxPx);
+            }
+            return UnityEngine.Mathf.Max(0f, growth);
+        }
+        const float TurnBoxPx = 150f, CaptionMaxPx = 120f;
+        /// <summary>The largest raised small text the 70 px one-row bar holds: the attention line above End Turn is taller with
+        /// it, and at 19 px (1366x657) the Hebrew turn box leaves the bar (TopBarTests.TheBarFitsEveryWindowInEnglishAndHebrew),
+        /// so above this the bar takes the stacked tier.</summary>
+        public const float OneRowSmallMaxPx = 18f;   // Statecraft.uss .turn-box width, .meter .meter-name max-width
+
+        /// <summary>Inline styles for the floor, only while it raises the text: its size; the captions on one line on the one-row
+        /// and stacked bars (a wrapped caption at the larger size would leave the bar), where FloorGrowth has made room (the
+        /// two-row bar keeps the stylesheet's wrapping); and the turn box widened so the attention line fits.</summary>
+        void StyleSmallText(bool raised)
+        {
+            bool oneLine = raised && !hudRoot.ClassListContains(TwoRowClass);
+            foreach (var l in smallText)
+            {
+                l.style.fontSize = raised ? new StyleLength(smallTextSize) : new StyleLength(StyleKeyword.Null);
+                if (l.name == "attention") continue;
+                l.style.whiteSpace = oneLine ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
+                l.style.maxWidth = oneLine ? new StyleLength(StyleKeyword.None) : new StyleLength(StyleKeyword.Null);
+            }
+            var box = TurnBoxPx * smallTextSize / SmallTextPx;
+            turnBox.style.width = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
+            turnBox.style.minWidth = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
+        }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // The panel scales by the canvas's device pixels, so a screen pixel here is a CSS pixel: the device's pixels / the
+        // browser's devicePixelRatio (DevicePixelRatio.jslib).
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern float StatecraftDevicePixelRatio();
+        static float DevicePixelRatio() { var r = StatecraftDevicePixelRatio(); return r > 0f ? r : 1f; }
+#else
+        static float DevicePixelRatio() => 1f;
+#endif
+
         void SetCompact(float width)
         {
             if (!(width > 0)) return;   // NaN before layout: wait for it
-            bar.EnableInClassList(CompactClass, width < CompactBelowPx);
-            hudRoot.EnableInClassList(NarrowClass, width < NarrowBelowPx);
+            var raised = FloorRaises(width);
+            var tierWidth = raised ? width - FloorGrowth() : width;   // the owner's text floor needs room (#624)
+            bar.EnableInClassList(CompactClass, tierWidth < CompactBelowPx);
+            hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || raised && smallTextSize > OneRowSmallMaxPx);
             hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx);
             hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
+            StyleSmallText(raised);
             ScreenNav.DisableCovered(hudRoot);   // two rows or one: what an open screen covers changes with it (#400)
         }
 

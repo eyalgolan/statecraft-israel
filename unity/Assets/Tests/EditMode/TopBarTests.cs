@@ -35,9 +35,11 @@ public class TopBarTests
     /// fullscreen 5:4 and 4:3, either side of NarrowBelowPx (1642 one row, 1635 stacked), and a square window. At 1563-1612
     /// the one-row bar wrapped "Public Support" and "International Standing" with the widest values (this round's first
     /// run), so 5:4 takes the stacked bar with its icons. (With the edge moved back to 1612, the one-row bar still fit at
-    /// 1635: the edge's place between 5:4 and 4:3 is a margin, not a measured limit.)</summary>
+    /// 1635: the edge's place between 5:4 and 4:3 is a margin, not a measured limit.) A 4:3 window as large as 1600x1200
+    /// keeps the one-row bar; at 1024x768 the owner's text floor (TheBarsSmallTextKeepsTheFloorOnScreen) raises the small text
+    /// to 20 px, which takes the stacked bar without icons (HudPresenter.FloorGrowth).</summary>
     static readonly (int w, int h, bool oneRow)[] Boundary =
-        { (1315, 1024, false), (1317, 1024, false), (1389, 1024, true), (1280, 1024, false), (1024, 768, true),
+        { (1315, 1024, false), (1317, 1024, false), (1389, 1024, true), (1280, 1024, false), (1600, 1200, true), (1024, 768, false),
           (1360, 1024, true), (1350, 1024, false), (1024, 1024, false) };
 
     /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the plain mean of the two
@@ -357,6 +359,38 @@ public class TopBarTests
             Assert.IsTrue(button.Contains(endTurn), $"headed.py's END_TURN {endTurn} is not on End Turn {button} (centre {button.center})");
             Assert.IsTrue(Css(root.Q("top-bar")).Contains(panel), $"headed.py's PANEL {panel} is not on the bar {Css(root.Q("top-bar"))}");
         }, widest: false);
+    }
+
+    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level and
+    /// the attention line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, in
+    /// both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window, so on screen is the
+    /// font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
+    /// collides at these sizes.)</summary>
+    [UnityTest]
+    public IEnumerator TheBarsSmallTextKeepsTheFloorOnScreen()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080) })
+                yield return Rendered(w, h, hebrew, (root, text) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    float perPanelPx = w / root.worldBound.width;
+                    var bar = root.Q("top-bar");
+                    var labels = bar.Query<Label>(className: "meter-name").ToList();
+                    labels.Add(root.Q<Label>("attention"));   // the captions' query also holds security-level (class meter-name)
+                    labels = labels.Distinct().ToList();
+                    if (labels.Count != 8) problems.Add($"{at}: precondition: 8 small labels, found {labels.Count}");
+                    foreach (var l in labels)
+                    {
+                        if (string.IsNullOrEmpty(l.text) || !(l.worldBound.height > 0)) { problems.Add($"{at}: precondition: {l.name} '{l.text}' shows"); continue; }
+                        float onScreen = l.resolvedStyle.fontSize * perPanelPx;
+                        TestContext.WriteLine($"{at}: {l.name}/{l.parent?.parent?.name} {l.resolvedStyle.fontSize:0.0} px, {onScreen:0.0} on screen");
+                        if (onScreen < 12f - 0.05f) problems.Add($"{at}: {l.parent?.parent?.name} {l.name} '{l.text}' is {onScreen:0.0} px on screen, under the 12 px floor");
+                        if (w == 1920 && Mathf.Abs(l.resolvedStyle.fontSize - 15f) > 0.01f) problems.Add($"{at}: {l.name} is {l.resolvedStyle.fontSize} px, not the stylesheet's 15");
+                    }
+                });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
     /// <summary>The audit's Tab order is kept: Cabinet, Budget, Defence, Why? (the left column), New Game, End Turn, then the

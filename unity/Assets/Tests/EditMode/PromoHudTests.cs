@@ -141,12 +141,13 @@ public class PromoHudTests
         // drop them; square and narrower wrap; a phone upright (390x844, ~790) takes three rows (#398).
         // HUD round 2 moved the four screen buttons to the left column (#602), so the bar holds about 248 px less and every
         // tier starts that much narrower (part 3): 16:10 and 4:3 now keep the one-row bar with its icons; 5:4 the stacked bar
-        // with them.
+        // with them. At 1024x768 the owner's text floor (#624) raises the small text to 20 px, and the bar takes the stacked
+        // tier without icons (HudPresenter.FloorGrowth).
         foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, false, false, false),
                                                               (1366, 768, true, false, false, false), (1760, 1000, true, false, false, false),
                                                               (2560, 1080, true, false, false, false),
                                                               (1920, 1200, true, false, false, false), (1440, 900, true, false, false, false),
-                                                              (1024, 768, true, false, false, false), (1280, 1024, true, true, false, false),
+                                                              (1024, 768, false, true, false, false), (1280, 1024, true, true, false, false),
                                                               (1024, 1024, false, true, false, false), (960, 1080, false, true, true, false),
                                                               (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
         {

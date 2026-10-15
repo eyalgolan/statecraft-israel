@@ -3144,6 +3144,13 @@ T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 
 - The plate is a label occluder (`date-plate` in `MapLabelsPresenter.OccluderNames`), since the bar's box no longer covers
   it (`MapLabelTests.APillUnderTheHangingPlateIsHidden`).
 - Security's level and the attention line are 15 px, the accessibility audit's floor (H4); they were 13 and 14.
+- The owner's text floor (15 October 2026): the bar's small text stays at least 12 px on screen at small windows. The panel
+  scales with the window (0.67 at 1280x720, 0.62 at 1024x768), so `HudPresenter` sets it to the whole px that keeps 12 on
+  screen (18 px at 1280x720, 20 at 1024x768; in a browser, CSS px: the panel's scale over `devicePixelRatio`). Raised
+  captions stay on one line, the turn box widens with them, and the tiers read the bar's width less the room this takes
+  (`FloorGrowth`), so 1024x768 takes the stacked bar without icons; above 18 px the one-row bar's turn box no longer fits
+  its 70 px, so 1366x657 takes the stacked bar. The phone tier (three rows) keeps 15 px: its fixed rows have no room for
+  25 px captions (an open owner question).
 - In Hebrew the bar's row mirrors (#550): the plate is at the right and End Turn at the left. The left column and the
   minimap keep their corners.
 
