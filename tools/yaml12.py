@@ -4,19 +4,28 @@
 # ///
 """YAML 1.2 core-schema loading for the Python tools and scripts (refs #601).
 
-PyYAML's safe_load follows YAML 1.1, so it coerces plain scalars the game never coerces: yes/no/on/off become bools,
-1_0 becomes 10, 1:30 becomes 90 (base 60), 017 becomes 15 (octal), 0b101 becomes 5 and 2026-10-15 becomes a date. The
-sim and Unity read the same files with YamlDotNet, which does not. A bake or a check that reads a file with safe_load can
-then disagree with the game in silence.
+PyYAML's safe_load follows YAML 1.1, so it coerces plain scalars: yes/no/on/off become bools, 1_0 becomes 10, 1:30
+becomes 90 (base 60), 017 becomes 15 (octal), 0b101 becomes 5 and 2026-10-15 becomes a date. The sim and Unity read the
+same files with YamlDotNet (18.1.0), and what it does depends on the C# field's type:
+- into a string (or object) field it keeps the text, as load() below does: 2026-10-15 stays "2026-10-15";
+- into a bool or int field it is looser than YAML 1.2 (review of #606): bool takes yes/on/y and no/off/n, int takes
+  017 as 15, 1_000, 1:30 as 90 and 0b101, and refuses 0o17.
+So load() is not "what the game reads" for every field. It removes the YAML 1.1 coercions on the Python side, and
+ambiguous() lists the plain scalars where a typed C# read and load() could disagree. tools/tests/test_yaml12_data.py
+keeps the game's YAML free of both kinds (dates excepted, which every reader here reads through their text).
 
 - load(text) / load_path(path): the YAML 1.2 core schema. Bool is true/false only (any case form the spec lists), null
   is null/~/empty, ints are decimal, 0o octal or 0x hex, floats need no dot (1e3) and keep .inf/.nan. No sexagesimal, no
-  underscores, no 0b, no implicit timestamps, no '<<' merge key. Everything else is a string.
+  underscores, no 0b, no implicit timestamps, no '<<' merge key. Everything else is a string. A duplicate key is an
+  error, as in the game (YamlDotNet's WithDuplicateKeyChecking).
 - load_raw(text): every scalar as its text (quoted or not, '~' stays '~'), for a reader that wants strings only.
-- hazards(text): the plain scalars that safe_load reads differently from the core schema, with line and key path.
-  `uv run tools/yaml12.py FILE...` prints them.
+- hazards(text): the plain scalars that safe_load reads differently from load(), with line and key path.
+- ambiguous(text): the plain scalars a YamlDotNet bool or int read accepts beyond YAML 1.2 (y, yes, off, 017, 1_000,
+  1:30, 0b101, 0o17).
+`uv run tools/yaml12.py FILE...` prints both lists.
 
-Use these instead of yaml.safe_load in tools/ and scripts/; tools/tests/test_yaml12_guard.py fails on a new safe_load.
+Use these instead of yaml.safe_load in tools/, scripts/ and .github/; tools/tests/test_yaml12_guard.py fails on a new
+PyYAML load.
 """
 from __future__ import annotations
 
@@ -45,7 +54,25 @@ CORE_RESOLVERS = [
 ]
 
 
-class Core12Loader(yaml.SafeLoader):
+class _UniqueKeys:
+    """Refuse a mapping that repeats a key (after resolution), as YamlDotNet's duplicate-key checking does."""
+
+    def construct_mapping(self, node, deep=False):
+        if isinstance(node, yaml.MappingNode):
+            seen = set()
+            for key_node, _ in node.value:
+                key = self.construct_object(key_node, deep=True)
+                try:
+                    if key in seen:
+                        raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
+                                                                f"found duplicate key {key!r}", key_node.start_mark)
+                    seen.add(key)
+                except TypeError:
+                    pass  # unhashable: the base constructor reports it
+        return super().construct_mapping(node, deep)
+
+
+class Core12Loader(_UniqueKeys, yaml.SafeLoader):
     """SafeLoader with the YAML 1.2 core schema's implicit resolvers and int/float constructors."""
     yaml_implicit_resolvers: dict = {}
 
@@ -84,7 +111,7 @@ Core12Loader.add_constructor(INT, _construct_int)
 Core12Loader.add_constructor(FLOAT, _construct_float)
 
 
-class RawLoader(yaml.SafeLoader):
+class RawLoader(_UniqueKeys, yaml.SafeLoader):
     """Every scalar is a string: its text, as written (no implicit resolution at all)."""
     yaml_implicit_resolvers: dict = {}
 
@@ -98,7 +125,7 @@ for _tag in (INT, FLOAT, BOOL, NULL, "tag:yaml.org,2002:timestamp"):
 
 
 def load(text: str) -> Any:
-    """Parse with the YAML 1.2 core schema (what YamlDotNet's typed reads agree with)."""
+    """Parse with the YAML 1.2 core schema (YamlDotNet's string reads agree; see ambiguous() for its typed ones)."""
     return yaml.load(text, Loader=Core12Loader)  # noqa: S506 (a SafeLoader subclass)
 
 
@@ -121,53 +148,79 @@ class Hazard:
 
 
 def _value(loader_cls, node: yaml.ScalarNode) -> Any:
-    """The value loader_cls gives a plain scalar with this text."""
+    """The value loader_cls gives a plain scalar with this text (a marker string when it cannot construct one, as
+    safe_load cannot for a bare '=' or '<<')."""
     loader = loader_cls("")
     try:
         tag = loader.resolve(yaml.ScalarNode, node.value, (True, False))
         return loader.construct_object(yaml.ScalarNode(tag, node.value, node.start_mark, node.end_mark), deep=True)
+    except yaml.YAMLError as e:
+        return f"<{loader_cls.__name__} error: {getattr(e, 'problem', e)}>"
     finally:
         loader.dispose()
+
+
+def _plain_scalars(text: str):
+    """(node, key path) for every plain, implicitly tagged scalar, keys included ("<key>" marks a mapping key)."""
+    resolver = yaml.SafeLoader("")
+
+    def walk(node: yaml.Node, path: str):
+        if isinstance(node, yaml.ScalarNode):
+            if node.style is None and node.tag == resolver.resolve(yaml.ScalarNode, node.value, (True, False)):
+                yield node, path  # quoted, block and explicitly tagged scalars read the same way everywhere
+        elif isinstance(node, yaml.SequenceNode):
+            for i, item in enumerate(node.value):
+                yield from walk(item, f"{path}[{i}]")
+        elif isinstance(node, yaml.MappingNode):
+            for k, v in node.value:
+                yield from walk(k, f"{path}.<key>" if path else "<key>")
+                name = k.value if isinstance(k, yaml.ScalarNode) else "?"
+                yield from walk(v, f"{path}.{name}" if path else name)
+
+    for doc in yaml.compose_all(text, Loader=yaml.SafeLoader):
+        if doc is not None:
+            yield from walk(doc, "")
 
 
 def hazards(text: str) -> list[Hazard]:
     """The plain scalars whose safe_load value differs (in value or type) from the core-schema value."""
     out: list[Hazard] = []
-    resolver = yaml.SafeLoader("")
-
-    def scalar(node: yaml.ScalarNode, path: str) -> None:
-        if node.style is not None or node.tag != resolver.resolve(yaml.ScalarNode, node.value, (True, False)):
-            return  # quoted or block scalars, and explicitly tagged ones, are read the same way by both
+    for node, path in _plain_scalars(text):
         old, new = _value(yaml.SafeLoader, node), _value(Core12Loader, node)
         same = type(old) is type(new) and (old == new or (isinstance(old, float) and math.isnan(old) and math.isnan(new)))
         if not same:
             out.append(Hazard(node.start_mark.line + 1, path, node.value, old, new))
-
-    def walk(node: yaml.Node, path: str) -> None:
-        if isinstance(node, yaml.ScalarNode):
-            scalar(node, path)
-        elif isinstance(node, yaml.SequenceNode):
-            for i, item in enumerate(node.value):
-                walk(item, f"{path}[{i}]")
-        elif isinstance(node, yaml.MappingNode):
-            for k, v in node.value:
-                walk(k, f"{path}.<key>" if path else "<key>")
-                name = k.value if isinstance(k, yaml.ScalarNode) else "?"
-                walk(v, f"{path}.{name}" if path else name)
-
-    for doc in yaml.compose_all(text, Loader=yaml.SafeLoader):
-        if doc is not None:
-            walk(doc, "")
     return out
+
+
+# What a YamlDotNet bool or int field accepts beyond YAML 1.2 core (review of #606, YamlDotNet 18.1.0): the YAML 1.1
+# bool words, and ints with a leading zero (octal), underscores, base-60 colons, 0b, or 0o (which it refuses).
+AMBIGUOUS = re.compile(r"""^(?:
+    (?i:y|yes|n|no|on|off)
+  | [-+]?0[0-9_]+
+  | [-+]?[0-9][0-9_]*_[0-9_]*(?:\.[0-9_]*)?
+  | [-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+
+  | [-+]?0b[01_]+
+  | [-+]?0o[0-7_]+
+  | [-+]?0x[0-9a-fA-F_]*_[0-9a-fA-F_]*
+)$""", re.X)
+
+
+def ambiguous(text: str) -> list[Hazard]:
+    """The plain scalars a YamlDotNet bool or int read could take differently from load()."""
+    return [Hazard(node.start_mark.line + 1, path, node.value, _value(yaml.SafeLoader, node), _value(Core12Loader, node))
+            for node, path in _plain_scalars(text) if AMBIGUOUS.match(node.value)]
 
 
 def main(argv: list[str]) -> int:
     count = 0
     for name in argv:
-        for h in hazards(Path(name).read_text(encoding="utf-8")):
-            count += 1
-            print(f"{name}:{h.line}\t{h.path}\t{h.raw!r}\tsafe_load={h.pyyaml!r}\tcore={h.core!r}")
-    print(f"{count} hazards in {len(argv)} files", file=sys.stderr)
+        text = Path(name).read_text(encoding="utf-8")
+        for kind, found in (("1.1", hazards(text)), ("typed", ambiguous(text))):
+            for h in found:
+                count += 1
+                print(f"{name}:{h.line}\t{kind}\t{h.path}\t{h.raw!r}\tsafe_load={h.pyyaml!r}\tcore={h.core!r}")
+    print(f"{count} hits in {len(argv)} files", file=sys.stderr)
     return 1 if count else 0
 
 

@@ -1,51 +1,79 @@
-"""Guard (refs #601): no new PyYAML YAML 1.1 load in tools/ or scripts/. Read YAML with tools/yaml12.py (load, load_path
-or load_raw), which resolves plain scalars by the YAML 1.2 core schema as the game's YamlDotNet does. A file that must
-keep yaml.safe_load goes in ALLOWED with the reason."""
+"""Guard (refs #601): no new PyYAML YAML 1.1 load in tools/, scripts/ or .github/. Read YAML with tools/yaml12.py
+(load, load_path or load_raw), which resolves plain scalars by the YAML 1.2 core schema and rejects duplicate keys. A
+file that must keep a PyYAML load goes in ALLOWED with the reason.
+
+The scan parses each file (ast): it follows `import yaml as y`, `from yaml import (safe_load as parse)` and `from yaml
+import *`, and flags any call through those names whose yaml-side name contains "load" (safe_load, load, full_load,
+*_all, and the SafeLoader classes)."""
+import ast
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SCANNED = ["tools", "scripts"]
+SCANNED = ["tools", "scripts", ".github"]
 SKIP_DIRS = {".cache", ".venv", "__pycache__", "node_modules"}
+LOADISH = re.compile("load", re.I)
 
-LOAD = r"(?:safe_|full_|unsafe_)?load(?:_all)?"
-PATTERN = re.compile(rf"\byaml\s*\.\s*{LOAD}\s*\(|^\s*from\s+yaml\s+import\s+[^\n]*\b{LOAD}\b", re.M)
 
-ALLOWED = {
-    "tools/yaml12.py": "the helper itself (yaml.load with its own SafeLoader subclasses)",
-    "tools/tests/test_yaml12.py": "pins safe_load's YAML 1.1 readings on purpose, to show the hazard the helper removes",
-    "tools/route_paths_bake.py": "being reworked in #547; migrate it there or after",
-    "scripts/pr_content_summary.py": "(c) a markdown report; reads event and model from/to through str(), and a date "
-                                     "prints as the same text",
-    "scripts/event_timeline.py": "(c) a printed report; reads from/to through str(), the same text either way",
-    "scripts/source_report.py": "(c) a printed report; to_date() takes a date or its ISO text alike",
-    "scripts/oss/commons_licences.py": "(c) writes ASSETS.portraits.yaml (a licence manifest the game never reads) from "
-                                       "people.yaml's portrait file and source strings",
-    "scripts/oss/ai_disclosure.py": "(c) reads ASSETS.yaml and ASSETS.portraits.yaml, licence manifests only Python reads",
-    "scripts/oss/check_repo.py": "(c) reads the ASSETS manifests and scripts/oss/allow.yaml, policy files only Python reads",
-    "scripts/oss/tests/test_policies.py": "(c) reads .github issue forms and workflows (GitHub's YAML, not the game's)",
-    "scripts/oss/tests/test_github_config.py": "(c) reads .github workflows, whose bare 'on' key it expects as True",
-}
+def _calls(tree: ast.AST) -> list[int]:
+    """Line numbers of the calls that reach a PyYAML load function or loader class."""
+    modules: set[str] = set()      # local names bound to the yaml package (or a yaml.* submodule's root)
+    functions: set[str] = set()    # local names bound to a load-ish name imported from yaml
+    star = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "yaml" or alias.name.startswith("yaml."):
+                    modules.add(alias.asname or "yaml")
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module and (
+                node.module == "yaml" or node.module.startswith("yaml.")):
+            for alias in node.names:
+                if alias.name == "*":
+                    star = True
+                elif LOADISH.search(alias.name):
+                    functions.add(alias.asname or alias.name)
+    lines = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if isinstance(f, ast.Attribute) and LOADISH.search(f.attr):
+            root = f.value
+            while isinstance(root, ast.Attribute):
+                root = root.value
+            if isinstance(root, ast.Name) and root.id in modules:
+                lines.append(node.lineno)
+        elif isinstance(f, ast.Name) and (f.id in functions or (star and LOADISH.search(f.id))):
+            lines.append(node.lineno)
+    return sorted(lines)
 
 
 def offenders(root: Path) -> dict[str, list[int]]:
-    """{repo-relative path: [line numbers]} of every YAML 1.1 load call in the scanned trees."""
+    """{repo-relative path: [line numbers]} of every PyYAML load call in the scanned trees."""
     found: dict[str, list[int]] = {}
     for top in SCANNED:
         for p in sorted((root / top).rglob("*.py")):
             if SKIP_DIRS & set(p.relative_to(root).parts):
                 continue
-            text = p.read_text(encoding="utf-8")
-            lines = [text.count("\n", 0, m.start()) + 1 for m in PATTERN.finditer(text)]
+            lines = _calls(ast.parse(p.read_text(encoding="utf-8"), filename=str(p)))
             if lines:
                 found[p.relative_to(root).as_posix()] = lines
     return found
 
 
+ALLOWED = {
+    "tools/yaml12.py": "the helper itself (yaml.load with its own SafeLoader subclasses)",
+    "tools/tests/test_yaml12.py": "pins safe_load's YAML 1.1 readings on purpose, to show the hazard the helper removes",
+    "scripts/oss/tests/test_policies.py": "reads .github issue forms and workflows, which GitHub parses, not the game",
+    "scripts/oss/tests/test_github_config.py": "reads .github workflows, which GitHub parses; it expects PyYAML's True "
+                                               "for the bare 'on' key",
+}
+
+
 def test_no_yaml_1_1_load_outside_the_helper_and_the_allowlist():
-    new = {f: lines for f, lines in offenders(ROOT).items() if f not in ALLOWED and f != "tools/tests/test_yaml12_guard.py"}
-    assert not new, ("YAML 1.1 loads (yes -> True, 1:30 -> 90, 2026-10-15 -> a date) where the game reads YAML 1.2; use "
-                     f"tools/yaml12.py, or add the file to ALLOWED with the reason: {new}")
+    new = {f: lines for f, lines in offenders(ROOT).items() if f not in ALLOWED}
+    assert not new, ("PyYAML loads (YAML 1.1: yes -> True, 1:30 -> 90, 2026-10-15 -> a date); use tools/yaml12.py, or "
+                     f"add the file to ALLOWED with the reason: {new}")
 
 
 def test_allowlist_is_not_stale():
@@ -58,14 +86,52 @@ def test_every_allowance_has_a_reason():
     assert all(len(reason) > 20 for reason in ALLOWED.values())
 
 
+EVASIONS = {
+    "plain": "import yaml\nx = yaml.safe_load(t)\n",
+    "loader_kwarg": "import yaml\nx = yaml.load(t, Loader=yaml.SafeLoader)\n",
+    "full_load": "import yaml\nx = yaml.full_load(t)\n",
+    "load_all": "import yaml\nx = list(yaml.safe_load_all(t))\n",
+    "spaced": "import yaml\nx = yaml . safe_load (t)\n",
+    "module_alias": "import yaml as y\nx = y.safe_load(t)\n",
+    "module_alias_load": "import yaml as y\nx = y.load(t, Loader=y.SafeLoader)\n",
+    "from_import": "from yaml import safe_load\nx = safe_load(t)\n",
+    "from_import_alias": "from yaml import load as parse\nx = parse(t)\n",
+    "from_import_parenthesised": "from yaml import (\n    dump,\n    safe_load,\n)\nx = safe_load(t)\n",
+    "from_import_star": "from yaml import *\nx = safe_load(t)\n",
+    "nested_import": "def f(t):\n    import yaml as yy\n    return yy.safe_load(t)\n",
+    "submodule_import": "import yaml.constructor\nx = yaml.safe_load(t)\n",
+}
+CLEAN = {
+    "helper": "import yaml12\nx = yaml12.load(t)\n",
+    "dump": "import yaml\ns = yaml.safe_dump(d)\n",
+    "other_load": "import json\nfrom pickle import load\nx = json.load(f)\ny = load(f)\n",
+    "yaml12_alias": "import yaml12 as yaml\nx = yaml.load(t)\n",
+}
+
+
+def _tree(tmp_path, files):
+    for top in SCANNED:
+        (tmp_path / top).mkdir(parents=True, exist_ok=True)
+    for name, text in files.items():
+        (tmp_path / "tools" / f"{name}.py").write_text(text, encoding="utf-8")
+    return tmp_path
+
+
 def test_the_scan_catches_each_form(tmp_path):
-    forms = ["yaml.safe_load(t)", "yaml.load(t, Loader=yaml.SafeLoader)", "yaml.full_load(t)", "yaml.safe_load_all(t)",
-             "yaml . safe_load (t)", "from yaml import safe_load", "from yaml import dump, load"]
-    for i, form in enumerate(forms):
-        (tmp_path / "tools").mkdir(exist_ok=True)
-        (tmp_path / "tools" / f"f{i}.py").write_text(f"import yaml\nx = 1\n{form}\n", encoding="utf-8")
-    (tmp_path / "scripts").mkdir()
-    (tmp_path / "scripts" / "ok.py").write_text("import yaml12\nyaml12.load(t)\nyaml.safe_dump(d)\n", encoding="utf-8")
+    found = offenders(_tree(tmp_path, EVASIONS))
+    assert sorted(found) == sorted(f"tools/{name}.py" for name in EVASIONS)
+
+
+def test_the_scan_passes_clean_code(tmp_path):
+    assert offenders(_tree(tmp_path, CLEAN)) == {}
+
+
+def test_the_scan_skips_caches(tmp_path):
+    _tree(tmp_path, {})
     (tmp_path / "tools" / ".cache").mkdir()
-    (tmp_path / "tools" / ".cache" / "x.py").write_text("yaml.safe_load(t)\n", encoding="utf-8")
-    assert offenders(tmp_path) == {f"tools/f{i}.py": [3] for i in range(len(forms))}
+    (tmp_path / "tools" / ".cache" / "x.py").write_text("import yaml\nyaml.safe_load(t)\n", encoding="utf-8")
+    assert offenders(tmp_path) == {}
+
+
+def test_the_scanned_directories_exist():
+    assert all((ROOT / top).is_dir() for top in SCANNED)

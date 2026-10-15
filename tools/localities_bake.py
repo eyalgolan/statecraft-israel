@@ -24,7 +24,9 @@ import argparse
 import sys
 from pathlib import Path
 
-import yaml12
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # under python -I the script's folder is not on sys.path
+import yaml12  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "content" / "map" / "localities_1948.yaml"

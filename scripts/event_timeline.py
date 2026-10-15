@@ -11,7 +11,8 @@ import argparse
 import sys
 from pathlib import Path
 
-import yaml
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))  # tools/yaml12.py
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 # The sim's defaults for a missing key (GameEvent in sim/Statecraft.Sim/Content.cs; a test keeps them equal).
@@ -20,10 +21,10 @@ DEFAULT_STATUS = "draft"
 
 
 def load(root: Path) -> list[dict]:
-    eras = yaml.safe_load((root / "content/eras.yaml").read_text(encoding="utf-8"))["eras"]
+    eras = yaml12.load((root / "content/eras.yaml").read_text(encoding="utf-8"))["eras"]
     rows = []
     for f in sorted((root / "content/events").glob("*.yaml")):
-        e = yaml.safe_load(f.read_text(encoding="utf-8"))
+        e = yaml12.load(f.read_text(encoding="utf-8"))
         start = str(e["from"])
         era = next((x["id"] for x in eras
                     if str(x["from"]) <= start and (not x.get("to") or start < str(x["to"]))), "-")

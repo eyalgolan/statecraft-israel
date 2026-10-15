@@ -86,7 +86,9 @@ def _commons(title: str, session) -> tuple[str, list[str], str]:
 def main() -> int:
     import requests
     import yaml
-    people = yaml.safe_load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]
+    sys.path.insert(0, str(ROOT / "tools"))
+    import yaml12  # tools/yaml12.py
+    people = yaml12.load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]
     pairs: list[tuple[str, str]] = []
     for p in people:
         portrait = p.get("portrait")

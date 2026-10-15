@@ -62,10 +62,13 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
   under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
   chosen DPR); `boot --runs N --baseline MS` checks the boot budget. Its browser test runs only with `pytest --headed`.
-- `yaml12.py` is how the tools and their tests read YAML: `yaml12.load` resolves plain scalars by the YAML 1.2 core
-  schema, as the game's YamlDotNet does, where `yaml.safe_load` follows YAML 1.1 (`yes` becomes True, `1:30` becomes 90,
-  `2026-10-15` becomes a date). `load_raw` keeps every scalar as its text; `uv run tools/yaml12.py FILE...` lists the
-  scalars the two schemas read differently. `test_yaml12_guard.py` fails on a new `yaml.safe_load` outside its allowlist.
+- `yaml12.py` is how the tools, scripts and their tests read YAML. `yaml12.load` resolves plain scalars by the YAML 1.2
+  core schema and refuses duplicate keys, where `yaml.safe_load` follows YAML 1.1 (`yes` becomes True, `1:30` becomes
+  90, `2026-10-15` becomes a date). That matches YamlDotNet's reads into string fields, not its bool and int fields,
+  which also take `yes`, `y`, `off`, `017`, `1_000` and `1:30`. `yaml12.ambiguous` lists those scalars, and
+  `test_yaml12_data.py` keeps them out of the game's YAML. `load_raw` keeps every scalar as its text, and
+  `uv run tools/yaml12.py FILE...` lists both kinds of hit. `test_yaml12_guard.py` fails on a new PyYAML load in
+  `tools/`, `scripts/` or `.github/` outside its allowlist.
 
 ## Running the tests
 

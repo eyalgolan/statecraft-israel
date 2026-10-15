@@ -14,7 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))  # tools/yaml12.py
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 # The dated model records: the sim's ModelView (sim/Statecraft.Sim/Content.cs; a test keeps them equal).
@@ -31,10 +32,10 @@ def records(root: Path, ref: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for path in git(root, "ls-tree", "-r", "--name-only", ref, "content/events/").split():
         if path.endswith(".yaml"):
-            e = yaml.safe_load(git(root, "show", f"{ref}:{path}")) or {}
+            e = yaml12.load(git(root, "show", f"{ref}:{path}")) or {}
             if "id" in e:
                 out[f"event:{e['id']}"] = {"from": str(e.get("from", "")), "to": str(e.get("to", ""))}
-    model = yaml.safe_load(git(root, "show", f"{ref}:content/model.yaml")) or {}
+    model = yaml12.load(git(root, "show", f"{ref}:content/model.yaml")) or {}
     for key in LISTS:
         for r in model.get(key) or []:
             if isinstance(r, dict) and "id" in r:

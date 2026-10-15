@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
-import yaml12  # noqa: E402  (tools/yaml12.py: YAML 1.2, as the sim reads the event)
+import yaml12  # noqa: E402  (tools/yaml12.py: YAML 1.2, no 1.1 coercions)
 SPEC = importlib.util.spec_from_file_location('new_event', ROOT / 'scripts/new_event.py')
 m = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(m)

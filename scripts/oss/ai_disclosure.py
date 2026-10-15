@@ -6,8 +6,11 @@
 """Generate review text only from explicit AI flags in the two asset manifests."""
 from __future__ import annotations
 import argparse
+import sys
 from pathlib import Path
-import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))  # tools/yaml12.py
+import yaml12  # noqa: E402
 
 KINDS = {
     'Images': {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.ico', '.svg', '.tif', '.tiff'},
@@ -20,7 +23,7 @@ KINDS = {
 def read_manifests(root: Path):
     rows = []
     for name in ('ASSETS.yaml', 'ASSETS.portraits.yaml'):
-        data = yaml.safe_load((root / name).read_text(encoding='utf-8'))
+        data = yaml12.load((root / name).read_text(encoding='utf-8'))
         if not isinstance(data, dict) or not isinstance(data.get('rules'), list):
             raise ValueError(f'{name}: rules must be a list')
         rows.extend((name, row) for row in data['rules'])

@@ -38,8 +38,10 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
-import yaml12
 from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # under python -I the script's folder is not on sys.path
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUTES = ROOT / "content" / "map" / "routes_1948.yaml"

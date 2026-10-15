@@ -22,10 +22,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-import yaml
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import oss_policy as P  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))  # tools/yaml12.py
+import yaml12  # noqa: E402
 
 ALLOW_FILE = "scripts/oss/allow.yaml"
 ASSET_FILES = ("ASSETS.yaml", "ASSETS.portraits.yaml")
@@ -125,7 +126,7 @@ def load_asset_rules(root: Path) -> tuple[list[dict], list[dict]]:
     for name in ASSET_FILES:
         p = root / name
         if p.is_file():
-            doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            doc = yaml12.load(p.read_text(encoding="utf-8")) or {}
             rules += [dict(r, _file=name) for r in doc.get("rules") or []]
             removed += doc.get("removed") or []
     return rules, removed
@@ -183,7 +184,7 @@ def apply_allowlist(root: Path, findings: list[Finding], checks: list[str]) -> l
     p = root / ALLOW_FILE
     rows: list[dict] = []
     if p.is_file():
-        rows = (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("allow") or []
+        rows = (yaml12.load(p.read_text(encoding="utf-8")) or {}).get("allow") or []
     kept, used = [], set()
     for f in findings:
         hit = next((i for i, r in enumerate(rows)

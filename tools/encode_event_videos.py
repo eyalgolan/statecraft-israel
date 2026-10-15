@@ -32,7 +32,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-import yaml12
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # under python -I the script's folder is not on sys.path
+import yaml12  # noqa: E402
+
 
 REPO = Path(__file__).resolve().parents[1]
 MAPPING = REPO / "unity/Assets/Resources/EventVideos/event-videos.yaml"

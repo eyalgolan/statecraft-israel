@@ -1,6 +1,6 @@
-"""tools/yaml12.py: a YAML 1.2 core-schema loader for the Python readers, so they read a plain scalar the way the game's
-YamlDotNet does, not the YAML 1.1 way PyYAML's safe_load does (yes -> True, 1_0 -> 10, 1:30 -> 90, 2026-10-15 -> a
-date). Refs #601."""
+"""tools/yaml12.py: a YAML 1.2 core-schema loader for the Python readers, in place of PyYAML's YAML 1.1 safe_load
+(yes -> True, 1_0 -> 10, 1:30 -> 90, 2026-10-15 -> a date). It matches YamlDotNet's string reads; YamlDotNet's typed
+bool and int reads accept more (yes, y, 017, 1_000), which ambiguous() flags. Refs #601."""
 import math
 from datetime import date
 
@@ -97,3 +97,36 @@ def test_hazards_lists_every_plain_scalar_1_1_reads_differently():
 
 def test_hazards_of_clean_text_is_empty():
     assert yaml12.hazards("a: 'yes'\nb: 12\nc: true\nd: 1.5\ne: ~\n") == []
+
+
+@pytest.mark.parametrize("text", ["k: 1\nk: 2\n", "a:\n  - {x: 1, x: 1}\n", "? a\n: 1\n? a\n: 2\n"])
+def test_duplicate_keys_are_refused(text):
+    # YamlDotNet's deserializer runs WithDuplicateKeyChecking (sim ContentLoader), so a duplicate never loads in game
+    with pytest.raises(yaml.constructor.ConstructorError, match="duplicate key"):
+        yaml12.load(text)
+    with pytest.raises(yaml.constructor.ConstructorError, match="duplicate key"):
+        yaml12.load_raw(text)
+
+
+def test_distinct_keys_that_only_1_1_would_merge_load():
+    # 1.1 reads both as True (and keeps one); 1.2 keeps both keys
+    assert yaml12.load("yes: 1\non: 2") == {"yes": 1, "on": 2}
+
+
+@pytest.mark.parametrize("raw", ["=", "<<"])
+def test_hazards_reports_scalars_safe_load_cannot_construct(raw):
+    got = yaml12.hazards(f"k: {raw}\n")
+    assert [(h.path, h.raw, h.core) for h in got] == [("k", raw, raw)]
+    assert "error" in str(got[0].pyyaml)
+
+
+@pytest.mark.parametrize("raw", ["y", "Y", "n", "N", "yes", "No", "ON", "off", "017", "1_000", "1:30", "0b101", "0o17",
+                                 "-0x1_F", "+012"])
+def test_ambiguous_flags_what_yamldotnet_typed_reads_accept_beyond_1_2(raw):
+    assert [(h.path, h.raw) for h in yaml12.ambiguous(f"k: {raw}\n")] == [("k", raw)]
+
+
+@pytest.mark.parametrize("raw", ["'y'", '"017"', "0", "10", "-3", "0x1F", "1.5", "true", "False", "yesterday", "on_hold",
+                                 "1948-05-15", "N/A", "n2", "1:30pm"])
+def test_ambiguous_leaves_unambiguous_scalars(raw):
+    assert yaml12.ambiguous(f"k: {raw}\n") == []

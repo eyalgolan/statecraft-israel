@@ -2,6 +2,7 @@
 navy-sepia tone) and nothing else; downloads are checked by SHA-1 before they are read."""
 import hashlib
 import io
+from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -103,3 +104,28 @@ def test_every_row_has_a_shipped_file_and_a_crop():
         assert len(r["crop"]) == 3 and len(r["sha1"]) == 40
         with Image.open(ei.FOLDER / r["file"]) as im:
             assert im.size[0] * 9 == im.size[1] * 16
+
+
+
+ISOLATED_IMPORT = ("import importlib.util, sys; s = importlib.util.spec_from_file_location('m', sys.argv[1]); "
+                   "s.loader.exec_module(importlib.util.module_from_spec(s))")
+
+
+# routes_accuracy.py has the same fix but needs scipy, which the tools tests do not install
+@pytest.mark.parametrize("tool", ["event_images.py", "encode_event_videos.py", "localities_bake.py", "land_bake.py",
+                                  "routes_1948.py"])
+def test_imports_under_python_isolated(tool):
+    """`python -I` (the documented way to run event_images.py, which reads untrusted downloads) leaves the script's own
+    folder off sys.path, so a tool must add it itself to import its siblings (yaml12, hexgrid). Imported, not run."""
+    import subprocess
+    import sys
+    path = Path(ei.__file__).with_name(tool)
+    r = subprocess.run([sys.executable, "-I", "-c", ISOLATED_IMPORT, str(path)], capture_output=True, text=True, cwd="/")
+    assert r.returncode == 0, r.stderr[-400:]
+
+
+def test_documented_isolated_command_starts():
+    import subprocess
+    import sys
+    r = subprocess.run([sys.executable, "-I", str(Path(ei.__file__)), "--help"], capture_output=True, text=True, cwd="/")
+    assert r.returncode == 0 and "--originals" in r.stdout, r.stderr[-400:]

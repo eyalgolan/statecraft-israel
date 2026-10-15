@@ -18,6 +18,8 @@ except Exception as exc:  # pragma: no cover
     raise SystemExit(1)
 
 ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT / "tools"))
+import yaml12  # noqa: E402  (tools/yaml12.py: YAML 1.2, no 1.1 coercions)
 EVENTS = ROOT / "content" / "events"
 
 
@@ -30,7 +32,7 @@ def main() -> int:
     for path in sorted(EVENTS.glob("*.yaml")):
         with path.open("r", encoding="utf-8") as fh:
             try:
-                data = yaml.safe_load(fh) or {}
+                data = yaml12.load(fh.read()) or {}
             except Exception as exc:  # pragma: no cover
                 problems.append(f"{path.name}: YAML parse error ({exc})")
                 continue

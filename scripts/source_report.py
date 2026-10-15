@@ -15,7 +15,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import yaml
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))  # tools/yaml12.py
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,7 +53,7 @@ def collect(root: Path, today: date) -> list[dict]:
     rows = []
     for f in sorted((root / "content").rglob("*.yaml")):
         found: list[dict] = []
-        walk(yaml.safe_load(f.read_text(encoding="utf-8")), found, set())
+        walk(yaml12.load(f.read_text(encoding="utf-8")), found, set())
         for s in found:
             d = to_date(s["checked"])
             rows.append({"file": str(f.relative_to(root)), "url": str(s["url"]), "checked": d,
