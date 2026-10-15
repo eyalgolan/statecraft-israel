@@ -16,6 +16,8 @@ namespace Statecraft.Game.Map
         public string Id { get; set; } = ""; public string Name { get; set; } = ""; public string Type { get; set; } = "";
         /// <summary>The 1948 Hebrew name (#558), with its own sources; empty when the file gives none (the UI keeps the English).</summary>
         public string NameHe { get; set; } = ""; public List<SourceRef> NameHeSources { get; set; } = new List<SourceRef>();
+        /// <summary>"agent-checked" while the Hebrew name waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string NameHeReview { get; set; } = "";
         public double Lon { get; set; } = double.NaN; public double Lat { get; set; } = double.NaN; // NaN = missing
         public int? Founded { get; set; }      // null for pre-modern cities (no verifiable founding year)
         public bool PreModern { get; set; }
@@ -95,6 +97,9 @@ namespace Statecraft.Game.Map
             bool named = !string.IsNullOrWhiteSpace(s.NameHe);
             if (named && sources.Count == 0) throw new InvalidDataException($"{at} name_he_sources is empty: a Hebrew name needs a source");
             if (!named && sources.Count > 0) throw new InvalidDataException($"{at} name_he is empty but name_he_sources is set");
+            if (!string.IsNullOrEmpty(s.NameHeReview) && s.NameHeReview != "agent-checked")
+                throw new InvalidDataException($"{at} name_he_review '{s.NameHeReview}' is not agent-checked (leave it out once a person has reviewed the name)");
+            if (!named && !string.IsNullOrEmpty(s.NameHeReview)) throw new InvalidDataException($"{at} name_he is empty but name_he_review is set");
             for (int i = 0; i < sources.Count; i++)
             {
                 if (string.IsNullOrWhiteSpace(sources[i]?.Url)) throw new InvalidDataException($"{at} name_he_sources[{i}].url is empty");

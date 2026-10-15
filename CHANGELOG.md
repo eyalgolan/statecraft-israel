@@ -8,6 +8,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Hebrew names wait for a person (refs #582, #564; owner, 15 October 2026): every Hebrew name #582 added, which only an
+  AI agent checked against its sources, now carries `*_review: agent-checked` (`title_he_review`, `title_he_f_review`,
+  `name_he_review`, `body_he_review`; 100 flags: offices, parties, governments, legislatures, the game settlements and
+  five 1948 localities). A native speaker's review in #564 removes the flag. The loader and the map's readers accept
+  only `agent-checked`, and only beside a name. CONTENT_POLICY section 2, rule 6, says so. The content hash moves; no
+  golden does.
 - GDD v0.1 Phase 1, the Unity queue takes the GDD orders (refs #380): `AssignWorkers`, `Train` and `CancelTraining`
   now queue in the slice, one per city, per city and track, and per cohort; an unknown city, training track or cohort is
   refused before End Turn. A reflection test fails for any command type that reaches the queue's default branch.

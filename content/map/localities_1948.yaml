@@ -24,6 +24,8 @@
 #                and the he.wiki page that gives it are in name_he_sources ({url, checked}); Majdal cites he.wiki's article
 #                on the town.
 #                Thirteen villages have no Hebrew label or article and no name_he: the map keeps the English (#558).
+#                name_he_review: agent-checked on those five rows: an AI agent checked the name against its sources and no
+#                person has read it yet (owner, 2026-10-15); a native speaker reviews it (#564) and removes the flag.
 #   kind/type    finer kind and the repo's settlement type; the kit archetype follows type (village and arab_town:
 #                Arab village houses; town, kibbutz, moshav: red-roofed Jewish settlement, moshav as a ring);
 #                kind mixed_locality (Nesher): both, side by side.
@@ -161,6 +163,7 @@ places:
     name_he: אשקלון
     source: https://www.wikidata.org/wiki/Q60956
   name_he: אל-מג'דל
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/אל-מג'דל_(אשקלון)
     checked: '2026-10-14'
@@ -466,6 +469,7 @@ places:
     name_he: פרדס חנה-כרכור
     source: https://www.wikidata.org/wiki/Q2475182
   name_he: פרדס חנה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/פרדס_חנה-כרכור
     checked: '2026-10-14'
@@ -544,6 +548,7 @@ places:
     name_he: בית שאן
     source: https://www.wikidata.org/wiki/Q152368
   name_he: ביסאן
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/העיר_העתיקה_של_בית_שאן
     checked: '2026-10-14'
@@ -852,6 +857,7 @@ places:
   name: Tarshiha
   name_basis: vs1945
   name_he: תרשיחא
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/מעלות-תרשיחא
     checked: '2026-10-14'
@@ -3386,6 +3392,7 @@ places:
     name_he: קריית אתא
     source: https://www.wikidata.org/wiki/Q152602
   name_he: כפר אתא
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/קריית_אתא
     checked: '2026-10-14'

@@ -171,6 +171,10 @@ One of `draft`, `fact-checked`, `historian-reviewed`, `sensitivity-reviewed`; an
 If AI helped draft the text, you still check every claim yourself before using `fact-checked`
 ([CONTENT_POLICY.md](CONTENT_POLICY.md), section 2, rule 6).
 
+Hebrew display names in the other content files (`name_he`, `title_he`, `body_he`) have a separate flag:
+`*_review: agent-checked` while only an AI agent has checked the name against its sources, removed once a native
+speaker has reviewed it (#564). It does not change the row's `status`.
+
 ## What the loader rejects
 
 Errors are printed as `file: field: message`. These are the messages you are most likely to see:

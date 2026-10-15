@@ -38,7 +38,11 @@ These rules protect the game and the people in it. They are not a viewpoint:
    D-P: "yes" to CC BY-SA 4.0 for portraits); share-alike applies, so a portrait cropped from a CC BY-SA 4.0 photograph
    is itself released under CC BY-SA 4.0 and credited in `NOTICE`. The maintainer refuses any other licence at review.
 6. **AI-assisted writing** is a draft. A human checks every factual claim in it against its sources, one by one,
-   before the entry is marked `fact-checked`; the maintainer applies this rule at review.
+   before the entry is marked `fact-checked`; the maintainer applies this rule at review. A Hebrew display name
+   (`name_he`, `title_he`, `title_he_f`, `body_he`) that an AI agent checked against its sources, but no person has read
+   yet, carries its own flag beside it, `*_review: agent-checked` (for example `name_he_review`), whatever the row's
+   `status` says about its English facts (owner, 15 October 2026). A native Hebrew speaker reviews these names (#564)
+   and then removes the flag; the loader accepts only `agent-checked`, and only next to a name.
 
 ## 3. How to dispute a fact
 

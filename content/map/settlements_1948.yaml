@@ -3,10 +3,13 @@
 # Naming follows the spec's Israeli-perspective rule.
 # name_he (#558): the place's 1948 Hebrew name, matching the English (owner, 2026-10-14), from the he.wiki article the
 # row's English source links to. Tel Aviv: the article is the merged city of 1950, "תל אביב-יפו"; its lead gives "תל אביב".
+# name_he_review: agent-checked marks a name an AI agent checked against its sources and no person has read yet
+# (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker reviews it (#564) and then removes the flag.
 settlements:
 - id: jerusalem
   name: Jerusalem
   name_he: ירושלים
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/ירושלים
     checked: '2026-10-14'
@@ -21,6 +24,7 @@ settlements:
 - id: tel_aviv
   name: Tel Aviv
   name_he: תל אביב
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/תל_אביב-יפו
     checked: '2026-10-14'
@@ -34,6 +38,7 @@ settlements:
 - id: jaffa
   name: Jaffa
   name_he: יפו
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/יפו
     checked: '2026-10-14'
@@ -48,6 +53,7 @@ settlements:
 - id: haifa
   name: Haifa
   name_he: חיפה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/חיפה
     checked: '2026-10-14'
@@ -62,6 +68,7 @@ settlements:
 - id: acre
   name: Acre
   name_he: עכו
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/עכו
     checked: '2026-10-14'
@@ -76,6 +83,7 @@ settlements:
 - id: tiberias
   name: Tiberias
   name_he: טבריה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/טבריה
     checked: '2026-10-14'
@@ -90,6 +98,7 @@ settlements:
 - id: safed
   name: Safed
   name_he: צפת
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/צפת
     checked: '2026-10-14'
@@ -104,6 +113,7 @@ settlements:
 - id: nazareth
   name: Nazareth
   name_he: נצרת
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/נצרת
     checked: '2026-10-14'
@@ -118,6 +128,7 @@ settlements:
 - id: lod
   name: Lydda
   name_he: לוד
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/לוד
     checked: '2026-10-14'
@@ -134,6 +145,7 @@ settlements:
 - id: ramla
   name: Ramle
   name_he: רמלה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/רמלה
     checked: '2026-10-14'
@@ -150,6 +162,7 @@ settlements:
 - id: gaza
   name: Gaza
   name_he: עזה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/עזה
     checked: '2026-10-14'
@@ -164,6 +177,7 @@ settlements:
 - id: beersheba
   name: Beersheba
   name_he: באר שבע
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/באר_שבע
     checked: '2026-10-14'
@@ -177,6 +191,7 @@ settlements:
 - id: petah_tikva
   name: Petah Tikva
   name_he: פתח תקווה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/פתח_תקווה
     checked: '2026-10-14'
@@ -190,6 +205,7 @@ settlements:
 - id: rishon_lezion
   name: Rishon LeZion
   name_he: ראשון לציון
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/ראשון_לציון
     checked: '2026-10-14'
@@ -203,6 +219,7 @@ settlements:
 - id: zikhron_yaakov
   name: Zikhron Ya'akov
   name_he: זכרון יעקב
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/זכרון_יעקב
     checked: '2026-10-14'
@@ -216,6 +233,7 @@ settlements:
 - id: rosh_pinna
   name: Rosh Pinna
   name_he: ראש פינה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/ראש_פינה
     checked: '2026-10-14'
@@ -229,6 +247,7 @@ settlements:
 - id: rehovot
   name: Rehovot
   name_he: רחובות
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/רחובות
     checked: '2026-10-14'
@@ -242,6 +261,7 @@ settlements:
 - id: hadera
   name: Hadera
   name_he: חדרה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/חדרה
     checked: '2026-10-14'
@@ -255,6 +275,7 @@ settlements:
 - id: netanya
   name: Netanya
   name_he: נתניה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/נתניה
     checked: '2026-10-14'
@@ -268,6 +289,7 @@ settlements:
 - id: degania_alef
   name: Degania Alef
   name_he: "דגניה א'"
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/דגניה_א'
     checked: '2026-10-14'
@@ -281,6 +303,7 @@ settlements:
 - id: ein_harod
   name: Ein Harod
   name_he: עין חרוד
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/עין_חרוד
     checked: '2026-10-14'
@@ -294,6 +317,7 @@ settlements:
 - id: nahalal
   name: Nahalal
   name_he: נהלל
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/נהלל
     checked: '2026-10-14'
@@ -307,6 +331,7 @@ settlements:
 - id: hanita
   name: Hanita
   name_he: חניתה
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/חניתה
     checked: '2026-10-14'
@@ -320,6 +345,7 @@ settlements:
 - id: revivim
   name: Revivim
   name_he: רביבים
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/רביבים
     checked: '2026-10-14'
@@ -333,6 +359,7 @@ settlements:
 - id: yad_mordechai
   name: Yad Mordechai
   name_he: יד מרדכי
+  name_he_review: agent-checked
   name_he_sources:
   - url: https://he.wikipedia.org/wiki/יד_מרדכי
     checked: '2026-10-14'

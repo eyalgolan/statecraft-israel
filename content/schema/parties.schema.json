@@ -16,7 +16,8 @@
           "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Lowercase letters, digits and underscores, starting with a letter. Unique." },
           "name": { "type": "string", "minLength": 1 },
           "name_he": { "type": "string", "minLength": 1, "description": "The Hebrew name (#558) as a source gives it. Leave out when no source gives one (the UI keeps the English). Needs name_he_sources." },
-          "name_he_sources": { "$ref": "#/definitions/sources", "description": "Sources for name_he." }
+          "name_he_sources": { "$ref": "#/definitions/sources", "description": "Sources for name_he." },
+          "name_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of name_he. agent-checked: an AI agent checked the name against its sources and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." }
         }
       }
     }

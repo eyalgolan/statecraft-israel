@@ -6,42 +6,45 @@ offices:
   # source gives a Hebrew title: rationing_minister, a game construct (the office passes from Rationing and Supply to
   # Agriculture and then Trade). Open owner questions: the Trade (order, and the Knesset's "התעשיה") and War Victims
   # wordings, and whether the Chief of Staff adds "של צה"ל" (PR #558 body).
+  # title_he_review / title_he_f_review: agent-checked marks a title an AI agent checked against its sources and no
+  # person has read yet (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15). A native speaker reviews it (#564) and
+  # then removes the flag; the row's own status covers the English facts.
   # `from: 1948-05-14` is the state's founding (issue #80). For the deputy titles and any post created later (some date from
   # 1951) it is a design floor, not the day the post was created.
-  - { id: prime_minister, title: Prime Minister, title_he: "ראש הממשלה", title_he_sources: [&he_gov1 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%201", checked: 2026-10-14 }], from: 1948-05-14 }
+  - { id: prime_minister, title: Prime Minister, title_he: "ראש הממשלה", title_he_review: agent-checked, title_he_sources: [&he_gov1 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%201", checked: 2026-10-14 }], from: 1948-05-14 }
   # Spelling is deliberate, do not "fix" it (playtest 1, item 8): the office title keeps Israel's official English,
   # "Ministry of Defense" / "Minister of Defense", because it is a proper noun. The UI is otherwise British English, so
   # the screen and its button say "Defence".
-  - { id: defense_minister, title: Minister of Defense, title_he: "שר הביטחון", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: finance_minister, title: Minister of Finance, title_he: "שר האוצר", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: foreign_minister, title: Minister of Foreign Affairs, title_he: "שר החוץ", title_he_sources: [*he_gov1], title_he_f: "שרת החוץ", title_he_f_sources: [&he_gov7 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%207", checked: 2026-10-14 }], from: 1948-05-14 }
-  - { id: health_minister, title: Minister of Health, title_he: "שר הבריאות", title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: defense_minister, title: Minister of Defense, title_he: "שר הביטחון", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: finance_minister, title: Minister of Finance, title_he: "שר האוצר", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: foreign_minister, title: Minister of Foreign Affairs, title_he: "שר החוץ", title_he_review: agent-checked, title_he_sources: [*he_gov1], title_he_f: "שרת החוץ", title_he_f_review: agent-checked, title_he_f_sources: [&he_gov7 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%207", checked: 2026-10-14 }], from: 1948-05-14 }
+  - { id: health_minister, title: Minister of Health, title_he: "שר הבריאות", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
   # No Immigration or War Victims portfolio in the Third Government (8 Oct 1951): research_notes/M3 content 1950-51/facts.md,
   # Addendum (2026-10-10) (a) and (b), after en.wiki, he.wiki and JVL. Re-add a term if a source shows the portfolio.
-  - { id: immigration_minister, title: Minister of Immigration, title_he: "שר העלייה", title_he_sources: [*he_gov1], until: 1951-10-08, from: 1948-05-14 }
-  - { id: interior_minister, title: Minister of Internal Affairs, title_he: "שר הפנים", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: justice_minister, title: Minister of Justice, title_he: "שר המשפטים", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: agriculture_minister, title: Minister of Agriculture, title_he: "שר החקלאות", title_he_sources: [&he_gov2 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%202", checked: 2026-10-14 }], from: 1948-05-14 }
-  - { id: labour_minister, title: Minister of Labour, title_he: "שר העבודה", title_he_sources: [*he_gov7], title_he_f: "שרת העבודה", title_he_f_sources: [*he_gov2], from: 1948-05-14 }
-  - { id: police_minister, title: Minister of Police, title_he: "שר המשטרה", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: minority_affairs_minister, title: Minister of Minority Affairs, title_he: "שר המיעוטים", title_he_sources: [&he_gov0 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%200", checked: 2026-10-14 }], from: 1948-05-14 }
-  - { id: religions_minister, title: Minister of Religions, title_he: "שר הדתות", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: war_victims_minister, title: Minister of War Victims, title_he: "השר לנפגעי מלחמה", title_he_sources: [*he_gov1], until: 1951-10-08, from: 1948-05-14 }
-  - { id: trade_minister, title: Minister of Trade and Industry, title_he: "שר המסחר והתעשייה", title_he_sources: [*he_gov2], from: 1948-05-14 }
-  - { id: transportation_minister, title: Minister of Transportation, title_he: "שר התחבורה", title_he_sources: [*he_gov1], from: 1948-05-14 }
-  - { id: welfare_minister, title: Minister of Welfare, title_he: "שר הסעד", title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: immigration_minister, title: Minister of Immigration, title_he: "שר העלייה", title_he_review: agent-checked, title_he_sources: [*he_gov1], until: 1951-10-08, from: 1948-05-14 }
+  - { id: interior_minister, title: Minister of Internal Affairs, title_he: "שר הפנים", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: justice_minister, title: Minister of Justice, title_he: "שר המשפטים", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: agriculture_minister, title: Minister of Agriculture, title_he: "שר החקלאות", title_he_review: agent-checked, title_he_sources: [&he_gov2 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%202", checked: 2026-10-14 }], from: 1948-05-14 }
+  - { id: labour_minister, title: Minister of Labour, title_he: "שר העבודה", title_he_review: agent-checked, title_he_sources: [*he_gov7], title_he_f: "שרת העבודה", title_he_f_review: agent-checked, title_he_f_sources: [*he_gov2], from: 1948-05-14 }
+  - { id: police_minister, title: Minister of Police, title_he: "שר המשטרה", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: minority_affairs_minister, title: Minister of Minority Affairs, title_he: "שר המיעוטים", title_he_review: agent-checked, title_he_sources: [&he_gov0 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%200", checked: 2026-10-14 }], from: 1948-05-14 }
+  - { id: religions_minister, title: Minister of Religions, title_he: "שר הדתות", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: war_victims_minister, title: Minister of War Victims, title_he: "השר לנפגעי מלחמה", title_he_review: agent-checked, title_he_sources: [*he_gov1], until: 1951-10-08, from: 1948-05-14 }
+  - { id: trade_minister, title: Minister of Trade and Industry, title_he: "שר המסחר והתעשייה", title_he_review: agent-checked, title_he_sources: [*he_gov2], from: 1948-05-14 }
+  - { id: transportation_minister, title: Minister of Transportation, title_he: "שר התחבורה", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
+  - { id: welfare_minister, title: Minister of Welfare, title_he: "שר הסעד", title_he_review: agent-checked, title_he_sources: [*he_gov1], from: 1948-05-14 }
   # The Ministry of Postal Services (renamed Communications in 1970). Its first minister, Mordechai Nurock, took office
   # on 3 November 1952 (Knesset records and plenum record, he.wiki Third Government, en.wiki "Ministry of Communications
   # (Israel)", checked 2026-10-12).
-  - { id: posts_minister, title: Minister of Postal Services, title_he: "שר הדואר", title_he_sources: [&he_gov3 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%203", checked: 2026-10-14 }], from: 1952-11-03 }
+  - { id: posts_minister, title: Minister of Postal Services, title_he: "שר הדואר", title_he_review: agent-checked, title_he_sources: [&he_gov3 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%203", checked: 2026-10-14 }], from: 1952-11-03 }
   # Set up on 15 June 1953 for Dov Yosef (he.wiki "משרד הפיתוח", en.wiki "Development Minister of Israel", Knesset
   # records, checked 2026-10-12). The Knesset records and he.wiki "לוי אשכול" also give Eshkol a Development title in
   # the Third Government, before the ministry existed; the office starts with the ministry (see Eshkol in people.yaml).
-  - { id: development_minister, title: Minister of Development, title_he: "שר הפיתוח", title_he_sources: [&he_gov4 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%204", checked: 2026-10-14 }], from: 1953-06-15 }
+  - { id: development_minister, title: Minister of Development, title_he: "שר הפיתוח", title_he_review: agent-checked, title_he_sources: [&he_gov4 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%204", checked: 2026-10-14 }], from: 1953-06-15 }
   # The Provisional Government (14 May 1948 - 10 March 1949) had no education portfolio. The ministry dates from the First
   # Government; Zalman Shazar was its first minister, from 10 March 1949 (en.wiki "Provisional government of Israel" and
   # "Ministry of Education (Israel)", he.wiki "הממשלה הזמנית", checked 2026-10-11). The budget line stays from 1948.
-  - { id: education_minister, title: Minister of Education and Culture, title_he: "שר החינוך והתרבות", title_he_sources: [*he_gov2], from: 1949-03-10 }
+  - { id: education_minister, title: Minister of Education and Culture, title_he: "שר החינוך והתרבות", title_he_review: agent-checked, title_he_sources: [*he_gov2], from: 1949-03-10 }
   # The minister responsible for rationing: the rationing policy's effects and events look this office up. Until
   # 1 November 1950 that was the Minister of Rationing and Supply (Dov Yosef). The ministry was then abolished and its
   # functions split: most went to Agriculture (Lavon), some supply departments to Trade and Industry (Geri) (research
@@ -59,22 +62,22 @@ offices:
   # Before the state the chief of staff led the Haganah (Yaakov Dori, from 1 June 1947), so the same post is split at the
   # state's founding (issue #80; sources on Dori's two terms in people.yaml). 14 May 1948 is the design's date; the IDF Ordinance
   # followed on 26 May 1948. Do not "correct" it to 26 May in a fact-check: it would move the goldens.
-  - { id: haganah_chief_of_staff, title: Haganah Chief of the General Staff, title_he: 'רמטכ"ל ההגנה', title_he_sources: [{ url: "https://he.wikipedia.org/wiki/יעקב_דורי", checked: 2026-10-14 }], until: 1948-05-14 }
-  - { id: chief_of_staff, title: IDF Chief of the General Staff, title_he: "ראש המטה הכללי", title_he_sources: [{ url: "https://he.wikipedia.org/wiki/ראש_המטה_הכללי", checked: 2026-10-14 }], from: 1948-05-14 }
+  - { id: haganah_chief_of_staff, title: Haganah Chief of the General Staff, title_he: 'רמטכ"ל ההגנה', title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/יעקב_דורי", checked: 2026-10-14 }], until: 1948-05-14 }
+  - { id: chief_of_staff, title: IDF Chief of the General Staff, title_he: "ראש המטה הכללי", title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/ראש_המטה_הכללי", checked: 2026-10-14 }], from: 1948-05-14 }
   # The role first appeared in the Third Government (Peretz Naphtali, 8 October 1951): he.wiki "שר בלי תיק"; the
   # Provisional, First and Second Governments' tables on en.wiki list none (checked 2026-10-11).
-  - { id: minister_without_portfolio, title: Minister without Portfolio, title_he: "שר בלי תיק", title_he_sources: [*he_gov3, { url: "https://he.wikipedia.org/wiki/שר_בלי_תיק", checked: 2026-10-14 }], from: 1951-10-08, several_holders: true }
+  - { id: minister_without_portfolio, title: Minister without Portfolio, title_he: "שר בלי תיק", title_he_review: agent-checked, title_he_sources: [*he_gov3, { url: "https://he.wikipedia.org/wiki/שר_בלי_תיק", checked: 2026-10-14 }], from: 1951-10-08, several_holders: true }
   # Established by the Transition Law of 16 February 1949 (he.wiki "נשיא מדינת ישראל", en.wiki "President of Israel",
   # checked 2026-10-11; he.wiki "חוק המעבר" gives 16 or 17 February). Weizmann's 1948 office, President of the
   # Provisional State Council, is a different office the game does not model.
-  - { id: president, title: President of Israel, title_he: "נשיא מדינת ישראל", title_he_sources: [{ url: "https://he.wikipedia.org/wiki/נשיא_מדינת_ישראל", checked: 2026-10-14 }], from: 1949-02-16 }
+  - { id: president, title: President of Israel, title_he: "נשיא מדינת ישראל", title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/נשיא_מדינת_ישראל", checked: 2026-10-14 }], from: 1949-02-16 }
   # Historical deputy titles: dated lookup/text only, never playable Cabinet seats or gameplay owners.
   # Sources and the start-date conflict are in research_notes/M3 content 1950-51/deputy-titles.md.
-  - { id: deputy_agriculture_minister, title: Deputy Minister of Agriculture, title_he: "סגן שר החקלאות", title_he_sources: [*he_gov2], historical_only: true, from: 1948-05-14 }
-  - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, title_he: "סגן שר התחבורה", title_he_sources: [*he_gov2], historical_only: true, from: 1948-05-14 }
-  - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, title_he: "סגן שר החינוך והתרבות", title_he_sources: [*he_gov3], historical_only: true, several_holders: true, from: 1948-05-14 }
-  - { id: deputy_prime_minister, title: Deputy Prime Minister, title_he: "סגן ראש הממשלה", title_he_sources: [*he_gov3], historical_only: true, from: 1948-05-14 }
+  - { id: deputy_agriculture_minister, title: Deputy Minister of Agriculture, title_he: "סגן שר החקלאות", title_he_review: agent-checked, title_he_sources: [*he_gov2], historical_only: true, from: 1948-05-14 }
+  - { id: deputy_transportation_minister, title: Deputy Minister of Transportation, title_he: "סגן שר התחבורה", title_he_review: agent-checked, title_he_sources: [*he_gov2], historical_only: true, from: 1948-05-14 }
+  - { id: deputy_education_minister, title: Deputy Minister of Education and Culture, title_he: "סגן שר החינוך והתרבות", title_he_review: agent-checked, title_he_sources: [*he_gov3], historical_only: true, several_holders: true, from: 1948-05-14 }
+  - { id: deputy_prime_minister, title: Deputy Prime Minister, title_he: "סגן ראש הממשלה", title_he_review: agent-checked, title_he_sources: [*he_gov3], historical_only: true, from: 1948-05-14 }
   # Deputy ministers of 1953-1956 (#26): dates from the Knesset records (KNS_PersonToPosition), see people.yaml.
-  - { id: deputy_religions_minister, title: Deputy Minister of Religions, title_he: "סגן שר הדתות", title_he_sources: [*he_gov4], historical_only: true, from: 1948-05-14 }
-  - { id: deputy_welfare_minister, title: Deputy Minister of Welfare, title_he: "סגן שר הסעד", title_he_sources: [*he_gov4], historical_only: true, from: 1948-05-14 }
-  - { id: deputy_trade_minister, title: Deputy Minister of Trade and Industry, title_he: "סגן שר המסחר והתעשיה", title_he_sources: [*he_gov4], historical_only: true, from: 1948-05-14 }
+  - { id: deputy_religions_minister, title: Deputy Minister of Religions, title_he: "סגן שר הדתות", title_he_review: agent-checked, title_he_sources: [*he_gov4], historical_only: true, from: 1948-05-14 }
+  - { id: deputy_welfare_minister, title: Deputy Minister of Welfare, title_he: "סגן שר הסעד", title_he_review: agent-checked, title_he_sources: [*he_gov4], historical_only: true, from: 1948-05-14 }
+  - { id: deputy_trade_minister, title: Deputy Minister of Trade and Industry, title_he: "סגן שר המסחר והתעשיה", title_he_review: agent-checked, title_he_sources: [*he_gov4], historical_only: true, from: 1948-05-14 }

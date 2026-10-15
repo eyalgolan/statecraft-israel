@@ -1,9 +1,12 @@
 # Periods are [from, to): a government's `to` is the day its successor was sworn in.
 # name_he (#558): the government's he.wiki article title (the Knesset's OData has no government table).
+# name_he_review: agent-checked marks a name an AI agent checked against its sources and no person has read yet
+# (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker reviews it (#564) and then removes the flag.
 governments:
   - id: provisional_government
     name: Provisional Government
     name_he: "הממשלה הזמנית"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/הממשלה_הזמנית", checked: 2026-10-14 }
     from: 1948-05-14
@@ -20,6 +23,7 @@ governments:
   - id: first_government
     name: First Government
     name_he: "ממשלת ישראל הראשונה"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הראשונה", checked: 2026-10-14 }
     # Sources differ (8 vs 10 March 1949); 10 March is the Knesset confidence vote recorded in Ben-Gurion's diary.
@@ -40,6 +44,7 @@ governments:
   - id: second_government
     name: Second Government
     name_he: "ממשלת ישראל השנייה"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השנייה", checked: 2026-10-14 }
     # Approved 69-42 with 2 abstentions on 1 November 1950. Resigned 14 February 1951 and served as a transitional
@@ -73,6 +78,7 @@ governments:
   - id: third_government
     name: Third Government
     name_he: "ממשלת ישראל השלישית"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השלישית", checked: 2026-10-14 }
     # Coalition of 65 seats per he.wiki. Democratic List for Israeli Arabs, Progress and Work and Agriculture and
@@ -110,6 +116,7 @@ governments:
   - id: fourth_government
     name: Fourth Government
     name_he: "ממשלת ישראל הרביעית"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הרביעית", checked: 2026-10-14 }
     # Ben-Gurion named the ministers on 22 December 1952, won the confidence vote on 23 December (63 to 24), and the
@@ -152,6 +159,7 @@ governments:
   - id: fifth_government
     name: Fifth Government
     name_he: "ממשלת ישראל החמישית"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_החמישית", checked: 2026-10-14 }
     # Sharett's first government, approved 75 to 23 on 26 January 1954, with the same parties as the Fourth. The
@@ -180,6 +188,7 @@ governments:
   - id: sixth_government
     name: Sixth Government
     name_he: "ממשלת ישראל השישית"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השישית", checked: 2026-10-14 }
     # Formed on 29 June 1955 without the General Zionists. Sharett told the Knesset that day that Mapai, Mizrachi,
@@ -201,6 +210,7 @@ governments:
   - id: seventh_government
     name: Seventh Government
     name_he: "ממשלת ישראל השביעית"
+    name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השביעית", checked: 2026-10-14 }
     # Ben-Gurion named the ministers on 2 November 1955 and won the confidence vote on 3 November, 73 to 32 (plenum

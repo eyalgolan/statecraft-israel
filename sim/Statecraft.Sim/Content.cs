@@ -9,6 +9,14 @@ namespace Statecraft.Sim
 
     public sealed class Source { public string Url { get; set; } = ""; public DateTime Checked { get; set; } }
 
+    /// <summary>The review flag of a Hebrew display name (`*_he_review`, CONTENT_POLICY section 2, rule 6). A name an AI agent
+    /// checked against its sources, but no person has read yet, carries <see cref="AgentChecked"/>; the row's own `status`
+    /// stays what it is for the English facts. A native speaker's review clears the flag (the key is removed).</summary>
+    public static class HebrewReview
+    {
+        public const string AgentChecked = "agent-checked";
+    }
+
     public sealed class Office
     {
         public string Id { get; set; } = "";
@@ -17,10 +25,15 @@ namespace Statecraft.Sim
         /// keeps the English).</summary>
         public string TitleHe { get; set; } = "";
         public List<Source> TitleHeSources { get; set; } = new List<Source>();
+        /// <summary>"agent-checked" while <see cref="TitleHe"/> waits for a native speaker's review (#564); empty once a
+        /// person has reviewed it (<see cref="HebrewReview"/>).</summary>
+        public string TitleHeReview { get; set; } = "";
         /// <summary>The feminine Hebrew title, only where a woman held the office (the Knesset records write שרת העבודה);
         /// sourced in <see cref="TitleHeFSources"/>. Needs <see cref="TitleHe"/>.</summary>
         public string TitleHeF { get; set; } = "";
         public List<Source> TitleHeFSources { get; set; } = new List<Source>();
+        /// <summary>As <see cref="TitleHeReview"/>, for <see cref="TitleHeF"/>.</summary>
+        public string TitleHeFReview { get; set; } = "";
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
@@ -74,6 +87,8 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
+        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string NameHeReview { get; set; } = "";
     }
 
     public sealed class OfficeTerm
@@ -122,6 +137,8 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name of the body (#558), sourced in <see cref="BodyHeSources"/>; empty when no source gives one.</summary>
         public string BodyHe { get; set; } = "";
         public List<Source> BodyHeSources { get; set; } = new List<Source>();
+        /// <summary>"agent-checked" while <see cref="BodyHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string BodyHeReview { get; set; } = "";
         public DateTime? Elected { get; set; }
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
@@ -141,6 +158,8 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
+        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string NameHeReview { get; set; } = "";
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
         /// <summary>The parties in the coalition when the government took office. Parties that join or leave later are

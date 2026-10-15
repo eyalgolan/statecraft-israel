@@ -133,6 +133,11 @@ public class SettlementTests
         AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", " + Src)), "h", "name_he_sources");
         AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he_sources: [{url: u, checked: x}], " + Src)), "h", "name_he");
         AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{url: u}], " + Src)), "h", "name_he_sources[0].checked");
+        // The review flag (#564): agent-checked until a native speaker reads the name, then left out.
+        var flagged = SettlementPlacer.Parse("settlements:\n" + Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{url: u, checked: x}], name_he_review: agent-checked, " + Src), Bounds);
+        Assert.AreEqual("agent-checked", flagged[0].NameHeReview);
+        AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{url: u, checked: x}], name_he_review: done, " + Src)), "h", "name_he_review");
+        AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he_review: agent-checked, " + Src)), "h", "name_he_review");
     }
 
 }
