@@ -33,10 +33,21 @@ namespace Statecraft.Game.Map.Units
         MapRuntimeAssets assets = null!;
         Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!, flagWhite = null!, flagBlue = null!;
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
+        /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
+        /// destroyed when the tokens are rebuilt and with the layer, so no roster change leaks them (review of #559, M1).</summary>
+        readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
         List<PlacedToken> placed = new List<PlacedToken>();
         Transform tokensRoot = null!;
         readonly List<Transform> badges = new List<Transform>();
+        /// <summary>Each badge's home (over the highest figure's feet, at the figures' height and the badge's lift) and how
+        /// far behind the trio it sits, away from the camera (review of #559: the badge keeps off the figures' heads from
+        /// any view, the camera's yaw and steepness alike).</summary>
+        readonly List<(Vector3 home, float back, Vector3 pole)> badgeHomes = new List<(Vector3, float, Vector3)>();
+        /// <summary>A badge sits this share of its token's base radius behind the trio, seen from the camera, and
+        /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
+        /// further out than its base's edge).</summary>
+        public const float BadgeBackShare = 0.6f, BadgeAsideM = 400f, BadgeOverFlagM = 150f;
         readonly List<(Vector2 centre, float radius)> treeHoles = new List<(Vector2, float)>();
         List<Bounds[]> keepClear = new List<Bounds[]>();
         GameObject? ring;
@@ -105,6 +116,7 @@ namespace Statecraft.Game.Map.Units
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
             // off: a plain screenshot run (HiddenInCaptures) keeps every tree, so its checkpoints stay comparable.
             layer.assets.OnTeardown(() => UnitShowcase.HideTrees(map, ToggleName, Array.Empty<(Vector2, float)>()));
+            layer.assets.OnTeardown(layer.FreeTokenMeshes);
             layer.assets.OnTeardown(VisualToggles.Register(ToggleName, on =>
             {
                 if (root != null) root.SetActive(on);
@@ -126,12 +138,25 @@ namespace Statecraft.Game.Map.Units
 
         void HideTrees() => UnitShowcase.HideTrees(map, ToggleName, gameObject.activeSelf ? treeHoles : (IReadOnlyList<(Vector2, float)>)Array.Empty<(Vector2, float)>());
 
-        /// <summary>Turns every badge to face the camera about to render (game, editor capture or scene view alike).</summary>
-        void FaceBadges(ScriptableRenderContext _, Camera cam)
+        /// <summary>Turns every badge to face the camera about to render (game, editor capture or scene view alike) and sets
+        /// it behind its trio as that camera sees it. No allocation.</summary>
+        void FaceBadges(ScriptableRenderContext _, Camera cam) => FaceCamera(cam);
+
+        /// <summary>As the render callback does: for a still render (the editor's promo captures, the tests).</summary>
+        public void FaceCamera(Camera cam)
         {
             if (cam == null) return;
-            var rotation = cam.transform.rotation;
-            foreach (var b in badges) if (b != null) b.rotation = rotation;
+            var rotation = cam.transform.rotation; var away = cam.transform.forward; away.y = 0f;
+            away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.forward;
+            var right = cam.transform.right; right.y = 0f;
+            right = right.sqrMagnitude > 1e-6f ? right.normalized : Vector3.right;
+            for (int i = 0; i < badges.Count; i++)
+            {
+                var b = badges[i]; if (b == null) continue;
+                var (home, back, pole) = badgeHomes[i];
+                var aside = pole == Vector3.zero ? Vector3.zero : (Vector3.Dot(pole, right) > 0f ? -right : right) * BadgeAsideM;
+                b.SetPositionAndRotation(home + away * back + aside, rotation);
+            }
         }
 
         /// <summary>Draws the units for <paramref name="state"/> (read only). Rebuilds the tokens only when the roster
@@ -189,11 +214,19 @@ namespace Statecraft.Game.Map.Units
         {
             if (!meshes.TryGetValue(key, out var mesh))
             {
-                mesh = assets.Own(build());
-                mesh.UploadMeshData(true);   // no CPU copy kept in players
+                mesh = UnitPlinth.Upload(assets.Own(build()));   // no CPU copy kept in players
                 meshes[key] = mesh;
             }
             return mesh;
+        }
+
+        /// <summary>Takes a mesh built for one token: freed with the tokens (<see cref="FreeTokenMeshes"/>).</summary>
+        Mesh TokenMesh(Mesh m) { tokenMeshes.Add(UnitPlinth.Upload(m)); return m; }
+
+        void FreeTokenMeshes()
+        {
+            foreach (var m in tokenMeshes) if (m != null) { if (Application.isPlaying) Destroy(m); else DestroyImmediate(m); }
+            tokenMeshes.Clear();
         }
 
         static UnitModels.Headgear Hat(string headgear) => headgear switch
@@ -212,7 +245,8 @@ namespace Statecraft.Game.Map.Units
                 old.transform.SetParent(null);
                 if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
             }
-            badges.Clear();
+            FreeTokenMeshes();
+            badges.Clear(); badgeHomes.Clear();
             treeHoles.Clear();
             keepClear = new List<Bounds[]>();   // a new list, so the labels see the change
             float hex = map.Hexes.hex_size_km * 1000f;
@@ -231,9 +265,10 @@ namespace Statecraft.Game.Map.Units
                         // rim, under the side's flag (refs #197). The base fits the full trio, whatever the call-up.
                         float k = UnitShowcase.DrawSpread * hex * Scale(p.Spot);
                         float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
-                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, m => assets.Own(m), MeshFor, paint, rim, flagWhite, flagBlue);
+                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, flagWhite, flagBlue);
                         treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
+                        float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)
                         for (int i = 0; i < offsets.Length; i++)
                         {
                             // The pose and heading are the trio position's; the headgear is the unit's (sourced, or the default).
@@ -242,9 +277,11 @@ namespace Statecraft.Game.Map.Units
                             var type = UnitRoster.RiflemanType(t.Headgear[i]);
                             var at = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * k;
                             at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
+                            highest = Mathf.Max(highest, at.y);
                             UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
                                 paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _);
                         }
+                        foot.y = highest;
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
                         break;
                     case UnitData.Air:
@@ -259,16 +296,24 @@ namespace Statecraft.Game.Map.Units
                 }
                 var badge = new GameObject("Badge");
                 badge.transform.SetParent(go.transform, false);
-                badge.transform.position = foot + Vector3.up * (top + UnitBadge.LiftM);
+                // Above the figures by the badge's lift, and above the flag's top (the cloth turns with the camera, so at some yaws it
+                // stands right behind the badge): the badge's lower edge clears the pole's top by BadgeOverFlagM.
+                float lift = top + UnitBadge.LiftM;
+                if (t.Unit.Service == UnitData.Army && go.transform.Find(UnitPlinth.FlagName) != null)
+                    lift = Mathf.Max(lift, UnitFlags.PoleHeight * UnitBadge.FigureHeightM * UnitShowcase.FigureScale + UnitBadge.SizeM / 2f + BadgeOverFlagM);
+                var home = foot + Vector3.up * lift;
+                float back = t.Unit.Service == UnitData.Army ? BadgeBackShare * UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), UnitShowcase.DrawSpread * hex * Scale(p.Spot))) : 0f;
+                badge.transform.position = home + Vector3.forward * back;
                 badge.transform.localScale = Vector3.one * UnitBadge.SizeM;
                 badge.AddComponent<UnitBadge>();
-                badges.Add(badge.transform);
-                var cam = Camera.main;
-                if (cam != null) badge.transform.rotation = cam.transform.rotation;
+                var flagT = go.transform.Find(UnitPlinth.FlagName);
+                var pole = flagT != null ? new Vector3(flagT.position.x - centre.x, 0f, flagT.position.z - centre.z) : Vector3.zero;
+                badges.Add(badge.transform); badgeHomes.Add((home, back, pole));
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
-                keepClear.Add(KeepClearOf(go.transform, badge.transform.position));
+                keepClear.Add(KeepClearOf(go.transform, home, back + (pole == Vector3.zero ? 0f : BadgeAsideM)));
             }
+            FaceCamera(Camera.main);   // the badges as the main camera sees them until a render turns them
             HideTrees();
         }
 
@@ -276,9 +321,10 @@ namespace Statecraft.Game.Map.Units
         /// and a cube of the badge's width round the badge's centre, which holds the plate however it is turned. The pieces'
         /// bounds come from their meshes and transforms, not Renderer.bounds, which is empty while the layer is inactive (the
         /// "units" toggle off when the tokens are built; review of #518).</summary>
-        static Bounds[] KeepClearOf(Transform token, Vector3 badgeCentre)
+        static Bounds[] KeepClearOf(Transform token, Vector3 badgeHome, float back)
         {
-            var boxes = new List<Bounds> { new Bounds(badgeCentre, Vector3.one * UnitBadge.SizeM) };
+            // The badge sits up to `back` from its home in any direction the camera's yaw takes it: a box round them all.
+            var boxes = new List<Bounds> { new Bounds(badgeHome, new Vector3(UnitBadge.SizeM + 2f * back, UnitBadge.SizeM, UnitBadge.SizeM + 2f * back)) };
             bool any = false; var pieces = default(Bounds);
             foreach (var f in token.GetComponentsInChildren<MeshFilter>(true))
             {

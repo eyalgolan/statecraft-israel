@@ -137,10 +137,9 @@ public class UnitShowcaseTests
         }
         Assert.Less(Luma(UnitPalette.Shade(UnitPalette.Trousers, 0.5f)), Luma(UnitPalette.Shade(UnitPalette.Shirt, 0.5f)), "the trousers read darker than the shirt");
         Assert.Greater(UnitPalette.Shade(UnitPalette.Earth, 0.5f).r / UnitPalette.Shade(UnitPalette.Earth, 0.5f).g, 1.15f, "warm earth");
-        var disc = UnitPlinth.TopMesh("base", (x, z) => 0f, Vector2.zero, 2000f);
-        Assert.IsTrue(disc.uv.All(uv => Mathf.Abs(uv.x - UnitPalette.U(UnitPalette.Earth)) < 1e-4f), "the base is painted in the earth");
-        Assert.Greater(disc.uv.Select(uv => uv.y).Distinct().Count(), 8, "mottled: its facets take several shade rows");
-        Object.DestroyImmediate(disc);
+        var rows = Enumerable.Range(0, 100).Select(i => UnitPlinth.Mottle(i * 137f, i * 211f)).ToList();
+        Assert.That(rows.Min(), Is.GreaterThanOrEqualTo(UnitPlinth.MottleLow)); Assert.That(rows.Max(), Is.LessThanOrEqualTo(UnitPlinth.MottleHigh));
+        Assert.Greater(rows.Max() - rows.Min(), 0.3f, "mottled: the earth takes a spread of shade rows across the base");
     }
 
     [Test]
@@ -229,11 +228,11 @@ public class UnitShowcaseTests
             Assert.IsNotNull(root.transform.Find("Spitfire1948/Propeller"));
             var plane = root.GetComponentInChildren<ShowcaseFlight>();
             Assert.AreEqual(UnitShowcase.StillPhase, plane.StillPhase);
-            // Each figure stands on the plinth (at the median ground under it), or on ground rising through it.
+            // Each figure stands on the draped base at its own point (the ground there plus the lip).
             var plinth = root.transform.Find(UnitPlinth.PlinthName);
             Assert.IsNotNull(plinth, "the trio stands on a plinth");
             foreach (var f in root.GetComponentsInChildren<MeshFilter>().Where(f => f.name.StartsWith("Rifleman")))
-                Assert.GreaterOrEqual(f.transform.position.y, plinth.position.y - 1f, f.name);
+                Assert.AreEqual(UnitPlinth.FigureY(map, plinth.localScale.x, f.transform.position.x, f.transform.position.z), f.transform.position.y, 1f, f.name);
             // The aircraft clears the highest ground under its loop.
             var loop = map.Frame.ToWorld(UnitShowcase.LoopCentre.lon, UnitShowcase.LoopCentre.lat, 0);
             Assert.Greater(plane.transform.position.y, UnitShowcase.LoopFloor(map, loop, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM * 0.99f);

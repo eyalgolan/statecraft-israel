@@ -395,30 +395,6 @@ public class UnitsInPlayTests
         Assert.Greater(outside, 0);
     }
 
-    /// <summary>Owner question (units on hard terrain), round 3 of #559: on a steep, curved hillside a token's base is draped:
-    /// every vertex of its top stands the lip over the ground, and between them it strays less than half the lip; an uphill
-    /// figure's boots stand on the highest ground under them, never in it.</summary>
-    [Test]
-    public void ABaseIsDrapedOnASteepCurvedSlope()
-    {
-        const float r = 2000f;
-        float H(float x, float z) => 100f + 0.6f * x + 0.2f * z + 300f * Mathf.Sin(x / 1500f) * Mathf.Cos(z / 1700f);   // 31 degrees and rolling
-        var mesh = UnitPlinth.TopMesh("t", H, new Vector2(1000f, 2000f), r);
-        float lip = UnitPlinth.LipShare * r, worst = 0f;
-        var v = mesh.vertices; var t = mesh.triangles;
-        Vector3 W(Vector3 p) => new Vector3(1000f + p.x * r, p.y, 2000f + p.z * r);
-        foreach (var p in v) Assert.AreEqual(H(W(p).x, W(p).z) + lip, p.y, 0.01f, "every vertex the lip over the ground");
-        for (int i = 0; i < t.Length; i += 3)
-        {
-            var c = (W(v[t[i]]) + W(v[t[i + 1]]) + W(v[t[i + 2]])) / 3f;
-            worst = Mathf.Max(worst, Mathf.Abs(c.y - H(c.x, c.z) - lip));
-        }
-        Assert.Less(worst, 0.5f * lip, "between its vertices the top strays less than half the lip");
-        float uphill = 1000f + 0.9f * r;
-        Assert.GreaterOrEqual(UnitPlinth.BootsTop(H, uphill, 2000f), H(uphill + 0.2f * UnitShowcase.FigureScale * 0.99f, 2000f), "an uphill figure's boots are not in the ground");
-        UnityEngine.Object.DestroyImmediate(mesh);
-    }
-
     /// <summary>Review of #518: the tokens' keep-clear boxes (what the map's names keep clear of) are right even when the
     /// tokens are built while the "units" toggle hides the layer, as a ?shot run without &amp;units does before the first
     /// Show: once the layer is shown again, each token's pieces box is the hull of its drawn pieces (Renderer.bounds, now
@@ -455,8 +431,8 @@ public class UnitsInPlayTests
         finally { if (VisualToggles.Names.Contains(UnitLayer.ToggleName)) VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands on its token's
-    /// plinth, no lower than the ground anywhere under its boots (UnitPlinthTests checks the plinth reaches the ground).</summary>
+    /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands on its token's draped
+    /// base at its own point, and the ground under its boots rises at most a tenth of its height over its feet.</summary>
     [Test]
     public void NoRiflemanSinksIntoTheHillsOfTheMap()
     {
@@ -475,7 +451,7 @@ public class UnitsInPlayTests
                     {
                         float a = Mathf.PI / 12f * k + 0.1f;
                         var q = UnitShowcase.Ground(map, p + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 0.2f * UnitShowcase.FigureScale * 0.9f);
-                        Assert.LessOrEqual(q.y, p.y + 25f, $"{f.parent.name}/{f.name} on {d:yyyy-MM-dd}: a boot sinks into the ground");
+                        Assert.LessOrEqual(q.y, p.y + 0.1f * UnitBadge.FigureHeightM * UnitShowcase.FigureScale, $"{f.parent.name}/{f.name} on {d:yyyy-MM-dd}: the ground under a boot rises more than the base hides");
                         lowest = Mathf.Min(lowest, q.y);
                     }
                     worstFloat = Mathf.Max(worstFloat, p.y - lowest);

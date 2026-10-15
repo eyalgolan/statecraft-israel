@@ -198,6 +198,8 @@ public static class MapCapture
                 foreach (var pose in Poses(args))
                 {
                     pose.Apply(rig, map.Frame);
+                    Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(Camera.main.transform.position);   // the flags face this pose's camera (#559)
+                    foreach (var layer in Object.FindObjectsByType<Statecraft.Game.Map.Units.UnitLayer>(FindObjectsSortMode.None)) layer.FaceCamera(Camera.main);   // and the badges
                     Save(Camera.main, 1920, 1080, Path.Combine(dir, $"{QualitySettings.names[level]}-{pose.Name}.png"));
                 }
             }

@@ -35,9 +35,8 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>A solid of revolution about the local +Y axis: <paramref name="profile"/> lists (y, radius) from bottom to
-        /// top; an end with a radius above zero is closed with a flat cap, unless <paramref name="caps"/> is false (a ring,
-        /// such as a plinth's rim). <paramref name="segments"/> around.</summary>
-        public MiniatureMesh Lathe(Matrix4x4 m, IReadOnlyList<Vector2> profile, int slot, int segments = 14, float shade = float.NaN, bool caps = true)
+        /// top; an end with a radius above zero is closed with a flat cap. <paramref name="segments"/> around.</summary>
+        public MiniatureMesh Lathe(Matrix4x4 m, IReadOnlyList<Vector2> profile, int slot, int segments = 14, float shade = float.NaN)
         {
             if (profile.Count < 2) throw new ArgumentException("a lathe needs two profile points", nameof(profile));
             int rings = profile.Count, start = verts.Count;
@@ -61,8 +60,8 @@ namespace Statecraft.Game.Map.Units
                     int a = start + i * stride + s, b = a + 1, c = a + stride, d = c + 1;
                     tris.AddRange(new[] { a, c, b, b, c, d });
                 }
-            if (caps && profile[0].y > 0f) Cap(m, profile[0].x, profile[0].y, segments, slot, down: true, shade);
-            if (caps && profile[rings - 1].y > 0f) Cap(m, profile[rings - 1].x, profile[rings - 1].y, segments, slot, down: false, shade);
+            if (profile[0].y > 0f) Cap(m, profile[0].x, profile[0].y, segments, slot, down: true, shade);
+            if (profile[rings - 1].y > 0f) Cap(m, profile[rings - 1].x, profile[rings - 1].y, segments, slot, down: false, shade);
             return this;
         }
 

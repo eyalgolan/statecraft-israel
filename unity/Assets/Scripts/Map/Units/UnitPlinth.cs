@@ -36,10 +36,10 @@ namespace Statecraft.Game.Map.Units
         public const int RimSegments = 192;
         /// <summary>The ring's colour: unlit white (the selection ring's ivory is 1, 0.95, 0.8).</summary>
         public static readonly Color RimColour = new Color(1f, 1f, 1f);
-        /// <summary>The draped grid: rings out to the edge and segments round it. At a 2 km radius a ring every 63 m and a
-        /// segment every 130 m at the edge, finer than the heightmap's 79 x 210 m spacing where it matters (12 x 48 left the
-        /// top 74-81 m off the ground's shape on Harel's and the 7th Brigade's slopes, 24 x 72 still 58 m on Harel's).</summary>
-        public const int Rings = 32, Segments = 96;
+        /// <summary>The outline's sides (the base's edge, the clip of its top and the line its lip follows), and the lip's
+        /// step along it (m): the lip samples the ground every 40 m, so its top meets the draped top's edge.</summary>
+        public const int OutlineSides = 96;
+        public const float LipStepM = 40f;
         /// <summary>The mottling: each vertex of the top takes a shade row in this range (the palette's dark wash below 0.45,
         /// its base colour above) from smooth value noise over the world (cells of <see cref="MottleCellM"/>), so the earth
         /// shows soft patches, the same every time and continuous across facets.</summary>
@@ -47,7 +47,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Where the flag's pole stands: on the base's back edge (north, away from the camera), at this share of
         /// the radius from the middle, east of the middle by <see cref="FlagEastShare"/> of the radius but never nearer it
         /// than half the badge's width and <see cref="FlagClearOfBadgeM"/>, so the flag flies clear of the badge.</summary>
-        public const float FlagEdgeShare = 0.9f, FlagEastShare = 0.3f, FlagClearOfBadgeM = 150f;
+        public const float FlagEdgeShare = 0.9f, FlagEastShare = 0.3f, FlagClearOfBadgeM = 700f;   // 150 and 400 m left the pole's finial touching a badge near the frame's edge at gameplay03
 
         /// <summary>The trio's width (m) for figures at <paramref name="offsets"/> (in hex circumradii times
         /// <paramref name="spread"/>).</summary>
@@ -79,28 +79,95 @@ namespace Statecraft.Game.Map.Units
             return Mathf.Lerp(MottleLow, MottleHigh, n);
         }
 
-        static Vector2 Polar(int ring, int seg) =>
-            new Vector2(Mathf.Cos(2f * Mathf.PI * seg / Segments), Mathf.Sin(2f * Mathf.PI * seg / Segments)) * ((float)ring / Rings);
-
         /// <summary>The base's top, draped: a polar grid over the unit disc (x, z scaled by the radius on the transform)
         /// whose every vertex stands <see cref="LipShare"/> of the radius over the ground at its world point, with smooth
         /// normals (the light follows the ground's shape) and mottled shade rows.</summary>
-        public static Mesh TopMesh(string name, Func<float, float, float> groundAt, Vector2 centre, float radius)
+        /// <summary>The terrain's own sample spacing (m): the finer of its heightmap's steps east-west and north-south.</summary>
+        public static float TerrainStepM(MapScene map)
         {
-            float lip = LipShare * radius, u = UnitPalette.U(UnitPalette.Earth);
-            var verts = new List<Vector3>(1 + Rings * Segments); var uv = new List<Vector2>(verts.Capacity); var tris = new List<int>(6 * Rings * Segments);
-            void Add(Vector2 p)
+            var d = map.Terrain.terrainData; int n = d.heightmapResolution - 1;
+            return Mathf.Min(d.size.x / n, d.size.z / n);
+        }
+
+        /// <summary>The base's outline: a <see cref="OutlineSides"/>-gon of radius r round c (world x, z), counter-clockwise.</summary>
+        static Vector2[] Outline(Vector2 c, float r)
+        {
+            var o = new Vector2[OutlineSides];
+            for (int k = 0; k < OutlineSides; k++) { float a = 2f * Mathf.PI * k / OutlineSides; o[k] = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r; }
+            return o;
+        }
+
+        static float Cross(Vector2 a, Vector2 b) => a.x * b.y - a.y * b.x;
+
+        /// <summary>The base's top, draped on the terrain's own triangles (round 4 of #559): every heightmap cell under the
+        /// disc is split along the diagonal the terrain itself uses there (found from its height at the cell's centre) into the
+        /// terrain's two triangles, each raised by the lip and clipped to the outline, a clipped corner taking its height from
+        /// its triangle's own plane. So the top follows the ground exactly, wherever the token stands, with no grid to tune; a
+        /// base about 2 km across covers some 760 cells. x and z are in the unit disc (the transform scales them by the
+        /// radius), y in world metres; smooth normals across the cells' shared corners; mottled shade rows.</summary>
+        public static Mesh TopMesh(string name, MapScene map, Vector2 centre, float radius)
+        {
+            var td = map.Terrain.terrainData; var tp = map.Terrain.transform.position;
+            int n = td.heightmapResolution - 1; float dx = td.size.x / n, dz = td.size.z / n, lip = LipShare * radius, u = UnitPalette.U(UnitPalette.Earth);
+            var ground = HeightAt(map); var outline = Outline(centre, radius);
+            var verts = new List<Vector3>(); var uv = new List<Vector2>(); var tris = new List<int>(); var grid = new Dictionary<long, int>();
+            int Add(float x, float y, float z) { verts.Add(new Vector3((x - centre.x) / radius, y + lip, (z - centre.y) / radius)); uv.Add(new Vector2(u, Mottle(x, z))); return verts.Count - 1; }
+            int G(int i, int j)
             {
-                float x = centre.x + p.x * radius, z = centre.y + p.y * radius;
-                verts.Add(new Vector3(p.x, groundAt(x, z) + lip, p.y)); uv.Add(new Vector2(u, Mottle(x, z)));
+                long key = (long)i * 1_000_003L + j;
+                if (!grid.TryGetValue(key, out int k)) { float x = tp.x + i * dx, z = tp.z + j * dz; grid[key] = k = Add(x, ground(x, z), z); }
+                return k;
             }
-            Add(Vector2.zero);
-            for (int ring = 1; ring <= Rings; ring++) for (int seg = 0; seg < Segments; seg++) Add(Polar(ring, seg));
-            int V(int ring, int seg) => ring == 0 ? 0 : 1 + (ring - 1) * Segments + ((seg % Segments) + Segments) % Segments;
-            for (int seg = 0; seg < Segments; seg++) tris.AddRange(new[] { 0, V(1, seg + 1), V(1, seg) });
-            for (int ring = 1; ring < Rings; ring++)
-                for (int seg = 0; seg < Segments; seg++)
-                    tris.AddRange(new[] { V(ring, seg), V(ring, seg + 1), V(ring + 1, seg), V(ring + 1, seg), V(ring, seg + 1), V(ring + 1, seg + 1) });
+            bool Inside(Vector2 q) { for (int k = 0; k < OutlineSides; k++) if (Cross(outline[(k + 1) % OutlineSides] - outline[k], q - outline[k]) < 0f) return false; return true; }
+            void Tri(int a, int b, int c)
+            {
+                var n3 = Vector3.Cross(verts[b] - verts[a], verts[c] - verts[a]);
+                if (n3.y >= 0f) tris.AddRange(new[] { a, b, c }); else tris.AddRange(new[] { a, c, b });
+            }
+            int i0 = Mathf.Max(0, Mathf.FloorToInt((centre.x - radius - tp.x) / dx)), i1 = Mathf.Min(n - 1, Mathf.CeilToInt((centre.x + radius - tp.x) / dx));
+            int j0 = Mathf.Max(0, Mathf.FloorToInt((centre.y - radius - tp.z) / dz)), j1 = Mathf.Min(n - 1, Mathf.CeilToInt((centre.y + radius - tp.z) / dz));
+            for (int i = i0; i <= i1; i++)
+                for (int j = j0; j <= j1; j++)
+                {
+                    float x0 = tp.x + i * dx, z0 = tp.z + j * dz;
+                    var near = new Vector2(Mathf.Clamp(centre.x, x0, x0 + dx), Mathf.Clamp(centre.y, z0, z0 + dz));
+                    if ((near - centre).magnitude > radius) continue;   // the cell lies outside the disc
+                    var c00 = new Vector3(x0, ground(x0, z0), z0); var c10 = new Vector3(x0 + dx, ground(x0 + dx, z0), z0);
+                    var c01 = new Vector3(x0, ground(x0, z0 + dz), z0 + dz); var c11 = new Vector3(x0 + dx, ground(x0 + dx, z0 + dz), z0 + dz);
+                    float mid = ground(x0 + dx / 2f, z0 + dz / 2f);
+                    bool d1 = Mathf.Abs(mid - (c00.y + c11.y) / 2f) <= Mathf.Abs(mid - (c10.y + c01.y) / 2f);   // the terrain's own diagonal here
+                    var cells = d1 ? new[] { (c00, c10, c11, (0, 0), (1, 0), (1, 1)), (c00, c11, c01, (0, 0), (1, 1), (0, 1)) }
+                                   : new[] { (c00, c10, c01, (0, 0), (1, 0), (0, 1)), (c10, c11, c01, (1, 0), (1, 1), (0, 1)) };
+                    foreach (var (pa, pb, pc, ia, ib, ic) in cells)
+                    {
+                        Vector2 A = new Vector2(pa.x, pa.z), B = new Vector2(pb.x, pb.z), Cc = new Vector2(pc.x, pc.z);
+                        if (Inside(A) && Inside(B) && Inside(Cc)) { Tri(G(i + ia.Item1, j + ia.Item2), G(i + ib.Item1, j + ib.Item2), G(i + ic.Item1, j + ic.Item2)); continue; }
+                        // Clip the triangle to the outline (Sutherland-Hodgman); heights from the triangle's plane.
+                        var poly = new List<Vector2> { A, B, Cc };
+                        for (int k = 0; k < OutlineSides && poly.Count > 0; k++)
+                        {
+                            Vector2 e0 = outline[k], e = outline[(k + 1) % OutlineSides] - e0; var outp = new List<Vector2>();
+                            for (int m = 0; m < poly.Count; m++)
+                            {
+                                Vector2 p = poly[m], q = poly[(m + 1) % poly.Count];
+                                float sp = Cross(e, p - e0), sq = Cross(e, q - e0);
+                                if (sp >= 0f) outp.Add(p);
+                                if ((sp >= 0f) != (sq >= 0f)) outp.Add(p + (q - p) * (sp / (sp - sq)));
+                            }
+                            poly = outp;
+                        }
+                        if (poly.Count < 3) continue;
+                        float det = (B.y - Cc.y) * (A.x - Cc.x) + (Cc.x - B.x) * (A.y - Cc.y);
+                        float H(Vector2 q)
+                        {
+                            float wa = ((B.y - Cc.y) * (q.x - Cc.x) + (Cc.x - B.x) * (q.y - Cc.y)) / det;
+                            float wb = ((Cc.y - A.y) * (q.x - Cc.x) + (A.x - Cc.x) * (q.y - Cc.y)) / det;
+                            return wa * pa.y + wb * pb.y + (1f - wa - wb) * pc.y;
+                        }
+                        int f0 = Add(poly[0].x, H(poly[0]), poly[0].y);
+                        for (int m = 1; m + 1 < poly.Count; m++) Tri(f0, Add(poly[m].x, H(poly[m]), poly[m].y), Add(poly[m + 1].x, H(poly[m + 1]), poly[m + 1].y));
+                    }
+                }
             var mesh = new Mesh { name = name };
             if (verts.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             mesh.SetVertices(verts); mesh.SetUVs(0, uv); mesh.SetTriangles(tris, 0);
@@ -112,13 +179,19 @@ namespace Statecraft.Game.Map.Units
         public static Mesh LipMesh(string name, Func<float, float, float> groundAt, Vector2 centre, float radius)
         {
             var m = new MiniatureMesh();
-            float lip = LipShare * radius;
-            for (int seg = 0; seg < Segments; seg++)
+            float lip = LipShare * radius; var outline = Outline(centre, radius);
+            var pts = new List<Vector2>();
+            for (int k = 0; k < OutlineSides; k++)
             {
-                var a = Polar(Rings, seg); var b = Polar(Rings, seg + 1);
-                float ga = groundAt(centre.x + a.x * radius, centre.y + a.y * radius), gb = groundAt(centre.x + b.x * radius, centre.y + b.y * radius);
-                m.Facet(new List<Vector3> { new Vector3(a.x, ga + lip, a.y), new Vector3(a.x, ga - LipSinkM, a.y), new Vector3(b.x, gb - LipSinkM, b.y), new Vector3(b.x, gb + lip, b.y) },
-                    UnitPalette.Earth, 0.1f, outward: true);
+                Vector2 a = outline[k], b = outline[(k + 1) % OutlineSides];
+                int steps = Mathf.Max(1, Mathf.CeilToInt((b - a).magnitude / LipStepM));
+                for (int s = 0; s < steps; s++) pts.Add(Vector2.Lerp(a, b, (float)s / steps));
+            }
+            Vector3 L(Vector2 p, float dy) => new Vector3((p.x - centre.x) / radius, groundAt(p.x, p.y) + dy, (p.y - centre.y) / radius);
+            for (int k = 0; k < pts.Count; k++)
+            {
+                Vector2 a = pts[k], b = pts[(k + 1) % pts.Count];
+                m.Facet(new List<Vector3> { L(a, lip), L(a, -LipSinkM), L(b, -LipSinkM), L(b, lip) }, UnitPalette.Earth, 0.1f, outward: true);
             }
             return m.Build(name);
         }
@@ -163,9 +236,15 @@ namespace Statecraft.Game.Map.Units
         public static Func<float, float, float> HeightAt(MapScene map) =>
             (x, z) => map.Terrain.SampleHeight(new Vector3(x, 0, z)) + map.Terrain.transform.position.y;
 
-        /// <summary>The height a figure standing at (x, z) on a base of <paramref name="radius"/> stands at: on the base's top
-        /// over the highest ground under its boots.</summary>
-        public static float FigureY(MapScene map, float radius, float x, float z) => BootsTop(HeightAt(map), x, z) + LipShare * radius;
+        /// <summary>The height a figure standing at (x, z) on a base of <paramref name="radius"/> stands at: on the draped top
+        /// at its own point (round 4 of #559; an uphill boot sets into the base, which hides it).</summary>
+        public static float FigureY(MapScene map, float radius, float x, float z) => HeightAt(map)(x, z) + LipShare * radius;
+
+        /// <summary>Tests read the built meshes back: true keeps their CPU copy (players free it after the upload).</summary>
+        internal static bool KeepMeshesReadable;
+
+        /// <summary>Frees a built mesh's CPU copy after its upload, unless a test reads it back.</summary>
+        public static Mesh Upload(Mesh m) { if (!KeepMeshesReadable) m.UploadMeshData(true); return m; }
 
         /// <summary>Builds the draped base, its lip and its ring, of radius <paramref name="radius"/> at
         /// <paramref name="centre"/> under <paramref name="token"/>, and <paramref name="side"/>'s flag when it has one.
@@ -176,7 +255,7 @@ namespace Statecraft.Game.Map.Units
         {
             var ground = HeightAt(map); var c = new Vector2(centre.x, centre.z);
             var at = new Vector3(centre.x, 0f, centre.z); var scale = new Vector3(radius, 1f, radius);
-            UnitShowcase.Piece(token, PlinthName, own(TopMesh("UnitPlinth", ground, c, radius)), paint, at, Quaternion.identity, 1f).transform.localScale = scale;
+            UnitShowcase.Piece(token, PlinthName, own(TopMesh("UnitPlinth", map, c, radius)), paint, at, Quaternion.identity, 1f).transform.localScale = scale;
             UnitShowcase.Piece(token, LipName, own(LipMesh("UnitPlinthLip", ground, c, radius)), paint, at, Quaternion.identity, 1f).transform.localScale = scale;
             var ring = UnitShowcase.Piece(token, RimName, own(RimMesh("UnitPlinthRim", ground, c, radius)), rim, at, Quaternion.identity, 1f);
             ring.transform.localScale = scale;
@@ -192,6 +271,8 @@ namespace Statecraft.Game.Map.Units
                 var flag = UnitShowcase.Piece(token, FlagName, shared("unit-flag-" + side, () => UnitFlags.Build(side)!), paint, foot, Quaternion.identity,
                     UnitBadge.FigureHeightM * UnitShowcase.FigureScale);
                 flag.GetComponent<MeshRenderer>().sharedMaterials = new[] { paint, flagWhite, flagBlue };
+                flag.AddComponent<UnitFlagFacing>();   // owner ruling, 2026-10-15: the cloth turns about the pole to face the camera
+                var cam = Camera.main; if (cam != null) UnitFlagFacing.Face(flag.transform, cam.transform.position);
             }
             return ground(centre.x, centre.z) + LipShare * radius;
         }

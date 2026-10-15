@@ -132,7 +132,7 @@ namespace Statecraft.Game.Map.Units
             var palette = assets.Own(UnitPalette.MakeTexture(readable: false));
             var paint = assets.Own(new Material(template) { name = "UnitMiniature (palette)" });
             paint.SetTexture("_BaseMap", palette);
-            Mesh Built(Mesh m) { assets.Own(m); m.UploadMeshData(true); return m; }   // no CPU copy kept in players
+            Mesh Built(Mesh m) { assets.Own(m); return UnitPlinth.Upload(m); }   // no CPU copy kept in players
             float hex = map.Hexes.hex_size_km * 1000f;
 
             // The trio: three riflemen shoulder to shoulder on their base, under the flag, at the clear spot nearest TrioAt.
@@ -144,7 +144,7 @@ namespace Statecraft.Game.Map.Units
             var flagWhite = assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
             var flagBlue = assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
             flagBlue.renderQueue = flagWhite.renderQueue + 1;   // the blue over the white
-            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => assets.Own(m), (_, build) => Built(build()), paint, rim, flagWhite, flagBlue);
+            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => UnitPlinth.Upload(assets.Own(m)), (_, build) => Built(build()), paint, rim, flagWhite, flagBlue);
             var holes = new List<(Vector2 centre, float radius)> { (new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter) };
             for (int i = 0; i < looks.Length; i++)
             {

@@ -20,7 +20,8 @@ namespace Statecraft.Game.Map.Units
     ///   2026-10-14), which fits the gazette's own drawing (the star fills most of the white between the stripes). The same
     ///   design, the Zionist flag, hung at the declaration on 14 May 1948 ("two flags, later to become the official flag of
     ///   Israel", https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence, checked 2026-10-14), so it flies from
-    ///   the game's first day. The blue is the roundel's.
+    ///   the game's first day. The gazette says only "dark sky-blue" (tkhelet kehe); the cloth's blue
+    ///   (<see cref="BlueColour"/>) is a choice, a little brighter than the roundel's so it reads unlit.
     /// - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag in the repo yet, so none (#226 brings the Arab forces).
     /// Proportions on the token follow T29: the cloth about half a figure's height, the pole about one and a half.</summary>
     public static class UnitFlags
@@ -68,7 +69,8 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>The cloth's colours, drawn unlit (the selection ring's shader) so the flag reads white and blue under
-        /// the map's light and grade, as T29's (its white 0.83-0.91 luma). The blue is the proclamation's "dark sky-blue".</summary>
+        /// the map's light and grade, as T29's (its white 0.83-0.91 luma). The blue stands for the proclamation's "dark
+        /// sky-blue", which gives no value: a choice.</summary>
         public static readonly Color WhiteColour = new Color(1f, 1f, 1f), BlueColour = new Color(0.0f, 0.22f, 0.62f);
 
         /// <summary>Puts the pole, the white and the blue in submeshes 0, 1 and 2 (the palette, white and blue materials).</summary>

@@ -194,22 +194,25 @@ checks every anchor and logs each spot and its distance.
 - **Air:** the squadron flies the slice's loop over its base at security level 4 or 5 and stands parked below that.
 - **Navy:** a ship is the K-20 corvette model; Wedgwood was the same modified Flower class.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
-  aircraft or a ship). It is turned to face each camera as it renders.
+  aircraft or a ship). It is turned to face each camera as it renders. On an army token it sits above the flag's top, a little
+  behind the trio and to the side away from the flag's pole as that camera sees it (`UnitLayer.FaceCamera`; review of #559:
+  it covered the middle figure's head once the trio stood shoulder to shoulder, and the flag now turns with the camera).
 - **Ring:** the white ring appears only on selection.
 - **Base and flag (demo2 T29, refs #197).** An army token's figures stand shoulder to shoulder on one round earth base
   ringed by a bright white rim (`UnitPlinth`), and the side's flag flies on a pole at the base's back edge (`UnitFlags`).
   See "The base and the flag".
-- **Slopes (owner question, 2026-10-11; round 3 of #559).** The base is draped on the ground: its top is a polar grid
-  of 32 rings and 96 segments whose every vertex stands the lip (`UnitPlinth.LipShare`, a twentieth of its radius, about
-  100 m) over the ground at its point, and an edge lip of that height closes it to the ground. So on a hill it neither
-  stands up as a mesa nor leaves a gap downhill. A figure stands on the base's top over the highest ground under its boots
-  (`UnitPlinth.FigureY`).
-  - **Tolerance:** between its vertices the top strays from the lip by at most half the lip (about 47 m): it never dips into
-    the ground and never floats more than one and a half lips over it. Measured on every hill token: Harel 45.5 m, the
-    7th Brigade 41.1 m, the rest under 14 m. The level discs before stood up to 1,081 m (round 1, on the highest ground)
-    or 707 m (round 2, on the median) over Harel's valley side.
-  - **Tests:** `ABaseIsDrapedOnASteepCurvedSlope`, `TheBaseFollowsTheGroundOnEveryHillToken` and
-    `NoRiflemanSinksIntoTheHillsOfTheMap`.
+- **Slopes (owner question, 2026-10-11; rounds 3 and 4 of #559).** The base is draped on the terrain's own triangles:
+  every heightmap cell under it (79 x 211 m) is split along the diagonal the terrain itself uses there and raised by the lip
+  (`UnitPlinth.LipShare`, a twentieth of its radius, about 100 m), the cells at the edge clipped to a 96-sided outline with
+  heights from the terrain's planes. So the top follows the ground exactly wherever a token stands, with no grid density
+  to tune, and an edge lip of the same height, sampled every 40 m along the outline, closes it to the ground. On a hill it
+  neither stands up as a mesa nor leaves a gap downhill. A figure stands on the top at its own point (an uphill boot sets
+  into the base, which hides it).
+  - **Tests:** `TheBaseFollowsTheGroundOnEveryHillHexOfTheMap` (every hill hex of the map, not only today's spots: the top
+    within half the lip of the ground plus the lip, and the 99th percentile within a quarter),
+    `TheBaseFollowsTheGroundOnEveryHillToken`, `EveryFigureStandsOnTheDrapedTop` and `NoRiflemanSinksIntoTheHillsOfTheMap`.
+    The level discs before stood up to 1,081 m (round 1) or 707 m (round 2) over Harel's valley side; round 3's 32 x 96
+    polar grid strayed up to 113 m on the map's hills.
 - **Trees (#249).** The kit trees whose crowns reach a drawn token's base are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
   that day clear trees, and they come back when the figure goes. With the `units` toggle off, as in a plain `?shot` run,
   every tree is drawn. The planting, and so the kits' layout, never changes. Tests:
@@ -339,7 +342,12 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
 - **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row today; the Arab states' sides are known to the
   loader for #226). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
-  unlit (white, and the proclamation's dark sky-blue), so it reads white under the map's light and grade as T29's. Only a side whose 1948
+  unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
+  grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it
+  never shows edge-on as the camera orbits; the pole stays upright at the base's edge.
+  - **Use of the flag:** the Flag and Emblem Law, 5709-1949, s. 2(a), forbids using the State flag for commerce, business or
+    profession without a permit from the Minister of the Interior (the 1949 text, read on the cited scan; the amended text
+    not checked). The game is free and non-commercial; a paid release needs this checked first. Only a side whose 1948
   flag is sourced here gets one, so no flag is invented:
   - Israel: the Provisional Council of State's "Proclamation on the Flag of the State of Israel" of 25 Tishrei 5709
     (28 October 1948), Iton Rishmi No. 32, 10 Heshvan 5709 (12 November 1948), p. 62
@@ -359,8 +367,8 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   (`MapScene.ShowcaseClearing`, `UnitShowcase.Clearing`), so no kit building or route crosses its base
   (`NoKitBuildingOrRailCrossesTheShowcasePlinth`). A plain screenshot keeps every kit.
 - **Aircraft and ships** have no base and no flag: they fly or float, and carry their own sourced markings.
-- **Cost:** per army token, a draped top (6,048 triangles), its lip (192) and its ring (384), built once per roster change;
-  one shared flag mesh (about 250). The base, lip and pole in the units' palette material; the ring and the cloth in three
+- **Cost:** per army token, a draped top (the terrain cells under it, see the PR), its lip and its ring (384), built once
+  per roster change and freed with the tokens; one shared flag mesh (about 250). The base, lip and pole in the units' palette material; the ring and the cloth in three
   unlit colours. No texture, no new shader, no per-pixel cost (docs/visual-v1.md, #391), and no per-frame code.
 
 ## Colour at map scale
