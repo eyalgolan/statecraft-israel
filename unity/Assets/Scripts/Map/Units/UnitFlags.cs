@@ -34,7 +34,7 @@ namespace Statecraft.Game.Map.Units
         public const float FlagBottom = FlagTop - FlagWidth * 160f / 220f;
         /// <summary>The star's outer points from its centre, in the specification's centimetres (69 cm across).</summary>
         public const float StarOuterCm = 34.5f;
-        const float StripeCm = 5.5f, Layer = 0.004f;
+        const float StripeCm = 5.5f, Layer = 0.02f;   // the blue a fiftieth of a figure off the white: enough depth for WebGL at 60 km
 
         static readonly HashSet<string> Sourced = new HashSet<string> { UnitData.Israel };
 

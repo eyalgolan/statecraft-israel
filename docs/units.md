@@ -205,8 +205,8 @@ checks every anchor and logs each spot and its distance.
   stands up as a mesa nor leaves a gap downhill. A figure stands on the base's top over the highest ground under its boots
   (`UnitPlinth.FigureY`).
   - **Tolerance:** between its vertices the top strays from the lip by at most half the lip (about 47 m): it never dips into
-    the ground and never floats more than one and a half lips over it. Measured on every hill token: Harel 40.9 m, the
-    7th Brigade 32.4 m, the rest under 15 m. The level discs before stood up to 1,081 m (round 1, on the highest ground)
+    the ground and never floats more than one and a half lips over it. Measured on every hill token: Harel 45.5 m, the
+    7th Brigade 41.1 m, the rest under 14 m. The level discs before stood up to 1,081 m (round 1, on the highest ground)
     or 707 m (round 2, on the median) over Harel's valley side.
   - **Tests:** `ABaseIsDrapedOnASteepCurvedSlope`, `TheBaseFollowsTheGroundOnEveryHillToken` and
     `NoRiflemanSinksIntoTheHillsOfTheMap`.

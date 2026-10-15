@@ -99,6 +99,7 @@ namespace Statecraft.Game.Map.Units
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
             layer.flagWhite = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
             layer.flagBlue = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
+            layer.flagBlue.renderQueue = layer.flagWhite.renderQueue + 1;   // the blue over the white
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
