@@ -174,6 +174,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    card's backdrop, the screens and the toast start right of it (68 px: its 56 px and a 12 px gap), so nothing covers it
    and it stays usable under the decision card, as the top bar does; the card itself stays centred in the window. */
 .left-column { position: absolute; left: 16px; top: 112px; width: 56px; align-items: center; }
+/* The backdrop's strip under the column (review of #602): from the window's left edge to where the backdrop starts (72 px),
+   full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
+.event-gutter { display: none; position: absolute; left: 0; top: 0; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
+.event-modal .event-gutter { display: flex; }
 .left-column .rail-button { width: 56px; height: 56px; margin: 0 0 12px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
 .left-column .rail-button .nav-disc { top: 0; left: 0; width: 56px; height: 56px; padding: 13px; border-radius: 28px; }

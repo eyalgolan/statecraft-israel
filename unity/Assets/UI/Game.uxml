@@ -8,6 +8,10 @@
         <!-- HUD round 2, part 2 (#398): promo 03's left icon column, the four screens (ScreenNav), icon-only; each one's name
              is its text (the event log records it), hidden, and its tooltip, shown beside it on hover and on focus
              (HoverTip). Before the top bar in the tree, so Tab still runs Cabinet, Budget, Defence, Why?, New Game, End Turn. -->
+        <!-- The left column's strip of the decision card's backdrop (review of #602): dimmed and taking the pointer while the
+             card is open (event-modal), so the map is blocked between and below the discs as it is everywhere else; before
+             the column in the tree, so the column's buttons stay above it and usable. -->
+        <ui:VisualElement name="event-gutter" class="event-gutter" />
         <ui:VisualElement name="left-column" class="left-column" picking-mode="Ignore">
             <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>

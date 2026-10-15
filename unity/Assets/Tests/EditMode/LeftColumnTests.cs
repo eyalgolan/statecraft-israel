@@ -138,6 +138,9 @@ public class LeftColumnTests
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
                     var window = root.worldBound;
                     float scale = w / window.width;
+                    // Preconditions, so no overlap check below is vacuous (a hidden element has no size).
+                    foreach (var shown in new[] { "event-card", "event-scrim", "event-gutter", "info-panel", "minimap", "map-layer" })
+                        if (!(root.Q(shown).worldBound.width > 0)) problems.Add($"{at}: precondition: {shown} shows");
                     var col = root.Q(Column).worldBound;
                     var buttons = root.Q(Column).Query<Button>().ToList();
                     var hull = buttons.Select(b => b.worldBound).Aggregate((a, b) => Rect.MinMaxRect(Mathf.Min(a.xMin, b.xMin), Mathf.Min(a.yMin, b.yMin), Mathf.Max(a.xMax, b.xMax), Mathf.Max(a.yMax, b.yMax)));
@@ -150,9 +153,9 @@ public class LeftColumnTests
                         if (b.resolvedStyle.color.a > 0.01f) problems.Add($"{at}: {b.name}'s caption shows");
                     }
                     foreach (var (name, r) in new[] { ("the info panel", root.Q("info-panel").worldBound), ("the decision card", root.Q("event-card").worldBound),
-                                                      ("the card's backdrop", root.Q("event-scrim").worldBound), ("the minimap", root.Q("minimap").worldBound),
+                                                      ("the card's backdrop", root.Q("event-scrim").worldBound), ("the backdrop's strip, over the column", ColumnOverGutter(root)), ("the minimap", root.Q("minimap").worldBound),
                                                       ("the border caption", root.Q("map-layer").worldBound) })
-                        if (r.width > 0 && r.Overlaps(hull)) problems.Add($"{at}: the column {hull} overlaps {name} {r}");
+                        if (r.Overlaps(hull)) problems.Add($"{at}: the column {hull} overlaps {name} {r}");
                     if (!root.Q(Column).enabledInHierarchy) problems.Add($"{at}: the column is disabled under the open card (the top bar is not)");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
@@ -184,6 +187,15 @@ public class LeftColumnTests
                     }, (root, nav) => nav.Toggle(screen));
             }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Empty unless the strip draws over the column: the strip comes before the column in the tree, so the column's
+    /// buttons are above it (checked by picking a disc's centre).</summary>
+    static Rect ColumnOverGutter(VisualElement root)
+    {
+        var b = root.Q<Button>("nav-cabinet");
+        var picked = root.panel.Pick(b.worldBound.center);
+        return picked == b || picked?.GetFirstAncestorOfType<Button>() == b ? Rect.zero : b.worldBound;
     }
 
     static Rect Hull(VisualElement root) => root.Q(Column).Query<Button>().ToList().Select(b => b.worldBound)
@@ -248,7 +260,10 @@ public class LeftColumnTests
                         b.Blur();
                         if (tip.style.display.value != DisplayStyle.None) problems.Add($"{at}: the tip of {name} stays after blur");
                     }
-                    UiTestKit.Press(root.Q<Button>("nav-budget"));
+                    var budget = root.Q<Button>("nav-budget");
+                    budget.Focus();
+                    UiTestKit.Press(budget);
+                    if (tip.style.display.value != DisplayStyle.None) problems.Add($"{at}: the tip stays over the screen Budget opened (review of #602)");
                     if (nav.Current != "budget") problems.Add($"{at}: Budget in the column opens the Budget screen (was {nav.Current ?? "none"})");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));

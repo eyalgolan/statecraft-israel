@@ -121,6 +121,71 @@ public class GameSceneTests
         Assert.AreEqual(size.z, Camera.main.GetComponent<CameraController>().Bounds.height, 1f);
     }
 
+    /// <summary>Review of #602 (must-fix): with a decision card open the map is blocked everywhere but the left icon column's
+    /// own buttons. Probes in the column's gutter (left of the discs, between two discs, below the last) reach the map while
+    /// no card is open (a hex click picks a hex there), and are UI while the card is open: the map pointer refuses the hex
+    /// click and the camera refuses the drag there. Before the fix the backdrop started at the column's right edge and the
+    /// column takes no pointer, so the strip leaked through to the map.</summary>
+    [UnityTest]
+    public IEnumerator WithACardOpenTheColumnsGutterBlocksTheMap()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        var rt = new RenderTexture(1920, 1080, 0);
+        var ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        try
+        {
+            doc.panelSettings = ps;
+            Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(Inputs, 0);
+            var ui = doc.rootVisualElement;
+            for (int i = 0; i < 30 && !(ui.Q("nav-why").worldBound.width > 0); i++) yield return null;
+            var panel = ui.panel;
+            float h = Screen.height;
+            Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
+            Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
+            Rect a = ui.Q("nav-cabinet").worldBound, b = ui.Q("nav-budget").worldBound, last = ui.Q("nav-why").worldBound;
+            var probes = new (string where, Vector2 p)[]
+            {
+                ("left of a disc", new Vector2(a.xMin - 6f, a.center.y)),
+                ("between two discs", new Vector2(a.center.x, (a.yMax + b.yMin) / 2)),
+                ("right of a disc, inside the column's strip", new Vector2(a.xMax + 4f, a.center.y)),
+                ("below the last disc", new Vector2(last.center.x, last.yMax + 80f)),
+            };
+            var pointer = Object.FindFirstObjectByType<MapPointer>();
+            var camera = Camera.main.GetComponent<CameraController>();
+            var bridge = root.Bridge!;
+            Assert.IsFalse(ui.Q("root").ClassListContains(EventCardPresenter.ModalClass), "precondition: no card at the start");
+            foreach (var (where, p) in probes)
+            {
+                Assert.IsFalse(pointer.IsOverUi!(ScreenFor(p)), $"no card: {where} {p} is map");
+                Assert.IsTrue(pointer.HandleClick(ScreenFor(p)), $"no card: a hex click {where} {p} picks a hex (the probe is on the map)");
+            }
+            var g = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+            while (g.State.PendingEvents.Count == 0) g.Step(new Command[0]);
+            bridge.Replace(g);
+            for (int i = 0; i < 5; i++) yield return null;
+            Assert.IsTrue(ui.Q("root").ClassListContains(EventCardPresenter.ModalClass), "precondition: the card is open");
+            foreach (var (where, p) in probes)
+            {
+                Assert.IsTrue(pointer.IsOverUi!(ScreenFor(p)), $"card open: {where} {p} blocks map clicks");
+                Assert.IsFalse(pointer.HandleClick(ScreenFor(p)), $"card open: a hex click {where} {p} picks no hex");
+                Assert.IsTrue(camera.IsOverUi!(ScreenFor(p)), $"card open: {where} {p} blocks the drag and the wheel");
+            }
+            UiTestKit.Press(ui.Q<Button>("nav-why"));
+            Assert.AreEqual(DisplayStyle.Flex, ui.Q("screen-why").style.display.value, "card open: the column's own buttons still work");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (ps != null) Object.DestroyImmediate(ps);
+            if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+        }
+    }
+
     // Carry 2 and 8: ScreenNav hides every screen at start; the empty middle of the screen reaches the map while the
     // panels do not (the camera and the map pointer ask the game panel); a minimap click moves the camera.
     [UnityTest]
