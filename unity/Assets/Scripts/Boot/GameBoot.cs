@@ -41,11 +41,17 @@ namespace Statecraft.Game.Boot
         static readonly Regex BarePath = new Regex(@"(?<![\w:/.\\])(?:file://)?(?:/|[A-Za-z]:\\)[^\s'""()]+");
         static string FileName(string path) => path.Substring(path.LastIndexOfAny(new[] { '/', '\\' }) + 1);
 
+        static readonly Regex MvpValue = new Regex(@"[?&]mvp=([^&#]*)", RegexOptions.CultureInvariant);
+
         /// <summary>The ?mvp=1 dev flag (#380): load the content through MvpSlice.Overlay, the GDD slice, for playtests. Only
-        /// "mvp=1" as a whole query parameter turns it on; the golden check and the smoke run ignore it and keep the real
-        /// content, so their pinned hashes hold.</summary>
-        internal static bool SliceRequested(string? url, bool golden, int smoke) =>
-            !golden && smoke == 0 && UrlFlags.Has(url, "mvp") && UrlFlags.Int(url, "mvp") == 1;
+        /// one "mvp" parameter whose value is exactly "1" turns it on (not "01", "1x" or a second value); the golden check and
+        /// the smoke run ignore it and keep the real content, so their pinned hashes hold.</summary>
+        internal static bool SliceRequested(string? url, bool golden, int smoke)
+        {
+            if (golden || smoke != 0) return false;
+            var values = MvpValue.Matches(url ?? "");
+            return values.Count == 1 && values[0].Groups[1].Value == "1";
+        }
 
         async void Start()
         {

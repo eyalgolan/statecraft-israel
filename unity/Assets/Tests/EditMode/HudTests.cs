@@ -54,7 +54,10 @@ public class HudTests
         Assert.AreEqual("Score 0", HudModel.From(bridge, Text).Score);
         bridge.State.Score = 150;
         Assert.AreEqual("Score 150", HudModel.From(bridge, Text).Score);
-        Assert.AreEqual("ניקוד 150", HudModel.From(bridge, He).Score);
+        // The value carries left-to-right marks in a Hebrew line (U+200E, #543), as every Hebrew value does.
+        var he = HudModel.From(bridge, He).Score;
+        Assert.AreEqual("ניקוד \u200E150\u200E", he);
+        Assert.AreEqual("ניקוד 150", he.Replace("\u200E", ""));
     }
 
     [Test]

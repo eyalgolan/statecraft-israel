@@ -10,6 +10,7 @@ using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor.SceneManagement;
+using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 /// <summary>The ?mvp=1 dev flag (#380): it loads the content through MvpSlice.Overlay (the GDD slice) for playtests. It is
@@ -26,6 +27,14 @@ public class MvpFlagTests
     [TestCase(Page + "?mvp=0", false, 0, ExpectedResult = false)]
     [TestCase(Page + "?mvp", false, 0, ExpectedResult = false)]
     [TestCase(Page + "?mvp-x=1", false, 0, ExpectedResult = false)]
+    [TestCase(Page + "?mvp=2", false, 0, ExpectedResult = false)]                // exactly "1": not any other number
+    [TestCase(Page + "?mvp=10", false, 0, ExpectedResult = false)]
+    [TestCase(Page + "?mvp=01", false, 0, ExpectedResult = false)]
+    [TestCase(Page + "?mvp=1x", false, 0, ExpectedResult = false)]
+    [TestCase(Page + "?mvp=1.5", false, 0, ExpectedResult = false)]
+    [TestCase(Page + "?mvp=1&mvp=0", false, 0, ExpectedResult = false)]          // two values: not a clear request
+    [TestCase(Page + "?mvp=0&mvp=1", false, 0, ExpectedResult = false)]
+    [TestCase(Page + "?mvpx=1&mvp=1", false, 0, ExpectedResult = true)]          // another parameter's name does not count
     [TestCase(Page + "?xmvp=1", false, 0, ExpectedResult = false)]
     [TestCase("", false, 0, ExpectedResult = false)]
     [TestCase(null, false, 0, ExpectedResult = false)]
@@ -126,6 +135,26 @@ public class MvpFlagTests
 
     static UnityEngine.UIElements.Button NewGameButton() =>
         Object.FindFirstObjectByType<UnityEngine.UIElements.UIDocument>().rootVisualElement.Q<UnityEngine.UIElements.Button>("new-game");
+
+    /// <summary>Defence in depth: even if a slice game ever got a New Game handler, pressing it twice (ask, confirm) would not
+    /// delete the player's autosave.</summary>
+    [Test]
+    public void NewGamePressedTwiceInASliceKeepsTheAutosave()
+    {
+        Directory.CreateDirectory(saveDir);
+        var path = Path.Combine(saveDir, SaveStore.AutosaveName);
+        File.WriteAllText(path, "the player's save");
+        using var ui = new UiTestKit();
+        var text = UiText.Parse(UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>(UiPaths.Strings).text);
+        var bridge = new SimBridge(GameSession.New(SliceInputs.Content, GoldenRun.Seed, Mode.Historical), text);
+        using var toast = new ToastPresenter(ui.Root, bridge, text);
+        using var newGame = new NewGamePresenter(ui.Root, bridge, new SaveStore(saveDir), toast, text, () => 7UL, slice: true);
+        var session = bridge.Session;
+        ui.Press("new-game");
+        ui.Press("new-game");
+        Assert.AreEqual("the player's save", File.ReadAllText(path), "the autosave is untouched");
+        Assert.AreSame(session, bridge.Session, "no new game started");
+    }
 
     /// <summary>A slice game has no New Game (it would delete the player's autosave): the button is not drawn and is out of
     /// the Tab order, rather than drawn and dead. A normal game keeps it, also after a slice game in the same scene.</summary>

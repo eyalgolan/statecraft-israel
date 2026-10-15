@@ -264,6 +264,10 @@ namespace Statecraft.Game.UI
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
             NewGamePresenter? newGame = null;
+            // A slice game has no New Game, so its button is not drawn and is out of the Tab order (not drawn and dead).
+            var newGameButton = root.Q<Button>("new-game");
+            newGameButton.style.display = inputs.Slice ? DisplayStyle.None : StyleKeyword.Null;
+            newGameButton.focusable = !inputs.Slice;
             if (smoke == 0 && !inputs.Slice)
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
