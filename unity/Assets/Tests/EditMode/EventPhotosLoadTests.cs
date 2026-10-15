@@ -283,6 +283,31 @@ public class EventPhotosLoadTests
         finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
     }
 
+    /// <summary>Issue #592 review: the card waits for its photograph exactly when Begin shows the start screen (one value
+    /// in GameRoot decides both; #598's slice game shows none). A card waiting under no screen would never be uncovered and
+    /// never show its photograph.</summary>
+    [Test]
+    public void TheCardWaitsForThePhotographExactlyWhenTheStartScreenShows([Values(false, true)] bool startScreen, [Values(0, 5)] int smoke,
+        [Values(false, true)] bool slice)
+    {
+        SaveWithAPhotographedDecisionWaiting();
+        EventPhotos.Schedule = (_, _, _) => { };
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap, slice);
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            if (smoke > 0) UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, "SMOKE FAIL the smoke run needs play mode or a player");
+            root.Begin(inputs, smoke, startScreen);
+            var open = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q("root").ClassListContains(StartScreenPresenter.OpenClass);
+            Assert.AreEqual(startScreen && smoke == 0 && !slice, open, "the start screen shows only outside a smoke run and the slice");
+            Assert.AreEqual(open, root.Card!.PhotoWaits, "the card waits for the photograph exactly when the screen covers it");
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
+    }
+
     /// <summary>Issue #592 with the real loads: a Continue with a decision waiting adds no Resources load to Begin.</summary>
     [Test]
     public void GameRootBeginOnAContinueWithADecisionWaitingLoadsNoPhotoCatalog()

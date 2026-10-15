@@ -35,6 +35,8 @@ namespace Statecraft.Game.UI
         /// <summary>The card was built under the start screen and it has not closed yet (issue #592): the photograph (and the
         /// portrait in its place) waits for onUncovered, so a Continue with a decision waiting loads no catalog in GameRoot.Begin.</summary>
         bool photoWaits;
+        /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
+        internal bool PhotoWaits => photoWaits;
         readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit;
         readonly Button hide, reopen, illustrationSwitch;
         readonly System.Action onHide, onReopen, onUncovered;
