@@ -23,6 +23,8 @@ namespace Statecraft.Sim
         public string? Code { get; }
         public SaveException(int line, string message, string? code = null)
             : base(line > 0 ? FormattableString.Invariant($"line {line}: {message}") : message) { Line = line; Code = code; }
+        /// <summary>A save whose replay threw <paramref name="inner"/>: kept, with its stack, for the log (#631).</summary>
+        public SaveException(string message, Exception inner) : base(message, inner) { }
     }
 
     /// <summary>

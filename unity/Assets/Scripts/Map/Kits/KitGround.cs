@@ -67,7 +67,7 @@ namespace Statecraft.Game.Map.Kits
 
         public string Biome(float x, float z) => biome.TryGetValue(Hex(x, z), out var b) ? b : "sea";
 
-        (int, int) Hex(float x, float z)
+        internal (int, int) Hex(float x, float z)
         {
             var (lon, lat) = Frame.ToLonLat(new Vector3(x, 0f, z));
             return HexPicker.FromLonLat(lon, lat, bounds, hexSizeKm);

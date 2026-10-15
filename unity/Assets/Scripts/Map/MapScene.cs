@@ -25,6 +25,10 @@ namespace Statecraft.Game.Map
         public HexFile Hexes { get; private set; }
         public Terrain Terrain { get; private set; }
         public Material MarkerMaterial => markerMaterial;
+        /// <summary>Kit.mat (null without the kits), for the transit camps' kits PlacementLayer builds when a camp is placed.</summary>
+        public Material KitMaterial => kitMaterial;
+        /// <summary>The heightmap's lowest elevation (m) as the last Build read it: a KitGround built after the map needs it.</summary>
+        public float ElevMinM { get; private set; }
         /// <summary>The settlements the last Build placed (settlements_1948.yaml), for the UI's map labels and, through
         /// SettlementsFor, the info panel's names. Read only: the markers, the kits, the labels and GameRoot share this one
         /// list and its objects; nothing may write to them.</summary>
@@ -201,6 +205,10 @@ namespace Statecraft.Game.Map
         /// Build or without the unit file.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> UnitClearings { get; private set; } = new List<(Vector2, float)>();
 
+        /// <summary>The unit tokens that stand outside the towns (centre x, z; ring radius m), as the kits get them
+        /// (KitGround.Tokens): the transit camps PlacementLayer builds later keep off them too. Empty before Build.</summary>
+        public IReadOnlyList<(Vector2 centre, float radius)> UnitTokens { get; private set; } = new List<(Vector2, float)>();
+
         /// <summary>The last Build's kit numbers (buildings, vertices, trees, build time), or null without kits.</summary>
         public Kits.KitLayer.Stats KitStats { get; private set; }
 
@@ -236,6 +244,7 @@ namespace Statecraft.Game.Map
             Clear();
             kitColumns.Clear(); kitProbe = null;
             var (meta, heights) = HeightmapLoader.Load(inputs.HeightmapJson, inputs.HeightmapR16z, MetaPath);
+            ElevMinM = meta.elev_min_m;
             DiagLog.BootPhase("heightmap decoded");
             Hexes = MapBuilder.LoadHexes(inputs.HexesJson, HexesPath);
             DiagLog.BootPhase("hexes parsed");
@@ -344,6 +353,7 @@ namespace Statecraft.Game.Map
             }
             UnitClearings = clearings;
             DiagLog.BootPhase("units placed");   // issue #321: the routes' corridors, the footprints and the unit spots
+            UnitTokens = unitRings;
             if (kitsOn)
             {
                 // ?kitscale=, ?housescale=, ?treescale= in the WebGL player: the same layout at another symbolic scale (city

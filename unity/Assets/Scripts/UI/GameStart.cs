@@ -38,14 +38,13 @@ namespace Statecraft.Game.UI
                 catch (Exception e)   // any failure (a bad save, a replay that throws): never block the start
                 {
                     try { store.SetAsideAutosave(); } catch (Exception) { /* even this must not stop the start */ }
-                    // A SaveException's message is about the save's own text (line numbers); anything else can carry file paths, so
-                    // the player gets a short reason and the full exception goes to the log.
-                    if (!(e is SaveException)) UnityEngine.Debug.LogWarning("Autosave could not be loaded: " + e);
-                    else UnityEngine.Debug.LogWarning("Autosave rejected: " + e.Message);
+                    // The sim's reasons are English and technical (line numbers, a replay's own exception), and anything else
+                    // can carry file paths: the full exception (with a replay's inner exception) goes to the log only (#631).
+                    UnityEngine.Debug.LogWarning((e is SaveException ? "Autosave rejected: " : "Autosave could not be loaded: ") + e);
                     // A refusal with a code (a save from before the GDD cutover, or from a newer version: R-SAVE-001, R-SAVE-002)
-                    // is said once, in the player's language (N4); a damaged save shows the sim's reason in brackets.
+                    // is said once, in the player's language (N4); anything else gets one short localised reason (#631).
                     if (e is SaveException refused && refused.Code != null) notes.Add(text["save.refused." + refused.Code]);
-                    else notes.Add(text.Format("save.unreadable", e is SaveException ? e.Message : text["save.reason_other"]));
+                    else notes.Add(text.Format("save.unreadable", text["save.reason_other"]));
                 }
             }
             return GameSession.New(c, newSeed(), Mode.Historical);

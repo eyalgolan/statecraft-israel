@@ -96,6 +96,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   it. It replaces the border skirt's flat tan slab and the sea past the map's edge. At 16:9 only the overview shows it (the
   camera fit of #174 keeps it off screen wherever the view is no wider than the map: below about 106 km at 16:9, 53 km
   at 32:9; a portrait window never shows it); one draw call, no shadow pass, no golden moves.
+- Map: a transit camp the player builds (from 1950) is drawn as a ma'abara instead of a marker box: rows of white and
+  khaki canvas tents with a few tin or canvas huts, a long communal hut and, in some camps, a water tower, on the
+  nearest free ground in its own hex (drawn as its box when the hex has none). Built when the camp is placed, not at map
+  build; the tent/hut share is a parameter for a staged look later. The camp looks worn: tents sag between their poles,
+  crease and lean, with dusty skirts, bleached roofs, patches and open door flaps; the tin huts are loose, rusting sheets,
+  some lifted or missing; washing lines and bundles stand between the tents. Presentation only (refs #32).
 - GDD v0.1 Phase 1, training (refs #377), behind the `systems.loop` switch: `Train` sends a city's civilians without work
   to basic training in a military camp (recruits, a count) or pioneer training in a Hakhshara (halutzim, movable units at
   the city's hex), paid from the Treasury, with any shortfall borrowed as debt (owner decision, 15 October 2026);
@@ -542,6 +548,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- An autosave that cannot be continued (refs #631, #622) no longer shows the sim's English reason or a replay's exception
+  message to the player: the note always gives the short reason "the file could not be read or replayed", in English and
+  Hebrew, and the full exception goes to the log. A replay that throws keeps that exception, with its stack, as the
+  SaveException's inner exception. No save format change.
 - UI text from Jeremy Hoover's review (refs #622): a refused order no longer shows a content id or an exception's
   message after "Not done:" ("Unknown policy", "The turn could not run", in English and Hebrew); both stay in the log.
   The six Title Case labels are in sentence case ("Public support", "International standing", "Foreign currency", "End
