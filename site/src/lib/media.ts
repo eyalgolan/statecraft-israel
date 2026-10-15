@@ -86,6 +86,21 @@ export const captures: MediaImage[] = manifest.images.map((e) => {
   if (!src) throw new Error(`media: docs/images/captures.yaml names ${e.file}, which is not in docs/images/`);
   return { id: e.file.replace(/\.jpg$/, ''), kind: 'engine', src, build: currentBuild, title: e.title, alt: e.alt, aiPart: e.ai_part, file: `docs/images/${e.file}` };
 });
+// The home page's hero still (`hero:` in captures.yaml): a clean in-engine render with no interface, composed for the
+// title, with its own build and date. It is not one of the README's screenshots, so it is not in the gallery.
+interface HeroEntry { file: string; build: string; date: string | Date; title: Text; alt: Text }
+const heroFiles = import.meta.glob<{ default: ImageMetadata }>('../../../docs/images/hero-engine-*.jpg', { eager: true });
+const heroEntry = (manifest as { hero?: HeroEntry }).hero;
+for (const p of Object.keys(heroFiles)) {
+  const name = p.split('/').pop()!;
+  if (heroEntry?.file !== name) throw new Error(`media: docs/images/${name} is not the hero: entry in docs/images/captures.yaml`);
+}
+export const heroShot: MediaImage = (() => {
+  if (!heroEntry) return captures[0];
+  const src = Object.entries(heroFiles).find(([p]) => p.endsWith(`/${heroEntry.file}`))?.[1].default;
+  if (!src) throw new Error(`media: docs/images/captures.yaml names the hero ${heroEntry.file}, which is not in docs/images/`);
+  return { id: heroEntry.file.replace(/\.jpg$/, ''), kind: 'engine', src, build: buildText(heroEntry.build, heroEntry.date), title: heroEntry.title, alt: heroEntry.alt, file: `docs/images/${heroEntry.file}` };
+})();
 export const capture = (file: string) => {
   const c = captures.find((x) => x.file === `docs/images/${file}`);
   if (!c) throw new Error(`media: no capture ${file} in docs/images/captures.yaml`);

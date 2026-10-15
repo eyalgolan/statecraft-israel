@@ -24,6 +24,17 @@ video:
   alt:
     en: "22 to 29 May 1948: the camera pans across Tel Aviv's white blocks, Jaffa and the coastal plain; a click on a hex opens its panel; the player answers the One Army event card and ends the turn, and the date moves to 29 May."
     he: "22 עד 29 במאי 1948: המצלמה עוברת על הבתים הלבנים של תל אביב, על יפו ועל מישור החוף; לחיצה על משושה פותחת את הלוח שלו; השחקן עונה על כרטיס האירוע \"צבא אחד\" ומסיים את התור, והתאריך מתקדם ל־29 במאי."
+# `hero` is the home page's hero still: a clean in-engine render with no interface, composed for the title, with its
+# own build and date (it is not a README screenshot, so it is not in the gallery). tools/: MapCapture.Promo with
+# -extraPose, on the Mobile tier, which is the WebGL tier (docs/visual-v1.md).
+hero:
+  file: hero-engine-coast.jpg
+  build: main 98515c5
+  date: 2026-10-15
+  title: { en: "Tel Aviv, Jaffa and the coast, without the interface", he: "תל אביב, יפו והחוף, בלי הממשק" }
+  alt:
+    en: "An in-engine render of the 1948 map with no interface: the coast at Jaffa and Tel Aviv, with sailing boats off Jaffa's breakwater, Tel Aviv's white blocks, a train on the coastal railway, groves, villages and the sub-district borders."
+    he: "תמונה מתוך מנוע המשחק של מפת 1948 בלי הממשק: החוף ביפו ובתל אביב, עם סירות מפרש מול שובר הגלים של יפו, הבתים הלבנים של תל אביב, רכבת על מסילת החוף, מטעים, כפרים וגבולות הנפות."
 images:
   - file: build-m3-city.jpg
     title: { en: "Tel Aviv’s white blocks and Jaffa", he: "הבתים הלבנים של תל אביב, ויפו" }

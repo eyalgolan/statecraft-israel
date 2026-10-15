@@ -75,6 +75,10 @@ rules:
     licence: CC-BY-4.0
     source: "Real screenshots of the game's own WebGL build, dated in the README caption; map derived from Copernicus DEM, portraits public domain or CC0, the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE), the start screen's painting AI-generated (CC0, its row above)"
     status: verified
+  - glob: "docs/images/hero-engine-*.jpg"
+    licence: CC-BY-4.0
+    source: "In-engine render of the game's own map with no interface (no AI): MapCapture.Promo (unity/Assets/Editor/MapCapture.cs) with -extraPose hero_c:34.76:32.06:36000:12 on the Mobile quality tier (the WebGL tier), 1920x1080, Unity 6000.3.25f1, commit 98515c5, 2026-10-15; saved as JPEG (quality 84). Map derived from Copernicus DEM. The website's home page hero"
+    status: verified
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
     source: "In-engine capture: about 11 seconds of real play recorded from the game's own WebGL build (commit f93fd5e, 2026-10-13) in headed Chrome at 1920x1080; the animated WebP for the README, the MP4 (H.264) and WebM (VP9) for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"

@@ -5,7 +5,7 @@ import Figure from '../../components/Figure.astro';
 import VideoFacade from '../../components/VideoFacade.astro';
 import MediaLabel from '../../components/MediaLabel.astro';
 import { type Lang, languages, href, t, REPO, formatDate, asset } from '../../i18n/ui';
-import { captures, capture, currentBuild, engine, concept, flythrough, trailer, gameplay, captureDateIso } from '../../lib/media';
+import { capture, engine, concept, flythrough, trailer, gameplay, gameplayVideo, captureDateIso, heroShot } from '../../lib/media';
 import { posts } from '../../lib/devlog';
 import { roadmap, cabinet as cabinetPeople } from '../../lib/repo';
 import { Picture } from 'astro:assets';
@@ -15,7 +15,6 @@ export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } 
 const lang = Astro.params.lang as Lang;
 const he = lang === 'he';
 
-const heroShot = captures[0];
 const mapShot = capture('build-m3-map.jpg');
 const cabinet = capture('build-m3-cabinet.jpg');
 const why = capture('build-m3-why.jpg');
@@ -127,19 +126,8 @@ const missing = he
         <img src={heroWebp.src} srcset={heroWebp.srcSet.attribute} sizes={heroSizes} width={heroShot.src.width}
           height={heroShot.src.height} alt={heroShot.alt[lang]} fetchpriority="high" loading="eager" decoding="sync" />
       </picture>
-      {gameplay && (
-        <video class="hero-video" muted loop playsinline preload="none" aria-label={`${t(lang, 'hero.video')}: ${gameplay.alt[lang]}`} data-hero-video>
-          {gameplay.sources.map((s) => <source src={s.src} type={s.type} />)}
-        </video>
-      )}
       <figcaption class="hero-label">
-        {gameplay
-          ? <MediaLabel lang={lang} kind="engine" build={gameplay.build} gameplay />
-          : <MediaLabel lang={lang} kind="engine" build={currentBuild} />}
-        {gameplay && (
-          <button type="button" class="hero-pause" data-hero-pause
-            data-pause={t(lang, 'video.pause')} data-play={t(lang, 'video.resume')}>{t(lang, 'video.pause')}</button>
-        )}
+        <MediaLabel lang={lang} kind="engine" build={heroShot.build} />
       </figcaption>
     </figure>
     <div class="hero-copy">
@@ -194,18 +182,17 @@ const missing = he
     </div>
   </div></section>
 
-{!gameplay && (
+  {/* The real gameplay clip, behind a click: the hero is now a clean still, so the first screen loads no video. */}
   <section class="section" aria-labelledby="footage"><div class="wrap">
     <div class="section-head">
       <span class="eyebrow">{he ? 'צילום מתוך המשחק' : 'In-engine footage'}</span>
-      <h2 id="footage" class="plaque">{he ? 'המפה, מהנגב ועד חיפה' : 'The map, from the Negev to Haifa'}</h2>
+      <h2 id="footage" class="plaque">{gameplayVideo ? (he ? 'כך זה נראה כשמשחקים' : 'What playing looks like') : (he ? 'המפה, מהנגב ועד חיפה' : 'The map, from the Negev to Haifa')}</h2>
       <p>{he
         ? 'הסרטון הראשון באתר מצולם מתוך המשחק עצמו. הטריילר הקולנועי, שנוצר בכלי בינה מלאכותית, מופיע אחריו עם תווית משלו.'
         : 'The first video on this site is recorded in the game itself. The cinematic trailer, made with AI tools, follows below under its own label.'}</p>
     </div>
-    <VideoFacade video={flythrough} lang={lang} />
+    <VideoFacade video={gameplayVideo ?? flythrough} lang={lang} />
   </div></section>
-)}
 
   <section class="section" aria-labelledby="features"><div class="wrap">
     <div class="section-head">
@@ -362,10 +349,6 @@ const missing = he
      at the bottom over a gradient to navy and one gold button. The pitch moves to the band below. */
   .hero-media img { inline-size: 100%; block-size: min(calc(100svh - var(--header-h)), 56.25vw); min-block-size: 30rem; object-fit: cover; object-position: 50% 30%; } /* 16:9 at most, so the game's own HUD is never cut */
   .hero-label { position: absolute; inset-block-end: 1.1rem; inset-inline-end: var(--gutter); padding: 0; z-index: 3; display: flex; gap: 0.5rem; align-items: center; }
-  .hero-video { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: 50% 30%; opacity: 0; }
-  .hero-video.on { opacity: 1; }
-  .hero-pause { font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--ink); background: rgba(9, 14, 26, 0.92); border: 1px solid var(--gold-dim); border-radius: 2px; padding: 0.25em 0.8em; cursor: pointer; min-block-size: 2rem; }
-  .hero-pause:hover { border-color: var(--gold); color: var(--gold-light); }
   .hero-label :global(.label) { background: rgba(9, 14, 26, 0.92); margin: 0; font-size: 0.85rem; }
   .hero-copy {
     position: absolute; inset-inline: 0; inset-block-end: 0; padding-block: 6rem 3rem;
@@ -403,9 +386,6 @@ const missing = he
        instead of a pill that wrapped into three columns over the video (the 390px bug). */
     .hero-label { position: static; justify-content: space-between; padding: 0.5rem var(--gutter); background: var(--navy-solid); border-block-end: 1px solid var(--gold-faint); }
     .hero-label :global(.label) { min-inline-size: 0; }
-    /* The video covers the picture only, not the caption bar now under it. */
-    .hero-video { block-size: auto; aspect-ratio: 4 / 3; inset-block-end: auto; object-position: 38% 50%; }
-    .hero-pause { flex: none; }
     .hero-label :global(.label) { font-size: 0.8rem; }
   }
   .heartbeat { background: var(--navy-solid); border-block-end: 0; }
@@ -461,20 +441,3 @@ const missing = he
   .closing .btn-row { margin-block-start: 1.25rem; }
 </style>
 
-<script>
-  // The hero loop: real gameplay, muted. It starts only after the page has loaded (the still stays the LCP image), never
-  // under prefers-reduced-motion, and the button pauses and resumes it (WCAG 2.2.2).
-  const video = document.querySelector<HTMLVideoElement>('[data-hero-video]');
-  const button = document.querySelector<HTMLButtonElement>('[data-hero-pause]');
-  if (video && button) {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const show = (playing: boolean) => {
-      button.textContent = playing ? button.dataset.pause! : button.dataset.play!;
-    };
-    const start = () => { video.preload = 'auto'; video.play().then(() => { video.classList.add('on'); show(true); }).catch(() => show(false)); };
-    button.addEventListener('click', () => { if (video.paused) start(); else { video.pause(); show(false); } });
-    if (reduce) show(false);
-    else if (document.readyState === 'complete') start();
-    else window.addEventListener('load', start, { once: true });
-  }
-</script>
