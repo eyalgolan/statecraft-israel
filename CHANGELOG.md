@@ -468,6 +468,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- Content: 101 Squadron's aircraft notes in `content/map/units_1948.yaml` (refs #607). The Avia S-199 note now gives the
+  sourced arrivals (one on 20 May 1948, one each on 21 and 22 May, the fourth lost in a C-46 crash dated 23 or 23-24 May,
+  sources disagree) instead of "the first four arrived on 20 May"; the Spitfire note names the two sources for the
+  27 September 1948 landing of three aircraft at Ramat David. Sources added, checked 15 October 2026. Notes only: no
+  date changes, map-only file outside the content hash, no golden moves.
 - Hebrew UI preview (refs #543, #193): a value inserted into a Hebrew line keeps its own order. `UiText.Format` puts a
   left-to-right mark (U+200E) on each side of each value with no Hebrew in it that it inserts into a Hebrew template, so
   negative foreign currency reads "-$4.2m" (not "$4.2m-") and "15 May 1948" in the Why screen's turn line stays one

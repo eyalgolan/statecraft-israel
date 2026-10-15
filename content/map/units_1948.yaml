@@ -324,19 +324,22 @@ units:
   - type: avia-s199
     from: '1948-05-20'
     to: '1948-10-15'
-    note: "The first four arrived on 20 May 1948 and flew first on 29 May (Avia S-199). The type flew on, sporadically, until mid-December (Avia S-199; Eduard p. 54 has one in Operation Horev); the map shows it until the squadron's Spitfires are first sourced in service."
+    note: "The first arrived at Ekron, disassembled, on 20 May 1948 (he.wiki Operation Balak, citing Cohen and Lavi, Hashamayim einam hagvul, 1990, pp. 50-52; 101squadron.com); a second on 21 May (both) and a third on 22 May (101squadron.com). The fourth was lost when the C-46 carrying it crashed; the sources disagree on when and where: 23 May, south of Latrun (101squadron.com), or the night of 23-24 May, near Tel Nof (he.wiki). Four flew first on 29 May (Avia S-199). The type flew on, sporadically, until mid-December (Avia S-199; Eduard p. 54 has one in Operation Horev); the map shows it until the squadron's Spitfires are first sourced in service."
     sources:
     - {url: 'https://en.wikipedia.org/wiki/Avia_S-199', checked: '2026-10-11'}
     - {url: 'https://info.eduard.com/en/11-2025-1/strana-53', checked: '2026-10-11'}
     - {url: 'https://info.eduard.com/en/11-2025-1/strana-54', checked: '2026-10-11'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%9C%D7%A7', checked: '2026-10-15'}
+    - {url: 'https://101squadron.com/101/s-199s.html', checked: '2026-10-15'}
   - type: spitfire
     from: '1948-10-15'
-    note: "The first Spitfires flew in from Czechoslovakia on 27 September 1948 (Operation Velvetta, he.wiki), unarmed; the first sourced sortie is 15 October 1948, three Spitfires escorting Beaufighters to El Arish (he.wiki Supermarine Spitfire). The squadron flew both the Avias and the Spitfires (he.wiki 101 Squadron). en.wiki's Spitfire operational history has IAF Spitfires in combat on 21 October and calls a 101 Squadron claim that day the IAF's \"first ever aerial victory\", which is wrong: the first victories were on 3 June 1948 (101 Squadron, Avia S-199)."
+    note: "The first Spitfires flew in from Czechoslovakia on 27 September 1948, unarmed: of five that left Yugoslavia, three landed at Ramat David (he.wiki Operation Velvetta, citing Wein 2019; 101squadron.com). These two are the only sources read for that landing; no IAF or archival record was reached. the first sourced sortie is 15 October 1948, three Spitfires escorting Beaufighters to El Arish (he.wiki Supermarine Spitfire). The squadron flew both the Avias and the Spitfires (he.wiki 101 Squadron). en.wiki's Spitfire operational history has IAF Spitfires in combat on 21 October and calls a 101 Squadron claim that day the IAF's \"first ever aerial victory\", which is wrong: the first victories were on 3 June 1948 (101 Squadron, Avia S-199)."
     sources:
     - {url: 'https://he.wikipedia.org/wiki/%D7%A1%D7%95%D7%A4%D7%A8%D7%9E%D7%A8%D7%99%D7%9F_%D7%A1%D7%A4%D7%99%D7%98%D7%A4%D7%99%D7%99%D7%A8', checked: '2026-10-11'}
     - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%95%D7%9C%D7%95%D7%95%D7%98%D7%94', checked: '2026-10-11'}
     - {url: 'https://he.wikipedia.org/wiki/%D7%98%D7%99%D7%99%D7%A1%D7%AA_101', checked: '2026-10-11'}
     - {url: 'https://en.wikipedia.org/wiki/Supermarine_Spitfire_operational_history', checked: '2026-10-11'}
+    - {url: 'https://101squadron.com/101real/spitfires.html', checked: '2026-10-15'}
   anchors:
   - place: Ekron (RAF Aqir)
     lon: 34.82184
