@@ -14,10 +14,13 @@ office: defense_minister
 # the Provisional State Council on 23 June that there was no such agreement: both below; the Ministry of Education has
 # Rabin commanding the IDF force off Tel Aviv; the dispersal rests on en.wiki alone). Research notes section 2.
 # The window opens on 15 June 1948, the monthly turn date before the arrival (owner decision, 15 October 2026, Q-CUT-7:
-# "on 15 June", with the Kfar Vitkin clause dropped; #375). By then the government knew the ship was coming: on 15 June
-# Begin met government representatives, and Ben-Gurion's diary of 16 June has Galili and Eshkol meeting him "yesterday"
-# and the ship due "tomorrow or the next day" (en.wiki "Altalena Affair", below). The landing place is not in the text:
-# no source has it settled by 15 June.
+# "on 15 June", with the Kfar Vitkin clause dropped; #375). By then the government knew the ship was coming: the Etzel
+# account dates Begin's meeting with government representatives to 15 June, and quotes Ben-Gurion's diary of 16 June:
+# Galili and Eshkol met Begin "yesterday" and the ship is due "tomorrow or the next day" (Hebrew "מחר-מחרתיים", in the
+# Daat encyclopedia entry, below). Secondary sources only: he.wiki footnotes the entry to the Ben-Gurion Archives
+# (bengurionarchive.bgu.ac.il/node/14209), which did not load on 15 October 2026, and the printed War Diary (Rivlin and
+# Oren, 1982) was not checked. Ben-Tzur (palyam.org) and he.wiki put the meeting on the night of 16 June. The landing
+# place is not in the text: no source has it settled by 15 June.
 from: 1948-06-15
 to: 1948-06-23
 options:
@@ -38,10 +41,15 @@ options:
       # Arms landed for a private force while the first truce forbade bringing in war material (first_truce.yaml).
       - { target: intl_standing, delta: -0.02 }
 sources:
-  # Also the 15 June meeting and Ben-Gurion's diary of 16 June (the ship due within a day or two), for the window.
-  - { url: "https://en.wikipedia.org/wiki/Altalena_Affair", checked: 2026-10-15 }
+  # Also the 15 June meeting and Ben-Gurion's diary of 16 June, for the window: en.wiki gives no footnote for them, and its
+  # text matches the Etzel account below word for word.
+  - { url: "https://en.wikipedia.org/wiki/Altalena_affair", checked: 2026-10-15 }
   # The Irgun's own account (Etzel history): Begin's two requests, the fifth for Jerusalem and the rest for the IDF battalions.
-  - { url: "https://daat.ac.il/etzel/english/ac20.htm", checked: 2026-10-14 }
+  # Also, for the window: Begin's meeting with government representatives on 15 June, and Ben-Gurion's diary of 16 June.
+  - { url: "https://daat.ac.il/etzel/english/ac20.htm", checked: 2026-10-15 }
+  # The Daat encyclopedia's Altalena entry (Lapidot) quotes the diary of 16 June in Hebrew: "ישבו אתמול עם בייגין.
+  # מחר-מחרתיים צריכה להגיע אוניה שלהם" (they sat yesterday with Begin; tomorrow or the next day their ship is due).
+  - { url: "https://www.daat.ac.il/encyclopedia/value.asp?id1=1694", checked: 2026-10-15 }
   - { url: "https://www.jta.org/archive/hull-of-altalena-sunk-vessel-destroyed-in-1948-when-irgun-tried-to-land-munitions", checked: 2026-10-14 }
   # Provisional State Council, fifth sitting, 23 June 1948 (Knesset minutes). Ben-Gurion: on 1 June the Irgun's head
   # signed that its arms would go to the IDF; the Irgun refused to put the ship at the government's disposal; the
