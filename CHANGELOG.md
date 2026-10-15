@@ -449,6 +449,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   lines; that gap is read again after #519's grade). The surf zone widens from 900 m to 1.8 km, the breakers stand 450 m
   apart (300 m before) and the foam is whiter; a 200 m lace net, behind a new `foam` toggle, breaks each crest on its own
   and fades to the old mean at the overview. All of it is in the water's own pass; the terrain function is unchanged.
+- The hill olives are larger and fewer (visual gap L1, refs #34; owner, 15 October 2026: "~1.7x bigger, fewer
+  trees"): the olive clumps' trees off the coastal plain and the hill scatter's single olives are 1.7 times the size and
+  0.6 of them are kept, so their crowns match promo 03's hand-marked crown size at gameplay03 and cover about as much of
+  the hills, with fewer instances. The scrub, the plain's olives, the mesh, the colours and the cypress rows are unchanged.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,
