@@ -215,7 +215,8 @@ public class SchemaTests
     {
         var people = LoadSchema("people.schema.json");
         var keys = At(people, "/definitions/person/properties/biography_sources/properties").EnumerateObject().Select(p => p.Name);
-        Assert.Equal(new[] { "born", "died", "name_he" }, keys.OrderBy(k => k, StringComparer.Ordinal));   // ContentLoader.Validate allows these three
+        Assert.Equal(new[] { "born", "died", "name_he", "title_he_form" }, keys.OrderBy(k => k, StringComparer.Ordinal));   // ContentLoader.Validate allows these four
+        Assert.Equal(new[] { TitleHeForms.Feminine }, At(people, "/definitions/person/properties/title_he_form/enum").EnumerateArray().Select(x => x.GetString()!));
         var statuses = (HashSet<string>)typeof(ContentLoader).GetField("Statuses", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
         var inPeople = At(people, "/definitions/person/properties/status/enum").EnumerateArray().Select(x => x.GetString()!);
         var inEvent = At(LoadSchema("event.schema.json"), "/properties/status/enum").EnumerateArray().Select(x => x.GetString()!);
@@ -249,6 +250,14 @@ people:
     [Fact]
     public void AWrongFieldNameInPeopleFails() =>
         Assert.Contains(Errors("people.schema.json", GoodPerson.Replace("competence", "competance")), e => e.Contains("competance") && e.Contains("unknown field"));
+
+    [Fact]
+    public void TitleHeFormIsFeminineOrLeftOut()
+    {
+        var feminine = GoodPerson.Replace("    living: false\n", "    living: false\n    title_he_form: feminine\n");
+        Assert.Empty(Errors("people.schema.json", feminine));
+        Assert.NotEmpty(Errors("people.schema.json", feminine.Replace("feminine", "female")));
+    }
 
     [Fact]
     public void AWrongFieldNameInATermFails() =>

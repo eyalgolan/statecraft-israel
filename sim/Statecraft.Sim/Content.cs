@@ -70,6 +70,10 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool TitleHeFReviewGiven => titleHeFReview != null;
         string? titleHeFReview;
+        /// <summary>The Hebrew title to show for <paramref name="holder"/>: <see cref="TitleHeF"/> when the person's
+        /// <see cref="Person.TitleHeForm"/> is feminine (the loader makes sure every office such a person holds has one),
+        /// else <see cref="TitleHe"/>. Empty when the office has no Hebrew title (the UI then keeps the English).</summary>
+        public string TitleHeFor(Person? holder) => holder?.TitleHeForm == TitleHeForms.Feminine ? TitleHeF : TitleHe;
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
@@ -148,14 +152,28 @@ namespace Statecraft.Sim
         public double? FocusY { get; set; }
     }
 
+    /// <summary>The values of people.yaml's `title_he_form`.</summary>
+    public static class TitleHeForms
+    {
+        /// <summary>The person's Hebrew office titles take the feminine form, <see cref="Office.TitleHeF"/> (שרת העבודה).</summary>
+        public const string Feminine = "feminine";
+    }
+
     public sealed class Person
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string NameHe { get; set; } = "";
+        /// <summary>"feminine" when the person's Hebrew office titles take the feminine form (<see cref="Office.TitleHeF"/>),
+        /// sourced in biography_sources.title_he_form; empty (the key left out) for the masculine <see cref="Office.TitleHe"/>.
+        /// Display only: no rule reads it.</summary>
+        public string TitleHeForm { get => titleHeForm ?? ""; set => titleHeForm = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank form is an error, not the masculine.</summary>
+        [YamlIgnore] public bool TitleHeFormGiven => titleHeForm != null;
+        string? titleHeForm;
         /// <summary>Biographical birth date; optional until the sourced person data is complete.</summary>
         public DateTime? Born { get; set; }
-        /// <summary>Sources for each biography value (name_he, born, died), separate from dated office-term sources.</summary>
+        /// <summary>Sources for each biography value (name_he, title_he_form, born, died), separate from dated office-term sources.</summary>
         public Dictionary<string, List<Source>> BiographySources { get; set; } = new Dictionary<string, List<Source>>();
         /// <summary>Required (null only when missing, which is a load error): a living person is excluded from release builds.</summary>
         public bool? Living { get; set; }

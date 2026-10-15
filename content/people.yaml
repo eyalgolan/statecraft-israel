@@ -19,7 +19,11 @@
 # measured on each picture; the event card keeps it in view (playtest 2, P2-5). For people in office from 1948 to 1952,
 # the Hebrew name cites the Knesset's person record (KNS_Person) and birth and death dates cite the Knesset member pages
 # (Internet Archive copies, as the live pages return a bot challenge) or the President's Office pages. Wikipedia stays
-# only for a value those records do not give or give differently (issue #457).
+# only for a value those records do not give or give differently (issue #457). title_he_form: feminine marks a person
+# whose Hebrew office titles take the offices.yaml title_he_f (שרת העבודה), sourced like the other biography values; it
+# is left out for the masculine title_he. Every person in the Knesset's government position records for governments 0-7
+# (KNS_PersonToPosition) was checked against KNS_Person.GenderDesc on 2026-10-15: Golda Meir is the only woman. The
+# people outside those records (the Presidents and the Chiefs of Staff) are men.
 people:
   - id: ben_gurion
     name: David Ben-Gurion
@@ -559,10 +563,13 @@ people:
   - id: golda_meir
     name: Golda Meir
     name_he: גולדה מאיר
+    title_he_form: feminine
     born: 1898-05-03
     died: 1978-12-08
     biography_sources:
       name_he: [{ url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Person(2448)", checked: 2026-10-14 }]
+      # The same Knesset record gives GenderDesc נקבה (GenderID 250).
+      title_he_form: [{ url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Person(2448)", checked: 2026-10-15 }]
       born: &golda_meir_bio [{ url: "https://web.archive.org/web/20170930230625/http://www.knesset.gov.il:80/mk/heb/mk.asp?mk_individual_id_t=685", checked: 2026-10-14 }]
       died: *golda_meir_bio
     living: false

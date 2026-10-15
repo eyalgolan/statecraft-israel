@@ -21,6 +21,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Q-CUT-8). Every golden moves; the cutover re-pins them once.
 
 ### Added
+- `title_he_form: feminine` in `people.yaml` (refs #558): a person so marked takes the offices' feminine Hebrew title
+  (`title_he_f`, שרת העבודה) through `Office.TitleHeFor`, sourced in `biography_sources.title_he_form`. The loader
+  refuses any other value, a blank, a missing source, and a marked person holding an office without `title_he_f`.
+  Golda Meir is marked; she is the only woman in the Knesset's government position records for 1948-1956 (KNS_Person,
+  checked 15 October 2026). Display only: no golden moves.
 - A person's sign-off beside a status (refs #375, #564, #611; owner, 15 October 2026: "Yes, humans only"): every status
   row takes `reviewed_by` (the reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither.
   The sim's loader, the map's readers (localities, the 1945 populations, units) and `tools/routes_1948.py` refuse a

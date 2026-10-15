@@ -32,6 +32,7 @@
         "id": { "$ref": "#/definitions/id", "description": "Unique across people." },
         "name": { "type": "string", "minLength": 1 },
         "name_he": { "type": "string" },
+        "title_he_form": { "enum": ["feminine"], "description": "feminine: the person's Hebrew office titles take the offices' title_he_f (שרת העבודה). Leave out for the masculine title_he. Source it in biography_sources.title_he_form." },
         "born": { "$ref": "#/definitions/date" },
         "died": { "$ref": "#/definitions/date", "description": "Every office term must end by this day." },
         "biography_sources": {
@@ -40,6 +41,7 @@
           "additionalProperties": false,
           "properties": {
             "name_he": { "$ref": "#/definitions/sources" },
+            "title_he_form": { "$ref": "#/definitions/sources" },
             "born": { "$ref": "#/definitions/sources" },
             "died": { "$ref": "#/definitions/sources" }
           }

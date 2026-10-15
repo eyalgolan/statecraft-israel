@@ -225,6 +225,28 @@ namespace Statecraft.Sim
             if (!SaveText.IsEncodable(s)) throw new ContentException(file, field, "must be valid text (no lone surrogate)");
         }
 
+        /// <summary>A person's title_he_form: left out, or feminine with its source; and then every office the person holds
+        /// has a feminine title_he_f, so the UI never falls back to the masculine title for her.</summary>
+        static void TitleHeForm(Content c, Person p)
+        {
+            var at = $"people[{p.Id}].title_he_form";
+            var sourced = p.BiographySources.ContainsKey("title_he_form");
+            if (!p.TitleHeFormGiven)
+            {
+                if (sourced) throw new ContentException("people.yaml", at, "required: biography_sources.title_he_form is set but title_he_form is not");
+                return;
+            }
+            if (p.TitleHeForm != TitleHeForms.Feminine)
+                throw new ContentException("people.yaml", at, $"must be {TitleHeForms.Feminine}, or left out for the masculine title_he");
+            if (!sourced) throw new ContentException("people.yaml", $"people[{p.Id}].biography_sources.title_he_form", "required: a feminine title_he_form needs a source (url and checked)");
+            foreach (var t in p.Offices)
+            {
+                var o = c.Offices.FirstOrDefault(x => x.Id == t.Office);
+                if (o != null && o.TitleHeF == "")
+                    throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_f", $"required: {p.Id} holds this office and has title_he_form: {TitleHeForms.Feminine}");
+            }
+        }
+
         /// <summary>A Hebrew display name (#558): when set it holds Hebrew letters and has at least one source, each an https URL
         /// with its checked date; sources without a name are an error. Empty means no sourced Hebrew name (the UI keeps the English).</summary>
         static void HebrewName(string file, string at, string key, string value, List<Source> sources, string review, bool reviewGiven)
@@ -683,13 +705,14 @@ namespace Statecraft.Sim
                 foreach (var kv in p.BiographySources)
                 {
                     var field = $"people[{p.Id}].biography_sources.{kv.Key}";
-                    if (kv.Key != "name_he" && kv.Key != "born" && kv.Key != "died")
-                        throw new ContentException("people.yaml", field, "unknown field (must be name_he, born or died)");
+                    if (kv.Key != "name_he" && kv.Key != "title_he_form" && kv.Key != "born" && kv.Key != "died")
+                        throw new ContentException("people.yaml", field, "unknown field (must be name_he, title_he_form, born or died)");
                     if (kv.Value == null) throw new ContentException("people.yaml", field, "must be a list");
                     for (int i = 0; i < kv.Value.Count; i++)
                         if (kv.Value[i] == null || string.IsNullOrWhiteSpace(kv.Value[i].Url) || kv.Value[i].Checked == default)
                             throw new ContentException("people.yaml", FormattableString.Invariant($"{field}[{i}]"), "needs a url and a checked date");
                 }
+                TitleHeForm(c, p);
                 foreach (var t in p.Offices)
                 {
                     if (string.IsNullOrEmpty(t.Office)) throw new ContentException("people.yaml", $"people[{p.Id}].offices", "office term without an office");
