@@ -139,12 +139,14 @@ public class PromoHudTests
         // (window, icons, stacked changes, two rows, three rows): 16:9 fullscreen; a 16:9 window; a 16:10 MacBook browser
         // (~1911 logical); 21:9 ultrawide (~2217); 16:10 fullscreen (~1821) keeps the icons on the stacked bar; 4:3 and 5:4
         // drop them; square and narrower wrap; a phone upright (390x844, ~790) takes three rows (#398).
+        // HUD round 2 moved the four screen buttons to the left column (#602), so the bar holds about 248 px less and every
+        // tier starts that much narrower (part 3): 16:10 and 4:3 now keep the one-row bar with its icons.
         foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, false, false, false),
                                                               (1366, 768, true, false, false, false), (1760, 1000, true, false, false, false),
                                                               (2560, 1080, true, false, false, false),
-                                                              (1920, 1200, true, true, false, false), (1440, 900, true, true, false, false),
-                                                              (1024, 768, false, true, false, false), (1280, 1024, false, true, false, false),
-                                                              (1024, 1024, false, true, true, false), (960, 1080, false, true, true, false),
+                                                              (1920, 1200, true, false, false, false), (1440, 900, true, false, false, false),
+                                                              (1024, 768, true, false, false, false), (1280, 1024, true, true, false, false),
+                                                              (1024, 1024, false, true, false, false), (960, 1080, false, true, true, false),
                                                               (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
         {
             var rt = new RenderTexture(w, h, 0);
@@ -232,14 +234,16 @@ public class PromoHudTests
                 var used = meters[meters.Count - 1].worldBound.xMax - meters[0].worldBound.xMin;
                 var limit = twoRow ? barRect.xMax - 14f : root.Q("nav").worldBound.xMin;
                 Assert.GreaterOrEqual(limit - meters[meters.Count - 1].worldBound.xMax, 0.05f * used, $"{where}: the meters use {used:0} of {limit - meters[0].worldBound.xMin:0} px");
-                // Review P2: every screen button's caption fits its button.
-                foreach (var nb in root.Q("nav").Query<Button>().ToList())
+                // Review P2: every screen button's caption fits its button (an icon-only button draws no caption: part 3).
+                foreach (var nb in root.Q("nav").Query<Button>().ToList().Where(b => b.resolvedStyle.color.a > 0.01f))
                 {
                     var natural = nb.MeasureTextSize(nb.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
                     Assert.LessOrEqual(natural.x, nb.contentRect.width + 0.5f, $"{where}: the caption '{nb.text}' ({natural.x:0} px) overflows its button ({nb.contentRect.width:0} px)");
                 }
-                foreach (var e in new[] { root.Q("nav"), root.Q(className: "turn-box"), badge })
+                foreach (var e in new[] { root.Q("nav"), root.Q(className: "turn-box") })
                     Assert.LessOrEqual(e.worldBound.yMax, barRect.yMax + 0.5f, $"{where}: {e.name}{string.Join(".", e.GetClasses())} leaves the bar");
+                // The date plate may hang below the one-row bar, as promo 03's does (part 3), but never past the panels under it.
+                Assert.LessOrEqual(badge.worldBound.yMax, root.Q("left-column").worldBound.yMin, $"{where}: the plate {badge.worldBound} reaches the left column");
                 Assert.GreaterOrEqual(root.Q("right-column").worldBound.yMin, barRect.yMax, where + ": the minimap column starts under the bar");
                 var screen = root.Q("screen-why");
                 screen.style.display = DisplayStyle.Flex;                // opened, as ScreenNav does

@@ -52,9 +52,9 @@
                 <ui:VisualElement name="meter-security" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="shield" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
-                        <ui:Label text="Security" class="meter-name" />
+                        <!-- The level beside the caption (HUD round 2, part 3): the bar keeps two lines, as promo 03's meters do. -->
+                        <ui:VisualElement class="meter-caption-row"><ui:Label text="Security" class="meter-name" /><ui:Label name="security-level" class="meter-name" /></ui:VisualElement>
                         <ui:VisualElement class="meter-row"><ui:Label name="security-value" class="meter-value" /><ui:Label name="security-delta" class="meter-delta" /></ui:VisualElement>
-                        <ui:Label name="security-level" class="meter-name" />
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-support" class="meter">
@@ -80,7 +80,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="nav" class="nav">
-                <ui:Button name="new-game" text="New game" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
+                <ui:Button name="new-game" text="New game" class="nav-button bar-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
             </ui:VisualElement>
             <ui:VisualElement class="turn-box">
                 <ui:Label name="attention" class="muted" />

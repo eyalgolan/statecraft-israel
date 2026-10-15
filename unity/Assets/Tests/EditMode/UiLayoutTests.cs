@@ -280,9 +280,13 @@ public class UiLayoutTests
                 Assert.GreaterOrEqual(bar.yMin, -0.5f, $"{w}x{h}: the top bar starts above the window");
                 var labels = root.Q("top-bar").Query<Label>().ToList().Where(l => !string.IsNullOrEmpty(l.text)).ToList();
                 Assert.Greater(labels.Count, 10, "the HUD filled the bar");
+                // The date plate hangs below the one-row bar, as promo 03's does (HUD round 2, part 3): its lines stay in the plate.
+                var plate = root.Q(className: "date-box").worldBound;
+                Assert.IsTrue(Inside(plate, root.worldBound), $"{w}x{h}: the plate {plate} leaves the window");
                 foreach (var l in labels)
                 {
-                    Assert.IsTrue(Inside(l.worldBound, bar), $"{w}x{h}: '{l.text}' {l.worldBound} is outside the top bar {bar}");
+                    bool inPlate = l.GetFirstAncestorOfType<VisualElement>() != null && root.Q(className: "date-box").Contains(l);
+                    Assert.IsTrue(Inside(l.worldBound, inPlate ? plate : bar), $"{w}x{h}: '{l.text}' {l.worldBound} is outside the {(inPlate ? "plate " + plate : "top bar " + bar)}");
                     Assert.GreaterOrEqual(l.worldBound.yMin, bar.yMin + 2f, $"{w}x{h}: '{l.text}' sits flush against the top edge");
                 }
                 foreach (var name in new[] { "event-card", "screen-cabinet", "screen-budget", "screen-defence", "screen-why", "toast" })
@@ -337,7 +341,7 @@ public class UiLayoutTests
                     var inset = new TopBarInset(root, rig);
                     var bar = root.Q("top-bar").worldBound.height;
                     var screen = root.panel.visualTree.worldBound.height;
-                    Assert.Greater(bar, 90f, $"{w}x{h}: the bar is laid out");
+                    Assert.Greater(bar, 60f, $"{w}x{h}: the bar is laid out (70 px one-row since HUD round 2, part 3)");
                     Assert.AreEqual(bar / screen, rig.TopInset, 1e-3f, $"{w}x{h}: the inset is the bar's share of the window");
                     inset.Dispose();
                     Assert.AreEqual(0f, rig.TopInset, $"{w}x{h}: disposing gives the screen back");
@@ -396,8 +400,14 @@ public class UiLayoutTests
                 Rect R(VisualElement e) => e.worldBound;
                 bool Inside(Rect inner, Rect outer) => inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
                 var bar = root.Q("top-bar");
+                var plate = root.Q(className: "date-box");   // hangs below the one-row bar, as promo 03's (HUD round 2, part 3)
+                if (!Inside(R(plate), R(root))) problems.Add($"{w}x{h}: the plate {R(plate)} leaves the window");
                 foreach (var l in bar.Query<VisualElement>().ToList().Where(e => e != bar && e.resolvedStyle.display == DisplayStyle.Flex))
-                    if (!Inside(R(l), R(bar))) problems.Add($"{w}x{h}: top bar child {l.name}/{(l as Label)?.text ?? l.GetClasses().FirstOrDefault()} {R(l)} leaves the bar {R(bar)}");
+                {
+                    var holder = l == plate || plate.Contains(l) ? (l == plate ? bar : plate) : bar;
+                    if (l == plate) continue;
+                    if (!Inside(R(l), R(holder))) problems.Add($"{w}x{h}: top bar child {l.name}/{(l as Label)?.text ?? l.GetClasses().FirstOrDefault()} {R(l)} leaves the {(holder == plate ? "plate" : "bar")} {R(holder)}");
+                }
                 var card = root.Q("event-card");
                 if (!Inside(R(card), R(root.Q("event-layer")))) problems.Add($"{w}x{h}: event card {R(card)} leaves the decision layer {R(root.Q("event-layer"))}");
                 if (R(card).yMin < R(bar).yMax - 0.5f) problems.Add($"{w}x{h}: event card {R(card)} starts over the top bar {R(bar)}");

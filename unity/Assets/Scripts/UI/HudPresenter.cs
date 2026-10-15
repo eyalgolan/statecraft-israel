@@ -25,17 +25,17 @@ namespace Statecraft.Game.UI
         /// <summary>Below this width the HUD's root gets NarrowClass: a taller bar (124 px) whose meters stack the change under
         /// the value, and the panels below it move down to match (Statecraft.uss .hud-narrow). Above it, six values and their
         /// changes fit side by side with the icons.</summary>
-        public const float NarrowBelowPx = 1860f;
+        public const float NarrowBelowPx = 1612f;
         public const string NarrowClass = "hud-narrow";
         /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): 16:10 keeps them on the
         /// stacked bar; 4:3 and 5:4 do not have the room.</summary>
-        public const float CompactBelowPx = 1700f;
+        public const float CompactBelowPx = 1452f;
         public const string CompactClass = "top-bar--compact";
         /// <summary>Below this width (windows narrower than about square, e.g. a browser snapped to half a 1080p screen, about
         /// 1360 logical px) one row cannot hold the badge, six meters, the screen buttons and End Turn: the root also gets
         /// TwoRowClass, and the bar wraps into two rows, the date and the meters above, the screen buttons and End Turn
         /// below (Statecraft.uss .hud-two-row).</summary>
-        public const float TwoRowBelowPx = 1500f;
+        public const float TwoRowBelowPx = 1370f;
         public const string TwoRowClass = "hud-two-row";
         /// <summary>Below this width (a phone held upright: 390x844 is about 790 logical px) the badge and six meters do not
         /// fit one row either: the root also gets ThreeRowClass, and the bar takes three rows, the badge, the meters, then the
@@ -65,7 +65,7 @@ namespace Statecraft.Game.UI
 
         /// <summary>The left icon column (promo 03): the four screens' buttons.</summary>
         public const string RailName = "left-column";
-        readonly HoverTip? railTips;
+        readonly HoverTip? railTips, barTips;
 
         public HudPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
@@ -86,6 +86,15 @@ namespace Statecraft.Game.UI
             var rail = root.Q<VisualElement>(RailName)?.Query<Button>().ToList() ?? new List<Button>();
             foreach (var b in rail) b.tooltip = b.text;
             if (rail.Count > 0 && root.Q<Label>(HoverTip.TipName) != null) railTips = new HoverTip(root, rail, () => HoverTip.Side.Right);
+            // New Game in the bar is icon-only too (HUD round 2, part 3); its tip opens toward the bar's middle: left of it,
+            // or right of it in the mirrored Hebrew bar.
+            var newGame = root.Q<Button>("new-game");
+            if (newGame != null)
+            {
+                newGame.tooltip = newGame.text;
+                if (root.Q<Label>(HoverTip.TipName) != null)
+                    barTips = new HoverTip(root, new[] { newGame }, () => hudRoot.ClassListContains(UiLanguage.HebrewClass) ? HoverTip.Side.Right : HoverTip.Side.Left);
+            }
             foreach (var id in new[] { "treasury", "immigration", "security", "support", "standing", "fx" })
             {
                 var meter = root.Q<VisualElement>("meter-" + id); var caption = text["hud.caption." + id];
@@ -100,7 +109,7 @@ namespace Statecraft.Game.UI
         /// <summary>Unsubscribes from the bridge and the button (the owner calls this when it is disabled).</summary>
         public void Dispose()
         {
-            railTips?.Dispose();
+            railTips?.Dispose(); barTips?.Dispose();
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
