@@ -7,11 +7,14 @@ sourced facts, the conflicts and the gaps. It builds on the
 [corridors note](GDD%20phase%204/corridors-1948-51.md) (2026-10-13), whose findings it does not repeat except where a
 source read today changes or confirms them.
 
+See also Agam's parallel note ([#612](https://github.com/eyalgolan/statecraft-israel/pull/612), `research_notes/GDD phase 4/phase4-corridors-camps-sourcing.md`) for the press scans and the Hula criterion-4 check.
+
 ## How to read this note
 
 - **[V]** I read the claim on the page or scan named, on 2026-10-15. **[S]** the claim is from a Wikipedia article
   (revision given), not checked against the source the article cites; the cited source is named so a fact-checker can
   go to it. **[P]** the claim rests on another person's reading of a page I could not open (named each time).
+  **[V: Agam, #612]** read on the newspaper scan by Agam for #612, not by me; that note's row is cited.
   **[C]** sources disagree. **[U]** one weak source, or the claim could not be checked. **[G]** gap: no source found.
 - Every source was checked on **2026-10-15** unless a row says otherwise.
 - **Coordinates** are the point the place's Wikipedia article gives (API `prop=coordinates`, read 2026-10-15), rounded
@@ -118,20 +121,21 @@ city. #570's unit anchors were not opened for this note.
 | Date | Event | Source | Mark |
 |---|---|---|---|
 | summer 1949 | Israel Railways laid two new sections of track: one bypassing Tulkarm station, which stayed in Jordanian hands, restoring continuous rail traffic between Haifa and the centre; the other joining the Rosh HaAyin-Petah Tikva line to the old Tel Aviv North station (today Bnei Brak station, by the Ramat Gan stadium) | Israel Railways, *50 Years of Israel Railways* (Hebrew booklet, September 1998), p. 15 | [V] |
-| 4 August 1949 | "Train traffic to Haifa in September; the section bypassing Tulkarm completed" (headline) | *Haaretz*, 4 August 1949, cited by HE Coastal | [S] |
+| 4 August 1949 | "Train traffic to Haifa in September; the section bypassing Tulkarm completed" (headline) | *Haaretz*, 4 August 1949, https://www.nli.org.il/he/newspapers/haretz/1949/08/04/01/article/12 ; cited by HE Coastal; headline read on the scan in #612 (its section on the rail link, row "The bypass was completed by 4 August 1949") | [V: Agam, #612] |
 | 4 August 1949 | "On the 21st of the month the freight train service will be renewed" (headline), i.e. 21 August 1949 | *Al HaMishmar*, 4 August 1949, cited by HE IR | [S] |
 | August 1949 or August 1948 | The bypass laid | HE Tulkarm station gives **August 1949**, citing Cotterell 1984, p. 86; EN PR gives **August 1948**, citing the same page | **[C]** on Cotterell's page; 1949 is supported by the booklet [V], *Israel, 1954* and *Railway World* 1973 (corridors note, Corroboration row 5) |
 | 12 September 1949 | "The new railway station in north Tel Aviv will be finished this month" (headline) | *Haaretz*, 12 September 1949, cited by HE Bnei Brak station | [S] |
 | 14 September 1949 | The Haifa-Tel Aviv line to open to passengers on the 20th: four trains a day, about 2¼ hours, by the existing track to Rosh HaAyin and the new line to the new station by the Yarkon bridge | *Haboker*, 14 September 1949, https://www.nli.org.il/he/newspapers/hbkr/1949/09/14/01/article/70 | [P] Agam, #384 |
 | **20 September 1949** | Regular passenger service Haifa-Binyamina-Hadera East-Rosh HaAyin-Tel Aviv North; 2 hours 20 minutes; at Rosh HaAyin the engine moved from the southern to the northern end of the train (HE Yarkon [S]: there was no direct connection from the branch to the line north) | Israel Railways 1998 booklet, p. 15 | [V] |
-| 20 September 1949 | Same day: "The railway along the lowland inaugurated" (headline) | *Maariv*, 20 September 1949, p. 1, https://www.nli.org.il/he/newspapers/mar/1949/09/20/01/article/1 , cited by HE Bnei Brak station and HE Tulkarm station | [S] |
+| 20 September 1949 | Same day: "The railway along the lowland inaugurated" (headline) | *Maariv*, 20 September 1949, p. 1, https://www.nli.org.il/he/newspapers/mar/1949/09/20/01/article/1 , cited by HE Bnei Brak station and HE Tulkarm station; headline read on the scan in #612 (its row "The line opened 20 September 1949") | [V: Agam, #612] |
 | 21 September 1949 | Service on the shortened Tel Aviv-Haifa line opened (headline); a first-train report says the line ran tens to hundreds of metres from the border near Qalqilya and Tulkarm, and that about 2 km of track by Tulkarm station stayed under Jordan | *Al HaMishmar*, 21 September 1949, https://www.nli.org.il/he/newspapers/ahr/1949/09/21/01/article/11 ; *Davar*, 21 September 1949 (S. Zarhi); *HaTzofe*, 21 September 1949; cited by HE Eastern and HE IR | [S] |
 | 22 September 1949 | First-days report: about 100 passengers on the first train from Tel Aviv, about 200 from Haifa | *Maariv*, 22 September 1949, https://www.nli.org.il/he/newspapers/mar/1949/09/22/01/article/21 | [P] Agam, #384 |
 | 1949 | The Haifa-Tel Aviv line reopened, shortened by new sections, "including one skirting a salient on the Jordan frontier" | *Israel, 1954* (corridors note, Corroboration row 2) | [V on 2026-10-13, not re-read] |
 
 **Verdict on the day.** 20 September 1949 is confirmed by Israel Railways' own history [V] and by Agam's reading of
 *Haboker* (14 September, the announcement) and *Maariv* (22 September, the first days) [P]. I could not open either
-paper. Three more same-week papers are cited by Wikipedia [S]. Nothing read contradicts the day.
+paper. *Maariv* of 20 September 1949 (p. 1) is read on the scan in #612 [V: Agam, #612]; three more same-week papers are
+cited by Wikipedia [S]. Nothing read contradicts the day.
 
 ### The Tulkarm bypass
 
@@ -143,7 +147,7 @@ paper. Three more same-week papers are cited by Wikipedia [S]. Nothing read cont
 - **What brackets it (not its line).** The old Eastern Railway's stations nearest Tulkarm that stayed in use after 1949
   were Ahituv (Qaqun) to the north and Eyal to the south (HE Eastern [S]). Tulkarm station itself was cut off. These are
   reference points only; the bypass's ends lay somewhere between them, and no source says where.
-- **Construction dates:** summer 1949 [V, booklet]; finished by 4 August 1949 [S, *Haaretz*]; freight from 21 August
+- **Construction dates:** summer 1949 [V, booklet]; finished by 4 August 1949 [V: Agam, #612, *Haaretz*]; freight from 21 August
   1949 [S, *Al HaMishmar* headline, not read]. The work start is not given [G]. The armistice with Jordan was signed on 3
   April 1949, so the work came after it (corridors note, R1).
 - **Opening:** freight about 21 August 1949 [S]; passengers 20 September 1949 [V].
@@ -272,8 +276,9 @@ HaGai; corridors note, D3).
 
 1. **No Hebrew newspaper was read by me.** The NLI site refused scripted access (HTTP 403). Every *Haboker*, *Maariv*,
    *Hayom*, *Haaretz*, *Davar*, *Al HaMishmar* and *HaTzofe* item above is [P] (Agam's browser read on #384, with his
-   caveat that JPress OCR is automatic) or [S] (a Wikipedia citation). A human should open each linked page before a
-   value is `fact-checked`.
+   caveat that JPress OCR is automatic), [V: Agam, #612] (*Haaretz* of 4 August 1949 and *Maariv* of 20 September 1949,
+   read on the scans for #612) or [S] (a Wikipedia citation). A human should open each linked page before a value is
+   `fact-checked`.
 2. **Tulkarm bypass alignment** [G]: no source gives it. Cotterell 1984 (p. 86) is unread and is cited for both August
    1948 (EN PR) and August 1949 (HE Tulkarm station) [C].
 3. **Where the Yarkon link left the Petah Tikva branch** [G], and whether today's line is the 1949 line [U].
