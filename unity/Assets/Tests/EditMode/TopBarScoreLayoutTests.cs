@@ -36,8 +36,15 @@ public class TopBarScoreLayoutTests
         inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
 
     /// <summary>The label's text, measured on one line, fits its own box.</summary>
-    static bool Whole(TextElement l) =>
-        l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x <= l.contentRect.width + 1f;
+    /// <summary>The label's text is not clipped: on one line, or (with #624's text floor, which lets the plate's date wrap at
+    /// the largest sizes) wrapped within its box's height.</summary>
+    static bool Whole(TextElement l)
+    {
+        var box = l.contentRect;
+        if (l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x <= box.width + 1f) return true;
+        if (l.resolvedStyle.whiteSpace != WhiteSpace.Normal) return false;
+        return l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined).y <= box.height + 1f;
+    }
 
     static bool Apart(Rect a, Rect b) => !Rect.MinMaxRect(a.xMin + 0.5f, a.yMin + 0.5f, a.xMax - 0.5f, a.yMax - 0.5f).Overlaps(b);
 

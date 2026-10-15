@@ -361,8 +361,8 @@ public class TopBarTests
         }, widest: false);
     }
 
-    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level and
-    /// the attention line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, in
+    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level,
+    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, in
     /// both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window, so on screen is the
     /// font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
     /// collides at these sizes.)</summary>
@@ -379,8 +379,9 @@ public class TopBarTests
                     var bar = root.Q("top-bar");
                     var labels = bar.Query<Label>(className: "meter-name").ToList();
                     labels.Add(root.Q<Label>("attention"));   // the captions' query also holds security-level (class meter-name)
+                    labels.Add(root.Q<Label>("turn")); labels.Add(root.Q<Label>("date"));   // the plate's date line
                     labels = labels.Distinct().ToList();
-                    if (labels.Count != 8) problems.Add($"{at}: precondition: 8 small labels, found {labels.Count}");
+                    if (labels.Count != 10) problems.Add($"{at}: precondition: 10 small labels, found {labels.Count}");
                     foreach (var l in labels)
                     {
                         if (string.IsNullOrEmpty(l.text) || !(l.worldBound.height > 0)) { problems.Add($"{at}: precondition: {l.name} '{l.text}' shows"); continue; }

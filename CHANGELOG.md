@@ -78,7 +78,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   round icon named in a tip, and a smaller End Turn. With the screen buttons in the left column (#602) the bar needs about
   248 px less, so 16:10 and 4:3 windows keep the one-row bar, and 5:4 the stacked bar with its icons. The decision card's
   backdrop reaches up to the bar at every tier, so no strip of map stays live under a card. The bar's small text (captions,
-  Security's level, the attention line) stays at least 12 px on screen at small windows, the owner's floor: it is set
+  Security's level, the attention line, the plate's turn and date) stays at least 12 px on screen at small windows, the owner's floor: it is set
   larger as the panel scales down, and the bar takes a taller tier when it needs the room. Presentation only: no golden
   moves.
 - The left icon column (HUD round 2, part 2, refs #398): the four screens' buttons (Cabinet, Budget, Defence, Why?) move

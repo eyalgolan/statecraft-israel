@@ -80,6 +80,11 @@ namespace Statecraft.Game.UI
             screenPxPerPanelPx > 0f ? UnityEngine.Mathf.Max(SmallTextPx, UnityEngine.Mathf.Ceil(TextFloorPx / screenPxPerPanelPx - 0.01f)) : SmallTextPx;
 
         readonly List<Label> smallText;
+        /// <summary>The plate's turn and date line (Statecraft.uss .date-row Label, 15 px): raised with the bar's small text (the
+        /// owner's second answer, 15 October 2026). The plate keeps its width; the turn and the date take a line each, and the
+        /// plate grows.</summary>
+        readonly List<Label> plateText;
+        readonly VisualElement? dateRow;
         readonly VisualElement turnBox;
         readonly IVisualElementScheduledItem floorCheck;
         float smallTextSize = SmallTextPx;
@@ -127,6 +132,8 @@ namespace Statecraft.Game.UI
             smallText = bar.Query<Label>(className: "meter-name").ToList();   // the six captions and Security's level
             smallText.Add(root.Q<Label>("attention"));
             turnBox = bar.Q<VisualElement>(className: "turn-box");
+            dateRow = bar.Q<VisualElement>(className: "date-row");
+            plateText = dateRow?.Query<Label>().ToList() ?? new List<Label>();
             ApplyTextFloor();
             floorCheck = root.schedule.Execute(ApplyTextFloor).Every(500);
             SetCompact(bar.layout.width);   // the bar may already be laid out (the loading screen shows it) and never resize
@@ -141,6 +148,8 @@ namespace Statecraft.Game.UI
             floorCheck.Pause();
             foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
             turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
+            foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
+            if (dateRow != null) dateRow.style.flexDirection = StyleKeyword.Null;
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
@@ -194,7 +203,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Whether the floor raises the text at this bar width. Not on the three-row bar (a phone held upright, about
-        /// 0.49 scale): its fixed rows have no room for 25 px captions, so it keeps the stylesheet's size (an owner question).</summary>
+        /// 0.49 scale): its fixed rows have no room for 25 px captions, so it keeps the stylesheet's size (a follow-up, by the owner's answer).</summary>
         bool FloorRaises(float width) => smallTextSize > SmallTextPx && !(width < ThreeRowBelowPx);
 
         /// <summary>The room the raised text takes beyond what the tiers were set for (the 15 px captions, wrapped at their 120 px
@@ -232,6 +241,14 @@ namespace Statecraft.Game.UI
                 l.style.whiteSpace = oneLine ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
                 l.style.maxWidth = oneLine ? new StyleLength(StyleKeyword.None) : new StyleLength(StyleKeyword.Null);
             }
+            foreach (var l in plateText)
+            {
+                l.style.fontSize = raised ? new StyleLength(smallTextSize) : new StyleLength(StyleKeyword.Null);
+                // At the largest sizes (23 px at 960x600) "30 September 1956" is about the plate's width: it may wrap inside it.
+                l.style.whiteSpace = raised ? new StyleEnum<WhiteSpace>(WhiteSpace.Normal) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
+            }
+            // Raised, the turn and the date take a line each (a raised date squeezed beside the turn was clipped in Hebrew).
+            if (dateRow != null) dateRow.style.flexDirection = raised ? new StyleEnum<FlexDirection>(FlexDirection.Column) : new StyleEnum<FlexDirection>(StyleKeyword.Null);
             var box = TurnBoxPx * smallTextSize / SmallTextPx;
             turnBox.style.width = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
             turnBox.style.minWidth = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
