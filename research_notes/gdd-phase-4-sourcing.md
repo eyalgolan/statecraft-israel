@@ -7,7 +7,7 @@ sourced facts, the conflicts and the gaps. It builds on the
 [corridors note](GDD%20phase%204/corridors-1948-51.md) (2026-10-13), whose findings it does not repeat except where a
 source read today changes or confirms them.
 
-See also Agam's parallel note ([#612](https://github.com/eyalgolan/statecraft-israel/pull/612), `research_notes/GDD phase 4/phase4-corridors-camps-sourcing.md`) for the press scans and the Hula criterion-4 check.
+See also Agam's parallel note ([#612](https://github.com/eyalgolan/statecraft-israel/pull/612), [research_notes/GDD phase 4/phase4-corridors-camps-sourcing.md](GDD%20phase%204/phase4-corridors-camps-sourcing.md)) for the press scans and the Hula criterion-4 check.
 
 ## How to read this note
 
@@ -35,8 +35,8 @@ See also Agam's parallel note ([#612](https://github.com/eyalgolan/statecraft-is
    **Camp Dora** by Netanya (the infantry school, Bahad 3, from 1948; its intelligence school from September 1948; the
    officers' school next door from January 1949); **Tzrifin** by Rishon LeZion (an IDF camp from 18-19 May 1948, the
    national training base from 1949); **Sirkin** by Petah Tikva (the flying school from 20 October 1949). For Jerusalem,
-   **Schneller** is a sourced base held from 17 March 1948 (before the game starts), so whether it counts is an owner
-   question; its training role is [U]. For Haifa, Tiberias, Safed, Rosh Pinna, Rehovot and Zikhron Ya'akov I found **no**
+   **Schneller** is a sourced base held from 17 March 1948 (before the game starts); by the owner's ruling of 15 October
+   2026 (#375), Jerusalem starts with a camp, so it is not a site to build. Its training role is [U]. For Haifa, Tiberias, Safed, Rosh Pinna, Rehovot and Zikhron Ya'akov I found **no**
    training base with a sourced place and date in the window [G].
 2. **Q-RAIL-1: both new segments and the day are confirmed by Israel Railways' own history [V]; the bypass's
    alignment is not given by any source [G].** Israel Railways' 1998 booklet says that in the summer of 1949 it laid two
@@ -86,16 +86,17 @@ held the officers' school. C3 and C4 were IDF schools and training bases (`milit
 recruits; whether it counts as a "military camp" for the recruit track is the owner's call. Which kind each site gets,
 and whether an air base counts, is Q-CAMP-3 and Q-SENS-1 territory.
 
-### Jerusalem: Schneller, a sourced base held before the start (owner question)
+### Jerusalem: Schneller, a sourced base held before the start (decided: the city starts with a camp)
 
 | Site | Point (lat, lon) | Nearest MVP city | Date | What it was | Mark |
 |---|---|---|---|---|---|
 | Schneller camp (the Schneller orphanage compound, מחנה שנלר) | 31.7908, 35.2127 [S, HE Schneller] | Jerusalem 1.8 km | **17 March 1948**: the British evacuated the camp and handed it to the Etzioni Brigade, the Haganah's Jerusalem district force; it was then called "permanent camp no. 1" and served as an army base for 60 years | [S] HE Schneller [43121200] (cited: Rachel Yanait, Yitzhak Avrahami and Yerah Etzion, *HaHagana BeYerushalayim*, vol. 2, Jerusalem, 5735 (1974-75), pp. 96, 98; not read). **Training role [U]:** Arutz 7, 26 November 2008 (https://www.inn.co.il/news/182116, read 2026-10-15), says the camp served "among other things as a training camp of the Etzioni Brigade", with no date for that use |
 
-**Owner question:** Schneller (from 17 March 1948) and Tel HaShomer (from 15 April 1948, below) were both held before
-15 May 1948. Q-CAMP-2 asks for bases near cities with no camp at the start. It does not say whether a camp already held
-before the start counts as one the player builds or as a facility the city already has. This note excluded Tel HaShomer
-on that ground; the same rule decides Schneller. Which way it goes is the owner's call, and it decides both sites.
+**Decided (owner, 15 October 2026, #375):** Schneller (from 17 March 1948) and Tel HaShomer (from 15 April 1948, below)
+were both held before 15 May 1948. The question was whether a camp already held before the start counts as one the
+player builds or as a facility the city already has. The owner chose "City already has a camp": Jerusalem (Schneller)
+and Petah Tikva (Tel HaShomer) start with a camp, and the player does not build one there
+(https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6184550836).
 
 Agam's parallel research (#612) raised Schneller and the Tzrifin prisoner-of-war camp; both rows above cite their
 sources directly.
@@ -104,9 +105,9 @@ sources directly.
 
 | Candidate | Why not | Source |
 |---|---|---|
-| Tel HaShomer (Camp Tel Litvinsky, today Camp Dori), 32.0434, 34.8573; Petah Tikva 5.8 km | Taken by the Alexandroni Brigade on 15 April 1948 (before the game starts; see the owner question above). The women's training base (Bahad 12) was set up there "in the early 1950s"; its infobox says 1950, with no month and no citation | [S] HE Tel HaShomer camp (cited: *HaBoker*, *Kol HaAm*, *Davar*, 16 April 1948); [S] HE Bahad 12 [U] |
+| Tel HaShomer (Camp Tel Litvinsky, today Camp Dori), 32.0434, 34.8573; Petah Tikva 5.8 km | Taken by the Alexandroni Brigade on 15 April 1948 (before the game starts; by the ruling above, Petah Tikva starts with a camp). The women's training base (Bahad 12) was set up there "in the early 1950s"; its infobox says 1950, with no month and no citation | [S] HE Tel HaShomer camp (cited: *HaBoker*, *Kol HaAm*, *Davar*, 16 April 1948); [S] HE Bahad 12 [U] |
 | Ju'ara, 32.5995, 35.1088; Zikhron Ya'akov 15.1 km, Haifa 26.5 km | The Haganah's main training base from 1938 to 1948, so it existed before the game starts; Golani's squad commanders' school from 1950 (year only). About two hexes from the nearest city | [S] HE Ju'ara (cited: Meir Shalev, *Bamahane*, 1988) |
-| The Gadna base at Givat Ram, Jerusalem | A 1948 photograph of its entrance sign exists; no opening date found (Schneller, above, is the Jerusalem candidate) | [S] HE Gadna (photograph caption only) [G] |
+| The Gadna base at Givat Ram, Jerusalem | A 1948 photograph of its entrance sign exists; no opening date found (Schneller, above, is Jerusalem's start camp by the owner's ruling) | [S] HE Gadna (photograph caption only) [G] |
 | Tel Nof (Ekron), by Rehovot | An operational air base; a flying course got its wings there on 10 May 1949, but no source names a training base opened there in the window | [S] HE Flying School [G] |
 | Haifa, Tiberias, Safed, Rosh Pinna | No training base with a place and a date in 1948-51 found in any source read | [G] |
 
@@ -121,13 +122,13 @@ city. #570's unit anchors were not opened for this note.
 | Date | Event | Source | Mark |
 |---|---|---|---|
 | summer 1949 | Israel Railways laid two new sections of track: one bypassing Tulkarm station, which stayed in Jordanian hands, restoring continuous rail traffic between Haifa and the centre; the other joining the Rosh HaAyin-Petah Tikva line to the old Tel Aviv North station (today Bnei Brak station, by the Ramat Gan stadium) | Israel Railways, *50 Years of Israel Railways* (Hebrew booklet, September 1998), p. 15 | [V] |
-| 4 August 1949 | "Train traffic to Haifa in September; the section bypassing Tulkarm completed" (headline) | *Haaretz*, 4 August 1949, https://www.nli.org.il/he/newspapers/haretz/1949/08/04/01/article/12 ; cited by HE Coastal; headline read on the scan in #612 (its section on the rail link, row "The bypass was completed by 4 August 1949") | [V: Agam, #612] |
+| 4 August 1949 | "Train traffic to Haifa in September; the section bypassing Tulkarm completed" (headline) | *Haaretz*, 4 August 1949, https://www.nli.org.il/he/newspapers/haretz/1949/08/04/01/article/12 ; cited by HE Coastal; headline read on the scan in #612 (its section 1, row "The bypass was completed by 4 August 1949") | [V: Agam, #612] |
 | 4 August 1949 | "On the 21st of the month the freight train service will be renewed" (headline), i.e. 21 August 1949 | *Al HaMishmar*, 4 August 1949, cited by HE IR | [S] |
 | August 1949 or August 1948 | The bypass laid | HE Tulkarm station gives **August 1949**, citing Cotterell 1984, p. 86; EN PR gives **August 1948**, citing the same page | **[C]** on Cotterell's page; 1949 is supported by the booklet [V], *Israel, 1954* and *Railway World* 1973 (corridors note, Corroboration row 5) |
 | 12 September 1949 | "The new railway station in north Tel Aviv will be finished this month" (headline) | *Haaretz*, 12 September 1949, cited by HE Bnei Brak station | [S] |
 | 14 September 1949 | The Haifa-Tel Aviv line to open to passengers on the 20th: four trains a day, about 2¼ hours, by the existing track to Rosh HaAyin and the new line to the new station by the Yarkon bridge | *Haboker*, 14 September 1949, https://www.nli.org.il/he/newspapers/hbkr/1949/09/14/01/article/70 | [P] Agam, #384 |
 | **20 September 1949** | Regular passenger service Haifa-Binyamina-Hadera East-Rosh HaAyin-Tel Aviv North; 2 hours 20 minutes; at Rosh HaAyin the engine moved from the southern to the northern end of the train (HE Yarkon [S]: there was no direct connection from the branch to the line north) | Israel Railways 1998 booklet, p. 15 | [V] |
-| 20 September 1949 | Same day: "The railway along the lowland inaugurated" (headline) | *Maariv*, 20 September 1949, p. 1, https://www.nli.org.il/he/newspapers/mar/1949/09/20/01/article/1 , cited by HE Bnei Brak station and HE Tulkarm station; headline read on the scan in #612 (its row "The line opened 20 September 1949") | [V: Agam, #612] |
+| 20 September 1949 | Same day: "The railway along the lowland inaugurated" (headline) | *Maariv*, 20 September 1949, p. 1, https://www.nli.org.il/he/newspapers/mar/1949/09/20/01/article/1 , cited by HE Bnei Brak station and HE Tulkarm station; headline read on the scan in #612 (its section 1, row "The line opened 20 September 1949") | [V: Agam, #612] |
 | 21 September 1949 | Service on the shortened Tel Aviv-Haifa line opened (headline); a first-train report says the line ran tens to hundreds of metres from the border near Qalqilya and Tulkarm, and that about 2 km of track by Tulkarm station stayed under Jordan | *Al HaMishmar*, 21 September 1949, https://www.nli.org.il/he/newspapers/ahr/1949/09/21/01/article/11 ; *Davar*, 21 September 1949 (S. Zarhi); *HaTzofe*, 21 September 1949; cited by HE Eastern and HE IR | [S] |
 | 22 September 1949 | First-days report: about 100 passengers on the first train from Tel Aviv, about 200 from Haifa | *Maariv*, 22 September 1949, https://www.nli.org.il/he/newspapers/mar/1949/09/22/01/article/21 | [P] Agam, #384 |
 | 1949 | The Haifa-Tel Aviv line reopened, shortened by new sections, "including one skirting a salient on the Jordan frontier" | *Israel, 1954* (corridors note, Corroboration row 2) | [V on 2026-10-13, not re-read] |
