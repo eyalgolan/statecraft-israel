@@ -293,6 +293,67 @@ public class SeaTests
         var w = map.Frame.ToWorld(lon, lat, 0); w.y = map.Terrain.SampleHeight(w); return w;
     }
 
+    /// <summary>Sea round 3 (#388): the surf reads as promo 03's lace, 2-4 broken white lines over the turquoise, not one
+    /// swash line and a smooth band. At TheBreakersAreFilteredToThePixel's pose (30 km at 960x540: about 45 m a pixel, as
+    /// gameplay03), the water's clock pinned at four moments of a breaker cycle, a one-pixel line is walked across the coast
+    /// from the shore out to 1.8 km, west of Tel Aviv (32.08 N) and south of Jaffa (31.95 N). A pixel is foam by
+    /// tools/coast_measure.py's class (luma at least 0.72, channels within 30/255: white, not turquoise), and a lace line is
+    /// a run of at least 2 foam pixels, as that tool counts them in a screenshot (its bands were set from promo 03).
+    /// On each line at 3 or more of the 4 moments: at least 2 lace lines, and the median foam share of the stretch from
+    /// the farthest foam pixel to the shore is within <see cref="LaceShare"/>, so the surf is lace, not a solid band.</summary>
+    [UnityTest]
+    public IEnumerator TheSurfShowsFoamLaceAtTheGameplayZoom()
+    {
+        var map = OpenMap();
+        yield return null;
+        VisualToggles.Set("grid", false);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        var log = new System.Text.StringBuilder();
+        foreach (var lat in new[] { 32.08f, 31.95f })
+        {
+            var (col, row) = ShoreTexel(lat);
+            const float texelM = 161529f / 2048f;   // a coast.png texel east-west
+            Vector3 shore = TexelWorld(map, col, row), reach = TexelWorld(map, col - Mathf.RoundToInt(1800f / texelM), row);
+            rig.LookAt = reach; rig.Distance = 30000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+            int laced = 0; var shares = new System.Collections.Generic.List<float>();
+            foreach (var t in new[] { 100f, 105f, 110f, 115f })
+            {
+                MapShaderGlobals.PinWaterTime(t);
+                var px = new Vector2[2];
+                var r = RenderSample.Render(cam, 960, 540, new[] { shore, reach }, px);
+                int n = Mathf.CeilToInt(Mathf.Max(Mathf.Abs(px[1].x - px[0].x), Mathf.Abs(px[1].y - px[0].y)));
+                var foam = new bool[n + 1];   // index 0 at the shore
+                var trace = new System.Text.StringBuilder();
+                for (int k = 0; k <= n; k++)
+                {
+                    var p = Vector2.Lerp(px[0], px[1], k / (float)n);
+                    var c = r.At(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y));
+                    foam[k] = Luma(c) >= 0.72f && Mathf.Max(c.r, c.g, c.b) - Mathf.Min(c.r, c.g, c.b) <= 30f / 255f;
+                    trace.Append(foam[k] ? '#' : '.');
+                }
+                int far = System.Array.LastIndexOf(foam, true), lines = 0, run = 0, on = 0;
+                for (int k = 0; k <= far + 1; k++)
+                {
+                    if (k <= far && foam[k]) { run++; on++; }
+                    else { if (run >= 2) lines++; run = 0; }
+                }
+                float share = far >= 0 ? on / (float)(far + 1) : 0f;
+                if (lines >= 2) laced++;
+                shares.Add(share);
+                log.AppendLine($"{lat:0.00} N t={t}: {lines} lines, share {share:0.00}  {trace}");
+            }
+            shares.Sort();
+            float median = 0.5f * (shares[1] + shares[2]);
+            TestContext.WriteLine(log.ToString());
+            Assert.GreaterOrEqual(laced, 3, $"{lat} N: at least 2 lace lines at 3 of the 4 moments");
+            Assert.That(median, Is.InRange(LaceShare.x, LaceShare.y), $"{lat} N: the surf is lace, not a solid band");
+        }
+    }
+
+    /// <summary>TheSurfShowsFoamLaceAtTheGameplayZoom's foam share band (promo 03 south of Jaffa: a median share of 0.56,
+    /// plan C1).</summary>
+    static readonly Vector2 LaceShare = new Vector2(0.3f, 0.7f);
+
     /// <summary>promo-sea review I2 / M5 / N1: the breakers are box-filtered over the pixel, so they never alias. Around
     /// the surf zone west of Tel Aviv, at the gameplay footprint (30 km at 960x540: about 45 m a pixel, the same as
     /// gameplay03's 60 km at 1920x1080), where an unfiltered crest is sub-pixel but not yet faded, every water pixel of a
