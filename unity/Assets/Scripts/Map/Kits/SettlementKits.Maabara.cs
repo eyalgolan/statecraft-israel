@@ -22,6 +22,11 @@ namespace Statecraft.Game.Map.Kits
         const int MaabaraCols = 5, MaabaraRows = 4;
         const float MaabaraPitchU = 8f, MaabaraPitchV = 9f, MaabaraPlotR = 4f;
 
+        /// <summary>The fewest plots a ma'abara is drawn with, one of them a hut (owner, 15 October 2026: "Yes, min 6 plots + a
+        /// hut"): fewer reads as a few sheds, not a camp, so the search goes on and the camp is its box if nowhere in its hex
+        /// has room.</summary>
+        public const int MaabaraMinPlots = 6;
+
         /// <summary>How far (house-scale metres) a ma'abara reaches from its centre: the communal hut past the last column
         /// (30 along, 9 to a side) and the rows' half width, rounded up.</summary>
         public const float MaabaraReach = 36f;
@@ -76,11 +81,10 @@ namespace Statecraft.Game.Map.Kits
         static (int tents, int huts, Vector2 at) Maabara(string id, Vector2 hexCentre, System.DateTime from, KitGround ground, KitMesh km, Lots lots,
             float hutShare)
         {
-            float m = KitScale.Houses;
-            if (!MaabaraSpot(hexCentre, MaabaraReach * m, from, ground, lots, out var c)) return (0, 0, c);
+            float m = KitScale.Houses, plotR = MaabaraPlotR * m;
             var rnd = new KitRandom(id, 1);
             float yaw = rnd.Range(0f, 90f), a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
-            Vector2 At(float u, float v) => c + new Vector2(u * ca - v * sa, u * sa + v * ca);
+            Vector2 Turn(float u, float v) => new Vector2(u * ca - v * sa, u * sa + v * ca);
             // As the Bedouin camps' tents (Encampments): off the routes and the units' clearings, the unit tokens (those present
             // on or after the camp's own date, T67), the hex grid's edge marks and steep ground. Each tent, hut, the communal
             // hut and the water tower's spot stands in the camp's own hex, not only its centre (review #557): the rows reach
@@ -94,19 +98,43 @@ namespace Statecraft.Game.Map.Kits
                 && !ground.OnRoute(p, r) && !ground.OnToken(p, r, from)
                 && (!MaabaraGroundRules || (!ground.OnGridMark(p, r) && ground.Slope(p.x, p.y, 600f) <= 0.12f)) && lots.Free(p, r, id, 0);
             // Huts at an even spread over the plots (a golden-ratio sequence from a seeded phase), not a coin per plot: the
-            // camp shows the share asked for, not a lucky draw of it.
+            // camp shows the share asked for, not a lucky draw of it. Drawn before the camp's spot is chosen; the spot draws
+            // nothing, so the stream is the one the camp always had (yaw, then phase).
             float phase = rnd.Value();
+            bool HutPlot(int k, float share) => Mathf.Repeat(phase + k * 0.618034f, 1f) < share;
+            // A plot's centre round a camp centre: the grid turned by the yaw, pegged by eye (the first two draws of the
+            // plot's wear stream, as the build below takes them).
+            Vector2 PlotAt(Vector2 centre, int i, int j, int k)
+            {
+                var w = new KitRandom(id, 100UL + (ulong)k);
+                return centre + Turn((i - (MaabaraCols - 1) * 0.5f) * MaabaraPitchU * m, (j - (MaabaraRows - 1) * 0.5f) * MaabaraPitchV * m)
+                    + new Vector2(w.Range(-0.4f, 0.4f), w.Range(-0.4f, 0.4f)) * m;
+            }
+            // Owner, 15 October 2026 ("Yes, min 6 plots + a hut"): a camp is at least MaabaraMinPlots free plots, one of them a
+            // hut, or the search goes on, further out in the hex. The hut is counted at the 1950-51 share
+            // (MaabaraHutShare), not the share asked for, so the share still changes what a plot holds, never where the
+            // camp stands. A camp's own lots never block each other (Lots.Free: the same id and group), so this dry run
+            // frees exactly the plots the build below fills.
+            bool Roomy(Vector2 centre)
+            {
+                int free = 0; bool hut = false;
+                for (int j = 0, k = 0; j < MaabaraRows; j++)
+                    for (int i = 0; i < MaabaraCols; i++, k++)
+                        if (Free(PlotAt(centre, i, j, k), plotR)) { free++; hut |= HutPlot(k, MaabaraHutShare); }
+                return free >= MaabaraMinPlots && hut;
+            }
+            if (!MaabaraSpot(hexCentre, MaabaraReach * m, from, ground, lots, Roomy, out var c)) return (0, 0, c);
+            Vector2 At(float u, float v) => c + Turn(u, v);
             int tents = 0, huts = 0, plot = 0;
-            float plotR = MaabaraPlotR * m;
             for (int j = 0; j < MaabaraRows; j++)
                 for (int i = 0; i < MaabaraCols; i++, plot++)
                 {
-                    bool hut = Mathf.Repeat(phase + plot * 0.618034f, 1f) < hutShare;
+                    bool hut = HutPlot(plot, hutShare);
                     // Wear (sag, creases, stains, washing) draws from its own stream per plot, so the layout stream above is
                     // the one the camp always had and the hut share still changes what a plot holds, never which plots.
                     var wear = new KitRandom(id, 100UL + (ulong)plot);
                     var p = At((i - (MaabaraCols - 1) * 0.5f) * MaabaraPitchU * m, (j - (MaabaraRows - 1) * 0.5f) * MaabaraPitchV * m)
-                        + new Vector2(wear.Range(-0.4f, 0.4f), wear.Range(-0.4f, 0.4f)) * m;   // pegged by eye: the grid reads, not ruled
+                        + new Vector2(wear.Range(-0.4f, 0.4f), wear.Range(-0.4f, 0.4f)) * m;   // pegged by eye: the grid reads, not ruled (PlotAt)
                     float pyaw = yaw + rnd.Range(-3f, 3f);   // pitched by hand: straight rows, not ruled ones
                     if (!Free(p, plotR)) continue;
                     lots.Add(new Lot { c = p, r = plotR, id = id, group = 0 });
@@ -487,9 +515,11 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The camp's centre: the dry spot nearest <paramref name="want"/> (rings an eighth of a reach apart) in the hex
         /// <paramref name="want"/> stands in, whose inner half stays off every town's plots, that is gentle and whose whole
         /// reach is clear of the unit tokens present on or after <paramref name="from"/> (Encampments' tests; T67) and of the
-        /// camps built before it. The player picks the hex, so the camp stands in it, where selection and the info panel point
-        /// (review #557). False when there is none: the camp is then drawn as its box.</summary>
-        static bool MaabaraSpot(Vector2 want, float reach, System.DateTime from, KitGround ground, Lots lots, out Vector2 at)
+        /// camps built before it, and that is <paramref name="roomy"/> (the owner's minimum camp). The player picks the hex,
+        /// so the camp stands in it, where selection and the info panel point (review #557). False when there is none: the
+        /// camp is then drawn as its box.</summary>
+        static bool MaabaraSpot(Vector2 want, float reach, System.DateTime from, KitGround ground, Lots lots, System.Func<Vector2, bool> roomy,
+            out Vector2 at)
         {
             // From any point of a hex the whole hex lies within two circumradii. The rings are an eighth of a reach apart (450 m
             // at the house scale), not half of one (1.8 km): the ma'abarot stood at the edges of the towns (T67, issue #32), and
@@ -505,7 +535,7 @@ namespace Statecraft.Game.Map.Kits
                     float a = 2f * Mathf.PI * k / around;
                     var p = want + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (ring * step);
                     if (!ground.Inside(p.x, p.y) || ground.Hex(p.x, p.y) != hex || ground.Water(p.x, p.y) || !OffTowns(p, clear, ground) || ground.Slope(p.x, p.y, 600f) > 0.12f
-                        || ground.OnToken(p, reach, from) || !lots.Free(p, reach)) continue;
+                        || ground.OnToken(p, reach, from) || !lots.Free(p, reach) || !roomy(p)) continue;
                     at = p; return true;
                 }
             }

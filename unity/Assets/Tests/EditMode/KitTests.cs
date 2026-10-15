@@ -743,7 +743,9 @@ public class KitTests
     /// <summary>Review #557: a camp stands in the hex the player built it on, where selection and the info panel point. Over
     /// the settlement hexes each camp's centre and the whole footprint of every structure it places (tents, huts, the
     /// communal hut, the water tower) map back to its own hex, or the camp has no kit and is drawn as its box. Its
-    /// tents, huts and water tower keep off the grid marks and steep ground (the water tower too: review #557, should-fix 3).</summary>
+    /// tents, huts and water tower keep off the grid marks and steep ground (the water tower too: review #557, should-fix 3).
+    /// The camps are built on 26 August 1950, as the game builds them (date-aware tokens, T67), and each kit has the owner's
+    /// minimum: SettlementKits.MaabaraMinPlots plots, one of them a hut.</summary>
     [Test]
     public void AMaabaraStandsInItsOwnHex()
     {
@@ -756,11 +758,15 @@ public class KitTests
         foreach (var hex in c.SettlementHexes)
         {
             var at = c.HexAt(hex.Q, hex.R)!; var w = map.Frame.ToWorld(at.Lon, at.Lat, 0);
-            var camp = new List<(string id, Vector2 at)> { ($"{Statecraft.Sim.MapActions.TransitCamp}_{hex.Q}_{hex.R}", new Vector2(w.x, w.z)) };
+            var camp = new List<(string id, Vector2 at, System.DateTime from)>
+                { ($"{Statecraft.Sim.MapActions.TransitCamp}_{hex.Q}_{hex.R}", new Vector2(w.x, w.z), new System.DateTime(1950, 8, 26)) };
             var built = SettlementKits.Maabarot(camp, g, out var placed)[0];
             if (built.mesh == null) { boxes.Add(hex.Id); continue; }
             kits++;
             Object.DestroyImmediate(built.mesh);
+            TestContext.WriteLine($"{hex.Id}: {built.tents} tents, {built.huts} huts, {placed.Count} structures, {(built.at - new Vector2(w.x, w.z)).magnitude:F0} m from the hex centre");
+            Assert.GreaterOrEqual(built.tents + built.huts, SettlementKits.MaabaraMinPlots, hex.Id + "'s camp has the owner's minimum of plots");
+            Assert.Greater(built.huts, 0, hex.Id + "'s camp has a hut");
             (int, int) HexOf(Vector2 p)
             {
                 var (lon, lat) = map.Frame.ToLonLat(new Vector3(p.x, 0f, p.y));
@@ -867,15 +873,39 @@ public class KitTests
     }
 
     /// <summary>T67 (issue #32; owner: "Yes, a follow-up"): the ma'abarot stood at the edges of the towns. A camp's centre is
-    /// looked for on rings an eighth of its reach apart (450 m at the house scale), not half of it (1.8 km), so a camp finds the free ground at a town's edge in its
-    /// hex: Gaza and Degania Alef, boxes with the coarse rings, get their kits. Every structure still stands wholly in the
-    /// hex and off the towns, routes and steep ground (AMaabaraStandsInItsOwnHex, MaabarotAreSeededAndStandOnFreeDryGround).</summary>
+    /// looked for on rings an eighth of its reach apart (450 m at the house scale), not half of it (1.8 km), so a camp finds
+    /// the free ground at a town's edge in its hex: Degania Alef, a box with the coarse rings, gets its kit. Every structure
+    /// still stands wholly in the hex and off the towns, routes and steep ground (AMaabaraStandsInItsOwnHex,
+    /// MaabarotAreSeededAndStandOnFreeDryGround). Gaza's edge has room for 4 tents only, under the owner's minimum, so it
+    /// stays its box (ACampIsAtLeastSixPlotsAndAHutOrItsBox).</summary>
     [Test]
     public void ACampFindsTheGroundAtATownsEdge()
     {
         var map = OpenMap();
         var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
-        foreach (var id in new[] { "gaza", "degania_alef" }) Assert.IsTrue(DrawnAsKit(map, c, id), id + "'s camp is drawn as its kit");
+        Assert.IsTrue(DrawnAsKit(map, c, "degania_alef"), "Degania Alef's camp is drawn as its kit");
+    }
+
+    /// <summary>Owner, 15 October 2026 ("Yes, min 6 plots + a hut"): a ma'abara is at least SettlementKits.MaabaraMinPlots
+    /// plots, one of them a hut, or its search goes on further out in its hex, and it is its box only when nowhere in the
+    /// hex has room. With the nearest free centre alone, Lod's and Ramla's camps of 1950 were 3 tents and no hut, Gaza's 4
+    /// (second review of #646).</summary>
+    [Test]
+    public void ACampIsAtLeastSixPlotsAndAHutOrItsBox()
+    {
+        var map = OpenMap();
+        var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var g = PlacementLayer.CampGround(map);
+        foreach (var id in new[] { "lod", "ramla", "gaza" })
+        {
+            var at = HexCentre(map, c, id);
+            var built = SettlementKits.Maabarot(new List<(string id, Vector2 at, System.DateTime from)> { ("transit_camp_" + id, at, new System.DateTime(1950, 8, 26)) }, g)[0];
+            TestContext.WriteLine($"{id}: {(built.mesh == null ? "box" : $"{built.tents} tents, {built.huts} huts, {(built.at - at).magnitude:F0} m from the hex centre")}");
+            if (built.mesh == null) continue;
+            Object.DestroyImmediate(built.mesh);
+            Assert.GreaterOrEqual(built.tents + built.huts, SettlementKits.MaabaraMinPlots, id + ": at least the minimum of plots");
+            Assert.Greater(built.huts, 0, id + ": a hut");
+        }
     }
 
     /// <summary>Review I2: the populations come from content/map/settlement_population_1945.yaml through the map inputs.</summary>
