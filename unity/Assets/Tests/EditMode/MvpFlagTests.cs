@@ -156,6 +156,31 @@ public class MvpFlagTests
         Assert.AreSame(session, bridge.Session, "no new game started");
     }
 
+    /// <summary>A slice game booted through GameRoot with the start screen asked for: no start screen, and New Game pressed
+    /// twice deletes nothing and starts nothing, even with its button forced back on screen (a regression that showed it).
+    /// The guard is the presenter's slice flag, which GameRoot must pass.</summary>
+    [Test]
+    public void ASliceGamesNewGameThroughGameRootDeletesNothing()
+    {
+        Directory.CreateDirectory(saveDir);
+        var path = Path.Combine(saveDir, SaveStore.AutosaveName);
+        File.WriteAllText(path, "the player's save");
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(SliceInputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(SliceInputs, 0, startScreen: true);
+        var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+        Assert.IsFalse(ui.Q("root").ClassListContains(StartScreenPresenter.OpenClass), "no start screen in a slice game");
+        var session = root.Bridge!.Session;
+        var button = ui.Q<Button>("new-game");
+        button.style.display = DisplayStyle.Flex;   // as if a regression drew it again
+        UiTestKit.Press(button);
+        UiTestKit.Press(button);
+        Assert.AreEqual("the player's save", File.ReadAllText(path), "the autosave is untouched");
+        Assert.AreSame(session, root.Bridge.Session, "no new game started");
+    }
+
     /// <summary>A slice game has no New Game (it would delete the player's autosave): the button is not drawn and is out of
     /// the Tab order, rather than drawn and dead. A normal game keeps it, also after a slice game in the same scene.</summary>
     [Test]

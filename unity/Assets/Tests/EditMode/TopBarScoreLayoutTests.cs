@@ -81,6 +81,8 @@ public class TopBarScoreLayoutTests
                         var o = root.Q<Label>(other);
                         if (!Apart(score.worldBound, o.worldBound)) problems.Add($"{at}: '{score.text}' {score.worldBound} overlaps {other} '{o.text}' {o.worldBound}");
                         if (!Whole(o)) problems.Add($"{at}: {other} '{o.text}' is clipped in {o.contentRect}");
+                        // The turn and date labels' own fit in the frame at this widest date is #625 (on main before this PR,
+                        // worse in Hebrew); this test checks only that the score keeps clear of them.
                     }
                 }
                 finally
