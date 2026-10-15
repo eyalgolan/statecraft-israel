@@ -41,6 +41,8 @@ public class SimBridgeGuardTests
     {
         var missing = CommandTypes().Where(t => !Samples.ContainsKey(t)).Select(t => t.Name).ToList();
         Assert.IsEmpty(missing, "add a sample here, then a branch in SimBridge.Validate and SimBridge.Key");
+        // Not vacuous: the reflection finds exactly the sampled types (an empty scan would pass every check in this class).
+        CollectionAssert.AreEquivalent(Samples.Keys, CommandTypes().ToList());
     }
 
     /// <summary>The command types whose order is one per turn by design, so their key is their kind (SimBridge.Key's
