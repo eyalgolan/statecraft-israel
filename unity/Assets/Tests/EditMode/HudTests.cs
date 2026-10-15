@@ -458,18 +458,18 @@ public class HudTests
             Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(line, @"\{\d+:[^}]*\}%"), "percent format in strings.en.yaml: " + line);
     }
 
-    /// <summary>Fix round 1, M3: the top-bar captions are the content names in title case (a deliberate casing for
-    /// captions); Immigration and Public Support are UI quantities with no content name.</summary>
+    /// <summary>Fix round 1, M3: the top-bar captions are the content names. Since #622 they are in the sentence case the
+    /// content and the rest of the strings use, so a caption is the content name as written (it was Title Case before);
+    /// Immigration and Public support are UI quantities with no content name.</summary>
     [Test]
-    public void TopBarCaptionsAreTheContentNamesInTitleCase()
+    public void TopBarCaptionsAreTheContentNames()
     {
         using var ui = new UiTestKit();
         string Caption(string meter) => ui.Q<VisualElement>(meter).Q<Label>(className: "meter-name").text;
-        string Title(string name) => System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(name);
-        Assert.AreEqual(Title(PlayerText.Target(C, "treasury")), Caption("meter-treasury"));
-        Assert.AreEqual(Title(PlayerText.Target(C, "security")), Caption("meter-security"));
-        Assert.AreEqual(Title(PlayerText.Target(C, "intl_standing")), Caption("meter-standing"));
-        Assert.AreEqual(Title(PlayerText.Target(C, "fx_reserves")), Caption("meter-fx"));
+        Assert.AreEqual(PlayerText.Target(C, "treasury"), Caption("meter-treasury"));
+        Assert.AreEqual(PlayerText.Target(C, "security"), Caption("meter-security"));
+        Assert.AreEqual(PlayerText.Target(C, "intl_standing"), Caption("meter-standing"));
+        Assert.AreEqual(PlayerText.Target(C, "fx_reserves"), Caption("meter-fx"));
     }
 
     /// <summary>Fix round 2 (R2-3, playtest 1 item 11): two Submit events on the Defence button within one frame (a
