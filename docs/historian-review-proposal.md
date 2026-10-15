@@ -77,7 +77,7 @@ reviewer should not need git or YAML to read it. Each packet holds:
 3. **Text as the player sees it:** title, body and every option, with each office placeholder resolved to the person
    who held it on `from` (from `people.yaml`), and a line if the holder changes inside the window.
 4. **Options:** for each, its text, whether it is marked `historical: true`, whether it is `recommended`, and its
-   effects in plain words, for example "Security +0.025, International standing −0.08 (indicators run 0 to 1)" or
+   effects in plain words, for example "Security +0.025, International support −0.08 (indicators run 0 to 1)" or
    "sets the war-escalation rung to 5". Names come from `content/model.yaml`. The packet says that these numbers are
    design values and are not under review.
 5. **Requirements:** any `requires` line, in words (for example "only after `second_truce` was resolved with `comply`").
