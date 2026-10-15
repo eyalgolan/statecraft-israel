@@ -52,7 +52,8 @@ namespace Statecraft.Sim
             var points = Points(c.RulesAt(date).Mvp!, date, o.ReferenceDate);
             s.Objectives[id] = date;
             s.Score += points;
-            why.Add(new Cause("objectives", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points)));
+            // In the Why list's "events" group: the card that follows is an event (Unity's WhyPresenter groups by system).
+            why.Add(new Cause("events", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points)));
             return true;
         }
     }

@@ -91,7 +91,7 @@ options:
         Assert.True(Objectives.Record(c, s, "first_goal", D("1949-04-15"), why));
         Assert.Equal(D("1949-04-15"), Assert.Single(s.Objectives).Value);
         Assert.Equal(110, s.Score);   // 2 months early (April to June)
-        Assert.Contains(why, x => x.System == "objectives" && x.Message == "First goal: completed, 110 points");
+        Assert.Contains(why, x => x.System == "events" && x.Message == "First goal: completed, 110 points");
 
         var hash = s.Hash();
         Assert.False(Objectives.Record(c, s, "first_goal", D("1949-05-15"), why));
@@ -130,7 +130,7 @@ options:
         Assert.Equal(built, Assert.Single(r.State.Objectives).Value);
         Assert.Equal(Objectives.Points(c.Rules.Mvp!, built, D("1949-06-12")), r.State.Score);
         Assert.Contains("first_card", r.State.PendingEvents);
-        Assert.Contains(r.Why, x => x.System == "objectives" && x.Target == "first_goal");
+        Assert.Contains(r.Why, x => x.System == "events" && x.Target == "first_goal");
 
         var score = r.State.Score;
         var s = Step(c, r.State, new ChooseEventOption("first_card", "continue")).State;
