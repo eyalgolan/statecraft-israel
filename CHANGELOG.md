@@ -435,6 +435,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   ~30, wider blocks"; every other town's floor stays. All of it is in Tel Aviv's own kit mesh (no new draw), so a model that
   replaces the town (#507) hides it whole. Haifa's Hadar keeps its blocks, and `Kit.shader` is not changed. Presentation
   only.
+- Sea round 3, the surf as lace (refs #388): promo 03's 2-4 broken white lines over the turquoise instead of one swash line
+  and a smooth band. The surf zone widens from 900 m to 1.8 km, the breakers stand 450 m apart (300 m before) and the foam
+  is whiter; a 200 m lace net, behind a new `foam` toggle, breaks each crest on its own and fades to the old mean at the
+  overview. All of it is in the water's own pass; the terrain function is unchanged.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,
