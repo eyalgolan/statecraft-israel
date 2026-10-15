@@ -106,3 +106,10 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
         run: uv run scripts/oss/changelog_check.py --base "$BASE_SHA" --head "$HEAD_SHA" --skip-label "$SKIP_LABEL"
+      # Only a person signs a row off (#375): no commit with an AI co-author trailer may add, change or remove a reviewed_by
+      # or reviewed_on line in content/. It needs every commit of the PR (fetch-depth 0 above) and fails closed.
+      - name: Only a person signs a row off (reviewed_by and reviewed_on)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: uv run scripts/oss/reviewed_by_guard.py --base "$BASE_SHA" --head "$HEAD_SHA"

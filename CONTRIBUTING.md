@@ -90,7 +90,7 @@ AI-assisted work is welcome. Say so in the pull request: which parts, and how yo
 
 ## What CI runs
 
-Every pull request and every push to `main` runs `Sim (dotnet test)`, `Tools (pytest)`, `Repo policy`, and, on pull requests, `Changelog`. The jobs use no secrets, call no paid API, run no AI agent and push nothing.
+Every pull request and every push to `main` runs `Sim (dotnet test)`, `Tools (pytest)`, `Repo policy`, and, on pull requests, `Changelog`. The `Changelog` job also runs `scripts/oss/reviewed_by_guard.py`: a commit with an AI co-author trailer may not add, change or remove a `reviewed_by` or `reviewed_on` line in `content/` (only a person signs a row off, #375). The jobs use no secrets, call no paid API, run no AI agent and push nothing.
 
 **Unity EditMode tests are not in CI.** Running Unity in CI needs the maintainer's Unity account credentials stored as repository secrets. GitHub never gives secrets to pull requests from forks, so the job could not run on the pull requests that most need it, and those credentials would sit on machines that run outside code. So the Unity tests are a local gate: paste their result in your PR, and the maintainer re-runs them before merging any change under `unity/`. A future Unity job must run Unity with `-CI false -GITHUB_ACTIONS false -TF_BUILD false` (runners set `CI=true`, and GitHub Actions and Azure Pipelines also set `GITHUB_ACTIONS=true` or `TF_BUILD=true`; the Unity-MCP plugin treats any of them as CI, then skips its NuGet download and fails to compile), or commit the plugin's DLLs.
 

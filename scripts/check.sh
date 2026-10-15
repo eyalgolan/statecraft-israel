@@ -35,6 +35,7 @@ run() {
 }
 
 run "changelog (against $base)" uv run scripts/oss/changelog_check.py --base "$base" --skip-label "$skip"
+run "reviewed_by guard (against $base)" uv run scripts/oss/reviewed_by_guard.py --base "$base"
 run "gdd lint" uv run scripts/oss/gdd_lint.py
 run "policy checker tests" uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q
 run "repo policy" uv run scripts/oss/check_repo.py

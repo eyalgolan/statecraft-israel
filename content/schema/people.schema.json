@@ -74,7 +74,9 @@
             }
           }
         },
-        "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"] }
+        "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"] },
+        "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent (scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
+        "reviewed_on": { "$ref": "#/definitions/date", "description": "The day of that sign-off. Needs reviewed_by." }
       }
     }
   }

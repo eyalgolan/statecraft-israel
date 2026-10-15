@@ -85,6 +85,14 @@ namespace Statecraft.Game.Map.Units
         public string Sector { get; set; } = "";
         public bool WikipediaOnly { get; set; }
         public string Status { get; set; } = "";
+        /// <summary>A person's sign-off beside the status (#375, "humans only"): both or neither, a GitHub handle and a day;
+        /// Statecraft.Sim.ReviewRecord checks them. A key that is present but blank counts as present.</summary>
+        public string? ReviewedBy { get => reviewedBy; set { reviewedBy = value; ReviewedByGiven = true; } }
+        [YamlIgnore] public bool ReviewedByGiven { get; private set; }
+        string? reviewedBy;
+        public string? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        string? reviewedOn;
         /// <summary>Why the map does not draw the unit (the sources name it but do not place it), or null.</summary>
         public string? Hidden { get; set; }
         public List<string>? ToVerify { get; set; }
@@ -180,6 +188,8 @@ namespace Statecraft.Game.Map.Units
                 if (!ids.Add(u.Id)) throw new InvalidDataException($"{at} duplicate id");
                 if (!Services.Contains(u.Service)) throw new InvalidDataException($"{at} has unknown service '{u.Service}' (army, air or navy)");
                 if (string.IsNullOrWhiteSpace(u.Name) || string.IsNullOrWhiteSpace(u.Sector)) throw new InvalidDataException($"{at} needs a name and a sector");
+                var signOff = Statecraft.Sim.ReviewRecord.Problem(u.ReviewedByGiven, u.ReviewedBy, u.ReviewedOnGiven, u.ReviewedOn);
+                if (signOff != null) throw new InvalidDataException($"{at} {signOff.Value.field}: {signOff.Value.message}");
                 if (u.Disbanded != null)
                 {
                     try { Day(u.Disbanded.Date); }

@@ -25,6 +25,14 @@ namespace Statecraft.Game.Map.Kits
             public string ListedAs { get; set; } = "";
             public string Note { get; set; } = "";
             public string Status { get; set; } = "";
+            /// <summary>A person's sign-off beside the status (#375, "humans only"): both or neither, a GitHub handle and a day;
+            /// Statecraft.Sim.ReviewRecord checks them. A key that is present but blank counts as present.</summary>
+            public string? ReviewedBy { get => reviewedBy; set { reviewedBy = value; ReviewedByGiven = true; } }
+            [YamlIgnore] public bool ReviewedByGiven { get; private set; }
+            string? reviewedBy;
+            public string? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+            [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+            string? reviewedOn;
             public List<SourceRef> Sources { get; set; } = new List<SourceRef>();
         }
 
@@ -34,7 +42,7 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Parses the file. Every malformed input throws InvalidDataException naming <paramref name="file"/> (and the
         /// id): YAML errors, unknown keys, an empty or non-snake_case or duplicate id, a negative population, a status other
-        /// than owner-verify / fact-checked / verified, no sources, a source with an empty url or checked. A null population
+        /// than owner-verify / fact-checked / verified, a bad sign-off (reviewed_by / reviewed_on), no sources, a source with an empty url or checked. A null population
         /// (a place the source does not list) is kept out of the table.</summary>
         public static Dictionary<string, int> Parse(string yaml, string file = FileName)
         {
@@ -51,6 +59,8 @@ namespace Statecraft.Game.Map.Kits
                 if (!seen.Add(r.Id)) throw new InvalidDataException($"{at} duplicate id");
                 if (r.Population < 0) throw new InvalidDataException($"{at} population {r.Population} is negative");
                 if (!Statuses.Contains(r.Status ?? "")) throw new InvalidDataException($"{at} status '{r.Status}' is not owner-verify, fact-checked or verified");
+                var signOff = Statecraft.Sim.ReviewRecord.Problem(r.ReviewedByGiven, r.ReviewedBy, r.ReviewedOnGiven, r.ReviewedOn);
+                if (signOff != null) throw new InvalidDataException($"{at} {signOff.Value.field}: {signOff.Value.message}");
                 if (r.Sources == null || r.Sources.Count == 0) throw new InvalidDataException($"{at} sources is empty");
                 for (int i = 0; i < r.Sources.Count; i++)
                     if (string.IsNullOrWhiteSpace(r.Sources[i]?.Url) || string.IsNullOrWhiteSpace(r.Sources[i].Checked))

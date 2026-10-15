@@ -21,6 +21,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Q-CUT-8). Every golden moves; the cutover re-pins them once.
 
 ### Added
+- A person's sign-off beside a status (refs #375, #564, #611; owner, 15 October 2026: "Yes, humans only"): every status
+  row takes `reviewed_by` (the reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither.
+  The sim's loader, the map's readers (localities, the 1945 populations, units) and `tools/routes_1948.py` refuse a
+  half, blank or malformed sign-off. `scripts/oss/reviewed_by_guard.py`, in CI's Changelog job, fails a pull request in
+  which a commit with an AI co-author trailer adds, changes or removes either line, or a person's `reviewed_on` is
+  after their commit; it fails closed. It also fails a pull request in which such a commit edits any field of a signed
+  row, the id included, until a person signs the row again or removes its sign-off (owner: "Block it in CI"). The review
+  queue leaves signed-off rows out and counts them.
+  `docs/HISTORIAN_REVIEW.md` records the reversal of its old "no reviewed_by keys" rule. No row is signed off yet.
 - Hebrew names wait for a person (refs #582, #564; owner, 15 October 2026): every Hebrew name #582 added, which only an
   AI agent checked against its sources, now carries `*_review: agent-checked` (`title_he_review`, `title_he_f_review`,
   `name_he_review`, `body_he_review`; 100 flags: offices, parties, governments, legislatures, the game settlements and

@@ -124,11 +124,23 @@ public class UnitsInPlayTests
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, wikipedia_only: true, headgear: [wool_cap, wool_cap, wool_cap], anchors: [" + Anchor + "]}", "headgear has no source")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: air, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "without aircraft")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, colour: red, sector: s, status: draft, wikipedia_only: true, anchors: []}", "colour")]
+    // A person's sign-off (#375): both or neither, a GitHub handle (never an email), a day.
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: eyalgolan, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: a@example.org, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: eyalgolan, reviewed_on: soon, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: '', reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
     public void BadUnitFilesNameTheFileAndTheProblem(string yaml, string expected)
     {
         var e = Assert.Throws<InvalidDataException>(() => UnitData.Parse(yaml, "u.yaml"));
         StringAssert.StartsWith("u.yaml:", e.Message);
         StringAssert.Contains(expected, e.Message);
+    }
+
+    [Test]
+    public void AUnitSignOffParses()
+    {
+        var u = UnitData.Parse("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, reviewed_by: eyalgolan, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "u.yaml");
+        Assert.AreEqual(("eyalgolan", "2026-10-15"), (u[0].ReviewedBy, u[0].ReviewedOn));
     }
 
     [Test]

@@ -41,6 +41,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # under python -I the script's folder is not on sys.path
+import review_record  # noqa: E402
 import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -453,6 +454,9 @@ def validate_routes(doc: dict, bounds: dict) -> None:
             raise ValueError(f"{rid}: kind (and trace, when given) must be one of {KINDS}")
         if r.get("status") not in STATUSES:
             raise ValueError(f"{rid}: status must be one of {STATUSES}")
+        signoff = review_record.problem(r)   # a person's sign-off beside the status (#375)
+        if signoff:
+            raise ValueError(f"{rid}: {signoff[0]} {signoff[1]}")
         if not r.get("name"):
             raise ValueError(f"{rid}: name required")
         if "opened" in r and (isinstance(r["opened"], bool) or not isinstance(r["opened"], int) or r["opened"] > 1948):

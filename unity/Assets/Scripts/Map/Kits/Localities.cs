@@ -165,6 +165,7 @@ namespace Statecraft.Game.Map.Kits
             public string Match { get; set; } = ""; public bool OwnerVerify { get; set; } public string Wikidata { get; set; } = "";
             public string? DraftId { get; set; } public string? Note { get; set; }
             public string Checked { get; set; } = ""; public string Status { get; set; } = "";
+            public bool ReviewedByGiven, ReviewedOnGiven; public string ReviewedBy = "", ReviewedOn = "";
             public List<SourceRow> Sources { get; set; } = new List<SourceRow>();
             public int Line, SourceCount;
         }
@@ -174,6 +175,7 @@ namespace Statecraft.Game.Map.Kits
             public string Subdistrict { get; set; } = ""; public int Population { get; set; } = -1;
             public List<string> ListedAs { get; set; } = new List<string>(); public string? Note { get; set; }
             public string Checked { get; set; } = ""; public string Status { get; set; } = "";
+            public bool ReviewedByGiven, ReviewedOnGiven; public string ReviewedBy = "", ReviewedOn = "";
             public List<SourceRow> Sources { get; set; } = new List<SourceRow>();
             public int Line, SourceCount;
         }
@@ -280,6 +282,8 @@ namespace Statecraft.Game.Map.Kits
                     throw new InvalidDataException($"{at} lon/lat {p.Lon}, {p.Lat} missing or outside the map");
                 if (p.Population < 1) throw new InvalidDataException($"{at} population {p.Population} is not a count of people");
                 CheckSourced(at, p.Status, p.Checked, p.Sources, runtime ? p.SourceCount : p.Sources.Count);
+                var signOffp = Statecraft.Sim.ReviewRecord.Problem(p.ReviewedByGiven, p.ReviewedBy, p.ReviewedOnGiven, p.ReviewedOn);   // #375; the YAML only (the runtime form does not carry it)
+                if (signOffp != null) throw new InvalidDataException($"{at} {signOffp.Value.field}: {signOffp.Value.message}");
                 if (p.NameHeSources.Count > 0 && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_sources without a name_he");
                 // Absent (a person has reviewed the name) or exactly agent-checked: blank, null or a list is neither.
                 if (p.NameHeReviewGiven && p.NameHeReview != "agent-checked")
@@ -304,6 +308,8 @@ namespace Statecraft.Game.Map.Kits
                 if (!subs.Add(a.Subdistrict)) throw new InvalidDataException($"{at} duplicate subdistrict");
                 if (a.Population < 1) throw new InvalidDataException($"{at} population {a.Population} is not a count of people");
                 CheckSourced(at, a.Status, a.Checked, a.Sources, runtime ? a.SourceCount : a.Sources.Count);
+                var signOffa = Statecraft.Sim.ReviewRecord.Problem(a.ReviewedByGiven, a.ReviewedBy, a.ReviewedOnGiven, a.ReviewedOn);   // #375; the YAML only (the runtime form does not carry it)
+                if (signOffa != null) throw new InvalidDataException($"{at} {signOffa.Value.field}: {signOffa.Value.message}");
                 doc.Encampments.Add(new Area { Subdistrict = a.Subdistrict, Population = a.Population, Sources = runtime ? a.SourceCount : a.Sources.Count });
             }
             return doc;
@@ -317,10 +323,10 @@ namespace Statecraft.Game.Map.Kits
         static readonly HashSet<string> PlaceKeys = new HashSet<string>
         {
             "id", "name", "name_basis", "today", "name_he", "name_ar", "lon", "lat", "kind", "type", "landmark", "population",
-            "listed_as", "match", "owner_verify", "wikidata", "draft_id", "note", "checked", "status", "sources", "name_he_sources", "name_he_review",
+            "listed_as", "match", "owner_verify", "wikidata", "draft_id", "note", "checked", "status", "sources", "name_he_sources", "name_he_review", "reviewed_by", "reviewed_on",
         };
         static readonly HashSet<string> NameSourceKeys = new HashSet<string> { "url", "checked" };
-        static readonly HashSet<string> AreaKeys = new HashSet<string> { "subdistrict", "population", "listed_as", "note", "checked", "status", "sources" };
+        static readonly HashSet<string> AreaKeys = new HashSet<string> { "subdistrict", "population", "listed_as", "note", "checked", "status", "sources", "reviewed_by", "reviewed_on" };
         static readonly HashSet<string> TodayKeys = new HashSet<string> { "name", "name_he", "source" };
 
         static FileRow Read(string yaml, string file)
@@ -345,6 +351,7 @@ namespace Statecraft.Game.Map.Kits
                     Lon = Num(m, "lon", at), Lat = Num(m, "lat", at), Population = (int)Num(m, "population", at, -1),
                     Today = t == null ? null : new TodayRow { Name = Str(t, "name"), NameHe = Str(t, "name_he"), Source = Str(t, "source") },
                     Checked = Str(m, "checked"), Status = Str(m, "status"), Sources = Sources(m, at), Line = m.Line,
+                    ReviewedByGiven = m.ContainsKey("reviewed_by"), ReviewedBy = Str(m, "reviewed_by"), ReviewedOnGiven = m.ContainsKey("reviewed_on"), ReviewedOn = Str(m, "reviewed_on"),
                 });
             }
             foreach (var o in List(root, "encampments", file))
@@ -356,6 +363,7 @@ namespace Statecraft.Game.Map.Kits
                 {
                     Subdistrict = Str(m, "subdistrict"), Population = (int)Num(m, "population", at, -1),
                     Checked = Str(m, "checked"), Status = Str(m, "status"), Sources = Sources(m, at), Line = m.Line,
+                    ReviewedByGiven = m.ContainsKey("reviewed_by"), ReviewedBy = Str(m, "reviewed_by"), ReviewedOnGiven = m.ContainsKey("reviewed_on"), ReviewedOn = Str(m, "reviewed_on"),
                 });
             }
             return f;

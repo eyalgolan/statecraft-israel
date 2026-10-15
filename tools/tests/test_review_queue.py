@@ -69,7 +69,7 @@ def test_scan_finds_flags_and_reviewed_statuses_with_their_lines():
 
 def test_queue_lists_agent_set_statuses_and_every_flag_and_counts_the_rest(tmp_path):
     repo = make_repo(tmp_path)
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     assert [(e.kind, e.file, e.line, e.row) for e in entries] == [
         ("flag", "content/governments.yaml", 5, "g1"),
         ("status", "content/governments.yaml", 10, "g1"),
@@ -91,7 +91,7 @@ def test_an_agent_marker_is_read_from_the_whole_message():
 def test_the_queue_changes_no_content(tmp_path):
     repo = make_repo(tmp_path)
     before = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in (repo / "content").rglob("*.yaml")}
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     rq.page(entries, human, git(repo, "rev-parse", "HEAD").strip())
     assert {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in (repo / "content").rglob("*.yaml")} == before
     assert git(repo, "status", "--porcelain") == ""
@@ -99,7 +99,7 @@ def test_the_queue_changes_no_content(tmp_path):
 
 def test_the_page_groups_by_file_and_links_each_line(tmp_path):
     repo = make_repo(tmp_path)
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     text = rq.page(entries, human, "0123456789abcdef")
     assert "at commit `01234567`" in text
     assert "- Hebrew names flagged `agent-checked`: **2**" in text
@@ -117,7 +117,7 @@ def test_deleting_a_flag_then_regenerating_keeps_every_line_right(tmp_path):
     repo = make_repo(tmp_path)
     gov = repo / "content" / "governments.yaml"
     gov.write_text(gov.read_text(encoding="utf-8").replace("    name_he_review: agent-checked\n", ""), encoding="utf-8")
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     assert [(e.kind, e.file, e.line, e.row) for e in entries] == [
         ("status", "content/governments.yaml", 9, "g1"), ("flag", "content/offices.yaml", 2, "pm")]
     assert entries[0].checked_by.startswith("a commit with an AI co-author trailer (PR #10")
@@ -132,7 +132,7 @@ def test_an_uncommitted_status_is_listed_as_not_committed_yet(tmp_path):
     ev = repo / "content" / "events" / "truce.yaml"
     ev.write_text("# a new comment line\n" + ev.read_text(encoding="utf-8").replace("status: sensitivity-reviewed", "status: historian-reviewed"),
                   encoding="utf-8")
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     truce = [e for e in entries if e.row == "truce"]
     assert [(e.kind, e.line, e.value, e.checked_by) for e in truce] == [("status", 6, "historian-reviewed", "not committed yet")]
     assert human == 0
@@ -169,7 +169,7 @@ def test_an_untracked_content_file_is_scanned_and_listed_as_not_committed_yet(tm
     """Independent re-review of #611 (A): git ls-files missed a new, untracked file, so its rows were never scanned."""
     repo = make_repo(tmp_path)
     (repo / "content" / "events" / "new_event.yaml").write_text(EVENT.replace("id: truce", "id: new_event"), encoding="utf-8")
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     new = [e for e in entries if e.row == "new_event"]
     assert [(e.file, e.line, e.value, e.checked_by) for e in new] == [
         ("content/events/new_event.yaml", 5, "sensitivity-reviewed", "not committed yet")]
@@ -183,7 +183,7 @@ def test_a_whitespace_only_human_edit_does_not_hide_an_agent_set_status(tmp_path
     gov = repo / "content" / "governments.yaml"
     gov.write_text(gov.read_text(encoding="utf-8").replace("    status: fact-checked\n", "    status:   fact-checked   \n"), encoding="utf-8")
     git(repo, "commit", "-q", "-am", "content: tidy spacing (#12)")
-    entries, human = rq.queue(repo)
+    entries, human, _ = rq.queue(repo)
     g1 = [e for e in entries if e.row == "g1" and e.kind == "status"]
     assert len(g1) == 1 and g1[0].checked_by.startswith("a commit with an AI co-author trailer (PR #10")
     assert human == 1
@@ -196,3 +196,23 @@ def test_a_moved_tracked_file_is_a_clear_error(tmp_path, capsys):
     assert rq.run(repo, write=False) == 2
     err = capsys.readouterr().err
     assert "content/offices.yaml" in err and "missing from the working tree" in err
+
+
+def test_a_row_a_person_signed_off_leaves_the_queue_and_is_counted(tmp_path):
+    """#375 ("Yes, humans only"): a whole reviewed_by / reviewed_on beside the status takes the row out of the queue, even
+    when an agent-co-written commit last wrote the status line; a malformed sign-off does not (fail closed)."""
+    repo = make_repo(tmp_path)
+    gov = repo / "content" / "governments.yaml"
+    gov.write_text(gov.read_text(encoding="utf-8").replace("    status: fact-checked\n",
+                                                           "    status: fact-checked\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n"),
+                   encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "content: sign off g1 (#13)")
+    entries, human, signed = rq.queue(repo)
+    assert [e.row for e in entries if e.kind == "status"] == []
+    assert (human, signed) == (1, 1)
+    text = rq.page(entries, human, "0123456789abcdef", signed)
+    assert "- signed off by a person (`reviewed_by` and `reviewed_on`; not listed): 1" in text
+
+    gov.write_text(gov.read_text(encoding="utf-8").replace("reviewed_by: eyalgolan", "reviewed_by: eyal@example.org"), encoding="utf-8")
+    entries, human, signed = rq.queue(repo)
+    assert [e.row for e in entries if e.kind == "status"] == ["g1"] and signed == 0
