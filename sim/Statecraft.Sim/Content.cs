@@ -10,14 +10,20 @@ namespace Statecraft.Sim
     public sealed class Source { public string Url { get; set; } = ""; public DateTime Checked { get; set; } }
 
     /// <summary>The shape of a sign-off's `reviewed_by`: a GitHub handle (letters and digits, single hyphens between them,
-    /// at most 39 characters), so never an email, an @-name, a display name or a bot account ("name[bot]"). Shared with
+    /// at most 39 characters, and at least one letter, so a bare number such as 1234 reads the same in every reader), so never an email, an @-name, a display name or a bot account ("name[bot]"). Shared with
     /// the map's readers in Unity.</summary>
     public static class ReviewRecord
     {
         static readonly System.Text.RegularExpressions.Regex Handle =
-            new System.Text.RegularExpressions.Regex(@"^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}\z");
+            new System.Text.RegularExpressions.Regex(@"^(?=[A-Za-z0-9-]*[A-Za-z])[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}\z");
 
         public static bool IsHandle(string? s) => s != null && Handle.IsMatch(s);
+
+        static readonly System.Text.RegularExpressions.Regex Day = new System.Text.RegularExpressions.Regex(@"^\d{4}-\d{2}-\d{2}\z");
+
+        /// <summary>Exactly YYYY-MM-DD, and a real day (no 30 February).</summary>
+        public static bool IsDay(string? s) => s != null && Day.IsMatch(s)
+            && DateTime.TryParseExact(s, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _);
 
         /// <summary>What is wrong with a row's sign-off, as (field, message), or null when it is absent or whole: both keys or
         /// neither (a key that is present but blank counts as present), the handle's shape, and the day as YYYY-MM-DD.</summary>
@@ -27,7 +33,7 @@ namespace Statecraft.Sim
             if (!onGiven) return ("reviewed_on", "required with reviewed_by: the day the person signed off (YYYY-MM-DD)");
             if (!byGiven) return ("reviewed_by", "required with reviewed_on: the reviewer's GitHub handle");
             if (!IsHandle(by)) return ("reviewed_by", "must be the reviewer's GitHub handle (letters, digits and single hyphens; no @, email or display name)");
-            if (!DateTime.TryParseExact(on ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+            if (!IsDay(on))
                 return ("reviewed_on", "must be the day of the sign-off, YYYY-MM-DD");
             return null;
         }
@@ -167,11 +173,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
     }
 
     public sealed class Legislature
@@ -202,11 +210,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
     }
 
     public sealed class Government
@@ -236,11 +246,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
 
         /// <summary>The coalition on <paramref name="date"/>: the opening list with every change dated on or before that
         /// day applied. The result keeps the opening order, with parties that joined added at the end.</summary>
@@ -463,11 +475,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
     }
 
     /// <summary>A city's start values (cities.yaml, GDD "Cities and construction"). Counts are population units (D-A1).</summary>
@@ -557,11 +571,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
     }
 
     public sealed class PopulationAnchor
@@ -576,11 +592,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
     }
 
     public sealed class EventCondition { public string Indicator { get; set; } = ""; public double? Min { get; set; } public double? Max { get; set; } }
@@ -624,11 +642,13 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
         string? reviewedBy;
-        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
-        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
-        DateTime? reviewedOn;
+        string? reviewedOn;
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
     }

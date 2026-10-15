@@ -68,14 +68,23 @@ A contributor's or AI's summary is not a substitute for the reviewer's record. G
 keys such as `reviewed_by` or `reviewed_on`". The [owner decision, 15 October 2026, #375](https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6184126823) reverses that: "Yes, humans only". A row a person has
 reviewed now carries, beside its `status`:
 
-- `reviewed_by`: the reviewer's GitHub handle (letters, digits and single hyphens), never an email or a display name;
-- `reviewed_on`: the day of the review, `YYYY-MM-DD`, not after the day of the commit that adds it.
+- `reviewed_by`: the reviewer's GitHub handle (letters, digits and single hyphens, at least one letter), never an email or
+  a display name;
+- `reviewed_on`: the day of the review, exactly `YYYY-MM-DD`, not after the day of the commit that adds it.
 
 Both or neither: the loader (and the map's readers in Unity, and `tools/routes_1948.py`) refuses one without the other, a
 blank value, or a value of the wrong shape. **Only the reviewer writes these two lines, in a commit of their own.** An AI
 agent never does, not even to copy a sign-off it was told about: `scripts/oss/reviewed_by_guard.py` fails a pull request
 in which a commit with an AI co-author trailer adds, changes or removes either line, and it fails closed. A row with a
 whole sign-off leaves the review queue (`tools/review_queue.py`, `docs/review-queue.md`).
+
+**A signed row is closed to agents** (owner, 15 October 2026, on #629: "Block it in CI"). A sign-off vouches for the text
+the reviewer read, so the same guard also fails a pull request in which a commit with an AI co-author trailer changes any
+line of a row that carries a whole sign-off, any field, the `id` included, or adds a key inside it. It stays failed until
+a person, in a later commit of their own in the same pull request, reads the row again and signs it again (a new
+`reviewed_by` / `reviewed_on`) or removes its sign-off. An agent that needs to change a signed row proposes the change
+in words, and a person makes it. Merging `main` into a branch does not count as an edit: the guard reads a merge commit's
+combined diff, so lines it takes unchanged from `main` are not its own.
 
 After the reviewer confirms acceptance, they add the two keys and a comment block next to `sources` that points to the
 record. Replace every placeholder with facts from the real review; never commit this unfilled example as a sign-off:

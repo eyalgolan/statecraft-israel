@@ -23,7 +23,7 @@ def test_guide_is_current_process_not_a_fabricated_signoff():
     event = re.search(r'class GameEvent\b.*?\n    }', read('sim/Statecraft.Sim/Content.cs'), re.S).group(0)
     assert 'ReviewedBy' in event and 'ReviewedOn' in event
     for text in ('Changed on 15 October 2026', '#375', 'Yes, humans only', 'reviewed_by_guard.py', 'fails closed',
-                 'never an email'):
+                 'never an email', 'Block it in CI', 'signs it again'):
         assert text in guide
 
 

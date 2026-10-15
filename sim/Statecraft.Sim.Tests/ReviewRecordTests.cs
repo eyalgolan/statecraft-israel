@@ -28,13 +28,13 @@ public class ReviewRecordTests
         files["governments.yaml"] = Fixture.Files["governments.yaml"].Replace("    name: Government One\n", "    name: Government One\n" + Indent(Signed, 4));
         files["aliyah.yaml"] = Fixture.Files["aliyah.yaml"].Replace("    to: 1948-12-31\n", "    to: 1948-12-31\n" + Indent(Signed, 4));
         var c = Load(files, new Dictionary<string, string> { ["drought.yaml"] = ValidationTests.Event + Signed });
-        var day = new DateTime(2026, 10, 15);
+        const string day = "2026-10-15";
         Assert.Equal(("eyalgolan", day), (c.People.Single(p => p.Id == "pm_one").ReviewedBy, c.People.Single(p => p.Id == "pm_one").ReviewedOn));
         Assert.Equal("eyalgolan", c.Legislatures.Single(l => l.Id == "council").ReviewedBy);
         Assert.Equal(day, c.Governments.Single(g => g.Id == "gov1").ReviewedOn);
         Assert.Equal("eyalgolan", c.Aliyah[0].ReviewedBy);
         Assert.Equal(day, c.Events.Single().ReviewedOn);
-        Assert.Equal(("", (DateTime?)null), (c.People.Single(p => p.Id != "pm_one").ReviewedBy, c.People.Single(p => p.Id != "pm_one").ReviewedOn));
+        Assert.Equal(("", ""), (c.People.Single(p => p.Id != "pm_one").ReviewedBy, c.People.Single(p => p.Id != "pm_one").ReviewedOn));
     }
 
     [Theory]
@@ -93,6 +93,31 @@ public class ReviewRecordTests
     [InlineData("dependabot[bot]", false)]
     public void TheHandleShapeIsGitHubs(string handle, bool ok) => Assert.Equal(ok, ReviewRecord.IsHandle(handle));
 
+    // ---- the shared cases: every reader agrees on them (tools/tests/data/review_record_cases.json) --------------------
+
+    public static IEnumerable<object?[]> SharedCases()
+    {
+        var path = Path.Combine(RealContentTests.ContentRoot(), "..", "tools", "tests", "data", "review_record_cases.json");
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        foreach (var c in doc.RootElement.GetProperty("cases").EnumerateArray())
+        {
+            string? S(string k) => c.GetProperty(k).ValueKind == System.Text.Json.JsonValueKind.Null ? null : c.GetProperty(k).GetString();
+            yield return new object?[] { S("by"), S("on"), S("field"), c.TryGetProperty("nonscalar", out var n) && n.GetBoolean() };
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(SharedCases))]
+    public void TheLoaderAgreesWithTheSharedCases(string? by, string? on, string? field, bool nonscalar)
+    {
+        var lines = (by == null ? "" : ("    reviewed_by: " + by).TrimEnd() + "\n") + (on == null ? "" : ("    reviewed_on: " + on).TrimEnd() + "\n");
+        var files = With("people.yaml", "    name: Pm One\n", lines);
+        if (field == null) { Load(files); return; }
+        var ex = Assert.Throws<ContentException>(() => Load(files));
+        Assert.Equal("people.yaml", ex.File);
+        if (!nonscalar) Assert.Equal("people[pm_one]." + field, ex.Field);
+    }
+
     /// <summary>The real content: every sign-off is a handle and a day that has already come (the loader keeps no clock; the
     /// test does).</summary>
     [Fact]
@@ -103,6 +128,6 @@ public class ReviewRecordTests
             .Concat(c.Governments.Select(g => (g.ReviewedBy, g.ReviewedOn))).Concat(c.Aliyah.Select(a => (a.ReviewedBy, a.ReviewedOn)))
             .Concat(c.PopulationAnchors.Select(a => (a.ReviewedBy, a.ReviewedOn))).Concat(c.Events.Select(e => (e.ReviewedBy, e.ReviewedOn)))
             .Concat(c.Sites.Select(s => (s.ReviewedBy, s.ReviewedOn))).Where(x => x.ReviewedBy != "").ToList();
-        Assert.All(signed, x => { Assert.True(ReviewRecord.IsHandle(x.ReviewedBy)); Assert.True(x.ReviewedOn <= DateTime.UtcNow.Date); });
+        Assert.All(signed, x => { Assert.True(ReviewRecord.IsHandle(x.ReviewedBy)); Assert.True(ReviewRecord.IsDay(x.ReviewedOn)); Assert.True(DateTime.ParseExact(x.ReviewedOn, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) <= DateTime.UtcNow.Date); });
     }
 }

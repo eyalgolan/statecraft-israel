@@ -139,6 +139,45 @@ def _rows(node, path: str = ""):
             yield from _rows(v, f"{path}[{i}]")
 
 
+def _mappings(node, path: str = ""):
+    """Every mapping node in the document with its label (as _rows)."""
+    if isinstance(node, yaml.MappingNode):
+        keys = {_scalar(k): v for k, v in node.value}
+        yield (_scalar(keys["id"]) if "id" in keys else path or "(file)"), keys, node
+        for k, v in node.value:
+            yield from _mappings(v, f"{path}.{_scalar(k)}" if path else _scalar(k))
+    elif isinstance(node, yaml.SequenceNode):
+        for i, v in enumerate(node.value):
+            yield from _mappings(v, f"{path}[{i}]")
+
+
+@dataclass
+class SignedRow:
+    label: str
+    first: int        # 1-based lines the row's mapping spans, inclusive
+    last: int
+    key_column: int   # 0-based column of its keys (a line inserted at this indent or deeper, right after it, belongs to it)
+    flow: bool        # a one-line { ... } row: nothing inserted after it belongs to it
+
+
+def signed_rows(text: str) -> list[SignedRow]:
+    """The rows of a YAML text that carry a person's whole sign-off (#375), with their line spans. Raises yaml.YAMLError on
+    text that is not YAML."""
+    root = yaml.compose(text)
+    if root is None:
+        return []
+    lines = text.splitlines()
+    out = []
+    for label, keys, node in _mappings(root):
+        if "reviewed_by" not in keys or not review_record.signed({k: _value(keys[k]) for k in review_record.FIELDS if k in keys}):
+            continue
+        end = node.end_mark
+        before = lines[end.line][:end.column] if end.line < len(lines) else ""
+        last0 = end.line - 1 if before.strip() == "" else end.line
+        out.append(SignedRow(label, node.start_mark.line + 1, last0 + 1, node.start_mark.column, bool(node.flow_style)))
+    return out
+
+
 def scan(text: str, rel: str) -> list[Entry]:
     """The flags and the reviewed statuses in one YAML file, with their lines; no git."""
     root = yaml.compose(text)

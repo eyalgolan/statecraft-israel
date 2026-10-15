@@ -48,8 +48,11 @@ These rules protect the game and the people in it. They are not a viewpoint:
    reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither (owner, 15 October 2026,
    #375: "Yes, humans only"). Only that person writes the two lines, in their own commit; an AI agent never adds, changes
    or removes them, and `scripts/oss/reviewed_by_guard.py` fails any pull request where a commit with an AI co-author
-   trailer does. How to sign off: [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off). A row with a sign-off
-   leaves the review queue ([review-queue.md](review-queue.md)).
+   trailer does. A signed row is closed to agents too (owner, 15 October 2026, on #629: "Block it in CI"): the guard
+   fails a pull request where a commit with an AI co-author trailer changes any field of a signed row, the `id`
+   included, until a person signs the row again or removes its sign-off in a commit of their own. How to sign off:
+   [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off). A row with a sign-off leaves the review queue
+   ([review-queue.md](review-queue.md)).
 
 ## 3. How to dispute a fact
 

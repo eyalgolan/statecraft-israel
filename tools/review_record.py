@@ -8,9 +8,9 @@ import datetime
 import re
 
 FIELDS = ("reviewed_by", "reviewed_on")
-# Letters and digits, single hyphens between them, at most 39 characters: never an email, an @-name, a display name or a
-# bot account ("name[bot]").
-HANDLE = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
+# Letters and digits, single hyphens between them, at most 39 characters, at least one letter: never an email, an
+# @-name, a display name, a bot account ("name[bot]") or a bare number (1234 is an int to some readers and text to others).
+HANDLE = re.compile(r"(?=[A-Za-z0-9-]*[A-Za-z])[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
 DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 

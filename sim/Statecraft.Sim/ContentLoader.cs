@@ -380,11 +380,11 @@ namespace Statecraft.Sim
             if (string.IsNullOrWhiteSpace(name)) throw new ContentException(file, field, "required (the name shown to the player)");
         }
 
-        /// <summary>A row's sign-off (#375): reviewed_by and reviewed_on together, a GitHub handle, a date (the YAML reader
-        /// already refused a day that is not one). <paramref name="at"/> is the row's path, as in "people[ben_gurion]".</summary>
-        internal static void Review(string file, string at, string by, bool byGiven, DateTime? on, bool onGiven)
+        /// <summary>A row's sign-off (#375): reviewed_by and reviewed_on together, a GitHub handle, a day as YYYY-MM-DD (read as
+        /// text, the same rule as tools/review_record.py and the map's readers). <paramref name="at"/> is the row's path, as in "people[ben_gurion]".</summary>
+        internal static void Review(string file, string at, string by, bool byGiven, string on, bool onGiven)
         {
-            var p = ReviewRecord.Problem(byGiven, by, onGiven, on?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            var p = ReviewRecord.Problem(byGiven, by, onGiven, on);
             if (p != null) throw new ContentException(file, $"{at}.{p.Value.field}", p.Value.message);
         }
 
