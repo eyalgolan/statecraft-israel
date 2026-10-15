@@ -32,8 +32,9 @@ source read today changes or confirms them.
    **Camp Dora** by Netanya (the infantry school, Bahad 3, from 1948; its intelligence school from September 1948; the
    officers' school next door from January 1949); **Tzrifin** by Rishon LeZion (an IDF camp from 18-19 May 1948, the
    national training base from 1949); **Sirkin** by Petah Tikva (the flying school from 20 October 1949). For Jerusalem,
-   Haifa, Tiberias, Safed, Rosh Pinna, Rehovot and Zikhron Ya'akov I found **no** training base with a sourced place and
-   date in the window [G].
+   **Schneller** is a sourced base held from 17 March 1948 (before the game starts), so whether it counts is an owner
+   question; its training role is [U]. For Haifa, Tiberias, Safed, Rosh Pinna, Rehovot and Zikhron Ya'akov I found **no**
+   training base with a sourced place and date in the window [G].
 2. **Q-RAIL-1: both new segments and the day are confirmed by Israel Railways' own history [V]; the bypass's
    alignment is not given by any source [G].** Israel Railways' 1998 booklet says that in the summer of 1949 it laid two
    new sections, one bypassing Tulkarm station and one joining the Rosh HaAyin-Petah Tikva line to Tel Aviv North, and
@@ -73,7 +74,7 @@ read before the site is `fact-checked`.
 | C1 | Camp 80 (מחנה 80, today Bahad Dotan), north-east entrance to Pardes Hanna-Karkur, on Route 65 | 32.4628, 34.9866 [S, HE C80] | Hadera 6.7 km; Zikhron Ya'akov 12.4 km | **13 July 1948**: the Gadna training of the 1931-born intake, including the settlement nuclei that became the Nahal's first company, moved here from Kfar Yona after artillery fire hit that camp during the Ten Days. It was meant to be temporary, but the camp stayed tied to the Nahal for decades. On 12 September 1948, when the Nahal was founded, the nuclei training here were made Nahal soldiers and trained about another month. In December 1948 the Nahal's second intake trained here. | [V] Gshur 2025, pp. 114-115, 120 and 126 (place and date). The point is [S]. HE C80 adds that the officers' school moved here in May 1948 (HE Bahad 1, no citation [U]) and was here, with the Nahal gone, from 1949 to 1955 [S, cited: *Bamahane*, 22 June 1994] |
 | C2 | The Gadna training camp at Kfar Yona (Hebrew Wikipedia calls the Gadna base "Camp Beit Lid", today Camp Gur, by Kfar Yona) | Kfar Yona 32.3155, 34.9320 [S]; Camp Gur 32.3337, 34.9235 [S, HE Gur] | Netanya 7.2 km (Kfar Yona) or 6.3 km (Camp Gur) | **First week of July 1948**: training of the 1931-born Gadna intake (about 1,400 youths called up on 23 June 1948, five settlement nuclei among them) began at Kfar Yona under Elhanan Yishai, the Gadna's deputy commander. It left on 13 July 1948 after artillery fire (C1). HE Gadna: the command training base at Camp Beit Lid "began its activity on 23 June 1948" and was suspended during the war because it was shelled several times | [V] Gshur 2025, pp. 114-115 (place "Kfar Yona" and the date). [S] HE Gadna for 23 June 1948 and the camp name, no citation [U]. **[U]** that Gshur's Kfar Yona camp and the Beit Lid camp are the same place: no source read says so |
 | C3 | Camp Dora (מחנה דורה), south of Netanya, around the Dora pool | Dora pool 32.2913, 34.8469 [S, HE Dora pool: the British camp "surrounded the pool"] | Netanya 4.2 km | **1948**: Bahad 3, the infantry school, founded at Camp Dora; **September 1948**: the permanent combat intelligence school set up there; **January 1949**: the officers' school (Bahad 1) opened at Camp Eliyahu, next to Camp Dora. The camp had been the Alexandroni Brigade's base and then the Eastern Front's headquarters (to May 1949); the Jewish Agency bought it from the British in January 1948 | [S] HE Bahad 3 (cited: Zalman Gandler, *Mabat Malam* 53, April 2009, for September 1948; Nir Man, *HaKirya*, 2012, p. 38, for the purchase); [S] HE Bahad 1 (cited: Hanoch Petishi, *Zaro*, 2013, p. 148, for January 1949). *HaTzofe*, 20 September 1949, reports the Prime Minister's visit to the infantry school [S, cited by HE Bahad 3]. None read |
-| C4 | Tzrifin (צריפין, Sarafand) | 31.9587, 34.8395 [S, HE Tzrifin] | Rishon LeZion 3.9 km; Rehovot 7.2 km | **18-19 May 1948**: taken by the Givati Brigade without loss, and at once an IDF camp. **1949**: the national training base (Bahad 4, recruits) there until 1967. **January to June 1950**: the third battalion commanders' course there, as Bahad 2 | [S] HE Tzrifin (cited: *Al HaMishmar* and *Haaretz*, 20 May 1948); [S] HE Bahad 4 (1949, year only, no citation [U]); [S] HE Bahad 2 (cited: Sagi Turgan, 2017, p. 281). None read |
+| C4 | Tzrifin (צריפין, Sarafand) | 31.9587, 34.8395 [S, HE Tzrifin] | Rishon LeZion 3.9 km; Rehovot 7.2 km | **18-19 May 1948**: taken by the Givati Brigade without loss, and at once an IDF camp. **1949**: the national training base (Bahad 4, recruits) there until 1967. **January to June 1950**: the third battalion commanders' course there, as Bahad 2 | [S] HE Tzrifin (cited: *Al HaMishmar* and *Haaretz*, 20 May 1948); [S] HE Bahad 4 (1949, year only, no citation [U]); [S] HE Bahad 2 (cited: Sagi Turgan, 2017, p. 281). None read. **Sensitivity:** a prisoner-of-war camp for Arabs captured in the fighting stood on the site (over 1,100 prisoners in December 1948; closed in summer 1949) [S, HE Tzrifin, cited: *Haaretz*, 1 December 1948; *HaBoker*, 22 August 1949; neither read]. Any card text built from this site goes through D-F1 review |
 | C5 | Sirkin airfield (מחנה סירקין, "Alon" base) | 32.0886, 34.9156 [S, HE Sirkin] | Petah Tikva 2.75 km | **20 October 1949**: the Air Force's flying school ("Training Wing 12") founded at the new Alon base; flying courses there until March 1955 | [S] HE Sirkin; HE Flying School (cited: Yishgav Nakdimon, *Bitaon Heil HaAvir* 175, July 1990). Not read; iaf.org.il refused the request |
 
 **Fit to the game's two facility kinds** (a design reading, not a fact): C1 and C2 trained pioneer settlement nuclei
@@ -82,13 +83,27 @@ held the officers' school. C3 and C4 were IDF schools and training bases (`milit
 recruits; whether it counts as a "military camp" for the recruit track is the owner's call. Which kind each site gets,
 and whether an air base counts, is Q-CAMP-3 and Q-SENS-1 territory.
 
+### Jerusalem: Schneller, a sourced base held before the start (owner question)
+
+| Site | Point (lat, lon) | Nearest MVP city | Date | What it was | Mark |
+|---|---|---|---|---|---|
+| Schneller camp (the Schneller orphanage compound, מחנה שנלר) | 31.7908, 35.2127 [S, HE Schneller] | Jerusalem 1.8 km | **17 March 1948**: the British evacuated the camp and handed it to the Etzioni Brigade, the Haganah's Jerusalem district force; it was then called "permanent camp no. 1" and served as an army base for 60 years | [S] HE Schneller [43121200] (cited: Rachel Yanait, Yitzhak Avrahami and Yerah Etzion, *HaHagana BeYerushalayim*, vol. 2, Jerusalem, 5735 (1974-75), pp. 96, 98; not read). **Training role [U]:** Arutz 7, 26 November 2008 (https://www.inn.co.il/news/182116, read 2026-10-15), says the camp served "among other things as a training camp of the Etzioni Brigade", with no date for that use |
+
+**Owner question:** Schneller (from 17 March 1948) and Tel HaShomer (from 15 April 1948, below) were both held before
+15 May 1948. Q-CAMP-2 asks for bases near cities with no camp at the start. It does not say whether a camp already held
+before the start counts as one the player builds or as a facility the city already has. This note excluded Tel HaShomer
+on that ground; the same rule decides Schneller. Which way it goes is the owner's call, and it decides both sites.
+
+Agam's parallel research (#612) raised Schneller and the Tzrifin prisoner-of-war camp; both rows above cite their
+sources directly.
+
 ### Candidates checked that do not qualify
 
 | Candidate | Why not | Source |
 |---|---|---|
-| Tel HaShomer (Camp Tel Litvinsky, today Camp Dori), 32.0434, 34.8573; Petah Tikva 5.8 km | Taken by the Alexandroni Brigade on 15 April 1948 (before the game starts). The women's training base (Bahad 12) was set up there "in the early 1950s"; its infobox says 1950, with no month and no citation | [S] HE Tel HaShomer camp (cited: *HaBoker*, *Kol HaAm*, *Davar*, 16 April 1948); [S] HE Bahad 12 [U] |
+| Tel HaShomer (Camp Tel Litvinsky, today Camp Dori), 32.0434, 34.8573; Petah Tikva 5.8 km | Taken by the Alexandroni Brigade on 15 April 1948 (before the game starts; see the owner question above). The women's training base (Bahad 12) was set up there "in the early 1950s"; its infobox says 1950, with no month and no citation | [S] HE Tel HaShomer camp (cited: *HaBoker*, *Kol HaAm*, *Davar*, 16 April 1948); [S] HE Bahad 12 [U] |
 | Ju'ara, 32.5995, 35.1088; Zikhron Ya'akov 15.1 km, Haifa 26.5 km | The Haganah's main training base from 1938 to 1948, so it existed before the game starts; Golani's squad commanders' school from 1950 (year only). About two hexes from the nearest city | [S] HE Ju'ara (cited: Meir Shalev, *Bamahane*, 1988) |
-| The Gadna base at Givat Ram, Jerusalem | A 1948 photograph of its entrance sign exists; no opening date found | [S] HE Gadna (photograph caption only) [G] |
+| The Gadna base at Givat Ram, Jerusalem | A 1948 photograph of its entrance sign exists; no opening date found (Schneller, above, is the Jerusalem candidate) | [S] HE Gadna (photograph caption only) [G] |
 | Tel Nof (Ekron), by Rehovot | An operational air base; a flying course got its wings there on 10 May 1949, but no source names a training base opened there in the window | [S] HE Flying School [G] |
 | Haifa, Tiberias, Safed, Rosh Pinna | No training base with a place and a date in 1948-51 found in any source read | [G] |
 
