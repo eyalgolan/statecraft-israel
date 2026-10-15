@@ -41,16 +41,24 @@ namespace Statecraft.Game.Boot
         static readonly Regex BarePath = new Regex(@"(?<![\w:/.\\])(?:file://)?(?:/|[A-Za-z]:\\)[^\s'""()]+");
         static string FileName(string path) => path.Substring(path.LastIndexOfAny(new[] { '/', '\\' }) + 1);
 
+        /// <summary>The ?mvp=1 dev flag (#380): load the content through MvpSlice.Overlay, the GDD slice, for playtests. Only
+        /// "mvp=1" as a whole query parameter turns it on; the golden check and the smoke run ignore it and keep the real
+        /// content, so their pinned hashes hold.</summary>
+        internal static bool SliceRequested(string? url, bool golden, int smoke) =>
+            !golden && smoke == 0 && UrlFlags.Has(url, "mvp") && UrlFlags.Int(url, "mvp") == 1;
+
         async void Start()
         {
             DiagLog.Init();
             DiagLog.BootPhase("player started");
-            await BootAsync(LoadAsync);
+            var slice = SliceRequested(Application.absoluteURL, GoldenCheck.Requested(), Statecraft.Game.UI.GameRoot.SmokeTurns());
+            if (slice) Debug.Log("MVP SLICE: content through MvpSlice.Overlay (?mvp=1); the autosave is not used");
+            await BootAsync(() => LoadAsync(slice));
         }
 
-        static async Awaitable<GameInputs> LoadAsync() => Application.platform == RuntimePlatform.WebGLPlayer
-            ? await GameInputs.FetchAsync(GameInputs.StreamingUrl(), Application.buildGUID)
-            : GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        static async Awaitable<GameInputs> LoadAsync(bool slice) => Application.platform == RuntimePlatform.WebGLPlayer
+            ? await GameInputs.FetchAsync(GameInputs.StreamingUrl(), Application.buildGUID, slice)
+            : GameInputs.FromDisk(Paths.Content, Paths.StreamingMap, slice);
 
         /// <summary>The boot Start runs, with the loader passed in so a test can drive the real failure path.</summary>
         internal async Awaitable BootAsync(Func<Awaitable<GameInputs>> load)

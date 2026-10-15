@@ -50,6 +50,9 @@ namespace Statecraft.Game.Boot
     {
         public Content Content = null!;
         public MapInputs Map = null!;
+        /// <summary>True when Content is the GDD slice (MvpSlice.Overlay over the real files: the ?mvp=1 dev flag, #380). A
+        /// slice game never touches the player's autosave (GameRoot).</summary>
+        public bool Slice;
 
         public static MapInputs MapFromDisk(string contentDir, string mapDir) => new MapInputs
         {
@@ -74,17 +77,18 @@ namespace Statecraft.Game.Boot
         /// <summary>A map-only, cosmetic input: "" when the file is missing (the map then skips that layer with a warning).</summary>
         static string ReadIfExists(string path) => File.Exists(path) ? File.ReadAllText(path) : "";
 
-        public static GameInputs FromDisk(string contentDir, string mapDir) =>
-            new GameInputs { Content = ContentLoader.Load(contentDir), Map = MapFromDisk(contentDir, mapDir) };
+        public static GameInputs FromDisk(string contentDir, string mapDir, bool slice = false) =>
+            new GameInputs { Content = slice ? MvpSlice.Load(contentDir) : ContentLoader.Load(contentDir), Map = MapFromDisk(contentDir, mapDir), Slice = slice };
 
         /// <summary>Builds the inputs from fetched texts (keys are manifest paths) and the packed heightmap's bytes.</summary>
-        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z)
+        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z, bool slice = false)
         {
             var events = manifest.Where(f => f.StartsWith("events/", StringComparison.Ordinal)).ToList();
-            var content = ContentLoader.Load(rel => texts.TryGetValue(rel, out var t) ? t : null, events);
+            Func<string, string?> read = rel => texts.TryGetValue(rel, out var t) ? t : null;
+            var content = ContentLoader.Load(slice ? MvpSlice.Overlay(read) : read, events);   // the slice: ?mvp=1 (#380)
             return new GameInputs
             {
-                Content = content,
+                Content = content, Slice = slice,
                 Map = new MapInputs
                 {
                     HeightmapJson = heightmapJson, HeightmapR16z = r16z,
@@ -187,7 +191,7 @@ namespace Statecraft.Game.Boot
         /// <summary>Fetches the manifest, then starts every download before awaiting any (parallel), then loads. A transient
         /// failure is retried (Done). When one download fails for good, the others still running are aborted and disposed.
         /// Every URL carries <paramref name="buildId"/> (WithBuildId; the player passes Application.buildGUID).</summary>
-        public static async Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId = "")
+        public static async Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId = "", bool slice = false)
         {
             var manifest = ContentManifest.Parse(await Text(Start(WithBuildId(baseUrl + "/content/" + ContentManifest.FileName, buildId)), ContentManifest.FileName));
             var requests = manifest.Select(f => (file: f, request: Start(WithBuildId(baseUrl + "/content/" + f, buildId)))).ToList();
@@ -200,7 +204,7 @@ namespace Statecraft.Game.Boot
                 var metaText = await Text(meta, "heightmap.json");
                 var r16zBytes = await Bytes(r16z, HeightmapCodec.FileName);
                 DiagLog.BootPhase($"downloaded {texts.Count + 3} files");
-                var inputs = FromTexts(texts, manifest, metaText, r16zBytes);
+                var inputs = FromTexts(texts, manifest, metaText, r16zBytes, slice);
                 DiagLog.BootPhase("content parsed and validated");
                 return inputs;
             }

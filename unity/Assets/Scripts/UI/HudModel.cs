@@ -21,7 +21,7 @@ namespace Statecraft.Game.UI
     /// number of immigrants who arrived during the last turn.</summary>
     public sealed class HudModel
     {
-        public string Year = "", Turn = "", Date = "", Attention = "", SecurityLevel = "";
+        public string Year = "", Turn = "", Date = "", Attention = "", SecurityLevel = "", Score = "";
         public Meter Treasury, Immigration, Security, Support, Standing, Fx;
 
         static double Arrivals(StepResult? r) => r == null ? 0 : r.Why.Where(w => w.System == "population").Sum(w => w.Delta);
@@ -78,6 +78,7 @@ namespace Statecraft.Game.UI
                 Date = t.Format("hud.date", PlayerText.Date(s.Date)),
                 Attention = t.Format("hud.attention", b.AttentionLeft, c.RulesAt(s.Date).AttentionPerTurn),
                 SecurityLevel = t.Format("hud.level", s.Rung),
+                Score = c.IsGdd ? t.Format("hud.score", s.Score) : "",   // the GDD loop only (#380); PR 6 moves it
                 Treasury = Money("treasury", s.Treasury - s.Debt, prev == null ? (double?)null : prev.Treasury - prev.Debt),
                 Immigration = People(Arrivals(b.Session.Last), b.BeforeLast == null ? (double?)null : Arrivals(b.BeforeLast)),
                 Security = Points(s.Indicators["security"], prev?.Indicators["security"]),

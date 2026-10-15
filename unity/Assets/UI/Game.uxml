@@ -12,6 +12,7 @@
                 <ui:VisualElement class="date-row">
                     <ui:Label name="turn" class="muted" />
                     <ui:Label name="date" class="muted" />
+                    <ui:Label name="score" class="muted" />
                 </ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame shadow="false" filigree="true" />
             </ui:VisualElement>

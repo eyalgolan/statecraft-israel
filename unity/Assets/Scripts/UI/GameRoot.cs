@@ -173,11 +173,12 @@ namespace Statecraft.Game.UI
             var text = Strings();
             var store = Store ?? SaveStore.ForPlatform();
             var notes = new List<string>();
-            // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
+            // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave. A slice game (?mvp=1,
+            // #380) is fresh too: the autosave was made with other rules, so it is neither read nor set aside.
             bool resumed;
             var session = smoke > 0
                 ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed, fresh: true)
-                : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed);
+                : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed, fresh: inputs.Slice);
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             var root = document.rootVisualElement;
@@ -259,11 +260,11 @@ namespace Statecraft.Game.UI
             var info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,
                 regions: regions, localitiesAt: localitiesAt));
-            // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
+            // A smoke or slice session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
             NewGamePresenter? newGame = null;
-            if (smoke == 0)
+            if (smoke == 0 && !inputs.Slice)
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
                 Own(GameStart.Autosave(bridge, store, text, toast.Append));   // appends: the turn's refusals stay visible

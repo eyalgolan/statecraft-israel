@@ -168,6 +168,9 @@ namespace Statecraft.Game.UI
             var m = HudModel.From(bridge, text);
             Set("year", m.Year); Set("turn", m.Turn); Set("date", m.Date); Set("attention", m.Attention);
             Set("security-level", m.SecurityLevel);
+            var score = root.Q<Label>("score");   // the GDD loop only (#380): hidden when HudModel gives none
+            score.text = m.Score;
+            score.style.display = m.Score.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             Set("treasury", m.Treasury); Set("immigration", m.Immigration); Set("security", m.Security);
             Set("support", m.Support); Set("standing", m.Standing); Set("fx", m.Fx);
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);

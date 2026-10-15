@@ -8,6 +8,7 @@ hud.date: "{0}"
 hud.attention: "Attention {0:0.0} of {1:0.0}"
 hud.people: "{0:N0}"
 hud.level: "Level {0} of 5"
+hud.score: "Score {0:N0}"
 hud.delta_people: "{0:+#,##0;-#,##0}"
 # A top-bar meter in words, kept as its tooltip for a later accessibility layer (HudModel.Spoken): {0} the caption, {1}
 # the value, {2} the change without its sign. Money: {0} the sign and the currency prefix from content ("IL ", "-IL ",
