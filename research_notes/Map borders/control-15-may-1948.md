@@ -184,7 +184,7 @@ Recommendation: A first (one scan, the sensitive ruling taken once); B only if t
    Owner ruling Q1.
 2. **Date offset.** The map is dated 18 May, three days after the game's start; Acre, Latrun, Jerusalem (Pitchfork),
    Atarot, Neve Yaakov, Nabi Yusha and Gesher changed or were fought over in between (section 3).
-3. **Symbol clash on the scan.** The legend's "Border of strongly-held Jewish area" and the base map's "Partition
+3. **Symbol clash on the scan (confirmed 2026-10-16, section 9).** The legend's "Border of strongly-held Jewish area" and the base map's "Partition
    Boundary" are both heavy solid black lines on this greyscale scan (the original was presumably in colour; no colour
    copy found). Where they coincide the scan cannot say whether the held border runs there. The CIA text of 5 May
    ("substantial possession of the areas allotted to them under the partition scheme, except in southern Palestine")
@@ -286,6 +286,50 @@ lat/long graticule, so step 2 adds a second source to the same tool rather than 
 
 Status of every new feature: `draft`, `review: owner-verify (sensitivity review before a shareable build)`,
 `source_quality: low_res_scan`.
+
+## 9. Step 2 check: the scan cannot carry the strongly-held border (2026-10-16)
+
+The owner ruled on 15/16 October 2026 (#674): Q1 "Use the CIA map, cited (Recommended)"; Q2 "Contested (Recommended)";
+Q3 "No colour + settlement hexes blue (Recommended)"; Q4-Q6 as this note recommends. Before tracing, the scan was
+tested for whether the line can be read reliably. **It cannot, outside the dashed (tenuous) borders.** What was done, in
+the session scratchpad (nothing committed):
+
+1. **Georeference: good.** The map's own graticule ticks, found by pixel search, were used: 35° and 35°30' E on the top
+   neatline (x 742.5 and 1075.5); 34°30', 35° and 35°30' E on the bottom one (x 380.5, 724.5, about 1060); and 33°, 32°30', 32° and
+   31°30' N on the right one (y 440, 837.5, 1235.5, 1631). A linear fit leaves residuals under 0.005° and gives about 0.139
+   km a pixel. It predicts 26 town symbols to within about 1-21 px (0.1-3 km); most are within 10 px. The D-B sub-district
+   boundaries overlaid on the scan fall on the map's own district boundaries.
+2. **Line weight does not separate the classes.** On this binarised scan the legend's "Border of strongly-held Jewish
+   area" and "Partition Boundary" bars are both about 4 px thick. The first-class roads and the standard-gauge railway are
+   2-4 px, and where they run together they merge into wider strokes. A stroke-width map (skeleton width, thresholds 4.5
+   and 6 px) marks the road and rail bundles as heavy as often as any border. So no mask picks out the held border.
+3. **Agreement cannot be measured.** The ink is too dense. For each ISA 6158/1 9 July red stroke, the share of its
+   length within 4 px (0.6 km) of CIA ink was compared with the same stroke shifted about 4 km in six directions:
+   r_galilee 0.67 against 0.63 shifted; r_jenin 0.72 against 0.67; r_south_east 0.50 against 0.52; r_south_west 0.51 against
+   0.48; r_carmel_ijzim 0.53 against 0.45. Only r_east (it runs on the frontier and the Jordan) stands out (0.89 against
+   0.61). A line drawn anywhere lands on ink about as often as the true one, so an on-ink check of a traced border would
+   prove nothing.
+4. **Read by eye.** The heavy dashed (tenuous) borders are legible: the loop from the frontier near Nabi Yusha down to
+   Safad and east to the Jordan, enclosing the Hula; the Latrun - Bab el Wad - El Qastal - Jerusalem corridor; the loop by
+   the north Dead Sea works; the Rishon-Sarafand area. The solid (strong) border cannot be told from the partition
+   boundary, the roads and the railway in the western Galilee (Acre - Nahariya), the Jezreel - Wadi Ara edge, or the Lydda
+   - Ramle area. Those are exactly the places where the 18 May position differs from 9 July.
+
+So a faithful trace of the 18 May strongly-held border is not possible from this copy. Tracing it anyway would mean
+choosing among candidate lines by expectation, which is a guess. Options for the owner:
+
+- **(a) A better copy, then trace (recommended for the CIA route).** A colour or full-resolution copy of CIA maps
+  10981 / 10984 is needed: NARA RG 263 (CIA records, CREST), or the Truman Library (which holds the colour 11 June
+  edition of the same series). Requesting one is an outward action for the owner. Until then, keep today's state: no
+  side colour before 11 June.
+- **(b) Draw only what is sourced and legible, without a 15 May line.** Show the `truce1` geometry (ISA 6158/1, 9 July)
+  from 15 May, with these changes. Contested (`c`) where the CIA 18 May map's dashed borders are legible (Safad-Hula, the
+  corridor, the north Dead Sea; traced from the CIA scan). Contested where a sourced change between 15 May and 11 June lies
+  inside a `truce1` Israeli area (the Acre-Nahariya coast, the Lajjun-Zir'in edge, Yibna), cut by the D-B sub-district
+  polygons so no new line is drawn. No colour in the south, with settlement hexes blue (Q3). Jerusalem `m`. The caption
+  would have to say the lines are those of 9 July 1948, adjusted. This is a different source from the one Q1 approved,
+  so it needs the owner's ruling.
+- **(c) Leave 15 May - 10 June uncoloured** (today's state), and record the CIA series as a cross-check only.
 
 ## Sources opened (2026-10-15)
 
