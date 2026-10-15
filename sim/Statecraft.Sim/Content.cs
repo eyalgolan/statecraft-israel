@@ -9,6 +9,30 @@ namespace Statecraft.Sim
 
     public sealed class Source { public string Url { get; set; } = ""; public DateTime Checked { get; set; } }
 
+    /// <summary>The shape of a sign-off's `reviewed_by`: a GitHub handle (letters and digits, single hyphens between them,
+    /// at most 39 characters), so never an email, an @-name, a display name or a bot account ("name[bot]"). Shared with
+    /// the map's readers in Unity.</summary>
+    public static class ReviewRecord
+    {
+        static readonly System.Text.RegularExpressions.Regex Handle =
+            new System.Text.RegularExpressions.Regex(@"^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}\z");
+
+        public static bool IsHandle(string? s) => s != null && Handle.IsMatch(s);
+
+        /// <summary>What is wrong with a row's sign-off, as (field, message), or null when it is absent or whole: both keys or
+        /// neither (a key that is present but blank counts as present), the handle's shape, and the day as YYYY-MM-DD.</summary>
+        public static (string field, string message)? Problem(bool byGiven, string? by, bool onGiven, string? on)
+        {
+            if (!byGiven && !onGiven) return null;
+            if (!onGiven) return ("reviewed_on", "required with reviewed_by: the day the person signed off (YYYY-MM-DD)");
+            if (!byGiven) return ("reviewed_by", "required with reviewed_on: the reviewer's GitHub handle");
+            if (!IsHandle(by)) return ("reviewed_by", "must be the reviewer's GitHub handle (letters, digits and single hyphens; no @, email or display name)");
+            if (!DateTime.TryParseExact(on ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+                return ("reviewed_on", "must be the day of the sign-off, YYYY-MM-DD");
+            return null;
+        }
+    }
+
     /// <summary>The review flag of a Hebrew display name (`*_he_review`, CONTENT_POLICY section 2, rule 6). A name an AI agent
     /// checked against its sources, but no person has read yet, carries <see cref="AgentChecked"/>; the row's own `status`
     /// stays what it is for the English facts. A native speaker's review clears the flag (the key is removed).</summary>
@@ -137,6 +161,17 @@ namespace Statecraft.Sim
         public Portrait? Portrait { get; set; }
         public List<OfficeTerm> Offices { get; set; } = new List<OfficeTerm>();
         public string Status { get; set; } = "draft";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
     }
 
     public sealed class Legislature
@@ -161,6 +196,17 @@ namespace Statecraft.Sim
         public List<string> OpenQuestions { get; set; } = new List<string>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
     }
 
     public sealed class Government
@@ -184,6 +230,17 @@ namespace Statecraft.Sim
         public List<CoalitionChange> CoalitionChanges { get; set; } = new List<CoalitionChange>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
 
         /// <summary>The coalition on <paramref name="date"/>: the opening list with every change dated on or before that
         /// day applied. The result keeps the opening order, with parties that joined added at the end.</summary>
@@ -400,6 +457,17 @@ namespace Statecraft.Sim
         public DateTime Founded { get; set; }
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
     }
 
     /// <summary>A city's start values (cities.yaml, GDD "Cities and construction"). Counts are population units (D-A1).</summary>
@@ -483,6 +551,17 @@ namespace Statecraft.Sim
         public Dictionary<string, double> Origins { get; set; } = new Dictionary<string, double>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
     }
 
     public sealed class PopulationAnchor
@@ -491,6 +570,17 @@ namespace Statecraft.Sim
         public double Jews { get; set; }
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
     }
 
     public sealed class EventCondition { public string Indicator { get; set; } = ""; public double? Min { get; set; } public double? Max { get; set; } }
@@ -528,6 +618,17 @@ namespace Statecraft.Sim
         public List<EventOption> Options { get; set; } = new List<EventOption>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off; set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public DateTime? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        DateTime? reviewedOn;
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
     }

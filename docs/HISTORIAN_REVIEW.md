@@ -12,16 +12,18 @@ plans `draft` -> `fact-checked` -> `historian-reviewed`, then `sensitivity-revie
 Historian review is planned for M4 and is not yet a gate. The current code and policy take precedence over the planned pipeline:
 
 - [ContentLoader.cs](../sim/Statecraft.Sim/ContentLoader.cs) accepts all four status values, but rejects unknown YAML keys.
-  [GameEvent](../sim/Statecraft.Sim/Content.cs) has `sources` and `status`, not fields for a reviewer or review date.
+  Beside `status`, every status row (an event, a person, a legislature, a government, an aliyah or population row, a
+  site, and the map files' rows) takes a person's sign-off: `reviewed_by` (their GitHub handle) and `reviewed_on` (the
+  day), both or neither (see "Sign the row off" below).
 - [RealContentTests.cs](../sim/Statecraft.Sim.Tests/RealContentTests.cs) currently requires non-sensitive events to be exactly
   `fact-checked` and sensitive events to be exactly `sensitivity-reviewed`. Changing one to `historian-reviewed` fails that test.
 - [ReleaseGate.cs](../sim/Statecraft.Sim/ReleaseGate.cs) checks sensitivity review, not historian review.
   A green release gate is not evidence that a historian checked the content.
 
-Record an actual historian review now in the PR and YAML comments as described below, leaving `status` unchanged.
-Before changing a status, a separate implementation must update tests and decide how historian and sensitivity sign-offs
-are preserved together. Do not weaken the sensitivity gate to make a historian status pass. No new machine-read fields
-or extra status values are defined by this guide.
+Record an actual historian review now in the PR, with the sign-off and a pointer comment in the YAML as described below,
+leaving `status` unchanged. Before changing a status, a separate implementation must update tests and decide how historian
+and sensitivity sign-offs are preserved together. Do not weaken the sensitivity gate to make a historian status pass. This
+guide defines no extra status values.
 
 ## Who reviews and what is being reviewed
 
@@ -53,18 +55,33 @@ do not reproduce a book or source packet whose rights do not permit sharing it.
       still need the maintainer's separate sensitivity review. A historian cannot sign that off on the maintainer's behalf.
 - [ ] List any omitted context that makes the text misleading, each correction needed, and any claim left outside the review scope.
 
-## Record the result without changing the schema
+## Record the result
 
 The reviewer comments on the PR for each event, giving: file/id, reviewed commit, review date, agreed public identity and
 relevant expertise, claim/source/page list, scope limits, outcome and corrections. Use `accepted`, `changes requested`, or
 `unable to verify` as **record outcomes**, not YAML `status` values. An accepted result needs an actual affirmative human review.
 A contributor's or AI's summary is not a substitute for the reviewer's record. GitHub code-owner approval is a different check.
 
-After the reviewer confirms acceptance, put a comment block next to `sources` in the event YAML. Replace every placeholder
-with facts from the real review; never commit this unfilled example as a sign-off:
+### Sign the row off
+
+**Changed on 15 October 2026.** Until then this guide said to record a review in comments only, "without adding unsupported
+keys such as `reviewed_by` or `reviewed_on`". The [owner decision, 15 October 2026, #375](https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6184126823) reverses that: "Yes, humans only". A row a person has
+reviewed now carries, beside its `status`:
+
+- `reviewed_by`: the reviewer's GitHub handle (letters, digits and single hyphens), never an email or a display name;
+- `reviewed_on`: the day of the review, `YYYY-MM-DD`, not after the day of the commit that adds it.
+
+Both or neither: the loader (and the map's readers in Unity, and `tools/routes_1948.py`) refuses one without the other, a
+blank value, or a value of the wrong shape. **Only the reviewer writes these two lines, in a commit of their own.** An AI
+agent never does, not even to copy a sign-off it was told about: `scripts/oss/reviewed_by_guard.py` fails a pull request
+in which a commit with an AI co-author trailer adds, changes or removes either line, and it fails closed. A row with a
+whole sign-off leaves the review queue (`tools/review_queue.py`, `docs/review-queue.md`).
+
+After the reviewer confirms acceptance, they add the two keys and a comment block next to `sources` that points to the
+record. Replace every placeholder with facts from the real review; never commit this unfilled example as a sign-off:
 
 ```yaml
-# Historian review record (not a new YAML field):
+# Historian review record:
 # Reviewer: <agreed public name/handle>; expertise: <confirmed relevant scope>
 # Reviewed: <YYYY-MM-DD>; content commit: <full reviewed SHA>
 # Record: <URL of the actual per-event review comment>
@@ -72,12 +89,14 @@ with facts from the real review; never commit this unfilled example as a sign-of
 # Scope: <covered claims and any exclusions>; outcome: accepted
 # Sensitivity: <separate maintainer record if applicable; otherwise not applicable>
 # status remains at its existing value until the M4 implementation supports the transition.
+# reviewed_by: <the reviewer's GitHub handle>    (the reviewer's own two lines, uncommented, beside status)
+# reviewed_on: <YYYY-MM-DD>
 ```
 
-Comments are not a machine-enforced certificate: anyone can edit them, and no test reads them. The reviewer's PR comment
-is the record; the YAML comment only points to it, without adding unsupported keys such as `reviewed_by` or `reviewed_on`.
-A comment-only edit still changes the content hash (`ContentLoader` hashes the text of every content file), so a save made
-before it loads with the "different game content" warning. It does not change any parsed value, so the golden hashes in
+The comments are not a machine-enforced certificate: anyone can edit them, and no test reads them. The reviewer's PR
+comment is the record; the comments point to it, and `reviewed_by` and `reviewed_on` say who signed the row off and when.
+An edit that adds only comments and these two keys still changes the content hash (`ContentLoader` hashes the text of every content file), so a save made
+before it loads with the "different game content" warning. It changes no game state, so the golden hashes in
 [determinism.md](determinism.md) stay the same. If they move, the edit changed more than comments: find out what before going on.
 
 ## Corrections, disagreements and changed content

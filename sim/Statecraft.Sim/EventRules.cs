@@ -21,6 +21,7 @@ namespace Statecraft.Sim
                 if (!ids.Add(e.Id)) throw new ContentException(e.File, F("id"), "duplicate event id");
                 if (e.Anchor != "hard" && e.Anchor != "soft") throw new ContentException(e.File, F("anchor"), $"unknown anchor '{e.Anchor}' (must be hard or soft)");
                 ContentLoader.Status(e.File, F("status"), e.Status);
+                ContentLoader.Review(e.File, $"events[{e.Id}]", e.ReviewedBy, e.ReviewedByGiven, e.ReviewedOn, e.ReviewedOnGiven);
                 ContentLoader.Period(e.File, $"events[{e.Id}]", e.From, e.To);
                 // Chapters design 9: an event may not span a boundary; it is split. An open window (no `to`) is allowed only in
                 // the last era, since EventSystem keeps an open event eligible to the end of the game.

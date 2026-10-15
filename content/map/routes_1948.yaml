@@ -14,6 +14,9 @@
 # trace: the map symbol the trace follows when it is not the kind's own (the 1,050 mm narrow-gauge lines are a thin
 # line on the 1946 map, so they trace as `track`).
 # status: draft = traced and checked by eye against the 1946 map (route previews), not yet by a historian.
+# reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
+# that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md). tools/routes_1948.py checks them; the
+# traced route_paths_1948.yaml does not carry them.
 # to_verify: what the sources leave open; a route with a to_verify line is not to be relied on beyond it.
 # opened: the year a cited source gives for the route's opening; left out where no source states it. Every route
 # except the Burma Road (1948) is on the 1946 map, so it ran by 1946 at the latest.

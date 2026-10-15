@@ -236,3 +236,24 @@ def test_gaussian_smooth_flattens_a_wobble_and_keeps_a_bend():
     radii = np.hypot(out[5:-5, 0], out[5:-5, 1])
     assert radii.min() > 0.9 * r, radii.min()                                    # the bend keeps its shape
     assert rt.gaussian_smooth(arc, rt.RESAMPLE_M) == rt.gaussian_smooth(arc, rt.RESAMPLE_M)   # deterministic
+
+
+@pytest.mark.parametrize("change, message", [
+    ({"reviewed_by": "eyalgolan"}, "reviewed_on"),
+    ({"reviewed_on": "2026-10-15"}, "reviewed_by"),
+    ({"reviewed_by": "someone@example.org", "reviewed_on": "2026-10-15"}, "reviewed_by"),
+    ({"reviewed_by": None, "reviewed_on": "2026-10-15"}, "reviewed_by"),
+    ({"reviewed_by": "eyalgolan", "reviewed_on": "15 October 2026"}, "reviewed_on"),
+])
+def test_validate_rejects_a_bad_sign_off(change, message):
+    """A person's sign-off beside the status (#375): both or neither, a GitHub handle, a day."""
+    doc = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
+    doc["routes"][0].update(change)
+    with pytest.raises(ValueError, match=message):
+        rt.validate_routes(doc, BOUNDS)
+
+
+def test_validate_accepts_a_whole_sign_off():
+    doc = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
+    doc["routes"][0].update({"reviewed_by": "eyalgolan", "reviewed_on": "2026-10-15"})
+    rt.validate_routes(doc, BOUNDS)

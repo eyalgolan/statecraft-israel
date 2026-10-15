@@ -181,3 +181,14 @@ def test_player_golden_runs_only_the_repositorys_own_released_players():
     assert "curl" not in text and "wget" not in text and "download-artifact" not in text
     for ref_line in re.findall(r"uses:\s*[\w.-]+/[\w./-]+@[0-9a-f]{40}.*", text):
         assert re.search(r"# v\d+\.\d+\.\d+$", ref_line), ref_line
+
+
+def test_the_reviewed_by_guard_runs_on_the_pr_head_with_full_history():
+    """#375: the guard needs every commit of the pull request (fetch-depth 0) and diffs the PR head, not the merge ref."""
+    job = next(j for j in ci()["jobs"].values() if j["name"] == "Changelog")
+    checkout = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/checkout@"))
+    assert checkout["with"]["fetch-depth"] == 0
+    step = next(s for s in job["steps"] if "reviewed_by_guard.py" in s.get("run", ""))
+    assert '--base "$BASE_SHA"' in step["run"] and '--head "$HEAD_SHA"' in step["run"]
+    assert step["env"]["HEAD_SHA"] == "${{ github.event.pull_request.head.sha }}"
+    assert step["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"

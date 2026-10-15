@@ -176,6 +176,14 @@ flag: `*_review: agent-checked` while only an AI agent has checked the name agai
 removes the line once they have reviewed the name (#564); a blank value is an error, not a review. It does not change
 the row's `status`.
 
+### reviewed_by and reviewed_on
+
+A person's sign-off beside `status`: `reviewed_by` is the reviewer's GitHub handle (never an email), `reviewed_on` the
+day, `YYYY-MM-DD`. Both or neither; the loader refuses a blank or malformed value. **Only the reviewer writes them**, in a
+commit of their own: never add, change or remove them yourself on someone's behalf, and an AI agent never does
+(`scripts/oss/reviewed_by_guard.py` fails such a pull request; owner, 15 October 2026, #375). See
+[HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off).
+
 ## What the loader rejects
 
 Errors are printed as `file: field: message`. These are the messages you are most likely to see:

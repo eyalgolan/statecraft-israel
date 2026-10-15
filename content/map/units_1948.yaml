@@ -32,6 +32,8 @@
 #   steel helmet, bush hat; docs/units.md).
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian.
+# reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
+# that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 units:
 # --- Army: the twelve brigades of 1948 -------------------------------------------------------------------------------
 - id: golani

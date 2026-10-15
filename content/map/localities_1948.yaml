@@ -26,6 +26,8 @@
 #                Thirteen villages have no Hebrew label or article and no name_he: the map keeps the English (#558).
 #                name_he_review: agent-checked on those five rows: an AI agent checked the name against its sources and no
 #                person has read it yet (owner, 2026-10-15); a native speaker reviews it (#564) and removes the flag.
+#   reviewed_by/on  a person's sign-off beside status (a place or a camp row), their GitHub handle and the day, both or
+#                neither; only that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 #   kind/type    finer kind and the repo's settlement type; the kit archetype follows type (village and arab_town:
 #                Arab village houses; town, kibbutz, moshav: red-roofed Jewish settlement, moshav as a ring);
 #                kind mixed_locality (Nesher): both, side by side.

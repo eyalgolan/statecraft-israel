@@ -491,6 +491,14 @@ public class KitTests
         Bad("places:\n" + Place("a").Replace("https://example.org/x", "example.org/x"), "URL");
         Bad("places:\n" + Place("a", "  fate: x\n"), "fate");
         Bad("places:\n" + Place("a", "  today:\n    name: Y\n") , "today");
+        // A person's sign-off (#375): both or neither, a GitHub handle (never an email), a day; on a place or a camp row.
+        Assert.AreEqual(1, Localities.Parse("places:\n" + Place("a", "  reviewed_by: eyalgolan\n  reviewed_on: '2026-10-15'\n"), b, reserved, "loc.yaml").Places.Count);
+        Bad("places:\n" + Place("a", "  reviewed_by: eyalgolan\n"), "reviewed_on");
+        Bad("places:\n" + Place("a", "  reviewed_on: '2026-10-15'\n"), "reviewed_by");
+        Bad("places:\n" + Place("a", "  reviewed_by: someone@example.org\n  reviewed_on: '2026-10-15'\n"), "reviewed_by");
+        Bad("places:\n" + Place("a", "  reviewed_by: ''\n  reviewed_on: '2026-10-15'\n"), "reviewed_by");
+        Bad("places:\n" + Place("a", "  reviewed_by: eyalgolan\n  reviewed_on: 15 October\n"), "reviewed_on");
+        Bad("places:\n" + Place("a") + "encampments:\n- subdistrict: gaza\n  population: 500\n  reviewed_by: eyalgolan\n" + src, "reviewed_on");
         // #558: name_he_sources need the name, and each source an https url and a checked date.
         Bad("places:\n" + Place("a", "  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x', checked: '2026-10-14'}\n"), "name_he_sources without a name_he");
         Bad("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x'}\n"), "name_he_sources[0]");
@@ -808,6 +816,10 @@ public class KitTests
         Bad("settlements:\n- id: a\n  population: 1\n  status: owner-verify\n" + src + "- id: a\n  population: 2\n  status: owner-verify\n" + src, "duplicate");
         Bad("settlements:\n- id: A\n  population: 1\n  status: owner-verify\n" + src, "snake_case");
         Bad("settlements:\n- id: a\n  people: 1\n", "people");
+        // A person's sign-off (#375): both or neither, a GitHub handle, a day.
+        Bad("settlements:\n- id: a\n  population: 1\n  status: verified\n  reviewed_by: eyalgolan\n" + src, "reviewed_on");
+        Bad("settlements:\n- id: a\n  population: 1\n  status: verified\n  reviewed_by: a@example.org\n  reviewed_on: '2026-10-15'\n" + src, "reviewed_by");
+        Assert.AreEqual(1, KitPopulation.Parse("settlements:\n- id: a\n  population: 1\n  status: verified\n  reviewed_by: eyalgolan\n  reviewed_on: '2026-10-15'\n" + src, "pop.yaml").Count);
     }
 
     [Test]

@@ -380,6 +380,14 @@ namespace Statecraft.Sim
             if (string.IsNullOrWhiteSpace(name)) throw new ContentException(file, field, "required (the name shown to the player)");
         }
 
+        /// <summary>A row's sign-off (#375): reviewed_by and reviewed_on together, a GitHub handle, a date (the YAML reader
+        /// already refused a day that is not one). <paramref name="at"/> is the row's path, as in "people[ben_gurion]".</summary>
+        internal static void Review(string file, string at, string by, bool byGiven, DateTime? on, bool onGiven)
+        {
+            var p = ReviewRecord.Problem(byGiven, by, onGiven, on?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            if (p != null) throw new ContentException(file, $"{at}.{p.Value.field}", p.Value.message);
+        }
+
         internal static void Status(string file, string field, string status)
         {
             if (!Statuses.Contains(status))
@@ -656,11 +664,11 @@ namespace Statecraft.Sim
             foreach (var p in c.Policies)
                 if (Array.IndexOf(PlayerText.MoneyIds, p.Id) >= 0) throw new ContentException("model.yaml", $"policies[{p.Id}].id", "same id as money (treasury, debt, fx_reserves)");
 
-            foreach (var p in c.People) Status("people.yaml", $"people[{p.Id}].status", p.Status);
-            foreach (var l in c.Legislatures) Status("legislatures.yaml", $"legislatures[{l.Id}].status", l.Status);
-            foreach (var g in c.Governments) Status("governments.yaml", $"governments[{g.Id}].status", g.Status);
-            for (int i = 0; i < c.Aliyah.Count; i++) Status("aliyah.yaml", FormattableString.Invariant($"series[{i}].status"), c.Aliyah[i].Status);
-            for (int i = 0; i < c.PopulationAnchors.Count; i++) Status("population.yaml", FormattableString.Invariant($"anchors[{i}].status"), c.PopulationAnchors[i].Status);
+            foreach (var p in c.People) { Status("people.yaml", $"people[{p.Id}].status", p.Status); Review("people.yaml", $"people[{p.Id}]", p.ReviewedBy, p.ReviewedByGiven, p.ReviewedOn, p.ReviewedOnGiven); }
+            foreach (var l in c.Legislatures) { Status("legislatures.yaml", $"legislatures[{l.Id}].status", l.Status); Review("legislatures.yaml", $"legislatures[{l.Id}]", l.ReviewedBy, l.ReviewedByGiven, l.ReviewedOn, l.ReviewedOnGiven); }
+            foreach (var g in c.Governments) { Status("governments.yaml", $"governments[{g.Id}].status", g.Status); Review("governments.yaml", $"governments[{g.Id}]", g.ReviewedBy, g.ReviewedByGiven, g.ReviewedOn, g.ReviewedOnGiven); }
+            for (int i = 0; i < c.Aliyah.Count; i++) { Status("aliyah.yaml", FormattableString.Invariant($"series[{i}].status"), c.Aliyah[i].Status); Review("aliyah.yaml", FormattableString.Invariant($"series[{i}]"), c.Aliyah[i].ReviewedBy, c.Aliyah[i].ReviewedByGiven, c.Aliyah[i].ReviewedOn, c.Aliyah[i].ReviewedOnGiven); }
+            for (int i = 0; i < c.PopulationAnchors.Count; i++) { Status("population.yaml", FormattableString.Invariant($"anchors[{i}].status"), c.PopulationAnchors[i].Status); Review("population.yaml", FormattableString.Invariant($"anchors[{i}]"), c.PopulationAnchors[i].ReviewedBy, c.PopulationAnchors[i].ReviewedByGiven, c.PopulationAnchors[i].ReviewedOn, c.PopulationAnchors[i].ReviewedOnGiven); }
 
             foreach (var p in c.People)
             {
@@ -1008,6 +1016,7 @@ namespace Statecraft.Sim
                     if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)
                         throw new ContentException(sf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
                 Status(sf, at + ".status", x.Status);
+                Review(sf, at, x.ReviewedBy, x.ReviewedByGiven, x.ReviewedOn, x.ReviewedOnGiven);
             }
         }
 

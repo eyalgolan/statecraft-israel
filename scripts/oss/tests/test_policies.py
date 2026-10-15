@@ -54,9 +54,9 @@ def test_check_script_runs_every_ci_command():
     ci = yaml.safe_load(read(".github/workflows/ci.yml"))
     script = read("scripts/check.sh")
     runs = [s["run"] for job in ci["jobs"].values() for s in job["steps"] if "run" in s]
-    assert len(runs) == 5, runs
+    assert len(runs) == 6, runs
     for cmd in runs:
-        # The changelog job passes the PR's SHAs; the script passes its own base ref.
+        # The changelog job (and the reviewed_by guard in it) passes the PR's SHAs; the script passes its own base ref.
         cmd = cmd.split(" --base ")[0]
         assert cmd in script, cmd
     assert f'UV_PYTHON:-{ci["env"]["UV_PYTHON"]}' in script
