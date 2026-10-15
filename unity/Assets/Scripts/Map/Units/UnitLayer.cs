@@ -54,6 +54,9 @@ namespace Statecraft.Game.Map.Units
         List<Bounds[]> keepClear = new List<Bounds[]>();
         GameObject? ring;
         bool still;
+        /// <summary>The camera pose <see cref="FaceCamera"/> last turned the badges and flags to; a call from the same pose
+        /// changes nothing and returns at once (GameRoot calls it every frame). Cleared when the tokens are rebuilt.</summary>
+        (Vector3 eye, Quaternion rotation)? facedFor;
 
         /// <summary>The tokens drawn now, in the data's order.</summary>
         public IReadOnlyList<PlacedToken> Tokens => placed;
@@ -153,7 +156,10 @@ namespace Statecraft.Game.Map.Units
         public void FaceCamera(Camera cam)
         {
             if (cam == null) return;
-            var eye = cam.transform.position; var rotation = cam.transform.rotation; var away = cam.transform.forward; away.y = 0f;
+            var eye = cam.transform.position; var rotation = cam.transform.rotation;
+            if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
+            facedFor = (eye, rotation);
+            var away = cam.transform.forward; away.y = 0f;
             away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.forward;
             var right = cam.transform.right; right.y = 0f;
             right = right.sqrMagnitude > 1e-6f ? right.normalized : Vector3.right;
@@ -261,7 +267,7 @@ namespace Statecraft.Game.Map.Units
                 if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
             }
             FreeTokenMeshes();
-            badges.Clear(); badgeHomes.Clear();
+            badges.Clear(); badgeHomes.Clear(); facedFor = null;
             treeHoles.Clear();
             keepClear = new List<Bounds[]>();   // a new list, so the labels see the change
             float hex = map.Hexes.hex_size_km * 1000f;
