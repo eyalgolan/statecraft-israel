@@ -533,8 +533,21 @@ public class UiLayoutTests
         if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < l.height - 1f)
         {
             var want = band.layout.width / EventCardPresenter.MediaAspect;
-            if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare");
+            if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare; {LayoutState(root)}");
         }
+    }
+
+    /// <summary>Issue #649: the header was once 956x566 at 1024x1024 in a full run (566 is the normal two-row height there;
+    /// 956 is not the normal 1004 width) and could not be reproduced. The state the header is sized from, so the next
+    /// failure says which input moved: the panel's scale and size, the HUD's tier, the
+    /// card's content width and padding, the height the presenter set and whether the photograph's texture is loaded.</summary>
+    static string LayoutState(VisualElement root)
+    {
+        var card = root.Q("event-card"); var band = root.Q("event-photo"); var s = card.resolvedStyle;
+        var tree = root.panel.visualTree.layout;
+        return $"panel scale {root.panel.scaledPixelsPerPoint:0.####}, panel {tree.width:0.#}x{tree.height:0.#}, HUD [{string.Join(" ", (root.Q("root") ?? root).GetClasses())}], "
+            + $"card content width {card.contentRect.width:0.#} (padding {s.paddingLeft:0.#}/{s.paddingRight:0.#}), header style height {band.style.height}, "
+            + $"photograph texture {(band.resolvedStyle.backgroundImage.texture != null ? "loaded" : "none")}";
     }
 
     /// <summary>The card's largest width (Statecraft.uss .event-card), logical px.</summary>
