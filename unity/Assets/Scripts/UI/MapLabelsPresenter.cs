@@ -347,8 +347,8 @@ namespace Statecraft.Game.UI
                 it.TopPanel = ToPanel(t, cameraRect, screen, origin);
                 it.TopVisible = t.z > 0f && t.x >= 0f && t.x <= 1f && t.y >= 0f && t.y <= 1f && !UnderAPanel(it.TopPanel);   // a marker under a panel is no one's neighbour
                 it.KitInFront = ProjectBoxes(kitsShown ? it.Kit : it.Marker, viewProjection, cameraRect, screen, origin, out it.KitPanel);
-                // A sprawl reaching behind the camera at the closest zoom has no screen rectangle: place round the marker box,
-                // as with the kits off, so a visible city keeps its name (second review of #599).
+                // A kit reaching behind the camera at the closest zoom has no screen rectangle: any settlement's pill is then
+                // placed round its marker box, as with the kits off, rather than hidden (second review of #599: Tel Aviv at 6 km).
                 if (!it.KitInFront && kitsShown) it.KitInFront = ProjectBoxes(it.Marker, viewProjection, cameraRect, screen, origin, out it.KitPanel);
                 it.Around = it.KitPanel;   // the kit, and every token that stands on it: the spots are placed round both
                 for (int k = 0; k < keepClearRects.Count; k++)

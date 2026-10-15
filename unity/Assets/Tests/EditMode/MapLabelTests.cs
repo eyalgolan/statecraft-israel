@@ -732,7 +732,8 @@ public class MapLabelTests
     /// (from the closest zoom out to 40 km, at five yaws, with the top-bar inset), every city whose marker is visible is named, with the units off and on, and
     /// its pill is nearer its own marker than any other visible settlement's. Within LocalityDistanceM the 1948 localities'
     /// markers are on the map too (Silwan is 1.5 km from Jerusalem), and they must not take a city's name away. The towns
-    /// the review named are logged (a town may give way, as before).</summary>
+    /// the review named are logged (a town may give way, as before). No other settlement's pill hangs under its marker:
+    /// Spot.Under is a city's last resort.</summary>
     [UnityTest]
     public IEnumerator EveryCityKeepsItsNameCloseUp() => CitiesKeepTheirNames(false);
 
@@ -771,6 +772,10 @@ public class MapLabelTests
                 if (over != null) Assert.IsTrue(tops.ContainsKey(over), $"{pose.Name}: {over}'s marker is on screen, so this pose checks it");
                 TestContext.WriteLine($"{pose.Name} units={units}: " + string.Join(" ", cities.Select(c => c.Id).Concat(towns).Where(tops.ContainsKey)
                     .Select(id => $"{id}={(shown.Any(x => x.id == id) ? "named" : "HIDDEN")}")));
+                // Only a city hangs its pill under its marker (Spot.Under: top LiftPx below the marker top, centred on it).
+                foreach (var (id, rect) in shown.Where(x => tops.ContainsKey(x.id) && map.Settlements.First(s => s.Id == x.id).Type != "city"))
+                    Assert.IsFalse(Mathf.Abs(rect.yMin - (tops[id].y + MapLabelsPresenter.LiftPx)) < 1f && Mathf.Abs(rect.center.x - tops[id].x) < 1f,
+                        $"{pose.Name}: {id} is no city but its pill {rect} hangs under its marker {tops[id]}");
                 foreach (var c in cities.Where(c => tops.ContainsKey(c.Id)))
                 {
                     var p = shown.FirstOrDefault(x => x.id == c.Id);
