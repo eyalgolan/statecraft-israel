@@ -196,6 +196,13 @@ public class TownCensusTests
         ["safed"] = 5, ["tel_aviv"] = 36, ["tiberias"] = 3, ["yad_mordechai"] = 0, ["zikhron_yaakov"] = 2,
     };
 
+    /// <summary>A floor measured on today's map where main's count is 0 and so floors nothing (review of #570: a unit's
+    /// clearing that thinned Rosh Pinna would pass). Main a3202ad drew no house in Rosh Pinna. Since round 2's small-town
+    /// fallback it draws 2 (main 3265c4e, 2026-10-15), both outside its inner half. The rule is MainBuildings': the count,
+    /// with no margin. The cities' floors sit 10-15% under their measure, but that rounds 2 down to 1, the "builds no
+    /// house" check above, and would still let a clearing take one of its two houses.</summary>
+    internal static readonly Dictionary<string, int> MeasuredBuildings = new Dictionary<string, int> { ["rosh_pinna"] = 2 };
+
     /// <summary>Review of towns round 2. No town draws fewer houses than main did (#317: on the 100x lattice a small town
     /// has some 7 plots; Tiberias drew 0 against main's 3, Netanya 1 against 2, Beersheba 3 against 5, until the small-town
     /// floor). The beach setback is the Mediterranean's (Degania on the Sea of Galilee), and Nahalal's ring reaches its
@@ -214,6 +221,8 @@ public class TownCensusTests
         }
         foreach (var id in new[] { "tiberias", "rosh_pinna" })
             if (rows[id].Buildings < 1) bad.Add(id + " builds no house");
+        foreach (var kv in MeasuredBuildings)
+            if (rows[kv.Key].Buildings < kv.Value) bad.Add($"{kv.Key}: {rows[kv.Key].Buildings} houses, measured {kv.Value}");
         float tallest = placed.Where(p => p.Kind == "building").Max(p => p.H);
         if (tallest > 8f * 3.3f * KitScale.CityBlocks + 1f) bad.Add($"a block {tallest:0} m tall, over eight storeys");
         CollectionAssert.IsEmpty(bad);
