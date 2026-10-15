@@ -5,17 +5,20 @@
 # - 12 June 1949, the ceremony of going onto Jewish National Fund land: Yad Ben-Zvi; Gvati's list gives 12.6.49.
 # - A garin of graduates of the Dror youth movement, from Uruguay and Argentina: Yad Ben-Zvi.
 # - HaKibbutz HaMeuhad: Yad Ben-Zvi (the kibbutz counted itself in it); Gvati: a Mefalsim garin of HaKibbutz HaMeuhad set up
-#   a kibbutz in the Negev in Sivan 5709.
+#   a kibbutz in the Negev in Sivan 5709. Gvati's list puts "האיחוד" (Ihud HaKvutzot VeHaKibbutzim) in its movement column:
+#   that is the kibbutz's affiliation after the 1951 split that Yad Ben-Zvi records, not its movement in 1949.
 # - First set up facing the Gaza Strip, moved to its present site a year later (1950) because of direct fire from Gaza:
 #   Yad Ben-Zvi.
 # Left out on purpose: the advance party of 8 June 1949 (one source), the Speaker's attendance and the 64 founders (one
 # source each), and 7 October 2023, which is outside the MVP's years (#378, question 4). The gazetteer check (#378, question
-# 7): no 1948 locality in map/localities_1948.yaml (places of 1,000 or more) lies on the Israeli side within 9 km; the
-# nearest depopulated villages, Najd and Dimra, are about 6 km away, and their articles name other kibbutzim and towns on
-# their land, not Mefalsim. Places under 1,000 people were not checked against a gazetteer.
+# 7): no 1948 locality in map/localities_1948.yaml (places of 1,000 or more) lies on the Israeli side within 9 km. The
+# nearest depopulated villages, by en.wiki/Wikidata coordinates against Mefalsim's 31.5019 N, 34.5644 E, are Huj (about
+# 5.6 km; counted with Dorot in Village Statistics 1945, so not in the file), al-Muharraqa (about 5.9 km; its article names
+# Yakhini, 1950, on village land), Najd (about 6.3 km; names Sderot and Or HaNer) and Dimra (about 6.3 km; names Erez).
+# None of the four articles names Mefalsim. Places under 1,000 people were not checked against a gazetteer (#654).
 id: first_new_yishuv
 title: Mefalsim founded
-text: 'On 12 June 1949 a garin of graduates of the Dror youth movement from Argentina and Uruguay went onto Jewish National Fund land in the Negev, facing the Gaza Strip, and founded Kibbutz Mefalsim of HaKibbutz HaMeuhad. Under direct fire from Gaza, the kibbutz moved to its present site a year later, in 1950.'
+text: 'On 12 June 1949 a garin of graduates of the Dror youth movement from Argentina and Uruguay went onto Jewish National Fund land in the Negev, facing the Gaza Strip, and founded Kibbutz Mefalsim of HaKibbutz HaMeuhad. Because of direct fire from Gaza, the kibbutz moved to its present site a year later, in 1950.'
 anchor: soft
 objective: first_new_yishuv
 # The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.

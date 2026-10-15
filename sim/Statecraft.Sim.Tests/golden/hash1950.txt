@@ -56,6 +56,7 @@ fired[
   austerity_1949
   bernadotte_assassination
   elections_1949
+  first_new_yishuv
   first_truce
   frumkin_commission
   idf_founding
@@ -80,6 +81,7 @@ chosen{
   austerity_1949=impose
   bernadotte_assassination=outlaw
   elections_1949=hold
+  first_new_yishuv=continue
   first_truce=accept
   idf_founding=one_army
   jerusalem_ceasefire=keep
@@ -105,3 +107,6 @@ units[
 site{
   mefalsim=done,1949-06-15
 next=2
+obj{
+  first_new_yishuv=1949-06-15
+score=100

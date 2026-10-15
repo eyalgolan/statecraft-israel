@@ -34,6 +34,9 @@ mvp:
   arrivals_city: tel_aviv                # the MVP has one city so far: every arrival lands there (R-CITY-003)
   build_yishuv_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D6: turns a pioneer build takes)
   build_yishuv_cost: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D6: IL millions, paid at the start)
+  objective_points: 100                  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6: points per objective)
+  objective_bonus_per_month: 5           # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: points per month early)
+  objective_bonus_cap: 60                # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: the most bonus points)
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06

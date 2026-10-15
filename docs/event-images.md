@@ -5,7 +5,8 @@ real archival photograph of the event, never an AI image. 24 of the 32 events in
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
 free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The eighth, the GDD objective
-card `first_new_yishuv`, waits for its photograph (Boris Carmi, June 1949, CC BY 4.0), which GDD Phase 1 PR 7 adds (#380).
+card `first_new_yishuv`, has no `office`, so it shows no picture at all until its photograph (Boris Carmi, June 1949, CC BY
+4.0) comes in GDD Phase 1 PR 7 (#380).
 
 Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` section 4):
 - Images of real people stay public domain or CC0, with one narrow exception: archival event photographs (not

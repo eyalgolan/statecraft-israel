@@ -123,14 +123,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   build; the tent/hut share is a parameter for a staged look later. The camp looks worn: tents sag between their poles,
   crease and lean, with dusty skirts, bleached roofs, patches and open door flaps; the tin huts are loose, rusting sheets,
   some lifted or missing; washing lines and bundles stand between the tents. Presentation only (refs #32).
-- GDD v0.1 Phase 1, the first new yishuv objective and the score (refs #379), behind the `systems.loop` switch:
-  `content/objectives.yaml` holds `first_new_yishuv`, completed when Mefalsim is built, with Mefalsim's founding date
+- GDD v0.1 Phase 1, the first new yishuv objective and the score (refs #379): `content/objectives.yaml` holds `first_new_yishuv`, completed when Mefalsim is built, with Mefalsim's founding date
   (12 June 1949) as its reference date, and `content/events/first_new_yishuv.yaml` is its card. At the end of the turn the
   site is built, the objective is recorded once and scores 100 points plus 5 a calendar month before history, capped at 60
   (the owner's D-B6 and D-B2), and the card fires once; it never fires in the legacy loop (R-OBJ-001 to R-OBJ-003). An
-  event's new `objective` key names its objective; an unanswered card resolves without an RNG draw. The point values are in
-  `MvpSlice.Overlay` until cutover. `mvp-slice` moves (Mefalsim, built on 15 March 1949, completes the objective for 115
-  points); the legacy goldens and `scenario-mvp-absorb-first` do not.
+  event's new `objective` key names its objective; an unanswered card resolves without an RNG draw. The point values are
+  `rules.yaml` design values (`mvp.objective_points`, `objective_bonus_per_month`, `objective_bonus_cap`), read at the
+  turn's start date. `hash1950` (`ad806776`), `hash1952` and `mvp-end` (`0f54dc51`) move: the reference player builds
+  Mefalsim on 15 June 1949, so the objective completes on time for 100 points and its card fires and is answered;
+  `smoke5` and the three scenarios do not move.
 - GDD v0.1 Phase 1, training (refs #377), behind the `systems.loop` switch: `Train` sends a city's civilians without work
   to basic training in a military camp (recruits, a count) or pioneer training in a Hakhshara (halutzim, movable units at
   the city's hex), paid from the Treasury, with any shortfall borrowed as debt (owner decision, 15 October 2026);

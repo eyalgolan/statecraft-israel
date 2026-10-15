@@ -23,7 +23,7 @@ namespace Statecraft.Sim
             Cities.UpdateCohesion(s, r);
             Cities.Arrive(c, s, r, next, why);            // 9. arrivals
             // 10. Occupation timers: Phase 6.
-            Objectives.Complete(c, s, next, why);         // 11. objectives and score
+            Objectives.Complete(c, s, r, next, why);      // 11. objectives and score
         }
     }
 }

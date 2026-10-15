@@ -31,11 +31,12 @@ namespace Statecraft.Sim
         }
 
         /// <summary>Step 11 of the GDD turn (spec 2026-10-12 §2.3, D-A6): records, in id order, every objective whose condition
-        /// holds, completed on <paramref name="next"/>, the turn's end date (R-OBJ-001).</summary>
-        public static void Complete(Content c, GameState s, DateTime next, List<Cause> why)
+        /// holds, completed on <paramref name="next"/>, the turn's end date (R-OBJ-001). <paramref name="r"/> is the rules of
+        /// the date the turn starts from (docs/determinism.md, "Rules per era").</summary>
+        public static void Complete(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
             foreach (var o in c.Objectives)   // ordered by id (the loader)
-                if (Holds(s, o)) Record(c, s, o.Id, next, why);
+                if (Holds(s, o)) Record(c, s, r, o.Id, next, why);
         }
 
         /// <summary>Whether the objective's condition holds: its site is built (R-SITE-003).</summary>
@@ -44,12 +45,13 @@ namespace Statecraft.Sim
 
         /// <summary>Records objective <paramref name="id"/> as completed on <paramref name="date"/> and adds its points to the
         /// score (R-OBJ-001, R-OBJ-002). Returns false, and changes nothing, when it is already recorded or the loop is not
-        /// gdd. The rules are the ones in force on <paramref name="date"/>.</summary>
-        public static bool Record(Content c, GameState s, string id, DateTime date, List<Cause> why)
+        /// gdd. <paramref name="r"/> is the rules of the date the turn starts from, not of <paramref name="date"/>, so a turn
+        /// that crosses an era boundary scores with the era it started in.</summary>
+        public static bool Record(Content c, GameState s, MvpRules r, string id, DateTime date, List<Cause> why)
         {
             if (!c.IsGdd || s.Objectives.ContainsKey(id)) return false;
             var o = c.Objectives.FirstOrDefault(x => x.Id == id) ?? throw new ArgumentException($"unknown objective '{id}'", nameof(id));
-            var points = Points(c.RulesAt(date).Mvp!, date, o.ReferenceDate);
+            var points = Points(r, date, o.ReferenceDate);
             s.Objectives[id] = date;
             s.Score += points;
             // In the Why list's "events" group: the card that follows is an event (Unity's WhyPresenter groups by system).

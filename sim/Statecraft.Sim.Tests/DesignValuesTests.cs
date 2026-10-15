@@ -28,6 +28,9 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.cohesion_jobs_weight"),
         ("rules.yaml", "mvp.build_yishuv_turns"),
         ("rules.yaml", "mvp.build_yishuv_cost"),
+        ("rules.yaml", "mvp.objective_points"),
+        ("rules.yaml", "mvp.objective_bonus_per_month"),
+        ("rules.yaml", "mvp.objective_bonus_cap"),
         ("cities.yaml", "cities[tel_aviv].housing_capacity"),
         ("cities.yaml", "cities[tel_aviv].job_slots"),
         ("cities.yaml", "cities[tel_aviv].civilians"),
@@ -111,6 +114,7 @@ public class DesignValuesTests
         Assert.Equal((0.5, 1.0, 0.5), (c.Rules.AttentionCost["assign_workers"], c.Rules.AttentionCost["train"], c.Rules.AttentionCost["cancel_training"]));
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));
+        Assert.Equal((100, 5, 60), (m.ObjectivePoints, m.ObjectiveBonusPerMonth, m.ObjectiveBonusCap));   // D-B6, D-B2
         var city = Assert.Single(c.Cities);
         Assert.Equal(("tel_aviv", 120, 90, 100, 80), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed));
         Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5) },

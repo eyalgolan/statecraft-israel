@@ -59,6 +59,7 @@ fired[
   clothing_rationing_1950
   education_registration_1951
   elections_1949
+  first_new_yishuv
   first_truce
   forex_crisis_1951
   frumkin_commission
@@ -92,6 +93,7 @@ chosen{
   clothing_rationing_1950=extend
   education_registration_1951=press_plan
   elections_1949=hold
+  first_new_yishuv=continue
   first_truce=accept
   forex_crisis_1951=request_aid
   frumkin_commission=inquiry
@@ -126,3 +128,6 @@ units[
 site{
   mefalsim=done,1949-06-15
 next=2
+obj{
+  first_new_yishuv=1949-06-15
+score=100

@@ -8,7 +8,7 @@ using Statecraft.Sim;
 /// only once it is recorded, never in the legacy loop (R-OBJ-003). The first objective is the first new yishuv, Mefalsim (#378).</summary>
 public class ObjectivesTests
 {
-    static readonly Content Mvp = MvpSlice.Load(RealContentTests.ContentRoot());
+    static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
     /// <summary>One objective on the fixture's site_a (founded 1949-06-12, built in 3 turns).</summary>
     const string ObjectivesYaml = "objectives:\n  - { id: first_goal, name: First goal, completes_when: { site_built: site_a }, reference_date: 1949-06-12, card: first_card }\n";
@@ -88,13 +88,13 @@ options:
         var c = Load(gdd: true);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var why = new List<Cause>();
-        Assert.True(Objectives.Record(c, s, "first_goal", D("1949-04-15"), why));
+        Assert.True(Objectives.Record(c, s, c.Rules.Mvp!, "first_goal", D("1949-04-15"), why));
         Assert.Equal(D("1949-04-15"), Assert.Single(s.Objectives).Value);
         Assert.Equal(110, s.Score);   // 2 months early (April to June)
         Assert.Contains(why, x => x.System == "events" && x.Message == "First goal: completed, 110 points");
 
         var hash = s.Hash();
-        Assert.False(Objectives.Record(c, s, "first_goal", D("1949-05-15"), why));
+        Assert.False(Objectives.Record(c, s, c.Rules.Mvp!, "first_goal", D("1949-05-15"), why));
         Assert.Equal(hash, s.Hash());
     }
 
@@ -105,7 +105,7 @@ options:
         var c = Load(gdd: false);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var hash = s.Hash();
-        Assert.False(Objectives.Record(c, s, "first_goal", D("1949-04-15"), new List<Cause>()));
+        Assert.False(Objectives.Record(c, s, c.Rules.Mvp!, "first_goal", D("1949-04-15"), new List<Cause>()));
         Assert.Equal(hash, s.Hash());
     }
 
@@ -144,6 +144,42 @@ options:
         Assert.Equal(score, s.Score);
     }
 
+    // R-OBJ-002: a turn that crosses an era boundary scores with the rules of the date it starts from (docs/determinism.md,
+    // "Rules per era"), not those of its end date. A turn that reaches the next era's start ends on that day, so its end
+    // date is in the next era. The fixture's build ends on the turn 29 May to 12 June 1948, and a later era from 12 June 1948
+    // sets objective_points to 1.
+    [Fact]
+    public void ATurnAcrossAnEraBoundaryScoresWithTheRulesItStartedIn()
+    {
+        const string eras = @"
+eras:
+  - id: founding
+    name: The Founding
+    from: 1948-05-15
+    to: 1948-06-12
+    systems: { loop: gdd }
+  - id: later
+    name: A Later Chapter
+    from: 1948-06-12
+    to: 1957-01-01
+    systems: { loop: gdd }
+";
+        var o = Fixture.Gdd(new Dictionary<string, string> { ["eras.yaml"] = eras, ["objectives.yaml"] = ObjectivesYaml });
+        var card = Card.Replace("from: 1948-05-15", "from: 1948-06-12");   // an event may not span an era boundary
+        var dir = Fixture.Write(o, new Dictionary<string, string> { ["first_card.yaml"] = card });
+        System.IO.Directory.CreateDirectory(System.IO.Path.Combine(dir, "rules"));
+        System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "rules", "later.yaml"), "mvp: { objective_points: 1 }\n");
+        var c = ContentLoader.Load(dir);
+        Assert.Equal(1, c.RulesAt(D("1948-06-12")).Mvp!.ObjectivePoints);
+
+        var r = StartBuilding(c);
+        var from = r.State.Date;
+        while (r.State.Sites["site_a"].BuiltOn == null) { from = r.State.Date; r = Step(c, r.State); }
+        var built = r.State.Sites["site_a"].BuiltOn!.Value;
+        Assert.Equal((D("1948-05-29"), D("1948-06-12")), (from, built));   // the turn that reaches an era's start ends on it
+        Assert.Equal(160, r.State.Score);   // 100 and the capped bonus; the later era would give 1 + 60
+    }
+
     // R-OBJ-001: a build that is stopped completes nothing.
     [Fact]
     public void AStoppedBuildCompletesNothing()
@@ -177,7 +213,7 @@ options:
     {
         var c = Load(gdd: true);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
-        Objectives.Record(c, s, "first_goal", s.Date, new List<Cause>());
+        Objectives.Record(c, s, c.Rules.Mvp!, "first_goal", s.Date, new List<Cause>());
         s = Step(c, s).State;
         Assert.Contains("first_card", s.PendingEvents);
 
@@ -207,58 +243,60 @@ options:
         Assert.Equal(g.State.Score, loaded.Score);
     }
 
-    // The slice: the first new yishuv is Mefalsim, and its reference date is the site's founding date (#378).
+    // The real content: the first new yishuv is Mefalsim, and its reference date is the site's founding date (#378).
     [Fact]
-    public void TheSlicesObjectiveIsTheFirstNewYishuvAtMefalsim()
+    public void TheObjectiveIsTheFirstNewYishuvAtMefalsim()
     {
-        var o = Assert.Single(Mvp.Objectives);
+        var o = Assert.Single(Real.Objectives);
         Assert.Equal(("first_new_yishuv", "mefalsim", "first_new_yishuv"), (o.Id, o.CompletesWhen!.SiteBuilt, o.Card));
-        Assert.Equal(Mvp.Sites.Single(x => x.Id == "mefalsim").Founded, o.ReferenceDate);
+        Assert.Equal(Real.Sites.Single(x => x.Id == "mefalsim").Founded, o.ReferenceDate);
         Assert.Equal(new DateTime(1949, 6, 12), o.ReferenceDate);
-        var card = Mvp.Events.Single(e => e.Id == o.Card);
+        var card = Real.Events.Single(e => e.Id == o.Card);
         Assert.Equal(("first_new_yishuv", "soft"), (card.Objective, card.Anchor));
         Assert.True(Assert.Single(card.Options).Historical);
         Assert.Empty(card.Tags);
     }
 
-    // R-OBJ-001 to R-OBJ-003 in the slice's golden run: Mefalsim is built on 15 March 1949 (PR 5), 3 calendar months before
-    // 12 June 1949, so the first new yishuv scores 100 + 15, and its card waits for the player at the run's end.
+    // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 June 1949 (#566), the month of its
+    // 12 June 1949 founding, so the first new yishuv is on time and scores 100, and its card fires and is answered.
     [Fact]
-    public void TheSliceCompletesTheFirstNewYishuvOnTheBuildDate()
+    public void TheGoldenRunCompletesTheFirstNewYishuvOnTheBuildDate()
     {
-        var s = MvpGolden.Play(Mvp);
+        var s = GoldenRun.Play(Real, GoldenRun.Until1950);
         var built = s.Sites["mefalsim"].BuiltOn!.Value;
-        Assert.Equal(new DateTime(1949, 3, 15), built);
+        Assert.Equal(new DateTime(1949, 6, 15), built);
         Assert.Equal(built, s.Objectives["first_new_yishuv"]);
-        Assert.Equal(115, s.Score);
-        Assert.Contains("first_new_yishuv", s.PendingEvents);
+        Assert.Equal(100, s.Score);
+        Assert.Equal("continue", s.ChosenOptions["first_new_yishuv"]);
     }
 
-    // The legacy loop loads the objective and its card (they are content), and never fires the card.
+    // The legacy loop (a fixture since the cutover) loads the real objective and its card (they are content), and never
+    // fires the card.
     [Fact]
-    public void TheRealLegacyContentNeverFiresTheCard()
+    public void TheRealCardNeverFiresInTheLegacyLoop()
     {
-        var legacy = ContentLoader.Load(RealContentTests.ContentRoot());
+        var root = RealContentTests.ContentRoot();
+        var legacy = ContentLoader.Load(Fixture.Write(
+            new Dictionary<string, string> { ["objectives.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "objectives.yaml")) },
+            new Dictionary<string, string> { ["first_new_yishuv.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "first_new_yishuv.yaml")) }));
         Assert.False(legacy.IsGdd);
         Assert.Single(legacy.Objectives);
         var s = Simulation.NewGame(legacy, GoldenRun.Seed, Mode.Historical);
         for (int i = 0; i < 40 && s.GameOver == null; i++)
         {
-            s = Simulation.Step(legacy, s, HistoricalAI.Commands(legacy, s)).State;
+            s = Step(legacy, s).State;
             Assert.DoesNotContain("first_new_yishuv", s.FiredEvents);
         }
         Assert.Empty(s.Objectives);
         Assert.Equal(0, s.Score);
     }
 
-    // R-OBJ-002: the point values are in MvpSlice.Overlay until cutover, never under content/ (ruling 2).
+    // R-OBJ-002: the point values are rules.yaml design values (DesignValuesTests), never in objectives.yaml.
     [Fact]
-    public void NoPointValueIsUnderContent()
+    public void NoPointValueIsInObjectivesYaml()
     {
-        var root = RealContentTests.ContentRoot();
-        var objectives = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "objectives.yaml"));
+        var objectives = System.IO.File.ReadAllText(System.IO.Path.Combine(RealContentTests.ContentRoot(), "objectives.yaml"));
         Assert.DoesNotMatch(@"(?m)^[^#\n]*\b\w*(points|bonus)\w*\s*:", objectives);   // no such key outside a comment
-        Assert.DoesNotContain("objective_", System.IO.File.ReadAllText(System.IO.Path.Combine(root, "rules.yaml")));
     }
 
     [Fact]

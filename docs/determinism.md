@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `f97e9f81d1feaee78c55847e1fc42f8e60bd9f12c84d234f0d10002f9dae48f2` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `75d382995d0f12f0eed772dd851906831990b0ab830c10f3a0af310da0547f31` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `75d382995d0f12f0eed772dd851906831990b0ab830c10f3a0af310da0547f31` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ad8067765007988a2ea52226a50622259b695cd72a5b735b298207e472b81504` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -45,8 +45,8 @@ Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 f97e9f81d1feaee78c55847e1fc42f8e60bd9f12c84d234f0d10002f9dae48f2" \
-  --expect "GOLDEN OK 1952 75d382995d0f12f0eed772dd851906831990b0ab830c10f3a0af310da0547f31" \
+  --expect "GOLDEN OK 1950 ad8067765007988a2ea52226a50622259b695cd72a5b735b298207e472b81504" \
+  --expect "GOLDEN OK 1952 0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2" \
   --expect "SMOKE OK 5 turns 1948-10-15 85191d48688be4595726b17778ecdda0175eff8f6f0fa1d976dbe3b48b42823b"
 ```
 
@@ -221,3 +221,6 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 2 PR 1 | scenario-cautious | `58eb01db` | monthly turns: ends 1949-01-15, turn 8 (was 1949-01-02, turn 23); rhodes_talks and elections_1949 now fire inside the run; the GDD sections appear; #577's rewritten cards and costs (was `1d5b8d71`) |
 | GDD Phase 2 PR 1 | scenario-reckless | `e2f409a5` | same (was `c0bd12bc`) |
 | GDD Phase 2 PR 1 | scenario-mvp-absorb-first | `f8858f6e` | plays the real content (the overlay is retired, `content: mvp` dropped); the Horev window edit makes rhodes_talks and sinai_withdrawal fire; #577's rewritten cards and costs (was `59ea3181`) |
+| GDD Phase 1 PR 6 | 1950 | `ad806776` | the first new yishuv objective (R-OBJ-001 to R-OBJ-003), rebased onto the cutover: the reference player builds Mefalsim on 15 June 1949, the month of its 12 June 1949 founding, so the objective completes on time for 100 points (`obj{first_new_yishuv=1949-06-15}`, `score=100`) and its card fires and is answered (`first_new_yishuv=continue`); no other event moves, so the card displaces nothing under the soft-event cap; `objective_points`, `objective_bonus_per_month` and `objective_bonus_cap` enter `rules.yaml` as design values (D-B6, D-B2) (was `f97e9f81`) |
+| GDD Phase 1 PR 6 | 1952 | `0f54dc51` | same (was `75d38299`) |
+| GDD Phase 1 PR 6 | mvp-end | `0f54dc51` | same; the same run as hash1952 (was `75d38299`); `smoke5` and the three scenarios do not move |

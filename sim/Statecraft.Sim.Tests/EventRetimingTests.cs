@@ -25,15 +25,16 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567 section 4 item 8: all 31 events fire in the historical monthly run. Before the re-timing, sinai_withdrawal and
-    /// rhodes_talks never fired (Horev's card came after both windows had closed).</summary>
+    /// <summary>#567 section 4 item 8: all 32 events fire in the historical monthly run (#567's 31 and the first new yishuv
+    /// card, R-OBJ-003). Before the re-timing, sinai_withdrawal and rhodes_talks never fired (Horev's card came after both
+    /// windows had closed).</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
     {
         Assert.Equal(GameOverCodes.MvpEnded, Run[Run.Count - 1].GameOver);
         var missing = C.Events.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
         Assert.True(missing.Count == 0, "never fired: " + string.Join(", ", missing));
-        Assert.Equal(31, C.Events.Count);
+        Assert.Equal(32, C.Events.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
@@ -61,6 +62,7 @@ public class EventRetimingTests
     [InlineData("armistice_lebanon", "1949-04-15")]
     [InlineData("armistice_jordan", "1949-04-15")]
     [InlineData("austerity_1949", "1949-05-15")]
+    [InlineData("first_new_yishuv", "1949-06-15")]                 // R-OBJ-003: the turn the reference player builds Mefalsim
     [InlineData("armistice_syria", "1949-08-15")]
     [InlineData("frumkin_commission", "1950-01-15")]
     [InlineData("maabarot_policy", "1950-04-15")]
