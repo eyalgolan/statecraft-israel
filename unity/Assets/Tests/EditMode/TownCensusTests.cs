@@ -196,12 +196,12 @@ public class TownCensusTests
         ["safed"] = 5, ["tel_aviv"] = 36, ["tiberias"] = 3, ["yad_mordechai"] = 0, ["zikhron_yaakov"] = 2,
     };
 
-    /// <summary>A floor measured on today's map where main's count is 0 and so floors nothing (review of #570: a unit's
-    /// clearing that thinned Rosh Pinna would pass). Main a3202ad drew no house in Rosh Pinna. Since round 2's small-town
-    /// fallback it draws 2 (main 3265c4e, 2026-10-15), both outside its inner half. The rule is MainBuildings': the count,
-    /// with no margin. The cities' floors sit 10-15% under their measure, but that rounds 2 down to 1, the "builds no
-    /// house" check above, and would still let a clearing take one of its two houses.</summary>
-    internal static readonly Dictionary<string, int> MeasuredBuildings = new Dictionary<string, int> { ["rosh_pinna"] = 2 };
+    /// <summary>Floors measured on today's map for the towns whose main count is 0, which floors nothing (review of #570: a
+    /// unit's clearing that thinned Rosh Pinna would pass). Main a3202ad drew no house in Rosh Pinna or Yad Mordechai. Since
+    /// round 2's small-town fallback they draw 2 and 3 (main 46ab572, 2026-10-15). The rule is MainBuildings': the count,
+    /// with no margin. The cities' floors sit 10-15% under their measure, but on 2 or 3 houses that leaves a floor of 1 or
+    /// 2, which would still let a clearing take a house. Yad Mordechai's row is the owner's decision on #621 (2026-10-15).</summary>
+    internal static readonly Dictionary<string, int> MeasuredBuildings = new Dictionary<string, int> { ["rosh_pinna"] = 2, ["yad_mordechai"] = 3 };
 
     /// <summary>Review of towns round 2. No town draws fewer houses than main did (#317: on the 100x lattice a small town
     /// has some 7 plots; Tiberias drew 0 against main's 3, Netanya 1 against 2, Beersheba 3 against 5, until the small-town
