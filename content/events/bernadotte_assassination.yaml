@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../schema/event.schema.json
 id: bernadotte_assassination
 title: The Mediator Assassinated
-text: 'Lehi gunmen assassinated the UN mediator, Count Folke Bernadotte, in Jerusalem on 17 September, a day after he completed his second plan. Emergency regulations proclaimed Lehi a terrorist organisation, about 200 of its members were arrested, and the Irgun battalions in Jerusalem were given 24 hours to disband into the IDF. {prime_minister} must decide whether the government keeps up the crackdown.'
+text: 'Lehi gunmen assassinated the UN mediator, Count Folke Bernadotte, in Jerusalem on 17 September, a day after he completed his second plan. Emergency regulations proclaimed Lehi a terrorist organisation, about 250 of its members were arrested, and the Irgun battalions in Jerusalem were given 24 hours to disband into the IDF. {prime_minister} must decide whether the government keeps up the crackdown.'
 anchor: hard
 tags: [security, terror]
 office: prime_minister
