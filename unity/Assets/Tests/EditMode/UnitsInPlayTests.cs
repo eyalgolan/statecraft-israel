@@ -71,7 +71,7 @@ public class UnitsInPlayTests
         Assert.AreEqual(1, units.Count(u => u.Service == UnitData.Air));
         Assert.AreEqual(2, units.Count(u => u.Service == UnitData.Navy));
         CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, units.Where(u => u.Hidden != null).Select(u => u.Id),
-            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli and Alexandroni are placed (refs #385)");
+            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (from 9 July 1948, by Mishmar HaYarden) and Alexandroni are placed (refs #385)");
         double lon0 = C.Hexes.Min(h => h.Lon), lon1 = C.Hexes.Max(h => h.Lon), lat0 = C.Hexes.Min(h => h.Lat), lat1 = C.Hexes.Max(h => h.Lat);
         foreach (var u in units)
         {
@@ -147,8 +147,8 @@ public class UnitsInPlayTests
     {
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
         var tokens = UnitRoster.Build(Units, C, s);
-        CollectionAssert.AreEqual(new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
-            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Yiftach only in Operation Dani");
+        CollectionAssert.AreEqual(new[] { "golani", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
+            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli from 9 July (Operation Brosh), Yiftach only in Operation Dani");
         Assert.AreEqual(5, s.Rung);
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Army).All(t => t.Figures == 3), "full war: call-up at least 0.8");
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Navy).All(t => t.ArtType == UnitShowcase.CorvetteType && t.Anchor.Place == "Haifa harbour"));
@@ -193,8 +193,8 @@ public class UnitsInPlayTests
     [Test]
     public void AfterTheArmisticesOnlyWhatASourceSaysContinuedShows()
     {
-        CollectionAssert.AreEqual(new[] { "carmeli", "kiryati", "etzioni", "squadron_101" }, Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1949, 2, 24), 4, 0.4)),
-            "the southern brigades and the ships end on the Egypt armistice; Carmeli on the Lebanon armistice");
+        CollectionAssert.AreEqual(new[] { "kiryati", "etzioni", "squadron_101" }, Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1949, 2, 24), 4, 0.4)),
+            "the southern brigades and the ships end on the Egypt armistice");
         CollectionAssert.AreEqual(new[] { "squadron_101" }, Ids(UnitRoster.Build(Units, C.Rules, new DateTime(1949, 4, 3), 2, 0.05)),
             "the central and Jerusalem brigades end on the Jordan armistice");
         Assert.IsEmpty(UnitRoster.Build(Units, C.Rules, LastArmistice, 2, 0.05));
@@ -237,8 +237,8 @@ public class UnitsInPlayTests
         Assert.AreEqual(WeeklyGolden, Sha256(all));
     }
 
-    const string RosterGolden1950 = "47251992443738244ed97a9e542b9eb60c644917bbfa16341f030a646ff83e7d";
-    const string WeeklyGolden = "4c4b1e6855939b64e1352f1746bcc318dba2d72b463ec5145891ae60dd496bcc";
+    const string RosterGolden1950 = "7d8b27f3cbefc241f17e922376b590939ac027cbc369ee6d7e128c9a26f4d92b";
+    const string WeeklyGolden = "64f86cfb203b0ece170ebd4a52b9c957405b860a2d7ae5bde74aedd4174bc6b6";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 
@@ -592,9 +592,9 @@ public class UnitsInPlayTests
             Assert.IsTrue(layer.Show(C, session.State));
             Assert.AreEqual(before, session.State.Hash(), "drawing the units changed the state");
             Assert.IsFalse(layer.Show(C, session.State), "the same roster draws nothing new");
-            Assert.AreEqual(10, layer.Tokens.Count);
+            Assert.AreEqual(9, layer.Tokens.Count);
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            Assert.AreEqual(10, tokens.childCount);
+            Assert.AreEqual(9, tokens.childCount);
             var kiryati = tokens.Find("kiryati");
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full call-up");
             var badge = kiryati.Find("Badge");

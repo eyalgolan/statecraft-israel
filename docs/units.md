@@ -88,7 +88,8 @@ The owner ruled:
    2 at or above the level-3 floor (0.15), else 1.
 3. 101 Squadron shows an Avia S-199 until the Spitfire's sourced date, then the Spitfire.
 4. The four brigades with no sourced position (Carmeli, Alexandroni, the 8th, Oded) are listed in the file and hidden.
-   - 2026-10-15 (draft, refs #385): Carmeli and Alexandroni now have sourced positions (below) and are shown. The 8th
+   - 2026-10-15 (refs #385): Carmeli (from 9 July 1948; coordinator's option (d)) and Alexandroni now have sourced
+     positions (below) and are shown. The 8th
      is sourced at Tel Litvinsky (24 May to 9 July 1948; owner, 2026-10-15: "Accept, verify later") but stays hidden:
      the map has no clear spot for it on its own side within one hex of the camp. Oded stays hidden (its sources
      conflict and name no place).
@@ -119,7 +120,7 @@ After the staff review the controller ruled:
 | Unit | Positions (dated, from the sources) | Ends |
 |---|---|---|
 | Golani (1st) | Yavne'el (since February 1948); the Julis camp from December 1948 | December 1948 (source); 24 Feb 1949 (Egypt) |
-| Carmeli (2nd) | Haifa, one place picked from its sector, the Haifa area and the Western Galilee (since February 1948) | 23 Mar 1949 (Lebanon) |
+| Carmeli (2nd) | By Mishmar HaYarden, facing the Syrian bridgehead, on the Rosh Pinna side, from 9 July 1948 (Operation Brosh). Not drawn at Haifa, its sector's place: no clear spot outside the town (#588) | 29 Oct 1948, Operation Hiram (source) |
 | Alexandroni (3rd) | Netanya, its headquarters at Camp Dora (since March 1948) | November 1948, the move to the Faluja pocket (source) |
 | Kiryati (4th) | Tel Aviv (since February 1948) | 3 Apr 1949 (Jordan) |
 | Givati (5th) | Gedera, one of the three places its sector names (no start given) | 24 Feb 1949 (Egypt) |

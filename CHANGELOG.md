@@ -14,10 +14,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Knesset records or Hebrew Wikipedia, checked 14 October 2026); the loader and `SettlementPlacer` refuse a Hebrew name
   without a source. Places take their 1948 form (Tel Aviv, Beisan, Kfar Ata, Pardes Hanna, Tarshiha), and the localities'
   runtime file carries `name_he`. The content hash moves; the goldens do not.
-- Two more brigades on the map (draft, refs #385, #197): Carmeli at Haifa (its sector, the Haifa area and the Western
-  Galilee, from 15 May 1948 to the Lebanon armistice) and Alexandroni at its Netanya headquarters (Camp Dora; to
-  November 1948), each sourced in `content/map/units_1948.yaml`. The 8th Brigade's position (Tel Litvinsky, 24 May to
-  9 July 1948) is recorded, but it stays hidden: the map has no clear spot for it on its own side. Oded stays hidden:
+- Two more brigades on the map (refs #385, #197): Carmeli by Mishmar HaYarden, facing the Syrian bridgehead from the
+  Rosh Pinna side, from Operation Brosh (9 July 1948) to Operation Hiram (29 October 1948), and Alexandroni at its
+  Netanya headquarters (Camp Dora; 15 May to November 1948), each sourced in `content/map/units_1948.yaml`. Carmeli is
+  not drawn at Haifa, its sector's place: the map has no clear spot outside the town (#588). The 8th Brigade's position
+  (Tel Litvinsky, 24 May to 9 July 1948) is recorded, but it stays hidden: the map has no clear spot for it on its own
+  side (#588). Oded stays hidden:
   its sources conflict and name no place. Map-only data: the sim goldens do not move; the units roster pins in
   `UnitsInPlayTests` are re-pinned.
 - Two-colour borders (refs #196, owner rulings 2026-10-14): from 11 June 1948 the map colours areas by side, as promo 03 does:

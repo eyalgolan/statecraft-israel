@@ -76,28 +76,40 @@ units:
   number: 2nd Brigade
   service: army
   formed: 22 February 1948
-  sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (13-22 May 1948) and fought in the north to Operation Hiram."
+  sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (13-22 May 1948), led Operation Brosh against the Syrian bridgehead at Mishmar HaYarden (9-18 July 1948) and fought in Operation Hiram."
   wikipedia_only: false
   status: draft
   anchors:
-  - place: Haifa
-    lon: 34.99917
-    lat: 32.81917
-    from: '1948-05-15'
-    since: February 1948
-    to: '1949-03-23'
-    end_basis: front_armistice
-    front: lebanon
-    note: "One place picked from the sector: he.wiki gives the brigade's area as the Haifa area and the Zevulun district (Haifa and the Western Galilee) from the split of February 1948; no source found names its headquarters. Its later operations (Ben-Ami, Dekel, Hiram) were in the north, so the window ends on the Lebanon armistice. The Haganah Heritage lexicon (Brigade 2 Carmeli) has the brigade organised in the Haifa area and the Western Galilee and operating in Haifa. It also has the brigade's headquarters and most of its forces in Operation Brosh against the Syrian bridgehead at Mishmar HaYarden in July 1948, which this window does not show (P66 conflict, for the owner)."
+  - place: Mishmar HaYarden (the Syrian bridgehead)
+    lon: 35.59972
+    lat: 33.00278
+    from: '1948-07-09'
+    since: 9 July 1948
+    to: '1948-10-29'
+    end_basis: source
+    end_note: "Operation Hiram was launched on the night of 28-29 October 1948; in it the brigade crossed into Lebanon (en.wiki Operation Hiram; the lexicon: in Hiram it operated in the Galilee and took the border road)."
+    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands on the Israeli side, by Rosh Pinna. Not drawn before 9 July: its sector place, Haifa, has no clear spot outside the town on the map (coordinator's option (d), 2026-10-15)."
+    toward:
+      place: Rosh Pinna
+      lon: 35.54222
+      lat: 32.97
+      note: "The headquarters of Operation Brosh (he.wiki Operation Brosh: the Hotel Shulamit in Rosh Pinna); Israeli throughout 1948, while Mishmar HaYarden's own hex was held by the Syrians from 10 June 1948."
+      sources:
+      - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-15'}
+      - {url: 'https://en.wikipedia.org/wiki/Rosh_Pinna', checked: '2026-10-15'}
+    place_hex: [12, 6]
     sources:
-    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
-    # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": organised in the Haifa area and the Western Galilee; operated in Haifa.
+    # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": the brigade's HQ and most of its forces in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden.
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47620', checked: '2026-10-15'}
-    - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
-    - {url: 'https://en.wikipedia.org/wiki/Haifa', checked: '2026-10-15'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Mishmar_HaYarden_(moshava)', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Hiram', checked: '2026-10-15'}
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Carmeli_Brigade', checked: '2026-10-11'}
   - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
+  # The sector's place, Haifa (he.wiki Carmeli; the lexicon: organised in the Haifa area and the Western Galilee, operated in Haifa), from 15 May 1948; not drawn there (no clear spot outside the town).
+  - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
+  - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
 - id: alexandroni
   name: Alexandroni Brigade
   number: 3rd Brigade
