@@ -2958,3 +2958,25 @@ base round stalled after one cold load when another process loaded the machine, 
 About 25 ms off the time from the map to the start screen; the map build is unchanged, since the parse that stays is the
 map's. Not done: the layer's second run of the unit placer (about 40 ms of `units layer built`) could take the map's
 spots too, and `screens wired` (about 270 ms) is not split yet.
+
+### #321 round 4: after the regions bake (#601), T66
+
+One clean measurement of main `7a4617ed` (after #601's region files from baked runtime forms) against the 2720 ms
+budget: a `-compression disabled` WebGL build, `tools/headed.py boot --runs 3 --cpu 4` under one `machine_lock
+--exclusive` hold (load 3.4 at the start; the job itself 28 s), median of 3 cold loads:
+
+| run | `map_build_ms` | `first_frame_ms` |
+|---|---|---|
+| 1 | 2283 | 8223 |
+| 2 | 2273 | 7983 |
+| 3 | 2246 | 7964 |
+| **median** | **2273** | **7983** |
+
+- **Headroom: 447 ms** under the 2720 ms budget, which meets #321's target of at least 300 ms. `first_frame_ms` is 7983
+  against its 10445 ms budget.
+- The largest phase is still `terrain heights set` (`TerrainData.SetHeights`): 1437, 1429 and 1413 ms. Next come
+  `kit buildings built` (about 185 ms) and `kits built` (the trees, about 162 ms).
+- The kits-and-trees bake stays parked (#321, T66 comment of 15 October): its trigger, headroom below about 200 ms, is
+  not met.
+- Main has moved since (HUD round 2: #584, #602; #598's `?mvp` flag). They are expected to run after `map built`, and
+  so outside this span, but that was not checked and they were not re-measured.
