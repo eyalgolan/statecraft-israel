@@ -21,12 +21,12 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import yaml
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import heightmap_codec  # noqa: E402
 import hexgrid  # noqa: E402
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 MAP_DIR = ROOT / "unity" / "Assets" / "StreamingAssets" / "map"
@@ -114,7 +114,7 @@ def coast_m(w: int, h: int) -> np.ndarray:
 
 def outside(w: int, h: int) -> np.ndarray:
     """1 where the pixel's hex is land outside Mandatory Palestine (hexgrid's projection and rounding)."""
-    doc = yaml.safe_load(REGIONS.read_text())
+    doc = yaml12.load_path(REGIONS)
     out = {(q, r) for q, r, rid in doc["hexes"] if rid == OUTSIDE_ID}
     grid = json.loads(HEXES.read_text())
     b, size = grid["bounds"], grid["hex_size_km"]
