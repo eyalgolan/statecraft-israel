@@ -78,9 +78,9 @@ namespace Statecraft.Game.UI
     /// after the game starts, while the start screen is up; the card asks for the catalog (Get) only when it shows an event.
     /// Get waits for a load still in flight, or loads now when none was started, so the first card always has its
     /// photograph and never the minister's portrait in its place. New Game reuses the loaded catalog.
-    /// A new game shows no card at turn 0, so its boot loads nothing. Continue is different: GameStart.Begin resumes the
-    /// autosave inside GameRoot.Begin, and when that turn has a decision waiting, the card's first Render (in its
-    /// constructor) calls Get, which loads the catalog then and there, as before this change (?bootlog: "on demand").</summary>
+    /// A new game shows no card at turn 0, so its boot loads nothing. A Continue resumes the autosave inside GameRoot.Begin,
+    /// and its turn may have a decision waiting; the card is then built under the start screen and asks for the catalog
+    /// only when the screen closes (issue #592), by when the prefetch has usually finished (?bootlog: "prefetch").</summary>
     public static class EventPhotos
     {
         /// <summary>How long after GameRoot.Begin the prefetch starts: clear of the first frames and their shader compiles.</summary>

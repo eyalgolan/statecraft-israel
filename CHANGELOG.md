@@ -349,6 +349,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   longer than with the old load; a card that comes before the load ends waits for it. A Continue whose turn has a
   decision waiting still loads the catalog in `Begin`, as before (#592). `?bootlog` logs when the card first gets the
   catalog. Presentation only.
+- A Continue whose turn has a decision waiting no longer loads the event photo catalog in `GameRoot.Begin` either
+  (refs #592, #321): the card is built under the start screen and asks for its photograph only when the screen closes,
+  by when the background load has usually finished. The card still opens with its photograph, never the minister's
+  portrait first. Presentation only.
 - The units file (`units_1948.yaml`) is parsed once at boot instead of twice: the map keeps its parse and the units
   layer draws from the same list (refs #321). The units and where they stand are unchanged. The second parse cost about
   25 ms at `--cpu 4` between the map and the start screen; the map build itself is unchanged. `?bootlog` has three more
