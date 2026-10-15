@@ -5,6 +5,15 @@
         <ui:Label name="loading" text="Loading the map of 1948…" class="loading-line" picking-mode="Ignore" />
         <!-- Settlement names, positioned by MapLabelsPresenter under every panel; clicks pass through to the map. -->
         <ui:VisualElement name="map-labels" class="map-labels" picking-mode="Ignore" />
+        <!-- HUD round 2, part 2 (#398): promo 03's left icon column, the four screens (ScreenNav), icon-only; each one's name
+             is its text (the event log records it), hidden, and its tooltip, shown beside it on hover and on focus
+             (HoverTip). Before the top bar in the tree, so Tab still runs Cabinet, Budget, Defence, Why?, New Game, End Turn. -->
+        <ui:VisualElement name="left-column" class="left-column" picking-mode="Ignore">
+            <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="scales" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
+        </ui:VisualElement>
         <ui:VisualElement name="top-bar" class="panel top-bar">
             <Statecraft.Game.UI.UiFrame corners="false" rule="false" />
             <ui:VisualElement class="date-box">
@@ -67,10 +76,6 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="nav" class="nav">
-                <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /></ui:Button>
-                <ui:Button name="nav-budget" text="Budget" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="scales" class="nav-disc" /></ui:Button>
-                <ui:Button name="nav-defence" text="Defence" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
-                <ui:Button name="nav-why" text="Why?" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
                 <ui:Button name="new-game" text="New Game" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
             </ui:VisualElement>
             <ui:VisualElement class="turn-box">

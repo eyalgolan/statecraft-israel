@@ -41,6 +41,7 @@ namespace Statecraft.Game.UI
             bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome));
+            r.Q("left-column")?.SetEnabled(!(start || outcome));   // the screens' buttons: usable wherever the top bar is
             r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome));
             r.Q("info-panel")?.SetEnabled(!(start || full || modal || outcome || r.ClassListContains(WideOpenClass)));
             var layer = r.Q("event-layer");

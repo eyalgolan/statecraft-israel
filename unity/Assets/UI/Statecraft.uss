@@ -141,7 +141,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The narrow HUD (HudPresenter sets hud-narrow on the root, with the compact bar): a taller bar whose meters put the
    change under the value, so no change runs into its neighbour; the panels below the bar move down with it. */
 .hud-narrow .top-bar { height: 124px; }
-.hud-narrow .right-column, .hud-narrow .event-layer, .hud-narrow .screen, .hud-narrow .toast { top: 140px; }
+.hud-narrow .right-column, .hud-narrow .left-column, .hud-narrow .event-layer, .hud-narrow .screen, .hud-narrow .toast { top: 140px; }
 .hud-narrow .meter { min-width: 96px; padding: 0 6px; }
 .hud-narrow .meter-row { flex-direction: column; align-items: flex-start; }
 .hud-narrow .meter-value { font-size: 22px; }
@@ -150,12 +150,12 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    (78% of the bar, so they always take the first row) above, the screen buttons and End Turn below; the panels move down. */
 .hud-two-row .top-bar { height: 216px; padding-top: 6px; padding-bottom: 4px; flex-wrap: wrap; justify-content: space-between; align-content: space-around; }
 .hud-two-row .meters { width: 78%; flex-grow: 1; }
-.hud-two-row .right-column, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
+.hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). */
 .hud-three-row .top-bar { height: 312px; }
 .hud-three-row .meters { width: 100%; }
-.hud-three-row .right-column, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 328px; }
+.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 328px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 16px; }
 .end-turn {
@@ -168,6 +168,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    bottom-right. The right-hand column keeps its 480 px width, so the screens and the border layer's caption stay where
    they were; it now holds only the minimap. */
 .right-column { position: absolute; right: 16px; top: 112px; bottom: 16px; width: 480px; }
+/* HUD round 2, part 2 (#398): promo 03's left icon column, the four screens' round buttons under the bar at the left edge
+   (promo 03: discs about 5.3% of the frame's height, 6.3% apart). Icon-only: the caption is the button's text (the event
+   log and the strings read it) but drawn clear; HoverTip shows it beside the disc on hover and on focus. The decision
+   card's backdrop, the screens and the toast start right of it (68 px: its 56 px and a 12 px gap), so nothing covers it
+   and it stays usable under the decision card, as the top bar does; the card itself stays centred in the window. */
+.left-column { position: absolute; left: 16px; top: 112px; width: 56px; align-items: center; }
+.left-column .rail-button { width: 56px; height: 56px; margin: 0 0 12px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
+.left-column .rail-button .nav-disc { top: 0; left: 0; width: 56px; height: 56px; padding: 13px; border-radius: 28px; }
 .right-gap { flex-grow: 1; flex-shrink: 0; min-height: 16px; }
 /* The decision layer: the room under the bar, top per HUD tier as the column's. While an event is open (event-open on the
    root) the map is blocked: the backdrop dims it and takes the pointer, so map clicks and drags stop at it, and
@@ -175,7 +184,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    middle. Hide collapses the card to the "Decision
    waiting" button at the layer's top right (EventCardPresenter), which takes no more room than itself. */
 .event-layer { position: absolute; left: 16px; right: 16px; top: 112px; bottom: 16px; justify-content: center; align-items: center; }
-.event-scrim { display: none; position: absolute; left: -16px; right: -16px; top: -16px; bottom: -16px; background-color: rgba(5, 9, 18, 0.55); }
+.event-scrim { display: none; position: absolute; left: 56px; right: -16px; top: -16px; bottom: -16px; background-color: rgba(5, 9, 18, 0.55); }
 .event-open .event-scrim { display: flex; }
 .event-reopen {
     display: none; position: absolute; right: 0; top: 0; margin: 0; padding: 6px 18px; font-size: 20px; -unity-text-align: middle-center;
@@ -316,7 +325,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The toast sits in the map's free top-left corner, above the info panel: opaque, and never over an open screen's title or
    the minimap column (B7). */
 .toast {
-    display: none; position: absolute; left: 16px; width: 520px; top: 112px; -unity-text-align: middle-center; white-space: normal;
+    display: none; position: absolute; left: 84px; width: 460px; top: 112px; -unity-text-align: middle-center; white-space: normal;
     background-color: var(--navy-solid); border-color: var(--gold); border-width: 1.5px;
 }
 
@@ -337,11 +346,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Wide screens (Cabinet and Defence, laid out as promo/final/04 and 08): from the left edge to the minimap column, over the
    info panel (an opaque reading screen; the info panel is about a hex, not needed while reading a screen). The event card
    and the minimap stay in view (UiLayoutTests). */
-.screen-wide { left: 16px; bottom: 100px; }
+.screen-wide { left: 84px; bottom: 100px; }
 /* While a wide screen is open the toast's corner (B7) is under it, so the toast moves to the strip the wide screen leaves
    free at the bottom, between the window's left edge and the minimap column: opaque, clear of the screen and the column
    (PromoHudTests.TheToastIsOpaqueAndClearOfTheScreens). Two lines fit. */
-.wide-screen-open .toast { top: auto; bottom: 16px; left: 16px; right: 512px; width: auto; padding: 6px 12px; }
+.wide-screen-open .toast { top: auto; bottom: 16px; left: 84px; right: 512px; width: auto; padding: 6px 12px; }
 /* The info panel under an open wide screen is hidden (ScreenNav sets wide-screen-open): no focus, no clicks, no updates. */
 .wide-screen-open .info-panel { display: none; }
 .section-title {
@@ -477,7 +486,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .pm-card .card-plate { height: 210px; }
 /* #210: in the two-row (narrow) HUD every screen takes the full width under the bar. While one is open the minimap column
    and the info panel under it are hidden (no focus, no clicks), and the toast takes the strip below the screen. */
-.hud-two-row .screen { left: 16px; right: 16px; bottom: 100px; }
+.hud-two-row .screen { left: 84px; right: 16px; bottom: 100px; }
 .hud-two-row.screen-open .right-column, .hud-two-row.screen-open .info-panel { display: none; }
 /* Any open screen sits where the decision card does: the card waits, hidden and out of reach, until the screen closes. */
 .screen-open .event-layer { display: none; }
@@ -489,7 +498,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .loading-line { display: none; position: absolute; left: 0; right: 0; top: 45%; -unity-text-align: middle-center; font-size: 28px; color: var(--ink); }
 .loading .loading-line { display: flex; }
 .root.loading { background-color: var(--navy-solid); }   /* the template's navy, not the default sky (final review M1) */
-.loading .date-box, .loading .meters, .loading .nav, .loading .turn-box, .loading .info-panel, .loading .right-column, .loading .event-layer { visibility: hidden; }
+.loading .date-box, .loading .meters, .loading .nav, .loading .left-column, .loading .turn-box, .loading .info-panel, .loading .right-column, .loading .event-layer { visibility: hidden; }
 
 /* Map labels (visual v1 Task 9; promo HUD pass: rounder, a firmer gold edge): the promo's dark pill with a thin gold edge, in EB Garamond SemiBold. Each pill sits in a
    zero-size slot that MapLabelsPresenter moves with an inline translate; the anchor class says which corner of the pill sits
@@ -541,7 +550,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    whole painting, as a full-width band, over the panel (StartScreenPresenter.Fit). */
 .start-screen { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--navy-deep); }
 .start-open .start-screen { display: flex; }
-.start-open .top-bar, .start-open .right-column, .start-open .event-layer, .start-open .info-panel, .start-open .screen, .start-open .map-labels { display: none; }
+.start-open .top-bar, .start-open .left-column, .start-open .right-column, .start-open .event-layer, .start-open .info-panel, .start-open .screen, .start-open .map-labels { display: none; }
 .start-art {
     position: absolute; left: 0; top: 0; right: 0; bottom: 0;
     background-image: url("project://database/Assets/UI/StartScreen/declaration-hall.jpg");

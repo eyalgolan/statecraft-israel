@@ -70,7 +70,7 @@ namespace Statecraft.Game.UI
         /// visible kit's.</summary>
         public const float MaxKitCover = 0.1f;
         /// <summary>The panels a pill never sits under (Game.uxml names).</summary>
-        public static readonly string[] OccluderNames = { "top-bar", "info-panel", "minimap", "map-layer", "event-card" };
+        public static readonly string[] OccluderNames = { "top-bar", "left-column", "info-panel", "minimap", "map-layer", "event-card" };
 
         const string Centre = "anchor-lower-centre", Left = "anchor-lower-left", Right = "anchor-lower-right";
 

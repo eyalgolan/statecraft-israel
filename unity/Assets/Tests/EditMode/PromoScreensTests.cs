@@ -734,7 +734,10 @@ public class PromoScreensTests
                     if (twoRow)
                     {
                         var panel = root.panel.visualTree.worldBound;
-                        if (r.width < panel.width - 40f) problems.Add($"{where}: not full width ({r.width:0} of {panel.width:0})");
+                        // Full width right of the left icon column (HUD round 2, #398), which stays in view to switch screens.
+                        var column = root.Q("left-column").worldBound;
+                        if (r.xMin < column.xMax - 0.5f) problems.Add($"{where}: covers the left icon column {column}");
+                        if (r.width < panel.width - 40f - 68f) problems.Add($"{where}: not full width ({r.width:0} of {panel.width:0})");
                         foreach (var hidden in new[] { "right-column", "info-panel" })
                             if (root.Q(hidden).resolvedStyle.display != DisplayStyle.None) problems.Add($"{where}: {hidden} shows under the screen");
                         var before = info.Selected;

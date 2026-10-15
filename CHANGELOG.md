@@ -20,6 +20,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - GDD v0.1 Phase 1, a dev flag and the score (refs #380): `?mvp=1` in the WebGL page's URL loads the content through
   `MvpSlice.Overlay` (the GDD slice) for playtests. The golden check and the smoke run ignore it, and a slice game never
   reads, sets aside or writes the player's autosave (and has no New Game). In the GDD loop the top bar shows the score.
+- The left icon column (HUD round 2, part 2, refs #398): the four screens' buttons (Cabinet, Budget, Defence, Why?) move
+  from the top bar to promo 03's column of round icons at the left edge, icon-only, each named in a tip beside it on hover
+  and on keyboard focus. No new action. Tab still runs Cabinet, Budget, Defence, Why?, New Game, End Turn; the column stays
+  usable under the decision card, as the top bar does, and the card's backdrop, the screens and the toast start right of it.
 - The minimap as promo 03's (HUD round 2, part 1, refs #398): a painted relief of the country, baked once from the map's
   own heightmap, ground colours, land use and coast (`tools/minimap_bake.py`, `Resources/Map/MinimapRelief.png`, checked
   fresh in CI) in place of the 128-pixel hex strip painted at boot, and beside it promo 03's three round buttons: zoom all

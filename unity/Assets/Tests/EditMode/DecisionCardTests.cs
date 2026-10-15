@@ -100,8 +100,9 @@ public class DecisionCardTests
             Assert.IsTrue(r.Shows("event-scrim"), $"{where}: the backdrop shows");
             Covered(r, true, where);
             // A point of the map clear of every panel: the backdrop takes it, so a map click or drag stops there.
-            // (The layer's 16 px gutter at the left, just under the bar: the backdrop reaches the window's edge.)
-            var free = new Vector2(4f, r.Root.Q("top-bar").worldBound.yMax + 4f);
+            // (Just right of the left icon column, under the bar: the backdrop starts at the column's edge, which stays usable
+            // under the card as the top bar does; HUD round 2, #398.)
+            var free = new Vector2(r.Root.Q("left-column").worldBound.xMax + 4f, r.Root.Q("top-bar").worldBound.yMax + 4f);
             Assert.AreSame(r.Root.Q("event-scrim"), r.Root.panel.Pick(free), $"{where}: the backdrop takes the pointer at {free}");
             Assert.AreSame(r.CardElement, r.Focused, $"{where}: the new event's card has the focus, no option lit");
             Assert.IsTrue(r.FirstOption.canGrabFocus, $"{where}: its options are in reach");
