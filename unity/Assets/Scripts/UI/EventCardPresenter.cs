@@ -35,6 +35,8 @@ namespace Statecraft.Game.UI
         /// <summary>The card was built under the start screen and it has not closed yet (issue #592): the photograph (and the
         /// portrait in its place) waits for onUncovered, so a Continue with a decision waiting loads no catalog in GameRoot.Begin.</summary>
         bool photoWaits;
+        /// <summary>A screenshot run (HiddenInCaptures): the card never shows, so the captures show the map.</summary>
+        readonly bool hiddenInCapture;
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
         readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit;
@@ -68,11 +70,14 @@ namespace Statecraft.Game.UI
         /// <param name="photosLater">With no <paramref name="photos"/>: gives the catalog, asked only once an event shows.</param>
         /// <param name="underStartScreen">The start screen goes up over the card once it is built (GameRoot.Begin): the card
         /// looks up no photograph until the screen closes, then renders again with it before it is first seen (issue #592).</param>
+        /// <param name="hiddenInCapture">A screenshot run (HiddenInCaptures): neither the card, its scrim nor "Decision
+        /// waiting" ever shows. Shown still names the event; the sim is untouched.</param>
         public EventCardPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits, EventImageCatalog? photos = null,
             CardVideo? video = null, System.Func<string, EventVideoMapping.Row?>? clipFor = null, System.Func<EventImageCatalog?>? photosLater = null,
-            bool underStartScreen = false)
+            bool underStartScreen = false, bool hiddenInCapture = false)
         {
             photoWaits = underStartScreen;
+            this.hiddenInCapture = hiddenInCapture;
             this.video = clipFor == null ? null : video; this.clipFor = clipFor;
             card = root.Q<VisualElement>("event-card"); this.bridge = bridge; this.text = text; this.portraits = portraits; this.photos = photos; this.photosLater = photosLater;
             band = card.Q<VisualElement>("event-photo"); credit = card.Q<Label>("event-photo-credit");
@@ -90,7 +95,7 @@ namespace Statecraft.Game.UI
             {
                 // The start screen has closed: the photograph now, in the same frame the card first shows (issue #592).
                 if (photoWaits) { photoWaits = false; if (Shown != null) Render(); }
-                focusedFor = null; if (Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
+                focusedFor = null; if (!hiddenInCapture && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
             };
             onHidePointer = _ => hideByPointer = true;
             onHideSubmit = _ => hideByPointer = false;
@@ -115,6 +120,13 @@ namespace Statecraft.Game.UI
             bridge.Changed += Render;
             Render();
         }
+
+        /// <summary>True for a screenshot run (?shot, -shot; VisualShots.Requested) that is not also a smoke run: the card is
+        /// then never shown, so the captures show the map, as before the GDD cutover opened every new game on a card. The
+        /// units are left out of the same runs (UnitLayer.HiddenInCaptures). A smoke run presses the card's options, so it
+        /// keeps the card; with no flag (normal play) the card shows.</summary>
+        public static bool HiddenInCaptures(string? url, string[] args, bool webgl) =>
+            Statecraft.Game.Map.VisualShots.Requested(url, args, webgl) && GameRoot.SmokeTurns(url, args, webgl) == 0;
 
         /// <summary>Unsubscribes from the bridge, removes the option buttons and hides the card (the owner calls this when disabled).</summary>
         public void Dispose()
@@ -178,10 +190,10 @@ namespace Statecraft.Game.UI
             Shown = open.FirstOrDefault();
             if (Shown == null) collapsedFor = null;
             if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; }
-            var shown = Shown != null && !Collapsed;
+            var shown = !hiddenInCapture && Shown != null && !Collapsed;
             card.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
             card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
-            reopen.style.display = Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
+            reopen.style.display = !hiddenInCapture && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
             hudRoot.EnableInClassList(OpenClass, shown);
             ScreenNav.DisableCovered(hudRoot);
             if (Shown == null || Collapsed) video?.Stop();

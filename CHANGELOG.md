@@ -613,6 +613,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- Screenshot runs (`?shot`, `-shot`; `tools/art_checkpoint.sh`) show the map again: since the GDD cutover (#600) the
+  opening card, One Army, covered it in every capture. The card, its scrim and "Decision waiting" now stay hidden in a
+  screenshot run, as the units do (`EventCardPresenter.HiddenInCaptures`); normal play and the smoke run still show it.
 - In the Hebrew UI a refused order names its kind in Hebrew (refs #595; owner, 15 October 2026: "Yes, translate them"),
   for example "לא ניתן לזהות מדיניות", not "policy לא מוכר". Each kind is a string, `order.kind.<kind>`, in both
   strings files; English reads as before ("Unknown policy"). The Hebrew words wait for the native reviewer (#564).

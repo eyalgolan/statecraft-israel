@@ -212,7 +212,10 @@ namespace Statecraft.Game.UI
             EventPhotos.ScheduleOn(root);
             card = Own(new EventCardPresenter(root, bridge, text, portraits, null, video,
                 clips == null ? null : id => clips.TryGetValue(id, out var r) ? r : null, EventPhotos.Get,
-                underStartScreen: showsStart));
+                underStartScreen: showsStart,
+                // A screenshot run (?shot) captures the map: the opening card would cover it (UnitLayer.HiddenInCaptures' rule).
+                hiddenInCapture: EventCardPresenter.HiddenInCaptures(Application.absoluteURL, Environment.GetCommandLineArgs(),
+                    Application.platform == RuntimePlatform.WebGLPlayer)));
             // The End Turn outcome clips (decision videos, phase 3): none in the automated runs (no video there). Their own
             // player, so the card's loop never takes it; an open screen closes when one starts.
             outcomes = video == null ? null : Own(new OutcomePresenter(root, bridge, text, Own(new CardVideo()), mapping.outcomes,

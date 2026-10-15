@@ -237,4 +237,43 @@ public class EventCardTests
         Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-photo").style.display.value);
         Assert.AreEqual(portraits.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
     }
+    /// <summary>A screenshot run (?shot, -shot) captures the map, so the opening card (One Army, waiting on every new game
+    /// since the GDD cutover) must not cover it, as the units are left out (UnitLayer.HiddenInCaptures). A smoke run
+    /// presses the card's options, so it keeps the card even with shot; every other run, normal play first, shows it.</summary>
+    [Test]
+    public void AScreenshotRunHidesTheCardAndOnlyIt()
+    {
+        Assert.IsTrue(EventCardPresenter.HiddenInCaptures("https://x/?shot", new string[0], true));
+        Assert.IsTrue(EventCardPresenter.HiddenInCaptures("https://x/?golden&shot", new string[0], true), "tools/art_checkpoint.sh's query");
+        Assert.IsTrue(EventCardPresenter.HiddenInCaptures("https://x/?golden&shot&units", new string[0], true), "the unit slice's shots too");
+        Assert.IsTrue(EventCardPresenter.HiddenInCaptures(null, new[] { "player", "-shot" }, false));
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures("https://x/", new string[0], true), "normal play shows the card");
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures(null, new string[0], true), "no URL: normal play");
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures(null, new[] { "player" }, false));
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures("https://x/?golden", new string[0], true));
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures("https://x/?vprofile", new string[0], true), "the frame profile prices the card");
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures("https://x/?screenshot=1", new string[0], true), "a whole parameter only");
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures("https://x/?smoke=5&shot", new string[0], true), "a smoke run presses the card");
+        Assert.IsFalse(EventCardPresenter.HiddenInCaptures(null, new[] { "player", "-smoke", "5", "-shot" }, false));
+    }
+
+    [Test]
+    public void AHiddenCardLeavesTheMapClearAndANormalOneCoversIt()
+    {
+        foreach (var hidden in new[] { true, false })
+        {
+            using var ui = new UiTestKit();
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var card = new EventCardPresenter(ui.Root, bridge, Text, null, hiddenInCapture: hidden);
+            var hud = ui.Root.Q("root") ?? ui.Root;
+            Assert.AreEqual("idf_founding", card.Shown?.Id, "a new game opens on One Army either way: the sim is untouched");
+            Assert.AreEqual(hidden ? DisplayStyle.None : DisplayStyle.Flex, ui.Q<VisualElement>("event-card").style.display.value, $"hidden {hidden}");
+            Assert.AreEqual(!hidden, hud.ClassListContains(EventCardPresenter.OpenClass), $"the scrim, hidden {hidden}");
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("event-reopen").style.display.value, "no Decision waiting button");
+            card.Render();                                                // a later render (any bridge change) keeps it so
+            Assert.AreEqual(hidden ? DisplayStyle.None : DisplayStyle.Flex, ui.Q<VisualElement>("event-card").style.display.value, $"re-rendered, hidden {hidden}");
+            Assert.AreEqual(!hidden, hud.ClassListContains(EventCardPresenter.OpenClass));
+            card.Dispose();
+        }
+    }
 }
