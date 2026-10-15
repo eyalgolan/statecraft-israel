@@ -67,7 +67,9 @@ namespace Statecraft.Sim
             foreach (var fx in o.Effects.Where(fx => EventRules.SpecialTargets.Contains(fx.Target) || s.Indicators.ContainsKey(fx.Target)))
             {
                 var change = fx.Delta;
-                if (fx.Target == "treasury") s.Treasury += fx.Delta;
+                // R-MONEY-001: a cost the Treasury cannot cover is borrowed, as every other payment is.
+                if (fx.Target == "treasury" && fx.Delta < 0) EconomySystem.PayOrBorrow(c, s, -fx.Delta, $"for {title}", why);
+                else if (fx.Target == "treasury") s.Treasury += fx.Delta;
                 else if (fx.Target == "fx_reserves") s.FxReserves += fx.Delta;
                 else change = EffectsSystem.Shift(c, s, fx.Target, fx.Delta);
                 why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})"));

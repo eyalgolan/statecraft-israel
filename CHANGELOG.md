@@ -8,6 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Changed
+- An event option's Treasury cost the Treasury cannot cover is now borrowed at once, like every other payment, with a cause
+  naming the event (refs #681, R-MONEY-001). Before, the Treasury went below 0 until the deficit step, which reported the
+  shortfall as "to cover the deficit". End-of-turn totals are unchanged and no golden moves. The top bar's Treasury is
+  still cash minus debt, so it reads negative once anything is borrowed.
 - `bernadotte_assassination` says "about 250" Lehi members were arrested, not "about 200" (refs #516; owner, 15 October
   2026): Ben-Gurion told the Provisional State Council 246 (184 + 62), and S/1315 gives 266 by 23 September (184 + 82).
   Card text only: no golden moves, the content hash does, so an older save loads with the "different game content"
