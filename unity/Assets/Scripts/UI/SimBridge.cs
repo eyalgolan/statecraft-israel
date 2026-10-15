@@ -71,12 +71,13 @@ namespace Statecraft.Game.UI
         public Command? QueuedLike(Command c) => queue.FirstOrDefault(q => Key(q) == Key(c));
 
         /// <summary>Null if the id is known, else the player-facing reason. The player sees only the kind of thing (#622: a
-        /// content id means nothing to them); the id goes to the log, for a bug report.</summary>
+        /// content id means nothing to them), in the UI's language: the string order.kind.&lt;kind&gt; (#595). The id goes to
+        /// the log, for a bug report.</summary>
         string? Unknown(string kind, string? id, IEnumerable<string> known)
         {
             if (!string.IsNullOrEmpty(id) && known.Contains(id)) return null;
-            UnityEngine.Debug.Log($"Order refused: unknown {kind} '{id}'");
-            return text.Format("order.unknown", kind);
+            UnityEngine.Debug.Log($"Order refused: unknown {kind.Replace('_', ' ')} '{id}'");
+            return text.Format("order.unknown", text["order.kind." + kind]);
         }
 
         /// <summary>Checks every id an order carries against the content, so End Turn can never be handed an id the
@@ -93,7 +94,7 @@ namespace Statecraft.Game.UI
                 case MapAction m: return Unknown("action", m.Action, MapActions.Actions);
                 case AllocateBudget b:
                     if (b.Shares == null) return text["order.invalid"];
-                    foreach (var k in b.Shares.Keys) { var r = Unknown("budget line", k, Content.Rules.BudgetStart.Keys); if (r != null) return r; }
+                    foreach (var k in b.Shares.Keys) { var r = Unknown("budget_line", k, Content.Rules.BudgetStart.Keys); if (r != null) return r; }
                     return null;
                 case SetMobilization _: case SecurityOrder _: return null;
                 // The GDD orders (#380): ids only. Roles, counts and limits are the sim's, which refuses them with its own
@@ -107,7 +108,7 @@ namespace Statecraft.Game.UI
                 // Pioneer work (#378): ids only; the sim refuses a busy unit, a built site or a short Treasury with its own reason.
                 case PioneerWork w:
                     return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)))
-                        ?? Unknown("pioneer work", w.Action, new[] { Projects.BuildYishuv }) ?? Unknown("site", w.Site, Content.Sites.Select(x => x.Id));
+                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv }) ?? Unknown("site", w.Site, Content.Sites.Select(x => x.Id));
                 case StopWork w: return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 default: return text["order.invalid"];
             }

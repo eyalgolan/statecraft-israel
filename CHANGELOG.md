@@ -523,6 +523,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- In the Hebrew UI a refused order names its kind in Hebrew (refs #595; owner, 15 October 2026: "Yes, translate them"),
+  for example "לא ניתן לזהות מדיניות", not "policy לא מוכר". Each kind is a string, `order.kind.<kind>`, in both
+  strings files; English reads as before ("Unknown policy"). The Hebrew words wait for the native reviewer (#564).
 - An autosave that cannot be continued (refs #631, #622) no longer shows the sim's English reason or a replay's exception
   message to the player: the note always gives the short reason "the file could not be read or replayed", in English and
   Hebrew, and the full exception goes to the log. A replay that throws keeps that exception, with its stack, as the

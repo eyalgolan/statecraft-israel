@@ -304,7 +304,7 @@ public class HudTests
         var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
         LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex("unknown policy 'curfew'"));
         var unknown = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text).Queue(new SetPolicy("curfew", 1));
-        Assert.AreEqual(text.Format("order.unknown", "policy"), unknown);
+        Assert.AreEqual(text.Format("order.unknown", text["order.kind.policy"]), unknown);   // the kind in the UI's language (#595)
         StringAssert.DoesNotContain("curfew", unknown);
 
         LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("stack detail 42"));
