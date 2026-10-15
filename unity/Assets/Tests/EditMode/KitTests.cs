@@ -665,7 +665,7 @@ public class KitTests
     /// <summary>Review (issue #32): the trees planted at map build do not stand in a ma'abara built later. While the camp's kit
     /// is drawn no tree drawn has its crown on the camp's ground (the disc round each tent, hut, communal hut and water
     /// tower); housing in its place, or the kits off (the camp is its box), gives them back. Safed's camp lands among the
-    /// hill olives (it was Rosh Pinna's until main's units file left that hex no ground for a camp: see
+    /// hill olives (it was Rosh Pinna's until main's units file left that hex no ground for a camp with no date: see
     /// AMaabaraKeepsOffTokensGridMarksAndSteepGround).</summary>
     [Test]
     public void NoTreeStandsInAMaabara()
@@ -705,7 +705,9 @@ public class KitTests
     /// on a unit token, on a hex edge's grid mark or on steep ground, so a token on the camp's own hex moves it off. Safed's
     /// camp stands on hilly ground by a hex edge, where those rules refuse plots a build without them fills (review #557: on
     /// flat Revivim the test passed with the rules removed). It was Rosh Pinna until main's units file placed Carmeli's
-    /// Operation Brosh token beside it (July 1948), whose ring leaves the camp no ground in that hex, so it is a box there.</summary>
+    /// Operation Brosh token beside it (July 1948), whose ring leaves a camp with no date no ground in that hex, so it is
+    /// a box there. A camp of 1950 keeps off only the tokens present from its date
+    /// (RoshPinnasCampOf1950IsAKitOfTentsAndHutsAgain).</summary>
     [Test]
     public void AMaabaraKeepsOffTokensGridMarksAndSteepGround()
     {
@@ -790,6 +792,90 @@ public class KitTests
         TestContext.WriteLine($"{c.SettlementHexes.Count} settlement hexes: {kits} camps drawn as kits ({structures} structures, {towers} water towers), "
             + $"{boxes.Count} as boxes ({string.Join(", ", boxes)})");
         Assert.Greater(kits, 0, "some camp finds ground in its own hex");
+    }
+
+    /// <summary>A transit camp the player builds on <paramref name="id"/>'s hex on 26 August 1950, rendered by a placement
+    /// layer: whether it is drawn as its kit (Kit.mat) rather than its marker box.</summary>
+    static bool DrawnAsKit(MapScene map, Statecraft.Sim.Content c, string id)
+    {
+        var hex = c.SettlementHexes.Single(s => s.Id == id);
+        var layer = new GameObject("Placements").AddComponent<PlacementLayer>();
+        layer.Render(new[] { new Statecraft.Sim.Placement(Statecraft.Sim.MapActions.TransitCamp, hex.Q, hex.R, new System.DateTime(1950, 8, 26)) }, c, map);
+        bool kit = layer.transform.GetChild(0).GetComponent<MeshRenderer>().sharedMaterial == AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Kit.mat");
+        layer.Render(new Statecraft.Sim.Placement[0], c, map);   // frees the camp's mesh
+        Object.DestroyImmediate(layer.gameObject);
+        return kit;
+    }
+
+    /// <summary>The centre of <paramref name="id"/>'s hex on the ground plane (world x, z), where PlacementLayer asks for the
+    /// camp the player builds on it.</summary>
+    static Vector2 HexCentre(MapScene map, Statecraft.Sim.Content c, string id)
+    {
+        var hex = c.SettlementHexes.Single(s => s.Id == id);
+        var at = c.HexAt(hex.Q, hex.R)!; var w = map.Frame.ToWorld(at.Lon, at.Lat, 0);
+        return new Vector2(w.x, w.z);
+    }
+
+    /// <summary>T67 (owner, 15 October 2026: "Yes, date-aware"): a camp keeps clear only of the unit tokens present while it
+    /// stands, from its own date on. Camps are built from 1950, and Carmeli's Operation Brosh token by Rosh Pinna stands
+    /// 9-18 July 1948 only (content/map/units_1948.yaml), so Rosh Pinna's camp of 1950 is a kit of tents and huts again, on
+    /// its hex's centre. With no date it keeps off that 1948 token too: then it is a box with the coarse rings, or a few
+    /// tents at the hex's far side with the fine ones.</summary>
+    [Test]
+    public void RoshPinnasCampOf1950IsAKitOfTentsAndHutsAgain()
+    {
+        var map = OpenMap();
+        var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        Assert.IsTrue(DrawnAsKit(map, c, "rosh_pinna"), "Rosh Pinna's camp of 1950 is drawn as its kit");
+        var at = HexCentre(map, c, "rosh_pinna");
+        var g = PlacementLayer.CampGround(map);
+        var built = SettlementKits.Maabarot(new List<(string id, Vector2 at, System.DateTime from)> { ("transit_camp_rosh_pinna", at, new System.DateTime(1950, 8, 26)) }, g)[0];
+        var undated = SettlementKits.Maabarot(new List<(string id, Vector2 at)> { ("transit_camp_rosh_pinna", at) }, g)[0];
+        TestContext.WriteLine($"1950: {built.tents} tents, {built.huts} huts, {(built.at - at).magnitude:F0} m from the hex centre; "
+            + $"no date: {undated.tents} tents, {undated.huts} huts, {(undated.at - at).magnitude:F0} m");
+        foreach (var k in new[] { built, undated }) if (k.mesh != null) Object.DestroyImmediate(k.mesh);
+        Assert.Greater(built.tents, 0, "tents"); Assert.Greater(built.huts, 0, "and huts");
+        Assert.Less(undated.tents + undated.huts, built.tents + built.huts, "with no date the 1948 token still takes the camp's ground");
+    }
+
+    /// <summary>T67: a token present on the camp's date still moves every tent, hut, communal hut and water tower off its ring;
+    /// one whose window ended before that date, on the same spot, changes nothing.</summary>
+    [Test]
+    public void ACampKeepsClearOfTheTokensPresentAtItsDate()
+    {
+        var map = OpenMap();
+        var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var g = PlacementLayer.CampGround(map);
+        var camp = new List<(string id, Vector2 at, System.DateTime from)> { ("transit_camp_rosh_pinna", HexCentre(map, c, "rosh_pinna"), new System.DateTime(1950, 8, 26)) };
+        var built = SettlementKits.Maabarot(camp, g)[0];
+        Assert.IsNotNull(built.mesh, "Rosh Pinna's camp of 1950 is a kit"); Object.DestroyImmediate(built.mesh);
+        float lot = 4f * KitScale.Houses;   // a plot's lot (SettlementKits.MaabaraPlotR)
+        var token = built.at + new Vector2(lot, 0f);   // on the camp's own ground
+        g.DatedTokens.Add((token, 300f, new System.DateTime(1949, 1, 1)));
+        var past = SettlementKits.Maabarot(camp, g)[0];
+        Assert.AreEqual((built.tents, built.huts, built.at), (past.tents, past.huts, past.at), "a token gone before the camp's date changes nothing");
+        if (past.mesh != null) Object.DestroyImmediate(past.mesh);
+
+        g.DatedTokens.Add((token, 300f, new System.DateTime(1951, 1, 1)));
+        var moved = SettlementKits.Maabarot(camp, g, out var clear)[0];
+        if (moved.mesh != null) Object.DestroyImmediate(moved.mesh);
+        TestContext.WriteLine($"with a token present in 1950: {moved.tents} tents, {moved.huts} huts, {clear.Count} structures");
+        Assert.AreNotEqual(built.at, moved.at, "the token present in 1950 moved the camp");
+        Assert.Greater(clear.Count, 0, "the camp found other ground");
+        foreach (var p in clear)
+            Assert.Greater((p.C - token).magnitude, 300f + 0.5f * Mathf.Min(p.W, p.D), $"{p.Kind} at ({p.C.x:F0}, {p.C.y:F0}) on the token present in 1950");
+    }
+
+    /// <summary>T67 (issue #32; owner: "Yes, a follow-up"): the ma'abarot stood at the edges of the towns. A camp's centre is
+    /// looked for on rings an eighth of its reach apart (450 m at the house scale), not half of it (1.8 km), so a camp finds the free ground at a town's edge in its
+    /// hex: Gaza and Degania Alef, boxes with the coarse rings, get their kits. Every structure still stands wholly in the
+    /// hex and off the towns, routes and steep ground (AMaabaraStandsInItsOwnHex, MaabarotAreSeededAndStandOnFreeDryGround).</summary>
+    [Test]
+    public void ACampFindsTheGroundAtATownsEdge()
+    {
+        var map = OpenMap();
+        var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        foreach (var id in new[] { "gaza", "degania_alef" }) Assert.IsTrue(DrawnAsKit(map, c, id), id + "'s camp is drawn as its kit");
     }
 
     /// <summary>Review I2: the populations come from content/map/settlement_population_1945.yaml through the map inputs.</summary>

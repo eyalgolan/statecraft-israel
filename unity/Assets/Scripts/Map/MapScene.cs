@@ -211,8 +211,10 @@ namespace Statecraft.Game.Map
         public IReadOnlyList<(Vector2 centre, float radius)> UnitClearings { get; private set; } = new List<(Vector2, float)>();
 
         /// <summary>The unit tokens that stand outside the towns (centre x, z; ring radius m), as the kits get them
-        /// (KitGround.Tokens): the transit camps PlacementLayer builds later keep off them too. Empty before Build.</summary>
-        public IReadOnlyList<(Vector2 centre, float radius)> UnitTokens { get; private set; } = new List<(Vector2, float)>();
+        /// (KitGround.Tokens), with the day the token's window ends (its anchor's `to`, exclusive): the transit camps
+        /// PlacementLayer builds later keep off those still present on the camp's date (KitGround.DatedTokens). Empty before
+        /// Build.</summary>
+        public IReadOnlyList<(Vector2 centre, float radius, DateTime until)> UnitTokens { get; private set; } = new List<(Vector2, float, DateTime)>();
 
         /// <summary>The last Build's kit numbers (buildings, vertices, trees, build time), or null without kits.</summary>
         public Kits.KitLayer.Stats KitStats { get; private set; }
@@ -345,6 +347,7 @@ namespace Statecraft.Game.Map
                 (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM);
             var clearings = new List<(Vector2 centre, float radius)>();
             var unitRings = new List<(Vector2 centre, float radius)>();
+            var datedRings = new List<(Vector2 centre, float radius, DateTime until)>();
             // The units' showcase trio gets the same clearing at its spot, off the railways and roads, so its base stands
             // clear of the kits (review of #559).
             if (ShowcaseClearing ?? Units.UnitShowcase.Requested()) clearings.Add(Units.UnitShowcase.Clearing(this));
@@ -356,12 +359,16 @@ namespace Statecraft.Game.Map
                 {
                     var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
                     if (kv.Value.InTown && !clearings.Exists(x => x.centre == c)) clearings.Add((c, unitGround.ClearingRadius));
-                    else if (!kv.Value.InTown) unitRings.Add((c, unitGround.RingRadius(kv.Value.Compact)));
+                    else if (!kv.Value.InTown)
+                    {
+                        unitRings.Add((c, unitGround.RingRadius(kv.Value.Compact)));
+                        datedRings.Add((c, unitGround.RingRadius(kv.Value.Compact), Units.UnitData.Day(kv.Key.To)));
+                    }
                 }
             }
             UnitClearings = clearings;
             DiagLog.BootPhase("units placed");   // issue #321: the routes' corridors, the footprints and the unit spots
-            UnitTokens = unitRings;
+            UnitTokens = datedRings;
             if (kitsOn)
             {
                 // ?kitscale=, ?housescale=, ?treescale= in the WebGL player: the same layout at another symbolic scale (city

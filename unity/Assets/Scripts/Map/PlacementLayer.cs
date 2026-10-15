@@ -74,13 +74,13 @@ namespace Statecraft.Game.Map
         /// and water tower stands on (the disc round it) to <paramref name="holes"/>.</summary>
         HashSet<string> Camps(List<Placement> list, Content content, MapScene map, List<(Vector2 centre, float radius)> holes)
         {
-            var camps = new List<(string id, Vector2 at)>();
+            var camps = new List<(string id, Vector2 at, System.DateTime from)>();
             foreach (var p in list)
             {
                 var hex = p.Action == MapActions.TransitCamp ? content.HexAt(p.Q, p.R) : null;
                 if (hex == null) continue;
                 var w = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
-                camps.Add(($"{p.Action}_{p.Q}_{p.R}", new Vector2(w.x, w.z)));
+                camps.Add(($"{p.Action}_{p.Q}_{p.R}", new Vector2(w.x, w.z), p.Date));
             }
             var drawn = new HashSet<string>();
             if (camps.Count == 0) return drawn;
@@ -103,15 +103,16 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The ground a camp is built on: the map's terrain with every kit's footprint (towns, 1948 localities,
-        /// Bedouin camps: MapScene.KitFootprints), the railways' and roads' corridors and the units' clearings and tokens (as
-        /// KitLayer.Build is given them), so a camp keeps off all of them.</summary>
+        /// Bedouin camps: MapScene.KitFootprints), the railways' and roads' corridors and the units' clearings (as KitLayer.Build
+        /// is given them), so a camp keeps off all of them, and the units' tokens with their dates, so a camp keeps off those
+        /// present on or after its own date (KitGround.DatedTokens; T67, owner 15 October 2026: "Yes, date-aware").</summary>
         internal static KitGround CampGround(MapScene map)
         {
             var ground = new KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
             foreach (var f in map.KitFootprints) ground.Footprints.Add(f);
             foreach (var (line, half) in map.RouteCorridors) ground.AddCorridor(line, half);
             foreach (var c in map.UnitClearings) ground.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
-            ground.Tokens.AddRange(map.UnitTokens);
+            ground.DatedTokens.AddRange(map.UnitTokens);
             return ground;
         }
     }

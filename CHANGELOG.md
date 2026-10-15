@@ -391,6 +391,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   hill houses that stand on a slope. A village keeps its mosque, now a one-storey hall with a short square minaret; the
   domed mosque with its tall minaret stays with the Arab towns. The median Arab locality draws 11 houses (main 5), in
   the same merged tile meshes (64 draws). Presentation only (`docs/visual-v1.md`, "Arab villages: dense, terraced cores").
+- Map: the ma'abara kit (Beri's, #557; refs #32) stands at a town's edge and keeps clear only of the unit tokens present
+  in its time. A camp's centre is now looked for on rings 450 m apart, not 1.8 km, so Gaza's and Degania Alef's camps
+  find the free ground at the town's edge and are drawn as kits, not boxes. A camp keeps off only the unit tokens whose
+  window runs to its own date or later (owner, 15 October 2026: "Yes, date-aware"). Camps are built from 1950, so Rosh
+  Pinna's camp is tents and huts again, not the box that the 1948 Operation Brosh token left it. Every structure still
+  stands wholly inside its hex. No golden moves.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,

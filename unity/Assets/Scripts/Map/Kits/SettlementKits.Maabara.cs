@@ -30,18 +30,19 @@ namespace Statecraft.Game.Map.Kits
         /// the hex grid's edge marks and on steep ground, so a test can show those rules refuse a plot (review #557).</summary>
         internal static bool MaabaraGroundRules = true;
 
-        /// <summary>Builds one ma'abara per entry of <paramref name="camps"/> (seed id, the centre of its hex in world x, z), in
-        /// order, on one lot list so no two overlap: a mesh in world space (null when no free ground was found in the camp's
-        /// own hex), the tents and huts it holds (the communal hut and the water tower not counted) and its centre.</summary>
-        public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at)> camps, KitGround ground,
-            float hutShare = MaabaraHutShare)
+        /// <summary>Builds one ma'abara per entry of <paramref name="camps"/> (seed id, the centre of its hex in world x, z, the
+        /// day it was built), in order, on one lot list so no two overlap: a mesh in world space (null when no free ground was
+        /// found in the camp's own hex), the tents and huts it holds (the communal hut and the water tower not counted) and its
+        /// centre. A camp keeps off the unit tokens present on or after its own day (KitGround.OnToken with a date; T67).</summary>
+        public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at, System.DateTime from)> camps,
+            KitGround ground, float hutShare = MaabaraHutShare)
         {
             var lots = new Lots();
             var result = new List<(Mesh?, int, int, Vector2)>();
-            foreach (var (id, at) in camps)
+            foreach (var (id, at, from) in camps)
             {
                 var km = new KitMesh();
-                var (tents, huts, c) = Maabara(id, at, ground, km, lots, hutShare);
+                var (tents, huts, c) = Maabara(id, at, from, ground, km, lots, hutShare);
                 result.Add((km.VertexCount > 0 ? km.ToMesh(id + "_kit") : null, tents, huts, c));
             }
             return result;
@@ -49,32 +50,48 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>As Maabarot, also listing everything placed (<see cref="Placed"/>: "tent", "hut", "communal_hut",
         /// "water_tower"), in placement order.</summary>
-        public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at)> camps, KitGround ground,
-            out List<Placed> placed, float hutShare = MaabaraHutShare)
+        public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at, System.DateTime from)> camps,
+            KitGround ground, out List<Placed> placed, float hutShare = MaabaraHutShare)
         {
             census = placed = new List<Placed>();
             try { return Maabarot(camps, ground, hutShare); }
             finally { census = null; }
         }
 
-        static (int tents, int huts, Vector2 at) Maabara(string id, Vector2 hexCentre, KitGround ground, KitMesh km, Lots lots, float hutShare)
+        /// <summary>As Maabarot, for camps with no date: each keeps off every unit token, dated or not.</summary>
+        public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at)> camps, KitGround ground,
+            float hutShare = MaabaraHutShare) => Maabarot(Undated(camps), ground, hutShare);
+
+        /// <summary>As Maabarot with <paramref name="placed"/>, for camps with no date: each keeps off every unit token.</summary>
+        public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at)> camps, KitGround ground,
+            out List<Placed> placed, float hutShare = MaabaraHutShare) => Maabarot(Undated(camps), ground, out placed, hutShare);
+
+        static List<(string id, Vector2 at, System.DateTime from)> Undated(IReadOnlyList<(string id, Vector2 at)> camps)
+        {
+            var list = new List<(string, Vector2, System.DateTime)>(camps.Count);
+            foreach (var (id, at) in camps) list.Add((id, at, System.DateTime.MinValue));
+            return list;
+        }
+
+        static (int tents, int huts, Vector2 at) Maabara(string id, Vector2 hexCentre, System.DateTime from, KitGround ground, KitMesh km, Lots lots,
+            float hutShare)
         {
             float m = KitScale.Houses;
-            if (!MaabaraSpot(hexCentre, MaabaraReach * m, ground, lots, out var c)) return (0, 0, c);
+            if (!MaabaraSpot(hexCentre, MaabaraReach * m, from, ground, lots, out var c)) return (0, 0, c);
             var rnd = new KitRandom(id, 1);
             float yaw = rnd.Range(0f, 90f), a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             Vector2 At(float u, float v) => c + new Vector2(u * ca - v * sa, u * sa + v * ca);
-            // As the Bedouin camps' tents (Encampments): off the routes and the units' clearings, the unit tokens, the hex
-            // grid's edge marks and steep ground. Each tent, hut, the communal hut and the water tower's spot stands in the
-            // camp's own hex, not only its centre (review #557): the rows reach about 1.6 km from the centre at the house
-            // scale, the communal hut about 3 km, against the hex's 4.33 km inradius.
+            // As the Bedouin camps' tents (Encampments): off the routes and the units' clearings, the unit tokens (those present
+            // on or after the camp's own date, T67), the hex grid's edge marks and steep ground. Each tent, hut, the communal
+            // hut and the water tower's spot stands in the camp's own hex, not only its centre (review #557): the rows reach
+            // about 1.6 km from the centre at the house scale, the communal hut about 3 km, against the hex's 4.33 km inradius.
             // The whole disc of radius r, not only its centre (review #557, c9): r is at least the half-width of what stands
             // there, so nothing overhangs the hex's edge (HexGrid.EdgeDistance: the drawn grid's own distance field).
             var hex = ground.Hex(hexCentre.x, hexCentre.y);
             bool InHex(Vector2 p, float r) => ground.Hex(p.x, p.y) == hex
                 && HexGrid.EdgeDistance(HexGrid.FromWorld(new Vector3(p.x, 0f, p.y), ground.TerrainOrigin, ground.Length), ground.HexSizeM) >= r;
             bool Free(Vector2 p, float r) => ground.Inside(p.x, p.y) && InHex(p, r) && !ground.Water(p.x, p.y) && OffTowns(p, r, ground)
-                && !ground.OnRoute(p, r) && !ground.OnToken(p, r)
+                && !ground.OnRoute(p, r) && !ground.OnToken(p, r, from)
                 && (!MaabaraGroundRules || (!ground.OnGridMark(p, r) && ground.Slope(p.x, p.y, 600f) <= 0.12f)) && lots.Free(p, r, id, 0);
             // Huts at an even spread over the plots (a golden-ratio sequence from a seeded phase), not a coin per plot: the
             // camp shows the share asked for, not a lucky draw of it.
@@ -156,7 +173,7 @@ namespace Statecraft.Game.Map.Kits
             // tests water, lots and routes but not slope or grid marks, so the spot its Claim (4 m) will take is found first on
             // a copy of the lots and must be Free as a tent's is (review #557).
             var tower = At(-((MaabaraCols - 1) * 0.5f * MaabaraPitchU + 10f) * m, 0f);
-            if (rnd.Chance(0.5f) && OffTowns(tower, 20f * m, ground) && !ground.OnToken(tower, 20f * m))
+            if (rnd.Chance(0.5f) && OffTowns(tower, 20f * m, ground) && !ground.OnToken(tower, 20f * m, from))
             {
                 var probe = new Lots();
                 foreach (var l in lots.List) probe.Add(l);
@@ -467,15 +484,18 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
-        /// <summary>The camp's centre: the dry spot nearest <paramref name="want"/> (rings of half a reach) in the hex
+        /// <summary>The camp's centre: the dry spot nearest <paramref name="want"/> (rings an eighth of a reach apart) in the hex
         /// <paramref name="want"/> stands in, whose inner half stays off every town's plots, that is gentle and whose whole
-        /// reach is clear of the unit tokens (Encampments' tests) and of the camps built before it. The player picks the hex,
-        /// so the camp stands in it, where selection and the info panel point (review #557). False when there is none: the
-        /// camp is then drawn as its box.</summary>
-        static bool MaabaraSpot(Vector2 want, float reach, KitGround ground, Lots lots, out Vector2 at)
+        /// reach is clear of the unit tokens present on or after <paramref name="from"/> (Encampments' tests; T67) and of the
+        /// camps built before it. The player picks the hex, so the camp stands in it, where selection and the info panel point
+        /// (review #557). False when there is none: the camp is then drawn as its box.</summary>
+        static bool MaabaraSpot(Vector2 want, float reach, System.DateTime from, KitGround ground, Lots lots, out Vector2 at)
         {
-            // From any point of a hex the whole hex lies within two circumradii.
-            float step = reach * 0.5f, max = 2f * ground.HexSizeM;
+            // From any point of a hex the whole hex lies within two circumradii. The rings are an eighth of a reach apart (450 m
+            // at the house scale), not half of one (1.8 km): the ma'abarot stood at the edges of the towns (T67, issue #32), and
+            // in the big towns' hexes the free ground at a town's edge fell between the coarse rings, so the camp was its box.
+            // The inner half that must stay off the towns is unchanged.
+            float step = reach * 0.125f, clear = reach * 0.5f, max = 2f * ground.HexSizeM;
             var hex = ground.Hex(want.x, want.y);
             for (int ring = 0; ring * step <= max; ring++)
             {
@@ -484,8 +504,8 @@ namespace Statecraft.Game.Map.Kits
                 {
                     float a = 2f * Mathf.PI * k / around;
                     var p = want + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (ring * step);
-                    if (!ground.Inside(p.x, p.y) || ground.Hex(p.x, p.y) != hex || ground.Water(p.x, p.y) || !OffTowns(p, step, ground) || ground.Slope(p.x, p.y, 600f) > 0.12f
-                        || ground.OnToken(p, reach) || !lots.Free(p, reach)) continue;
+                    if (!ground.Inside(p.x, p.y) || ground.Hex(p.x, p.y) != hex || ground.Water(p.x, p.y) || !OffTowns(p, clear, ground) || ground.Slope(p.x, p.y, 600f) > 0.12f
+                        || ground.OnToken(p, reach, from) || !lots.Free(p, reach)) continue;
                     at = p; return true;
                 }
             }
