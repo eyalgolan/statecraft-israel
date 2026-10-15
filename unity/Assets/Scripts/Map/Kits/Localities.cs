@@ -158,7 +158,7 @@ namespace Statecraft.Game.Map.Kits
         {
             public string Id { get; set; } = ""; public string Name { get; set; } = ""; public string NameBasis { get; set; } = "";
             public TodayRow? Today { get; set; } public string? NameHe { get; set; } public string? NameAr { get; set; }
-            public List<SourceRow> NameHeSources { get; set; } = new List<SourceRow>(); public string NameHeReview { get; set; } = "";
+            public List<SourceRow> NameHeSources { get; set; } = new List<SourceRow>(); public string NameHeReview { get; set; } = ""; public bool NameHeReviewGiven;
             public double Lon { get; set; } = double.NaN; public double Lat { get; set; } = double.NaN;
             public string Kind { get; set; } = ""; public string Type { get; set; } = ""; public string Landmark { get; set; } = "";
             public int Population { get; set; } = -1; public List<string> ListedAs { get; set; } = new List<string>();
@@ -281,9 +281,10 @@ namespace Statecraft.Game.Map.Kits
                 if (p.Population < 1) throw new InvalidDataException($"{at} population {p.Population} is not a count of people");
                 CheckSourced(at, p.Status, p.Checked, p.Sources, runtime ? p.SourceCount : p.Sources.Count);
                 if (p.NameHeSources.Count > 0 && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_sources without a name_he");
-                if (p.NameHeReview != "" && p.NameHeReview != "agent-checked")
-                    throw new InvalidDataException($"{at} name_he_review '{p.NameHeReview}' is not agent-checked (leave it out once a person has reviewed the name)");
-                if (p.NameHeReview != "" && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_review without a name_he");
+                // Absent (a person has reviewed the name) or exactly agent-checked: blank, null or a list is neither.
+                if (p.NameHeReviewGiven && p.NameHeReview != "agent-checked")
+                    throw new InvalidDataException($"{at} name_he_review '{p.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                if (p.NameHeReviewGiven && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_review without a name_he");
                 for (int i = 0; i < p.NameHeSources.Count; i++)
                     if (!p.NameHeSources[i].Url.StartsWith("https://") || string.IsNullOrWhiteSpace(p.NameHeSources[i].Checked))
                         throw new InvalidDataException($"{at} name_he_sources[{i}] needs an https url and a checked date");
@@ -340,7 +341,7 @@ namespace Statecraft.Game.Map.Kits
                 if (t != null) Keys(t, TodayKeys, at + " today");
                 f.Places.Add(new PlaceRow
                 {
-                    Id = Str(m, "id"), Name = Str(m, "name"), NameHe = Str(m, "name_he"), NameHeSources = NameSources(m, at), NameHeReview = Str(m, "name_he_review"), Kind = Str(m, "kind"), Type = Str(m, "type"), Landmark = Str(m, "landmark"),
+                    Id = Str(m, "id"), Name = Str(m, "name"), NameHe = Str(m, "name_he"), NameHeSources = NameSources(m, at), NameHeReview = Str(m, "name_he_review"), NameHeReviewGiven = m.ContainsKey("name_he_review"), Kind = Str(m, "kind"), Type = Str(m, "type"), Landmark = Str(m, "landmark"),
                     Lon = Num(m, "lon", at), Lat = Num(m, "lat", at), Population = (int)Num(m, "population", at, -1),
                     Today = t == null ? null : new TodayRow { Name = Str(t, "name"), NameHe = Str(t, "name_he"), Source = Str(t, "source") },
                     Checked = Str(m, "checked"), Status = Str(m, "status"), Sources = Sources(m, at), Line = m.Line,

@@ -27,13 +27,19 @@ namespace Statecraft.Sim
         public List<Source> TitleHeSources { get; set; } = new List<Source>();
         /// <summary>"agent-checked" while <see cref="TitleHe"/> waits for a native speaker's review (#564); empty once a
         /// person has reviewed it (<see cref="HebrewReview"/>).</summary>
-        public string TitleHeReview { get; set; } = "";
+        public string TitleHeReview { get => titleHeReview ?? ""; set => titleHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool TitleHeReviewGiven => titleHeReview != null;
+        string? titleHeReview;
         /// <summary>The feminine Hebrew title, only where a woman held the office (the Knesset records write שרת העבודה);
         /// sourced in <see cref="TitleHeFSources"/>. Needs <see cref="TitleHe"/>.</summary>
         public string TitleHeF { get; set; } = "";
         public List<Source> TitleHeFSources { get; set; } = new List<Source>();
         /// <summary>As <see cref="TitleHeReview"/>, for <see cref="TitleHeF"/>.</summary>
-        public string TitleHeFReview { get; set; } = "";
+        public string TitleHeFReview { get => titleHeFReview ?? ""; set => titleHeFReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool TitleHeFReviewGiven => titleHeFReview != null;
+        string? titleHeFReview;
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
@@ -88,7 +94,10 @@ namespace Statecraft.Sim
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
         /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
-        public string NameHeReview { get; set; } = "";
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
     }
 
     public sealed class OfficeTerm
@@ -138,7 +147,10 @@ namespace Statecraft.Sim
         public string BodyHe { get; set; } = "";
         public List<Source> BodyHeSources { get; set; } = new List<Source>();
         /// <summary>"agent-checked" while <see cref="BodyHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
-        public string BodyHeReview { get; set; } = "";
+        public string BodyHeReview { get => bodyHeReview ?? ""; set => bodyHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool BodyHeReviewGiven => bodyHeReview != null;
+        string? bodyHeReview;
         public DateTime? Elected { get; set; }
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
@@ -159,7 +171,10 @@ namespace Statecraft.Sim
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
         /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
-        public string NameHeReview { get; set; } = "";
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
         /// <summary>The parties in the coalition when the government took office. Parties that join or leave later are

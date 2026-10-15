@@ -81,11 +81,31 @@ public class HebrewNameTests
     [InlineData("legislatures.yaml", "    body: Council\n", "    body: Council\n    body_he: מועצה\n    body_he_sources: " + Src + "\n    body_he_review: reviewed\n", "legislatures[council].body_he_review")]
     [InlineData("governments.yaml", "    name: Government One\n", "    name: Government One\n    name_he_review: agent-checked\n", "governments[gov1].name_he")]
     [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: yes,", "settlements[town_a].name_he_review")]
+    // A blank or empty flag is not a review: the key is either agent-checked or gone (second review of #610).
+    [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: " + Src + "\n    title_he_review: ''\n", "offices[prime_minister].title_he_review")]
+    [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: " + Src + "\n    title_he_review: ~\n", "offices[prime_minister].title_he_review")]
+    [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: " + Src + "\n    title_he_f: ראשת הממשלה\n    title_he_f_sources: " + Src + "\n    title_he_f_review:\n", "offices[prime_minister].title_he_f_review")]
+    [InlineData("parties.yaml", "    name: Alpha\n", "    name: Alpha\n    name_he: אלפא\n    name_he_sources: " + Src + "\n    name_he_review: \"\"\n", "parties[alpha].name_he_review")]
+    [InlineData("legislatures.yaml", "    body: Council\n", "    body: Council\n    body_he: מועצה\n    body_he_sources: " + Src + "\n    body_he_review: ~\n", "legislatures[council].body_he_review")]
+    [InlineData("governments.yaml", "    name: Government One\n", "    name: Government One\n    name_he: ממשלה\n    name_he_sources: " + Src + "\n    name_he_review: ''\n", "governments[gov1].name_he_review")]
+    [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: '',", "settlements[town_a].name_he_review")]
+    [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: ~,", "settlements[town_a].name_he_review")]
+    [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: [agent-checked],", "settlements[town_a].name_he_review")]
+    // The sim reads settlements untyped, so it checks the keys itself: a misspelt flag is an error, not a reviewed name.
+    [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_reveiw: agent-checked,", "settlements[town_a].name_he_reveiw")]
     public void AReviewFlagIsAgentCheckedAndSitsOnAName(string file, string from, string to, string field)
     {
         var ex = Assert.Throws<ContentException>(() => Load(Replace(file, from, to)));
         Assert.Equal(file, ex.File);
         Assert.Equal(field, ex.Field);
+    }
+
+    [Fact]
+    public void ANonScalarFlagInATypedFileIsAnError()
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Replace("offices.yaml", "    title: Prime Minister\n",
+            "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: " + Src + "\n    title_he_review: [agent-checked]\n")));
+        Assert.Equal("offices.yaml", ex.File);
     }
 
     // ---- the real content ------------------------------------------------------------------------------------------

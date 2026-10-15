@@ -42,7 +42,8 @@ These rules protect the game and the people in it. They are not a viewpoint:
    (`name_he`, `title_he`, `title_he_f`, `body_he`) that an AI agent checked against its sources, but no person has read
    yet, carries its own flag beside it, `*_review: agent-checked` (for example `name_he_review`), whatever the row's
    `status` says about its English facts (owner, 15 October 2026). A native Hebrew speaker reviews these names (#564)
-   and then removes the flag; the loader accepts only `agent-checked`, and only next to a name.
+   and then removes the line; the loader accepts only `agent-checked` (a blank value is an error), and only next to a
+   name.
 
 ## 3. How to dispute a fact
 

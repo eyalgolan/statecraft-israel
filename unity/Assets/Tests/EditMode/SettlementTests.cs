@@ -138,6 +138,9 @@ public class SettlementTests
         Assert.AreEqual("agent-checked", flagged[0].NameHeReview);
         AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{url: u, checked: x}], name_he_review: done, " + Src)), "h", "name_he_review");
         AssertNames(Rejects(Entry("h", "lon: 35, lat: 32, type: town, founded: 1900, name_he_review: agent-checked, " + Src)), "h", "name_he_review");
+        // A blank or empty flag is not a review: the key is either agent-checked or gone (second review of #610).
+        foreach (var blank in new[] { "''", "~", "\"\"" })
+            AssertNames(Rejects(Entry("h", $"lon: 35, lat: 32, type: town, founded: 1900, name_he: \"\u05D0\", name_he_sources: [{{url: u, checked: x}}], name_he_review: {blank}, " + Src)), "h", "name_he_review");
     }
 
 }

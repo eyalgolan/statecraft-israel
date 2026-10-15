@@ -498,6 +498,9 @@ public class KitTests
         // The review flag (#564): agent-checked on a named row only, any other value refused.
         Bad("places:\n" + Place("a", "  name_he_review: agent-checked\n"), "name_he_review without a name_he");
         Bad("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_review: checked\n"), "name_he_review 'checked'");
+        // A blank, empty or non-scalar flag is not a review (second review of #610).
+        foreach (var blank in new[] { "''", "~", "", "[agent-checked]" })
+            Bad("places:\n" + Place("a", $"  name_he: \"\\u05D0\"\n  name_he_review: {blank}\n"), "name_he_review");
         Assert.AreEqual(1, Localities.Parse("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_review: agent-checked\n"), b, reserved, "loc.yaml").Places.Count);
         Assert.AreEqual("\u05D0", Localities.Parse("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x', checked: '2026-10-14'}\n"),
             b, reserved, "loc.yaml").Places[0].NameHe);

@@ -70,16 +70,25 @@ namespace Statecraft.Sim
                 {
                     var sid = r.TryGetValue("id", out var id) && id is string s0 && s0 != ""
                         ? s0 : throw new ContentException(SettlementsFileName, $"settlements[{i}].id", "required");
+                    // The sim reads these rows untyped, so it checks their keys itself: a misspelt key (name_he_reveiw)
+                    // would otherwise load as if absent. The same keys as Unity's SettlementPlacer.Settlement.
+                    foreach (var key in r.Keys)
+                        if (!SettlementKeys.Contains(key)) throw new ContentException(SettlementsFileName, $"settlements[{sid}].{key}", "unknown field");
                     var sname = r.TryGetValue("name", out var name) && name is string n0 && !string.IsNullOrWhiteSpace(n0)
                         ? n0 : throw new ContentException(SettlementsFileName, $"settlements[{i}].name", "required (the name shown to the player)");
                     HebrewName(SettlementsFileName, $"settlements[{sid}]", "name_he", r.TryGetValue("name_he", out var he) && he is string hs ? hs : "",
                         SettlementSources(r, $"settlements[{sid}].name_he_sources"),
-                        r.TryGetValue("name_he_review", out var rv) && rv is string rs ? rs : "");
+                        r.TryGetValue("name_he_review", out var rv) && rv is string rs ? rs : "", r.ContainsKey("name_he_review"));
                     return (sid, sname);
                 }).ToList();
             }
             catch (YamlException e) { throw new ContentException(SettlementsFileName, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
         }
+
+        static readonly HashSet<string> SettlementKeys = new HashSet<string>
+        {
+            "id", "name", "name_he", "name_he_sources", "name_he_review", "lon", "lat", "type", "founded", "pre_modern", "sources",
+        };
 
         /// <summary>A settlement row's name_he_sources, read from the untyped row: a list of { url, checked } maps.</summary>
         static List<Source> SettlementSources(Dictionary<string, object> row, string field)
@@ -218,14 +227,16 @@ namespace Statecraft.Sim
 
         /// <summary>A Hebrew display name (#558): when set it holds Hebrew letters and has at least one source, each an https URL
         /// with its checked date; sources without a name are an error. Empty means no sourced Hebrew name (the UI keeps the English).</summary>
-        static void HebrewName(string file, string at, string key, string value, List<Source> sources, string review)
+        static void HebrewName(string file, string at, string key, string value, List<Source> sources, string review, bool reviewGiven)
         {
-            if (review != "" && review != HebrewReview.AgentChecked)
+            // The flag is either absent (a person has reviewed the name) or exactly agent-checked; a blank or null value is
+            // neither, so it is an error rather than a silent "reviewed".
+            if (reviewGiven && review != HebrewReview.AgentChecked)
                 throw new ContentException(file, $"{at}.{key}_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
             if (value == "")
             {
                 if (sources.Count > 0) throw new ContentException(file, $"{at}.{key}", $"required: {key}_sources is set but the name is empty");
-                if (review != "") throw new ContentException(file, $"{at}.{key}", $"required: {key}_review is set but the name is empty");
+                if (reviewGiven) throw new ContentException(file, $"{at}.{key}", $"required: {key}_review is set but the name is empty");
                 return;
             }
             if (!value.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(file, $"{at}.{key}", "must be the Hebrew name, in Hebrew letters");
@@ -621,13 +632,13 @@ namespace Statecraft.Sim
             // Hebrew display names (#558): each value carries its own sources, and sources need a value.
             foreach (var o in c.Offices)
             {
-                HebrewName("offices.yaml", $"offices[{o.Id}]", "title_he", o.TitleHe, o.TitleHeSources, o.TitleHeReview);
-                HebrewName("offices.yaml", $"offices[{o.Id}]", "title_he_f", o.TitleHeF, o.TitleHeFSources, o.TitleHeFReview);
+                HebrewName("offices.yaml", $"offices[{o.Id}]", "title_he", o.TitleHe, o.TitleHeSources, o.TitleHeReview, o.TitleHeReviewGiven);
+                HebrewName("offices.yaml", $"offices[{o.Id}]", "title_he_f", o.TitleHeF, o.TitleHeFSources, o.TitleHeFReview, o.TitleHeFReviewGiven);
                 if (o.TitleHeF != "" && o.TitleHe == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he", "required: a feminine title_he_f needs the title_he beside it");
             }
-            foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources, p.NameHeReview);
-            foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources, l.BodyHeReview);
-            foreach (var g in c.Governments) HebrewName("governments.yaml", $"governments[{g.Id}]", "name_he", g.NameHe, g.NameHeSources, g.NameHeReview);
+            foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources, p.NameHeReview, p.NameHeReviewGiven);
+            foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources, l.BodyHeReview, l.BodyHeReviewGiven);
+            foreach (var g in c.Governments) HebrewName("governments.yaml", $"governments[{g.Id}]", "name_he", g.NameHe, g.NameHeSources, g.NameHeReview, g.NameHeReviewGiven);
             foreach (var a in c.Money)
             {
                 if (Array.IndexOf(PlayerText.MoneyIds, a.Id) < 0)
