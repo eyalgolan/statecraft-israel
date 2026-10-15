@@ -123,6 +123,46 @@ public class RegionsRuntimeTests
         }
     }
 
+    /// <summary>Review of #601: a leading zero. The game's YAML path (YamlDotNet 18.1.0, the region classes' own deserializer)
+    /// reads an integer with a leading zero as octal: checked with that DLL and Subdistricts1948.Parse's builder chain,
+    /// "id: 010" gives 8, "[012, 0, 17]" gives q = 10, "[-012, 0, 17]" gives -10, and "id: 08" throws. The runtime reader
+    /// would read 12, so it refuses such a number and the YAML is read (one warning). Each case edits the YAML and its
+    /// runtime file alike (yaml_check and body_check made again), so only the number's reading differs.</summary>
+    [Test]
+    public void ALeadingZeroIsReadAsTheYamlPathReadsIt()
+    {
+        var m = Inputs().Map;
+        foreach (var (yamlOld, yamlNew, tsvOld, tsvNew, why) in new[]
+        {
+            ("  - [12, 0, 17]\n", "  - [012, 0, 17]\n", "\t870\t12 0 17;", "\t870\t012 0 17;", "a hex's q, 012 (octal 10 on the YAML path)"),
+            ("{ id: 17, key: outside,", "{ id: 021, key: outside,", "id=s:17\tkey=s:outside", "id=s:021\tkey=s:outside", "a region id, 021 (octal 17)"),
+        })
+        {
+            StringAssert.Contains(yamlOld, m.RegionsYaml, why); StringAssert.Contains(tsvOld, m.RegionsTsv, why);
+            var yaml = m.RegionsYaml.Replace(yamlOld, yamlNew);
+            var lines = Rebody(m.RegionsTsv.Replace(tsvOld, tsvNew)).Split('\n');
+            int check = Array.FindIndex(lines, l => l.StartsWith("meta\tyaml_check\t"));
+            lines[check] = "meta\tyaml_check\t" + Statecraft.Game.Map.Routes.RouteRibbonFile.Check(yaml).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var warnings = new List<string>();
+            var got = Describe(Subdistricts1948.ReadRuntimeOrYaml(string.Join("\n", lines), yaml, warnings.Add));
+            Assert.AreEqual(Describe(Subdistricts1948.Parse(yaml)), got, why);
+            Assert.AreEqual(1, warnings.Count, $"{why}: {string.Join(" | ", warnings)}");
+        }
+    }
+
+    /// <summary>Review of #601: a runtime file of another version says so, before any row it cannot read (a version 1 file's
+    /// typed values are not version 2's).</summary>
+    [Test]
+    public void AnOldVersionIsNamedFirst()
+    {
+        var m = Inputs().Map;
+        var old = m.RegionsTsv.Replace($"meta\tversion\t{RegionsRuntime.Version}\n", "meta\tversion\t1\n").Replace("id=s:1\t", "id=i:1\t");
+        var warnings = new List<string>();
+        Subdistricts1948.ReadRuntimeOrYaml(old, m.RegionsYaml, warnings.Add);
+        Assert.AreEqual(1, warnings.Count);
+        StringAssert.Contains($"version 1, this build reads {RegionsRuntime.Version}", warnings[0]);
+    }
+
     /// <summary>A field the class does not read is refused, as YamlDotNet refuses an unknown key: the YAML is read.</summary>
     [Test]
     public void AnUnknownFieldIsRefused()

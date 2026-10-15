@@ -30,7 +30,7 @@ REBAKE = "run uv run tools/regions_bake.py and commit the .tsv"
 
 # The fingerprint of the readers (code_fingerprint). Re-pin only after RegionsRuntimeTests passes in Unity, with
 # RegionsRuntime.Version and regions_bake.VERSION bumped together if the runtime layout changed.
-PINNED_CODE = "08cc1f2d60868e3d0d3501b268f1d5de4943c1e2f2a51dfcf9604aa3d9f17295"
+PINNED_CODE = "688bfe4efcf6459b5b5de21812c92c1b1e5a906204e0145ac531d55b5f3d35d2"
 
 
 def member(text: str, signature: str) -> str:

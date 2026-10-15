@@ -55,7 +55,7 @@ namespace Statecraft.Game.Map
             {
                 var v = Get(key, 's');
                 if (v == null) return absent;
-                return v.Text != null && int.TryParse(v.Text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n) ? n
+                return v.Text != null && DecimalInt(v.Text, out var n) ? n
                     : throw new InvalidDataException($"{file}:{line}: field '{key}' '{v.Text}' is not an integer");
             }
             /// <summary>A boolean field from its text, "true" or "false" only (anything else is refused and the YAML read).</summary>
@@ -132,7 +132,7 @@ namespace Statecraft.Game.Map
                 {
                     var ints = new List<int>(r.Count);
                     foreach (var t in r)
-                        ints.Add(int.TryParse(t, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n) ? n
+                        ints.Add(DecimalInt(t, out var n) ? n
                             : throw new InvalidDataException($"{file}: '{key}' holds '{t}', not an integer"));
                     list.Add(ints);
                 }
@@ -143,6 +143,17 @@ namespace Statecraft.Game.Map
             {
                 foreach (var k in keys) if (!read.Contains(k)) throw new InvalidDataException($"{file}: unknown key '{k}'");
             }
+        }
+
+        /// <summary>A plain decimal integer, read as the YAML path reads it. A leading zero is refused: YamlDotNet (the
+        /// region classes' deserializer, 18.1.0) reads "012" as octal 10 and "08" not at all, where this would read 12 and 8
+        /// (review of #601); such a file then falls back to the YAML.</summary>
+        internal static bool DecimalInt(string text, out int n)
+        {
+            n = 0;
+            int i = text.Length > 0 && (text[0] == '+' || text[0] == '-') ? 1 : 0;
+            if (text.Length > i + 1 && text[i] == '0') return false;
+            return int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out n);
         }
 
         /// <summary>FNV-1a over the UTF-8 bytes of the data rows, each followed by '\n' (tools/regions_bake.py's body_check).</summary>
@@ -165,6 +176,15 @@ namespace Statecraft.Game.Map
             int? version = null, check = null, count = null, body = null;
             var rows = new List<string>();
             var lines = tsv.Split('\n');
+            // The version first, so a file of another layout says so rather than failing on a row it cannot read (review of #601).
+            foreach (var l in lines)
+                if (l.StartsWith("meta\tversion\t", StringComparison.Ordinal))
+                {
+                    var v = l.TrimEnd('\r').Substring("meta\tversion\t".Length);
+                    if (v != Version.ToString(CultureInfo.InvariantCulture))
+                        throw new InvalidDataException($"{file}: version {v}, this build reads {Version} (re-bake: tools/regions_bake.py)");
+                    break;
+                }
             int Int(string text, string what, int line) =>
                 int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v)
                     ? v : throw new InvalidDataException($"{file}:{line}: {what} '{text}' is not an integer");
