@@ -49,12 +49,23 @@ transparency; artwork PG-13 (map, towns, boats and unit miniatures).
 | Library logo | `library/library_logo_1280w.png` | 1280 x 183, PNG with transparency | "Either 1280px wide and/or 720px tall (.png)", transparent background | same two pages |
 | Shortcut icon (Community) | `community/shortcut_icon_256x256.png` | 256 x 256 PNG | 256px x 256px ".ico or .png" ("We will generate a .ico if a png is provided") | [store/assets](https://partner.steamgames.com/doc/store/assets) |
 | App icon (Community) | `community/app_icon_184x184.jpg` | 184 x 184 JPG | 184px x 184px .jpg | same page |
+| Shortcut icon, small sizes (monogram) | `community/monogram/monogram.ico` (16, 24, 32, 48, 64, 128 and 256 px) and `monogram_<n>.png` at each size | 16 to 256 | the shortcut icon may be ".ico or .png" | [store/assets](https://partner.steamgames.com/doc/store/assets) |
 
 Valve's overview page also says, under "August, 2024", that "Old dimensions are no longer accepted"; the sizes above
 are the current ones on that page. The two Community icons, which Valve lists as Required, are made the same way: a
 square crop of `telaviv40` (dimmed) with the title on two lines (`sources/icons.py`). The title reads at 256 and 184 px,
-but not at the 32 and 48 px sizes a Windows shortcut uses; a simpler mark (a monogram) would read there, and choosing
-one is a design call for the owner. Not in the kit: the optional page background (1438 x 810) and the event assets.
+but not at the 32 and 48 px sizes a Windows shortcut uses.
+
+**The monogram (owner's choice, 15 October 2026: "A simple monogram").** For those small sizes the kit has an "S" in EB
+Garamond SemiBold in the map's land tan on the map's sea blue, with a darker rim so the tile reads on light and dark
+backgrounds (`sources/monogram.py`). The colours are taken from the game's own palette on `main` at `d304661a`: the sea
+is `ScDeepSrgb` (0.27, 0.40, 0.54) in `unity/Assets/Shaders/StatecraftMap.hlsl`, sRGB (69, 102, 138); the land is the
+"desert" biome colour (0.80, 0.68, 0.48) in `unity/Assets/Scripts/Map/MapBuilder.cs`, sRGB (204, 173, 122); the rim
+is the sea at 70 %. Each size is drawn on its own pixel grid (8x supersampled, then box-reduced), not shrunk from 256.
+Checked at 1:1 on light and dark backgrounds: the "S" reads at 16, 24, 32 and 48 px. Valve lists no small sizes of
+its own beyond the 256 x 256 shortcut icon and says it generates a .ico from a PNG; uploading `monogram.ico` instead
+gives Windows the monogram at every shortcut size. Not in the kit: the optional page background (1438 x 810) and the
+event assets.
 
 **Legibility at the small display sizes.** The small capsule sets the title on two lines so that it nearly fills the
 capsule, as Valve's page advises, over a dimmed background. Previews at Steam's generated sizes,
@@ -111,7 +122,8 @@ small-capsule previews, the two Community icons, the screenshots and the two sou
 choice (coordinator ruling, 15 October 2026): the renders show the land-use, biome and route bakes
 (`unity/Assets/Textures/Map/landuse.png`, `unity/Assets/Resources/Map/BiomeColours.bytes`,
 `unity/Assets/Resources/Routes/RouteRibbons.bytes`), which D13 (PR #565) made CC BY-SA 4.0. The library logo has no
-render in it: it is the title set in EB Garamond on transparency, so it is **CC BY 4.0**. The font is OFL-1.1; it is
+render in it: it is the title set in EB Garamond on transparency, so it is **CC BY 4.0**. The monogram icons have
+no render pixels either (the font and two palette colours), so they are **CC BY 4.0** too. The font is OFL-1.1; it is
 credited, and the images are not under the OFL. The scripts in `sources/` are MIT.
 
 CC BY-SA 4.0 asks two things of anyone who shares these images, Valve's store included:
@@ -136,6 +148,14 @@ screenshots as in section 2.
 | --- | --- | --- | --- | --- |
 | community/app_icon_184x184.jpg | 16950 | 184x184 | fe89fbe88126c2a9eae11a71c1d39b8243279c1525f47d107b0edaab7d340498 | CC BY-SA 4.0 |
 | community/shortcut_icon_256x256.png | 122559 | 256x256 | b37d19ec6b77ded41673d9ba1311e907b127c45cb12daee5423078a997c2f7d7 | CC BY-SA 4.0 |
+| community/monogram/monogram.ico | 15173 | 16 to 256 | 3f95ff84cc50a9abf2b3322e4ad78ec2162d36387ed8157aac5f2efd18d44065 | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_128.png | 3197 | 128x128 | 788876452fe03c07a43fd8d87ee5d2016b7a653bf307cf9bab544fb65b8aed4a | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_16.png | 470 | 16x16 | 253cae3382acf9bcb849e4f07a0bd338c259cf17887228c3fac37bf422a19cae | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_24.png | 678 | 24x24 | 01ab2f8c6206a96cd96f0432589ab9962082a0da0a1d2a9b1b6dfa179444f49f | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_256.png | 6484 | 256x256 | 516546295ea7807aff9213fb458dbe28450b452f10ffbbc2e21c14e5f02b5fe1 | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_32.png | 881 | 32x32 | af3c9dada4af535d20a10884c649272883b120b98bd9a589eb891716fe7d2a3b | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_48.png | 1277 | 48x48 | cf234617ee958db154fd3ee0f2496a53b29f865e61b1e80f1fc5a8e74a2ce075 | CC BY 4.0 (font OFL-1.1, credited) |
+| community/monogram/monogram_64.png | 1649 | 64x64 | ced9f026060eb8a7f6a743042e6ece041668cc57eb5af7bfb50b75621eb46296 | CC BY 4.0 (font OFL-1.1, credited) |
 | capsules/header_capsule_920x430.png | 681357 | 920x430 | e2d4522ce4a0c7615eeb0a77d55e2abbcc94b62b3c566b3f09043b73f0bb43a8 | CC BY-SA 4.0 |
 | capsules/main_capsule_1232x706.png | 1342138 | 1232x706 | 18b6e75f5319fa49931029b42b695a41c122d4a7448083c59f714cbe1ff44a48 | CC BY-SA 4.0 |
 | capsules/preview_small_120x45.png | 13021 | 120x45 | 60f209b338a474870ecf1cf4c46c1f3f4176777972e3c28579e73cd7a787cfb7 | CC BY-SA 4.0 |
@@ -160,6 +180,7 @@ screenshots as in section 2.
 | sources/capsules.py | 5999 | - | 2f79346dc4d426da74b882b52708b1e5baf47c46f107f78d7f7eab869b14ec3d | MIT |
 | sources/capture.py | 4367 | - | 728275b9bc35436264897bf9fd3904059c4c0d9401fd4e37a4a1c465900d02f9 | MIT |
 | sources/icons.py | 1640 | - | 249683bb8c357ceeb4ed24e9083376eac9def2024c0ce6256688bde4702dd235 | MIT |
+| sources/monogram.py | 2923 | - | f8f3965baab4c7058fc7383f032e5b04a1606cccb7c2c7155abdee90818e2800 | MIT |
 | sources/steps1.json | 393 | - | c1d6f57eda508aa0f6900ce24077980d7cc198f01ca6b7e8fa16dfb9ce32e057 | MIT |
 | sources/steps5.json | 208 | - | 6eea8d0e91be8ae415cf706ddee31b57b9b6cede5370970fb0a2cb8315ad9422 | MIT |
 | sources/steps6.json | 209 | - | 716a73fa69e13a4b94ae09870273ad0ed80ee1db8e73b6b5a338a838f4a1c4c8 | MIT |
@@ -327,8 +348,9 @@ None of these is done. Each is the owner's action.
 5. **Tags** from section 6.
 6. **Graphical assets.** Upload the capsules and library art from section 1 (header, small, main, vertical, library
    capsule, library header, library hero, library logo); place the logo on the hero with Steam's preview tool. Upload
-   the Community icons (shortcut 256 x 256 PNG, app icon 184 x 184 JPG), or replace them with a monogram first if the
-   title should read at shortcut sizes (section 1).
+   the Community icons: for the shortcut icon, `community/monogram/monogram.ico` (the owner's monogram choice: it
+   reads at the 32 and 48 px shortcut sizes), or `shortcut_icon_256x256.png` if the title version is wanted at 256 px
+   and Steam's generated .ico is accepted; for the app icon, `app_icon_184x184.jpg` (section 1).
 7. **Screenshots.** Upload the screenshots from section 2 and tick "suitable for all ages" only on the ones marked so
    there (at least four).
 8. **Trailer.** A real-build gameplay trailer is still pending (#45). Check in Steamworks whether the Coming Soon
