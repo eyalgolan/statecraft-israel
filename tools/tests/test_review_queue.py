@@ -103,7 +103,7 @@ def test_the_page_groups_by_file_and_links_each_line(tmp_path):
     text = rq.page(entries, human, "0123456789abcdef")
     assert "at commit `01234567`" in text
     assert "- Hebrew names flagged `agent-checked`: **2**" in text
-    assert "co-author trailer: **1**" in text
+    assert "co-author trailer, or not committed yet: **1**" in text
     assert "### [content/offices.yaml](../content/offices.yaml) (1)" in text
     assert "| [2](../content/offices.yaml#L2) | pm | title_he | ראש הממשלה | <https://knesset.gov.il/x> |" in text
     assert "[10](../content/governments.yaml#L10) | g1 | fact-checked |" in text
@@ -124,14 +124,22 @@ def test_deleting_a_flag_then_regenerating_keeps_every_line_right(tmp_path):
     assert human == 1
 
 
-def test_an_uncommitted_line_does_not_crash_and_is_not_agent_written(tmp_path):
+def test_an_uncommitted_status_is_listed_as_not_committed_yet(tmp_path):
+    """A reviewed status nobody has committed yet has no commit to vouch for it, so it is listed, as "not committed yet"
+    (independent re-review of #611: it was counted with the human-set ones and hidden). The extra line above it must not
+    crash the blame or shift the lines."""
     repo = make_repo(tmp_path)
     ev = repo / "content" / "events" / "truce.yaml"
     ev.write_text("# a new comment line\n" + ev.read_text(encoding="utf-8").replace("status: sensitivity-reviewed", "status: historian-reviewed"),
                   encoding="utf-8")
     entries, human = rq.queue(repo)
-    assert "truce" not in [e.row for e in entries]   # the status line is uncommitted: nobody's commit yet
-    assert human == 1
+    truce = [e for e in entries if e.row == "truce"]
+    assert [(e.kind, e.line, e.value, e.checked_by) for e in truce] == [("status", 6, "historian-reviewed", "not committed yet")]
+    assert human == 0
+    gov = repo / "content" / "governments.yaml"
+    gov.write_text(gov.read_text(encoding="utf-8").replace("status: draft", "status: fact-checked"), encoding="utf-8")
+    g2 = [e for e in rq.queue(repo)[0] if e.row == "g2"]
+    assert [(e.line, e.value, e.checked_by) for e in g2] == [(13, "fact-checked", "not committed yet")]
 
 
 def test_historian_reviewed_counts_as_a_reviewed_status():

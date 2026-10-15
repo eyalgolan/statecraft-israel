@@ -18,10 +18,10 @@ Two kinds of entry:
 The heuristic for (2), because content has no reviewer field: `docs/HISTORIAN_REVIEW.md` keeps the reviewer's record in
 the pull request, not in the YAML (no `reviewed_by` key), so the only signal in the repository is git history. For each
 such status line, `git blame` on the working-tree file (the text this script reads, so a deleted flag or another
-uncommitted edit does not shift the lines) gives the commit that last wrote it; a line not committed yet counts as no
-commit's. A commit counts when its message has an AI co-author trailer or the Claude Code line ("Co-Authored-By:
+uncommitted edit does not shift the lines) gives the commit that last wrote it. A commit counts when its message has an AI co-author trailer or the Claude Code line ("Co-Authored-By:
 Claude ...", "Co-Authored-By: ... Codex / Copilot / GPT ...", "Generated with [Claude Code]", "Generated with Codex").
-Such a row is listed with the commit and its pull request number; any other is counted, not listed.
+Such a row is listed with the commit and its pull request number. A status line not committed yet is listed too, as
+"not committed yet": no commit vouches for it, so the queue fails closed. Any other row is counted, not listed.
 
 Limits, said plainly, and on the page too:
 - **Over-inclusive.** An agent-co-written commit may only record a person's decision (the owner's sensitivity sign-offs
@@ -190,6 +190,9 @@ def queue(repo: Path) -> tuple[list[Entry], int]:
             if e.kind == "flag":
                 e.checked_by = f"an AI agent (the `{FLAG}` flag)"
                 entries.append(e)
+            elif c.sha == UNCOMMITTED:   # no commit vouches for it yet: list it, never hide it (fail closed)
+                e.checked_by = "not committed yet"
+                entries.append(e)
             elif c.agent:
                 e.checked_by = c.describe()
                 entries.append(e)
@@ -224,13 +227,13 @@ def page(entries: list[Entry], human: int, head: str) -> str:
         "",
         f"- Hebrew names flagged `{FLAG}`: **{len(flags)}**",
         f"- `fact-checked`, `historian-reviewed` or `sensitivity-reviewed` statuses last written by a commit with an AI "
-        f"co-author trailer: **{len(statuses)}**",
-        f"- the same statuses last written by a commit without one, or not committed yet (not listed): {human}",
+        f"co-author trailer, or not committed yet: **{len(statuses)}**",
+        f"- the same statuses last written by a commit without one (not listed): {human}",
         "",
     ]
     for title, items, cols in (
         ("Hebrew names to review (#564)", flags, ("Line", "Row", "Field", "Value", "Sources", "Checked by")),
-        ("Reviewed statuses last written by a commit with an AI co-author trailer", statuses,
+        ("Reviewed statuses last written by a commit with an AI co-author trailer, or not committed yet", statuses,
          ("Line", "Row", "Status", "Sources", "Last written by")),
     ):
         out += [f"## {title}", ""]
