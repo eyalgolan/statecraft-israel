@@ -407,6 +407,10 @@ public class TopBarTests
                         if (r.yMax > plate.yMax - clear + 0.05f) problems.Add($"{at}: {name} {r} ends {plate.yMax - r.yMax:0.0} px above the plate's bottom {plate.yMax:0.0}, inside its frame (needs {clear})");
                         foreach (var c in corners)
                             if (r.Overlaps(c)) problems.Add($"{at}: {name} {r} enters the corner scroll's zone {c} of the plate {plate}");
+                        // The measurements, for the review: the line's room to the plate's top and bottom, and to the nearer
+                        // corner zone on either side (horizontal room where the line shares the zone's rows, else vertical).
+                        float Room(Rect z) => r.yMax <= z.yMin || r.yMin >= z.yMax ? Mathf.Max(z.yMin - r.yMax, r.yMin - z.yMax) : Mathf.Max(z.xMin - r.xMax, r.xMin - z.xMax);
+                        TestContext.WriteLine($"{at}: {name} top {r.yMin - plate.yMin:0.0}, bottom {plate.yMax - r.yMax:0.0}, corners TL {Room(corners[0]):0.0} TR {Room(corners[1]):0.0} BL {Room(corners[2]):0.0} BR {Room(corners[3]):0.0} (panel px; needs {clear} and > 0)");
                     }
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
