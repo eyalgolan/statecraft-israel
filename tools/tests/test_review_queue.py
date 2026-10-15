@@ -77,7 +77,7 @@ def test_queue_lists_agent_set_statuses_and_every_flag_and_counts_the_rest(tmp_p
     ]
     assert human == 1   # the truce's status came from a commit with no agent marker
     status = entries[1]
-    assert status.checked_by.startswith("an AI agent (PR #10")
+    assert status.checked_by.startswith("a commit with an AI co-author trailer (PR #10")
     assert entries[0].checked_by == "an AI agent (the `agent-checked` flag)"
 
 
@@ -103,8 +103,55 @@ def test_the_page_groups_by_file_and_links_each_line(tmp_path):
     text = rq.page(entries, human, "0123456789abcdef")
     assert "at commit `01234567`" in text
     assert "- Hebrew names flagged `agent-checked`: **2**" in text
-    assert "statuses last set by an agent-written commit: **1**" in text
+    assert "co-author trailer: **1**" in text
     assert "### [content/offices.yaml](../content/offices.yaml) (1)" in text
     assert "| [2](../content/offices.yaml#L2) | pm | title_he | ראש הממשלה | <https://knesset.gov.il/x> |" in text
     assert "[10](../content/governments.yaml#L10) | g1 | fact-checked |" in text
     assert "truce" not in text   # human-set: counted, not listed
+
+
+def test_deleting_a_flag_then_regenerating_keeps_every_line_right(tmp_path):
+    """The reviewer's step is to delete a *_review line in the working tree; the queue then drops that flag and the lines
+    below it move up, still blamed on the commits that wrote them (second review of #611: it blamed HEAD but read the
+    working tree)."""
+    repo = make_repo(tmp_path)
+    gov = repo / "content" / "governments.yaml"
+    gov.write_text(gov.read_text(encoding="utf-8").replace("    name_he_review: agent-checked\n", ""), encoding="utf-8")
+    entries, human = rq.queue(repo)
+    assert [(e.kind, e.file, e.line, e.row) for e in entries] == [
+        ("status", "content/governments.yaml", 9, "g1"), ("flag", "content/offices.yaml", 2, "pm")]
+    assert entries[0].checked_by.startswith("a commit with an AI co-author trailer (PR #10")
+    assert human == 1
+
+
+def test_an_uncommitted_line_does_not_crash_and_is_not_agent_written(tmp_path):
+    repo = make_repo(tmp_path)
+    ev = repo / "content" / "events" / "truce.yaml"
+    ev.write_text("# a new comment line\n" + ev.read_text(encoding="utf-8").replace("status: sensitivity-reviewed", "status: historian-reviewed"),
+                  encoding="utf-8")
+    entries, human = rq.queue(repo)
+    assert "truce" not in [e.row for e in entries]   # the status line is uncommitted: nobody's commit yet
+    assert human == 1
+
+
+def test_historian_reviewed_counts_as_a_reviewed_status():
+    assert [e.value for e in rq.scan(EVENT.replace("sensitivity-reviewed", "historian-reviewed"), "e.yaml")] == ["historian-reviewed"]
+
+
+def test_a_long_subject_is_cut_before_its_pr_number():
+    c = rq.Commit("a" * 40, "A Person", "content: " + "x" * 120 + " (#123)", True)
+    text = c.describe()
+    assert text.startswith("a commit with an AI co-author trailer (PR #123: content: ")
+    assert "(#" not in text and text.endswith("…)")
+
+
+def test_a_shallow_clone_is_refused(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    shallow = tmp_path / "shallow"
+    subprocess.run(["git", "clone", "-q", "--depth", "1", repo.as_uri(), str(shallow)], check=True, capture_output=True)
+    assert rq.run(shallow, write=False) == 2
+    assert "shallow clone" in capsys.readouterr().err
+    assert rq.run(repo, write=False) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("# Human-review queue")
+    assert "over-inclusive" in out

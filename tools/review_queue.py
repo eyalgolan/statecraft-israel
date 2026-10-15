@@ -2,8 +2,8 @@
 # requires-python = ">=3.11"
 # dependencies = ["pyyaml==6.0.3"]
 # ///
-"""Lists the content an AI agent checked that no named person has reviewed yet (CONTENT_POLICY section 2, rule 6), so the
-owner can work through it: docs/review-queue.md.
+"""Lists the content that no named person has reviewed yet and that an AI agent may have checked (CONTENT_POLICY
+section 2, rule 6), so the owner can work through it: docs/review-queue.md.
 
 Read-only on content/: it parses the YAML and asks git, and writes only the Markdown page (or prints it).
 
@@ -11,18 +11,26 @@ Two kinds of entry:
 
 1. **Agent-checked Hebrew names**: every `*_review: agent-checked` flag (`name_he_review`, `title_he_review`,
    `title_he_f_review`, `body_he_review`; #564). The flag itself says no person has read the name.
-2. **Statuses an agent set**: every row whose `status` is `fact-checked` or `sensitivity-reviewed`, where the line that
-   holds that status was last written by a commit that an AI agent co-wrote.
+2. **Reviewed statuses last written by a commit with an AI co-author trailer**: every row whose `status` is
+   `fact-checked`, `historian-reviewed` or `sensitivity-reviewed`, where the line that holds that status was last
+   written by such a commit.
 
 The heuristic for (2), because content has no reviewer field: `docs/HISTORIAN_REVIEW.md` keeps the reviewer's record in
 the pull request, not in the YAML (no `reviewed_by` key), so the only signal in the repository is git history. For each
-such status line, `git blame` gives the commit that last wrote it. A commit counts as agent-written when its message has
-an AI co-author trailer or the Claude Code line ("Co-Authored-By: Claude ...", "Co-Authored-By: ... Codex ...",
-"Generated with [Claude Code]", "Generated with Codex"). Such a row is listed with the commit and its pull request
-number; a row whose status line came from a commit with no such marker is counted as human-set and not listed. Limits,
-said plainly: a person may have reviewed an agent's row and merged it without touching the line (it stays listed, which
-errs on the side of review), a person may have set a status without checking (not caught), and a shallow clone blames
-every line on its one commit (run it on a full clone; the page names the commit it was generated from).
+such status line, `git blame` on the working-tree file (the text this script reads, so a deleted flag or another
+uncommitted edit does not shift the lines) gives the commit that last wrote it; a line not committed yet counts as no
+commit's. A commit counts when its message has an AI co-author trailer or the Claude Code line ("Co-Authored-By:
+Claude ...", "Co-Authored-By: ... Codex / Copilot / GPT ...", "Generated with [Claude Code]", "Generated with Codex").
+Such a row is listed with the commit and its pull request number; any other is counted, not listed.
+
+Limits, said plainly, and on the page too:
+- **Over-inclusive.** An agent-co-written commit may only record a person's decision (the owner's sensitivity sign-offs
+  are recorded that way), and a person may have reviewed an agent's row and merged it without touching the line. Both
+  stay listed: the list is "not shown to be human-reviewed", not "checked by an agent".
+- **Blind spots.** An agent whose commits carry none of these trailers (another tool, or an outside contributor who does
+  not mark AI use) counts as a person; a person who set a status without checking is not caught.
+- **History.** A shallow clone blames every line on its one commit, so the script refuses one (exit 2). The page names
+  the commit it was generated from.
 
 Usage: uv run tools/review_queue.py [--write]   (prints the page; --write writes docs/review-queue.md)
 """
@@ -39,7 +47,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "docs" / "review-queue.md"
-STATUSES = ("fact-checked", "sensitivity-reviewed")
+STATUSES = ("fact-checked", "historian-reviewed", "sensitivity-reviewed")
 FLAG = "agent-checked"
 FLAG_KEY = re.compile(r"^(?P<field>[a-z_]+_he(?:_f)?)_review$")
 AI_MARK = re.compile(r"co-authored-by:[^\n]*(claude|codex|copilot|gpt)|generated with \[?(claude code|codex)", re.I)
@@ -59,9 +67,14 @@ class Commit:
         return f"#{m.group(1)}" if m else ""
 
     def describe(self) -> str:
-        who = "an AI agent" if self.agent else self.author
+        """The commit, not a verdict on who checked the row: an agent-co-written commit may only record a person's
+        decision (the owner's sensitivity sign-offs are recorded that way)."""
+        who = "a commit with an AI co-author trailer" if self.agent else f"a commit by {self.author}"
         where = f"PR {self.pr}" if self.pr else f"commit {self.sha[:8]}"
-        return f"{who} ({where}: {self.subject[:80]})"
+        subject = PR_NUMBER.sub("", self.subject).rstrip()
+        if len(subject) > 80:
+            subject = subject[:79].rstrip() + "…"
+        return f"{who} ({where}: {subject})"
 
 
 @dataclass
@@ -132,9 +145,14 @@ def _git(args: list[str], cwd: Path) -> str:
     return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout
 
 
+UNCOMMITTED = "0" * 40
+
+
 def blame(repo: Path, rel: str) -> dict[int, str]:
-    """Line number to the sha of the commit that last wrote it, at HEAD."""
-    out, lines, sha = _git(["blame", "--line-porcelain", "HEAD", "--", rel], repo), {}, ""
+    """Line number of the working-tree file (the text scan() reads) to the sha of the commit that last wrote it; a line
+    not committed yet maps to UNCOMMITTED. Blaming HEAD instead would misplace every line after an uncommitted edit, such
+    as a reviewer's deleted flag (second review of #611)."""
+    out, lines, sha = _git(["blame", "--line-porcelain", "--", rel], repo), {}, ""
     for row in out.splitlines():
         m = re.match(r"^([0-9a-f]{40}) \d+ (\d+)", row)
         if m:
@@ -144,6 +162,8 @@ def blame(repo: Path, rel: str) -> dict[int, str]:
 
 
 def commit(repo: Path, sha: str, cache: dict[str, Commit]) -> Commit:
+    if sha == UNCOMMITTED:
+        return Commit(sha, "nobody yet", "not committed yet", False)
     if sha not in cache:
         author, subject, body = _git(["log", "-1", "--format=%an%x00%s%x00%B", sha], repo).split("\x00", 2)
         cache[sha] = Commit(sha, author, subject, bool(AI_MARK.search(body)))
@@ -193,17 +213,25 @@ def page(entries: list[Entry], human: int, head: str) -> str:
         "name's `*_review: agent-checked` line once they have read it against its source (#564); a person who has checked",
         "every claim of an agent-set row records it as `docs/HISTORIAN_REVIEW.md` describes.",
         "",
-        "How \"agent-set\" is decided, and its limits: the docstring of `tools/review_queue.py` "
+        "**This list is over-inclusive, and it is not a verdict on who checked anything.** The second table lists every",
+        "reviewed status whose line was last written by a commit with an AI co-author trailer. Some of those record a",
+        "person's decision that an agent only typed in, such as the owner's sensitivity sign-offs; they are listed",
+        "anyway, because the repository holds no reviewer record to tell them apart (`docs/HISTORIAN_REVIEW.md` keeps it",
+        "in the pull request). It also misses things: an agent whose commits carry no such trailer (another tool, or an",
+        "outside contributor who does not mark AI use) is counted as a person, and a person who set a status without",
+        "checking is not caught. The heuristic in full: [tools/review_queue.py](../tools/review_queue.py)",
         "([CONTENT_POLICY.md](CONTENT_POLICY.md), section 2, rule 6).",
         "",
         f"- Hebrew names flagged `{FLAG}`: **{len(flags)}**",
-        f"- `fact-checked` or `sensitivity-reviewed` statuses last set by an agent-written commit: **{len(statuses)}**",
-        f"- the same statuses set by a commit with no agent marker (not listed): {human}",
+        f"- `fact-checked`, `historian-reviewed` or `sensitivity-reviewed` statuses last written by a commit with an AI "
+        f"co-author trailer: **{len(statuses)}**",
+        f"- the same statuses last written by a commit without one, or not committed yet (not listed): {human}",
         "",
     ]
     for title, items, cols in (
         ("Hebrew names to review (#564)", flags, ("Line", "Row", "Field", "Value", "Sources", "Checked by")),
-        ("Statuses an agent set", statuses, ("Line", "Row", "Status", "Sources", "Set by")),
+        ("Reviewed statuses last written by a commit with an AI co-author trailer", statuses,
+         ("Line", "Row", "Status", "Sources", "Last written by")),
     ):
         out += [f"## {title}", ""]
         if not items:
@@ -221,21 +249,27 @@ def page(entries: list[Entry], human: int, head: str) -> str:
     return "\n".join(out).rstrip("\n") + "\n"
 
 
+def run(repo: Path, write: bool) -> int:
+    """Prints the page for <repo>, or writes it to its docs/review-queue.md; 2 on a shallow clone."""
+    if _git(["rev-parse", "--is-shallow-repository"], repo).strip() == "true":
+        print("review_queue: a shallow clone blames every line on one commit; run it on a full clone", file=sys.stderr)
+        return 2
+    entries, human = queue(repo)
+    text = page(entries, human, _git(["rev-parse", "HEAD"], repo).strip())
+    if write:
+        target = repo / PAGE.relative_to(ROOT)
+        target.write_text(text, encoding="utf-8", newline="\n")
+        print(f"wrote {target.relative_to(repo)}: {len(entries)} entries")
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--write", action="store_true", help=f"write {PAGE.relative_to(ROOT)} instead of printing it")
     args = ap.parse_args(argv)
-    if _git(["rev-parse", "--is-shallow-repository"], ROOT).strip() == "true":
-        print("review_queue: a shallow clone blames every line on one commit; run it on a full clone", file=sys.stderr)
-        return 2
-    entries, human = queue(ROOT)
-    text = page(entries, human, _git(["rev-parse", "HEAD"], ROOT).strip())
-    if args.write:
-        PAGE.write_text(text, encoding="utf-8", newline="\n")
-        print(f"wrote {PAGE.relative_to(ROOT)}: {len(entries)} entries")
-    else:
-        sys.stdout.write(text)
-    return 0
+    return run(ROOT, args.write)
 
 
 if __name__ == "__main__":
