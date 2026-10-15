@@ -16,12 +16,16 @@
 //     are linked from the Press page in both languages.
 //  9. the history approach page exists in both languages, links to the two documents it restates, and History links to it.
 // 10. no page publishes a game portrait whose ASSETS.portraits.yaml row is not verified (the owner-verify GPO
-//     photographs are hidden for now: owner, 15 October 2026, decision D-P), and the Cabinet page exists in both languages.
+//     photographs are hidden for now: owner, 15 October 2026, decision D-P), and the Cabinet page exists in both languages;
+// 11. no page shows an in-engine picture or video that site/src/data/people-in-images.yaml does not clear. A check cannot
+//     see inside a screenshot, so that file records, checked by hand, the real people visible in each one; a screenshot
+//     of a hidden portrait (the Cabinet screen) is held back here.
 // Run after `astro build` (npm run build does both). Exit 1 with one line per problem.
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
 import { plan, zipEntries, zipRead, CONCEPT_TAG, LIKENESS_TAG } from './press-kit.mjs';
+import { imageRules } from './people-in-images.mjs';
 
 const dist = path.resolve(process.argv[2] ?? 'dist');
 const problems = [];
@@ -235,9 +239,33 @@ for (const lang of ['en', 'he']) {
   for (const lang of ['en', 'he']) if (!fs.existsSync(path.join(dist, lang, 'cabinet', 'index.html'))) problems.push(`${lang}/cabinet/index.html: missing`);
 }
 
+// 11. In-engine pictures and videos: every file in docs/images/ (the README's screenshots, the hero, the gameplay clip)
+// and every file people-in-images.yaml lists must be cleared before a page names it. A built file keeps its source name
+// (/_astro/<stem>.<hash>...), and a public/ file keeps its path.
+{
+  const repo = path.resolve(dist, '..', '..');
+  const people = imageRules(repo, process.env.SITE_PEOPLE_IN_IMAGES);
+  const candidates = new Set([...people.listed.keys()]);
+  for (const n of fs.readdirSync(path.join(repo, 'docs/images'))) if (/\.(jpe?g|png|webp|mp4|webm)$/.test(n)) candidates.add(`docs/images/${n}`);
+  const blocked = [...candidates].map((f) => [f, people.why(f)]).filter(([, w]) => w);
+  for (const f of pages) {
+    const html = fs.readFileSync(f, 'utf8');
+    for (const [file, why] of blocked) {
+      const base = path.basename(file);
+      const stem = base.replace(/\.[^.]+$/, '');
+      const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // A picture is re-encoded (any image extension); a video keeps its own extension.
+      const ext = /\.(mp4|webm)$/.test(base) ? base.split('.').pop() : '(?:avif|webp|jpe?g|png)';
+      const built = new RegExp(`/_astro/${esc(stem)}\\.[A-Za-z0-9_-]+\\.${ext}(?![a-z0-9])`);
+      const direct = file.startsWith('site/public/') ? html.includes(`/${file.slice('site/public/'.length)}`) : false;
+      if (built.test(html) || direct) fail(f, `shows ${file}: ${why}`);
+    }
+  }
+}
+
 if (problems.length) {
   console.error(problems.join('\n'));
   console.error(`check-site: ${problems.length} problem(s)`);
   process.exit(1);
 }
-console.log(`check-site: ${pages.length} pages OK (both languages, labels on every image and video, nothing from other origins, devlog RSS feeds, contributors groups, press zips, history approach page, no unverified portraits, cabinet page)`);
+console.log(`check-site: ${pages.length} pages OK (both languages, labels on every image and video, nothing from other origins, devlog RSS feeds, contributors groups, press zips, history approach page, no unverified portraits, cabinet page, in-engine pictures cleared for the people in them)`);

@@ -1,0 +1,28 @@
+# Every in-engine picture and video the website may show, checked by hand for the real people visible in it. A check
+# (check-site, press-kit, src/lib/media.ts) cannot see inside a screenshot, so this list is the record. The site shows
+# a file only if it is listed here and everything it shows of a real person is cleared:
+#   portraits: people.yaml ids whose game portrait is visible; each needs its ASSETS.portraits.yaml row `verified`
+#              (owner, 15 October 2026: the owner-verify GPO photographs are hidden for now, decision D-P);
+#   photos:    event photographs (unity/Assets/UI/EventImages/<id>.jpg) visible in the picture; each needs its
+#              ASSETS.yaml row `verified`;
+#   unidentified: portraits visible whose person cannot be named from the picture; any number above 0 hides the file.
+# A new screenshot, or a retaken one, needs an entry checked again by a person (or an agent who looked at the file),
+# with the date. Not listed means not shown. Concept art and the cinematic trailer are AI-generated and labelled as such
+# (src/lib/media.ts); the History page's archival photographs carry their own credits and rows. Neither is listed here.
+images:
+  docs/images/hero-engine-coast.jpg: { checked: 2026-10-15, note: "The coast at Jaffa and Tel Aviv, no interface: map only, no people." }
+  docs/images/build-m3-city.jpg: { checked: 2026-10-15, note: "Tel Aviv and Jaffa with the top bar: tiny brigade figures, no identifiable person." }
+  docs/images/build-m3-map.jpg: { checked: 2026-10-15, photos: [idf_founding], note: "The One Army event card: its archival photograph, no minister portrait." }
+  docs/images/build-m3-why.jpg: { checked: 2026-10-15, photos: [idf_founding], note: "The Why panel and the One Army card: its archival photograph, no minister portrait." }
+  docs/images/build-m3-start.jpg: { checked: 2026-10-15, note: "The start screen: an AI-generated painting with no identifiable person (its ai_part label)." }
+  docs/images/build-m3-cabinet.jpg:
+    checked: 2026-10-15
+    portraits: [ben_gurion, kaplan, sharett, shapira, gruenbaum]
+    unidentified: 5
+    note: "The Cabinet screen: named cards for Ben-Gurion, Kaplan, Sharett, Shapira (twice) and Gruenbaum, and five more portraits cut off below their names. Hidden: Kaplan and Gruenbaum are owner-verify, and five cannot be named."
+  docs/images/build-gameplay.mp4: { checked: 2026-10-15, photos: [idf_founding], note: "Real play, 22 to 29 May 1948: the map, the One Army card with its archival photograph, the hex panel. No minister portrait (frames checked at 1 per second)." }
+  docs/images/build-gameplay.webm: { checked: 2026-10-15, photos: [idf_founding], note: "The same clip as the MP4." }
+  promo/final/10-m2-topdown.png: { checked: 2026-10-15, note: "The M2 map from above: map only." }
+  site/src/assets/media/flythrough-m2-poster.jpg: { checked: 2026-10-15, note: "The M2 flythrough's first frame: map only." }
+  site/public/media/flythrough-m2-720p.mp4: { checked: 2026-10-15, note: "Eight seconds over the M2 map, no interface: map only (frames checked at 1 per second)." }
+  site/public/media/flythrough-m2-720p.webm: { checked: 2026-10-15, note: "The same flight as the MP4." }

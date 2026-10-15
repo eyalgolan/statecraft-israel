@@ -18,6 +18,8 @@ import flythroughPoster from '../assets/media/flythrough-m2-poster.jpg';
 import trailerPoster from '../assets/media/cinematic-trailer-1-poster.jpg';
 import { type Lang, formatDate } from '../i18n/ui';
 import { repoRoot } from './repo';
+// @ts-expect-error: a plain .mjs module shared with the build scripts
+import { imageRules } from '../../scripts/people-in-images.mjs';
 
 export type Kind = 'engine' | 'concept' | 'cinematic';
 type Text = Record<Lang, string>;
@@ -81,11 +83,20 @@ export const gameplay: GameplayClip | undefined = manifest.video ? {
 } : undefined;
 
 /** The current build's screenshots, in the manifest's order. The first is the home page's hero. */
-export const captures: MediaImage[] = manifest.images.map((e) => {
+// The real people visible in each in-engine picture were checked by hand (src/data/people-in-images.yaml): a screenshot
+// that shows a portrait not cleared for publication (an owner-verify GPO photograph, decision D-P) is left out of the
+// site, though it stays in the README and on main.
+const people = imageRules(repoRoot) as { why: (file: string) => string | null };
+/** Fails the build when the site would show a file not cleared in src/data/people-in-images.yaml. */
+export const mustShow = (file: string) => { const w = people.why(file); if (w) throw new Error(`media: ${w}`); };
+const allCaptures: MediaImage[] = manifest.images.map((e) => {
   const src = shotByName.get(e.file);
   if (!src) throw new Error(`media: docs/images/captures.yaml names ${e.file}, which is not in docs/images/`);
   return { id: e.file.replace(/\.jpg$/, ''), kind: 'engine', src, build: currentBuild, title: e.title, alt: e.alt, aiPart: e.ai_part, file: `docs/images/${e.file}` };
 });
+/** The README screenshots the site may show, in the manifest's order. */
+export const captures: MediaImage[] = allCaptures.filter((c) => people.why(c.file) === null);
+if (!captures.length) throw new Error('media: no in-engine screenshot is cleared in src/data/people-in-images.yaml');
 // The home page's hero still (`hero:` in captures.yaml): a clean in-engine render with no interface, composed for the
 // title, with its own build and date. It is not one of the README's screenshots, so it is not in the gallery.
 interface HeroEntry { file: string; build: string; date: string | Date; title: Text; alt: Text }
@@ -102,6 +113,7 @@ export const heroShot: MediaImage = (() => {
   return { id: heroEntry.file.replace(/\.jpg$/, ''), kind: 'engine', src, build: buildText(heroEntry.build, heroEntry.date), title: heroEntry.title, alt: heroEntry.alt, file: `docs/images/${heroEntry.file}` };
 })();
 export const capture = (file: string) => {
+  mustShow(`docs/images/${file}`);
   const c = captures.find((x) => x.file === `docs/images/${file}`);
   if (!c) throw new Error(`media: no capture ${file} in docs/images/captures.yaml`);
   return c;
@@ -239,3 +251,10 @@ export const trailer: MediaVideo = {
   captions: { en: 'media/promo-trailer.en.vtt', he: 'media/promo-trailer.he.vtt' },
   duration: 'PT1M23S', durationText: '1:23', sound: true,
 };
+
+// Every other in-engine picture and video the site shows must be cleared too (src/data/people-in-images.yaml).
+mustShow(heroShot.file);
+for (const e of engine) mustShow(e.file);
+for (const f of manifest.video?.files ?? []) mustShow(`docs/images/${f}`);
+mustShow('site/src/assets/media/flythrough-m2-poster.jpg');
+for (const s of flythrough.sources) mustShow(`site/public/${s.src}`);

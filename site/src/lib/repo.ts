@@ -166,6 +166,11 @@ export interface Person {
 const GAME_START = '1948-05-14';
 const GAME_END = '1952-01-01';
 const PORTRAIT_DIR = 'unity/Assets/UI/Portraits/';
+// The per-person marker that picks an office's feminine Hebrew title (offices.yaml title_he_f, "שרת העבודה"). It is
+// added to content/people.yaml by a separate, sourced content PR; until then no person carries it and every card uses
+// title_he. The field name must match that PR's schema: it is read in this one place.
+export const FEMININE_TITLE_FIELD = 'title_he_feminine';
+const feminine = (p: Record<string, any>) => { const v = p[FEMININE_TITLE_FIELD]; return v === true || (!!v && typeof v === 'object' && v.value !== false); };
 
 /** The CC BY 4.0 and CC BY-SA 4.0 portrait credits in NOTICE ("Portraits:" paragraph): each licence block names its
  * collection, and each file line its photographer, year and "cropped". */
@@ -187,7 +192,7 @@ function noticeCredits(): Map<string, { who: string; collection: string; licence
 }
 
 export function cabinet(): Person[] {
-  const officeDoc = readYaml('content/offices.yaml').offices as { id: string; title: string; title_he?: string }[];
+  const officeDoc = readYaml('content/offices.yaml').offices as { id: string; title: string; title_he?: string; title_he_f?: string }[];
   const officeOrder = new Map(officeDoc.map((o, i) => [o.id, i]));
   const office = new Map(officeDoc.map((o) => [o.id, o]));
   const parties = new Map((readYaml('content/parties.yaml').parties as { id: string; name: string; name_he?: string }[]).map((p) => [p.id, p]));
@@ -220,7 +225,8 @@ export function cabinet(): Person[] {
       } else {
         const off = office.get(o.office);
         if (!off) throw new Error(`site: ${p.id} holds an office that offices.yaml does not define: ${o.office}`);
-        terms.push({ office: o.office, title: { en: off.title, he: off.title_he }, partyId, party: party(partyId), from: o.from, to: o.to, sources: [...o.sources] });
+        const he = feminine(p) && off.title_he_f ? off.title_he_f : off.title_he;
+        terms.push({ office: o.office, title: { en: off.title, he }, partyId, party: party(partyId), from: o.from, to: o.to, sources: [...o.sources] });
       }
     }
     terms.sort((a, b) => (officeOrder.get(a.office)! - officeOrder.get(b.office)!) || a.from.localeCompare(b.from));

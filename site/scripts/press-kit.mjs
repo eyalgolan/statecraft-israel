@@ -13,6 +13,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { imageRules } from './people-in-images.mjs';
 
 const here = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -62,7 +63,11 @@ export function plan(repo = here) {
 
   // 1. In-engine screenshots, as captures.yaml lists them.
   const label = `In-engine capture — ${captures.build}, ${longDate(String(captures.date))}`;
+  // Only the screenshots the site may show (site/src/data/people-in-images.yaml): never one with a portrait that is not
+  // cleared for publication.
+  const people = imageRules(repo);
   const shots = captures.images.map((img) => ({ file: `docs/images/${img.file}`, img }))
+    .filter(({ file }) => people.why(file) === null)
     .sort((a, b) => a.file.localeCompare(b.file));
   const shotRows = new Map();
   const shotLines = shots.map(({ file, img }) => {

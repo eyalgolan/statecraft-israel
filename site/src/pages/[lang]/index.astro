@@ -15,7 +15,6 @@ const lang = Astro.params.lang as Lang;
 const he = lang === 'he';
 
 const mapShot = capture('build-m3-map.jpg');
-const cabinet = capture('build-m3-cabinet.jpg');
 const why = capture('build-m3-why.jpg');
 const topdown = engine.find((e) => e.id === 'm2-topdown')!;
 // The hero is a real screenshot of the build (the LCP image): preloaded as AVIF, never lazy.
@@ -78,13 +77,6 @@ const pitch = he
   : 'A turn-based grand-strategy game about governing Israel. You are the prime minister on 15 May 1948. The ministers are the real ones, the map is real, and every historical fact comes with a source.';
 
 const features = [
-  {
-    item: cabinet,
-    title: he ? 'שרים אמיתיים, קואליציה אמיתית' : 'Real ministers in a real coalition',
-    text: he
-      ? 'ממנים ומחליפים שרים אמיתיים, כמו דוד בן־גוריון, אליעזר קפלן ומשה שרת, בתוך קואליציה אמיתית. הפורטרטים הם צילומי ארכיון, כל אחד עם הרישיון והקרדיט שלו.'
-      : 'Appoint and replace real ministers such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real coalition. The portraits are archival photographs, each with its licence and credit.',
-  },
   {
     item: mapShot, crop: '100% 0%',
     title: he ? 'החלטות אמיתיות במועדן האמיתי' : 'Real decisions at their real dates',
