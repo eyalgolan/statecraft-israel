@@ -121,6 +121,42 @@ public class MvpFlagTests
             "nothing set aside, nothing added");
     }
 
+    static GameInputs? realInputs;
+    static GameInputs RealInputs => realInputs ??= GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+
+    static UnityEngine.UIElements.Button NewGameButton() =>
+        Object.FindFirstObjectByType<UnityEngine.UIElements.UIDocument>().rootVisualElement.Q<UnityEngine.UIElements.Button>("new-game");
+
+    /// <summary>A slice game has no New Game (it would delete the player's autosave): the button is not drawn and is out of
+    /// the Tab order, rather than drawn and dead. A normal game keeps it, also after a slice game in the same scene.</summary>
+    [Test]
+    public void ASliceGameHasNoNewGameButton()
+    {
+        BootSlice();
+        var button = NewGameButton();
+        Assert.AreEqual(UnityEngine.UIElements.DisplayStyle.None, button.style.display.value, "not drawn");
+        Assert.IsFalse(button.focusable, "out of the Tab order");
+        Assert.IsFalse(button.canGrabFocus, "out of the Tab order");
+
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Begin(RealInputs, 0);   // the same scene, now a normal game
+        Assert.AreNotEqual(UnityEngine.UIElements.DisplayStyle.None, button.style.display.value, "a normal game draws it");
+        Assert.IsTrue(button.focusable, "a normal game keeps it in the Tab order");
+    }
+
+    [Test]
+    public void ANormalGameHasItsNewGameButton()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(RealInputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(RealInputs, 0);
+        var button = NewGameButton();
+        Assert.AreNotEqual(UnityEngine.UIElements.DisplayStyle.None, button.style.display.value);
+        Assert.IsTrue(button.focusable);
+    }
+
     [Test]
     public void ASliceGameWritesNoAutosave()
     {

@@ -25,7 +25,7 @@ public class InfoPanelLayoutTests
     static Dictionary<string, string> Names() => SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t => t.Id, t => t.Name);
 
     /// <summary>Every window size the HUD's tests use (UiLayoutTests, PromoHudTests, StartScreenTests) and a 16:10 laptop.</summary>
-    static readonly (int w, int h)[] Windows =
+    internal static readonly (int w, int h)[] Windows =
     {
         (1920, 1080), (1280, 720), (1366, 768), (1760, 1000), (1920, 1200), (1440, 900), (1680, 1050), (1024, 768), (1280, 1024),
         (1024, 1024), (960, 1080), (800, 1000), (1531, 784), (2560, 1080), (1920, 900), (1600, 757), (1366, 657), (960, 600), (390, 844),
