@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>Issue #321 (T58): the map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control
 /// areas) are read at boot from their baked runtime forms (tools/regions_bake.py) instead of YamlDotNet over the YAML
-/// (about 160 ms at cpu 4). Each runtime file must give exactly the YAML's object, field by field; one that does not match
+/// (about 160 ms at cpu 4: 135 in GameRoot, 24 in the map). Each runtime file must give exactly the YAML's object, field by field; one that does not match
 /// its YAML (its check or its version), is cut short anywhere or is malformed is refused with one warning and the YAML is
 /// read. The map reads the sub-districts once and GameRoot's region layers take that object.</summary>
 public class RegionsRuntimeTests

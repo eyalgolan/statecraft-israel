@@ -26,17 +26,18 @@ source). One row per line, tab-separated:
   empty   <key>                                     an empty top-level list
   meta    body_check  <signed int32>                the last row: FNV-1a over the data rows' UTF-8, each with its '\\n'
 
-A value is typed: "s:" and the text (backslash, tab, CR and line feed escaped as \\\\, \\t, \\r, \\n), "n:" null,
-"b:true" / "b:false", "i:" and an integer, or "l:" and a comma-separated list of plain tokens. A date is written as
-its yyyy-MM-dd text, as YamlDotNet reads it into the classes' string fields. A plain token holds no space, comma,
-semicolon, tab or line break; the bake refuses one that does.
+A value is "s:" and the scalar's own text (backslash, tab, CR and line feed escaped as \\\\, \\t, \\r, \\n), "n:" for a
+plain null (empty, ~, null, Null or NULL, as YamlDotNet reads one), or "l:" and a comma-separated list of tokens. The
+bake works on the YAML's nodes (yaml.compose), not on PyYAML's resolved values, so every scalar keeps the text
+YamlDotNet sees: YAML 1.1's re-typing (yes, Off, 1_0, 1:30, 0x0F, a datetime) never reaches the runtime file (review of
+#601). The classes then read integers and booleans from that text as their YAML path does. A token holds no space,
+comma, semicolon, tab or line break; the bake refuses one that does.
 
 Usage: uv run tools/regions_bake.py [--check]
 --check exits 1 when a committed runtime file differs from a fresh bake (pytest runs the same comparison:
 tools/tests/test_regions_bake.py).
 """
 import argparse
-import datetime
 import struct
 import sys
 from pathlib import Path
@@ -46,7 +47,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 MAP = ROOT / "content" / "map"
 FILES = ["subdistrict_hexes_1948", "armistice_hexes_1949", "control_hexes_1948_49"]
-VERSION = 1   # RegionsRuntime.Version
+VERSION = 2   # RegionsRuntime.Version (2: every scalar as its own text, review of #601)
 
 
 def fnv1a(data: bytes) -> int:
@@ -61,50 +62,56 @@ def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("\t", "\\t").replace("\r", "\\r").replace("\n", "\\n")
 
 
-def _token(value, where: str) -> str:
-    if isinstance(value, bool) or not isinstance(value, (int, str, datetime.date)):
-        raise ValueError(f"{where}: {value!r} is not a plain token")
-    text = value.isoformat() if isinstance(value, datetime.date) else str(value)
-    if text == "" or any(c in text for c in " ,;\t\r\n"):
+NULLS = {"", "~", "null", "Null", "NULL"}
+
+
+def _scalar(node, where: str):
+    if not isinstance(node, yaml.ScalarNode):
+        raise ValueError(f"{where}: not a scalar")
+    return None if node.style is None and node.value in NULLS else node.value
+
+
+def _token(node, where: str) -> str:
+    text = _scalar(node, where)
+    if not text or any(c in text for c in " ,;\t\r\n"):
         raise ValueError(f"{where}: {text!r} is not a plain token")
     return text
 
 
-def _value(value, where: str) -> str:
-    if value is None:
-        return "n:"
-    if isinstance(value, bool):
-        return "b:true" if value else "b:false"
-    if isinstance(value, int):
-        return f"i:{value}"
-    if isinstance(value, datetime.date):
-        return "s:" + value.isoformat()
-    if isinstance(value, str):
-        return "s:" + _escape(value)
-    if isinstance(value, list):
-        return "l:" + ",".join(_token(v, where) for v in value)
-    raise ValueError(f"{where}: {value!r} has no runtime form")
+def _value(node, where: str) -> str:
+    if isinstance(node, yaml.SequenceNode):
+        return "l:" + ",".join(_token(v, where) for v in node.value)
+    text = _scalar(node, where)
+    return "n:" if text is None else "s:" + _escape(text)
 
 
 def bake(name: str, data: bytes) -> str:
     """The runtime file for a region YAML's bytes: deterministic, so a fresh bake equals the committed file."""
-    doc = yaml.safe_load(data.decode("utf-8"))
+    root = yaml.compose(data.decode("utf-8"))
+    if not isinstance(root, yaml.MappingNode):
+        raise ValueError(f"{name}.yaml: not a mapping")
     rows = []
-    for key, value in doc.items():
+    for key_node, value in root.value:
+        key = _token(key_node, f"{name}.yaml")
         where = f"{name}.yaml: {key}"
-        if isinstance(value, list) and not value:
+        if isinstance(value, yaml.SequenceNode) and not value.value:
             rows.append(f"empty\t{key}")
-        elif isinstance(value, list) and all(isinstance(v, dict) for v in value):
-            for i, item in enumerate(value):
-                fields = [f"{k}={_value(v, f'{where}[{i}].{k}')}" for k, v in item.items()]
-                if any("=" in k or "\t" in k for k in item):
-                    raise ValueError(f"{where}[{i}]: a field name holds '=' or a tab")
+        elif isinstance(value, yaml.SequenceNode) and all(isinstance(v, yaml.MappingNode) for v in value.value):
+            for i, item in enumerate(value.value):
+                fields = []
+                for k, v in item.value:
+                    field = _token(k, f"{where}[{i}]")
+                    if "=" in field:
+                        raise ValueError(f"{where}[{i}]: field name {field!r} holds '='")
+                    fields.append(f"{field}={_value(v, f'{where}[{i}].{field}')}")
                 rows.append("\t".join(["item", key] + fields))
-        elif isinstance(value, list) and all(isinstance(v, list) for v in value):
-            body = ";".join(" ".join(_token(t, f"{where}[{i}]") for t in v) for i, v in enumerate(value))
-            rows.append(f"tuples\t{key}\t{len(value)}\t{body}")
-        else:
+        elif isinstance(value, yaml.SequenceNode) and all(isinstance(v, yaml.SequenceNode) for v in value.value):
+            body = ";".join(" ".join(_token(t, f"{where}[{i}]") for t in v.value) for i, v in enumerate(value.value))
+            rows.append(f"tuples\t{key}\t{len(value.value)}\t{body}")
+        elif isinstance(value, (yaml.ScalarNode, yaml.SequenceNode)):
             rows.append(f"scalar\t{key}\t{_value(value, where)}")
+        else:
+            raise ValueError(f"{where}: no runtime form for a {type(value).__name__}")
     out = [
         f"# Generated by tools/regions_bake.py from {name}.yaml. Do not edit: edit the YAML (or rerun its own tool) and",
         "# rerun this one. The runtime form the map reads at boot (display only, outside the content hash).",

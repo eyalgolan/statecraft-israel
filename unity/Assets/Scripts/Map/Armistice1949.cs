@@ -35,14 +35,15 @@ namespace Statecraft.Game.Map
 
         /// <summary>The boot read: the runtime file when it is for this YAML, else (one warning) the YAML.</summary>
         public static Armistice1949 ReadRuntimeOrYaml(string? tsv, string yaml, System.Action<string> warn) =>
-            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return Build(doc); }, Parse, warn);
+            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return doc; }, Build, Parse, warn);
 
         static FileDoc FromRuntime(RegionsRuntime.Doc d)
         {
+            var absent = new ItemRow();   // the YAML path's defaults for a field the row leaves out (review of #601)
             ItemRow Item(RegionsRuntime.Row r) => new ItemRow
             {
                 Id = r.Int("id", 0), Key = r.Str("key", "")!, Front = r.Str("front", "")!, Name = r.Str("name", "")!,
-                ShownFrom = r.Str("shown_from", "")!, Style = r.Str("style", "secondary")!, Agreement = r.Str("agreement", null),
+                ShownFrom = r.Str("shown_from", absent.ShownFrom)!, Style = r.Str("style", absent.Style)!, Agreement = r.Str("agreement", absent.Agreement),
                 Signed = r.Str("signed", null), LabelNote = r.Str("label_note", "")!, LowAccuracy = r.Bool("low_accuracy", false),
             };
             return new FileDoc

@@ -18,9 +18,10 @@ namespace Statecraft.Game.Map
     {
         /// <summary>Bump it, with tools/regions_bake.py's VERSION, when the layout or its reading changes;
         /// tools/tests/test_regions_bake.py pins a fingerprint of this reader and of the classes' runtime mapping.</summary>
-        public const int Version = 1;
+        public const int Version = 2;   // 2: every scalar as its own text (review of #601)
 
-        /// <summary>A typed value: a string (null for "n:"), a bool, an integer or a list of plain tokens.</summary>
+        /// <summary>A value: a scalar's own text (null for a plain null) or a list of tokens. Integers and booleans are read
+        /// from the text as the classes' YAML path reads them.</summary>
         public sealed class Value
         {
             public char Kind; public string? Text; public List<string>? Items;
@@ -43,18 +44,28 @@ namespace Statecraft.Game.Map
             {
                 read.Add(key);
                 if (!fields.TryGetValue(key, out var v)) return null;
-                if (kind == 's' && v.Kind != 'l') return v;   // a string field takes any scalar's text, as YamlDotNet does
-                if (v.Kind != kind) throw new InvalidDataException($"{file}:{line}: field '{key}' is not of the expected type");
+                if ((kind == 'l') != (v.Kind == 'l')) throw new InvalidDataException($"{file}:{line}: field '{key}' is not of the expected type");
                 return v;
             }
             /// <summary>The field's text; <paramref name="absent"/> when the row has no such field (the YAML class's default).</summary>
             public string? Str(string key, string? absent) { var v = Get(key, 's'); return v == null ? absent : v.Text; }
+            /// <summary>An integer field from its text (a decimal integer only; anything else, as YamlDotNet's 0x0F, is refused
+            /// and the YAML read instead).</summary>
             public int Int(string key, int absent)
             {
-                var v = Get(key, 'i');
-                return v == null ? absent : int.Parse(v.Text!, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                var v = Get(key, 's');
+                if (v == null) return absent;
+                return v.Text != null && int.TryParse(v.Text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n) ? n
+                    : throw new InvalidDataException($"{file}:{line}: field '{key}' '{v.Text}' is not an integer");
             }
-            public bool Bool(string key, bool absent) { var v = Get(key, 'b'); return v == null ? absent : v.Text == "true"; }
+            /// <summary>A boolean field from its text, "true" or "false" only (anything else is refused and the YAML read).</summary>
+            public bool Bool(string key, bool absent)
+            {
+                var v = Get(key, 's');
+                if (v == null) return absent;
+                return v.Text == "true" ? true : v.Text == "false" ? false
+                    : throw new InvalidDataException($"{file}:{line}: field '{key}' '{v.Text}' is not true or false");
+            }
             public List<string> List(string key) { var v = Get(key, 'l'); return v == null ? new List<string>() : new List<string>(v.Items!); }
             public void Done()
             {
@@ -121,7 +132,7 @@ namespace Statecraft.Game.Map
                 {
                     var ints = new List<int>(r.Count);
                     foreach (var t in r)
-                        ints.Add(int.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n
+                        ints.Add(int.TryParse(t, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n) ? n
                             : throw new InvalidDataException($"{file}: '{key}' holds '{t}', not an integer"));
                     list.Add(ints);
                 }
@@ -230,12 +241,6 @@ namespace Statecraft.Game.Map
                 case 'n':
                     if (body.Length != 0) throw new InvalidDataException($"{file}:{line}: a null with text");
                     return new Value { Kind = 'n', Text = null };
-                case 'b':
-                    if (body != "true" && body != "false") throw new InvalidDataException($"{file}:{line}: bool '{body}'");
-                    return new Value { Kind = 'b', Text = body };
-                case 'i':
-                    if (!int.TryParse(body, NumberStyles.Integer, CultureInfo.InvariantCulture, out _)) throw new InvalidDataException($"{file}:{line}: integer '{body}'");
-                    return new Value { Kind = 'i', Text = body };
                 case 'l': return new Value { Kind = 'l', Items = body.Length == 0 ? new List<string>() : new List<string>(body.Split(',')) };
                 default: throw new InvalidDataException($"{file}:{line}: unknown type '{text[0]}'");
             }
@@ -258,16 +263,19 @@ namespace Statecraft.Game.Map
             return b.ToString();
         }
 
-        /// <summary>The boot read for a region file: <paramref name="runtime"/> (the class's mapping, its Done and its checks)
-        /// over the runtime file when it is for this YAML,
-        /// else, with one warning through <paramref name="warn"/>, <paramref name="parse"/> over the YAML.</summary>
-        public static T ReadOrYaml<T>(string? tsv, string yaml, string file, Func<Doc, T> runtime, Func<string, T> parse, Action<string> warn)
+        /// <summary>The boot read for a region file: the class's rows from the runtime file (<paramref name="rows"/>, which
+        /// reads every field and calls Done) when it is for this YAML, else, with one warning through <paramref name="warn"/>,
+        /// <paramref name="parse"/> over the YAML. Then <paramref name="build"/>, the class's checks, outside the fallback: a
+        /// content error is the YAML's own (both sources would fail it), so it throws as the YAML path does, with no warning
+        /// and no second read (review of #601).</summary>
+        public static T ReadOrYaml<TDoc, T>(string? tsv, string yaml, string file, Func<Doc, TDoc> rows, Func<TDoc, T> build,
+            Func<string, T> parse, Action<string> warn)
         {
             if (string.IsNullOrWhiteSpace(tsv)) { warn($"{file}: missing; reading the YAML"); return parse(yaml); }
-            T result;
-            try { result = runtime(Read(tsv!, yaml, file)); }
+            TDoc doc;
+            try { doc = rows(Read(tsv!, yaml, file)); }
             catch (InvalidDataException e) { warn($"{e.Message}; reading the YAML"); return parse(yaml); }
-            return result;
+            return build(doc);
         }
     }
 }

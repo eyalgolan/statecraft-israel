@@ -95,10 +95,10 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
-        /// <summary>As FillHexes, from the sub-district file's text, read with the event reader below (boot budget: the map
-        /// build reads only each region's key and style and the hexes' regions; GameRoot's Subdistricts1948.Parse validates
-        /// the whole file later in the same boot). KitTests checks both give the same hexes.</summary>
-        public static void FillHexes(Doc doc, string regionsYaml, HexFile hexes, string file = FileName)
+        /// <summary>As FillHexes, from the sub-district file's text, read with the event reader below: a test aid since issue
+        /// #321 (the map reads the sub-districts' runtime form and calls the overload above). KitTests checks the two give the
+        /// same hexes.</summary>
+        internal static void FillHexes(Doc doc, string regionsYaml, HexFile hexes, string file = FileName)
         {
             const string regionsFile = Subdistricts1948.FileName;
             YMap root;

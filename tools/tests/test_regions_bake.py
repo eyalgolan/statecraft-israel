@@ -30,7 +30,7 @@ REBAKE = "run uv run tools/regions_bake.py and commit the .tsv"
 
 # The fingerprint of the readers (code_fingerprint). Re-pin only after RegionsRuntimeTests passes in Unity, with
 # RegionsRuntime.Version and regions_bake.VERSION bumped together if the runtime layout changed.
-PINNED_CODE = "91f488afb2fc8f2065318818f18e6d4822dce68eaef1f2961dbf436317a516e1"
+PINNED_CODE = "08cc1f2d60868e3d0d3501b268f1d5de4943c1e2f2a51dfcf9604aa3d9f17295"
 
 
 def member(text: str, signature: str) -> str:
@@ -106,3 +106,35 @@ def test_the_yaml_check_is_the_ribbon_bakes():
     for name in bake.FILES:
         data = (bake.MAP / f"{name}.yaml").read_bytes()
         assert bake.fnv1a(data) == fnv1a(data)
+
+
+def _rows(tsv: str):
+    return [line for line in tsv.split("\n") if line and not line.startswith("#") and not line.startswith("meta\t")]
+
+
+# Review of #601, S1: PyYAML's YAML 1.1 resolver re-types plain scalars that YamlDotNet reads into the classes' string
+# fields as their text. Each case is one edit to a shipped file; the bake must keep the scalar's own text, as the YAML path
+# does (0x0F then stays "0x0F", which Control1948 refuses on both paths; a datetime keeps its space).
+YAML_11_CASES = [
+    ("subdistrict_hexes_1948", 'name: "Acre Sub-District"', "name: yes", "name=s:yes"),
+    ("subdistrict_hexes_1948", 'district: "Galilee District", style: primary }\n  - { id: 2', 'district: Off, style: primary }\n  - { id: 2', "district=s:Off"),
+    ("subdistrict_hexes_1948", "key: acre,", "key: 1_0,", "key=s:1_0"),
+    ("armistice_hexes_1949", "signed: 1949-03-23, shown_from: 1949-03-23", "signed: 1949-03-23 00:00:00, shown_from: 1949-03-23", "signed=s:1949-03-23 00:00:00"),
+    ("control_hexes_1948_49", '  - [15, 1, "IIIIIIIIIIIIIII"]', '  - [0x0F, 1, "IIIIIIIIIIIIIII"]', "0x0F 1 IIIIIIIIIIIIIII"),
+]
+
+
+@pytest.mark.parametrize("name,old,new,expected", YAML_11_CASES)
+def test_the_bake_keeps_plain_scalars_as_text(name, old, new, expected):
+    text = (bake.MAP / f"{name}.yaml").read_text(encoding="utf-8")
+    assert old in text, f"{name}: the case's anchor is gone"
+    tsv = bake.bake(name, text.replace(old, new, 1).encode("utf-8"))
+    assert expected in "\n".join(_rows(tsv))
+
+
+def test_the_bake_keeps_a_sexagesimal_looking_note_as_text():
+    text = (bake.MAP / "armistice_hexes_1949.yaml").read_text(encoding="utf-8")
+    m = re.search(r'note: ("[^"]*"|[^,}\n]*)', text)
+    assert m
+    tsv = bake.bake("armistice_hexes_1949", (text[:m.start()] + "note: 1:30" + text[m.end():]).encode("utf-8"))
+    assert "note=s:1:30" in "\n".join(_rows(tsv))

@@ -35,7 +35,7 @@ namespace Statecraft.Game.Map
 
         /// <summary>The boot read: the runtime file when it is for this YAML, else (one warning) the YAML.</summary>
         public static Control1948 ReadRuntimeOrYaml(string? tsv, string yaml, System.Action<string> warn) =>
-            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return Build(doc); }, Parse, warn);
+            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return doc; }, Build, Parse, warn);
 
         static FileDoc FromRuntime(RegionsRuntime.Doc d) => new FileDoc
         {
