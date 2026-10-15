@@ -899,8 +899,11 @@ public class KitTests
         foreach (var id in new[] { "lod", "ramla", "gaza" })
         {
             var at = HexCentre(map, c, id);
-            var built = SettlementKits.Maabarot(new List<(string id, Vector2 at, System.DateTime from)> { ("transit_camp_" + id, at, new System.DateTime(1950, 8, 26)) }, g)[0];
+            var hex = c.SettlementHexes.Single(s => s.Id == id);   // the game's seed id (PlacementLayer), so the game's layout
+            var built = SettlementKits.Maabarot(new List<(string id, Vector2 at, System.DateTime from)>
+                { ($"{Statecraft.Sim.MapActions.TransitCamp}_{hex.Q}_{hex.R}", at, new System.DateTime(1950, 8, 26)) }, g)[0];
             TestContext.WriteLine($"{id}: {(built.mesh == null ? "box" : $"{built.tents} tents, {built.huts} huts, {(built.at - at).magnitude:F0} m from the hex centre")}");
+            if (id == "lod") Assert.IsNotNull(built.mesh, "Lod's camp of 1950 is a kit, not its box (second review of #646)");
             if (built.mesh == null) continue;
             Object.DestroyImmediate(built.mesh);
             Assert.GreaterOrEqual(built.tents + built.huts, SettlementKits.MaabaraMinPlots, id + ": at least the minimum of plots");
