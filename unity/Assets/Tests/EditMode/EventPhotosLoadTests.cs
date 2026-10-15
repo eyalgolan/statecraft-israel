@@ -293,15 +293,14 @@ public class EventPhotosLoadTests
     }
 
     /// <summary>Issue #592 review: the card waits for its photograph exactly when Begin shows the start screen (one value
-    /// in GameRoot decides both; #598's slice game shows none). A card waiting under no screen would never be uncovered and
+    /// in GameRoot decides both; the ?mvp=1 slice went with the cutover). A card waiting under no screen would never be uncovered and
     /// never show its photograph.</summary>
     [Test]
-    public void TheCardWaitsForThePhotographExactlyWhenTheStartScreenShows([Values(false, true)] bool startScreen, [Values(0, 5)] int smoke,
-        [Values(false, true)] bool slice)
+    public void TheCardWaitsForThePhotographExactlyWhenTheStartScreenShows([Values(false, true)] bool startScreen, [Values(0, 5)] int smoke)
     {
         SaveWithAPhotographedDecisionWaiting();
         EventPhotos.Schedule = (_, _, _) => { };
-        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap, slice);
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
         try
         {
             EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
@@ -311,7 +310,7 @@ public class EventPhotosLoadTests
             if (smoke > 0) UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, "SMOKE FAIL the smoke run needs play mode or a player");
             root.Begin(inputs, smoke, startScreen);
             var open = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q("root").ClassListContains(StartScreenPresenter.OpenClass);
-            Assert.AreEqual(startScreen && smoke == 0 && !slice, open, "the start screen shows only outside a smoke run and the slice");
+            Assert.AreEqual(startScreen && smoke == 0, open, "the start screen shows only outside a smoke run");
             Assert.AreEqual(open, root.Card!.PhotoWaits, "the card waits for the photograph exactly when the screen covers it");
         }
         finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
