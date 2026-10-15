@@ -31,9 +31,9 @@
                 </ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame shadow="false" filigree="true" />
             </ui:VisualElement>
-            <!-- Meter captions are the content display names in title case, a deliberate casing for captions (Treasury and
-                 Foreign Currency: model.yaml money; Security and International Standing: model.yaml indicators;
-                 HudTests.TopBarCaptionsAreTheContentNamesInTitleCase). Immigration and Public Support are UI quantities. -->
+            <!-- Meter captions are the content display names as written, in sentence case (#622) (Treasury and
+                 Foreign currency: model.yaml money; Security and International standing: model.yaml indicators;
+                 HudTests.TopBarCaptionsAreTheContentNames). Immigration and Public support are UI quantities. -->
             <ui:VisualElement name="meters" class="meters">
                 <ui:VisualElement name="meter-treasury" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="coin" class="meter-icon" />
