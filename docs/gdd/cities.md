@@ -18,6 +18,7 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - The craftsman trains in a city with a completed industry project, fills an ordinary job slot and earns a multiple of the job income (`Q-CRAFT-1` and `Q-CRAFT-2`, decided 15 October 2026 [S3]; D-D4). The income multiple, training time and training cost are labelled design values taken from the plan's PR zero table (the plan's table merged by #604; `Q-CRAFT-2` and `Q-CRAFT-3`). Free job slots fill automatically at no Attention cost until the player fixes a city's number with `AssignWorkers` (`Q-JOBS-1`, decided 15 October 2026 [S3]).
 - The one specialised industry is the winery, in Rishon LeZion, subject to a dated 1948 to 1951 source for the town's vineyards (`Task 6.0`) (`Q-SPEC-1`, decided 15 October 2026 [S3]; Carmel Winery's first winery is in Rishon LeZion [S5]). The winery's job slots are a labelled design value taken from the plan's PR zero table (the plan's table merged by #604; `Q-SPEC-2`).
 - The "absorb immigrants" objective completes when, over all city residents, no refugees wait for housing, overflow stays within its bound, and employed civilians reach their share (`Q-ABS-2`, decided 15 October 2026 [S3]; D-B4; the two shares are labelled design values taken from the plan's PR zero table, merged by #604). Its milestone is the Jewish population passing one million, marked on 20 December 1949 (`Q-ABS-1`, the owner's pick, 15 October 2026 [S3]; JTA [S6]). With that milestone the card shows no photograph unless the owner approves a generic arrival one (`Q-ABS-3`, decided 15 October 2026 [S3]).
+- The on-screen Hebrew words: craftsman בעל מלאכה, housing condition מצב הדיור, housing project מיזם דיור, industry תעשייה, winery יקב (`Q-UI-2`, all five approved, decided 15 October 2026 [S11]).
 
 ## Data touched
 
@@ -51,8 +52,8 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - [S8] CBS Statistical Abstract of Israel No. 3 (1952), the settlements list, pp. 133 and 144, https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf, checked 2026-10-15
 - [S9] Rosh Pinna local council, "The history of Rosh Pinna", http://www.rosh-pina.co.il/%D7%94%D7%99%D7%A1%D7%98%D7%95%D7%A8%D7%99%D7%94, checked 2026-10-15
 - [S10] Village Statistics, April 1945 (Government of Palestine), Safad Sub-District, serial 66, p. 10, https://users.cecs.anu.edu.au/~bdm/yabber/census/VillageStatistics1945orig.pdf, checked 2026-10-15
+- [S11] The owner's decision on #375, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6190619484, checked 2026-10-15
 
 ## Open questions
 
-- The Hebrew words for the new UI terms (Q-UI-2): an owner pick, not a number row, so it stays with the owner. The number rows take the plan's PR zero table values (the plan's table merged by #604), per the owner's "Agents propose design values" of 15 October 2026 [S7].
 - Zikhron Ya'akov is sourced: 1,935 on 8 November 1948 (CBS Statistical Abstract No. 3, the settlements list, p. 133 [S8]). Rosh Pinna keeps the accepted Hebrew Wikipedia figure, about three hundred and fifty in May 1948, corroborated by the town council's own history: about one hundred and fifty absorbed during the war, reaching five hundred [S9]. The CBS list enters Rosh Pinna with no population (p. 144 [S8]), and the Village Statistics 1945 count of eight hundred and forty at the end of 1944 is logged as a conflict in the research epic [S10].
