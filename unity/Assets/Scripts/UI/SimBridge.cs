@@ -10,8 +10,7 @@ namespace Statecraft.Game.UI
     /// orders, runs End Turn and tells the screens to refresh. Orders take effect at End Turn, in the order given; each
     /// order replaces an earlier one with the same key (one choice per event, one call-up level, one budget, one appointee
     /// per office, one policy level per policy, one build per hex, one work order per city, one training order per city and
-    /// track, one cancel per cohort,
-    /// one pioneer order per unit).</summary>
+    /// track, one cancel per cohort, one pioneer order per unit).</summary>
     public sealed class SimBridge
     {
         readonly List<Command> queue = new List<Command>();
