@@ -38,7 +38,7 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
-import yaml
+import yaml12
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -416,7 +416,7 @@ def trace_route(route: dict, fetch: bool, preview: Path | None = None) -> list[t
 
 # --- files -------------------------------------------------------------------------------------------------------
 def load_routes(path: Path = ROUTES) -> dict:
-    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc = yaml12.load(path.read_text(encoding="utf-8"))
     validate_routes(doc, json_bounds())
     return doc
 
@@ -518,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
     routes = doc["routes"]
     old = {}
     if PATHS.exists():
-        for r in (yaml.safe_load(PATHS.read_text(encoding="utf-8")) or {}).get("routes", []):
+        for r in (yaml12.load(PATHS.read_text(encoding="utf-8")) or {}).get("routes", []):
             old[r["id"]] = r
     lines = {}
     for r in routes:

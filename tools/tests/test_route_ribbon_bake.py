@@ -18,7 +18,7 @@ import struct
 from pathlib import Path
 
 import numpy as np
-import yaml
+import yaml12
 
 from test_terrain_water_bake import MAP, csharp, fingerprint, heights_check, method, unity_heights
 
@@ -128,7 +128,7 @@ def test_every_route_is_in_the_index_once_and_its_ranges_tile_its_mesh():
         indices = np.array(r.take(f"<{ni}i"), dtype=np.int64)
         assert ni == 0 or (indices.min() >= 0 and indices.max() < nv), name
     assert r.at == len(r.data), "longer than its meshes: " + REBAKE
-    shipped = [route["id"] for route in yaml.safe_load(ROUTES.read_text(encoding="utf-8"))["routes"]]
+    shipped = [route["id"] for route in yaml12.load(ROUTES.read_text(encoding="utf-8"))["routes"]]
     assert sorted(ids) == sorted(shipped), "stale (route ids): " + REBAKE
 
 

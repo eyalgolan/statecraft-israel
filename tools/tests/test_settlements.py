@@ -4,14 +4,14 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import yaml
+import yaml12
 
 import hexgrid as hg
 
 ROOT = Path(__file__).resolve().parents[2]
 TYPES = {"city", "town", "kibbutz", "moshav", "arab_town", "village"}
 HEXES = json.loads((ROOT / "content" / "map" / "hexes.json").read_text())
-TOWNS = yaml.safe_load((ROOT / "content" / "map" / "settlements_1948.yaml").read_text())["settlements"]
+TOWNS = yaml12.load((ROOT / "content" / "map" / "settlements_1948.yaml").read_text())["settlements"]
 BY_QR = {(h["q"], h["r"]): h for h in HEXES["hexes"]}
 
 
@@ -40,7 +40,7 @@ def test_shore_settlement_moves_to_nearest_land_neighbour():
     assert (q - q0, r - r0) in hg.NEIGHBOURS
 
 
-POPULATION = yaml.safe_load((ROOT / "content" / "map" / "settlement_population_1945.yaml").read_text())["settlements"]
+POPULATION = yaml12.load((ROOT / "content" / "map" / "settlement_population_1945.yaml").read_text())["settlements"]
 
 
 def test_population_rows_match_the_settlements_and_carry_sources():

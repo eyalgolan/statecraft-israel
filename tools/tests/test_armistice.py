@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import yaml
+import yaml12
 
 import armistice_bake as ab
 import armistice_digitise as ad
@@ -17,8 +17,8 @@ import borders_bake as bb
 ROOT = Path(__file__).resolve().parents[2]
 MAP = ROOT / "content" / "map"
 SOURCE = json.loads((MAP / "armistice_lines_1949.geojson").read_text(encoding="utf-8"))
-BAKED = yaml.safe_load((MAP / "armistice_hexes_1949.yaml").read_text(encoding="utf-8"))
-SUBD = yaml.safe_load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))
+BAKED = yaml12.load((MAP / "armistice_hexes_1949.yaml").read_text(encoding="utf-8"))
+SUBD = yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))
 HEXES = json.loads((MAP / "hexes.json").read_text())
 FEATS = {f["properties"]["id"]: f for f in SOURCE["features"]}
 DATES = {"egypt": "1949-02-24", "lebanon": "1949-03-23", "jordan": "1949-04-03", "syria": "1949-07-20"}

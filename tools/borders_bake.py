@@ -40,12 +40,12 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import heightmap_codec  # noqa: E402
 import hexgrid  # noqa: E402
 from geo import KM_PER_DEG_LAT, KM_PER_DEG_LON_EQ  # noqa: E402
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 MAP = ROOT / "content" / "map"
@@ -296,7 +296,7 @@ def build() -> str:
     source = json.loads(SOURCE.read_text(encoding="utf-8"))
     hexes = json.loads((MAP / "hexes.json").read_text())
     elev, meta = load_elevation()
-    settlements = yaml.safe_load((MAP / "settlements_1948.yaml").read_text(encoding="utf-8"))["settlements"]
+    settlements = yaml12.load((MAP / "settlements_1948.yaml").read_text(encoding="utf-8"))["settlements"]
     regions, cells = bake(source, hexes, water_mask(elev, meta), meta, listed_places(settlements))
     armistice = json.loads(ARMISTICE.read_text(encoding="utf-8")) if ARMISTICE.exists() else None
     return render(source, regions, cells, armistice)

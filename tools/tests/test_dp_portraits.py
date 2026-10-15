@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 from PIL import Image
-import yaml
+import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
 # person id: (Commons file, promo/ref source crop, focus_y, artist, people.yaml licence, ASSETS licence, Commons template,
@@ -20,8 +20,8 @@ BATCH = {
 }
 OLD_GPO = {"promo/ref/people/Yehuda_Leib_Maimon.jpg", "promo/ref/people/Mordechai_Bentov.jpg",
            "promo/ref/people/Haim-Moshe_Shapira.jpg"}
-PEOPLE = {p["id"]: p for p in yaml.safe_load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]}
-RULES = yaml.safe_load((ROOT / "ASSETS.portraits.yaml").read_text(encoding="utf-8"))["rules"]
+PEOPLE = {p["id"]: p for p in yaml12.load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]}
+RULES = yaml12.load((ROOT / "ASSETS.portraits.yaml").read_text(encoding="utf-8"))["rules"]
 
 
 def source(name):

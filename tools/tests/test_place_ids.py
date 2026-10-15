@@ -12,7 +12,7 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
-import yaml
+import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
 SETTLEMENTS = "content/map/settlements_1948.yaml"
@@ -23,7 +23,7 @@ KEYED_BY_SETTLEMENT = ["content/map/settlement_hexes.yaml", "content/map/settlem
 
 
 def yaml_ids(rel, key, root=ROOT):
-    return [row["id"] for row in yaml.safe_load((root / rel).read_text(encoding="utf-8"))[key]]
+    return [row["id"] for row in yaml12.load((root / rel).read_text(encoding="utf-8"))[key]]
 
 
 def tsv_ids(rel, root=ROOT):

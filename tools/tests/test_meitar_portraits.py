@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 
 from PIL import Image
-import yaml
+import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
 BATCH = {
@@ -13,8 +13,8 @@ BATCH = {
     "dov_yosef": ("Dov_Yosef_(997008137381905171).jpg", "promo/ref/people/Dov_Yosef_CCBY_1949.jpg", 0.36,
                   "Benno Rothenberg"),
 }
-PEOPLE = {p["id"]: p for p in yaml.safe_load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]}
-RULES = yaml.safe_load((ROOT / "ASSETS.portraits.yaml").read_text(encoding="utf-8"))["rules"]
+PEOPLE = {p["id"]: p for p in yaml12.load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]}
+RULES = yaml12.load((ROOT / "ASSETS.portraits.yaml").read_text(encoding="utf-8"))["rules"]
 
 
 def source(name):

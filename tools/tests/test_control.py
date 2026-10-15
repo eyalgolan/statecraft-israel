@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 import pytest
-import yaml
+import yaml12
 
 import borders_bake as bb
 import control_bake as cb
@@ -17,7 +17,7 @@ import hexgrid as hg
 ROOT = Path(__file__).resolve().parents[2]
 MAP = ROOT / "content" / "map"
 SOURCE = json.loads((MAP / "control_1948_49.geojson").read_text(encoding="utf-8"))
-BAKED = yaml.safe_load((MAP / "control_hexes_1948_49.yaml").read_text(encoding="utf-8"))
+BAKED = yaml12.load((MAP / "control_hexes_1948_49.yaml").read_text(encoding="utf-8"))
 HEXES = json.loads((MAP / "hexes.json").read_text())
 META = SOURCE["statecraft"]
 PERIODS = [p["id"] for p in BAKED["periods"]]

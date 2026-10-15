@@ -25,7 +25,7 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
-import yaml
+import yaml12
 from scipy.spatial import cKDTree
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     print("| Route | Reference | Median distance | 90th percentile | Within 300 m |")
     print("|---|---|---|---|---|")
-    for r in yaml.safe_load(PATHS.read_text(encoding="utf-8"))["routes"]:
+    for r in yaml12.load(PATHS.read_text(encoding="utf-8"))["routes"]:
         line = densify([tuple(p) for p in r["points"]], 50)
         names = ["OHM rail by 1948", "OSM rail, current and abandoned"] if r["kind"] == "rail" else ["OHM roads valid in 1948"]
         for name in names:

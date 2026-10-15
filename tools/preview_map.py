@@ -12,11 +12,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import yaml
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import hexgrid as hg  # noqa: E402
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 BIOME_RGB = {"sea": (70, 130, 180), "lake": (40, 110, 200), "coastal_plain": (175, 215, 120),
@@ -67,7 +67,7 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     hexes = json.loads((ROOT / "content" / "map" / "hexes.json").read_text())
     towns_file = ROOT / "content" / "map" / "settlements_1948.yaml"
-    towns = yaml.safe_load(towns_file.read_text())["settlements"] if towns_file.exists() else []
+    towns = yaml12.load(towns_file.read_text())["settlements"] if towns_file.exists() else []
     render(hg.MAP_DIR, hexes, towns, out)
     print(f"wrote {out}")
 

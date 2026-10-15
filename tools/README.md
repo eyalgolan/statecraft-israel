@@ -62,6 +62,10 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
   under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
   chosen DPR); `boot --runs N --baseline MS` checks the boot budget. Its browser test runs only with `pytest --headed`.
+- `yaml12.py` is how the tools and their tests read YAML: `yaml12.load` resolves plain scalars by the YAML 1.2 core
+  schema, as the game's YamlDotNet does, where `yaml.safe_load` follows YAML 1.1 (`yes` becomes True, `1:30` becomes 90,
+  `2026-10-15` becomes a date). `load_raw` keeps every scalar as its text; `uv run tools/yaml12.py FILE...` lists the
+  scalars the two schemas read differently. `test_yaml12_guard.py` fails on a new `yaml.safe_load` outside its allowlist.
 
 ## Running the tests
 

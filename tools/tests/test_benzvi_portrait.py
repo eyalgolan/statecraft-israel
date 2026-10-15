@@ -3,21 +3,21 @@ from pathlib import Path
 import re
 
 from PIL import Image
-import yaml
+import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = "https://commons.wikimedia.org/wiki/File:President_Isaac_Ben_Zwi_,_president_van_Israel_en_echtgenote_ontvangen_door_het_,_Bestanddeelnr_909-7131.jpg"
 
 
 def portrait():
-    return next(p for p in yaml.safe_load((ROOT / "content/people.yaml").read_text())["people"] if p["id"] == "ben_zvi")["portrait"]
+    return next(p for p in yaml12.load((ROOT / "content/people.yaml").read_text())["people"] if p["id"] == "ben_zvi")["portrait"]
 
 
 def test_ben_zvi_has_legal_portrait_with_cc0_provenance():
     p = portrait()
     assert p["license"] == "CC0" and p["source"] == SOURCE
     assert p["focus_y"] == 0.32
-    rules = yaml.safe_load((ROOT / "ASSETS.portraits.yaml").read_text())["rules"]
+    rules = yaml12.load((ROOT / "ASSETS.portraits.yaml").read_text())["rules"]
     for path in (p["file"], "unity/Assets/UI/Portraits/ben_zvi.jpg"):
         r = next(r for r in rules if r["glob"] == path)
         assert r["source"] == SOURCE and r["status"] == "verified"

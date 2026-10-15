@@ -21,7 +21,7 @@ import io
 import sys
 from pathlib import Path
 
-import yaml
+import yaml12
 from PIL import Image
 
 REPO = Path(__file__).resolve().parents[1]
@@ -96,7 +96,7 @@ def encode(im: Image.Image) -> bytes:
 
 
 def load_rows(mapping: Path = MAPPING) -> list[dict]:
-    return yaml.safe_load(mapping.read_text(encoding="utf-8"))["images"]
+    return yaml12.load(mapping.read_text(encoding="utf-8"))["images"]
 
 
 def isolated() -> bool:

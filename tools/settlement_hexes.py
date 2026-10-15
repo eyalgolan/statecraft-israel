@@ -13,10 +13,10 @@ import json
 import sys
 from pathlib import Path
 
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import hexgrid as hg  # noqa: E402
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 MAP = ROOT / "content" / "map"
@@ -36,7 +36,7 @@ def render(hexes: dict, settlements: list[dict]) -> str:
 
 def main() -> None:
     hexes = json.loads((MAP / "hexes.json").read_text())
-    settlements = yaml.safe_load((MAP / "settlements_1948.yaml").read_text())["settlements"]
+    settlements = yaml12.load((MAP / "settlements_1948.yaml").read_text())["settlements"]
     OUT.write_text(render(hexes, settlements))
     print(f"wrote {OUT.relative_to(ROOT)} ({len(settlements)} settlements)")
 

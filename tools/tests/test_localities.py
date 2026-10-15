@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+import yaml12
 
 import hexgrid as hg
 
@@ -13,14 +14,14 @@ ROOT = Path(__file__).resolve().parents[2]
 MAP = ROOT / "content" / "map"
 HEXES = json.loads((MAP / "hexes.json").read_text())
 BY_QR = {(h["q"], h["r"]): h for h in HEXES["hexes"]}
-DOC = yaml.safe_load((MAP / "localities_1948.yaml").read_text())
+DOC = yaml12.load((MAP / "localities_1948.yaml").read_text())
 PLACES = DOC["places"]
 CAMPS = DOC["encampments"]
-GAME_IDS = {s["id"] for s in yaml.safe_load((MAP / "settlements_1948.yaml").read_text())["settlements"]}
+GAME_IDS = {s["id"] for s in yaml12.load((MAP / "settlements_1948.yaml").read_text())["settlements"]}
 TYPES = {"town", "kibbutz", "moshav", "arab_town", "village"}
 KINDS = {"arab_town": "arab_town", "arab_village": "village", "jewish_town": "town", "moshava": "town",
          "kibbutz": "kibbutz", "moshav": "moshav", "mixed_locality": "town"}
-SUBDISTRICTS = yaml.safe_load((MAP / "subdistrict_hexes_1948.yaml").read_text())
+SUBDISTRICTS = yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text())
 NO_TODAY = {line.strip() for line in (ROOT / "tools" / "tests" / "data" / "localities_no_today_qids.txt").read_text().splitlines()
             if line.strip() and not line.startswith("#")}
 LANDMARKS = {"mosque", "church", "none", "water_tower", "mosque_and_water_tower"}

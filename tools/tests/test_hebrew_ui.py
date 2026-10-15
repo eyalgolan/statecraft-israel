@@ -2,13 +2,13 @@
 from pathlib import Path
 import re
 from collections import Counter
-import yaml
+import yaml12
 ROOT = Path(__file__).resolve().parents[2]
 UI = ROOT / 'unity/Assets/UI'
 
 
 def strings(name):
-    return yaml.safe_load((UI / name).read_text(encoding='utf-8'))
+    return yaml12.load((UI / name).read_text(encoding='utf-8'))
 
 
 def test_hebrew_keys_match_english_and_every_value_is_nonempty():

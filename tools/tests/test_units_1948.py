@@ -5,10 +5,10 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlparse
 
-import yaml
+import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
-UNITS = yaml.safe_load((ROOT / 'content/map/units_1948.yaml').read_text(encoding='utf-8'))['units']
+UNITS = yaml12.load((ROOT / 'content/map/units_1948.yaml').read_text(encoding='utf-8'))['units']
 # The signing day of each front's armistice (https://en.wikipedia.org/wiki/1949_Armistice_Agreements, checked 2026-10-11).
 ARMISTICE = {'egypt': date(1949, 2, 24), 'lebanon': date(1949, 3, 23), 'jordan': date(1949, 4, 3), 'syria': date(1949, 7, 20)}
 GAME_START = date(1948, 5, 15)

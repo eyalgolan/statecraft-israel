@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import yaml
+import yaml12
 
 import borders_bake as bb
 import borders_digitise as bd
@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 MAP = ROOT / "content" / "map"
 SOURCE = json.loads((MAP / "subdistricts_1948.geojson").read_text(encoding="utf-8"))
 HEXES = json.loads((MAP / "hexes.json").read_text())
-BAKED = yaml.safe_load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))
-TOWNS = {t["id"]: t for t in yaml.safe_load((MAP / "settlements_1948.yaml").read_text())["settlements"]}
+BAKED = yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))
+TOWNS = {t["id"]: t for t in yaml12.load((MAP / "settlements_1948.yaml").read_text())["settlements"]}
 # The 1947 Schedule (Palestine Gazette No. 1552, Supplement No. 2): six districts, sixteen sub-districts.
 GAZETTE_1947 = {
     "Galilee District": ["Acre Sub-District", "Beisan Sub-District", "Nazareth Sub-District", "Safad Sub-District", "Tiberias Sub-District"],

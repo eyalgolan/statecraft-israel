@@ -7,14 +7,14 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import yaml
+import yaml12
 
 import routes_1948 as rt
 
 ROOT = Path(__file__).resolve().parents[2]
 BOUNDS = json.loads((ROOT / "content" / "map" / "hexes.json").read_text())["bounds"]
-ROUTES = yaml.safe_load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
-PATHS = yaml.safe_load((ROOT / "content" / "map" / "route_paths_1948.yaml").read_text(encoding="utf-8"))["routes"]
+ROUTES = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
+PATHS = yaml12.load((ROOT / "content" / "map" / "route_paths_1948.yaml").read_text(encoding="utf-8"))["routes"]
 BY_ID = {r["id"]: r for r in PATHS}
 
 
@@ -100,14 +100,14 @@ def test_display_windows():
     ({"to": "1900"}, "to must be after from"),
 ])
 def test_validate_rejects_bad_dates(change, message):
-    doc = yaml.safe_load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
+    doc = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
     doc["routes"][0].update(change)
     with pytest.raises(ValueError, match=message):
         rt.validate_routes(doc, BOUNDS)
 
 
 def test_validate_requires_from():
-    doc = yaml.safe_load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
+    doc = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
     del doc["routes"][0]["from"]
     with pytest.raises(ValueError, match="from is required"):
         rt.validate_routes(doc, BOUNDS)

@@ -26,7 +26,7 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import yaml
+import yaml12
 from PIL import Image
 
 import hexgrid
@@ -132,7 +132,7 @@ def biome_at(xk: np.ndarray, yk: np.ndarray, hexes: dict) -> np.ndarray:
 
 
 def settlements_km(meta: dict) -> list[tuple[str, float, float]]:
-    doc = yaml.safe_load((CONTENT / "settlements_1948.yaml").read_text())
+    doc = yaml12.load((CONTENT / "settlements_1948.yaml").read_text())
     return [(s["id"], *hexgrid.lonlat_to_km(s["lon"], s["lat"], meta)) for s in doc["settlements"]]
 
 

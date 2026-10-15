@@ -41,10 +41,10 @@ def test_the_encode_is_pinned_silent_and_has_no_burned_in_caption():
 def test_provenance_stays_ai_generated_on_every_row():
     """The caption goes; the provenance stays: every row of the mapping, and every clip's ASSETS.yaml row, says
     ai_generated: true."""
-    import yaml
+    import yaml12
     rows = ev.load_rows()
     assert rows and all(r["ai_generated"] is True for r in rows)
-    assets = {r["glob"]: r for r in yaml.safe_load((ev.REPO / "ASSETS.yaml").read_text(encoding="utf-8"))["rules"]}
+    assets = {r["glob"]: r for r in yaml12.load((ev.REPO / "ASSETS.yaml").read_text(encoding="utf-8"))["rules"]}
     for r in rows:
         assert assets["unity/Assets/StreamingAssets/video/" + r["file"]]["ai_generated"] is True, r["file"]
 
