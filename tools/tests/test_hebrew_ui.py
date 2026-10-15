@@ -61,6 +61,14 @@ def test_an_order_refusal_shows_no_raw_id_or_exception_text():
         assert re.findall(r'\{[^{}]+\}', s['order.failed']) == [], name
 
 
+def test_a_failed_turn_gives_the_next_step_in_both_languages():
+    # #622 (maintainer, 15 October 2026): SimBridge.EndTurn clears the queue when the turn fails, so the refusal says so
+    # and tells the player to give the orders again. The Hebrew waits for the native reviewer (#564).
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    assert en['order.failed'] == 'The turn could not run. Your orders were cleared. Give them again.'
+    assert he['order.failed'].count('.') == 3, he['order.failed']
+    assert not re.search('[A-Za-z]', he['order.failed']), he['order.failed']
+
 def test_the_top_bar_and_start_labels_are_in_sentence_case():
     # #622 finding 2: the six Title Case labels match the file's sentence case, and so do the lines that name the two
     # buttons, written as the button shows them. Game.uxml keeps the same texts (HebrewUiTests).

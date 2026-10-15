@@ -342,7 +342,7 @@ public class HudTests
         Assert.AreEqual(0, bridge.Queued.Count);
         Assert.IsNull(bridge.BeforeLast);
         Assert.AreSame(order, seen![0].Command);
-        Assert.AreEqual("Not done: The turn could not run", ui.Q<Label>("toast").text);   // "boom": the log only (#622)
+        Assert.AreEqual("Not done: The turn could not run. Your orders were cleared. Give them again.", ui.Q<Label>("toast").text);   // "boom": the log only (#622)
     }
 
     /// <summary>Playtest 1, item 11: pressing the open screen's button closes it, every time, with every presenter

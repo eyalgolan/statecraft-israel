@@ -76,7 +76,9 @@ order.kind.unit: "יחידה"
 order.kind.pioneer_work: "עבודה חלוצית"
 order.kind.site: "אתר"
 order.invalid: "הפקודה אינה תקפה"
-order.failed: "לא ניתן היה להריץ את התור"
+# order.failed: the turn failed and SimBridge.EndTurn cleared the queue, so the player gives the orders again (#622;
+# maintainer, 15 October 2026). For the native reviewer (#564).
+order.failed: "לא ניתן היה להריץ את התור. הפקודות שלך נמחקו. יש לתת אותן שוב."
 defence.rung1: "1  איום שגרתי: תקריות גבול, שימור ההרתעה"
 defence.rung2: "2  גל: טרור או הסתננות, התעצמות האויב"
 defence.rung3: "3  פעולה מוגבלת: פשיטות, פעולות תגמול"
