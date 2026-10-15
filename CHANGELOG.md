@@ -412,8 +412,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   7). The route ribbons are re-baked; no route was added.
 - The map's colour grade is retuned towards promo 03 (refs #38, #391): more contrast and darker shadows, with cool slate
   shadows, pale instead of amber highlights and a slightly cooler white balance; the vignette stays as it was. At the
-  gameplay pose the land's contrast and saturation match the promo's and its warmth comes closer; the sea stays blue, a
-  little darker than promo 03's (the owner's decision). Presentation only.
+  gameplay pose the land's contrast comes to the promo's, while its warmth stays slightly over main's and the whole land
+  reads a little rosier; the table around the diorama turns a redder brown. The sea stays blue, a little darker than promo
+  03's (the owner's decision). Presentation only.
 - The trees are warm olive-brown instead of bright green, like the groves in promo 03 (refs #34): citrus groves, olive
   crowns, palms and cypresses. Only the leaf colours change; the fruit, meshes and frame cost are the same.
 - Map: settlement quick wins (refs #31). The White City's blocks are lime white, with a solid-parapet balcony on each

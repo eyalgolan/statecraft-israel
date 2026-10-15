@@ -280,8 +280,9 @@ public class GradeTests
     }
 
     /// <summary>Rendered at the gameplay pose: the grade neither washes the colour out nor pumps it. Since the merge point
-    /// MapGrade.Saturation is 0 (merged diorama02 was over the promo's saturation at 16), so the grade's only effect on
-    /// saturation is the side effect of contrast, white balance and split toning: measured 0.568 -> 0.598 (x1.053).
+    /// MapGrade.Saturation has stayed near 0 (merged diorama02 was over the promo's saturation at 16; issue #38 set -2 to
+    /// offset part of what Contrast 18 adds), so the grade's effect on saturation is mostly the side effect of contrast,
+    /// white balance and split toning: measured 0.568 -> 0.598 (x1.053) at the merge point, 0.399 -> 0.398 (x0.998) since #38.
     /// The ceiling catches a return of the saturation lever (about +0.7% of frame saturation per unit here, so x1.12 is
     /// about Saturation 10); the floor catches a milky grade.</summary>
     [UnityTest]
