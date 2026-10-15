@@ -21,7 +21,8 @@
 #   name_he/ar   Hebrew and Arabic names as the research draft took them (Wikidata labels, else the he/ar Wikipedia title),
 #                re-checked against Wikidata on 2026-10-14. name_he is the 1948 form matching `name` (owner, 2026-10-14): where
 #                the label is a later name (Beisan, Kfar Ata, Pardes Hanna) or there was none (Tarshiha), the 1948 Hebrew form
-#                and the he.wiki page that gives it are in name_he_sources ({url, checked}); Majdal cites he.wiki's own page.
+#                and the he.wiki page that gives it are in name_he_sources ({url, checked}); Majdal cites he.wiki's article
+#                on the town.
 #                Thirteen villages have no Hebrew label or article and no name_he: the map keeps the English (#558).
 #   kind/type    finer kind and the repo's settlement type; the kit archetype follows type (village and arab_town:
 #                Arab village houses; town, kibbutz, moshav: red-roofed Jewish settlement, moshav as a ring);
@@ -161,7 +162,7 @@ places:
     source: https://www.wikidata.org/wiki/Q60956
   name_he: אל-מג'דל
   name_he_sources:
-  - url: https://he.wikipedia.org/wiki/מג'דל
+  - url: https://he.wikipedia.org/wiki/אל-מג'דל_(אשקלון)
     checked: '2026-10-14'
   name_ar: المجدل
   lon: 34.5664

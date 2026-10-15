@@ -43,6 +43,7 @@ public class HebrewNameTests
     [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n", "offices[prime_minister].title_he_sources")]
     [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he_sources: " + Src + "\n", "offices[prime_minister].title_he")]
     [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he_f: ראשת הממשלה\n    title_he_f_sources: " + Src + "\n", "offices[prime_minister].title_he")]
+    [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: " + Src + "\n    title_he_f: ראשת הממשלה\n", "offices[prime_minister].title_he_f_sources")]
     [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: [{ url: 'https://example.org/he' }]\n", "offices[prime_minister].title_he_sources[0]")]
     [InlineData("offices.yaml", "    title: Prime Minister\n", "    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: [{ url: 'example.org/he', checked: 2026-10-14 }]\n", "offices[prime_minister].title_he_sources[0]")]
     [InlineData("parties.yaml", "    name: Alpha\n", "    name: Alpha\n    name_he: Alpha\n    name_he_sources: " + Src + "\n", "parties[alpha].name_he")]
