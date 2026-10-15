@@ -16,7 +16,8 @@
 //     are linked from the Press page in both languages.
 //  9. the history approach page exists in both languages, links to the two documents it restates, and History links to it.
 // 10. no page publishes a game portrait whose ASSETS.portraits.yaml row is not verified (the owner-verify GPO
-//     photographs are hidden for now: owner, 15 October 2026, decision D-P), and the Cabinet page exists in both languages;
+//     photographs are hidden for now: owner, 15 October 2026, decision D-P), the Cabinet page exists in both languages,
+//     and Golda Meir's Hebrew card uses the feminine title (title_he_form, #661);
 // 11. no page shows an in-engine picture or video that site/src/data/people-in-images.yaml does not clear. A check cannot
 //     see inside a screenshot, so that file records, checked by hand, the real people visible in each one; a screenshot
 //     of a hidden portrait (the Cabinet screen) is held back here.
@@ -237,6 +238,15 @@ for (const lang of ['en', 'he']) {
     for (const id of hidden) if (new RegExp(`/_astro/${id}\\.[A-Za-z0-9_-]+\\.(?:avif|webp|jpe?g|png)`).test(html)) fail(f, `publishes the unverified portrait ${id}.jpg (ASSETS.portraits.yaml status is not verified)`);
   }
   for (const lang of ['en', 'he']) if (!fs.existsSync(path.join(dist, lang, 'cabinet', 'index.html'))) problems.push(`${lang}/cabinet/index.html: missing`);
+  // The feminine Hebrew title (#661, title_he_form: feminine): Golda Meir's card reads שרת העבודה, never שר העבודה.
+  const heCab = path.join(dist, 'he', 'cabinet', 'index.html');
+  if (fs.existsSync(heCab)) {
+    const html = fs.readFileSync(heCab, 'utf8');
+    const at = html.indexOf('id="golda_meir"');
+    const card = at < 0 ? '' : html.slice(at, html.indexOf('</article>', at));
+    if (!card) fail(heCab, 'no card for golda_meir');
+    else if (!card.includes('שרת העבודה') || /שר העבודה/.test(card)) fail(heCab, 'Golda Meir\'s card does not read שרת העבודה (title_he_form: feminine)');
+  }
 }
 
 // 11. In-engine pictures and videos: every file in docs/images/ (the README's screenshots, the hero, the gameplay clip)

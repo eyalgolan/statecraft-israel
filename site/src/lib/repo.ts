@@ -166,11 +166,15 @@ export interface Person {
 const GAME_START = '1948-05-14';
 const GAME_END = '1952-01-01';
 const PORTRAIT_DIR = 'unity/Assets/UI/Portraits/';
-// The per-person marker that picks an office's feminine Hebrew title (offices.yaml title_he_f, "שרת העבודה"). It is
-// added to content/people.yaml by a separate, sourced content PR; until then no person carries it and every card uses
-// title_he. The field name must match that PR's schema: it is read in this one place.
-export const FEMININE_TITLE_FIELD = 'title_he_feminine';
-const feminine = (p: Record<string, any>) => { const v = p[FEMININE_TITLE_FIELD]; return v === true || (!!v && typeof v === 'object' && v.value !== false); };
+// The Hebrew form of a person's office titles (#661): `title_he_form: feminine` in content/people.yaml, sourced under
+// biography_sources.title_he_form, picks the office's feminine title (offices.yaml title_he_f, "שרת העבודה"); left out,
+// the title is title_he. The sim's mirror is Office.TitleHeFor(Person?). Any other value fails the build.
+const feminine = (p: Record<string, any>) => {
+  const v = p.title_he_form;
+  if (v === undefined || v === null) return false;
+  if (v !== 'feminine') throw new Error(`site: ${p.id} has title_he_form ${JSON.stringify(v)}; the only value is "feminine"`);
+  return true;
+};
 
 /** The CC BY 4.0 and CC BY-SA 4.0 portrait credits in NOTICE ("Portraits:" paragraph): each licence block names its
  * collection, and each file line its photographer, year and "cropped". */
@@ -251,7 +255,7 @@ export function cabinet(): Person[] {
     }
     const bio = p.biography_sources ?? {};
     const bioSources: Source[] = [];
-    for (const k of ['born', 'died', 'name_he']) for (const s of (bio[k] ?? []) as Source[]) if (!bioSources.some((x) => x.url === s.url)) bioSources.push(s);
+    for (const k of ['born', 'died', 'name_he', 'title_he_form']) for (const s of (bio[k] ?? []) as Source[]) if (!bioSources.some((x) => x.url === s.url)) bioSources.push(s);
     list.push({
       id: p.id, name: p.name, name_he: p.name_he, born: toIso(p.born), died: p.died ? toIso(p.died) : undefined,
       party: party(p.party || undefined), status: p.status, competence: p.competence, loyalty: p.loyalty,
