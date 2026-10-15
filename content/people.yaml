@@ -538,7 +538,7 @@ people:
     status: fact-checked
   - id: shazar
     name: Zalman Shazar
-    name_he: זלמן שז"ר
+    name_he: זלמן שז״ר
     # The President's Office page gives 24 November 1889; the Knesset member page gives 22 December 1889 (issue #457).
     born: 1889-11-24
     died: 1974-10-05

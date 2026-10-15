@@ -187,8 +187,8 @@ public class HebrewNameTests
             .Single(r => ((YamlScalarNode)r.Children[new YamlScalarNode("id")]).Value == id).Children[new YamlScalarNode("name_he")]).Value!;
         Assert.Equal("תל אביב", Settlement("tel_aviv"));
         Assert.Equal("לוד", Settlement("lod"));
-        Assert.Equal("מפא\"י", C.Parties.Single(p => p.Id == "mapai").NameHe);
-        Assert.Equal("מק\"י", C.Parties.Single(p => p.Id == "maki").NameHe);
+        Assert.Equal("מפא״י", C.Parties.Single(p => p.Id == "mapai").NameHe);
+        Assert.Equal("מק״י", C.Parties.Single(p => p.Id == "maki").NameHe);
         Assert.Equal("האספה המכוננת (הכנסת הראשונה)", C.Legislatures.Single(l => l.Id == "first_knesset").BodyHe);
         var labour = C.Offices.Single(o => o.Id == "labour_minister");
         Assert.Equal(("שר העבודה", "שרת העבודה"), (labour.TitleHe, labour.TitleHeF));

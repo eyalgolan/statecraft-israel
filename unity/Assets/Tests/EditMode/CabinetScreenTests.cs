@@ -62,7 +62,7 @@ public class CabinetScreenTests
         var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
         cabinet.Select("finance_minister");
         UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
-        Assert.AreEqual("Ordered: Golda Meir to Minister of Finance, at End Turn", ui.Q<Label>("cabinet-status").text);
+        Assert.AreEqual("Ordered: Golda Meir to Minister of Finance, at End turn", ui.Q<Label>("cabinet-status").text);
         bridge.EndTurn();
         Assert.AreEqual("golda_meir", Cabinet.Holder(C, bridge.State, "finance_minister")!.Id);
         StringAssert.EndsWith("(your appointee)", ui.Q<Label>("seat-finance_minister-holder").text);

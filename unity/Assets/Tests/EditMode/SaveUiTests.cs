@@ -171,7 +171,7 @@ public class SaveUiTests
         ui.Press("new-game");
         Assert.AreSame(session, bridge.Session, "one press after a change only arms again");
         Assert.IsTrue(newGame.Armed);
-        Assert.AreEqual("Press New Game again to abandon this game and start over.", ui.Q<Label>("toast").text);
+        Assert.AreEqual("Press New game again to abandon this game and start over.", ui.Q<Label>("toast").text);
         Assert.AreEqual(1, bridge.Queued.Count);
     }
 
@@ -208,7 +208,7 @@ public class SaveUiTests
         var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 4UL);
         ui.Press("new-game");
         Assert.IsTrue(newGame.Armed);
-        Assert.AreEqual("Press New Game again to abandon this game and start over.", ui.Q<UnityEngine.UIElements.Label>("toast").text);
+        Assert.AreEqual("Press New game again to abandon this game and start over.", ui.Q<UnityEngine.UIElements.Label>("toast").text);
         Assert.AreEqual(1, bridge.State.Turn);
         ui.Press("new-game");
         Assert.AreEqual(0, bridge.State.Turn);

@@ -60,31 +60,31 @@
                 <ui:VisualElement name="meter-support" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="crowd" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
-                        <ui:Label text="Public Support" class="meter-name" />
+                        <ui:Label text="Public support" class="meter-name" />
                         <ui:VisualElement class="meter-row"><ui:Label name="support-value" class="meter-value" /><ui:Label name="support-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-standing" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="globe" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
-                        <ui:Label text="International Standing" class="meter-name" />
+                        <ui:Label text="International standing" class="meter-name" />
                         <ui:VisualElement class="meter-row"><ui:Label name="standing-value" class="meter-value" /><ui:Label name="standing-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="meter-fx" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="banknote" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
-                        <ui:Label text="Foreign Currency" class="meter-name" />
+                        <ui:Label text="Foreign currency" class="meter-name" />
                         <ui:VisualElement class="meter-row"><ui:Label name="fx-value" class="meter-value" /><ui:Label name="fx-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="nav" class="nav">
-                <ui:Button name="new-game" text="New Game" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
+                <ui:Button name="new-game" text="New game" class="nav-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
             </ui:VisualElement>
             <ui:VisualElement class="turn-box">
                 <ui:Label name="attention" class="muted" />
-                <ui:Button name="end-turn" text="End Turn" class="end-turn" />
+                <ui:Button name="end-turn" text="End turn" class="end-turn" />
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- The right-hand column: the minimap, with the border layer's caption beside it. -->
@@ -316,7 +316,7 @@
                     </ui:VisualElement>
                     <ui:VisualElement name="start-actions" class="start-actions">
                         <ui:Button name="start-continue" text="Continue" class="start-button" />
-                        <ui:Button name="start-new-game" text="New Game" class="start-button" />
+                        <ui:Button name="start-new-game" text="New game" class="start-button" />
                     </ui:VisualElement>
                     <ui:VisualElement name="start-caption" class="start-caption" picking-mode="Ignore">
                         <ui:Label name="start-caption-he" text="…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל." class="start-he start-caption-he" language-direction="RTL" picking-mode="Ignore" />

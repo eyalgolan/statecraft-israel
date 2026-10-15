@@ -508,6 +508,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- UI text from Jeremy Hoover's review (refs #622): a refused order no longer shows a content id or an exception's
+  message after "Not done:" ("Unknown policy", "The turn could not run", in English and Hebrew); both stay in the log.
+  The six Title Case labels are in sentence case ("Public support", "International standing", "Foreign currency", "End
+  turn", "New game"), and the lines that name the two buttons follow them. Hebrew acronyms in content use the gershayim
+  character the strings use (״, U+05F4: מפא״י, רמטכ״ל, שז״ר). The strings.en.yaml header now says which strings format a
+  date. The content hash moves; no golden does.
 - Content: 101 Squadron's aircraft notes in `content/map/units_1948.yaml` (refs #607). The Avia S-199 note now gives the
   sourced arrivals (one on 20 May 1948, one each on 21 and 22 May, the fourth lost in a C-46 crash dated 23 or 23-24 May,
   sources disagree) instead of "the first four arrived on 20 May"; the Spitfire note names the two sources for the

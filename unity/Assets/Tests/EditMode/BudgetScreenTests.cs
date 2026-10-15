@@ -60,7 +60,7 @@ public class BudgetScreenTests
         ui.Press("budget-submit");
         var queued = (AllocateBudget)bridge.Queued.Single();
         Assert.AreEqual(1.0, queued.Shares.Values.Sum(), 1e-9);
-        Assert.AreEqual("Submitted: takes effect at End Turn", ui.Q<Label>("budget-status").text);
+        Assert.AreEqual("Submitted: takes effect at End turn", ui.Q<Label>("budget-status").text);
         bridge.EndTurn();
         Assert.AreEqual(budget.Draft["education_minister"], bridge.State.Budget["education_minister"], 1e-12);
         Assert.IsEmpty(bridge.Session.Last!.Rejected);
@@ -177,11 +177,11 @@ public class BudgetScreenTests
         {
             UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
             ui.Press("budget-submit");
-            Assert.AreEqual("Submitted: takes effect at End Turn", ui.Q<Label>("budget-status").text);
+            Assert.AreEqual("Submitted: takes effect at End turn", ui.Q<Label>("budget-status").text);
             UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
             Assert.AreEqual("Changed: submit to put it to the vote", ui.Q<Label>("budget-status").text);
             ui.Press("budget-submit");
-            Assert.AreEqual("Submitted: takes effect at End Turn", ui.Q<Label>("budget-status").text);
+            Assert.AreEqual("Submitted: takes effect at End turn", ui.Q<Label>("budget-status").text);
             var queued = (AllocateBudget)bridge.Queued.Single();
             foreach (var kv in budget.Draft) Assert.AreEqual(kv.Value, queued.Shares[kv.Key], 1e-12);
         }

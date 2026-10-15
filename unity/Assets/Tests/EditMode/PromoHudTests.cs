@@ -39,7 +39,7 @@ public class PromoHudTests
     {
         using var ui = new UiTestKit();
         foreach (var (button, name, glyph) in new[] { ("nav-cabinet", "Cabinet", "columns"), ("nav-budget", "Budget", "ledger"),
-                                                      ("nav-defence", "Defence", "helmet"), ("nav-why", "Why?", "question"), ("new-game", "New Game", "restart") })
+                                                      ("nav-defence", "Defence", "helmet"), ("nav-why", "Why?", "question"), ("new-game", "New game", "restart") })
         {
             var b = ui.Q<Button>(button);
             Assert.AreEqual(name, b.text, button + ": the name stays the button's text (legible, and what the event log records)");

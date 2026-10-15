@@ -78,7 +78,7 @@ public class MapActionUiTests
         Assert.IsTrue(ui.Q<Button>("build-camp").enabledSelf, ui.Q<Label>("info-reason").text);
         Assert.AreEqual("Place a transit camp (IL 1.5m)", ui.Q<Button>("build-camp").text);
         ui.Press("build-camp");
-        Assert.AreEqual("Ordered: A transit camp, at End Turn", ui.Q<Label>("info-placement").text);
+        Assert.AreEqual("Ordered: A transit camp, at End turn", ui.Q<Label>("info-placement").text);
         bridge.EndTurn();
         Assert.AreEqual(MapActions.TransitCamp, MapActions.At(bridge.State, tlv.Q, tlv.R)!.Action);
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);

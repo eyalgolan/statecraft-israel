@@ -70,8 +70,14 @@ namespace Statecraft.Game.UI
         /// <summary>The queued order with this key, or null.</summary>
         public Command? QueuedLike(Command c) => queue.FirstOrDefault(q => Key(q) == Key(c));
 
-        string? Unknown(string kind, string? id, IEnumerable<string> known) =>
-            !string.IsNullOrEmpty(id) && known.Contains(id) ? null : text.Format("order.unknown", kind, id ?? "");
+        /// <summary>Null if the id is known, else the player-facing reason. The player sees only the kind of thing (#622: a
+        /// content id means nothing to them); the id goes to the log, for a bug report.</summary>
+        string? Unknown(string kind, string? id, IEnumerable<string> known)
+        {
+            if (!string.IsNullOrEmpty(id) && known.Contains(id)) return null;
+            UnityEngine.Debug.Log($"Order refused: unknown {kind} '{id}'");
+            return text.Format("order.unknown", kind);
+        }
 
         /// <summary>Checks every id an order carries against the content, so End Turn can never be handed an id the
         /// simulation would throw on. Returns the player-facing reason, or null.</summary>
@@ -149,7 +155,7 @@ namespace Statecraft.Game.UI
                 else UnityEngine.Debug.LogException(e);
                 queue.Clear();
                 LastBatch = Array.Empty<Command>();
-                var reason = text.Format("order.failed", e.Message);
+                var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
                 Changed?.Invoke();
                 TurnEnded?.Invoke(failed.Rejected);

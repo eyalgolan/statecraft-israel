@@ -42,10 +42,10 @@ public class SimBridgeSiteTests
     {
         var t = Text;
         var (b, id) = WithAHalutz();
-        Assert.AreEqual(t.Format("order.unknown", "unit", "99"), b.Queue(new PioneerWork(99, Projects.BuildYishuv, "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "pioneer work", "build_road"), b.Queue(new PioneerWork(id, "build_road", "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "site", "yeruham"), b.Queue(new PioneerWork(id, Projects.BuildYishuv, "yeruham")));
-        Assert.AreEqual(t.Format("order.unknown", "unit", "99"), b.Queue(new StopWork(99)));
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(99, Projects.BuildYishuv, "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "pioneer work"), b.Queue(new PioneerWork(id, "build_road", "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "site"), b.Queue(new PioneerWork(id, Projects.BuildYishuv, "yeruham")));
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(99)));
         Assert.AreEqual(0, b.Queued.Count);
     }
 
@@ -54,8 +54,8 @@ public class SimBridgeSiteTests
     {
         var t = Text;
         var b = Bridge(Legacy);
-        Assert.AreEqual(t.Format("order.unknown", "unit", "1"), b.Queue(new PioneerWork(1, Projects.BuildYishuv, "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "unit", "1"), b.Queue(new StopWork(1)));
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(1, Projects.BuildYishuv, "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(1)));
         Assert.AreEqual(0, b.Queued.Count);
     }
 }

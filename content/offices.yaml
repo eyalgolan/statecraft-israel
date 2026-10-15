@@ -5,7 +5,7 @@ offices:
   # where a woman held the office (owner, 2026-10-14). The English titles stay the player's default. Left empty where no
   # source gives a Hebrew title: rationing_minister, a game construct (the office passes from Rationing and Supply to
   # Agriculture and then Trade). Open owner questions: the Trade (order, and the Knesset's "התעשיה") and War Victims
-  # wordings, and whether the Chief of Staff adds "של צה"ל" (PR #558 body).
+  # wordings, and whether the Chief of Staff adds "של צה״ל" (PR #558 body).
   # title_he_review / title_he_f_review: agent-checked marks a title an AI agent checked against its sources and no
   # person has read yet (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15). A native speaker reviews it (#564) and
   # then removes the flag; the row's own status covers the English facts.
@@ -62,7 +62,7 @@ offices:
   # Before the state the chief of staff led the Haganah (Yaakov Dori, from 1 June 1947), so the same post is split at the
   # state's founding (issue #80; sources on Dori's two terms in people.yaml). 14 May 1948 is the design's date; the IDF Ordinance
   # followed on 26 May 1948. Do not "correct" it to 26 May in a fact-check: it would move the goldens.
-  - { id: haganah_chief_of_staff, title: Haganah Chief of the General Staff, title_he: 'רמטכ"ל ההגנה', title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/יעקב_דורי", checked: 2026-10-14 }], until: 1948-05-14 }
+  - { id: haganah_chief_of_staff, title: Haganah Chief of the General Staff, title_he: 'רמטכ״ל ההגנה', title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/יעקב_דורי", checked: 2026-10-14 }], until: 1948-05-14 }
   - { id: chief_of_staff, title: IDF Chief of the General Staff, title_he: "ראש המטה הכללי", title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/ראש_המטה_הכללי", checked: 2026-10-14 }], from: 1948-05-14 }
   # The role first appeared in the Third Government (Peretz Naphtali, 8 October 1951): he.wiki "שר בלי תיק"; the
   # Provisional, First and Second Governments' tables on en.wiki list none (checked 2026-10-11).

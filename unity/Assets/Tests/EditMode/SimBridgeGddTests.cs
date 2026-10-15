@@ -45,12 +45,12 @@ public class SimBridgeGddTests
     {
         var t = Text;
         var b = Bridge(Slice);
-        Assert.AreEqual(t.Format("order.unknown", "city", "haifa"), b.Queue(new AssignWorkers("haifa", "job", 1)));
-        Assert.AreEqual(t.Format("order.unknown", "city", "haifa"), b.Queue(new Train("haifa", "halutz", 1)));
-        Assert.AreEqual(t.Format("order.unknown", "training", "pilot"), b.Queue(new Train("tel_aviv", "pilot", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new AssignWorkers("haifa", "job", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new Train("haifa", "halutz", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "training"), b.Queue(new Train("tel_aviv", "pilot", 1)));
         // civilian is a unit type, but nobody trains to it: it has no facility.
-        Assert.AreEqual(t.Format("order.unknown", "training", "civilian"), b.Queue(new Train("tel_aviv", "civilian", 1)));
-        Assert.AreEqual(t.Format("order.unknown", "cohort", "7"), b.Queue(new CancelTraining(7)));
+        Assert.AreEqual(t.Format("order.unknown", "training"), b.Queue(new Train("tel_aviv", "civilian", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "cohort"), b.Queue(new CancelTraining(7)));
         Assert.AreEqual(0, b.Queued.Count);
     }
 
@@ -104,9 +104,9 @@ public class SimBridgeGddTests
         var t = Text;
         var b = Bridge(Legacy);
         Assert.IsFalse(Legacy.IsGdd);
-        Assert.AreEqual(t.Format("order.unknown", "city", "tel_aviv"), b.Queue(new AssignWorkers("tel_aviv", "job", 1)));
-        Assert.AreEqual(t.Format("order.unknown", "city", "tel_aviv"), b.Queue(new Train("tel_aviv", "halutz", 1)));
-        Assert.AreEqual(t.Format("order.unknown", "cohort", "1"), b.Queue(new CancelTraining(1)));
+        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new AssignWorkers("tel_aviv", "job", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new Train("tel_aviv", "halutz", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "cohort"), b.Queue(new CancelTraining(1)));
         Assert.AreEqual(0, b.Queued.Count);
     }
 }
