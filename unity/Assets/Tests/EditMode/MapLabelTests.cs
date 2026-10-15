@@ -175,6 +175,7 @@ public class MapLabelTests
         Assert.AreEqual(new Rect(115, 215 - lift - 10, 30, 10), over);
         Assert.AreEqual(30f * 9f / (60f * 40f), MapLabelsPresenter.Cover(over, kit), 1e-4f, "over the kit: its bottom 9 rows, 270 of its 2400 px");
         Assert.AreEqual(0f, MapLabelsPresenter.Cover(over, new Rect(0, 0, 0, 0)), "an empty kit is never covered");
+        Assert.AreEqual(new Rect(115, 215 + lift, 30, 10), MapLabelsPresenter.SpotRect(MapLabelsPresenter.Spot.Under, kit, point, size), "under the point (#599)");
     }
     [Test]
     public void EverySettlementHasOneGaramondPillThatIgnoresThePointer()
@@ -674,6 +675,57 @@ public class MapLabelTests
             }
         }
         finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>Issue #599: close over Jaffa's harbour (gameplay03's yaw at 30, 40 and 50% of its distance, with the game's
+    /// top-bar inset), Tel Aviv's and Jaffa's kit rectangles are hundreds of pixels across and overlap, and each holds or
+    /// touches the other's marker. Every shown pill must still be nearer its own settlement's marker than any other
+    /// visible marker, so "Tel Aviv" never hangs by Jaffa's harbour and "Jaffa" never sits on the pier by Tel Aviv. The
+    /// markers are measured independently of the presenter. Jaffa is named at every pose, and Tel Aviv wherever its
+    /// marker is visible (a city keeps its name). gameplay03 itself is checked the same way.</summary>
+    [UnityTest]
+    public IEnumerator EachPillIsNearerItsOwnMarkerByJaffasHarbour() => NearerOwnMarker(false);
+
+    /// <summary>The same with the units in play (#518's keep-clear moves the spots round the Kiryati Brigade).</summary>
+    [UnityTest]
+    public IEnumerator EachPillIsNearerItsOwnMarkerByJaffasHarbourWithTheUnits() => NearerOwnMarker(true);
+
+    IEnumerator NearerOwnMarker(bool units)
+    {
+        var hd = new HdPanel(cam);
+        var labels = Labels(hd, units);
+        var inset = new TopBarInset(hd.Root, rig);
+        try
+        {
+            var g03 = PromoPose.Gameplay03;
+            foreach (var pose in new[] { g03, new PromoPose("jaffa30", 34.76, 32.05, 0.3f * g03.Distance, g03.Yaw),
+                         new PromoPose("jaffa40", 34.76, 32.05, 0.4f * g03.Distance, g03.Yaw), new PromoPose("jaffa50", 34.76, 32.05, 0.5f * g03.Distance, g03.Yaw) })
+            {
+                pose.Apply(rig, map.Frame);
+                yield return null;
+                inset.Update();
+                yield return Settle(labels);
+                var tops = VisibleMarkerTops(hd, map);
+                var shown = labels.Slots.Where(Shown).Select(s => (id: s.name.Substring("slot-".Length), rect: s.Q<Label>().worldBound)).ToList();
+                foreach (var id in new[] { "tel_aviv", "jaffa" })
+                {
+                    var p = shown.FirstOrDefault(x => x.id == id);
+                    string Gaps() => string.Join(" ", new[] { "tel_aviv", "jaffa" }.Where(tops.ContainsKey).Select(o => $"{o} {Gap(p.rect, tops[o]):F0}"));
+                    TestContext.WriteLine($"{pose.Name} units={units}: {id} marker {(tops.TryGetValue(id, out var t) ? t.ToString() : "not visible")} " +
+                        (p.id == null ? "hidden" : $"pill {p.rect}, gap to {Gaps()}"));
+                }
+                Assert.IsTrue(shown.Any(x => x.id == "jaffa"), $"{pose.Name}: Jaffa is named");
+                if (tops.ContainsKey("tel_aviv")) Assert.IsTrue(shown.Any(x => x.id == "tel_aviv"), $"{pose.Name}: Tel Aviv's marker is visible, so it is named");
+                foreach (var (id, rect) in shown)
+                {
+                    Assert.IsTrue(tops.ContainsKey(id), $"{pose.Name}: {id} is shown but its marker is not visible");
+                    float own = Gap(rect, tops[id]);
+                    foreach (var other in tops.Where(o => o.Key != id))
+                        Assert.Less(own, Gap(rect, other.Value), $"{pose.Name}: the {id} pill {rect} is {own:F0} px from its own marker but {Gap(rect, other.Value):F0} px from {other.Key}'s");
+                }
+            }
+        }
+        finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
     }
 
     /// <summary>Re-review N1: a panel that appears (the event card) hides the pill it covers when its layout lands, from the

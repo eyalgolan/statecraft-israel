@@ -21,8 +21,9 @@ namespace Statecraft.Game.UI
     /// box when there is no kit, or while the "kits" toggle is off and the boxes are drawn) to a screen rectangle, and
     /// every spot a pill may take is placed against that rectangle: above it (centred, or to the left or right of its
     /// centre), then beside it on the right or the left, then below it. Only when none of those fits may a pill sit over
-    /// its kit, its bottom centre LiftPx above the settlement's point, and only if it covers at most MaxKitCover of the
-    /// kit's rectangle (a big city's name over its own streets, never a kibbutz's roofs under a pill).
+    /// its kit, its bottom centre LiftPx above the settlement's point (or, failing that, its top centre LiftPx below it),
+    /// and only if it covers at most MaxKitCover of the kit's rectangle (a big city's name over its own streets, never a
+    /// kibbutz's roofs under a pill).
     ///
     /// Declutter: pills are placed in priority order (city, then town and Arab town, then the rest, each in file order). A
     /// pill is hidden (visibility, so it keeps its size and the choice does not flicker) when its marker is behind the
@@ -33,10 +34,13 @@ namespace Statecraft.Game.UI
     /// (OccluderNames: the top bar, the left icon column, the info panel, the minimap and its map-layer caption, the event card), does not
     /// overlap an already placed pill (its last laid-out size plus MarginPx), covers at most MaxKitCover of its own kit's
     /// rectangle and of every other visible kit's, and is more than twice as far from every other visible marker's top as
-    /// from its own kit (the kit alone, not the tokens on it), plus MarginPx, so no name reads as a neighbour's. A city
-    /// that finds no such spot never loses its name: it takes, in this order, the first spot round its kit alone that
-    /// still reads as its own (over a unit token if need be), then the first clear of panels, pills, tokens and its own
-    /// kit, then the first clear of panels, pills and its own kit. A pill hidden in the last refresh needs HysteresisPx more
+    /// from its own kit (the kit alone, not the tokens on it), plus MarginPx, so no name reads as a neighbour's. Whatever
+    /// the spot, a pill is also nearer its own marker's top than any other visible marker's, by more than MarginPx
+    /// (issue #599: two sprawling kits' rectangles overlap and each holds the other's marker, so a spot against one's
+    /// edge can sit by the other's town). A city that finds no such spot keeps its name if it can: it takes, in this
+    /// order, the first spot round its kit alone that still reads as its own (over a unit token if need be), then the
+    /// first clear of panels, pills, tokens and its own kit, then the first clear of panels, pills and its own kit, each
+    /// still nearer its own marker than any other. A pill hidden in the last refresh needs HysteresisPx more
     /// room to come back, so it does not blink at a threshold. Refresh allocates nothing. The dense Tel Aviv - Lod cluster
     /// keeps M2's anchor classes. The kits' bounds are read once, when the presenter is created (a later MapScene.Build
     /// needs a new presenter; GameRoot makes one per Begin).
@@ -75,9 +79,11 @@ namespace Statecraft.Game.UI
         const string Centre = "anchor-lower-centre", Left = "anchor-lower-left", Right = "anchor-lower-right";
 
         /// <summary>Where a pill sits against its kit's screen rectangle: above it (centred on it, starting at its centre,
-        /// or ending at it), beside it, below it, or over it (its bottom centre above the settlement's point).</summary>
-        public enum Spot { AboveCentre, AboveLeft, AboveRight, BesideRight, BesideLeft, Below, Over }
-        static readonly Spot[] Fallbacks = { Spot.AboveRight, Spot.AboveLeft, Spot.AboveCentre, Spot.BesideRight, Spot.BesideLeft, Spot.Below, Spot.Over };
+        /// or ending at it), beside it, below it, or over it (its bottom centre above the settlement's point), or last
+        /// under the point (its top centre below it: issue #599, where the spots round a sprawl are all by a neighbour and
+        /// the point is too near the top bar for Over).</summary>
+        public enum Spot { AboveCentre, AboveLeft, AboveRight, BesideRight, BesideLeft, Below, Over, Under }
+        static readonly Spot[] Fallbacks = { Spot.AboveRight, Spot.AboveLeft, Spot.AboveCentre, Spot.BesideRight, Spot.BesideLeft, Spot.Below, Spot.Over, Spot.Under };
         static readonly HashSet<string> MinorTypes = new HashSet<string> { "village", "kibbutz", "moshav" };
         static readonly Dictionary<string, string> AnchorClass = new Dictionary<string, string>
         {
@@ -237,7 +243,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The pill's rectangle at <paramref name="spot"/> against the kit's screen rectangle <paramref name="kit"/>
-        /// (LiftPx clear of it); Over hangs it LiftPx above <paramref name="point"/> instead.</summary>
+        /// (LiftPx clear of it); Over hangs it LiftPx above <paramref name="point"/> instead, Under LiftPx below it.</summary>
         public static Rect SpotRect(Spot spot, Rect kit, Vector2 point, Vector2 size)
         {
             float above = kit.yMin - LiftPx - size.y, cx = kit.center.x, cy = kit.center.y;
@@ -249,6 +255,7 @@ namespace Statecraft.Game.UI
                 Spot.BesideRight => new Rect(kit.xMax + LiftPx, cy - size.y / 2f, size.x, size.y),
                 Spot.BesideLeft => new Rect(kit.xMin - LiftPx - size.x, cy - size.y / 2f, size.x, size.y),
                 Spot.Below => new Rect(cx - size.x / 2f, kit.yMax + LiftPx, size.x, size.y),
+                Spot.Under => new Rect(point.x - size.x / 2f, point.y + LiftPx, size.x, size.y),
                 _ => new Rect(point.x - size.x / 2f, point.y - LiftPx - size.y, size.x, size.y),
             };
         }
@@ -399,15 +406,18 @@ namespace Statecraft.Game.UI
             if (clearOfTokens) for (int i = 0; i < keepClearRects.Count; i++) if (keepClearRects[i].Overlaps(grown)) return false;
             for (int i = 0; i < placed.Count; i++) if (placed[i].Overlaps(grown)) return false;
             if (Cover(r, it.KitPanel) > MaxKitCover) return false;
-            if (clearOfNeighbours)
+            // Issue #599: in every pass the pill is nearer its own marker than any other visible marker, by more than
+            // MarginPx. Two sprawling kits' rectangles overlap and hold each other's markers, so a spot against one's
+            // edge can sit by the other's town.
+            float mine = Gap(r, it.TopPanel) + MarginPx + extra;
+            float need = 2f * Gap(r, it.KitPanel) + MarginPx + extra;   // owned by the town itself, never by the tokens on it
+            for (int i = 0; i < items.Count; i++)
             {
-                float need = 2f * Gap(r, it.KitPanel) + MarginPx + extra;   // owned by the town itself, never by the tokens on it
-                for (int i = 0; i < items.Count; i++)
-                {
-                    var other = items[i];
-                    if (other == it || !other.TopVisible) continue;
-                    if (Gap(r, other.TopPanel) <= need || (other.KitInFront && Cover(r, other.KitPanel) > MaxKitCover)) return false;
-                }
+                var other = items[i];
+                if (other == it || !other.TopVisible) continue;
+                float gap = Gap(r, other.TopPanel);
+                if (gap <= mine) return false;
+                if (clearOfNeighbours && (gap <= need || (other.KitInFront && Cover(r, other.KitPanel) > MaxKitCover))) return false;
             }
             placed.Add(r);
             it.Placed = r;
