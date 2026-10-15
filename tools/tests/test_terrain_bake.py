@@ -243,3 +243,78 @@ def test_constants_duplicated_in_csharp_and_hlsl_match_the_bake():
     cr = float(re.search(r"static const float ScCoastRangeM\s*=\s*([0-9.]+)", hlsl).group(1))
     assert tb.VERTICAL_EXAGGERATION == ve
     assert tb.COAST_RANGE_M == cr
+
+
+# Sea round 3 (#388): a wider beach on the dune coasts, baked into coast.png's land side (no shader change).
+
+def test_the_beach_widening_keeps_the_waterline_metric_and_takes_the_extra_out_beyond_the_full_sand():
+    d = np.linspace(0, 12000, 24001)
+    assert np.array_equal(tb.beach_widened(d, np.zeros_like(d)), d), "no extra: metres"
+    e = np.full_like(d, 1800.0)
+    w = tb.beach_widened(d, e)
+    a, b = tb.BEACH_KNEE_M
+    assert np.array_equal(w[d <= a], d[d <= a]), "the waterline, the land use's fade and the wet sand stay in metres"
+    assert np.allclose(w[d >= b + 1800], d[d >= b + 1800] - 1800), "beyond the full sand: the extra taken out, metric again"
+    assert (np.diff(w) > 0).all(), "monotone, so the shore's ramps keep their order"
+    assert np.abs(np.diff(w)).max() <= np.diff(d).max() + 1e-9, "continuous: no step"
+    assert tb.encode_coast(np.array([b]))[0] / 255 * 2 * tb.COAST_RANGE_M - tb.COAST_RANGE_M < 0.55 * 0.6 * 900, (
+        "the squeezed stretch, as 8-bit levels, reads as full sand at ScShore's narrowest width")
+    assert np.array_equal(tb.beach_widened(-d, e), -d), "the water side is untouched"
+
+
+def test_the_extra_width_is_south_of_jaffa_and_in_haifa_bay_only():
+    lon = np.array([34.72, 34.55, 34.42, 35.06, 35.05, 34.78, 34.89, 34.96, 35.08, 34.95, 35.60])
+    lat = np.array([31.95, 31.70, 31.50, 32.88, 32.84, 32.15, 32.50, 32.70, 33.00, 29.50, 32.80])
+    extra = tb.beach_extra_m(lon, lat)
+    assert np.allclose(extra[:5], tb.BEACH_EXTRA_M), "Rishon, Ashdod, Gaza's coast, Haifa Bay's dunes"
+    assert np.allclose(extra[5:], 0), "Herzliya, Netanya, the Carmel coast, north of Acre, Eilat, the Sea of Galilee"
+    ramp = tb.beach_extra_m(np.full(81, 34.75), np.linspace(32.00, 32.10, 81))
+    assert (np.diff(ramp) <= 0).all() and ramp[0] == tb.BEACH_EXTRA_M and ramp[-1] == 0, "a smooth ramp at Jaffa"
+    assert np.abs(np.diff(ramp)).max() < 0.06 * tb.BEACH_EXTRA_M
+
+
+def test_the_bake_widens_only_the_land_side_inside_a_band(tmp_path, monkeypatch):
+    n = 41
+    y, x = np.mgrid[0:n, 0:n]
+    elev = np.where(x < 15, 0.0, 5.0 + 0.5 * x).astype(np.float32)
+    meta = {**meta_for(n, n, 79.0, 211.0), "lon0": 34.55, "lon1": 34.59, "lat0": 31.80, "lat1": 31.88}   # off Ashdod
+    _, wide = tb.bake(elev, meta)
+    monkeypatch.setattr(tb, "BEACH_EXTRA_M", 0.0)
+    _, metric = tb.bake(elev, meta)
+    wet = metric < 128
+    assert wet[:, :10].all() and np.array_equal(wide[wet], metric[wet]), "the water texels are the metric encoding"
+    assert (wide[:, 25:] < metric[:, 25:]).all(), "the land beyond the full sand reads nearer the sea"
+    assert (wide <= metric).all()
+
+
+def lonlat(row: int, col: int) -> tuple[float, float]:
+    return 34.2 + (col + 0.5) / 2048 * 1.7, 33.35 - (row + 0.5) / 2048 * 3.9
+
+
+def land_m_inland(lat: float, km: float) -> float:
+    """coast.png's land-side metres (as ScShore decodes them) km east of the Mediterranean shore on lat's row."""
+    c = np.asarray(png(ROOT / "unity/Assets/Textures/Map/coast.png")).astype(np.float64) / 255
+    row, _ = texel(34.2, lat)
+    line = c[row, :texel(35.1, lat)[1]]
+    shore = int(np.argmax(line >= 0.5))
+    col = shore + round(km * 1000 / (161529.4 / 2048))
+    return (line[col] - 0.5) * 2 * tb.COAST_RANGE_M
+
+
+def test_the_committed_coast_draws_a_wide_beach_south_of_jaffa_and_a_narrow_one_under_the_kurkar():
+    # ScShore (StatecraftMap.hlsl): full sand to 0.55 W and none beyond W, W = ScBeachM (900 m) x 0.6..1.4.
+    assert land_m_inland(31.95, 2.0) < 0.55 * 0.6 * 900, "2 km inland south of Jaffa: full sand at any width"
+    assert land_m_inland(32.15, 2.0) > 1.4 * 900, "2 km inland at Herzliya: no sand at any width"
+
+
+def test_the_csharp_twin_of_the_beach_bands_matches_the_bake():
+    import re
+    cs = (ROOT / "unity/Assets/Scripts/Map/Kits/BeachBands.cs").read_text()
+    hlsl = (ROOT / "unity/Assets/Shaders/StatecraftMap.hlsl").read_text()
+    assert float(re.search(r"const float ExtraM = ([0-9.]+)f", cs).group(1)) == tb.BEACH_EXTRA_M
+    bands = [tuple(float(v) for v in m) for m in re.findall(
+        r"\(([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+)\)", cs.split("Bands =", 1)[1].split(";", 1)[0])]
+    assert bands == [tuple(b) for b in tb.BEACH_BANDS]
+    beach = float(re.search(r"static const float ScBeachM = ([0-9.]+);", hlsl).group(1))
+    full = float(re.search(r"const float FullSandM = ([0-9.]+)f", cs).group(1))
+    assert full == pytest.approx(0.55 * 1.4 * beach, abs=0.5), "ScShore's widest full sand"

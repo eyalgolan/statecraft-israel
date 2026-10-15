@@ -338,6 +338,48 @@ public class KitTests
         Assert.IsTrue(g.Water(lake.x, lake.z), "the Sea of Galilee is water");
     }
 
+    /// <summary>Sea round 3 (#388, owner 15 October 2026: "keep them off the sand"): no citrus or olive crown reaches the
+    /// beach's full sand. Read from coast.png itself (the file the terrain's ScShore draws the beach from, beach-scaled on the
+    /// dune coasts): ScShore paints full sand where the land-side distance is under 0.55 of a width that reaches 1.4 x
+    /// ScBeachM (693 m), and the distance field is 1-Lipschitz there, so a trunk at that distance plus its crown's radius
+    /// keeps the whole crown off it. One 8-bit level of coast.png (94 m) is the tolerance. ScShore draws sand only by
+    /// sea-level water (above -100 m), and coast.png also measures the distance to the rift lakes (the Sea of Galilee at
+    /// -210 m, the Dead Sea): a crown that reads near water is counted only when KitGround.SeaDistance, the sea-level test
+    /// the keep-out itself uses, finds the sea within that reach (plus the dune coasts' extra width, which coast.png takes
+    /// out of its land side), so a tree by a lake, where no sand is drawn, is not counted.</summary>
+    [Test]
+    public void NoGroveOrOliveCrownStandsOnTheBeach()
+    {
+        var map = OpenMap();
+        var coast = new Texture2D(2, 2);
+        try
+        {
+            Assert.IsTrue(coast.LoadImage(System.IO.File.ReadAllBytes(System.IO.Path.Combine(Application.dataPath, "Textures/Map/coast.png"))));
+            var g = Ground(map);
+            var trees = Vegetation.Plant(map.Settlements, g);
+            float LandM(float x, float z) => (coast.GetPixelBilinear(x / g.Width, z / g.Length).r - 0.5f) * 2f * 12000f;   // ScCoastRangeM
+            const float FullSandM = 0.55f * 1.4f * 900f, LevelM = 2f * 12000f / 255f;
+            var bad = new List<string>();
+            int citrus = 0, olives = 0, byLake = 0;
+            foreach (var (kind, m) in trees)
+            {
+                if (kind != TreeKind.Citrus && kind != TreeKind.CitrusPatch && kind != TreeKind.Olive) continue;
+                if (kind == TreeKind.Olive) olives++; else citrus++;
+                Vector3 p = m.GetColumn(3); float crown = Vegetation.CrownRadiusM(kind) * ((Vector3)m.GetColumn(0)).magnitude;
+                float d = LandM(p.x, p.z) - crown;
+                if (d >= FullSandM - LevelM) continue;
+                // The water coast.png sees, in metres: on the dune coasts its land side reads up to BeachBands.ExtraM short.
+                float reach = LandM(p.x, p.z) + BeachBands.ExtraM + 2f * LevelM;
+                if (g.SeaDistance(p.x, p.z, reach) == float.MaxValue) { byLake++; continue; }   // that water is a lake
+                bad.Add($"{kind} at ({p.x:0}, {p.z:0}): crown {d:0} m from the sea's edge in coast.png");
+            }
+            TestContext.WriteLine($"{citrus} citrus and {olives} olive instances; {bad.Count} crowns on the full sand; {byLake} near a rift lake only");
+            CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} crowns on the beach's full sand");
+            Assert.Greater(citrus, 500, "the groves keep their trees");
+        }
+        finally { Object.DestroyImmediate(coast); }
+    }
+
     /// <summary>#317: nothing stands in a lake's drawn water. Read from coast.png itself (the file the water shader samples,
     /// decoded here because the import is not CPU-readable): no tree trunk and no building's or landmark's lot centre in the
     /// rift (a lake hex, or ground below MapBuilder.LakeBelowM) lies where the drawn water covers the ground (coast below

@@ -279,6 +279,38 @@ public class SeaTests
         Assert.Greater(b.b / b.g, 0.62f, "sand, not the plain's yellow-green");
     }
 
+    /// <summary>Sea round 3 (#388, owner 15 October 2026: geographic, about 2.5-3 km, as promo 03 draws south of Jaffa): the
+    /// beach is wide on the dune coast and stays narrow under the kurkar. Rendered 2 km inland of the shore (25 texels east of
+    /// the first land texel, about 1.85 km across the coast), without the kits: at 31.95 N (south of Jaffa, by Rishon
+    /// LeZion) the sample is pale sand by ASandStripLinesTheMediterraneanShore's own floors (luma over 0.72, b/g over 0.62);
+    /// at 32.15 N (Herzliya) it is not, as on main, whose 900 m beach is gone by 1.26 km at its widest. That test's third
+    /// floor (0.32 over a plain 5 km inland) is not used: 5 km inland south of Jaffa is the pale dune belt's land use, not
+    /// Tel Aviv's darker plain.</summary>
+    [UnityTest]
+    public IEnumerator TheBeachIsWideOnTheDuneCoastAndNarrowUnderTheKurkar()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().ConfigureKits(null, null);   // the scene is not saved
+        var map = OpenMap(reopen: false);
+        yield return null;
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        Color At(float lat)
+        {
+            var (col, row) = ShoreTexel(lat);
+            Vector3 b = TexelWorld(map, col + 1 + 25, row);
+            rig.LookAt = b; rig.Distance = 30000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+            var px = new Vector2[1];
+            var r = RenderSample.Render(cam, 960, 540, new[] { b }, px);
+            return r.Mean((int)px[0].x, (int)px[0].y, 1);
+        }
+        bool Sand(Color b) => Luma(b) > 0.72f && b.b / b.g > 0.62f;
+        Color south = At(31.95f), north = At(32.15f);
+        TestContext.WriteLine($"2 km inland: 31.95 N {south} (luma {Luma(south):0.000}, b/g {south.b / south.g:0.00}); " +
+            $"32.15 N {north} (luma {Luma(north):0.000}, b/g {north.b / north.g:0.00})");
+        Assert.IsTrue(Sand(south), "the dune coast south of Jaffa: sand 2 km inland");
+        Assert.IsFalse(Sand(north), "the kurkar coast at Herzliya: no sand 2 km inland");
+    }
+
     /// <summary>The coast.png column of the first water texel west of (34.95 E, lat) and its row; row 0 = south.</summary>
     static (int col, int row) ShoreTexel(float lat)
     {
