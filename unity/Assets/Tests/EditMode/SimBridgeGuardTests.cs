@@ -41,6 +41,23 @@ public class SimBridgeGuardTests
         Assert.IsEmpty(missing, "add a sample here, then a branch in SimBridge.Validate and SimBridge.Key");
     }
 
+    /// <summary>The command types whose order is one per turn by design, so their key is their kind (SimBridge.Key's
+    /// default): one budget, one call-up level, one security order.</summary>
+    static readonly HashSet<Type> OnePerTurn = new HashSet<Type> { typeof(AllocateBudget), typeof(SetMobilization), typeof(SecurityOrder) };
+
+    /// <summary>Every other command type has its own branch in SimBridge.Key, so its orders are not one per turn by accident
+    /// (a new type with a Validate branch and no Key branch would silently keep only the last order of the turn).</summary>
+    [Test]
+    public void EveryCommandTypeHasAKeyBranchOrIsOnePerTurn()
+    {
+        foreach (var t in CommandTypes().Where(Samples.ContainsKey))
+        {
+            var key = SimBridge.Key(Samples[t]);
+            if (OnePerTurn.Contains(t)) Assert.AreEqual(Samples[t].Kind, key, t.Name);
+            else Assert.AreNotEqual(Samples[t].Kind, key, t.Name + " has no branch in SimBridge.Key: add one, or list it in OnePerTurn");
+        }
+    }
+
     [Test]
     public void NoCommandTypeFallsToTheDefaultBranch()
     {

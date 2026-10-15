@@ -78,6 +78,26 @@ public class SimBridgeGddTests
         Assert.AreEqual(1, withCohort.Queued.Count);
     }
 
+    /// <summary>The work key names the city: another city's order is its own, not a replacement. (QueuedLike checks keys
+    /// only, so a city the slice does not have is enough.) One per city is right while "job" is the only role; craftsmen
+    /// (Phase 3, D-D4) will need the role in the key.</summary>
+    [Test]
+    public void AnotherCitysWorkOrderIsItsOwn()
+    {
+        var b = Bridge(Slice);
+        Assert.IsNull(b.Queue(new AssignWorkers("tel_aviv", "job", 10)));
+        Assert.IsNull(b.QueuedLike(new AssignWorkers("jerusalem", "job", 1)), "another city is its own order");
+    }
+
+    /// <summary>The cancel key names the cohort: cancelling two cohorts in one turn keeps both orders.</summary>
+    [Test]
+    public void AnotherCohortsCancelIsItsOwn()
+    {
+        var (b, id) = WithACohort();
+        Assert.IsNull(b.Queue(new CancelTraining(id)));
+        Assert.IsNull(b.QueuedLike(new CancelTraining(id + 1)), "another cohort is its own order");
+    }
+
     [Test]
     public void TheLegacyLoopQueuesNoGddOrder()
     {

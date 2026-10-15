@@ -47,7 +47,9 @@ namespace Statecraft.Game.UI
             this.text = text ?? throw new ArgumentNullException(nameof(text));
         }
 
-        static string Key(Command c) => c switch
+        /// <summary>The order's slot in the queue: a later order with the same key replaces the earlier one. Internal for
+        /// SimBridgeGuardTests, which checks that every command type is listed here or is one per turn by design.</summary>
+        internal static string Key(Command c) => c switch
         {
             ChooseEventOption e => "event:" + e.EventId,
             SetPolicy p => "policy:" + p.Policy,
