@@ -2630,50 +2630,41 @@ the biggest gap to promo 03. Measured with its crops and poses: editor renders (
   every row: within noise, as expected for one more uniform in an unchanged pass.
 
 ## Issue #38: grade retune (land against promo 03, sea kept blue)
-- **What changed.** `MapGrade`: contrast 14 -> 18, saturation 0 -> -2, post exposure 0.15 -> 0.45, temperature 5 -> 3,
-  split-tone shadows teal (0.36, 0.52, 0.60) -> slate (0.45, 0.45, 0.53), highlights amber (0.96, 0.78, 0.55) -> pale
-  (0.89, 0.80, 0.88), balance -15 -> -31. Tint, the tonemapper and the vignette (0.26 / 0.45) are unchanged. The darker
-  shadow tone and the balance pull the low end down. Contrast 18 alone warms and saturates the land; the pale highlights
-  and the cooler white balance take most of that back (land warmth 0.229 with the first fit's colours, 0.196 now), but
-  not all of it: against main (0.191) the land is slightly warmer, and further from promo 03's 0.181.
-- **How it got here: three owner decisions.**
-  - The first fit (temperature 7, saturation -4, highlights (0.96, 0.78, 0.62), vignette 0.34 / 0.84) darkened
-    gameplay03's sea, which sits on the frame's left edge. The owner's rule on #519: wait for the sea PR (#536),
-    re-measure, and "if the sea is still dark, use main's vignette". After #536 the open sea read luma 0.254 and p5 0.172
-    against promo 03's 0.351 / 0.295 and main's 0.340 / 0.290. "Dark" was read as more than 0.02 below both the promo and
-    main on both (0.02 is the tolerance #519 gates the frame's p5 with), so the vignette went back to main's.
-  - With main's vignette the land and diorama02 read too warm (diorama02's whole-frame warmth 0.169, over #38's 0.145).
-    The owner chose "Re-fit the warmth": keep main's vignette and re-tune the highlights' colour and the split balance,
-    with temperature and tint in small steps if needed, without a post exposure change that darkens the open sea.
-  - No candidate inside those levers met both diorama02's 0.145 and #555's stripe test (table below). The owner then
-    ruled, on 2026-10-15: "Exposure 0.45, sea slightly darker". This grade is that candidate, as measured.
-- **The re-fit.** Every candidate was a WebGL build shot at both poses: the first four rows of the table below on main
-  `37fb6843`, the last two on `d2ba1334`, and this grade again on `d304661a` (no map change between them; main's own
-  numbers are the same on all three to 0.003). The balance was left at -31: moving it towards 0 brightened both the land
-  and the sea (-20: land luma 0.531, sea 0.368). Temperature and the highlights' red-to-blue are the warmth levers, and
-  only shift hue: the land's and the sea's luma and p5 did not move. Three EditMode tests bound them:
-  `TheGradeIsWarmLandTealShadowsAndAGentleVignette` wants the highlights' red over their blue ("amber") and a positive
-  temperature, and #555's `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` wants the Israeli border stripe nearer the owner's
-  deeper blue than main's lighter one (and under 10 deltaE76 from it). The stripe test is the binding one. On main the
-  stripe measures 0.6 deltaE76 from the owner's ruled blue (89, 119, 156), and 12.7 from main's lighter blue; every
-  candidate cooler than temperature 5 with saturation 0 to -3 failed it (temperature 3 at saturation -4 tied, 7.5 against
-  7.5, but fails the saturation floor). `TheGradeKeepsSaturationNearTheUngradedFrame`
-  (x0.98 floor) rules out saturation -4 with pale highlights. With this grade the stripe is 8.1 deltaE76 from the ruled
-  blue, against 0.6 on main: a visible shift, under the test's cap of 10, and passing because it is still nearer the
-  ruled blue than main's lighter blue (9.2). The stripe colour was itself an owner ruling (#555), so this is for the
-  owner to see.
+- **What changed.** `MapGrade`: contrast 14 -> 18, post exposure 0.15 -> 0.45, saturation 0 -> -7, temperature 5 -> 3,
+  tint 2 -> -2, split-tone shadows teal (0.36, 0.52, 0.60) -> near-neutral (0.43, 0.46, 0.49), highlights amber (0.96,
+  0.78, 0.55) -> near-neutral (0.84, 0.87, 0.835), balance -15 -> -31. The tonemapper and the vignette (0.26 / 0.45) are
+  unchanged. The look is crisper: more contrast, the low end pulled down by the balance and the mid-tones lifted by the
+  exposure, while saturation -7 takes back what contrast 18 adds, so the land keeps main's warmth and saturation.
+- **How it got here: four owner decisions on #519.**
+  1. The first fit (temperature 7, saturation -4, highlights (0.96, 0.78, 0.62), vignette 0.34 / 0.84) darkened
+     gameplay03's sea. The owner's rule: wait for the sea PR (#536), re-measure, and "if the sea is still dark, use main's
+     vignette". After #536 the open sea read luma 0.254 / p5 0.172 against promo 03's 0.351 / 0.295 and main's 0.340 /
+     0.290, more than 0.02 below both, so the vignette went back to main's.
+  2. With main's vignette diorama02's whole-frame warmth was 0.169, over #38's 0.145: the owner chose "Re-fit the warmth"
+     (the highlights' colour and the balance, temperature and tint in small steps, no exposure change that darkens the sea).
+  3. No such re-fit met both 0.145 and #555's border-stripe test at exposure 0.55; the owner ruled "Exposure 0.45, sea
+     slightly darker" (2026-10-15). That grade (temperature 3, saturation -2, pale rose highlights (0.89, 0.80, 0.88),
+     slate shadows (0.45, 0.45, 0.53), tint 2) met the numbers but read pink, turned the table around the diorama maroon,
+     and moved the Israeli border stripe 8.1 deltaE76 from the owner's ruled blue (0.6 on main).
+  4. After side-by-sides the owner chose "Less pink, then merge" (2026-10-15): keep the exposure and contrast, take the
+     rose out of the land and the table, and bring the stripe back to about 3 deltaE76 of the ruled blue or less.
+- **The less-pink re-fit.** Each candidate was checked by EditMode (`GradeTests`, and `ControlTests`'
+  `ThePrimaryStripeIsTheDeeperBlueOfTheRuling`, which logs the stripe's deltaE76 to the ruled blue (89, 119, 156)), then
+  built and shot in WebGL. The stripe was too blue (94, 119, 169 at the pink grade), and the slate shadows' blue was most
+  of it: near-neutral shadows took it to 3.8. Green-highest highlights and tint -2 took the rose out of the land; they
+  warm it, and saturation -7 (with temperature 3) brings diorama02's warmth back under 0.145. A rose index, (R - G) -
+  (G - B) of the land's mean colour, measures the cast: above 0 reads pink or rose, below 0 olive or yellow.
 
-  | candidate (temperature, saturation, highlights) | d02 warmth | g03 land warmth | stripe deltaE76 to the ruled / main's blue | tests |
+  | candidate (temperature, saturation, tint, shadows, highlights) | d02 warmth (bar 0.145) | stripe deltaE76 | land rose | tests |
   |---|---|---|---|---|
-  | main's vignette, first fit's colours (7, -4, 0.96/0.78/0.62) | 0.169 | 0.229 | 5.3 / 8.1 | pass |
-  | 3, -4, 0.84/0.80/0.88 | 0.140 | 0.192 | 7.5 / 7.5 | highlights not amber, saturation x0.967 |
-  | 0.5, 0, 0.89/0.80/0.86 | 0.142 | 0.198 | 9.1 / 7.5 | stripe |
-  | 3, 0, 0.89/0.80/0.885 | 0.148 | 0.203 | 8.6 / 7.5 | stripe |
-  | 5, -2, 0.89/0.80/0.88 | 0.149 | 0.204 | 7.4 / 7.5 | pass, 0.004 over the warmth bar |
-  | **3, -2, 0.89/0.80/0.88, post exposure 0.45 (this grade)** | **0.144** | **0.196** | **8.1 / 9.2** | **pass; the open sea drops to 0.333 / 0.280** |
+  | the pink grade (3, -2, 2, 0.45/0.45/0.53, 0.89/0.80/0.88) | 0.144 | 8.1 | +8 | pass |
+  | 3, -3, 0, 0.46/0.47/0.50, 0.88/0.85/0.82 | 0.157 | 3.8 | -1 | pass |
+  | 4, -3, -2, 0.45/0.46/0.49, 0.87/0.86/0.83 | 0.158 | 2.6 | -4 | pass |
+  | 3, -6, 0, 0.46/0.47/0.50, 0.85/0.87/0.84 | 0.149 | 2.9 | -3 | pass |
+  | 4, -7, -2, 0.45/0.46/0.49, 0.85/0.87/0.84 | 0.150 | 1.8 | -3 | pass |
+  | 3, -8, -1, 0.46/0.47/0.50, 0.86/0.86/0.85 | | 2.6 | | saturation x0.980 (floor) |
+  | **3, -7, -2, 0.43/0.46/0.49, 0.84/0.87/0.835 (this grade)** | **0.141** | **2.1** | **-5** | **pass** |
 
-  At post exposure 0.55 no candidate met both diorama02's 0.145 and the stripe test. Post exposure 0.45 meets both, and
-  the open sea stays within 0.02 of promo 03's and main's luma and p5.
 - **What is measured.** The targets are region-based (maintainer's decision on #38): the land against promo 03's land,
   the sea held, #388's sea floors, and diorama02's whole-frame warmth in [0.087, 0.145]. Shots: WebGL `?shot`, 1920x1080
   (`tools/art_checkpoint.sh`'s `web_check.py --query "golden&shot" --shots`). Crops, measured with
@@ -2681,64 +2672,58 @@ the biggest gap to promo 03. Measured with its crops and poses: editor renders (
   sea `(0.02, 0.15, 0.28, 0.45)` (promo `(0.05, 0.12, 0.25, 0.30)`, the 2026-10-13 audit's; promo 03's wider sea crop
   takes in its dark UI buttons), frame `(0, 0.09, 0.83, 0.83)` (promo `(0, 0.07, 0.83, 0.80)`), diorama02 board
   `(0.31, 0.12, 0.71, 0.97)` (promo 02 `(0.02, 0.13, 1, 1)`), diorama02 open sea `(0.29, 0.12, 0.37, 0.26)` (promo 02
-  `(0.05, 0.15, 0.30, 0.55)`). The whole-frame warmth is `tools/art_compare.py`'s. #388's detail and spread are #536's
-  measures (detail is std(luma - 4 px blur) at 480 px wide; spread is luma p10-p90). Since the map frame (#36),
-  diorama02 shows the walnut board and the table. On main they are a dark olive-brown and pull the whole-frame warmth
-  down: the board alone reads 0.228 against promo 02's 0.152, while the whole frame reads 0.132. This grade turns the table
-  a redder brown (mean R - B 0.039 -> 0.109 beside the board, crop `(0.01, 0.3, 0.12, 0.7)`), and that is what raises the
-  whole-frame warmth (0.132 -> 0.144) while the board alone falls (0.228 -> 0.205).
+  `(0.05, 0.15, 0.30, 0.55)`), diorama02 Negev `(0.35, 0.75, 0.55, 0.95)`, diorama02 table `(0.01, 0.3, 0.12, 0.7)`. The
+  whole-frame warmth and palette distance are `tools/art_compare.py`'s; #388's detail and spread are #536's measures.
+  Main and this grade were both measured on main `732ceab8`.
 
-  | | promo | main | first fit | main's vignette | this grade |
-  |---|---|---|---|---|---|
-  | g03 land luma / p5 / contrast | 0.425 / 0.145 / 0.187 | 0.485 / 0.197 / 0.167 | 0.465 / 0.169 / 0.188 | 0.516 / 0.205 / 0.185 | 0.501 / 0.194 / 0.184 |
-  | g03 land saturation / warmth | 0.363 / 0.181 | 0.351 / 0.191 | 0.383 / 0.201 | 0.382 / 0.229 | 0.347 / 0.196 |
-  | g03 open sea luma / p5 / warmth | 0.351 / 0.295 / -0.248 | 0.340 / 0.290 / -0.228 | 0.254 / 0.172 / -0.192 | 0.348 / 0.292 / -0.210 | 0.333 / 0.280 / -0.226 |
-  | g03 frame p5 / contrast / warmth | 0.148 / 0.184 / 0.064 | 0.245 / 0.155 / 0.030 | 0.167 / 0.189 / 0.051 | 0.250 / 0.173 / 0.060 | 0.240 / 0.173 / 0.031 |
-  | #388 detail / spread (crop; focus band) | 0.060 / 0.201; 0.075 / 0.316 | 0.029 / 0.096; 0.037 / 0.104 | 0.028 / 0.154; 0.038 / 0.153 | 0.032 / 0.110; 0.041 / 0.119 | 0.031 / 0.108; 0.041 / 0.117 |
-  | whole-frame warmth g03 / d02 | 0.064 / 0.145 | 0.056 / 0.132 | 0.064 / 0.139 | 0.085 / 0.169 | 0.060 / 0.144 |
-  | d02 board luma / warmth | 0.556 / 0.152 | 0.590 / 0.228 | | 0.634 / 0.249 | 0.618 / 0.205 |
-  | d02 open sea luma / p5 | 0.437 / 0.371 | 0.410 / 0.399 | 0.343 / 0.302 | 0.431 / 0.418 | 0.414 / 0.401 |
+  | | promo | main | this grade |
+  |---|---|---|---|
+  | g03 land luma / p5 / contrast | 0.425 / 0.145 / 0.187 | 0.481 / 0.181 / 0.170 | 0.501 / 0.179 / 0.187 |
+  | g03 land saturation / warmth | 0.363 / 0.181 | 0.370 / 0.201 | 0.373 / 0.202 |
+  | g03 land mean colour, rose index | (130, 104, 84), +6 | (141, 121, 90), -11 | (148, 125, 97), -5 |
+  | d02 Negev mean colour, rose index | (190, 156, 128), +6 | (204, 169, 106), -28 | (212, 180, 126), -22 |
+  | d02 table mean colour, rose index | | (50, 47, 41), -3 | (58, 44, 31), +1 |
+  | g03 open sea luma / p5 / warmth | 0.351 / 0.295 / -0.248 | 0.335 / 0.285 / -0.219 | 0.331 / 0.276 / -0.199 |
+  | g03 frame p5 / contrast / warmth | 0.148 / 0.184 / 0.064 | 0.235 / 0.157 / 0.040 | 0.230 / 0.176 / 0.046 |
+  | #388 detail / spread (crop; focus band) | 0.060 / 0.201; 0.075 / 0.316 | 0.036 / 0.102; 0.037 / 0.104 | 0.038 / 0.113; 0.041 / 0.119 |
+  | whole-frame warmth g03 / d02 | 0.064 / 0.145 | 0.060 / 0.131 | 0.066 / 0.141 |
+  | palette distance g03 / d02 (#388 bars 0.44 / 0.56) | | 0.36 / 0.58 | 0.35 / 0.57 |
+  | d02 board luma / warmth | 0.556 / 0.152 | 0.590 / 0.230 | 0.623 / 0.204 |
+  | d02 open sea luma / p5 | 0.437 / 0.371 | 0.410 / 0.399 | 0.418 / 0.403 |
+  | border stripe deltaE76 to the ruled blue | | 0.6 | 2.1 |
 
-  The first fit's column was measured on main `2889cb5f`, main's vignette on `37fb6843`, main and this grade on
-  `d304661a`; main's own numbers are the same on all three to 0.003. #388's floors (detail 0.025 and 0.033, spread 0.09)
-  and palette-distance bars (gameplay03 0.30, diorama02 0.53, against 0.44 and 0.56) hold.
-- **What is left.** The land is still brighter than the promo's (luma 0.501 against 0.425; main 0.485), and its p5 is
-  0.049 high. Its warmth is 0.196 against the promo's 0.181, slightly further from it than main's 0.191, and its
-  saturation 0.347 against 0.363 (main 0.351). The whole land reads rosier than main's, not only the sunlit slopes
-  (gameplay03 land mean (144, 121, 90) -> (156, 122, 100); the Negev in diorama02 (204, 169, 106) -> (216, 176, 128)),
-  where promo 03's land is olive-brown. The border stripe is 8.1 deltaE76 from the owner's ruled blue (0.6 on main). The open sea is 0.018 under promo 03's luma
-  (0.333 against 0.351) and 0.015 under its p5, by the owner's decision. The frame's warmth at gameplay03 (0.031) is under
-  #519's first target (0.05-0.07): the sea, as blue as main's, takes it down. Met: diorama02's whole-frame warmth (0.144),
-  the land's contrast (0.184 against 0.187; main 0.167), #388's floors, and its palette-distance bars (0.30 and 0.53;
-  main 0.37 and 0.59).
+- **What is left.** The land is brighter than the promo's (luma 0.501 against 0.425; main 0.481); its warmth and
+  saturation stay at main's (0.202 / 0.373 against main's 0.201 / 0.370 and the promo's 0.181 / 0.363). Its hue sits
+  between main's yellow and the promo's slight rose (rose index -5; main -11, promo +6). The table around the diorama is
+  a little warmer brown than main's. The open sea is 0.020 under promo 03's luma and 0.019 under its p5 (main's own sea is
+  0.016 / 0.010 under). diorama02's palette distance (0.57) is over #388's 0.56, as main's (0.58) already is. Met:
+  diorama02's whole-frame warmth (0.141), the land's contrast (0.187 against the promo's 0.187; main 0.170), #388's detail
+  and spread floors, and the stripe within 3 deltaE76 of the ruled blue.
 - **Why one global grade cannot do it all.** Contrast works per channel in log space, so it raises every colour's
-  saturation; taking the land to the promo's saturation needed Saturation about -25, which turns the sea grey-navy (a
-  -25 trial, on dc4b272: sea warmth -0.12, `TheOpenSeaStaysBlueUnderTheHaze` b - r 0.149 against its 0.15,
-  `BandsStayOffTheWater` 89k sea pixels against its 100k). Warm split-tone shadows (#391) push the sea warm in the same way.
-- **How the first fit was made.** An offline model of URP 17's LDR grading (`LutBuilderLdr` + `ApplyColorGrading`: white
-  balance in LMS, LogC contrast, split toning in gamma space, saturation, the 32^3 8-bit LUT and the Neutral tonemapper),
-  fed with WebGL shots taken with ColorAdjustments, WhiteBalance and SplitToning switched off, and a constrained search
-  over its parameters. The vignette, the warmth and the exposure were then changed under the owner's decisions above,
-  measured in WebGL.
-- **Tests.** No test or threshold changed. EditMode 929 of 931 on main `d304661a` with this grade (2 explicit tests not
-  run), 0 `warning CS`; filtered (Grade, Sea, SeaCraft, Border, BorderEdge, Map, MapEdge, MapLabel, BiomeColourBake,
-  TerrainShader, Control, Settlement, Kit) 214 of 214. The grade's own tests: saturation 0.399 -> 0.398 (x0.998), clipped
-  0.00% (Negev and gameplay03), vignette corner/centre 0.757 -> 0.578, selection deltaE 33.3 graded at gameplay03 (28.9
-  ungraded) and 39.1 at diorama02 (33.4), colour-blind sea-land 49.6 / 41.6, selection-land 31.1 / 32.3, selection-sea
-  61.3 / 56.8 (deuteranopia / protanopia). The sea tests: `TheOpenSeaStaysBlueUnderTheHaze` b - r 0.236,
-  `BandsStayOffTheWater` 635,438 sea pixels (100k bar), `TheBreakersAreFilteredToThePixel` p99 0.0131 (0.014 bar),
-  `TheBakesCarveTheRelief` 0.1009 -> 0.1123 (x1.113, 1.08 bar). `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` 8.1 against
-  main's blue's 9.2.
+  saturation; taking the land well under main's saturation needs a large negative Saturation, which turns the sea grey-navy
+  (a -25 trial, on dc4b272: sea warmth -0.12, `TheOpenSeaStaysBlueUnderTheHaze` b - r 0.149 against its 0.15). Warm
+  split-tone shadows (#391) push the sea warm in the same way.
+- **Tests.** No test or threshold changed (a stale saturation note in `GradeTests` was updated). EditMode 1157 of 1159
+  on main `732ceab8` with this grade (2 explicit tests not run), 0 `warning CS`; the filtered Grade, Sea, SeaCraft,
+  Border, BorderEdge, Map, MapEdge, MapLabel, BiomeColourBake, TerrainShader, Control, Settlement and Kit suites 222 of
+  222 on main `988279c3`. The grade's own tests: saturation 0.411 -> 0.411 (x0.999), clipped 0.00% (Negev and
+  gameplay03), vignette corner/centre 0.754 -> 0.576, selection deltaE 32.6 graded at gameplay03 (28.9 ungraded) and 38.6
+  at diorama02 (33.4), colour-blind sea-land 47.1 / 40.1, selection-land 31.2 / 32.3, selection-sea 59.1 / 54.8
+  (deuteranopia / protanopia). The sea tests: `TheOpenSeaStaysBlueUnderTheHaze` b - r 0.216, `BandsStayOffTheWater`
+  633,139 sea pixels (100k bar), `TheBreakersAreFilteredToThePixel` p99 0.0129 (0.014 bar), `TheBakesCarveTheRelief`
+  0.1021 -> 0.1134 (x1.111, 1.08 bar). `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` 2.1 deltaE76 from the ruled blue,
+  against 10.6 for main's lighter blue. Thin margins: the highlights' red is over their blue by 0.005 (the warm-highlights
+  check), diorama02's warmth is 0.004 under its bar, and the open sea sits at the coordinator's hold (luma 0.33, p5 0.27).
 - **Frame time** (headed WebGL `?vprofile` through `tools/headed.py profile`, 1920x1080, DPR 1, frame rate uncapped,
-  under `machine_lock.py --exclusive --wait-unity`; main `d304661a` and this grade interleaved main, grade, grade, main;
-  medians of the average): gameplay03 `all` 8.47 / 8.45 ms against main's 8.85 / 8.34, diorama02 16.50 / 16.58 against
-  17.21 / 16.14; p95 10 and 18 ms (main 10-11 and 17-20). The grade's own cost (`all` minus `-grade`) is +0.04 / 0.00 ms
-  at gameplay03 and +0.12 / 0.00 at diorama02, against main's +0.16 / +0.01 and +0.91 / +0.09 (main's first round ran
-  under a noisier machine): noise. Only the LUT's inputs change; the passes and shader variants are the same.
+  under `machine_lock.py --exclusive --wait-unity`; main `732ceab8` and this grade interleaved main, grade, grade, main;
+  medians of the average): gameplay03 `all` 8.51 / 8.72 ms against main's 9.26 / 8.44, diorama02 16.27 / 17.16 against
+  19.73 / 16.55; p95 10-11 and 17-18 ms (main 10-11 and 17-22). The grade's own cost (`all` minus `-grade`) is -0.12 /
+  -0.24 ms at gameplay03 and -0.27 / 0.00 at diorama02, against main's +0.22 / +0.05 and +2.71 / +0.10 (main's first
+  round ran on a busy machine): noise. Only the LUT's inputs change; the passes and shader variants are the same.
 - **Labels** (the label pills are UI, drawn after the grade, over the same 7 gameplay03 and 11 diorama02 label boxes as
-  main's shot). Text against the pill's fill (WCAG): gameplay03 at least 5.4 (main 5.7), median 8.7 (9.0); diorama02 at
-  least 6.3 (6.7), median 7.8 (8.2). Fill against the ground around it: gameplay03 at least 2.04 (2.01), diorama02 at least
-  2.34 (2.33).
+  main's shot). Text against the pill's fill (WCAG): gameplay03 at least 5.5 (main 5.7), median 8.6 (9.0); diorama02 at
+  least 6.3 (6.7), median 7.8 (8.2). Fill against the ground around it: gameplay03 at least 2.07 (2.01), diorama02 at
+  least 2.34 (2.33).
 
 ## HUD round 1: the info panel and the gilt trim (#398, #397)
 
