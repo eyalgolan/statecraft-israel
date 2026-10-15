@@ -2653,7 +2653,7 @@ wide in a 1920 frame. Main drew white boxes of two to seven storeys, about 25-30
   - They were 50 buildings and 22.5% / 25% cover, with a `MainBuildings` row of 36.
   - Every other town's floor is unchanged.
 - The ruling said about 30 buildings. At 1.6 times main's width the lattice holds 27; the sweep's 29-32-building
-  variants kept median widths of only 15.8-17 m.
+  variants kept median widths of only 15.8-17 m. The owner then chose "27 wide blocks (Recommended)" (#652, 2026-10-15).
 - **Neighbours:**
   - Jaffa draws 39 buildings (main 38), with cover 39.0% (main 39.0%).
   - Petah Tikva draws 9 (main 9), with cover 20.7% (main 20.3%).

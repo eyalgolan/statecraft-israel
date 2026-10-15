@@ -278,7 +278,8 @@ public class TownCensusTests
     /// <summary>Tel Aviv's building floor here and in MainBuildings, and its cover floors in Floors (was 50 / 22.5% / 25%
     /// and MainBuildings 36): owner ruling on #652, 2026-10-15, "Lower floor to ~30, wider blocks". Its blocks are about
     /// 1.6-2 times main's width, with open plots for palms (visual gap S2). It draws 27 / 27.2% / 23.7%; the floors sit about
-    /// 10% under. Every other town's floor is unchanged.</summary>
+    /// 10% under. The owner then chose 27 wide blocks over narrower ones to reach 30 (ruling on #652, 2026-10-15: "27 wide
+    /// blocks (Recommended)"). Every other town's floor is unchanged.</summary>
     internal const int TelAvivFloor = 24;
 
     /// <summary>#318 (owner ruling 2026-10-12): Tel Aviv's 1948 localities keep their hearts (#291, review M8). Every locality
