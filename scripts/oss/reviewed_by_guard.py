@@ -9,14 +9,18 @@ request's range this fails when:
    file (owner, 15 October 2026, #375: "Yes, humans only");
 2. a commit that an AI agent co-wrote changes any line, the id included, of a row that carries a person's whole sign-off
    in that commit's parent (so on the base, or signed earlier in the same pull request) (owner, 15 October 2026, on #629: "Block it in CI"), unless a later commit of the same pull
-   request with no AI trailer signs that row again or removes its sign-off;
+   request with no AI trailer changes that row's own reviewed_by / reviewed_on lines (signs it again or removes its
+   sign-off; a merge commit releases nothing);
 3. a person's added `reviewed_on` is after the day of their own commit.
 
 "Co-wrote" is the trailer test of tools/review_queue.py (AI_MARK: "Co-Authored-By: Claude / Codex / Copilot / GPT ...",
 "Generated with [Claude Code]" or "Generated with Codex"), read from each commit's full message. For (1) any non-comment
 line that names either key counts, quoted or not, block or flow style. A row's span is its mapping's lines
-(tools/review_queue.py, signed_rows); a line inserted right after a block row at its keys' indent or deeper belongs to it;
-a comment inside a signed row counts as part of it. A commit is diffed against its parent with renames followed; a merge
+(tools/review_queue.py, signed_rows), plus the spans of nodes it reaches through an alias or a merge key; a block inserted
+right after a block row belongs to it when its first line that is neither blank nor a comment is at the row's keys'
+indent or deeper; a comment inside a signed row counts as part of it. Known limit: a row stored under a mapping key (not
+in a list) has its id on the key line, outside its span, so renaming that key passes; no content file has such a status
+row today. A commit is diffed against its parent with renames followed; a merge
 commit by its combined diff (--cc), so lines it takes unchanged from one parent (a person's sign-off merged in from main)
 are not its own.
 
@@ -99,15 +103,20 @@ def _named(text: str) -> bool:
 
 
 def _touches(row, start: int, count: int, inserted: list[str]) -> bool:
-    """True when a change at old lines [start, start+count) (count 0: an insertion after line start) is inside the row."""
-    if count > 0:
-        return start <= row.last and start + count - 1 >= row.first
-    if row.first <= start < row.last:
-        return True
-    if start == row.last and not row.flow and inserted:
-        first = inserted[0]
-        indent = len(first) - len(first.lstrip(" "))
-        return first.strip() != "" and not first.lstrip().startswith("#") and indent >= row.key_column and not first.lstrip().startswith("- ")
+    """True when a change at old lines [start, start+count) (count 0: an insertion after line start) is inside the row, or
+    inside a node the row reaches through an alias or a merge key."""
+    for first, last in [(row.first, row.last), *row.extra]:
+        if count > 0 and start <= last and start + count - 1 >= first:
+            return True
+        if count == 0 and first <= start < last:
+            return True
+    if count == 0 and start == row.last and not row.flow:
+        # A line inserted right after the row belongs to it when the first line that says anything (not blank, not a
+        # comment) is indented as the row's keys or deeper and does not start a new item.
+        text = next((t for t in inserted if t.strip() and not t.lstrip().startswith("#")), None)
+        if text is not None:
+            indent = len(text) - len(text.lstrip(" "))
+            return indent >= row.key_column and not text.lstrip().startswith("- ")
     return False
 
 
@@ -221,19 +230,28 @@ def check(repo: Path, base: str, head: str) -> list[str]:
                             continue
                         if signed_on > day:
                             problems.append(f"{sha[:10]}: {ch.path}: reviewed_on {m.group(1)} is after the commit's own day, {day}")
-            if named:
-                touched_rows = set()
-                rows_after = _signed(repo, sha, ch.path, must_exist=False)
+            if named and len(parents) <= 1:
+                # Release only the rows whose own lines gain or lose a sign-off line in this commit: a person re-signing (or
+                # unsigning) row b does not release row a, even in the same hunk. A merge never releases (fail closed).
+                added, removed = set(), set()
                 for hk in ch.hunks:
-                    for row in rows_after:
-                        if _touches(row, hk.new[0], hk.new[1], []) or hk.new[1] == 0 and row.first <= hk.new[0] <= row.last:
-                            touched_rows.add(row.label)
-                    for p, (parent, old) in enumerate(zip(parents or [EMPTY_TREE], ch.old_paths)):
-                        if old and parent != EMPTY_TREE and p < len(hk.old):
-                            for row in _signed(repo, parent, old, must_exist=len(parents) == 1):
-                                if _touches(row, hk.old[p][0], hk.old[p][1], []):
-                                    touched_rows.add(row.label)
-                for label in touched_rows:
+                    old_no, new_no = hk.old[0][0] if hk.old else 0, hk.new[0]
+                    for cols, text in hk.lines:
+                        if "-" in cols:
+                            if _named(text):
+                                removed.add(old_no)
+                            old_no += 1
+                        elif "+" in cols:
+                            if _named(text):
+                                added.add(new_no)
+                            new_no += 1
+                released = {row.label for row in _signed(repo, sha, ch.path, must_exist=False)
+                            if any(row.first <= n <= row.last for n in added)}
+                old = ch.old_paths[0] if ch.old_paths else ""
+                if old and parents:
+                    released |= {row.label for row in _signed(repo, parents[0], old, must_exist=True)
+                                 if any(row.first <= n <= row.last for n in removed)}
+                for label in released:
                     edited.pop((ch.path, label), None)
     for (path, label), sha in edited.items():
         problems.append(f"{sha[:10]}: a commit with an AI co-author trailer edits {path} row {label!r}, which a person signed "

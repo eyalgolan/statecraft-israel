@@ -158,6 +158,9 @@ class SignedRow:
     last: int
     key_column: int   # 0-based column of its keys (a line inserted at this indent or deeper, right after it, belongs to it)
     flow: bool        # a one-line { ... } row: nothing inserted after it belongs to it
+    # 1-based inclusive spans of nodes the row pulls in from elsewhere through an alias or a merge key (`*a`, `<<: *d`):
+    # editing the anchor changes the row as surely as editing the row (people.yaml shares source anchors across rows).
+    extra: list = field(default_factory=list)
 
 
 def signed_rows(text: str) -> list[SignedRow]:
@@ -167,14 +170,31 @@ def signed_rows(text: str) -> list[SignedRow]:
     if root is None:
         return []
     lines = text.splitlines()
+
+    def last_line(n) -> int:
+        end = n.end_mark
+        before = lines[end.line][:end.column] if end.line < len(lines) else ""
+        return (end.line - 1 if before.strip() == "" else end.line) + 1
+
     out = []
     for label, keys, node in _mappings(root):
         if "reviewed_by" not in keys or not review_record.signed({k: _value(keys[k]) for k in review_record.FIELDS if k in keys}):
             continue
-        end = node.end_mark
-        before = lines[end.line][:end.column] if end.line < len(lines) else ""
-        last0 = end.line - 1 if before.strip() == "" else end.line
-        out.append(SignedRow(label, node.start_mark.line + 1, last0 + 1, node.start_mark.column, bool(node.flow_style)))
+        first, last = node.start_mark.line + 1, last_line(node)
+        extra, seen, todo = [], set(), [node]
+        while todo:   # every node the row reaches; one whose text lies outside the row came in through an alias
+            n = todo.pop()
+            if id(n) in seen:
+                continue
+            seen.add(id(n))
+            a, b = n.start_mark.line + 1, last_line(n)
+            if a < first or a > last:
+                extra.append((a, max(a, b)))
+            if isinstance(n, yaml.MappingNode):
+                todo.extend(v for kv in n.value for v in kv)
+            elif isinstance(n, yaml.SequenceNode):
+                todo.extend(n.value)
+        out.append(SignedRow(label, first, last, node.start_mark.column, bool(node.flow_style), sorted(set(extra))))
     return out
 
 

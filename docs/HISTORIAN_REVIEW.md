@@ -82,7 +82,10 @@ whole sign-off leaves the review queue (`tools/review_queue.py`, `docs/review-qu
 the reviewer read, so the same guard also fails a pull request in which a commit with an AI co-author trailer changes any
 line of a row that carries a whole sign-off, any field, the `id` included, or adds a key inside it. It stays failed until
 a person, in a later commit of their own in the same pull request, reads the row again and signs it again (a new
-`reviewed_by` / `reviewed_on`) or removes its sign-off. An agent that needs to change a signed row proposes the change
+`reviewed_by` / `reviewed_on`) or removes its sign-off. Only the row whose own sign-off lines that commit changes is
+released, and a merge commit releases nothing. Any change to the row's `reviewed_by` or `reviewed_on` line counts, even
+a comment added to it, so change those lines only after reading the row again. A row also covers what it pulls in from
+elsewhere through a YAML alias or merge key (`*gov1_k`, `<<: *d`): an agent editing the anchor edits the row. An agent that needs to change a signed row proposes the change
 in words, and a person makes it. Merging `main` into a branch does not count as an edit: the guard reads a merge commit's
 combined diff, so lines it takes unchanged from `main` are not its own.
 

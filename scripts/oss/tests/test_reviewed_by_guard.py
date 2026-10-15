@@ -234,3 +234,53 @@ def test_merging_main_where_a_person_edited_and_signed_a_row_is_not_a_false_fail
     signed = TWO.replace("name: A", "name: A (corrected)")
     root, main_tip = branch_with_main_signed(tmp_path, signed)
     assert guard.check(root, main_tip, "HEAD") == []
+
+
+# ---- scoped re-review of #629: three ways round the signed-row rule ---------------------------------------------------
+
+def test_a_key_inserted_after_a_comment_or_a_blank_line_is_still_inside_the_row(tmp_path):
+    for i, lead in enumerate(["    # note\n", "\n", "    # one\n\n"]):
+        root, base = repo(tmp_path / str(i), TWO)
+        edit(root, TWO.replace("    reviewed_on: 2026-10-15\n", "    reviewed_on: 2026-10-15\n" + lead + "    born: 1900\n"))
+        commit(root, "content: add born to A" + AI)
+        assert len(guard.check(root, base, "HEAD")) == 1, repr(lead)
+    root, base = repo(tmp_path / "eof", SIGNED)
+    edit(root, SIGNED + "    # note\n    born: 1900\n")
+    commit(root, "content: add born to A at the end" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+
+
+def test_a_comment_or_blank_line_alone_after_a_signed_row_passes(tmp_path):
+    root, base = repo(tmp_path, TWO)
+    edit(root, TWO.replace("    reviewed_on: 2026-10-15\n", "    reviewed_on: 2026-10-15\n\n    # a note between rows\n"))
+    commit(root, "content: a note" + AI)
+    assert guard.check(root, base, "HEAD") == []
+
+
+def test_a_person_re_signing_another_row_does_not_release_the_edited_one(tmp_path):
+    both = SIGNED + "  - id: b\n    name: B\n    status: fact-checked\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n"
+    root, base = repo(tmp_path, both)
+    edit(root, both.replace("name: A", "name: A2"))
+    commit(root, "content: edit A" + AI)
+    edit(root, both.replace("name: A", "name: A3").replace("    name: B\n    status: fact-checked\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n",
+                                                          "    name: B\n    status: fact-checked\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-16\n"))
+    commit(root, "content: fix A's typo, re-sign B", date="2026-10-16T12:00:00+00:00")
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "'a'" in problems[0]
+
+
+def test_an_anchor_a_signed_row_uses_is_part_of_it(tmp_path):
+    text = ("people:\n  - id: x\n    name: X\n    sources: [&src { url: 'https://example.org/1', checked: 2026-10-14 }]\n"
+            "    status: draft\n"
+            "  - id: a\n    name: A\n    sources: [*src]\n    status: fact-checked\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n")
+    root, base = repo(tmp_path, text)
+    edit(root, text.replace("https://example.org/1", "https://example.org/2"))
+    commit(root, "content: change X's source" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "'a'" in problems[0]
+    merge = ("defaults: &d\n  status: fact-checked\n  note: n\n"
+             "people:\n  - id: a\n    <<: *d\n    name: A\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n")
+    root2, base2 = repo(tmp_path / "merge", merge)
+    edit(root2, merge.replace("note: n", "note: m"))
+    commit(root2, "content: change the defaults" + AI)
+    assert len(guard.check(root2, base2, "HEAD")) == 1
