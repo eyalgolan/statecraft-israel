@@ -162,6 +162,8 @@ export interface Person {
   id: string; name: string; name_he: string; born: string; died?: string; party?: Named;
   status: string; competence: number; loyalty: number; terms: Term[]; group: 'government' | 'state' | 'deputy';
   portrait?: Portrait; bioSources: Source[];
+  /** The game has a portrait, but its licence row is not verified yet (owner-verify, D-P): the site holds it back. */
+  portraitHeld: boolean;
 }
 const GAME_START = '1948-05-14';
 const GAME_END = '1952-01-01';
@@ -238,10 +240,12 @@ export function cabinet(): Person[] {
     const group = ids.some((i) => i === 'prime_minister' || (i.endsWith('_minister') && !i.startsWith('deputy_')))
       ? 'government' : ids.some((i) => i.startsWith('deputy_')) ? 'deputy' : 'state';
     let portrait: Portrait | undefined;
+    let portraitHeld = false;
     if (p.portrait) {
       const file = `${PORTRAIT_DIR}${p.id}.jpg`;
       const row = credits.get(file);
       if (!row) throw new Error(`site: portrait ${file} has no row in ASSETS.portraits.yaml`);
+      portraitHeld = row.status !== 'verified';
       if (row.status === 'verified') {
         const open = /^CC-BY/.test(row.licence);
         const n = notice.get(p.id);
@@ -259,7 +263,7 @@ export function cabinet(): Person[] {
     list.push({
       id: p.id, name: p.name, name_he: p.name_he, born: toIso(p.born), died: p.died ? toIso(p.died) : undefined,
       party: party(p.party || undefined), status: p.status, competence: p.competence, loyalty: p.loyalty,
-      terms: terms.map(({ partyId: _x, ...t }) => t), group, bioSources, portrait,
+      terms: terms.map(({ partyId: _x, ...t }) => t), group, bioSources, portrait, portraitHeld,
     });
   }
   const rank = (x: Person) => Math.min(...x.terms.map((t) => officeOrder.get(t.office)!));

@@ -238,6 +238,30 @@ for (const lang of ['en', 'he']) {
     for (const id of hidden) if (new RegExp(`/_astro/${id}\\.[A-Za-z0-9_-]+\\.(?:avif|webp|jpe?g|png)`).test(html)) fail(f, `publishes the unverified portrait ${id}.jpg (ASSETS.portraits.yaml status is not verified)`);
   }
   for (const lang of ['en', 'he']) if (!fs.existsSync(path.join(dist, lang, 'cabinet', 'index.html'))) problems.push(`${lang}/cabinet/index.html: missing`);
+  // The two plates: a person whose game portrait is held back (its ASSETS.portraits.yaml row is not verified) gets
+  // "Portrait awaiting a licence check"; a person with no portrait at all keeps "No public-domain portrait yet".
+  {
+    const peopleDoc = YAML.parse(fs.readFileSync(path.resolve(dist, '..', '..', 'content', 'people.yaml'), 'utf8')).people;
+    const withPortrait = new Set(peopleDoc.filter((x) => x.portrait).map((x) => x.id));
+    const held = new Set(hidden);
+    const texts = { en: { held: 'Portrait awaiting a licence check', none: 'No public-domain portrait yet' }, he: { held: 'הצילום ממתין לבדיקת רישיון', none: 'אין עדיין צילום בנחלת הכלל' } };
+    let seen = { held: 0, none: 0 };
+    for (const lang of ['en', 'he']) {
+      const page = path.join(dist, lang, 'cabinet', 'index.html');
+      if (!fs.existsSync(page)) continue;
+      const html = fs.readFileSync(page, 'utf8');
+      for (const m of html.matchAll(/<article class="minister"[^>]*\sid="([a-z_]+)"[\s\S]*?<\/article>/g)) {
+        const [card, id] = m;
+        const plate = card.match(/data-plate="(\w+)"/)?.[1];
+        const want = held.has(id) ? 'held' : withPortrait.has(id) ? null : 'none';
+        if (plate !== (want ?? undefined)) { fail(page, `${id}: plate ${plate ?? 'none shown'}, expected ${want ?? 'the portrait'}`); continue; }
+        if (want && !card.includes(texts[lang][want])) fail(page, `${id}: the ${want} plate does not say "${texts[lang][want]}"`);
+        if (want) seen[want]++;
+      }
+    }
+    if (held.size && !seen.held) problems.push('cabinet: no "awaiting a licence check" plate found, though some portraits are held back');
+    if (!seen.none) problems.push('cabinet: no "no portrait yet" plate found');
+  }
   // The feminine Hebrew title (#661, title_he_form: feminine): Golda Meir's card reads שרת העבודה, never שר העבודה.
   const heCab = path.join(dist, 'he', 'cabinet', 'index.html');
   if (fs.existsSync(heCab)) {

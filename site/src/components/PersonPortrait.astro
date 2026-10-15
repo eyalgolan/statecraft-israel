@@ -13,7 +13,11 @@ const he = lang === 'he';
 const files = import.meta.glob<{ default: ImageMetadata }>('../../../unity/Assets/UI/Portraits/*.jpg', { eager: true });
 const img = p.portrait && Object.entries(files).find(([f]) => f.endsWith(`/${p.id}.jpg`))?.[1].default;
 const c = p.portrait?.credit;
-const none = he ? 'אין עדיין צילום בנחלת הכלל' : 'No public-domain portrait yet';
+// Two plates: a portrait held back while its licence is checked (owner-verify, D-P), and no portrait at all.
+const plate = p.portraitHeld ? 'held' : 'none';
+const none = p.portraitHeld
+  ? (he ? 'הצילום ממתין לבדיקת רישיון' : 'Portrait awaiting a licence check')
+  : (he ? 'אין עדיין צילום בנחלת הכלל' : 'No public-domain portrait yet');
 ---
 {img && p.portrait && c ? (
   <figure class="media person-portrait" data-kind="archival">
@@ -33,7 +37,7 @@ const none = he ? 'אין עדיין צילום בנחלת הכלל' : 'No publi
     )}
   </figure>
 ) : (
-  <div class="no-portrait" role="img" aria-label={none}>
+  <div class="no-portrait" role="img" aria-label={none} data-plate={plate}>
     <span aria-hidden="true">{(he ? p.name_he : p.name).split(/[\s-]+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('')}</span>
     <small>{none}</small>
   </div>
