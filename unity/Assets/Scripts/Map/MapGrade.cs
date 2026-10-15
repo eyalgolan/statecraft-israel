@@ -18,22 +18,24 @@ namespace Statecraft.Game.Map
     {
         /// <summary>Neutral, not ACES: it only rolls off highlights, so the sea's blue and the amber land keep their hue (plan Task 4).</summary>
         public const TonemappingMode Tonemapper = TonemappingMode.Neutral;
-        /// <summary>Temperature 5, unchanged by issue #38's retune. Cooler white balances took diorama02's frame warmth under
-        /// #38's 0.145 but pushed the Israeli border stripe away from the owner's deeper blue (ControlTests'
-        /// ThePrimaryStripeIsTheDeeperBlueOfTheRuling, about 0.5 deltaE per unit); the land's warmth is pulled down by the
-        /// paler highlights instead (docs/visual-v1.md, "Issue #38: grade retune"). History: Temperature 5, not the plan's 9 (Task 4
+        /// <summary>Temperature 3 since issue #38 (was 5). With the paler highlights below it takes diorama02's frame warmth
+        /// under #38's 0.145. At post exposure 0.55 a white balance this cool pushed the Israeli border stripe past main's
+        /// lighter blue (ControlTests' ThePrimaryStripeIsTheDeeperBlueOfTheRuling); at 0.45 it stays nearer the owner's
+        /// blue (owner's decision on #519, 2026-10-15; docs/visual-v1.md, "Issue #38: grade retune"). History: Temperature 5, not the plan's 9 (Task 4
         /// merge arithmetic, docs/visual-v1.md "Task 4: grade"): at 9 the t04 diorama warmth was 0.118, and Track B's land
         /// (+0.021 before the grade, about +0.027 after it) would put the merged diorama at the promo's 0.145 with nothing left
         /// for Track B's later haze and palette work.</summary>
-        public const float Temperature = 5f;
+        public const float Temperature = 3f;
         /// <summary>Saturation -2 since issue #38 (was 0). It offsets part of what Contrast 18 adds and keeps the border stripe
         /// near the owner's blue; -4 with the paler highlights fell under GradeTests' 0.98 floor for the frame (x0.967), -2 is
         /// x0.994. History: 0, not Task 4's 16 (merge-point carry, review I1): with Track B's palette the merged WebGL
         /// diorama02 measured 0.53 against the promo's 0.43 at 16; the bar is promo + 0.05 (docs/visual-v1.md "Merge point").</summary>
         public const float Saturation = -2f;
-        /// <summary>Issue #38: Contrast 18 (was 14) and PostExposure 0.55 (was 0.15). The darker shadow tone and the stronger
-        /// split balance below pull the low end down; the exposure keeps the land's mean luma close to where it was.</summary>
-        public const float PostExposure = 0.55f, Contrast = 18f, Tint = 2f;
+        /// <summary>Issue #38: Contrast 18 (was 14) and PostExposure 0.45 (was 0.15). The darker shadow tone and the stronger
+        /// split balance below pull the low end down; the exposure lifts it back. 0.45, not the first fit's 0.55: the owner's
+        /// decision on #519 (2026-10-15, "Exposure 0.45, sea slightly darker") takes the land and the border stripe darker,
+        /// towards promo 03 and the owner's blue, for an open sea 0.015 darker (luma 0.333 against promo 03's 0.351).</summary>
+        public const float PostExposure = 0.45f, Contrast = 18f, Tint = 2f;
         /// <summary>Issue #38: balance -31 (was -15). The vignette stays at 0.26 and 0.45: the retune's stronger, softer 0.34 and
         /// 0.84 darkened gameplay03's sea, which sits on the frame's left edge, well below promo 03's (owner's rule on #519:
         /// "if the sea is still dark, use main's vignette"; docs/visual-v1.md, "Issue #38: grade retune").</summary>
