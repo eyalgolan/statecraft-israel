@@ -1171,8 +1171,15 @@ D-C (owner-verify).
   closure the agreements' lines (`armistice_lines_1949.geojson`, D-A) and UNTS vol. 42, the Jordan-derived sides flagged
   low accuracy.
 - *Periods* (`content/map/control_hexes_1948_49.yaml`, `tools/control_bake.py`: each land hex of Mandatory Palestine takes
-  the code at its centre, per period): 15 May-11 June 1948 the 1947 sub-districts in grey (no sourced line for 15 May);
-  11 June the 9 July line; 8-18 July (the Ten Days) grey where the 9 and 18 July lines differ; 18 July the blue line;
+  the code at its centre, per period): 15 May-10 June 1948 the 9 July line, adjusted (owner decision of 16 October 2026,
+  #674, option (b); research note `control-15-may-1948.md` section 9): the other side not named; grey where the CIA's
+  "Military Situation - 18 May 1948" dashed (tenuously held) border is legible and closes on the 9 July line or the
+  frontier (the Safad-Hula loop, traced on the scan georeferenced on its graticule ticks), and, cut by the 1947
+  sub-districts (no new line), the 9 July Israeli areas of the Acre (Ben-Ami, Acre 17/18 May), Jenin (Lajjun-Zir'in, 28
+  May), Ramle (Yibna, 5 June; the CIA's Rishon-Sarafand border, which closes on nothing sourced) and Jerusalem (the CIA's
+  corridor border, a single line along the road) sub-districts; the Gaza and Beersheba sub-districts without colour, the
+  hexes of their Jewish settlements whose 1948 site is sourced pinned blue (Q3); every hex within 6 km of the Old City
+  no-man's land; 11 June the 9 July line; 8-18 July (the Ten Days) grey where the 9 and 18 July lines differ; 18 July the blue line;
   24-26 July grey at Ijzim, Jaba and Ein Ghazal; 15-31 October grey where the July and October lines differ in the south
   (Yoav, Ha-Har, Beit Jibrin, al-Dawayima), 29-31 October in the Galilee (Hiram); from 31 October the green line, until the
   Egypt agreement (Operation Horev is not drawn: its fighting lay south of the scan or beyond the frontier, and no source
@@ -1190,15 +1197,16 @@ D-C (owner-verify).
   Egyptian army on 8 July, captured by Giv'ati in Operation Yoav on 19 October), where ISA 6158/1's 9 July line, about
   1.3 km away, puts it on the Israeli side (the source and the archive map disagree; recorded in the data); a pin covers
   whole periods only, so the Yoav period shows Huleiqat's hex Israeli from 15 October, four days before its capture.
-- *Drawing:* `MapRegions` draws `Control1948`'s layer from 11 June 1948: Israel Primary, the other side Secondary,
+- *Drawing:* `MapRegions` draws `Control1948`'s layer from 15 May 1948 (#674): Israel Primary, the other side Secondary,
   contested, no-man's land and zones the new Neutral style (`BorderStyle.Neutral`, the shader's third style, dashed along
   its edge every 2 km, 65% drawn: a cue that is not colour), the land beyond the frontier style none, no colour left out (no
-  band, so the edge of the sourced data is not drawn as a front). Before it the sub-districts are drawn in Neutral, since
-  blue now means the Israeli side. Colours: Primary pre-grade sRGB 0.29, 0.40, 0.56 (was 0.40, 0.50, 0.80), measured on
+  band, so the edge of the sourced data is not drawn as a front). Before a first period (none with today's data) the
+  sub-districts would be drawn in Neutral, since blue means the Israeli side. Colours: Primary pre-grade sRGB 0.29, 0.40, 0.56 (was 0.40, 0.50, 0.80), measured on
   screen at deltaE76 0.6 from 89,119,156; Neutral 0.46, 0.46, 0.44 with a pale stripe 0.98, 0.97, 0.93.
 - *Label* (`map-layer`, `MapRegions.ControlLabel`): the legend names each side before its colour, and grey as dashed:
   1948 "Held by Israel: blue · Held by Arab forces: orange-red · Contested or no-man's land: grey, dashed", with the caption
-  "Front lines, {date}, approximate (Israel State Archives)"; once a front has its agreement "Israeli side of the armistice
+  "Front lines, {date}, approximate (Israel State Archives)", from 15 May to 10 June 1948 "Front lines of 9 July 1948,
+  adjusted (Israel State Archives; CIA map of 18 May 1948)"; once a front has its agreement "Israeli side of the armistice
   line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", with "Armistice lines: {fronts}"
   (all switched) or "Armistice lines: {fronts}; elsewhere front lines of {date}" (some), Jordan named "Jordan (low
   accuracy)" (D-A ruling 2). Dates in the UI's language (Hebrew month names). The label may take up to six lines in its

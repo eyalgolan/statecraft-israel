@@ -16,10 +16,11 @@ namespace Statecraft.Game.Map
     /// (Jordan) is labelled so. The layer as a whole leaves the map only on the sub-district layer's own end
     /// (<see cref="Subdistricts1948.ShownUntil"/>), null until the armistice lines enclose each side's area. Display only: reads no sim state but the date it is given.</summary>
     /// <remarks>Since the owner's rulings of 2026-10-14, when the side data is given (<see cref="Control"/>), the map colours
-    /// areas by side from its first period (11 June 1948, the first sourced line) instead: the Israeli side blue, the other
-    /// side orange-red, contested, no-man's land and demilitarized zones grey (<see cref="Control1948"/>); before that the
-    /// 1947 sub-districts are drawn in the neutral grey, since no side is sourced for 15 May 1948 and blue now means the
-    /// Israeli side. The label then carries the legend (<see cref="ControlLabel"/>).</remarks>
+    /// areas by side from its first period (15 May 1948, the game's start: the 9 July 1948 lines, adjusted, owner decision of
+    /// 16 October 2026, #674) instead: the Israeli side blue, the other side orange-red, contested, no-man's land and
+    /// demilitarized zones grey (<see cref="Control1948"/>); before a first period (none with today's data) the 1947
+    /// sub-districts are drawn in the neutral grey, since blue means the Israeli side. The label then carries the legend
+    /// (<see cref="ControlLabel"/>).</remarks>
     public sealed class MapRegions
     {
         /// <summary>Zones are region ids ZoneIdBase + zone id in the composed layer, apart from the sub-districts' ids.</summary>
@@ -156,7 +157,7 @@ namespace Statecraft.Game.Map
 
         /// <summary>The map label while sides are drawn: the legend for the period and a caption naming the source line.
         /// <paramref name="text"/> gives a UI string by key: map.legend_held and map.caption_held ({0} the source line's
-        /// date) in 1948; map.legend_armistice with map.caption_mixed ({0} the fronts whose armistice line is in force, {1}
+        /// date) in 1948, map.caption_adjusted ({0} the same) from 15 May to 10 June 1948 (#674); map.legend_armistice with map.caption_mixed ({0} the fronts whose armistice line is in force, {1}
         /// the date of the front lines elsewhere) while some fronts have switched, or map.caption_armistice ({0} the fronts)
         /// once all have; map.front_*; map.layer_front_low ({0} a low-accuracy front: Jordan, D-A ruling 2). Dates through
         /// date.* (Control1948.LineDateText). Null before the first period (the sub-district label stands).</summary>
@@ -175,6 +176,8 @@ namespace Statecraft.Game.Map
             {
                 case Control1948.Legend.Held:
                     return text("map.legend_held") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_held"), lineDate);
+                case Control1948.Legend.Adjusted:
+                    return text("map.legend_held") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_adjusted"), lineDate);
                 case Control1948.Legend.Mixed:
                     return text("map.legend_armistice") + "\n" + string.Format(CultureInfo.InvariantCulture, text("map.caption_mixed"), fronts, lineDate);
                 default:

@@ -20,8 +20,9 @@ using Object = UnityEngine.Object;
 /// <summary>Two-colour borders (owner rulings 2026-10-14, refs #196): who held which areas, 1948-49
 /// (content/map/control_hexes_1948_49.yaml, baked by tools/control_bake.py from the true polygons of
 /// tools/control_digitise.py): the Israeli side blue, the other side orange-red, contested, no-man's land and the
-/// demilitarized zones grey, from 11 June 1948 (the first sourced line); before it the 1947 sub-districts in grey; the label
-/// carries the approved legend in English and Hebrew; the sim never reads the file.</summary>
+/// demilitarized zones grey, from 15 May 1948, the game's start (owner decision of 16 October 2026, #674: the 9 July 1948
+/// lines, adjusted, until 11 June); nothing before it; the label carries the approved legend in English and Hebrew; the sim
+/// never reads the file.</summary>
 public class ControlTests
 {
     static GameInputs? inputs;
@@ -52,11 +53,16 @@ public class ControlTests
     }
 
     [Test]
-    public void TheBakedFileParsesWithContiguousPeriodsFrom11June1948()
+    public void TheBakedFileParsesWithContiguousPeriodsFrom15May1948()
     {
         var c = Control1948.Parse(ControlText);
-        Assert.AreEqual(new DateTime(1948, 6, 11), c.ShownFrom);
-        Assert.IsNull(c.PeriodOn(Start), "15 May 1948 has no sourced line");
+        Assert.AreEqual(Start, c.ShownFrom);
+        Assert.IsNull(c.PeriodOn(Start.AddDays(-1)), "nothing before the game's start, 15 May 1948");
+        Assert.AreEqual("opening", c.PeriodOn(Start)!.Id);
+        Assert.AreEqual(Control1948.Legend.Adjusted, c.PeriodOn(Start)!.Legend);
+        Assert.AreEqual("1948-07-09", c.PeriodOn(Start)!.LineDate, "the 9 July 1948 lines");
+        Assert.AreEqual("opening", c.PeriodOn(new DateTime(1948, 6, 10))!.Id, "to 10 June inclusive");
+        Assert.AreEqual("truce1", c.PeriodOn(new DateTime(1948, 6, 11))!.Id, "the first truce from 11 June");
         Assert.AreEqual("truce1", c.PeriodOn(Truce1)!.Id);
         Assert.AreEqual("ten_days", c.PeriodOn(TenDays)!.Id);
         Assert.AreEqual(Control1948.Legend.Held, c.PeriodOn(October)!.Legend);
@@ -96,10 +102,42 @@ public class ControlTests
         Assert.AreEqual(Control1948.Side.Israel, m.Control.At(nazareth.q, nazareth.r, Truce2).side);
     }
 
+    // Settlement hexes (content/map/settlement_hexes.yaml, tools/settlement_hexes.py)
+    static readonly (int q, int r) AcreHex = (7, 6), JerusalemHex = (0, 23), GazaHex = (-11, 27), YadMordechaiHex = (-9, 26);
+
+    /// <summary>#674 (b): from the game's start the 9 July lines, adjusted: the coast blue, Samaria orange-red, the Acre coast
+    /// grey (contested), Jerusalem no-man's land, the south without colour but its settlements blue; nothing before 15 May.</summary>
     [Test]
-    public void BeforeTheFirstSourcedLineTheSubdistrictsAreGreyNotBlue()
+    public void TheGameOpensOnThe9JulyLinesAdjustedAndNothingIsColouredBefore15May()
     {
         var m = Regions();
+        Assert.IsNull(m.LayerOn(Start.AddDays(-1)), "nothing is drawn before 15 May 1948");
+        Assert.IsNull(m.ControlLabel(Start.AddDays(-1), k => En[k]));
+        var layer = m.LayerOn(Start)!;
+        Assert.AreEqual("control_1948_49:opening", layer.Name);
+        BorderStyle Style((int q, int r) h) => layer.StyleOf(layer.RegionOf(h.q, h.r));
+        Assert.AreEqual(BorderStyle.Primary, Style(HexOf(34.78, 32.08)), "Tel Aviv");
+        Assert.AreEqual(BorderStyle.Secondary, Style(HexOf(35.2608, 32.2211)), "Nablus");
+        Assert.AreEqual(BorderStyle.Neutral, Style(AcreHex), "the Acre coast: Operation Ben-Ami, Acre taken 17/18 May");
+        Assert.AreEqual(BorderStyle.Neutral, Style(JerusalemHex));
+        Assert.AreEqual(BorderStyle.Primary, Style(YadMordechaiHex), "a settlement in the uncoloured south (owner ruling Q3)");
+        Assert.AreEqual(0, layer.RegionOf(GazaHex.q, GazaHex.r), "the south has no colour: no region, no band");
+        var c = m.Control!;
+        Assert.AreEqual((Control1948.Side.Contested, (string?)null), c.At(AcreHex.q, AcreHex.r, Start));
+        Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), c.At(JerusalemHex.q, JerusalemHex.r, Start));
+        Assert.AreEqual((Control1948.Side.None, (string?)null), c.At(GazaHex.q, GazaHex.r, Start));
+        Assert.AreEqual((Control1948.Side.Arab, (string?)null), c.At(HexOf(35.3033, 32.7019).q, HexOf(35.3033, 32.7019).r, Start),
+            "Nazareth: the other side, its holder not named before 11 June");
+        Assert.AreEqual(Control1948.Side.Israel, c.At(YadMordechaiHex.q, YadMordechaiHex.r, Start).side);
+        Assert.AreNotEqual(Control1948.Side.Israel, c.At(YadMordechaiHex.q, YadMordechaiHex.r, Truce1).side, "fallen on 24 May");
+    }
+
+    /// <summary>Kept for a side file whose first period starts later: before it the sub-districts are grey, never blue.</summary>
+    [Test]
+    public void BeforeAFirstPeriodTheSubdistrictsAreGreyNotBlue()
+    {
+        var later = Control1948.Parse("layer: x\nshown_from: 1948-06-11\nperiods:\n  - { id: a, from: 1948-06-11, until: null, legend: held, line_date: '1948-07-09', fronts: [] }\nhexes: []\n");
+        var m = new MapRegions(Subdistricts1948.Parse(SubText), Armistice1949.Parse(ArmText), later);
         var layer = m.LayerOn(Start)!;
         StringAssert.StartsWith("subdistricts_1948", layer.Name);
         var styles = layer.Hexes.Select(h => layer.StyleOf(layer.RegionOf(h.q, h.r))).Distinct().ToList();
@@ -131,6 +169,17 @@ public class ControlTests
         StringAssert.DoesNotContain("July", he);
         StringAssert.Contains("ארכיון המדינה", he);
         StringAssert.Contains("9 July 1948", m.ControlLabel(Truce1, k => En[k]), "the 11 June snapshot is the line dated 9 July, labelled as such");
+        // #674 (b): 15 May - 10 June 1948, "lines of 9 July 1948, adjusted"
+        var open = m.ControlLabel(Start, k => En[k])!;
+        StringAssert.StartsWith("Held by Israel: blue · Held by Arab forces: orange-red · Contested or no-man's land: grey, dashed", open);
+        StringAssert.Contains("Front lines of 9 July 1948, adjusted", open);
+        StringAssert.Contains("CIA map of 18 May 1948", open);
+        StringAssert.DoesNotContain("approximate", open);
+        var openHe = m.ControlLabel(Start, k => He[k])!;
+        StringAssert.Contains("קווי החזית של 9 ביולי 1948, מותאמים", openHe);
+        StringAssert.DoesNotContain("July", openHe);
+        Assert.AreEqual(open, m.ControlLabel(new DateTime(1948, 6, 10), k => En[k]), "the same caption to 10 June");
+        StringAssert.Contains("Front lines, 9 July 1948, approximate", m.ControlLabel(new DateTime(1948, 6, 11), k => En[k]));
         var after = m.ControlLabel(After, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", after);
         StringAssert.Contains("Jordan (low accuracy)", after, "D-A ruling 2: the Jordan line is labelled low-accuracy on the map");
@@ -155,17 +204,22 @@ public class ControlTests
         StringAssert.StartsWith("Held by Arab forces", InfoPanelPresenter.ControlText(m, En, nablus.q, nablus.r, march), "Jordan has not");
         Assert.AreEqual("Israeli side of the armistice line", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, After));
         Assert.AreEqual("Arab side of the armistice line (Jordan)", InfoPanelPresenter.ControlText(m, En, nablus.q, nablus.r, After), "the state, not the army, after the armistice");
-        Assert.AreEqual("", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, Start), "no side before the first sourced line");
+        Assert.AreEqual("", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, Start.AddDays(-1)), "nothing before 15 May 1948");
+        Assert.AreEqual("Held by Israel", InfoPanelPresenter.ControlText(m, En, telAviv.q, telAviv.r, Start));
+        Assert.AreEqual("Held by Arab forces", InfoPanelPresenter.ControlText(m, En, nablus.q, nablus.r, Start), "no holder named before 11 June");
+        Assert.AreEqual("Contested", InfoPanelPresenter.ControlText(m, En, AcreHex.q, AcreHex.r, Start));
+        Assert.AreEqual("No-man's land", InfoPanelPresenter.ControlText(m, En, JerusalemHex.q, JerusalemHex.r, Start));
+        Assert.AreEqual("No sourced front line here on this date", InfoPanelPresenter.ControlText(m, En, GazaHex.q, GazaHex.r, Start));
         var amman = HexOf(35.9, 31.95);
         Assert.AreEqual("", InfoPanelPresenter.ControlText(m, En, amman.q, amman.r, After), "beyond the frontier the data says nothing");
         StringAssert.StartsWith("Held by Israel", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Truce2));
         StringAssert.DoesNotContain("Mandate sub-districts", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Truce2), "no sub-district once its bands are gone");
-        StringAssert.Contains("Mandate sub-districts", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Start));
+        StringAssert.DoesNotContain("Mandate sub-districts", InfoPanelPresenter.RegionText(m, En, telAviv.q, telAviv.r, Start), "sides from the start (#674)");
         // a demilitarized zone hex: the zone's own line, not a second "Demilitarized zone"
         var dmz = m.Control!.Periods.Count > 0 ? FindHex(m, After, Control1948.Side.Dmz) : default;
         Assert.AreEqual("Demilitarized zone", InfoPanelPresenter.ControlText(m, En, dmz.q, dmz.r, After));
         StringAssert.DoesNotContain("Demilitarized zone", InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
-        // no-man's land: no hex of the data has it at this scale (Jerusalem's line falls between two hexes); a file that does
+        // no-man's land from a minimal file too (the data has it only in the opening period, in the Old City's hex)
         var nml = Control1948.Parse("layer: x\nshown_from: 1948-06-11\nperiods:\n  - { id: a, from: 1948-06-11, until: null, legend: held, line_date: '1948-07-09', fronts: [] }\nhexes:\n  - [1, 2, 'm']\n");
         Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), nml.At(1, 2, Truce1));
         Assert.AreEqual("No-man's land", InfoPanelPresenter.ControlText(new MapRegions(Subdistricts1948.Parse(SubText), null, nml), En, 1, 2, Truce1));
@@ -178,9 +232,9 @@ public class ControlTests
     }
 
     /// <summary>The game's own wiring (review S10): boot, then move the session's date through the bridge past 11 June
-    /// 1948. The map draws the side layer and the label carries the legend; at the start, the grey sub-districts.</summary>
+    /// 1948. The map draws the side layer and the label carries the legend; at the start, the 9 July lines, adjusted (#674).</summary>
     [Test]
-    public void ANormalGameSwitchesToSidesOn11June1948AndShowsTheLegend()
+    public void ANormalGameOpensOnSidesAndSwitchesToTheFirstTruceOn11June1948()
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
@@ -188,8 +242,14 @@ public class ControlTests
         root.Store = new SaveStore(saveDir);
         root.Begin(Inputs, 0);
         var label = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer");
-        Assert.AreEqual("Mandate sub-districts, 1947", label.text);
-        Assert.AreEqual("subdistricts_1948:neutral", MapBorders.Current!.Name, "the grey sub-districts, drawn from the side data's MapRegions");
+        Assert.AreEqual("control_1948_49:opening", MapBorders.Current!.Name, "sides from the game's start");
+        StringAssert.StartsWith("Held by Israel: blue", label.text);
+        StringAssert.Contains("Front lines of 9 July 1948, adjusted", label.text);
+        var g0 = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+        g0.State.Date = new DateTime(1948, 6, 11);
+        root.Bridge!.Replace(g0);
+        Assert.AreEqual("control_1948_49:truce1", MapBorders.Current!.Name);
+        StringAssert.Contains("Front lines, 9 July 1948, approximate", label.text);
         var g = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
         g.State.Date = Truce2;
         root.Bridge!.Replace(g);
@@ -330,7 +390,7 @@ public class ControlTests
             File.WriteAllBytes(Path.Combine(dir, name + ".png"), tex.EncodeToPNG());
             Object.DestroyImmediate(tex);
         }
-        var dates = new List<(string id, DateTime d)> { ("sub_districts", Start) };
+        var dates = new List<(string id, DateTime d)>();
         dates.AddRange(m.Control!.Periods.Select(p => (p.Id, p.From.AddDays(1))));
         foreach (var (id, d) in dates)
         {
@@ -344,7 +404,7 @@ public class ControlTests
         }
         // the legend as the UI draws it
         foreach (var (lang, tag) in new[] { (En, "en"), (He, "he") })
-            foreach (var d in new[] { Truce2, Mixed, After })
+            foreach (var d in new[] { Start, Truce1, Truce2, Mixed, After })
             {
                 var rt = new RenderTexture(1920, 1080, 0);
                 var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));

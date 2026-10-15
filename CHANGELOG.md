@@ -53,6 +53,16 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Map: an army token's figures and its flag's pole turn about the base's middle with the camera's yaw (refs #644, from
   #559), so from every side the trio stands side by side facing the camera with the pole behind it; at yaw 90 or 270 the
   figures stood in a column, and from about yaw 180 the pole stood in front of them. Presentation only.
+- The map shows sides from the game's start (refs #674; owner decision of 16 October 2026, "(b) 9 July lines, adjusted"):
+  from 15 May to 10 June 1948 the front lines of 9 July 1948 (Israel State Archives map 6158/1), with grey where the CIA's
+  "Military Situation - 18 May 1948" map draws a tenuously held border that closes (the Safad-Hula loop, traced) and,
+  cut by the 1947 sub-districts so that no new line is drawn, where a source dates a change of hands before 11 June
+  inside a 9 July Israeli area (the Acre coast, Lajjun-Zir'in, Yibna) or the CIA's dashed border closes on nothing sourced
+  (Rishon-Sarafand, the Jerusalem corridor); the Gaza and Beersheba sub-districts without colour, their Jewish
+  settlements' hexes blue; Jerusalem no-man's land. The caption reads "Front lines of 9 July 1948, adjusted (Israel State
+  Archives; CIA map of 18 May 1948)", in English and Hebrew (the Hebrew waits for the native reviewer, #564). Before, the
+  grey 1947 sub-districts stood until 11 June. Map-only data (draft, owner-verify): the sim goldens and the content hash
+  do not move.
 - `bernadotte_assassination` says "about 250" Lehi members were arrested, not "about 200" (refs #516; owner, 15 October
   2026): Ben-Gurion told the Provisional State Council 246 (184 + 62), and S/1315 gives 266 by 23 September (184 + 82).
   Card text only: no golden moves, the content hash does, so an older save loads with the "different game content"

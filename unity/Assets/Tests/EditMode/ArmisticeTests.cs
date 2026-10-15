@@ -247,8 +247,9 @@ public class ArmisticeTests
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(saveDir);
         root.Begin(Inputs, 0);
-        StringAssert.StartsWith("subdistricts_1948", MapBorders.Current!.Name, "the 1947 sub-districts, in the neutral grey before any side is sourced");
-        Assert.AreEqual("Mandate sub-districts, 1947", Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer").text);
+        // Since #674 the start shows sides (ControlTests); the armistice layer's own label is tested on MapRegions above
+        Assert.AreEqual("control_1948_49:opening", MapBorders.Current!.Name);
+        StringAssert.Contains("Front lines of 9 July 1948, adjusted", Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer").text);
     }
 
     [Test]

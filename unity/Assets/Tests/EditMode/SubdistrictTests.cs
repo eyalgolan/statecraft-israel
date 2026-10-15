@@ -155,14 +155,16 @@ public class SubdistrictTests
     [Test]
     public void ANormalGameOutlinesTheRealSubdistricts()
     {
-        Boot(saveDir);
+        var root = Boot(saveDir);
         var current = MapBorders.Current;
         Assert.IsNotNull(current, "play draws a region layer without any flag");
-        StringAssert.StartsWith("subdistricts_1948", current!.Name, "the 1947 sub-districts, in the neutral grey before any side is sourced");
+        // Since #674 (owner decision of 16 October 2026) the start shows sides (the 9 July 1948 lines, adjusted); the real
+        // sub-districts stay loaded under them as the base (and outline the frontier)
+        Assert.AreEqual("control_1948_49:opening", current!.Name);
         var label = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer");
-        Assert.AreEqual("Mandate sub-districts, 1947", label.text, "labelled on screen");
+        StringAssert.Contains("Front lines of 9 July 1948, adjusted", label.text, "labelled on screen");
         Assert.AreEqual(DisplayStyle.Flex, label.style.display.value, "shown while the layer is drawn");
-        Assert.AreEqual(Subdistricts1948.Parse(FileText).Layer.Count, current.Count);
+        Assert.AreEqual(Subdistricts1948.Parse(FileText).Layer.Count, root.Regions!.Subdistricts.Layer.Count);
     }
 
     /// <summary>Rendered, in the gameplay03 frame: the real sub-district borders change the picture, and the "borders"
@@ -206,6 +208,7 @@ public class SubdistrictTests
         ui.panel?.Pick(Vector2.zero);
         var p = cam.WorldToScreenPoint(new Vector3(ground.x, map.Terrain.SampleHeight(ground), ground.z));
         Assert.IsTrue(pointer.HandleClick(new Vector2(p.x, p.y)), "the ray hit the terrain");
-        Assert.AreEqual(Text.Format("info.region", "Jaffa Sub-District", "Lydda District"), ui.Q<Label>("info-region").text);
+        // from the start the panel says who held the hex (#674); the sub-district is named only while its bands are drawn
+        Assert.AreEqual(Text["info.control_israel"], ui.Q<Label>("info-region").text);
     }
 }

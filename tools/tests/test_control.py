@@ -1,7 +1,8 @@
 """Who held which areas, 1948-49: the true polygons (content/map/control_1948_49.geojson, tools/control_digitise.py) and
 their per-hex, per-period layer (content/map/control_hexes_1948_49.yaml, tools/control_bake.py). Owner rulings of
 2026-10-14: sides only from sourced data; grey only for the days an operation ran there; the 11 June snapshot may use the
-line the archive map dates 9 July; the localities stay as of 1948 (no per-village dates)."""
+line the archive map dates 9 July; the localities stay as of 1948 (no per-village dates). Owner decision of 16 October
+2026 (#674, option b): from 15 May to 10 June 1948 the 9 July lines, adjusted (research note control-15-may-1948.md §9)."""
 import json
 import re
 from pathlib import Path
@@ -34,18 +35,20 @@ def test_the_bake_is_up_to_date_and_deterministic():
     assert cb.build() == text
 
 
-def test_periods_run_on_from_11_june_1948_without_gaps():
+def test_periods_run_on_from_15_may_1948_without_gaps():
+    """#674 (b): coloured from the game's start, 15 May 1948; nothing before it."""
     ps = BAKED["periods"]
-    assert str(ps[0]["from"]) == "1948-06-11", "no sourced line for 15 May 1948: the sub-districts until the first truce"
+    assert str(ps[0]["from"]) == "1948-05-15", "the 9 July lines, adjusted, from the game's start"
     for a, b in zip(ps, ps[1:]):
         assert str(a["until"]) == str(b["from"]), (a["id"], b["id"])
     assert ps[-1]["until"] is None
-    assert str(BAKED["shown_from"]) == "1948-06-11"
+    assert str(BAKED["shown_from"]) == "1948-05-15"
 
 
 def test_the_legend_turns_to_the_armistice_wording_front_by_front():
     by = {p["id"]: p for p in BAKED["periods"]}
-    assert all(by[p]["legend"] == "held" and by[p]["fronts"] == [] for p in PERIODS if not p.startswith("arm_"))
+    assert by["opening"]["legend"] == "adjusted" and by["opening"]["fronts"] == []
+    assert all(by[p]["legend"] == "held" and by[p]["fronts"] == [] for p in PERIODS if not p.startswith("arm_") and p != "opening")
     assert by["arm_1949-02-24"]["fronts"] == ["egypt"] and by["arm_1949-02-24"]["legend"] == "mixed"
     assert by["arm_1949-03-23"]["fronts"] == ["egypt", "lebanon"]
     assert by["arm_1949-04-03"]["fronts"] == ["egypt", "jordan", "lebanon"]
@@ -61,7 +64,9 @@ def test_every_land_hex_of_mandatory_palestine_has_one_valid_code_per_period():
 
 @pytest.mark.parametrize("place, lon, lat", [("Tel Aviv", 34.78, 32.08), ("Haifa", 34.9992, 32.8192), ("Rehovot", 34.8167, 31.8969)])
 def test_the_coastal_plain_is_israeli_throughout(place, lon, lat):
-    assert set(CODES[hg.settlement_hex(lon, lat, HEXES)]) == {"I"}, place
+    """From 11 June; in the opening period Rehovot's sub-district (Ramle) is grey (#674: Yibna and the CIA's tenuously
+    held Rishon-Sarafand area), tested below."""
+    assert set(CODES[hg.settlement_hex(lon, lat, HEXES)][PERIODS.index("truce1"):]) == {"I"}, place
 
 
 @pytest.mark.parametrize("place, lon, lat", [("Nablus", 35.2608, 32.2211), ("Hebron", 35.0986, 31.535), ("Gaza", 34.4597, 31.5075)])
@@ -84,11 +89,11 @@ def test_dated_changes_follow_the_sources():
 
 def test_grey_contested_is_only_for_the_days_an_operation_ran():
     contested = {p for p in PERIODS for c in CODES.values() if c[PERIODS.index(p)] == "c"}
-    assert contested <= {"ten_days", "shoter", "yoav", "yoav_hiram"}, contested
+    assert contested <= {"opening", "ten_days", "shoter", "yoav", "yoav_hiram"}, contested
     ops = META["operations"]
     for f in SOURCE["features"]:
         p = f["properties"]
-        if p.get("neutral_kind") == "contested":
+        if p.get("neutral_kind") == "contested" and not p["id"].startswith("contested_opening_"):
             op = {"contested_ten_days": "ten_days", "contested_shoter": "shoter", "contested_yoav": "yoav",
                   "contested_hiram": "hiram"}[p["id"]]
             assert (p["shown_from"], p["shown_until"]) == (ops[op]["from"], ops[op]["until"]), p["id"]
@@ -100,13 +105,16 @@ def test_jerusalem_is_split_between_its_two_hexes_or_no_mans_land():
     q, r = hg.settlement_hex(35.2256, 31.7789, HEXES)
     east, west = CODES[(q, r)], CODES[(q - 1, r)]
     assert "I" not in east and set(east) <= set("MJm"), east
-    assert set(west) <= {"I", "m"}, west
+    assert set(west[T1:]) <= {"I", "m"}, west
+    assert west[OPEN] == "c", "15 May - 10 June: the hex west of the Old City's is the corridor's end (Motza, El Qastal), grey"
 
 
 def test_the_south_is_uncoloured_until_the_jordan_agreement_closes_it():
     eilat = CODES[hg.settlement_hex(34.95, 29.56, HEXES)]
     i = PERIODS.index("arm_1949-04-03")
     assert set(eilat[:i]) == {"-"}, "no 1948 line is sourced south of the scan's 60-km northing"
+    revivim = CODES[hg.settlement_hex(34.7211, 31.0436, HEXES)]
+    assert revivim[PERIODS.index("opening")] == "-", "south of the 60-km northing: no colour, as from 11 June (not pinned)"
     assert set(eilat[i:]) == {"I"}
 
 
@@ -120,7 +128,8 @@ def test_every_feature_is_sourced_draft_and_awaits_the_owners_review():
     for f in SOURCE["features"]:
         p = f["properties"]
         assert p["status"] == "draft" and p["review"] == "owner-verify", p["id"]
-        assert p["sources"] and p["checked"] == cd.CHECKED, p["id"]
+        assert p["sources"] and p["checked"] in (cd.CHECKED, cd.CHECKED_OPENING), p["id"]
+        assert p["checked"] == cd.CHECKED or p["id"] in OPENING_FEATURES, p["id"]
         if p["kind"] == "area":
             assert p["side"] in ("israel", "arab", "neutral", "unsided"), p["id"]
 
@@ -133,6 +142,8 @@ def test_each_area_cites_the_source_it_comes_from_with_that_sources_accuracy():
         p = f["properties"]
         if p["kind"] != "area":
             continue
+        if p["id"] == "unsourced_south_opening":
+            continue    # tested in test_the_south_is_uncoloured_in_the_opening_period_but_its_settlements
         if (p.get("snapshot") or "").startswith("arm_") or p.get("neutral_kind") in ("dmz", "not_sourced"):
             assert "armistice_lines_1949.geojson" in p["sources"], p["id"]
             assert any("treaties.un.org" in s for s in p["sources"]), p["id"]
@@ -158,10 +169,12 @@ GAZA_STRIP = {"Gaza": (34.4597, 31.5075), "Deir al-Balah": (34.3508, 31.4181), "
 
 @pytest.mark.parametrize("town", sorted(GAZA_STRIP))
 def test_the_gaza_strip_is_egypts_in_every_period(town):
-    """Review M1, M2: Egypt held the Strip from 1948 to the end of the game; no overlay or box may take its towns away."""
+    """Review M1, M2: Egypt held the Strip from June 1948 to the end of the game; no overlay or box may take its towns away.
+    Before 11 June the south has no colour (#674, owner ruling Q3)."""
     lon, lat = GAZA_STRIP[town]
     c = CODES[hg.settlement_hex(lon, lat, HEXES)]
-    assert set(c) == {"E"}, (town, c)
+    assert c[PERIODS.index("opening")] == "-", (town, c)
+    assert set(c[PERIODS.index("truce1"):]) == {"E"}, (town, c)
 
 
 def test_no_assumed_box_overrides_a_source():
@@ -216,9 +229,10 @@ def test_the_staleness_and_pins_are_recorded_as_the_sources_say():
 
 def test_only_the_three_front_lines_are_traced_never_the_partition_or_the_demanded_line():
     lines = [f["properties"] for f in SOURCE["features"] if f["properties"]["kind"] == "line"]
-    assert {l["colour"] for l in lines} == {"red", "blue", "green"}
-    assert {k for k, (c, _) in cd.STROKES.items()} == {l["id"] for l in lines}
-    assert all(l["on_ink"] >= 0.5 for l in lines), [(l["id"], l["on_ink"]) for l in lines]
+    assert {l["colour"] for l in lines} == {"red", "blue", "green", "cia_tenuous"}
+    assert set(cd.STROKES) | set(cd.CIA_STROKES) == {l["id"] for l in lines}
+    isa = [l for l in lines if l["colour"] in ("red", "blue", "green")]
+    assert all(l["on_ink"] >= 0.5 for l in isa), [(l["id"], l["on_ink"]) for l in isa]
     assert any("partition" in t for t in META["not_traced"])
 
 
@@ -268,7 +282,7 @@ def test_the_uncoloured_closure_strip_is_at_most_3_km_wide():
     total = sum(area(p[0]) - sum(area(h) for h in p[1:]) for p in polys)
     assert 0 < total <= 3.0 * 40 + 3.14 * 3.0 ** 2, f"{total:.0f} km2"
     gaza = hg.settlement_hex(34.4597, 31.5075, HEXES)
-    assert set(CODES[gaza]) == {"E"}
+    assert set(CODES[gaza][PERIODS.index("truce1"):]) == {"E"}
 
 
 def test_the_scan_and_its_georeference_are_recorded():
@@ -305,3 +319,122 @@ def test_the_localities_stay_as_of_1948():
     """Owner ruling (b), 2026-10-14: the colour claims military control only; no locality gets a date or a fate."""
     loc = (MAP / "localities_1948.yaml").read_text(encoding="utf-8")
     assert "control_1948" not in loc and "held_by" not in loc
+
+
+# --- #674, owner decision of 16 October 2026, option (b): 15 May - 10 June 1948, "lines of 9 July 1948, adjusted" ------
+
+SUBS = {(q, r): rid for q, r, rid in yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))["hexes"]}
+SUB_KEY = {r["id"]: r["key"] for r in yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))["regions"]}
+OPEN, T1 = PERIODS.index("opening") if "opening" in PERIODS else -1, PERIODS.index("truce1")
+OPENING_FEATURES = {"opening:israel", "opening:arab:unspecified", "cia_hula"} | {
+    "unsourced_south_opening", "contested_opening_hula", "contested_opening_acre", "contested_opening_jenin",
+    "contested_opening_ramle", "contested_opening_jerusalem"}
+OPENING_OVERLAYS = {"unsourced_south_opening", "contested_opening_hula", "contested_opening_acre", "contested_opening_jenin",
+                    "contested_opening_ramle", "contested_opening_jerusalem"}
+# The Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the 60-km northing whose 1948
+# site the repository already holds, sourced (settlements_1948.yaml; the closure check's anchors): Q3 "settlement hexes blue".
+SOUTH_SETTLEMENTS = {"Yad Mordechai": (34.5583, 31.5886), "Negba": (34.683, 31.6608), "Nir Am": (34.5808, 31.5194),
+                     "Dorot": (34.6453, 31.5064), "Shoval": (34.7428, 31.4128), "Mishmar HaNegev": (34.7186, 31.3642),
+                     "Hatzerim": (34.7142, 31.2403), "Nevatim": (34.8828, 31.2236)}
+
+
+def sub(lon, lat):
+    return SUB_KEY[SUBS[hg.settlement_hex(lon, lat, HEXES)]]
+
+
+def test_the_opening_period_runs_from_15_may_to_10_june_1948_on_the_9_july_line():
+    by = {p["id"]: p for p in BAKED["periods"]}
+    assert PERIODS[0] == "opening" and PERIODS[1] == "truce1"
+    o = by["opening"]
+    assert (str(o["from"]), str(o["until"])) == ("1948-05-15", "1948-06-11"), "nothing before 15 May; 11 June is the first truce"
+    assert o["legend"] == "adjusted" and o["line_date"] == "1948-07-09", "the caption names the 9 July 1948 lines, adjusted"
+    src = next(p for p in META["periods"] if p["id"] == "opening")
+    assert src["snapshot"] == "opening" and set(src["overlays"]) == OPENING_OVERLAYS and src["jerusalem"] == "no_mans_land"
+
+
+def test_the_opening_snapshot_is_the_9_july_geometry_with_no_holder_named():
+    """No new line: the opening's areas are truce1's polygons; the other side is not named before the state armies and the
+    ALA's re-entry (7 June) are sourced to an area (research note §4)."""
+    feats = {f["properties"]["id"]: f for f in SOURCE["features"]}
+    assert feats["opening:israel"]["geometry"] == feats["truce1:israel"]["geometry"]
+    other = [f for f in SOURCE["features"] if f["properties"].get("snapshot") == "opening" and f["properties"]["side"] == "arab"]
+    assert [f["properties"]["holder"] for f in other] == ["unspecified"]
+    assert not set("EJSVM") & {c[OPEN] for c in CODES.values()}
+
+
+def test_away_from_the_adjustments_each_hex_keeps_its_9_july_side():
+    pinned = {hg.settlement_hex(x, y, HEXES) for x, y in SOUTH_SETTLEMENTS.values()}
+    checked = 0
+    for qr, c in CODES.items():
+        if c[OPEN] in "cm-" or qr in pinned:
+            continue
+        assert (c[OPEN] == "I") == (c[T1] == "I"), (qr, c[OPEN], c[T1])
+        checked += 1
+    assert checked > 150
+
+
+@pytest.mark.parametrize("place, lon, lat", [("Acre", 35.0817, 32.9278), ("Nahariya", 35.0925, 33.0036), ("Zir'in", 35.32, 32.555),
+                                             ("Yibna", 34.745, 31.866), ("Rehovot", 34.8167, 31.8969), ("Metulla", 35.578, 33.278),
+                                             ("Mishmar HaYarden", 35.5997, 33.0028), ("Motza", 35.165, 31.79)])
+def test_the_adjusted_areas_are_contested(place, lon, lat):
+    """Acre coast (Ben-Ami, Acre 17/18 May), Lajjun-Zir'in (28 May), Yibna (5 June): sourced changes inside a 9 July Israeli
+    area, cut by their sub-district; the CIA 18 May tenuously held Safad-Hula loop (traced) and the corridor and
+    Rishon-Sarafand (cut by sub-district)."""
+    assert CODES[hg.settlement_hex(lon, lat, HEXES)][OPEN] == "c", place
+
+
+@pytest.mark.parametrize("place, lon, lat, want", [("Tel Aviv", 34.78, 32.08, "I"), ("Haifa", 34.9992, 32.8192, "I"),
+                                                   ("Hadera", 34.9167, 32.45, "I"), ("Nahalal", 35.1967, 32.69, "I"),
+                                                   ("Ein Harod", 35.3908, 32.5603, "I"), ("Nablus", 35.2608, 32.2211, "A"),
+                                                   ("Nazareth", 35.3033, 32.7019, "A"), ("Lydda", 34.8881, 31.9519, "A"),
+                                                   ("Hebron", 35.0986, 31.535, "A")])
+def test_the_rest_keeps_the_9_july_sides(place, lon, lat, want):
+    assert CODES[hg.settlement_hex(lon, lat, HEXES)][OPEN] == want, place
+
+
+def test_grey_in_the_opening_period_is_only_where_a_source_puts_it():
+    allowed = {"acre", "jenin", "ramle", "jerusalem", "safad"}
+    for qr, c in CODES.items():
+        if c[OPEN] == "c":
+            assert SUB_KEY[SUBS[qr]] in allowed, (qr, SUB_KEY[SUBS[qr]])
+            assert c[T1] == "I" or SUB_KEY[SUBS[qr]] == "safad", ("grey only inside a 9 July Israeli area, or the CIA loop", qr, c[T1])
+    for f in SOURCE["features"]:
+        p = f["properties"]
+        if p["id"] in OPENING_OVERLAYS:
+            assert (p["shown_from"], p["shown_until"]) == ("1948-05-15", "1948-06-11"), p["id"]
+            assert p["sources"] and p["why"], p["id"]
+            if p["neutral_kind"] == "contested":
+                assert any("wikipedia.org" in s or "cia.gov" in s for s in p["sources"]), p["id"]
+
+
+def test_jerusalem_is_no_mans_land_in_the_opening_period():
+    km_lon = hg.km_per_deg_lon(HEXES["bounds"])
+    near = [(h["q"], h["r"]) for h in HEXES["hexes"] if (h["q"], h["r"]) in CODES
+            and ((h["lon"] - 35.2256) * km_lon) ** 2 + ((h["lat"] - 31.7789) * 110.574) ** 2 <= cb.JERUSALEM_KM ** 2]
+    assert len(near) >= 1, "the Old City's hex (the hex west of it is the corridor's end, tested above)"
+    assert {CODES[qr][OPEN] for qr in near} == {"m"}
+    assert "m" not in {c[OPEN] for qr, c in CODES.items() if qr not in near}
+
+
+def test_the_south_is_uncoloured_in_the_opening_period_but_its_settlements():
+    pinned = {hg.settlement_hex(x, y, HEXES): n for n, (x, y) in SOUTH_SETTLEMENTS.items()}
+    for qr, c in CODES.items():
+        if SUB_KEY[SUBS[qr]] in ("gaza", "beersheba"):
+            assert c[OPEN] == ("I" if qr in pinned else "-"), (qr, pinned.get(qr), c[OPEN])
+    pins = {p["place"]: p for p in META["pinned_towns"]}
+    for n in SOUTH_SETTLEMENTS:
+        assert (pins[n]["holder"], pins[n]["from"], pins[n]["until"]) == ("israel", "1948-05-15", "1948-06-11"), n
+    assert CODES[hg.settlement_hex(34.5583, 31.5886, HEXES)][T1] != "I", "Yad Mordechai fell on 24 May: from 11 June the other side's"
+    assert "Yad Mordechai" in " ".join(META["known_staleness"])
+    f = next(f["properties"] for f in SOURCE["features"] if f["properties"]["id"] == "unsourced_south_opening")
+    assert f["neutral_kind"] == "not_sourced" and f["side"] == "unsided"
+
+
+def test_the_cia_map_is_recorded_georeferenced_and_its_trace_lies_on_its_ink():
+    cia = next(s for s in META["sources"] if s.get("sha256") == cd.CIA_MAP["sha256"])
+    assert "CIA-RDP78-01617A004700010003-6" in cia["url"] and "17 USC 105" in cia["licence"]
+    g = META["georeference_cia"]
+    assert g["ticks"] >= 9 and max(g["max_residual_deg"]) < 0.01
+    hula = next(f["properties"] for f in SOURCE["features"] if f["properties"]["id"] == "cia_hula")
+    assert hula["colour"] == "cia_tenuous" and hula["date"] == "1948-05-18" and hula["on_ink"] >= 0.8
+    assert any("strongly-held" in t for t in META["not_traced"]), "the solid border cannot be told from the partition line"

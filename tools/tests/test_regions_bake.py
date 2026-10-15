@@ -120,7 +120,7 @@ YAML_11_CASES = [
     ("subdistrict_hexes_1948", 'district: "Galilee District", style: primary }\n  - { id: 2', 'district: Off, style: primary }\n  - { id: 2', "district=s:Off"),
     ("subdistrict_hexes_1948", "key: acre,", "key: 1_0,", "key=s:1_0"),
     ("armistice_hexes_1949", "signed: 1949-03-23, shown_from: 1949-03-23", "signed: 1949-03-23 00:00:00, shown_from: 1949-03-23", "signed=s:1949-03-23 00:00:00"),
-    ("control_hexes_1948_49", '  - [15, 1, "IIIIIIIIIIIIIII"]', '  - [0x0F, 1, "IIIIIIIIIIIIIII"]', "0x0F 1 IIIIIIIIIIIIIII"),
+    ("control_hexes_1948_49", '  - [15, 1, "cIIIIIIIIIIIIIII"]', '  - [0x0F, 1, "cIIIIIIIIIIIIIII"]', "0x0F 1 cIIIIIIIIIIIIIII"),
 ]
 
 

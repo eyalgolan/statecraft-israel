@@ -9,8 +9,8 @@ side like promo 03 (blue the Israeli side, orange-red the other side, grey conte
 sourced data only; the colours claim military control on a date, nothing else; the 1948 localities stay as of the game's
 start. Research note: research_notes/Map borders/control-areas-1948-49.md.
 
-Usage (the scan is a download kept outside the repository and checked by SHA-256; ISA_MAP has the URL):
-  uv run tools/control_digitise.py --isa-map <dir>/R0005czg.pdf
+Usage (the scans are downloads kept outside the repository and checked by SHA-256; ISA_MAP and CIA_MAP have the URLs):
+  uv run tools/control_digitise.py --isa-map <dir>/R0005czg.pdf --cia-map <dir>/CIA-RDP78-01617A004700010003-6.pdf
 
 Source: Israel State Archives, Prime Minister's Office, map 6158/1 ("Palestine: the partition lines and the front lines",
 1949, a Survey of Palestine 1:250,000 sheet with the lines drawn by hand), the best public copy found (ISA_MAP: the NYU
@@ -55,6 +55,17 @@ Method:
     D-A): the 1948 lines of that front leave as the agreement's lines come in (each 1948 piece leaves on the date of the
     nearest line of its front, so line A in the Iraqi sector comes in by Art. VI.3's stages, the earlier lines held until
     then), the demilitarized zones are neutral, and the gaps D-A records are closed as listed in CLOSURES.
+  9 15 May - 10 June 1948 (owner decision of 16 October 2026 on #674, option (b), "9 July lines, adjusted"; research
+    note research_notes/Map borders/control-15-may-1948.md section 9): no line for 15 May can be traced honestly (the 18
+    May CIA scan's strongly-held border cannot be told from the partition line, roads and rail), so the opening period
+    shows the 9 July snapshot's polygons, the other side not named, with: grey where the CIA "Military Situation - 18 May
+    1948" map's dashed (tenuously held) border is legible and closes on a sourced line (CIA_STROKES: the Safad-Hula loop,
+    traced on the CIA scan, georeferenced on its own graticule ticks); grey, cut by the 1947 sub-districts (D-B) so no
+    new line is drawn, where a source dates a change of hands between 15 May and 11 June inside a 9 July Israeli area
+    (OPENING_CUTS: the Acre coast, Lajjun-Zir'in, Yibna) or where the CIA's dashed border is legible but closes on nothing
+    sourced (the corridor, Rishon-Sarafand); the Gaza and Beersheba sub-districts without colour and their Jewish
+    settlements' hexes blue (pinned_towns; owner ruling Q3); Jerusalem no-man's land (the period's `jerusalem` rule, in
+    tools/control_bake.py).
 Accuracy: about +-1-2 km (a 1:250,000 base, pen lines 0.5-0.7 km wide, a low-resolution scan): source_quality
 low_res_scan. Status draft, owner-verify (sensitivity review) for every feature.
 """
@@ -253,20 +264,21 @@ PINNED = [
      "(en.wiki); ISA 6158/1's 9 July line puts it on the Israeli side, about 1.3 km from the line, so the source and the "
      "archive map disagree for these weeks"),
 ]
-# The closure check's anchors: (place, lon, lat, side, from, until, source). Coordinates: settlements_1948.yaml and
+# The closure check's anchors: (place, lon, lat, side, from, until, source). Windows from 15 May 1948 (#674): the places
+# whose holder the source gives from before the game's start to past 11 June 1948 (no change of hands in between). Coordinates: settlements_1948.yaml and
 # localities_1948.tsv; the Wikipedia API (prop=coordinates) for Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim,
 # Nevatim (each at its 1946 or earlier site), Huleiqat-area places are left out (within 2 km of the lines).
 ANCHORS = [
-    ("Tel Aviv", 34.78, 32.08, "israel", "1948-06-11", None, WIKI + "Tel_Aviv"),
-    ("Haifa", 34.9992, 32.8192, "israel", "1948-06-11", None, WIKI + "Battle_of_Haifa_(1948)"),
-    ("Jaffa", 34.7531, 32.0522, "israel", "1948-06-11", None, WIKI + "Jaffa"),
+    ("Tel Aviv", 34.78, 32.08, "israel", "1948-05-15", None, WIKI + "Tel_Aviv"),
+    ("Haifa", 34.9992, 32.8192, "israel", "1948-05-15", None, WIKI + "Battle_of_Haifa_(1948)"),
+    ("Jaffa", 34.7531, 32.0522, "israel", "1948-05-15", None, WIKI + "Jaffa"),
     ("Acre", 35.0817, 32.9278, "israel", "1948-06-11", None, WIKI + "Acre,_Israel"),
-    ("Safed", 35.4983, 32.9658, "israel", "1948-06-11", None, WIKI + "Battle_of_Safed"),
-    ("Tiberias", 35.5333, 32.7944, "israel", "1948-06-11", None, WIKI + "Tiberias"),
-    ("Nahariya", 35.0925, 33.0036, "israel", "1948-06-11", None, WIKI + "Nahariya"),
+    ("Safed", 35.4983, 32.9658, "israel", "1948-05-15", None, WIKI + "Battle_of_Safed"),
+    ("Tiberias", 35.5333, 32.7944, "israel", "1948-05-15", None, WIKI + "Tiberias"),
+    ("Nahariya", 35.0925, 33.0036, "israel", "1948-05-15", None, WIKI + "Nahariya"),
     ("Beisan", 35.4989, 32.4961, "israel", "1948-06-11", None, WIKI + "Beisan"),
-    ("Rehovot", 34.8167, 31.8969, "israel", "1948-06-11", None, WIKI + "Rehovot"),
-    ("Hadera", 34.9167, 32.45, "israel", "1948-06-11", None, WIKI + "Hadera"),
+    ("Rehovot", 34.8167, 31.8969, "israel", "1948-05-15", None, WIKI + "Rehovot"),
+    ("Hadera", 34.9167, 32.45, "israel", "1948-05-15", None, WIKI + "Hadera"),
     ("Negba", 34.683, 31.6608, "israel", "1948-06-11", None, WIKI + "Negba"),
     ("Nir Am", 34.5808, 31.5194, "israel", "1948-06-11", None, WIKI + "Nir_Am"),
     ("Dorot", 34.6453, 31.5064, "israel", "1948-06-11", None, WIKI + "Dorot"),
@@ -274,28 +286,28 @@ ANCHORS = [
     ("Mishmar HaNegev", 34.7186, 31.3642, "israel", "1948-06-11", None, WIKI + "Mishmar_HaNegev"),
     ("Hatzerim", 34.7142, 31.2403, "israel", "1948-06-11", None, WIKI + "Hatzerim"),
     ("Nevatim", 34.8828, 31.2236, "israel", "1948-06-11", None, WIKI + "Nevatim"),
-    ("Ein Harod", 35.3908, 32.5603, "israel", "1948-06-11", None, WIKI + "Ein_Harod"),
-    ("Nahalal", 35.1967, 32.69, "israel", "1948-06-11", None, WIKI + "Nahalal"),
-    ("Degania Alef", 35.5747, 32.7081, "israel", "1948-06-11", None, WIKI + "Battles_of_the_Kinarot_Valley"),
-    ("Mishmar HaEmek", 35.1417, 32.6097, "israel", "1948-06-11", None, WIKI + "Battle_of_Mishmar_HaEmek"),
+    ("Ein Harod", 35.3908, 32.5603, "israel", "1948-05-15", None, WIKI + "Ein_Harod"),
+    ("Nahalal", 35.1967, 32.69, "israel", "1948-05-15", None, WIKI + "Nahalal"),
+    ("Degania Alef", 35.5747, 32.7081, "israel", "1948-05-15", None, WIKI + "Battles_of_the_Kinarot_Valley"),
+    ("Mishmar HaEmek", 35.1417, 32.6097, "israel", "1948-05-15", None, WIKI + "Battle_of_Mishmar_HaEmek"),
     ("Abu Ghosh", 35.1108, 31.8047, "israel", "1948-06-11", None, WIKI + "Abu_Ghosh"),
-    ("Nazareth", 35.3033, 32.7019, "arab", "1948-06-11", "1948-07-16", WIKI + "Operation_Dekel"),
+    ("Nazareth", 35.3033, 32.7019, "arab", "1948-05-15", "1948-07-16", WIKI + "Operation_Dekel"),
     ("Nazareth", 35.3033, 32.7019, "israel", "1948-07-18", None, WIKI + "Operation_Dekel"),
-    ("Lydda", 34.8881, 31.9519, "arab", "1948-06-11", "1948-07-11", WIKI + "Operation_Danny"),
+    ("Lydda", 34.8881, 31.9519, "arab", "1948-05-15", "1948-07-11", WIKI + "Operation_Danny"),
     ("Lydda", 34.8881, 31.9519, "israel", "1948-07-18", None, WIKI + "Operation_Danny"),
-    ("Ramle", 34.8625, 31.9275, "arab", "1948-06-11", "1948-07-12", WIKI + "Operation_Danny"),
+    ("Ramle", 34.8625, 31.9275, "arab", "1948-05-15", "1948-07-12", WIKI + "Operation_Danny"),
     ("Ramle", 34.8625, 31.9275, "israel", "1948-07-18", None, WIKI + "Operation_Danny"),
-    ("Shefa-Amr", 35.1694, 32.8056, "arab", "1948-06-11", "1948-07-14", WIKI + "Operation_Dekel"),
+    ("Shefa-Amr", 35.1694, 32.8056, "arab", "1948-05-15", "1948-07-14", WIKI + "Operation_Dekel"),
     ("Shefa-Amr", 35.1694, 32.8056, "israel", "1948-07-18", None, WIKI + "Operation_Dekel"),
-    ("Saffuriya", 35.2792, 32.7531, "arab", "1948-06-11", "1948-07-16", WIKI + "Saffuriyya"),
+    ("Saffuriya", 35.2792, 32.7531, "arab", "1948-05-15", "1948-07-16", WIKI + "Saffuriyya"),
     ("Saffuriya", 35.2792, 32.7531, "israel", "1948-07-18", None, WIKI + "Saffuriyya"),
-    ("Ijzim", 34.9881, 32.6447, "arab", "1948-06-11", "1948-07-24", WIKI + "Operation_Shoter"),
+    ("Ijzim", 34.9881, 32.6447, "arab", "1948-05-15", "1948-07-24", WIKI + "Operation_Shoter"),
     ("Ijzim", 34.9881, 32.6447, "israel", "1948-07-26", None, WIKI + "Operation_Shoter"),
-    ("Tira (Haifa)", 34.9752, 32.7618, "arab", "1948-06-11", "1948-07-16", WIKI + "Al-Tira,_Haifa"),
+    ("Tira (Haifa)", 34.9752, 32.7618, "arab", "1948-05-15", "1948-07-16", WIKI + "Al-Tira,_Haifa"),
     ("Tira (Haifa)", 34.9752, 32.7618, "israel", "1948-07-18", None, WIKI + "Al-Tira,_Haifa"),
-    ("Tarshiha", 35.2683, 33.009, "arab", "1948-06-11", "1948-10-29", WIKI + "Operation_Hiram"),
+    ("Tarshiha", 35.2683, 33.009, "arab", "1948-05-15", "1948-10-29", WIKI + "Operation_Hiram"),
     ("Tarshiha", 35.2683, 33.009, "israel", "1948-10-31", None, WIKI + "Operation_Hiram"),
-    ("Jish", 35.4447, 33.0258, "arab", "1948-06-11", "1948-10-29", WIKI + "Operation_Hiram"),
+    ("Jish", 35.4447, 33.0258, "arab", "1948-05-15", "1948-10-29", WIKI + "Operation_Hiram"),
     ("Jish", 35.4447, 33.0258, "israel", "1948-10-31", None, WIKI + "Operation_Hiram"),
     ("Malkiya", 35.5111, 33.0983, "arab", "1948-06-11", "1948-10-29", WIKI + "Operation_Hiram"),
     ("Beersheba", 34.7867, 31.2522, "arab", "1948-06-11", "1948-10-21", WIKI + "Operation_Yoav"),
@@ -310,17 +322,92 @@ ANCHORS = [
     ("Yad Mordechai", 34.5583, 31.5886, "arab", "1948-06-11", "1948-11-05", WIKI + "Battle_of_Yad_Mordechai"),
     ("Gaza", 34.4597, 31.5075, "arab", "1948-06-11", None, WIKI + "Gaza_Strip"),
     ("Khan Yunis", 34.3025, 31.3439, "arab", "1948-06-11", None, WIKI + "Gaza_Strip"),
-    ("Jenin", 35.3, 32.4611, "arab", "1948-06-11", None, WIKI + "Battle_of_Jenin_(1948)"),
-    ("Tulkarm", 35.0308, 32.3111, "arab", "1948-06-11", None, WIKI + "Tulkarm"),
-    ("Nablus", 35.2608, 32.2211, "arab", "1948-06-11", None, WIKI + "Nablus"),
-    ("Qalqilya", 34.9685, 32.1904, "arab", "1948-06-11", None, WIKI + "Qalqilya"),   # pinned from 3 April 1949 (PINNED)
-    ("Hebron", 35.0986, 31.535, "arab", "1948-06-11", None, WIKI + "Hebron"),
-    ("Bethlehem", 35.2061, 31.7044, "arab", "1948-06-11", None, WIKI + "Bethlehem"),
-    ("Ramallah", 35.2017, 31.8969, "arab", "1948-06-11", None, WIKI + "Ramallah"),
+    ("Jenin", 35.3, 32.4611, "arab", "1948-05-15", None, WIKI + "Battle_of_Jenin_(1948)"),
+    ("Tulkarm", 35.0308, 32.3111, "arab", "1948-05-15", None, WIKI + "Tulkarm"),
+    ("Nablus", 35.2608, 32.2211, "arab", "1948-05-15", None, WIKI + "Nablus"),
+    ("Qalqilya", 34.9685, 32.1904, "arab", "1948-05-15", None, WIKI + "Qalqilya"),   # pinned from 3 April 1949 (PINNED)
+    ("Hebron", 35.0986, 31.535, "arab", "1948-05-15", None, WIKI + "Hebron"),
+    ("Bethlehem", 35.2061, 31.7044, "arab", "1948-05-15", None, WIKI + "Bethlehem"),
+    ("Ramallah", 35.2017, 31.8969, "arab", "1948-05-15", None, WIKI + "Ramallah"),
     ("Imwas", 34.9927, 31.842, "arab", "1948-06-11", None, WIKI + "Imwas"),
-    ("Umm al-Fahm", 35.1536, 32.5194, "arab", "1948-06-11", "1949-05-22", WIKI + "Umm_al-Fahm"),
+    ("Umm al-Fahm", 35.1536, 32.5194, "arab", "1948-05-15", "1949-05-22", WIKI + "Umm_al-Fahm"),
 ]
-FACT_SOURCES = [ISA_MAP, RES181, S1025]
+
+# --- 15 May - 10 June 1948 (#674, option b) ---------------------------------------------------------------------------
+CHECKED_OPENING = "2026-10-16"
+CIA_MAP = {"cite": "CIA, Near East/Africa Branch, Intelligence Summary Vol. III No. 19, week ending 19 May 1948, page 2: "
+                   "'Military Situation - 18 May 1948', map no. 10981 (Map Branch, CIA, 4-48), CONFIDENTIAL, declassified and "
+                   "approved for release 2013-07-22. Legend: 'Border of strongly-held Jewish area' (heavy solid line), 'Border "
+                   "of tenuously-held Jewish area' (heavy dashed line). Record CIA-RDP78-01617A004700010003-6; the copy used: "
+                   "the Wayback Machine's of the reading room PDF, page 2 (1594 x 2108 px, 1 bit).",
+           "url": "https://web.archive.org/web/20250302131758/https://www.cia.gov/readingroom/docs/CIA-RDP78-01617A004700010003-6.pdf",
+           "record": "https://www.cia.gov/readingroom/document/cia-rdp78-01617a004700010003-6",
+           "sha256": "56915d81ac0f6f69ecef301f12c71362abb34ba5d6fa7d377b9853bb0cf69cbf", "checked": CHECKED_OPENING,
+           "licence": "A US federal government work, not protected by US copyright (17 USC 105); its 1:250,000 base is a UK "
+                      "military sheet (facts only, as D-B). Facts only, redrawn by our own method; no image is copied."}
+# The graticule ticks printed on the map's inner neatline: (degrees, side, the tick's pixel along that side, a first guess).
+CIA_TICKS = [("lon", 35.0, "top", 743), ("lon", 35.5, "top", 1075), ("lon", 34.5, "bottom", 380), ("lon", 35.0, "bottom", 724),
+             ("lon", 35.5, "bottom", 1068), ("lat", 33.0, "right", 441), ("lat", 32.5, "right", 837), ("lat", 32.0, "right", 1235),
+             ("lat", 31.5, "right", 1632), ("lat", 33.0, "left", 433)]
+CIA_NEATLINES = {"top": 154, "bottom": 1979, "left": 616, "right": 1308}   # first guesses (px) for the thin inner neatline
+# The CIA map's dashed (tenuously held) borders that are legible and close on a sourced line, waypoints on its dashes in scan
+# pixels (each snapped to the nearest ink within 4 px): the loop from the frontier near Nabi Yusha down to Safad and east
+# to the Jordan, enclosing the Hula. Its ends join the 9 July line or the frontier (within 3 km).
+CIA_STROKES = {
+    "cia_hula": [(1113, 368), (1107, 384), (1101, 396), (1090, 412), (1077, 426), (1069, 440), (1066, 456), (1068, 470),
+                 (1074, 475), (1086, 478), (1102, 479), (1118, 480), (1132, 478), (1146, 475), (1160, 474)],
+}
+# The faces of the 9 July snapshot cut by each CIA stroke that the dashed border encloses, each by a place inside it (lon,
+# lat), and their sane total area (km2): a stroke that failed to close would merge a face with its neighbour. The Hula loop
+# holds the 9 July Israeli face (Rosh Pinna: settlements_1948.yaml) and the strip west of the Jordan that ISA 6158/1's 9
+# July line gives the other side (the Syrian bridgehead at Mishmar HaYarden, taken on 10 June; a point inside it read on
+# the 9 July polygons), which the CIA loop encloses on 18 May.
+CIA_FACES = {"cia_hula": ([("Rosh Pinna", 35.5422, 32.97), ("the 9 July line's strip west of the Jordan", 35.6192, 33.0343)],
+                          (100.0, 700.0))}
+WIKI_OPENING = {
+    "acre": [WIKI + "Operation_Ben-Ami", WIKI + "Acre,_Israel"],
+    "jenin": [WIKI + "Battle_of_Jenin_(1948)", WIKI + "Zir%27in"],
+    "ramle": [WIKI + "Yibna", WIKI + "Battles_of_Latrun_(1948)"],
+    "jerusalem": [WIKI + "Burma_Road_(Israel)", WIKI + "Battles_of_Latrun_(1948)", WIKI + "Operation_Pitchfork"],
+    "hula": [WIKI + "Al-Nabi_Yusha%27", WIKI + "Al-Malkiyya", WIKI + "Mishmar_HaYarden_(moshava)"],
+    "south": [WIKI + "Battle_of_Yad_Mordechai", WIKI + "Battle_of_Nitzanim", WIKI + "Isdud"],
+}
+# Grey, cut by a 1947 sub-district (D-B; no new line), inside the 9 July Israeli area: (sub-district, why, sources).
+OPENING_CUTS = {
+    "contested_opening_acre": ("acre", "the Acre coast: Operation Ben-Ami from 13 May, Acre surrendered on the night of 17/18 May "
+                               "1948 (en.wiki); the 9 July Israeli area of the Acre sub-district", WIKI_OPENING["acre"]),
+    "contested_opening_jenin": ("jenin", "Lajjun and Zir'in, taken on 28 May 1948, then the battle of Jenin (31 May - 4 June) "
+                                "(en.wiki); the 9 July Israeli area of the Jenin sub-district", WIKI_OPENING["jenin"]),
+    "contested_opening_ramle": ("ramle", "Yibna, occupied on 5 June 1948 (en.wiki), and the Rishon-Sarafand area that the CIA's "
+                                "18 May map draws inside a dashed (tenuously held) border, whose northern end runs into the "
+                                "lettering by Jaffa and closes on no sourced line; the 9 July Israeli area of the Ramle "
+                                "sub-district", [CIA_MAP["url"]] + WIKI_OPENING["ramle"]),
+    "contested_opening_jerusalem": ("jerusalem", "the Bab el Wad - El Qastal - Jerusalem corridor, a single dashed (tenuously "
+                                    "held) border along the road on the CIA's 18 May map, which closes on no sourced line (the "
+                                    "Legion blocked the Latrun road from 18 May; the Burma Road); the 9 July Israeli area of the "
+                                    "Jerusalem sub-district (the city's own hexes are no-man's land: the period's jerusalem rule)",
+                                    [CIA_MAP["url"]] + WIKI_OPENING["jerusalem"]),
+}
+OPENING_SOUTH = ("gaza", "beersheba")
+# Q3 "settlement hexes blue": the Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the
+# 60-km northing whose 1948 site the repository already holds, sourced (settlements_1948.yaml; the ANCHORS above, each at its
+# 1946 or earlier site). Others (Nitzanim, Kfar Darom, Nirim, Be'erot Yitzhak and more) are not pinned: their sites moved
+# after 1948 and no 1948 site is sourced here yet (listed in known_staleness).
+OPENING_SETTLEMENTS = [("Yad Mordechai", 34.5583, 31.5886, WIKI + "Battle_of_Yad_Mordechai", "held until it fell on 24 May 1948 (en.wiki): known staleness"),
+                       ("Negba", 34.683, 31.6608, WIKI + "Negba", "held throughout (attacked on 2 June 1948)"),
+                       ("Nir Am", 34.5808, 31.5194, WIKI + "Nir_Am", "held throughout"),
+                       ("Dorot", 34.6453, 31.5064, WIKI + "Dorot", "held throughout"),
+                       ("Shoval", 34.7428, 31.4128, WIKI + "Shoval", "held throughout"),
+                       ("Mishmar HaNegev", 34.7186, 31.3642, WIKI + "Mishmar_HaNegev", "held throughout"),
+                       ("Hatzerim", 34.7142, 31.2403, WIKI + "Hatzerim", "held throughout"),
+                       ("Nevatim", 34.8828, 31.2236, WIKI + "Nevatim", "held throughout")]
+for _n, _x, _y, _src, _held in OPENING_SETTLEMENTS:
+    PINNED.append((_n, _x, _y, "israel", "1948-05-15", "1948-06-11", _src,
+                   "a Jewish settlement in the uncoloured south (owner ruling Q3, #674: no colour, settlement hexes blue); " + _held))
+CIA_ACCURACY = ("the 9 July lines: " + "about +-1-2 km (ISA 6158/1)" + "; the CIA's 18 May dashed border: about +-1.5 km on the scan "
+                "(its graticule fit), on a map compiled at 1:250,000-1:500,000 and printed near 1:1,000,000 (about +-3-5 km)")
+
+FACT_SOURCES = [ISA_MAP, RES181, S1025, CIA_MAP]
 
 
 # --- the scan ---------------------------------------------------------------------------------------------------------
@@ -457,6 +544,120 @@ def trace_all(a: np.ndarray, log) -> dict:
         xy, on = run(colour, wps)
         out[name] = {"colour": colour, "px": xy, "on_ink": round(on, 3)}
         log(f"  {name}: {len(xy)} vertices, {on:.0%} on its colour's ink")
+    return out
+
+
+# --- the CIA scan (#674) ----------------------------------------------------------------------------------------------
+
+def load_cia(pdf: Path) -> np.ndarray:
+    """The 18 May 1948 map (page 2) as an ink mask (True: dark)."""
+    from pypdf import PdfReader
+    ad.check(pdf, CIA_MAP)
+    page = PdfReader(pdf).pages[1]
+    img = max(page.images, key=lambda im: im.image.size[0] * im.image.size[1]).image.convert("L")
+    a = np.asarray(img) < 128
+    if a.shape != (2108, 1594):
+        raise SystemExit(f"{pdf}: the map image is {a.shape[1]} x {a.shape[0]} px, expected 1594 x 2108")
+    return a
+
+
+def cia_georeference(ink: np.ndarray, log) -> dict:
+    """Longitude and latitude as affine functions of the pixel, fitted to the graticule ticks printed on the map's thin
+    inner neatline (CIA_TICKS): each neatline's row or column, then each tick's centre where it leaves it. Fails if a tick
+    is not found or a residual is over 0.01 degree (about 1 km)."""
+    def centre(profile, lo, guess, w):
+        seg = profile[guess - w:guess + w + 1]
+        idx = np.nonzero(seg >= 0.8)[0]
+        if len(idx) == 0:
+            raise SystemExit(f"CIA scan: no ink line near pixel {guess}")
+        return float(lo + guess - w + idx.mean())
+    nl = {"top": centre(ink[:, 800:1000].mean(1), 0, CIA_NEATLINES["top"], 6),
+          "bottom": centre(ink[:, 800:1000].mean(1), 0, CIA_NEATLINES["bottom"], 6),
+          "right": centre(ink[1000:1100, :].mean(0), 0, CIA_NEATLINES["right"], 6),
+          "left": centre(ink[250:380, :].mean(0), 0, CIA_NEATLINES["left"], 6)}
+    obs = {"lon": [], "lat": []}
+    for kind, deg, side, guess in CIA_TICKS:
+        if side in ("top", "bottom"):
+            y = int(nl[side]); band = ink[y + 3:y + 9] if side == "top" else ink[y - 9:y - 3]
+            obs[kind].append((centre(band.mean(0), 0, guess, 8), nl[side], deg))
+        else:
+            x = int(nl[side]); band = ink[:, x - 9:x - 3] if side == "right" else ink[:, x + 3:x + 9]
+            obs[kind].append((nl[side], centre(band.mean(1), 0, guess, 8), deg))
+    fit, res = {}, {}
+    for k, o in obs.items():
+        o = np.array(o); A = np.c_[np.ones(len(o)), o[:, 0], o[:, 1]]
+        c = np.linalg.lstsq(A, o[:, 2], rcond=None)[0]
+        fit[k] = c; res[k] = A @ c - o[:, 2]
+    worst = [round(float(np.abs(res[k]).max()), 5) for k in ("lon", "lat")]
+    if max(worst) > 0.01:
+        raise SystemExit(f"CIA scan: a graticule residual is {max(worst)} degrees (over 0.01)")
+    km_px = (float(fit["lon"][1]) * 94.6, -float(fit["lat"][2]) * 110.9)
+    log(f"CIA 18 May 1948: georeferenced on {len(CIA_TICKS)} graticule ticks, max residual {worst[0]} / {worst[1]} deg "
+        f"(lon / lat), about {km_px[0]:.3f} / {km_px[1]:.3f} km a pixel")
+    return {"lon": fit["lon"], "lat": fit["lat"],
+            "diag": {"ticks": len(CIA_TICKS), "max_residual_deg": worst, "neatlines_px": {k: round(v, 1) for k, v in nl.items()},
+                     "km_per_px": [round(v, 4) for v in km_px], "method": "affine lon/lat of the pixel, least squares on the ticks"}}
+
+
+def cia_trace(ink: np.ndarray, fit: dict, log) -> dict:
+    """Each CIA stroke's waypoints, snapped to the nearest ink within 4 px, as a line in Palestine-grid km; on_ink is the
+    share of waypoints that found ink."""
+    from scipy import ndimage as ndi
+    from shapely.geometry import LineString
+    iy, ix = ndi.distance_transform_edt(~ink, return_indices=True)[1]
+    out = {}
+    for name, wps in CIA_STROKES.items():
+        pts, hits = [], 0
+        for x, y in wps:
+            sx, sy = int(ix[y, x]), int(iy[y, x])
+            if np.hypot(sx - x, sy - y) <= 4:
+                pts.append((sx, sy)); hits += 1
+            else:
+                pts.append((x, y))
+        p = np.array(pts, float)
+        lon = fit["lon"][0] + fit["lon"][1] * p[:, 0] + fit["lon"][2] * p[:, 1]
+        lat = fit["lat"][0] + fit["lat"][1] * p[:, 0] + fit["lat"][2] * p[:, 1]
+        e, n = ad.lonlat_to_mr(lon, lat)
+        out[name] = {"km": LineString(np.c_[e, n]), "on_ink": round(hits / len(wps), 3)}
+        log(f"  {name}: {len(wps)} waypoints, {hits / len(wps):.0%} on the scan's ink")
+    return out
+
+
+def subdistrict_km(key: str):
+    import shapely
+    from shapely.geometry import shape
+    doc = json.loads(ad.SUBDISTRICTS.read_text(encoding="utf-8"))
+    g = next(shape(f["geometry"]) for f in doc["features"] if f["properties"]["id"] == key)
+    return shapely.transform(g, lambda c: np.c_[ad.lonlat_to_mr(c[:, 0], c[:, 1])])
+
+
+def cia_faces(snap: dict, cia: dict, land, log) -> dict:
+    """{stroke: the area it encloses}: the 9 July snapshot's lines and the land outline, with the stroke joined to them
+    (its ends within 3 km), polygonised; the face holding the stroke's named place (CIA_FACES). Fails when that face is
+    outside its sane area, which an unclosed stroke would cause."""
+    import shapely
+    from shapely.geometry import Point
+    from shapely.ops import polygonize, unary_union
+    t1 = [s for s, _ in snap["pieces"]]
+    out = {}
+    for name, c in cia.items():
+        joined, joins = join_ends({name: c["km"]}, unary_union(t1 + [land.boundary]))
+        if any("free_km" in j for j in joins):
+            raise SystemExit(f"{name}: an end is not within 3 km of the 9 July line or the frontier ({joins})")
+        faces = [f for f in polygonize(unary_union(t1 + [joined[name], land.boundary])) if land.contains(f.representative_point())]
+        seeds, (lo, hi) = CIA_FACES[name]
+        got = []
+        for place, lon, lat in seeds:
+            e, n = ad.lonlat_to_mr(lon, lat)
+            face = next((f for f in faces if f.contains(Point(float(e), float(n)))), None)
+            if face is None:
+                raise SystemExit(f"{name}: no face holds {place}")
+            got.append(face)
+        area = shapely.union_all(got)
+        if not lo <= area.area <= hi:
+            raise SystemExit(f"{name}: the faces holding {', '.join(p for p, _, _ in seeds)} are {area.area:.0f} km2, outside {lo}-{hi}")
+        out[name] = {"area": area, "joins": joins}
+        log(f"  {name}: encloses {area.area:.0f} km2 (the faces holding {', '.join(p for p, _, _ in seeds)})")
     return out
 
 
@@ -752,7 +953,7 @@ def area_feature(fid, snapshot, side, geom, holder=None, kind=None, extra=None, 
     return {"type": "Feature", "properties": props, "geometry": mapping(g)}
 
 
-def build(isa_pdf: Path, log=print) -> dict:
+def build(isa_pdf: Path, cia_pdf: Path, log=print) -> dict:
     import shapely
     from shapely.geometry import LineString, mapping
     a = load_scan(isa_pdf)
@@ -762,20 +963,32 @@ def build(isa_pdf: Path, log=print) -> dict:
     land_all = ad.mandate_land()
     land_n = land_all.intersection(km_box(0, SOUTH_N, 400, 400))
     feats, snaps, anchors = [], {}, {}
-    # the drawn lines, as traced (true lines)
+    # the drawn lines, as traced (true lines); the CIA's after the snapshots
     for name, t in traced.items():
         he, en, d = LEGEND[t["colour"]]
         g = shapely.set_precision(ad.km_geom_to_lonlat(stroke_km(fit, t["px"]).simplify(0.02)), 1e-5)
         feats.append({"type": "Feature", "properties": {"id": name, "kind": "line", "colour": t["colour"], "legend_he": he,
                       "legend": en, "date": d, "on_ink": t["on_ink"], "sources": [ISA_MAP["url"]], "checked": CHECKED,
                       "status": "draft", "review": "owner-verify"}, "geometry": mapping(g)})
-    spans = {"truce1": ("1948-06-11", "1948-07-08"), "truce2": ("1948-07-18", "1948-07-24"), "truce2b": ("1948-07-26", "1948-10-15"),
-             "october": ("1948-10-31", "1949-02-24")}
+    spans = {"opening": ("1948-05-15", "1948-06-11"), "truce1": ("1948-06-11", "1948-07-08"), "truce2": ("1948-07-18", "1948-07-24"),
+             "truce2b": ("1948-07-26", "1948-10-15"), "october": ("1948-10-31", "1949-02-24")}
     for sid, (names, drops, drawn, shown) in SNAPSHOTS.items():
         log(f"snapshot {sid} (lines as drawn {drawn}, shown from {shown}):")
         snaps[sid] = build_snapshot(fit, traced, land_n, names, drops, log)
         anchors[sid] = check_anchors(snaps[sid], sid, *spans[sid], log)
         check_holders(snaps[sid], sid, *spans[sid])
+    # 15 May - 10 June 1948 (#674, option b): the 9 July polygons themselves (no line of their own)
+    log("snapshot opening (the 9 July lines, adjusted; shown from 1948-05-15):")
+    snaps["opening"] = snaps["truce1"]
+    anchors["opening"] = check_anchors(snaps["opening"], "opening", *spans["opening"], log)
+    if len(anchors["opening"]) < 20:
+        raise SystemExit(f"opening: only {len(anchors['opening'])} anchors are sourced for 15 May - 10 June (20 wanted)")
+    check_holders(snaps["opening"], "opening", *spans["opening"])
+    log("the CIA's 18 May 1948 map:")
+    ink = load_cia(cia_pdf)
+    cfit = cia_georeference(ink, log)
+    cia = cia_trace(ink, cfit, log)
+    cia_area = cia_faces(snaps["truce1"], cia, land_n, log)
     fronts, arm_lines, arm_zones = armistice_features()
     prev_key = None; arm_ids = {}
     for d in ARMISTICE_DATES:
@@ -791,6 +1004,12 @@ def build(isa_pdf: Path, log=print) -> dict:
         log(f"armistice {d}: fronts switched {', '.join(s['switched'])}; closures {', '.join(s['closures']) or 'none'}")
         anchors[sid] = check_anchors(s, sid, d, nxt, log, 3.0 if "jordan" in s["switched"] else 2.0)
         check_holders(s, sid, d, nxt)
+    for name, c in cia.items():
+        g = shapely.set_precision(ad.km_geom_to_lonlat(c["km"]), 1e-5)
+        feats.append({"type": "Feature", "properties": {"id": name, "kind": "line", "colour": "cia_tenuous",
+                      "legend": "Border of tenuously-held Jewish area", "date": "1948-05-18", "on_ink": c["on_ink"],
+                      "sources": [CIA_MAP["url"]], "checked": CHECKED_OPENING, "status": "draft", "review": "owner-verify"},
+                      "geometry": mapping(g)})
     # overlays: contested during operations, no colour at the uncertain Egypt closure, demilitarized zones
     south = km_box(0, 0, 400, 160); north = km_box(0, 200, 400, 400)
     ten = xor_israel(snaps["truce1"], snaps["truce2"])
@@ -810,6 +1029,30 @@ def build(isa_pdf: Path, log=print) -> dict:
         "contested_hiram": (octx.intersection(north), "contested", ops["hiram"][:2], [ISA_MAP["url"]] + ops["hiram"][2], ISA_ACCURACY, "low_res_scan",
                             "Operation Hiram: the Galilee pocket"),
     }
+    # 15 May - 10 June 1948 (#674): grey where the CIA's dashed border closes (traced) or a source dates a change inside a 9
+    # July Israeli area (cut by its sub-district), the south without colour (cut by its sub-districts)
+    win = ("1948-05-15", "1948-06-11")
+    t1_israel = snaps["truce1"]["areas"]["israel"]
+    opening = {"contested_opening_hula": (cia_area["cia_hula"]["area"], "contested", win,
+                                          [ISA_MAP["url"], CIA_MAP["url"]] + WIKI_OPENING["hula"], CIA_ACCURACY, "low_res_scan",
+                                          "the Safad-Hula loop that the CIA's 18 May map draws as a dashed (tenuously held) border, "
+                                          "from the frontier near Nabi Yusha down to Safad and east to the Jordan (traced on the "
+                                          "scan); its other edges are the 9 July line and the frontier")}
+    for oid, (key, why, srcs) in OPENING_CUTS.items():
+        opening[oid] = (subdistrict_km(key).intersection(t1_israel), "contested", win, [ISA_MAP["url"]] + srcs,
+                        ISA_ACCURACY, "low_res_scan", why)
+    south = shapely.union_all([subdistrict_km(k) for k in OPENING_SOUTH]).intersection(land_all)
+    opening["unsourced_south_opening"] = (south, "not_sourced", win, [ISA_MAP["url"], CIA_MAP["url"]] + WIKI_OPENING["south"],
+                                          "the Gaza and Beersheba sub-districts (D-B)", None,
+                                          "the south: the CIA's 18 and 25 May maps draw no Jewish-held area beyond the partition "
+                                          "boundary and its 11 June map labels the Negev 'Arab controlled', while ISA 6158/1's 9 "
+                                          "July line draws an Israeli block; the settlements were islands among Arab localities, with "
+                                          "the Egyptian army moving north from 15 May. The sources disagree: no colour, the Jewish "
+                                          "settlements' hexes blue (pinned_towns; owner ruling Q3, #674)")
+    for oid, o in opening.items():
+        if o[0].is_empty:
+            raise SystemExit(f"{oid}: empty")
+    overlays = {**opening, **overlays}
     first_egypt = next(sid for d, sid in arm_ids.items() if "egypt" in snaps[sid]["switched"])
     # the uncertain band is the Israeli side's only: the area the Egypt line and the frontier already give Egypt stays Egypt's
     unc = shapely.union_all([shapely.buffer(u, CLOSURE_UNCERTAIN_KM) for u in snaps[first_egypt]["uncertain"]]).intersection(land_all)
@@ -821,7 +1064,7 @@ def build(isa_pdf: Path, log=print) -> dict:
         overlays["dmz_" + z["id"]] = (z["geom"].intersection(land_all), "dmz", (z["from"], None), [ARMISTICE.name, ad.UNTS["url"]],
                                       z["accuracy"] or ARMISTICE_ACCURACY, z["source_quality"], z["name"])
     # features
-    for sid, s in snaps.items():
+    for sid, s in sorted(snaps.items(), key=lambda kv: kv[0] != "opening"):
         date = spans.get(sid, (sid[4:], None))[0]
         arm = sid.startswith("arm_")
         legend = "armistice" if arm else "held"
@@ -833,15 +1076,27 @@ def build(isa_pdf: Path, log=print) -> dict:
         for h, g in sorted(split_holders(s["areas"]["arab"], date).items()):
             flag = {"low_accuracy": jordan_in and h == "jordan"} if arm else {}
             feats.append(area_feature(f"{sid}:arab:{h}", sid, "arab", g, h, extra={"legend": legend, **flag}, **kw))
+        if sid == "opening":
+            for f in feats[-(1 + len(split_holders(s["areas"]["arab"], date))):]:
+                f["properties"]["checked"] = CHECKED_OPENING
     for oid, (g, kind, (f, u), srcs, acc, sq, why) in overlays.items():
         if g.is_empty:
             continue
         side = "unsided" if kind == "not_sourced" else "neutral"
-        feats.append(area_feature(oid, None, side, g, None, kind, {"shown_from": f, "shown_until": u, "why": why}, sources=srcs,
-                                  accuracy=acc, source_quality=sq))
+        feat = area_feature(oid, None, side, g, None, kind, {"shown_from": f, "shown_until": u, "why": why}, sources=srcs,
+                            accuracy=acc, source_quality=sq)
+        if oid in opening:
+            feat["properties"]["checked"] = CHECKED_OPENING
+        feats.append(feat)
     periods = [
-        {"id": "sub_districts", "from": "1948-05-15", "until": "1948-06-11", "snapshot": None, "overlays": [], "legend": None,
-         "why": "15 May 1948 has no sourced line (research note, section 1): the 1947 sub-districts, no side colour"},
+        {"id": "opening", "from": "1948-05-15", "until": "1948-06-11", "snapshot": "opening",
+         "overlays": ["unsourced_south_opening", "contested_opening_hula", "contested_opening_acre", "contested_opening_jenin",
+                      "contested_opening_ramle", "contested_opening_jerusalem"],
+         "legend": "adjusted", "line_date": "1948-07-09", "jerusalem": "no_mans_land",
+         "why": "owner decision of 16 October 2026 (#674, option b, '9 July lines, adjusted'): no line for 15 May can be traced "
+                "honestly, so the 9 July line with grey where the front moved before 11 June or the CIA's 18 May map shows a "
+                "tenuous hold, the south without colour (its settlements blue), Jerusalem no-man's land (research note "
+                "control-15-may-1948.md section 9)"},
         {"id": "truce1", "from": "1948-06-11", "until": "1948-07-08", "snapshot": "truce1", "overlays": [], "legend": "held",
          "line_date": "1948-07-09", "why": "the first truce: the line ISA 6158/1 dates 9 July 1948, the closest sourced line (owner ruling 2026-10-14)"},
         {"id": "ten_days", "from": "1948-07-08", "until": "1948-07-18", "snapshot": "truce1", "overlays": ["contested_ten_days"], "legend": "held", "line_date": "1948-07-09"},
@@ -872,16 +1127,36 @@ def build(isa_pdf: Path, log=print) -> dict:
                        "the small circles the map draws in red (Kfar Darom, 'Iraq Suweidan and its neighbour): not in the map's legend",
                        "the blue strokes under 1.5 km from the red in the Hula valley and at Ein Gev (below the accuracy)",
                        "the Syrian and Israeli truce lines of S/1353/Rev.1: on its colour scan the Israeli line is legible only in parts and the Syrian line cannot be told apart from the zone's outline and the river at that resolution; ISA 6158/1's red and blue cover that front",
-                       "the 1950 modus vivendi line: it does not change either side's position (S/1471 Art. III)"],
+                       "the 1950 modus vivendi line: it does not change either side's position (S/1471 Art. III)",
+                       "the CIA 18 May 1948 map's strongly-held (solid) border: on the greyscale scan it cannot be told from the "
+                       "partition boundary, the roads and the railway (research note control-15-may-1948.md section 9)",
+                       "the CIA 18 May map's dashed (tenuously held) borders by Rishon-Sarafand and along the Jerusalem corridor: "
+                       "legible, but they close on no sourced line (the first runs into the lettering by Jaffa, the second is a single "
+                       "line along the road); their areas are cut by the Ramle and Jerusalem sub-districts instead",
+                       "the CIA 18 May map's dashed loop by the north Dead Sea works: not legible on this copy (one dash, then the "
+                       "'Palestine Potash Ltd' lettering); the area keeps the 9 July line's side",
+                       "the CIA 18 May map's dashed border from Ramle to Latrun: within about 1.5 km of the 9 July line all the way "
+                       "(below both maps' accuracy)"],
         "south_limit_km_n": SOUTH_N,
         "known_staleness": ["the October 1948 line is shown until the Egypt agreement (24 February 1949), since no source gives a later line: Isdud (taken 28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then; the caption names the source line's date",
+                            "15 May - 10 June 1948 is one period on the 9 July lines (owner ruling Q4, #674): changes inside it are not "
+                            "shown by day: Atarot (17 May) and Neve Yaakov (18 May) evacuated, the Kinarot valley fighting (18-22 "
+                            "May), Kalia and Beit HaArava abandoned (20 May), Yad Mordechai fallen (24 May; its hex stays blue), RAF "
+                            "Ramat David handed over (26 May), the Jewish Quarter surrendered (28 May), Isdud taken by the Egyptian "
+                            "army (29 May), Nitzanim fallen (7 June), Mishmar HaYarden taken by the Syrian army (10 June); and the "
+                            "British evacuation enclave at Haifa (to 30 June 1948) is not drawn (owner ruling Q5: an info-panel note)",
+                            "the south in 15 May - 10 June 1948: only the Jewish settlements whose 1948 site the repository holds are "
+                            "pinned blue (Yad Mordechai, Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim, Nevatim); Nitzanim, "
+                            "Kfar Darom, Nirim, Be'erot Yitzhak and others are not, their sites having moved after 1948 with no 1948 "
+                            "site sourced here; Revivim, south of the 60-km northing, stays without colour as in every 1948 period",
                             "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns). A known limit of the periods: the pin covers whole periods inside its window, so the Yoav period (15-29 October) shows the hex Israeli from 15 October, four days before its capture"],
         "pinned_towns": [{"place": n, "lon": x, "lat": y, "holder": h, "from": f, "until": u, "source": src, "why": w} for n, x, y, h, f, u, src, w in PINNED],
         "georeference": fit["diag"],
+        "georeference_cia": cfit["diag"],
         "conversion": "Palestine Grid (EPSG:28191) to WGS84 by the EPSG Helmert transformation (tools/armistice_digitise.py, PG_PIPELINE)",
         "drops": {sid: [{"stroke": s, "px": [x, y], "why": w} for s, x, y, w in d] for sid, (_, d, _, _) in SNAPSHOTS.items()},
         "closures": CLOSURES,
-        "joins": {sid: s["joins"] for sid, s in snaps.items()},
+        "joins": {**{sid: s["joins"] for sid, s in snaps.items()}, **{n: c["joins"] for n, c in cia_area.items()}},
         "operations": {k: {"from": f, "until": u, "sources": src} for k, (f, u, src) in OPERATIONS.items()},
         "anchors": anchors,
         "periods": periods,
@@ -892,9 +1167,10 @@ def build(isa_pdf: Path, log=print) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--isa-map", type=Path, required=True, help="the NYU copy of ISA 6158/1 (R0005czg.pdf)")
+    ap.add_argument("--cia-map", type=Path, required=True, help="the CIA 18 May 1948 summary (CIA-RDP78-01617A004700010003-6.pdf)")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args()
-    doc = build(args.isa_map)
+    doc = build(args.isa_map, args.cia_map)
     ad.write(doc, args.out)
     print(f"wrote {args.out} ({len(doc['features'])} features)")
 

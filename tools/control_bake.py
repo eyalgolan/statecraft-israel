@@ -22,7 +22,8 @@ Mandatory Palestine (the sub-district layer's land: its regions but 'outside') t
     south before 3 April 1949);
   4 Jerusalem (S/1025: an agreed line with a no-man's land between the two lines; from 1949 map 2, not available): a hex
     within 6 km of the city whose own area holds both sides, the smaller at least a fifth of 37 sample points, is
-    no-man's land (m).
+    no-man's land (m). A period whose `jerusalem` is no_mans_land (15 May - 10 June 1948: the city fought over, owner
+    decision of 16 October 2026, #674) makes every hex within 6 km no-man's land (m), unless it has no colour (-);
   5 a pinned town (the GeoJSON's pinned_towns: a town the sources place on one side that the traced lines, within their
     accuracy, put on the other) gives its hex (placed as the game places settlements) the sourced holder for every period
     inside the pin's window, unless the hex is grey;
@@ -129,7 +130,9 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
             if c is None:   # a frontier hex whose centre the outline leaves out (Metulla): the most common code over its area
                 got = [g for g in (code_at(x, y, snaps[p["snapshot"]], ovs) for x, y in samples(lon, lat, km_lon, size)) if g]
                 c = max(sorted(set(got)), key=got.count) if got else "-"
-            if jer and c not in "cz-":
+            if jer and p.get("jerusalem") == "no_mans_land" and c != "-":
+                c = "m"
+            elif jer and c not in "cz-":
                 got = [code_at(x, y, snaps[p["snapshot"]], []) for x, y in samples(lon, lat, km_lon, size)]
                 n_i = sum(1 for g in got if g == "I"); n_a = sum(1 for g in got if g and g != "I")
                 if min(n_i, n_a) >= JERUSALEM_MIN_SHARE * len(got):
@@ -150,7 +153,7 @@ def render(source: dict, periods: list, cells: dict) -> str:
            f"title: {q(meta['title'])}\n",
            f"meaning: {q(meta['meaning'])}\n",
            f"line: {q('The true polygons are content/map/control_1948_49.geojson (status ' + meta['status'] + ', ' + meta['review'] + '); shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line.')}\n",
-           f"shown_from: {periods[0]['from']}   # before it the 1947 sub-districts, no side colour (no sourced line for 15 May 1948)\n",
+           f"shown_from: {periods[0]['from']}   # the game's start (15 May 1948): the 9 July 1948 lines, adjusted (#674); nothing before it\n",
            "codes: \"I Israel; E Egypt, J Jordan, S Syria, V the Arab Liberation Army, M several, A not named "
            "(the other side, by holder); c contested; m no-man's land; z demilitarized zone; - no colour (no sourced line)\"\n",
            "periods:   # legend: held (1948 front lines), armistice (every front's agreement), mixed (some); line_date: the date the source line shows\n"]
