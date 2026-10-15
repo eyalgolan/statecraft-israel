@@ -94,6 +94,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `Train` borrow what the Treasury lacks, as map actions do. `mvp-slice` moves (the reference player builds Mefalsim by
   15 March 1949, and the golden now runs to that date); the legacy goldens and `scenario-mvp-absorb-first` do not.
   The Unity order queue (`SimBridge`) takes both orders, one per unit.
+- Map: every army token stands as in demo2 T29: the figures shoulder to shoulder on a round, dark, mottled earth base
+  built on the terrain's own triangles (it follows the ground on any hill, no mesa, no gap downhill), a bright white
+  ring on the ground just outside it, and its side's flag, drawn unlit, on a pole at the base's back edge, turning about
+  the pole to face the camera (owner, 15 October); the figures at 1400x, 1.8 times a block (owner, 14 October; refs
+  #197). `units_1948.yaml` gives each unit a `side`; only Israel's flag is drawn, from the 1948 proclamation, and other
+  sides fly none until a sourced flag exists. The showcase trio stands off the routes in a kit clearing. Aircraft and
+  ships are unchanged.
 - Desktop release builds from the Mac (refs #54; Phases 0-1 of the plan in PR #482): `Build.LinuxMono` and
   `Build.WindowsMono` build the Linux and Windows x64 players on Mono (decisions O7, O8) and put the committed IL2CPP
   setting back afterwards, and
@@ -559,10 +566,18 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- In the Hebrew UI a refused order names its kind in Hebrew (refs #595; owner, 15 October 2026: "Yes, translate them"),
+  for example "לא ניתן לזהות מדיניות", not "policy לא מוכר". Each kind is a string, `order.kind.<kind>`, in both
+  strings files; English reads as before ("Unknown policy"). The Hebrew words wait for the native reviewer (#564).
 - An autosave that cannot be continued (refs #631, #622) no longer shows the sim's English reason or a replay's exception
   message to the player: the note always gives the short reason "the file could not be read or replayed", in English and
   Hebrew, and the full exception goes to the log. A replay that throws keeps that exception, with its stack, as the
   SaveException's inner exception. No save format change.
+- Kit faces in shadow keep their own colour (refs #32): `Kit.shader`'s ambient takes the sun's warmth where the sun does
+  not reach (a bounce term, 0.6 of it in full shade, at the trilight's own brightness), so a shaded wall, roof flank or
+  tree crown reads as a darker version of itself and not blue-grey under the grade's teal shadows (Safed at 6 km, shaded
+  wall hue 100 to 44 degrees, saturation 0.09 to 0.27, same value). Terrain, water and every other shader are unchanged;
+  sunlit kit faces get a little warmer. `KitTests.AKitFaceInShadowKeepsItsOwnHue` pins it. No golden moves.
 - UI text from Jeremy Hoover's review (refs #622): a refused order no longer shows a content id or an exception's
   message after "Not done:" ("Unknown policy", "The turn could not run", in English and Hebrew); both stay in the log.
   The six Title Case labels are in sentence case ("Public support", "International standing", "Foreign currency", "End

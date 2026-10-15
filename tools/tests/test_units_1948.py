@@ -99,3 +99,12 @@ def test_a_window_ends_at_the_earliest_sourced_move():
         return any(day(a['from']) <= d < day(a['to']) for a in u['anchors'])
     assert shown('carmeli', date(1948, 7, 10)) and not shown('carmeli', date(1948, 9, 1))
     assert shown('givati', date(1948, 10, 1)) and not shown('givati', date(1948, 12, 15))
+
+# The sides of 1948 a unit can belong to (UnitData.Sides): Israel and the Arab states whose armies entered the war. Every row
+# names its side; the map flies that side's flag where one is sourced (UnitFlags).
+SIDES = {'israel', 'egypt', 'jordan', 'syria', 'iraq', 'lebanon'}
+
+
+def test_every_unit_names_a_known_side():
+    for u in UNITS:
+        assert u.get('side') in SIDES, f"{u['id']}: side {u.get('side')!r} is not one of {sorted(SIDES)}"

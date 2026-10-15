@@ -1,7 +1,8 @@
 // Settlement kits and trees (art spike, issues #31 #32 #34 #37). Vertex colour is the sRGB albedo; its alpha picks a
 // facade's window pattern (KitMesh.Facade), drawn from uv0 = the wall's (along, up) position in real metres, so storeys and
 // windows keep real proportions on symbolic-size buildings, box-filtered so they fade to their mean instead of shimmering
-// when a storey is a pixel or two. Lit like the terrain (the sun with its shadows, the trilight ambient through SH) and
+// when a storey is a pixel or two. Lit like the terrain (the sun with its shadows, the trilight ambient through SH; in shade
+// the ambient also takes a sun-warm bounce, KitBounce, so a face keeps its own colour) and
 // hazed with the terrain's own ScHazeAmount, so kits sit in the same air as the ground. GPU instancing for the trees, with a
 // per-instance tint hashed from the instance's origin (no per-instance buffer: WebGL 2 has instanced arrays only).
 // Shadows use the sun's own URP bias, unchanged (ApplyShadowBias): KitTests.AKitShadowStartsAtItsWalls finds no gap at
@@ -63,6 +64,9 @@ Shader "Statecraft/Kit"
                 return o;
             }
 
+            // How much of the ambient in full shade is the sun's bounce (kit shadow colour, refs #32).
+            static const half KitBounce = 0.6;
+
             // A 1D band [a, b] of a period-1 pattern, box-filtered over the pixel's footprint w (in periods).
             float Band(float x, float a, float b, float w)
             {
@@ -118,7 +122,13 @@ Shader "Statecraft/Kit"
                 }
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 float ndl = saturate(dot(n, sun.direction));
-                half3 lit = albedo * (SampleSH(n) + sun.color * ndl * sun.shadowAttenuation);
+                // The ambient takes the sun's warmth where the sun does not reach (the bounce off the sunlit ground; same
+                // brightness, the trilight's luminance): with the trilight's own colour, near grey at a wall and sky blue on
+                // a roof, a pale face in shade had almost no colour left, and the grade's teal shadows turned it blue-grey.
+                float sunlit = ndl * sun.shadowAttenuation;
+                half3 sh = SampleSH(n);
+                half3 bounce = Luminance(sh) * sun.color / max(Luminance(sun.color), 1e-4);
+                half3 lit = albedo * (lerp(sh, bounce, KitBounce * (1.0 - sunlit)) + sun.color * sunlit);
                 float h = _ScHaze.a * ScHazeAmount(i.positionWS);
                 return half4(lerp(lit, _ScHaze.rgb, h), 1.0);
             }

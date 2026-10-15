@@ -30,6 +30,8 @@
 #   Sword, 1961) or the IDF and Defense Establishment Archives. The card computes the same note per anchor.
 # headgear: the riflemen's headgear, only where a source ties it to the unit (otherwise the uniform default: bush hat,
 #   steel helmet, bush hat; docs/units.md).
+# side: whose formation it is: israel (every row here), or egypt, jordan, syria, iraq, lebanon (#226). The token flies
+#   that side's flag where the repo has a sourced one (Israel's only, for now; docs/units.md, "The plinth and the flag").
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian.
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
@@ -40,6 +42,7 @@ units:
   name: Golani Brigade
   number: 1st Brigade
   service: army
+  side: israel
   formed: 22 February 1948
   first_commander: Moshe Mann
   sector: "Much of the Lower Galilee and the Jezreel Valley, the Jordan Valley and the Hula Valley; headquarters in Yavne'el. In December 1948 it moved to the southern front, at the Julis camp."
@@ -77,6 +80,7 @@ units:
   name: Carmeli Brigade
   number: 2nd Brigade
   service: army
+  side: israel
   formed: 22 February 1948
   sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (from 13 May 1948; Acre surrendered on the night of 17-18 May), led Operation Brosh against the Syrian bridgehead at Mishmar HaYarden (9-18 July 1948) and fought in Operation Hiram."
   wikipedia_only: false
@@ -116,6 +120,7 @@ units:
   name: Alexandroni Brigade
   number: 3rd Brigade
   service: army
+  side: israel
   formed: November 1947 (the Haganah's decision of 7 November)
   sector: "The Sharon region: from the Carmel in the north to the Dan bloc in the south; headquarters at Camp Dora in Netanya. In November 1948 it replaced the Givati Brigade at the Faluja pocket."
   wikipedia_only: false
@@ -147,6 +152,7 @@ units:
   name: Kiryati Brigade
   number: 4th Brigade
   service: army
+  side: israel
   formed: February 1948
   sector: "The urban area of Tel Aviv, from the Yarkon River in the north to Bat Yam in the south and Yazur in the east."
   wikipedia_only: false
@@ -170,6 +176,7 @@ units:
   name: Givati Brigade
   number: 5th Brigade
   service: army
+  side: israel
   formed: December 1947
   first_commander: Shimon Avidan
   sector: "Moved to the south as the war entered its second stage, concentrated mainly around Gedera, Gan Yavne and Be'er Tuvia."
@@ -195,6 +202,7 @@ units:
   name: Etzioni Brigade
   number: 6th Brigade
   service: army
+  side: israel
   formed: Late 1947
   first_commander: Yisrael Amir
   sector: The defence of Jerusalem and its surroundings.
@@ -226,6 +234,7 @@ units:
   name: 7th Brigade
   number: 7th Brigade
   service: army
+  side: israel
   formed: 16 May 1948
   first_commander: Shlomo Shamir
   sector: "The battles of Latrun (Operation Bin Nun, 24 May to 1 June 1948), from the headquarters at Hulda; in June 1948 it moved to the northern front, organising for a time at Ein Shemer."
@@ -261,6 +270,7 @@ units:
   name: 8th Brigade
   number: 8th Brigade
   service: army
+  side: israel
   formed: 24 May 1948
   first_commander: Yitzhak Sadeh
   sector: "The IDF's first armoured brigade: after its founding it trained at Tel Litvinsky (later Tel HaShomer); its first operation was Operation Dani in July 1948, then Yoav, Assaf and Horev in the south. Disbanded in April 1949."
@@ -282,6 +292,7 @@ units:
   name: Oded Brigade
   number: 9th Brigade
   service: army
+  side: israel
   sector: The sources conflict.
   wikipedia_only: false
   status: draft
@@ -299,6 +310,7 @@ units:
   name: Harel Brigade
   number: 10th Brigade (Palmach)
   service: army
+  side: israel
   formed: 16 April 1948
   first_commander: Yitzhak Rabin
   sector: "All units in the Jerusalem corridor and hills; in the first half of May 1948 it took the corridor and opened the road to Sha'ar HaGai. Later it fought in Operation Horev."
@@ -333,6 +345,7 @@ units:
   name: Yiftach Brigade
   number: 11th Brigade (Palmach)
   service: army
+  side: israel
   formed: April 1948
   sector: "Formed from Palmach battalions of the Jezreel Valley and the eastern valleys; in July 1948 it fought in Operation Dani, which took Lydda and Ramle. Disbanded in May 1949."
   wikipedia_only: false
@@ -358,6 +371,7 @@ units:
   name: Negev Brigade
   number: 12th Brigade (Palmach)
   service: army
+  side: israel
   formed: March 1948
   first_commander: Nahum Sarig
   sector: "The Negev, in two sectors divided by the Beersheba-Gaza road; brigade headquarters at the Mekorot camp near Nir Am."
@@ -386,6 +400,7 @@ units:
   name: 101 Squadron
   number: First Fighter Squadron
   service: air
+  side: israel
   formed: 20 May 1948
   first_commander: Modi Alon
   sector: "Formed at Ekron (the former RAF Aqir) in May 1948; first mission 29 May. It flew from a strip near Herzliya from mid-June, and from Hatzor from November 1948."
@@ -455,6 +470,7 @@ units:
   name: INS Haganah (K-20)
   number: Corvette, commissioned 1948
   service: navy
+  side: israel
   formed: 1948 (taken over and rearmed by the navy)
   sector: "Ex-HMCS Norsyd, a modified Flower-class corvette; as the Aliyah Bet ship Haganah it was moored in Haifa harbour until the state was founded, then taken over and rearmed by the navy in 1948."
   wikipedia_only: true
@@ -476,6 +492,7 @@ units:
   name: INS Wedgwood
   number: Corvette, commissioned 1948
   service: navy
+  side: israel
   formed: 1948 (commissioned after independence)
   sector: "Ex-HMCS Beauharnois, a modified Flower-class corvette; impounded at Haifa until independence, then commissioned in the navy. It fought beside Haganah in Operation Yoav."
   wikipedia_only: true

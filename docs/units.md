@@ -29,7 +29,8 @@ Code: `unity/Assets/Scripts/Map/Units/`. The materials are made by `UnitMaterial
 
 ## Owner rulings (2026-10-11)
 
-1. **Units are Civ-style tokens at about 2,000x real size** (see "Scale").
+1. **Units are Civ-style tokens at symbolic scale** (see "Scale"). The 11 October ruling said about 2,000x; the owner's
+   decision of 14 October supersedes it: figures at 1.8 times a block, as T29 (1,400x).
 2. **Promo-quality close-zoom models come from a separate track:** a cloud-GPU AI-3D pipeline (TRELLIS, MIT). The
    code-built miniatures here stay as the far-zoom and fallback version.
 
@@ -193,19 +194,30 @@ checks every anchor and logs each spot and its distance.
 - **Air:** the squadron flies the slice's loop over its base at security level 4 or 5 and stands parked below that.
 - **Navy:** a ship is the K-20 corvette model; Wedgwood was the same modified Flower class.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
-  aircraft or a ship). It is turned to face each camera as it renders.
+  aircraft or a ship). It is turned to face each camera as it renders. On an army token it sits above the flag's top, a little
+  behind the trio and to the side away from the flag's pole as that camera sees it (`UnitLayer.FaceCamera`; review of #559:
+  it covered the middle figure's head once the trio stood shoulder to shoulder, and the flag now turns with the camera).
+  The map's names keep clear of the badge and the flag where the camera draws them: `GameRoot` turns them to the labels'
+  camera before the names are placed, and each token's keep-clear boxes follow (`UnitLayer.KeepClear`). A fixed box round
+  every place the camera's yaw could take the badge, about 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03
+  (`MapLabelTests.PillsKeepClearOfTheUnitTokens`; test `TheKeepClearBoxesFollowTheBadgeAndTheFlagAsTheCameraTurns`).
 - **Ring:** the white ring appears only on selection.
-- **Slopes (owner question, 2026-10-11).** Each rifleman stands on the highest ground under its boots
-  (`UnitShowcase.Stand`: the centre plus 48 points on three rings out to the boots' 400 m radius), so no boot sinks into
-  a hill. Where the ground under the boots falls more than 20 m, the figure stands on a base, as a painted miniature
-  does. The base is a disc of trodden earth (the palette's `Dust`) of the boots' radius, reaching down to the lowest ground, so the
-  downhill boot never floats.
-  - **Steepest spots:** the worst drop is about 0.6–1 km, against a 3.6 km figure, on the 3x relief of the Jerusalem
-    hills.
-  - **Tests:** `AFigureStandsOnASteepSlopeWithoutSinking` and `NoRiflemanSinksIntoTheHillsOfTheMap`.
-  - **Close-ups** (`MapCapture.Promo -units -extraPose …`, at 12 and 20 km): at 6 km the camera sees only boots.
-- **Trees (#249).** The kit trees whose crowns reach a drawn figure's boots (its 400 m foot radius, which is also its
-  base's) are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
+- **Base and flag (demo2 T29, refs #197).** An army token's figures stand shoulder to shoulder on one round earth base
+  ringed by a bright white rim (`UnitPlinth`), and the side's flag flies on a pole at the base's back edge (`UnitFlags`).
+  See "The base and the flag".
+- **Slopes (owner question, 2026-10-11; rounds 3 and 4 of #559).** The base is draped on the terrain's own triangles:
+  every heightmap cell under it (79 x 211 m) is split along the diagonal the terrain itself uses there and raised by the lip
+  (`UnitPlinth.LipShare`, a twentieth of its radius, about 100 m), the cells at the edge clipped to a 96-sided outline with
+  heights from the terrain's planes. So the top follows the ground exactly wherever a token stands, with no grid density
+  to tune, and an edge lip of the same height, sampled every 40 m along the outline, closes it to the ground. On a hill it
+  neither stands up as a mesa nor leaves a gap downhill. A figure stands on the top at its own point (an uphill boot sets
+  into the base, which hides it).
+  - **Tests:** `TheBaseFollowsTheGroundOnEveryHillHexOfTheMap` (every hill hex of the map, not only today's spots: the top
+    within half the lip of the ground plus the lip, and the 99th percentile within a quarter),
+    `TheBaseFollowsTheGroundOnEveryHillToken`, `EveryFigureStandsOnTheDrapedTop` and `NoRiflemanSinksIntoTheHillsOfTheMap`.
+    The level discs before stood up to 1,081 m (round 1) or 707 m (round 2) over Harel's valley side; round 3's 32 x 96
+    polar grid strayed up to 113 m on the map's hills.
+- **Trees (#249).** The kit trees whose crowns reach a drawn token's base are left out at draw time (`VegetationLayer.Hide`), so no orchard grows through a figure. Only the figures drawn
   that day clear trees, and they come back when the figure goes. With the `units` toggle off, as in a plain `?shot` run,
   every tree is drawn. The planting, and so the kits' layout, never changes. Tests:
   `NoKitTreeGrowsThroughAShownFiguresFeet` and `OnlyTheShownFiguresTreesGoAndTheToggleBringsThemBack`.
@@ -295,13 +307,73 @@ which plugs authored models in through the art hook above.
 
 Measured on the promo scaled to 1920 px wide: a rifleman is about 87 px tall, inside a ring about 190 px across. Our
 gameplay03 pose frames the same hex count as the promo (about 9 across: see `PromoPose`). The first checkpoint, at 2600x,
-drew our riflemen 113 px tall. So the slice uses `UnitShowcase.FigureScale = 2000`: a man about 3.6 km tall on 5 km
-hexes, with the ring at 0.66 of a hex's circumradius. The aircraft (x420, a 4.7 km span) and the ship (x95, 6.0 km) are
-sized against the figures, as Civ sizes them, not against each other.
+drew our riflemen 113 px tall, so the first round used 2000x. The ring is at 0.66 of a hex's circumradius. The aircraft
+(x420, a 4.7 km span) and the ship (x95, 6.0 km) are sized against the figures, as Civ sizes them, not against each other.
 
-**Owner ruling (2026-10-11): units stay Civ-style tokens at about 2,000x.** This is far above the 10–25x ruling for
+**Owner ruling (2026-10-11), superseded on 14 October (below): units stay Civ-style tokens at about 2,000x.** This is far above the 10–25x ruling for
 buildings and trees. At 10–25x a man is 18–45 m tall, which is under one pixel at 60 km. The promo, which wins over strict
 scale by the owner's ruling, draws units as tokens. The scale is one constant.
+
+**Owner decision (2026-10-14): figures at 1.8 times a block, as T29; it supersedes the 11 October ~2,000x ruling. 1,400x (refs #197).** T29's figures stand about 1.8 times a house. At 2000x ours
+stood about 2.5 times the White City blocks beside the showcase trio at close30 (the T54 audit's measure). The block is the
+kit's seven-storey heart block, 7 x 3.3 m at the city blocks' 60x, about 1.4 km; on the close30 render it measures about
+1.3 km against the figure. So `UnitShowcase.FigureScale = 1400`: a man about 2.5 km tall, 1.8 times that block
+(`UnitShowcase.HouseRatio`, pinned to 1.6–2.0 by `TheFiguresStandAbout1Point8TimesAHouse`). A one- or two-storey village
+house (100x) is 0.33–0.66 km, so against those the figures still stand about 4–7 times as tall. The token's ring and its
+spot are unchanged, so no unit moved; the figures are drawn closer together (below), inside the ground the placer checked.
+
+## The base and the flag
+
+Demo2 T29 (owner's reference) stands every unit on a round earth base ringed in bright white and flies the side's flag on
+a pole. Measured on 4x crops of three of its tokens (the 1:12 frame): the base (the ring's outer edge) is 1.41, 1.62 and
+1.71 times the trio's width; the trio is about 1.15 figure heights wide (shoulder to shoulder); the ring is about 8% of the
+base's radius wide; the flag's cloth is 0.47–0.60 of a figure's height tall and 0.65–0.70 wide, on a pole about 1.5
+figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw the same from code:
+- **Figures:** drawn at `UnitShowcase.DrawSpread` (0.19 of a hex's circumradius between neighbours), shoulder to
+  shoulder, the trio about 1.15 figure heights wide. The placer still checks a spot at `TrioSpread`, so no spot moved.
+  The showcase trio stands the same way.
+- **Base:** one draped earth disc per army token (see "Slopes"), its ring 1.45 times the full trio's width across
+  (`UnitPlinth.BaseToTrio`; 1.42–1.44 measured on the built tokens, pinned to 1.3–1.7 by `TheBaseHugsTheTrioAsInT29`).
+  The earth is the palette's `Earth`, dark and warm as T29's, mottled by smooth value noise over the world in its shade
+  rows (no texture). Owner, 2026-10-15: this base (earth 0.45, 0.33, 0.22), the lighter of the two rendered, over a
+  darker one (0.38, 0.28, 0.18) that brought the ring nearer T29's contrast but left the figures lighter than their base.
+- **Ring:** a band on the ground just outside the base, from 1.02 to 1.10 of its radius, each vertex over the highest ground
+  across the band (the selection ring's rule), drawn unlit in white with the selection ring's shader. The selection ring
+  is unchanged and still appears only on selection.
+- **On renders** (`TheBaseRingAndFlagReadAsT29OnARender`: a 30 km look at Harel's hill token and at the showcase trio,
+  through the game's camera, measured as T29 was): see the numbers in PR #559. The bands are T29's own measures, set
+  before measuring ours.
+- **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row today; the Arab states' sides are known to the
+  loader for #226). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+  radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
+  unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
+  grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it
+  never shows edge-on as the camera orbits; the pole stays upright at the base's edge.
+  - **Use of the flag:** the Flag and Emblem Law, 5709-1949, s. 2(a), forbids using the State flag for commerce, business or
+    profession without a permit from the Minister of the Interior (the 1949 text, read on the cited scan; the amended text
+    not checked). The game is free and non-commercial; a paid release needs this checked first. Only a side whose 1948
+  flag is sourced here gets one, so no flag is invented:
+  - Israel: the Provisional Council of State's "Proclamation on the Flag of the State of Israel" of 25 Tishrei 5709
+    (28 October 1948), Iton Rishmi No. 32, 10 Heshvan 5709 (12 November 1948), p. 62
+    (https://fs.knesset.gov.il/0/law/0_lsr_340940.pdf, read 2026-10-14): 220 cm by 160 cm; white, with two dark
+    sky-blue stripes 25 cm broad along its length, 15 cm from the top and the bottom edge; in the middle, equally far from
+    both stripes, a Star of David of six sky-blue stripes 5.5 cm broad forming two equilateral triangles whose bases are
+    parallel to the stripes. The Flag and Emblem Law, 5709-1949 (Sefer HaChukim No. 8, 24 May 1949, p. 37, s. 1(a);
+    https://fs.knesset.gov.il/1/law/1_lsr_208225.pdf, read 2026-10-14) makes that proclaimed flag the State flag "in
+    any size". Neither text sets the star's size: it is drawn 69 cm across, as the construction drawing at
+    https://en.wikipedia.org/wiki/Flag_of_Israel (checked 2026-10-14), which fits the gazette's own drawing. The same
+    design hung at the declaration on 14 May 1948 (https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence,
+    checked 2026-10-14), so it flies from the game's first day. Pinned by `TheIsraeliFlagFollowsTheSpecification`.
+  - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag yet, so a token of theirs flies none
+    (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
+- **The showcase trio** (`?units`, `-units`) stands at the land hex nearest its old spot whose base keeps off the
+  railways and roads, and the kits keep a clearing there in such a run, as they do for a unit in a town
+  (`MapScene.ShowcaseClearing`, `UnitShowcase.Clearing`), so no kit building or route crosses its base
+  (`NoKitBuildingOrRailCrossesTheShowcasePlinth`). A plain screenshot keeps every kit.
+- **Aircraft and ships** have no base and no flag: they fly or float, and carry their own sourced markings.
+- **Cost:** per army token, a draped top (the terrain cells under it, see the PR), its lip and its ring (384), built once
+  per roster change and freed with the tokens; one shared flag mesh (about 250). The base, lip and pole in the units' palette material; the ring and the cloth in three
+  unlit colours. No texture, no new shader, no per-pixel cost (docs/visual-v1.md, #391), and no per-frame code.
 
 ## Colour at map scale
 
@@ -311,9 +383,8 @@ are black and white, and the kit itself (khaki drill, 37-pattern webbing, the th
 below. Measured on editor renders of both tiers (gameplay03, the showcase trio at 20 km, the 7th Brigade at 15 km,
 Golani at 12 km, Harel at 15 km in the Judean hills and Etzioni at 30 km), a figure was 0.68–0.82 of the surrounding
 ground's luminance with the old, lighter khaki, and blended into it; it is now 0.50–0.57, and warm (red above green).
-Promo 03's figures are about 0.45 (figures round 1, refs #197). The webbing stays pale, as the promo's straps do. A
-slope base is painted trodden earth (`Dust`), within 7% of the ground's luminance where measured, so it reads as the
-promo's worn patch rather than a dark disc. The aircraft and ship colours are untouched.
+Promo 03's figures are about 0.45 (figures round 1, refs #197). The webbing stays pale, as the promo's straps do. The
+token's base is painted earth (`Earth`), lighter than the uniforms (it replaced round 1's per-figure slope base). The aircraft and ship colours are untouched.
 
 ## Sources (checked 2026-10-11)
 

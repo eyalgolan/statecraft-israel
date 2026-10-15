@@ -1100,4 +1100,53 @@ public class KitTests
         }
         finally { Object.DestroyImmediate(go); Object.DestroyImmediate(mesh); }
     }
+
+    /// <summary>A kit face in shadow is a darker version of its own colour, not blue-grey. A pale canvas kit box on the open
+    /// coastal plain at 12 km, web tier, seen from its shaded side: the wall facing away from the sun is lit by the ambient
+    /// alone, the roof by the sun. With the trilight's own colour (near grey at a wall) a pale face in shade kept almost no
+    /// colour, and the grade's teal shadows turned it green-grey: measured before the fix, hue 69 deg against the roof's
+    /// 38, green over red. Graded, as the player sees it (the other switches off): the shaded wall must keep its hue within
+    /// <see cref="ShadeHueDegrees"/> of the sunlit roof's, red its strongest channel, and at least 0.8 of its saturation.</summary>
+    public const float ShadeHueDegrees = 15f;
+
+    [UnityTest]
+    public IEnumerator AKitFaceInShadowKeepsItsOwnHue()
+    {
+        int previous = QualitySettings.GetQualityLevel();
+        QualitySettings.SetQualityLevel(0, false);
+        var map = OpenMap();
+        yield return null;
+        foreach (var n in VisualToggles.Names.Where(n => n != "shadows" && n != "grade")) VisualToggles.Set(n, false);
+        var g = Ground(map);
+        var at = map.Frame.ToWorld(34.70, 31.70, 0);
+        var sun = MapLighting.FindSun()!; var fall = sun.transform.forward; fall.y = 0f; fall.Normalize();
+        const float w = 300f;
+        float toWall = 0.5f * w / Mathf.Max(Mathf.Abs(fall.x), Mathf.Abs(fall.z));
+        var canvas = new Color32(229, 221, 198, 255);   // a pale warm albedo: canvas, lime wash, the camps' tents
+        var km = new KitMesh();
+        float y = g.Y(at.x, at.z);
+        km.Box(at.x, at.z, 0f, w, w, y - 30f, y, w, canvas, canvas, Facade.Plain, 25f);
+        var mesh = km.ToMesh("ShadeProbe");
+        var go = new GameObject("ShadeProbe"); go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        go.AddComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Kit.mat");
+        try
+        {
+            // Looking towards the sun, so the wall facing away from it (the fall crosses it) faces the camera.
+            var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+            rig.LookAt = at; rig.Distance = 12000f; rig.Yaw = Mathf.Atan2(-fall.x, -fall.z) * Mathf.Rad2Deg; rig.TopInset = 0f; rig.Apply();
+            var pts = new[] { at + fall * (toWall * 0.98f) + Vector3.up * (y + 0.5f * w - at.y), new Vector3(at.x, y + w, at.z) };
+            var px = new Vector2[2];
+            var s = RenderSample.Render(cam, 1920, 1080, pts, px);
+            Color shade = s.Mean((int)px[0].x, (int)px[0].y, 2), lit = s.Mean((int)px[1].x, (int)px[1].y, 2);
+            Color.RGBToHSV(shade, out var hs, out var ss, out var vs); Color.RGBToHSV(lit, out var hl, out var sl, out var vl);
+            TestContext.WriteLine($"sunlit roof rgb ({lit.r:0.000}, {lit.g:0.000}, {lit.b:0.000}) hue {hl * 360f:0} deg sat {sl:0.00} val {vl:0.00}; " +
+                $"shaded wall rgb ({shade.r:0.000}, {shade.g:0.000}, {shade.b:0.000}) hue {hs * 360f:0} deg sat {ss:0.00} val {vs:0.00}");
+            Assert.Less(vs, 0.8f * vl, "the wall is in shade");
+            Assert.LessOrEqual(Mathf.Abs(Mathf.DeltaAngle(hs * 360f, hl * 360f)), ShadeHueDegrees, "the shaded face turns another hue");
+            Assert.Greater(shade.r, Mathf.Max(shade.g, shade.b), "the shaded face of a warm albedo goes green- or blue-grey");
+            // The hue alone stops failing once the grade's shadows turn slate (#519); the washed-out colour still shows here.
+            Assert.GreaterOrEqual(ss, 0.8f * sl, "the shaded face keeps its colour");
+        }
+        finally { Object.DestroyImmediate(go); Object.DestroyImmediate(mesh); QualitySettings.SetQualityLevel(previous, false); }
+    }
 }

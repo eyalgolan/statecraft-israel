@@ -53,6 +53,6 @@ public class ReviewRecordCasesTests
 
     [TestCaseSource(nameof(Cases))]
     public void TheUnitsFileAgrees(Case c) => Expect(c, () => UnitData.Parse(
-        "units:\n- id: a\n  name: A\n  number: '1'\n  service: army\n  sector: s\n  status: draft\n  wikipedia_only: true\n" + Lines(c, "  ")
+        "units:\n- id: a\n  name: A\n  number: '1'\n  service: army\n  side: israel\n  sector: s\n  status: draft\n  wikipedia_only: true\n" + Lines(c, "  ")
         + "  anchors:\n  - {place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}\n", "u.yaml"));
 }
