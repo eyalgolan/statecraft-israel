@@ -2485,6 +2485,94 @@ the biggest gap to promo 03. Measured with its crops and poses: editor renders (
   Techniques in Palestine", Prostor 25 (2017) 140-153, https://doi.org/10.31522/p.25.1(53).9
 - The White City (1930s International Style, flat roofs, balconies): https://en.wikipedia.org/wiki/White_City,_Tel_Aviv
 
+## Arab villages: dense, terraced cores (visual gap S1, branch `visual/arab-villages-s1`, refs #32)
+The 2026-10-15 gap audit ranked this 9 of 10: promo 03's Qalqilya, Lydda and Ramla are dense packs of layered stone
+houses, while main drew each 1948 Arab locality as a handful of large cubes with a domed mosque at its heart, so the
+hills read as evenly spaced dice, nearly every one with a dome.
+
+**Cause on main `c02d4eb0`.**
+- The 228 Arab localities (villages and Arab towns, Nesher aside) took the promo-villages scatter (`BuildOne`): six
+  buildings wanted (`TargetCount`'s floor: at 100x the built-up share asks for fewer), each 6.5-12 m real, so 650-1,200 m
+  wide, on random spots. Counted from their lots: 1,063 houses over 250 Arab localities (churches and Druze villages
+  included), median 5, and 17 with none.
+- Every Muslim locality built the domed town mosque at 0.8 size (a 672 m hall, a 264 m dome and a 1.25 km round minaret).
+
+**Changes** (`SettlementKits.cs`, `SettlementKits.Landmarks.cs`):
+- **Layout.** An Arab locality is laid out on the village plot lattice (`PlaceHouses`, towns round 2), as Lod and Ramla
+  are, nearest its heart first. As before, it builds only in its own cell, off the routes, the grid's edge midpoints
+  (review M10) and every other place's lots. It keeps no beach setback: the coast's villages met the shore, as their
+  scatter drew them. Where the routes, a bigger neighbour or the cell's seam leave fewer than ten houses
+  (`VillageFloor`), small village houses fill free spots over its plot reach, nearest the heart first.
+- **The village lattice** (`Style.Village`, so also Lod, Ramla, Tiberias, Safed and Jerusalem's Arab quarters):
+  - The pitch is 6.6 x 6.2 m (was 7.6 x 7.2) with less jitter. Houses are 3.8-5.4 x 3.6-5.0 m (was 4.4-6.6 x 4.2-6.0),
+    so the lanes run about two metres real.
+  - It is built solid to 0.75 of the radius (was 0.5), and 0.85 at the radius (was 0.6).
+  - More two-storey houses in the core: 60% falling to 15% (was 45% to 10%). Single-storey houses keep their roof
+    rooms, and the roofs stay flat lime plaster.
+  - House domes on hill houses fall from 7% to 3%. A village now draws about twice the houses, so it keeps about the
+    domes it had.
+- **Terraces.** A hill house (above 120 m) whose ground falls more than 0.8 m across its footprint, beyond its 2 m
+  plinth, stands on a terrace. The terrace is a dry-stone retaining wall up to the house's uphill ground, with a yard
+  0.3 m wide round the walls. The house's lot covers the terrace.
+- **The mosque rule.** Every Muslim locality keeps its mosque: all 271 localities are places of 1,000 or more people,
+  none a hamlet. A village's mosque is now a village mosque (`VillageMosque`):
+  - a one-storey stone hall, 12 x 9 m at the landmark scale (0.8 x 60x: 576 x 432 m);
+  - a flat lime roof and no dome;
+  - a short, thick square minaret at one corner, about 14 m tall (672 m), inside the hall's footprint.
+
+  The domed mosque with its tall round minaret stays with the 18 Muslim Arab towns (Hebron, Nablus, Majdal, Qalqilya
+  and the others), and with the game towns, which keep their own landmarks. So the domes go from about 234 at the
+  localities to 18.
+- **The game towns keep their ground.** A village keeps its houses out of every smaller game settlement's plot reach,
+  plus the lot of that settlement's largest fallback house. That settlement places its houses, and its small-town
+  fallback (#317), after the village. Without this rule, Hiribya's packed lattice left Yad Mordechai 1 house against
+  its measured floor of 3.
+
+**Historical basis** (sources below):
+- Village houses were single rooms, from about three metres across in small houses, clustered round yards "in a compact
+  and convergent manner" (Abuarkub 2018).
+- The hill villages stood on slopes worked in stone terraces (Battir).
+- A village mosque was a one-storey hall with a chunky minaret at one end (Qaysaria), and a village's square minaret
+  stood 10-15 m (Kawfakha, from Petersen's gazetteer).
+- No source here supports leaving out the mosques of the villages of 1,000 or more people. So the rule makes them
+  smaller and domeless; it does not drop them.
+
+**Result** (EditMode census: `VillageKitTests`, `TownCensusTests`; main from the localities' lots on the same build):
+
+| | main `c02d4eb0` | branch |
+|---|---|---|
+| Arab localities' houses (250, churches and Druze villages included) | 1,063, median 5 | 2,617, median 11 (`VILLAGES`: max 50) |
+| localities with no house | 17 | 9, all inside Jerusalem's or Tel Aviv's footprint (Silwan, At-Tur, Lifta, Abu Dis, Sheikh Muwannis...) |
+| hill villages (150): median houses, core cover | not recorded | 12, 35.8% |
+| domed mosques at the localities / village mosques | 234 / 0 | 18 / 216 |
+| Lod / Ramla houses (census) | 11 / 11 | 16 / 16 |
+| WebGL `KITS` line: buildings, vertices, triangles, draws | 1,972, 103,537, 70,572, 64 | 3,632, 167,329, 89,178, 64 |
+| grid readable at gameplay03 (floor 75%) | 80% | 83% (74 of 89) |
+
+- The villages under six houses outside the game towns are Yibna, Taibe, Bayt Dajan, al-Bireh (beside Ramallah),
+  al-Jura, az-Zeeb, Wadi Hunayn, Tantura, Nazla and al-Jiyya (10 of about 200). The routes, the coast and bigger
+  neighbours take their ground. The test holds the count at 5% or fewer.
+- Each house stays at the house scale (100x): no village house is over 5.4 m real. The census and town tests pass,
+  every town is at or over its floor, and Yad Mordechai is back to 3.
+- The goldens are unchanged (`GOLDEN OK 1950 71e9904d`, `1952 62f8ec61`).
+- **Against promo 03** (`p2-villages-s1-compare/`):
+  - The villages now read as packs of small houses with lanes, not as dice, and the domes are gone.
+  - The promo's Qalqilya still has more and taller houses: 30-40 houses of two or three storeys on terraced rings.
+    At 100x a village's 1.3-1.4 km footprint holds about 19 plots, so 30+ houses would need a smaller house scale or a
+    larger village footprint (an owner call).
+  - The promo's warmer honey stone and its shading are the palette and `Kit.shader`, out of scope here.
+
+**Frame time** PERF_TBD
+
+### Sources (checked 2026-10-15)
+- One-room village houses ("from three meters in small houses"), clustered round yards: M. Abuarkub, "Classifications and
+  Revitalization of Traditional Houses in the Rural Areas in Palestine", IJCIET 9(12) (2018) 1141-1161,
+  http://iaeme.com/MasterAdmin/Journal_uploads/IJCIET/VOLUME_9_ISSUE_12/IJCIET_09_12_118.pdf
+- Battir, on a valley slope, its core surrounded by agricultural terraces: https://en.wikipedia.org/wiki/Battir
+- A village minaret "chunky as it rises above the one-story mosque" (Qaysaria): L. Dittmar, "A View from the Minaret",
+  Harvard Divinity Bulletin (2019), https://bulletin.hds.harvard.edu/a-view-from-the-minaret/
+- Kawfakha's mosque, a "thick square minaret 10-15 meters high" (Petersen 2001, pp. 195-196): https://en.wikipedia.org/wiki/Kawfakha
+
 ## Issue #195: the water and the border lookups out of the terrain's fragment shader
 - **Why.** promo-sea (#138) put the water shading (`ScWaterShade`, the breakers' `fwidth`, the footprint) in the terrain
   graph's function, and promo-borders (#206) six neighbour fetches in `ScBorderApply`'s loop. Either one makes the shader

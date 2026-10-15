@@ -349,6 +349,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   +0.9 ms at the gameplay zoom), not yet on an idle one.
 
 ### Changed
+- The 1948 Arab villages and towns on the map are dense packs of small stone houses with lanes between them (visual
+  gap S1, refs #32): each Arab locality is laid out on the village plot lattice, as Lod and Ramla are, with smaller
+  one-room houses (3.8-5.4 m, still at 100x), more two-storey houses in the core, roof rooms, and terraces under the
+  hill houses that stand on a slope. A village keeps its mosque, now a one-storey hall with a short square minaret; the
+  domed mosque with its tall minaret stays with the Arab towns. The median Arab locality draws 11 houses (main 5), in
+  the same merged tile meshes (64 draws). Presentation only (`docs/visual-v1.md`, "Arab villages: dense, terraced cores").
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,

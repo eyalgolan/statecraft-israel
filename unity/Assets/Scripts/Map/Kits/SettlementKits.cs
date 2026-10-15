@@ -160,6 +160,22 @@ namespace Statecraft.Game.Map.Kits
                     else result.TownLandmarks[s.Id] = n;
                     landmarks[s.Id] = n; streams[s.Id] = rnd;
                 }
+            // A village's houses keep out of every smaller game settlement's plot reach, plus the lot of its largest
+            // fallback house (S1): that settlement places its houses, and its small-town fallback (#317), after the
+            // village, and the 25 towns keep the ground they had (Yad Mordechai beside Hiribya).
+            var townReach = new List<(Vector2 c, float r, int pop)>();
+            foreach (var t in towns)
+                townReach.Add((centres[t.Id], FootprintRadiusM(t, ground.HexSizeM) * PlotReach + 0.5f * Mathf.Sqrt(12f * 12f + 9f * 9f) * KitScale.For(ArchetypeOf(t)),
+                    KitPopulation.Of(t.Id)));
+            System.Func<Vector2, bool> SmallerTowns(Settlement loc)
+            {
+                int pop = KitPopulation.Of(loc.Id);
+                return q =>
+                {
+                    foreach (var (c, r, tp) in townReach) if (tp < pop && (q - c).sqrMagnitude < r * r) return true;
+                    return false;
+                };
+            }
             // Then the houses, largest place first. A game settlement's houses ignore the localities' cells (their landmarks'
             // lots still stand): the 25 towns keep the ground they had before the villages came, and a village next to one
             // (Fajja by Petah Tikva) fills in around its houses.
@@ -169,7 +185,11 @@ namespace Statecraft.Game.Map.Kits
                 if (merged.Contains(s.Id))
                 {
                     var tile = Tile(centres[s.Id]); int from = tile.VertexCount;
-                    result.LocalityBuildings += BuildOne(s, centres[s.Id], ground, tile, lots, Phase.Houses, ref rnd, landmarks[s.Id], null);
+                    // An Arab village or town (S1): a dense pack of small stone houses on the village lattice, as Lod's and
+                    // Ramla's. The Jewish localities and mixed Nesher keep their scatter.
+                    result.LocalityBuildings += ArchetypeOf(s) == Archetype.ArabTown && !Localities.IsMixed(s.Id)
+                        ? PlaceHouses(s, centres[s.Id], ground, tile, lots, ref rnd, null, out _, locality: true, keepOut: SmallerTowns(s))
+                        : BuildOne(s, centres[s.Id], ground, tile, lots, Phase.Houses, ref rnd, landmarks[s.Id], null);
                     spans[s.Id].Add((tile, from, tile.VertexCount));
                     continue;
                 }
@@ -339,7 +359,10 @@ namespace Statecraft.Game.Map.Kits
             Style.TownBlock => (20f, 16f, 0.03f, KitScale.CityBlocks, 1.00f, 0.30f, 0.80f),
             Style.StoneBlock => (23f, 17.5f, 0.03f, KitScale.CityBlocks, 0.97f, 0.50f, 0.60f),
             Style.OldHouse => (7.2f, 6.8f, 0.05f, KitScale.Houses, 1.00f, 0.60f, 0.75f),
-            Style.Village => (7.6f, 7.2f, 0.07f, KitScale.Houses, 1.00f, 0.50f, 0.60f),
+            // S1: a compact pack of small houses, lanes of about two metres between them, built solid to three quarters of
+            // the radius (houses "clustered around the yards ... in a compact and convergent manner": Abuarkub 2018). The pitch
+            // leaves a lane when two full-size neighbours' jitter and yaw meet (TownCensusTests.NoTwoHousesOfATownOverlap).
+            Style.Village => (6.6f, 6.2f, 0.04f, KitScale.Houses, 1.00f, 0.75f, 0.85f),
             _ => (11.5f, 9.8f, 0.04f, KitScale.Houses, 0.95f, 0.40f, 0.60f),
         };
 
@@ -409,9 +432,12 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Places a town's houses on its lattices, nearest the centre first; returns how many. When the lattice
         /// places fewer than <see cref="SmallTownFloor"/>, <paramref name="scatter"/> is the town's fallback (#317), which
-        /// Build runs after every other place's houses; else null.</summary>
+        /// Build runs after every other place's houses; else null. A 1948 <paramref name="locality"/> (an Arab village or
+        /// town, S1) keeps its houses off the grid's edge midpoints, as its scatter did (review M10), and out of
+        /// <paramref name="keepOut"/> (the smaller game settlements' ground), keeps no beach setback, and fills up to its own
+        /// floor (<see cref="VillageFloor"/>) at once instead of the deferred fallback.</summary>
         static int PlaceHouses(Settlement s, Vector2 centre, KitGround ground, KitMesh km, Lots lots, ref KitRandom rnd, HashSet<string>? ignoreCellsOf,
-            out System.Func<int>? scatter)
+            out System.Func<int>? scatter, bool locality = false, System.Func<Vector2, bool>? keepOut = null)
         {
             var arch = ArchetypeOf(s);
             float R = FootprintRadiusM(s, ground.HexSizeM), reach = R * PlotReach;
@@ -435,7 +461,8 @@ namespace Statecraft.Game.Map.Kits
             }
 
             // Only a town with water near its footprint tests the beach setback per plot (eight samples each: the boot budget).
-            bool shore = WaterWithin(centre, reach + BeachSetbackM + 1000f, ground);
+            // A 1948 village keeps none: the coast's villages (Tantura, az-Zeeb) met the shore, as their scatter drew them.
+            bool shore = !locality && WaterWithin(centre, reach + BeachSetbackM + 1000f, ground);
             var plots = new List<(float d, int order, Vector2 p, int lattice)>();
             for (int li = 0; li < lattices.Count; li++)
             {
@@ -470,6 +497,7 @@ namespace Statecraft.Game.Map.Kits
                     q = p + new Vector2(u * ca - v * sa, u * sa + v * ca);
                     if ((du != 0f || dv != 0f) && (!ground.Inside(q.x, q.y) || !Mine(q) || !Allows(s, L, q, t, ground) || ground.Water(q.x, q.y))) continue;
                     if (!lots.Free(q, b.lotR, s.Id, group) || ground.OnRoute(q, b.lotR)) continue;   // off the railways and roads too
+                    if (locality && (ground.OnGridMark(q, b.lotR) || (keepOut != null && keepOut(q)))) continue;
                     if (ground.Slope(q.x, q.y, b.w) > (hillTown ? 0.6f : 0.35f)) continue;
                     if (CornerInWater(q, yaw, b.w, b.d, ground)) continue;   // the whole footprint is dry
                     if (shore && L.Style != Style.OldHouse && NearSea(q, yaw, b.w + 2f * BeachSetbackM, b.d + 2f * BeachSetbackM, ground)) continue;
@@ -503,6 +531,36 @@ namespace Statecraft.Game.Map.Kits
                 placed++;
             }
 
+            // A 1948 village's floor (S1): where the routes, a bigger neighbour's lots or the cell's seam take most of its
+            // plots, small village houses on free spots over its plot reach, nearest its heart first (KitRandom(id, 3)), at
+            // full size and then 0.72, until it has VillageFloor houses.
+            if (locality && placed < VillageFloor)
+            {
+                var srnd = new KitRandom(s.Id, 3);
+                float m = KitScale.Houses;
+                var spots = new List<(float r, int i, Vector2 p, float yaw, Spec b, ulong detail)>();
+                for (int i = 0; i < ScatterTries; i++)
+                {
+                    float r = reach * Mathf.Sqrt(srnd.Value()), ang = srnd.Range(0f, 2f * Mathf.PI);
+                    var b = Pick(Style.Village, r / R, ref srnd, m);
+                    spots.Add((r, i, centre + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * r, lattices[0].Yaw + srnd.Range(-4f, 4f), b, srnd.Next()));
+                }
+                spots.Sort((x, y) => x.r != y.r ? x.r.CompareTo(y.r) : x.i.CompareTo(y.i));
+                foreach (var shrink in new[] { 1f, 0.72f })
+                    for (int k = 0; k < spots.Count && placed < VillageFloor; k++)
+                    {
+                        var (r, _, p, yaw, full, detail) = spots[k];
+                        var b = Shrink(full, shrink);
+                        if (!ground.Inside(p.x, p.y) || !Mine(p) || ground.Water(p.x, p.y)) continue;
+                        if (!lots.Free(p, b.lotR) || ground.OnRoute(p, b.lotR) || ground.OnGridMark(p, b.lotR) || (keepOut != null && keepOut(p))) continue;
+                        if (ground.Slope(p.x, p.y, b.w) > 0.6f || CornerInWater(p, yaw, b.w, b.d, ground)) continue;
+                        lots.Add(new Lot { c = p, r = b.lotR, id = s.Id });
+                        var drnd = new KitRandom(detail);
+                        Emit(s.Id, Style.Village, p, yaw, b, r / R, ground, km, ref drnd);
+                        placed++;
+                    }
+            }
+
             // A small town's floor (#317): at the houses' 100x scale a plot is about 1 km, so a footprint of 1.3-2 km radius
             // holds only some 7 plots, and the routes, the sea or a neighbour's lots can take most of them.
             // Below SmallTownFloor houses the town is filled up as round 1 drew it: its archetype's full-size building (the
@@ -510,7 +568,7 @@ namespace Statecraft.Game.Map.Kits
             // stream (KitRandom(id, 3)). Build runs it after every place's own houses and the camps, so it takes only ground
             // no other place builds on.
             scatter = null;
-            if (placed < SmallTownFloor && SmallTownScatter)
+            if (placed < SmallTownFloor && SmallTownScatter && !locality)
             {
                 int want = SmallTownFloor - placed;
                 scatter = () =>
@@ -565,6 +623,8 @@ namespace Statecraft.Game.Map.Kits
         /// 25 towns' lattices fall short of it (the moshavot and kibbutzim, Tiberias, Netanya, Beersheba and Acre); their
         /// fallback houses join the lattice's where free ground is left (13 of them).</summary>
         const int SmallTownFloor = 6;
+        /// <summary>The fewest houses a 1948 Arab village or town keeps (S1): the lattice's median village draws about a dozen.</summary>
+        const int VillageFloor = 10;
         /// <summary>Random spots a small town's fallback tries before it settles for fewer than SmallTownFloor houses (round 1
         /// tried about 30 per building).</summary>
         const int ScatterTries = 240;
@@ -662,8 +722,11 @@ namespace Statecraft.Game.Map.Kits
                     storeys = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(3.2f, 1.3f, Mathf.Clamp01(t)) + rnd.Range(-0.8f, 0.8f)), 1, 4);
                     break;
                 case Style.Village:
-                    w = rnd.Range(4.4f, 6.6f); d = rnd.Range(4.2f, 6.0f);
-                    storeys = rnd.Chance(Mathf.Lerp(0.45f, 0.1f, Mathf.Clamp01(t))) ? 2 : 1;
+                    // S1: the village's one-room house, smaller than a town's (the one-room house of the villages "ranges from
+                    // three meters in small houses" up: Abuarkub 2018; was 4.4-6.6 x 4.2-6.0 m).
+                    w = rnd.Range(3.8f, 5.4f); d = rnd.Range(3.6f, 5.0f);
+                    // More two-storey houses in the core (was 45% falling to 10%): the layered heart promo 03's Qalqilya shows.
+                    storeys = rnd.Chance(Mathf.Lerp(0.6f, 0.15f, Mathf.Clamp01(t))) ? 2 : 1;
                     break;
                 case Style.Templer:
                     w = rnd.Range(8.5f, 10.5f); d = rnd.Range(7.5f, 9f);
@@ -674,7 +737,9 @@ namespace Statecraft.Game.Map.Kits
                     storeys = rnd.Chance(0.15f) ? 2 : 1;
                     break;
             }
-            return new Spec { w = w * m, d = d * m, h = storeys * 3.3f * m, storeys = storeys, lotR = 0.5f * Mathf.Sqrt(w * w + d * d) * m };
+            // A village house's lot also covers the terrace it may stand on (Emit, Style.Village).
+            float pad = st == Style.Village ? 2f * TerraceMarginM : 0f;
+            return new Spec { w = w * m, d = d * m, h = storeys * 3.3f * m, storeys = storeys, lotR = 0.5f * Mathf.Sqrt((w + pad) * (w + pad) + (d + pad) * (d + pad)) * m };
         }
 
         // sRGB palettes (promo 03: white and cream city, honey stone Jaffa, tan villages, terracotta roofs).
@@ -773,7 +838,13 @@ namespace Statecraft.Game.Map.Kits
                     bool hill = ground.ElevM(p.x, p.y) >= HillVillageM;
                     var wall = hill ? StoneWall(ref rnd) : Jitter(MudBrick, ref rnd, 0.06f);
                     var roof = Jitter(LimeRoof, ref rnd, 0.05f);
-                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Village, m, hill && rnd.Chance(VillageDome), ref rnd);
+                    bool dome = hill && rnd.Chance(VillageDome);
+                    // S1: a hill house on a slope stands on its terrace, a dry-stone retaining wall up to the house's
+                    // uphill ground with a flat yard round the house, so a village on a hillside steps down in terraces.
+                    if (hill && top - bottom > TerraceRiseM * m)
+                        km.Box(p.x, p.y, yaw, b.w + 2f * TerraceMarginM * m, b.d + 2f * TerraceMarginM * m, bottom, top, 0.15f * m,
+                            Jitter(TerraceStone, ref rnd, 0.05f), Jitter(TerraceYard, ref rnd, 0.04f), Facade.Plain, m);
+                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Village, m, dome, ref rnd);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
@@ -812,8 +883,16 @@ namespace Statecraft.Game.Map.Kits
         const float HillVillageM = 120f;
         /// <summary>Share of an old town's flat-roofed houses with a dome (was 22%: promo 03's Jaffa shows few).</summary>
         const float OldHouseDome = 0.08f;
-        /// <summary>Share of a hill village's houses with a dome (was 10% of every village's).</summary>
-        const float VillageDome = 0.07f;
+        /// <summary>Share of a hill village's houses with a dome (was 10% of every village's, then 7%; S1: 3%, as a village now
+        /// draws about twice the houses, so it keeps about the domes it had).</summary>
+        const float VillageDome = 0.03f;
+        /// <summary>A hill village's terraces (S1): a house whose ground falls more than this (real m, plinth included: 2 m)
+        /// across its footprint stands on a terrace reaching this far (real m) past its walls. The hill villages stood on
+        /// slopes worked in stone terraces (Battir, "on the precipitous slope of a deep valley", its core "surrounded by
+        /// agricultural terraces": https://en.wikipedia.org/wiki/Battir, checked 2026-10-15).</summary>
+        const float TerraceRiseM = 2.8f, TerraceMarginM = 0.3f;
+        /// <summary>The terrace's dry-stone retaining wall and its beaten-earth yard (sRGB).</summary>
+        static readonly Color32 TerraceStone = C(0.66f, 0.60f, 0.50f), TerraceYard = C(0.74f, 0.66f, 0.53f);
         /// <summary>Grey-buff limestone, lime-plastered roofs and the plain's mud brick (sRGB).</summary>
         static readonly Color32 LimeRoof = C(0.86f, 0.83f, 0.77f), MudBrick = C(0.78f, 0.69f, 0.56f);
 
@@ -1002,7 +1081,11 @@ namespace Statecraft.Game.Map.Kits
                     float size = (s.Type == "village" ? 0.8f : 1f) * mosqueK;
                     switch (Localities.LandmarkOf(s.Id) ?? Landmark.Mosque)
                     {
-                        case Landmark.Mosque: return Mosque(s.Id, At(heart), ground, km, lots, ref rnd, size);
+                        // S1: a village keeps its mosque, as a village mosque (no dome, a short square minaret); the domed
+                        // mosque with its tall minaret is the Arab towns'.
+                        case Landmark.Mosque:
+                            return s.Type == "village" ? VillageMosque(s.Id, At(heart), ground, km, lots, ref rnd, size)
+                                : Mosque(s.Id, At(heart), ground, km, lots, ref rnd, size);
                         case Landmark.Church: return Church(s.Id, At(heart), ground, km, lots, size) ? 1 : 0;
                         default: return 0;
                     }
