@@ -163,3 +163,36 @@ def test_a_shallow_clone_is_refused(tmp_path, capsys):
     out = capsys.readouterr().out
     assert out.startswith("# Human-review queue")
     assert "over-inclusive" in out
+
+
+def test_an_untracked_content_file_is_scanned_and_listed_as_not_committed_yet(tmp_path):
+    """Independent re-review of #611 (A): git ls-files missed a new, untracked file, so its rows were never scanned."""
+    repo = make_repo(tmp_path)
+    (repo / "content" / "events" / "new_event.yaml").write_text(EVENT.replace("id: truce", "id: new_event"), encoding="utf-8")
+    entries, human = rq.queue(repo)
+    new = [e for e in entries if e.row == "new_event"]
+    assert [(e.file, e.line, e.value, e.checked_by) for e in new] == [
+        ("content/events/new_event.yaml", 5, "sensitivity-reviewed", "not committed yet")]
+    assert human == 1
+
+
+def test_a_whitespace_only_human_edit_does_not_hide_an_agent_set_status(tmp_path):
+    """Independent re-review of #611 (B): a person re-spacing or re-indenting a line is not a review of it, so blame ignores
+    whitespace (-w) and follows moved lines (-M)."""
+    repo = make_repo(tmp_path)
+    gov = repo / "content" / "governments.yaml"
+    gov.write_text(gov.read_text(encoding="utf-8").replace("    status: fact-checked\n", "    status:   fact-checked   \n"), encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "content: tidy spacing (#12)")
+    entries, human = rq.queue(repo)
+    g1 = [e for e in entries if e.row == "g1" and e.kind == "status"]
+    assert len(g1) == 1 and g1[0].checked_by.startswith("a commit with an AI co-author trailer (PR #10")
+    assert human == 1
+
+
+def test_a_moved_tracked_file_is_a_clear_error(tmp_path, capsys):
+    """A plain mv of a tracked file, not yet committed, left the listing pointing at a missing file (FileNotFoundError)."""
+    repo = make_repo(tmp_path)
+    (repo / "content" / "offices.yaml").rename(repo / "content" / "offices_moved.yaml")
+    assert rq.run(repo, write=False) == 2
+    err = capsys.readouterr().err
+    assert "content/offices.yaml" in err and "missing from the working tree" in err

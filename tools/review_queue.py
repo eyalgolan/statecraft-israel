@@ -18,7 +18,8 @@ Two kinds of entry:
 The heuristic for (2), because content has no reviewer field: `docs/HISTORIAN_REVIEW.md` keeps the reviewer's record in
 the pull request, not in the YAML (no `reviewed_by` key), so the only signal in the repository is git history. For each
 such status line, `git blame` on the working-tree file (the text this script reads, so a deleted flag or another
-uncommitted edit does not shift the lines) gives the commit that last wrote it. A commit counts when its message has an AI co-author trailer or the Claude Code line ("Co-Authored-By:
+uncommitted edit does not shift the lines), with `-w -M`, gives the commit that last wrote it; a file git does not track
+yet is read too, and every row in it counts as not committed. A commit counts when its message has an AI co-author trailer or the Claude Code line ("Co-Authored-By:
 Claude ...", "Co-Authored-By: ... Codex / Copilot / GPT ...", "Generated with [Claude Code]", "Generated with Codex").
 Such a row is listed with the commit and its pull request number. A status line not committed yet is listed too, as
 "not committed yet": no commit vouches for it, so the queue fails closed. Any other row is counted, not listed.
@@ -29,6 +30,10 @@ Limits, said plainly, and on the page too:
   stay listed: the list is "not shown to be human-reviewed", not "checked by an agent".
 - **Blind spots.** An agent whose commits carry none of these trailers (another tool, or an outside contributor who does
   not mark AI use) counts as a person; a person who set a status without checking is not caught.
+- **Edits that move the blame.** Blame ignores whitespace (`-w`) and follows lines moved within a file (`-M`), so a
+  re-indent or a re-spacing keeps the earlier author. It cannot see through a key reordering that moves too little text
+  for `-M` to match (git needs about 20 characters), nor a reflow between flow style (`{ id: x, status: ... }`) and block
+  style: the commit that did either becomes the line's author.
 - **History.** A shallow clone blames every line on its one commit, so the script refuses one (exit 2). The page names
   the commit it was generated from.
 
@@ -152,7 +157,9 @@ def blame(repo: Path, rel: str) -> dict[int, str]:
     """Line number of the working-tree file (the text scan() reads) to the sha of the commit that last wrote it; a line
     not committed yet maps to UNCOMMITTED. Blaming HEAD instead would misplace every line after an uncommitted edit, such
     as a reviewer's deleted flag (second review of #611)."""
-    out, lines, sha = _git(["blame", "--line-porcelain", "--", rel], repo), {}, ""
+    # -w: a whitespace-only change (re-spacing, re-indenting) is not a review, so it keeps the earlier author; -M: a line
+    # moved within the file keeps its author too (independent re-review of #611).
+    out, lines, sha = _git(["blame", "-w", "-M", "--line-porcelain", "--", rel], repo), {}, ""
     for row in out.splitlines():
         m = re.match(r"^([0-9a-f]{40}) \d+ (\d+)", row)
         if m:
@@ -170,9 +177,21 @@ def commit(repo: Path, sha: str, cache: dict[str, Commit]) -> Commit:
     return cache[sha]
 
 
-def content_files(repo: Path) -> list[str]:
-    """Every tracked YAML file under content/, in ordinal order."""
-    return sorted(f for f in _git(["ls-files", "content"], repo).splitlines() if f.endswith(".yaml"))
+class QueueError(Exception):
+    """The working tree cannot be read as the page needs (run() prints it and exits 2)."""
+
+
+def content_files(repo: Path) -> tuple[list[str], set[str]]:
+    """Every YAML file under content/, in ordinal order: the tracked ones and the untracked ones git does not ignore (a new
+    file is content too; independent re-review of #611); and the set of untracked ones. A tracked file missing from the
+    working tree (a plain mv not yet committed) is an error, not a silent gap."""
+    tracked = [f for f in _git(["ls-files", "content"], repo).splitlines() if f.endswith(".yaml")]
+    missing = [f for f in tracked if not (repo / f).exists()]
+    if missing:
+        raise QueueError(f"{', '.join(missing)}: tracked but missing from the working tree (moved or deleted?); commit the "
+                         "move or restore the file, then rerun")
+    untracked = {f for f in _git(["ls-files", "--others", "--exclude-standard", "content"], repo).splitlines() if f.endswith(".yaml")}
+    return sorted(set(tracked) | untracked), untracked
 
 
 def queue(repo: Path) -> tuple[list[Entry], int]:
@@ -180,11 +199,12 @@ def queue(repo: Path) -> tuple[list[Entry], int]:
     cache: dict[str, Commit] = {}
     entries: list[Entry] = []
     human = 0
-    for rel in content_files(repo):
+    files, untracked = content_files(repo)
+    for rel in files:
         found = scan((repo / rel).read_text(encoding="utf-8"), rel)
         if not found:
             continue
-        lines = blame(repo, rel)
+        lines = {e.line: UNCOMMITTED for e in found} if rel in untracked else blame(repo, rel)
         for e in found:
             c = commit(repo, lines[e.line], cache)
             if e.kind == "flag":
@@ -222,7 +242,9 @@ def page(entries: list[Entry], human: int, head: str) -> str:
         "anyway, because the repository holds no reviewer record to tell them apart (`docs/HISTORIAN_REVIEW.md` keeps it",
         "in the pull request). It also misses things: an agent whose commits carry no such trailer (another tool, or an",
         "outside contributor who does not mark AI use) is counted as a person, and a person who set a status without",
-        "checking is not caught. The heuristic in full: [tools/review_queue.py](../tools/review_queue.py)",
+        "checking is not caught. Blame ignores whitespace and follows moved lines, but a key reordering too small for git",
+        "to match, or a reflow between flow and block style, makes that commit the line's author. The heuristic in full:",
+        "[tools/review_queue.py](../tools/review_queue.py)",
         "([CONTENT_POLICY.md](CONTENT_POLICY.md), section 2, rule 6).",
         "",
         f"- Hebrew names flagged `{FLAG}`: **{len(flags)}**",
@@ -257,7 +279,11 @@ def run(repo: Path, write: bool) -> int:
     if _git(["rev-parse", "--is-shallow-repository"], repo).strip() == "true":
         print("review_queue: a shallow clone blames every line on one commit; run it on a full clone", file=sys.stderr)
         return 2
-    entries, human = queue(repo)
+    try:
+        entries, human = queue(repo)
+    except QueueError as e:
+        print(f"review_queue: {e}", file=sys.stderr)
+        return 2
     text = page(entries, human, _git(["rev-parse", "HEAD"], repo).strip())
     if write:
         target = repo / PAGE.relative_to(ROOT)
