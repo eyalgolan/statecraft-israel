@@ -46,8 +46,10 @@ public class TopBarTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, in English or Hebrew, as the game builds it: the bar laid
     /// out (the loading screen) before the HUD is made, a turn played, then the widest values, changes and date, and a
-    /// score in the plate. <paramref name="widest"/> false keeps the turn-1 values.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, UiText> check, bool widest = true, bool withEvent = false)
+    /// score in the plate. <paramref name="widest"/> false keeps the turn-1 values. <paramref name="collapsed"/> (with
+    /// <paramref name="withEvent"/>) hides the open card to its "Decision waiting" button, as Hide does.</summary>
+    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, UiText> check, bool widest = true, bool withEvent = false,
+                                bool collapsed = false)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -74,6 +76,7 @@ public class TopBarTests
             bridge.EndTurn();
             if (withEvent)
                 for (int t = 0; bridge.State.PendingEvents.Count == 0; t++) { if (t >= 50) Assert.Fail("no event within 50 turns"); bridge.EndTurn(); }
+            if (collapsed) card!.Collapse();
             for (int i = 0; i < 6; i++) yield return null;
             var toast = root.Q<Label>("toast");
             toast.text = text["hud.new_game"]; toast.style.display = DisplayStyle.Flex;   // shown, so its place is checked
@@ -215,11 +218,30 @@ public class TopBarTests
                         if (r.xMin < plate.xMax && r.xMax > plate.xMin && r.yMin < plate.yMax - 0.5f && name != "event-layer" && name != "right-column")
                             problems.Add($"{at}: {name} {r} starts under the hanging plate {plate}");
                     }
-                    // The decision layer's "Decision waiting" sits at its top right: clear of the plate in either language.
-                    var layer = root.Q("event-layer").worldBound;
-                    var waiting = new Rect(layer.xMax - 260f, layer.yMin, 260f, 40f);
-                    if (waiting.Overlaps(plate)) problems.Add($"{at}: Decision waiting's corner {waiting} lies under the plate {plate}");
                 });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>With a card hidden, its "Decision waiting" button (the real element, laid out, review of #624: it was a guessed
+    /// 260 x 40 corner) is clear of the hanging plate and of the bar, at every window size and in both languages.</summary>
+    [UnityTest]
+    public IEnumerator DecisionWaitingIsClearOfThePlate()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in Windows.Concat(Boundary.Select(b => (b.w, b.h))).Distinct())
+                yield return Rendered(w, h, hebrew, (root, text) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    var button = root.Q<Button>("event-reopen");
+                    var waiting = button.worldBound;
+                    if (button.resolvedStyle.display != DisplayStyle.Flex || !(waiting.width > 0) || !(waiting.height > 0) || button.text != text["event.reopen"])
+                    { problems.Add($"{at}: precondition: Decision waiting shows ({waiting}, '{button.text}')"); return; }
+                    var plate = root.Q("date-plate").worldBound;
+                    var bar = root.Q("top-bar").worldBound;
+                    if (waiting.Overlaps(plate)) problems.Add($"{at}: Decision waiting {waiting} lies under the plate {plate}");
+                    if (waiting.Overlaps(bar)) problems.Add($"{at}: Decision waiting {waiting} lies under the bar {bar}");
+                }, withEvent: true, collapsed: true);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
