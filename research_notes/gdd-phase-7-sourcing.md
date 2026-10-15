@@ -124,7 +124,10 @@ What the statutes show:
   sections 2 and 5 of the Law of Return. [V] Law of Return amendment 1954 (Knesset scan). So the statute itself still
   named the Minister of Immigration for almost three years after the office ended; how those powers were exercised in
   the gap (October 1951 to August 1954) is **not found** here.
-- The Interior Minister from 8 October 1951 was the same person, Shapira. [V] Knesset OData.
+- The Interior Minister from 8 October 1951 was the same person, Shapira, who had held Interior alongside Immigration
+  since 10 March 1949 (Knesset OData: GovMinistryID 724 from 10 March 1949, 735 from 1 November 1950, 746 from
+  8 October 1951; `people.yaml` has the same terms). [V] Knesset OData. The holder and the Interior portfolio both run
+  unbroken across 8 October 1951.
 
 **What the content should name as the successor office.** Recommendation for the owner, not a decision:
 
@@ -236,6 +239,8 @@ note adds.
     and further points. **2 for.**
   - Herut (Meridor) declared that it would not take part in the votes and read a statement of its position; the Speaker
     recorded the abstention.
+  - The General Zionists (Sapir) made a statement "לא לשם העמדתה להצבעה" (not to be put to a vote): they do not
+    recognise the declared annexation and call on the government to act towards non-recognition. It was not voted on.
 
 **What this means for Q-NEW-2.** The #135 note's blocker was that only one sourced Israeli response existed, so a card
 would have one option. The Knesset record now gives a dated choice among sourced alternatives: (a) take note, keep the
@@ -252,8 +257,10 @@ reservations"). Party motions are attributed to the parties that tabled them.
 ## 4. Q-HFX-4: dated arrivals of named equipment, 1948-1949
 
 The plan asks for "a sourced arrival of the named equipment on a dated day". Four candidates, in date order. Note:
-`content/map/units_1948.yaml` already uses 20 May 1948 (Avia S-199) and 27 September 1948 (Spitfire) for 101 Squadron's
-aircraft, sourced to Wikipedia; this section gives the better sources found for those days.
+`content/map/units_1948.yaml` already has 101 Squadron's aircraft: the Avia S-199 `from: '1948-05-20'` (sourced to
+en.wiki Avia S-199 and to Eduard, *Info* 11/2025, pp. 53-54; its note says "The first four arrived on 20 May 1948"), and
+the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 appears only in the Spitfire row's note
+(sourced to he.wiki). This section gives the further sources found for those days.
 
 ### 4a. The 65 mm mountain guns ("Napoleonchiks"): ship *Borea*, 13 to 15 May 1948
 
@@ -287,8 +294,11 @@ aircraft, sourced to Wikipedia; this section gives the better sources found for 
   - **20 May 1948:** the first disassembled S-199 lands at Ekron in a C-54, with five pilots trained in Czechoslovakia
     and Czech mechanics. [V] with he.wiki מבצע בלק ("בלק-5", footnote to Cohen and Lavi, *השמים אינם הגבול* (1990),
     pp. 50-52).
-  - 21 May: a second, by C-46. 22 May: a third, by C-54. 23-24 May: a C-46 carrying a fourth crashes near Ekron in fog;
-    the navigator is killed. [V] for 21 May and the crash with he.wiki מבצע בלק.
+  - 21 May: a second, by C-46 ([V] with he.wiki מבצע בלק). 22 May: a third, by C-54 ([S]). A C-46 carrying a fourth
+    crashed and its navigator was killed; **[C] on the day and the place**: 101 Squadron puts it on 23 May, the aircraft
+    (RX-136, Balak 11) diverted from fog-bound Ekron towards Sde Dov, fired on there, and crashing "on a gentle slope
+    south of Latrun"; he.wiki מבצע בלק puts it on the night of 23-24 May, hitting a low hill while circling near Tel Nof
+    (Ekron) to find the runway.
   - 28-29 May: the Air Force commander reports to the Prime Minister that the aircraft, bombs and guns are not yet ready.
   - **29 May 1948:** four S-199s, assembled at Ekron, fly their first mission, against the Egyptian column near Isdud
     (Ashdod); one of the four crashed on the way back. [V] with he.wiki אוויה S-199 ("ב-29 במאי 1948, כאשר ארבעה מטוסי אוויה S-199 תקפו
@@ -296,7 +306,8 @@ aircraft, sourced to Wikipedia; this section gives the better sources found for 
 - **[C] When four were ready:** 101 Squadron says "by the end of the day [29 May], four S-199s ... were ready"; a search
   summary of the same page read "by the end of May 21", which the page text does not say. The page text is used here.
 - **Fit:** the clearest "assembled and in service" date for a grant is **29 May 1948** (four aircraft, 101 Squadron),
-  inside the 15 May 1948 turn. `units_1948.yaml` already shows 101 Squadron from 20 May.
+  inside the 15 May 1948 turn. `units_1948.yaml` already shows the S-199 from 20 May; its note's "first four arrived on
+20 May" conflicts with the day-by-day arrivals above (one on 20 May, then 21 and 22 May, the fourth lost in the crash).
 
 ### 4c. The Hotchkiss H39 tanks: June 1948
 
@@ -327,9 +338,9 @@ aircraft, sourced to Wikipedia; this section gives the better sources found for 
 - **[C] How many landed on 22 and 26 December:** he.wiki: of five on 22 December one turned back and the rest landed; all
   six on 26 December landed. 101 Squadron: on 22 December one landed at Hatzor after losing the others and one nearly
   collided at Ekron; on 26 December the leader turned back just after take-off. The counts differ by one or two.
-- **Totals:** 18 Spitfires flew in during the war (6 in September and 12 in December, counted at departure); the rest
-  came by sea after the war. [S] en.wiki Arms shipments from Czechoslovakia to Israel, as summarised in a search result
-  (not opened). The IAF's own Spitfire page (iaf.org.il, "47 more by sea and air in the Velvetta operations") returned
+- **Totals (unverified):** 18 Spitfires flew in during the war (6 in September and 12 in December, counted at
+  departure); the rest came by sea after the war. This rests only on a search summary of en.wiki Arms shipments from
+  Czechoslovakia to Israel; the page was not opened. The IAF's own Spitfire page (iaf.org.il, "47 more by sea and air in the Velvetta operations") returned
   HTTP 403 and was **not reached**; its figure is from a search summary only.
 - **Fit:** the best-sourced dated arrival in the set: **27 September 1948**, three Spitfires at Ramat David (the
   15 September 1948 turn). A December grant (22 December 1948, the 15 December turn) would coincide with Operation Horev.
@@ -346,8 +357,9 @@ aircraft, sourced to Wikipedia; this section gives the better sources found for 
 
 The plan's draft answer to Q-HFX-4 is "no grant unless a sourced arrival of named equipment on a dated day is found".
 The S-199s (20 and 29 May 1948) and the first Spitfires (27 September 1948) meet that bar; the Hotchkiss tanks do not
-yet. Which, if any, becomes a grant is the owner's call; note that the aircraft are already in `units_1948.yaml`, so a
-grant there would duplicate them unless the units data changes.
+yet. Which, if any, becomes a grant is the owner's call; note that the aircraft are already in `units_1948.yaml` (the S-199
+from 20 May 1948, the Spitfire from 15 October 1948, its first sourced sortie), so a grant there would duplicate them
+unless the units data changes.
 
 **Sensitivity.** None of the four tags for an arrival as such. The 29 May 1948 mission and Degania involve deaths; a card
 should state the arrival, not the fighting, or carry the `war-casualties` review if it describes the battle.
@@ -385,4 +397,7 @@ should state the arrival, not the fighting, or carry the `war-casualties` review
 | Napoleonchiks at Degania | four vs two | 4a |
 | Hotchkiss arrival | early June vs 15 June 1948 | 4c |
 | Spitfires landed, Velvetta 1 and 2 | three on 27 September (101 Squadron); December counts differ by one or two between he.wiki and 101 Squadron | 4d |
-| IAF total of Velvetta Spitfires | "47" (IAF page, search summary only) vs 18 flown in during the war | 4d |
+| Day and place of the C-46 crash with the fourth S-199 | 23 May, south of Latrun after diverting to Sde Dov (101 Squadron) vs night of 23-24 May, near Tel Nof/Ekron (he.wiki מבצע בלק) | 4b |
+| S-199 arrivals | one on 20 May, then 21 and 22 May, fourth lost (101 Squadron, he.wiki) vs "The first four arrived on 20 May 1948" (`units_1948.yaml` note) | 4b |
+| Spitfire date in `units_1948.yaml` | `from: '1948-10-15'` (first sourced sortie) vs 27 September arrival (its note, and this note) | 4d |
+| IAF total of Velvetta Spitfires | "47" (IAF page, search summary only) vs 18 flown in during the war (search summary only; both unverified) | 4d |
