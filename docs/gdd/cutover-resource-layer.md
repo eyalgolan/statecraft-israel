@@ -14,7 +14,7 @@ As a player of the MVP, I want the real game to switch to the GDD loop with mont
 - Food and Arms are national pools, whole numbers (D-C2, decided 15 October 2026 [S2]). Arms comes from sourced arms-deal events and from Money, and training and attacks consume it (D-G6, decided 15 October 2026 [S2]).
 - Social cohesion is the `morale` indicator on its zero-to-one scale, shown to the player as Social cohesion, its thresholds as situations, and International Support is the `intl_standing` indicator on its zero-to-one scale, under its player name (D-C1, decided 15 October 2026 [S2]; proposed R-NAT-001 and R-NAT-003).
 - An event option's effects may target Money, Food, Arms, Social cohesion and International Support; any other target is a load error (proposed R-EFX-001 [S2]). An option tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot raise any of the five resources or foreign currency unless the same option carries a matching cost (the sensitive-option answer of 15 October 2026 [S2]; proposed R-EFX-002). The owner chose to add a real cost: the check is a net of zero or less across the five resources, with the cost falling on a different resource than the gain (owner, 15 October 2026 [S3]; the plan [S2]).
-- The historical run has at most six months without any event, and at most two months in wartime (owner, 15 October 2026 [S3]; the gap rule, docs/m3-rulings.md). Five war event cards are rewritten as decisions taken during or after the event, and the first truce and Rhodes cards are accepted as arriving late (`Q-CUT-3`, "Mixed" [S2]). The Altalena card opens on 15 June 1948 without the Kfar Vitkin clause, and the Ten Days card is rewritten (owner, 15 October 2026 [S3]). Cards whose text changed go back to `fact-checked` until the owner re-reviews them (`Q-CUT-4`, decided 15 October 2026 [S3]).
+- The historical run has at most six months without any event, and at most two months in wartime, the full-war level of the war state counting as wartime (owner, 15 October 2026 [S3] and [S4]; the gap rule, docs/m3-rulings.md). Five war event cards are rewritten as decisions taken during or after the event, and the first truce and Rhodes cards are accepted as arriving late (`Q-CUT-3`, "Mixed" [S2]). The Altalena card opens on 15 June 1948 without the Kfar Vitkin clause, and the Ten Days card is rewritten (owner, 15 October 2026 [S3]). Cards whose text changed go back to `fact-checked` until the owner re-reviews them (`Q-CUT-4`, decided 15 October 2026 [S3]).
 - Every balance number lives in `content/`, tagged on its line as a design value, not a historical figure, and one test lists them all, so no number slips in untagged (the design-values answer of 15 October 2026 [S2]). The numbers themselves stay the owner's to set or accept in review.
 - The cabinet and Attention stay; coalition is optional with no collapse; the budget is optional; policies are internal; diplomacy is deferred (D-C5 [S2]).
 
@@ -25,7 +25,7 @@ As a player of the MVP, I want the real game to switch to the GDD loop with mont
 - `GameState`: the new Food and Arms pools; `GameState.Cohesion` and its hash line go as cohesion becomes `morale` under the player name (the plan, PR 4 [S2]).
 - `model.yaml`: player names and the effects web for the two national indicators (the plan, PR 4 [S2]).
 - The event-effect loader: the five allowed targets (proposed R-EFX-001 [S2]).
-- The HUD: the existing meters stay (`Q-HUD-1`, decided 15 October 2026 [S3]); the five resources are shown, and approval appears as Public support (`Q-HUD-2`, decided 15 October 2026 [S3]).
+- The HUD: the existing meters stay (`Q-HUD-1`, decided 15 October 2026 [S3]); the five resources are shown, and approval appears as Public support (`Q-HUD-2`, decided 15 October 2026 [S3]). The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית (`Q-HUD-3` and `Q-MONEY-4`, decided 15 October 2026 [S4]).
 
 ## Done when
 
@@ -35,7 +35,7 @@ As a player of the MVP, I want the real game to switch to the GDD loop with mont
 ## Out of scope
 
 - Upkeep: none until the third phase, then the values enter `content/` as labelled design values (`Q-MONEY-2`, decided 15 October 2026 [S3]; D-C6 [S2]).
-- The sensitive options' real costs: the Altalena, Bernadotte and reparations options each get one (owner, 15 October 2026 [S3]); each amount is a labelled design value set in `#577`.
+- The sensitive options' real costs: the Altalena, Bernadotte and reparations options each get one (owner, 15 October 2026 [S3]); each amount is a labelled design value set in `#577`; the reparations claim's cost falls on Money (owner, 15 October 2026 [S4]).
 - D-B3 and D-B4: moved to Phases 3 and 4 (owner, 15 October 2026 [S3]).
 - The war objective, prisoners and the ceasefire clock (Phase 5).
 - Defeat: built in the final phase, with the counter set then (`Q-GOV-2`, decided 15 October 2026 [S3]); what "Money exhausted" means now that borrowing is allowed stays open.
@@ -45,9 +45,10 @@ As a player of the MVP, I want the real game to switch to the GDD loop with mont
 - [S1] The game design of record, docs/GDD.md
 - [S2] GDD v0.1 impact analysis and phased plan, section 5, docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md, with the owner's answers of 15 October 2026 recorded by #575; and the Phase 2 plan, docs/superpowers/plans/2026-10-14-gdd-phase-2.md
 - [S3] The owner's phase answers announced on #375, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6180592337, checked 2026-10-15
+- [S4] The owner's decisions recorded on #375, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6183538544, checked 2026-10-15
 
 ## Open questions
 
-- `Q-HUD-3` and `Q-MONEY-4`: the Hebrew words for the HUD and for Money. Every other Phase 2 question is decided (owner, 15 October 2026 [S3]); the plan's table records the decided rows (`Q-CUT-4` to `Q-CUT-8`, `Q-POOL-2/4/5`, `Q-NAT-2/3/5`, `Q-EFX-1/3`, `Q-GOV-1/2`, `Q-HUD-1/2`) [S2].
+- None: every Phase 2 question is decided (owner, 15 October 2026 [S3] and [S4]); the plan's table records the decided rows (`Q-CUT-4` to `Q-CUT-8`, `Q-POOL-2/4/5`, `Q-NAT-2/3/5`, `Q-EFX-1/3`, `Q-GOV-1/2`, `Q-HUD-1` to `Q-HUD-3`, `Q-MONEY-2` and `Q-MONEY-4`) [S2].
 - D-C6: the balance values themselves. Each enters `content/` as a labelled design value for the owner to set or accept in review (decided 15 October 2026 [S2]).
 - D-B3 (the railway card's reference date) and D-B4: open, moved to Phases 3 and 4 [S3].
