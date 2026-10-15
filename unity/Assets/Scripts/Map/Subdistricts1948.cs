@@ -23,6 +23,35 @@ namespace Statecraft.Game.Map
     {
         public const string FileName = "subdistrict_hexes_1948.yaml";
 
+        /// <summary>The baked runtime form of the file the player reads at boot (tools/regions_bake.py; issue #321).</summary>
+        public const string RuntimeFileName = "subdistrict_hexes_1948.tsv";
+
+        /// <summary>Parses the runtime file made from <paramref name="yaml"/> with the same checks as <see cref="Parse"/>;
+        /// throws InvalidDataException when it is of another version, made from another YAML, cut short or malformed.</summary>
+        public static Subdistricts1948 ParseRuntime(string tsv, string yaml)
+        {
+            var d = RegionsRuntime.Read(tsv, yaml, RuntimeFileName);
+            var doc = FromRuntime(d);
+            d.Done();
+            return Build(doc);
+        }
+
+        /// <summary>The boot read: the runtime file when it is for this YAML, else (one warning) the YAML.</summary>
+        public static Subdistricts1948 ReadRuntimeOrYaml(string? tsv, string yaml, System.Action<string> warn) =>
+            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return Build(doc); }, Parse, warn);
+
+        static FileDoc FromRuntime(RegionsRuntime.Doc d) => new FileDoc
+        {
+            Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Line = d.Str("line", "")!, Label = d.Str("label", "")!,
+            ShownFrom = d.Str("shown_from", "")!, ShownUntil = d.Str("shown_until", null),
+            Fronts = d.Items("fronts", r => new FrontRow { Key = r.Str("key", "")!, Until = r.Str("until", null) }),
+            Regions = d.Items("regions", r => new FileRow
+            {
+                Id = r.Int("id", 0), Key = r.Str("key", "")!, Name = r.Str("name", "")!, District = r.Str("district", "")!, Style = r.Str("style", "")!,
+            }),
+            Hexes = d.Ints("hexes"),
+        };
+
         public sealed class Region
         {
             public int Id; public string Key = "", Name = "", District = ""; public BorderStyle Style;
@@ -66,6 +95,12 @@ namespace Statecraft.Game.Map
             FileDoc? doc;
             try { doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).WithDuplicateKeyChecking().Build().Deserialize<FileDoc>(yaml); }
             catch (YamlException e) { throw new InvalidDataException($"{FileName}: line {e.Start.Line}: {e.InnerException?.Message ?? e.Message}", e); }
+            return Build(doc);
+        }
+
+        /// <summary>The checks and the object, from the file's rows (the YAML's or the runtime file's: RegionsRuntime).</summary>
+        static Subdistricts1948 Build(FileDoc? doc)
+        {
             if (doc == null || string.IsNullOrWhiteSpace(doc.Layer)) throw new InvalidDataException($"{FileName}: no layer");
             if (doc.Regions.Count == 0) throw new InvalidDataException($"{FileName}: no regions");
             if (string.IsNullOrWhiteSpace(doc.Label)) throw new InvalidDataException($"{FileName}: no label (the layer is labelled on screen)");

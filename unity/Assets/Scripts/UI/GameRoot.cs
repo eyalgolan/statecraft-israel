@@ -45,6 +45,8 @@ namespace Statecraft.Game.UI
         Statecraft.Game.Map.Units.UnitLayer? units;
         /// <summary>The units in play (null before Begin).</summary>
         internal Statecraft.Game.Map.Units.UnitLayer? Units => units;
+        /// <summary>The map's region layers (sub-districts, armistice, control; null before Begin): a test aid.</summary>
+        internal MapRegions? Regions { get; private set; }
         MapLabelsPresenter? labels;
         ScreenNav? nav;
         StartScreenPresenter? start;
@@ -216,9 +218,11 @@ namespace Statecraft.Game.UI
             // where the line exists (display only: the sim never reads them; docs/visual-v1.md, owner rulings 2026-10-11).
             // Since the owner's rulings of 2026-10-14 the areas are coloured by side from 11 June 1948 (control_hexes_1948_49.yaml),
             // with the legend in the label.
-            var regions = new MapRegions(Subdistricts1948.Parse(inputs.Map.RegionsYaml),
-                string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.Parse(inputs.Map.ArmisticeYaml),
-                string.IsNullOrWhiteSpace(inputs.Map.ControlYaml) ? null : Control1948.Parse(inputs.Map.ControlYaml));
+            // From their runtime forms when they match the YAML (issue #321: boot time), the sub-districts as the map read them.
+            var regions = new MapRegions(map.SubdistrictsFor(inputs.Map.RegionsTsv, inputs.Map.RegionsYaml, Debug.LogWarning),
+                string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
+                string.IsNullOrWhiteSpace(inputs.Map.ControlYaml) ? null : Control1948.ReadRuntimeOrYaml(inputs.Map.ControlTsv, inputs.Map.ControlYaml, Debug.LogWarning));
+            Regions = regions;
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
@@ -376,7 +380,7 @@ namespace Statecraft.Game.UI
             StopAllCoroutines();
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; rig = null; drawn = null; units = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; rig = null; drawn = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;

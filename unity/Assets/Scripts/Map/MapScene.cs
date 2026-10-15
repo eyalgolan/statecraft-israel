@@ -151,6 +151,18 @@ namespace Statecraft.Game.Map
         public IReadOnlyList<Units.UnitEntry> UnitEntries { get; private set; } = Array.Empty<Units.UnitEntry>();
         string unitsYamlRead;   // null before a build
 
+        /// <summary>The 1948 sub-districts as the last Build read them for the Bedouin camps' hexes (null when it did not:
+        /// no kits, or no sub-district file). Read only: GameRoot's region layers draw from this same object.</summary>
+        public Subdistricts1948 Subdistricts { get; private set; }
+        string regionsYamlRead;   // null before a build, or when Build did not read the file
+
+        /// <summary>The sub-districts for <paramref name="yaml"/>: the object the last Build read when it read the same text
+        /// (issue #321: the file was read twice at boot), else read from <paramref name="tsv"/> or the YAML
+        /// (Subdistricts1948.ReadRuntimeOrYaml, warning through <paramref name="warn"/>).</summary>
+        public Subdistricts1948 SubdistrictsFor(string tsv, string yaml, Action<string> warn) =>
+            regionsYamlRead != null && Subdistricts != null && string.Equals(yaml, regionsYamlRead, StringComparison.Ordinal)
+                ? Subdistricts : Subdistricts1948.ReadRuntimeOrYaml(tsv, yaml, warn);
+
         /// <summary>The unit spots the last Build placed (UnitGround.Place over <see cref="UnitEntries"/>, keyed by their
         /// anchors; an anchor it could not place has none) and the hexes it placed them on. The units layer takes them instead
         /// of placing again when it draws the same units on the same hexes (issue #321; UnitSpotsFor).</summary>
@@ -263,7 +275,14 @@ namespace Statecraft.Game.Map
                 // The camps' areas are the sub-districts as the region layer draws them (review I4: no copy in the
                 // localities file).
                 if (string.IsNullOrWhiteSpace(inputs.RegionsYaml)) { localities.Encampments.Clear(); Debug.LogWarning($"KITS map/{Subdistricts1948.FileName} is missing: no Bedouin camps"); }
-                else Kits.Localities.FillHexes(localities, inputs.RegionsYaml, Hexes, "map/" + Kits.Localities.FileName);
+                else
+                {
+                    // The camps' hexes from the sub-districts, read once from their runtime form (issue #321) and handed on
+                    // to GameRoot's region layers (SubdistrictsFor).
+                    Subdistricts = Subdistricts1948.ReadRuntimeOrYaml(inputs.RegionsTsv, inputs.RegionsYaml, Debug.LogWarning);
+                    regionsYamlRead = inputs.RegionsYaml;
+                    Kits.Localities.FillHexes(localities, Subdistricts, Hexes, "map/" + Kits.Localities.FileName);
+                }
             }
             Kits.Localities.Use(localities.Places);   // on every build, so a map without the kits inherits nothing (review M13)
             if (kitsOn) DiagLog.BootPhase("localities parsed");
@@ -452,6 +471,7 @@ namespace Statecraft.Game.Map
             Hexes = null;
             settlementsYamlRead = null;
             UnitEntries = Array.Empty<Units.UnitEntry>(); unitsYamlRead = null;
+            Subdistricts = null; regionsYamlRead = null;
             UnitSpots = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>(); UnitHexes = Array.Empty<Statecraft.Sim.MapHex>();
         }
     }

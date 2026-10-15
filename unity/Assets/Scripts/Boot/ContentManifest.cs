@@ -23,8 +23,10 @@ namespace Statecraft.Game.Boot
         public static readonly IReadOnlyCollection<string> ToolInputs = new HashSet<string> { "map/routes_1948.yaml", "map/localities_1948.yaml" };
 
         /// <summary>Baked map files that are not YAML, listed when present: the runtime forms of the 1948 localities and of the
-        /// route paths (boot budget). The route paths' YAML still ships: the runtime file is checked against it.</summary>
-        public static readonly IReadOnlyList<string> RuntimeData = new[] { "map/localities_1948.tsv", "map/route_paths_1948.tsv" };
+        /// route paths and the region files (boot budget, issue #321). Their YAML still ships: each runtime file is checked
+        /// against it.</summary>
+        public static readonly IReadOnlyList<string> RuntimeData = new[] { "map/localities_1948.tsv", "map/route_paths_1948.tsv",
+            "map/subdistrict_hexes_1948.tsv", "map/armistice_hexes_1949.tsv", "map/control_hexes_1948_49.tsv" };
 
         [Serializable] sealed class ManifestJson { public string[] files = new string[0]; }
 

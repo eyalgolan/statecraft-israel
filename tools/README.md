@@ -18,6 +18,10 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   into `tools/.cache/pal250k-1946/`, not committed): it reads the hand-written routes, sources and waypoints in
   `content/map/routes_1948.yaml` and writes the traced lines to `content/map/route_paths_1948.yaml` (committed; the map
   draws it, the sim never reads it). `--preview` writes each traced segment over the map for checking by eye.
+- `regions_bake.py [--check]` bakes the region files `content/map/subdistrict_hexes_1948.yaml`,
+  `armistice_hexes_1949.yaml` and `control_hexes_1948_49.yaml` into `.tsv` runtime forms beside them (committed), which
+  the map reads at boot (issue #321). Rerun it after `borders_bake.py`, `armistice_bake.py` or `control_bake.py`
+  rewrites one: `test_regions_bake.py` fails a stale file, naming it, and `--check` does the same.
 - `route_paths_bake.py [--check]` bakes `content/map/route_paths_1948.yaml` into `content/map/route_paths_1948.tsv`
   (committed), the compact runtime form the map reads at boot (issue #321). Rerun it after `routes_1948.py`:
   `test_route_paths_bake.py` fails a stale bake, and `--check` does the same.

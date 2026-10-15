@@ -20,6 +20,35 @@ namespace Statecraft.Game.Map
     {
         public const string FileName = "control_hexes_1948_49.yaml";
 
+        /// <summary>The baked runtime form of the file the player reads at boot (tools/regions_bake.py; issue #321).</summary>
+        public const string RuntimeFileName = "control_hexes_1948_49.tsv";
+
+        /// <summary>Parses the runtime file made from <paramref name="yaml"/> with the same checks as <see cref="Parse"/>;
+        /// throws InvalidDataException when it is of another version, made from another YAML, cut short or malformed.</summary>
+        public static Control1948 ParseRuntime(string tsv, string yaml)
+        {
+            var d = RegionsRuntime.Read(tsv, yaml, RuntimeFileName);
+            var doc = FromRuntime(d);
+            d.Done();
+            return Build(doc);
+        }
+
+        /// <summary>The boot read: the runtime file when it is for this YAML, else (one warning) the YAML.</summary>
+        public static Control1948 ReadRuntimeOrYaml(string? tsv, string yaml, System.Action<string> warn) =>
+            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return Build(doc); }, Parse, warn);
+
+        static FileDoc FromRuntime(RegionsRuntime.Doc d) => new FileDoc
+        {
+            Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Meaning = d.Str("meaning", "")!, Line = d.Str("line", "")!,
+            ShownFrom = d.Str("shown_from", "")!, Codes = d.Str("codes", "")!,
+            Periods = d.Items("periods", r => new PeriodRow
+            {
+                Id = r.Str("id", "")!, From = r.Str("from", "")!, Until = r.Str("until", null), Legend = r.Str("legend", "")!,
+                LineDate = r.Str("line_date", "")!, Fronts = r.List("fronts"),
+            }),
+            Hexes = d.Strings("hexes"),
+        };
+
         /// <summary>What a hex is on a date. Holder: the other side's holder when the sources name one, else null.</summary>
         /// <summary>None: a hex of Mandatory Palestine with no sourced line on the date (no colour); OffData: a hex outside the
         /// data (beyond the frontier, the sea).</summary>
@@ -49,6 +78,8 @@ namespace Statecraft.Game.Map
         public readonly DateTime ShownFrom;
         public readonly IReadOnlyList<Period> Periods;
         readonly Dictionary<(int q, int r), string> codes;
+        /// <summary>Each hex's codes as read (a test aid: the runtime file must give the YAML's, issue #321).</summary>
+        internal IReadOnlyDictionary<(int q, int r), string> Codes => codes;
         readonly RegionLayer?[] layers;
         IReadOnlyCollection<(int q, int r)> outside = Array.Empty<(int, int)>();
 
@@ -108,6 +139,12 @@ namespace Statecraft.Game.Map
             FileDoc? doc;
             try { doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).WithDuplicateKeyChecking().Build().Deserialize<FileDoc>(yaml); }
             catch (YamlException e) { throw new InvalidDataException($"{FileName}: line {e.Start.Line}: {e.InnerException?.Message ?? e.Message}", e); }
+            return Build(doc);
+        }
+
+        /// <summary>The checks and the object, from the file's rows (the YAML's or the runtime file's: RegionsRuntime).</summary>
+        static Control1948 Build(FileDoc? doc)
+        {
             if (doc == null || string.IsNullOrWhiteSpace(doc.Layer)) throw new InvalidDataException($"{FileName}: no layer");
             if (doc.Periods.Count == 0) throw new InvalidDataException($"{FileName}: no periods");
             var periods = new List<Period>();

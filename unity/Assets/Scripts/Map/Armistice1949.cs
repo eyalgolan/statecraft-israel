@@ -20,6 +20,44 @@ namespace Statecraft.Game.Map
     {
         public const string FileName = "armistice_hexes_1949.yaml";
 
+        /// <summary>The baked runtime form of the file the player reads at boot (tools/regions_bake.py; issue #321).</summary>
+        public const string RuntimeFileName = "armistice_hexes_1949.tsv";
+
+        /// <summary>Parses the runtime file made from <paramref name="yaml"/> with the same checks as <see cref="Parse"/>;
+        /// throws InvalidDataException when it is of another version, made from another YAML, cut short or malformed.</summary>
+        public static Armistice1949 ParseRuntime(string tsv, string yaml)
+        {
+            var d = RegionsRuntime.Read(tsv, yaml, RuntimeFileName);
+            var doc = FromRuntime(d);
+            d.Done();
+            return Build(doc);
+        }
+
+        /// <summary>The boot read: the runtime file when it is for this YAML, else (one warning) the YAML.</summary>
+        public static Armistice1949 ReadRuntimeOrYaml(string? tsv, string yaml, System.Action<string> warn) =>
+            RegionsRuntime.ReadOrYaml(tsv, yaml, RuntimeFileName, d => { var doc = FromRuntime(d); d.Done(); return Build(doc); }, Parse, warn);
+
+        static FileDoc FromRuntime(RegionsRuntime.Doc d)
+        {
+            ItemRow Item(RegionsRuntime.Row r) => new ItemRow
+            {
+                Id = r.Int("id", 0), Key = r.Str("key", "")!, Front = r.Str("front", "")!, Name = r.Str("name", "")!,
+                ShownFrom = r.Str("shown_from", "")!, Style = r.Str("style", "secondary")!, Agreement = r.Str("agreement", null),
+                Signed = r.Str("signed", null), LabelNote = r.Str("label_note", "")!, LowAccuracy = r.Bool("low_accuracy", false),
+            };
+            return new FileDoc
+            {
+                Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Line = d.Str("line", "")!, Label = d.Str("label", "")!,
+                Fronts = d.Items("fronts", r => new FrontRow
+                {
+                    Key = r.Str("key", "")!, Name = r.Str("name", "")!, Agreement = r.Str("agreement", "")!, Signed = r.Str("signed", "")!,
+                    ShownFrom = r.Str("shown_from", null), LowAccuracy = r.Bool("low_accuracy", false), Note = r.Str("note", "")!,
+                }),
+                Zones = d.Items("zones", Item), Lines = d.Items("lines", Item), NoHex = d.List("no_hex"),
+                ZoneHexes = d.Ints("zone_hexes"), LineHexes = d.Ints("line_hexes"),
+            };
+        }
+
         public sealed class Front
         {
             public string Key = "", Name = "", Agreement = "", Note = ""; public DateTime Signed; public DateTime? ShownFrom;
@@ -43,6 +81,9 @@ namespace Statecraft.Game.Map
         public readonly IReadOnlyList<Item> Zones, Lines;
         readonly Dictionary<(int q, int r), Item> zoneAt;
         readonly Dictionary<(int q, int r), List<Item>> linesAt;
+        /// <summary>The zone and line hexes as read (a test aid: the runtime file must give the YAML's, issue #321).</summary>
+        internal IReadOnlyDictionary<(int q, int r), Item> ZoneHexes => zoneAt;
+        internal IReadOnlyDictionary<(int q, int r), List<Item>> LineHexes => linesAt;
 
         Armistice1949(string title, string line, string label, List<Front> fronts, List<Item> zones, List<Item> lines,
             Dictionary<(int q, int r), Item> zoneAt, Dictionary<(int q, int r), List<Item>> linesAt)
@@ -79,6 +120,12 @@ namespace Statecraft.Game.Map
             FileDoc? doc;
             try { doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).WithDuplicateKeyChecking().Build().Deserialize<FileDoc>(yaml); }
             catch (YamlException e) { throw new InvalidDataException($"{FileName}: line {e.Start.Line}: {e.InnerException?.Message ?? e.Message}", e); }
+            return Build(doc);
+        }
+
+        /// <summary>The checks and the object, from the file's rows (the YAML's or the runtime file's: RegionsRuntime).</summary>
+        static Armistice1949 Build(FileDoc? doc)
+        {
             if (doc == null || string.IsNullOrWhiteSpace(doc.Layer)) throw new InvalidDataException($"{FileName}: no layer");
             if (string.IsNullOrWhiteSpace(doc.Label)) throw new InvalidDataException($"{FileName}: no label (the layer is labelled on screen)");
             if (doc.Fronts.Count == 0) throw new InvalidDataException($"{FileName}: no fronts");
