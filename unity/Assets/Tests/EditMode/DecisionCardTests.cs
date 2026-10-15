@@ -100,12 +100,15 @@ public class DecisionCardTests
             Assert.IsTrue(r.Shows("event-scrim"), $"{where}: the backdrop shows");
             Covered(r, true, where);
             // A point of the map clear of every panel: the backdrop takes it, so a map click or drag stops there.
-            // (The window's left edge just under the bar, inside the left icon column's strip: the backdrop's gutter takes it,
-            // review of #602; and just right of the column the backdrop itself.)
+            // (The window's left edge just under the bar: the backdrop's full-width band takes it, review of #624; beside the
+            // left column's discs its strip does, review of #602; and just right of the column the backdrop itself.)
             var bar = r.Root.Q("top-bar").worldBound.yMax;
             var edge = new Vector2(4f, bar + 4f);
-            Assert.AreSame(r.Root.Q("event-gutter"), r.Root.panel.Pick(edge), $"{where}: the backdrop's strip under the column takes the pointer at {edge}");
-            var free = new Vector2(r.Root.Q("left-column").worldBound.xMax + 4f, bar + 4f);
+            Assert.AreSame(r.Root.Q("event-scrim-top"), r.Root.panel.Pick(edge), $"{where}: the backdrop's band under the bar takes the pointer at {edge}");
+            var cabinet = r.Root.Q("nav-cabinet").worldBound;
+            var beside = new Vector2(4f, cabinet.center.y);
+            Assert.AreSame(r.Root.Q("event-gutter"), r.Root.panel.Pick(beside), $"{where}: the backdrop's strip beside the column takes the pointer at {beside}");
+            var free = new Vector2(r.Root.Q("left-column").worldBound.xMax + 4f, r.Root.Q("left-column").worldBound.yMin + 4f);
             Assert.AreSame(r.Root.Q("event-scrim"), r.Root.panel.Pick(free), $"{where}: the backdrop takes the pointer at {free}");
             Assert.AreSame(r.CardElement, r.Focused, $"{where}: the new event's card has the focus, no option lit");
             Assert.IsTrue(r.FirstOption.canGrabFocus, $"{where}: its options are in reach");

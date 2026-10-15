@@ -3132,11 +3132,18 @@ T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 
   log reads it), and its tooltip, which `HoverTip` shows beside it on hover and on focus.
 - End Turn is 20 px with its attention line at 14 px.
 - With the four screen buttons in the left column (#602) the bar needs about 248 px less, so each width tier starts that
-  much narrower (`HudPresenter`): 16:10 and 4:3 windows now keep the one-row bar with its icons. The taller tiers' heights
-  are unchanged.
-- The panels under the bar keep their 112 px top, which clears the hanging plate. The decision card's backdrop is raised to
-  the bar's bottom at the one-row tier (`top: -42px`), so no strip of map stays live under a card
-  (`TopBarTests.WithACardOpenTheBackdropMeetsTheBar`).
+  much narrower (`HudPresenter`). Logical width is the window's width over the panel's scale, which is the plain mean of
+  the two ratios, (w/1920 + h/1080) / 2 (logged by `TopBarTests`). The one-row edge is 1640: below it the one-row bar
+  wraps "Public Support" and "International Standing" with the widest values (review of #624 asked whether a fullscreen
+  5:4 could keep it; at 1563-1612 it could not). So 16:10 (~1819) and 4:3 (~1646) keep the one-row bar with its icons,
+  a fullscreen 5:4 (~1585) takes the stacked bar with them, and a square window (~1382) the stacked bar without. The
+  taller tiers' heights are unchanged.
+- The panels under the bar keep their 112 px top, which clears the hanging plate. Under a decision card a full-width band
+  of the backdrop runs from the bar's bottom to the column's top (`event-scrim-top`), so no strip of map stays live and
+  the hanging plate is dimmed evenly; the column's strip starts at the column's top (`TopBarTests.WithACardOpenTheBackdropMeetsTheBar`).
+- The plate is a label occluder (`date-plate` in `MapLabelsPresenter.OccluderNames`), since the bar's box no longer covers
+  it (`MapLabelTests.APillUnderTheHangingPlateIsHidden`).
+- Security's level and the attention line are 15 px, the accessibility audit's floor (H4); they were 13 and 14.
 - In Hebrew the bar's row mirrors (#550): the plate is at the right and End Turn at the left. The left column and the
   minimap keep their corners.
 

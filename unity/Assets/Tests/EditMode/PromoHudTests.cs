@@ -140,7 +140,8 @@ public class PromoHudTests
         // (~1911 logical); 21:9 ultrawide (~2217); 16:10 fullscreen (~1821) keeps the icons on the stacked bar; 4:3 and 5:4
         // drop them; square and narrower wrap; a phone upright (390x844, ~790) takes three rows (#398).
         // HUD round 2 moved the four screen buttons to the left column (#602), so the bar holds about 248 px less and every
-        // tier starts that much narrower (part 3): 16:10 and 4:3 now keep the one-row bar with its icons.
+        // tier starts that much narrower (part 3): 16:10 and 4:3 now keep the one-row bar with its icons; 5:4 the stacked bar
+        // with them.
         foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, false, false, false),
                                                               (1366, 768, true, false, false, false), (1760, 1000, true, false, false, false),
                                                               (2560, 1080, true, false, false, false),

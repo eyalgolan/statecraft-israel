@@ -20,7 +20,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="top-bar" class="panel top-bar">
             <Statecraft.Game.UI.UiFrame corners="false" rule="false" />
-            <ui:VisualElement class="date-box">
+            <ui:VisualElement name="date-plate" class="date-box">
                 <ui:VisualElement class="year-row">
                     <ui:Label name="year" class="year" />
                     <ui:Label name="score" class="muted" />
@@ -136,6 +136,10 @@
              event's photograph). Hidden under the start screen and any open screen (ScreenNav.DisableCovered). -->
         <ui:VisualElement name="event-layer" class="event-layer" picking-mode="Ignore">
             <ui:VisualElement name="event-scrim" class="event-scrim" />
+            <!-- The backdrop's band from the bar's bottom to the column's top, the window's full width: it dims the hanging date
+                 plate evenly and leaves no live strip of map (review of #624). Above the left column's top, so it never
+                 covers a disc. -->
+            <ui:VisualElement name="event-scrim-top" class="event-scrim-top" />
             <ui:VisualElement name="event-card" class="panel event-card">
                 <!-- The 16:9 media header: an archival photograph of the event (EventImageCatalog), framed in gold, with its
                      credit line as a caption strip along its bottom edge, and, for an event with a clip, the Illustration

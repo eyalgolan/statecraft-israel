@@ -16,20 +16,22 @@ namespace Statecraft.Game.UI
         readonly System.Collections.Generic.Dictionary<string, (VisualElement element, string caption)> said =
             new System.Collections.Generic.Dictionary<string, (VisualElement, string)>();
 
-        // Three tiers by the bar's logical width (1080p reference, match 0.5: logical width = sqrt(aspect x 1920 x 1080)).
-        // HUD round 2 moved the four screen buttons to the left column (#602), about 248 px out of the bar, so every tier
-        // starts that much narrower (part 3). Each threshold sits clear of a common window shape:
-        //   16:9 1920, 16:10 ~1821, 4:3 ~1662 | NarrowBelowPx 1612 | 5:4 ~1585 | CompactBelowPx 1452 | square ~1440 (1382 at
-        //   1024x1024) | TwoRowBelowPx 1370 | half a 1080p screen ~1358.
+        // Three tiers by the bar's logical width (1080p reference, match 0.5: the panel's scale is the plain mean of the two
+        // ratios, (w/1920 + h/1080) / 2, so logical width = w / that; TopBarTests logs it). HUD round 2 moved the four screen
+        // buttons to the left column (#602), about 248 px out of the bar, so every tier starts narrower (part 3). Below about
+        // 1640 the one-row bar wraps two captions with the widest values (TopBarTests, review of #624), so a fullscreen 5:4
+        // takes the stacked bar with its icons:
+        //   16:9 1920, 16:10 ~1819, 4:3 ~1646 | NarrowBelowPx 1640 | 5:4 ~1585 | CompactBelowPx 1452 | square ~1382
+        //   | TwoRowBelowPx 1370 | half a 1080p screen (960x1080) ~1280.
         // PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn proves each tier holds the widest late-game values and changes.
 
         /// <summary>Below this width the HUD's root gets NarrowClass: a taller bar (124 px) whose meters stack the change under
         /// the value, and the panels below it move down to match (Statecraft.uss .hud-narrow). Above it, the 70 px one-row bar
         /// (promo 03's 6.5%) holds six values and their changes side by side with the icons.</summary>
-        public const float NarrowBelowPx = 1612f;
+        public const float NarrowBelowPx = 1640f;
         public const string NarrowClass = "hud-narrow";
-        /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): 5:4 keeps them on the
-        /// stacked bar; a square window does not have the room.</summary>
+        /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): a square window does not
+        /// have the room for them on the stacked bar.</summary>
         public const float CompactBelowPx = 1452f;
         public const string CompactClass = "top-bar--compact";
         /// <summary>Below this width (windows narrower than about square, e.g. a browser snapped to half a 1080p screen, about

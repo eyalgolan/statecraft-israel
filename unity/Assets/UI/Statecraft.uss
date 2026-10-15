@@ -109,7 +109,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* In the bar a long caption wraps rather than widen its meter; on the roomy bar it keeps one line, as in the promo (B8). */
 .meter .meter-name { max-width: 120px; }
 .top-bar--roomy .meter .meter-name { max-width: none; white-space: nowrap; }
-#security-level { font-size: 13px; color: var(--ink-dim); margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
+#security-level { font-size: 15px; color: var(--ink-dim); margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
 .meter-row { flex-direction: row; align-items: flex-end; }
 .meter-value { font-size: 21px; color: var(--ink); }
 .meter-delta { font-size: 16px; margin-left: 7px; }
@@ -146,7 +146,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The narrow HUD (HudPresenter sets hud-narrow on the root, with the compact bar): a taller bar whose meters put the
    change under the value, so no change runs into its neighbour; the panels below the bar move down with it. */
 .hud-narrow .top-bar { height: 124px; }
-.hud-narrow .right-column, .hud-narrow .left-column, .hud-narrow .event-layer, .hud-narrow .screen, .hud-narrow .toast { top: 140px; }
+.hud-narrow .right-column, .hud-narrow .left-column, .hud-narrow .event-gutter, .hud-narrow .event-layer, .hud-narrow .screen, .hud-narrow .toast { top: 140px; }
 .hud-narrow .meter { min-width: 96px; padding: 0 6px; }
 .hud-narrow .meter-row { flex-direction: column; align-items: flex-start; }
 .hud-narrow .meter-value { font-size: 22px; }
@@ -155,14 +155,14 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    (78% of the bar, so they always take the first row) above, the screen buttons and End Turn below; the panels move down. */
 .hud-two-row .top-bar { height: 216px; padding-top: 6px; padding-bottom: 4px; flex-wrap: wrap; justify-content: space-between; align-content: space-around; }
 .hud-two-row .meters { width: 78%; flex-grow: 1; }
-.hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
+.hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-gutter, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). */
 .hud-three-row .top-bar { height: 312px; }
 .hud-three-row .meters { width: 100%; }
-.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 328px; }
+.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 328px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
-#attention { font-size: 14px; }
+#attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 20px;
     border-color: var(--gold); border-width: 1.5px; color: var(--gold-light); padding: 2px 12px 2px 38px;
@@ -181,7 +181,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .left-column { position: absolute; left: 16px; top: 112px; width: 56px; align-items: center; }
 /* The backdrop's strip under the column (review of #602): from the window's left edge to where the backdrop starts (72 px),
    full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
-.event-gutter { display: none; position: absolute; left: 0; top: 0; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
+.event-gutter { display: none; position: absolute; left: 0; top: 112px; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
 .event-modal .event-gutter { display: flex; }
 .left-column .rail-button { width: 56px; height: 56px; margin: 0 0 12px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
@@ -193,11 +193,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    middle. Hide collapses the card to the "Decision
    waiting" button at the layer's top right (EventCardPresenter), which takes no more room than itself. */
 .event-layer { position: absolute; left: 16px; right: 16px; top: 112px; bottom: 16px; justify-content: center; align-items: center; }
-.event-scrim { display: none; position: absolute; left: 56px; right: -16px; top: -42px; bottom: -16px; background-color: rgba(5, 9, 18, 0.55); }
+.event-scrim { display: none; position: absolute; left: 56px; right: -16px; top: 0; bottom: -16px; background-color: rgba(5, 9, 18, 0.55); }
 .event-open .event-scrim { display: flex; }
-/* The backdrop reaches up to the bar's bottom at every tier (the one-row bar is 70 px and the layer starts at 112, clear of
-   the hanging date plate; the taller tiers' layer starts 16 px under their bar): no strip of map stays live under a card. */
-.hud-narrow .event-scrim, .hud-two-row .event-scrim, .hud-three-row .event-scrim { top: -16px; }
+/* The backdrop reaches up to the bar's bottom at every tier: a full-width band from the bar to the layer's top (42 px under the
+   70 px one-row bar, where the date plate hangs; 16 px under the taller tiers' bars), then the layer's own part right of
+   the left column, and the column's strip (event-gutter) beside and below its discs. No strip of map stays live under a
+   card, and the hanging plate is dimmed evenly (review of #624). */
+.event-scrim-top { display: none; position: absolute; left: -16px; right: -16px; top: -42px; height: 42px; background-color: rgba(5, 9, 18, 0.55); }
+.event-open .event-scrim-top { display: flex; }
+.hud-narrow .event-scrim-top, .hud-two-row .event-scrim-top, .hud-three-row .event-scrim-top { top: -16px; height: 16px; }
 .event-reopen {
     display: none; position: absolute; right: 0; top: 0; margin: 0; padding: 6px 18px; font-size: 20px; -unity-text-align: middle-center;
     background-color: var(--navy-solid); border-color: var(--gold); border-width: 1.5px; color: var(--gold-light);

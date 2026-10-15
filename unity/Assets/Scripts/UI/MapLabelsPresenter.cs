@@ -31,7 +31,7 @@ namespace Statecraft.Game.UI
     /// place (village, kibbutz, moshav) beyond DeclutterDistanceM, or when no spot fits. Its anchor class (USS) picks which
     /// of the three spots above the kit is tried first; the spots are applied as a pixel shift on the slot's translate (no
     /// class change, so no style pass). A spot fits when the pill lies wholly on screen and clear of every panel
-    /// (OccluderNames: the top bar, the left icon column, the info panel, the minimap and its map-layer caption, the event card), does not
+    /// (OccluderNames: the top bar and its hanging date plate, the left icon column, the info panel, the minimap and its map-layer caption, the event card), does not
     /// overlap an already placed pill (its last laid-out size plus MarginPx), covers at most MaxKitCover of its own kit's
     /// rectangle and of every other visible kit's, and is more than twice as far from every other visible marker's top as
     /// from its own kit (the kit alone, not the tokens on it), plus MarginPx, so no name reads as a neighbour's. Whatever
@@ -75,7 +75,7 @@ namespace Statecraft.Game.UI
         /// visible kit's.</summary>
         public const float MaxKitCover = 0.1f;
         /// <summary>The panels a pill never sits under (Game.uxml names).</summary>
-        public static readonly string[] OccluderNames = { "top-bar", "left-column", "info-panel", "minimap", "map-layer", "event-card" };
+        public static readonly string[] OccluderNames = { "top-bar", "date-plate", "left-column", "info-panel", "minimap", "map-layer", "event-card" };
 
         const string Centre = "anchor-lower-centre", Left = "anchor-lower-left", Right = "anchor-lower-right";
 

@@ -28,6 +28,16 @@ public class TopBarTests
         (1024, 1024), (960, 1080), (800, 1000), (1531, 784), (2560, 1080), (1920, 900), (1600, 757), (1366, 657), (960, 600), (390, 844),
     };
 
+    /// <summary>Windows at the one-row tier's edge (review of #624), by their logical width. The panel scales by the plain mean of
+    /// the two ratios (match 0.5: scale = (w/1920 + h/1080) / 2, logged by TheOneRowBarReachesFiveByFour), so a fullscreen
+    /// 5:4 is 1585, 4:3 is 1646 and a square 1382, not the geometric mean's 1610, 1662 and 1440. Widths 1610, 1612 and 1662,
+    /// fullscreen 5:4 and 4:3, either side of NarrowBelowPx (1642 one row, 1635 stacked), and a square window. Below about
+    /// 1640 the one-row bar wraps "Public Support" and "International Standing" with the widest values (this round's first
+    /// run, at 1563-1612), so 5:4 takes the stacked bar with its icons.</summary>
+    static readonly (int w, int h, bool oneRow)[] Boundary =
+        { (1315, 1024, false), (1317, 1024, false), (1389, 1024, true), (1280, 1024, false), (1024, 768, true),
+          (1360, 1024, true), (1350, 1024, false), (1024, 1024, false) };
+
     /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the geometric mean of the
     /// two ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.)</summary>
     static readonly (int w, int h)[] PromoShapes = { (1920, 1080), (1280, 720), (1366, 768) };
@@ -153,7 +163,7 @@ public class TopBarTests
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in Windows)
+            foreach (var (w, h) in Windows.Concat(Boundary.Select(b => (b.w, b.h))).Distinct())
                 yield return Rendered(w, h, hebrew, (root, text) =>
                 {
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
@@ -215,9 +225,31 @@ public class TopBarTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>Review of #624: the one-row bar's edge. 4:3 (1646 logical px) and 1662 keep the one-row bar with its icons; a
+    /// fullscreen 5:4 (1585) and 1610 or 1612 take the stacked bar with its icons (the one-row bar does not hold the widest
+    /// values there); just above NarrowBelowPx (1642) one row, just below (1635) stacked; a square window (1382) the stacked
+    /// bar without icons. The logical widths are logged, the numbers HudPresenter's notes quote.</summary>
+    [UnityTest]
+    public IEnumerator TheOneRowBarReachesFiveByFour()
+    {
+        var problems = new List<string>();
+        foreach (var (w, h, oneRow) in Boundary)
+            yield return Rendered(w, h, false, (root, text) =>
+            {
+                var r = root.Q("root");
+                bool narrow = r.ClassListContains(HudPresenter.NarrowClass);
+                TestContext.WriteLine($"{w}x{h}: panel {root.worldBound.width:0.0} x {root.worldBound.height:0.0}, bar {root.Q("top-bar").worldBound.width:0.0}; narrow {narrow}, compact {root.Q("top-bar").ClassListContains(HudPresenter.CompactClass)}, two rows {r.ClassListContains(HudPresenter.TwoRowClass)}");
+                if (narrow == oneRow) problems.Add($"{w}x{h} ({root.Q("top-bar").worldBound.width:0} px): {(oneRow ? "not the one-row bar" : "the one-row bar")}");
+                if (oneRow && root.Q("top-bar").ClassListContains(HudPresenter.CompactClass)) problems.Add($"{w}x{h}: the one-row bar dropped its icons");
+            });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     /// <summary>A smaller bar must not open a gap in the decision card's backdrop (the fail-open of #602's review): with a
-    /// card open, at every window size and in both languages, the backdrop and the left column's strip start at the bar's
-    /// bottom, and a point just under the bar, on the map side, is the backdrop's.</summary>
+    /// card open, at every window size and in both languages, the backdrop's full-width band starts at the bar's bottom and
+    /// reaches the column's top, where the column's strip takes over; points just under the bar are the band's; and the
+    /// hanging date plate is dimmed evenly, by the band alone, across its width (review of #624: it was dimmed from x = 72
+    /// with a hard edge).</summary>
     [UnityTest]
     public IEnumerator WithACardOpenTheBackdropMeetsTheBar()
     {
@@ -229,14 +261,31 @@ public class TopBarTests
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
                     if (!root.Q("root").ClassListContains(EventCardPresenter.ModalClass)) { problems.Add($"{at}: precondition: the card is open"); return; }
                     var bar = root.Q("top-bar").worldBound;
+                    var band = root.Q("event-scrim-top").worldBound;
                     var scrim = root.Q("event-scrim").worldBound;
                     var gutter = root.Q("event-gutter").worldBound;
-                    if (!(scrim.height > 0) || !(gutter.height > 0)) { problems.Add($"{at}: precondition: the backdrop shows"); return; }
-                    if (scrim.yMin > bar.yMax + 0.5f) problems.Add($"{at}: the backdrop starts at {scrim.yMin:0}, below the bar's bottom {bar.yMax:0}");
-                    if (gutter.yMin > bar.yMax + 0.5f) problems.Add($"{at}: the left strip starts at {gutter.yMin:0}, below the bar's bottom {bar.yMax:0}");
-                    var probe = new Vector2(root.worldBound.center.x * 0.8f, bar.yMax + 2f);
-                    var picked = root.panel.Pick(probe);
-                    if (picked == null) problems.Add($"{at}: the map is reachable at {probe}, just under the bar");
+                    var column = root.Q("left-column").worldBound;
+                    if (!(band.height > 0) || !(scrim.height > 0) || !(gutter.height > 0)) { problems.Add($"{at}: precondition: the backdrop shows"); return; }
+                    if (Mathf.Abs(band.yMin - bar.yMax) > 0.5f) problems.Add($"{at}: the band starts at {band.yMin:0}, not at the bar's bottom {bar.yMax:0}");
+                    if (band.xMin > root.worldBound.xMin + 0.5f || band.xMax < root.worldBound.xMax - 0.5f) problems.Add($"{at}: the band {band} is not the window's width");
+                    if (band.yMax < scrim.yMin - 0.5f || band.yMax < gutter.yMin - 0.5f) problems.Add($"{at}: a gap between the band {band} and the backdrop {scrim} or the strip {gutter}");
+                    if (band.yMax > column.yMin + 0.5f) problems.Add($"{at}: the band {band} reaches over the column's discs {column}");
+                    foreach (var x in new[] { 0.1f, 0.5f, 0.9f })
+                    {
+                        var probe = new Vector2(root.worldBound.width * x, bar.yMax + 2f);
+                        var picked = root.panel.Pick(probe);
+                        if (picked != root.Q("event-scrim-top")) problems.Add($"{at}: {probe}, just under the bar, is {(picked == null ? "the map" : picked.name)}, not the band");
+                    }
+                    var plate = root.Q("date-plate").worldBound;
+                    if (scrim.yMin < plate.yMax - 0.5f && scrim.xMin < plate.xMax && scrim.xMax > plate.xMin) problems.Add($"{at}: the backdrop {scrim} also dims the plate {plate}: two shades");
+                    if (gutter.yMin < plate.yMax - 0.5f && gutter.xMax > plate.xMin) problems.Add($"{at}: the column's strip {gutter} lies under the plate {plate}");
+                    if (plate.yMax > bar.yMax + 4f)
+                        foreach (var x in new[] { plate.xMin + 6f, plate.center.x, plate.xMax - 6f })
+                        {
+                            var p = new Vector2(x, (bar.yMax + plate.yMax) / 2);
+                            var picked = root.panel.Pick(p);
+                            if (picked != root.Q("event-scrim-top")) problems.Add($"{at}: the plate's hanging band at {p} is under {picked?.name ?? "nothing"}, not the band alone");
+                        }
                 }, widest: false, withEvent: true);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }

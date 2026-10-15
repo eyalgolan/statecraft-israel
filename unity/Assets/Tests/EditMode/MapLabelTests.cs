@@ -877,6 +877,36 @@ public class MapLabelTests
         finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>Review of #624: the date plate hangs below the 70 px bar, so the bar's box no longer covers it, and a pill
+    /// under the plate must hide as under any panel. The plate is made larger here so that towns certainly lie under it
+    /// (checked first, so the test is not vacuous); no shown pill may overlap it.</summary>
+    [UnityTest]
+    public IEnumerator APillUnderTheHangingPlateIsHidden()
+    {
+        var hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            PromoPose.Gameplay03.Apply(rig, map.Frame);
+            var plateEl = hd.Root.Q<VisualElement>("date-plate");
+            Assert.IsNotNull(plateEl, "the plate is named date-plate");
+            plateEl.style.height = 700f; plateEl.style.width = 900f;   // over the coast and Tel Aviv's district at gameplay03
+            for (int i = 0; i < 4; i++) yield return null;
+            yield return Settle(labels);
+            var plate = plateEl.worldBound;
+            var bar = hd.Root.Q<VisualElement>("top-bar").worldBound;
+            var under = map.Settlements.Where(t => { var p = hd.ToPanel(MarkerTopOf(t.Id), out bool front); return front && plate.Contains(p) && p.y > bar.yMax; }).Select(t => t.Id).ToList();
+            TestContext.WriteLine($"plate {plate}; towns under it: {string.Join(", ", under)}");
+            Assert.IsNotEmpty(under, "precondition: some towns lie under the plate");
+            foreach (var slot in labels.Slots.Where(Shown))
+            {
+                var r = slot.Q<Label>().worldBound;
+                Assert.IsFalse(r.Overlaps(plate), $"{slot.name} {r} is shown under the hanging plate {plate}");
+            }
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
     /// <summary>One step of the camera sweep the refresh tests share: a turn of 1.5 degrees and a zoom from 60 km out to
     /// the farthest, over 240 steps, so that every refresh sees a new view.</summary>
     void SweepStep(int i)
