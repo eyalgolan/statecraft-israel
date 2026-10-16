@@ -7,6 +7,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Fixed
+- Player builds work again (refs #680). Since #680 every `Build.*` failed with "no CRC for the bundle", because Unity
+  reads a bundle's CRC from its `.manifest` and the collection's bundles were copied into StreamingAssets without them.
+  The checks file is now written in the bundle cache and copied beside the shipped bundles.
+
 ### Changed
 - Sourcing audit of the MVP-window office rows (#457): the First Government row no longer cites Wikipedia (the
   Knesset's position records, the 14 May 1948 minutes, Ben-Gurion's diary page, the plenum records and the
