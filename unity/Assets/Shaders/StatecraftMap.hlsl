@@ -127,8 +127,23 @@ static const float ScWaveTilt = 0.6;                             // wave normal 
 // on the northern frontage (promo 03: 12.3, band 6-30); at 2.4 km it reads 30.8 and 25.0. The zone is one width along the
 // whole coast, so 2.4 km is the widest step that keeps the north at least 5 px under 30 (gameplay03 editor renders: 2.4 km
 // reads 29 px south and 24 north, 2.7 km 33 and 28); a wider surf south of Jaffa only is an owner option on #690.
+// #690 option C (owner, 16 October 2026: "merge, then do C next"): the surf is wide on the dune coasts and narrow under
+// the kurkar, as promo 03 draws it (44 px south of Jaffa, 12.3 px on the northern frontage at gameplay03). One zone width
+// for the whole coast had to trade the two: 2.4 km read 30.8 px south and 25.0 north, with 3 or more evenly spaced white
+// lines in 40% of the frontage's rows (coast_measure's stripe_rows; promo 03 0.05). The dune coasts are DuneCoasts.json's
+// bands, which MapShaderGlobals hands over in map metres (_ScDuneRect: x0, x1, z0, z1; _ScDuneRamp: the ramp east-west and
+// north-south): ScSurfDuneM inside them, ScSurfM elsewhere, smoothstepped across each band's ramp as DuneCoasts.WeightAt
+// is. Chosen on gameplay03 editor renders (median of 3 moments). ScSurfM 1.5 km: 15.9 px on the frontage, foam share
+// 0.66, stripe_rows 0.07 (promo 03: 12.3 px, 0.63, 0.05). 1.2 km read 12.2 px but packed the foam into a near-solid band
+// (share 0.76; SeaTests' lace test read 0.81 at 32.08 N against its 0.7 bound), so the frontage keeps 1.5 km. ScSurfDuneM
+// 3.0 km: 35.6 px south, 2 lines, stripe_rows 0.45 (3.3 km: 37.3, 3 lines, 0.56; 3.6 km: 40.9, 3 lines, 0.59; promo 03:
+// 44.0, 2 lines, 0.30); the owner chose 3.0 km, with breaking up the evenly spaced lines before any wider surf (#716).
 float _ScSeaFoam;                                                // 1 = on, 0 = off (the "foam" toggle)
-static const float ScSwashM = 180.0, ScSurfM = 2400.0, ScBreakerSpacingM = 450.0, ScBreakerRate = 0.05, ScFoamWhite = 0.95;
+float4 _ScDuneRect[4];
+float4 _ScDuneRamp[4];
+float _ScDuneCount;
+static const float ScSurfDuneM = 3000.0;
+static const float ScSwashM = 180.0, ScSurfM = 1500.0, ScBreakerSpacingM = 450.0, ScBreakerRate = 0.05, ScFoamWhite = 0.95;
 static const float ScLaceCellM = 200.0, ScLaceCover = 0.62, ScLaceEdge = 0.25;
 // Sea round 2 (#388): the far sea's texture, which promo 02 and 03 show at the gameplay and overview zooms where the waves
 // above have faded to a smooth surface (sea detail 0.013 against promo 03's 0.060 at gameplay03, 0.019 against 0.063 at
@@ -197,6 +212,21 @@ float ScTriSqBox(float x, float w)
 
 // The water's clock: Unity's time, or the pinned seconds (MapShaderGlobals.PinWaterTime).
 float ScWaterClock() { return _ScWaterTime.y > 0.5 ? _ScWaterTime.x : _Time.y; }
+
+// 0 off the dune coasts, 1 inside a band (DuneCoasts.WeightAt's smoothstep on each axis, in map metres). A slot past
+// _ScDuneCount reads 0 (its zero ramp is never used).
+float ScDuneWeight(float2 mapM)
+{
+    float w = 0.0;
+    [unroll] for (int i = 0; i < 4; i++)
+    {
+        float4 r = _ScDuneRect[i]; float2 ramp = _ScDuneRamp[i].xy;
+        float b = smoothstep(r.x, r.x + ramp.x, mapM.x) * (1.0 - smoothstep(r.y - ramp.x, r.y, mapM.x))
+            * smoothstep(r.z, r.z + ramp.y, mapM.y) * (1.0 - smoothstep(r.w - ramp.y, r.w, mapM.y));
+        w = max(w, (float)i < _ScDuneCount ? b : 0.0);
+    }
+    return w;
+}
 
 // The breakers' phase (cycles; crests at whole numbers) and its box width: fwidth(phase) x ScBreakerFilterPx. The phase's
 // true gradient is not 1 / ScBreakerSpacingM: its noise term adds up to 0.0025 cycles/m and the 8-bit coast's slope varies
@@ -306,7 +336,7 @@ float3 ScWaterShade(float coast, float elevM, float3 positionWS, float2 mapM, fl
     // Sea round 2: the swash line is never under 1.5 pixels wide, so the white rim reads at the overview as well.
     float swashM = max(ScSwashM, 1.5 * footprintM);
     float swash = 1.0 - smoothstep(swashM, swashM * 1.8, offshoreM);
-    float zone = 1.0 - smoothstep(ScSwashM, ScSurfM, offshoreM);
+    float zone = 1.0 - smoothstep(ScSwashM, lerp(ScSurfM, ScSurfDuneM, ScDuneWeight(mapM)), offshoreM);
     float crest = ScTriSqBox(breakers.x, breakers.y);
     float broken = smoothstep(0.3, 0.7, ScNoise(mapM / 300.0 + float2(0.0, time * 0.02)));
     float lace = ScNoise(mapM / ScLaceCellM + float2(5.1, 2.3) + float2(time * 0.03, 0.0));

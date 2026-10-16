@@ -539,7 +539,7 @@ public class SeaTests
     }
 
     /// <summary>TheSurfWalksSeeTheBreakersAndNotTheWhitecaps' reach: 60 px is about 2.1 km at the walk's 35 m a pixel,
-    /// past the surf under the kurkar (1.2 km).</summary>
+    /// past the surf under the kurkar (1.5 km, about 43 px).</summary>
     const int FleckFromPx = 60;
 
     /// <summary>TheSurfIsWideOnTheDuneCoastAndNarrowUnderTheKurkar's bound: promo 03's ratio is 0.28 (12.3 / 44), one width
