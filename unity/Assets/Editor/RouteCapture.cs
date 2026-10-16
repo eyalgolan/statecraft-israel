@@ -23,7 +23,7 @@ public static class RouteCapture
         ("sorek", 35.07, 31.755, 10000f, 0f),      // the Jaffa–Jerusalem line in the Sorek gorge (review B15)
         ("jericho", 35.36, 31.80, 14000f, 0f),     // the Jerusalem–Jericho road's descent (review A-I1)
         ("jezreel", 35.55, 32.60, 16000f, 0f),     // the Jezreel Valley line's Jordan end, Beisan to Gesher (#252)
-        ("jerusalem", 35.234, 31.777, 12000f, 0f), // the Old City's walls and the roads that end at them (#319)
+        ("jerusalem", 35.234, 31.777, 32000f, 0f), // the Old City's walls and the roads that end at them (#319)
     };
 
     public static void Close()
