@@ -176,6 +176,15 @@ public class PromoHudTests
                 hud = new HudPresenter(root, bridge, Text);
                 bridge.EndTurn();                                       // real changes on every meter that moved
                 for (int i = 0; i < 6; i++) yield return null;
+                if (threeRow)
+                {
+                    // #380 (the owner's choice, 16 October 2026): a phone's seven meters take two lines with the turn-1 values
+                    // too, so the bar's second meter line is never an empty band. A line's meters share their centre (.meters
+                    // align-items: center); their tops differ with their captions' lines.
+                    var lines = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None)
+                        .Select(m => Mathf.Round(m.worldBound.center.y)).Distinct().Count();
+                    Assert.AreEqual(2, lines, $"{w}x{h}: the meters' lines with the turn-1 values");
+                }
                 if ((w, h) == (1920, 1080) || (w, h) == (2560, 1080))
                 {
                     // Review P1: with typical (turn-1) values at 16:9, and at 21:9 (#398), the bar has room for the promo's sizes.
