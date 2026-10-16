@@ -82,11 +82,11 @@ namespace Statecraft.Game.Map.Routes
         /// lot or crown still keeps about 130 m from the visible dirt.</summary>
         public const float RoadCorridorMarginM = 40f;
 
-        /// <summary>Every route's drawn line (world x, z; <see cref="Drawn"/>) with the half-width kits must keep clear of: half the drawn width plus
+        /// <summary>Every route's traced line (world x, z; <see cref="World"/>, not cut as <see cref="Drawn"/> is) with the half-width kits must keep clear of: half the drawn width plus
         /// <see cref="CorridorMarginM"/> (<see cref="RoadCorridorMarginM"/> for roads). All routes, whatever their window: the
         /// kits are built once, not per date, so a route that appears later (the Burma Road) has its corridor from the start.</summary>
         public static List<(List<Vector2> line, float halfWidth)> Corridors(GeoFrame frame, IEnumerable<RoutePath> routes) =>
-            routes.Select(r => (Drawn(frame, r), WidthOf(r.Kind) / 2f + (r.Kind == RoutePaths.Road ? RoadCorridorMarginM : CorridorMarginM))).ToList();
+            routes.Select(r => (World(frame, r), WidthOf(r.Kind) / 2f + (r.Kind == RoutePaths.Road ? RoadCorridorMarginM : CorridorMarginM))).ToList();
 
         public static float WidthOf(string kind) => kind switch
         {
@@ -224,13 +224,14 @@ namespace Statecraft.Game.Map.Routes
             return w;
         }
 
-        /// <summary>A route's line as the map draws it, its ribbon and its kit corridor: <see cref="World"/>, with a road's ends
+        /// <summary>A route's line as the map draws its ribbon: <see cref="World"/>, with a road's ends
         /// cut at the walls of Jerusalem's symbolic Old City (#319). The walled square (SettlementKits.OldCityWalls) is 4 km
         /// across, about 4 times the real Old City, so the real 1948 roads that start outside the real walls, by New Gate and
         /// Jaffa Gate, fall inside it. Cut there, each road ends on the wall line, where the walls leave it a gate, and the
         /// traced data keeps the real lines. Only a road's ends are cut: a road that ran through the square would keep its
         /// middle, and RouteTests.TheRoadsStopAtTheOldCityWalls fails on it. The railway is not cut (its terminus is the
-        /// station).</summary>
+        /// station). The corridors (<see cref="Corridors"/>) keep the traced lines, so the kits and the units stand where
+        /// they did: inside the walls the roads' clear ways read as the streets from the gates.</summary>
         public static List<Vector2> Drawn(GeoFrame frame, RoutePath route)
         {
             var line = World(frame, route);

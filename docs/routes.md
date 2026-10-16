@@ -151,8 +151,8 @@ measurement in `docs/units.md`:
 (Jaffa–Jerusalem, Hebron, Nablus and Jericho) meet at a point about 60 m west of New Gate, outside the real walls, and
 none crosses the real walled city, but near the city they fall inside the drawn square. The data keeps the real lines; the map cuts them instead (`RouteLayer.Drawn`):
 - each road's run inside the square is cut off at the wall line, where the walls leave a gate for it;
-- the ribbons and the kits' corridors both use the cut line, so the houses inside the walls are no longer kept off roads
-  that are not drawn;
+- only the ribbons are cut; the corridors the kits and the units keep clear of stay on the traced lines, so no building
+  or unit moves, and inside the walls the roads' clear ways read as the streets from the gates;
 - only a road's ends are cut, so a road traced through the square would fail
   `RouteTests.TheRoadsStopAtTheOldCityWalls` and `test_no_road_runs_inside_the_old_city_walls`;
 - the railway is not cut: it ends at the station, inside the drawn square.

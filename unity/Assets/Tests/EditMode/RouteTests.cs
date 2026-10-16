@@ -136,7 +136,7 @@ public class RouteTests
                 }
                 // Roads keep main's drape: every vertex clears the ground under it by the clearance (the railways' clearance
                 // under their rails is TheRailClearsTheGroundUnderItsRailsAndRampsItsWidth).
-                var roadCheck = RouteLayer.Ribbon(routes.Where(r => r.Kind != RoutePaths.Rail).Select(r => (RouteLayer.World(map.Frame, r), RouteLayer.WidthOf(r.Kind))), data, origin, "roads");
+                var roadCheck = RouteLayer.Ribbon(routes.Where(r => r.Kind != RoutePaths.Rail).Select(r => (RouteLayer.Drawn(map.Frame, r), RouteLayer.WidthOf(r.Kind))), data, origin, "roads");
                 Assert.AreEqual(roadVerts, roadCheck.vertexCount);
                 foreach (var v in roadCheck.vertices)
                     Assert.GreaterOrEqual(v.y - RouteLayer.Ground(data, origin, new Vector2(v.x, v.z)), RouteLayer.ClearanceM - 0.01f);
@@ -455,34 +455,38 @@ public class RouteTests
     }
 
     /// <summary>Jerusalem's symbolic Old City is a walled square 4 km across (SettlementKits.OldCityWalls), so the real 1948
-    /// roads that start by Jaffa Gate fall inside it. The map cuts each road at the walls (#319): no road corridor (the
-    /// line the ribbons and the kits use) has a point inside the square, and the four roads that start there each end on
-    /// the wall line. The railway is not a road and keeps its terminus.</summary>
+    /// roads that meet by New Gate fall inside it. The map cuts each road's ribbon at the walls (#319): no road ribbon vertex
+    /// lies inside the square by more than half a road's width (a ribbon's end section is square to the road, so a road
+    /// meeting the wall at a slant reaches that far in, under the wall), and the four roads that meet there each reach to
+    /// within 300 m outside it. The railway is not a road and keeps its station.</summary>
     [Test]
     public void TheRoadsStopAtTheOldCityWalls()
     {
-        var meta = HeightmapLoader.Load(Paths.StreamingMap).meta;
-        var size = MapBuilder.TerrainSize(meta);
-        var frame = new GeoFrame(meta.lon0, meta.lon1, meta.lat0, meta.lat1, size.x, size.z);
-        var routes = RoutePaths.Parse(CommittedYaml, Bounds);
-        var corridors = RouteLayer.Corridors(frame, routes);
-        var (c, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(frame);
-        Assert.Greater(half, 1000f, "the square is not empty");
-        float Depth(Vector2 p) => half - Mathf.Max(Mathf.Abs(p.x - c.x), Mathf.Abs(p.y - c.y));   // > 0 inside the walls
-        var inside = new List<string>();
-        var atWalls = new List<string>();
-        for (int i = 0; i < routes.Count; i++)
+        var map = BuildMap();
+        try
         {
-            if (routes[i].Kind != RoutePaths.Road) continue;
-            var line = corridors[i].line;
-            for (int k = 0; k + 1 < line.Count && !inside.Contains(routes[i].Id); k++)
-                for (int t = 0; t <= 20; t++)
-                    if (Depth(Vector2.Lerp(line[k], line[k + 1], t / 20f)) > 0.5f) { inside.Add(routes[i].Id); break; }
-            if (line.Count > 0 && (Mathf.Abs(Depth(line[0])) < 0.5f || Mathf.Abs(Depth(line[line.Count - 1])) < 0.5f)) atWalls.Add(routes[i].Id);
+            var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
+            var (c, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
+            Assert.Greater(half, 1000f, "the square is not empty");
+            float allowed = RouteLayer.RoadWidthM / 2f;
+            var inside = new SortedSet<string>(); var reach = new SortedSet<string>();
+            foreach (var plan in RouteLayer.Plan(RoutePaths.Parse(CommittedYaml, Bounds)).Where(p => p.Look == "Roads"))
+            {
+                var g = RouteLayer.Derive(plan, map.Frame, data, origin);
+                foreach (var span in g.Routes)
+                    for (int v = span.FirstVertex; v < span.FirstVertex + span.VertexCount; v++)
+                    {
+                        var p = g.Vertices[v];
+                        float d = Mathf.Max(Mathf.Abs(p.x - c.x), Mathf.Abs(p.z - c.y));   // under half: inside the walls
+                        if (d < half - allowed) inside.Add(span.Id);
+                        else if (d < half + 300f) reach.Add(span.Id);
+                    }
+            }
+            CollectionAssert.IsEmpty(inside, "road ribbons inside the Old City's walls");
+            CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
+                "jerusalem_jericho_road" }, reach, "the roads that reach the walls");
         }
-        CollectionAssert.IsEmpty(inside, "roads inside the Old City's walls");
-        CollectionAssert.AreEquivalent(new[] { "jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
-            "jerusalem_jericho_road" }, atWalls, "the roads that end at the walls");
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>Kits and routes together (#179 on main): no kit building, landmark or tree reaches into any route's
