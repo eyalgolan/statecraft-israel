@@ -19,7 +19,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   accepted on #569), with the CBS working share where one exists and labelled design values for the gaps (Q-START-1).
   Every value carries a status (sourced, derived, wikipedia-only or design) and the loader refuses a historical value
   without its sources and date. People become units to the nearest 1,000, at least 1 for a town with people
-  (Q-START-2): 511 units in all.
+  (Q-START-2): 511 units in all. With 211 employed units paying job income, `spending_per_capita_per_year` is re-derived
+  from the same Michaely anchor (IL 98.4m of internal debt over 1950-51) with that income included: 0.0001036, was
+  0.000093 (owner, 16 October 2026, #821, option (a)); the run's 1950-51 debt rise is 98.7m. Every golden moves
+  (docs/determinism.md, rebaseline history).
 - The top bar's Money figure is labelled net: "Money (net)", "כסף (נטו)" in Hebrew, and its tooltip says the same (refs
   #681; owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"). The value is unchanged,
   cash minus debt; the Budget screen still shows money and debt separately.
