@@ -34,12 +34,15 @@ namespace Statecraft.Game.Map
         static double Smooth(double t) { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); }
 
         /// <summary>0 off the dune coasts, 1 inside a band, ramped at its edges.</summary>
-        public static float WeightAt(double lon, double lat)
+        public static float WeightAt(double lon, double lat) => (float)Weight(lon, lat);
+
+        /// <summary><see cref="WeightAt"/> in double precision, as tools/terrain_bake.py computes it (BeachBands.ExtraAt).</summary>
+        public static double Weight(double lon, double lat)
         {
             double w = 0;
             foreach (var b in Bands)
                 w = Math.Max(w, Smooth((lon - b.lon0) / b.ramp) * Smooth((b.lon1 - lon) / b.ramp) * Smooth((lat - b.lat0) / b.ramp) * Smooth((b.lat1 - lat) / b.ramp));
-            return (float)w;
+            return w;
         }
 
         /// <summary>The bands in map metres from the south-west corner, as the water pass reads them: per band (x0, x1, z0, z1)

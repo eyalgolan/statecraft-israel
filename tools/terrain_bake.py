@@ -54,10 +54,13 @@ COAST_RANGE_M = 12000.0        # StatecraftMap.hlsl ScCoastRangeM
 # the coast from Tel Aviv northwards (Wikipedia: "Kurkar", "Haifa Bay", "Holon", "Nitzanim", retrieved 2026-10-15). The
 # widths are art direction, and the cut-off at Jaffa is interpolated between Jaffa (32.05 N) and Tel Aviv, not a sourced
 # line. Each band is (lon west, lon east, lat south, lat north, ramp in degrees): the extra width is full inside it and
-# falls to 0 over the ramp at each edge. Unity's tree keep-out reads a twin (Kits/BeachBands.cs, pinned by a test).
+# falls to 0 over the ramp at each edge. The bands are DuneCoasts.json (#690: the one definition, which Unity's kits and the
+# water pass's surf read too): Jaffa south to the map's southern coast (full south of 32.03 N), and Haifa Bay from the
+# Kishon's mouth to the Na'aman's (32.91 N).
 BEACH_EXTRA_M = 1800.0         # ScShore's 900 m beach becomes about 2.7 km
-BEACH_BANDS = ((34.0, 34.86, 31.0, 32.07, 0.04),     # Jaffa south to the map's southern coast (full south of 32.03 N)
-               (35.02, 35.2, 32.77, 32.91, 0.02))    # Haifa Bay, from the Kishon's mouth to the Na'aman's (32.91 N)
+DUNE_COASTS = ROOT / "unity" / "Assets" / "Resources" / "Map" / "DuneCoasts.json"
+BEACH_BANDS = tuple((b["lon0"], b["lon1"], b["lat0"], b["lat1"], b["ramp"])
+                    for b in json.loads(DUNE_COASTS.read_text(encoding="utf-8"))["bands"])
 # Acre was not dune country (owner, 16 October 2026): Haifa and Acre are the bay's capes and its centre is lined with dunes
 # (Wikipedia, "Haifa Bay"); the Na'aman empties into the bay south of Acre (Wikipedia, "Na'aman River" and "Acre, Israel"),
 # at 32.909 N 35.081 E (he.wikipedia, "נחל נעמן"; all retrieved 2026-10-16). So the bay's band ends at the Na'aman's mouth,
