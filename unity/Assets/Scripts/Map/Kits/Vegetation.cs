@@ -119,6 +119,8 @@ namespace Statecraft.Game.Map.Kits
             // Sea round 3 (#388): no citrus or olive crown on the beach's full sand (BeachBands; owner: "keep them off the
             // sand"). Set only round the groves and olive cells near the sea: SeaDistance costs up to 48 height samples.
             bool nearSand = false;
+            // The sand yields to every settlement's plot reach (option (c), owner 16 October 2026), as the bake's beach_keep.
+            var reaches = BeachBands.Reaches(settlements, ground);
             // Sea within r (m) of (x, z): SeaDistance's sea test on its outer ring of 12 directions only (a quarter of its
             // samples; the boot's trees phase rose 37 ms with all four rings), which finds a straight shore r away by
             // r / cos 15 degrees.
@@ -142,7 +144,7 @@ namespace Statecraft.Game.Map.Kits
                 // grove rows through blocks).
                 // Nor into a railway's or road's corridor (the routes run through the groves otherwise).
                 float crown = CrownRadiusM(k) * s * size * 1.15f;
-                if (ground.OnLot(x, z, crown) || ground.OnRoute(new Vector2(x, z), crown) || nearSand && SeaWithin(x, z, BeachBands.FullSandAt(ground.Frame, x, z) + crown)) return;
+                if (ground.OnLot(x, z, crown) || ground.OnRoute(new Vector2(x, z), crown) || nearSand && SeaWithin(x, z, BeachBands.FullSandAt(ground.Frame, x, z, reaches) + crown)) return;
                 float y = ground.Y(x, z);
                 float yaw = float.IsNaN(yawDeg) ? spin : yawDeg;
                 trees.Add((k, Matrix4x4.TRS(new Vector3(x, y, z), Quaternion.Euler(0, yaw, 0), new Vector3(scale, scale * stretch * squash, scale))));
@@ -228,7 +230,7 @@ namespace Statecraft.Game.Map.Kits
                         float e = ground.ElevM(px, pz);
                         if (e < (plain ? 5f : 40f) || e > 950f || ground.Water(px, pz) || ground.InTown(px, pz, 0.9f) || ground.Slope(px, pz, 600f) > 0.35f) continue;
                         int n = rnd.Range(1, 4);
-                        nearSand = SeaWithin(px, pz, BeachBands.MaxFullSandM + 0.71f * cell + CrownRadiusM(TreeKind.Olive) * s * 1.15f);
+                        nearSand = SeaWithin(px, pz, BeachBands.MaxFullSandM + 0.71f * cell + CrownRadiusM(TreeKind.Olive) * s * size * 1.15f);
                         for (int i = 0; i < n; i++)
                         {
                             float tx = px + rnd.Range(-0.5f, 0.5f) * cell, tz = pz + rnd.Range(-0.5f, 0.5f) * cell;

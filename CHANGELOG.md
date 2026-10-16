@@ -539,8 +539,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   about 2.5-3 km, trees kept off the sand): from Jaffa south and along Haifa Bay the sand reaches about 2.7 km inland, as
   promo 03 draws it south of Jaffa; from Tel Aviv north, under the kurkar, it stays 900 m. `tools/terrain_bake.py` bakes
   the extra width into `coast.png`'s land side past the wet sand, so no shader changes; the water side is unchanged. Citrus
-  groves and olives keep their crowns off the beach's full sand (`BeachBands`, the bake's C# twin). `tools/coast_measure.py`
-  measures beach width, foam and lace on a screenshot against bands set from promo 03.
+  groves and olives keep their crowns off the beach's full sand (`BeachBands`, the bake's C# twin). Each settlement's own
+  lots and fields stay off the sand (owner, 16 October 2026, option (c)): the extra width yields to every game settlement's
+  and 1948 locality's plot reach, where the beach stays 900 m, and comes back over 1 km beyond it. Haifa Bay's band ends
+  at the Na'aman's mouth, so Acre, a cape of the bay and not dune country, keeps the 900 m beach.
 - The map's region files (the 1948 sub-districts, the 1949 armistice lines, the 1948-49 control areas) are read
   from baked runtime forms at boot instead of being parsed as YAML (`tools/regions_bake.py`, refs #321), as the
   localities and the route paths are. The sub-districts are read once, for the camps and the region layers. A stale,

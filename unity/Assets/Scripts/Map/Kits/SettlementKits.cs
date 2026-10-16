@@ -198,9 +198,12 @@ namespace Statecraft.Game.Map.Kits
                 int n = landmarks[s.Id] + PlaceHouses(s, centres[s.Id], ground, km, lots, ref rnd, merged, out var scatter, out var palms);   // towns round 2: plot lattices
                 gameTowns.Add((s, km, n, scatter, palms));
             }
+            // The dune coasts' extra sand yields to the places' own ground (BeachBands, option (c)); a camp is not a place, so
+            // its tents keep off that sand instead.
+            var reaches = camps.Count > 0 ? BeachBands.Reaches(order, ground) : new List<(Vector2, float)>();
             foreach (var area in camps)
             {
-                var (c, t) = Encampments(area, ground, lots, Tile);
+                var (c, t) = Encampments(area, ground, lots, Tile, reaches);
                 result.Camps += c; result.Tents += t;
             }
             // Last, the small towns' fallback houses (#317), largest place first: after every place's own houses and the camps,
@@ -660,8 +663,9 @@ namespace Statecraft.Game.Map.Kits
             k >= 1f ? b : new Spec { w = b.w * k, d = b.d * k, h = b.h, storeys = b.storeys, lotR = b.lotR * k };
 
 
-        /// <summary>How far (m) a new town's buildings keep back from the sea: the beach strip (promo-sea's ScBeachM, 650 m on
-        /// average) stays sand, with its palms, as in promo 03's Tel Aviv. The old towns (Jaffa, Acre, Gaza, Haifa's lower
+        /// <summary>How far (m) a new town's buildings keep back from the sea: the beach strip (ScShore's ScBeachM, 900 m on
+        /// average; on the dune coasts the extra width yields to a town's own ground, terrain_bake.py's beach_keep) stays
+        /// sand, with its palms, as in promo 03's Tel Aviv. The old towns (Jaffa, Acre, Gaza, Haifa's lower
         /// town by the port) meet the water.</summary>
         const float BeachSetbackM = 700f;
 
@@ -1286,7 +1290,8 @@ namespace Statecraft.Game.Map.Kits
         /// this clear of every unit token (KitGround.Tokens).</summary>
         public const float CampReach = 64f;
 
-        static (int camps, int tents) Encampments(Localities.Area area, KitGround ground, Lots lots, System.Func<Vector2, KitMesh> tile)
+        static (int camps, int tents) Encampments(Localities.Area area, KitGround ground, Lots lots, System.Func<Vector2, KitMesh> tile,
+            List<(Vector2 centre, float reach)> reaches)
         {
             if (area.Hexes.Count == 0) return (0, 0);
             float m = KitScale.Houses, hex = ground.HexSizeM;
@@ -1317,6 +1322,9 @@ namespace Statecraft.Game.Map.Kits
                         float tyaw = yaw + rnd.Range(-20f, 20f);
                         float lotR = 0.55f * Mathf.Sqrt(tw * tw + td * td);
                         if (ground.Water(p.x, p.y) || !FreeAt(lots, p, lotR) || ground.OnRoute(p, lotR) || ground.OnGridMark(p, lotR)) continue;
+                        // Nor on the dune coasts' extra sand (option (c), #685), which yields to the places but not to a camp.
+                        float sand = BeachBands.FullSandAt(ground.Frame, p.x, p.y, reaches);
+                        if (sand > BeachBands.FullSandM && ground.SeaDistance(p.x, p.y, sand + lotR) != float.MaxValue) continue;
                         lots.Add(new Lot { c = p, r = lotR, id = "camp:" + area.Subdistrict });
                         var (bottom, top) = GroundSpan(p, tyaw, tw, td, ground, m);
                         // Goat-hair cloth, a warm dark brown rather than black: at the overview a black row read as a scratch.

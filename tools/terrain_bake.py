@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["numpy==2.5.3", "pillow==12.3.0"]
+# dependencies = ["numpy==2.5.3", "pillow==12.3.0", "pyyaml==6.0.3"]
 # ///
 """Heightmap -> the baked shading textures of the terrain and sea shaders (no network: reads only the committed heightmap).
 
@@ -15,7 +15,9 @@ Reads unity/Assets/StreamingAssets/map/heightmap.r16z (heightmap_codec) + height
       water below LAKE_BELOW_M covering at least MIN_LAKE_AREA_KM2), the rules tools/hexgrid.py uses for its sea and lake
       biomes; the area floor drops the Karameh reservoir (0.3 km2, built in the 1990s) and dike slivers between the pans.
       The land side is beach-scaled, not metres, on the dune coasts (BEACH_BANDS): beach_widened takes BEACH_EXTRA_M out
-      of the distance past the wet sand, so the shader's beach (ScShore) reaches that much further inland there
+      of the distance past the wet sand, so the shader's beach (ScShore) reaches that much further inland there, except
+      over a settlement's own ground (beach_keep: its plots' reach, from content/map/settlements_1948.yaml,
+      localities_1948.yaml and settlement_population_1945.yaml), where the beach stays ScShore's own
 Heights are multiplied by VERTICAL_EXAGGERATION (MapBuilder.VerticalExaggeration) so the shading matches the relief the
 game draws. Texel (j, i) is the mean of heightmap samples j..j+1, i..i+1, so its centre sits at terrain UV (j + 0.5) / 2048.
 Distances are exact Euclidean (a Felzenszwalb-Huttenlocher two-pass transform) with each axis' own sample spacing (about
@@ -29,10 +31,12 @@ import numpy as np
 from PIL import Image
 
 import heightmap_codec
+import yaml12
 
 ROOT = Path(__file__).resolve().parents[1]
 MAP_DIR = ROOT / "unity" / "Assets" / "StreamingAssets" / "map"
 OUT_DIR = ROOT / "unity" / "Assets" / "Textures" / "Map"
+CONTENT_MAP = ROOT / "content" / "map"
 VERTICAL_EXAGGERATION = 3.0
 AO_RADIUS_M = 2000.0
 SKY_RADIUS_M = 12000.0
@@ -53,7 +57,17 @@ COAST_RANGE_M = 12000.0        # StatecraftMap.hlsl ScCoastRangeM
 # falls to 0 over the ramp at each edge. Unity's tree keep-out reads a twin (Kits/BeachBands.cs, pinned by a test).
 BEACH_EXTRA_M = 1800.0         # ScShore's 900 m beach becomes about 2.7 km
 BEACH_BANDS = ((34.0, 34.86, 31.0, 32.07, 0.04),     # Jaffa south to the map's southern coast (full south of 32.03 N)
-               (35.02, 35.2, 32.77, 32.94, 0.02))    # Haifa Bay, from the Kishon's mouth to Acre
+               (35.02, 35.2, 32.77, 32.91, 0.02))    # Haifa Bay, from the Kishon's mouth to the Na'aman's (32.91 N)
+# Acre was not dune country (owner, 16 October 2026): Haifa and Acre are the bay's capes and its centre is lined with dunes
+# (Wikipedia, "Haifa Bay"); the Na'aman empties into the bay south of Acre (Wikipedia, "Na'aman River" and "Acre, Israel"),
+# at 32.909 N 35.081 E (he.wikipedia, "נחל נעמן"; all retrieved 2026-10-16). So the bay's band ends at the Na'aman's mouth,
+# full sand to 32.89 N, and Acre (32.928 N) keeps ScShore's own beach.
+# Option (c) (owner, 16 October 2026): each settlement's own lots and fields stay off the sand. The extra width yields to
+# every game settlement's and 1948 locality's plot reach, as SettlementKits sizes it (FootprintRadiusM x PlotReach: the disc
+# its plots fill and PaintGround tints; its fields are the land use under it), and comes back over BEACH_YIELD_RAMP_M beyond.
+# Inside the reach the beach is ScShore's own 900 m, behind which the towns keep their 700 m setback, as before the round.
+PEOPLE_PER_HEX, MIN_HEXES, PLOT_REACH = 60000.0, 0.08, 1.1   # SettlementKits.PeoplePerHex, MinHexes, PlotReach (pinned)
+BEACH_YIELD_RAMP_M = 1000.0
 BEACH_KNEE_M = (230.0, 280.0)  # metres past the wet sand (ScShore: 60-160 m) and past a shore texel's diagonal sample
                                # (hypot(79, 211) m), so every texel the waterline crosses keeps its metric value; the extra
                                # is gone by 280 m, which encodes as level 130 (235 m) at most, inside ScShore's narrowest
@@ -266,33 +280,74 @@ def beach_widened(d: np.ndarray, extra: np.ndarray) -> np.ndarray:
     return np.where((d <= a) | (extra <= 0), d, np.where(d >= b + extra, d - extra, squeezed))
 
 
+def plot_reaches(meta: dict, content: Path = CONTENT_MAP) -> list[tuple[float, float, float]]:
+    """(x, z, reach) in world metres (GeoFrame.ToWorld: x east of lon0, z north of lat0) of every game settlement and 1948
+    locality: SettlementKits.FootprintRadiusM (a disc of max(MIN_HEXES, population / PEOPLE_PER_HEX) hexes) x PLOT_REACH,
+    the population as KitPopulation reads it (settlement_population_1945.yaml; a locality's own row; none: the smallest)."""
+    pop = {r["id"]: r.get("population") for r in yaml12.load((content / "settlement_population_1945.yaml").read_text())["settlements"]}
+    towns = yaml12.load((content / "settlements_1948.yaml").read_text())["settlements"]
+    places = yaml12.load((content / "localities_1948.yaml").read_text())["places"]
+    hex_m = json.loads((content / "hexes.json").read_text())["hex_size_km"] * 1000
+    hex_area = 1.5 * math.sqrt(3) * hex_m * hex_m
+    w_m, l_m = meta["width_km"] * 1000, meta["length_km"] * 1000
+    out = []
+    for s, n in [(t, pop.get(t["id"]) or 0) for t in towns] + [(p, p["population"]) for p in places]:
+        r = math.sqrt(max(MIN_HEXES, n / PEOPLE_PER_HEX) * hex_area / math.pi)
+        out.append(((s["lon"] - meta["lon0"]) / (meta["lon1"] - meta["lon0"]) * w_m,
+                    (s["lat"] - meta["lat0"]) / (meta["lat1"] - meta["lat0"]) * l_m, r * PLOT_REACH))
+    return out
+
+
+def beach_keep(x: np.ndarray, z: np.ndarray, reaches: list[tuple[float, float, float]]) -> np.ndarray:
+    """How much of the extra width stands on the grid of world x (columns, east) by z (rows): 0 inside a settlement's plot
+    reach, rising (smoothstep) to 1 at BEACH_YIELD_RAMP_M beyond it. Each disc is evaluated only in its own window."""
+    keep = np.ones((len(z), len(x)))
+    for cx, cz, reach in reaches:
+        out = reach + BEACH_YIELD_RAMP_M
+        cols, rows = np.nonzero(np.abs(x - cx) < out)[0], np.nonzero(np.abs(z - cz) < out)[0]
+        if len(cols) == 0 or len(rows) == 0:
+            continue
+        win = np.s_[rows[0]:rows[-1] + 1, cols[0]:cols[-1] + 1]
+        d = np.hypot(x[None, cols[0]:cols[-1] + 1] - cx, z[rows[0]:rows[-1] + 1, None] - cz)
+        keep[win] = np.minimum(keep[win], smoothstep01((d - reach) / BEACH_YIELD_RAMP_M))
+    return keep
+
+
 def encode_coast(signed_m: np.ndarray, range_m: float = COAST_RANGE_M) -> np.ndarray:
     return to_u8(0.5 + signed_m / (2 * range_m))
 
 
-def bake(elev: np.ndarray, meta: dict) -> tuple[np.ndarray, np.ndarray]:
+def coast(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]] = ()) -> np.ndarray:
+    """coast.png's levels (L8, 2048 x 2048, row 0 = north); the beach's extra width yields to <reaches> (plot_reaches;
+    main() passes the map's)."""
     dx, dy = spacing_m(meta)
-    z = elev * np.float32(VERTICAL_EXAGGERATION)
-    ao, sky, curv = openness(z, dx, dy, AO_RADIUS_M), openness(z, dx, dy, SKY_RADIUS_M), curvature(z, dx, dy)
     water = water_mask(elev, dx, dy)
     h, w = elev.shape
     lon = meta["lon0"] + np.arange(w)[None, :] / (w - 1) * (meta["lon1"] - meta["lon0"])
     lat = meta["lat1"] - np.arange(h)[:, None] / (h - 1) * (meta["lat1"] - meta["lat0"])   # row 0 = north
-    land_m = beach_widened(distance_to(water, dx, dy, COAST_RANGE_M), beach_extra_m(lon, lat))
+    extra = beach_extra_m(lon, lat) * beach_keep(np.arange(w) * dx, (h - 1 - np.arange(h)) * dy, reaches)
+    land_m = beach_widened(distance_to(water, dx, dy, COAST_RANGE_M), extra)
     signed = np.where(water, -distance_to(~water, dx, dy, COAST_RANGE_M), land_m)
+    return encode_coast(to_texels(signed.astype(np.float32)))
+
+
+def bake(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]] = ()) -> tuple[np.ndarray, np.ndarray]:
+    dx, dy = spacing_m(meta)
+    z = elev * np.float32(VERTICAL_EXAGGERATION)
+    ao, sky, curv = openness(z, dx, dy, AO_RADIUS_M), openness(z, dx, dy, SKY_RADIUS_M), curvature(z, dx, dy)
     rgb = np.stack([to_u8(to_texels(ao)), to_u8(to_texels(curv)), to_u8(to_texels(sky))], axis=-1)
-    return rgb, encode_coast(to_texels(signed.astype(np.float32)))
+    return rgb, coast(elev, meta, reaches)
 
 
 def main(map_dir: Path = MAP_DIR, out_dir: Path = OUT_DIR) -> None:
     elev, meta = load_heightmap(map_dir)
-    rgb, coast = bake(elev, meta)
+    rgb, levels = bake(elev, meta, plot_reaches(meta))
     out_dir.mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgb, "RGB").save(out_dir / "terrain_bake.png")
-    Image.fromarray(coast, "L").save(out_dir / "coast.png")
+    Image.fromarray(levels, "L").save(out_dir / "coast.png")
     Image.fromarray(np.ascontiguousarray(rgb[..., 0]), "L").save(out_dir / "ao.png")
-    print(f"wrote {out_dir / 'terrain_bake.png'}, {out_dir / 'ao.png'} and {out_dir / 'coast.png'} ({coast.shape[1]} x {coast.shape[0]}): "
-          f"water {np.mean(coast < 128):.1%} of texels; AO mean {rgb[..., 0].mean() / 255:.3f}, sky-view mean {rgb[..., 2].mean() / 255:.3f}")
+    print(f"wrote {out_dir / 'terrain_bake.png'}, {out_dir / 'ao.png'} and {out_dir / 'coast.png'} ({levels.shape[1]} x {levels.shape[0]}): "
+          f"water {np.mean(levels < 128):.1%} of texels; AO mean {rgb[..., 0].mean() / 255:.3f}, sky-view mean {rgb[..., 2].mean() / 255:.3f}")
 
 
 if __name__ == "__main__":
