@@ -25,8 +25,10 @@ namespace Statecraft.Game.Map
         public static readonly Color HazeColour = new Color(0.84f, 0.74f, 0.58f);
         public const float HazeMax = 0.45f;
         /// <summary>A cooler, weaker haze over water (review I2), so the sea stays the promo's saturated blue towards the
-        /// horizon: 0.4 of the land's strength.</summary>
-        public static readonly Color WaterHazeColour = new Color(0.62f, 0.74f, 0.86f);
+        /// horizon: 0.4 of the land's strength. Issue #709: a deeper blue (was 0.62, 0.74, 0.86), so diorama02's sea reads
+        /// as blue as promo 02's: per-material warmth R - B -0.235, was -0.197 (promo -0.260, band [-0.312, -0.208]). The
+        /// water haze starts at 120 km (ScWaterHazeLeadM), so the gameplay pose's water (48-91 km) does not change.</summary>
+        public static readonly Color WaterHazeColour = new Color(0.42f, 0.62f, 0.88f);
         public const float WaterHazeMax = HazeMax * 0.4f;
         /// <summary>The aerial haze is 1 - exp(-max(d - start, 0) / scale), times HazeMax: none within 200 km (the gameplay
         /// pose, 48-91 km, has none: its depth cue is the tilt-shift), about 2% at the country-wide pose's nearest land
