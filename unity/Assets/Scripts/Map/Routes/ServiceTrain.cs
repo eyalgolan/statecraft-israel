@@ -91,6 +91,7 @@ namespace Statecraft.Game.Map.Routes
             }
             Train = RouteTrain.SpawnModel(transform, prefab, line, data, origin, startAt, endAt, ModelYaw, ModelSize);
             Train.gameObject.SetActive(shownAt >= From);
+            Debug.Log($"TRAIN: the steam train runs on {RouteLayer.TrainRoute} from {From:yyyy-MM-dd} ({ModelId}, {Train.Length:0} m)");
         }
     }
 }

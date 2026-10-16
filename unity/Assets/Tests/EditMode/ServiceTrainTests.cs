@@ -140,6 +140,7 @@ public class ServiceTrainTests
             Assert.AreEqual((ServiceTrain.ModelId, CollectionDetail.Far), (asked[0].id, asked[0].detail));
             Assert.IsNull(service.Train, "nothing drawn until the stream answers (a later frame)");
 
+            LogAssert.Expect(LogType.Log, new Regex("^TRAIN: the steam train runs on jaffa_jerusalem_railway from 1950-03-02"));
             asked[0].done(FarPrefab());
             Assert.IsNotNull(service.Train);
             Assert.IsTrue(service.Train.gameObject.activeInHierarchy);
