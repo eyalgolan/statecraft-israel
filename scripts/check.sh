@@ -42,14 +42,17 @@ run "policy checker tests" uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --wi
 run "repo policy" uv run scripts/oss/check_repo.py
 run "rule ids" uv run scripts/oss/rule_ids.py
 run "sim build, warnings as errors" dotnet build sim/Statecraft.sln -c Release --nologo -warnaserror
-# Optional (T72): compile unity/ with dotnet, outside Unity, in about 2 s and with no Unity licence. It needs the
-# project's editor and a unity/Library, so it is skipped in CI and on most contributors' machines.
+# Optional (T72): compile unity/ with dotnet, outside Unity, in about 2 s and with no Unity licence. It is skipped only
+# when the project's editor or unity/Library is missing (CI, most contributors), and says so; any other problem fails.
 unity_version="$(sed -n 's/^m_EditorVersion: //p' unity/ProjectSettings/ProjectVersion.txt)"
+[ -n "$unity_version" ] || { echo "FAILED: unity compile: no m_EditorVersion in unity/ProjectSettings/ProjectVersion.txt"; exit 1; }
 unity_contents="${CHECK_UNITY_CONTENTS:-/Applications/Unity/Hub/Editor/$unity_version/Unity.app/Contents}"
-if [ -d "$unity_contents/Resources/Scripting" ] && [ -d unity/Library/ScriptAssemblies ]; then
-  run "unity compile (dotnet, outside Unity)" scripts/unity_compile/compile.sh "$unity_contents"
+if [ ! -d "$unity_contents" ]; then
+  echo "== unity compile: SKIPPED, no Unity $unity_version editor at $unity_contents"
+elif [ ! -d unity/Library ]; then
+  echo "== unity compile: SKIPPED, no unity/Library (open the project in Unity once, or clone a Library)"
 else
-  echo "== unity compile: skipped (needs Unity $unity_version and unity/Library/ScriptAssemblies)"
+  run "unity compile (dotnet, outside Unity)" scripts/unity_compile/compile.sh "$unity_contents"
 fi
 run "sim and content tests" dotnet test sim/Statecraft.sln -c Release --nologo
 run "data tool tests" uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q

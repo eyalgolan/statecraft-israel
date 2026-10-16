@@ -143,23 +143,35 @@ were checked 11 October 2026; re-check before submission. These are not itch.io 
 
 CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two pull requests can each pass and still break Unity once
 both are on `main`. `tools/unity_postmerge.py` closes that gap after the merge, on the owner's Mac, from a launchd job
-(`tools/unity_postmerge.plist.in`, every 15 minutes). Each run fetches `origin/main`; when its tip is not the commit it
-last tested, it checks the tip out in its own clean worktree (`~/.cache/statecraft/unity-postmerge/worktree`, Library
-kept between runs and capped at 6 GB), runs the whole EditMode suite under `machine_lock.py --shared --wait-unity`
-and reverts the settings churn. A pass adds one line to `~/.cache/statecraft/unity-postmerge/results.log`. Anything
-else, 0 tests included, opens one issue for that commit (label `area: unity`) with the failing tests and the log tail.
-It tests the tip only: when several commits landed since the last run, the issue lists them.
+(`tools/unity_postmerge.plist.in`, every 15 minutes).
+- launchd starts `unity_postmerge_launch.py` (a copy in the job folder, `~/.cache/statecraft/unity-postmerge`). It
+  fetches `origin/main`, moves the job's own worktree (`~/.cache/statecraft/unity-postmerge/worktree`) to the tip and
+  runs `tools/unity_postmerge.py` from there. So a merged change to the script takes effect on the next run, and no
+  checkout's working tree is used or changed.
+- When the tip is not the commit it last tested, the script cleans the worktree (keeping the Library, capped at 6 GB),
+  runs the whole EditMode suite under `machine_lock.py --shared --wait-unity` and reverts the settings churn. A Unity
+  still running 90 minutes after it started (`--unity-timeout-min`) is stopped by the PID `machine_lock.py` recorded
+  for it (SIGTERM, then SIGKILL), and the run counts as timed out.
+- A pass adds one line to `~/.cache/statecraft/unity-postmerge/results.log`. Anything else, 0 tests included, is
+  reported once per commit with the failing tests and the log tail: as a new issue (label `area: unity`), or, while an
+  issue it opened is still open, as a comment on that issue. It tests the tip only; the report lists the commits since
+  the last tested one.
+- Fetch and `gh` failures, and a launcher that cannot start the script, are written to `launchd.log` in the job folder.
 
-Install (owner's Mac only, from an up-to-date main checkout):
+Install (owner's Mac only, from a checkout of `main` that has these files):
 
 ```bash
-mkdir -p ~/.cache/statecraft/unity-postmerge
-sed -e "s#@UV@#$(command -v uv)#g" -e "s#@REPO@#$PWD#g" -e "s#@HOME@#$HOME/.cache/statecraft/unity-postmerge#g" \
+job=~/.cache/statecraft/unity-postmerge
+mkdir -p "$job" && cp tools/unity_postmerge_launch.py "$job/"
+sed -e "s#@UV@#$(command -v uv)#g" -e "s#@REPO@#$HOME/israel-game#g" -e "s#@HOME@#$job#g" \
     -e "s#@PATH@#$(dirname "$(command -v uv)"):$(dirname "$(command -v gh)"):$(dirname "$(command -v dotnet)"):/usr/bin:/bin:/usr/sbin:/sbin#g" \
     tools/unity_postmerge.plist.in > ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
 plutil -lint ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
 ```
+
+`@REPO@` is the main checkout: the launcher only fetches there and clones its Library once. A change to the launcher
+itself needs the `cp` again; a change to `unity_postmerge.py` does not.
 
 Uninstall: `launchctl bootout gui/$(id -u)/com.statecraft.unity-postmerge`, then delete the plist. To remove the
 worktree too: `git worktree remove --force ~/.cache/statecraft/unity-postmerge/worktree`. A trial without opening an

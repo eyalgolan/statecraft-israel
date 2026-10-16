@@ -1,5 +1,11 @@
+import fcntl
 import json
+import os
 import plistlib
+import subprocess
+import sys
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -122,13 +128,18 @@ def test_an_issue_for_another_sha_is_not_a_duplicate():
 class FakeGh:
     def __init__(self, open_issues=(), labels=("area: unity", "bug"), fail_create=False):
         self.open_issues, self.labels, self.fail_create = list(open_issues), list(labels), fail_create
-        self.created = []
+        self.created, self.comments = [], []
 
     def __call__(self, args, stdin=None):
         if args[:2] == ["issue", "list"]:
             return json.dumps(self.open_issues)
         if args[:2] == ["label", "list"]:
             return json.dumps([{"name": n} for n in self.labels])
+        if args[:2] == ["issue", "comment"]:
+            if self.fail_create:
+                raise RuntimeError("gh failed")
+            self.comments.append((args, stdin))
+            return f"https://github.com/{up.REPO_SLUG}/issues/{args[2]}#issuecomment-{len(self.comments)}\n"
         if args[:2] == ["issue", "create"]:
             if self.fail_create:
                 raise RuntimeError("gh failed")
@@ -161,6 +172,33 @@ def test_report_never_opens_a_second_issue_for_a_commit():
     assert up.report(gh, state, SHA, "t", "b") == "u5" and gh.created == []
     gh2 = FakeGh()   # the first issue was closed, but this job already opened one for the commit
     assert up.report(gh2, {"issued": {SHA: "u1"}}, SHA, "t", "b") == "u1" and gh2.created == []
+
+
+def test_a_new_failure_while_a_post_merge_issue_is_open_comments_on_it():
+    open_issue = {"number": 42, "title": up.issue_title(PREV), "body": f"b\n{up.marker(PREV)}", "url": "u42"}
+    unrelated = {"number": 7, "title": "a bug", "body": "no marker", "url": "u7"}
+    gh, state = FakeGh(open_issues=[unrelated, open_issue]), {}
+    url = up.report(gh, state, SHA, up.issue_title(SHA), f"body {SHA}\n{up.marker(SHA)}")
+    assert gh.created == [] and len(gh.comments) == 1
+    args, body = gh.comments[0]
+    assert args[2] == "42" and args[args.index("--repo") + 1] == up.REPO_SLUG and SHA in body
+    assert url.endswith("#issuecomment-1") and state["issued"][SHA] == url
+    assert up.report(gh, state, SHA, "t", "b") == url and len(gh.comments) == 1     # never twice for one commit
+
+
+def test_the_oldest_open_post_merge_issue_gets_the_comment():
+    issues = [{"number": n, "title": "x", "body": up.marker(f"{n:040x}"), "url": f"u{n}"} for n in (50, 12, 31)]
+    gh = FakeGh(open_issues=issues)
+    up.report(gh, {}, SHA, "t", "b")
+    assert gh.comments[0][0][2] == "12"
+
+
+def test_a_failed_comment_raises_and_records_nothing():
+    gh = FakeGh(open_issues=[{"number": 42, "title": "x", "body": up.marker(PREV), "url": "u42"}], fail_create=True)
+    state = {}
+    with pytest.raises(RuntimeError):
+        up.report(gh, state, SHA, "t", "b")
+    assert SHA not in state.get("issued", {})
 
 
 def test_a_failed_create_raises_and_records_nothing():
@@ -222,5 +260,134 @@ def test_the_plist_template_polls_no_more_often_than_every_ten_minutes():
     filled = up.fill_plist(text, uv="/opt/uv", repo="/r", home="/h", path="/usr/bin:/bin")
     plist = plistlib.loads(filled.encode())
     assert plist["StartInterval"] >= 600
-    assert plist["ProgramArguments"][:3] == ["/opt/uv", "run", "/r/tools/unity_postmerge.py"]
     assert plist["Label"] == up.LABEL_ID and "@" not in filled
+
+
+# --- a hung Unity is stopped by the PID machine_lock recorded ----------------------------------------------------
+
+def _locked(tmp_path, *code):
+    return [sys.executable, str(up.TOOLS / "machine_lock.py"), "--shared", "--", sys.executable, "-c", *code]
+
+
+def _alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    # a zombie (exited, not yet reaped) counts as gone
+    st = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+    return bool(st) and not st.startswith("Z")
+
+
+def _lock_is_free(lock):
+    with open(lock, "a+") as f:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        fcntl.flock(f, fcntl.LOCK_UN)
+        return True
+
+
+@pytest.mark.parametrize("ignores_term", [False, True])
+def test_a_hung_unity_is_stopped_by_pid_and_the_lock_is_released(tmp_path, monkeypatch, ignores_term):
+    lock = tmp_path / "machine.lock"
+    monkeypatch.setenv("STATECRAFT_MACHINE_LOCK", str(lock))
+    hang = ("import signal, time\n" + ("signal.signal(signal.SIGTERM, signal.SIG_IGN)\n" if ignores_term else "")
+            + "time.sleep(600)")
+    started = time.monotonic()
+    with open(tmp_path / "out.log", "w") as out:
+        code, stopped = up.run_with_timeout(_locked(tmp_path, hang), tmp_path / "holder", timeout=1.5, grace=1.0,
+                                            poll=0.1, cwd=tmp_path, stdout=out)
+    assert stopped is not None and not _alive(stopped)
+    assert code != 0 and time.monotonic() - started < 60
+    assert _lock_is_free(lock), "machine_lock still holds the lock after the timeout"
+
+
+def test_a_unity_that_finishes_in_time_is_left_alone(tmp_path, monkeypatch):
+    monkeypatch.setenv("STATECRAFT_MACHINE_LOCK", str(tmp_path / "machine.lock"))
+    with open(tmp_path / "out.log", "w") as out:
+        code, stopped = up.run_with_timeout(_locked(tmp_path, "import sys; sys.exit(2)"), tmp_path / "holder",
+                                            timeout=30, grace=1, poll=0.1, cwd=tmp_path, stdout=out)
+    assert (code, stopped) == (2, None)
+
+
+def test_the_clock_starts_when_unity_starts_not_while_waiting_for_the_lock(tmp_path, monkeypatch):
+    lock = tmp_path / "machine.lock"
+    monkeypatch.setenv("STATECRAFT_MACHINE_LOCK", str(lock))
+    with open(lock, "a+") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)          # someone else holds the machine for 2 s, longer than the timeout
+        timer = threading.Timer(2.0, lambda: fcntl.flock(held, fcntl.LOCK_UN))
+        timer.start()
+        with open(tmp_path / "out.log", "w") as out:
+            code, stopped = up.run_with_timeout(_locked(tmp_path, "import time; time.sleep(0.5)"), tmp_path / "holder",
+                                                timeout=1.5, grace=1, poll=0.1, cwd=tmp_path, stdout=out)
+        timer.join()
+    assert (code, stopped) == (0, None)
+
+
+def test_a_timed_out_run_is_reported_as_a_timeout():
+    r = up.timed_out(4242, 90)
+    assert r.broken and "timed out" in r.broken and "4242" in r.broken and not up.passed(r, unity_exit=0)
+
+
+# --- the launcher runs the script from the worktree, at origin/main ---------------------------------------------
+
+STUB = """import json, os, sys
+from pathlib import Path
+Path(sys.argv[sys.argv.index("--home") + 1], "ran.json").write_text(json.dumps(
+    {"version": VERSION, "argv": sys.argv[1:], "file": __file__, "locked": os.environ.get("UNITY_POSTMERGE_LOCKED")}))
+"""
+
+
+def _git(cwd, *args):
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+
+
+def _push_stub(src, version):
+    (src / "tools").mkdir(exist_ok=True)
+    (src / "tools" / "unity_postmerge.py").write_text(f"VERSION = {version}\n" + STUB)
+    _git(src, "add", "-A")
+    _git(src, "-c", "user.name=t", "-c", "user.email=t@users.noreply.github.com", "commit", "-qm", f"v{version}")
+    _git(src, "push", "-q", "origin", "HEAD:main")
+    return _git(src, "rev-parse", "HEAD")
+
+
+def test_the_launcher_runs_the_merged_script_from_the_worktree(tmp_path):
+    origin, src, repo, home = (tmp_path / n for n in ("origin.git", "src", "repo", "home"))
+    _git(tmp_path, "init", "-q", "--bare", "-b", "main", str(origin))
+    _git(tmp_path, "clone", "-q", str(origin), str(src))
+    first = _push_stub(src, 1)
+    _git(tmp_path, "clone", "-q", str(origin), str(repo))
+    home.mkdir()
+    fake_uv = tmp_path / "uv"
+    fake_uv.write_text(f"#!/bin/sh\nshift\nexec {sys.executable} \"$@\"\n")
+    fake_uv.chmod(0o755)
+    launch = [sys.executable, str(up.TOOLS / "unity_postmerge_launch.py"), "--uv", str(fake_uv), "--repo", str(repo),
+              "--home", str(home)]
+
+    assert subprocess.run(launch).returncode == 0
+    ran = json.loads((home / "ran.json").read_text())
+    wt = home / "worktree"
+    assert ran["version"] == 1 and Path(ran["file"]).resolve() == (wt / "tools" / "unity_postmerge.py").resolve()
+    assert ran["locked"] == "1" and _git(wt, "rev-parse", "HEAD") == first
+    assert ran["argv"] == ["--repo", str(repo), "--home", str(home)]
+
+    second = _push_stub(src, 2)                         # a merged change to the script takes effect on the next run
+    assert subprocess.run(launch).returncode == 0
+    assert json.loads((home / "ran.json").read_text())["version"] == 2 and _git(wt, "rev-parse", "HEAD") == second
+    assert _git(repo, "status", "--porcelain") == ""    # the main checkout's working tree is never touched
+
+    (home / "ran.json").unlink()
+    with open(home / "run.lock", "a+") as held:          # a run in progress: the launcher leaves the worktree alone
+        fcntl.flock(held, fcntl.LOCK_EX)
+        _push_stub(src, 3)
+        assert subprocess.run(launch).returncode == 0
+    assert not (home / "ran.json").exists() and _git(wt, "rev-parse", "HEAD") == second
+
+
+def test_the_plist_runs_the_launcher_from_the_job_folder():
+    text = (up.TOOLS / "unity_postmerge.plist.in").read_text(encoding="utf-8")
+    plist = plistlib.loads(up.fill_plist(text, uv="/opt/uv", repo="/r", home="/h", path="/usr/bin").encode())
+    assert plist["ProgramArguments"] == ["/opt/uv", "run", "/h/unity_postmerge_launch.py", "--uv", "/opt/uv",
+                                         "--repo", "/r", "--home", "/h"]

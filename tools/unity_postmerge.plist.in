@@ -2,7 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- launchd job for tools/unity_postmerge.py (T72). Filled in and installed by hand, outside the repository:
      see the "Post-merge Unity run" section of tools/README.md. @UV@, @REPO@, @HOME@ and @PATH@ are replaced
-     on install. launchd never starts a second copy while one is running. -->
+     on install. It runs the launcher copied into the job folder (@HOME@), which runs tools/unity_postmerge.py from
+     the job's worktree at origin/main. launchd never starts a second copy while one is running. -->
 <plist version="1.0">
 <dict>
   <key>Label</key>
@@ -11,14 +12,16 @@
   <array>
     <string>@UV@</string>
     <string>run</string>
-    <string>@REPO@/tools/unity_postmerge.py</string>
+    <string>@HOME@/unity_postmerge_launch.py</string>
+    <string>--uv</string>
+    <string>@UV@</string>
     <string>--repo</string>
     <string>@REPO@</string>
     <string>--home</string>
     <string>@HOME@</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>@REPO@</string>
+  <string>@HOME@</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>

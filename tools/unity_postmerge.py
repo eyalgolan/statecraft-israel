@@ -11,14 +11,19 @@ CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two PRs can each be gr
    Only the tip is tested: when several commits landed since the last run, the issue lists them all (`prev..tip`).
 2. checks the tip out in its own worktree (~/.cache/statecraft/unity-postmerge/worktree, forced, `git clean -ffdx`
    except unity/Library and the Unity-MCP NuGet download). The first run APFS-clones the main checkout's Library.
+   launchd starts tools/unity_postmerge_launch.py, which moves this worktree to origin/main and runs this script from
+   it, so a merged change to the script takes effect on the next run.
 3. builds the sim DLLs (tools/build_sim_for_unity.py), then runs the full EditMode suite through
    `machine_lock.py --shared --wait-unity --timeout 14400`, never with -nographics, and afterwards reverts
-   unity/ProjectSettings and unity/Assets/Settings (also on an exception).
+   unity/ProjectSettings and unity/Assets/Settings (also on an exception). A Unity still running after
+   --unity-timeout-min (90) minutes, counted from its start, is stopped by the PID machine_lock recorded for it
+   (SIGTERM, then SIGKILL after 60 s), never by name, and the run is reported as timed out.
 4. passes only when Unity exits 0 and its result file names at least one test and no failure. A pass appends one line
    to results.log and nothing else. Anything else (failing tests, 0 tests, no result file, a compile error, a sim build
-   failure, a lock timeout) opens one GitHub issue for that commit, labelled `area: unity` when the label exists, with
-   the SHA, the failing test names and the log tail. It first looks for an open issue carrying the commit's marker or
-   title, and also remembers every commit it opened an issue for, so it never opens two for one commit.
+   failure, a lock or Unity timeout) is reported once for that commit, with the SHA, the range since the last tested
+   commit, the failing test names and the log tail. When an issue this job opened is still open (main is still
+   broken), the report is a comment on it; otherwise it is a new issue, labelled `area: unity` when the label exists.
+   An open issue that already names the commit, or the job's own record of every commit it reported, means no report.
 5. deletes unity/Builds, Temp and Logs in the worktree, keeps the last KEEP_RUNS run folders, and deletes the
    worktree's Library when it grows past --cap-gb (the next run clones it again).
 
@@ -26,7 +31,7 @@ If opening the issue fails, the report is kept in the state file and retried on 
 again. The state is advanced only after a pass is logged or the issue exists. It uses the existing `gh` login and
 never reads, prints or stores a token.
 
-Usage: uv run tools/unity_postmerge.py [--repo PATH] [--home DIR] [--cap-gb N] [--dry-run]
+Usage: uv run tools/unity_postmerge.py [--repo PATH] [--home DIR] [--cap-gb N] [--unity-timeout-min N] [--dry-run]
 --dry-run runs everything but prints the issue instead of opening it and leaves the state file alone.
 Exit 0 when nothing was new, the commit passed or its issue exists; 1 when fetching or reporting failed."""
 from __future__ import annotations
@@ -38,17 +43,24 @@ import os
 import re
 import shutil
 import subprocess
+import signal
 import sys
+import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+import machine_lock   # tools/: the holder record that names the Unity process to stop on a timeout
 
 TOOLS = Path(__file__).resolve().parent
 REPO_SLUG = "eyalgolan/statecraft-israel"
 LABEL = "area: unity"
 LABEL_ID = "com.statecraft.unity-postmerge"
 LOCK_TIMEOUT = 14400
+UNITY_TIMEOUT_MIN = 90     # from Unity's start, not counting the lock wait
+UNITY_GRACE = 60           # seconds between SIGTERM and SIGKILL
+LOCKED_ENV = "UNITY_POSTMERGE_LOCKED"   # set by unity_postmerge_launch.py, which already holds run.lock
 KEEP_RUNS = 10
 LOG_TAIL = 80
 MAX_FAILURES = 50
@@ -115,14 +127,21 @@ def parse_results(path: Path) -> Results:
     return r
 
 
+def timed_out(pid: int, minutes: float) -> Results:
+    return Results(broken=f"timed out: Unity (PID {pid}) ran longer than {minutes:g} min and was stopped")
+
+
 def passed(r: Results, unity_exit: int) -> bool:
     return unity_exit == 0 and r.broken is None and r.total > 0 and r.failed == 0 and not r.failures
 
 
 # --- issues -----------------------------------------------------------------------------------------------------
 
+MARKER_PREFIX = "<!-- unity-postmerge sha="
+
+
 def marker(sha: str) -> str:
-    return f"<!-- unity-postmerge sha={sha} -->"
+    return f"{MARKER_PREFIX}{sha} -->"
 
 
 def issue_title(sha: str) -> str:
@@ -174,16 +193,29 @@ def issue_body(sha: str, prev: str | None, r: Results, unity_exit: int, log_text
     return "\n".join(out)
 
 
+def open_postmerge_issue(issues: list[dict]) -> dict | None:
+    """The oldest open issue this job opened (its body carries a marker), the one a still-broken main is reported on."""
+    ours = [i for i in issues if MARKER_PREFIX in (i.get("body") or "")]
+    return min(ours, key=lambda i: int(i["number"])) if ours else None
+
+
 def report(gh, state: dict, sha: str, title: str, body: str) -> str:
-    """Open the commit's issue unless this job already opened one or an open issue names the commit."""
+    """Report a commit once: nothing when this job already reported it or an open issue names it; a comment on the open
+    post-merge issue when there is one (main is still broken); otherwise a new issue."""
     issued = state.setdefault("issued", {})
     if sha in issued:
         return issued[sha]
-    found = existing_issue(json.loads(gh(["issue", "list", "--repo", REPO_SLUG, "--state", "open", "--limit", "1000",
-                                          "--json", "number,title,body,url"])), sha)
+    issues = json.loads(gh(["issue", "list", "--repo", REPO_SLUG, "--state", "open", "--limit", "1000",
+                            "--json", "number,title,body,url"]))
+    found = existing_issue(issues, sha)
     if found:
         issued[sha] = found
         return found
+    if still_open := open_postmerge_issue(issues):
+        url = gh(["issue", "comment", str(still_open["number"]), "--repo", REPO_SLUG, "--body-file", "-"],
+                 stdin=f"Still broken at {sha}.\n\n{body}").strip().splitlines()[-1]
+        issued[sha] = url
+        return url
     labels = {lab["name"] for lab in json.loads(gh(["label", "list", "--repo", REPO_SLUG, "--limit", "500",
                                                      "--json", "name"]))}
     args = ["issue", "create", "--repo", REPO_SLUG, "--title", title, "--body-file", "-"]
@@ -211,6 +243,54 @@ def fill_plist(text: str, *, uv: str, repo: str, home: str, path: str) -> str:
     for key, value in (("UV", uv), ("REPO", repo), ("HOME", home), ("PATH", path)):
         text = text.replace(f"@{key}@", value)
     return text
+
+
+def _parent(pid: int) -> int | None:
+    out = subprocess.run(["ps", "-o", "ppid=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+    return int(out) if out.isdigit() else None
+
+
+def _holder(record: Path) -> tuple[int, int] | None:
+    try:
+        lock_pid, child = (int(x) for x in record.read_text().split())
+        return lock_pid, child
+    except (OSError, ValueError):
+        return None
+
+
+def run_with_timeout(cmd: list[str], record: Path, *, timeout: float, grace: float, poll: float = 5.0, cwd: Path,
+                     stdout) -> tuple[int, int | None]:
+    """Run `cmd` (machine_lock.py wrapping Unity). The clock starts when machine_lock records the command it started
+    (machine_lock.HOLDER_ENV), so waiting for the lock never counts. Past `timeout` seconds, that recorded PID gets
+    SIGTERM, then SIGKILL after `grace` seconds, each only while its parent is still the recorded machine_lock (so a
+    reused PID is never signalled). machine_lock then returns and its lock is released when it exits. Returns the
+    exit code and the PID that was stopped, or None when the command finished in time."""
+    record.unlink(missing_ok=True)
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=stdout, stderr=subprocess.STDOUT,
+                            env={**os.environ, machine_lock.HOLDER_ENV: str(record)})
+    started = holder = None
+    while (code := proc.poll()) is None:
+        if started is None and (holder := _holder(record)):
+            started = time.monotonic()
+        if started is not None and time.monotonic() - started > timeout:
+            break
+        time.sleep(poll)
+    else:
+        return code, None
+    lock_pid, child = holder
+    for sig, wait in ((signal.SIGTERM, grace), (signal.SIGKILL, grace)):
+        if _parent(child) != lock_pid:
+            break
+        os.kill(child, sig)
+        deadline = time.monotonic() + wait
+        while _parent(child) == lock_pid and time.monotonic() < deadline:
+            time.sleep(min(poll, 0.5))
+    try:
+        proc.wait(grace + 60)
+    except subprocess.TimeoutExpired:      # machine_lock did not return: stop it (and so its lock) by its own PID
+        proc.kill()
+        proc.wait()
+    return proc.returncode, child
 
 
 def _git(cwd: Path):
@@ -263,7 +343,7 @@ def tidy(wt: Path, runs: Path, cap_bytes: int) -> str:
     return f"library {size >> 20} MiB"
 
 
-def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path) -> tuple[Results, int, str]:
+def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path, timeout_min: float) -> tuple[Results, int, str]:
     xml, log, build_log = run_dir / "editmode.xml", run_dir / "unity.log", run_dir / "build-sim.log"
     try:
         prepare_worktree(repo, wt, sha)
@@ -281,12 +361,14 @@ def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path) -> tuple[Results, i
         return Results(broken=f"Unity {version} (unity/ProjectSettings/ProjectVersion.txt) is not installed"), -1, ""
     try:
         with open(run_dir / "machine-lock.log", "w") as f:
-            code = subprocess.run(unity_command(wt, version, xml, log), cwd=wt, stdout=f,
-                                  stderr=subprocess.STDOUT).returncode
+            code, stopped = run_with_timeout(unity_command(wt, version, xml, log), run_dir / "lock-holder", cwd=wt,
+                                             stdout=f, timeout=timeout_min * 60, grace=UNITY_GRACE)
     finally:
         subprocess.run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=wt,
                        capture_output=True)
     text = log.read_text(errors="replace") if log.is_file() else ""
+    if stopped is not None:
+        return timed_out(stopped, timeout_min), code, text
     if code == 3 and not log.is_file():
         lock_text = (run_dir / "machine-lock.log").read_text(errors="replace")
         return Results(broken=f"machine_lock timed out after {LOCK_TIMEOUT} s waiting for Unity"), code, lock_text
@@ -298,6 +380,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repo", type=Path, default=TOOLS.parent, help="the main checkout (default: this script's)")
     ap.add_argument("--home", type=Path, default=Path.home() / ".cache" / "statecraft" / "unity-postmerge")
     ap.add_argument("--cap-gb", type=float, default=6.0, help="delete the worktree's Library above this size")
+    ap.add_argument("--unity-timeout-min", type=float, default=UNITY_TIMEOUT_MIN,
+                    help="stop Unity (by its recorded PID) after this many minutes of running")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
     repo, home = a.repo.resolve(), a.home
@@ -306,11 +390,12 @@ def main(argv: list[str] | None = None) -> int:
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     with open(home / "run.lock", "a+") as lock:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            print("unity_postmerge: another run is in progress")
-            return 0
+        if os.environ.get(LOCKED_ENV) != "1":       # the launcher holds run.lock for this run
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                print("unity_postmerge: another run is in progress")
+                return 0
         state_path = home / "state.json"
         state = load_state(state_path)
         if (pending := state.get("pending")) and not a.dry_run:     # a report that could not be opened last time
@@ -333,7 +418,7 @@ def main(argv: list[str] | None = None) -> int:
         prev = state.get("last_tested")
         run_dir = runs / f"{stamp.replace(':', '')}-{sha[:12]}"
         run_dir.mkdir()
-        r, code, log_text = run_suite(repo, home / "worktree", sha, run_dir)
+        r, code, log_text = run_suite(repo, home / "worktree", sha, run_dir, a.unity_timeout_min)
         disk = tidy(home / "worktree", runs, int(a.cap_gb * 2**30))
         ok = passed(r, code)
         line = (f"{stamp} {sha} {'PASS' if ok else 'FAIL'} exit={code} total={r.total} passed={r.passed} "
