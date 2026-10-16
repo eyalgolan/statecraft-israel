@@ -27,6 +27,8 @@ hud.caption.security: "Security"
 hud.caption.support: "Public support"
 hud.caption.standing: "International support"
 hud.caption.fx: "Foreign currency"
+# Social cohesion (GameState.Cohesion, R-CITY-005), the GDD loop only; the owner's ruling of 15 October 2026 (#380).
+hud.caption.cohesion: "Social cohesion"
 # The other static texts of Game.uxml, each set by the presenter that owns its element (#193). Each English string is
 # the UXML's own text (HebrewUiTests.EachEnglishStaticTextIsTheUxmlsOwnText), so English shows what it always showed.
 # The top bar (HudPresenter):
@@ -64,6 +66,13 @@ event.reopen: "Decision waiting"
 event.illustration: "Illustration"
 event.photo: "Photograph"
 event.ai_label: "AI-generated illustration"
+# An objective card's line under its text (#380), from Objectives.MonthsFromHistory: early, in the same month as history,
+# or later. The owner's wording (#379, 14 October 2026). {0} the completion date, {1} the historical date, {2} months.
+event.objective_early: "Completed on {0}; historically {1}; {2} months early."
+event.objective_early_one: "Completed on {0}; historically {1}; 1 month early."
+event.objective_on_time: "Completed on time, as in history."
+event.objective_late: "Completed {0} months later than in history."
+event.objective_late_one: "Completed 1 month later than in history."
 start.listen: "Play the recording"
 start.stop: "Stop the recording"
 start.loading: "Loading the recording…"

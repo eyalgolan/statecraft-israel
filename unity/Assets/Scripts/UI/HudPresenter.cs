@@ -54,9 +54,10 @@ namespace Statecraft.Game.UI
         /// editor's; PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn asserts it).</summary>
         public const float SpareShare = 0.05f;
 
-        /// <summary>The meters' predicted growth when roomy: six icons 30 -> 38 px, values 22 -> 25 px (about 14% wider), and
-        /// each wrapped caption back to its one-line width (<paramref name="captionGrowth"/>).</summary>
-        public static float RoomyGrowth(float valueWidths, float captionGrowth = 0f) => 6 * 8f + 0.14f * valueWidths + captionGrowth;
+        /// <summary>The meters' predicted growth when roomy: each of the <paramref name="icons"/> shown icons 30 -> 38 px (six,
+        /// or seven with Social cohesion in the GDD loop), values 22 -> 25 px (about 14% wider), and each wrapped caption back
+        /// to its one-line width (<paramref name="captionGrowth"/>).</summary>
+        public static float RoomyGrowth(float valueWidths, float captionGrowth = 0f, int icons = 6) => icons * 8f + 0.14f * valueWidths + captionGrowth;
 
         /// <summary>The top bar's static texts and their strings (#193): the screen buttons, New Game and End Turn. The
         /// meters' captions are hud.caption.*, the same words their tooltips say.</summary>
@@ -127,7 +128,7 @@ namespace Statecraft.Game.UI
                 if (root.Q<Label>(HoverTip.TipName) != null)
                     barTips = new HoverTip(root, new[] { newGame }, () => hudRoot.ClassListContains(UiLanguage.HebrewClass) ? HoverTip.Side.Right : HoverTip.Side.Left);
             }
-            foreach (var id in new[] { "treasury", "immigration", "security", "support", "standing", "fx" })
+            foreach (var id in new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" })
             {
                 var meter = root.Q<VisualElement>("meter-" + id); var caption = text["hud.caption." + id];
                 meter.Q<Label>(className: "meter-name").text = caption;   // the bar shows the words its tooltip says
@@ -178,6 +179,7 @@ namespace Statecraft.Game.UI
         /// <summary>Roomy only on the one-row bar with icons; see RoomyClass.</summary>
         void UpdateRoomy()
         {
+            var meters = this.meters.Where(m => m.resolvedStyle.display != DisplayStyle.None).ToList();   // a hidden meter takes no room
             if (meters.Count == 0) return;
             var oneRow = !hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass);
             // Panel coordinates (logical px), so the meters and the screen buttons compare directly.
@@ -198,7 +200,7 @@ namespace Statecraft.Game.UI
                     var oneLine = c.MeasureTextSize(c.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
                     return UnityEngine.Mathf.Max(0f, oneLine - c.worldBound.width);
                 });
-                if (spare - RoomyGrowth(values, captions) >= SpareShare * used + 8f) bar.AddToClassList(RoomyClass);
+                if (spare - RoomyGrowth(values, captions, meters.Count) >= SpareShare * used + 8f) bar.AddToClassList(RoomyClass);
             }
         }
 
@@ -348,6 +350,9 @@ namespace Statecraft.Game.UI
             score.style.display = m.Score.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             Set("treasury", m.Treasury); Set("immigration", m.Immigration); Set("security", m.Security);
             Set("support", m.Support); Set("standing", m.Standing); Set("fx", m.Fx);
+            // Social cohesion: the GDD loop only (#380), as the score; a hidden meter takes no room in the bar.
+            Set("cohesion", m.Cohesion);
+            said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);
         }
     }

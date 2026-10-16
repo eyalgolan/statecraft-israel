@@ -272,6 +272,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-option { min-height: 42px; padding: 5px 12px 5px 46px; margin: 3px 0; border-color: rgba(196, 160, 92, 0.6); }
 .event-title { -unity-text-align: middle-center; margin-bottom: 4px; white-space: normal; font-size: 28px; }   /* centred, as before, in the card */
 .event-text { white-space: normal; margin-bottom: 8px; }
+/* An objective card's line under its text (#380): when it was completed against history. */
+.event-objective { white-space: normal; margin-bottom: 8px; }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
 /* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. */
 .info-panel { position: absolute; left: 16px; bottom: 16px; width: 520px; min-height: 160px; flex-direction: row; align-items: flex-start; }

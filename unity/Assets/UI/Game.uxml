@@ -65,6 +65,14 @@
                         <ui:VisualElement class="meter-row"><ui:Label name="support-value" class="meter-value" /><ui:Label name="support-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
+                <!-- Social cohesion (#380): shown only in the GDD loop (HudModel.ShowsCohesion). -->
+                <ui:VisualElement name="meter-cohesion" class="meter">
+                    <Statecraft.Game.UI.UiIcon glyph="rings" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Social cohesion" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="cohesion-value" class="meter-value" /><ui:Label name="cohesion-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
                 <ui:VisualElement name="meter-standing" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="globe" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
@@ -157,7 +165,7 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="gold-rule" />
-                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /></ui:ScrollView>
+                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
                 <ui:VisualElement name="event-options" />
                 <!-- The count of other open decisions, and Hide: the card collapses to "Decision waiting" so the map can be
                      inspected (EventCardPresenter.Collapse); focus order: the options, then Hide. -->

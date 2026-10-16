@@ -138,6 +138,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   showcase's coaches, four articulated cars that ride the track (owner, 16 October 2026: "ride the track, cut walls"):
   on the Sorek valley's tightest bends their sides pass into the gorge walls. It streams only once the game date reaches
   the service, never at boot. If it does not stream, the game plays on without it and logs one warning.
+- Social cohesion on the top bar, a resource meter (לכידות חברתית in Hebrew) with its change since last turn, in the GDD
+  loop only; it reads `GameState.Cohesion` (R-CITY-005; the owner's ruling of 15 October 2026, refs #380). The
+  objective card's line under its text, completed early (both dates and the months), on time or later, in English and
+  Hebrew (`Objectives.MonthsFromHistory`; the owner's wording on #379), and its photograph of Mefalsim's first days
+  (Boris Carmi, June 1949, CC BY 4.0, Meitar Collection; `ASSETS.yaml` row `owner-verify`). No golden moves.
 - Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins

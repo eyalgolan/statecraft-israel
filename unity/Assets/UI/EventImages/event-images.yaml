@@ -342,3 +342,17 @@ images:
     sensitive: false
     sensitivity_reviewed: false
     note: "US federal work (Abbie Rowe, National Park Service photographer at the White House), public domain in the US."
+  - event: first_new_yishuv
+    file: first_new_yishuv.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Mefalsim_(997009452698205171.jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Mefalsim_%28997009452698205171.jpg"
+    sha1: f4d82b8f08f810081145eec13d24ac09f672873f
+    original_size: [1528, 1566]
+    licence: CC-BY-4.0
+    artist: "Boris Carmi"
+    credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "Two men put up a barbed-wire fence on open ground in the first days of Kibbutz Mefalsim, June 1949."
+    crop: [0.5, 0.53, 1.0]
+    sensitive: false
+    sensitivity_reviewed: false
+    note: "The GDD objective card (content/events/first_new_yishuv.yaml; #380). NLI title 'ימיו הראשונים של קיבוץ מפלסים' (the first days of kibbutz Mefalsim), dated June 1949, the founding month (research_notes/GDD objectives/designated-site-1.md). Two unnamed men at work; nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-16."

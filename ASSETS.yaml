@@ -563,6 +563,15 @@ rules:
     adapted: "graded and cropped"
     commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
     note: "Event iraqi_exodus. Original 1914x1322, SHA-1 70c4dfa48f2794853b6eb6229663f2840c68c613 (https://upload.wikimedia.org/wikipedia/commons/1/1d/Aliyah_%28997008136551705171%29.jpg); made by tools/event_images.py (crop [0.5, 0.55, 1.0]). Commons VRTS permission ticket 2021092910005788. Licence verified 2026-10-11 via the Commons API (licence review), with the owner's sign-off 2026-10-11 (in session, via controller). Re-cropped 2026-10-13 to the centred card's 16:9 media header (at most 960x540) from the same original, the same crop centre and width; only the crop changed, the credit and licence are as before."
+  - glob: "unity/Assets/UI/EventImages/first_new_yishuv.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Mefalsim_(997009452698205171.jpg"
+    status: owner-verify
+    artist: "Boris Carmi"
+    credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
+    note: "Event first_new_yishuv, the GDD objective card (#380). Original 1528x1566, SHA-1 f4d82b8f08f810081145eec13d24ac09f672873f (https://upload.wikimedia.org/wikipedia/commons/e/e3/Mefalsim_%28997009452698205171.jpg); made by tools/event_images.py (crop [0.5, 0.53, 1.0]). Commons VRTS permission ticket 2021092910005788. NLI title 'the first days of kibbutz Mefalsim', June 1949. Licence, artist and credit read through the Commons API on 2026-10-16. Waits for the owner's sign-off (the issue's 'What needs maintainer sign-off')."
   - glob: "unity/Assets/UI/EventImages/israel_bonds.jpg"
     licence: Public-Domain
     source: "https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office,_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg"

@@ -219,6 +219,9 @@ namespace Statecraft.Game.UI
             card.Q<Label>("event-title").text = Cabinet.Fill(c, s, e.Title, date);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", c.Offices.First(o => o.Id == e.Office).Title, holder.Name);
             card.Q<Label>("event-text").text = EventSystem.Render(c, s, e);
+            var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
+            objective.text = ObjectiveLine(c, s, e, text);
+            objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             var options = card.Q<VisualElement>("event-options");
             options.Clear();
             foreach (var o in e.Options)
@@ -231,6 +234,25 @@ namespace Statecraft.Game.UI
             }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
+        }
+
+        /// <summary>An objective card's line under its text (#380; the owner's wording, #379): completed early, "Completed on
+        /// {date}; historically {date}; n months early."; in the same calendar month, "Completed on time, as in history.";
+        /// later, "Completed n months later than in history.". The dates are the recorded completion (GameState.Objectives)
+        /// and the objective's reference date, in the UI's language; the months are Objectives.MonthsFromHistory. Empty for
+        /// an event that is not an objective's card, or whose objective is not recorded (the card fires only once it is,
+        /// R-OBJ-003).</summary>
+        public static string ObjectiveLine(Content c, GameState s, GameEvent e, UiText t)
+        {
+            if (e.Objective.Length == 0 || !s.Objectives.TryGetValue(e.Objective, out var done)) return "";
+            var o = c.Objectives.First(x => x.Id == e.Objective);   // the loader checks the event names an objective
+            string Date(System.DateTime d) => t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);
+            var months = Objectives.MonthsFromHistory(done, o.ReferenceDate);
+            if (months == 0) return t["event.objective_on_time"];
+            if (months < 0) return months == -1 ? t["event.objective_late_one"] : t.Format("event.objective_late", -months);
+            var early = Objectives.MonthsEarly(done, o.ReferenceDate);
+            return early == 1 ? t.Format("event.objective_early_one", Date(done), Date(o.ReferenceDate))
+                : t.Format("event.objective_early", Date(done), Date(o.ReferenceDate), early);
         }
 
         /// <summary>A newly shown event puts the keyboard focus on the card (keyboard play, #41): the next Tab reaches its

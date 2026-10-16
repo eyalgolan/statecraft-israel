@@ -8,7 +8,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>A small vector icon drawn with Painter2D (no image asset), in the promo's style (promo/final/03): a gold coin
     /// for the Treasury, figures for Immigration and Public Support, a blue shield for Security, a globe for International
-    /// Standing, a banknote for Foreign Currency, gold line icons for the screen buttons, and a terrain sign per biome. Each
+    /// Standing, a banknote for Foreign Currency, two linked rings for Social cohesion, gold line icons for the screen buttons, and a terrain sign per biome. Each
     /// glyph is drawn in a 24 x 24 design box, scaled to the element's content box and centred in it. In UXML:
     /// <c>&lt;Statecraft.Game.UI.UiIcon glyph="coin" /&gt;</c>. An unknown glyph draws nothing.</summary>
     [UxmlElement]
@@ -40,7 +40,7 @@ namespace Statecraft.Game.UI
 
         static readonly Dictionary<string, Painter> Painters = new Dictionary<string, Painter>
         {
-            ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote,
+            ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote, ["rings"] = Rings,
             ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["restart"] = Restart, ["gear"] = Gear,
             ["chevron"] = Chevron, ["chevron-back"] = ChevronBack, ["hourglass"] = Hourglass,
             ["region"] = Region, ["house"] = House, ["village"] = Village, ["flag"] = Flag,
@@ -175,6 +175,18 @@ namespace Statecraft.Game.UI
             p.BeginPath(); p.MoveTo(at(2.8f, 12)); p.LineTo(at(21.2f, 12)); p.Stroke();
             p.BeginPath(); p.MoveTo(at(4.4f, 7.4f)); p.LineTo(at(19.6f, 7.4f)); p.Stroke();
             p.BeginPath(); p.MoveTo(at(4.4f, 16.6f)); p.LineTo(at(19.6f, 16.6f)); p.Stroke();
+        }
+
+        /// <summary>Social cohesion (#380): two linked gold rings, each drawn over a dark edge so it reads on the bar.</summary>
+        static void Rings(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
+        {
+            foreach (var (x, colour) in new[] { (8.6f, GoldBase), (15.4f, GoldLight) })
+            {
+                p.strokeColor = GoldDark; p.lineWidth = 3.4f * s;
+                Circle(p, at(x, 12), 5.8f * s); p.Stroke();
+                p.strokeColor = colour; p.lineWidth = 2f * s;
+                Circle(p, at(x, 12), 5.8f * s); p.Stroke();
+            }
         }
 
         static void Banknote(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
