@@ -326,11 +326,12 @@ def test_the_localities_stay_as_of_1948():
 SUBS = {(q, r): rid for q, r, rid in yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))["hexes"]}
 SUB_KEY = {r["id"]: r["key"] for r in yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))["regions"]}
 OPEN, T1 = PERIODS.index("opening") if "opening" in PERIODS else -1, PERIODS.index("truce1")
-OPENING_FEATURES = {"opening:israel", "opening:arab:unspecified", "cia_hula"} | {
-    "unsourced_south_opening", "contested_opening_hula", "contested_opening_acre", "contested_opening_jenin",
-    "contested_opening_ramle", "contested_opening_jerusalem"}
-OPENING_OVERLAYS = {"unsourced_south_opening", "contested_opening_hula", "contested_opening_acre", "contested_opening_jenin",
-                    "contested_opening_ramle", "contested_opening_jerusalem"}
+OPENING_OVERLAYS = {"unsourced_south_opening", "contested_opening_hula", "contested_opening_jenin", "contested_opening_jerusalem"}
+OPENING_FEATURES = {"opening:israel", "opening:arab:unspecified", "cia_hula"} | OPENING_OVERLAYS
+# Owner ruling 2 of 16 October 2026 on #686 (cut breadth): in the Ramle and Acre sub-districts grey only the hexes that
+# changed hands between 15 May and 10 June 1948: Yibna's (occupied 5 June) and Acre's (surrendered on the night of 17/18
+# May). Rehovot, Rishon and Nahariya, and every other hex of the two sub-districts, keep their 9 July side.
+CUT_GREY = {"ramle": {(-5, 22)}, "acre": {(7, 6)}}
 # The Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the 60-km northing whose 1948
 # site the repository already holds, sourced (settlements_1948.yaml; the closure check's anchors): Q3 "settlement hexes blue".
 SOUTH_SETTLEMENTS = {"Yad Mordechai": (34.5583, 31.5886), "Negba": (34.683, 31.6608), "Nir Am": (34.5808, 31.5194),
@@ -373,14 +374,35 @@ def test_away_from_the_adjustments_each_hex_keeps_its_9_july_side():
     assert checked > 150
 
 
-@pytest.mark.parametrize("place, lon, lat", [("Acre", 35.0817, 32.9278), ("Nahariya", 35.0925, 33.0036), ("Zir'in", 35.32, 32.555),
-                                             ("Yibna", 34.745, 31.866), ("Rehovot", 34.8167, 31.8969), ("Metulla", 35.578, 33.278),
-                                             ("Mishmar HaYarden", 35.5997, 33.0028), ("Motza", 35.165, 31.79)])
+@pytest.mark.parametrize("place, lon, lat", [("Acre", 35.0817, 32.9278), ("Zir'in", 35.32, 32.555), ("Yibna", 34.7463, 31.866),
+                                             ("Metulla", 35.578, 33.278), ("Mishmar HaYarden", 35.5997, 33.0028),
+                                             ("Motza", 35.165, 31.79)])
 def test_the_adjusted_areas_are_contested(place, lon, lat):
-    """Acre coast (Ben-Ami, Acre 17/18 May), Lajjun-Zir'in (28 May), Yibna (5 June): sourced changes inside a 9 July Israeli
-    area, cut by their sub-district; the CIA 18 May tenuously held Safad-Hula loop (traced) and the corridor and
-    Rishon-Sarafand (cut by sub-district)."""
+    """Acre (surrendered 17/18 May) and Yibna (5 June): the hex of a place that changed hands (owner ruling 2, #686);
+    Lajjun-Zir'in (28 May), cut by its sub-district; the CIA 18 May tenuously held Safad-Hula loop (traced) and the corridor
+    (cut by sub-district)."""
     assert CODES[hg.settlement_hex(lon, lat, HEXES)][OPEN] == "c", place
+
+
+def test_the_ramle_and_acre_cuts_grey_only_the_hexes_that_changed_hands():
+    """Owner ruling 2 of 16 October 2026 on #686: grey only Yibna's and the Acre coast's hexes; Rehovot, Rishon and
+    Nahariya, and every other Israeli-held hex of the two sub-districts that did not change hands, stay blue."""
+    for key, want in CUT_GREY.items():
+        got = {qr for qr, c in CODES.items() if SUB_KEY[SUBS[qr]] == key and c[OPEN] == "c"}
+        assert got == want, (key, sorted(got))
+        for qr, c in CODES.items():
+            if SUB_KEY[SUBS[qr]] == key and qr not in want:
+                assert c[OPEN] == ("I" if c[T1] == "I" else "A"), (key, qr, c[OPEN], c[T1])
+    for place, lon, lat in [("Rehovot", 34.8167, 31.8969), ("Rishon LeZion", 34.8, 31.95), ("Nahariya", 35.0925, 33.0036)]:
+        assert code(lon, lat, "opening") == "I", place
+    by = {p["place"]: p for p in META["contested_places"]}
+    assert set(by) == {"Yibna", "Acre"}
+    assert {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in by.values()} == set().union(*CUT_GREY.values())
+    for p in by.values():
+        assert (p["from"], p["until"]) == ("1948-05-15", "1948-06-11") and p["why"], p["place"]
+        assert p["sources"] and all("wikipedia.org" in s for s in p["sources"]), p["place"]
+    feats = {f["properties"]["id"] for f in SOURCE["features"]}
+    assert not feats & {"contested_opening_acre", "contested_opening_ramle"}, "no sub-district cut is drawn for Ramle or Acre"
 
 
 @pytest.mark.parametrize("place, lon, lat, want", [("Tel Aviv", 34.78, 32.08, "I"), ("Haifa", 34.9992, 32.8192, "I"),
@@ -438,3 +460,16 @@ def test_the_cia_map_is_recorded_georeferenced_and_its_trace_lies_on_its_ink():
     hula = next(f["properties"] for f in SOURCE["features"] if f["properties"]["id"] == "cia_hula")
     assert hula["colour"] == "cia_tenuous" and hula["date"] == "1948-05-18" and hula["on_ink"] >= 0.8
     assert any("strongly-held" in t for t in META["not_traced"]), "the solid border cannot be told from the partition line"
+
+
+def test_a_contested_place_that_greys_no_hex_fails_the_bake():
+    """Fail closed: a contested place outside Mandatory Palestine's land, or with no period inside its window, must stop the
+    bake, not grey nothing (a place at sea already fails in hexgrid.settlement_hex)."""
+    elev, meta = bb.load_elevation()
+    water = bb.water_mask(elev, meta)
+    first = SOURCE["statecraft"]["contested_places"][0]
+    for bad in (dict(first, place="Irbid", lon=35.85, lat=32.556), dict(first, place="no window", until="1948-05-20")):
+        src = json.loads(json.dumps(SOURCE))
+        src["statecraft"]["contested_places"] = [bad]
+        with pytest.raises(SystemExit, match=bad["place"]):
+            cb.bake(src, HEXES, water, meta)

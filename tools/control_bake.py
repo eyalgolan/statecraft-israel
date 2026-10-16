@@ -24,7 +24,10 @@ Mandatory Palestine (the sub-district layer's land: its regions but 'outside') t
     within 6 km of the city whose own area holds both sides, the smaller at least a fifth of 37 sample points, is
     no-man's land (m). A period whose `jerusalem` is no_mans_land (15 May - 10 June 1948: the city fought over, owner
     decision of 16 October 2026, #674) makes every hex within 6 km no-man's land (m), unless it has no colour (-);
-  5 a pinned town (the GeoJSON's pinned_towns: a town the sources place on one side that the traced lines, within their
+  5 a contested place (the GeoJSON's contested_places: a place whose change of hands a source dates inside a period
+    that no traced line shows, owner ruling 2 of 16 October 2026 on #686) makes its hex (placed as the game places
+    settlements) contested (c) for every period inside its window, unless the hex has no colour (-) or is no-man's land (m);
+  6 a pinned town (the GeoJSON's pinned_towns: a town the sources place on one side that the traced lines, within their
     accuracy, put on the other) gives its hex (placed as the game places settlements) the sourced holder for every period
     inside the pin's window, unless the hex is grey;
 Each hex row is [q, r, "codes"]: one character per period, in the periods' order. The sim never reads the output (display
@@ -103,15 +106,22 @@ def samples(lon: float, lat: float, km_lon: float, size_km: float) -> list:
     return pts
 
 
+def inside(period: dict, window: dict) -> bool:
+    """The whole period lies inside the window (from, until; an until of None is open-ended)."""
+    return period["from"] >= window["from"] and (window["until"] is None or (period["until"] is not None and period["until"] <= window["until"]))
+
+
 def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list, dict]:
     snaps, overlays, periods = load(source)
     pins = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("pinned_towns", [])]
+    greys = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("contested_places", [])]
     land = mandate_hexes()
     b = hexes["bounds"]
     km_lon = KM_PER_DEG_LON_EQ * math.cos(math.radians((b["lat0"] + b["lat1"]) / 2))
     size = hexes["hex_size_km"]
     drawn = [p for p in periods if p["snapshot"]]
     cells = {}
+    applied = set()
     for h in hexes["hexes"]:
         qr = (h["q"], h["r"])
         if qr not in land:
@@ -137,11 +147,18 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
                 n_i = sum(1 for g in got if g == "I"); n_a = sum(1 for g in got if g and g != "I")
                 if min(n_i, n_a) >= JERUSALEM_MIN_SHARE * len(got):
                     c = "m"
+            for gqr, g in greys:
+                if gqr == qr and c not in "-m" and inside(p, g):
+                    c = "c"
+                    applied.add(g["place"])
             for pqr, pin in pins:
-                if pqr == qr and c not in "czm" and p["from"] >= pin["from"] and (pin["until"] is None or (p["until"] is not None and p["until"] <= pin["until"])):
+                if pqr == qr and c not in "czm" and inside(p, pin):
                     c = HOLDER_CODE[pin["holder"]]
             codes.append(c)
         cells[qr] = "".join(codes)
+    missed = sorted({g["place"] for _, g in greys} - applied)
+    if missed:   # fail closed: a contested place off the land, or with no period inside its window, would grey nothing
+        raise SystemExit(f"contested_places greyed no hex: {', '.join(missed)}")
     return drawn, cells
 
 

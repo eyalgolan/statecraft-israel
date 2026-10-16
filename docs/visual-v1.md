@@ -1174,10 +1174,11 @@ D-C (owner-verify).
   the code at its centre, per period): 15 May-10 June 1948 the 9 July line, adjusted (owner decision of 16 October 2026,
   #674, option (b); research note `control-15-may-1948.md` section 9): the other side not named; grey where the CIA's
   "Military Situation - 18 May 1948" dashed (tenuously held) border is legible and closes on the 9 July line or the
-  frontier (the Safad-Hula loop, traced on the scan georeferenced on its graticule ticks), and, cut by the 1947
-  sub-districts (no new line), the 9 July Israeli areas of the Acre (Ben-Ami, Acre 17/18 May), Jenin (Lajjun-Zir'in, 28
-  May), Ramle (Yibna, 5 June; the CIA's Rishon-Sarafand border, which closes on nothing sourced) and Jerusalem (the CIA's
-  corridor border, a single line along the road) sub-districts; the Gaza and Beersheba sub-districts without colour, the
+  frontier (the Safad-Hula loop, traced on the scan georeferenced on its graticule ticks); cut by the 1947
+  sub-districts (no new line), the 9 July Israeli areas of the Jenin (Lajjun-Zir'in, 28 May) and Jerusalem (the CIA's
+  corridor border, a single line along the road) sub-districts; in the Ramle and Acre sub-districts only the hex of the
+  place that changed hands (`contested_places`, owner ruling 2 of 16 October 2026 on #686): Yibna's (5 June) and Acre's
+  (17/18 May), so Rehovot, Rishon and Nahariya stay blue and the CIA's Rishon-Sarafand border is not drawn; the Gaza and Beersheba sub-districts without colour, the
   hexes of their Jewish settlements whose 1948 site is sourced pinned blue (Q3); every hex within 6 km of the Old City
   no-man's land; 11 June the 9 July line; 8-18 July (the Ten Days) grey where the 9 and 18 July lines differ; 18 July the blue line;
   24-26 July grey at Ijzim, Jaba and Ein Ghazal; 15-31 October grey where the July and October lines differ in the south

@@ -55,10 +55,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   figures stood in a column, and from about yaw 180 the pole stood in front of them. Presentation only.
 - The map shows sides from the game's start (refs #674; owner decision of 16 October 2026, "(b) 9 July lines, adjusted"):
   from 15 May to 10 June 1948 the front lines of 9 July 1948 (Israel State Archives map 6158/1), with grey where the CIA's
-  "Military Situation - 18 May 1948" map draws a tenuously held border that closes (the Safad-Hula loop, traced) and,
-  cut by the 1947 sub-districts so that no new line is drawn, where a source dates a change of hands before 11 June
-  inside a 9 July Israeli area (the Acre coast, Lajjun-Zir'in, Yibna) or the CIA's dashed border closes on nothing sourced
-  (Rishon-Sarafand, the Jerusalem corridor); the Gaza and Beersheba sub-districts without colour, their Jewish
+  "Military Situation - 18 May 1948" map draws a tenuously held border that closes (the Safad-Hula loop, traced); cut
+  by the 1947 sub-districts so that no new line is drawn, at Lajjun-Zir'in (taken 28 May) and along the Jerusalem
+  corridor (a CIA dashed border that closes on nothing sourced); only Yibna's hex (5 June) and Acre's (17/18 May) in the
+  Ramle and Acre sub-districts, so Rehovot, Rishon and Nahariya stay blue (owner ruling of 16 October 2026); the Gaza and Beersheba sub-districts without colour, their Jewish
   settlements' hexes blue; Jerusalem no-man's land. The caption reads "Front lines of 9 July 1948, adjusted (Israel State
   Archives; CIA map of 18 May 1948)", in English and Hebrew (the Hebrew waits for the native reviewer, #564). Before, the
   grey 1947 sub-districts stood until 11 June. Map-only data (draft, owner-verify): the sim goldens and the content hash

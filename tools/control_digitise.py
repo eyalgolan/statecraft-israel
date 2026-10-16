@@ -62,8 +62,10 @@ Method:
     1948" map's dashed (tenuously held) border is legible and closes on a sourced line (CIA_STROKES: the Safad-Hula loop,
     traced on the CIA scan, georeferenced on its own graticule ticks); grey, cut by the 1947 sub-districts (D-B) so no
     new line is drawn, where a source dates a change of hands between 15 May and 11 June inside a 9 July Israeli area
-    (OPENING_CUTS: the Acre coast, Lajjun-Zir'in, Yibna) or where the CIA's dashed border is legible but closes on nothing
-    sourced (the corridor, Rishon-Sarafand); the Gaza and Beersheba sub-districts without colour and their Jewish
+    (OPENING_CUTS: Lajjun-Zir'in) or where the CIA's dashed border is legible but closes on nothing sourced (the
+    corridor); in the Ramle and Acre sub-districts grey only the hex of the place that changed hands (OPENING_CONTESTED,
+    the GeoJSON's contested_places: Yibna, Acre; owner ruling 2 of 16 October 2026 on #686), so Rehovot, Rishon,
+    Nahariya and the CIA's Rishon-Sarafand area keep the 9 July side; the Gaza and Beersheba sub-districts without colour and their Jewish
     settlements' hexes blue (pinned_towns; owner ruling Q3); Jerusalem no-man's land (the period's `jerusalem` rule, in
     tools/control_bake.py).
 Accuracy: about +-1-2 km (a 1:250,000 base, pen lines 0.5-0.7 km wide, a low-resolution scan): source_quality
@@ -367,27 +369,31 @@ CIA_FACES = {"cia_hula": ([("Rosh Pinna", 35.5422, 32.97), ("the 9 July line's s
 WIKI_OPENING = {
     "acre": [WIKI + "Operation_Ben-Ami", WIKI + "Acre,_Israel"],
     "jenin": [WIKI + "Battle_of_Jenin_(1948)", WIKI + "Zir%27in"],
-    "ramle": [WIKI + "Yibna", WIKI + "Battles_of_Latrun_(1948)"],
     "jerusalem": [WIKI + "Burma_Road_(Israel)", WIKI + "Battles_of_Latrun_(1948)", WIKI + "Operation_Pitchfork"],
     "hula": [WIKI + "Al-Nabi_Yusha%27", WIKI + "Al-Malkiyya", WIKI + "Mishmar_HaYarden_(moshava)"],
     "south": [WIKI + "Battle_of_Yad_Mordechai", WIKI + "Battle_of_Nitzanim", WIKI + "Isdud"],
 }
 # Grey, cut by a 1947 sub-district (D-B; no new line), inside the 9 July Israeli area: (sub-district, why, sources).
 OPENING_CUTS = {
-    "contested_opening_acre": ("acre", "the Acre coast: Operation Ben-Ami from 13 May, Acre surrendered on the night of 17/18 May "
-                               "1948 (en.wiki); the 9 July Israeli area of the Acre sub-district", WIKI_OPENING["acre"]),
     "contested_opening_jenin": ("jenin", "Lajjun and Zir'in, taken on 28 May 1948, then the battle of Jenin (31 May - 4 June) "
                                 "(en.wiki); the 9 July Israeli area of the Jenin sub-district", WIKI_OPENING["jenin"]),
-    "contested_opening_ramle": ("ramle", "Yibna, occupied on 5 June 1948 (en.wiki), and the Rishon-Sarafand area that the CIA's "
-                                "18 May map draws inside a dashed (tenuously held) border, whose northern end runs into the "
-                                "lettering by Jaffa and closes on no sourced line; the 9 July Israeli area of the Ramle "
-                                "sub-district", [CIA_MAP["url"]] + WIKI_OPENING["ramle"]),
     "contested_opening_jerusalem": ("jerusalem", "the Bab el Wad - El Qastal - Jerusalem corridor, a single dashed (tenuously "
                                     "held) border along the road on the CIA's 18 May map, which closes on no sourced line (the "
                                     "Legion blocked the Latrun road from 18 May; the Burma Road); the 9 July Israeli area of the "
                                     "Jerusalem sub-district (the city's own hexes are no-man's land: the period's jerusalem rule)",
                                     [CIA_MAP["url"]] + WIKI_OPENING["jerusalem"]),
 }
+# Owner ruling 2 of 16 October 2026 on #686 (cut breadth): in the Ramle and Acre sub-districts grey only the hexes that
+# changed hands, Yibna's and the Acre coast's; Rehovot, Rishon and Nahariya stay blue. Each place's hex (placed as the game
+# places settlements) is contested for the opening period (tools/control_bake.py rule 5): (place, lon, lat, sources, why).
+# Coordinates: localities_1948.yaml (Yibna), settlements_1948.yaml (Acre).
+OPENING_CONTESTED = [
+    ("Yibna", 34.7463, 31.866, [WIKI + "Yibna"],
+     "Yibna, occupied by the Givati Brigade on 5 June 1948 (en.wiki Yibna, revision 1375084946)"),
+    ("Acre", 35.0817, 32.9278, WIKI_OPENING["acre"],
+     "Acre: Operation Ben-Ami from 13 May; attacked on 16 May, the town surrendered on the night of 17/18 May 1948 (en.wiki "
+     "Acre, Israel, revision 1380244094; Operation Ben-Ami, revision 1369980718)"),
+]
 OPENING_SOUTH = ("gaza", "beersheba")
 # Q3 "settlement hexes blue": the Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the
 # 60-km northing whose 1948 site the repository already holds, sourced (settlements_1948.yaml; the ANCHORS above, each at its
@@ -1090,8 +1096,7 @@ def build(isa_pdf: Path, cia_pdf: Path, log=print) -> dict:
         feats.append(feat)
     periods = [
         {"id": "opening", "from": "1948-05-15", "until": "1948-06-11", "snapshot": "opening",
-         "overlays": ["unsourced_south_opening", "contested_opening_hula", "contested_opening_acre", "contested_opening_jenin",
-                      "contested_opening_ramle", "contested_opening_jerusalem"],
+         "overlays": ["unsourced_south_opening", "contested_opening_hula", "contested_opening_jenin", "contested_opening_jerusalem"],
          "legend": "adjusted", "line_date": "1948-07-09", "jerusalem": "no_mans_land",
          "why": "owner decision of 16 October 2026 (#674, option b, '9 July lines, adjusted'): no line for 15 May can be traced "
                 "honestly, so the 9 July line with grey where the front moved before 11 June or the CIA's 18 May map shows a "
@@ -1130,9 +1135,11 @@ def build(isa_pdf: Path, cia_pdf: Path, log=print) -> dict:
                        "the 1950 modus vivendi line: it does not change either side's position (S/1471 Art. III)",
                        "the CIA 18 May 1948 map's strongly-held (solid) border: on the greyscale scan it cannot be told from the "
                        "partition boundary, the roads and the railway (research note control-15-may-1948.md section 9)",
-                       "the CIA 18 May map's dashed (tenuously held) borders by Rishon-Sarafand and along the Jerusalem corridor: "
-                       "legible, but they close on no sourced line (the first runs into the lettering by Jaffa, the second is a single "
-                       "line along the road); their areas are cut by the Ramle and Jerusalem sub-districts instead",
+                       "the CIA 18 May map's dashed (tenuously held) border along the Jerusalem corridor: legible, but a single line "
+                       "along the road that closes on no sourced line; its area is cut by the Jerusalem sub-district instead",
+                       "the CIA 18 May map's dashed (tenuously held) border by Rishon-Sarafand: legible, but it runs into the "
+                       "lettering by Jaffa and closes on no sourced line; not drawn (owner ruling 2 of 16 October 2026 on #686: in "
+                       "the Ramle sub-district only Yibna's hex is grey, Rehovot and Rishon stay blue)",
                        "the CIA 18 May map's dashed loop by the north Dead Sea works: not legible on this copy (one dash, then the "
                        "'Palestine Potash Ltd' lettering); the area keeps the 9 July line's side",
                        "the CIA 18 May map's dashed border from Ramle to Latrun: within about 1.5 km of the 9 July line all the way "
@@ -1150,6 +1157,8 @@ def build(isa_pdf: Path, cia_pdf: Path, log=print) -> dict:
                             "Kfar Darom, Nirim, Be'erot Yitzhak and others are not, their sites having moved after 1948 with no 1948 "
                             "site sourced here; Revivim, south of the 60-km northing, stays without colour as in every 1948 period",
                             "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns). A known limit of the periods: the pin covers whole periods inside its window, so the Yoav period (15-29 October) shows the hex Israeli from 15 October, four days before its capture"],
+        "contested_places": [{"place": n, "lon": x, "lat": y, "from": "1948-05-15", "until": "1948-06-11", "sources": src, "why": w}
+                             for n, x, y, src, w in OPENING_CONTESTED],
         "pinned_towns": [{"place": n, "lon": x, "lat": y, "holder": h, "from": f, "until": u, "source": src, "why": w} for n, x, y, h, f, u, src, w in PINNED],
         "georeference": fit["diag"],
         "georeference_cia": cfit["diag"],
