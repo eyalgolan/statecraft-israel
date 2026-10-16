@@ -6,6 +6,7 @@ line the archive map dates 9 July; the localities stay as of 1948 (no per-villag
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import yaml12
@@ -323,6 +324,15 @@ def test_the_localities_stay_as_of_1948():
 
 # --- #674, owner decision of 16 October 2026, option (b): 15 May - 10 June 1948, "lines of 9 July 1948, adjusted" ------
 
+def host(url: str) -> str:
+    """The URL's host name, so a source check matches the site, not a substring anywhere in the URL. A Wayback Machine copy
+    (web.archive.org/web/<timestamp>/<url>) gives the archived page's host."""
+    u = urlparse(url)
+    if u.hostname == "web.archive.org":
+        return host(u.path.split("/", 3)[3])
+    return u.hostname or ""
+
+
 SUBS = {(q, r): rid for q, r, rid in yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))["hexes"]}
 SUB_KEY = {r["id"]: r["key"] for r in yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8"))["regions"]}
 OPEN, T1 = PERIODS.index("opening") if "opening" in PERIODS else -1, PERIODS.index("truce1")
@@ -400,7 +410,7 @@ def test_the_ramle_and_acre_cuts_grey_only_the_hexes_that_changed_hands():
     assert {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in by.values()} == set().union(*CUT_GREY.values())
     for p in by.values():
         assert (p["from"], p["until"]) == ("1948-05-15", "1948-06-11") and p["why"], p["place"]
-        assert p["sources"] and all("wikipedia.org" in s for s in p["sources"]), p["place"]
+        assert p["sources"] and all(host(s) == "en.wikipedia.org" for s in p["sources"]), p["place"]
     feats = {f["properties"]["id"] for f in SOURCE["features"]}
     assert not feats & {"contested_opening_acre", "contested_opening_ramle"}, "no sub-district cut is drawn for Ramle or Acre"
 
@@ -426,7 +436,7 @@ def test_grey_in_the_opening_period_is_only_where_a_source_puts_it():
             assert (p["shown_from"], p["shown_until"]) == ("1948-05-15", "1948-06-11"), p["id"]
             assert p["sources"] and p["why"], p["id"]
             if p["neutral_kind"] == "contested":
-                assert any("wikipedia.org" in s or "cia.gov" in s for s in p["sources"]), p["id"]
+                assert any(host(s) in ("en.wikipedia.org", "www.cia.gov") for s in p["sources"]), p["id"]
 
 
 def test_jerusalem_is_no_mans_land_in_the_opening_period():
