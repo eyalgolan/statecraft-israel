@@ -61,7 +61,7 @@ namespace Statecraft.Sim
         /// <summary>The cities by id (ordinal).</summary>
         public SortedDictionary<string, City> Cities = new SortedDictionary<string, City>(StringComparer.Ordinal);
         /// <summary>Social cohesion, 0 to 1, from the cities' housing and jobs (R-CITY-005). A placeholder while D-C1 is open:
-        /// no other system reads it and nothing shows it. Hashed only when the state has cities.</summary>
+        /// no other system reads it, and only the top bar shows it (#380). Hashed only when the state has cities.</summary>
         public double Cohesion;
         /// <summary>The movable units by id.</summary>
         public SortedList<int, Unit> Units = new SortedList<int, Unit>();
