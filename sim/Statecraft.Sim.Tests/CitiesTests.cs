@@ -200,9 +200,9 @@ public class CitiesTests
         Assert.Equal(0.8 * 0.6 + 0.2 * 0.5, after.Cohesion, 12);
     }
 
-    /// <summary>Social cohesion is a labelled placeholder while D-C1 is open (an owner question on #375): no effect, morale,
-    /// threshold or display reads it. Two states that differ only in it step to the same state, and no code outside the
-    /// city rules and the state names it.</summary>
+    /// <summary>Social cohesion is a labelled placeholder while D-C1 is open (an owner question on #375): no effect, morale or
+    /// threshold reads it, and only the top bar displays it (#380). Two states that differ only in it step to the same state,
+    /// and no code outside the city rules, the state and the top bar names it.</summary>
     // R-CITY-005
     [Fact]
     public void CohesionFeedsNothingElse()
@@ -219,7 +219,9 @@ public class CitiesTests
             .SelectMany(d => System.IO.Directory.GetFiles(d, "*.cs", System.IO.SearchOption.AllDirectories))
             .Where(f => System.Text.RegularExpressions.Regex.IsMatch(System.IO.File.ReadAllText(f), @"\bCohesion\b"))
             .Select(f => System.IO.Path.GetFileName(f)).OrderBy(f => f, StringComparer.Ordinal);
-        Assert.Equal(new[] { "Cities.cs", "GameState.cs" }, readers);
+        // The top bar shows it (the owner's ruling of 15 October 2026, #380): the HUD's model, presenter and tests read it to
+        // display it, and nothing else in Unity or the sim does.
+        Assert.Equal(new[] { "Cities.cs", "GameState.cs", "HudModel.cs", "HudPresenter.cs", "HudTests.cs" }, readers);
     }
 
     [Fact]

@@ -98,7 +98,7 @@ def test_a_download_with_the_wrong_sha1_is_refused(tmp_path, capsys, as_isolated
 
 def test_every_row_has_a_shipped_file_and_a_crop():
     rows = ei.load_rows()
-    assert len(rows) == 24
+    assert len(rows) == 25   # first_new_yishuv, the objective card (#380)
     for r in rows:
         assert (ei.FOLDER / r["file"]).is_file()
         assert len(r["crop"]) == 3 and len(r["sha1"]) == 40

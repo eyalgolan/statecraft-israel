@@ -75,6 +75,14 @@ MonoBehaviour:
       and cropped"
     sensitive: 0
     sensitivityReviewed: 0
+  - eventId: first_new_yishuv
+    image: {fileID: 2800000, guid: 8622975d7ac09487890f20fcc50bc45f, type: 3}
+    alt: Two men put up a barbed-wire fence on open ground in the first days of Kibbutz
+      Mefalsim, June 1949.
+    credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker
+      Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
   - eventId: first_truce
     image: {fileID: 2800000, guid: e52b94b9d64f24bafa07294fd5068c17, type: 3}
     alt: A quiet, tree-lined street in Jerusalem during a pause in the fighting,
