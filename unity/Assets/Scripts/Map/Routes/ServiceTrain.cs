@@ -28,17 +28,23 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>The yaw (degrees) that turns the model's smokebox to its car's +Z, the way it runs (measured on the far
         /// prefab: ServiceTrainTests.TheLocomotiveLeadsWithItsSmokebox).</summary>
         public const float ModelYaw = 0f;
-        /// <summary>The train's size as a share of the showcase's (RouteTrain.Scale and Chunk): 0.4, about 816 m by 298 m on
-        /// the map, about the rail ribbon's width. At the showcase's own size (about 2 km by 745 m) one rigid body cannot
-        /// follow the Sorek valley's bends: it had to ride up to about 1 km over the gorge to clear the ground (issue #668,
-        /// measured along Lod–Jerusalem).</summary>
+        /// <summary>The train's length as a share of the showcase's locomotive and tender (RouteTrain.Scale): 0.4, about 816 m
+        /// on the map (coordinator, 16 October 2026). At the showcase's own size (about 2 km by 745 m) one rigid body cannot
+        /// follow the Sorek valley's bends (issue #668, measured along Lod–Jerusalem).</summary>
         public const float ModelSize = 0.4f;
+        /// <summary>The train's articulated cars, Tal's locomotive and three coaches, each a quarter of its length (about
+        /// 204 m): the owner's ruling for #668 (16 October 2026, "ride the track, cut walls"), measured against one rigid car.</summary>
+        public const int Cars = 4;
+        /// <summary>Each car's width: 0.9 of the rail ribbon's narrowest drawn width (RouteLayer.MinWidthShare of
+        /// RouteLayer.RailWidthM, 170 m on the Sorek's gorge floor), about 153 m, so a car fits the track it rides.</summary>
+        public const float CarWidthM = 0.9f * RouteLayer.MinWidthShare * RouteLayer.RailWidthM;
 
         /// <summary>How the train asks for its model: the game's stream. A test seam (internal; the tests see it through
         /// InternalsVisibleTo), so the tests can answer with a prefab or with nothing.</summary>
         internal static Action<string, CollectionDetail, Action<GameObject?>> Request = CollectionStream.Request;
 
         List<Vector2> line = new List<Vector2>();
+        MapRuntimeAssets? assets;
         TerrainData? data;
         Vector3 origin, startAt, endAt;
         DateTime shownAt;
@@ -53,13 +59,15 @@ namespace Statecraft.Game.Map.Routes
 
         /// <summary>Adds the (empty) service train under <paramref name="parent"/> for <paramref name="route"/>'s service,
         /// shown as at <paramref name="date"/>.</summary>
-        public static ServiceTrain Create(Transform parent, GeoFrame frame, RoutePath route, TerrainData data, Vector3 origin, DateTime date)
+        public static ServiceTrain Create(Transform parent, MapRuntimeAssets assets, GeoFrame frame, RoutePath route, TerrainData data,
+            Vector3 origin, DateTime date)
         {
             var s = route.Service ?? throw new ArgumentException($"'{route.Id}' has no service", nameof(route));
             var go = new GameObject(Name);
             go.transform.SetParent(parent, false);
             var t = go.AddComponent<ServiceTrain>();
             t.line = RouteLayer.World(frame, route);
+            t.assets = assets;
             t.data = data; t.origin = origin;
             t.startAt = frame.ToWorld(s.StartLon, s.StartLat, 0);
             t.endAt = frame.ToWorld(s.EndLon, s.EndLat, 0);
@@ -83,13 +91,13 @@ namespace Statecraft.Game.Map.Routes
         void OnModel(GameObject? prefab)
         {
             if (this == null) return;   // the map was rebuilt before the model came; the new map asks again
-            if (prefab == null || data == null)
+            if (prefab == null || data == null || assets == null)
             {
                 failed = true;
                 Debug.LogWarning($"TRAIN: the locomotive ({ModelId}) did not stream; no train runs on {RouteLayer.TrainRoute}, and the map plays on without it.");
                 return;
             }
-            Train = RouteTrain.SpawnModel(transform, prefab, line, data, origin, startAt, endAt, ModelYaw, ModelSize);
+            Train = RouteTrain.SpawnModel(transform, assets, prefab, line, data, origin, startAt, endAt, ModelYaw, ModelSize, Cars, CarWidthM);
             Train.gameObject.SetActive(shownAt >= From);
             Debug.Log($"TRAIN: the steam train runs on {RouteLayer.TrainRoute} from {From:yyyy-MM-dd} ({ModelId}, {Train.Length:0} m)");
         }

@@ -196,7 +196,7 @@ namespace Statecraft.Game.Map.Routes
                 // fallback carries none, or it was refused with a warning): no train.
                 if (trainRoute.Service != null)
                 {
-                    var service = ServiceTrain.Create(root.transform, frame, trainRoute, data, origin, date);
+                    var service = ServiceTrain.Create(root.transform, assets, frame, trainRoute, data, origin, date);
                     assets.OnTeardown(VisualToggles.Register(TrainToggle, on => { if (service != null) service.gameObject.SetActive(on); }));
                 }
             }

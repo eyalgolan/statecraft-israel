@@ -13,9 +13,10 @@ namespace Statecraft.Game.Map.Routes
     /// A still train (screenshots, editor renders) stands at <see cref="StillAt"/>, heading inland, every run alike. Cheap:
     /// six transforms set per frame from a precomputed table; no physics, no allocation after Spawn. A showcase for the
     /// promo frames and `?train` / `?units` (RouteLayer.ModeFor, review I1): the run is ambience, not a sourced timetable.
-    /// Normal play's train is <see cref="SpawnModel"/>'s (issue #668, <see cref="ServiceTrain"/>): one streamed model,
-    /// Tal's locomotive and tender, on the stretch and from the date the content gives, kept clear of the ground under
-    /// its whole body (<see cref="BodyLift"/>).</summary>
+    /// Normal play's train is <see cref="SpawnModel"/>'s (issue #668, <see cref="ServiceTrain"/>): Tal's streamed
+    /// locomotive and tender leading three of this showcase's coaches, four articulated cars on the stretch and from the
+    /// date the content gives, each riding the line (owner, 16 October 2026: "ride the track, cut walls";
+    /// <see cref="MaxLiftM"/>).</summary>
     public sealed class RouteTrain : MonoBehaviour
     {
         /// <summary>Times real size along the line, measured on the promo's gameplay frame: its six-car train is about 250 px
@@ -85,10 +86,16 @@ namespace Statecraft.Game.Map.Routes
                 var mid = At(c);
                 var fwd = front - back;
                 var axis = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : Vector3.forward;
-                if (clearGround) mid.y += BodyLift(mid, axis, carHalf[k]);
+                if (clearGround) mid.y += Mathf.Min(BodyLift(mid, axis, carHalf[k]), MaxLiftM);
                 cars[k].SetPositionAndRotation(mid, Quaternion.LookRotation(axis, Vector3.up));
             }
         }
+
+        /// <summary>The most (m) a service-train car is raised off the line to clear the ground under it: 5 m. The owner's
+        /// ruling for #668 (16 October 2026: "ride the track, cut walls"): every car rides the line, and where the Sorek
+        /// valley's walls rise under a car's sides on the tightest bends, the sides pass into them, as the rail ribbon's
+        /// own edges do in a cutting (RouteLayer.RiseToleranceM), instead of the car floating over them.</summary>
+        public const float MaxLiftM = 5f;
 
         /// <summary>Samples along a model car's body (each side of its middle) and across it (each side of its centre line)
         /// where <see cref="BodyLift"/> reads the ground.</summary>
@@ -97,8 +104,9 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>How far (m) to raise a car whose middle is at <paramref name="mid"/> (on the line, at the ride height) and
         /// whose straight body runs along <paramref name="dir"/> for <paramref name="half"/> each way, so its base stays
         /// <see cref="RideM"/> above the ground everywhere under it: the line's own points carry that height, but a rigid
-        /// body about 2 km long cuts across a bend or a rise of the Sorek valley's grade (issue #668). 0 where the ground
-        /// stays under it. 205 terrain reads (41 along by 5 across) per frame for the one car.</summary>
+        /// car cuts across a bend or a rise of the Sorek valley's grade (issue #668). 0 where the ground stays under it.
+        /// Place raises a car by at most <see cref="MaxLiftM"/> of it. 205 terrain reads (41 along by 5 across) per car per
+        /// frame.</summary>
         public float BodyLift(Vector3 mid, Vector3 dir, float half)
         {
             if (terrain == null) return 0f;
@@ -193,40 +201,84 @@ namespace Statecraft.Game.Map.Routes
         /// gap and its tender (TrainModels), so both trains are one size on the map.</summary>
         public const float ModelRealLengthM = TrainModels.LocoLengthM + TrainModels.GapM + TrainModels.TenderLengthM;
 
-        /// <summary>Normal play's train (issue #668): one car, an instance of <paramref name="model"/> (Tal's streamed
-        /// locomotive and tender, <see cref="ServiceTrain"/>), sized to <see cref="ModelRealLengthM"/> at <see cref="Scale"/>
-        /// along and <see cref="Chunk"/> more across and up, as the showcase's cars, times <paramref name="sizeShare"/>;
-        /// shuttling, running, between the line's points nearest <paramref name="startAt"/> and <paramref name="endAt"/> (world). The model's own frame is turned so
-        /// its length runs along +Z (<paramref name="modelYaw"/>, degrees, then to its long horizontal axis) with its base on
-        /// the car's origin. Its meshes and materials stay the stream's (shared, not owned).</summary>
-        public static RouteTrain SpawnModel(Transform parent, GameObject model, IReadOnlyList<Vector2> line, TerrainData data,
-            Vector3 origin, Vector3 startAt, Vector3 endAt, float modelYaw, float sizeShare)
+        /// <summary>Normal play's train (issue #668): <paramref name="cars"/> articulated cars of equal length, together
+        /// <see cref="ModelRealLengthM"/> at <see cref="Scale"/> times <paramref name="sizeShare"/> long and each
+        /// <paramref name="carWidthM"/> wide (its height scaled with its width): first an instance of <paramref name="model"/>
+        /// (Tal's streamed locomotive and tender, <see cref="ServiceTrain"/>), then this showcase's coaches
+        /// (<see cref="TrainModels.Coach"/>, their meshes, palette and material owned by <paramref name="assets"/>). Each car is
+        /// placed at its own distance along the line, faces along it and rides it (<see cref="Place"/>, <see cref="MaxLiftM"/>);
+        /// the train shuttles, the locomotive leading each way, between the line's points nearest <paramref name="startAt"/>
+        /// and <paramref name="endAt"/> (world). The model's own frame is turned so its length runs along +Z
+        /// (<paramref name="modelYaw"/>, degrees, then to its long horizontal axis) with its base on the car's origin; its
+        /// meshes and materials stay the stream's (shared, not owned).</summary>
+        public static RouteTrain SpawnModel(Transform parent, MapRuntimeAssets assets, GameObject model, IReadOnlyList<Vector2> line,
+            TerrainData data, Vector3 origin, Vector3 startAt, Vector3 endAt, float modelYaw, float sizeShare, int cars, float carWidthM)
         {
             var train = NewTrain(parent, line, data, origin);
             float a = train.Nearest(new Vector2(startAt.x, startAt.z)), b = train.Nearest(new Vector2(endAt.x, endAt.z));
             train.startS = Mathf.Min(a, b); train.endS = Mathf.Max(a, b);
+            float total = ModelRealLengthM * Scale * sizeShare, carLength = total / Mathf.Max(cars, 1);
 
-            var car = new GameObject("Locomotive");
-            car.transform.SetParent(train.transform, false);
-            var body = UnityEngine.Object.Instantiate(model, car.transform, false);
+            // The locomotive: the model turned to +Z, its base on the car's origin, sized to the car.
+            var loco = new GameObject("Locomotive");
+            loco.transform.SetParent(train.transform, false);
+            var body = UnityEngine.Object.Instantiate(model, loco.transform, false);
             body.name = model.name;
             body.transform.localRotation = Quaternion.Euler(0f, modelYaw, 0f) * body.transform.localRotation;
-            var size = LocalBounds(car.transform, body);
+            var size = LocalBounds(loco.transform, body);
             if (size.size.x > size.size.z)
             {
                 body.transform.localRotation = Quaternion.Euler(0f, 90f, 0f) * body.transform.localRotation;
-                size = LocalBounds(car.transform, body);
+                size = LocalBounds(loco.transform, body);
             }
             body.transform.localPosition -= new Vector3(size.center.x, size.min.y, size.center.z);
-            float k = ModelRealLengthM * Scale * sizeShare / Mathf.Max(size.size.z, 1e-4f);
-            car.transform.localScale = new Vector3(k * Chunk, k * Chunk, k);
-            float half = size.size.z * k / 2f;
-            train.cars.Add(car.transform); train.carOffset.Add(half); train.carHalf.Add(half);
-            train.length = 2f * half;
-            train.carHalfWidth = size.size.x * k * Chunk / 2f;
+            loco.transform.localScale = CarScale(size.size, carLength, carWidthM);
+            train.AddCar(loco.transform, carLength);
+
+            // The coaches: the showcase's painted miniatures, one mesh per coach as the showcase's own consist.
+            if (cars > 1)
+            {
+                var template = Resources.Load<Material>(UnitMaterials.MiniatureResource)
+                    ?? throw new InvalidOperationException($"Resources/{UnitMaterials.MiniatureResource}.mat is missing (run UnitMaterialAssets.Create)");
+                var palette = assets.Own(UnitPalette.MakeTexture(readable: false));
+                var paint = assets.Own(new Material(template) { name = "Service train (palette)" });
+                paint.SetTexture("_BaseMap", palette);
+                for (int k = 1; k < cars; k++)
+                {
+                    var mesh = assets.Own(TrainModels.Coach($"ServiceCoach{k}"));
+                    var bounds = mesh.bounds;
+                    mesh.UploadMeshData(true);
+                    var coach = new GameObject($"Coach{k}");
+                    coach.transform.SetParent(train.transform, false);
+                    var shape = new GameObject("Body");
+                    shape.transform.SetParent(coach.transform, false);
+                    shape.transform.localPosition = -new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+                    shape.AddComponent<MeshFilter>().sharedMesh = mesh;
+                    shape.AddComponent<MeshRenderer>().sharedMaterial = paint;
+                    coach.transform.localScale = CarScale(bounds.size, carLength, carWidthM);
+                    train.AddCar(coach.transform, carLength);
+                }
+            }
+            train.length = total;
+            train.carHalfWidth = carWidthM / 2f;
             train.terrain = data; train.terrainOrigin = origin; train.clearGround = true;
             var (h, d) = train.HeadAt(0f); train.Place(h, d);
             return train;
+        }
+
+        /// <summary>The scale that makes a shape of <paramref name="size"/> (its length along Z) <paramref name="length"/> long
+        /// and <paramref name="width"/> wide, its height scaled with its width.</summary>
+        static Vector3 CarScale(Vector3 size, float length, float width)
+        {
+            float across = width / Mathf.Max(size.x, 1e-4f);
+            return new Vector3(across, across, length / Mathf.Max(size.z, 1e-4f));
+        }
+
+        /// <summary>Adds a car <paramref name="length"/> long behind the cars already in the train, nose to tail.</summary>
+        void AddCar(Transform car, float length)
+        {
+            float offset = carOffset.Count == 0 ? 0f : carOffset[carOffset.Count - 1] + carHalf[carHalf.Count - 1];
+            cars.Add(car); carOffset.Add(offset + length / 2f); carHalf.Add(length / 2f);
         }
 
         /// <summary>The bounds of <paramref name="body"/>'s renderers in <paramref name="frame"/>'s local space.</summary>

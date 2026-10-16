@@ -134,8 +134,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (refs #668, #35; maintainer decision on #35, 16 October 2026). It runs from Lod to Jerusalem, sourced in
   `content/map/routes_1948.yaml` (Israel Railways, 1998), with the date awaiting the human check. Tel Aviv South to Lod
   is in the content too. It rests on Wikipedia alone, so it runs only once a person signs it off.
-  The model is Tal's (@pixelrenderai-hash) locomotive and tender from The 1948 Collection. It streams only once the game
-  date reaches the service, never at boot. If it does not stream, the game plays on without it and logs one warning.
+  The model is Tal's (@pixelrenderai-hash) locomotive and tender from The 1948 Collection. It leads three of the
+  showcase's coaches, four articulated cars that ride the track (owner, 16 October 2026: "ride the track, cut walls"):
+  on the Sorek valley's tightest bends their sides pass into the gorge walls. It streams only once the game date reaches
+  the service, never at boot. If it does not stream, the game plays on without it and logs one warning.
 - Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins

@@ -144,8 +144,10 @@ public class ServiceTrainTests
             asked[0].done(FarPrefab());
             Assert.IsNotNull(service.Train);
             Assert.IsTrue(service.Train.gameObject.activeInHierarchy);
-            Assert.AreEqual(1, service.Train.Cars.Count, "one car: Tal's locomotive and tender");
-            Assert.IsNotNull(service.Train.Cars[0].GetComponentInChildren<Renderer>(), "the streamed model is drawn");
+            Assert.AreEqual(ServiceTrain.Cars, service.Train.Cars.Count, "Tal's locomotive and three coaches (owner, \"ride the track, cut walls\")");
+            Assert.AreEqual("Locomotive", service.Train.Cars[0].name, "the locomotive leads");
+            Assert.AreEqual(FarPrefab().name, service.Train.Cars[0].GetChild(0).name, "the streamed model is the locomotive");
+            foreach (var car in service.Train.Cars) Assert.IsNotNull(car.GetComponentInChildren<Renderer>(), car.name);
 
             RouteLayer.ShowAt(map, new DateTime(1951, 1, 1));
             Assert.AreEqual(1, asked.Count, "asked for once");
@@ -253,10 +255,11 @@ public class ServiceTrainTests
             for (float t = 0f; t < 2f * leg; t += 2f)
             {
                 var (h, d) = train.HeadAt(t); train.Place(h, d);
-                var c = train.Cars[0];
-                foreach (var tip in new[] { c.position + c.forward * train.Length / 2f, c.position - c.forward * train.Length / 2f })
-                    Assert.Greater((Flat(tip) - W(map, TelAvivSouth)).magnitude, lodToTelAvivSouth - 1500f,
-                        $"at {t:0} s the train reaches onto Tel Aviv South to Lod");
+                float carHalf = train.Length / train.Cars.Count / 2f;
+                foreach (var c in train.Cars)
+                    foreach (var tip in new[] { c.position + c.forward * carHalf, c.position - c.forward * carHalf })
+                        Assert.Greater((Flat(tip) - W(map, TelAvivSouth)).magnitude, lodToTelAvivSouth - 1500f,
+                            $"at {t:0} s {c.name} reaches onto Tel Aviv South to Lod");
             }
         }
         finally { Object.DestroyImmediate(map.gameObject); }
