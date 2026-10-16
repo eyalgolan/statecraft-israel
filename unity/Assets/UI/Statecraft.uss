@@ -162,10 +162,14 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-gutter, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). Seven meters do not
-   fit a phone's width (#380): they wrap to two lines (the owner's choice, 16 October 2026), and the bar is a meter line
+   fit a phone's width with the widest values (#380): they wrap to two lines (the owner's choice, 16 October 2026), and the bar is a meter line
    (96 px) taller than the six meters' 312 px. */
 .hud-three-row .top-bar { height: 408px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
+/* Each meter a quarter of the row, so the seven always take two lines (four, then three) and the bar's second line is
+   never an empty band (a phone's turn-1 values would otherwise fit one line). A quarter (~190 px) is wider than the widest
+   meter there (~154 px). */
+.hud-three-row .meter { flex-basis: 25%; flex-grow: 0; flex-shrink: 0; }
 .hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 424px; }
 /* The event layer gives up the same 96 px at its bottom, so the centred card stays where the six meters left it, clear of
    the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
