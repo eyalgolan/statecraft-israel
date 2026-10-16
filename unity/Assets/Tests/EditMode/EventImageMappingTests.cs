@@ -21,6 +21,9 @@ public class EventImageMappingTests
 
     /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate.</summary>
     static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks" };
+    /// <summary>Photographs whose ASSETS.yaml row waits for the owner's sign-off (#380, "What needs maintainer sign-off"). When the
+    /// owner signs one off, its row becomes verified and its name leaves this list.</summary>
+    static readonly string[] AwaitingSignOff = { "first_new_yishuv" };
     static readonly string[] SensitivePhotos =
         { "altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
 
@@ -136,7 +139,8 @@ public class EventImageMappingTests
             Assert.AreEqual(r.Licence, Get(rule!, "licence"), glob);
             Assert.AreEqual(r.Commons, Get(rule!, "source"), glob);
             Assert.AreEqual(r.Credit, Get(rule!, "credit"), glob);
-            Assert.AreEqual("verified", Get(rule!, "status"), glob);   // the owner's sign-off of 2026-10-11 (docs/event-images.md)
+            // The owner's sign-off of 2026-10-11 (docs/event-images.md) covers every picture but the ones still waiting for it.
+            Assert.AreEqual(AwaitingSignOff.Contains(r.Event) ? "owner-verify" : "verified", Get(rule!, "status"), glob);
             Assert.AreEqual("graded and cropped", Get(rule!, "adapted"), glob);
             if (r.Sensitive) StringAssert.Contains("sensitivity review", Get(rule!, "note"), glob);
         }

@@ -192,7 +192,7 @@ public class BuildGateTests
             StringAssert.IsMatch("\"shareable\":\\s*false", dev);
             foreach (var id in SensitivePhotos)
                 StringAssert.IsMatch($"\"event_id\":\\s*\"{id}\",\\s*\"sensitive\":\\s*true,\\s*\"sensitivity_reviewed\":\\s*true", dev);
-            Assert.AreEqual(24, System.Text.RegularExpressions.Regex.Matches(dev, "\"event_id\"").Count);
+            Assert.AreEqual(25, System.Text.RegularExpressions.Regex.Matches(dev, "\"event_id\"").Count);   // first_new_yishuv came with #380
             StringAssert.IsMatch("\"shareable\":\\s*true", (string)json.Invoke(null, new object?[] { photos, true })!);
             StringAssert.IsMatch("\"photos\":\\s*\\[\\s*\\]", (string)json.Invoke(null, new object?[] { null, true })!);
         }
