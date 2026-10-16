@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import numpy as np
 import pytest
 from PIL import Image
@@ -178,7 +181,7 @@ def test_the_material_classifier_labels_each_known_patch():
 
 def test_the_wood_land_and_sand_luma_thresholds_are_pinned():
     assert (ac.NEUTRAL_SAT, ac.WOOD_LUMA, ac.SAND_LUMA) == (0.08, 0.30, 0.55)
-    assert ac.GUARDED_MATERIALS == ("sand", "sea", "wood")
+    assert ac.GUARDED_MATERIALS == ("sand", "sea") and ac.INFO_MATERIALS == ("wood",)   # wood is not like-for-like
     assert (ac.MATERIAL_TOLERANCE, ac.MIN_MATERIAL_SHARE) == (0.2, 0.02)
     assert ac.material_band(0.381) == pytest.approx((0.3048, 0.4572))
     assert ac.material_band(-0.254) == pytest.approx((-0.3048, -0.2032))
@@ -198,7 +201,7 @@ def test_a_warmer_sand_fails_the_sand_guard_although_the_whole_frame_warmth_is_u
     shot = stripes([PATCH["sea"], (229, 173, 119), (50, 44, 41)])
     assert ac.metrics(shot)["warmth"] == pytest.approx(ac.metrics(promo)["warmth"], abs=1e-6)
     g = ac.material_guard(shot, promo)
-    assert not g["sand"]["ok"] and not g["wood"]["ok"] and g["sea"]["ok"]
+    assert set(g) == {"sand", "sea"} and not g["sand"]["ok"] and g["sea"]["ok"]
     assert g["sand"]["ours"] > g["sand"]["hi"]
 
 
@@ -214,13 +217,77 @@ def test_a_material_too_rare_in_either_image_raises_instead_of_passing():
         ac.material_guard(Image.fromarray(a, "RGB"), full)
 
 
-def test_main_prints_the_diorama02_material_verdicts_and_the_whole_frame_warmth_as_information(tmp_path, capsys):
+def material_shots(tmp_path, sand=PATCH["sand"], sea=PATCH["sea"]):
     promo = tmp_path / "promo.png"; stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270)).save(promo)
     shots = tmp_path / "shots"; shots.mkdir()
-    stripes([PATCH["sea"], (229, 173, 119), PATCH["wood"]], (480, 270)).save(shots / "diorama02.png")
-    log = tmp_path / "art-log.tsv"
-    assert ac.main(["art_compare.py", str(shots), "t", "--log", str(log)], root=tmp_path,
-                   promos={"gameplay03": promo, "diorama02": promo}) == 0
+    stripes([sea, sand, PATCH["wood"]], (480, 270)).save(shots / "diorama02.png")
+    return ac.main(["art_compare.py", str(shots), "t", "--log", str(tmp_path / "art-log.tsv")], root=tmp_path,
+                   promos={"gameplay03": promo, "diorama02": promo})
+
+
+def test_main_passes_when_every_gating_material_is_in_band(tmp_path, capsys):
+    assert material_shots(tmp_path) == 0
     out = capsys.readouterr().out
-    assert "MATERIAL diorama02 sand" in out and "FAIL" in out and "MATERIAL diorama02 sea" in out
-    assert "whole-frame warmth (information only)" in out
+    assert "MATERIAL diorama02 sand" in out and "PASS" in out and "GUARD FAIL" not in out
+    assert "whole-frame warmth (information only)" in out and "MATERIAL diorama02 wood" in out and "information only" in out
+
+
+def test_a_material_guard_fail_exits_3_and_names_the_material_its_value_and_band(tmp_path, capsys):
+    assert material_shots(tmp_path, sand=(229, 173, 119)) == ac.EXIT_GUARD_FAIL == 3
+    fails = [l for l in capsys.readouterr().out.splitlines() if l.startswith("GUARD FAIL: ")]
+    assert len(fails) == 1 and fails[0].startswith("GUARD FAIL: sand 0.4314 vs [0.2824, 0.4235]")
+
+
+def test_a_gating_material_missing_from_the_capture_exits_4_not_3(tmp_path, capsys):
+    assert material_shots(tmp_path, sea=PATCH["land"]) == ac.EXIT_UNMEASURABLE == 4
+    assert "cannot measure" in capsys.readouterr().out
+
+
+STUB_UV = r"""#!/usr/bin/env bash
+# A stand-in for uv: Unity (through machine_lock) and the browser do nothing; web_check writes each pose's PNG;
+# art_compare writes a compare image, prints what STUB_ART_OUT holds and exits STUB_ART_EXIT.
+shift
+case "$1" in
+  tools/machine_lock.py) exit 0 ;;
+  tools/web_check.py) while [[ $# -gt 0 && "$1" != --shots ]]; do shift; done
+    for p in gameplay03 diorama02 hero06judea hero06negev; do echo x > "$2/$p.png"; done ;;
+  tools/art_compare.py) mkdir -p "$2/editor"; echo x > "$2/gameplay03-compare.png"; echo x > "$2/editor/a-compare.png"
+    printf '%b' "$STUB_ART_OUT"; exit "$STUB_ART_EXIT" ;;
+esac
+"""
+
+
+def run_checkpoint(tmp_path, art_exit, art_out=""):
+    """tools/art_checkpoint.sh in a scratch git repository holding only what it reads, with uv stubbed (no Unity)."""
+    import shutil
+    import subprocess
+    repo, tools = tmp_path / "repo", Path(__file__).resolve().parents[1]
+    for rel, text in {"unity/ProjectSettings/QualitySettings.asset": "q\n", "unity/Builds/Web-disabled/index.html": "x\n",
+                      "sim/Statecraft.Sim.Tests/golden/manifest.txt": "hash1950 aa\nhash1952 bb\n"}.items():
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True); (repo / rel).write_text(text)
+    (repo / "tools").mkdir(); shutil.copy(tools / "art_checkpoint.sh", repo / "tools")
+    (repo / "unity/Assets/Scripts/Map").mkdir(parents=True)
+    shutil.copy(tools.parent / "unity/Assets/Scripts/Map/PromoPose.cs", repo / "unity/Assets/Scripts/Map")
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@example.com"]
+    subprocess.run(git + ["init", "-q"], check=True); subprocess.run(git + ["add", "-A"], check=True)
+    subprocess.run(git + ["commit", "-qm", "t"], check=True)
+    stub = tmp_path / "bin"; stub.mkdir(); (stub / "uv").write_text(STUB_UV); (stub / "uv").chmod(0o755)
+    env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}", "UNITY": "/bin/true",
+           "STUB_ART_EXIT": str(art_exit), "STUB_ART_OUT": art_out}
+    return subprocess.run(["bash", "tools/art_checkpoint.sh", "--no-build", "cp"], cwd=repo, env=env, capture_output=True, text=True)
+
+
+def test_the_checkpoint_completes_then_lists_each_guard_fail_and_exits_3(tmp_path):
+    r = run_checkpoint(tmp_path, 3, "GUARD FAIL: sand 0.2948 vs [0.3049, 0.4574] in diorama02\nGUARD FAIL: sea -0.1729 vs [-0.3117, -0.2078] in diorama02\n")
+    assert r.returncode == 3, r.stderr
+    assert "ART CHECKPOINT cp:" in r.stdout
+    tail = r.stdout[r.stdout.index("ART CHECKPOINT cp:"):]
+    assert "GUARD FAIL: sand 0.2948 vs [0.3049, 0.4574] in diorama02" in tail and "GUARD FAIL: sea -0.1729" in tail
+
+
+def test_the_checkpoint_passes_and_stops_on_genuine_errors_as_before(tmp_path):
+    ok = run_checkpoint(tmp_path / "ok", 0)
+    assert ok.returncode == 0 and "ART CHECKPOINT cp:" in ok.stdout and "GUARD FAIL" not in ok.stdout
+    for code in (1, 2, 4):          # no pose matched or a crash, a blank capture, a material too rare to measure
+        r = run_checkpoint(tmp_path / str(code), code)
+        assert r.returncode == code and "ART CHECKPOINT" not in r.stdout, code

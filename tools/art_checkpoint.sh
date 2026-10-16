@@ -58,5 +58,19 @@ for pose in $poses; do
 done
 shared "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod MapCapture.Promo -captureDir "$root/$out/editor" ${units_arg[@]+"${units_arg[@]}"} ${proof_arg[@]+"${proof_arg[@]}"} -logFile "$root/unity-capture-promo.log"
 git checkout -- unity/ProjectSettings/QualitySettings.asset   # SetQualityLevel may have written m_CurrentQuality (no unstaged edits: checked above)
-uv run tools/art_compare.py "$out" "$name${units_query:+-units}${proof_query:+-borderproof}" --log "$main_root/captures/visual/art-log.tsv"
+# art_compare's exit codes (tools/art_compare.py): 0 passed; 1 no screenshot matched a pose, or a crash; 2 a blank
+# capture; 3 a material guard FAIL (#695: the art is off its promo-02 band); 4 a material too rare to measure. 1, 2 and 4
+# stop here as any error does. 3 lets the checkpoint finish (its images are what the owner reviews), then lists every
+# "GUARD FAIL: <material> <value> vs <band>" line and exits 3.
+compare_out="$out/art-compare.out"
+set +e
+uv run tools/art_compare.py "$out" "$name${units_query:+-units}${proof_query:+-borderproof}" --log "$main_root/captures/visual/art-log.tsv" | tee "$compare_out"
+compare=${PIPESTATUS[0]}
+set -e
+[[ $compare == 0 || $compare == 3 ]] || { echo "art_checkpoint: art_compare exited $compare" >&2; exit "$compare"; }
 echo "ART CHECKPOINT $name: $(ls "$out"/*-compare*.png "$out"/editor/*-compare*.png | tr '\n' ' ')"
+if [[ $compare == 3 ]]; then
+  echo "art_checkpoint: the material guards failed (docs/visual-v1.md, \"diorama02 warmth per material\"):"
+  grep '^GUARD FAIL: ' "$compare_out"
+  exit 3
+fi

@@ -15,9 +15,10 @@ short commit (both "-" outside a git checkout), the image's absolute path, satur
 8x8x8 RGB histograms; 0 = same palette, 1 = disjoint). Every number leaves out HUD_MASK's boxes (the HUD) of both
 images (pass mask=() for the whole frame), and main() names its rows <checkpoint-name>-hudmask, so they cannot be
 mistaken for the whole-frame rows written before the mask. For diorama02 it also prints a MATERIAL line per
-material (sand, sea, wood) with its warmth against its band from promo 02, PASS or FAIL (#695), and the whole-frame
-warmth as information. The numbers inform the owner's review. Exit code 2 when a
-screenshot is near-uniform (luma std < 0.01: a black or blank WebGL capture), 1 when no screenshot matched a pose."""
+gating material (sand, sea) with its warmth against its band from promo 02, PASS or FAIL (#695), and wood and the
+whole-frame warmth as information. Exit codes (EXIT_GUARD_FAIL and its neighbours below): 0 all passed, 1 no screenshot
+matched a pose, 2 a near-uniform screenshot (luma std < 0.01: a black or blank WebGL capture), 3 a gating material out
+of its band, 4 a gating material too rare to measure."""
 import argparse
 import subprocess
 import sys
@@ -56,7 +57,15 @@ HUD_MASK: Mask = (
 # luma is 0.13-0.26 (our table 0.18-0.20), the hills' 0.35-0.50 and the Negev sand's 0.70-0.71.
 MATERIALS = ("neutral", "sea", "green", "wood", "land", "sand")
 NEUTRAL_SAT, WOOD_LUMA, SAND_LUMA = 0.08, 0.30, 0.55
-GUARDED_MATERIALS = ("sand", "sea", "wood")
+GUARDED_MATERIALS = ("sand", "sea")
+# Printed, not gated: promo 02's dark backdrop is mostly under HUD_MASK's top-bar box, so its "wood" is mostly the frame's
+# walnut and terrain shadow while ours is mostly the table, which is not like-for-like.
+INFO_MATERIALS = ("wood",)
+# main()'s exit codes: 0 every check passed; 1 no screenshot matched a pose (an uncaught crash also exits 1); 2 a blank
+# capture; 3 a gating material outside its band (EXIT_GUARD_FAIL; each failure printed as "GUARD FAIL: ..."); 4 a gating
+# material too rare to measure in the screenshot or the promo (EXIT_UNMEASURABLE). 1, 2 and 4 are errors in the capture
+# or the setup, 3 is the art missing its target.
+EXIT_GUARD_FAIL, EXIT_UNMEASURABLE = 3, 4
 # Each guarded material's band is promo 02's mean warmth (R - B) for it, plus or minus MATERIAL_TOLERANCE of its size: the
 # old whole-frame band [0.087, 0.145] was 40% of its promo anchor wide, here centred on the promo, so either way is a miss.
 MATERIAL_TOLERANCE = 0.2
@@ -194,7 +203,7 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
     a = ap.parse_args(argv[1:])
     log = a.log or root / "captures" / "visual" / "art-log.tsv"
     log.parent.mkdir(parents=True, exist_ok=True)
-    rows, uniform = 0, []
+    rows, uniform, unmeasurable, guard_fails = 0, [], [], []
     branch, commit = source_identity(root)
     for path in sorted(a.shots.rglob("*.png")):
         if "-compare" in path.stem:
@@ -219,16 +228,33 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
         print("ART " + title)
         if pose == "diorama02":
             print(f"MATERIAL {pose} whole-frame warmth (information only) {m['warmth']:.4f} vs promo {p['warmth']:.4f}")
-            for name, g in material_guard(shot, promo).items():
+            try:
+                guard = material_guard(shot, promo)
+            except ValueError as e:
+                unmeasurable.append(path)
+                print(f"FAIL: {path}: {e}")
+                continue
+            for name, g in guard.items():
                 print(f"MATERIAL {pose} {name} warmth {g['ours']:.4f} vs promo {g['promo']:.4f} band "
                       f"[{g['lo']:.4f}, {g['hi']:.4f}] {'PASS' if g['ok'] else 'FAIL'}")
+                if not g["ok"]:
+                    guard_fails.append(f"GUARD FAIL: {name} {g['ours']:.4f} vs [{g['lo']:.4f}, {g['hi']:.4f}] in {path}")
+            ours, theirs = material_warmth(shot), material_warmth(promo)
+            for name in INFO_MATERIALS:
+                o, t = ours[name][1], theirs[name][1]
+                print(f"MATERIAL {pose} {name} warmth {'-' if o is None else f'{o:.4f}'} vs promo "
+                      f"{'-' if t is None else f'{t:.4f}'} (information only: not like-for-like)")
         rows += 1
+    for line in guard_fails:
+        print(line)
     if uniform:
         return 2
+    if unmeasurable:
+        return EXIT_UNMEASURABLE
     if rows == 0:
         print(f"no screenshot named after a pose ({', '.join(promos)}) under {a.shots}")
         return 1
-    return 0
+    return EXIT_GUARD_FAIL if guard_fails else 0
 
 
 if __name__ == "__main__":
