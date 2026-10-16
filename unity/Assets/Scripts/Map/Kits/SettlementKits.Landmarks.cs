@@ -152,9 +152,15 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The Old City's centre (its sourced coordinate) and the half side (m) of its symbolic walled square: 4 km
         /// across, about 4 times the real Old City (0.9 km^2), so the walls hold the Haram and a quarter of stone houses at
         /// the kits' scale. In metres, not scaled with the kits: the drawn 1948 roads fix where the Haram can stand
-        /// (docs/visual-v1.md, "Towns round 2"). Those roads ran round the real walls; at this size they cross inside the
-        /// square, through gaps in the walls.</summary>
-        static (Vector2 centre, float half) OldCity(KitGround g) => (World(g, 35.23417, 31.77667), 2000f);
+        /// (docs/visual-v1.md, "Towns round 2"). Those roads ran round the real walls; at this size their real lines fall
+        /// inside the square, so the map cuts each road at the walls (RouteLayer.Drawn, #319).</summary>
+        public const double OldCityLon = 35.23417, OldCityLat = 31.77667;
+        public const float OldCityHalfM = 2000f;
+
+        /// <summary>The Old City's walled square in world metres: its centre and half side (<see cref="OldCityHalfM"/>).</summary>
+        public static (Vector2 centre, float half) OldCityWalls(GeoFrame f) { var w = f.ToWorld(OldCityLon, OldCityLat, 0); return (new Vector2(w.x, w.z), OldCityHalfM); }
+
+        static (Vector2 centre, float half) OldCity(KitGround g) => OldCityWalls(g.Frame);
 
         /// <summary>How far inside the walls the Old City's houses keep (and outside them the new city's).</summary>
         const float OldCityInset = 220f;

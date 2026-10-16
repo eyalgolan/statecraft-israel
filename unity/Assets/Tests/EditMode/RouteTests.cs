@@ -454,6 +454,37 @@ public class RouteTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>Jerusalem's symbolic Old City is a walled square 4 km across (SettlementKits.OldCityWalls), so the real 1948
+    /// roads that start by Jaffa Gate fall inside it. The map cuts each road at the walls (#319): no road corridor (the
+    /// line the ribbons and the kits use) has a point inside the square, and the four roads that start there each end on
+    /// the wall line. The railway is not a road and keeps its terminus.</summary>
+    [Test]
+    public void TheRoadsStopAtTheOldCityWalls()
+    {
+        var meta = HeightmapLoader.Load(Paths.StreamingMap).meta;
+        var size = MapBuilder.TerrainSize(meta);
+        var frame = new GeoFrame(meta.lon0, meta.lon1, meta.lat0, meta.lat1, size.x, size.z);
+        var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+        var corridors = RouteLayer.Corridors(frame, routes);
+        var (c, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(frame);
+        Assert.Greater(half, 1000f, "the square is not empty");
+        float Depth(Vector2 p) => half - Mathf.Max(Mathf.Abs(p.x - c.x), Mathf.Abs(p.y - c.y));   // > 0 inside the walls
+        var inside = new List<string>();
+        var atWalls = new List<string>();
+        for (int i = 0; i < routes.Count; i++)
+        {
+            if (routes[i].Kind != RoutePaths.Road) continue;
+            var line = corridors[i].line;
+            for (int k = 0; k + 1 < line.Count && !inside.Contains(routes[i].Id); k++)
+                for (int t = 0; t <= 20; t++)
+                    if (Depth(Vector2.Lerp(line[k], line[k + 1], t / 20f)) > 0.5f) { inside.Add(routes[i].Id); break; }
+            if (line.Count > 0 && (Mathf.Abs(Depth(line[0])) < 0.5f || Mathf.Abs(Depth(line[line.Count - 1])) < 0.5f)) atWalls.Add(routes[i].Id);
+        }
+        CollectionAssert.IsEmpty(inside, "roads inside the Old City's walls");
+        CollectionAssert.AreEquivalent(new[] { "jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
+            "jerusalem_jericho_road" }, atWalls, "the roads that end at the walls");
+    }
+
     /// <summary>Kits and routes together (#179 on main): no kit building, landmark or tree reaches into any route's
     /// corridor, half the drawn width plus RouteLayer.CorridorMarginM, the Burma Road included (the kits are built once,
     /// not per date). Checked by brute force against every segment, independent of KitGround's grid.</summary>

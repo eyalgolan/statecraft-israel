@@ -13,6 +13,7 @@ RouteLayer.Derive and what they call; comments and whitespace left out) covers i
 colours): an edit to it fails here until the ribbons are re-baked, RouteRibbonFile.Version is bumped and the fingerprint
 is re-pinned. There is no numpy port: the ribbons drape on Unity's terrain sampling (GetInterpolatedHeight and Normal)."""
 import codecs
+import json
 import re
 import struct
 from pathlib import Path
@@ -175,3 +176,62 @@ def test_the_ribbon_code_is_the_one_the_bake_was_made_with():
         f"the C# that makes the route ribbons changed (version {bake_version()}, fingerprint {code_fingerprint()}): "
         f"{BAKE.relative_to(ROOT)} is stale until you {REBAKE} after bumping RouteRibbonFile.Version, then re-pin PINNED_VERSION and PINNED_CODE in "
         "tools/tests/test_route_ribbon_bake.py")
+
+
+# Jerusalem's symbolic Old City (SettlementKits.OldCityWalls): its walled square is 4 km across, so the real 1948 roads by
+# Jaffa Gate fall inside it; the map cuts each road at the walls (RouteLayer.Drawn, #319).
+LANDMARKS = "Kits/SettlementKits.Landmarks.cs"
+OLD_CITY_ROADS = ("jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
+                  "jerusalem_jericho_road")
+
+
+def road_vertices_by_route() -> dict[str, np.ndarray]:
+    """Every road and track ribbon's vertices (world x, z) in the bake, by route id."""
+    r = Reader(bake_bytes())
+    head = read_header(r)
+    out: dict[str, list] = {}
+    for _ in range(head["meshes"]):
+        name = r.text()
+        nv, ni, nr = r.take("<3i")
+        spans = []
+        for _ in range(nr):
+            rid = r.text()
+            first_v, count_v, _, _ = r.take("<4i")
+            spans.append((rid, first_v, count_v))
+        xyz = np.array(r.take(f"<{3 * nv}f"), dtype=np.float64).reshape(-1, 3) if nv else np.zeros((0, 3))
+        r.take(f"<{5 * nv}f")
+        r.take(f"<{ni}i")
+        if name.startswith("RouteRoads"):
+            for rid, first, count in spans:
+                out.setdefault(rid, []).append(xyz[first:first + count][:, [0, 2]])
+    return {k: np.concatenate(v) for k, v in out.items()}
+
+
+def old_city_square() -> tuple[np.ndarray, float]:
+    """The walls' centre (world x, z) and half side, from the C# constants and the bake's terrain size (GeoFrame.ToWorld)."""
+    head = read_header(Reader(bake_bytes()))
+    size_x, _, size_z = head["terrain"][:3]
+    meta = json.loads((MAP / "heightmap.json").read_text())
+    lon, lat = (float(csharp_const(LANDMARKS, n)) for n in ("OldCityLon", "OldCityLat"))
+    centre = np.array([(lon - meta["lon0"]) / (meta["lon1"] - meta["lon0"]) * size_x,
+                       (lat - meta["lat0"]) / (meta["lat1"] - meta["lat0"]) * size_z])
+    return centre, float(csharp_const(LANDMARKS, "OldCityHalfM"))
+
+
+def test_no_road_runs_inside_the_old_city_walls():
+    """Each road ends at the walls: no road vertex lies inside the square by more than half a road's width (the end
+    section is square to the road, so a road meeting the wall at a slant reaches that far in under the wall). Not vacuous:
+    the square is where the real Old City is, and the four roads that start there each reach to within 300 m of it."""
+    centre, half = old_city_square()
+    assert 1000 < half < 5000, half
+    depth_allowed = float(csharp_const("Routes/RouteLayer.cs", "RoadWidthM")) / 2
+    roads = road_vertices_by_route()
+    inside, near = {}, {}
+    for rid, xz in roads.items():
+        d = np.abs(xz - centre).max(axis=1)   # Chebyshev distance: inside the square where it is under half
+        if (deep := int((d < half - depth_allowed).sum())):
+            inside[rid] = deep
+        near[rid] = int(((d >= half - depth_allowed) & (d < half + 300)).sum())
+    assert not inside, f"road vertices inside the Old City's walls: {inside}"
+    missing = [rid for rid in OLD_CITY_ROADS if near.get(rid, 0) == 0]
+    assert not missing, f"these roads should reach the Old City's walls: {missing}"
