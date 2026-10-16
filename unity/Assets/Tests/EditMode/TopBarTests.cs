@@ -97,7 +97,7 @@ public class TopBarTests
                     root.Q<Label>(name + "-value").text = value;
                 root.Q<Label>("security-level").text = text.Format("hud.level", 5);
                 root.Q<Label>("turn").text = text.Format("hud.turn", 120);
-                root.Q<Label>("date").text = text.Format("hud.date", PlayerText.Date(new System.DateTime(1956, 9, 30)));
+                root.Q<Label>("date").text = text.Format("hud.date", Statecraft.Game.Map.Control1948.DateText(TopBarScoreLayoutTests.WorstDate(hebrew), k => text[k]));
                 root.Q<Label>("attention").text = text.Format("hud.attention", 4.0, 4.0);
             }
             dir?.Apply();

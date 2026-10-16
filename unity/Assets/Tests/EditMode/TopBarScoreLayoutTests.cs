@@ -21,8 +21,10 @@ public class TopBarScoreLayoutTests
 
     /// <summary>Five digits with the thousands separator: well past what a Phase 1 or MVP run can score.</summary>
     const int WorstScore = 99999;
-    /// <summary>The widest date line the box was sized for ("Turn 120  30 September 1956", Statecraft.uss .date-box).</summary>
-    static readonly System.DateTime WorstDate = new System.DateTime(1956, 9, 30);
+    /// <summary>The widest date line the box was sized for ("Turn 120  30 September 1956", Statecraft.uss .date-box). In Hebrew
+    /// (#687) the widest month is October, "31 באוקטובר 1956", 109.8 px at the plate's 15 px in Frank Ruhl Libre Medium
+    /// against 109.0 for "30 בספטמבר 1956" (Pillow's advance widths over the twelve months).</summary>
+    public static System.DateTime WorstDate(bool hebrew) => hebrew ? new System.DateTime(1956, 10, 31) : new System.DateTime(1956, 9, 30);
     const int WorstTurn = 120;
 
     static Rect ContentBox(VisualElement e)
@@ -69,7 +71,7 @@ public class TopBarScoreLayoutTests
                 root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);
                 var bridge = new SimBridge(GameSession.New(Gdd, GoldenRun.Seed, Mode.Historical), text);
                 bridge.State.Score = WorstScore;
-                bridge.State.Date = WorstDate;
+                bridge.State.Date = WorstDate(hebrew);
                 bridge.State.Turn = WorstTurn;
                 var hud = new HudPresenter(root, bridge, text);
                 try
@@ -79,7 +81,7 @@ public class TopBarScoreLayoutTests
                     for (int i = 0; i < 3; i++) yield return null;   // the bar's tier classes settle after the first layout
                     var at = $"{language} {w}x{h}";
                     Assert.AreEqual(text.Format("hud.score", WorstScore), score.text, $"{at}: precondition: the worst score shows");
-                    Assert.AreEqual(text.Format("hud.date", PlayerText.Date(WorstDate)), root.Q<Label>("date").text, $"{at}: precondition: the widest date shows");
+                    Assert.AreEqual(text.Format("hud.date", Statecraft.Game.Map.Control1948.DateText(WorstDate(hebrew), k => text[k])), root.Q<Label>("date").text, $"{at}: precondition: the widest date shows");
                     var box = root.Q(className: "date-box");
                     if (!Inside(score.worldBound, ContentBox(box))) problems.Add($"{at}: '{score.text}' {score.worldBound} leaves the date box's frame {ContentBox(box)}");
                     if (!Whole(score)) problems.Add($"{at}: '{score.text}' is clipped in {score.contentRect}");
