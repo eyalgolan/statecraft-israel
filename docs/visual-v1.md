@@ -2254,6 +2254,8 @@ blocks, village houses, red-roofed villas), Jaffa 6 → 7, Tel Aviv 8 → 7.
 - **Jerusalem's Old City is symbolic and squeezed by the roads.**
   - It is 4 km across, about 4 times the real one. The drawn 1948 roads (300 m ribbons) meet by Jaffa Gate and loop
     round the north and east, so at any readable size they cross inside the square, through gaps in the walls.
+    Since #319 the map cuts each road at the walls (`docs/routes.md`, "Jerusalem's Old City"), so no road runs inside
+    them. The Haram's shape below, and the gates, are still as round 2 placed them.
   - Only one place in its south-east quadrant fits a platform clear of every route: 1.3 x 1.1 km, wider than long. Al-Aqsa
     therefore stands in its south-east corner, not across its south end.
   - The citadel is moved east off the drawn Hebron road.

@@ -180,8 +180,9 @@ namespace Statecraft.Game.Map.Kits
             int n = 0;
             // The Haram al-Sharif in the city's south-east (in the real city it fills the east side down to the south wall):
             // its platform, the Dome of the Rock and Al-Aqsa, where the platform keeps clear of the drawn Jericho road. The
-            // roads leave no room for the real platform's north-south length, so it is wider than long and Al-Aqsa stands in
-            // its south-east corner rather than across its south end (docs/visual-v1.md, "Towns round 2").
+            // roads left no room for the real platform's north-south length, so it is wider than long and Al-Aqsa stands in
+            // its south-east corner rather than across its south end (docs/visual-v1.md, "Towns round 2"). Since #319 the
+            // roads stop at the walls; reshaping the platform is the rest of that issue.
             float pw = 1300f, pl = 1100f;
             var pc = oc + new Vector2(350f, -1200f);
             var paving = C(0.86f, 0.82f, 0.72f);

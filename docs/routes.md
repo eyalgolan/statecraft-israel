@@ -146,6 +146,17 @@ measurement in `docs/units.md`:
 | Burma Road | (not in the promo) | 200 m |
 | Train (six cars) | about 250 px, about 8.8 km | 8.8 km: locomotive, tender and four coaches at 80x real length and 1.5x stockier across (at a uniform 65x the first checkpoint drew a thin dark line) |
 
+**Jerusalem's Old City** (#319). The kits draw the Old City as a walled square 4 km across
+(`SettlementKits.OldCityWalls`), about 4 times the real one. The four roads that start there in the traced data
+(Jaffa–Jerusalem, Hebron, Nablus and Jericho) meet at a point about 60 m west of New Gate, outside the real walls, and
+none crosses the real walled city, but near the city they fall inside the drawn square. The data keeps the real lines; the map cuts them instead (`RouteLayer.Drawn`):
+- each road's run inside the square is cut off at the wall line, where the walls leave a gate for it;
+- the ribbons and the kits' corridors both use the cut line, so the houses inside the walls are no longer kept off roads
+  that are not drawn;
+- only a road's ends are cut, so a road traced through the square would fail
+  `RouteTests.TheRoadsStopAtTheOldCityWalls` and `test_no_road_runs_inside_the_old_city_walls`;
+- the railway is not cut: it ends at the station, inside the drawn square.
+
 **The mesh** (`RouteLayer.Ribbon`).
 - A cross-section every 120 m, square to the line's direction averaged over two steps each way.
 - Five vertices across each section.

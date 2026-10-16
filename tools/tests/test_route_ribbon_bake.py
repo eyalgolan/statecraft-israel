@@ -141,14 +141,15 @@ def test_the_check_is_fnv1a():
 
 # The fingerprint of the ribbons' C# code (code_fingerprint), and the RouteRibbonFile.Version it was pinned at. Re-pin both
 # together, only after re-baking (RouteRibbonBake.Bake) with Version bumped.
-PINNED_VERSION, PINNED_CODE = 1, "533ef09adbfaf34c768842be54486f6370eb938456b1bcb069bc482dd43dae68"
+PINNED_VERSION, PINNED_CODE = 2, "cb44923392a002f856fed420582d22bd603383825f8284a03b2869659042bf71"
 
 
 def code_fingerprint() -> str:
     """The code between the inputs and the bake: RouteRibbonFile.Bake (the terrain and frame it builds), the plans and
-    their routes' windows, and RouteLayer's geometry. Its constants are left out: the header holds them (FLOATS, INTS)."""
+    their routes' windows, RouteLayer's geometry, and the Old City's walls the roads are cut at (#319). Its constants are left out: the header holds them (FLOATS, INTS)."""
     layer = csharp("Scripts/Map/Routes/RouteLayer.cs")
     paths = csharp("Scripts/Map/Routes/RoutePaths.cs")
+    landmarks = csharp("Scripts/Map/" + LANDMARKS)
     return fingerprint([
         method(csharp("Scripts/Map/Routes/RouteRibbonFile.cs"), "public static byte[] Bake("),
         method(csharp("Scripts/Map/MapBuilder.cs"), "public static Vector3 TerrainSize("),
@@ -160,6 +161,12 @@ def code_fingerprint() -> str:
         method(layer, "public static List<RibbonPlan> Plan("),
         method(layer, "public static RibbonGeometry Derive("),
         method(layer, "public static List<Vector2> World("),
+        method(layer, "public static List<Vector2> Drawn("),
+        method(layer, "public static List<Vector2> TrimEndsInside("),
+        method(layer, "static Vector2 Exit("),
+        method(landmarks, "public const double OldCityLon"),
+        method(landmarks, "public const float OldCityHalfM"),
+        method(landmarks, "public static (Vector2 centre, float half) OldCityWalls("),
         method(layer, "public static (List<Vector2> points, List<float> along) Resample("),
         method(layer, "public static float GradeHeight("),
         method(layer, "public static float FlatHalfWidth("),

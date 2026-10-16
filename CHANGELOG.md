@@ -18,6 +18,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   Knesset's history pages cover every value); the Provisional Government keeps its two named Wikipedia lines for
   the coalition, the State Council keeps one named Wikipedia line for the seat distribution, and the Third
   Government keeps its named he.wiki lines. No values changed.
+- The 1948 roads stop at the walls of Jerusalem's symbolic Old City instead of running inside them (refs #319). The map
+  cuts the Jaffa, Hebron, Nablus and Jericho roads at the 4 km square's wall line, where the walls leave each a gate;
+  the traced lines, which meet just outside the real walls by New Gate, are unchanged. The route ribbons are re-baked.
+  Map only: no golden and no content hash moves.
 - The Treasury is now shown as Money, כסף in Hebrew, on the top bar, the Budget screen and in the causes (refs #382,
   R-MONEY-001; spec §1.2, owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim
   (D-C3). No upkeep yet: per Q-MONEY-2 it waits for Phase 3. No golden moves; the content hash does (the name is in
