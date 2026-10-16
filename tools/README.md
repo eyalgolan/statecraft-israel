@@ -60,6 +60,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `art_compare.py` puts screenshots next to the promo image of their pose, writes deuteranopia and protanopia copies and
   logs rough colour numbers; `art_checkpoint.sh [--no-build] <name>` builds WebGL, takes the screenshots
   (`web_check.py --shots`) and runs it (docs/visual-v1.md).
+- `coast_measure.py <shots...> --window south|north [--promo] [--check]` measures the beach width, foam band, lace lines
+  and sand lightness across the coast of a gameplay03 screenshot (or promo 03's same coast), the median over several
+  shots, against bands set from promo 03 (#388).
 - `machine_lock.py` serialises frame-time measurements against every other Unity job on the machine (all worktrees,
   batch runs and open editors).
 - `headed.py` drives a WebGL build in a headed Chrome for Testing over CDP (real GPU, real mouse events, a temporary
