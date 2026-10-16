@@ -20,8 +20,7 @@ public class EventImageMappingTests
     static IReadOnlyList<EventImageMapping.Row> Rows => EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
 
     /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate.</summary>
-    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks",
-        "first_new_yishuv" };   // GDD Phase 1 PR 6: its photograph (Boris Carmi, June 1949, CC BY 4.0) arrives with PR 7 (#380)
+    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks" };
     static readonly string[] SensitivePhotos =
         { "altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
 
@@ -29,7 +28,7 @@ public class EventImageMappingTests
     public void TheMappingIsSoundAgainstTheContent()
     {
         var rows = Rows;
-        Assert.AreEqual(24, rows.Count);
+        Assert.AreEqual(25, rows.Count);   // first_new_yishuv's photograph came with #380
         CollectionAssert.IsEmpty(EventImageMapping.Problems(rows, C));
         CollectionAssert.AreEquivalent(C.Events.Select(e => e.Id).Except(Fallback), rows.Select(r => r.Event), "every event but the fallbacks has a picture");
         CollectionAssert.AreEquivalent(SensitivePhotos, rows.Where(r => r.Sensitive).Select(r => r.Event), "the owner's sensitive list");

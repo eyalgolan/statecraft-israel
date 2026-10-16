@@ -276,4 +276,95 @@ public class EventCardTests
             card.Dispose();
         }
     }
+
+    // ---- The objective card (#380): its line and its photograph ----
+
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    /// <summary>The first new yishuv's card, recorded as completed on <paramref name="done"/> (R-OBJ-001), pending.</summary>
+    static SimBridge ObjectiveDone(System.DateTime done, UiText text)
+    {
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = done;
+        g.State.Objectives["first_new_yishuv"] = done;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add("first_new_yishuv");
+        return new SimBridge(g, text);
+    }
+
+    /// <summary>The objective card's line under its text, in the owner's wording (#379, 14 October 2026), against Mefalsim's
+    /// reference date of 12 June 1949 (objectives.yaml), by calendar months (Objectives.MonthsFromHistory): early with both
+    /// dates and the months, on time in the same month, later with the months; one month in the singular.</summary>
+    [Test]
+    public void TheObjectiveCardSaysWhenItWasCompletedAgainstHistory()
+    {
+        Assert.AreEqual(new System.DateTime(1949, 6, 12), C.Objectives.Single(o => o.Id == "first_new_yishuv").ReferenceDate, "precondition");
+        foreach (var (done, line) in new[]
+        {
+            (new System.DateTime(1949, 3, 15), "Completed on 15 March 1949; historically 12 June 1949; 3 months early."),
+            (new System.DateTime(1949, 5, 31), "Completed on 31 May 1949; historically 12 June 1949; 1 month early."),
+            (new System.DateTime(1949, 6, 1), "Completed on time, as in history."),
+            (new System.DateTime(1949, 6, 30), "Completed on time, as in history."),
+            (new System.DateTime(1949, 7, 1), "Completed 1 month later than in history."),
+            (new System.DateTime(1950, 2, 15), "Completed 8 months later than in history."),
+        })
+        {
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, ObjectiveDone(done, Text), Text, null);
+            Assert.AreEqual("first_new_yishuv", card.Shown!.Id);
+            var label = ui.Q<Label>("event-objective");
+            Assert.AreEqual(line, label.text, done.ToString("yyyy-MM-dd"));
+            Assert.AreEqual(DisplayStyle.Flex, label.style.display.value, done.ToString("yyyy-MM-dd"));
+        }
+    }
+
+    /// <summary>The same line in Hebrew: Hebrew months (date.month_*), the values between left-to-right marks (#543).</summary>
+    [Test]
+    public void TheObjectiveCardsLineIsInHebrewInTheHebrewUi()
+    {
+        foreach (var (done, line) in new[]
+        {
+            (new System.DateTime(1949, 3, 15), "הושלם ב־15 במרץ 1949; בהיסטוריה ב־12 ביוני 1949; מוקדם ב־3 חודשים."),
+            (new System.DateTime(1949, 5, 31), "הושלם ב־31 במאי 1949; בהיסטוריה ב־12 ביוני 1949; מוקדם בחודש אחד."),
+            (new System.DateTime(1949, 6, 30), "הושלם בזמן, כמו בהיסטוריה."),
+            (new System.DateTime(1949, 7, 1), "הושלם באיחור של חודש אחד לעומת ההיסטוריה."),
+            (new System.DateTime(1950, 2, 15), "הושלם באיחור של 8 חודשים לעומת ההיסטוריה."),
+        })
+        {
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, ObjectiveDone(done, He), He, null);
+            var shown = ui.Q<Label>("event-objective").text;
+            Assert.AreEqual(line, shown.Replace("\u200E", ""), done.ToString("yyyy-MM-dd"));
+            Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(shown, "[A-Za-z]"), $"English in the Hebrew line: {shown}");
+        }
+    }
+
+    /// <summary>Every other card has no objective line, and takes no room for one.</summary>
+    [Test]
+    public void ACardThatIsNoObjectiveHasNoObjectiveLine()
+    {
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, AtArmistice(), Text, null);
+        Assert.AreEqual("armistice_egypt", card.Shown!.Id);
+        Assert.AreEqual("", ui.Q<Label>("event-objective").text);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-objective").style.display.value);
+    }
+
+    /// <summary>The objective card shows Mefalsim's photograph (Boris Carmi, June 1949, CC BY 4.0) with its credit, in place
+    /// of a portrait (the event has no office).</summary>
+    [Test]
+    public void TheObjectiveCardShowsItsPhotographWithItsCredit()
+    {
+        using var ui = new UiTestKit();
+        var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(PhotosPath);
+        var entry = photos.Find("first_new_yishuv");
+        Assert.IsNotNull(entry, "the catalog has the card's photograph (EventImageImport.Run)");
+        using var card = new EventCardPresenter(ui.Root, ObjectiveDone(new System.DateTime(1949, 3, 15), Text), Text, null, photos);
+        var band = ui.Q<VisualElement>("event-photo");
+        Assert.AreEqual(entry!.Value.image, band.style.backgroundImage.value.texture);
+        Assert.AreEqual(DisplayStyle.Flex, band.style.display.value);
+        Assert.AreEqual(entry.Value.alt, card.PhotoAlt);
+        var credit = ui.Q<Label>("event-photo-credit").text;
+        StringAssert.StartsWith("Boris Carmi / Meitar Collection", credit);
+        StringAssert.EndsWith("CC BY 4.0 · graded and cropped", credit);
+    }
 }

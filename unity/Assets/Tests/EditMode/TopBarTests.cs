@@ -90,10 +90,10 @@ public class TopBarTests
             if (widest)
             {
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", text.Format("hud.delta_people", 12345.0)),
-                                                      ("security", "-10%"), ("support", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
+                                                      ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
                     root.Q<Label>(name + "-delta").text = delta;
                 foreach (var (name, value) in new[] { ("treasury", PlayerText.Money(C, "treasury", -123.4)), ("immigration", text.Format("hud.people", 123456.0)),
-                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("standing", "100%") })
+                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
                     root.Q<Label>(name + "-value").text = value;
                 root.Q<Label>("security-level").text = text.Format("hud.level", 5);
                 root.Q<Label>("turn").text = text.Format("hud.turn", 120);
@@ -381,7 +381,7 @@ public class TopBarTests
                     labels.Add(root.Q<Label>("attention"));   // the captions' query also holds security-level (class meter-name)
                     labels.Add(root.Q<Label>("turn")); labels.Add(root.Q<Label>("date"));   // the plate's date line
                     labels = labels.Distinct().ToList();
-                    if (labels.Count != 10) problems.Add($"{at}: precondition: 10 small labels, found {labels.Count}");
+                    if (labels.Count != 11) problems.Add($"{at}: precondition: 11 small labels (Social cohesion's caption with #380), found {labels.Count}");
                     foreach (var l in labels)
                     {
                         if (string.IsNullOrEmpty(l.text) || !(l.worldBound.height > 0)) { problems.Add($"{at}: precondition: {l.name} '{l.text}' shows"); continue; }

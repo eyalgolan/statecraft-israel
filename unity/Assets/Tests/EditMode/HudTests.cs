@@ -153,6 +153,55 @@ public class HudTests
         Assert.AreEqual("Score 150", label.text);
     }
 
+    // ---- Social cohesion (#380): a resource meter, only in the GDD loop, from GameState.Cohesion ----
+
+    /// <summary>The owner's ruling of 15 October 2026 (#380): Social cohesion on the top bar as a resource meter, in the GDD
+    /// loop. Its value is GameState.Cohesion (R-CITY-005) on the 0-100 scale, as the other 0..1 meters; after a turn it
+    /// shows the change, and its tooltip says both, under the caption the bar shows (Hebrew: לכידות חברתית).</summary>
+    [Test]
+    public void TheGddGameShowsSocialCohesion()
+    {
+        using var ui = new UiTestKit();
+        var bridge = GddBridge();
+        using var hud = new HudPresenter(ui.Root, bridge, Text);
+        var meter = ui.Q<VisualElement>("meter-cohesion");
+        Assert.AreEqual(DisplayStyle.Flex, meter.style.display.value, "shown in the GDD loop");
+        Assert.AreEqual("Social cohesion", meter.Q<Label>(className: "meter-name").text);
+        Assert.AreEqual("rings", meter.Q<UiIcon>().Glyph);
+        Assert.Greater(bridge.State.Cohesion, 0.0, "precondition: the cities have set it at the start");
+        Assert.AreEqual(PlayerText.Percent(bridge.State.Cohesion), ui.Q<Label>("cohesion-value").text);
+        Assert.AreEqual("", ui.Q<Label>("cohesion-delta").text, "no change before the first turn");
+        Assert.AreEqual($"Social cohesion: {PlayerText.Percent(bridge.State.Cohesion)}", meter.tooltip);
+        bridge.EndTurn();
+        var prev = bridge.Session.Previous!; var now = bridge.State;
+        now.Cohesion = 0.634; prev.Cohesion = 0.584;                        // 58% -> 63%: up 5 points
+        hud.Render();
+        Assert.AreEqual("63%", ui.Q<Label>("cohesion-value").text);
+        Assert.AreEqual("+5%", ui.Q<Label>("cohesion-delta").text);
+        Assert.IsTrue(ui.Q<Label>("cohesion-delta").ClassListContains("delta-up"));
+        Assert.AreEqual("Social cohesion: 63%, up 5 points since last turn", meter.tooltip);
+        now.Cohesion = 0.574;                                               // 58% -> 57%: down 1 point
+        hud.Render();
+        Assert.AreEqual("-1%", ui.Q<Label>("cohesion-delta").text);
+        Assert.IsTrue(ui.Q<Label>("cohesion-delta").ClassListContains("delta-down"));
+        Assert.AreEqual("Social cohesion: 57%, down 1 point since last turn", meter.tooltip);
+        using var heUi = new UiTestKit();
+        using var heHud = new HudPresenter(heUi.Root, GddBridge(), He);
+        Assert.AreEqual("לכידות חברתית", heUi.Q<VisualElement>("meter-cohesion").Q<Label>(className: "meter-name").text);
+        StringAssert.StartsWith("לכידות חברתית: ", heUi.Q<VisualElement>("meter-cohesion").tooltip);
+    }
+
+    /// <summary>The legacy loop has no Social cohesion (its cities do not exist): the meter is hidden, as the score is.</summary>
+    [Test]
+    public void TheLegacyLoopShowsNoSocialCohesion()
+    {
+        SimBridge LegacyBridge() => new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), Text);
+        using var ui = new UiTestKit();
+        using var hud = new HudPresenter(ui.Root, LegacyBridge(), Text);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("meter-cohesion").style.display.value);
+        Assert.AreEqual("", ui.Q<Label>("cohesion-value").text);
+    }
+
     [Test]
     public void EndTurnAdvancesTheGameAndShowsChanges()
     {
@@ -596,7 +645,7 @@ public class HudTests
         Assert.AreEqual(1, m.Security.Sign);
     }
 
-    static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "standing", "fx" };
+    static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
     static string Inv(System.FormattableString f) => System.FormattableString.Invariant(f);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings.Replace("strings.en.yaml", "strings.he.yaml")).text, "strings.he.yaml");
 

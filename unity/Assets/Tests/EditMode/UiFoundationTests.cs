@@ -35,7 +35,7 @@ public class UiFoundationTests
         using var ui = new UiTestKit();
         foreach (var name in new[] { "top-bar", "event-card", "info-panel", "minimap", "screen-cabinet", "screen-budget", "screen-defence", "screen-why", "toast" })
             ui.Q<VisualElement>(name);
-        foreach (var name in new[] { "treasury", "immigration", "security", "support", "standing", "fx" })
+        foreach (var name in new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" })
         {
             ui.Q<Label>(name + "-value");
             ui.Q<Label>(name + "-delta");

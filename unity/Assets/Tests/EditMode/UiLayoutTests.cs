@@ -488,6 +488,8 @@ public class UiLayoutTests
                     var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
                     g.State.Date = e.From;                       // the text names the office holders of the event's own time
                     g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                    // An objective card shows its line under the text (#380), at its longest (completed early, both dates).
+                    if (e.Objective != "") g.State.Objectives[e.Objective] = new System.DateTime(1948, 11, 30);
                     bridge.Replace(g);
                     for (int i = 0; i < 4; i++) yield return null;   // the fourth: a photograph dropped for height settles
                     CheckPhoto($"{w}x{h}: {e.Id}", root, card, problems);

@@ -25,7 +25,7 @@ public class PromoHudTests
     {
         using var ui = new UiTestKit();
         foreach (var (meter, glyph) in new[] { ("meter-treasury", "coin"), ("meter-immigration", "people"), ("meter-security", "shield"),
-                                               ("meter-support", "crowd"), ("meter-standing", "globe"), ("meter-fx", "banknote") })
+                                               ("meter-support", "crowd"), ("meter-cohesion", "rings"), ("meter-standing", "globe"), ("meter-fx", "banknote") })
         {
             var icon = ui.Q<VisualElement>(meter).Q<UiIcon>();
             Assert.IsNotNull(icon, meter);
@@ -187,11 +187,11 @@ public class PromoHudTests
                 }
                 // The widest realistic changes, formatted as HudModel formats them, and the widest date line.
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", Text.Format("hud.delta_people", 12345.0)),
-                                                      ("security", "-10%"), ("support", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
+                                                      ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
                     root.Q<Label>(name + "-delta").text = delta;
                 // ... and the widest late-game values (review N7).
                 foreach (var (name, value) in new[] { ("treasury", PlayerText.Money(C, "treasury", -123.4)), ("immigration", Text.Format("hud.people", 123456.0)),
-                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("standing", "100%") })
+                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
                     root.Q<Label>(name + "-value").text = value;
                 root.Q<Label>("security-level").text = Text.Format("hud.level", 5);
                 root.Q<Label>("turn").text = Text.Format("hud.turn", 120);
