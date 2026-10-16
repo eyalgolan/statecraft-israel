@@ -281,8 +281,9 @@ public class SeaTests
 
     /// <summary>Sea round 3 (#388, owner 15 October 2026: geographic, about 2.5-3 km, as promo 03 draws south of Jaffa): the
     /// beach is wide on the dune coast and stays narrow under the kurkar. Rendered 2 km inland of the shore (25 texels east of
-    /// the first land texel, about 1.85 km across the coast), without the kits: at 31.95 N (south of Jaffa, by Rishon
-    /// LeZion) the sample is pale sand by ASandStripLinesTheMediterraneanShore's own floors (luma over 0.72, b/g over 0.62);
+    /// the first land texel, about 1.85 km across the coast), without the kits: at 31.90 N (south of Jaffa, off Yavne's
+    /// dunes; 31.95 N, by Rishon LeZion, is 2.3 km from Nabi Rubin, whose own ground the beach yields to under option (c))
+    /// the sample is pale sand by ASandStripLinesTheMediterraneanShore's own floors (luma over 0.72, b/g over 0.62);
     /// at 32.15 N (Herzliya) it is not, as on main, whose 900 m beach is gone by 1.26 km at its widest. That test's third
     /// floor (0.32 over a plain 5 km inland) is not used: 5 km inland south of Jaffa is the pale dune belt's land use, not
     /// Tel Aviv's darker plain.</summary>
@@ -304,8 +305,8 @@ public class SeaTests
             return r.Mean((int)px[0].x, (int)px[0].y, 1);
         }
         bool Sand(Color b) => Luma(b) > 0.72f && b.b / b.g > 0.62f;
-        Color south = At(31.95f), north = At(32.15f);
-        TestContext.WriteLine($"2 km inland: 31.95 N {south} (luma {Luma(south):0.000}, b/g {south.b / south.g:0.00}); " +
+        Color south = At(31.90f), north = At(32.15f);
+        TestContext.WriteLine($"2 km inland: 31.90 N {south} (luma {Luma(south):0.000}, b/g {south.b / south.g:0.00}); " +
             $"32.15 N {north} (luma {Luma(north):0.000}, b/g {north.b / north.g:0.00})");
         Assert.IsTrue(Sand(south), "the dune coast south of Jaffa: sand 2 km inland");
         Assert.IsFalse(Sand(north), "the kurkar coast at Herzliya: no sand 2 km inland");

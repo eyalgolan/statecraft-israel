@@ -356,7 +356,9 @@ public class KitTests
         {
             Assert.IsTrue(coast.LoadImage(System.IO.File.ReadAllBytes(System.IO.Path.Combine(Application.dataPath, "Textures/Map/coast.png"))));
             var g = Ground(map);
-            var trees = Vegetation.Plant(map.Settlements, g);
+            // The game's list (towns and 1948 localities), so the keep-out's sand yields to every place's own ground as the
+            // bake's does (option (c)).
+            var trees = Vegetation.Plant(map.Settlements.Concat(LoadLocalities(map).Places.Select(p => p.Settlement)).ToList(), g);
             float LandM(float x, float z) => (coast.GetPixelBilinear(x / g.Width, z / g.Length).r - 0.5f) * 2f * 12000f;   // ScCoastRangeM
             const float FullSandM = 0.55f * 1.4f * 900f, LevelM = 2f * 12000f / 255f;
             var bad = new List<string>();
@@ -370,15 +372,66 @@ public class KitTests
                 if (d >= FullSandM - LevelM) continue;
                 // The water coast.png sees, in metres: on the dune coasts its land side reads up to BeachBands.ExtraM short.
                 float reach = LandM(p.x, p.z) + BeachBands.ExtraM + 2f * LevelM;
-                if (g.SeaDistance(p.x, p.z, reach) == float.MaxValue) { byLake++; continue; }   // that water is a lake
+                if (g.SeaDistance(p.x, p.z, reach) == float.MaxValue)   // that water is a lake
+                {
+                    // A crown SeaDistance misses would land here and pass silently, so it must stand in the rift: the
+                    // Mediterranean's shore is at sea level, the Sea of Galilee's at -210 m (today 6 crowns, -70 to -214 m,
+                    // on its western shore by Tiberias).
+                    byLake++;
+                    if (g.ElevM(p.x, p.z) >= -50f) bad.Add($"{kind} at ({p.x:0}, {p.z:0}): near water SeaDistance misses, but not in the rift ({g.ElevM(p.x, p.z):0} m)");
+                    continue;
+                }
                 bad.Add($"{kind} at ({p.x:0}, {p.z:0}): crown {d:0} m from the sea's edge in coast.png");
             }
             TestContext.WriteLine($"{citrus} citrus and {olives} olive instances; {bad.Count} crowns on the full sand; {byLake} near a rift lake only");
             CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} crowns on the beach's full sand");
-            // A crown SeaDistance misses is counted as "near a lake", so a miss on a curved or inlet shore would pass
-            // silently: pin the count to today's 2, so a new one fails here.
-            Assert.LessOrEqual(byLake, 2, "crowns counted as near a rift lake only (a SeaDistance miss would land here)");
             Assert.Greater(citrus, 500, "the groves keep their trees");
+        }
+        finally { Object.DestroyImmediate(coast); }
+    }
+
+    /// <summary>Option (c) (#685; owner, 16 October 2026: "Keep each settlement's own lots and fields off the sand"): the
+    /// lots the map builds (every building's, landmark's and tent's, over the 296 places, the camps and the routes), each
+    /// centre read against coast.png's full sand: ScShore paints full sand under 0.55 of a width of 0.6-1.4 x ScBeachM
+    /// (900 m), so under 297 m at any noise width and under 693 m at the widest. A lot by a lake only is not counted (no sand
+    /// is drawn there; KitGround.SeaDistance, as NoGroveOrOliveCrownStandsOnTheBeach). Main before the wide beach (adf102c9)
+    /// has 9 and 30 such lots (the old towns' waterfronts, al-Jura, Deir al-Balah and the like, which met the shore); the
+    /// wide beach before option (c) had 83 and 119, over 17 places.</summary>
+    [Test]
+    public void TheSettlementsOwnLotsStayOffTheDuneSand()
+    {
+        var (any, widest, places) = LotsOnTheSand(System.IO.Path.Combine(Application.dataPath, "Textures/Map/coast.png"));
+        TestContext.WriteLine($"lot centres on the full sand: {any} at any noise, {widest} at the widest; places: {string.Join(", ", places)}");
+        Assert.LessOrEqual(any, 9, "lots on the full sand at any noise width: main's 9");
+        Assert.LessOrEqual(widest, 30, "lots on the full sand at the widest noise: main's 30");
+    }
+
+    /// <summary>The map's lots (TheSettlementsOwnLotsStayOffTheDuneSand) whose centre is on the full sand of the coast.png at
+    /// <paramref name="coastPath"/>: at any noise width, at the widest, and the places they belong to (sorted).</summary>
+    internal static (int any, int widest, List<string> places) LotsOnTheSand(string coastPath)
+    {
+        var map = OpenMap();
+        var g = Ground(map);
+        foreach (var (line, half) in Corridors(map)) g.AddCorridor(line, half);
+        var doc = LoadLocalities(map);
+        var built = SettlementKits.Build(map.Settlements, doc.Places.Select(p => p.Settlement).ToList(), doc.Encampments, g);
+        foreach (var k in built.Towns) Object.DestroyImmediate(k.mesh);
+        foreach (var t in built.Tiles) Object.DestroyImmediate(t.mesh);
+        Assert.Greater(built.Claimed.Count, 3000, "the whole map's lots");
+        var coast = new Texture2D(2, 2);
+        try
+        {
+            Assert.IsTrue(coast.LoadImage(System.IO.File.ReadAllBytes(coastPath)));
+            int any = 0, widest = 0; var places = new SortedSet<string>(System.StringComparer.Ordinal);
+            foreach (var (c, _, id) in built.Claimed)
+            {
+                float d = (coast.GetPixelBilinear(c.x / g.Width, c.y / g.Length).r - 0.5f) * 2f * 12000f;   // ScCoastRangeM
+                if (d <= 0f || d >= 0.55f * 1.4f * 900f) continue;
+                if (g.SeaDistance(c.x, c.y, 3000f) == float.MaxValue) continue;   // a lake: no sand drawn
+                widest++; if (d < 0.55f * 0.6f * 900f) any++;
+                places.Add(id);
+            }
+            return (any, widest, places.ToList());
         }
         finally { Object.DestroyImmediate(coast); }
     }

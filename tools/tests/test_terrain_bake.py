@@ -303,7 +303,9 @@ def land_m_inland(lat: float, km: float) -> float:
 
 def test_the_committed_coast_draws_a_wide_beach_south_of_jaffa_and_a_narrow_one_under_the_kurkar():
     # ScShore (StatecraftMap.hlsl): full sand to 0.55 W and none beyond W, W = ScBeachM (900 m) x 0.6..1.4.
-    assert land_m_inland(31.95, 2.0) < 0.55 * 0.6 * 900, "2 km inland south of Jaffa: full sand at any width"
+    # 31.90 N (off Yavne's dunes): 31.95 N, by Rishon LeZion, is now 2.3 km from Nabi Rubin, whose own ground the beach
+    # yields to (option (c)).
+    assert land_m_inland(31.90, 2.0) < 0.55 * 0.6 * 900, "2 km inland south of Jaffa: full sand at any width"
     assert land_m_inland(32.15, 2.0) > 1.4 * 900, "2 km inland at Herzliya: no sand at any width"
 
 
@@ -318,3 +320,94 @@ def test_the_csharp_twin_of_the_beach_bands_matches_the_bake():
     beach = float(re.search(r"static const float ScBeachM = ([0-9.]+);", hlsl).group(1))
     full = float(re.search(r"const float FullSandM = ([0-9.]+)f", cs).group(1))
     assert full == pytest.approx(0.55 * 1.4 * beach, abs=0.5), "ScShore's widest full sand"
+
+
+# Option (c) (#685; owner, 16 October 2026): "Keep each settlement's own lots and fields off the sand, and narrow the beach
+# ramp at Acre, which was not dune country."
+
+def test_acre_and_the_naaman_mouth_get_no_extra_width_and_the_bays_dunes_keep_it():
+    lon = np.array([35.082, 35.081, 35.07, 35.06])
+    lat = np.array([32.928, 32.909, 32.885, 32.86])
+    extra = tb.beach_extra_m(lon, lat)
+    assert extra[0] == 0, "Acre's walled town (Wikipedia: 32.928 N 35.082 E), a cape of the bay, not dune country"
+    assert extra[1] < 0.01 * tb.BEACH_EXTRA_M, "the Na'aman's mouth (he.wikipedia: 32.909 N 35.081 E), where the bay's dunes end"
+    assert np.allclose(extra[2:], tb.BEACH_EXTRA_M), "the bay's dunes south of the Na'aman keep the wide beach"
+
+
+def test_the_beach_yields_to_a_settlements_plot_reach_and_comes_back_beyond_it():
+    x = np.linspace(0, 6000, 61)
+    keep = tb.beach_keep(x, np.array([0.0]), [(0.0, 0.0, 2000.0)])[0]
+    assert (keep[x <= 2000] == 0).all(), "no extra width over the settlement's own ground"
+    assert (keep[x >= 2000 + tb.BEACH_YIELD_RAMP_M] == 1).all(), "the full extra width beyond the ramp"
+    assert (np.diff(keep) >= 0).all() and np.abs(np.diff(keep)).max() < 0.2, "a smooth ramp"
+    two = tb.beach_keep(x, np.array([0.0]), [(0.0, 0.0, 2000.0), (6000.0, 0.0, 1000.0)])[0]
+    assert np.array_equal(two, np.minimum(keep, tb.beach_keep(x, np.array([0.0]), [(6000.0, 0.0, 1000.0)])[0]))
+
+
+def test_the_plot_reaches_are_the_kits_footprints():
+    meta = json.loads((ROOT / "unity/Assets/StreamingAssets/map/heightmap.json").read_text())
+    reaches = tb.plot_reaches(meta)
+    towns = len(tb.yaml12.load((ROOT / "content/map/settlements_1948.yaml").read_text())["settlements"])
+    places = len(tb.yaml12.load((ROOT / "content/map/localities_1948.yaml").read_text())["places"])
+    assert len(reaches) == towns + places, "every game settlement and every 1948 locality"
+    hex_area = 1.5 * np.sqrt(3) * 5000.0 ** 2
+    w_m, l_m = meta["width_km"] * 1000, meta["length_km"] * 1000
+    def reach_at(lon: float, lat: float) -> float:
+        x, z = (lon - meta["lon0"]) / (meta["lon1"] - meta["lon0"]) * w_m, (lat - meta["lat0"]) / (meta["lat1"] - meta["lat0"]) * l_m
+        return next(r for cx, cz, r in reaches if abs(cx - x) < 1 and abs(cz - z) < 1)
+    smallest = np.sqrt(tb.MIN_HEXES * hex_area / np.pi) * tb.PLOT_REACH
+    assert reach_at(34.7503, 32.0231) == pytest.approx(smallest), "Bat Yam (2,000 people, a locality): the smallest footprint"
+    assert reach_at(34.7531, 32.0522) == pytest.approx(np.sqrt(94310 / 60000 * hex_area / np.pi) * 1.1), "Jaffa: 94,310 people"
+
+
+def test_the_kits_constants_and_the_yield_ramp_match_the_csharp():
+    import re
+    kits = (ROOT / "unity/Assets/Scripts/Map/Kits/SettlementKits.cs").read_text()
+    cs = (ROOT / "unity/Assets/Scripts/Map/Kits/BeachBands.cs").read_text()
+    assert float(re.search(r"const float PeoplePerHex = ([0-9.]+)f", kits).group(1)) == tb.PEOPLE_PER_HEX
+    assert float(re.search(r"const float MinHexes = ([0-9.]+)f", kits).group(1)) == tb.MIN_HEXES
+    assert float(re.search(r"const float PlotReach = ([0-9.]+)f", kits).group(1)) == tb.PLOT_REACH
+    assert float(re.search(r"const float YieldRampM = ([0-9.]+)f", cs).group(1)) == tb.BEACH_YIELD_RAMP_M
+
+
+def committed_and_metric_coast():
+    elev, meta = tb.load_heightmap(tb.MAP_DIR)
+    return elev, meta, np.asarray(png(ROOT / "unity/Assets/Textures/Map/coast.png")).astype(int)
+
+
+def test_the_committed_coast_is_the_bake_of_todays_settlements(monkeypatch):
+    # A locality added or resized on the dune coast without a re-bake would leave its ground under the extra sand.
+    elev, meta, committed = committed_and_metric_coast()
+    fresh = tb.coast(elev, meta, tb.plot_reaches(meta)).astype(int)
+    diff = np.abs(fresh - committed)
+    assert diff.max() <= 1 and (diff > 0).mean() < 1e-4, "coast.png is stale: run uv run tools/terrain_bake.py"
+
+
+def test_the_committed_coast_keeps_every_settlements_own_ground_at_scshores_beach(monkeypatch):
+    elev, meta, committed = committed_and_metric_coast()
+    monkeypatch.setattr(tb, "BEACH_EXTRA_M", 0.0)
+    metric = tb.coast(elev, meta).astype(int)
+    h, w = elev.shape
+    dx, dy = tb.spacing_m(meta)
+    x = (np.arange(w - 1) + 0.5) * dx                     # texel centres (to_texels: the mean of 2 x 2 samples)
+    z = (h - 1 - (np.arange(h - 1) + 0.5)) * dy
+    own = np.zeros((h - 1, w - 1), bool)
+    for cx, cz, reach in tb.plot_reaches(meta):
+        own |= (x[None, :] - cx) ** 2 + (z[:, None] - cz) ** 2 < reach ** 2
+    assert own.sum() > 0
+    worst = np.abs(committed - metric)[own].max()
+    assert worst <= 1, f"a settlement's plot reach has extra sand (coast.png reads up to {worst} levels short)"
+    assert (committed < metric - 1).sum() > 100_000, "the open dune coast keeps its wide beach"
+
+
+def test_the_committed_coast_draws_acre_at_scshores_beach_and_the_bays_dunes_wide(monkeypatch):
+    elev, meta, committed = committed_and_metric_coast()
+    monkeypatch.setattr(tb, "BEACH_EXTRA_M", 0.0)
+    metric = tb.coast(elev, meta).astype(int)
+    r0, c0 = texel(35.05, 32.95)
+    r1, c1 = texel(35.12, 32.912)
+    acre = np.s_[r0:r1, c0:c1]   # Acre's walled town, its peninsula and its shore to just north of the Na'aman's mouth
+    assert (committed[acre] >= 128).sum() > 50 and np.abs(committed[acre] - metric[acre]).max() <= 1, (
+        "Acre has ScShore's own beach, no extra width")
+    # ScShore (StatecraftMap.hlsl): full sand at any width under 0.55 x 0.6 x 900 m.
+    assert land_m_inland(32.87, 2.0) < 0.55 * 0.6 * 900, "2 km inland on the bay's dunes south of the Na'aman: full sand"
