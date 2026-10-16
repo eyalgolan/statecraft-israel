@@ -3389,3 +3389,26 @@ compare masked rows only with masked rows.
   possibly 0.6 × the old whole-frame top. It is kept.
 - The other bars are unchanged: gameplay03 palette distance to promo 03 <= 0.44 and <= main + 0.02, diorama02
   saturation <= 0.48, now all measured masked.
+
+## diorama02 warmth per material (#695, T77)
+The owner ruled on #695: **"Measure each material"**. Whole-frame warmth compares geography as much as colour: masked,
+promo 02 is about a quarter sea and 6% dark wood, our diorama02 an eighth sea and a third table, and that mix alone puts
+our frame 0.028 warmer while our materials' colours put it 0.015 cooler (T77's split of the 0.0133 gap). So diorama02's
+warmth guard now compares each material with the same material in promo 02.
+
+- **Classifier** (`tools/art_compare.py`, `classify()`): neutral (chroma (max - min) / max under 0.08), sea (B > R),
+  green (G > R), then the warm pixels by luma: wood under 0.30, land 0.30-0.55, sand from 0.55. The cuts sit in the gaps
+  between the materials' mean luma measured on promo 02 and on main's diorama02: wood 0.13-0.26 (our table 0.18-0.20),
+  hills 0.35-0.50, Negev sand 0.70-0.71.
+- **Bands.** Guarded: sand, sea and wood. Each band is promo 02's mean warmth (R - B) for the material, masked with
+  `HUD_MASK`, plus or minus 20% of its size: the old whole-frame band [0.087, 0.145] was 40% of its promo anchor wide,
+  here centred on the promo. Sand [0.3049, 0.4574] (promo 0.3811), sea [-0.3117, -0.2078] (promo -0.2598), wood
+  [0.0731, 0.1096] (promo 0.0914). No band is fitted to our output.
+- **Fail-closed.** A guarded material covering under 2% of the measured pixels of either image (about 37,000 pixels at
+  1920x1080) raises instead of passing.
+- **Whole-frame warmth** is still printed, as information only; `[0.087, 0.151]` (T74) no longer decides.
+- **Where main stands** (d031af36, 3 WebGL `?shot` captures, spread 0.0000): sand 0.2948 (-0.086, paler and less
+  orange), sea -0.1729 (+0.087, less blue), wood 0.1128 (+0.021): all three outside their bands. That is an art
+  follow-up on #695; this section only sets the measure. Caveats: promo 02's dark backdrop is mostly under the top-bar
+  box, so its wood is mostly the frame and terrain shadow; and a single Negev crop is closer than the class means
+  (ours 0.336, promo 0.351).

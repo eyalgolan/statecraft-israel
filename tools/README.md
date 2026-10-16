@@ -65,7 +65,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `terrain_graph.py` writes `unity/Assets/Shaders/StatecraftTerrain.shadergraph` from Unity's "Terrain Simple" template
   with one Custom Function node (`StatecraftTerrain.hlsl`); re-run it only when that function's inputs or outputs change.
 - `art_compare.py` puts screenshots next to the promo image of their pose, writes deuteranopia and protanopia copies and
-  logs rough colour numbers, leaving out the HUD (`HUD_MASK`) of both images (rows named `<name>-hudmask`);
+  logs rough colour numbers, leaving out the HUD (`HUD_MASK`) of both images (rows named `<name>-hudmask`), and
+  prints diorama02's warmth per material (sand, sea, wood) against promo 02's (#695);
   `art_checkpoint.sh [--no-build] <name>` builds WebGL, takes the screenshots (`web_check.py --shots`) and runs it
   (docs/visual-v1.md).
 - `coast_measure.py <shots...> --window south|north [--promo] [--check]` measures the beach width, foam band, lace lines

@@ -14,7 +14,9 @@ short commit (both "-" outside a git checkout), the image's absolute path, satur
 (mean R - B), and the palette distance to the promo (total variation between
 8x8x8 RGB histograms; 0 = same palette, 1 = disjoint). Every number leaves out HUD_MASK's boxes (the HUD) of both
 images (pass mask=() for the whole frame), and main() names its rows <checkpoint-name>-hudmask, so they cannot be
-mistaken for the whole-frame rows written before the mask. The numbers inform the owner's review. Exit code 2 when a
+mistaken for the whole-frame rows written before the mask. For diorama02 it also prints a MATERIAL line per
+material (sand, sea, wood) with its warmth against its band from promo 02, PASS or FAIL (#695), and the whole-frame
+warmth as information. The numbers inform the owner's review. Exit code 2 when a
 screenshot is near-uniform (luma std < 0.01: a black or blank WebGL capture), 1 when no screenshot matched a pose."""
 import argparse
 import subprocess
@@ -41,6 +43,26 @@ HUD_MASK: Mask = (
     (0.0, 0.0, 0.13, 0.10),    # the date plate hanging below it: ours 12.4% x 9.1%, promo 03's 12% x 8.6%
     (0.0, 0.10, 0.045, 0.44),  # the left column of round buttons: ours (four) to 34% of the height, promo 03's (five) to 43%
 )
+# diorama02's warmth is measured per material against promo 02 (owner's ruling on #695, "Measure each material"): the
+# whole frame mixes materials in different shares (promo 02's board is about a quarter sea, ours an eighth, with a third
+# table), so its warmth compares geography as much as colour. classify() puts each pixel in one class, in this order:
+#   neutral  chroma (max - min) / max under NEUTRAL_SAT: greys, white salt and labels, which carry no hue;
+#   sea      blue above red (B > R): the sea, the Dead Sea and the lakes;
+#   green    green above red (and B <= R): fields and orchards;
+#   wood     warm (R >= G, R >= B) and luma under WOOD_LUMA: the table, the frame's walnut and promo 02's dark backdrop;
+#   land     warm, luma WOOD_LUMA to SAND_LUMA: the hills and the cut earth;
+#   sand     warm, luma at or over SAND_LUMA: the Negev, the dunes and the beaches.
+# The luma cuts sit in the gaps between the materials measured on promo 02 and main's diorama02 (T77): the wood's mean
+# luma is 0.13-0.26 (our table 0.18-0.20), the hills' 0.35-0.50 and the Negev sand's 0.70-0.71.
+MATERIALS = ("neutral", "sea", "green", "wood", "land", "sand")
+NEUTRAL_SAT, WOOD_LUMA, SAND_LUMA = 0.08, 0.30, 0.55
+GUARDED_MATERIALS = ("sand", "sea", "wood")
+# Each guarded material's band is promo 02's mean warmth (R - B) for it, plus or minus MATERIAL_TOLERANCE of its size: the
+# old whole-frame band [0.087, 0.145] was 40% of its promo anchor wide, here centred on the promo, so either way is a miss.
+MATERIAL_TOLERANCE = 0.2
+# A guarded material must cover at least this share of the measured pixels in both images (about 37,000 pixels of a
+# 1920x1080 frame); below it the guard raises, so a capture missing a material cannot pass on a handful of pixels.
+MIN_MATERIAL_SHARE = 0.02
 MACHADO = {
     "deuteranopia": np.array([[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]]),
     "protanopia": np.array([[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]]),
@@ -98,6 +120,53 @@ def histogram_distance(a: Image.Image, b: Image.Image, bins: int = 8, mask: Mask
     return float(0.5 * np.abs(histogram(a, bins, mask) - histogram(b, bins, mask)).sum())
 
 
+def classify(img: Image.Image) -> np.ndarray:
+    """(height, width) indices into MATERIALS, one per pixel (the rules are above MATERIALS)."""
+    a = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    mx, mn = a.max(-1), a.min(-1)
+    chroma = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0.0)
+    luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    out = np.full(r.shape, MATERIALS.index("sand"), dtype=np.int8)
+    out[luma < SAND_LUMA] = MATERIALS.index("land")
+    out[luma < WOOD_LUMA] = MATERIALS.index("wood")
+    out[g > r] = MATERIALS.index("green")
+    out[b > r] = MATERIALS.index("sea")
+    out[chroma < NEUTRAL_SAT] = MATERIALS.index("neutral")
+    return out
+
+
+def material_warmth(img: Image.Image, mask: Mask = HUD_MASK) -> dict[str, tuple[float, float | None]]:
+    """Per material: (its share of the pixels outside mask, its mean warmth R - B, or None when it has no pixel)."""
+    rgb = img.convert("RGB")
+    k = keep(rgb.width, rgb.height, mask)
+    a = np.asarray(rgb, dtype=np.float32) / 255.0
+    w, labels = (a[..., 0] - a[..., 2])[k], classify(rgb)[k]
+    return {name: (float((labels == i).mean()), float(w[labels == i].mean()) if (labels == i).any() else None)
+            for i, name in enumerate(MATERIALS)}
+
+
+def material_band(promo_warmth: float) -> tuple[float, float]:
+    t = MATERIAL_TOLERANCE * abs(promo_warmth)
+    return promo_warmth - t, promo_warmth + t
+
+
+def material_guard(shot: Image.Image, promo: Image.Image, mask: Mask = HUD_MASK) -> dict[str, dict[str, float | bool]]:
+    """Each guarded material's mean warmth in shot against its band from promo. Raises ValueError when a guarded material
+    covers less than MIN_MATERIAL_SHARE of either image, rather than pass on too few pixels."""
+    ours, theirs = material_warmth(shot, mask), material_warmth(promo, mask)
+    out: dict[str, dict[str, float | bool]] = {}
+    for name in GUARDED_MATERIALS:
+        for who, m in (("the screenshot", ours), ("the promo", theirs)):
+            if m[name][0] < MIN_MATERIAL_SHARE:
+                raise ValueError(f"{name} covers {m[name][0]:.2%} of {who}, under {MIN_MATERIAL_SHARE:.0%}: cannot measure it")
+        o, p = ours[name][1], theirs[name][1]
+        assert o is not None and p is not None
+        lo, hi = material_band(p)
+        out[name] = {"ours": o, "promo": p, "lo": lo, "hi": hi, "ok": lo <= o <= hi}
+    return out
+
+
 def simulate_cvd(img: Image.Image, kind: str) -> Image.Image:
     a = np.asarray(img.convert("RGB"), dtype=np.float64) / 255.0
     lin = np.where(a <= 0.04045, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
@@ -148,6 +217,11 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
         with log.open("a") as f:
             f.write("\t".join([a.name + MASKED_SUFFIX, branch, commit, str(path.resolve()), f"{m['saturation']:.4f}", f"{m['contrast']:.4f}", f"{m['warmth']:.4f}", f"{d:.4f}"]) + "\n")
         print("ART " + title)
+        if pose == "diorama02":
+            print(f"MATERIAL {pose} whole-frame warmth (information only) {m['warmth']:.4f} vs promo {p['warmth']:.4f}")
+            for name, g in material_guard(shot, promo).items():
+                print(f"MATERIAL {pose} {name} warmth {g['ours']:.4f} vs promo {g['promo']:.4f} band "
+                      f"[{g['lo']:.4f}, {g['hi']:.4f}] {'PASS' if g['ok'] else 'FAIL'}")
         rows += 1
     if uniform:
         return 2

@@ -148,3 +148,79 @@ def test_masked_art_log_rows_and_titles_are_labelled_so_they_are_not_mistaken_fo
     old, new = (r.split("\t")[0] for r in log.read_text().splitlines())
     assert old == "main6" and new == "main6" + ac.MASKED_SUFFIX == "main6-hudmask"
     assert "main6-hudmask (HUD masked)" in capsys.readouterr().out
+
+
+PATCH = {"sand": (219, 173, 129), "sea": (83, 116, 146), "wood": (60, 44, 31), "land": (150, 115, 80),
+         "green": (110, 140, 80), "neutral": (128, 128, 128)}
+
+
+def stripes(colours, size=(300, 200)):
+    """A frame of full-height vertical stripes, one per colour, equal widths."""
+    a = np.zeros((size[1], size[0], 3), dtype=np.uint8)
+    edges = np.linspace(0, size[0], len(colours) + 1).astype(int)
+    for c, x0, x1 in zip(colours, edges, edges[1:]):
+        a[:, x0:x1] = c
+    return Image.fromarray(a, "RGB")
+
+
+def test_the_material_classifier_labels_each_known_patch():
+    for name, rgb in PATCH.items():
+        labels = ac.classify(solid(rgb))
+        assert set(np.unique(labels)) == {ac.MATERIALS.index(name)}, name
+    edge = {(240, 238, 235): "neutral",       # white salt and labels: chroma under NEUTRAL_SAT
+            (150, 120, 150): "land",          # R == B is not sea; warm-or-level hue at mid luma
+            (120, 160, 170): "sea",           # the Dead Sea's pale cyan is water
+            (70, 70, 63): "wood",             # dark, barely warm (chroma 0.10) is still dark wood
+            (190, 150, 110): "sand"}          # luma 0.6
+    for rgb, name in edge.items():
+        assert ac.MATERIALS[int(ac.classify(solid(rgb))[0, 0])] == name, (rgb, name)
+
+
+def test_the_wood_land_and_sand_luma_thresholds_are_pinned():
+    assert (ac.NEUTRAL_SAT, ac.WOOD_LUMA, ac.SAND_LUMA) == (0.08, 0.30, 0.55)
+    assert ac.GUARDED_MATERIALS == ("sand", "sea", "wood")
+    assert (ac.MATERIAL_TOLERANCE, ac.MIN_MATERIAL_SHARE) == (0.2, 0.02)
+    assert ac.material_band(0.381) == pytest.approx((0.3048, 0.4572))
+    assert ac.material_band(-0.254) == pytest.approx((-0.3048, -0.2032))
+
+
+def test_material_warmth_gives_each_class_its_share_and_mean_warmth():
+    m = ac.material_warmth(stripes([PATCH["sea"], PATCH["sand"]]), mask=())
+    assert m["sea"][0] == pytest.approx(0.5) and m["sand"][0] == pytest.approx(0.5)
+    assert m["sand"][1] == pytest.approx((219 - 129) / 255) and m["sea"][1] == pytest.approx((83 - 146) / 255)
+    assert m["wood"] == (0.0, None)
+
+
+def test_a_warmer_sand_fails_the_sand_guard_although_the_whole_frame_warmth_is_unchanged():
+    promo = stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]])
+    assert all(r["ok"] for r in ac.material_guard(promo, promo).values())
+    # sand 20/255 warmer, wood 20/255 cooler: the same whole-frame warmth, so the old metric cannot tell them apart
+    shot = stripes([PATCH["sea"], (229, 173, 119), (50, 44, 41)])
+    assert ac.metrics(shot)["warmth"] == pytest.approx(ac.metrics(promo)["warmth"], abs=1e-6)
+    g = ac.material_guard(shot, promo)
+    assert not g["sand"]["ok"] and not g["wood"]["ok"] and g["sea"]["ok"]
+    assert g["sand"]["ours"] > g["sand"]["hi"]
+
+
+def test_a_material_too_rare_in_either_image_raises_instead_of_passing():
+    full = stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]])
+    no_sea = stripes([PATCH["land"], PATCH["sand"], PATCH["wood"]])
+    with pytest.raises(ValueError, match="sea"):
+        ac.material_guard(no_sea, full)
+    with pytest.raises(ValueError, match="sea"):
+        ac.material_guard(full, no_sea)
+    a = np.asarray(full).copy(); a[:, :99] = PATCH["land"]; a[:, 99] = PATCH["sea"]   # sea is 1 column of 300: 0.3%
+    with pytest.raises(ValueError, match="sea"):
+        ac.material_guard(Image.fromarray(a, "RGB"), full)
+
+
+def test_main_prints_the_diorama02_material_verdicts_and_the_whole_frame_warmth_as_information(tmp_path, capsys):
+    promo = tmp_path / "promo.png"; stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270)).save(promo)
+    shots = tmp_path / "shots"; shots.mkdir()
+    stripes([PATCH["sea"], (229, 173, 119), PATCH["wood"]], (480, 270)).save(shots / "diorama02.png")
+    log = tmp_path / "art-log.tsv"
+    assert ac.main(["art_compare.py", str(shots), "t", "--log", str(log)], root=tmp_path,
+                   promos={"gameplay03": promo, "diorama02": promo}) == 0
+    out = capsys.readouterr().out
+    assert "MATERIAL diorama02 sand" in out and "FAIL" in out and "MATERIAL diorama02 sea" in out
+    assert "whole-frame warmth (information only)" in out
