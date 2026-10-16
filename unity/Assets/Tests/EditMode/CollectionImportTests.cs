@@ -32,8 +32,12 @@ public class CollectionImportTests
     /// <summary>Found by #668's WebGL build: every Build.* ran BuildBundles, which copied the bundles into
     /// StreamingAssets/collection without their .manifest files and then asked Unity for each one's CRC there, which Unity
     /// reads from the .manifest: "no CRC for the bundle", and no player build since #680. The real path, for the editor's
-    /// build target: the shipped folder holds the bundles and a checks file whose every line matches its bundle.</summary>
-    [Test]
+    /// build target: the shipped folder holds the bundles and a checks file whose every line matches its bundle.
+    /// The timeout is 10 minutes, not Unity's default 3 (#759). Nearly all of the time is BuildAssetBundles: 0.1 s with
+    /// the bundles already built, 5 s without them, 42 s in a fresh Library clone (its first build imports and compiles
+    /// for the target), and 240-249 s in six fresh clones built at once at a load of about 20. 600 s is 2.4 times the
+    /// slowest run seen. Unity checks the timeout when the test returns; it does not abort a running build.</summary>
+    [Test, Timeout(600000)]
     public void BuildBundlesWritesTheChecksBesideTheShippedBundles()
     {
         var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
