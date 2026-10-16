@@ -380,7 +380,10 @@ def test_the_committed_coast_is_the_bake_of_todays_settlements(monkeypatch):
     elev, meta, committed = committed_and_metric_coast()
     fresh = tb.coast(elev, meta, tb.plot_reaches(meta)).astype(int)
     diff = np.abs(fresh - committed)
-    assert diff.max() <= 1 and (diff > 0).mean() < 1e-4, "coast.png is stale: run uv run tools/terrain_bake.py"
+    assert diff.max() <= 1 and (diff > 0).mean() < 1e-4, (
+        "unity/Assets/Textures/Map/coast.png is stale against content/map/settlements_1948.yaml, localities_1948.yaml or "
+        "settlement_population_1945.yaml (the dune beach yields to each place's plot reach, set by its coordinates and "
+        "population): run `uv run tools/terrain_bake.py` from the repo root and commit unity/Assets/Textures/Map/coast.png")
 
 
 def test_the_committed_coast_keeps_every_settlements_own_ground_at_scshores_beach(monkeypatch):
