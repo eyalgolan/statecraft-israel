@@ -104,7 +104,7 @@ flowchart LR
 | Phase | What it adds | Status | Issue |
 |---|---|---|---|
 | 0 | Owner decisions on the open GDD items | In progress: the Phase 1 decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
-| 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | In progress: 6 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
+| 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | In progress: 7 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
 | 2 | Monthly turns for the real game, and the five resources | In progress: monthly turns and Money are done | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | Every city, with housing, jobs and immigrant absorption | Later | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | Pioneers, building sites, roads and railways | Later | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
