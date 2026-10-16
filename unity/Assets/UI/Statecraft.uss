@@ -409,6 +409,14 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .card-stat-name { width: 82px; flex-shrink: 0; font-size: 14px; color: var(--ink-dim); -unity-text-align: middle-left; padding: 0; margin: 0; }
 .card-stat-value { width: 24px; flex-shrink: 0; font-size: 16px; color: var(--ink); -unity-text-align: middle-right; padding: 0; margin: 0; }
 .seat-selected { border-color: var(--gold-light); background-color: var(--navy-raised); }
+/* The selected seat's tag (#41 M6): a gold band with a word across the foot of the plate, the mark that is not a colour.
+   Absolute, so the card's layout does not move; not a thicker rim, which the border-box would take out of the content
+   and which the audit's L3 proposes for focus. Not in the .seat:focus text list below: it keeps its colours under focus. */
+.card-selected {
+    display: none; position: absolute; left: 0; right: 0; bottom: 0; height: 22px; padding: 0; margin: 0;
+    background-color: var(--gold-light); color: var(--navy-deep); font-size: 15px; -unity-text-align: middle-center;
+}
+.seat-selected .card-selected { display: flex; }
 .seat-vacant .card-name { color: var(--ink-dim); }
 .appointed { color: var(--gold); }
 /* A keyboard-focused card takes the warm focus fill (Button:focus); its dim and gold text turn light to stay legible on it. */
@@ -439,6 +447,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 #cabinet-pick-title { white-space: normal; }
 .pm-offices { flex-direction: row; flex-wrap: wrap; margin: -2px 0 8px 0; flex-shrink: 0; }
 .pm-office { font-size: 15px; padding: 3px 10px; margin: 0 6px 4px 0; border-color: rgba(196, 160, 92, 0.6); }
+/* A selected office the Prime Minister holds himself has no plate for the tag (#41 M6): its rim doubles instead, a mark
+   that is not a colour. The padding gives the pixel back, so the button keeps its size. */
+.pm-office.seat-selected { border-width: 2px; padding: 2px 9px; }
 .cabinet-house {
     flex-direction: row; flex-wrap: wrap; align-items: center; flex-shrink: 0; margin: 0 5px 8px 5px; padding: 10px 14px;
     background-color: rgba(5, 9, 18, 0.55); border-width: 1px; border-color: var(--gold-dim); border-radius: 2px;

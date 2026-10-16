@@ -36,6 +36,11 @@ namespace Statecraft.Game.UI
             var plate = Element(prefix + "-plate", "card-plate");
             plate.Add(Element(prefix + "-portrait", PortraitClass));
             plate.Add(Text(prefix + "-initials", InitialsClass));
+            // The selected seat's word, shown only under .seat-selected (Statecraft.uss): a mark that is not a colour
+            // change, since the selected fill and rim differ from the rest by 1.2:1 and 2.4:1 (#41 M6).
+            var selected = Text(prefix + "-selected", "card-selected");
+            selected.text = text["card.selected"];
+            plate.Add(selected);
             card.Add(plate);
             card.Add(Text(prefix + "-holder", NameClass));
             card.Add(Text(prefix + "-office", OfficeClass));

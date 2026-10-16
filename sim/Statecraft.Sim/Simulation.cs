@@ -17,6 +17,7 @@ namespace Statecraft.Sim
             EconomySystem.Init(c, s);
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
+            Pools.Init(c, s);
             SecuritySystem.Init(c, s, why);
             AttentionSystem.Refill(c, s);
             EventSystem.Trigger(c, s, why);

@@ -69,9 +69,11 @@ namespace Statecraft.Sim
             UpdateSituations(c, s, why);
         }
 
-        /// <summary>clamp(base + effect contributions) to [0, 1], before event shifts.</summary>
+        /// <summary>clamp(base + effect contributions) to [0, 1], before event shifts. In the GDD loop food_supply also carries
+        /// the Food stock's term (R-FOOD-003), exactly 0 at a full cover.</summary>
         internal static double Inner(Content c, GameState s, Indicator i) =>
-            Math.Max(0, Math.Min(1, i.Base + c.At(s.Date).Effects.Where(e => e.Target == i.Id).Sum(e => s.EffectContributions[e.Id])));
+            Math.Max(0, Math.Min(1, i.Base + c.At(s.Date).Effects.Where(e => e.Target == i.Id).Sum(e => s.EffectContributions[e.Id])
+                + (i.Id == Pools.FoodIndicator ? Pools.FoodTerm(c, s) : 0.0)));
 
         /// <summary>clamp(inner + event shift) to [0, 1].</summary>
         internal static double Level(Content c, GameState s, Indicator i) =>

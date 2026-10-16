@@ -82,7 +82,7 @@ namespace Statecraft.Game.Map.Routes
         /// lot or crown still keeps about 130 m from the visible dirt.</summary>
         public const float RoadCorridorMarginM = 40f;
 
-        /// <summary>Every route's line (world x, z) with the half-width kits must keep clear of: half the drawn width plus
+        /// <summary>Every route's traced line (world x, z; <see cref="World"/>, not cut as <see cref="Drawn"/> is) with the half-width kits must keep clear of: half the drawn width plus
         /// <see cref="CorridorMarginM"/> (<see cref="RoadCorridorMarginM"/> for roads). All routes, whatever their window: the
         /// kits are built once, not per date, so a route that appears later (the Burma Road) has its corridor from the start.</summary>
         public static List<(List<Vector2> line, float halfWidth)> Corridors(GeoFrame frame, IEnumerable<RoutePath> routes) =>
@@ -126,7 +126,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>A plan's ribbon, derived from the terrain (what the bake stores). A change to it or to what it calls
         /// (World, Geometry and their helpers) needs a re-bake and a bump of RouteRibbonFile.Version (see Plan).</summary>
         public static RibbonGeometry Derive(RibbonPlan plan, GeoFrame frame, TerrainData data, Vector3 origin) =>
-            Geometry(plan.Routes.Select(r => (r.Id, World(frame, r), WidthOf(r.Kind))), data, origin, plan.RailGrade);
+            Geometry(plan.Routes.Select(r => (r.Id, Drawn(frame, r), WidthOf(r.Kind))), data, origin, plan.RailGrade);
 
         /// <summary>Builds the routes under <paramref name="terrain"/> (so a map rebuild destroys them): one group per display
         /// window (its rail and road ribbons), shown as at <paramref name="date"/>, and, when <paramref name="train"/> is not
@@ -222,6 +222,50 @@ namespace Statecraft.Game.Map.Routes
                 if (w.Count == 0 || (q - w[w.Count - 1]).sqrMagnitude > 1e-4f) w.Add(q);
             }
             return w;
+        }
+
+        /// <summary>A route's line as the map draws its ribbon: <see cref="World"/>, with a road's or a railway's ends
+        /// cut at the walls of Jerusalem's symbolic Old City (#319). The walled square (SettlementKits.OldCityWalls) is 4 km
+        /// across, about 4 times the real Old City, so the real 1948 roads that start outside the real walls, by New Gate and
+        /// Jaffa Gate, and the Jaffa-Jerusalem railway's station, also outside them, fall inside it. Cut there, each line
+        /// ends on the wall line, where the walls leave it a gap (the railway on the owner's ruling, "Cut it at the walls"),
+        /// and the traced data keeps the real lines. Only a line's ends are cut: one that ran through the square would keep
+        /// its middle, and RouteTests.TheRoadsAndTheRailwayStopAtTheOldCityWalls fails on it. Tracks are not cut (none comes
+        /// near). The corridors (<see cref="Corridors"/>) keep the traced lines, so the kits and the units stand where
+        /// they did: inside the walls the roads' clear ways read as the streets from the gates.</summary>
+        public static List<Vector2> Drawn(GeoFrame frame, RoutePath route)
+        {
+            var line = World(frame, route);
+            if (route.Kind == RoutePaths.Track) return line;
+            var (centre, half) = Kits.SettlementKits.OldCityWalls(frame);
+            return TrimEndsInside(line, centre, half);
+        }
+
+        /// <summary><paramref name="line"/> without its leading and trailing runs inside the square (centre
+        /// <paramref name="c"/>, half side <paramref name="half"/>), each cut where it crosses the square's edge. A line wholly
+        /// inside comes back empty, one wholly outside unchanged.</summary>
+        public static List<Vector2> TrimEndsInside(List<Vector2> line, Vector2 c, float half)
+        {
+            bool Inside(Vector2 p) => Mathf.Abs(p.x - c.x) < half && Mathf.Abs(p.y - c.y) < half;
+            int first = line.FindIndex(p => !Inside(p)), last = line.FindLastIndex(p => !Inside(p));
+            if (first < 0) return new List<Vector2>();
+            if (first == 0 && last == line.Count - 1) return line;
+            var cut = new List<Vector2>(last - first + 3);
+            void Add(Vector2 q) { if (cut.Count == 0 || (q - cut[cut.Count - 1]).sqrMagnitude > 1e-4f) cut.Add(q); }
+            if (first > 0) Add(Exit(line[first - 1], line[first], c, half));
+            for (int i = first; i <= last; i++) Add(line[i]);
+            if (last < line.Count - 1) Add(Exit(line[last + 1], line[last], c, half));
+            return cut;
+        }
+
+        /// <summary>Where the segment from <paramref name="a"/> (inside the square) to <paramref name="b"/> (outside) crosses
+        /// its edge.</summary>
+        static Vector2 Exit(Vector2 a, Vector2 b, Vector2 c, float half)
+        {
+            var d = b - a; float t = 1f;
+            if (d.x != 0f) t = Mathf.Min(t, ((d.x > 0f ? c.x + half : c.x - half) - a.x) / d.x);
+            if (d.y != 0f) t = Mathf.Min(t, ((d.y > 0f ? c.y + half : c.y - half) - a.y) / d.y);
+            return a + d * Mathf.Max(0f, t);
         }
 
         /// <summary>Points every <paramref name="step"/> metres along a polyline, its last point included, and the

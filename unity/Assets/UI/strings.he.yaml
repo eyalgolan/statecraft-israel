@@ -157,6 +157,9 @@ card.loyalty: "נאמנות"
 card.party: "מפלגה: {0}"
 card.appointed_name: "{0} (מינוי שלך)"
 card.offices_separator: " · "
+# The tag on the selected Cabinet seat's card (PersonCard; #41 M6). Not "נבחר": on a minister's card in a game about the
+# Knesset it reads as "elected". "מסומן" agrees with the card (כרטיס), masculine. For the native reviewer (#564).
+card.selected: "מסומן"
 info.hint: "יש ללחוץ על המפה כדי לבדוק משושה"
 info.off_map: "מחוץ למפה"
 info.hex: "{0} · גובה {1:N0} מ׳"

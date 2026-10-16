@@ -1018,6 +1018,13 @@ namespace Statecraft.Sim
                 if (!cities.Contains(m.ArrivalsCity)) throw new ContentException(file, "mvp.arrivals_city", $"'{m.ArrivalsCity}' is not a city in cities.yaml");
                 if (m.BuildYishuvTurns < 1) throw new ContentException(file, "mvp.build_yishuv_turns", "must be >= 1");
                 if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
+                // R-FOOD-001 to R-FOOD-003: required, so a missing key is never read as 0 (a stock term of 0, or no stock).
+                if (m.KFood == null) throw new ContentException(file, "mvp.k_food", "required when eras.yaml systems.loop is gdd");
+                if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
+                if (m.CoverMonths == null) throw new ContentException(file, "mvp.cover_months", "required when eras.yaml systems.loop is gdd");
+                if (m.CoverMonths < 1) throw new ContentException(file, "mvp.cover_months", "must be >= 1");
+                if (c.Indicators.All(i => i.Id != Pools.FoodIndicator))
+                    throw new ContentException(file, "mvp.k_food", "the Food stock feeds the food_supply indicator, which model.yaml must define");
                 // One game has one last day (R-LOOP-004): an era cannot move it.
                 if (m.End != c.Rules.Mvp!.End) throw new ContentException(file, "mvp.end", "must be the same in every era (the game has one end)");
                 // R-OBJ-002. Required, so a missing key is not read as 0. Zero is allowed (a balance choice); a negative value

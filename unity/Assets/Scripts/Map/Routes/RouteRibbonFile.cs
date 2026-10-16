@@ -63,7 +63,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Bump it when RouteLayer.Geometry's rule changes (the constants are checked on their own), so CI fails a
         /// bake made by the old rule. tools/tests/test_route_ribbon_bake.py pins it with a fingerprint of that code
         /// (RouteLayer.Plan, Derive and what they call, and Bake below) and fails on an edit until both are re-pinned.</summary>
-        public const int Version = 1;
+        public const int Version = 3;   // 2: roads cut at the Old City's walls (RouteLayer.Drawn, #319); 3: the railway too
         const int Magic = 0x31524353;   // "SCR1"
 
         /// <summary>What the ribbons were made from, as the map read it.</summary>

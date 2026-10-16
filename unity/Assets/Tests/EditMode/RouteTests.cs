@@ -101,7 +101,7 @@ public class RouteTests
         using var sha = System.Security.Cryptography.SHA256.Create();
         return string.Concat(sha.ComputeHash(bytes.ToArray()).Select(b => b.ToString("x2")));
     }
-    const string RailMeshHash = "5363889121beb4aae19525a062cb108ff35394ba04e397b42f75a03a8e82439d";   // #252: full width where only one side leaves the tolerance
+    const string RailMeshHash = "e6b1710041c05f9ce18d1591e5173c003b933308e9cb84fa807e23b015f16fbd";   // #252: full width where only one side leaves the tolerance; #319: cut at the Old City's walls
 
     [Test]
     public void TheMapBuildsRibbonsOnTheGroundAndTheTogglesHideThem()
@@ -126,7 +126,7 @@ public class RouteTests
             // clears the ground under it by the clearance, and lies on the terrain.
             var routes = RoutePaths.Parse(CommittedYaml, Bounds);
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
-            var check = RouteLayer.Ribbon(routes.Where(r => r.Kind == RoutePaths.Rail).Select(r => (RouteLayer.World(map.Frame, r), RouteLayer.RailWidthM)), data, origin, "check", railGrade: true);
+            var check = RouteLayer.Ribbon(routes.Where(r => r.Kind == RoutePaths.Rail).Select(r => (RouteLayer.Drawn(map.Frame, r), RouteLayer.RailWidthM)), data, origin, "check", railGrade: true);
             try
             {
                 Assert.AreEqual(railVerts, check.vertexCount, "the same data gives the same vertices");
@@ -136,7 +136,7 @@ public class RouteTests
                 }
                 // Roads keep main's drape: every vertex clears the ground under it by the clearance (the railways' clearance
                 // under their rails is TheRailClearsTheGroundUnderItsRailsAndRampsItsWidth).
-                var roadCheck = RouteLayer.Ribbon(routes.Where(r => r.Kind != RoutePaths.Rail).Select(r => (RouteLayer.World(map.Frame, r), RouteLayer.WidthOf(r.Kind))), data, origin, "roads");
+                var roadCheck = RouteLayer.Ribbon(routes.Where(r => r.Kind != RoutePaths.Rail).Select(r => (RouteLayer.Drawn(map.Frame, r), RouteLayer.WidthOf(r.Kind))), data, origin, "roads");
                 Assert.AreEqual(roadVerts, roadCheck.vertexCount);
                 foreach (var v in roadCheck.vertices)
                     Assert.GreaterOrEqual(v.y - RouteLayer.Ground(data, origin, new Vector2(v.x, v.z)), RouteLayer.ClearanceM - 0.01f);
@@ -450,6 +450,77 @@ public class RouteTests
             var burma = RoutesRoot(map).Find(RouteLayer.RibbonsName).GetComponentsInChildren<RouteGroup>(true)
                 .Single(g => g.Window.From == new System.DateTime(1948, 6, 14));
             Assert.IsTrue(burma.gameObject.activeSelf, "shown at once after the rebuild");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>RouteLayer.TrimEndsInside, on hand-made lines (no map): an end inside the square is cut exactly on the wall
+    /// line, nothing that is left lies inside, and only the ends are cut (#319 review). The railway case uses its real
+    /// numbers, in metres from the square's centre: its first point inside is only 92 m deep, well under the 340 m the
+    /// ribbon test allows, so this test is what pins the crossing.</summary>
+    [Test]
+    public void TrimEndsInsideCutsEachEndExactlyOnTheWall()
+    {
+        var c = new Vector2(98264f, 257260f); const float half = 2000f, eps = 0.05f;   // float32 at these world coordinates has a 0.03 m step
+        List<Vector2> Line(params float[] xy) { var l = new List<Vector2>(); for (int i = 0; i < xy.Length; i += 2) l.Add(c + new Vector2(xy[i], xy[i + 1])); return l; }
+        float Cheb(Vector2 p) => Mathf.Max(Mathf.Abs(p.x - c.x), Mathf.Abs(p.y - c.y));
+        void NothingInside(List<Vector2> l, string what) { foreach (var p in l) Assert.GreaterOrEqual(Cheb(p), half - eps, $"{what}: {p - c} is inside"); }
+
+        // The railway: in through the south wall, its last two points inside (92 m and 1094 m deep).
+        var rail = RouteLayer.TrimEndsInside(Line(-2227f, -2570f, -1743f, -1908f, -904f, -1094f), c, half);
+        Assert.AreEqual(2, rail.Count, "the railway keeps its outside point and gains the crossing");
+        var end = rail[rail.Count - 1] - c;
+        Assert.AreEqual(-2000f, end.y, eps, "the railway ends on the south wall");
+        Assert.AreEqual(-1743f + (-484f) * (92f / 662f), end.x, 0.1f, "where its last segment crosses it");
+        NothingInside(rail, "railway");
+
+        // A line that starts inside and leaves by the east wall: its first point becomes the crossing (2000, 150).
+        var east = RouteLayer.TrimEndsInside(Line(0f, 0f, 1500f, 100f, 2500f, 200f), c, half);
+        Assert.AreEqual(2, east.Count);
+        Assert.AreEqual(2000f, (east[0] - c).x, eps); Assert.AreEqual(150f, (east[0] - c).y, eps);
+        Assert.AreEqual(half, Cheb(east[0]), eps, "the cut end lies on the wall line");
+        NothingInside(east, "east");
+
+        // Wholly outside: unchanged. Wholly inside: empty. Through the square: only the ends are cut, so it keeps its middle.
+        var outside = Line(-3000f, -3000f, 3000f, -3000f);
+        CollectionAssert.AreEqual(outside, RouteLayer.TrimEndsInside(outside, c, half));
+        CollectionAssert.IsEmpty(RouteLayer.TrimEndsInside(Line(-100f, 0f, 100f, 0f), c, half));
+        var through = Line(-3000f, 0f, 0f, 0f, 3000f, 0f);
+        CollectionAssert.AreEqual(through, RouteLayer.TrimEndsInside(through, c, half));
+    }
+
+    /// <summary>Jerusalem's symbolic Old City is a walled square 4 km across (SettlementKits.OldCityWalls), so the real 1948
+    /// roads that meet by New Gate, and the Jaffa-Jerusalem railway's station, all outside the real walls, fall inside it.
+    /// The map cuts each road's and the railway's ribbon at the walls (#319; the railway on the owner's ruling, "Cut it at
+    /// the walls"): no ribbon vertex lies inside the square by more than half its ribbon's width (an end section is square
+    /// to the line, so a line meeting the wall at a slant reaches that far in, under the wall), and the four roads and the
+    /// railway that meet there each reach to within 300 m outside it.</summary>
+    [Test]
+    public void TheRoadsAndTheRailwayStopAtTheOldCityWalls()
+    {
+        var map = BuildMap();
+        try
+        {
+            var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
+            var (c, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
+            Assert.Greater(half, 1000f, "the square is not empty");
+            var inside = new SortedSet<string>(); var reach = new SortedSet<string>();
+            foreach (var plan in RouteLayer.Plan(RoutePaths.Parse(CommittedYaml, Bounds)))
+            {
+                float allowed = (plan.RailGrade ? RouteLayer.RailWidthM : RouteLayer.RoadWidthM) / 2f;
+                var g = RouteLayer.Derive(plan, map.Frame, data, origin);
+                foreach (var span in g.Routes)
+                    for (int v = span.FirstVertex; v < span.FirstVertex + span.VertexCount; v++)
+                    {
+                        var p = g.Vertices[v];
+                        float d = Mathf.Max(Mathf.Abs(p.x - c.x), Mathf.Abs(p.z - c.y));   // under half: inside the walls
+                        if (d < half - allowed) inside.Add(span.Id);
+                        else if (d < half + 300f) reach.Add(span.Id);
+                    }
+            }
+            CollectionAssert.IsEmpty(inside, "ribbons inside the Old City's walls");
+            CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
+                "jerusalem_jericho_road", "jaffa_jerusalem_railway" }, reach, "the roads and the railway that reach the walls");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }

@@ -13,11 +13,13 @@ RouteLayer.Derive and what they call; comments and whitespace left out) covers i
 colours): an edit to it fails here until the ribbons are re-baked, RouteRibbonFile.Version is bumped and the fingerprint
 is re-pinned. There is no numpy port: the ribbons drape on Unity's terrain sampling (GetInterpolatedHeight and Normal)."""
 import codecs
+import json
 import re
 import struct
 from pathlib import Path
 
 import numpy as np
+import pytest
 import yaml12
 
 from test_terrain_water_bake import MAP, csharp, fingerprint, heights_check, method, unity_heights
@@ -140,14 +142,15 @@ def test_the_check_is_fnv1a():
 
 # The fingerprint of the ribbons' C# code (code_fingerprint), and the RouteRibbonFile.Version it was pinned at. Re-pin both
 # together, only after re-baking (RouteRibbonBake.Bake) with Version bumped.
-PINNED_VERSION, PINNED_CODE = 1, "533ef09adbfaf34c768842be54486f6370eb938456b1bcb069bc482dd43dae68"
+PINNED_VERSION, PINNED_CODE = 3, "a60ad9441761c59d2dab361e68be89fb710cc59a5edc31e0c051a6ff14367328"
 
 
 def code_fingerprint() -> str:
     """The code between the inputs and the bake: RouteRibbonFile.Bake (the terrain and frame it builds), the plans and
-    their routes' windows, and RouteLayer's geometry. Its constants are left out: the header holds them (FLOATS, INTS)."""
+    their routes' windows, RouteLayer's geometry, and the Old City's walls the roads are cut at (#319). Its constants are left out: the header holds them (FLOATS, INTS)."""
     layer = csharp("Scripts/Map/Routes/RouteLayer.cs")
     paths = csharp("Scripts/Map/Routes/RoutePaths.cs")
+    landmarks = csharp("Scripts/Map/" + LANDMARKS)
     return fingerprint([
         method(csharp("Scripts/Map/Routes/RouteRibbonFile.cs"), "public static byte[] Bake("),
         method(csharp("Scripts/Map/MapBuilder.cs"), "public static Vector3 TerrainSize("),
@@ -159,6 +162,12 @@ def code_fingerprint() -> str:
         method(layer, "public static List<RibbonPlan> Plan("),
         method(layer, "public static RibbonGeometry Derive("),
         method(layer, "public static List<Vector2> World("),
+        method(layer, "public static List<Vector2> Drawn("),
+        method(layer, "public static List<Vector2> TrimEndsInside("),
+        method(layer, "static Vector2 Exit("),
+        method(landmarks, "public const double OldCityLon"),
+        method(landmarks, "public const float OldCityHalfM"),
+        method(landmarks, "public static (Vector2 centre, float half) OldCityWalls("),
         method(layer, "public static (List<Vector2> points, List<float> along) Resample("),
         method(layer, "public static float GradeHeight("),
         method(layer, "public static float FlatHalfWidth("),
@@ -175,3 +184,67 @@ def test_the_ribbon_code_is_the_one_the_bake_was_made_with():
         f"the C# that makes the route ribbons changed (version {bake_version()}, fingerprint {code_fingerprint()}): "
         f"{BAKE.relative_to(ROOT)} is stale until you {REBAKE} after bumping RouteRibbonFile.Version, then re-pin PINNED_VERSION and PINNED_CODE in "
         "tools/tests/test_route_ribbon_bake.py")
+
+
+# Jerusalem's symbolic Old City (SettlementKits.OldCityWalls): its walled square is 4 km across, so the real 1948 roads by
+# New Gate and the Jaffa-Jerusalem railway's station, all outside the real walls, fall inside it; the map cuts each road
+# and the railway at the walls (RouteLayer.Drawn, #319; the railway on the owner's ruling, "Cut it at the walls").
+LANDMARKS = "Kits/SettlementKits.Landmarks.cs"
+OLD_CITY_ROADS = ("jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
+                  "jerusalem_jericho_road")
+OLD_CITY_RAIL = ("jaffa_jerusalem_railway",)
+
+
+def ribbon_vertices_by_route(look: str) -> dict[str, np.ndarray]:
+    """Every ribbon vertex (world x, z) of one look in the bake ("Roads": the roads and tracks; "Rail"), by route id."""
+    r = Reader(bake_bytes())
+    head = read_header(r)
+    out: dict[str, list] = {}
+    for _ in range(head["meshes"]):
+        name = r.text()
+        nv, ni, nr = r.take("<3i")
+        spans = []
+        for _ in range(nr):
+            rid = r.text()
+            first_v, count_v, _, _ = r.take("<4i")
+            spans.append((rid, first_v, count_v))
+        xyz = np.array(r.take(f"<{3 * nv}f"), dtype=np.float64).reshape(-1, 3) if nv else np.zeros((0, 3))
+        r.take(f"<{5 * nv}f")
+        r.take(f"<{ni}i")
+        if name.startswith(f"Route{look} "):
+            for rid, first, count in spans:
+                out.setdefault(rid, []).append(xyz[first:first + count][:, [0, 2]])
+    return {k: np.concatenate(v) for k, v in out.items()}
+
+
+def old_city_square() -> tuple[np.ndarray, float]:
+    """The walls' centre (world x, z) and half side, from the C# constants and the bake's terrain size (GeoFrame.ToWorld)."""
+    head = read_header(Reader(bake_bytes()))
+    size_x, _, size_z = head["terrain"][:3]
+    meta = json.loads((MAP / "heightmap.json").read_text())
+    lon, lat = (float(csharp_const(LANDMARKS, n)) for n in ("OldCityLon", "OldCityLat"))
+    centre = np.array([(lon - meta["lon0"]) / (meta["lon1"] - meta["lon0"]) * size_x,
+                       (lat - meta["lat0"]) / (meta["lat1"] - meta["lat0"]) * size_z])
+    return centre, float(csharp_const(LANDMARKS, "OldCityHalfM"))
+
+
+@pytest.mark.parametrize("look, width, reaching", [("Roads", "RoadWidthM", OLD_CITY_ROADS), ("Rail", "RailWidthM", OLD_CITY_RAIL)])
+def test_no_road_or_railway_runs_inside_the_old_city_walls(look, width, reaching):
+    """Each road and the railway end at the walls: no ribbon vertex lies inside the square by more than half the ribbon's
+    width (the end section is square to the line, so a line meeting the wall at a slant reaches that far in under the
+    wall). Not vacuous: the square is where the real Old City is, and the four roads that start there and the railway
+    that ends there each reach to within 300 m of it."""
+    centre, half = old_city_square()
+    assert 1000 < half < 5000, half
+    depth_allowed = float(csharp_const("Routes/RouteLayer.cs", width)) / 2
+    ribbons = ribbon_vertices_by_route(look)
+    assert ribbons, f"no {look} ribbons in the bake"
+    inside, near = {}, {}
+    for rid, xz in ribbons.items():
+        d = np.abs(xz - centre).max(axis=1)   # Chebyshev distance: inside the square where it is under half
+        if (deep := int((d < half - depth_allowed).sum())):
+            inside[rid] = deep
+        near[rid] = int(((d >= half - depth_allowed) & (d < half + 300)).sum())
+    assert not inside, f"{look} vertices inside the Old City's walls: {inside}"
+    missing = [rid for rid in reaching if near.get(rid, 0) == 0]
+    assert not missing, f"these should reach the Old City's walls: {missing}"

@@ -18,7 +18,7 @@ namespace Statecraft.Sim
             Training.Progress(c, s, why);                 // 4. training
             Projects.Advance(c, s, next, why);            // 5. construction
             Cities.Produce(c, s, r, yearFraction, why);   // 6. production
-            // 7. Consumption: Phase 2.
+            Pools.Consume(c, s, r, why);                  // 7. consumption: the nation eats, then imports (R-FOOD-002)
             Cities.House(c, s, why);                      // 8. housing, then Social cohesion
             Cities.UpdateCohesion(s, r);
             Cities.Arrive(c, s, r, next, why);            // 9. arrivals

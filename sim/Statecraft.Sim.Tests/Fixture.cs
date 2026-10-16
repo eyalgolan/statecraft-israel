@@ -227,6 +227,8 @@ mvp:
   objective_points: 100
   objective_bonus_per_month: 5
   objective_bonus_cap: 60
+  k_food: 0.1
+  cover_months: 3
 ";
 
     public const string GddCities = @"

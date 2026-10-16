@@ -76,6 +76,12 @@ namespace Statecraft.Sim
         /// <summary>The player's score (GDD "Objectives": bonus points). An int assumes whole-number points; the point values and
         /// the timing bonus are open decisions with the owner (D-B2, D-B6), so the type is revisited when they are set.</summary>
         public int Score;
+        /// <summary>The national Food stock (R-FOOD-001; D-C2): units of Food, one population unit's food for a month. Never below 0.</summary>
+        public int Food;
+        /// <summary>The Food the nation needed in the last turn (R-FOOD-002): its population in units, set at the start and in step 7.</summary>
+        public int FoodNeed;
+        /// <summary>The part of <see cref="FoodNeed"/> the stock could not cover in the last turn (R-FOOD-002, Q-POOL-5).</summary>
+        public int FoodUnmet;
 
         public double TotalPopulation => Population.Values.Sum();
 
@@ -197,6 +203,12 @@ namespace Statecraft.Sim
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             if (Score != 0) { Sep(); Nl(); sb.Append("score=").Append(Score.ToString(CultureInfo.InvariantCulture)); }
+            if (Food != 0 || FoodNeed != 0 || FoodUnmet != 0)
+            {
+                Sep(); Nl();
+                sb.Append("food=").Append(Food.ToString(CultureInfo.InvariantCulture)).Append(',').Append(FoodNeed.ToString(CultureInfo.InvariantCulture))
+                  .Append(',').Append(FoodUnmet.ToString(CultureInfo.InvariantCulture));
+            }
             return sb.ToString();
         }
     }

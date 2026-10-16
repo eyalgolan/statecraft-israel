@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ad8067765007988a2ea52226a50622259b695cd72a5b735b298207e472b81504` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ca953c983faa2a85216efdf264bf1da9167c9787a06d21a73c76717dfab0f8b4` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `b42380ab7935e4daabd0577fa3df231c474f3ad92f6006af0a05918a46743915` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `b42380ab7935e4daabd0577fa3df231c474f3ad92f6006af0a05918a46743915` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -39,15 +39,15 @@ check `hash1950` and `hash1952`.
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 85191d48688be4595726b17778ecdda0175eff8f6f0fa1d976dbe3b48b42823b`.
+ministers): `SMOKE OK 5 turns 1948-10-15 848969ce7236d5fb4b8af33c2e6a8445d0a437a002b93cb076d54450c3d79e0a`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 ad8067765007988a2ea52226a50622259b695cd72a5b735b298207e472b81504" \
-  --expect "GOLDEN OK 1952 0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2" \
-  --expect "SMOKE OK 5 turns 1948-10-15 85191d48688be4595726b17778ecdda0175eff8f6f0fa1d976dbe3b48b42823b"
+  --expect "GOLDEN OK 1950 ca953c983faa2a85216efdf264bf1da9167c9787a06d21a73c76717dfab0f8b4" \
+  --expect "GOLDEN OK 1952 b42380ab7935e4daabd0577fa3df231c474f3ad92f6006af0a05918a46743915" \
+  --expect "SMOKE OK 5 turns 1948-10-15 848969ce7236d5fb4b8af33c2e6a8445d0a437a002b93cb076d54450c3d79e0a"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -224,3 +224,10 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 1 PR 6 | 1950 | `ad806776` | the first new yishuv objective (R-OBJ-001 to R-OBJ-003), rebased onto the cutover: the reference player builds Mefalsim on 15 June 1949, the month of its 12 June 1949 founding, so the objective completes on time for 100 points (`obj{first_new_yishuv=1949-06-15}`, `score=100`) and its card fires and is answered (`first_new_yishuv=continue`); no other event moves, so the card displaces nothing under the soft-event cap; `objective_points`, `objective_bonus_per_month` and `objective_bonus_cap` enter `rules.yaml` as design values (D-B6, D-B2) (was `f97e9f81`) |
 | GDD Phase 1 PR 6 | 1952 | `0f54dc51` | same (was `75d38299`) |
 | GDD Phase 1 PR 6 | mvp-end | `0f54dc51` | same; the same run as hash1952 (was `75d38299`); `smoke5` and the three scenarios do not move |
+| GDD Phase 2 PR 3 | 1950 | `ca953c98` | the national Food stock (R-FOOD-001 to R-FOOD-003; maintainer decision of 16 October 2026, #382, option (b)): a new hashed line `food=stock,need,unmet`, written only when set. The stock starts at `cover_months` (3) of the need and the monthly import keeps it there, so its `food_supply` term is exactly 0 and nothing else in the run moves (`food=3003,1001,0`) (was `ad806776`) |
+| GDD Phase 2 PR 3 | 1952 | `b42380ab` | same, and the 1951 currency crisis now cuts Food imports into the stock (Q-POOL-4) instead of shifting `food_supply` directly: the legacy cut is gone (`shift food_supply` 0.15, was 0.1167: the events' 0.15 less the cut's 0.0333 over the two crisis turns), the last turn imports nothing, the stock falls to 2732 against a full 4170 (`food=2732,1390,0`), and the stock term takes 0.0345 off, so `food_supply` ends at 0.8555 (was 0.8567); the voter groups read `food_supply`, so `stab` moves with it (0.5098, was 0.5095) (was `0f54dc51`) |
+| GDD Phase 2 PR 3 | mvp-end | `b42380ab` | same; the same run as hash1952 (was `0f54dc51`) |
+| GDD Phase 2 PR 3 | smoke5 | `848969ce` | the new `food=` line only; the five turns hold a full stock (was `85191d48`) |
+| GDD Phase 2 PR 3 | scenario-cautious | `5553c31a` | the new `food=` line only (`food=2253,751,0`) (was `58eb01db`) |
+| GDD Phase 2 PR 3 | scenario-reckless | `42041362` | the new `food=` line only (`food=2253,751,0`) (was `e2f409a5`) |
+| GDD Phase 2 PR 3 | scenario-mvp-absorb-first | `e01bb37a` | the new `food=` line only (`food=2556,852,0`) (was `f8858f6e`) |

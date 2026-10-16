@@ -157,6 +157,8 @@ card.loyalty: "Loyalty"
 card.party: "Party: {0}"
 card.appointed_name: "{0} (your appointee)"
 card.offices_separator: " · "
+# The tag on the selected Cabinet seat's card (PersonCard; #41 M6).
+card.selected: "Selected"
 # Defence (promo 08): the Ministry of Defense's share of budget spending (the Budget screen's line).
 defence.budget_share: "{0} of budget spending"
 defence.budget_none: "No defence line in the budget"
