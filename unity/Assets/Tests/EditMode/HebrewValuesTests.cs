@@ -31,7 +31,7 @@ public class HebrewValuesTests
     [Test]
     public void AValueInAHebrewTemplateIsWrappedInLeftToRightMarks()
     {
-        Assert.AreEqual("אוצר " + Lrm + "$12.0m" + Lrm + " · חוב " + Lrm + "IL 3.0m" + Lrm + " · מטבע חוץ " + Lrm + "-$4.2m" + Lrm,
+        Assert.AreEqual("כסף " + Lrm + "$12.0m" + Lrm + " · חוב " + Lrm + "IL 3.0m" + Lrm + " · מטבע חוץ " + Lrm + "-$4.2m" + Lrm,
             He.Format("budget.money", "$12.0m", "IL 3.0m", "-$4.2m"));
         Assert.AreEqual("מ־" + Lrm + "15 May 1948" + Lrm + " עד " + Lrm + "1 June 1948" + Lrm, He.Format("why.turn", "15 May 1948", "1 June 1948"));
         // A format item keeps its format: the value is formatted, then wrapped.
@@ -57,8 +57,8 @@ public class HebrewValuesTests
         Assert.IsTrue(UiDirection.RightToLeft(appointed), appointed);
         var amount = He.Format("hud.say_million", "-IL ", "3.0");
         Assert.AreEqual(Lrm + "-IL " + Lrm + Lrm + "3.0" + Lrm + " מיליון", amount);
-        Assert.AreEqual("אוצר: " + amount + ", קיטון של " + Lrm + "IL " + Lrm + Lrm + "4.0" + Lrm + " מיליון מאז התור הקודם",
-            He.Format("hud.say_down", "אוצר", amount, He.Format("hud.say_million", "IL ", "4.0")));
+        Assert.AreEqual("כסף: " + amount + ", קיטון של " + Lrm + "IL " + Lrm + Lrm + "4.0" + Lrm + " מיליון מאז התור הקודם",
+            He.Format("hud.say_down", "כסף", amount, He.Format("hud.say_million", "IL ", "4.0")));
     }
 
     /// <summary>A template with no letter of its own ("{0} {1}", "{0:N0}") is neither language: its values are left alone,
@@ -105,7 +105,7 @@ public class HebrewValuesTests
             CollectionAssert.AreEqual(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(got), key);
             Assert.AreEqual(-1, got.IndexOf(Lrm, StringComparison.Ordinal), key);
         }
-        Assert.AreEqual("Treasury $12.0m · debt IL 3.0m · foreign currency -$4.2m", en.Format("budget.money", "$12.0m", "IL 3.0m", "-$4.2m"));
+        Assert.AreEqual("Money $12.0m · debt IL 3.0m · foreign currency -$4.2m", en.Format("budget.money", "$12.0m", "IL 3.0m", "-$4.2m"));
         Assert.AreEqual("15 May 1948 to 1 June 1948", en.Format("why.turn", "15 May 1948", "1 June 1948"));
     }
 

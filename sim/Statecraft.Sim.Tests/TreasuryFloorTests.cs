@@ -52,7 +52,7 @@ public class TreasuryFloorTests
         var why = new List<Cause>();
         Assert.Null(EventSystem.Choose(Real, s, "reparations_claim", "claim", why));
         var money = why.Where(x => x.Target == "treasury" || x.Target == "debt").Select(x => x.Message).ToList();
-        Assert.Equal(new[] { "Treasury -IL 1.0m (A Claim on Germany)", "Borrowed IL 0.6m for A Claim on Germany" }, money);
+        Assert.Equal(new[] { "Money -IL 1.0m (A Claim on Germany)", "Borrowed IL 0.6m for A Claim on Germany" }, money);
     }
 
     // R-MONEY-003: an event that brings money in adds it to the Treasury and borrows nothing, debt or no debt.

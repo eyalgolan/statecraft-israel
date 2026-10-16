@@ -29,8 +29,10 @@ situations:
   - { id: food_crisis, indicator: food_supply, on_below: 0.30, off_above: 0.45, name: Food crisis }
   - { id: housing_crisis, indicator: housing, on_below: 0.25, off_above: 0.40, name: Housing crisis }
 # Money the sim tracks (these three ids, in millions): the name and the currency prefix the player sees.
+# The treasury is the GDD's Money (R-MONEY-001; spec §1.2 "Treasury becomes Money", owner, 15 October 2026, Q-MONEY-4).
+# Debt and foreign currency stay internal, under Money (D-C3, Q-MONEY-1).
 money:
-  - { id: treasury, name: Treasury, prefix: 'IL ' }
+  - { id: treasury, name: Money, prefix: 'IL ' }
   - { id: debt, name: Debt, prefix: 'IL ' }
   - { id: fx_reserves, name: Foreign currency, prefix: '$' }
 voter_groups:

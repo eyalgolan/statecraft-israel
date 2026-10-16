@@ -8,6 +8,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Changed
+- The Treasury is now shown as Money, כסף in Hebrew, on the top bar, the Budget screen and in the causes (refs #382,
+  R-MONEY-001; spec §1.2, owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim
+  (D-C3). No upkeep yet: per Q-MONEY-2 it waits for Phase 3. No golden moves; the content hash does (the name is in
+  `content/model.yaml`), so an older save loads with the "different game content" warning.
 - An event option's Treasury cost the Treasury cannot cover is now borrowed at once, like every other payment, with a cause
   naming the event (refs #681, R-MONEY-003). Before, the Treasury went below 0 until the deficit step, which reported the
   shortfall as "to cover the deficit". End-of-turn totals are unchanged and no golden moves. The top bar's Treasury is

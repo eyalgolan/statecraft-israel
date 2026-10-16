@@ -78,6 +78,8 @@ R-OBJ-003: An event with `objective:` is that objective's card. It is eligible o
 
 ## Money
 
+R-MONEY-001: The GDD's Money is the Treasury (`model.yaml` money `treasury`, in IL millions): the player sees it as Money, כסף in Hebrew, on the top bar, the Budget screen and in the causes (spec §1.2, "Treasury becomes Money"; owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim and the state hash, internal under Money, so the sourced 1951 currency crisis still happens (D-C3, Q-MONEY-1). Income is the per-head tax and spending until Phase 3, with job income (R-CITY-002) on top, and nothing pays upkeep until Phase 3 has cities to charge (Q-MONEY-2, decided 15 October 2026).
+
 R-MONEY-003: A GDD cost above the Treasury is paid, and the shortfall moves to debt, as map actions do: the Treasury stops at 0, and a cause names what the shortfall was borrowed for (Q-MONEY-3, owner decision "Allow borrowing", 15 October 2026, for training and pioneer work; the Phase 2 plan applies it to every GDD cost). It covers the deficit, map actions, training (R-TRAIN-001), pioneer work (R-SITE-001) and an event option's Treasury cost.
 
 The top bar shows the net position, Treasury minus debt (`HudModel.From`), so it reads below 0 once anything is borrowed.

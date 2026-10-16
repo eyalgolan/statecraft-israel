@@ -306,7 +306,7 @@ public class PlayerTextTests
         Assert.Equal(30.0, PlayerText.Scale(0.3), 9);
         Assert.Equal("55%", PlayerText.Percent(0.55));
         Assert.Equal("+4.1%", PlayerText.PercentChange(0.041));
-        Assert.Equal("Treasury -IL 2.0m", PlayerText.Change(Real, "treasury", -2));
+        Assert.Equal("Money -IL 2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
         Assert.Equal("Morale +5.0%", PlayerText.Change(Real, "morale", 0.05));
         Assert.Equal("Foreign currency", PlayerText.Target(Real, "fx_reserves"));
     }
