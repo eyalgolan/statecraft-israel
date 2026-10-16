@@ -34,14 +34,14 @@ public class HudTests
     }
 
     /// <summary>T71: the top bar's Treasury is the net position, cash minus debt (HudModel.From; M3 plan: "with deficits
-    /// borrowed, cash alone is always 0"). The sim keeps cash at 0 or above (R-MONEY-001), so a negative reading is debt,
+    /// borrowed, cash alone is always 0"). The sim keeps cash at 0 or above (R-MONEY-003), so a negative reading is debt,
     /// not a negative Treasury: after four monthly turns with no orders, 0 cash and the debt read as minus the debt.</summary>
     [Test]
     public void TheTreasuryShowsCashMinusDebtSoBorrowingReadsNegative()
     {
         var bridge = NewBridge();
         for (var i = 0; i < 4; i++) bridge.EndTurn();
-        Assert.AreEqual(0.0, bridge.State.Treasury);   // R-MONEY-001: cash stops at 0
+        Assert.AreEqual(0.0, bridge.State.Treasury);   // R-MONEY-003: cash stops at 0
         Assert.Greater(bridge.State.Debt, 0.0);
         var m = HudModel.From(bridge, Text);
         Assert.AreEqual(PlayerText.Money(C, "treasury", -bridge.State.Debt), m.Treasury.Value);

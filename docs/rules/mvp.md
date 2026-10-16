@@ -78,4 +78,6 @@ R-OBJ-003: An event with `objective:` is that objective's card. It is eligible o
 
 ## Money
 
-R-MONEY-001: The Treasury is cash and never goes below 0. Every payment it cannot cover is borrowed: the shortfall is added to the debt and the Treasury stops at 0, with a cause naming what was paid for. This covers the deficit, map actions, training (R-TRAIN-001), pioneer work (R-SITE-001) and an event option's Treasury cost (owner decision "Allow borrowing", 15 October 2026; T71). The top bar shows the net position, Treasury minus debt (`HudModel.From`), so it reads below 0 once anything is borrowed.
+R-MONEY-003: A GDD cost above the Treasury is paid, and the shortfall moves to debt, as map actions do: the Treasury stops at 0, and a cause names what the shortfall was borrowed for (Q-MONEY-3, owner decision "Allow borrowing", 15 October 2026, for training and pioneer work; the Phase 2 plan applies it to every GDD cost). It covers the deficit, map actions, training (R-TRAIN-001), pioneer work (R-SITE-001) and an event option's Treasury cost.
+
+The top bar shows the net position, Treasury minus debt (`HudModel.From`), so it reads below 0 once anything is borrowed.

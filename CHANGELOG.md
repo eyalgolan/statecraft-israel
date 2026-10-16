@@ -9,7 +9,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ### Changed
 - An event option's Treasury cost the Treasury cannot cover is now borrowed at once, like every other payment, with a cause
-  naming the event (refs #681, R-MONEY-001). Before, the Treasury went below 0 until the deficit step, which reported the
+  naming the event (refs #681, R-MONEY-003). Before, the Treasury went below 0 until the deficit step, which reported the
   shortfall as "to cover the deficit". End-of-turn totals are unchanged and no golden moves. The top bar's Treasury is
   still cash minus debt, so it reads negative once anything is borrowed.
 - `bernadotte_assassination` says "about 250" Lehi members were arrested, not "about 200" (refs #516; owner, 15 October
