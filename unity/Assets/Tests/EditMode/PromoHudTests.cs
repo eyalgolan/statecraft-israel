@@ -144,12 +144,16 @@ public class PromoHudTests
         // tier starts that much narrower (part 3): 16:10 and 4:3 now keep the one-row bar with its icons; 5:4 the stacked bar
         // with them. At 1024x768 the owner's text floor (#624) raises the small text to 20 px, and the bar takes the stacked
         // tier without icons (HudPresenter.FloorGrowth).
-        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, false, false, false),
-                                                              (1366, 768, true, false, false, false), (1760, 1000, true, false, false, false),
+        // Social cohesion made seven meters (#380); the owner chose "tighten and re-tier" (16 October 2026). Only these rows
+        // moved, each to the tier the seven meters' measured widths need (HudPresenter's notes): 1280x720 and 1366x768 (the
+        // floor raises their captions to 18 and 17 px), 1920x1200 and 1440x900 (16:10) take the stacked bar with its icons;
+        // 1280x1024 (5:4) drops them; 1024x1024 (square) takes two rows. Every fit assert below is unchanged.
+        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, true, false, false),
+                                                              (1366, 768, true, true, false, false), (1760, 1000, true, false, false, false),
                                                               (2560, 1080, true, false, false, false),
-                                                              (1920, 1200, true, false, false, false), (1440, 900, true, false, false, false),
-                                                              (1024, 768, false, true, false, false), (1280, 1024, true, true, false, false),
-                                                              (1024, 1024, false, true, false, false), (960, 1080, false, true, true, false),
+                                                              (1920, 1200, true, true, false, false), (1440, 900, true, true, false, false),
+                                                              (1024, 768, false, true, false, false), (1280, 1024, false, true, false, false),
+                                                              (1024, 1024, false, true, true, false), (960, 1080, false, true, true, false),
                                                               (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
         {
             var rt = new RenderTexture(w, h, 0);

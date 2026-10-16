@@ -96,8 +96,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .date-row Label { font-size: 15px; margin-right: 8px; }
 .year { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 27px; color: var(--ink); }
 .meters { flex-direction: row; flex-grow: 1; align-items: center; }
+/* Seven meters with Social cohesion (#380): the owner chose "tighten and re-tier" (16 October 2026), so each meter's
+   sides are 6 px narrower than the six meters' 7 and 6 px, here, on the stacked bar and in Hebrew. */
 .meter {
-    flex-direction: row; align-items: center; min-width: 130px; flex-shrink: 1; padding: 0 7px 0 6px;
+    flex-direction: row; align-items: center; min-width: 130px; flex-shrink: 1; padding: 0 4px 0 3px;
     border-right-width: 1px; border-color: rgba(196, 160, 92, 0.25);
 }
 /* The icon gives way first in a narrow window (down to 26px), so the caption keeps its line. */
@@ -149,7 +151,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    change under the value, so no change runs into its neighbour; the panels below the bar move down with it. */
 .hud-narrow .top-bar { height: 124px; }
 .hud-narrow .right-column, .hud-narrow .left-column, .hud-narrow .event-gutter, .hud-narrow .event-layer, .hud-narrow .screen, .hud-narrow .toast { top: 140px; }
-.hud-narrow .meter { min-width: 96px; padding: 0 6px; }
+.hud-narrow .meter { min-width: 96px; padding: 0 3px; }
 .hud-narrow .meter-row { flex-direction: column; align-items: flex-start; }
 .hud-narrow .meter-value { font-size: 22px; }
 .hud-narrow .meter-delta { margin-left: 0; font-size: 15px; }
@@ -159,10 +161,12 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .meters { width: 78%; flex-grow: 1; }
 .hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-gutter, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
-   screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). */
-.hud-three-row .top-bar { height: 312px; }
-.hud-three-row .meters { width: 100%; }
-.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 328px; }
+   screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). Seven meters do not
+   fit a phone's width (#380): they wrap to two lines (the owner's choice, 16 October 2026), and the bar is a meter line
+   (96 px) taller than the six meters' 312 px. */
+.hud-three-row .top-bar { height: 408px; }
+.hud-three-row .meters { width: 100%; flex-wrap: wrap; }
+.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 424px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
@@ -671,7 +675,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .lang-he .top-bar { padding: 0 8px 0 14px; }
 .lang-he .date-box { margin-right: 0; margin-left: 10px; padding: 0 12px 0 10px; }
 .lang-he .date-row Label { margin-right: 0; margin-left: 8px; }
-.lang-he .meter { border-right-width: 0; border-left-width: 1px; padding: 0 6px 0 7px; }
+.lang-he .meter { border-right-width: 0; border-left-width: 1px; padding: 0 3px 0 4px; }
 .lang-he .meter-icon { margin-right: 0; margin-left: 5px; }
 .lang-he .meter-delta { margin-left: 0; margin-right: 7px; }
 .lang-he.hud-narrow .meter-delta { margin-right: 0; }

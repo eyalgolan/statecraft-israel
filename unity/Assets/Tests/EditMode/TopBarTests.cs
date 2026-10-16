@@ -37,14 +37,19 @@ public class TopBarTests
     /// run), so 5:4 takes the stacked bar with its icons. (With the edge moved back to 1612, the one-row bar still fit at
     /// 1635: the edge's place between 5:4 and 4:3 is a margin, not a measured limit.) A 4:3 window as large as 1600x1200
     /// keeps the one-row bar; at 1024x768 the owner's text floor (TheBarsSmallTextKeepsTheFloorOnScreen) raises the small text
-    /// to 20 px, which takes the stacked bar without icons (HudPresenter.FloorGrowth).</summary>
+    /// to 20 px, which takes the stacked bar without icons (HudPresenter.FloorGrowth).
+    /// Social cohesion made seven meters (#380), and the owner chose "tighten and re-tier" (16 October 2026): the one-row edge
+    /// moved to NarrowBelowPx 1860, so 1389x1024, 1600x1200 (4:3) and 1360x1024 now take the stacked bar (only those three
+    /// flags changed), and 1813x1080 (1865 logical, one row) and 1794x1080 (1855, stacked) hold the new edge.</summary>
     static readonly (int w, int h, bool oneRow)[] Boundary =
-        { (1315, 1024, false), (1317, 1024, false), (1389, 1024, true), (1280, 1024, false), (1600, 1200, true), (1024, 768, false),
-          (1360, 1024, true), (1350, 1024, false), (1024, 1024, false) };
+        { (1315, 1024, false), (1317, 1024, false), (1389, 1024, false), (1280, 1024, false), (1600, 1200, false), (1024, 768, false),
+          (1360, 1024, false), (1350, 1024, false), (1024, 1024, false), (1813, 1080, true), (1794, 1080, false) };
 
     /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the plain mean of the two
-    /// ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.)</summary>
-    static readonly (int w, int h)[] PromoShapes = { (1920, 1080), (1280, 720), (1366, 768) };
+    /// ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.) With seven meters (#380; the owner's
+    /// "tighten and re-tier", 16 October 2026) only 1920x1080 keeps the one-row bar: at 1280x720 and 1366x768 the text floor
+    /// raises the captions to 18 and 17 px, and those windows take the stacked bar (PromoHudTests pins their tier).</summary>
+    static readonly (int w, int h)[] PromoShapes = { (1920, 1080) };
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, in English or Hebrew, as the game builds it: the bar laid
     /// out (the loading screen) before the HUD is made, a turn played, then the widest values, changes and date, and a

@@ -18,31 +18,36 @@ namespace Statecraft.Game.UI
 
         // Three tiers by the bar's logical width (1080p reference, match 0.5: the panel's scale is the plain mean of the two
         // ratios, (w/1920 + h/1080) / 2, so logical width = w / that; TopBarTests logs it). HUD round 2 moved the four screen
-        // buttons to the left column (#602), about 248 px out of the bar, so every tier starts narrower (part 3). The one-row
-        // edge sits between a fullscreen 5:4 and 4:3 (review of #624): the first run found the one-row bar wrapping two
-        // captions with the widest values at 1563-1612; TopBarTests holds one row at 1642 and the stacked bar at 1635:
-        //   16:9 1920, 16:10 ~1819, 4:3 ~1646 | NarrowBelowPx 1640 | 5:4 ~1585 | CompactBelowPx 1452 | square ~1382
-        //   | TwoRowBelowPx 1370 | half a 1080p screen (960x1080) ~1280.
+        // buttons to the left column (#602), about 248 px out of the bar, so every tier starts narrower (part 3). With six
+        // meters the one-row edge sat between a fullscreen 5:4 and 4:3 (1640; review of #624).
+        // Social cohesion made seven meters (#380). The owner chose "tighten and re-tier" (16 October 2026): the meters' padding
+        // is about 6 px narrower, and the edges move to the seven meters' measured widths (widest values, the Hebrew bar the
+        // widest: one row about 1285 px of meters, stacked about 1055, without icons about 811, each with 5% to spare, beside
+        // about 484 px of plate, turn box and padding). 16:9 at 1920 keeps the one-row bar; 16:10, 4:3, and 1280x720 and
+        // 1366x768 (where the text floor raises the captions) take the stacked bar; 5:4 drops the icons; a square window
+        // takes two rows; a phone's meters wrap to two lines. TopBarTests holds one row at 1865 and the stacked bar at 1855:
+        //   21:9 ~2217 | 16:9 1920 | NarrowBelowPx 1860 | 16:10 ~1819 | 4:3 ~1646 | CompactBelowPx 1640 | 5:4 ~1585
+        //   | TwoRowBelowPx 1400 | square ~1382 | half a 1080p screen (960x1080) ~1280.
         // PromoHudTests.EveryWindowShapeFitsTheBarAfterATurn proves each tier holds the widest late-game values and changes.
 
         /// <summary>Below this width the HUD's root gets NarrowClass: a taller bar (124 px) whose meters stack the change under
         /// the value, and the panels below it move down to match (Statecraft.uss .hud-narrow). Above it, the 70 px one-row bar
-        /// (promo 03's 6.5%) holds six values and their changes side by side with the icons.</summary>
-        public const float NarrowBelowPx = 1640f;
+        /// (promo 03's 6.5%) holds seven values and their changes side by side with the icons.</summary>
+        public const float NarrowBelowPx = 1860f;
         public const string NarrowClass = "hud-narrow";
         /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): a square window does not
         /// have the room for them on the stacked bar.</summary>
-        public const float CompactBelowPx = 1452f;
+        public const float CompactBelowPx = 1640f;
         public const string CompactClass = "top-bar--compact";
         /// <summary>Below this width (windows narrower than about square, e.g. a browser snapped to half a 1080p screen, about
-        /// 1360 logical px) one row cannot hold the badge, six meters, New Game and End Turn: the root also gets
+        /// 1360 logical px, and a square one, about 1382) one row cannot hold the badge, seven meters, New Game and End Turn: the root also gets
         /// TwoRowClass, and the bar wraps into two rows, the date and the meters above, the screen buttons and End Turn
         /// below (Statecraft.uss .hud-two-row).</summary>
-        public const float TwoRowBelowPx = 1370f;
+        public const float TwoRowBelowPx = 1400f;
         public const string TwoRowClass = "hud-two-row";
-        /// <summary>Below this width (a phone held upright: 390x844 is about 790 logical px) the badge and six meters do not
-        /// fit one row either: the root also gets ThreeRowClass, and the bar takes three rows, the badge, the meters, then the
-        /// screen buttons and End Turn (Statecraft.uss .hud-three-row; #210).</summary>
+        /// <summary>Below this width (a phone held upright: 390x844 is about 790 logical px) the badge and the meters do not
+        /// fit one row either: the root also gets ThreeRowClass, and the bar takes three rows, the badge, the meters (seven,
+        /// wrapped to two lines, #380), then the screen buttons and End Turn (Statecraft.uss .hud-three-row; #210).</summary>
         public const float ThreeRowBelowPx = 1100f;
         public const string ThreeRowClass = "hud-three-row";
         /// <summary>On the one-row bar, when the meters leave enough room, the bar gets RoomyClass: promo-sized icons (38 px)
