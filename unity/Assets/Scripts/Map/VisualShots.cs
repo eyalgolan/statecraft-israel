@@ -40,12 +40,19 @@ namespace Statecraft.Game.Map
         /// localities had trees (audit 2026-10-13).</summary>
         public static readonly string[] OffForCloseChecks = { "haze", "trees" };
 
+        /// <summary>The close look at the unit tokens (?shot&amp;units only; not a promo pose, so tools/art_checkpoint.sh, which
+        /// requires every PromoPose.cs pose, does not ask for it on plain checkpoints).</summary>
+        public static readonly PromoPose UnitsClose = new PromoPose("units12", Units.UnitShowcase.TrioAt.lon, Units.UnitShowcase.TrioAt.lat, 12000f, 0f);
+
         public static IEnumerator Run(CameraRig rig, GeoFrame frame, Action<string> log)
         {
             foreach (var pose in PromoPose.All) yield return Shoot(rig, frame, pose, log);
             var off = TurnOff(OffForCloseChecks);
             try { foreach (var pose in PromoPose.CloseChecks) yield return Shoot(rig, frame, pose, log); }
             finally { TurnOn(off); }
+            // The unit art up close (#665), only when the units are asked for (?shot&units), so plain checkpoints keep their
+            // shots: the showcase trio's spot at 12 km.
+            if (Units.UnitShowcase.Requested()) yield return Shoot(rig, frame, UnitsClose, log);
             log("SHOT done");
         }
 

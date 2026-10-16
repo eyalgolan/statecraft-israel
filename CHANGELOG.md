@@ -7,6 +7,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Added
+- The Israeli riflemen on the army tokens and the showcase trio are Tal's soldiers from The 1948 Collection (refs #665;
+  models by Tal, @pixelrenderai-hash, #507): the sabra pioneer, the young recruit and the veteran fighter, by the
+  rifleman's headgear. They stream in after the first frame; until they arrive, and if their bundle is missing or
+  damaged, the code-built figures stay. `?shot&units` adds a close shot of the trio (`units12`).
+
 ### Fixed
 - In the Hebrew UI the Budget's "no ministry until" date, the Why? screen's turn span and the info panel's build date
   name their months in Hebrew ("מ־15 במאי 1948 עד 15 ביוני 1948", "באוגוסט 1950") through the `date.*` strings, as

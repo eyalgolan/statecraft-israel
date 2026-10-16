@@ -123,7 +123,7 @@ public class UnitFiguresTests
             }
             Assert.Greater(dressed, 10, "dressed figures (not a vacuous pass)");
             // Tal's soldier in the frame of the code-built one: as tall within 15%, standing on its feet.
-            foreach (var f in figures.Take(3))
+            foreach (var f in figures)
             {
                 var code = f.GetComponent<MeshFilter>().sharedMesh.bounds;
                 var rs = f.Find(UnitFigures.ModelName).GetComponentsInChildren<Renderer>();
@@ -131,6 +131,9 @@ public class UnitFiguresTests
                 float height = b.size.y / f.lossyScale.y, want = code.size.y;
                 Debug.Log($"UNITS figures {f.parent.name}/{f.name}: model {height:0.00} m tall, code-built {want:0.00} m; feet {(b.min.y - f.position.y) / f.lossyScale.y:0.000} m");
                 Assert.AreEqual(want, height, 0.15f * want, $"{f.name}: as tall as the code-built figure");
+                // Standing: the soldier is taller than he is wide or deep (a model laid on its back would be scaled to the
+                // same height and fail here; the far prefabs' root carries the FBX's axis turn).
+                Assert.Less(Mathf.Max(b.size.x, b.size.z) / f.lossyScale.y, 0.75f * height, $"{f.name}: standing upright");
                 Assert.AreEqual(0f, (b.min.y - f.position.y) / f.lossyScale.y, 0.08f, $"{f.name}: feet on the figure's origin");
             }
             // A roster change rebuilds the tokens: the new figures are dressed at once, with no new request.

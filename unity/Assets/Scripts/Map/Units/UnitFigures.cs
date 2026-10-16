@@ -65,6 +65,8 @@ namespace Statecraft.Game.Map.Units
             ask(id, CollectionDetail.Far, prefab =>
             {
                 if (prefab == null) return;   // fail open: the code-built figure stays (the stream has warned once)
+                if (!arrived.ContainsKey(id) && arrived.Count == 0 && Application.isPlaying)
+                    Debug.Log("UNITS figures: Tal's soldiers streamed in");   // once a session: when the captures can show them
                 arrived[id] = prefab;
                 if (figure != null) Swap(figure, prefab);   // the token may have been rebuilt or destroyed meanwhile
             });
@@ -75,22 +77,28 @@ namespace Statecraft.Game.Map.Units
         static void Swap(Transform figure, GameObject prefab)
         {
             if (figure.Find(ModelName) != null) return;
-            var model = UnityEngine.Object.Instantiate(prefab, figure, false);
-            model.name = ModelName;
-            model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
-            model.transform.localScale = Vector3.one;
+            // The model under a holder in the figure's frame: the prefab keeps its own root transform (the far meshes' root
+            // carries the FBX's axis turn, so resetting it would lay the soldier on his back).
+            var holder = new GameObject(ModelName).transform;
+            holder.SetParent(figure, false);
+            var model = UnityEngine.Object.Instantiate(prefab, holder, false);
             var code = figure.GetComponent<MeshRenderer>();
             var renderers = model.GetComponentsInChildren<Renderer>(true);
             // Tal's models are a unit tall (#680's import); the code-built figure is a man's height in real metres. The model
-            // takes the code-built figure's height, so the badge, flag and keep-clear boxes, which read that height, still fit.
+            // takes the code-built figure's height, feet on its origin, so the badge, flag and keep-clear boxes, which read
+            // that height, still fit.
             var codeMesh = figure.GetComponent<MeshFilter>()?.sharedMesh;
             if (codeMesh != null && renderers.Length > 0)
             {
                 var b = renderers[0].bounds;
                 foreach (var r in renderers) b.Encapsulate(r.bounds);
-                float tall = b.size.y / Mathf.Max(figure.lossyScale.y, 1e-6f);
-                if (tall > 1e-4f) model.transform.localScale = Vector3.one * (codeMesh.bounds.size.y / tall);
+                float unit = Mathf.Max(figure.lossyScale.y, 1e-6f), tall = b.size.y / unit;
+                if (tall > 1e-4f)
+                {
+                    float k = codeMesh.bounds.size.y / tall;
+                    model.transform.localPosition -= Vector3.up * ((b.min.y - figure.position.y) / unit);
+                    holder.localScale = Vector3.one * k;
+                }
             }
             foreach (var r in renderers)
             {

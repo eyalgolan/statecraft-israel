@@ -47,6 +47,17 @@ An authored model follows the code-built convention:
 The showcase places and scales it as it does the code-built model. That is the whole hook: there is no registry beyond
 it, and there are no level-of-detail switches yet.
 
+**Tal's soldiers (#665).** The Israeli riflemen on the army tokens and the showcase trio wear soldiers from The 1948
+Collection, made by Tal (@pixelrenderai-hash, #507). `UnitFigures` maps each rifleman by its headgear, as Tal paired them
+in #507: the slouch hat is the sabra pioneer (C04), the steel helmet the young recruit (C06) and the wool cap the veteran
+fighter (C07). Each figure is built code-built as before and asks `CollectionStream` for its model's far mesh; nothing is
+fetched before the first frame. When the model arrives it goes under the figure, scaled to the code-built figure's
+height with its feet on the figure's origin, and the code-built renderer is switched off in the same callback. A model
+that has arrived is put on rebuilt tokens at once. It fails open: until a model arrives, and when the people bundle is
+missing or damaged, the code-built figure stays. Other sides keep the code-built figures: the Arab Legion (C08) and the
+irregulars (C09) wait for #226 to place those forces, and C09 for the maintainer's review. `?shot&units` adds a
+`units12` shot of the trio at 12 km.
+
 ## What is in the slice
 
 | Piece | Model | Where (PromoPose.Gameplay03) |
