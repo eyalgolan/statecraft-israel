@@ -9,6 +9,7 @@ take differently (refs #601, review of #606):
 The scenarios' `on:` step key is allowed: the sim reads it as the key "on" (a string), and no Python reader loads them.
 """
 import datetime
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -17,8 +18,11 @@ import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
 SCENARIOS = "sim/Statecraft.Sim.Tests/scenarios"
-GAME_YAML = sorted({*ROOT.glob("content/**/*.yaml"), *ROOT.glob("unity/Assets/**/*.yaml"),
-                    *ROOT.glob(f"{SCENARIOS}/**/*.yaml")})
+# Tracked files only: a local WebGL build copies content/ into the gitignored unity/Assets/StreamingAssets/content/,
+# and a glob over the working tree would test those copies too (54 extra cases in one run, review of #686).
+GAME_YAML = sorted(ROOT / rel for rel in subprocess.run(
+    ["git", "ls-files", "-z", "--", "content/*.yaml", "unity/Assets/*.yaml", f"{SCENARIOS}/*.yaml"],
+    cwd=ROOT, check=True, capture_output=True, text=True).stdout.split("\0") if rel)
 
 
 def allowed(rel: str, h: yaml12.Hazard) -> bool:
@@ -29,6 +33,7 @@ def test_the_game_yaml_is_found():
     rels = {p.relative_to(ROOT).as_posix() for p in GAME_YAML}
     assert len(rels) > 50 and "content/people.yaml" in rels and "unity/Assets/UI/strings.en.yaml" in rels
     assert any(r.startswith(SCENARIOS + "/") for r in rels)
+    assert not any(r.startswith("unity/Assets/StreamingAssets/content/") for r in rels)  # gitignored build copies
 
 
 @pytest.mark.parametrize("path", GAME_YAML, ids=lambda p: p.relative_to(ROOT).as_posix())
