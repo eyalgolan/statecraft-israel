@@ -48,6 +48,26 @@ public class HudTests
         StringAssert.Contains("-IL", m.Treasury.Value);
     }
 
+    /// <summary>#681 (owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"): the Money
+    /// caption, and the tooltip that says it, read net in both languages; the value stays cash minus debt, so with debt
+    /// it reads negative.</summary>
+    [TestCase(false, "Money (net)")]
+    [TestCase(true, "כסף (נטו)")]
+    public void TheMoneyFigureIsLabelledNet(bool hebrew, string caption)
+    {
+        var text = hebrew ? He : Text;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+        for (var i = 0; i < 4; i++) bridge.EndTurn();
+        Assert.Greater(bridge.State.Debt, 0.0, "precondition: something is borrowed");
+        using var ui = new UiTestKit();
+        new HudPresenter(ui.Root, bridge, text);
+        var meter = ui.Q<VisualElement>("meter-treasury");
+        Assert.AreEqual(caption, meter.Q<Label>(className: "meter-name").text);
+        StringAssert.StartsWith(caption + ":", meter.tooltip);
+        Assert.AreEqual(PlayerText.Money(C, "treasury", bridge.State.Treasury - bridge.State.Debt), ui.Q<Label>("treasury-value").text);
+        StringAssert.Contains("-IL", ui.Q<Label>("treasury-value").text);
+    }
+
     // ---- The score (#380): only in the GDD loop, from GameState.Score ----
 
     /// <summary>The real game: the GDD loop since the cutover (the ?mvp=1 slice is gone with MvpSlice).</summary>
