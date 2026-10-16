@@ -3135,7 +3135,7 @@ T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 
   much narrower (`HudPresenter`). Logical width is the window's width over the panel's scale, which is the plain mean of
   the two ratios, (w/1920 + h/1080) / 2 (logged by `TopBarTests`). The one-row edge is 1640, between a fullscreen 5:4 and
   4:3 (review of #624 asked whether a fullscreen 5:4 could keep the one-row bar; at 1563-1612 it wrapped "Public Support"
-  and "International Standing" with the widest values, while at 1635 it still fit, so 1640 is a margin, not a limit). So 16:10 (~1819) and 4:3 (~1646) keep the one-row bar with its icons,
+  and "International Standing" (the captions' names then; #622 and #683 renamed them) with the widest values, while at 1635 it still fit, so 1640 is a margin, not a limit). So 16:10 (~1819) and 4:3 (~1646) keep the one-row bar with its icons,
   a fullscreen 5:4 (~1585) takes the stacked bar with them, and a square window (~1382) the stacked bar without. The
   taller tiers' heights are unchanged.
 - The panels under the bar keep their 112 px top, which clears the hanging plate. Under a decision card a full-width band
@@ -3152,8 +3152,9 @@ T54 measured the bar at 8.8% of the frame's height against promo 03's and T29's 
   its 70 px, so 1366x657 takes the stacked bar. The phone tier (three rows) keeps 15 px: its fixed rows have no room for
   25 px captions (a follow-up, by the owner's answer). The plate's turn and date line takes the same floor (the owner's
   second answer): the plate keeps its 230 px width, the turn and the date take a line each,
-  and the plate's padding (18 px at the sides, 9 at the top and bottom) keeps every line clear of its gilt
-  frame and corner scrolls; the plate grows to hold them, taller and, where the date needs it (23 px at 960x600), wider
+  and the plate's padding (18 px at the sides, 9 at the top and bottom) keeps every line inside its gilt frame's inner
+  rule and at least 0 px from the 18 px corner zones (the scrolls' reach of about 14 px, plus 4; the score sits on a
+  zone's edge at 1280x720, 4 px clear of the scroll); the plate grows to hold them, taller and, where the date needs it (23 px at 960x600), wider
   than 230 px, and the tiers count the extra width.
 - In Hebrew the bar's row mirrors (#550): the plate is at the right and End Turn at the left. The left column and the
   minimap keep their corners.

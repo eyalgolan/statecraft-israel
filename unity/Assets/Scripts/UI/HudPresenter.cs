@@ -86,8 +86,9 @@ namespace Statecraft.Game.UI
         readonly List<Label> plateText;
         readonly VisualElement? dateRow;
         /// <summary>The plate's padding while the floor raises its text (the stylesheet's is 2 px top and bottom, 10-12 at the
-        /// sides): PlateSidePx at both sides keeps every line out of the corner scrolls' reach (about 14 px in) with 4 to
-        /// spare, and PlateEdgePx at the top and bottom keeps it inside the frame's inner rule (7 px in). The plate grows to
+        /// sides): PlateSidePx at both sides keeps every line at least 0 px from the 18 px corner zones (TopBarTests), each the
+        /// corner scrolls' reach (about 14 px in) plus 4, and PlateEdgePx at the top and bottom keeps it inside the frame's
+        /// inner rule (7 px in). The plate grows to
         /// hold them (its height is a minimum), rather than shift its lines.</summary>
         public const float PlateSidePx = 18f, PlateEdgePx = 9f;
         readonly VisualElement turnBox;
@@ -269,8 +270,9 @@ namespace Statecraft.Game.UI
                 l.style.whiteSpace = raised ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
             }
             // Raised, the turn and the date take a line each (a raised date squeezed beside the turn was clipped in Hebrew),
-            // and the plate's padding keeps every line clear of its gilt frame and corner scrolls (PlateSidePx, PlateEdgePx;
-            // reviews of #624 in WebGL); the plate grows to hold them.
+            // and the plate's padding keeps every line inside its gilt frame's inner rule and at least 0 px from the 18 px corner
+            // zones, which keep 4 px clear of the scrolls (PlateSidePx, PlateEdgePx; reviews of #624 in WebGL); the plate grows
+            // to hold them.
             if (dateRow != null)
             {
                 dateRow.style.flexDirection = raised ? new StyleEnum<FlexDirection>(FlexDirection.Column) : new StyleEnum<FlexDirection>(StyleKeyword.Null);

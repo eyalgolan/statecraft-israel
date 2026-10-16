@@ -33,7 +33,7 @@ public class TopBarTests
     /// the two ratios (match 0.5: scale = (w/1920 + h/1080) / 2, logged by TheOneRowBarReachesFiveByFour), so a fullscreen
     /// 5:4 is 1585, 4:3 is 1646 and a square 1382, not the geometric mean's 1610, 1662 and 1440. Widths 1610, 1612 and 1662,
     /// fullscreen 5:4 and 4:3, either side of NarrowBelowPx (1642 one row, 1635 stacked), and a square window. At 1563-1612
-    /// the one-row bar wrapped "Public Support" and "International Standing" with the widest values (this round's first
+    /// the one-row bar wrapped "Public Support" and "International Standing" (the captions' names then; #622 and #683 renamed them) with the widest values (this round's first
     /// run), so 5:4 takes the stacked bar with its icons. (With the edge moved back to 1612, the one-row bar still fit at
     /// 1635: the edge's place between 5:4 and 4:3 is a margin, not a measured limit.) A 4:3 window as large as 1600x1200
     /// keeps the one-row bar; at 1024x768 the owner's text floor (TheBarsSmallTextKeepsTheFloorOnScreen) raises the small text
@@ -392,8 +392,9 @@ public class TopBarTests
                     }
                     // The plate's text keeps clear of its gilt frame (reviews of #624 in WebGL: the raised date, then the year,
                     // ran into the corner scrolls): every line, the score included, is at least the frame's inner rule (the inset
-                    // plus the filigree's gap, and a pixel) from the plate's top and bottom, and outside the four corner zones,
-                    // the scrolls' reach (about 14 px) plus 4.
+                    // plus the filigree's gap, and a pixel) from the plate's top and bottom, and at least 0 px from each of the
+                    // four 18 px corner zones (Rect.Overlaps is strict, so a line touching a zone's edge passes: the score does,
+                    // at 0.0); a zone is the scrolls' reach (about 14 px) plus 4, so a line at its edge is 4 px clear of a scroll.
                     var plate = root.Q("date-plate").worldBound;
                     float clear = 4f + UiFrame.FiligreeGap + 1f, zone = 14f + 4f;
                     var corners = new[] { new Rect(plate.xMin, plate.yMin, zone, zone), new Rect(plate.xMax - zone, plate.yMin, zone, zone),
@@ -410,7 +411,7 @@ public class TopBarTests
                         // The measurements, for the review: the line's room to the plate's top and bottom, and to the nearer
                         // corner zone on either side (horizontal room where the line shares the zone's rows, else vertical).
                         float Room(Rect z) => r.yMax <= z.yMin || r.yMin >= z.yMax ? Mathf.Max(z.yMin - r.yMax, r.yMin - z.yMax) : Mathf.Max(z.xMin - r.xMax, r.xMin - z.xMax);
-                        TestContext.WriteLine($"{at}: {name} top {r.yMin - plate.yMin:0.0}, bottom {plate.yMax - r.yMax:0.0}, corners TL {Room(corners[0]):0.0} TR {Room(corners[1]):0.0} BL {Room(corners[2]):0.0} BR {Room(corners[3]):0.0} (panel px; needs {clear} and > 0)");
+                        TestContext.WriteLine($"{at}: {name} top {r.yMin - plate.yMin:0.0}, bottom {plate.yMax - r.yMax:0.0}, corners TL {Room(corners[0]):0.0} TR {Room(corners[1]):0.0} BL {Room(corners[2]):0.0} BR {Room(corners[3]):0.0} (panel px; needs {clear} from the top and bottom, and >= 0 from each zone)");
                     }
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
