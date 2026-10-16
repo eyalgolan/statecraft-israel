@@ -488,6 +488,57 @@ def validate_routes(doc: dict, bounds: dict) -> None:
         srcs = r.get("sources") or []
         if not srcs or not all(str(s.get("url", "")).startswith("https://") and s.get("checked") for s in srcs):
             raise ValueError(f"{rid}: every route needs sources with an https url and a checked date")
+        if "service" in r:
+            _validate_service(rid, r, window[0], bounds)
+
+
+def _station_problem(w) -> bool:
+    return not (isinstance(w, dict) and w.get("name") and str(w.get("url", "")).startswith("https://"))
+
+
+def _validate_service(rid: str, r: dict, route_from: date, bounds: dict) -> None:
+    """A railway's train service (issue #668): a sourced start date inside the route's window and its stretches, in order
+    along the line, each between two named stations on the map and ending where the next starts. A stretch with
+    `gated: true` runs only once a person signs it off (tools/route_paths_bake.py)."""
+    s = r["service"]
+    if r["kind"] != "rail" or not isinstance(s, dict):
+        raise ValueError(f"{rid}: a service only on a railway, as a mapping")
+    v = s.get("from")
+    if not isinstance(v, str) or not DATE_RULE.fullmatch(v):
+        raise ValueError(f"{rid}: service from must be a quoted 'YYYY' or 'YYYY-MM-DD'")
+    if _as_date(v) < route_from:
+        raise ValueError(f"{rid}: service from ({v}) is before the route's from")
+    if s.get("status") not in STATUSES:
+        raise ValueError(f"{rid}: service status must be one of {STATUSES}")
+    if not _sourced(s):
+        raise ValueError(f"{rid}: the service needs sources with an https url and a checked date")
+    stretches = s.get("stretches")
+    if not isinstance(stretches, list) or not stretches:
+        raise ValueError(f"{rid}: the service needs stretches")
+    for n, x in enumerate(stretches, 1):
+        at = f"{rid}: service stretch {n}"
+        for key in ("start", "end"):
+            w = x.get(key) if isinstance(x, dict) else None
+            lon, lat = (w.get("lon"), w.get("lat")) if isinstance(w, dict) else (None, None)
+            if _station_problem(w) or not (isinstance(lon, (int, float)) and isinstance(lat, (int, float))
+                                           and bounds["lon0"] <= lon <= bounds["lon1"] and bounds["lat0"] <= lat <= bounds["lat1"]):
+                raise ValueError(f"{at} {key} needs a name, an https url and a lon/lat on the map")
+        if not isinstance(x.get("gated", False), bool):
+            raise ValueError(f"{at} gated must be true or false")
+        if x.get("status") not in STATUSES:
+            raise ValueError(f"{at} status must be one of {STATUSES}")
+        signoff = review_record.problem(x)
+        if signoff:
+            raise ValueError(f"{at} {signoff[0]} {signoff[1]}")
+        if not _sourced(x):
+            raise ValueError(f"{at} needs sources with an https url and a checked date")
+        if n > 1 and (x["start"]["lon"], x["start"]["lat"]) != (stretches[n - 2]["end"]["lon"], stretches[n - 2]["end"]["lat"]):
+            raise ValueError(f"{rid}: service stretch {n} does not start where stretch {n - 1} ends")
+
+
+def _sourced(row: dict) -> bool:
+    srcs = row.get("sources") or []
+    return bool(srcs) and all(str(x.get("url", "")).startswith("https://") and x.get("checked") for x in srcs)
 
 
 HEADER = """\

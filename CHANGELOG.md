@@ -130,6 +130,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   town's Hebrew name), so the hillside hex's
   70 m does not read as the town's (refs #204). It is worked out in Unity from the town's own lon/lat and the hex grid
   (`InfoPanelPresenter.TownHex`), with no new `content/map/` field; an ordinary hex shows no such line.
+- A steam train runs on the Jaffa–Jerusalem railway in normal play from 2 March 1950, the date regular service resumed
+  (refs #668, #35; maintainer decision on #35, 16 October 2026). It runs from Lod to Jerusalem, sourced in
+  `content/map/routes_1948.yaml` (Israel Railways, 1998), with the date awaiting the human check. Tel Aviv South to Lod
+  is in the content too. It rests on Wikipedia alone, so it runs only once a person signs it off.
+  The model is Tal's (@pixelrenderai-hash) locomotive and tender from The 1948 Collection. It streams only once the game
+  date reaches the service, never at boot. If it does not stream, the game plays on without it and logs one warning.
 - Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins

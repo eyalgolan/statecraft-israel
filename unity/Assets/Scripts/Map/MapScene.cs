@@ -396,7 +396,8 @@ namespace Statecraft.Game.Map
                 Debug.Log(stats.ToString());
             }
             // The routes are drawn map-only, as at the game's date (the start until the game sets one); a missing or malformed
-            // file means no routes and a warning; the train only in screenshots, editor renders and ?train. The ribbons are
+            // file means no routes and a warning; the promo's train in screenshots, editor renders and ?train, and in normal play
+            // the service train from its sourced date (issue #668), streamed then, never at boot. The ribbons are
             // placed from their bake when it was made from these inputs (issue #321), else derived.
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml));
