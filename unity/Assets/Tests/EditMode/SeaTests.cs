@@ -432,8 +432,9 @@ public class SeaTests
     static readonly float[] SouthWindowLats = { 31.90f, 31.92f, 31.94f, 31.96f }, NorthWindowLats = { 32.12f, 32.16f, 32.20f, 32.24f };
 
     /// <summary>Whether <see cref="SurfWalks"/> renders the far sea's texture ("seatexture": mottle, ripple and the
-    /// whitecap flecks).</summary>
-    const bool WalkSeaTexture = true;
+    /// whitecap flecks). Off: the walks measure the surf alone (the surf terms do not read _ScSeaTexture), as the seam test
+    /// pins the texture off; a whitecap fleck is not surf (<see cref="TheSurfWalksSeeTheBreakersAndNotTheWhitecaps"/>).</summary>
+    const bool WalkSeaTexture = false;
 
     /// <summary>#690's walk: at the breaker test's pose (30 km at 960x540) and four pinned moments, a one-pixel line from the
     /// shore 3 km out to sea at each latitude. Per walk, the foam band (px to the end of the farthest run of 2 or more foam
