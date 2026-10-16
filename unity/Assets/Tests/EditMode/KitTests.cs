@@ -375,6 +375,9 @@ public class KitTests
             }
             TestContext.WriteLine($"{citrus} citrus and {olives} olive instances; {bad.Count} crowns on the full sand; {byLake} near a rift lake only");
             CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} crowns on the beach's full sand");
+            // A crown SeaDistance misses is counted as "near a lake", so a miss on a curved or inlet shore would pass
+            // silently: pin the count to today's 2, so a new one fails here.
+            Assert.LessOrEqual(byLake, 2, "crowns counted as near a rift lake only (a SeaDistance miss would land here)");
             Assert.Greater(citrus, 500, "the groves keep their trees");
         }
         finally { Object.DestroyImmediate(coast); }
