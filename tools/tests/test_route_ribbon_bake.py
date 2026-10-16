@@ -19,6 +19,7 @@ import struct
 from pathlib import Path
 
 import numpy as np
+import pytest
 import yaml12
 
 from test_terrain_water_bake import MAP, csharp, fingerprint, heights_check, method, unity_heights
@@ -186,14 +187,16 @@ def test_the_ribbon_code_is_the_one_the_bake_was_made_with():
 
 
 # Jerusalem's symbolic Old City (SettlementKits.OldCityWalls): its walled square is 4 km across, so the real 1948 roads by
-# Jaffa Gate fall inside it; the map cuts each road at the walls (RouteLayer.Drawn, #319).
+# New Gate and the Jaffa-Jerusalem railway's station, all outside the real walls, fall inside it; the map cuts each road
+# and the railway at the walls (RouteLayer.Drawn, #319; the railway on the owner's ruling, "Cut it at the walls").
 LANDMARKS = "Kits/SettlementKits.Landmarks.cs"
 OLD_CITY_ROADS = ("jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
                   "jerusalem_jericho_road")
+OLD_CITY_RAIL = ("jaffa_jerusalem_railway",)
 
 
-def road_vertices_by_route() -> dict[str, np.ndarray]:
-    """Every road and track ribbon's vertices (world x, z) in the bake, by route id."""
+def ribbon_vertices_by_route(look: str) -> dict[str, np.ndarray]:
+    """Every ribbon vertex (world x, z) of one look in the bake ("Roads": the roads and tracks; "Rail"), by route id."""
     r = Reader(bake_bytes())
     head = read_header(r)
     out: dict[str, list] = {}
@@ -208,7 +211,7 @@ def road_vertices_by_route() -> dict[str, np.ndarray]:
         xyz = np.array(r.take(f"<{3 * nv}f"), dtype=np.float64).reshape(-1, 3) if nv else np.zeros((0, 3))
         r.take(f"<{5 * nv}f")
         r.take(f"<{ni}i")
-        if name.startswith("RouteRoads"):
+        if name.startswith(f"Route{look} "):
             for rid, first, count in spans:
                 out.setdefault(rid, []).append(xyz[first:first + count][:, [0, 2]])
     return {k: np.concatenate(v) for k, v in out.items()}
@@ -225,20 +228,23 @@ def old_city_square() -> tuple[np.ndarray, float]:
     return centre, float(csharp_const(LANDMARKS, "OldCityHalfM"))
 
 
-def test_no_road_runs_inside_the_old_city_walls():
-    """Each road ends at the walls: no road vertex lies inside the square by more than half a road's width (the end
-    section is square to the road, so a road meeting the wall at a slant reaches that far in under the wall). Not vacuous:
-    the square is where the real Old City is, and the four roads that start there each reach to within 300 m of it."""
+@pytest.mark.parametrize("look, width, reaching", [("Roads", "RoadWidthM", OLD_CITY_ROADS), ("Rail", "RailWidthM", OLD_CITY_RAIL)])
+def test_no_road_or_railway_runs_inside_the_old_city_walls(look, width, reaching):
+    """Each road and the railway end at the walls: no ribbon vertex lies inside the square by more than half the ribbon's
+    width (the end section is square to the line, so a line meeting the wall at a slant reaches that far in under the
+    wall). Not vacuous: the square is where the real Old City is, and the four roads that start there and the railway
+    that ends there each reach to within 300 m of it."""
     centre, half = old_city_square()
     assert 1000 < half < 5000, half
-    depth_allowed = float(csharp_const("Routes/RouteLayer.cs", "RoadWidthM")) / 2
-    roads = road_vertices_by_route()
+    depth_allowed = float(csharp_const("Routes/RouteLayer.cs", width)) / 2
+    ribbons = ribbon_vertices_by_route(look)
+    assert ribbons, f"no {look} ribbons in the bake"
     inside, near = {}, {}
-    for rid, xz in roads.items():
+    for rid, xz in ribbons.items():
         d = np.abs(xz - centre).max(axis=1)   # Chebyshev distance: inside the square where it is under half
         if (deep := int((d < half - depth_allowed).sum())):
             inside[rid] = deep
         near[rid] = int(((d >= half - depth_allowed) & (d < half + 300)).sum())
-    assert not inside, f"road vertices inside the Old City's walls: {inside}"
-    missing = [rid for rid in OLD_CITY_ROADS if near.get(rid, 0) == 0]
-    assert not missing, f"these roads should reach the Old City's walls: {missing}"
+    assert not inside, f"{look} vertices inside the Old City's walls: {inside}"
+    missing = [rid for rid in reaching if near.get(rid, 0) == 0]
+    assert not missing, f"these should reach the Old City's walls: {missing}"

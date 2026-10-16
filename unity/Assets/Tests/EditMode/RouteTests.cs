@@ -455,12 +455,13 @@ public class RouteTests
     }
 
     /// <summary>Jerusalem's symbolic Old City is a walled square 4 km across (SettlementKits.OldCityWalls), so the real 1948
-    /// roads that meet by New Gate fall inside it. The map cuts each road's ribbon at the walls (#319): no road ribbon vertex
-    /// lies inside the square by more than half a road's width (a ribbon's end section is square to the road, so a road
-    /// meeting the wall at a slant reaches that far in, under the wall), and the four roads that meet there each reach to
-    /// within 300 m outside it. The railway is not a road and keeps its station.</summary>
+    /// roads that meet by New Gate, and the Jaffa-Jerusalem railway's station, all outside the real walls, fall inside it.
+    /// The map cuts each road's and the railway's ribbon at the walls (#319; the railway on the owner's ruling, "Cut it at
+    /// the walls"): no ribbon vertex lies inside the square by more than half its ribbon's width (an end section is square
+    /// to the line, so a line meeting the wall at a slant reaches that far in, under the wall), and the four roads and the
+    /// railway that meet there each reach to within 300 m outside it.</summary>
     [Test]
-    public void TheRoadsStopAtTheOldCityWalls()
+    public void TheRoadsAndTheRailwayStopAtTheOldCityWalls()
     {
         var map = BuildMap();
         try
@@ -468,10 +469,10 @@ public class RouteTests
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
             var (c, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
             Assert.Greater(half, 1000f, "the square is not empty");
-            float allowed = RouteLayer.RoadWidthM / 2f;
             var inside = new SortedSet<string>(); var reach = new SortedSet<string>();
-            foreach (var plan in RouteLayer.Plan(RoutePaths.Parse(CommittedYaml, Bounds)).Where(p => p.Look == "Roads"))
+            foreach (var plan in RouteLayer.Plan(RoutePaths.Parse(CommittedYaml, Bounds)))
             {
+                float allowed = (plan.RailGrade ? RouteLayer.RailWidthM : RouteLayer.RoadWidthM) / 2f;
                 var g = RouteLayer.Derive(plan, map.Frame, data, origin);
                 foreach (var span in g.Routes)
                     for (int v = span.FirstVertex; v < span.FirstVertex + span.VertexCount; v++)
@@ -482,9 +483,9 @@ public class RouteTests
                         else if (d < half + 300f) reach.Add(span.Id);
                     }
             }
-            CollectionAssert.IsEmpty(inside, "road ribbons inside the Old City's walls");
+            CollectionAssert.IsEmpty(inside, "ribbons inside the Old City's walls");
             CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_road", "jerusalem_hebron_beersheba_road", "jerusalem_nablus_nazareth_road",
-                "jerusalem_jericho_road" }, reach, "the roads that reach the walls");
+                "jerusalem_jericho_road", "jaffa_jerusalem_railway" }, reach, "the roads and the railway that reach the walls");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }
