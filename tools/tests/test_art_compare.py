@@ -54,7 +54,7 @@ def test_main_pairs_each_pose_with_its_promo_logs_a_row_and_writes_cvd_copies(tm
         for suffix in ("-compare.png", "-compare-deuteranopia.png", "-compare-protanopia.png"):
             assert (shots / (stem + suffix)).exists(), stem + suffix
     rows = log.read_text().splitlines()
-    assert len(rows) == 2 and all(r.startswith("task-x\t") for r in rows)
+    assert len(rows) == 2 and all(r.startswith("task-x-hudmask\t") for r in rows)
     assert ac.main(["art_compare.py", str(shots), "again", "--log", str(log)], root=tmp_path,
                    promos={"gameplay03": promo, "diorama02": promo}) == 0
     assert not (shots / "gameplay03-compare-compare.png").exists()
@@ -77,7 +77,7 @@ def test_art_log_rows_name_the_branch_the_commit_and_the_absolute_image(tmp_path
     assert ac.main(["art_compare.py", str(shots), "t", "--log", str(log)], root=tmp_path,
                    promos={"gameplay03": promo, "diorama02": promo}) == 0
     name, branch, commit, image = log.read_text().splitlines()[0].split("\t")[:4]
-    assert (name, branch, commit) == ("t", "-", "-")                     # tmp_path is not a git checkout
+    assert (name, branch, commit) == ("t-hudmask", "-", "-")             # tmp_path is not a git checkout
     assert image == str((shots / "gameplay03.png").resolve())
     from pathlib import Path
     branch, commit = ac.source_identity(Path(ac.__file__).resolve().parents[1])
@@ -114,8 +114,37 @@ def test_pixels_inside_the_hud_mask_do_not_move_the_metrics():
 def test_a_mask_that_leaves_no_pixels_fails_instead_of_passing_vacuously():
     img = noisy()
     for bad in (((0.0, 0.0, 1.0, 1.0),), ((0.0, 0.0, 1.0, 0.5), (0.0, 0.5, 1.0, 1.0)), ((0.5, 0.0, 0.2, 1.0),),
-                ((-0.1, 0.0, 0.5, 0.5),)):
+                ((-0.1, 0.0, 0.5, 0.5),), ((0.0, 0.0, 1.0, 0.55),), ((0.0, 0.0, 0.999, 0.999),)):
         with pytest.raises(ValueError):
             ac.metrics(img, mask=bad)
         with pytest.raises(ValueError):
             ac.histogram_distance(img, img, mask=bad)
+
+
+def test_the_hud_mask_keeps_most_of_the_build_frame_and_of_promo_03():
+    for w, h in ((1920, 1080), (1280, 720), (2752, 1536)):
+        assert ac.keep(w, h, ac.HUD_MASK).mean() > 0.85, (w, h)
+    assert ac.MIN_KEPT == 0.5
+
+
+def test_the_resize_pad_drops_every_pixel_blended_from_the_masked_pixels():
+    """The masked pixels are zeroed before the 256x256 resize; without the pad the bicubic blend of that black with the
+    image would land in other bins. A solid image therefore keeps exactly one bin, enlarged or shrunk."""
+    for size in ((64, 36), (480, 270), (1920, 1080), (688, 384)):
+        h = ac.histogram(solid((200, 150, 60), size))
+        assert np.count_nonzero(h) == 1 and h.max() == 1.0, size
+
+
+def test_masked_art_log_rows_and_titles_are_labelled_so_they_are_not_mistaken_for_whole_frame_rows(tmp_path, capsys):
+    """Masking moves main's gameplay03 palette distance by about 0.027, more than the main + 0.02 tolerance, so a masked
+    row must never read as one of the whole-frame rows already in the shared log (art_checkpoint.sh's -units precedent)."""
+    promo = tmp_path / "promo.png"; noisy().save(promo)
+    shots = tmp_path / "shots"; shots.mkdir()
+    noisy(seed=5).save(shots / "gameplay03.png")
+    log = tmp_path / "art-log.tsv"
+    log.write_text("main6\tmain\t988ad417\t/x/gameplay03.png\t0.4\t0.2\t0.1\t0.3505\n")   # a whole-frame row from before
+    assert ac.main(["art_compare.py", str(shots), "main6", "--log", str(log)], root=tmp_path,
+                   promos={"gameplay03": promo, "diorama02": promo}) == 0
+    old, new = (r.split("\t")[0] for r in log.read_text().splitlines())
+    assert old == "main6" and new == "main6" + ac.MASKED_SUFFIX == "main6-hudmask"
+    assert "main6-hudmask (HUD masked)" in capsys.readouterr().out

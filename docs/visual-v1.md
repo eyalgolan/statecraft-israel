@@ -3373,14 +3373,19 @@ budget: a `-compression disabled` WebGL build, `tools/headed.py boot --runs 3 --
 Promo 03 has its own HUD, so the guards leave the same screen regions out of both images rather than hide ours.
 `tools/art_compare.py`'s `HUD_MASK`, as (x0, y0, x1, y1) fractions of the frame, is the top bar (0, 0, 1, 0.07), the
 date plate hanging below it (0, 0, 0.13, 0.10) and the left button column (0, 0.10, 0.045, 0.44). `metrics()` and
-`histogram_distance()` apply it by default; `mask=()` gives the whole frame. A mask that leaves no pixel raises.
+`histogram_distance()` apply it by default; `mask=()` gives the whole frame. A mask that leaves less than half the
+frame raises. `art_compare.py`'s art-log rows are named `<checkpoint-name>-hudmask` (as `art_checkpoint.sh`'s `-units`
+rows), since masking alone moves main's gameplay03 palette distance by about 0.027, more than the main + 0.02 tolerance:
+compare masked rows only with masked rows.
 
 - **Why.** #624 alone moved diorama02's whole-frame warmth 0.1409 -> 0.1465 and gameplay03's palette distance
   0.3505 -> 0.3681 (988ad417 with only #624 cherry-picked, 3 WebGL `?shot` captures each). About half is the shorter
   navy bar; the rest is the camera reframing to the new bar height (`TopBarInset` -> `CameraRig.TopInset`): with the
   top 10% and the left column left out of both frames, diorama02 warmth still moves 0.1643 -> 0.1667.
 - **diorama02 warmth band: [0.087, 0.151]** (was [0.087, 0.145]). The top is promo 02's warmth measured the same masked
-  way, `metrics(promo/final/02-map-diorama.png, mask=HUD_MASK)` = 0.1509 (whole frame 0.1454, the old 0.145). The 0.087
-  floor's derivation is not recorded (it first appears in the Task 4 merge arithmetic above); it is kept.
+  way, `metrics(promo/final/02-map-diorama.png, mask=HUD_MASK)` = 0.1509 (whole frame 0.1454, the old 0.145). Promo 02
+  has no HUD: on it the boxes are geometric, matching where our HUD sits in our diorama02 frame, and they remove a dark
+  backdrop band, part of the title plaque and some sea. The floor 0.087 has no recorded derivation (first in 9d28c722);
+  possibly 0.6 × the old whole-frame top. It is kept.
 - The other bars are unchanged: gameplay03 palette distance to promo 03 <= 0.44 and <= main + 0.02, diorama02
   saturation <= 0.48, now all measured masked.

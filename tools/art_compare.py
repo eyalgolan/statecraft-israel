@@ -13,7 +13,8 @@ For every PNG under <shots-dir> whose name ends in a pose (gameplay03, diorama02
 short commit (both "-" outside a git checkout), the image's absolute path, saturation, contrast (luma std), warmth
 (mean R - B), and the palette distance to the promo (total variation between
 8x8x8 RGB histograms; 0 = same palette, 1 = disjoint). Every number leaves out HUD_MASK's boxes (the HUD) of both
-images; pass mask=() for the whole frame. The numbers inform the owner's review. Exit code 2 when a
+images (pass mask=() for the whole frame), and main() names its rows <checkpoint-name>-hudmask, so they cannot be
+mistaken for the whole-frame rows written before the mask. The numbers inform the owner's review. Exit code 2 when a
 screenshot is near-uniform (luma std < 0.01: a black or blank WebGL capture), 1 when no screenshot matched a pose."""
 import argparse
 import subprocess
@@ -28,6 +29,9 @@ PROMOS = {"gameplay03": ROOT / "promo" / "final" / "03-gameplay-1936.png",
           "diorama02": ROOT / "promo" / "final" / "02-map-diorama.png"}
 CAPTION_PX, GAP_PX, HEIGHT_PX = 44, 16, 720
 UNIFORM_STD = 0.01
+MIN_KEPT = 0.5         # a mask must leave at least this share of the frame measured
+MASKED_SUFFIX = "-hudmask"   # main() names its art-log rows <checkpoint-name>-hudmask: they leave out HUD_MASK, and
+                             # rows written before it measured the whole frame (as art_checkpoint.sh's -units rows)
 Mask = tuple[tuple[float, float, float, float], ...]
 # Screen regions the guards leave out of both the screenshot and the promo, as (x0, y0, x1, y1) fractions of the frame:
 # the HUD covers the same places in both, and promo 03's HUD cannot be hidden. Measured on 1920x1080 ?shot captures
@@ -55,15 +59,16 @@ def source_identity(root: Path) -> tuple[str, str]:
 
 def keep(width: int, height: int, mask: Mask, pad: tuple[int, int] = (0, 0)) -> np.ndarray:
     """(height, width) booleans, True outside every box of mask (each grown by pad pixels). Raises ValueError on a box
-    outside [0, 1] or inside out, and when the mask leaves no pixel: a guard must not pass on an empty region."""
+    outside [0, 1] or inside out, and when the mask leaves less than MIN_KEPT of the frame: a guard must not pass on an
+    empty or near-empty region."""
     k = np.ones((height, width), dtype=bool)
     for x0, y0, x1, y1 in mask:
         if not (0 <= x0 < x1 <= 1 and 0 <= y0 < y1 <= 1):
             raise ValueError(f"mask box {(x0, y0, x1, y1)} is not inside the frame")
         k[max(0, int(np.floor(y0 * height)) - pad[1]):int(np.ceil(y1 * height)) + pad[1],
           max(0, int(np.floor(x0 * width)) - pad[0]):int(np.ceil(x1 * width)) + pad[0]] = False
-    if not k.any():
-        raise ValueError(f"mask {mask} leaves no pixel of a {width}x{height} frame")
+    if k.mean() < MIN_KEPT:
+        raise ValueError(f"mask {mask} leaves {k.mean():.1%} of a {width}x{height} frame, under {MIN_KEPT:.0%}")
     return k
 
 
@@ -76,18 +81,21 @@ def metrics(img: Image.Image, mask: Mask = HUD_MASK) -> dict[str, float]:
     return {"saturation": float(s.mean()), "contrast": float(luma.std()), "warmth": float((a[:, 0] - a[:, 2]).mean())}
 
 
+def histogram(img: Image.Image, bins: int = 8, mask: Mask = HUD_MASK) -> np.ndarray:
+    """The normalised bins x bins x bins RGB histogram of img at 256x256, outside mask."""
+    px = np.asarray(img.convert("RGB")).copy()
+    px[~keep(px.shape[1], px.shape[0], mask)] = 0             # the masked pixels cannot reach the resize below
+    # and the 256x256 pixels the resize blended from them are dropped too (bicubic reaches 2 pixels of the
+    # smaller grid: 2 here when shrinking, 2 * 256 / side when enlarging)
+    pad = tuple(int(np.ceil(2 * max(1, 256 / side))) + 1 for side in (px.shape[1], px.shape[0]))
+    small = np.asarray(Image.fromarray(px, "RGB").resize((256, 256)), dtype=np.int64)
+    x = (small[keep(256, 256, mask, pad)] // (256 // bins)).reshape(-1, 3)
+    h = np.bincount(x[:, 0] * bins * bins + x[:, 1] * bins + x[:, 2], minlength=bins ** 3).astype(np.float64)
+    return h / h.sum()
+
+
 def histogram_distance(a: Image.Image, b: Image.Image, bins: int = 8, mask: Mask = HUD_MASK) -> float:
-    def hist(img: Image.Image) -> np.ndarray:
-        px = np.asarray(img.convert("RGB")).copy()
-        px[~keep(px.shape[1], px.shape[0], mask)] = 0             # the masked pixels cannot reach the resize below
-        # and the 256x256 pixels the resize blended from them are dropped too (bicubic reaches 2 pixels of the
-        # smaller grid: 2 here when shrinking, 2 * 256 / side when enlarging)
-        pad = tuple(int(np.ceil(2 * max(1, 256 / side))) + 1 for side in (px.shape[1], px.shape[0]))
-        small = np.asarray(Image.fromarray(px, "RGB").resize((256, 256)), dtype=np.int64)
-        x = (small[keep(256, 256, mask, pad)] // (256 // bins)).reshape(-1, 3)
-        h = np.bincount(x[:, 0] * bins * bins + x[:, 1] * bins + x[:, 2], minlength=bins ** 3).astype(np.float64)
-        return h / h.sum()
-    return float(0.5 * np.abs(hist(a) - hist(b)).sum())
+    return float(0.5 * np.abs(histogram(a, bins, mask) - histogram(b, bins, mask)).sum())
 
 
 def simulate_cvd(img: Image.Image, kind: str) -> Image.Image:
@@ -131,14 +139,14 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
             uniform.append(path)
             print(f"FAIL: {path} is near-uniform (luma std {m['contrast']:.4f}): the capture is blank")
             continue
-        title = (f"{a.name} | {path.stem} (left) vs {promos[pose].name} (right) | saturation {m['saturation']:.2f}/{p['saturation']:.2f}"
+        title = (f"{a.name}{MASKED_SUFFIX} (HUD masked) | {path.stem} (left) vs {promos[pose].name} (right) | saturation {m['saturation']:.2f}/{p['saturation']:.2f}"
                  f"  contrast {m['contrast']:.3f}/{p['contrast']:.3f}  warmth {m['warmth']:.3f}/{p['warmth']:.3f}  palette distance {d:.2f}")
         pair = compose(shot, promo, title)
         pair.save(path.with_name(path.stem + "-compare.png"))
         for kind in MACHADO:
             simulate_cvd(pair, kind).save(path.with_name(f"{path.stem}-compare-{kind}.png"))
         with log.open("a") as f:
-            f.write("\t".join([a.name, branch, commit, str(path.resolve()), f"{m['saturation']:.4f}", f"{m['contrast']:.4f}", f"{m['warmth']:.4f}", f"{d:.4f}"]) + "\n")
+            f.write("\t".join([a.name + MASKED_SUFFIX, branch, commit, str(path.resolve()), f"{m['saturation']:.4f}", f"{m['contrast']:.4f}", f"{m['warmth']:.4f}", f"{d:.4f}"]) + "\n")
         print("ART " + title)
         rows += 1
     if uniform:
