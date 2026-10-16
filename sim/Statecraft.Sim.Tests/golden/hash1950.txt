@@ -110,3 +110,4 @@ next=2
 obj{
   first_new_yishuv=1949-06-15
 score=100
+food=3003,1001,0

@@ -31,6 +31,8 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.objective_points"),
         ("rules.yaml", "mvp.objective_bonus_per_month"),
         ("rules.yaml", "mvp.objective_bonus_cap"),
+        ("rules.yaml", "mvp.k_food"),
+        ("rules.yaml", "mvp.cover_months"),
         ("cities.yaml", "cities[tel_aviv].housing_capacity"),
         ("cities.yaml", "cities[tel_aviv].job_slots"),
         ("cities.yaml", "cities[tel_aviv].civilians"),

@@ -13,6 +13,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- Food is a national stock (refs #382, R-FOOD-001 to R-FOOD-003; maintainer, 16 October 2026, option (b)): the nation
+  eats its head count each month, a monthly import keeps three months of cover, and the stock stops at 0. Food supply
+  falls as the cover falls and further by any unmet share; rationing and events still act on top. The 1951 currency
+  crisis now cuts the Food imports instead of Food supply directly. `k_food` (0.1) and `cover_months` (3) are new design
+  values for the owner to set or accept. Every golden moves (a new `food=` line; the end of 1951 also moves Food supply
+  slightly); the content hash moves too, so an older save loads with the "different game content" warning.
 - The first-new-yishuv card's source comment records the #706 gazetteer findings for places under 1,000 near
   Mefalsim (seven depopulated villages in the sweeps, none naming Mefalsim; the Bedouin-locality caveat), instead of
   the stale not-checked note (#654). Comment only; the card's text is unchanged.

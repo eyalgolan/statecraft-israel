@@ -37,6 +37,15 @@ mvp:
   objective_points: 100                  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6: points per objective)
   objective_bonus_per_month: 5           # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: points per month early)
   objective_bonus_cap: 60                # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: the most bonus points)
+  # The national Food stock (R-FOOD-001 to R-FOOD-003; D-C2; maintainer decision of 16 October 2026, #382, option (b)). One
+  # unit of Food is one population unit's food for a month. The stock starts at, and the monthly import keeps it at,
+  # cover_months of the nation's need; the foreign currency crisis cuts the import. food_supply carries the term
+  # k_food * (stock - full) / full, minus the unmet share: an empty stock costs k_food, which with food_supply's base of
+  # 0.40 is the food_crisis line (0.30, model.yaml), so an empty larder brings the country to the edge of a food crisis
+  # and any unmet need tips it over. Three months' cover makes one month of the 1951 crisis cost a third of k_food,
+  # about what the legacy direct cut (fx_crisis_food_per_year) took over the same weeks. Neither is a historical figure.
+  k_food: 0.1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-C2: food_supply lost with an empty Food stock)
+  cover_months: 3                        # DESIGN VALUE: owner-set balance, not a historical figure (D-C2: months of need a full Food stock holds)
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06
@@ -86,7 +95,8 @@ imports_per_capita_per_year: 0.00025
 # the turn covering 19 Oct (ending 1951-11-15), against $45m falling due; the first crisis is in the turn ending
 # 1951-12-15; reserves -13.0 at the game's end. The value was not retuned.
 capital_inflow_per_year: 200
-# While reserves are exhausted, food imports are cut: food_supply falls by this much per year.
+# While reserves are exhausted, food imports are cut: food_supply falls by this much per year. The legacy loop only: in the
+# GDD loop the crisis cuts the Food stock's imports instead (R-FOOD-002, Q-POOL-4), and food_supply follows the stock.
 fx_crisis_food_per_year: -0.2
 mobilization_cost_per_year: 60
 # Derived from CBS table 2.1 (1949): (end-1949 1,013.9k - end-1948 758.7k - 1949 immigrants 239,954) / average 1949 population 901.0k.

@@ -72,8 +72,9 @@ namespace Statecraft.Sim
             if (!on && s.FxReserves < 0) { s.ActiveSituations.Add(FxCrisis); why.Add(new Cause("economy", FxCrisis, 1, "Foreign currency reserves are exhausted")); }
             else if (on && s.FxReserves > 0.25 * r.FxStart) { s.ActiveSituations.Remove(FxCrisis); why.Add(new Cause("economy", FxCrisis, -1, "Foreign currency crisis eased")); }
 
-            // The consequence: with no currency to pay for them, food imports are cut while the crisis lasts.
-            if (s.ActiveSituations.Contains(FxCrisis) && r.FxCrisisFoodPerYear < 0)
+            // The consequence: with no currency to pay for them, food imports are cut while the crisis lasts. In the GDD loop
+            // the cut falls on the Food stock's imports instead (R-FOOD-002, Q-POOL-4), and food_supply follows the stock.
+            if (!c.IsGdd && s.ActiveSituations.Contains(FxCrisis) && r.FxCrisisFoodPerYear < 0)
             {
                 var change = EffectsSystem.Shift(c, s, "food_supply", r.FxCrisisFoodPerYear * yearFraction);
                 if (change != 0)

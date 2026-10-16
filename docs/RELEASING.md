@@ -19,9 +19,9 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-brotli --query "golden&smoke=5" \
-     --expect "GOLDEN OK 1950 ad8067765007988a2ea52226a50622259b695cd72a5b735b298207e472b81504" \
-     --expect "GOLDEN OK 1952 0f54dc51a42575774b12a4b712d6d6ad69a45573232bd5b54b8527b24f4281f2" \
-     --expect "SMOKE OK 5 turns 1948-10-15 85191d48688be4595726b17778ecdda0175eff8f6f0fa1d976dbe3b48b42823b"
+     --expect "GOLDEN OK 1950 ca953c983faa2a85216efdf264bf1da9167c9787a06d21a73c76717dfab0f8b4" \
+     --expect "GOLDEN OK 1952 b42380ab7935e4daabd0577fa3df231c474f3ad92f6006af0a05918a46743915" \
+     --expect "SMOKE OK 5 turns 1948-10-15 848969ce7236d5fb4b8af33c2e6a8445d0a437a002b93cb076d54450c3d79e0a"
    bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
 

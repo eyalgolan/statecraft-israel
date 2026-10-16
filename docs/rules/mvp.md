@@ -83,3 +83,13 @@ R-MONEY-001: The GDD's Money is the Treasury (`model.yaml` money `treasury`, in 
 R-MONEY-003: A GDD cost above the Treasury is paid, and the shortfall moves to debt, as map actions do: the Treasury stops at 0, and a cause names what the shortfall was borrowed for (Q-MONEY-3, owner decision "Allow borrowing", 15 October 2026, for training and pioneer work; the Phase 2 plan applies it to every GDD cost). It covers the deficit, map actions, training (R-TRAIN-001), pioneer work (R-SITE-001) and an event option's Treasury cost.
 
 The top bar shows the net position, Treasury minus debt (`HudModel.From`), so it reads below 0 once anything is borrowed.
+
+## Food
+
+The national Food pool (D-C2, "National pools", decided 15 October 2026), built on the maintainer's food rule of 16 October 2026 (#382, option (b): "food_supply adds a stock term: it rises and falls with months of cover (new design values `k_food`, `cover_months`), rationing and events still act on top, and the unmet share lowers it further").
+
+R-FOOD-001: Food is a national stock of whole units (`GameState.Food`); one unit is one population unit's food for one month, and there is no storage cap (Q-POOL-2, decided 15 October 2026). A new game starts the stock at `cover_months` of the start's need, the need being the national head count in population units (`people_per_unit`), rounded half away from zero. `k_food` and `cover_months` are required in the GDD loop (`rules.yaml` `mvp:`, labelled design values); a missing or out-of-range value is a load error.
+
+R-FOOD-002: In step 7 the nation eats the turn's need from the stock as far as it goes: the stock stops at 0, and the rest is the unmet share, kept in the state with the need (Q-POOL-5, decided 15 October 2026). Then a monthly import brings the stock back to `cover_months` of the need, unless foreign currency is exhausted (the `fx_crisis` situation at the turn's start), when nothing is imported (Q-POOL-4, decided 15 October 2026). Imports are already paid for in foreign currency per head (`imports_per_capita_per_year`), so they are not charged again. In the GDD loop the crisis cuts the imports, not `food_supply` directly: `fx_crisis_food_per_year` acts in the legacy loop only.
+
+R-FOOD-003: `food_supply` stays the 0 to 1 level the UI, the situations and the events read (Q-POOL-3, decided 15 October 2026), with a stock term inside its effect sum: `k_food * (stock - full) / full - unmet / need`, where `full` is `cover_months` of the last need. The term is exactly 0 at a full stock, `-k_food` when the stock is empty, and the unmet share lowers it further; rationing, the other effects and event shifts act on top as before, and the level's clamp to 0..1 bounds the result. The GDD loop requires the `food_supply` indicator.

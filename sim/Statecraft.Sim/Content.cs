@@ -479,6 +479,12 @@ namespace Statecraft.Sim
         public int? ObjectiveBonusPerMonth { get; set; }
         /// <summary>The most bonus points one objective can earn (R-OBJ-002; D-B2, #456).</summary>
         public int? ObjectiveBonusCap { get; set; }
+        /// <summary>How far food_supply falls when the Food stock is empty, against a full cover (R-FOOD-003; maintainer
+        /// decision of 16 October 2026, #382, option (b)). Required in the GDD loop, 0 to 1.</summary>
+        public double? KFood { get; set; }
+        /// <summary>The months of the nation's need the Food stock holds when full: the start stock and the level the monthly
+        /// imports keep (R-FOOD-001, R-FOOD-002). Required in the GDD loop, at least 1.</summary>
+        public int? CoverMonths { get; set; }
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
