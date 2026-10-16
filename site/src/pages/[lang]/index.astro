@@ -101,7 +101,7 @@ const features = [
 ];
 
 const works = he
-  ? ['תורות חודשיים מ־15 במאי 1948 ועד 15 בינואר 1952.', 'מסך הפתיחה.', 'מפת 1948: עיירות, כפרים ומאהלי בדואים, מסילות ודרכים, השטחים שבידי כל צד מ־11 ביוני 1948, ואזורי שביתת הנשק וקוויה מ־1949, מתאריך כל הסכם.', 'עיירות וכפרים בגודל לפי האוכלוסייה שלהם ב־1945, ביניהם העיר הלבנה של תל אביב והכפרים הערביים מאבן, עם מטעי זיתים והדרים.', 'החטיבות של 1948, טייסת 101 וספינות חיל הים הראשונות, כאסימונים במיקומים המתועדים שלהם. הם עוד לא מקבלים פקודות.', 'מסך הממשלה עם מינויים.', 'מסך התקציב, והסרגל העליון עם כסף ותמיכה בינלאומית.', 'מסך הביטחון עם סולם ההסלמה וגיוס המילואים.', 'אירועים היסטוריים עם מקורות, ממלחמת 1948 ועד משבר המטבע הזר של 1951, ולרובם צילום ארכיון.', 'לוח "למה?".', 'שמירה אוטומטית וטעינה.', 'גרסת הדפדפן (WebGL), שבונים מקוד המקור.']
+  ? ['תורות חודשיים מ־15 במאי 1948 ועד 15 בינואר 1952.', 'מסך הפתיחה.', 'מפת 1948: עיירות, כפרים ומאהלי בדואים, מסילות ודרכים, השטחים שבידי כל צד מ־11 ביוני 1948, ואזורי שביתת הנשק וקוויה מ־1949, מתאריך כל הסכם.', 'עיירות וכפרים שגודלם לפי אוכלוסייתם ב־1945, ביניהם העיר הלבנה של תל אביב וכפרי האבן הערביים, עם מטעי זיתים והדרים.', 'החטיבות של 1948, טייסת 101 וספינות חיל הים הראשונות, כאסימונים במיקומים המתועדים שלהם. הם עוד לא מקבלים פקודות.', 'מסך הממשלה עם מינויים.', 'מסך התקציב, והסרגל העליון עם כסף ותמיכה בינלאומית.', 'מסך הביטחון עם סולם ההסלמה וגיוס המילואים.', 'אירועים היסטוריים עם מקורות, ממלחמת 1948 ועד משבר המטבע הזר של 1951, ולרובם צילום ארכיון.', 'לוח "למה?".', 'שמירה אוטומטית וטעינה.', 'גרסת הדפדפן (WebGL), שבונים מקוד המקור.']
   : ['Monthly turns from 15 May 1948 to 15 January 1952.', 'The start screen.', 'The 1948 map: towns, villages and Bedouin camps, railways and roads, the areas each side held from 11 June 1948, and the 1949 armistice zones and lines from each agreement’s date.', 'Towns and villages sized by their 1945 population, among them Tel Aviv’s White City and the stone Arab villages, with olive and citrus groves.', 'The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. They take no orders yet.', 'The Cabinet with appointments.', 'The Budget screen, and the top bar with Money and International support.', 'The Defence screen with the escalation ladder and reserve call-up.', 'Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.', 'The “Why?” panel.', 'Autosave and load.', 'The browser (WebGL) build, built from source.'];
 const missing = he
   ? ['האמנות שבתמונות הקונספט. היישובים והעצים הם עדיין מודלים פרוצדורליים; דגמי הבניינים ו"אוסף 1948" של טל כבר במאגר, אבל עוד לא על המפה.', 'רוב מה שב־GDD: יחידות שמאמנים ומפקדים עליהן, ערים עם דיור ותעסוקה, בנייה, קרבות ושלוש המטרות. בסימולציה יש כבר חלק ראשון מהם (תל אביב, אימון, יישוב חדש אחד והמטרה הראשונה), אבל עוד אין מסך שנותן את הפקודות האלה.', 'דיפלומטיה.', 'כל מה שאחרי 15 בינואר 1952.', 'גרסה מתארחת שאפשר לשחק בה בלחיצה אחת.']
@@ -253,7 +253,7 @@ const missing = he
         {he ? (
           <>
             <p>מסמך עיצוב המשחק של הבעלים, GDD v0.1 מ־12 באוקטובר 2026, הוא העיצוב המחייב. הוא מתאר תורות חודשיים, יחידות, ערים, עבודת חלוצים ושלוש מטרות לשנים 1948 עד 1951. רבים מהכללים בו עדיין מסומנים כפתוחים, ובגרסה 0.1.0 הם לא קיימים.</p>
-            <p>מאז 15 באוקטובר 2026 המשחק שבקוד המקור משוחק בתורות החודשיים של ה־GDD. השאר נבנה שלב אחר שלב.</p>
+            <p>מאז 15 באוקטובר 2026 המשחק שבקוד המקור משוחק בתורות החודשיים של ה־GDD. שאר החלקים נבנים עכשיו, שלב אחר שלב.</p>
           </>
         ) : (
           <>
@@ -380,7 +380,10 @@ const missing = he
   .split { display: grid; gap: clamp(1.5rem, 4vw, 3.5rem); grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
   /* The status panel is long: it goes under the text, full width, with its lists in two columns. */
   .split-status { grid-template-columns: minmax(0, 1fr); }
-  @media (max-width: 56rem) { .split { grid-template-columns: 1fr; } }
+  /* Its text takes the full row: the two paragraphs side by side, so no gap is left beside them. */
+  .split-status > .prose { max-inline-size: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .split-status > .prose > :not(p) { grid-column: 1 / -1; }
+  @media (max-width: 56rem) { .split, .split-status > .prose { grid-template-columns: 1fr; } }
   .status ul { padding-inline-start: 1.2rem; font-size: 0.97em; columns: 2 15rem; column-gap: 2.5rem; }
   .status li { break-inside: avoid; }
   .status h3 { font-size: 1.15rem; color: var(--gold-light); }
