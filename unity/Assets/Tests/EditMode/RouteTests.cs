@@ -454,6 +454,41 @@ public class RouteTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>RouteLayer.TrimEndsInside, on hand-made lines (no map): an end inside the square is cut exactly on the wall
+    /// line, nothing that is left lies inside, and only the ends are cut (#319 review). The railway case uses its real
+    /// numbers, in metres from the square's centre: its first point inside is only 92 m deep, well under the 340 m the
+    /// ribbon test allows, so this test is what pins the crossing.</summary>
+    [Test]
+    public void TrimEndsInsideCutsEachEndExactlyOnTheWall()
+    {
+        var c = new Vector2(98264f, 257260f); const float half = 2000f, eps = 0.05f;   // float32 at these world coordinates has a 0.03 m step
+        List<Vector2> Line(params float[] xy) { var l = new List<Vector2>(); for (int i = 0; i < xy.Length; i += 2) l.Add(c + new Vector2(xy[i], xy[i + 1])); return l; }
+        float Cheb(Vector2 p) => Mathf.Max(Mathf.Abs(p.x - c.x), Mathf.Abs(p.y - c.y));
+        void NothingInside(List<Vector2> l, string what) { foreach (var p in l) Assert.GreaterOrEqual(Cheb(p), half - eps, $"{what}: {p - c} is inside"); }
+
+        // The railway: in through the south wall, its last two points inside (92 m and 1094 m deep).
+        var rail = RouteLayer.TrimEndsInside(Line(-2227f, -2570f, -1743f, -1908f, -904f, -1094f), c, half);
+        Assert.AreEqual(2, rail.Count, "the railway keeps its outside point and gains the crossing");
+        var end = rail[rail.Count - 1] - c;
+        Assert.AreEqual(-2000f, end.y, eps, "the railway ends on the south wall");
+        Assert.AreEqual(-1743f + (-484f) * (92f / 662f), end.x, 0.1f, "where its last segment crosses it");
+        NothingInside(rail, "railway");
+
+        // A line that starts inside and leaves by the east wall: its first point becomes the crossing (2000, 150).
+        var east = RouteLayer.TrimEndsInside(Line(0f, 0f, 1500f, 100f, 2500f, 200f), c, half);
+        Assert.AreEqual(2, east.Count);
+        Assert.AreEqual(2000f, (east[0] - c).x, eps); Assert.AreEqual(150f, (east[0] - c).y, eps);
+        Assert.AreEqual(half, Cheb(east[0]), eps, "the cut end lies on the wall line");
+        NothingInside(east, "east");
+
+        // Wholly outside: unchanged. Wholly inside: empty. Through the square: only the ends are cut, so it keeps its middle.
+        var outside = Line(-3000f, -3000f, 3000f, -3000f);
+        CollectionAssert.AreEqual(outside, RouteLayer.TrimEndsInside(outside, c, half));
+        CollectionAssert.IsEmpty(RouteLayer.TrimEndsInside(Line(-100f, 0f, 100f, 0f), c, half));
+        var through = Line(-3000f, 0f, 0f, 0f, 3000f, 0f);
+        CollectionAssert.AreEqual(through, RouteLayer.TrimEndsInside(through, c, half));
+    }
+
     /// <summary>Jerusalem's symbolic Old City is a walled square 4 km across (SettlementKits.OldCityWalls), so the real 1948
     /// roads that meet by New Gate, and the Jaffa-Jerusalem railway's station, all outside the real walls, fall inside it.
     /// The map cuts each road's and the railway's ribbon at the walls (#319; the railway on the owner's ruling, "Cut it at
