@@ -497,13 +497,14 @@ public class HudTests
 
     /// <summary>Fix round 1, M3: the top-bar captions are the content names. Since #622 they are in the sentence case the
     /// content and the rest of the strings use, so a caption is the content name as written (it was Title Case before);
-    /// Immigration and Public support are UI quantities with no content name.</summary>
+    /// Immigration and Public support are UI quantities with no content name. Money carries "(net)" after its name: the top
+    /// bar shows cash minus debt (#681, owner, 16 October 2026), where the content name, as the causes use it, is cash.</summary>
     [Test]
     public void TopBarCaptionsAreTheContentNames()
     {
         using var ui = new UiTestKit();
         string Caption(string meter) => ui.Q<VisualElement>(meter).Q<Label>(className: "meter-name").text;
-        Assert.AreEqual(PlayerText.Target(C, "treasury"), Caption("meter-treasury"));
+        Assert.AreEqual(PlayerText.Target(C, "treasury") + " (net)", Caption("meter-treasury"));
         Assert.AreEqual(PlayerText.Target(C, "security"), Caption("meter-security"));
         Assert.AreEqual(PlayerText.Target(C, "intl_standing"), Caption("meter-standing"));
         Assert.AreEqual(PlayerText.Target(C, "fx_reserves"), Caption("meter-fx"));
