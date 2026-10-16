@@ -257,16 +257,18 @@ eras:
         Assert.Empty(card.Tags);
     }
 
-    // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 June 1949 (#566), the month of its
-    // 12 June 1949 founding, so the first new yishuv is on time and scores 100, and its card fires and is answered.
+    // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 March 1949, three months before its
+    // 12 June 1949 founding, so the first new yishuv scores 100 and the early bonus (D-B2), and its card fires and is answered.
+    // Since GDD Phase 3 PR 1 the cities start with every job filled (Q-START-1), so the player trains its halutz group on the
+    // first turn instead of on 15 August 1948 (ReferencePlayerTests); before, it built on 15 June 1949 and scored 100.
     [Fact]
     public void TheGoldenRunCompletesTheFirstNewYishuvOnTheBuildDate()
     {
         var s = GoldenRun.Play(Real, GoldenRun.Until1950);
         var built = s.Sites["mefalsim"].BuiltOn!.Value;
-        Assert.Equal(new DateTime(1949, 6, 15), built);
+        Assert.Equal(new DateTime(1949, 3, 15), built);
         Assert.Equal(built, s.Objectives["first_new_yishuv"]);
-        Assert.Equal(100, s.Score);
+        Assert.Equal(100 + 3 * 5, s.Score);   // D-B6 and D-B2: +5 a month for three months early
         Assert.Equal("continue", s.ChosenOptions["first_new_yishuv"]);
     }
 

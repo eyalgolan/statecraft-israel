@@ -13,6 +13,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- The GDD game has its twelve cities (GDD Phase 3 PR 1, refs #732, #383; R-CITY-006, R-CITY-007): `content/cities.yaml`
+  holds the `city` and `town` rows of the 1948 settlements, each starting from its census population of 8 November 1948
+  (CBS Statistical Abstract No. 14, Table 11; Zikhron Ya'akov from No. 3; Rosh Pinna from Hebrew Wikipedia, as the owner
+  accepted on #569), with the CBS working share where one exists and labelled design values for the gaps (Q-START-1).
+  Every value carries a status (sourced, derived, wikipedia-only or design) and the loader refuses a historical value
+  without its sources and date. People become units to the nearest 1,000, at least 1 for a town with people
+  (Q-START-2): 511 units in all.
 - The top bar's Money figure is labelled net: "Money (net)", "כסף (נטו)" in Hebrew, and its tooltip says the same (refs
   #681; owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"). The value is unchanged,
   cash minus debt; the Budget screen still shows money and debt separately.

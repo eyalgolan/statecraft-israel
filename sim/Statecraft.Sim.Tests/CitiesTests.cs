@@ -10,8 +10,8 @@ public class CitiesTests
     static readonly Content Mvp = ContentLoader.Load(RealContentTests.ContentRoot());
 
     /// <summary>The GDD fixture with one city: 20 jobs, 10 civilians, 6 of them employed, housing for 12.</summary>
-    static Content Town(string city = "  - { id: town_a, housing_capacity: 12, job_slots: 20, civilians: 10, employed: 6, facilities: [] }\n") =>
-        ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string> { ["cities.yaml"] = "cities:\n" + city })));
+    static Content Town(string? city = null) =>
+        ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string> { ["cities.yaml"] = "cities:\n" + (city ?? Fixture.City("town_a", 12, 20, 10, 6)) })));
 
     static StepResult Step(Content c, GameState s, params Command[] commands) => Simulation.Step(c, s, commands);
 
@@ -19,8 +19,9 @@ public class CitiesTests
     public void ANewGddGameStartsWithItsCities()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
-        var city = Assert.Single(s.Cities.Values);
-        Assert.Equal(("tel_aviv", 120, 90, 100, 80, 0), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed, city.Refugees));
+        Assert.Equal(Mvp.Cities.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal), s.Cities.Keys);
+        var city = s.Cities["tel_aviv"];   // the census start of Tel Aviv-Yafo (R-CITY-007)
+        Assert.Equal(("tel_aviv", 248, 106, 248, 106, 0), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed, city.Refugees));
     }
 
     [Fact]
@@ -109,13 +110,14 @@ public class CitiesTests
     [Fact]
     public void ATurnsArrivalsAreHousedOnTheNextTurn()
     {
-        var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
+        // Tel Aviv starts full (Q-START-1: housing equals the start people), so 20 of its people are moved out to free room.
+        var s = With(Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical), "tel_aviv", 228, 106, 0);
         var one = Step(Mvp, s).State;
         var arrived = one.Cities["tel_aviv"].Refugees;
         Assert.True(arrived > 0);
-        Assert.Equal(100, one.Cities["tel_aviv"].Civilians);   // housing for 20 more was free, but it ran before they came
+        Assert.Equal(228, one.Cities["tel_aviv"].Civilians);   // housing for 20 more was free, but it ran before they came
         var two = Step(Mvp, one).State.Cities["tel_aviv"];
-        Assert.Equal(100 + Math.Min(arrived, 20), two.Civilians);
+        Assert.Equal(228 + Math.Min(arrived, 20), two.Civilians);
     }
 
     // R-CITY-003
@@ -169,7 +171,7 @@ public class CitiesTests
     /// either share shows apart from the other.</summary>
     static Content Unequal() => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
     {
-        ["cities.yaml"] = "cities:\n  - { id: town_a, housing_capacity: 12, job_slots: 20, civilians: 10, employed: 6, facilities: [] }\n",
+        ["cities.yaml"] = "cities:\n" + Fixture.City("town_a", 12, 20, 10, 6),
         ["rules.yaml"] = Fixture.Files["rules.yaml"].Replace("map_action: 1 }", Fixture.GddCosts)
             + Fixture.GddRules.Replace("cohesion_housing_weight: 0.5", "cohesion_housing_weight: 0.8").Replace("cohesion_jobs_weight: 0.5", "cohesion_jobs_weight: 0.2"),
     })));

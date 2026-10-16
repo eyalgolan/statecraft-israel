@@ -231,10 +231,12 @@ mvp:
   cover_months: 3
 ";
 
-    public const string GddCities = @"
-cities:
-  - { id: town_a, housing_capacity: 12, job_slots: 8, civilians: 10, employed: 6, facilities: [military_camp, hakhshara] }
-";
+    public static readonly string GddCities = "\ncities:\n" + City("town_a", 12, 8, 10, 6, "[military_camp, hakhshara]");
+
+    /// <summary>One cities.yaml row in the fixture's units (people_per_unit 10): every field a design value (fixture values,
+    /// not history), with the people and the employed share chosen so they convert to the given units (R-CITY-007).</summary>
+    public static string City(string id, int housing, int jobs, int civilians, int employed, string facilities = "[]") =>
+        FormattableString.Invariant($"  - {{ id: {id}, people: {{ value: {civilians * 10}, status: design }}, employed_share: {{ value: {(civilians == 0 ? 0m : (decimal)employed / civilians)}, status: design }}, housing_capacity: {{ value: {housing}, status: design }}, job_slots: {{ value: {jobs}, status: design }}, facilities: {facilities} }}\n");
 
     public const string GddUnitTypes = @"
 types:

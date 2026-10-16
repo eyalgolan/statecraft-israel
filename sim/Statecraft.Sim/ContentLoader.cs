@@ -959,9 +959,33 @@ namespace Statecraft.Sim
         /// <summary>Facilities a city may have (cities.yaml facilities): the GDD's training places (D-D5).</summary>
         static readonly string[] Facilities = { "military_camp", "hakhshara" };
 
-        static void NotNegative(string file, string field, int v)
+        static readonly string[] CityStatuses = { "sourced", "derived", "wikipedia-only", "design" };
+        static readonly System.Text.RegularExpressions.Regex Month = new System.Text.RegularExpressions.Regex(@"^\d{4}-\d{2}\z");
+
+        /// <summary>R-CITY-006: a city value is present and has a known status; a sourced, derived or wikipedia-only value also
+        /// has sources, each with a url and a checked date, and the day (YYYY-MM-DD) or month (YYYY-MM) it describes.</summary>
+        static CityValue CityValueOf(string file, string at, CityValue? v)
         {
-            if (v < 0) throw new ContentException(file, field, "must be >= 0");
+            if (v == null) throw new ContentException(file, at, "required");
+            if (v.Status == "") throw new ContentException(file, at + ".status", "required");
+            if (!CityStatuses.Contains(v.Status))
+                throw new ContentException(file, at + ".status", $"unknown status '{v.Status}' (sourced, derived, wikipedia-only or design)");
+            for (int i = 0; i < v.Sources.Count; i++)
+                if (v.Sources[i] == null || string.IsNullOrWhiteSpace(v.Sources[i].Url) || v.Sources[i].Checked == default)
+                    throw new ContentException(file, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
+            if (v.Date != "" && !ReviewRecord.IsDay(v.Date)
+                && !(Month.IsMatch(v.Date) && DateTime.TryParseExact(v.Date, "yyyy-MM", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _)))
+                throw new ContentException(file, at + ".date", "must be YYYY-MM-DD or YYYY-MM");
+            if (v.Status == "design") return v;   // a design value may name what its method rests on, and needs no date
+            if (v.Sources.Count == 0) throw new ContentException(file, at + ".sources", $"required: a {v.Status} value needs a source");
+            if (v.Date == "") throw new ContentException(file, at + ".date", "required: the day or month the value describes");
+            return v;
+        }
+
+        static void Whole(string file, string at, CityValue v)
+        {
+            if (v.Value < 0 || v.Value != decimal.Truncate(v.Value) || v.Value > int.MaxValue)
+                throw new ContentException(file, at + ".value", "must be a whole number >= 0");
         }
 
         /// <summary>The GDD v0.1 city data and rules (Phase 1 PR 3), checked only when systems.loop is gdd.</summary>
@@ -974,12 +998,12 @@ namespace Statecraft.Sim
             {
                 var at = $"cities[{x.Id}]";
                 if (!known.Contains(x.Id)) throw new ContentException(cf, at + ".id", $"is not in {SettlementsFileName}");
-                NotNegative(cf, at + ".housing_capacity", x.HousingCapacity);
-                NotNegative(cf, at + ".job_slots", x.JobSlots);
-                NotNegative(cf, at + ".civilians", x.Civilians);
-                NotNegative(cf, at + ".employed", x.Employed);
-                if (x.Employed > x.Civilians) throw new ContentException(cf, at + ".employed", "cannot be more than civilians");
-                if (x.Employed > x.JobSlots) throw new ContentException(cf, at + ".employed", "cannot be more than job_slots");
+                // R-CITY-006: every value is required (never read as 0) and says what it is.
+                Whole(cf, at + ".people", CityValueOf(cf, at + ".people", x.People));
+                var share = CityValueOf(cf, at + ".employed_share", x.EmployedShare);
+                if (share.Value < 0 || share.Value > 1) throw new ContentException(cf, at + ".employed_share.value", "must be a number from 0 to 1");
+                Whole(cf, at + ".housing_capacity", CityValueOf(cf, at + ".housing_capacity", x.Housing));
+                Whole(cf, at + ".job_slots", CityValueOf(cf, at + ".job_slots", x.Jobs));
                 foreach (var f in x.Facilities)
                     if (!Facilities.Contains(f)) throw new ContentException(cf, at + ".facilities", $"unknown facility '{f}' (military_camp or hakhshara)");
             }
@@ -1034,6 +1058,17 @@ namespace Statecraft.Sim
                     if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
                     if (v < 0) throw new ContentException(file, "mvp." + key, "must be >= 0");
                 }
+            }
+            // R-CITY-007: the units the sim starts from, in the one unit size of every era (checked above).
+            foreach (var x in c.Cities)
+            {
+                var ppu = c.Rules.Mvp!.PeoplePerUnit;
+                x.Civilians = Cities.StartUnits(x.People!.Value, ppu);
+                x.Employed = Cities.NearestUnit(x.People.Value * x.EmployedShare!.Value, ppu);
+                x.HousingCapacity = (int)x.Housing!.Value;
+                x.JobSlots = (int)x.Jobs!.Value;
+                if (x.Employed > x.JobSlots)
+                    throw new ContentException(cf, $"cities[{x.Id}].job_slots.value", FormattableString.Invariant($"is fewer than the {x.Employed} employed units of people times employed_share"));
             }
             // Strictly before the last era's end: an end on it is the era's own end, and the game would be over as era_ended.
             if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end >= c.Eras[c.Eras.Count - 1].To))

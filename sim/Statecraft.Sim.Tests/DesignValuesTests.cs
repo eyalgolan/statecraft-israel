@@ -33,10 +33,40 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.objective_bonus_cap"),
         ("rules.yaml", "mvp.k_food"),
         ("rules.yaml", "mvp.cover_months"),
-        ("cities.yaml", "cities[tel_aviv].housing_capacity"),
-        ("cities.yaml", "cities[tel_aviv].job_slots"),
-        ("cities.yaml", "cities[tel_aviv].civilians"),
-        ("cities.yaml", "cities[tel_aviv].employed"),
+        // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's
+        // housing is its start people and its job slots its start employed; seven towns with no CBS working share take
+        // the national one. The census people and the five CBS shares are sourced, not design values (R-CITY-006).
+        ("cities.yaml", "cities[jerusalem].housing_capacity.value"),
+        ("cities.yaml", "cities[jerusalem].job_slots.value"),
+        ("cities.yaml", "cities[tel_aviv].housing_capacity.value"),
+        ("cities.yaml", "cities[tel_aviv].job_slots.value"),
+        ("cities.yaml", "cities[haifa].housing_capacity.value"),
+        ("cities.yaml", "cities[haifa].job_slots.value"),
+        ("cities.yaml", "cities[tiberias].housing_capacity.value"),
+        ("cities.yaml", "cities[tiberias].job_slots.value"),
+        ("cities.yaml", "cities[safed].housing_capacity.value"),
+        ("cities.yaml", "cities[safed].job_slots.value"),
+        ("cities.yaml", "cities[petah_tikva].employed_share.value"),
+        ("cities.yaml", "cities[petah_tikva].housing_capacity.value"),
+        ("cities.yaml", "cities[petah_tikva].job_slots.value"),
+        ("cities.yaml", "cities[rishon_lezion].employed_share.value"),
+        ("cities.yaml", "cities[rishon_lezion].housing_capacity.value"),
+        ("cities.yaml", "cities[rishon_lezion].job_slots.value"),
+        ("cities.yaml", "cities[zikhron_yaakov].employed_share.value"),
+        ("cities.yaml", "cities[zikhron_yaakov].housing_capacity.value"),
+        ("cities.yaml", "cities[zikhron_yaakov].job_slots.value"),
+        ("cities.yaml", "cities[rosh_pinna].employed_share.value"),
+        ("cities.yaml", "cities[rosh_pinna].housing_capacity.value"),
+        ("cities.yaml", "cities[rosh_pinna].job_slots.value"),
+        ("cities.yaml", "cities[rehovot].employed_share.value"),
+        ("cities.yaml", "cities[rehovot].housing_capacity.value"),
+        ("cities.yaml", "cities[rehovot].job_slots.value"),
+        ("cities.yaml", "cities[hadera].employed_share.value"),
+        ("cities.yaml", "cities[hadera].housing_capacity.value"),
+        ("cities.yaml", "cities[hadera].job_slots.value"),
+        ("cities.yaml", "cities[netanya].employed_share.value"),
+        ("cities.yaml", "cities[netanya].housing_capacity.value"),
+        ("cities.yaml", "cities[netanya].job_slots.value"),
         ("unit_types.yaml", "types[recruit].training_turns"),
         ("unit_types.yaml", "types[recruit].training_cost"),
         ("unit_types.yaml", "types[halutz].training_turns"),
@@ -45,7 +75,9 @@ public class DesignValuesTests
 
 
     /// <summary>Every number in the GDD files and blocks, as (file, key path, the line it is on). Scope: all of cities.yaml and
-    /// unit_types.yaml, rules.yaml mvp:, and the GDD kinds under rules.yaml attention_cost.</summary>
+    /// unit_types.yaml, rules.yaml mvp:, and the GDD kinds under rules.yaml attention_cost. A value whose own mapping says
+    /// `status: sourced`, `derived` or `wikipedia-only` is a historical figure, not balance: the loader holds it to its
+    /// sources and date instead (cities.yaml, R-CITY-006), so it is left out.</summary>
     public static List<(string File, string Key, string Line)> Numbers(string root)
     {
         var found = new List<(string, string, string)>();
@@ -62,6 +94,8 @@ public class DesignValuesTests
                 switch (node)
                 {
                     case YamlMappingNode m:
+                        if (m.Children.TryGetValue(new YamlScalarNode("status"), out var st) && st is YamlScalarNode ss
+                            && (ss.Value == "sourced" || ss.Value == "derived" || ss.Value == "wikipedia-only")) break;
                         foreach (var kv in m.Children)
                         {
                             var k = ((YamlScalarNode)kv.Key).Value!;
@@ -117,8 +151,9 @@ public class DesignValuesTests
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));
         Assert.Equal((100, 5, 60), (m.ObjectivePoints, m.ObjectiveBonusPerMonth, m.ObjectiveBonusCap));   // D-B6, D-B2
-        var city = Assert.Single(c.Cities);
-        Assert.Equal(("tel_aviv", 120, 90, 100, 80), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed));
+        Assert.Equal(12, c.Cities.Count);
+        foreach (var x in c.Cities)   // the listed housing and job values are the ones Cities.Init starts from
+            Assert.Equal(((int)x.Housing!.Value, (int)x.Jobs!.Value), (x.HousingCapacity, x.JobSlots));
         Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5) },
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.TrainingTurns, t.TrainingCost)));
     }
@@ -129,10 +164,12 @@ public class DesignValuesTests
     {
         var dir = Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
         {
-            ["cities.yaml"] = "cities:\n  - id: town_a\n    housing_capacity: 12   " + Tag + " (D-A4)\n    job_slots: 8\n",
+            ["cities.yaml"] = "cities:\n  - id: town_a\n    people: { value: 100, status: sourced, date: 1948-11-08, sources: [{ url: \"https://example.org/census\", checked: 2026-10-15 }] }\n"
+                + "    housing_capacity: { value: 12, status: design }   " + Tag + " (D-A4)\n    job_slots: { value: 8, status: design }\n",
         }));
         var numbers = Numbers(dir).Where(n => n.File == "cities.yaml").ToList();
-        Assert.Equal(new[] { "cities[town_a].housing_capacity", "cities[town_a].job_slots" }, numbers.Select(n => n.Key));
+        // the sourced census value is not a balance number; the two design values are, tagged or not
+        Assert.Equal(new[] { "cities[town_a].housing_capacity.value", "cities[town_a].job_slots.value" }, numbers.Select(n => n.Key));
         Assert.Contains(Tag, numbers[0].Line);
         Assert.DoesNotContain(Tag, numbers[1].Line);
         // rules.yaml: the mvp block and the GDD kinds are in scope, the legacy numbers are not.

@@ -48,6 +48,10 @@ R-CITY-004: Each turn, `min(refugees, max(0, housing_capacity - civilians))` of 
 
 R-CITY-005: Social cohesion is `clamp(0, 1, cohesion_housing_weight * housed + cohesion_jobs_weight * employed)`, where `housed` is civilians over civilians and refugees (1 with nobody) and `employed` is employed over civilians (1 with none), over all cities. It is a placeholder while D-C1 is open: no other system reads it.
 
+R-CITY-006: The cities are the `city` and `town` rows of `map/settlements_1948.yaml`, in that file's order, and their start values are `cities.yaml`'s. Each of a city's values (`people`, `employed_share`, `housing_capacity`, `job_slots`) is required and has a status: `sourced` (read from the source named), `derived` (computed from sourced values), `wikipedia-only` (an owner-accepted Wikipedia figure) or `design` (a labelled design value, R-LOOP-005). A `sourced`, `derived` or `wikipedia-only` value has at least one source, each with a url and a checked date, and the day (YYYY-MM-DD) or month (YYYY-MM) it describes; the loader refuses a value without them, naming the file and field (GDD Phase 3 plan, review focus 3).
+
+R-CITY-007: A city starts with `civilians` = `people / people_per_unit` to the nearest unit (a half rounds up), and at least 1 when `people` is above 0 (Q-START-2, owner, 15 October 2026); `employed` = `people * employed_share / people_per_unit` to the nearest unit; `housing_capacity` and `job_slots` as written, in units. The loader refuses a city whose start employed is above its job slots. The arithmetic is decimal, so it is exact on every runtime.
+
 ## Training
 
 Training is step 4 of the turn in the approved order (§2.3, D-A6): it runs before production. One military camp and one Hakhshara exist in Tel Aviv at the start, a labelled design assumption (D-D5); pioneers will build more.
