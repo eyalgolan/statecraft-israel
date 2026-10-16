@@ -238,7 +238,7 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
             tag = "" if gated else " (information only: editor render, not gated)"
             print(f"MATERIAL {rel} whole-frame warmth (information only) {m['warmth']:.4f} vs promo {p['warmth']:.4f}")
             try:
-                guard = material_guard(shot, promo)
+                guard = material_guard(shot, promo, mask=MATERIAL_MASK)
             except ValueError as e:
                 print(f"{'FAIL' if gated else 'NOTE'}: {path}: {e}")
                 if gated:
@@ -251,7 +251,7 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
                       f"[{g['lo']:.4f}, {g['hi']:.4f}] {verdict}{tag}")
                 if gated and not g["ok"]:
                     guard_fails.append(f"GUARD FAIL: {name} {g['ours']:.4f} vs [{g['lo']:.4f}, {g['hi']:.4f}] in {path}")
-            ours, theirs = material_warmth(shot), material_warmth(promo)
+            ours, theirs = material_warmth(shot, MATERIAL_MASK), material_warmth(promo, MATERIAL_MASK)
             for name in INFO_MATERIALS:
                 o, t = ours[name][1], theirs[name][1]
                 print(f"MATERIAL {rel} {name} warmth {'-' if o is None else f'{o:.4f}'} vs promo "

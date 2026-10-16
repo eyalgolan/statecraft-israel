@@ -327,3 +327,18 @@ def test_only_the_webgl_shot_is_gated_and_every_material_line_names_its_file(tmp
     assert any(l.startswith("MATERIAL editor/PC-diorama02.png sand") and "information only" in l and "FAIL" not in l
                for l in lines)
     assert "GUARD FAIL" not in out
+
+
+def test_the_material_guard_and_main_leave_a_navy_minimap_out_of_the_sea(tmp_path, capsys):
+    """material_guard's default mask (and what main() passes) must be MATERIAL_MASK, not HUD_MASK."""
+    plain = stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270))
+    a = np.asarray(plain).copy(); a[int(0.62 * 270):, int(0.86 * 480):] = (14, 22, 38)    # a navy minimap
+    with_ui = Image.fromarray(a, "RGB")
+    assert ac.material_guard(with_ui, plain)["sea"]["ours"] == ac.material_guard(plain, plain)["sea"]["ours"]
+    promo = tmp_path / "promo.png"; plain.save(promo)
+    for name, img in (("plain", plain), ("ui", with_ui)):
+        (tmp_path / name).mkdir(); img.save(tmp_path / name / "diorama02.png")
+        ac.main(["art_compare.py", str(tmp_path / name), "t", "--log", str(tmp_path / "log.tsv")], root=tmp_path,
+                promos={"gameplay03": promo, "diorama02": promo})
+    sea = [l.split(" vs ")[0] for l in capsys.readouterr().out.splitlines() if l.startswith("MATERIAL diorama02.png sea")]
+    assert len(sea) == 2 and sea[0] == sea[1], sea
