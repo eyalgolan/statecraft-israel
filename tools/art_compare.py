@@ -15,10 +15,10 @@ short commit (both "-" outside a git checkout), the image's absolute path, satur
 8x8x8 RGB histograms; 0 = same palette, 1 = disjoint). Every number leaves out HUD_MASK's boxes (the HUD) of both
 images (pass mask=() for the whole frame), and main() names its rows <checkpoint-name>-hudmask, so they cannot be
 mistaken for the whole-frame rows written before the mask. For diorama02 it also prints a MATERIAL line per
-gating material (sand, sea) with its warmth against its band from promo 02, PASS or FAIL (#695), and wood and the
-whole-frame warmth as information. Exit codes (EXIT_GUARD_FAIL and its neighbours below): 0 all passed, 1 no screenshot
-matched a pose, 2 a near-uniform screenshot (luma std < 0.01: a black or blank WebGL capture), 3 a gating material out
-of its band, 4 a gating material too rare to measure."""
+gating material (sand, sea) of the WebGL shot with its warmth against its band from promo 02, PASS or FAIL (#695),
+and wood, the whole-frame warmth and the editor renders as information. Exit codes (EXIT_GUARD_FAIL and its neighbours
+below): 0 all passed, 1 no screenshot matched a pose, 2 a near-uniform screenshot (luma std < 0.01: a black or blank
+WebGL capture), 3 a gating material out of its band, 4 a gating material too rare to measure."""
 import argparse
 import subprocess
 import sys
@@ -48,16 +48,21 @@ HUD_MASK: Mask = (
 # whole frame mixes materials in different shares (promo 02's board is about a quarter sea, ours an eighth, with a third
 # table), so its warmth compares geography as much as colour. classify() puts each pixel in one class, in this order:
 #   neutral  chroma (max - min) / max under NEUTRAL_SAT: greys, white salt and labels, which carry no hue;
-#   sea      blue above red (B > R): the sea, the Dead Sea and the lakes;
+#   sea      blue above red (B > R): the sea, the Dead Sea and the lakes (and promo 02's glass towers and solar fields);
 #   green    green above red (and B <= R): fields and orchards;
 #   wood     warm (R >= G, R >= B) and luma under WOOD_LUMA: the table, the frame's walnut and promo 02's dark backdrop;
 #   land     warm, luma WOOD_LUMA to SAND_LUMA: the hills and the cut earth;
-#   sand     warm, luma at or over SAND_LUMA: the Negev, the dunes and the beaches.
-# The luma cuts sit in the gaps between the materials measured on promo 02 and main's diorama02 (T77): the wood's mean
-# luma is 0.13-0.26 (our table 0.18-0.20), the hills' 0.35-0.50 and the Negev sand's 0.70-0.71.
+#   sand     warm, luma at or over SAND_LUMA: bright warm ground (the Negev, the beaches, sunlit hills and stone towns).
+# The luma cuts sit between hand-picked region means on promo 02 and main's diorama02 (T77), not in gaps of the pixel
+# histograms: the wood's mean luma is 0.13-0.26 (our table 0.18-0.20), the hills' 0.35-0.50 and the Negev sand's 0.70-0.71.
 MATERIALS = ("neutral", "sea", "green", "wood", "land", "sand")
 NEUTRAL_SAT, WOOD_LUMA, SAND_LUMA = 0.08, 0.30, 0.55
 GUARDED_MATERIALS = ("sand", "sea")
+# The material guard also leaves out the minimap (bottom right), the "Click the map" plate (bottom left) and the map-layer
+# legend (bottom right, beside the minimap): their navy is B > R and would count as sea, about 16% of main's diorama02 sea
+# pixels. Applied to promo 02 alike (there they cover open sand, a corner of the Dead Sea and some hills: no UI). HUD_MASK
+# itself, and the guards that use it, are unchanged.
+MATERIAL_MASK: Mask = HUD_MASK + ((0.86, 0.62, 1.0, 1.0), (0.0, 0.92, 0.17, 1.0), (0.76, 0.94, 0.87, 1.0))
 # Printed, not gated: promo 02's dark backdrop is mostly under HUD_MASK's top-bar box, so its "wood" is mostly the frame's
 # walnut and terrain shadow while ours is mostly the table, which is not like-for-like.
 INFO_MATERIALS = ("wood",)
@@ -145,7 +150,7 @@ def classify(img: Image.Image) -> np.ndarray:
     return out
 
 
-def material_warmth(img: Image.Image, mask: Mask = HUD_MASK) -> dict[str, tuple[float, float | None]]:
+def material_warmth(img: Image.Image, mask: Mask = MATERIAL_MASK) -> dict[str, tuple[float, float | None]]:
     """Per material: (its share of the pixels outside mask, its mean warmth R - B, or None when it has no pixel)."""
     rgb = img.convert("RGB")
     k = keep(rgb.width, rgb.height, mask)
@@ -160,7 +165,7 @@ def material_band(promo_warmth: float) -> tuple[float, float]:
     return promo_warmth - t, promo_warmth + t
 
 
-def material_guard(shot: Image.Image, promo: Image.Image, mask: Mask = HUD_MASK) -> dict[str, dict[str, float | bool]]:
+def material_guard(shot: Image.Image, promo: Image.Image, mask: Mask = MATERIAL_MASK) -> dict[str, dict[str, float | bool]]:
     """Each guarded material's mean warmth in shot against its band from promo. Raises ValueError when a guarded material
     covers less than MIN_MATERIAL_SHARE of either image, rather than pass on too few pixels."""
     ours, theirs = material_warmth(shot, mask), material_warmth(promo, mask)
@@ -227,22 +232,29 @@ def main(argv: list[str], root: Path = ROOT, promos: dict[str, Path] = PROMOS) -
             f.write("\t".join([a.name + MASKED_SUFFIX, branch, commit, str(path.resolve()), f"{m['saturation']:.4f}", f"{m['contrast']:.4f}", f"{m['warmth']:.4f}", f"{d:.4f}"]) + "\n")
         print("ART " + title)
         if pose == "diorama02":
-            print(f"MATERIAL {pose} whole-frame warmth (information only) {m['warmth']:.4f} vs promo {p['warmth']:.4f}")
+            # Only the WebGL ?shot (directly under <shots-dir>) is gated; the editor renders (editor/) are printed as
+            # information, since the WebGL player is what the owner sees.
+            rel, gated = path.relative_to(a.shots).as_posix(), path.parent == a.shots
+            tag = "" if gated else " (information only: editor render, not gated)"
+            print(f"MATERIAL {rel} whole-frame warmth (information only) {m['warmth']:.4f} vs promo {p['warmth']:.4f}")
             try:
                 guard = material_guard(shot, promo)
             except ValueError as e:
-                unmeasurable.append(path)
-                print(f"FAIL: {path}: {e}")
+                print(f"{'FAIL' if gated else 'NOTE'}: {path}: {e}")
+                if gated:
+                    unmeasurable.append(path)
+                rows += 1
                 continue
             for name, g in guard.items():
-                print(f"MATERIAL {pose} {name} warmth {g['ours']:.4f} vs promo {g['promo']:.4f} band "
-                      f"[{g['lo']:.4f}, {g['hi']:.4f}] {'PASS' if g['ok'] else 'FAIL'}")
-                if not g["ok"]:
+                verdict = ('PASS' if g['ok'] else 'FAIL') if gated else ('in band' if g['ok'] else 'out of band')
+                print(f"MATERIAL {rel} {name} warmth {g['ours']:.4f} vs promo {g['promo']:.4f} band "
+                      f"[{g['lo']:.4f}, {g['hi']:.4f}] {verdict}{tag}")
+                if gated and not g["ok"]:
                     guard_fails.append(f"GUARD FAIL: {name} {g['ours']:.4f} vs [{g['lo']:.4f}, {g['hi']:.4f}] in {path}")
             ours, theirs = material_warmth(shot), material_warmth(promo)
             for name in INFO_MATERIALS:
                 o, t = ours[name][1], theirs[name][1]
-                print(f"MATERIAL {pose} {name} warmth {'-' if o is None else f'{o:.4f}'} vs promo "
+                print(f"MATERIAL {rel} {name} warmth {'-' if o is None else f'{o:.4f}'} vs promo "
                       f"{'-' if t is None else f'{t:.4f}'} (information only: not like-for-like)")
         rows += 1
     for line in guard_fails:

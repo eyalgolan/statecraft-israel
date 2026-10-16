@@ -3397,24 +3397,38 @@ our frame 0.028 warmer while our materials' colours put it 0.015 cooler (T77's s
 warmth guard now compares each material with the same material in promo 02.
 
 - **Classifier** (`tools/art_compare.py`, `classify()`): neutral (chroma (max - min) / max under 0.08), sea (B > R),
-  green (G > R), then the warm pixels by luma: wood under 0.30, land 0.30-0.55, sand from 0.55. The cuts sit in the gaps
-  between the materials' mean luma measured on promo 02 and on main's diorama02: wood 0.13-0.26 (our table 0.18-0.20),
-  hills 0.35-0.50, Negev sand 0.70-0.71.
+  green (G > R), then the warm pixels by luma: wood under 0.30, land 0.30-0.55, sand from 0.55. The cuts sit between
+  hand-picked **region means** (wood 0.13-0.26, our table 0.18-0.20; hills 0.35-0.50; Negev sand 0.70-0.71), not in gaps
+  of the pixel histograms: ours has a valley at 0.25-0.50, promo 02's runs flat there and 0.55 sits on its ramp. "Sand" is
+  therefore bright warm ground: the Negev, the beaches, and sunlit hills and stone towns in promo 02. Sensitivity of the
+  sand verdict on main: FAIL for a sand cut of 0.45, 0.50, 0.55 and 0.60 (ours 0.287-0.307 against floors 0.288-0.313);
+  at 0.65 it passes by 0.001 (0.3206 against 0.3197).
+- **Mask.** The material guard uses `MATERIAL_MASK`: `HUD_MASK` plus the minimap (0.86, 0.62, 1, 1), the "Click the map"
+  plate (0, 0.92, 0.17, 1) and the map-layer legend (0.76, 0.94, 0.87, 1). Their navy is B > R, so unmasked they read as
+  sea: about 16% of main's sea pixels, which made it -0.1729 instead of -0.2000. The boxes apply to promo 02 alike; there
+  they cover open sand, a corner of the Dead Sea and some hills, no UI (without them on promo 02: sand 0.3811, sea
+  -0.2598, within 0.002). `HUD_MASK` and the other guards are unchanged.
 - **Bands.** The gates are sand and sea. Each band is promo 02's mean warmth (R - B) for the material, masked with
-  `HUD_MASK`, plus or minus 20% of its size: the old whole-frame band [0.087, 0.145] was 40% of its promo anchor wide,
-  here centred on the promo. Sand [0.3049, 0.4574] (promo 0.3811), sea [-0.3117, -0.2078] (promo -0.2598). No band is
-  fitted to our output. The sand gate is the class mean. As a check, a pure-sand crop of the open Negev west of
+  `MATERIAL_MASK`, plus or minus 20% of its size: the old whole-frame band [0.087, 0.145] was 40% of its promo anchor
+  wide, here centred on the promo. Sand [0.3037, 0.4556] (promo 0.3796), sea [-0.3119, -0.2080] (promo -0.2599). No band
+  is fitted to our output. Known limitation: promo 02's "sea" also holds its glass towers and solar fields (B > R): 9% of
+  its sea pixels (chroma under 0.2, warmth -0.048); without them its sea reads -0.281, so the sea band's centre is about
+  0.02 warmer than promo 02's water. A simple chroma cut does not separate them cleanly (it also drops shore and salt
+  pixels and keeps the bluest panels), so they stay in. The sand gate is the class mean. As a check, a pure-sand crop of the open Negev west of
   Beersheba (ours (0.22, 0.80, 0.34, 0.93), promo 02 (0.08, 0.86, 0.28, 0.97), both over 99% sand) reads 0.344 against
   promo 02's 0.468: the same direction, larger.
 - **Wood is printed, not gated.** It is not like-for-like: promo 02's dark backdrop lies mostly under `HUD_MASK`'s top-bar
   box, so promo 02's "wood" is mostly the frame's walnut and terrain shadow (6% of the frame), while ours is mostly the
-  table (a third of it). Main reads 0.1128 against promo 02's 0.0914.
+  table (a third of it). Main reads 0.1126 against promo 02's 0.0908.
+- **Which image is gated.** Only the WebGL `?shot` (directly under the checkpoint folder): it is what the owner sees. The
+  editor renders (`editor/PC-diorama02.png`, `editor/Mobile-diorama02.png`) are printed as information. Every MATERIAL
+  line names its file.
 - **Fail-closed.** A gating material covering under 2% of the measured pixels of either image (about 37,000 pixels at
   1920x1080) cannot be measured. A gate out of band is a failure, not a note: `art_compare.py` exits 3 and prints
   `GUARD FAIL: <material> <value> vs <band>` for each; it exits 4 when a gating material cannot be measured (1 when no
   screenshot matched a pose, 2 on a blank capture). `art_checkpoint.sh` stops on 1, 2 and 4 as on any error; on 3 it
   finishes the checkpoint (its images are what the owner reviews), lists every `GUARD FAIL` line and exits 3.
 - **Whole-frame warmth** is still printed, as information only; `[0.087, 0.151]` (T74) no longer decides.
-- **Where main stands** (d031af36, 3 WebGL `?shot` captures, spread 0.0000): sand 0.2948 (-0.086, paler and less
-  orange) and sea -0.1729 (+0.087, less blue): both outside their bands, so `art_checkpoint.sh` exits 3 on main until
+- **Where main stands** (d031af36, 3 WebGL `?shot` captures, spread 0.0000): sand 0.2952 (-0.085, paler and less
+  orange) and sea -0.2000 (+0.060, less blue; 0.008 short of the band's edge): both outside their bands, so `art_checkpoint.sh` exits 3 on main until
   the art follow-up on #695 lands. This section only sets the measure.

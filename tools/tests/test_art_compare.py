@@ -228,8 +228,8 @@ def material_shots(tmp_path, sand=PATCH["sand"], sea=PATCH["sea"]):
 def test_main_passes_when_every_gating_material_is_in_band(tmp_path, capsys):
     assert material_shots(tmp_path) == 0
     out = capsys.readouterr().out
-    assert "MATERIAL diorama02 sand" in out and "PASS" in out and "GUARD FAIL" not in out
-    assert "whole-frame warmth (information only)" in out and "MATERIAL diorama02 wood" in out and "information only" in out
+    assert "MATERIAL diorama02.png sand" in out and "PASS" in out and "GUARD FAIL" not in out
+    assert "whole-frame warmth (information only)" in out and "MATERIAL diorama02.png wood" in out and "information only" in out
 
 
 def test_a_material_guard_fail_exits_3_and_names_the_material_its_value_and_band(tmp_path, capsys):
@@ -285,9 +285,45 @@ def test_the_checkpoint_completes_then_lists_each_guard_fail_and_exits_3(tmp_pat
     assert "GUARD FAIL: sand 0.2948 vs [0.3049, 0.4574] in diorama02" in tail and "GUARD FAIL: sea -0.1729" in tail
 
 
+def test_the_checkpoint_exits_3_even_without_a_guard_fail_line(tmp_path):
+    r = run_checkpoint(tmp_path, 3)
+    assert r.returncode == 3 and "ART CHECKPOINT cp:" in r.stdout, r.stderr
+
+
 def test_the_checkpoint_passes_and_stops_on_genuine_errors_as_before(tmp_path):
     ok = run_checkpoint(tmp_path / "ok", 0)
     assert ok.returncode == 0 and "ART CHECKPOINT cp:" in ok.stdout and "GUARD FAIL" not in ok.stdout
     for code in (1, 2, 4):          # no pose matched or a crash, a blank capture, a material too rare to measure
         r = run_checkpoint(tmp_path / str(code), code)
         assert r.returncode == code and "ART CHECKPOINT" not in r.stdout, code
+
+
+def test_the_material_mask_adds_the_minimap_and_the_bottom_plates_to_the_hud_mask():
+    """Their navy is B > R, so unmasked they read as sea (about 16% of main's diorama02 "sea")."""
+    assert ac.MATERIAL_MASK == ac.HUD_MASK + ((0.86, 0.62, 1.0, 1.0), (0.0, 0.92, 0.17, 1.0), (0.76, 0.94, 0.87, 1.0))
+    navy = np.asarray(stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270))).copy()
+    navy[int(0.62 * 270):, int(0.86 * 480):] = (14, 22, 38)          # a minimap-like navy panel bottom right
+    with_ui = ac.material_warmth(Image.fromarray(navy, "RGB"))
+    plain = ac.material_warmth(stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270)))
+    assert with_ui["sea"] == plain["sea"]
+
+
+def test_a_cooler_sand_fails_the_sand_guard_below_its_band():
+    promo = stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]])
+    g = ac.material_guard(stripes([PATCH["sea"], (209, 173, 139), PATCH["wood"]]), promo)   # 20/255 cooler
+    assert not g["sand"]["ok"] and g["sand"]["ours"] < g["sand"]["lo"] and g["sea"]["ok"]
+
+
+def test_only_the_webgl_shot_is_gated_and_every_material_line_names_its_file(tmp_path, capsys):
+    promo = tmp_path / "promo.png"; stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270)).save(promo)
+    shots = tmp_path / "shots"; (shots / "editor").mkdir(parents=True)
+    stripes([PATCH["sea"], PATCH["sand"], PATCH["wood"]], (480, 270)).save(shots / "diorama02.png")
+    stripes([PATCH["sea"], (229, 173, 119), PATCH["wood"]], (480, 270)).save(shots / "editor" / "PC-diorama02.png")
+    assert ac.main(["art_compare.py", str(shots), "t", "--log", str(tmp_path / "log.tsv")], root=tmp_path,
+                   promos={"gameplay03": promo, "diorama02": promo}) == 0
+    out = capsys.readouterr().out
+    lines = [l for l in out.splitlines() if l.startswith("MATERIAL ")]
+    assert all(" diorama02.png " in l or " editor/PC-diorama02.png " in l for l in lines), lines
+    assert any(l.startswith("MATERIAL editor/PC-diorama02.png sand") and "information only" in l and "FAIL" not in l
+               for l in lines)
+    assert "GUARD FAIL" not in out

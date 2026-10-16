@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Owner art checkpoint (non-blocking): a WebGL build (skipped with --no-build when the task has just built), screenshots at
+# Owner art checkpoint (exits 3 when diorama02's material guards fail, after finishing): a WebGL build (skipped with --no-build when the task has just built), screenshots at
 # the promo poses from the player itself (?shot: the web tier with its UI and labels), editor renders of both quality
 # tiers, and side-by-side images against the promo with colour-blind simulations. Re-checks both golden hashes in the same
 # player run and fails if a screenshot is missing or blank. The art log lives in the main checkout's captures/ so every
@@ -71,6 +71,6 @@ set -e
 echo "ART CHECKPOINT $name: $(ls "$out"/*-compare*.png "$out"/editor/*-compare*.png | tr '\n' ' ')"
 if [[ $compare == 3 ]]; then
   echo "art_checkpoint: the material guards failed (docs/visual-v1.md, \"diorama02 warmth per material\"):"
-  grep '^GUARD FAIL: ' "$compare_out"
+  grep '^GUARD FAIL: ' "$compare_out" || true
   exit 3
 fi
