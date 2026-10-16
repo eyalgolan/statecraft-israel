@@ -25,7 +25,7 @@ REBAKE = "run uv run tools/route_paths_bake.py"
 
 # The fingerprint of the readers (code_fingerprint). Re-pin only after RoutePathsRuntimeTests passes in Unity, with
 # RoutePaths.RuntimeVersion and route_paths_bake.VERSION bumped together if the runtime layout changed.
-PINNED_CODE = "a7cc9cf147bca7ec7bcf3a769fd86550bd4a92bbcfeea98ab0f74e60908fca00"
+PINNED_CODE = "ea5cd1dccf91f9cc5f5824104546f95e2281925c6b7e6bb6f7bfcbd414e2bf8d"
 
 
 def member(text: str, signature: str) -> str:
