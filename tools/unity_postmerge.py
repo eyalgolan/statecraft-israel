@@ -24,8 +24,13 @@ CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two PRs can each be gr
    commit, the failing test names and the log tail. When an issue this job opened is still open (main is still
    broken), the report is a comment on it; otherwise it is a new issue, labelled `area: unity` when the label exists.
    An open issue that already names the commit, or the job's own record of every commit it reported, means no report.
+   The log tail, compile errors and test messages are redacted first (redact(): email addresses, the home folder, the
+   user name); if redacting raises, the report says "Log withheld" and carries none of them.
 5. deletes unity/Builds, Temp and Logs in the worktree, keeps the last KEEP_RUNS run folders, and deletes the
    worktree's Library when it grows past --cap-gb (the next run clones it again).
+
+If main's tip has no PASS or FAIL line in results.log STALE_AFTER (6 h) after it was committed, each run until then
+appends one STALE line for it to results.log (and launchd.log), so a job that is stuck or cannot report is visible.
 
 If opening the issue fails, the report is kept in the state file and retried on the next run without running Unity
 again. The state is advanced only after a pass is logged or the issue exists. It uses the existing `gh` login and
@@ -38,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import getpass
 import json
 import os
 import re
@@ -68,6 +74,12 @@ MAX_MESSAGE = 500
 # Kept between runs: Unity's import cache, and the Unity-MCP plugin's NuGet download (it fetches it on first open).
 KEEP = ("/unity/Library/", "/unity/Assets/Plugins/NuGet/", "/unity/Assets/Plugins/NuGet.meta")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+# No result (PASS or FAIL) for main's tip this long after the commit means the job is stuck or failing quietly: the
+# longest legitimate run is the lock wait (LOCK_TIMEOUT), Unity (UNITY_TIMEOUT_MIN) and 30 min for the poll and build.
+STALE_AFTER = LOCK_TIMEOUT + UNITY_TIMEOUT_MIN * 60 + 30 * 60     # 6 h
+EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
+HOME_RE = re.compile(r"(/Users/|/home/)[^/\s'\"]+")
+PIPE_RE = re.compile(r"(LicenseClient-)[^\s/'\"]+?(?=-\d|[\s/'\"]|$)")
 
 
 # --- change detection -------------------------------------------------------------------------------------------
@@ -96,6 +108,22 @@ def fetch_tip(git) -> str:
 
 def commit_to_test(tip: str, state: dict) -> str | None:
     return None if state.get("last_tested") == tip else tip
+
+
+def commit_time(git, sha: str) -> int:
+    return int(git("show", "-s", "--format=%ct", sha).strip())
+
+
+def stale_note(log_text: str, tip: str, tip_epoch: float, now: float, state: dict) -> str | None:
+    """A results.log line when main's tip has no PASS or FAIL line STALE_AFTER after it was committed (and none was
+    logged for it yet), so a job that is stuck or failing quietly shows in results.log, not only in launchd.log."""
+    if state.get("last_tested") == tip or re.search(rf" {tip} (PASS|FAIL|STALE) ", log_text + " "):
+        return None
+    age = now - tip_epoch
+    if age <= STALE_AFTER:
+        return None
+    return (f"{tip} STALE no PASS or FAIL logged {age / 3600:.1f} h after the commit (bound {STALE_AFTER // 3600} h); "
+            "see launchd.log")
 
 
 # --- results ----------------------------------------------------------------------------------------------------
@@ -155,6 +183,21 @@ def existing_issue(issues: list[dict], sha: str) -> str | None:
     return None
 
 
+def redact(text: str) -> str:
+    """Strip what identifies the Mac's owner before text goes into a public issue: every email address, the home
+    folder (to ~), any /Users/<name> or /home/<name>, Unity's LicenseClient-<name> pipe, and the user name itself."""
+    text = EMAIL_RE.sub("<email>", text)
+    for home in {os.environ.get("HOME", ""), str(Path.home())}:
+        if len(home.rstrip("/")) > 1:
+            text = text.replace(home.rstrip("/"), "~")
+    text = HOME_RE.sub(r"\1<user>", text)
+    text = PIPE_RE.sub(r"\1<user>", text)
+    for user in {getpass.getuser(), os.environ.get("USER", "")}:
+        if user:
+            text = re.sub(re.escape(user), "<user>", text, flags=re.IGNORECASE)
+    return text
+
+
 def _tail(text: str, n: int) -> str:
     return "\n".join(text.splitlines()[-n:])
 
@@ -165,6 +208,13 @@ def _fence(text: str) -> str:
 
 def issue_body(sha: str, prev: str | None, r: Results, unity_exit: int, log_text: str, commits: str) -> str:
     rng = f"{prev[:12]}..{sha[:12]}" if prev else sha[:12]
+    try:                     # fail closed: if redacting fails, no log text and no test message leaves the Mac
+        log_text, commits = redact(log_text), redact(commits)
+        failures, withheld = [(redact(n), redact(m)) for n, m in r.failures], None
+    except Exception as e:   # noqa: BLE001 (any error withholds; only its type is shown, never its text)
+        log_text, failures = "", [(n, "") for n, _ in r.failures]
+        withheld = (f"Log withheld: redacting it failed ({type(e).__name__}), so the log tail, compile errors and "
+                    "test messages stay in the run folder on the Mac.")
     out = [f"The post-merge Unity EditMode run (tools/unity_postmerge.py, on the owner's Mac) did not pass on `main` "
            f"at {sha}.", "", f"- Commit: https://github.com/{REPO_SLUG}/commit/{sha}"]
     if prev:
@@ -176,9 +226,9 @@ def issue_body(sha: str, prev: str | None, r: Results, unity_exit: int, log_text
         out.append(f"- Result: {r.failed} failed of {r.total} ({r.passed} passed)")
     if commits.strip():
         out += ["", f"Commits in {rng}:", _fence(_tail(commits.strip(), 30))]
-    if r.failures:
+    if failures:
         out += ["", "Failing tests:"]
-        for name, message in r.failures[:MAX_FAILURES]:
+        for name, message in failures[:MAX_FAILURES]:
             msg = " ".join(message.split())
             msg = msg[:MAX_MESSAGE] + ("..." if len(msg) > MAX_MESSAGE else "")
             out.append(f"- `{name}`" + (f": {msg}" if msg else ""))
@@ -187,9 +237,13 @@ def issue_body(sha: str, prev: str | None, r: Results, unity_exit: int, log_text
     errors = [line for line in log_text.splitlines() if "error CS" in line]
     if errors:
         out += ["", "Compile errors:", _fence("\n".join(dict.fromkeys(errors))[:8000])]
-    out += ["", f"Last {LOG_TAIL} lines of the Unity log:", _fence(_tail(log_text, LOG_TAIL)[-20000:]), "",
-            "Run on the commit itself, in a clean worktree; one issue per commit. Close this when `main` is green "
-            "again.", marker(sha)]
+    if withheld:
+        out += ["", withheld]
+    else:
+        out += ["", f"Last {LOG_TAIL} lines of the Unity log (home folder, user name and email addresses redacted):",
+                _fence(_tail(log_text, LOG_TAIL)[-20000:])]
+    out += ["", "Run on the commit itself, in a clean worktree. While `main` stays broken, each newly failing commit "
+            "is a comment on this issue, not a new issue. Close this when `main` is green again.", marker(sha)]
     return "\n".join(out)
 
 
@@ -398,6 +452,21 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
         state_path = home / "state.json"
         state = load_state(state_path)
+        try:
+            tip = fetch_tip(_git(repo))
+        except (subprocess.CalledProcessError, RuntimeError) as e:
+            print(f"unity_postmerge: fetching origin/main failed: {getattr(e, 'stderr', '') or e}", file=sys.stderr)
+            return 1
+        results_log = home / "results.log"
+        logged = results_log.read_text() if results_log.is_file() else ""
+        try:
+            note = stale_note(logged, tip, commit_time(_git(repo), tip), time.time(), state)
+        except (subprocess.CalledProcessError, ValueError) as e:      # fail loud: a check that cannot run says so
+            note = None if f" {tip} STALE " in logged else f"{tip} STALE check failed: {e}"
+        if note:
+            with open(results_log, "a") as f:
+                f.write(f"{stamp} {note}\n")
+            print(f"unity_postmerge: {note}", file=sys.stderr)
         if (pending := state.get("pending")) and not a.dry_run:     # a report that could not be opened last time
             try:
                 url = report(_gh, state, pending["sha"], pending["title"], pending["body"])
@@ -407,11 +476,6 @@ def main(argv: list[str] | None = None) -> int:
             state["last_tested"] = state.pop("pending")["sha"]
             save_state(state_path, state)
             print(f"unity_postmerge: reported {state['last_tested'][:12]}: {url}")
-        try:
-            tip = fetch_tip(_git(repo))
-        except (subprocess.CalledProcessError, RuntimeError) as e:
-            print(f"unity_postmerge: fetching origin/main failed: {getattr(e, 'stderr', '') or e}", file=sys.stderr)
-            return 1
         sha = commit_to_test(tip, state)
         if sha is None:
             return 0
@@ -423,7 +487,7 @@ def main(argv: list[str] | None = None) -> int:
         ok = passed(r, code)
         line = (f"{stamp} {sha} {'PASS' if ok else 'FAIL'} exit={code} total={r.total} passed={r.passed} "
                 f"failed={r.failed}{' broken' if r.broken else ''} {disk} run={run_dir.name}")
-        with open(home / "results.log", "a") as f:
+        with open(results_log, "a") as f:
             f.write(line + "\n")
         print(line)
         if a.dry_run:

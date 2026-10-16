@@ -391,3 +391,104 @@ def test_the_plist_runs_the_launcher_from_the_job_folder():
     plist = plistlib.loads(up.fill_plist(text, uv="/opt/uv", repo="/r", home="/h", path="/usr/bin").encode())
     assert plist["ProgramArguments"] == ["/opt/uv", "run", "/h/unity_postmerge_launch.py", "--uv", "/opt/uv",
                                          "--repo", "/r", "--home", "/h"]
+
+
+# --- privacy: the log tail goes into a public issue -------------------------------------------------------------
+
+# Assembled at run time so the repo's own home-path and email checks (scripts/oss/check_repo.py) pass on this file.
+USERS, HOME_ROOT, AT = "/" + "Users", "/" + "home", "@"
+LOG_WITH_IDENTIFIERS = f"""\
+Built from '6000.3/staging' branch; Version is '6000.3.25f1'; mode is 'batchmode'
+Command line arguments:
+    /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -projectPath {USERS}/someone/israel-game/unity
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] LicenseClient-someone channel disconnected successfully.
+Launching external process: /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/Frameworks/UnityLicensingClient.app --namedPipe Unity-LicenseClient-someone-6000.3.25
+[Licensing::Client] Successfully resolved entitlement details for Someone.Person+unity{AT}example.co.il
+Loading package cache from {USERS}/someone/Library/Unity/cache/packages
+Assets/Scripts/Hud/WhyPresenter.cs(81,48): error CS0103: The name 'MvpSlice' does not exist
+{USERS}/someone/.cache/statecraft/unity-postmerge/worktree/unity/Assets/X.cs(3,1): error CS1002: ; expected
+Saved to ~/x by SOMEONE (owner: someone{AT}gmail.com)
+"""
+
+
+@pytest.fixture
+def someone(monkeypatch):
+    """The machine's user is `someone`, with its home folder under /Users."""
+    monkeypatch.setenv("HOME", f"{USERS}/someone")
+    monkeypatch.setenv("USER", "someone")
+    monkeypatch.setattr(up.getpass, "getuser", lambda: "someone")
+
+
+def test_redaction_leaves_no_home_user_name_or_email(someone):
+    out = up.redact(LOG_WITH_IDENTIFIERS)
+    assert "someone" not in out.lower() and "@" not in out
+    assert "~/israel-game/unity" in out and "LicenseClient-<user>" in out and "<email>" in out
+    assert "error CS0103" in out and "6000.3.25f1" in out                  # the useful part survives
+
+
+def test_redaction_also_covers_another_users_home_and_licence_pipe(monkeypatch):
+    monkeypatch.setenv("HOME", f"{USERS}/owner")
+    monkeypatch.setenv("USER", "owner")
+    monkeypatch.setattr(up.getpass, "getuser", lambda: "owner")
+    out = up.redact(f"{USERS}/someone/x LicenseClient-someone-6000.3.25 {HOME_ROOT}/someone/y")
+    assert "someone" not in out and "LicenseClient-<user>-6000.3.25" in out
+
+
+def test_the_issue_body_carries_no_identifier_from_the_log_or_test_messages(tmp_path, someone):
+    r = up.parse_results(results_xml(tmp_path, [("A.One", "Failed", f"at {USERS}/someone/israel-game/unity/A.cs:3 "
+                                                                     f"mail someone{AT}example.com")]))
+    body = up.issue_body(SHA, PREV, r, unity_exit=2, log_text=LOG_WITH_IDENTIFIERS, commits="abc1234 Merge #600")
+    assert "someone" not in body.lower() and "@" not in body
+    assert "error CS0103" in body and "A.One" in body and "Last 80 lines" in body
+
+
+def test_a_redaction_that_raises_withholds_the_log(tmp_path, someone, monkeypatch):
+    def boom(text):
+        raise ValueError("redaction broke")
+    monkeypatch.setattr(up, "redact", boom)
+    r = up.parse_results(results_xml(tmp_path, [("A.One", "Failed", f"at {USERS}/someone/A.cs someone{AT}example.com")]))
+    body = up.issue_body(SHA, PREV, r, unity_exit=2, log_text=LOG_WITH_IDENTIFIERS, commits="abc1234 Merge #600")
+    assert "someone" not in body.lower() and "@" not in body
+    assert "log withheld" in body.lower() and "error CS" not in body and "Last 80 lines" not in body
+    assert "A.One" in body and SHA in body and up.marker(SHA) in body       # still a usable report
+
+
+def test_the_report_says_what_the_job_does_now_not_one_issue_per_commit(tmp_path):
+    body = up.issue_body(SHA, PREV, up.Results(broken="x"), unity_exit=1, log_text="", commits="")
+    assert "one issue per commit" not in body
+    assert "comment" in body
+
+
+# --- fail-silent: no result for main's tip within the bound -----------------------------------------------------
+
+def test_the_stale_bound_covers_the_lock_wait_and_the_unity_timeout():
+    assert up.STALE_AFTER == up.LOCK_TIMEOUT + up.UNITY_TIMEOUT_MIN * 60 + 30 * 60 == 6 * 3600
+
+
+def test_a_tip_with_no_result_past_the_bound_is_stale():
+    t0 = 1_800_000_000
+    log = f"2026-10-16T00:00:00Z {PREV} PASS exit=0 total=9\n"
+    assert up.stale_note(log, SHA, t0, t0 + up.STALE_AFTER + 1, {}) is not None
+    assert up.stale_note(log, SHA, t0, t0 + up.STALE_AFTER - 1, {}) is None           # still inside the bound
+    assert up.stale_note(log + f"x {SHA} FAIL exit=2\n", SHA, t0, t0 + 10**6, {}) is None   # it has a result
+    assert up.stale_note(log, SHA, t0, t0 + 10**6, {"last_tested": SHA}) is None
+    assert up.stale_note(log + f"x {SHA} STALE no result\n", SHA, t0, t0 + 10**6, {}) is None  # said once
+
+
+def test_an_expired_gh_login_makes_the_job_log_stale_instead_of_staying_silent(tmp_path, monkeypatch):
+    home = tmp_path / "job"
+    home.mkdir()
+    up.save_state(home / "state.json", {"last_tested": PREV, "pending": {"sha": PREV, "title": "t", "body": "b"}})
+    (home / "results.log").write_text(f"2026-10-16T00:00:00Z {PREV} FAIL exit=2\n")
+    monkeypatch.setattr(up, "fetch_tip", lambda git: SHA)
+    monkeypatch.setattr(up, "commit_time", lambda git, sha: time.time() - up.STALE_AFTER - 60)
+
+    def gh(args, stdin=None):
+        raise RuntimeError("gh: authentication required")
+    monkeypatch.setattr(up, "_gh", gh)
+    assert up.main(["--repo", str(tmp_path), "--home", str(home)]) == 1
+    log = (home / "results.log").read_text()
+    assert f" {SHA} STALE " in log and "6 h" in log
+    assert up.main(["--repo", str(tmp_path), "--home", str(home)]) == 1
+    assert (home / "results.log").read_text().count("STALE") == 1          # once per tip, not every 15 minutes

@@ -74,8 +74,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   shots, against bands set from promo 03 (#388).
 - `machine_lock.py` serialises frame-time measurements against every other Unity job on the machine (all worktrees,
   batch runs and open editors).
-- `unity_postmerge.py` runs the full Unity EditMode suite on each new `main` commit, on the owner's Mac, and opens one
-  issue per commit that fails (T72; details in "Post-merge Unity run" below).
+- `unity_postmerge.py` runs the full Unity EditMode suite on each new `main` commit, on the owner's Mac, and reports a
+  failure as one issue while `main` stays broken, with a comment for each newly failing commit (T72; details in
+  "Post-merge Unity run" below).
 - `headed.py` drives a WebGL build in a headed Chrome for Testing over CDP (real GPU, real mouse events, a temporary
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
   under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
@@ -156,7 +157,14 @@ both are on `main`. `tools/unity_postmerge.py` closes that gap after the merge, 
   reported once per commit with the failing tests and the log tail: as a new issue (label `area: unity`), or, while an
   issue it opened is still open, as a comment on that issue. It tests the tip only; the report lists the commits since
   the last tested one.
+- Before the log tail, compile errors and test messages go into the public issue, email addresses, the home folder
+  (to `~`), any `/Users/<name>`, Unity's `LicenseClient-<name>` and the user name are redacted. If redacting fails,
+  the report says "Log withheld" and carries none of them.
 - Fetch and `gh` failures, and a launcher that cannot start the script, are written to `launchd.log` in the job folder.
+  When `main`'s tip still has no PASS or FAIL line in `results.log` 6 hours after it was committed (the 4 h lock wait,
+  90 min of Unity and 30 min to spare), the job appends one `STALE` line for that commit to `results.log`, so a
+  stuck job or an expired `gh` login shows there. A job that does not run at all (launchd, `uv` or the fetch broken)
+  writes nothing: a `results.log` whose last line is older than `main`'s tip by more than 6 hours means that.
 
 Install (owner's Mac only, from a checkout of `main` that has these files):
 
