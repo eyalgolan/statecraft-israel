@@ -656,6 +656,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- In the Hebrew UI the top bar's date plate shows the date in Hebrew, "15 במאי 1948", through the same `date.*` strings
+  as the map's front-line date (refs #687). Before, it read "15 May 1948". English is unchanged.
 - Map labels (refs #599): close over Jaffa's harbour the "Tel Aviv" and "Jaffa" pills no longer read swapped. Every pill
   is now nearer its own settlement's marker than any other visible marker (by more than 4 px), in every placing pass,
   since two sprawling kits' screen rectangles overlap and a spot against one's edge could sit by the other town. A city
