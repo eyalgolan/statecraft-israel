@@ -81,7 +81,18 @@ namespace Statecraft.Game.Map.Units
             model.transform.localRotation = Quaternion.identity;
             model.transform.localScale = Vector3.one;
             var code = figure.GetComponent<MeshRenderer>();
-            foreach (var r in model.GetComponentsInChildren<Renderer>(true))
+            var renderers = model.GetComponentsInChildren<Renderer>(true);
+            // Tal's models are a unit tall (#680's import); the code-built figure is a man's height in real metres. The model
+            // takes the code-built figure's height, so the badge, flag and keep-clear boxes, which read that height, still fit.
+            var codeMesh = figure.GetComponent<MeshFilter>()?.sharedMesh;
+            if (codeMesh != null && renderers.Length > 0)
+            {
+                var b = renderers[0].bounds;
+                foreach (var r in renderers) b.Encapsulate(r.bounds);
+                float tall = b.size.y / Mathf.Max(figure.lossyScale.y, 1e-6f);
+                if (tall > 1e-4f) model.transform.localScale = Vector3.one * (codeMesh.bounds.size.y / tall);
+            }
+            foreach (var r in renderers)
             {
                 if (code != null) { r.shadowCastingMode = code.shadowCastingMode; r.receiveShadows = code.receiveShadows; }
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;

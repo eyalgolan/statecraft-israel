@@ -348,6 +348,7 @@ namespace Statecraft.Game.Map.Units
                             var figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
                                 paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _);
                             figures[i] = (figure.transform, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
+                            UnitFigures.Dress(figure.transform, UnitFigures.ModelFor(t.Unit.Side, type));   // Tal's soldier, once streamed (#665)
                         }
                         foot.y = highest;
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;

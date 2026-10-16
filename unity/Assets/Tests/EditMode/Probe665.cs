@@ -141,4 +141,97 @@ public class Probe665
         }
         finally { foreach (var g in made) UnityEngine.Object.DestroyImmediate(g); cam.targetTexture = null; UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex); }
     }
+
+    /// <summary>Why the far meshes did not draw on the tokens: diagnostics, and the far lineup alone at real size.</summary>
+    [Test]
+    public void ProbeFar()
+    {
+        var outDir = Environment.GetEnvironmentVariable("PROBE665_OUT") ?? Path.GetTempPath();
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        var cam = Camera.main;
+        var rt = new RenderTexture(1600, 600, 24); var tex = new Texture2D(1600, 600, TextureFormat.RGB24, false);
+        var made = new List<GameObject>();
+        try
+        {
+            for (int i = 0; i < Soldiers.Length; i++)
+                foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(Soldiers[i], d));
+                    var g = UnityEngine.Object.Instantiate(prefab);
+                    g.transform.position = new Vector3((i - 3) * 0.9f, 0, d == CollectionDetail.Far ? 0f : 3f);
+                    made.Add(g);
+                    foreach (var r in g.GetComponentsInChildren<Renderer>(true))
+                    {
+                        var mesh = r is SkinnedMeshRenderer sk ? sk.sharedMesh : r.GetComponent<MeshFilter>()?.sharedMesh;
+                        Debug.Log($"PROBEFAR {Soldiers[i]} {d} {r.name}: enabled {r.enabled} active {r.gameObject.activeInHierarchy} layer {r.gameObject.layer} rlm {r.renderingLayerMask} forceOff {r.forceRenderingOff} shadow {r.shadowCastingMode} " +
+                            $"mesh {(mesh == null ? "NULL" : mesh.name + " v" + mesh.vertexCount + " sub" + mesh.subMeshCount + " idx" + mesh.GetIndexCount(0) + " topo" + mesh.GetTopology(0) + " mb " + mesh.bounds + " attrs " + string.Join("/", mesh.GetVertexAttributes().Select(a => a.attribute + ":" + a.format + "x" + a.dimension)))} " +
+                            $"rb {r.bounds} lossy {r.transform.lossyScale} det {r.transform.localToWorldMatrix.determinant:0.000} mats {string.Join(",", r.sharedMaterials.Select(m => m == null ? "NULL" : m.name + ":" + m.shader.name + ":" + m.shader.isSupported + ":pass" + m.passCount + ":" + string.Join(" ", m.shaderKeywords)))}");
+                    }
+                }
+            foreach (var (name, pos, look) in new[] { ("front", new Vector3(0, 1.0f, 9f), new Vector3(0, 0.6f, 1.5f)), ("side", new Vector3(9f, 1.0f, 1.5f), new Vector3(0, 0.6f, 1.5f)), ("top", new Vector3(0, 9f, 1.5f), new Vector3(0, 0f, 1.5f)) })
+            {
+                cam.transform.position = pos; cam.transform.LookAt(look); cam.fieldOfView = 30; cam.nearClipPlane = 0.05f;
+                cam.targetTexture = rt; cam.aspect = 1600f / 600f; cam.Render(); RenderTexture.active = rt;
+                tex.ReadPixels(new Rect(0, 0, 1600, 600), 0, 0); tex.Apply(); RenderTexture.active = null;
+                File.WriteAllBytes(Path.Combine(outDir, $"far-lineup-{name}.png"), tex.EncodeToPNG());
+            }
+            foreach (var g in made) foreach (var r in g.GetComponentsInChildren<Renderer>(true)) Debug.Log($"PROBEFAR visible {g.name} {r.name} {r.isVisible}");
+        }
+        finally { foreach (var g in made) UnityEngine.Object.DestroyImmediate(g); cam.targetTexture = null; UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex); }
+    }
+
+    /// <summary>The real UnitFigures path on the map: code-built, then dressed, at gameplay03, harel 30/12 km and the trio 12 km.</summary>
+    [Test]
+    public void ProbeDressed()
+    {
+        var outDir = Environment.GetEnvironmentVariable("PROBE665_OUT") ?? Path.GetTempPath();
+        Directory.CreateDirectory(outDir);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = UnityEngine.Object.FindFirstObjectByType<MapScene>();
+        map.ShowcaseClearing = true;
+        map.Build();
+        var rt = new RenderTexture(1920, 1080, 24); var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical).Clone();
+        s.Date = new DateTime(1948, 5, 29); s.Rung = 5; s.Mobilization = 0.8;
+        try
+        {
+            foreach (var tag in new[] { "proc", "dressed" })
+            {
+                UnitFigures.Forget();
+                UnitFigures.Source = tag == "proc" ? null : (id, d, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, d)));
+                var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
+                layer.Show(C, s);
+                var showcase = UnitShowcase.Spawn(map, still: true).transform;
+                var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+                var harel = tokens.Find("harel");
+                foreach (var f in harel.Cast<Transform>().Where(x => x.name.StartsWith("Rifleman")))
+                {
+                    var m = f.Find(UnitFigures.ModelName);
+                    var code = f.GetComponent<MeshRenderer>();
+                    Debug.Log($"PROBED {tag} {f.name}: code enabled {code.enabled} code bounds {code.bounds.size} lossy {f.lossyScale.y}; model {(m == null ? "none" : string.Join(" | ", m.GetComponentsInChildren<Renderer>().Select(r => r.name + " en " + r.enabled + " b " + r.bounds.size + " lossy " + r.transform.lossyScale + " vis " + r.isVisible)))}");
+                }
+                foreach (var (name, target, dist) in new (string, Transform?, float)[] { ("gameplay03", null, 0f), ("harel30", harel, 30000f), ("harel12", harel, 12000f), ("plain12", showcase, 12000f), ("plain30", showcase, 30000f) })
+                {
+                    PromoPose pose;
+                    if (target == null) pose = PromoPose.Gameplay03;
+                    else { var c = target == showcase ? UnitShowcase.TrioSpot(map) : target.Find(UnitPlinth.PlinthName).position; var (lon, lat) = map.Frame.ToLonLat(c); pose = new PromoPose(name, lon, lat, dist, 0f); }
+                    pose.Apply(rig, map.Frame);
+                    UnitFlagFacing.FaceAll(cam.transform.position);
+                    layer.FaceCamera(cam);
+                    cam.targetTexture = rt; cam.aspect = 1920f / 1080f;
+                    cam.Render(); RenderTexture.active = rt;
+                    tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0); tex.Apply();
+                    RenderTexture.active = null;
+                    File.WriteAllBytes(Path.Combine(outDir, $"{tag}-{name}.png"), tex.EncodeToPNG());
+                }
+                foreach (var f in harel.Cast<Transform>().Where(x => x.name.StartsWith("Rifleman")))
+                {
+                    var m = f.Find(UnitFigures.ModelName);
+                    if (m != null) Debug.Log($"PROBED after {tag} {f.name}: " + string.Join(" | ", m.GetComponentsInChildren<Renderer>().Select(r => r.name + " vis " + r.isVisible + " b " + r.bounds.size)));
+                }
+            }
+        }
+        finally { UnitFigures.Source = null; UnitFigures.Forget(); cam.targetTexture = null; cam.ResetAspect(); RenderTexture.active = null; UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
 }
