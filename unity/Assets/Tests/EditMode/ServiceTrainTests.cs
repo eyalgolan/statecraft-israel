@@ -327,49 +327,62 @@ public class ServiceTrainTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>The coordinator's check for #668: on the Sorek valley's climb to Jerusalem the train's rigid body, about
-    /// 2 km on the map, never dips into the ground, along its length or at its sides. Sampled finer than the lift reads
-    /// it (RouteTrain.BodyLift), at every 25 m of the head from Lod to Jerusalem, both ways; the tolerance is
-    /// <see cref="BaseToleranceM"/>.</summary>
+    /// <summary>The owner's ruling for #668 (16 October 2026, "ride the track, cut walls"): every car rides the line. Each
+    /// car's base stays within <see cref="LineBoundM"/> of the line's height (the rail ribbon plus RouteTrain.RideM) under
+    /// the car's middle, at every 25 m of the train from Lod to Jerusalem, both ways; on the Sorek valley's tightest bends
+    /// the cars' sides pass into the gorge walls instead of floating over them. How deep they go is reported (not
+    /// bounded) along the whole route and on the Artuf–Battir grade. On the coastal plain, west of 34.95 E, where the
+    /// line runs on open ground, the sides must not sink into it (<see cref="PlainSinkM"/>).</summary>
     [Test]
-    public void TheTrainsBaseStaysAboveTheGroundOnTheSorekGrade()
+    public void EveryCarRidesTheLineAndTheWallsTakeTheRest()
     {
         var (map, train) = RunningTrain();
         try
         {
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
-            float lodS = train.Nearest(new Vector2(map.Frame.ToWorld(Lod.lon, Lod.lat, 0).x, map.Frame.ToWorld(Lod.lon, Lod.lat, 0).z));
             var (start, end) = train.Stretch;
             float west = map.Frame.ToWorld(35.00, 31.75, 0).x, east = map.Frame.ToWorld(35.13, 31.75, 0).x;   // Artuf to Battir
-            var car = train.Cars[0];
-            float half = train.Length / 2f, halfWidth = train.CarHalfWidth;
-            int placements = 0, onGrade = 0; float worst = float.MaxValue, maxLift = 0f;
+            float plainEdge = map.Frame.ToWorld(34.95, 31.9, 0).x;
+            float half = train.Length / 2f, carHalf = train.Length / train.Cars.Count / 2f, halfWidth = train.CarHalfWidth;
+            int placements = 0, onGrade = 0, onPlain = 0; float worstOff = 0f, worstPlainSink = float.MinValue;
+            var depthAll = new List<float>(); var depthGrade = new List<float>();
             foreach (int dir in new[] { 1, -1 })
-                for (float c = Mathf.Max(lodS, start + half); c <= end - half; c += 25f)   // the car's middle, Lod to Jerusalem
+                for (float c = start + half; c <= end - half; c += 25f)   // the train's middle, Lod to Jerusalem
                 {
                     train.Place(c + dir * half, dir);
-                    var mid = car.position;
                     placements++;
-                    if (mid.x >= west && mid.x <= east) onGrade++;
-                    maxLift = Mathf.Max(maxLift, mid.y - train.At(c).y);
-                    for (int i = -40; i <= 40; i++)
-                        for (int j = -4; j <= 4; j++)
-                        {
-                            var p = mid + car.forward * (half * i / 40f) + car.right * (halfWidth * j / 4f);
-                            worst = Mathf.Min(worst, p.y - RouteLayer.Ground(data, origin, new Vector2(p.x, p.z)));
-                        }
+                    foreach (var car in train.Cars)
+                    {
+                        var mid = car.position;
+                        float line = train.At(train.Nearest(new Vector2(mid.x, mid.z))).y;
+                        worstOff = Mathf.Max(worstOff, Mathf.Abs(mid.y - line));
+                        float depth = float.MinValue;   // > 0: the car's side is this far under the ground
+                        for (int i = -10; i <= 10; i++)
+                            foreach (int j in new[] { -1, 1 })
+                            {
+                                var p = mid + car.forward * (carHalf * i / 10f) + car.right * (halfWidth * j);
+                                depth = Mathf.Max(depth, RouteLayer.Ground(data, origin, new Vector2(p.x, p.z)) - p.y);
+                            }
+                        depthAll.Add(depth);
+                        if (mid.x >= west && mid.x <= east) { depthGrade.Add(depth); onGrade++; }
+                        if (mid.x < plainEdge) { onPlain++; worstPlainSink = Mathf.Max(worstPlainSink, depth); }
+                    }
                 }
-            TestContext.WriteLine($"{placements} placements from Lod to Jerusalem, {onGrade} on the Artuf-Battir grade; " +
-                $"the base's least height over the ground {worst:0.0} m; the most the body was lifted off the line {maxLift:0} m");
-            Assert.Greater(onGrade, 200, "non-vacuous: hundreds of placements on the grade itself");
-            Assert.GreaterOrEqual(worst, -BaseToleranceM, "the base never sinks into the ground");
+            string P(List<float> l) { var x = l.OrderBy(v => v).ToList(); return $"p50 {x[x.Count / 2]:0.0} p90 {x[(int)(x.Count * 0.9f)]:0.0} max {x[x.Count - 1]:0.0}"; }
+            TestContext.WriteLine($"{placements} placements of {train.Cars.Count} cars from Lod to Jerusalem ({onGrade} car placements on the Artuf-Battir grade, {onPlain} on the plain); " +
+                $"the worst base off the line {worstOff:0.0} m; the sides under the ground (m, per car placement): whole route {P(depthAll)}, Sorek {P(depthGrade)}; on the plain at most {worstPlainSink:0.0} m");
+            Assert.Greater(onGrade, 200, "non-vacuous: hundreds of car placements on the grade itself");
+            Assert.Greater(onPlain, 200, "and on the plain");
+            Assert.LessOrEqual(worstOff, LineBoundM, "every car's base rides the line (no float)");
+            Assert.LessOrEqual(worstPlainSink, PlainSinkM, "on the plain no car sinks into the ground");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }
-    /// <summary>How far (m) the base may dip under the ground between the lift's own samples (RouteTrain.LiftSamplesAlong and
-    /// Across: 41 along by 5 across, about 20 m by 75 m on the 816 m by 298 m body, against this test's 81 by 9): 5 m, under
-    /// the 20 m the rail ribbon itself stands over the ground (RouteLayer.ClearanceM).</summary>
-    const float BaseToleranceM = 5f;
+    /// <summary>How far (m) a car's base may sit off the line's height under its middle: 5 m (the owner's "ride the track";
+    /// the coordinator's bound).</summary>
+    const float LineBoundM = 5f;
+    /// <summary>How far (m) a car's side may pass under the ground on the plain: 5 m.</summary>
+    const float PlainSinkM = 5f;
 
     [Test]
     public void TheEditorsShowcaseIsUnchanged()
