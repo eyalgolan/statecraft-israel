@@ -92,13 +92,13 @@ namespace Statecraft.Game.Map.Routes
 
         /// <summary>Samples along a model car's body (each side of its middle) and across it (each side of its centre line)
         /// where <see cref="BodyLift"/> reads the ground.</summary>
-        public const int LiftSamplesAlong = 10, LiftSamplesAcross = 1;
+        public const int LiftSamplesAlong = 20, LiftSamplesAcross = 2;
 
         /// <summary>How far (m) to raise a car whose middle is at <paramref name="mid"/> (on the line, at the ride height) and
         /// whose straight body runs along <paramref name="dir"/> for <paramref name="half"/> each way, so its base stays
         /// <see cref="RideM"/> above the ground everywhere under it: the line's own points carry that height, but a rigid
         /// body about 2 km long cuts across a bend or a rise of the Sorek valley's grade (issue #668). 0 where the ground
-        /// stays under it. A few dozen terrain reads per frame for the one car.</summary>
+        /// stays under it. 205 terrain reads (41 along by 5 across) per frame for the one car.</summary>
         public float BodyLift(Vector3 mid, Vector3 dir, float half)
         {
             if (terrain == null) return 0f;

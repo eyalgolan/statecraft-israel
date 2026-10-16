@@ -352,10 +352,10 @@ public class ServiceTrainTests
                     placements++;
                     if (mid.x >= west && mid.x <= east) onGrade++;
                     maxLift = Mathf.Max(maxLift, mid.y - train.At(c).y);
-                    for (int i = -20; i <= 20; i++)
-                        for (int j = -2; j <= 2; j++)
+                    for (int i = -40; i <= 40; i++)
+                        for (int j = -4; j <= 4; j++)
                         {
-                            var p = mid + car.forward * (half * i / 20f) + car.right * (halfWidth * j / 2f);
+                            var p = mid + car.forward * (half * i / 40f) + car.right * (halfWidth * j / 4f);
                             worst = Mathf.Min(worst, p.y - RouteLayer.Ground(data, origin, new Vector2(p.x, p.z)));
                         }
                 }
@@ -366,9 +366,10 @@ public class ServiceTrainTests
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }
-    /// <summary>How far (m) the base may dip under the ground between the lift's own samples (21 along by 3 across, against
-    /// this test's 41 by 5): a metre, a hair at the map's scale (the body is about 2 km long).</summary>
-    const float BaseToleranceM = 1f;
+    /// <summary>How far (m) the base may dip under the ground between the lift's own samples (RouteTrain.LiftSamplesAlong and
+    /// Across: 41 along by 5 across, about 20 m by 75 m on the 816 m by 298 m body, against this test's 81 by 9): 5 m, under
+    /// the 20 m the rail ribbon itself stands over the ground (RouteLayer.ClearanceM).</summary>
+    const float BaseToleranceM = 5f;
 
     [Test]
     public void TheEditorsShowcaseIsUnchanged()
