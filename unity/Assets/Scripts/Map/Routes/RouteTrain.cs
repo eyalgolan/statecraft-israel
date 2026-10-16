@@ -64,6 +64,8 @@ namespace Statecraft.Game.Map.Routes
 
         public float? StillHead => still;
         public IReadOnlyList<Transform> Cars => cars;
+        /// <summary>Each car's middle, metres behind the head along the line (Place puts car k at head - dir * offset).</summary>
+        public IReadOnlyList<float> CarOffsets => carOffset;
         public float Length => length;
         public (float start, float end) Stretch => (startS, endS);
 

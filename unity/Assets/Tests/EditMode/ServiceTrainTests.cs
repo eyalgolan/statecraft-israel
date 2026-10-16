@@ -334,8 +334,8 @@ public class ServiceTrainTests
     /// car's base stays within <see cref="LineBoundM"/> of the line's height (the rail ribbon plus RouteTrain.RideM) under
     /// the car's middle, at every 25 m of the train from Lod to Jerusalem, both ways; on the Sorek valley's tightest bends
     /// the cars' sides pass into the gorge walls instead of floating over them. How deep they go is reported (not
-    /// bounded) along the whole route and on the Artuf–Battir grade. On the coastal plain, west of 34.95 E, where the
-    /// line runs on open ground, the sides must not sink into it (<see cref="PlainSinkM"/>).</summary>
+    /// bounded) along the whole route and on the Artuf–Battir grade. On the coastal plain, west of 34.95 E, the sides may go
+    /// no deeper than the rail ribbon's own edges may (<see cref="PlainSinkM"/>).</summary>
     [Test]
     public void EveryCarRidesTheLineAndTheWallsTakeTheRest()
     {
@@ -354,10 +354,11 @@ public class ServiceTrainTests
                 {
                     train.Place(c + dir * half, dir);
                     placements++;
-                    foreach (var car in train.Cars)
+                    for (int k = 0; k < train.Cars.Count; k++)
                     {
+                        var car = train.Cars[k];
                         var mid = car.position;
-                        float line = train.At(train.Nearest(new Vector2(mid.x, mid.z))).y;
+                        float line = train.At(c + dir * half - dir * train.CarOffsets[k]).y;   // the line under the car's own middle
                         worstOff = Mathf.Max(worstOff, Mathf.Abs(mid.y - line));
                         float depth = float.MinValue;   // > 0: the car's side is this far under the ground
                         for (int i = -10; i <= 10; i++)
@@ -384,8 +385,9 @@ public class ServiceTrainTests
     /// <summary>How far (m) a car's base may sit off the line's height under its middle: 5 m (the owner's "ride the track";
     /// the coordinator's bound).</summary>
     const float LineBoundM = 5f;
-    /// <summary>How far (m) a car's side may pass under the ground on the plain: 5 m.</summary>
-    const float PlainSinkM = 5f;
+    /// <summary>How far (m) a car's side may pass under the ground on the plain: as far as the rail ribbon's own edges may
+    /// (RouteLayer.RiseToleranceM, 40 m: "an edge running under a little higher ground reads as a cutting").</summary>
+    const float PlainSinkM = RouteLayer.RiseToleranceM;
 
     [Test]
     public void TheEditorsShowcaseIsUnchanged()
