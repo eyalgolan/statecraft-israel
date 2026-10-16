@@ -38,10 +38,10 @@ namespace Statecraft.Sim
             s.FoodNeed = need;
             s.FoodUnmet = need - eaten;
             if (s.FoodUnmet > 0)
-                why.Add(new Cause("food", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet")));
+                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet")));
             if (s.ActiveSituations.Contains(EconomySystem.FxCrisis))
             {
-                why.Add(new Cause("food", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units")));
+                why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units")));
                 return;
             }
             var target = (long)r.CoverMonths!.Value * need;

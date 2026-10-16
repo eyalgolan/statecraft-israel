@@ -71,7 +71,7 @@ public class PoolsTests
         var r = StepWithWhy(c, s);
         Assert.Equal(300 - 100, r.State.Food);      // ate a month's need, imported nothing
         Assert.Equal(0, r.State.FoodUnmet);
-        Assert.Contains(r.Why, w => w.System == "food" && w.Target == "food" && w.Message.Contains("foreign currency crisis"));
+        Assert.Contains(r.Why, w => w.System == "economy" && w.Target == "food" && w.Message.Contains("foreign currency crisis"));
         // The legacy direct cut does not also act in the GDD loop: the only change is the stock term.
         Assert.Equal(0.0, r.State.IndicatorShifts["food_supply"]);
     }
@@ -88,7 +88,7 @@ public class PoolsTests
         var r = StepWithWhy(c, s);
         Assert.Equal(0, r.State.Food);
         Assert.Equal(100 - 40, r.State.FoodUnmet);
-        Assert.Contains(r.Why, w => w.System == "food" && w.Message.Contains("60 of 100"));
+        Assert.Contains(r.Why, w => w.System == "economy" && w.Message.Contains("60 of 100"));
         var again = Step(c, r.State);               // still no imports: nothing to eat, never below 0
         Assert.Equal(0, again.Food);
         Assert.Equal(again.FoodNeed, again.FoodUnmet);
