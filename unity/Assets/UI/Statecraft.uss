@@ -167,6 +167,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-three-row .top-bar { height: 408px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
 .hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 424px; }
+/* The event layer gives up the same 96 px at its bottom, so the centred card stays where the six meters left it, clear of
+   the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
+.hud-three-row .event-layer { bottom: 112px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
