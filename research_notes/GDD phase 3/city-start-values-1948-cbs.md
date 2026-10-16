@@ -13,7 +13,9 @@ every balance value, are the owner's calls (D-D1 to D-D4).
   1948.
 - All residents are counted (the census basis), not Jews only.
 - Tel Aviv-Yafo is one city (`tel_aviv`, the CBS Tel Aviv-Yafo row). Jaffa stays a separate place on the map.
-- The Hebrew Wikipedia figures for Zikhron Ya'akov (1,900) and Rosh Pinna (about 350) are accepted.
+- The Hebrew Wikipedia figures for Zikhron Ya'akov (1,900) and Rosh Pinna (about 350) are accepted. P66 (15 October
+  2026) then found Zikhron Ya'akov's census count in CBS SA No. 3 (1,935, p. 133), so it follows the census rule
+  above. Rosh Pinna stays on the Wikipedia figure.
 - Rishon LeZion is 10,433 (CBS SA 14).
 - Labelled design values fill the gaps where no source exists.
 
@@ -228,4 +230,5 @@ Still for Phase 3, not settled here: converting people to population units (D-A1
 
 Researched and drafted by an AI agent (Claude Code, for personal2). It read the CBS tables named above from the scanned
 PDFs, page by page, on 2026-10-15, and the Wikipedia pages tagged [S] on 2026-10-14. A human must check each figure
-against the scans before any value becomes content.
+against the scans before any value becomes content. That check is the owner gate for Phase 3 PR 1, which copies the
+values into `content/`; it does not block merging this note.

@@ -1,6 +1,7 @@
 # PROPOSAL, not content. Start values for the MVP's twelve Jewish cities and towns (issue #383; research note
 # city-start-values-1948-cbs.md, next to this file). Nothing loads this file: it is outside content/, so the content hash
-# and the goldens do not depend on it. It lands with Phase 3.
+# and the goldens do not depend on it. Phase 3 PR 1 copies the values into content/ after a human checks each figure
+# against the scans.
 #
 # Owner decision, 15 October 2026 ("Census values + defaults", recorded on PR #569):
 # - The 8 November 1948 census counts are the start values, labelled with their date (no scaling back to May 1948).
