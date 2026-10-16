@@ -1,0 +1,373 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+"""Post-merge Unity EditMode watcher for the owner's Mac (T72; owner, 16 October 2026: "Approve, failures to issue").
+
+CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two PRs can each be green and still break Unity together on
+`main`. A launchd job (tools/unity_postmerge.plist.in) runs this script every 15 minutes. Each run:
+
+1. fetches origin/main in the main checkout and reads its tip. If the tip is the commit this job last tested, it stops.
+   Only the tip is tested: when several commits landed since the last run, the issue lists them all (`prev..tip`).
+2. checks the tip out in its own worktree (~/.cache/statecraft/unity-postmerge/worktree, forced, `git clean -ffdx`
+   except unity/Library and the Unity-MCP NuGet download). The first run APFS-clones the main checkout's Library.
+3. builds the sim DLLs (tools/build_sim_for_unity.py), then runs the full EditMode suite through
+   `machine_lock.py --shared --wait-unity --timeout 14400`, never with -nographics, and afterwards reverts
+   unity/ProjectSettings and unity/Assets/Settings (also on an exception).
+4. passes only when Unity exits 0 and its result file names at least one test and no failure. A pass appends one line
+   to results.log and nothing else. Anything else (failing tests, 0 tests, no result file, a compile error, a sim build
+   failure, a lock timeout) opens one GitHub issue for that commit, labelled `area: unity` when the label exists, with
+   the SHA, the failing test names and the log tail. It first looks for an open issue carrying the commit's marker or
+   title, and also remembers every commit it opened an issue for, so it never opens two for one commit.
+5. deletes unity/Builds, Temp and Logs in the worktree, keeps the last KEEP_RUNS run folders, and deletes the
+   worktree's Library when it grows past --cap-gb (the next run clones it again).
+
+If opening the issue fails, the report is kept in the state file and retried on the next run without running Unity
+again. The state is advanced only after a pass is logged or the issue exists. It uses the existing `gh` login and
+never reads, prints or stores a token.
+
+Usage: uv run tools/unity_postmerge.py [--repo PATH] [--home DIR] [--cap-gb N] [--dry-run]
+--dry-run runs everything but prints the issue instead of opening it and leaves the state file alone.
+Exit 0 when nothing was new, the commit passed or its issue exists; 1 when fetching or reporting failed."""
+from __future__ import annotations
+
+import argparse
+import fcntl
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+
+TOOLS = Path(__file__).resolve().parent
+REPO_SLUG = "eyalgolan/statecraft-israel"
+LABEL = "area: unity"
+LABEL_ID = "com.statecraft.unity-postmerge"
+LOCK_TIMEOUT = 14400
+KEEP_RUNS = 10
+LOG_TAIL = 80
+MAX_FAILURES = 50
+MAX_MESSAGE = 500
+# Kept between runs: Unity's import cache, and the Unity-MCP plugin's NuGet download (it fetches it on first open).
+KEEP = ("/unity/Library/", "/unity/Assets/Plugins/NuGet/", "/unity/Assets/Plugins/NuGet.meta")
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+# --- change detection -------------------------------------------------------------------------------------------
+
+def load_state(path: Path) -> dict:
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+        return state if isinstance(state, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(path: Path, state: dict) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def fetch_tip(git) -> str:
+    git("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main")
+    tip = git("rev-parse", "--verify", "refs/remotes/origin/main^{commit}").strip()
+    if not SHA_RE.match(tip):
+        raise RuntimeError(f"origin/main did not resolve to a commit: {tip!r}")
+    return tip
+
+
+def commit_to_test(tip: str, state: dict) -> str | None:
+    return None if state.get("last_tested") == tip else tip
+
+
+# --- results ----------------------------------------------------------------------------------------------------
+
+@dataclass
+class Results:
+    total: int = 0
+    passed: int = 0
+    failed: int = 0
+    failures: list[tuple[str, str]] = field(default_factory=list)
+    broken: str | None = None
+
+
+def parse_results(path: Path) -> Results:
+    """Unity's NUnit 3 result file. A missing or unreadable file, or one with 0 tests, is a broken run (never a pass)."""
+    if not path.is_file():
+        return Results(broken=f"no result file was written ({path.name}): Unity did not run the tests")
+    try:
+        root = ET.parse(path).getroot()
+    except ET.ParseError as e:
+        return Results(broken=f"the result file could not be read: {e}")
+    r = Results(total=int(root.get("total", 0)), passed=int(root.get("passed", 0)), failed=int(root.get("failed", 0)))
+    for case in root.iter("test-case"):
+        if case.get("result") == "Failed":
+            message = (case.findtext("failure/message") or "").strip()
+            r.failures.append((case.get("fullname") or case.get("name") or "?", message))
+    if r.total == 0:
+        r.broken = "0 tests ran: a broken run (the suite did not load, or the filter matched nothing)"
+    return r
+
+
+def passed(r: Results, unity_exit: int) -> bool:
+    return unity_exit == 0 and r.broken is None and r.total > 0 and r.failed == 0 and not r.failures
+
+
+# --- issues -----------------------------------------------------------------------------------------------------
+
+def marker(sha: str) -> str:
+    return f"<!-- unity-postmerge sha={sha} -->"
+
+
+def issue_title(sha: str) -> str:
+    return f"Unity EditMode broken on main at {sha[:12]} ({sha})"
+
+
+def existing_issue(issues: list[dict], sha: str) -> str | None:
+    for i in issues:
+        if marker(sha) in (i.get("body") or "") or sha in (i.get("title") or ""):
+            return i.get("url") or f"#{i.get('number')}"
+    return None
+
+
+def _tail(text: str, n: int) -> str:
+    return "\n".join(text.splitlines()[-n:])
+
+
+def _fence(text: str) -> str:
+    return "```\n" + text.replace("```", "'''") + "\n```"
+
+
+def issue_body(sha: str, prev: str | None, r: Results, unity_exit: int, log_text: str, commits: str) -> str:
+    rng = f"{prev[:12]}..{sha[:12]}" if prev else sha[:12]
+    out = [f"The post-merge Unity EditMode run (tools/unity_postmerge.py, on the owner's Mac) did not pass on `main` "
+           f"at {sha}.", "", f"- Commit: https://github.com/{REPO_SLUG}/commit/{sha}"]
+    if prev:
+        out.append(f"- Untested since the last run: {rng} (https://github.com/{REPO_SLUG}/compare/{prev}...{sha})")
+    out.append(f"- Unity exit code: {unity_exit}")
+    if r.broken:
+        out.append(f"- **Broken run:** {r.broken}")
+    else:
+        out.append(f"- Result: {r.failed} failed of {r.total} ({r.passed} passed)")
+    if commits.strip():
+        out += ["", f"Commits in {rng}:", _fence(_tail(commits.strip(), 30))]
+    if r.failures:
+        out += ["", "Failing tests:"]
+        for name, message in r.failures[:MAX_FAILURES]:
+            msg = " ".join(message.split())
+            msg = msg[:MAX_MESSAGE] + ("..." if len(msg) > MAX_MESSAGE else "")
+            out.append(f"- `{name}`" + (f": {msg}" if msg else ""))
+        if len(r.failures) > MAX_FAILURES:
+            out.append(f"- ... and {len(r.failures) - MAX_FAILURES} more (see the result file on the Mac)")
+    errors = [line for line in log_text.splitlines() if "error CS" in line]
+    if errors:
+        out += ["", "Compile errors:", _fence("\n".join(dict.fromkeys(errors))[:8000])]
+    out += ["", f"Last {LOG_TAIL} lines of the Unity log:", _fence(_tail(log_text, LOG_TAIL)[-20000:]), "",
+            "Run on the commit itself, in a clean worktree; one issue per commit. Close this when `main` is green "
+            "again.", marker(sha)]
+    return "\n".join(out)
+
+
+def report(gh, state: dict, sha: str, title: str, body: str) -> str:
+    """Open the commit's issue unless this job already opened one or an open issue names the commit."""
+    issued = state.setdefault("issued", {})
+    if sha in issued:
+        return issued[sha]
+    found = existing_issue(json.loads(gh(["issue", "list", "--repo", REPO_SLUG, "--state", "open", "--limit", "1000",
+                                          "--json", "number,title,body,url"])), sha)
+    if found:
+        issued[sha] = found
+        return found
+    labels = {lab["name"] for lab in json.loads(gh(["label", "list", "--repo", REPO_SLUG, "--limit", "500",
+                                                     "--json", "name"]))}
+    args = ["issue", "create", "--repo", REPO_SLUG, "--title", title, "--body-file", "-"]
+    if LABEL in labels:
+        args += ["--label", LABEL]
+    url = gh(args, stdin=body).strip().splitlines()[-1]
+    issued[sha] = url
+    return url
+
+
+# --- running ----------------------------------------------------------------------------------------------------
+
+def unity_path(version: str) -> str:
+    return f"/Applications/Unity/Hub/Editor/{version}/Unity.app/Contents/MacOS/Unity"
+
+
+def unity_command(wt: Path, version: str, xml: Path, log: Path) -> list[str]:
+    return ["uv", "run", str(TOOLS / "machine_lock.py"), "--shared", "--wait-unity", "--timeout", str(LOCK_TIMEOUT),
+            "--", unity_path(version), "-batchmode", "-CI", "false", "-GITHUB_ACTIONS", "false", "-TF_BUILD", "false",
+            "-projectPath", str(wt / "unity"), "-buildTarget", "OSXUniversal", "-runTests", "-testPlatform", "EditMode",
+            "-testResults", str(xml), "-logFile", str(log)]
+
+
+def fill_plist(text: str, *, uv: str, repo: str, home: str, path: str) -> str:
+    for key, value in (("UV", uv), ("REPO", repo), ("HOME", home), ("PATH", path)):
+        text = text.replace(f"@{key}@", value)
+    return text
+
+
+def _git(cwd: Path):
+    def run(*args: str) -> str:
+        return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True).stdout
+    return run
+
+
+def _gh(args: list[str], stdin: str | None = None) -> str:
+    p = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True)
+    if p.returncode:
+        raise RuntimeError(f"gh {args[0]} {args[1]} failed (exit {p.returncode}): {p.stderr.strip()[-500:]}")
+    return p.stdout
+
+
+def prepare_worktree(repo: Path, wt: Path, sha: str) -> None:
+    git = _git(repo)
+    if not (wt / ".git").exists():
+        git("worktree", "prune")
+        wt.parent.mkdir(parents=True, exist_ok=True)
+        git("worktree", "add", "--detach", "--force", str(wt), sha)
+    w = _git(wt)
+    w("checkout", "--force", "--detach", sha)
+    w("clean", "-ffdx", *[x for k in KEEP for x in ("-e", k)])
+    if w("status", "--porcelain").strip():
+        raise RuntimeError("the worktree is not clean after checkout and clean")
+    lib, src = wt / "unity" / "Library", repo / "unity" / "Library"
+    if not lib.exists() and src.is_dir():
+        subprocess.run(["cp", "-c", "-R", str(src), str(lib)], check=True)
+
+
+def du_bytes(path: Path) -> int:
+    if not path.exists():
+        return 0
+    out = subprocess.run(["du", "-sk", str(path)], capture_output=True, text=True).stdout.split()
+    return int(out[0]) * 1024 if out and out[0].isdigit() else 0
+
+
+def tidy(wt: Path, runs: Path, cap_bytes: int) -> str:
+    for d in ("Builds", "Temp", "Logs"):
+        shutil.rmtree(wt / "unity" / d, ignore_errors=True)
+    old = sorted((p for p in runs.iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)[:-KEEP_RUNS]
+    for p in old:
+        shutil.rmtree(p, ignore_errors=True)
+    lib = wt / "unity" / "Library"
+    size = du_bytes(lib)
+    if size > cap_bytes:
+        shutil.rmtree(lib, ignore_errors=True)
+        return f"library {size >> 20} MiB > cap, deleted"
+    return f"library {size >> 20} MiB"
+
+
+def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path) -> tuple[Results, int, str]:
+    xml, log, build_log = run_dir / "editmode.xml", run_dir / "unity.log", run_dir / "build-sim.log"
+    try:
+        prepare_worktree(repo, wt, sha)
+    except (subprocess.CalledProcessError, RuntimeError) as e:
+        detail = getattr(e, "stderr", "") or str(e)
+        return Results(broken=f"the worktree could not be prepared: {detail.strip()[-500:]}"), -1, ""
+    with open(build_log, "w") as f:
+        b = subprocess.run(["uv", "run", "tools/build_sim_for_unity.py"], cwd=wt, stdout=f, stderr=subprocess.STDOUT)
+    if b.returncode:
+        text = build_log.read_text(errors="replace")
+        return Results(broken=f"building the sim DLLs failed (exit {b.returncode})"), b.returncode, text
+    m = re.search(r"m_EditorVersion: (\S+)", (wt / "unity/ProjectSettings/ProjectVersion.txt").read_text())
+    version = m.group(1) if m else "?"
+    if not Path(unity_path(version)).is_file():
+        return Results(broken=f"Unity {version} (unity/ProjectSettings/ProjectVersion.txt) is not installed"), -1, ""
+    try:
+        with open(run_dir / "machine-lock.log", "w") as f:
+            code = subprocess.run(unity_command(wt, version, xml, log), cwd=wt, stdout=f,
+                                  stderr=subprocess.STDOUT).returncode
+    finally:
+        subprocess.run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=wt,
+                       capture_output=True)
+    text = log.read_text(errors="replace") if log.is_file() else ""
+    if code == 3 and not log.is_file():
+        lock_text = (run_dir / "machine-lock.log").read_text(errors="replace")
+        return Results(broken=f"machine_lock timed out after {LOCK_TIMEOUT} s waiting for Unity"), code, lock_text
+    return parse_results(xml), code, text
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--repo", type=Path, default=TOOLS.parent, help="the main checkout (default: this script's)")
+    ap.add_argument("--home", type=Path, default=Path.home() / ".cache" / "statecraft" / "unity-postmerge")
+    ap.add_argument("--cap-gb", type=float, default=6.0, help="delete the worktree's Library above this size")
+    ap.add_argument("--dry-run", action="store_true")
+    a = ap.parse_args(argv)
+    repo, home = a.repo.resolve(), a.home
+    runs = home / "runs"
+    runs.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    with open(home / "run.lock", "a+") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print("unity_postmerge: another run is in progress")
+            return 0
+        state_path = home / "state.json"
+        state = load_state(state_path)
+        if (pending := state.get("pending")) and not a.dry_run:     # a report that could not be opened last time
+            try:
+                url = report(_gh, state, pending["sha"], pending["title"], pending["body"])
+            except (RuntimeError, ValueError, OSError) as e:
+                print(f"unity_postmerge: reporting {pending['sha'][:12]} failed again: {e}", file=sys.stderr)
+                return 1
+            state["last_tested"] = state.pop("pending")["sha"]
+            save_state(state_path, state)
+            print(f"unity_postmerge: reported {state['last_tested'][:12]}: {url}")
+        try:
+            tip = fetch_tip(_git(repo))
+        except (subprocess.CalledProcessError, RuntimeError) as e:
+            print(f"unity_postmerge: fetching origin/main failed: {getattr(e, 'stderr', '') or e}", file=sys.stderr)
+            return 1
+        sha = commit_to_test(tip, state)
+        if sha is None:
+            return 0
+        prev = state.get("last_tested")
+        run_dir = runs / f"{stamp.replace(':', '')}-{sha[:12]}"
+        run_dir.mkdir()
+        r, code, log_text = run_suite(repo, home / "worktree", sha, run_dir)
+        disk = tidy(home / "worktree", runs, int(a.cap_gb * 2**30))
+        ok = passed(r, code)
+        line = (f"{stamp} {sha} {'PASS' if ok else 'FAIL'} exit={code} total={r.total} passed={r.passed} "
+                f"failed={r.failed}{' broken' if r.broken else ''} {disk} run={run_dir.name}")
+        with open(home / "results.log", "a") as f:
+            f.write(line + "\n")
+        print(line)
+        if a.dry_run:
+            if not ok:
+                print(issue_title(sha) + "\n\n" + issue_body(sha, prev, r, code, log_text, ""))
+            return 0
+        if ok:
+            state["last_tested"] = sha
+            save_state(state_path, state)
+            return 0
+        commits = ""
+        if prev:
+            try:
+                commits = _git(repo)("log", "--oneline", "--no-decorate", f"{prev}..{sha}")
+            except subprocess.CalledProcessError:
+                commits = ""
+        title, body = issue_title(sha), issue_body(sha, prev, r, code, log_text, commits)
+        try:
+            url = report(_gh, state, sha, title, body)
+        except (RuntimeError, ValueError, OSError) as e:
+            state["pending"] = {"sha": sha, "title": title, "body": body}
+            save_state(state_path, state)
+            print(f"unity_postmerge: opening the issue failed, kept for the next run: {e}", file=sys.stderr)
+            return 1
+        state["last_tested"] = sha
+        save_state(state_path, state)
+        print(f"unity_postmerge: {url}")
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

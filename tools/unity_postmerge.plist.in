@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- launchd job for tools/unity_postmerge.py (T72). Filled in and installed by hand, outside the repository:
+     see the "Post-merge Unity run" section of tools/README.md. @UV@, @REPO@, @HOME@ and @PATH@ are replaced
+     on install. launchd never starts a second copy while one is running. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.statecraft.unity-postmerge</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>@UV@</string>
+    <string>run</string>
+    <string>@REPO@/tools/unity_postmerge.py</string>
+    <string>--repo</string>
+    <string>@REPO@</string>
+    <string>--home</string>
+    <string>@HOME@</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>@REPO@</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>@PATH@</string>
+  </dict>
+  <!-- Every 15 minutes (never under 10). -->
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>@HOME@/launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>@HOME@/launchd.log</string>
+</dict>
+</plist>

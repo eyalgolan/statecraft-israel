@@ -74,6 +74,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   shots, against bands set from promo 03 (#388).
 - `machine_lock.py` serialises frame-time measurements against every other Unity job on the machine (all worktrees,
   batch runs and open editors).
+- `unity_postmerge.py` runs the full Unity EditMode suite on each new `main` commit, on the owner's Mac, and opens one
+  issue per commit that fails (T72; details in "Post-merge Unity run" below).
 - `headed.py` drives a WebGL build in a headed Chrome for Testing over CDP (real GPU, real mouse events, a temporary
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
   under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
@@ -136,3 +138,29 @@ Repeated paths do not satisfy the count. It does not compare image contents: cop
 what each screenshot shows and records the build commit/zip SHA-256 and capture date. This does not capture anything,
 change a release gate or submit a store page. Steam's [official screenshot requirements](https://partner.steamgames.com/doc/store/assets/standard)
 were checked 11 October 2026; re-check before submission. These are not itch.io requirements.
+
+## Post-merge Unity run (T72)
+
+CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two pull requests can each pass and still break Unity once
+both are on `main`. `tools/unity_postmerge.py` closes that gap after the merge, on the owner's Mac, from a launchd job
+(`tools/unity_postmerge.plist.in`, every 15 minutes). Each run fetches `origin/main`; when its tip is not the commit it
+last tested, it checks the tip out in its own clean worktree (`~/.cache/statecraft/unity-postmerge/worktree`, Library
+kept between runs and capped at 6 GB), runs the whole EditMode suite under `machine_lock.py --shared --wait-unity`
+and reverts the settings churn. A pass adds one line to `~/.cache/statecraft/unity-postmerge/results.log`. Anything
+else, 0 tests included, opens one issue for that commit (label `area: unity`) with the failing tests and the log tail.
+It tests the tip only: when several commits landed since the last run, the issue lists them.
+
+Install (owner's Mac only, from an up-to-date main checkout):
+
+```bash
+mkdir -p ~/.cache/statecraft/unity-postmerge
+sed -e "s#@UV@#$(command -v uv)#g" -e "s#@REPO@#$PWD#g" -e "s#@HOME@#$HOME/.cache/statecraft/unity-postmerge#g" \
+    -e "s#@PATH@#$(dirname "$(command -v uv)"):$(dirname "$(command -v gh)"):$(dirname "$(command -v dotnet)"):/usr/bin:/bin:/usr/sbin:/sbin#g" \
+    tools/unity_postmerge.plist.in > ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
+plutil -lint ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
+```
+
+Uninstall: `launchctl bootout gui/$(id -u)/com.statecraft.unity-postmerge`, then delete the plist. To remove the
+worktree too: `git worktree remove --force ~/.cache/statecraft/unity-postmerge/worktree`. A trial without opening an
+issue or moving the state: `uv run tools/unity_postmerge.py --dry-run --home <scratch folder>`.
