@@ -33,10 +33,10 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 |---|---|---|---|
 | Q1 | excerpt of a translated diary entry | source not found (primary text) | no. A secondary page agrees on the wording [S]. |
 | Q2 | excerpt of the same entry | source not found (primary text) | no. A secondary page agrees on the wording [S]. |
-| Q3 | verbatim excerpt, capital "At" added | confirmed, with a note on the ellipsis | yes [V] |
-| Q4 | verbatim excerpt of the first clause of a longer sentence | confirmed, with a note on the cut and the attribution | yes [V] |
+| Q3 | verbatim excerpt of the published English text, capital "At" added | confirmed, with a note on the ellipsis | yes [V] |
+| Q4 | verbatim excerpt of the MFA English translation, the first clause of a longer sentence | confirmed, with a note on the cut and the attribution | yes [V] |
 | Q5 | excerpt with the punctuation changed and the third phrase dropped | wording differs from source | yes [V] |
-| Q6 | verbatim excerpt of two lines joined into one | confirmed, with a note on joining | yes [V] |
+| Q6 | verbatim excerpt of the PMO English translation (original Hebrew), two lines joined into one | confirmed, with a note on joining | yes [V] |
 | Q7 | a common English rendering of a German motto | wording differs from source | no. The German wording is [S]. |
 
 ## 3. Quote by quote
@@ -47,7 +47,7 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Full passage, as an English rendering gives it: a few days after the First Zionist Congress, Herzl wrote that if he were to sum up the Basel Congress in a word, it would be "At Basel, I founded the Jewish State". The passage goes on that if he said this out loud today he would be answered by universal laughter, and that perhaps in five years, certainly in fifty, everyone will know it. [S] https://en.wikiquote.org/wiki/Theodor_Herzl (opened 2026-10-15). The page cites a secondary book, Judy S. Bertelsen, *Nonstate Nations in International Politics* (1977), p. 37, and no edition of the diaries.
 - Speaker and role: Theodor Herzl, founder and leader of the World Zionist Organization [S, Wikiquote]. The card says "founder of political Zionism".
 - Date and occasion: diary entry of 3 September 1897, a few days after the First Zionist Congress in Basel [S, Wikiquote]. A search snippet gives 29 August 1897 as the Congress start date [S]. The Congress dates were not read on an opened page [GAP].
-- Original language: German [S, general knowledge, not shown on an opened page].
+- Original language: German. *Theodor Herzls Tagebücher*, vol. 2 (Berlin: Jüdischer Verlag, 1922), p. 24 [V] https://archive.org/details/theodorherzlstag02herzuoft (page 24 of the scan, read in the second review on PR #648, 15 Oct 2026).
 - Translator and translation source: not identified. The Wikiquote page cites the English edition of the diaries (*The Complete Diaries of Theodor Herzl*, ed. Raphael Patai, trans. Harry Zohn, 1960) for other entries but not for this one [S]. Other English renderings of the same sentence end "everyone will perceive it" (a blog and a community site, search snippets [S]). The card's "everyone will know it" matches the Wikiquote rendering and not those.
 - Status: source not found for the primary text. To close: the German text in *Tagebücher* (or the Zohn volume and page), and the wording of the translation the trailer used.
 - Note: the card trims "Perhaps in five years, certainly" from the sentence. The ellipsis does not reverse the meaning. The two cards are two parts of one diary entry shown 5 seconds apart, and they should be recorded as one passage.
@@ -57,7 +57,7 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Text as shown: "At the tender age of sixteen, I was handed a rifle..."
 - Full sentence [V] https://www.nobelprize.org/prizes/peace/1994/rabin/lecture/ : "At an age when most youngsters are struggling to unravel the secrets of mathematics and the mysteries of the Bible; at an age when first love blooms; at the tender age of sixteen, I was handed a rifle so that I could defend myself" and the sentence goes on, after a dash, with a clause that he was handed it also so that he could kill in an hour of danger.
 - Difference from the source: the card starts with a capital "At" (the source has a lowercase "at" inside a longer sentence). The ellipsis removes both the purpose of the rifle and the second clause.
-- Speaker and role: Yitzhak Rabin. The lecture page does not state his office [GAP on that page]. He was Prime Minister of Israel at the time [S].
+- Speaker and role: Yitzhak Rabin. The lecture page does not state his office. The NobelPrize.org facts page gives "Role: Prime Minister of Israel" [V] https://www.nobelprize.org/prizes/peace/1994/rabin/facts/ .
 - Date and occasion: Nobel Peace Prize ceremony, Oslo City Hall, 10 December 1994, where Rabin, Shimon Peres and Yasser Arafat received the prize. The ceremony date comes from a search snippet of the NobelPrize.org Peres photo gallery [S]. The lecture page opened does not show the date.
 - Original language: not stated on the page [GAP]. The text is printed in English in *Nobel Lectures, Peace 1991-1995*, ed. Irwin Abrams (World Scientific, 1999), copyright the Nobel Foundation 1994 [V, citation line on the lecture page].
 - Translator: not stated [GAP].
@@ -69,7 +69,7 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Full sentence [V] https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel : "THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles; it will foster the development of the country for the benefit of all its inhabitants" and the sentence continues through further clauses, including "it will ensure complete equality of social and political rights to all its inhabitants irrespective of religion, race or sex".
 - Speaker and role: the text is the proclamation approved by the Jewish People's Council at the Tel Aviv Museum on 14 May 1948. The page's picture caption says David Ben-Gurion reading it. The page does not say Ben-Gurion wrote the sentence [V].
 - Date and occasion: 14 May 1948 (5 Iyar 5708), published in the Official Gazette No. 1 of 5 Iyar 5708 [V, same page].
-- Original language: Hebrew [S]. The opened page publishes the English text and names the Official Gazette as the place of publication. The Hebrew text itself was not opened [GAP].
+- Original language: no opened page states it [GAP]. The opened page publishes the English text and names the Official Gazette as the place of publication. The Hebrew text itself was not opened [GAP].
 - Translator: not named on the page [GAP]. The page sits under the Ministry of Foreign Affairs on gov.il.
 - Status: confirmed (wording).
 - Note: the card is attributed to Ben-Gurion and to the Declaration. The page supports "the Declaration of Independence, read by David Ben-Gurion". It does not support him as the author of the clause.
@@ -114,13 +114,13 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 3. Declaration (Q4): decide the attribution line. The page supports "Declaration of Independence, 14 May 1948" and a reading by Ben-Gurion.
 4. Herzl (Q1, Q2, Q7): decide the translation. A named translation (Zohn for the diaries, Levensohn for the novel) would give each card a translator. Q7 says "dream" where the German says "Märchen".
 5. Translated quotations (Q1, Q2, Q4, Q6, Q7 are translated, and Q3 may be): the cards do not say the English is a translation. The caption files do not carry a translator either.
-6. The Hebrew caption file describes the English text on screen and gives no Hebrew rendering of any quotation. If a Hebrew version of a card is ever shown, each quotation that was spoken or written in Hebrew needs its original Hebrew wording. The Declaration and Netanyahu's statement were Hebrew [V for Netanyahu, S for the Declaration]. Rabin's language is a gap. The Hebrew wording goes to the native reviewer in #564.
+6. The Hebrew caption file describes the English text on screen and gives no Hebrew rendering of any quotation. If a Hebrew version of a card is ever shown, each quotation that was spoken or written in Hebrew needs its original Hebrew wording. Netanyahu's statement was Hebrew [V]. The Declaration's original language is not yet sourced [GAP, see Q4]. Rabin's language is a gap. The Hebrew wording goes to the native reviewer in #564.
 
 ## 5. Gaps
 
 - Herzl: the Zohn volume and page, or the German text, for the entry of 3 September 1897; the First Zionist Congress dates on an opened page.
 - Rabin: the language of delivery and any translator; the lecture date on an opened Nobel page.
-- Declaration: the Hebrew text and the name of the translator of the gov.il English text.
+- Declaration: a source for its original language, the Hebrew text and the name of the translator of the gov.il English text.
 - Altneuland: the German title page; the wording of a named English translation.
 
 ## 6. Sources opened on 2026-10-15
