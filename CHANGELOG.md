@@ -13,8 +13,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (D-C3). No upkeep yet: per Q-MONEY-2 it waits for Phase 3. No golden moves; the content hash does (the name is in
   `content/model.yaml`), so an older save loads with the "different game content" warning.
 - The surf reaches further out to sea (refs #690, #388): the breakers' zone widens from 1.8 to 2.4 km, so south of Jaffa
-  the white foam band reads 31.7 px at the gameplay zoom, inside promo 03's 25-55 px band (20.3 before; the promo reads
-  44), and the northern frontage reads 25.0 px, inside its 6-30 px band. Presentation only.
+  the white foam band reads 30.8 px at the gameplay zoom, inside promo 03's 25-55 px band (20.3 before; the promo reads
+  44), and the northern frontage reads 25.0 px (18.3 before), inside its 6-30 px band. Presentation only.
 - An event option's Treasury cost the Treasury cannot cover is now borrowed at once, like every other payment, with a cause
   naming the event (refs #681, R-MONEY-003). Before, the Treasury went below 0 until the deficit step, which reported the
   shortfall as "to cover the deficit". End-of-turn totals are unchanged and no golden moves. The top bar's Treasury is
