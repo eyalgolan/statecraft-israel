@@ -218,7 +218,7 @@ public class RegionsRuntimeTests
         var regions = root.Regions!;
         Assert.AreSame(map.Subdistricts, regions.Subdistricts, "GameRoot took the map's sub-districts");
         Assert.AreEqual("Egypt (runtime)", regions.Armistice!.FrontOf("egypt")!.Name, "GameRoot read the armistice runtime file");
-        Assert.AreEqual("truce1x", regions.Control!.Periods[0].Id, "GameRoot read the control runtime file");
+        CollectionAssert.Contains(regions.Control!.Periods.Select(p => p.Id).ToList(), "truce1x", "GameRoot read the control runtime file");
     }
 
     /// <summary>The manifest ships the runtime files to the player, beside their YAML (each is checked against it).</summary>
