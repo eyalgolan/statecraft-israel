@@ -377,7 +377,7 @@ public class UnitPlinthTests
     /// points: the base's top in front of the figures, the figures' shirts and the flag's white field; the ring as T29's was
     /// measured, from its bright, neutral pixels in the screen box of its front half. The bands are T29's measures (4x crops of the 1:12 frame), set before measuring ours:
     /// base luma 0.24-0.30 (band 0.18-0.36); ring 0.96-0.98 (at least 0.85) and 3.2-4.1 times the base (at least 2.8);
-    /// figure torsos 0.15-0.24, 0.5-0.9 of the base (ours are logged, not pinned: an open owner question); flag white
+    /// figure torsos 0.15-0.24, 0.5-0.9 of the base (logged here, pinned by TheFiguresReadDarkerThanTheirBaseAsT29); flag white
     /// 0.83-0.91 (at least 0.8).</summary>
     [Test]
     public void TheBaseRingAndFlagReadAsT29OnARender()
@@ -438,11 +438,104 @@ public class UnitPlinthTests
                 Assert.GreaterOrEqual(count, 300, $"{t.name}: the ring shows as a band of bright white pixels");
                 Assert.GreaterOrEqual(ring, 0.85f, $"{t.name}: the ring is bright");
                 Assert.GreaterOrEqual(ring / bas, 2.8f, $"{t.name}: the ring stands out from the base as T29's");
-                // The figures against their base are recorded, not pinned: T29's are darker than it (0.5-0.9); on the owner's base
-                // A ours read 1.17 at Harel and 0.92 on the plain (the showcase), so on flat ground they barely part from it in
-                // brightness. An open owner question in #559 (the look is the owner's), not a test to fit.
+                // Logged only: this point is on the figures' chest brace, not the shirt (#645). The shirts against their base are
+                // pinned to T29's 0.5-0.9 by TheFiguresReadDarkerThanTheirBaseAsT29, which reads the shirt beside the brace.
                 Assert.GreaterOrEqual(white, 0.8f, $"{t.name}: the flag reads white");
             }
+        }
+        finally { cam.targetTexture = null; cam.ResetAspect(); RenderTexture.active = null; UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>#645, the follow-up #559's owner asked for: T29's figures read darker than their base, their torsos 0.5-0.9
+    /// of its luma. Measured as round 3 of #559 measured them (TheBaseRingAndFlagReadAsT29OnARender: the base's top in front
+    /// of the figures and the shirts at the chest, 3x3 medians on a 1920 x 1080 render through the game's camera) at the
+    /// 30 km looks at Harel's hill token and at the showcase trio on the plain, and at the gameplay03 pose on every army
+    /// token wholly in the frame. The figures must still part from the base's dark edge lip: at Harel's 30 km look the shirts
+    /// and the lip (its middle, on the camera's side) differ by at least 15% of the brighter. At gameplay03 the lip is a
+    /// pixel or two tall, so there it is logged, not pinned.</summary>
+    [Test]
+    public void TheFiguresReadDarkerThanTheirBaseAsT29()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = UnityEngine.Object.FindFirstObjectByType<MapScene>();
+        map.ShowcaseClearing = true;
+        map.Build();
+        var rt = new RenderTexture(1920, 1080, 24); var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        try
+        {
+            var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
+            layer.Show(C, StateAt(Dates[0]));
+            var showcase = UnitShowcase.Spawn(map, still: true).transform;
+            var harel = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Find("harel");
+            var army = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Cast<Transform>()
+                .Where(t => t.Find(UnitPlinth.PlinthName) != null).Append(showcase).ToList();
+            var ground = UnitPlinth.HeightAt(map);
+            var front = Enumerable.Range(0, 15).Select(k => Mathf.Deg2Rad * (205f + 9f * k)).ToList();   // the camera's side, as round 3
+            var failures = new List<string>();
+
+            void Render(PromoPose pose, string name)
+            {
+                pose.Apply(rig, map.Frame);
+                UnitFlagFacing.FaceAll(cam.transform.position);
+                layer.FaceCamera(cam);
+                cam.targetTexture = rt; cam.aspect = 1920f / 1080f;
+                cam.Render(); RenderTexture.active = rt;
+                tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0); tex.Apply();
+                RenderTexture.active = null;
+                var png = Path.Combine(Path.GetTempPath(), $"statecraft-unitsfigures-{name}.png");
+                File.WriteAllBytes(png, tex.EncodeToPNG());
+                Debug.Log($"UNITS render {name} saved {png}");
+            }
+
+            // Shirts against the base, and against the lip where it is tall enough on screen to be judged.
+            void Judge(Transform t, string look, bool pinLip)
+            {
+                var plinth = t.Find(UnitPlinth.PlinthName); float r = plinth.localScale.x, lip = UnitPlinth.LipShare * r; var c = plinth.position;
+                Vector3 At(float a, float share, float lift) { var p = c + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * r * share; p.y = ground(p.x, p.z) + lift; return p; }
+                float bas = Median(front.SelectMany(a => new[] { 0.6f, 0.75f, 0.88f }.Select(sh => LumaAt(tex, cam, At(a, sh, lip), false))));
+                // The shirt beside the chest brace: #559's point, (0, 1.25, 0.12), lands on the brace (pale webbing, grey in the
+                // shade), so it is logged as "brace" and the shirt is read up and to the figure's left of it, about 0.13 of a figure
+                // clear of the brace's middle line.
+                var figures = t.Cast<Transform>().Where(f => f.name.StartsWith("Rifleman")).ToList();
+                float brace = Median(figures.Select(f => LumaAt(tex, cam, f.TransformPoint(new Vector3(0f, 1.25f, 0.12f)), false)));
+                var chests = figures.Select(f => f.TransformPoint(new Vector3(0.10f, 1.32f, 0.10f))).ToList();
+                float shirt = Median(chests.Select(p => LumaAt(tex, cam, p, false)));
+                float edge = Median(front.Select(a => LumaAt(tex, cam, At(a, 1f, 0.5f * lip), false)));
+                float sep = Mathf.Abs(shirt - edge) / Mathf.Max(shirt, edge);
+                float lipPx = (cam.WorldToViewportPoint(At(front[7], 1f, lip)) - cam.WorldToViewportPoint(At(front[7], 1f, 0f))).y * tex.height;
+                // The nine pixels under each shirt point (a pale one would mean the brace or the sky behind).
+                string raw = string.Join(" | ", chests.Select(p => { var v = cam.WorldToViewportPoint(p); int x = (int)(v.x * tex.width), y = (int)(v.y * tex.height);
+                    return string.Join(",", Enumerable.Range(0, 9).Select(i => Luma(tex.GetPixel(x + i % 3 - 1, y + i / 3 - 1)).ToString("0.00"))); }));
+                Debug.Log($"UNITS render {look} {t.name}: base {bas:0.000}, shirts {shirt:0.000} ({shirt / bas:0.00} of the base), lip {edge:0.000} ({lipPx:0.0} px tall, shirts part from it by {sep:0.00}), brace {brace:0.000}; shirt pixels {raw}");
+                if (!(shirt / bas >= 0.5f && shirt / bas <= 0.9f)) failures.Add($"{look} {t.name}: shirts {shirt / bas:0.00} of the base, T29's 0.5-0.9");
+                if (pinLip && !(sep >= 0.15f)) failures.Add($"{look} {t.name}: shirts part from the lip by {sep:0.00}, at least 0.15");
+            }
+
+            foreach (var (t, look) in new[] { (harel, "harel30"), (showcase, "plain30") })
+            {
+                var (lon, lat) = map.Frame.ToLonLat(t.Find(UnitPlinth.PlinthName).position);
+                Render(new PromoPose(look, lon, lat, 30000f, 0f), look);
+                Judge(t, look, pinLip: look == "harel30");
+            }
+
+            // gameplay03: every army token whose base, ring and figures are all inside the frame.
+            Render(PromoPose.Gameplay03, "gameplay03");
+            bool InFrame(Vector3 p) { var v = cam.WorldToViewportPoint(p); return v.z > 0f && v.x > 0.01f && v.x < 0.99f && v.y > 0.01f && v.y < 0.99f; }
+            int judged = 0;
+            foreach (var t in army)
+            {
+                var plinth = t.Find(UnitPlinth.PlinthName); float r = plinth.localScale.x * UnitPlinth.RimOuter; var c = plinth.position;
+                var outline = Enumerable.Range(0, 16).Select(k => c + new Vector3(Mathf.Cos(k * Mathf.PI / 8f), 0f, Mathf.Sin(k * Mathf.PI / 8f)) * r)
+                    .Select(p => new Vector3(p.x, ground(p.x, p.z), p.z));
+                var heads = t.Cast<Transform>().Where(f => f.name.StartsWith("Rifleman")).Select(f => f.TransformPoint(new Vector3(0f, 1.8f, 0f)));
+                if (!outline.Concat(heads).All(InFrame)) continue;
+                Judge(t, "gameplay03", pinLip: false);
+                judged++;
+            }
+            Debug.Log($"UNITS render gameplay03: {judged} army tokens wholly in the frame");
+            Assert.GreaterOrEqual(judged, 2, "gameplay03 shows army tokens to judge");
+            Assert.IsEmpty(failures, string.Join("; ", failures));
         }
         finally { cam.targetTexture = null; cam.ResetAspect(); RenderTexture.active = null; UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -711,7 +804,8 @@ public class UnitPlinthTests
 
     /// <summary>Owner ruling (2026-10-15): "billboard the flag". At gameplay03 and at a 30 km look at Harel at camera yaw 0,
     /// 90 and 180, each flag turns about its pole as the camera renders: the cloth's normal points at the camera, seen from
-    /// above, within 2 degrees; the pole stays upright (the flag's up is the world's); its foot does not move.</summary>
+    /// above, within 2 degrees; the pole stays upright (the flag's up is the world's); its foot stays on the base's edge (an
+    /// in-play token's pole goes round the base with the camera's yaw, so it stands behind the figures: issue #644).</summary>
     [Test]
     public void TheFlagTurnsAboutItsPoleToFaceTheCamera()
     {
@@ -725,7 +819,8 @@ public class UnitPlinthTests
             layer.Show(C, StateAt(Dates[0]));
             var flags = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Cast<Transform>().Select(t => t.Find(UnitPlinth.FlagName)).Where(f => f != null).ToList();
             flags.Add(UnitShowcase.Spawn(map, still: true).transform.Find(UnitPlinth.FlagName));
-            var feet = flags.Select(f => f.position).ToList();
+            float Edge(Transform f) { var c = f.parent.Find(UnitPlinth.PlinthName).position; return new Vector2(f.position.x - c.x, f.position.z - c.z).magnitude; }
+            var edges = flags.Select(Edge).ToList();
             var (hlon, hlat) = map.Frame.ToLonLat(flags[0].position);
             int n = 0;
             foreach (var yaw in new[] { 0f, 90f, 180f })
@@ -742,7 +837,7 @@ public class UnitPlinthTests
                         Assert.That(Mathf.Min(angle, 180f - angle), Is.LessThanOrEqualTo(2f), $"yaw {yaw} {f.parent.name}: the cloth faces the camera");
                         Assert.Less(angle, 90f, $"yaw {yaw} {f.parent.name}: its front, not its back, so the cloth flies to the camera's right");
                         Assert.Greater(Vector3.Dot(f.up, Vector3.up), 0.9999f, $"yaw {yaw} {f.parent.name}: the pole stays upright");
-                        Assert.Less((f.position - feet[i]).magnitude, 0.01f, $"{f.parent.name}: the pole's foot stays put");
+                        Assert.AreEqual(edges[i], Edge(f), 0.5f, $"{f.parent.name}: the pole's foot stays on the base's edge");
                         n++;
                     }
                 }

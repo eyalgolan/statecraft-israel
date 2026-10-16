@@ -89,13 +89,14 @@ namespace Statecraft.Game.UI
             if ((boot == null || boot.Error == null) && Bridge == null) ShowLoading();
         }
 
-        /// <summary>A boot failure replaces the loading line with the reason; the loading state stays, so no half-built panel
-        /// shows (M3 final review I5).</summary>
+        /// <summary>A boot failure replaces the loading line with a short reason in the player's language; the loading state
+        /// stays, so no half-built panel shows (M3 final review I5). <paramref name="reason"/> is an exception's English text
+        /// (a file path, a content error): it stays in GameBoot.Error and the log, never on screen (#637).</summary>
         internal void OnBootFailed(string reason)
         {
             var text = ShowLoading();
             var line = text == null ? null : document.rootVisualElement.Q<Label>("loading");
-            if (line != null) Say(line, text!.Format("boot.failed", GameBoot.ForPlayer(reason).TrimEnd('.')), text["ui.lang"] == UiLanguage.Hebrew);
+            if (line != null) Say(line, text!.Format("boot.failed", text["boot.reason_other"]), text["ui.lang"] == UiLanguage.Hebrew);
         }
 
         /// <summary>Puts the loading line in the UI's language (boot.loading, #193). In Hebrew the root also gets its mark
@@ -270,7 +271,9 @@ namespace Statecraft.Game.UI
             var localitiesAt = LocalitiesAt(map);
             var info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,
-                regions: regions, localitiesAt: localitiesAt));
+                regions: regions, localitiesAt: localitiesAt,
+                townHex: InfoPanelPresenter.TownHex(map.SettlementsFor(inputs.Map.SettlementsYaml), map.Hexes),
+                townNamesHe: map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe)));
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.

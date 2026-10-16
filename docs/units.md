@@ -342,13 +342,17 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   is unchanged and still appears only on selection.
 - **On renders** (`TheBaseRingAndFlagReadAsT29OnARender`: a 30 km look at Harel's hill token and at the showcase trio,
   through the game's camera, measured as T29 was): see the numbers in PR #559. The bands are T29's own measures, set
-  before measuring ours.
+  before measuring ours. The figures read darker than their base, as T29's (0.5–0.9 of its luma), at those looks and at
+  gameplay03 (`TheFiguresReadDarkerThanTheirBaseAsT29`, #645: the shirts at 0.9 of #559's paint, read beside the chest
+  brace, which #559's sample point hit).
 - **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row today; the Arab states' sides are known to the
   loader for #226). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it
-  never shows edge-on as the camera orbits; the pole stays upright at the base's edge.
+  never shows edge-on as the camera orbits; the pole stays upright at the base's edge. The figures and the pole turn about
+  the base's middle with the camera's yaw (`UnitLayer.FaceCamera`, #644), so from every side the trio stands side by side
+  and the pole behind it (`TheTrioReadsSideBySideAndThePoleStandsBehindItAtEveryYaw`).
   - **Use of the flag:** the Flag and Emblem Law, 5709-1949, s. 2(a), forbids using the State flag for commerce, business or
     profession without a permit from the Minister of the Interior (the 1949 text, read on the cited scan; the amended text
     not checked). The game is free and non-commercial; a paid release needs this checked first. Only a side whose 1948

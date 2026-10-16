@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
@@ -59,6 +60,42 @@ def gone_soon(pid, seconds=3.0):
             return True
         time.sleep(0.01)
     return False
+
+
+@pytest.fixture
+def stop_once_ready(monkeypatch, tmp_path):
+    """Returns arm(ready): it holds a timed-out run's stop until the fake player has written `ready`, which it does once
+    its TERM trap is set. Under heavy load (#704) a 1-2 s timeout could fire before the shell got that far: the stop
+    then killed a player that had not started yet, and the test found no file to read. If `ready` never appears the run
+    is still stopped, and the test then fails, so a fake player that never starts cannot hang the test or let it pass.
+    At teardown, after the test's own checks, it SIGKILLs whatever is left of each stopped run's process group, so a
+    failing test (a stop that no longer sends SIGKILL) does not leave its fake player looping. It signals a group only
+    while one of its processes runs from this test's tmp_path, so a reused group id is never touched."""
+    groups, killpg = [], os.killpg
+
+    def arm(ready, seconds=30.0):
+        stop = pg.stop_group
+
+        def stop_when_ready(proc, grace):
+            groups.append(proc.pid)   # start_new_session: the group id is the run's pid
+            deadline = time.monotonic() + seconds
+            while not (started := ready.is_file() and ready.read_text().endswith("\n")) and time.monotonic() < deadline:
+                time.sleep(0.01)
+            stop(proc, grace)
+            assert started, (f"the fake player did not write {ready.name} within {seconds} s, so it never started: "
+                             "the machine is too loaded to run it (#704), and the stop itself was not tested")
+
+        monkeypatch.setattr(pg, "stop_group", stop_when_ready)
+
+    yield arm
+    for pgid in groups:
+        ps = subprocess.run(["ps", "-A", "-o", "pgid=,command="], capture_output=True, text=True, check=True).stdout
+        ours = [line for line in ps.splitlines() if line.split()[:1] == [str(pgid)] and str(tmp_path) in line]
+        if ours:
+            try:
+                killpg(pgid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
 
 
 def release(tag, *names, draft=False):
@@ -279,36 +316,55 @@ def test_a_linux_run_without_xvfb_run_is_refused_before_the_player_runs(tmp_path
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="the fake player and xvfb-run are shell scripts")
-def test_a_timeout_also_stops_what_xvfb_run_started(tmp_path, fake_xvfb_run):
+def test_a_timeout_also_stops_what_xvfb_run_started(tmp_path, fake_xvfb_run, stop_once_ready):
     # xvfb-run runs the player as its child; killing only xvfb-run would leave the player running.
     exe = tmp_path / "Statecraft.x86_64"
     pid_file = tmp_path / "player.pid"
+    stop_once_ready(pid_file)
     exe.write_text(f'#!/bin/sh\necho $$ > "{pid_file}"\nexec sleep 30\n')
     exe.chmod(0o755)
     assert pg.run_player(exe, tmp_path / "player.log", 2, "linux") is None
-    assert gone_soon(int(pid_file.read_text()))
+    assert gone_soon(int(pid_file.read_text())), "xvfb-run's child, the player, outlived the stop"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="the fake player and xvfb-run are shell scripts")
-def test_a_timeout_asks_the_player_to_stop_before_killing_it(tmp_path, fake_xvfb_run):
+def test_a_timeout_asks_the_player_to_stop_before_killing_it(tmp_path, fake_xvfb_run, stop_once_ready):
     # Review #581 nit 1: SIGTERM first, so the player (and Xvfb) can shut down cleanly; SIGKILL only after the grace.
     exe = tmp_path / "Statecraft.x86_64"
-    termed = tmp_path / "termed"
-    exe.write_text(f"#!/bin/sh\ntrap 'echo yes > \"{termed}\"; exit 0' TERM\nsleep 30 &\nwait\n")
+    termed, ready = tmp_path / "termed", tmp_path / "ready"
+    stop_once_ready(ready)
+    exe.write_text(f"#!/bin/sh\ntrap 'echo yes > \"{termed}\"; exit 0' TERM\necho $$ > \"{ready}\"\nsleep 30 &\nwait\n")
     exe.chmod(0o755)
     assert pg.run_player(exe, tmp_path / "player.log", 1, "linux") is None
+    # The player was ready, its trap set (stop_once_ready), so a missing `termed` is not #704's start-up race.
+    assert termed.is_file(), ("the ready player never handled a SIGTERM: the stop sent none, or killed it before the "
+                              "grace let its trap run")
     assert termed.read_text().strip() == "yes"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="the fake player and xvfb-run are shell scripts")
-def test_a_player_that_ignores_sigterm_is_killed_after_the_grace(tmp_path, fake_xvfb_run, monkeypatch):
+def test_a_player_that_ignores_sigterm_is_killed_after_the_grace(tmp_path, fake_xvfb_run, monkeypatch,
+                                                                  stop_once_ready):
     monkeypatch.setattr(pg, "TERM_GRACE", 1)
     exe = tmp_path / "Statecraft.x86_64"
     pid_file = tmp_path / "player.pid"
+    stop_once_ready(pid_file)
+    sent, killpg = [], os.killpg
+
+    def record(pid, sig):
+        if sig:
+            sent.append((sig, time.monotonic()))
+        killpg(pid, sig)
+
+    monkeypatch.setattr(pg.os, "killpg", record)
     exe.write_text(f"#!/bin/sh\ntrap '' TERM\necho $$ > \"{pid_file}\"\nwhile :; do sleep 1; done\n")
     exe.chmod(0o755)
     assert pg.run_player(exe, tmp_path / "player.log", 1, "linux") is None
-    assert gone_soon(int(pid_file.read_text()))
+    assert gone_soon(int(pid_file.read_text())), "a player that ignores SIGTERM outlived the stop: no SIGKILL"
+    # SIGTERM, then SIGKILL no sooner than the grace after it. Load can only lengthen the gap, never shorten it.
+    assert [sig for sig, _ in sent] == [signal.SIGTERM, signal.SIGKILL], "the stop must send SIGTERM, then SIGKILL"
+    gap = sent[1][1] - sent[0][1]
+    assert gap >= pg.TERM_GRACE, f"SIGKILL came {gap:.2f} s after SIGTERM, before the {pg.TERM_GRACE} s grace"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="process groups are POSIX")

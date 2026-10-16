@@ -37,9 +37,16 @@ namespace Statecraft.Sim
             return r;
         }
 
+        /// <summary>Load warning: the save was made with other content, so the replayed game may differ (spec section 7).</summary>
+        public const string ContentChanged = "content_changed";
+        /// <summary>Load warning: made with other content, the replay then ended on a different state than the saved game.</summary>
+        public const string ReplayDiffers = "replay_differs";
+
         /// <summary>Parses and replays a save. Throws SaveException when the text is malformed, or when the content is the
         /// same but the replay ends on a different hash (a determinism bug). Content made with other content loads with a
-        /// warning (spec section 7), and a second warning if the replay then differs from the saved game.</summary>
+        /// warning (spec section 7), and a second warning if the replay then differs from the saved game. The warnings are
+        /// kinds (<see cref="ContentChanged"/>, <see cref="ReplayDiffers"/>), not display text: the UI says each in the
+        /// player's language, as it does SaveException.Code (#637).</summary>
         public static GameSession Load(Content c, string saveText, out IReadOnlyList<string> warnings)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
@@ -52,7 +59,7 @@ namespace Statecraft.Sim
                     : new SaveException(0, "This save was made with a newer version of the game's rules.", SaveException.NewerVersion);
             var list = new List<string>();
             bool sameContent = saved.ContentHash == c.Hash;
-            if (!sameContent) list.Add("This save was made with different game content; the replayed game may differ.");
+            if (!sameContent) list.Add(ContentChanged);
             var session = New(c, saved.Seed, saved.Mode);
             int turnNo = 0;
             try { foreach (var turn in saved.Turns) { session.Step(turn); turnNo++; } }
@@ -61,7 +68,7 @@ namespace Statecraft.Sim
             if (session.State.Hash() != saved.FinalHash)
             {
                 if (sameContent) throw new SaveException(0, "The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.");
-                list.Add("The replayed game differs from the saved one.");
+                list.Add(ReplayDiffers);
             }
             warnings = list;
             return session;

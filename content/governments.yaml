@@ -9,10 +9,17 @@ governments:
     name_he_review: agent-checked
     name_he_sources:
       - { url: "https://he.wikipedia.org/wiki/הממשלה_הזמנית", checked: 2026-10-14 }
+    # from: every KNS_PersonToPosition row for GovernmentNum 0 starts 1948-05-14. The Declaration's clause 12
+    # (minutes of 14 May 1948, 0_ptm_258580) puts Minhelet HaAm in office "from the termination of the Mandate,
+    # tonight", i.e. 15 May; the 14/15 May question is open as #457 item 2. to: the day the First Government was
+    # sworn in.
+    # coalition: the two en.wiki articles below. The records name the 13 ministers across 17 ministry rows with
+    # null factions, so they do not carry the 11-list value.
     from: 1948-05-14
     to: 1949-03-10
     coalition: [mapai, mapam, general_zionists, new_aliyah, mizrachi, hapoel_hamizrachi, agudat_yisrael, sephardim, ahdut_haavoda_poalei_tzion, poale_zion_left, independent]
     sources:
+      # coalition rests on these two en.wiki articles.
       - { url: "https://en.wikipedia.org/wiki/Provisional_government_of_Israel", checked: 2026-10-09 }
       - { url: "https://en.wikipedia.org/wiki/Provisional_State_Council", checked: 2026-10-09 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%200", checked: 2026-10-14 }
@@ -28,12 +35,11 @@ governments:
       - { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_הראשונה", checked: 2026-10-14 }
     # Sources differ (8 vs 10 March 1949); 10 March is the Knesset confidence vote recorded in Ben-Gurion's diary.
     from: 1949-03-10
-    # Ben-Gurion resigned 15 October 1950 (some pages give 16 October); the en.wiki infobox gives 30 October as the
-    # dissolution date. The successor was sworn in on 1 November 1950, which is the handover date used here.
+    # Ben-Gurion resigned 15 October 1950 (some pages give 16 October, and 30 October also appears as a
+    # dissolution date). The successor was sworn in on 1 November 1950, which is the handover date used here.
     to: 1950-11-01
     coalition: [mapai, united_religious_front, progressive, sephardim, democratic_list_nazareth]
     sources:
-      - { url: "https://en.wikipedia.org/wiki/First_government_of_Israel", checked: 2026-10-10 }
       - { url: "https://bengurionarchive.bgu.ac.il/en/node/14566", checked: 2026-10-09 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%201", checked: 2026-10-14 }
       - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250182.pdf", checked: 2026-10-14 }

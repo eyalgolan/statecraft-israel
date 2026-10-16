@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Text.RegularExpressions;
 using Statecraft.Game.Map;
 using UnityEngine;
 
@@ -16,8 +15,8 @@ namespace Statecraft.Game.Boot
         public GameInputs? Inputs { get; private set; }
         public string? Error { get; private set; }
         public event Action<GameInputs>? Ready;
-        /// <summary>Raised with the reason when the boot fails (a failed fetch, a content error): GameRoot shows it on the
-        /// loading line (M3 final review I5).</summary>
+        /// <summary>Raised with the reason when the boot fails (a failed fetch, a content error): GameRoot shows a short
+        /// localised reason on the loading line instead (M3 final review I5, #637).</summary>
         public event Action<string>? Failed;
 
         public void Configure(MapScene mapScene) => map = mapScene;
@@ -29,17 +28,6 @@ namespace Statecraft.Game.Boot
             Debug.LogError("BOOT FAIL " + reason);
             Failed?.Invoke(reason);
         }
-
-        /// <summary>The failure reason as the player sees it: absolute local paths (a desktop player reads its files from
-        /// disk, file:// URIs included) shortened to the file name; http(s) URLs and plain reasons are kept. Error and the
-        /// log keep the full reason (pre-merge rereview).</summary>
-        public static string ForPlayer(string reason) =>
-            BarePath.Replace(QuotedPath.Replace(reason, m => m.Groups[1].Value + FileName(m.Groups[2].Value) + m.Groups[1].Value),
-                m => FileName(m.Value));
-
-        static readonly Regex QuotedPath = new Regex(@"(['""])((?:file://|/|[A-Za-z]:\\)[^'""]*)\1");
-        static readonly Regex BarePath = new Regex(@"(?<![\w:/.\\])(?:file://)?(?:/|[A-Za-z]:\\)[^\s'""()]+");
-        static string FileName(string path) => path.Substring(path.LastIndexOfAny(new[] { '/', '\\' }) + 1);
 
         async void Start()
         {

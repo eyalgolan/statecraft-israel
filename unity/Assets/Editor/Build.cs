@@ -12,7 +12,8 @@ using UnityEngine;
 namespace Statecraft.Game.EditorTools
 {
     /// <summary>Headless player builds. Map.unity is the boot scene; ContentSync copies content/ into StreamingAssets
-    /// first (IPreprocessBuildWithReport). Exits non-zero on failure.
+    /// first (IPreprocessBuildWithReport), and CollectionImport.BuildBundles puts The 1948 Collection's streamed bundles in
+    /// StreamingAssets/collection. Exits non-zero on failure.
     ///   Web: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web
     ///        [-compression disabled|gzip|brotli] [-out Builds/Web-disabled] [-textureSubtarget dxt|etc2|astc]
     ///        (-textureSubtarget: the compressed format of every automatic texture; the default build is DXT, for desktop
@@ -235,10 +236,14 @@ namespace Statecraft.Game.EditorTools
 
         static bool Run(BuildTarget target, string location, int subtarget = 0)
         {
+            // The 1948 Collection's streamed bundles (issue #664) go in StreamingAssets/collection first; their manifest keeps
+            // the classes only they use (Animator, SkinnedMeshRenderer) in the player.
+            var bundles = CollectionImport.BuildBundles(target);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = new[] { ProjectSetup.BootScene }, locationPathName = location, target = target, options = BuildOptions.None,
                 subtarget = subtarget,   // WebGL: the texture subtarget (0, Generic: the project's own setting)
+                assetBundleManifestPath = bundles,
             });
             var s = report.summary;
             Debug.Log($"BUILD {s.result} {target} -> {location}: {OutputMegabytes(location):0.0} MB on disk, {s.totalErrors} errors, {s.totalTime.TotalSeconds:0}s");

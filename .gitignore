@@ -59,6 +59,8 @@ unity-*.log
 captures/
 unity/Assets/StreamingAssets/content/
 unity/Assets/StreamingAssets/content.meta
+unity/Assets/StreamingAssets/collection/
+unity/Assets/StreamingAssets/collection.meta
 unity/Builds/
 
 # local secrets, licences and agent workspaces

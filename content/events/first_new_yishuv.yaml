@@ -15,7 +15,10 @@
 # nearest depopulated villages, by en.wiki/Wikidata coordinates against Mefalsim's 31.5019 N, 34.5644 E, are Huj (about
 # 5.6 km; counted with Dorot in Village Statistics 1945, so not in the file), al-Muharraqa (about 5.9 km; its article names
 # Yakhini, 1950, on village land), Najd (about 6.3 km; names Sderot and Or HaNer) and Dimra (about 6.3 km; names Erez).
-# None of the four articles names Mefalsim. Places under 1,000 people were not checked against a gazetteer (#654).
+# None of the four articles names Mefalsim. Places under 1,000 were checked in #706 against Village Statistics 1945
+# and the 1942 Gaza sheet: seven depopulated villages lie in the two sweeps (the four above plus Dayr Sunayd,
+# Kawfakha and Bayt Jirja), and none names Mefalsim. Three Bedouin localities (Gatatweh, Urour, Rawashdeh) cannot be
+# population-tested: Village Statistics 1945 counts the Beersheba bedouin by tribe (designated-site-1.md section 5).
 id: first_new_yishuv
 title: Mefalsim founded
 text: 'On 12 June 1949 a garin of graduates of the Dror youth movement from Argentina and Uruguay went onto Jewish National Fund land in the Negev, facing the Gaza Strip, and founded Kibbutz Mefalsim of HaKibbutz HaMeuhad. Because of direct fire from Gaza, the kibbutz moved to its present site a year later, in 1950.'

@@ -16,7 +16,10 @@ Unity processes are recognised by their executable (`ps -o comm=`), never by arg
 name Unity in their command line do not count (review C1). macOS flock does not queue fairly, so every request first
 passes a gate (the same path plus ".gate"): it takes the gate exclusively, then the machine lock, then releases the gate.
 A waiting exclusive request holds the gate until it has the lock, so no new shared holder gets in ahead of it and the
-running ones drain (issue #207; before, a stream of shared jobs starved a profile, review M9)."""
+running ones drain (issue #207; before, a stream of shared jobs starved a profile, review M9).
+
+When STATECRAFT_LOCK_HOLDER names a file, it writes "<this pid> <command pid>" there once the command has started:
+the holder record tools/unity_postmerge.py uses to stop a hung Unity by its PID (T72)."""
 import argparse
 import fcntl
 import os
@@ -28,6 +31,7 @@ from pathlib import Path
 LOCK = Path(os.environ.get("STATECRAFT_MACHINE_LOCK", str(Path.home() / ".cache" / "statecraft" / "machine.lock")))
 GATE = LOCK.with_name(LOCK.name + ".gate")
 UNITY_EXE = "/Unity.app/Contents/MacOS/Unity"
+HOLDER_ENV = "STATECRAFT_LOCK_HOLDER"
 
 
 def parse(argv: list[str]) -> argparse.Namespace:
@@ -112,7 +116,17 @@ def main(argv: list[str] | None = None) -> int:
         if a.wait_unity and not wait_for_unity(a.timeout):
             print("machine_lock: timed out waiting for Unity")
             return 3
-        return subprocess.call(a.command)
+        child = subprocess.Popen(a.command)
+        if record := os.environ.get(HOLDER_ENV):
+            tmp = Path(record + ".tmp")
+            tmp.write_text(f"{os.getpid()} {child.pid}\n")
+            os.replace(tmp, record)
+        try:
+            return child.wait()
+        except BaseException:
+            child.kill()
+            child.wait()
+            raise
 
 
 if __name__ == "__main__":

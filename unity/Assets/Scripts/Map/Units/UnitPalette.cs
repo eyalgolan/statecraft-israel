@@ -25,7 +25,7 @@ namespace Statecraft.Game.Map.Units
         static readonly Color[] Base =
         {
             new Color(0.80f, 0.60f, 0.46f),   // Skin: sun-tanned
-            new Color(0.42f, 0.31f, 0.21f),   // Shirt: khaki drill, darker and warmer than the photographs' (see the class note)
+            new Color(0.38f, 0.28f, 0.19f),   // Shirt: khaki drill, darker and warmer than the photographs' (see the class note); 0.9 of #559's, so the figures read darker than their base as T29's (#645)
             new Color(0.26f, 0.19f, 0.14f),   // Trousers: khaki drill, darker and dustier (the photographs' trousers read darker than the shirts)
             new Color(0.86f, 0.80f, 0.62f),   // Webbing: 37-pattern, pale
             new Color(0.30f, 0.31f, 0.22f),   // Helmet: Mk II steel helmet, dark olive
@@ -35,7 +35,7 @@ namespace Statecraft.Game.Map.Units
             new Color(0.45f, 0.28f, 0.16f),   // RifleWood
             new Color(0.20f, 0.20f, 0.21f),   // RifleMetal
             new Color(0.17f, 0.13f, 0.10f),   // Hair
-            new Color(0.50f, 0.38f, 0.26f),   // ShirtFaded: sun-bleached khaki
+            new Color(0.45f, 0.34f, 0.23f),   // ShirtFaded: sun-bleached khaki, darkened with the shirt (#645)
             new Color(0.47f, 0.50f, 0.50f),   // CamoGrey: ocean grey
             new Color(0.27f, 0.32f, 0.22f),   // CamoGreen: dark green
             new Color(0.68f, 0.71f, 0.72f),   // Underside: medium sea grey

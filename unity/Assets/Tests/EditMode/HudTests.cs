@@ -33,6 +33,48 @@ public class HudTests
         Assert.AreEqual("", m.Treasury.Delta);                       // no previous turn yet
     }
 
+    /// <summary>#687: the plate's date is in the UI's language, through the date.* strings as the map's front-line date
+    /// (Control1948.LineDateText): "15 במאי 1948" in Hebrew, every month with its Hebrew name and no Latin letter.</summary>
+    [Test]
+    public void TheDatePlateIsInHebrewInTheHebrewUi()
+    {
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), He);
+        Assert.AreEqual("15 במאי 1948", HudModel.From(bridge, He).Date);
+        var months = new[] { "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר" };
+        for (int m = 1; m <= 12; m++)
+        {
+            bridge.State.Date = new System.DateTime(1950, m, 1);
+            var date = HudModel.From(bridge, He).Date;
+            Assert.AreEqual($"1 ב{months[m - 1]} 1950", date);
+            Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(date, "[A-Za-z]"), date);
+        }
+    }
+
+    /// <summary>#687: English is unchanged, PlayerText.Date's "15 May 1948" on every day of a leap year (every month, every
+    /// day number).</summary>
+    [Test]
+    public void TheDatePlateInEnglishIsUnchanged()
+    {
+        var bridge = NewBridge();
+        for (var d = new System.DateTime(1948, 1, 1); d.Year == 1948; d = d.AddDays(1))
+        {
+            bridge.State.Date = d;
+            Assert.AreEqual(PlayerText.Date(d), HudModel.From(bridge, Text).Date);
+        }
+    }
+
+    /// <summary>#687, fail-open check: a Hebrew strings file without a month's name does not fall back to English or show
+    /// nothing; the lookup throws naming the file and the key.</summary>
+    [Test]
+    public void AMissingMonthNameThrowsRatherThanShowingEnglish()
+    {
+        var yaml = AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text;
+        var noMay = UiText.Parse(string.Join("\n", yaml.Split('\n').Where(l => !l.StartsWith("date.month_5:"))), "strings.he.yaml");
+        var e = Assert.Throws<System.Collections.Generic.KeyNotFoundException>(() =>
+            HudModel.From(new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), He), noMay));
+        StringAssert.Contains("date.month_5", e!.Message);
+    }
+
     /// <summary>T71: the top bar's Treasury is the net position, cash minus debt (HudModel.From; M3 plan: "with deficits
     /// borrowed, cash alone is always 0"). The sim keeps cash at 0 or above (R-MONEY-003), so a negative reading is debt,
     /// not a negative Treasury: after four monthly turns with no orders, 0 cash and the debt read as minus the debt.</summary>

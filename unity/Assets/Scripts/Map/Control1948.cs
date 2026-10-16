@@ -189,10 +189,15 @@ namespace Statecraft.Game.Map
         {
             string F(string key, params object[] a) => string.Format(CultureInfo.InvariantCulture, text(key), a);
             if (DateTime.TryParseExact(lineDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
-                return F("date.day_month_year", d.Day, text("date.month_" + d.Month), d.Year);
+                return DateText(d, text);
             if (DateTime.TryParseExact(lineDate, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var m))
                 return F("date.month_year", text("date.month_" + m.Month), m.Year);
             return lineDate;
         }
+
+        /// <summary>A day as players read it, in the UI's language through <paramref name="text"/> (date.day_month_year,
+        /// date.month_1..12): "15 May 1948" / "15 במאי 1948". The map's line date and the top bar's date plate (#687).</summary>
+        public static string DateText(DateTime d, Func<string, string> text) =>
+            string.Format(CultureInfo.InvariantCulture, text("date.day_month_year"), d.Day, text("date.month_" + d.Month), d.Year);
     }
 }

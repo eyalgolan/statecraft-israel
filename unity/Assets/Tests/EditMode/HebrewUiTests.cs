@@ -122,13 +122,13 @@ public class HebrewUiTests
     }
 
     /// <summary>In Hebrew each text takes its paragraph direction from its own words: the Hebrew strings right to left, the
-    /// English date and the numbers left to right (so "15 May 1948" is not reordered), and a text that changes follows.</summary>
+    /// numbers left to right (so "1948" is not reordered), the date in Hebrew right to left (#687), and a text that changes follows.</summary>
     [Test]
     public void InHebrewEachTextTakesItsDirectionFromItsOwnWords()
     {
         var game = Boot(UiLanguage.Hebrew);
         Assert.AreEqual(LanguageDirection.RTL, Ui.Q<Label>("turn").languageDirection, "turn: Hebrew");
-        Assert.AreEqual(LanguageDirection.LTR, Ui.Q<Label>("date").languageDirection, "the date is still English (#55)");
+        Assert.AreEqual(LanguageDirection.RTL, Ui.Q<Label>("date").languageDirection, "the date is in Hebrew (#687)");
         Assert.AreEqual(LanguageDirection.LTR, Ui.Q<Label>("year").languageDirection, "digits alone");
         foreach (var t in Ui.Query<TextElement>().ToList().Where(t => !t.ClassListContains("start-he")))
             Assert.AreEqual(UiDirection.RightToLeft(t.text) ? LanguageDirection.RTL : LanguageDirection.LTR, t.languageDirection, $"'{t.name}': {t.text}");
@@ -141,7 +141,7 @@ public class HebrewUiTests
         // After a turn the texts the turn rewrote keep the direction of their new words.
         game.Bridge!.EndTurn();
         Assert.AreEqual(LanguageDirection.RTL, turn.languageDirection, turn.text);
-        Assert.AreEqual(LanguageDirection.LTR, Ui.Q<Label>("date").languageDirection, Ui.Q<Label>("date").text);
+        Assert.AreEqual(LanguageDirection.RTL, Ui.Q<Label>("date").languageDirection, Ui.Q<Label>("date").text);
     }
 
     /// <summary>Many texts a presenter builds after boot get their words before they are on the panel (new Label(text)), so
@@ -343,7 +343,7 @@ public class HebrewUiTests
             _ = boot.BootAsync(() => throw new IOException("Could not find file '/Users/someone/Statecraft Israel.app/Contents/Resources/Data/StreamingAssets/map/heightmap.json'."));
             if (failFirst) game.Started();
             var t = language == UiLanguage.Hebrew ? He : En;
-            Assert.AreEqual(t.Format("boot.failed", "Could not find file 'heightmap.json'"), Ui.Q<Label>("loading").text, $"{language}, {order}");
+            Assert.AreEqual(t.Format("boot.failed", t["boot.reason_other"]), Ui.Q<Label>("loading").text, $"{language}, {order}");   // #637
             Assert.AreEqual(language == UiLanguage.Hebrew, Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), $"{language}, {order}: the face");
         }
     }

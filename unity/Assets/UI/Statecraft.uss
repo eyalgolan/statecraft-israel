@@ -452,7 +452,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .house-coalition { font-size: 20px; color: var(--ink); white-space: normal; }
 .house-stability { flex-grow: 0; height: 8px; margin: 3px 0 6px 0; max-width: 360px; }
 .house-legend > Label { padding-top: 0; padding-bottom: 0; }
-.party-chips { flex-direction: row; flex-wrap: wrap; margin-top: 6px; }
+/* The chips in two groups, coalition then opposition, each a wrapping row opened by its side's name (#41 M5). */
+.party-chips { flex-direction: column; margin-top: 6px; }
+.party-group { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.party-group-heading {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 14px; color: var(--ink); padding: 0; margin: 0 10px 2px 0;
+}
 .party-chip { flex-direction: row; align-items: center; margin: 0 12px 2px 0; }
 .party-chip > Label { font-size: 14px; color: var(--ink-dim); padding: 0; margin: 0; }
 .party-swatch { width: 11px; height: 11px; border-radius: 6px; margin-right: 5px; }
@@ -622,7 +628,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    in it. Each rule above that names EB Garamond is listed here; HebrewUiTests fails for one that is missed, including the
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
-.lang-he .why-group, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
+.lang-he .why-group, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
 .lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
@@ -640,7 +646,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .lang-he .card-stat-value { -unity-text-align: middle-left; }
 .lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
-.lang-he .cabinet-house, .lang-he .party-chips, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
+.lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
 .lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container { flex-direction: row-reverse; }
 .lang-he.hud-narrow .meter-row { flex-direction: column; align-items: flex-end; }
 .lang-he .turn-box { align-items: flex-start; }
@@ -662,6 +668,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .lang-he .pm-office { margin: 0 0 4px 6px; }
 .lang-he .hemicycle-box { margin-right: 0; margin-left: 18px; }
 .lang-he .party-chip { margin: 0 0 2px 12px; }
+.lang-he .party-group-heading { margin: 0 0 2px 10px; }
 .lang-he .party-swatch { margin-right: 0; margin-left: 5px; }
 .lang-he .rung { border-left-width: 0; border-right-width: 3px; }
 .lang-he .rung-target { border-left-width: 1px; border-right-width: 3px; }

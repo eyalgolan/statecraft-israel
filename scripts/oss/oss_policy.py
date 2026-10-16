@@ -92,6 +92,23 @@ def home_path_kinds(line: str) -> list[str]:
     return ["home-path"] if HOME_PATH.search(line) else []
 
 
+# Binaries only: a model exported from a temp folder names the account without any "/Users/" (PR #680 shipped
+# "/private/tmp/claude-501/-Users-<name>/<session>/..."). Text files can name /tmp and /var/folders legitimately.
+TEMP_PATH = re.compile(r"/private/(?:tmp|var)/|/var/folders/|(?<![\w-])claude-\d+|-Users-[A-Za-z]")
+_UTF16_LE = re.compile(rb"([\x20-\x7e])\x00")
+_UTF16_BE = re.compile(rb"\x00([\x20-\x7e])")
+
+
+def binary_home_path_kinds(data: bytes) -> list[str]:
+    """A home, temp or session path anywhere in a binary, as UTF-8/Latin-1 bytes or as UTF-16 (either byte order, at
+    any offset): the UTF-16 views drop the NUL beside each ASCII character, so the same patterns match."""
+    for view in (data, _UTF16_LE.sub(rb"\1", data), _UTF16_BE.sub(rb"\1", data)):
+        text = view.decode("latin-1")
+        if HOME_PATH.search(text) or TEMP_PATH.search(text):
+            return ["home-path-in-binary"]
+    return []
+
+
 def conflict_marker_kinds(line: str) -> list[str]:
     m = CONFLICT_MARKER.match(line)
     return [f"conflict-marker {m.group(1)}"] if m else []

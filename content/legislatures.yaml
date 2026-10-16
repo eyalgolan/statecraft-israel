@@ -44,6 +44,9 @@ legislatures:
       wizo: 1
       yemenite_association: 1
     sources:
+      # en.wikipedia's Provisional State Council article is kept for one value, named per #457: the seat
+      # distribution by list. from and to rest on the 14 May 1948 minutes (0_ptm_258580) and KNS_KnessetDates
+      # (Knesset 0 PlenumFinish 1949-02-14); 1_ptm_250172 is the opening sitting on 14 February 1949.
       - { url: "https://en.wikipedia.org/wiki/Provisional_State_Council", checked: 2026-10-09 }
       - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_258580.pdf", checked: 2026-10-14 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }

@@ -227,7 +227,7 @@ public class MapActionTests
         Assert.NotEqual(Fixture.Files["rules.yaml"], rules);
         var stale = ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["rules.yaml"] = rules }));
         var loaded = GameSession.Load(stale, save, out var warnings);
-        Assert.Contains(warnings, w => w.Contains("different game content"));
+        Assert.Contains(GameSession.ContentChanged, warnings);
         Assert.Null(MapActions.At(loaded.State, hex.Q, hex.R));
         var refused = Assert.Single(loaded.Last!.Rejected);
         Assert.Equal("That map action is not available in this game", refused.Reason);

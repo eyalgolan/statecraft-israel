@@ -718,7 +718,8 @@ public class GameSceneTests
             boot.Fail("people.yaml: people[x].name: required");
             for (int i = 0; i < 5; i++) yield return null;
             var ui = doc.rootVisualElement;
-            Assert.AreEqual("Statecraft could not start: people.yaml: people[x].name: required. Reload the page.", ui.Q<Label>("loading").text);
+            // #637: the player reads a short localised reason; the content error stays in Error and the log.
+            Assert.AreEqual("Statecraft could not start: its files failed to load. Reload the page.", ui.Q<Label>("loading").text);
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("loading").resolvedStyle.display);
             Assert.IsTrue(ui.Q("root").ClassListContains("loading"), "the panels stay hidden");
             Assert.AreEqual(Visibility.Hidden, ui.Q("info-panel").resolvedStyle.visibility);
@@ -758,7 +759,7 @@ public class GameSceneTests
             _ = boot.BootAsync(() => throw new IOException("Could not find file '/Users/someone/Statecraft Israel.app/Contents/Resources/Data/StreamingAssets/map/heightmap.json'."));
             for (int i = 0; i < 3; i++) yield return null;
             var line = doc.rootVisualElement.Q<Label>("loading").text;
-            Assert.AreEqual("Statecraft could not start: Could not find file 'heightmap.json'. Reload the page.", line);
+            Assert.AreEqual("Statecraft could not start: its files failed to load. Reload the page.", line);   // #637: no exception text
             StringAssert.DoesNotContain("/Users/", line);
         }
         finally
@@ -768,11 +769,4 @@ public class GameSceneTests
             if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
         }
     }
-
-    [TestCase("Could not find file '/Users/a b/x/content/people.yaml'.", "Could not find file 'people.yaml'.")]
-    [TestCase(@"Could not find file 'C:\Games\Statecraft\StreamingAssets\map\hexes.json'.", "Could not find file 'hexes.json'.")]
-    [TestCase("heightmap.r16z: Cannot connect to destination host (file:///Users/me/Data/StreamingAssets/map/heightmap.r16z)", "heightmap.r16z: Cannot connect to destination host (heightmap.r16z)")]
-    [TestCase("people.yaml: people[x].name: required", "people.yaml: people[x].name: required")]
-    [TestCase("manifest.json: HTTP/1.1 404 Not Found (http://localhost:8766/StreamingAssets/content/manifest.json)", "manifest.json: HTTP/1.1 404 Not Found (http://localhost:8766/StreamingAssets/content/manifest.json)")]
-    public void BootFailureTextKeepsOnlyFileNames(string reason, string shown) => Assert.AreEqual(shown, GameBoot.ForPlayer(reason));
 }
