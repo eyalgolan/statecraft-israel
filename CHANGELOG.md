@@ -8,6 +8,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Changed
+- The top bar's Money figure is labelled net: "Money (net)", "כסף (נטו)" in Hebrew, and its tooltip says the same (refs
+  #681; owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"). The value is unchanged,
+  cash minus debt; the Budget screen still shows money and debt separately.
 - Sourcing audit of the MVP-window office rows (#457): the First Government row no longer cites Wikipedia (the
   Knesset's position records, the 14 May 1948 minutes, Ben-Gurion's diary page, the plenum records and the
   Knesset's history pages cover every value); the Provisional Government keeps its two named Wikipedia lines for

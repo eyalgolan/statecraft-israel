@@ -574,7 +574,7 @@ public class HudTests
         using var ui = new UiTestKit();
         var bridge = NewBridge();
         var hud = new HudPresenter(ui.Root, bridge, Text);
-        Assert.AreEqual("Money: IL 20.0 million", ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
+        Assert.AreEqual("Money (net): IL 20.0 million", ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
         Assert.AreEqual("Foreign currency: $40.0 million", ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual("Security: 30%", ui.Q<VisualElement>("meter-security").tooltip);
         bridge.EndTurn();
@@ -586,7 +586,7 @@ public class HudTests
         hud.Render();
         var net = System.Math.Round(now.Treasury - now.Debt, 1, System.MidpointRounding.AwayFromZero);
         Assert.Greater(net, 0, "the test expects a positive net position after one turn");
-        Assert.AreEqual(Inv($"Money: IL {net:0.0} million, down IL 1.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
+        Assert.AreEqual(Inv($"Money (net): IL {net:0.0} million, down IL 1.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
         Assert.AreEqual(Inv($"Foreign currency: ${now.FxReserves:0.0} million, up $2.0 million since last turn"), ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual($"Security: {ui.Q<Label>("security-value").text}, up 5 points since last turn", ui.Q<VisualElement>("meter-security").tooltip);
         Assert.AreEqual($"International support: {ui.Q<Label>("standing-value").text}, down 1 point since last turn", ui.Q<VisualElement>("meter-standing").tooltip);
@@ -646,8 +646,8 @@ public class HudTests
         new HudPresenter(ui.Root, bridge, he);
         var said = ui.Q<VisualElement>("meter-treasury").tooltip;
         // The values carry left-to-right marks (U+200E, #543), so the minus stays on the left of "IL" in a right-to-left line.
-        Assert.AreEqual("כסף: \u200E-IL \u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
-        Assert.AreEqual("כסף: -IL 3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
+        Assert.AreEqual("כסף (נטו): \u200E-IL \u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
+        Assert.AreEqual("כסף (נטו): -IL 3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
         foreach (var id in MeterIds)
         {
             var tip = ui.Q<VisualElement>("meter-" + id).tooltip;

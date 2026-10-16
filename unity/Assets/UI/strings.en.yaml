@@ -21,7 +21,7 @@ hud.say_million: "{0}{1} million"
 hud.say_point: "{0:0} point"
 hud.say_points: "{0:0} points"
 # The top-bar captions, as Game.uxml shows them (HudTests.TheSpokenCaptionsAreTheBarsCaptions), for the words above.
-hud.caption.treasury: "Money"
+hud.caption.treasury: "Money (net)"
 hud.caption.immigration: "Immigration"
 hud.caption.security: "Security"
 hud.caption.support: "Public support"

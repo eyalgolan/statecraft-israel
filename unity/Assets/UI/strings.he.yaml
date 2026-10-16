@@ -16,7 +16,7 @@ hud.say_million: "{0}{1} מיליון"
 hud.say_point: "{0:0} נקודה"
 hud.say_points: "{0:0} נקודות"
 # hud.caption.treasury: Money (R-MONEY-001, Q-MONEY-4); the owner's Hebrew word for it, כסף (Q-HUD-3, 15 October 2026, #375).
-hud.caption.treasury: "כסף"
+hud.caption.treasury: "כסף (נטו)"
 hud.caption.immigration: "עלייה"
 hud.caption.security: "ביטחון"
 hud.caption.support: "תמיכה ציבורית"

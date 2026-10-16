@@ -38,7 +38,7 @@
                 <ui:VisualElement name="meter-treasury" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="coin" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
-                        <ui:Label text="Money" class="meter-name" />
+                        <ui:Label text="Money (net)" class="meter-name" />
                         <ui:VisualElement class="meter-row"><ui:Label name="treasury-value" class="meter-value" /><ui:Label name="treasury-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
