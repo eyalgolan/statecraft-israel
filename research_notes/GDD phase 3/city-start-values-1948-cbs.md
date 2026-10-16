@@ -86,7 +86,7 @@ Checks:
   these towns but labels the column 31 December 1948; the table says 8 XI 1948.
 - Safed: the English Wikipedia says about 1,700 Jews in 1948 (citing Vilnai); the Hebrew Wikipedia says about 2,300
   at the founding of the state. The CBS census figure is 2,317 [V].
-- The twelve towns sum to 509,417 people on 8 November 1948, below the 716,700 Jews in `content/population.yaml` (the
+- The twelve towns sum to 509,452 people on 8 November 1948, below the 716,700 Jews in `content/population.yaml` (the
   town figures also include non-Jews, mainly in Haifa and Jaffa).
 
 Composition: the census counted residents of all groups. The Tel Aviv-Yafo row includes Jaffa, which
