@@ -257,3 +257,77 @@ def test_validate_accepts_a_whole_sign_off():
     doc = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
     doc["routes"][0].update({"reviewed_by": "eyalgolan", "reviewed_on": "2026-10-15"})
     rt.validate_routes(doc, BOUNDS)
+
+
+def test_the_train_service_is_sourced_and_on_the_line():
+    """Issue #668 (maintainer decision on #35, 16 October 2026): a train on the Jaffa-Jerusalem line in normal play only
+    from the sourced date regular service resumed, 2 March 1950. Its stretches run in order along the traced line, each
+    ending where the next starts; Tel Aviv South to Lod rests on Wikipedia alone, so it is gated on a person's check."""
+    src = next(r for r in ROUTES["routes"] if r["id"] == "jaffa_jerusalem_railway")
+    service = src["service"]
+    assert service["from"] == "1950-03-02"
+    assert service["status"] == "draft", "the date awaits the human check (CONTENT_POLICY section 2.6)"
+    assert service["to_verify"]
+    stretches = service["stretches"]
+    assert [(s["start"]["name"].split(" (")[0], s["end"]["name"].split(" (")[0], s.get("gated", False)) for s in stretches] == [
+        ("Tel Aviv South railway station", "Lod railway station", True), ("Lod railway station", "Jerusalem", False)]
+    assert not any("reviewed_by" in s for s in stretches), "only a person signs a stretch off"
+    points = [tuple(p) for p in BY_ID["jaffa_jerusalem_railway"]["points"]]
+    for s in stretches:
+        assert all(x["url"].startswith("https://") and x["checked"] for x in s["sources"])
+        for end in ("start", "end"):
+            lonlat = (s[end]["lon"], s[end]["lat"])
+            nearest_km = min(rt.km_between(lonlat, p) for p in points)
+            assert nearest_km < 1.0, f"{s[end]['name']} is {nearest_km:.2f} km off the traced line"
+    assert [r["id"] for r in ROUTES["routes"] if "service" in r] == ["jaffa_jerusalem_railway"], "one train (#668)"
+
+
+def _service_doc():
+    doc = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
+    return doc, next(r for r in doc["routes"] if r["id"] == "jaffa_jerusalem_railway")["service"]
+
+
+@pytest.mark.parametrize("change, message", [
+    ({"from": "1950-3-2"}, "service from must be a quoted"),
+    ({"from": "1900"}, "service from .* is before the route's from"),
+    ({"sources": []}, "service needs sources"),
+    ({"sources": [{"url": "http://x", "checked": "2026-10-16"}]}, "service needs sources"),
+    ({"status": "approved"}, "service status"),
+    ({"stretches": []}, "service needs stretches"),
+])
+def test_validate_rejects_a_bad_service(change, message):
+    doc, service = _service_doc()
+    service.update(change)
+    with pytest.raises(ValueError, match=message):
+        rt.validate_routes(doc, BOUNDS)
+
+
+@pytest.mark.parametrize("change, message", [
+    ({"start": None}, "stretch 1 start"),
+    ({"end": {"name": "x", "lon": 40.0, "lat": 31.7, "url": "https://x"}}, "stretch 1 end"),
+    ({"end": {"name": "x", "lon": 35.2, "lat": 31.7, "url": "http://x"}}, "stretch 1 end"),
+    ({"gated": "yes"}, "stretch 1 gated"),
+    ({"status": "approved"}, "stretch 1 status"),
+    ({"sources": []}, "stretch 1 needs sources"),
+    ({"reviewed_by": "someone"}, "stretch 1 reviewed_on"),
+])
+def test_validate_rejects_a_bad_stretch(change, message):
+    doc, service = _service_doc()
+    service["stretches"][0].update(change)
+    with pytest.raises(ValueError, match=message):
+        rt.validate_routes(doc, BOUNDS)
+
+
+def test_validate_rejects_stretches_that_do_not_meet():
+    doc, service = _service_doc()
+    service["stretches"][1]["start"] = dict(service["stretches"][1]["start"], lon=34.9)
+    with pytest.raises(ValueError, match="stretch 2 does not start where stretch 1 ends"):
+        rt.validate_routes(doc, BOUNDS)
+
+
+def test_validate_rejects_a_service_on_a_road():
+    doc, service = _service_doc()
+    road = next(r for r in doc["routes"] if r["kind"] == "road")
+    road["service"] = service
+    with pytest.raises(ValueError, match="service only on a railway"):
+        rt.validate_routes(doc, BOUNDS)

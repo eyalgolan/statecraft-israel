@@ -74,7 +74,7 @@ public class RouteTests
         for (int i = 1; i + 1 < along.Count; i++) Assert.AreEqual(120f * i, along[i], 1e-3f);
     }
 
-    static MapScene BuildMap()
+    internal static MapScene BuildMap()
     {
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         var map = new GameObject("MapScene").AddComponent<MapScene>();
@@ -85,7 +85,7 @@ public class RouteTests
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
 
-    static Transform RoutesRoot(MapScene map) => map.Terrain.transform.Find(RouteLayer.RootName);
+    internal static Transform RoutesRoot(MapScene map) => map.Terrain.transform.Find(RouteLayer.RootName);
 
     static IEnumerable<MeshFilter> Ribbons(Transform root, string name) =>
         root.Find(RouteLayer.RibbonsName).GetComponentsInChildren<MeshFilter>(true).Where(f => f.name == name);
@@ -584,16 +584,17 @@ public class RouteTests
         }
     }
 
-    /// <summary>I1 and M11: the train is a showcase. Editor renders and `?shot` hold it still (the promo frames); `?train`
-    /// or `?units` runs it; normal play has none.</summary>
+    /// <summary>I1 and M11: the promo's train is a showcase. Editor renders and `?shot` hold it still (the promo frames);
+    /// `?train` or `?units` runs it; normal play runs the service train instead, from its sourced date (issue #668,
+    /// ServiceTrainTests).</summary>
     [Test]
-    public void TheTrainIsAShowcaseOnly()
+    public void ThePromosTrainIsAShowcase()
     {
         Assert.AreEqual(RouteLayer.TrainMode.Still, RouteLayer.ModeFor(playing: false, shot: false, requested: false), "editor renders");
         Assert.AreEqual(RouteLayer.TrainMode.Still, RouteLayer.ModeFor(playing: true, shot: true, requested: false), "?shot freezes it");
         Assert.AreEqual(RouteLayer.TrainMode.Still, RouteLayer.ModeFor(playing: true, shot: true, requested: true));
         Assert.AreEqual(RouteLayer.TrainMode.Moving, RouteLayer.ModeFor(playing: true, shot: false, requested: true));
-        Assert.AreEqual(RouteLayer.TrainMode.None, RouteLayer.ModeFor(playing: true, shot: false, requested: false), "normal play: no train");
+        Assert.AreEqual(RouteLayer.TrainMode.Service, RouteLayer.ModeFor(playing: true, shot: false, requested: false), "normal play: the service train (#668)");
         Assert.IsTrue(RouteLayer.TrainRequested("https://x/index.html?train", new string[0], true));
         Assert.IsTrue(RouteLayer.TrainRequested("https://x/index.html?golden&units", new string[0], true));
         Assert.IsFalse(RouteLayer.TrainRequested("https://x/index.html?golden&smoke=5", new string[0], true));
@@ -608,7 +609,7 @@ public class RouteTests
             var data = map.Terrain.terrainData;
             var routes = RoutePaths.Parse(CommittedYaml, Bounds);
             var none = RouteLayer.Build(map.Terrain, map.Frame, routes, RouteLayer.TrainMode.None, RouteLayer.DefaultDate);
-            Assert.IsNull(none.GetComponentInChildren<RouteTrain>(true), "no train in normal play");
+            Assert.IsNull(none.GetComponentInChildren<RouteTrain>(true), "no train");
             var moving = RouteLayer.Build(map.Terrain, map.Frame, routes, RouteLayer.TrainMode.Moving, RouteLayer.DefaultDate);
             Assert.IsNull(moving.GetComponentInChildren<RouteTrain>().StillHead, "the showcase runs");
             Object.DestroyImmediate(none); Object.DestroyImmediate(moving);
