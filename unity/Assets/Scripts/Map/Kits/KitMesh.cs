@@ -210,11 +210,13 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>A soft, lumpy crown: a sphere of radius (rx, ry, rz) around <paramref name="centre"/> whose vertices are
         /// pushed in and out by <paramref name="lumps"/> (seeded), with spherical normals so the light rolls over it like
         /// foliage, not facets. <paramref name="speck"/> is the share of faces tinted <paramref name="speckColour"/> (citrus
-        /// fruit).</summary>
+        /// fruit). With <paramref name="topFrom"/> under 1, the crown's top pales towards <paramref name="topColour"/>: from none
+        /// where the normal's up component is <paramref name="topFrom"/> to all of it at the crown's peak (the sunlit top;
+        /// up, not towards the sun, so a tree's random yaw cannot turn it away; the shader's sun then lights its sunward side).</summary>
         public void Crown(Vector3 centre, Vector3 radius, Color32 colour, ref KitRandom rnd, float lumps = 0.12f, int segments = 9, int rings = 6,
-            float speck = 0f, Color32 speckColour = default, float flatBottom = 0.35f)
+            float speck = 0f, Color32 speckColour = default, float flatBottom = 0.35f, Color32 topColour = default, float topFrom = 1f)
         {
-            colour.a = 0; speckColour.a = 0;
+            colour.a = 0; speckColour.a = 0; topColour.a = 0;
             int first = pos.Count;
             var cols = new Color32[(rings + 1) * (segments + 1)];
             for (int j = 0; j <= rings; j++)
@@ -228,6 +230,7 @@ namespace Statecraft.Game.Map.Kits
                     var p = Vector3.Scale(n, radius) * k;
                     if (p.y < -radius.y * flatBottom) p.y = -radius.y * flatBottom;   // a flatter underside, as clipped trees have
                     var c = speck > 0f && rnd.Chance(speck) ? speckColour : colour;
+                    if (topFrom < 1f) c = Color32.Lerp(c, topColour, Mathf.SmoothStep(0f, 1f, (n.y - topFrom) / (1f - topFrom)));
                     // Light the underside less: foliage self-shadows.
                     float shade = Mathf.Lerp(0.72f, 1.06f, (n.y + 1f) * 0.5f);
                     c = new Color32((byte)Mathf.Min(255, c.r * shade), (byte)Mathf.Min(255, c.g * shade), (byte)Mathf.Min(255, c.b * shade), 0);

@@ -12,6 +12,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   R-MONEY-001; spec §1.2, owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim
   (D-C3). No upkeep yet: per Q-MONEY-2 it waits for Phase 3. No golden moves; the content hash does (the name is in
   `content/model.yaml`), so an older save loads with the "different game content" warning.
+- The olive crowns are darker, with pale tops (visual gap L2, refs #34; owner, 15 October 2026: "Darker, with pale
+  sunlit tops"). At gameplay03 their body is luma 0.29 (main 0.50, promo 03 0.30) and their sunlit top stands 0.18 above
+  it (main 0.14, promo 0.18). Vertex colours only: no tree count, size, shader or grade change.
 - An event option's Treasury cost the Treasury cannot cover is now borrowed at once, like every other payment, with a cause
   naming the event (refs #681, R-MONEY-003). Before, the Treasury went below 0 until the deficit step, which reported the
   shortfall as "to cover the deficit". End-of-turn totals are unchanged and no golden moves. The top bar's Treasury is

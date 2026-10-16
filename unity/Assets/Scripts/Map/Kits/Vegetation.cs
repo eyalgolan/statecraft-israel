@@ -38,11 +38,16 @@ namespace Statecraft.Game.Map.Kits
                     }
                     break;
                 case TreeKind.Olive:
+                {
+                    // Visual gap L2 (issue #34; owner, 15 Oct 2026: "Darker, with pale sunlit tops"): dark olive-brown lobes whose
+                    // tops pale to OliveTop, to promo 03's crowns (KitTests.TheHillOliveCrownsAreDarkWithPaleSunlitTops).
+                    var top = C(OliveTop.r, OliveTop.g, OliveTop.b);
                     km.Shaft(new Vector3(0, -0.6f, 0), new Vector3(0.15f, 1.7f, 0.1f), 0.32f, 0.22f, C(0.36f, 0.31f, 0.25f), 4);
-                    km.Crown(new Vector3(0.5f, 2.9f, 0.2f), new Vector3(2.0f, 1.5f, 1.9f), C(0.55f, 0.53f, 0.39f), ref rnd, 0.16f, 7, 4);
-                    km.Crown(new Vector3(-0.8f, 2.6f, -0.4f), new Vector3(1.6f, 1.3f, 1.5f), C(0.52f, 0.50f, 0.37f), ref rnd, 0.18f, 6, 4);
-                    km.Crown(new Vector3(-0.1f, 3.5f, 0.6f), new Vector3(1.3f, 1.0f, 1.3f), C(0.60f, 0.58f, 0.44f), ref rnd, 0.15f, 6, 3);
+                    km.Crown(new Vector3(0.5f, 2.9f, 0.2f), new Vector3(2.0f, 1.5f, 1.9f), C(0.28f, 0.255f, 0.225f), ref rnd, 0.16f, 7, 4, 0f, default, 0.35f, top, OliveTopFrom);
+                    km.Crown(new Vector3(-0.8f, 2.6f, -0.4f), new Vector3(1.6f, 1.3f, 1.5f), C(0.265f, 0.24f, 0.21f), ref rnd, 0.18f, 6, 4, 0f, default, 0.35f, top, OliveTopFrom);
+                    km.Crown(new Vector3(-0.1f, 3.5f, 0.6f), new Vector3(1.3f, 1.0f, 1.3f), C(0.30f, 0.275f, 0.24f), ref rnd, 0.15f, 6, 3, 0f, default, 0.35f, top, OliveTopFrom);
                     break;
+                }
                 case TreeKind.Palm:
                 {
                     var trunk = C(0.48f, 0.40f, 0.30f);
@@ -82,6 +87,10 @@ namespace Statecraft.Game.Map.Kits
         /// ground between the crowns and the instance count falls. CrownRadiusM, the mesh and every other tree are unchanged;
         /// the keep-outs (lots, routes, footprints, groves, grid marks) and the tree holes under units read the size.</summary>
         public const float HillOliveSize = 1.7f, HillOliveShare = 0.6f;
+        /// <summary>Visual gap L2 (issue #34): the olive crown's sunlit top colour, and the up component of the normal from which
+        /// a lobe starts to pale towards it (all of it at the lobe's peak).</summary>
+        public static readonly Color OliveTop = new Color(0.57f, 0.52f, 0.46f);
+        public const float OliveTopFrom = 0.5f;
         /// <summary>The widest crown (m) the grove index is asked about (its query reach past a grove's disc).</summary>
         const float ScatterKeepM = 1500f;
 
