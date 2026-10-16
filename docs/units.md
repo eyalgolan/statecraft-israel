@@ -350,7 +350,9 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it
-  never shows edge-on as the camera orbits; the pole stays upright at the base's edge.
+  never shows edge-on as the camera orbits; the pole stays upright at the base's edge. The figures and the pole turn about
+  the base's middle with the camera's yaw (`UnitLayer.FaceCamera`, #644), so from every side the trio stands side by side
+  and the pole behind it (`TheTrioReadsSideBySideAndThePoleStandsBehindItAtEveryYaw`).
   - **Use of the flag:** the Flag and Emblem Law, 5709-1949, s. 2(a), forbids using the State flag for commerce, business or
     profession without a permit from the Minister of the Interior (the 1949 text, read on the cited scan; the amended text
     not checked). The game is free and non-commercial; a paid release needs this checked first. Only a side whose 1948

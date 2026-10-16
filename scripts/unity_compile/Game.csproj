@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Common.props" />
+  <PropertyGroup>
+    <AssemblyName>Statecraft.Game</AssemblyName>
+    <DefineConstants>$(UnityDefines);NET_STANDARD;NET_STANDARD_2_0;NET_STANDARD_2_1;NETSTANDARD;NETSTANDARD2_1</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(Editor)/Resources/Scripting/NetStandard/ref/2.1.0/netstandard.dll" Private="false" />
+    <Compile Include="$(Src)/Assets/Scripts/**/*.cs" />
+  </ItemGroup>
+</Project>

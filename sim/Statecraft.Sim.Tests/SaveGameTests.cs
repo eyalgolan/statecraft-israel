@@ -108,7 +108,7 @@ public class SaveGameTests
         var text = Played(Fixture1()).Save.Write();
         var other = Fixture1("90");
         GameSession.Load(other, text, out var warnings);
-        Assert.Equal(new[] { "This save was made with different game content; the replayed game may differ.", "The replayed game differs from the saved one." }, warnings);
+        Assert.Equal(new[] { GameSession.ContentChanged, GameSession.ReplayDiffers }, warnings);   // kinds, not display text (#637)
     }
 
     [Fact]

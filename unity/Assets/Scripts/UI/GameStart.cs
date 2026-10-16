@@ -31,7 +31,13 @@ namespace Statecraft.Game.UI
                     var saved = store.ReadAutosave();
                     if (saved == null) return GameSession.New(c, newSeed(), Mode.Historical);
                     var loaded = GameSession.Load(c, saved, out var warnings);
-                    notes.AddRange(warnings);
+                    // The sim returns warning kinds, not text (#637): each is said in the player's language, the kind goes
+                    // to the log. A kind with no string is only logged, so a new kind never sets a loadable save aside.
+                    foreach (var kind in warnings)
+                    {
+                        UnityEngine.Debug.LogWarning("Autosave loaded with a warning: " + kind);
+                        if (text.Has("save.warning." + kind)) notes.Add(text["save.warning." + kind]);
+                    }
                     resumed = true;
                     return loaded;
                 }

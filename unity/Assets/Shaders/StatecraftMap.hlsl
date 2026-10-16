@@ -122,8 +122,13 @@ static const float ScWaveTilt = 0.6;                             // wave normal 
 // carry about 35% more foam on average at the gameplay zoom. Like "broken", it fades to 0.5 at 75-150 m pixels, so the
 // overview's mean foam is unchanged, and zooming out through that range dims the breakers by about a quarter
 // (independent review of #660; kept rather than re-centred, which would change the overview).
+// #690: the surf zone from 1.8 to 2.4 km. On main d031af36 (with #519's grade) the foam band (shore to the farthest
+// near-white pixel, tools/coast_measure.py at gameplay03) read 20.3 px south of Jaffa (promo 03: 44, band 25-55) and 18.3 px
+// on the northern frontage (promo 03: 12.3, band 6-30); at 2.4 km it reads 30.8 and 25.0. The zone is one width along the
+// whole coast, so 2.4 km is the widest step that keeps the north at least 5 px under 30 (gameplay03 editor renders: 2.4 km
+// reads 29 px south and 24 north, 2.7 km 33 and 28); a wider surf south of Jaffa only is an owner option on #690.
 float _ScSeaFoam;                                                // 1 = on, 0 = off (the "foam" toggle)
-static const float ScSwashM = 180.0, ScSurfM = 1800.0, ScBreakerSpacingM = 450.0, ScBreakerRate = 0.05, ScFoamWhite = 0.95;
+static const float ScSwashM = 180.0, ScSurfM = 2400.0, ScBreakerSpacingM = 450.0, ScBreakerRate = 0.05, ScFoamWhite = 0.95;
 static const float ScLaceCellM = 200.0, ScLaceCover = 0.62, ScLaceEdge = 0.25;
 // Sea round 2 (#388): the far sea's texture, which promo 02 and 03 show at the gameplay and overview zooms where the waves
 // above have faded to a smooth surface (sea detail 0.013 against promo 03's 0.060 at gameplay03, 0.019 against 0.063 at

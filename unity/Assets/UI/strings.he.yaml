@@ -142,6 +142,11 @@ cabinet.opposition: "אופוזיציה: {0} {1}"
 cabinet.majority: "רוב: {0} {1}"
 cabinet.largest: "המפלגה הגדולה: {0}, {1} {2}"
 cabinet.party_seats: "{0} {1}"
+# The headings of the two groups of party chips under the half circle (CabinetPresenter.RenderHouse), so a chip's
+# side is read, not only seen in its swatch's colour (#41 M5). The same nouns as cabinet.coalition and
+# cabinet.opposition, with no adjective to agree. For the native reviewer (#564).
+cabinet.coalition_group: "קואליציה"
+cabinet.opposition_group: "אופוזיציה"
 cabinet.unrecorded: "לא תועד"
 cabinet.members_unit: "חברים"
 cabinet.seats: "מנדטים"
@@ -203,6 +208,10 @@ date.month_12: "דצמבר"
 info.owned: "יישובים: {0}"
 info.localities: "יישובים ב-1948: {0}"
 info.locality_today: "{0} (היום: {1})"
+# info.town_in_water: a town in a lake or sea hex drawn on the land hex next to it (#204), named by its name_he. "מוצגת
+# ... שלה" is feminine, as Hebrew city names are; the drift guard (EveryTownDrawnOffItsOwnHexLiesInWater) says only
+# Tiberias gets this line today. For the native reviewer (#564).
+info.town_in_water: "{0} מוצגת כאן, כי המשושה שלה מכוסה במים."
 map.today: "היום: {0}"
 map.mixed: "יישוב מעורב"
 minimap.overview: "התרחקות מרבית"
@@ -246,5 +255,12 @@ save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0
 save.reason_other: "לא ניתן היה לקרוא את הקובץ או לשחזר את המשחק"
 save.refused.older_rules: "המשחק השמור נוצר בגרסה קודמת של חוקי המשחק ואי אפשר להמשיך אותו. משחק חדש התחיל."
 save.refused.newer_version: "המשחק השמור נוצר בגרסה חדשה יותר של המשחק ואי אפשר לפתוח אותו כאן. משחק חדש התחיל."
+# save.warning.*: a save made with other content is continued, and each warning kind the sim returns
+# (GameSession.ContentChanged, ReplayDiffers) is said here, not in the sim's English (#637). For the native reviewer (#564).
+save.warning.content_changed: "השמירה הזאת מגרסה קודמת של המשחק, לכן ייתכן שהאירועים יתפתחו קצת אחרת."
+save.warning.replay_differs: "המשחק שוחזר, אבל לא בדיוק כפי שנשמר."
 boot.failed: "לא ניתן היה להפעיל את Statecraft: {0}. יש לטעון את הדף מחדש."
+# boot.reason_other fills boot.failed's {0} instead of the exception's English text, which goes to the log (#637).
+# For the native reviewer (#564).
+boot.reason_other: "קבצי המשחק לא נטענו"
 save.write_failed: "לא ניתן היה לשמור את המשחק."

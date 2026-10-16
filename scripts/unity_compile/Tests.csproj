@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Common.props" />
+  <PropertyGroup>
+    <AssemblyName>Statecraft.Tests.EditMode</AssemblyName>
+    <DefineConstants>$(UnityDefines);NET_4_6;NET_UNITY_4_8;UNITY_EDITOR_ONLY_COMPILATION</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(Editor)/Resources/Scripting/UnityReferenceAssemblies/unity-4.8-api/*.dll" Private="false" />
+    <Reference Include="$(Editor)/Resources/Scripting/UnityReferenceAssemblies/unity-4.8-api/Facades/*.dll" Private="false" />
+    <Reference Include="$(Lib)/ScriptAssemblies/UnityEngine.TestRunner.dll;$(Lib)/ScriptAssemblies/UnityEditor.TestRunner.dll" Private="false" />
+    <Reference Include="$(Lib)/PackageCache/com.unity.ext.nunit@*/net40/unity-custom/nunit.framework.dll" Private="false" />
+    <ProjectReference Include="Game.csproj" />
+    <Compile Include="$(Src)/Assets/Tests/EditMode/**/*.cs" />
+  </ItemGroup>
+</Project>

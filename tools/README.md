@@ -74,6 +74,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   shots, against bands set from promo 03 (#388).
 - `machine_lock.py` serialises frame-time measurements against every other Unity job on the machine (all worktrees,
   batch runs and open editors).
+- `unity_postmerge.py` runs the full Unity EditMode suite on each new `main` commit, on the owner's Mac, and reports a
+  failure as one issue while `main` stays broken, with a comment for each newly failing commit (T72; details in
+  "Post-merge Unity run" below).
 - `headed.py` drives a WebGL build in a headed Chrome for Testing over CDP (real GPU, real mouse events, a temporary
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
   under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
@@ -136,3 +139,49 @@ Repeated paths do not satisfy the count. It does not compare image contents: cop
 what each screenshot shows and records the build commit/zip SHA-256 and capture date. This does not capture anything,
 change a release gate or submit a store page. Steam's [official screenshot requirements](https://partner.steamgames.com/doc/store/assets/standard)
 were checked 11 October 2026; re-check before submission. These are not itch.io requirements.
+
+## Post-merge Unity run (T72)
+
+CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two pull requests can each pass and still break Unity once
+both are on `main`. `tools/unity_postmerge.py` closes that gap after the merge, on the owner's Mac, from a launchd job
+(`tools/unity_postmerge.plist.in`, every 15 minutes).
+- launchd starts `unity_postmerge_launch.py` (a copy in the job folder, `~/.cache/statecraft/unity-postmerge`). It
+  fetches `origin/main`, moves the job's own worktree (`~/.cache/statecraft/unity-postmerge/worktree`) to the tip and
+  runs `tools/unity_postmerge.py` from there. So a merged change to the script takes effect on the next run, and no
+  checkout's working tree is used or changed.
+- When the tip is not the commit it last tested, the script cleans the worktree (keeping the Library, capped at 6 GB),
+  runs the whole EditMode suite under `machine_lock.py --shared --wait-unity` and reverts the settings churn. A Unity
+  still running 90 minutes after it started (`--unity-timeout-min`) is stopped by the PID `machine_lock.py` recorded
+  for it (SIGTERM, then SIGKILL), and the run counts as timed out.
+- A pass adds one line to `~/.cache/statecraft/unity-postmerge/results.log`. Anything else, 0 tests included, is
+  reported once per commit with the failing tests and the log tail: as a new issue (label `area: unity`), or, while an
+  issue it opened is still open, as a comment on that issue. It tests the tip only; the report lists the commits since
+  the last tested one.
+- Before the log tail, compile errors, test messages, the broken-run reason (git's stderr, for one) and the commit
+  list go into the public issue, email addresses, the home folder (to `~`), any `/Users/<name>`, Unity's
+  `LicenseClient-<name>` and the user name are redacted. If redacting fails, the report says "Log withheld" and
+  carries none of them.
+- Fetch and `gh` failures, and a launcher that cannot start the script, are written to `launchd.log` in the job folder.
+  When `main`'s tip still has no PASS or FAIL line in `results.log` 6 hours after it was committed (the 4 h lock wait,
+  90 min of Unity and 30 min to spare), the job appends one `STALE` line for that commit to `results.log`, so a
+  stuck job or an expired `gh` login shows there. A job that does not run at all (launchd, `uv` or the fetch broken)
+  writes nothing: a `results.log` whose last line is older than `main`'s tip by more than 6 hours means that.
+
+Install (owner's Mac only, from a checkout of `main` that has these files):
+
+```bash
+job=~/.cache/statecraft/unity-postmerge
+mkdir -p "$job" && cp tools/unity_postmerge_launch.py "$job/"
+sed -e "s#@UV@#$(command -v uv)#g" -e "s#@REPO@#$HOME/israel-game#g" -e "s#@HOME@#$job#g" \
+    -e "s#@PATH@#$(dirname "$(command -v uv)"):$(dirname "$(command -v gh)"):$(dirname "$(command -v dotnet)"):/usr/bin:/bin:/usr/sbin:/sbin#g" \
+    tools/unity_postmerge.plist.in > ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
+plutil -lint ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.unity-postmerge.plist
+```
+
+`@REPO@` is the main checkout: the launcher only fetches there and clones its Library once. A change to the launcher
+itself needs the `cp` again; a change to `unity_postmerge.py` does not.
+
+Uninstall: `launchctl bootout gui/$(id -u)/com.statecraft.unity-postmerge`, then delete the plist. To remove the
+worktree too: `git worktree remove --force ~/.cache/statecraft/unity-postmerge/worktree`. A trial without opening an
+issue or moving the state: `uv run tools/unity_postmerge.py --dry-run --home <scratch folder>`.

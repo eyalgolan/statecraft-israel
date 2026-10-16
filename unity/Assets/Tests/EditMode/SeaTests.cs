@@ -143,7 +143,11 @@ public class SeaTests
 
     /// <summary>Rendered west of Tel Aviv: just offshore (about 120-200 m out, on the swash line: full to 180 m, gone by
     /// 324 m) is brighter than 1.2 km out (inside the turquoise shallows), which is lighter and greener than the open sea
-    /// 24 km out. The shore is found in coast.png itself.</summary>
+    /// 24 km out. The shore is found in coast.png itself. The 1.2 km sample also lies inside the breakers' zone (ScSurfM,
+    /// 1.8 km before #690, 2.4 km since), so its colour carries some crest foam, more since #690 (luma 0.70 to 0.78). It is
+    /// kept: no point past 2.4 km is sure to be in the shallows, whose edge wanders 1.7-3.5 km (ScShallowM 2.6 km, +-35%).
+    /// The foam can only help "lighter" and works against "greener" (white lowers g/b); "foam at the shore" keeps a 0.13
+    /// luma margin (0.92 against 0.78).</summary>
     [UnityTest]
     public IEnumerator ShallowsAreLighterThanTheOpenSeaAndFoamLinesTheShore()
     {
@@ -357,6 +361,69 @@ public class SeaTests
     /// share of 0.56, plan C1). The branch's median at 32.08 N is 0.67, close to the upper bound: another GPU or driver may
     /// read it a little differently.</summary>
     static readonly Vector2 LaceShare = new Vector2(0.3f, 0.7f);
+
+    /// <summary>#690: the surf's foam band reaches promo 03's band south of Jaffa. tools/coast_measure.py reads the band at
+    /// gameplay03 from the shore to the farthest foam pixel: promo 03 44 px south of Jaffa (band 25-55 px); main d031af36 20.3.
+    /// At the breaker test's pose (30 km at 960x540), with the water's clock pinned at four moments, a one-pixel line is walked
+    /// east-west from the shore out to 3 km (87 px, so about 35 m a pixel along the walk) at 31.90, 31.92, 31.94 and 31.96 N:
+    /// the latitudes coast_measure's south window (rows 690-880) covers at gameplay03, 31.89-31.97 N without the top bar's
+    /// inset and 31.90-31.98 N with it. A pixel is foam by the breaker test's rule, and the band ends at the farthest run of
+    /// 2 or more foam pixels (the breaker test's line), so a lone white pixel offshore (a boat) does not count. The mean over
+    /// the 16 walks must lie in <see cref="SurfBandSouthPx"/>, coast_measure's band. This walk reads 1.11-1.16x coast_measure
+    /// (22.5 px against 20.3 on main d031af36, 35.6 against 30.8 at 2.4 km), so the bound is a little looser than the tool's
+    /// band; the tool's own reading is in the PR. One walk's reach jumps by a whole crest spacing (about 10 px) as the outer
+    /// breaker rolls in and fades, so a single line's median over 4 moments rides on 2 of them. The northern band (6-30 px)
+    /// is not asserted on one line: the breakers' noise makes one line's reach vary along the coast (32.30 N read 27.5 px on
+    /// main 585f34ed, where coast_measure's northern window read 19.2), so it is read with coast_measure over the window's
+    /// 100 rows.</summary>
+    [UnityTest]
+    public IEnumerator TheSurfReachesPromo03sBandSouthOfJaffa()
+    {
+        var map = OpenMap();
+        yield return null;
+        VisualToggles.Set("grid", false);
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        var log = new System.Text.StringBuilder();
+        var bands = new System.Collections.Generic.List<int>();
+        foreach (var lat in new[] { 31.90f, 31.92f, 31.94f, 31.96f })
+        {
+            var (col, row) = ShoreTexel(lat);
+            const float texelM = 161529f / 2048f;   // a coast.png texel east-west
+            Vector3 shore = TexelWorld(map, col, row), reach = TexelWorld(map, col - Mathf.RoundToInt(3000f / texelM), row);
+            rig.LookAt = reach; rig.Distance = 30000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+            foreach (var t in new[] { 100f, 105f, 110f, 115f })
+            {
+                MapShaderGlobals.PinWaterTime(t);
+                var px = new Vector2[2];
+                var r = RenderSample.Render(cam, 960, 540, new[] { shore, reach }, px);
+                int n = Mathf.CeilToInt(Mathf.Max(Mathf.Abs(px[1].x - px[0].x), Mathf.Abs(px[1].y - px[0].y)));
+                int band = 0, run = 0;
+                var trace = new System.Text.StringBuilder();
+                for (int k = 0; k <= n + 1; k++)
+                {
+                    bool foam = false;
+                    if (k <= n)
+                    {
+                        var p = Vector2.Lerp(px[0], px[1], k / (float)n);
+                        var c = r.At(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y));
+                        foam = Luma(c) >= 0.72f && Mathf.Max(c.r, c.g, c.b) - Mathf.Min(c.r, c.g, c.b) <= 30f / 255f;
+                        trace.Append(foam ? '#' : '.');
+                    }
+                    if (foam) run++;
+                    else { if (run >= 2) band = k; run = 0; }   // the band ends where the farthest line of 2+ px ends
+                }
+                bands.Add(band);
+                log.AppendLine($"{lat:0.00} N t={t}: foam band {band} px of {n + 1}  {trace}");
+            }
+        }
+        float mean = (float)bands.Average();
+        TestContext.WriteLine(log.ToString());
+        TestContext.WriteLine($"mean foam band over {bands.Count} walks: {mean:0.0} px");
+        Assert.That(mean, Is.InRange(SurfBandSouthPx.x, SurfBandSouthPx.y), "south of Jaffa: the surf's foam band in promo 03's band");
+    }
+
+    /// <summary>TheSurfReachesPromo03sBandSouthOfJaffa's bounds, coast_measure's southern band for gameplay03 (#690).</summary>
+    static readonly Vector2 SurfBandSouthPx = new Vector2(25f, 55f);
 
     /// <summary>promo-sea review I2 / M5 / N1: the breakers are box-filtered over the pixel, so they never alias. Around
     /// the surf zone west of Tel Aviv, at the gameplay footprint (30 km at 960x540: about 45 m a pixel, the same as

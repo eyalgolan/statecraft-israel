@@ -29,6 +29,33 @@ public class CollectionImportTests
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Found by #668's WebGL build: every Build.* ran BuildBundles, which copied the bundles into
+    /// StreamingAssets/collection without their .manifest files and then asked Unity for each one's CRC there, which Unity
+    /// reads from the .manifest: "no CRC for the bundle", and no player build since #680. The real path, for the editor's
+    /// build target: the shipped folder holds the bundles and a checks file whose every line matches its bundle.</summary>
+    [Test]
+    public void BuildBundlesWritesTheChecksBesideTheShippedBundles()
+    {
+        var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
+        Assert.IsNotNull(t, "CollectionImport");
+        try { t!.GetMethod("BuildBundles")!.Invoke(null, new object[] { EditorUserBuildSettings.activeBuildTarget }); }
+        catch (System.Reflection.TargetInvocationException e) when (e.InnerException != null) { throw e.InnerException; }
+        var dest = System.IO.Path.Combine(Application.streamingAssetsPath, CollectionCatalog.StreamingFolder);
+        var checks = CollectionCatalog.ParseChecks(System.IO.File.ReadAllText(System.IO.Path.Combine(dest, CollectionCatalog.ChecksFile)));
+        Assert.IsNotNull(checks, "a well-formed checks file");
+        CollectionAssert.AreEquivalent(CollectionCatalog.Bundles.Select(b => b.Bundle), checks!.Keys);
+        var cache = (string)t.GetMethod("BundleCache")!.Invoke(null, new object[] { EditorUserBuildSettings.activeBuildTarget })!;
+        foreach (var (bundle, check) in checks)
+        {
+            var file = System.IO.Path.Combine(dest, bundle);
+            Assert.IsTrue(BuildPipeline.GetCRCForAssetBundle(System.IO.Path.Combine(cache, bundle), out var crc), bundle);
+            Assert.AreEqual(crc, check.Crc, $"{bundle}: Unity's CRC, from the bundle build's own manifest");
+            Assert.AreEqual(new System.IO.FileInfo(file).Length, check.Bytes, bundle);
+            Assert.AreEqual(CollectionCatalog.Sha256(file), check.Sha256, bundle);
+            Assert.IsFalse(System.IO.File.Exists(file + ".manifest"), "the build ships no .manifest files");
+        }
+    }
+
     [Test]
     public void TheCatalogHasThe31ModelsOfIssue664InThreeBundles()
     {

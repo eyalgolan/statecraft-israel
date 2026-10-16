@@ -234,8 +234,11 @@ namespace Statecraft.Game.Map.Units
             (x, z) => map.Terrain.SampleHeight(new Vector3(x, 0, z)) + map.Terrain.transform.position.y;
 
         /// <summary>The height a figure standing at (x, z) on a base of <paramref name="radius"/> stands at: on the draped top
-        /// at its own point (round 4 of #559; an uphill boot sets into the base, which hides it).</summary>
-        public static float FigureY(MapScene map, float radius, float x, float z) => HeightAt(map)(x, z) + LipShare * radius;
+        /// at its own point (round 4 of #559; an uphill boot sets into the base, which hides it).
+        /// UnitLayer.FaceCamera calls it as the camera turns (issue #644), so it samples the ground itself: HeightAt builds a
+        /// new closure on every call.</summary>
+        public static float FigureY(MapScene map, float radius, float x, float z) =>
+            map.Terrain.SampleHeight(new Vector3(x, 0, z)) + map.Terrain.transform.position.y + LipShare * radius;
 
         /// <summary>Tests read the built meshes back: true keeps their CPU copy (players free it after the upload).</summary>
         internal static bool KeepMeshesReadable;

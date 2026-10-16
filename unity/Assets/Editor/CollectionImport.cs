@@ -193,7 +193,11 @@ namespace Statecraft.Game.EditorTools
                 bytes += size;
                 Debug.Log($"BUNDLE {b} {size} bytes");
             }
-            WriteChecks(dest, manifest.GetAllAssetBundles());
+            // Unity reads a bundle's CRC from its .manifest, which stays in the cache (the player ships the bundles only), so
+            // the checks are written there, over the same bytes, and copied beside the shipped bundles (found by #668: from
+            // #680 every player build failed with "no CRC for the bundle").
+            WriteChecks(cache, manifest.GetAllAssetBundles());
+            File.Copy(Path.Combine(cache, CollectionCatalog.ChecksFile), Path.Combine(dest, CollectionCatalog.ChecksFile));
             Debug.Log($"BUNDLES {target}: {manifest.GetAllAssetBundles().Length} bundles, {bytes} bytes -> {dest}");
             return Path.Combine(cache, Path.GetFileName(cache) + ".manifest");
         }

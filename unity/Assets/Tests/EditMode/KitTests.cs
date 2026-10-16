@@ -1151,6 +1151,55 @@ public class KitTests
         Assert.That(crowns.cover, Is.InRange(PromoCrownCover.x, PromoCrownCover.y), "hill olive crown cover against promo 03");
     }
 
+    /// <summary>Visual gap L2 (issue #34; owner, 15 Oct 2026: crown tone "Darker, with pale sunlit tops"): promo 03's hill
+    /// olives are dark crowns with pale, sunlit tops. At gameplay03 (tilt-shift and top inset off, shadows on), the crown
+    /// pixels are those of the plan's windows OW1 and OW2 that the trees change by more than 3/255 in luma with shadows off
+    /// (TheHillOlivesCoverPromo03sShareOfTheHills: the crowns, not their cast shadows), less a pixel at every edge (a pixel
+    /// counts only if its four neighbours do), so the ground blended into a crown's rim is left out. Their median luma (the
+    /// body) and their 90th percentile less the median (the sunlit top against the body) must fall in promo 03's bands.</summary>
+    /// <remarks>Promo 03's numbers are from the 53 hand-marked crowns of TheHillOlivesMatchPromo03sCrownSize, each circle's
+    /// inner 0.8 of the radius (again leaving out the rim), 22,849 pixels, measured 16 Oct 2026: body (median luma) 0.302,
+    /// 90th percentile 0.484, top against body 0.181; hue median 28 degrees, saturation 0.32; lit from the upper left (the
+    /// crowns' upper halves 0.351 against lower 0.279, left 0.354 against right 0.277). Each band is the promo's value ±15%.
+    /// </remarks>
+    public static readonly Vector2 PromoCrownBodyLuma = new Vector2(0.257f, 0.347f), PromoCrownTopContrast = new Vector2(0.154f, 0.208f);
+
+    [UnityTest]
+    public IEnumerator TheHillOliveCrownsAreDarkWithPaleSunlitTops()
+    {
+        var map = OpenMap();
+        yield return null;
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+        RenderSample.TiltShift(false);
+        var windows = new[] { new RectInt(1530, 290, 200, 100), new RectInt(1540, 520, 200, 150) };
+        VisualToggles.Set("shadows", false);
+        VisualToggles.Set("trees", true); var on = RenderSample.Render(cam, 1920, 1080);
+        VisualToggles.Set("trees", false); var off = RenderSample.Render(cam, 1920, 1080);
+        VisualToggles.Set("trees", true); VisualToggles.Set("shadows", true);
+        var look = RenderSample.Render(cam, 1920, 1080);
+        bool Crown(int x, int row) => Mathf.Abs(RenderSample.Luma(on.At(x, row)) - RenderSample.Luma(off.At(x, row))) > 3f / 255f;
+        var luma = new List<float>(); var hue = new List<float>(); var sat = new List<float>();
+        foreach (var w in windows)
+            for (int y = w.yMin; y < w.yMax; y++)
+                for (int x = w.xMin; x < w.xMax; x++)
+                {
+                    int row = 1079 - y;   // RenderSample's row 0 is the bottom
+                    if (!(Crown(x, row) && Crown(x - 1, row) && Crown(x + 1, row) && Crown(x, row - 1) && Crown(x, row + 1))) continue;
+                    var c = look.At(x, row);
+                    luma.Add(RenderSample.Luma(c));
+                    Color.RGBToHSV(c, out float h, out float s, out _); hue.Add(h * 360f); sat.Add(s);
+                }
+        static float Pct(List<float> l, float p) { l.Sort(); return l.Count == 0 ? float.NaN : l[Mathf.Clamp(Mathf.RoundToInt(p * (l.Count - 1)), 0, l.Count - 1)]; }
+        float body = Pct(luma, 0.5f), top = Pct(luma, 0.9f), contrast = top - body;
+        TestContext.WriteLine($"gameplay03 OW1+OW2 olive crowns: {luma.Count} pixels; body (median luma) {body:0.000} (promo {PromoCrownBodyLuma.x:0.000}-{PromoCrownBodyLuma.y:0.000}), " +
+                              $"90th percentile {top:0.000}, top against body {contrast:0.000} (promo {PromoCrownTopContrast.x:0.000}-{PromoCrownTopContrast.y:0.000}); " +
+                              $"hue median {Pct(hue, 0.5f):0.0} (IQR {Pct(hue, 0.25f):0.0}-{Pct(hue, 0.75f):0.0}; promo 28.2), saturation median {Pct(sat, 0.5f):0.000} (promo 0.322)");
+        Assert.Greater(luma.Count, 2000, "enough crown pixels in the windows");
+        Assert.That(body, Is.InRange(PromoCrownBodyLuma.x, PromoCrownBodyLuma.y), "olive crown body luma against promo 03");
+        Assert.That(contrast, Is.InRange(PromoCrownTopContrast.x, PromoCrownTopContrast.y), "olive crown sunlit top against its body, against promo 03");
+    }
+
     /// <summary>The WebGL checkpoint drew every palm black: a frond's tip quad collapsed to a point, its edge-based normal was
     /// zero and normalize(0) is NaN on WebGL 2 (the tilt-shift then smeared it into black blocks). No part may have one.</summary>
     [Test]

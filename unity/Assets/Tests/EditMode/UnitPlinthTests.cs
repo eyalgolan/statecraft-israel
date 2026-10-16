@@ -804,7 +804,8 @@ public class UnitPlinthTests
 
     /// <summary>Owner ruling (2026-10-15): "billboard the flag". At gameplay03 and at a 30 km look at Harel at camera yaw 0,
     /// 90 and 180, each flag turns about its pole as the camera renders: the cloth's normal points at the camera, seen from
-    /// above, within 2 degrees; the pole stays upright (the flag's up is the world's); its foot does not move.</summary>
+    /// above, within 2 degrees; the pole stays upright (the flag's up is the world's); its foot stays on the base's edge (an
+    /// in-play token's pole goes round the base with the camera's yaw, so it stands behind the figures: issue #644).</summary>
     [Test]
     public void TheFlagTurnsAboutItsPoleToFaceTheCamera()
     {
@@ -818,7 +819,8 @@ public class UnitPlinthTests
             layer.Show(C, StateAt(Dates[0]));
             var flags = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Cast<Transform>().Select(t => t.Find(UnitPlinth.FlagName)).Where(f => f != null).ToList();
             flags.Add(UnitShowcase.Spawn(map, still: true).transform.Find(UnitPlinth.FlagName));
-            var feet = flags.Select(f => f.position).ToList();
+            float Edge(Transform f) { var c = f.parent.Find(UnitPlinth.PlinthName).position; return new Vector2(f.position.x - c.x, f.position.z - c.z).magnitude; }
+            var edges = flags.Select(Edge).ToList();
             var (hlon, hlat) = map.Frame.ToLonLat(flags[0].position);
             int n = 0;
             foreach (var yaw in new[] { 0f, 90f, 180f })
@@ -835,7 +837,7 @@ public class UnitPlinthTests
                         Assert.That(Mathf.Min(angle, 180f - angle), Is.LessThanOrEqualTo(2f), $"yaw {yaw} {f.parent.name}: the cloth faces the camera");
                         Assert.Less(angle, 90f, $"yaw {yaw} {f.parent.name}: its front, not its back, so the cloth flies to the camera's right");
                         Assert.Greater(Vector3.Dot(f.up, Vector3.up), 0.9999f, $"yaw {yaw} {f.parent.name}: the pole stays upright");
-                        Assert.Less((f.position - feet[i]).magnitude, 0.01f, $"{f.parent.name}: the pole's foot stays put");
+                        Assert.AreEqual(edges[i], Edge(f), 0.5f, $"{f.parent.name}: the pole's foot stays on the base's edge");
                         n++;
                     }
                 }

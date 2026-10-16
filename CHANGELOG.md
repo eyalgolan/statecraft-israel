@@ -7,10 +7,18 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Fixed
+- Player builds work again (refs #680). Since #680 every `Build.*` failed with "no CRC for the bundle", because Unity
+  reads a bundle's CRC from its `.manifest` and the collection's bundles were copied into StreamingAssets without them.
+  The checks file is now written in the bundle cache and copied beside the shipped bundles.
+
 ### Changed
 - The top bar's Money figure is labelled net: "Money (net)", "כסף (נטו)" in Hebrew, and its tooltip says the same (refs
   #681; owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"). The value is unchanged,
   cash minus debt; the Budget screen still shows money and debt separately.
+- The first-new-yishuv card's source comment records the #706 gazetteer findings for places under 1,000 near
+  Mefalsim (seven depopulated villages in the sweeps, none naming Mefalsim; the Bedouin-locality caveat), instead of
+  the stale not-checked note (#654). Comment only; the card's text is unchanged.
 - Sourcing audit of the MVP-window office rows (#457): the First Government row no longer cites Wikipedia (the
   Knesset's position records, the 14 May 1948 minutes, Ben-Gurion's diary page, the plenum records and the
   Knesset's history pages cover every value); the Provisional Government keeps its two named Wikipedia lines for
@@ -20,6 +28,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   R-MONEY-001; spec §1.2, owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim
   (D-C3). No upkeep yet: per Q-MONEY-2 it waits for Phase 3. No golden moves; the content hash does (the name is in
   `content/model.yaml`), so an older save loads with the "different game content" warning.
+- The olive crowns are darker, with pale tops (visual gap L2, refs #34; owner, 15 October 2026: "Darker, with pale
+  sunlit tops"). At gameplay03 their body is luma 0.29 (main 0.50, promo 03 0.30) and their sunlit top stands 0.18 above
+  it (main 0.14, promo 0.18). Vertex colours only: no tree count, size, shader or grade change.
+- The surf reaches further out to sea (refs #690, #388): the breakers' zone widens from 1.8 to 2.4 km, so south of Jaffa
+  the white foam band reads 30.8 px at the gameplay zoom, inside promo 03's 25-55 px band (20.3 before; the promo reads
+  44), and the northern frontage reads 25.0 px (18.3 before), inside its 6-30 px band. Presentation only.
 - An event option's Treasury cost the Treasury cannot cover is now borrowed at once, like every other payment, with a cause
   naming the event (refs #681, R-MONEY-003). Before, the Treasury went below 0 until the deficit step, which reported the
   shortfall as "to cover the deficit". End-of-turn totals are unchanged and no golden moves. The top bar's Treasury is
@@ -27,6 +41,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The unit figures' shirts are darker (0.9 of their paint), so the figures read darker than their earth base as demo2
   T29's do, 0.5-0.9 of its luma at the Harel and plain 30 km looks and at gameplay03 (refs #645, #197), pinned by
   `TheFiguresReadDarkerThanTheirBaseAsT29`. #559's shirt sample landed on the chest brace; the new test reads the shirt.
+- Map: an army token's figures and its flag's pole turn about the base's middle with the camera's yaw (refs #644, from
+  #559), so from every side the trio stands side by side facing the camera with the pole behind it; at yaw 90 or 270 the
+  figures stood in a column, and from about yaw 180 the pole stood in front of them. Presentation only.
 - `bernadotte_assassination` says "about 250" Lehi members were arrested, not "about 200" (refs #516; owner, 15 October
   2026): Ben-Gurion told the Provisional State Council 246 (184 + 62), and S/1315 gives 266 by 23 September (184 + 82).
   Card text only: no golden moves, the content hash does, so an older save loads with the "different game content"
@@ -51,6 +68,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Q-CUT-8). Every golden moves; the cutover re-pins them once.
 
 ### Added
+- The info panel of Tiberias' hex adds "Tiberias is shown here because its own hex is water." (Hebrew too, with the
+  town's Hebrew name), so the hillside hex's
+  70 m does not read as the town's (refs #204). It is worked out in Unity from the town's own lon/lat and the hex grid
+  (`InfoPanelPresenter.TownHex`), with no new `content/map/` field; an ordinary hex shows no such line.
 - Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins
@@ -681,6 +702,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   It decodes to the same bytes, so the terrain is unchanged (#44).
 
 ### Fixed
+- A save that loads with warnings (made with other game content; then a replay that differs) says each warning in the
+  player's language (refs #637): `GameSession.Load` returns the kind (`content_changed`, `replay_differs`) instead of
+  English text, the UI shows `save.warning.<kind>` from both strings files, and the kind goes to the log. A boot failure
+  no longer shows the exception's English text either: the loading line gives the short reason `boot.reason_other`, and
+  the full reason stays in the log. The Hebrew waits for the native reviewer (#564). No golden moves.
+- In the Hebrew UI the top bar's date plate shows the date in Hebrew, "15 במאי 1948", through the same `date.*` strings
+  as the map's front-line date (refs #687). Before, it read "15 May 1948". English is unchanged.
 - Map labels (refs #599): close over Jaffa's harbour the "Tel Aviv" and "Jaffa" pills no longer read swapped. Every pill
   is now nearer its own settlement's marker than any other visible marker (by more than 4 px), in every placing pass,
   since two sprawling kits' screen rectangles overlap and a spot against one's edge could sit by the other town. A city
@@ -731,6 +759,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Keyboard focus that lands on something scrolled out of view, such as a Cabinet card below the first row or a
   candidate far down the list, now scrolls its list to it (accessibility audit H1, refs #41). Focus that follows a mouse
   press leaves the list where it is. Presentation only: no golden moves.
+- The Cabinet's party chips say which side each party is on, not only by the swatch's blue or grey: they sit in two
+  groups headed "Coalition" and "Opposition", קואליציה and אופוזיציה in Hebrew (accessibility audit M5, refs #41). The
+  Hebrew waits for the native reviewer (#564). The chips also follow a coalition change in the middle of a government
+  (`coalition_changes`, such as 25 May 1953), where before they kept their old colours. Presentation only: no golden
+  moves.
 - Wheel zoom in the web build: one small wheel delta, such as a touchpad's half pixel, made every later frame zoom 27%,
   since Unity's player takes the smallest delta it has seen as one notch. The camera now counts the browser's wheel
   events itself (`WheelInput.jslib`): a touchpad's small pixel deltas zoom by how far the fingers move (100 px to a

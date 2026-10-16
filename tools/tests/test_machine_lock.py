@@ -117,3 +117,22 @@ def test_a_waiting_exclusive_request_runs_before_a_later_shared_one(tmp_path):
             p.terminate()
             p.wait(10)
             p.stdout.close()
+
+
+def test_the_holder_record_names_this_lock_and_the_command_it_started(tmp_path):
+    """T72: unity_postmerge.py stops a hung Unity by the PID this record gives, never by name."""
+    record = tmp_path / "holder"
+    env = {**os.environ, "STATECRAFT_MACHINE_LOCK": str(tmp_path / "machine.lock"), ml.HOLDER_ENV: str(record)}
+    p = subprocess.run([sys.executable, ml.__file__, "--shared", "--", sys.executable, "-c",
+                        "import os; print(os.getpid(), os.getppid())"], env=env, capture_output=True, text=True)
+    assert p.returncode == 0
+    child, parent = p.stdout.split()[-2:]
+    assert record.read_text().split() == [parent, child]
+
+
+def test_no_holder_record_is_written_unless_asked(tmp_path):
+    env = {k: v for k, v in os.environ.items() if k != ml.HOLDER_ENV}
+    env["STATECRAFT_MACHINE_LOCK"] = str(tmp_path / "machine.lock")
+    assert subprocess.run([sys.executable, ml.__file__, "--shared", "--", sys.executable, "-c", "pass"],
+                          env=env).returncode == 0
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["machine.lock", "machine.lock.gate"]
