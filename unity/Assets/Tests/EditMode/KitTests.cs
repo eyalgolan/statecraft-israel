@@ -1038,19 +1038,24 @@ public class KitTests
     /// <remarks>Measured 2026-10-14 over 11,285 km² of hill country: main 3,480 olives (30.8 per 100 km²), no scrub; with the
     /// scatter 15,165 (134.4), 4,234 of them scrub, Clark-Evans 1.08. Visual gap L1 (15 Oct 2026) makes the hill olives
     /// fewer and larger (Vegetation.HillOliveSize, HillOliveShare), so the floor is now on the crowns' area, not their count:
-    /// main 7cba8a5d measured 15,123 olives (134.0 per 100 km²) under 0.291 of the hill country.</remarks>
-    public const float HillCrownShare = 0.29f;
+    /// main 8e45d8dc measured 15,167 olives (134.4 per 100 km²) under 0.292 of the hill country, and L1 10,405 (92.2) under
+    /// 0.454 (16 Oct 2026). The floor is about 90% of L1's share, the headroom the old count floor had (120 against 134),
+    /// so it fails on main's smaller crowns and on a loss of a tenth of L1's crown area.</remarks>
+    public const float HillCrownShare = 0.41f;
     public static readonly Vector2 ScrubSpread = new Vector2(0.8f, 1.3f);
 
-    /// <summary>Visual gap L1 (issue #34): promo 03's hill olives are large rounded crowns. At gameplay03 (tilt-shift and top
-    /// inset off), every full-size hill olive (an olive off the coastal plain that is not squat scrub) whose trunk falls in
-    /// a window of the east hills has its crown's vertices projected; its on-screen diameter is their horizontal spread, as
-    /// a share of the frame's width. The median in each window must fall in promo 03's band for that frame height.</summary>
+    /// <summary>Visual gap L1 (issue #34): promo 03's hill olives are large rounded crowns. At gameplay03 (top inset off; the
+    /// crowns are projected geometry, not a render), every full-size hill olive (an olive on the hills or mountains that is
+    /// not squat scrub) whose trunk falls in a window of the east hills has its crown's vertices projected; its on-screen
+    /// diameter is their horizontal spread, as a share of the frame's width. The median in each window must fall in promo
+    /// 03's band for that frame height.</summary>
     /// <remarks>The windows are the plan's OW1 and OW2 frame heights (top-down y 0.269-0.361 and 0.481-0.620) across the east
     /// hills (x 0.66-0.96). The bands come from 53 crowns hand-marked as circles on promo 03 (2752 px wide), 15 Oct 2026:
     /// PW2 (x 1880-2280, y 420-620, top-down frame y 0.27-0.40) 33 crowns, median 0.97% of the width (IQR 0.92-1.02); PW3
     /// (x 2110-2310, y 740-940, y 0.48-0.61) 20 crowns, median 1.21% (IQR 0.97-1.33). Each band is the median ±15%, cut to
-    /// the plan's provisional band (1.0-1.2% and 1.2-1.45%), which the marks may narrow but not move.</remarks>
+    /// the plan's provisional band (1.0-1.2% and 1.2-1.45%), which the marks may narrow but not move. So the upper band
+    /// (1.00-1.12%) sits above PW2's own median (0.97%) by design: the ±15% band (0.82-1.12%) is cut at the provisional
+    /// 1.0% floor, and a crown at the promo's exact median would fail it.</remarks>
     public static readonly Vector2 PromoCrownUpper = new Vector2(0.0100f, 0.0112f), PromoCrownMiddle = new Vector2(0.0120f, 0.0139f);
 
     static readonly Rect EastHillsUpper = Rect.MinMaxRect(0.66f, 1f - 0.361f, 0.96f, 1f - 0.269f);
@@ -1060,7 +1065,7 @@ public class KitTests
     {
         if (k != TreeKind.Olive || ((Vector3)m.GetColumn(1)).magnitude < 0.8f * ((Vector3)m.GetColumn(0)).magnitude) return false;
         var b = g.Biome(m.m03, m.m23);
-        return b != "coastal_plain" && b != "lowland";
+        return b == "hills" || b == "mountains";
     }
 
     [UnityTest]
