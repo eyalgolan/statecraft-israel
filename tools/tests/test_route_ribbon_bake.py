@@ -142,7 +142,7 @@ def test_the_check_is_fnv1a():
 
 # The fingerprint of the ribbons' C# code (code_fingerprint), and the RouteRibbonFile.Version it was pinned at. Re-pin both
 # together, only after re-baking (RouteRibbonBake.Bake) with Version bumped.
-PINNED_VERSION, PINNED_CODE = 2, "cb44923392a002f856fed420582d22bd603383825f8284a03b2869659042bf71"
+PINNED_VERSION, PINNED_CODE = 3, "a60ad9441761c59d2dab361e68be89fb710cc59a5edc31e0c051a6ff14367328"
 
 
 def code_fingerprint() -> str:

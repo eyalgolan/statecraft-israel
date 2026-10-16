@@ -101,7 +101,7 @@ public class RouteTests
         using var sha = System.Security.Cryptography.SHA256.Create();
         return string.Concat(sha.ComputeHash(bytes.ToArray()).Select(b => b.ToString("x2")));
     }
-    const string RailMeshHash = "5363889121beb4aae19525a062cb108ff35394ba04e397b42f75a03a8e82439d";   // #252: full width where only one side leaves the tolerance
+    const string RailMeshHash = "e6b1710041c05f9ce18d1591e5173c003b933308e9cb84fa807e23b015f16fbd";   // #252: full width where only one side leaves the tolerance; #319: cut at the Old City's walls
 
     [Test]
     public void TheMapBuildsRibbonsOnTheGroundAndTheTogglesHideThem()
@@ -126,7 +126,7 @@ public class RouteTests
             // clears the ground under it by the clearance, and lies on the terrain.
             var routes = RoutePaths.Parse(CommittedYaml, Bounds);
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
-            var check = RouteLayer.Ribbon(routes.Where(r => r.Kind == RoutePaths.Rail).Select(r => (RouteLayer.World(map.Frame, r), RouteLayer.RailWidthM)), data, origin, "check", railGrade: true);
+            var check = RouteLayer.Ribbon(routes.Where(r => r.Kind == RoutePaths.Rail).Select(r => (RouteLayer.Drawn(map.Frame, r), RouteLayer.RailWidthM)), data, origin, "check", railGrade: true);
             try
             {
                 Assert.AreEqual(railVerts, check.vertexCount, "the same data gives the same vertices");

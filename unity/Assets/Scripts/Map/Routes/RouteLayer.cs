@@ -224,18 +224,19 @@ namespace Statecraft.Game.Map.Routes
             return w;
         }
 
-        /// <summary>A route's line as the map draws its ribbon: <see cref="World"/>, with a road's ends
+        /// <summary>A route's line as the map draws its ribbon: <see cref="World"/>, with a road's or a railway's ends
         /// cut at the walls of Jerusalem's symbolic Old City (#319). The walled square (SettlementKits.OldCityWalls) is 4 km
         /// across, about 4 times the real Old City, so the real 1948 roads that start outside the real walls, by New Gate and
-        /// Jaffa Gate, fall inside it. Cut there, each road ends on the wall line, where the walls leave it a gate, and the
-        /// traced data keeps the real lines. Only a road's ends are cut: a road that ran through the square would keep its
-        /// middle, and RouteTests.TheRoadsStopAtTheOldCityWalls fails on it. The railway is not cut (its terminus is the
-        /// station). The corridors (<see cref="Corridors"/>) keep the traced lines, so the kits and the units stand where
+        /// Jaffa Gate, and the Jaffa-Jerusalem railway's station, also outside them, fall inside it. Cut there, each line
+        /// ends on the wall line, where the walls leave it a gap (the railway on the owner's ruling, "Cut it at the walls"),
+        /// and the traced data keeps the real lines. Only a line's ends are cut: one that ran through the square would keep
+        /// its middle, and RouteTests.TheRoadsAndTheRailwayStopAtTheOldCityWalls fails on it. Tracks are not cut (none comes
+        /// near). The corridors (<see cref="Corridors"/>) keep the traced lines, so the kits and the units stand where
         /// they did: inside the walls the roads' clear ways read as the streets from the gates.</summary>
         public static List<Vector2> Drawn(GeoFrame frame, RoutePath route)
         {
             var line = World(frame, route);
-            if (route.Kind != RoutePaths.Road) return line;
+            if (route.Kind == RoutePaths.Track) return line;
             var (centre, half) = Kits.SettlementKits.OldCityWalls(frame);
             return TrimEndsInside(line, centre, half);
         }

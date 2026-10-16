@@ -20,7 +20,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   Government keeps its named he.wiki lines. No values changed.
 - The 1948 roads stop at the walls of Jerusalem's symbolic Old City instead of running inside them (refs #319). The map
   cuts the Jaffa, Hebron, Nablus and Jericho roads at the 4 km square's wall line, where the walls leave each a gate;
-  the traced lines, which meet just outside the real walls by New Gate, are unchanged. The route ribbons are re-baked.
+  the traced lines, which meet just outside the real walls by New Gate, are unchanged. The Jaffa–Jerusalem railway now
+  ends at the walls too (owner: "Cut it at the walls"); its station stands outside the real walls. The route ribbons are
+  re-baked.
   Map only: no golden and no content hash moves.
 - The Treasury is now shown as Money, כסף in Hebrew, on the top bar, the Budget screen and in the causes (refs #382,
   R-MONEY-001; spec §1.2, owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim
