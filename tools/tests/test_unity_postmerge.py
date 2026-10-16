@@ -492,3 +492,21 @@ def test_an_expired_gh_login_makes_the_job_log_stale_instead_of_staying_silent(t
     assert f" {SHA} STALE " in log and "6 h" in log
     assert up.main(["--repo", str(tmp_path), "--home", str(home)]) == 1
     assert (home / "results.log").read_text().count("STALE") == 1          # once per tip, not every 15 minutes
+
+
+def test_a_broken_run_reason_with_git_stderr_carries_no_identifier(someone):
+    r = up.Results(broken=f"the worktree could not be prepared: fatal: cannot lock ref in {USERS}/someone/.cache/"
+                          f"statecraft/unity-postmerge/worktree (committer someone{AT}example.com)")
+    body = up.issue_body(SHA, PREV, r, unity_exit=-1, log_text="", commits=f"abc1234 Fix by someone{AT}example.com")
+    assert "someone" not in body.lower() and "@" not in body
+    assert "Broken run" in body and "could not be prepared" in body and "~/.cache/statecraft" in body
+
+
+def test_a_redaction_that_raises_withholds_the_broken_run_reason_too(someone, monkeypatch):
+    def boom(text):
+        raise ValueError("redaction broke")
+    monkeypatch.setattr(up, "redact", boom)
+    r = up.Results(broken=f"the worktree could not be prepared: {USERS}/someone/x someone{AT}example.com")
+    body = up.issue_body(SHA, PREV, r, unity_exit=-1, log_text="", commits="")
+    assert "someone" not in body.lower() and "@" not in body
+    assert "Broken run" in body and "log withheld" in body.lower()

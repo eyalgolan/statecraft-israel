@@ -157,9 +157,10 @@ both are on `main`. `tools/unity_postmerge.py` closes that gap after the merge, 
   reported once per commit with the failing tests and the log tail: as a new issue (label `area: unity`), or, while an
   issue it opened is still open, as a comment on that issue. It tests the tip only; the report lists the commits since
   the last tested one.
-- Before the log tail, compile errors and test messages go into the public issue, email addresses, the home folder
-  (to `~`), any `/Users/<name>`, Unity's `LicenseClient-<name>` and the user name are redacted. If redacting fails,
-  the report says "Log withheld" and carries none of them.
+- Before the log tail, compile errors, test messages, the broken-run reason (git's stderr, for one) and the commit
+  list go into the public issue, email addresses, the home folder (to `~`), any `/Users/<name>`, Unity's
+  `LicenseClient-<name>` and the user name are redacted. If redacting fails, the report says "Log withheld" and
+  carries none of them.
 - Fetch and `gh` failures, and a launcher that cannot start the script, are written to `launchd.log` in the job folder.
   When `main`'s tip still has no PASS or FAIL line in `results.log` 6 hours after it was committed (the 4 h lock wait,
   90 min of Unity and 30 min to spare), the job appends one `STALE` line for that commit to `results.log`, so a

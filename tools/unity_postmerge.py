@@ -24,8 +24,9 @@ CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two PRs can each be gr
    commit, the failing test names and the log tail. When an issue this job opened is still open (main is still
    broken), the report is a comment on it; otherwise it is a new issue, labelled `area: unity` when the label exists.
    An open issue that already names the commit, or the job's own record of every commit it reported, means no report.
-   The log tail, compile errors and test messages are redacted first (redact(): email addresses, the home folder, the
-   user name); if redacting raises, the report says "Log withheld" and carries none of them.
+   The log tail, compile errors, test messages, broken-run reason and commit list are redacted first (redact():
+   email addresses, the home folder, the user name); if redacting raises, the report says "Log withheld" and
+   carries none of them.
 5. deletes unity/Builds, Temp and Logs in the worktree, keeps the last KEEP_RUNS run folders, and deletes the
    worktree's Library when it grows past --cap-gb (the next run clones it again).
 
@@ -210,18 +211,20 @@ def issue_body(sha: str, prev: str | None, r: Results, unity_exit: int, log_text
     rng = f"{prev[:12]}..{sha[:12]}" if prev else sha[:12]
     try:                     # fail closed: if redacting fails, no log text and no test message leaves the Mac
         log_text, commits = redact(log_text), redact(commits)
+        broken = redact(r.broken) if r.broken else None      # e.g. git's stderr when the worktree can't be prepared
         failures, withheld = [(redact(n), redact(m)) for n, m in r.failures], None
     except Exception as e:   # noqa: BLE001 (any error withholds; only its type is shown, never its text)
         log_text, failures = "", [(n, "") for n, _ in r.failures]
-        withheld = (f"Log withheld: redacting it failed ({type(e).__name__}), so the log tail, compile errors and "
-                    "test messages stay in the run folder on the Mac.")
+        broken = "details withheld (see below)" if r.broken else None
+        withheld = (f"Log withheld: redacting it failed ({type(e).__name__}), so the log tail, compile errors, "
+                    "test messages and the broken-run reason stay in the run folder on the Mac.")
     out = [f"The post-merge Unity EditMode run (tools/unity_postmerge.py, on the owner's Mac) did not pass on `main` "
            f"at {sha}.", "", f"- Commit: https://github.com/{REPO_SLUG}/commit/{sha}"]
     if prev:
         out.append(f"- Untested since the last run: {rng} (https://github.com/{REPO_SLUG}/compare/{prev}...{sha})")
     out.append(f"- Unity exit code: {unity_exit}")
-    if r.broken:
-        out.append(f"- **Broken run:** {r.broken}")
+    if broken:
+        out.append(f"- **Broken run:** {broken}")
     else:
         out.append(f"- Result: {r.failed} failed of {r.total} ({r.passed} passed)")
     if commits.strip():
