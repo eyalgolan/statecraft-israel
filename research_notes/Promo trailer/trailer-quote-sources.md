@@ -31,8 +31,8 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 
 | Card | Class | Status | Primary text opened |
 |---|---|---|---|
-| Q1 | excerpt of a translated diary entry | source not found (primary text) | no. A secondary page agrees on the wording [S]. |
-| Q2 | excerpt of the same entry | source not found (primary text) | no. A secondary page agrees on the wording [S]. |
+| Q1 | excerpt of a translated diary entry | confirmed in the German primary text; English translation source not identified | yes [V], *Tagebücher*, vol. 2, p. 24. |
+| Q2 | excerpt of the same entry | confirmed in the German primary text; English translation source not identified | yes [V], *Tagebücher*, vol. 2, p. 24. |
 | Q3 | verbatim excerpt of the published English text, capital "At" added | confirmed, with a note on the ellipsis | yes [V] |
 | Q4 | verbatim excerpt of the MFA English translation, the first clause of a longer sentence | confirmed, with a note on the cut and the attribution | yes [V] |
 | Q5 | excerpt with the punctuation changed and the third phrase dropped | wording differs from source | yes [V] |
@@ -47,9 +47,9 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Full passage, as an English rendering gives it: a few days after the First Zionist Congress, Herzl wrote that if he were to sum up the Basel Congress in a word, it would be "At Basel, I founded the Jewish State". The passage goes on that if he said this out loud today he would be answered by universal laughter, and that perhaps in five years, certainly in fifty, everyone will know it. [S] https://en.wikiquote.org/wiki/Theodor_Herzl (opened 2026-10-15). The page cites a secondary book, Judy S. Bertelsen, *Nonstate Nations in International Politics* (1977), p. 37, and no edition of the diaries.
 - Speaker and role: Theodor Herzl, founder and leader of the World Zionist Organization [S, Wikiquote]. The card says "founder of political Zionism".
 - Date and occasion: diary entry of 3 September 1897, a few days after the First Zionist Congress in Basel [S, Wikiquote]. A search snippet gives 29 August 1897 as the Congress start date [S]. The Congress dates were not read on an opened page [GAP].
-- Original language: German. *Theodor Herzls Tagebücher*, vol. 2 (Berlin: Jüdischer Verlag, 1922), p. 24 [V] https://archive.org/details/theodorherzlstag02herzuoft (page 24 of the scan, read in the second review on PR #648, 15 Oct 2026).
+- Original language: German. *Theodor Herzls Tagebücher*, vol. 2 (Berlin: Jüdischer Verlag, 1923 on the title page; the archive.org record says 1922), p. 24 [V] https://archive.org/details/theodorherzlstag02herzuoft (page 24 of the scan, read in the second review on PR #648, 15 Oct 2026).
 - Translator and translation source: not identified. The Wikiquote page cites the English edition of the diaries (*The Complete Diaries of Theodor Herzl*, ed. Raphael Patai, trans. Harry Zohn, 1960) for other entries but not for this one [S]. Other English renderings of the same sentence end "everyone will perceive it" (a blog and a community site, search snippets [S]). The card's "everyone will know it" matches the Wikiquote rendering and not those.
-- Status: source not found for the primary text. To close: the German text in *Tagebücher* (or the Zohn volume and page), and the wording of the translation the trailer used.
+- Status: confirmed in the German primary text [V], *Tagebücher*, vol. 2, p. 24. To close: the Zohn volume and page, and the wording of the translation the trailer used.
 - Note: the card trims "Perhaps in five years, certainly" from the sentence. The ellipsis does not reverse the meaning. The two cards are two parts of one diary entry shown 5 seconds apart, and they should be recorded as one passage.
 
 ### Q3. Rabin, Nobel lecture, Oslo
@@ -103,22 +103,22 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Text as shown: "If you will it, it is no dream."
 - Original: German, "Wenn ihr wollt, ist es kein Märchen" [S]. The German phrase is the title of several German-language publications and of a Brill reference entry (search snippets, not opened). The Wikiquote Herzl page gives the German, places it as the prefix to *Altneuland* (1902), and renders it "If you will, it is no legend" [S] https://en.wikiquote.org/wiki/Theodor_Herzl (opened).
 - Difference: "Märchen" means a fairy tale or fable. "Dream" is a looser rendering and the plural "ihr" is "you" addressed to a group. The English line on the card is common, but it is not the literal sense, and the repository does not say which translation it follows.
-- Translator: not identified for the card's wording. The standard English edition of the novel was translated by Lotta Levensohn (Bloch, 1941), and the first Hebrew edition, "Tel Aviv", by Nahum Sokolow (Warsaw, 1902) [S, en.wikipedia "The Old New Land", opened]. Whether Levensohn's motto reads "no dream" was not checked [GAP].
+- Translator: not identified for the card's wording. The standard English edition of the novel was translated by Lotta Levensohn (Bloch, 1941), and the first Hebrew edition, "Tel Aviv", by Nahum Sokolow (Warsaw, 1902) [S, en.wikipedia "The Old New Land", opened]. Whether Levensohn's motto reads "no dream" was not checked [GAP]. A *Jerusalem Post* article of 12 July 2020 gives "If you will it, it is no dream" as the English of "im tirtzu, ein zo agada" [S, lead, not opened] https://www.jpost.com/israel-news/remembering-herzl-on-his-116th-yahrtzeit-634781 .
 - Date: 1902, the publication year [S, Wikipedia and Wikiquote].
 - Status: wording differs from source (a translation choice). To close: the German title page of the 1902 edition and the wording in a named English translation.
 
 ## 4. Points for the maintainers
 
-1. Begin (Q5): the card shortens a three-part line to two and changes the punctuation. Decide whether to show all three ("No more war, no more bloodshed, no more bereavement") or keep the two and note the excerpt.
+1. Begin (Q5): the card shortens a three-part line to two and changes the punctuation. The owner's ruling on #650 of 16 October 2026 is to "keep v1 everywhere", so the original two-part card stays. This supersedes the 15 October maintainer decision to re-render it with the full line. The status remains "wording differs from source".
 2. Rabin (Q3): the ellipsis stops before "so that I could defend myself". Decide whether to complete that clause.
 3. Declaration (Q4): decide the attribution line. The page supports "Declaration of Independence, 14 May 1948" and a reading by Ben-Gurion.
-4. Herzl (Q1, Q2, Q7): decide the translation. A named translation (Zohn for the diaries, Levensohn for the novel) would give each card a translator. Q7 says "dream" where the German says "Märchen".
+4. Herzl (Q1, Q2, Q7): the owner's ruling on #650 of 16 October 2026 is to "keep v1 everywhere", with the motto "If you will it, it is no dream." This supersedes the 15 October maintainer decision to use Levensohn's "If you will it, it is no fable." A named translation for Q1 and Q2 would still identify their translator; Q7's status remains "wording differs from source".
 5. Translated quotations (Q1, Q2, Q4, Q6, Q7 are translated, and Q3 may be): the cards do not say the English is a translation. The caption files do not carry a translator either.
 6. The Hebrew caption file describes the English text on screen and gives no Hebrew rendering of any quotation. If a Hebrew version of a card is ever shown, each quotation that was spoken or written in Hebrew needs its original Hebrew wording. Netanyahu's statement was Hebrew [V]. The Declaration's original language is not yet sourced [GAP, see Q4]. Rabin's language is a gap. The Hebrew wording goes to the native reviewer in #564.
 
 ## 5. Gaps
 
-- Herzl: the Zohn volume and page, or the German text, for the entry of 3 September 1897; the First Zionist Congress dates on an opened page.
+- Herzl: the Zohn volume and page for the English rendering of the entry of 3 September 1897; the First Zionist Congress dates on an opened page.
 - Rabin: the language of delivery and any translator; the lecture date on an opened Nobel page.
 - Declaration: a source for its original language, the Hebrew text and the name of the translator of the gov.il English text.
 - Altneuland: the German title page; the wording of a named English translation.
