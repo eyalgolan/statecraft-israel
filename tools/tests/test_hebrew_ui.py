@@ -103,7 +103,7 @@ def test_hebrew_acronyms_use_the_gershayim_character():
         assert not HEBREW_ACRONYM_STRAIGHT_QUOTE.search(text), name
     content = ROOT / 'content'
     for file, key, field in (('offices.yaml', 'offices', 'title_he'), ('parties.yaml', 'parties', 'name_he'),
-                             ('people.yaml', 'people', 'name_he')):
+                             ('people.yaml', 'people', 'name_he'), ('map/units_1948.yaml', 'units', 'name_he')):
         rows = yaml12.load((content / file).read_text(encoding='utf-8'))[key]
         values = [r[f] for r in rows for f in (field, field + '_f') if r.get(f)]
         assert values, file

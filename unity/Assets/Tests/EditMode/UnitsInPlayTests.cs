@@ -123,11 +123,32 @@ public class UnitsInPlayTests
         Assert.AreEqual(LastArmistice, UnitData.FrontArmistice["syria"]);
     }
 
+    /// <summary>#902: 20 Hebrew names, each from a cited IDF, Palmach, Haganah Heritage or other Israeli page. INS Haganah's
+    /// name stays absent until a reviewer settles its spelling; every agent-checked value carries its own dated source
+    /// pending the native-speaker review in #564.</summary>
+    [Test]
+    public void HebrewUnitNamesAreSourcedAndAgentChecked()
+    {
+        var units = Units;
+        CollectionAssert.AreEquivalent(new[] { "ins_haganah" },
+            units.Where(u => string.IsNullOrEmpty(u.NameHe)).Select(u => u.Id));
+        foreach (var u in units.Where(u => !string.IsNullOrEmpty(u.NameHe)))
+        {
+            StringAssert.IsMatch("[א-ת]", u.NameHe, u.Id);
+            Assert.AreEqual("agent-checked", u.NameHeReview, u.Id);
+            Assert.IsNotEmpty(u.NameHeSources, u.Id);
+            Assert.That(u.NameHeSources.All(s => s.Url.StartsWith("https://", StringComparison.Ordinal) && !string.IsNullOrEmpty(s.Checked)), u.Id);
+        }
+    }
+
     const string Anchor = "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}";
     const string Unit = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: [";
 
     [TestCase("units: []", "no units")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: cavalry, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown service 'cavalry'")]
+    [TestCase("units:\n- {id: a, name: A, name_he: אב, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: []}", "name_he_sources is empty")]
+    [TestCase("units:\n- {id: a, name: A, name_he_sources: [{url: 'https://x.org', checked: '2026-10-17'}], number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: []}", "name_he_sources is set without name_he")]
+    [TestCase("units:\n- {id: a, name: A, name_he: אב, name_he_sources: [{url: 'https://x.org', checked: '2026-10-17'}], name_he_review: reviewed, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: []}", "name_he_review must be agent-checked")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown side ''")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: atlantis, sector: s, status: draft, wikipedia_only: true, anchors: []}", "unknown side 'atlantis'")]
     [TestCase(Unit + "]}", "'a' has no anchors")]
