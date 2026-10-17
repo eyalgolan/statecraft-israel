@@ -45,6 +45,7 @@
   },
   "properties": {
     "id": { "$ref": "#/definitions/id", "description": "Unique across all events." },
+    "kind": { "enum": ["historical", "consequence", "reconvergence"], "description": "Default historical. consequence: a soft card that exists only on a road not taken (R-ALT-005 to R-ALT-008). reconvergence: a real outside event that happened regardless (its variants arrive with #952)." },
     "title": { "type": "string", "minLength": 1, "description": "May contain office placeholders such as {prime_minister}." },
     "text": { "type": "string", "minLength": 1, "description": "May contain office placeholders. No invented quotes." },
     "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre and war-casualties are sensitive." },

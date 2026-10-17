@@ -31,7 +31,9 @@ namespace Statecraft.Sim
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
-                .OrderBy(e => e.From).ThenBy(e => e.Id, StringComparer.Ordinal)
+                // R-ALT-008: a road the player took is not crowded out of its window. With no consequence card eligible every key
+                // is equal and OrderBy is stable, so the order is the From-then-id order of before.
+                .OrderBy(e => e.Kind == EventKinds.Consequence ? 0 : 1).ThenBy(e => e.From).ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
             var hardCount = eligible.Count(e => e.Anchor == "hard");
             var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard")

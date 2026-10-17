@@ -752,9 +752,18 @@ namespace Statecraft.Sim
         [YamlIgnore] public bool IsConsidered => Basis == Proposed || Basis == Debated;
     }
 
+    /// <summary>The kinds of event (R-ALT-005): the record, a card only on a road not taken, and a real outside
+    /// event that happened regardless.</summary>
+    public static class EventKinds
+    {
+        public const string Historical = "historical", Consequence = "consequence", Reconvergence = "reconvergence";
+    }
+
     public sealed class GameEvent
     {
         public string Id { get; set; } = "";
+        /// <summary>historical (the default), consequence (R-ALT-005) or reconvergence (its variants arrive with #952).</summary>
+        public string Kind { get; set; } = EventKinds.Historical;
         public string Title { get; set; } = "";
         public string Text { get; set; } = "";
         public List<string> Tags { get; set; } = new List<string>();

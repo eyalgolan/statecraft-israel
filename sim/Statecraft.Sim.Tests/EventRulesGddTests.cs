@@ -196,9 +196,12 @@ options:
     public void ThePreviewListsEveryEffectOnTheRealContent()
     {
         var checkedOptions = 0;
+        // A consequence card never fires in the historical run (R-ALT-012); its state comes from a run on its road.
         foreach (var e in C.Events)
         {
-            var s = Run.First(x => x.FiredEvents.Contains(e.Id));   // every event fires in the run (EventRetimingTests)
+            var s = e.Kind != EventKinds.Consequence
+                ? Run.First(x => x.FiredEvents.Contains(e.Id))   // every historical event fires in the run (EventRetimingTests)
+                : AltRun.Play(C, AltRun.RoadTo(C, e)).First(x => x.FiredEvents.Contains(e.Id));
             foreach (var o in e.Options)
             {
                 var expected = o.Effects.Select(fx => (fx.Target, fx.Delta))

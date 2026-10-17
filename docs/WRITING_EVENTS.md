@@ -37,6 +37,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
+| `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken. See below. |
 | `requires` | no | Fires only after every listed requirement holds. See below. |
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `options` | yes | One or more options. See below. |
@@ -111,6 +112,40 @@ conditions:
 ```
 
 `min` and `max` are both optional, and `min` must not exceed `max`. Not every event needs this; the example has none.
+
+### kind
+
+Every event on the record is `historical`, the default; leave the key out. A **consequence card**, `kind: consequence`,
+exists only because the player took a road that did not happen (R-ALT-005 to R-ALT-008):
+
+```yaml
+id: after_the_road
+kind: consequence
+anchor: soft                  # always soft
+title: ...
+text: '...'                   # only what was threatened, promised or recorded as feared at the time; office placeholders
+from: 1948-07-15              # absolute dates, opening after the parent's window closes
+to: 1948-09-15
+requires: [{ event: parent_event, option: road_not_taken }]   # or { event: parent_event, diverged: true }
+options:
+  - id: hold
+    text: ...
+    alternative: { basis: debated, by: ..., date: ..., sources: [...] }   # every option carries one
+```
+
+The loader refuses a consequence card that:
+- is `hard`, or has an option marked `historical: true`;
+- has no requirement on a road not taken (an option that did not happen, `diverged: true`, or an option of another
+  consequence card);
+- has an option without an `alternative` record;
+- follows a road nobody is recorded proposing (the Ferguson test, R-ALT-006, owner's answer Q-ALT-3): the option it
+  follows must have `alternative.basis` `proposed` or `debated`. With `diverged: true`, every option that did not
+  happen must;
+- does not carry each sensitive tag of the event it follows (R-ALT-007). The no-gain rule then covers it too;
+- lies more than 2 cards deep from the record (`EventRules.MaxConsequenceDepth`, a design value, Q-ALT-5).
+
+Consequence cards take a turn's soft slots before the other soft events (R-ALT-008). They never fire in the historical
+run (R-ALT-012), so `EventRetimingTests` counts only the other events.
 
 ### requires
 
@@ -295,6 +330,14 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `a design alternative names nobody and no date` | A `design` alternative with a `by` or a `date`. |
 | `needs at least one source` | A proposed or debated `alternative` with no `sources`. |
 | `needs an https url and a checked date` | An `alternative` source without `https://` or without `checked`. |
+| `a consequence card is soft` | `kind: consequence` with `anchor: hard`. |
+| `a consequence card has no historical option` | A consequence card's option is marked `historical: true`. |
+| `a consequence card follows a road not taken` | A consequence card with no requirement on an option that did not happen. |
+| `every option of a consequence card says who proposed it` | A consequence card's option has no `alternative`. |
+| `which nobody is recorded proposing` | The road it follows has `basis: design`, or no record (R-ALT-006). |
+| `must carry '` | A consequence card lacks a sensitive tag of the event it follows (R-ALT-007). |
+| `cards deep; the most is` | A chain of consequence cards longer than `EventRules.MaxConsequenceDepth`, 2 (Q-ALT-5). |
+| `must be historical, consequence or reconvergence` | `kind` is another word. |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):

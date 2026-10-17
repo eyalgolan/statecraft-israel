@@ -32,9 +32,11 @@ public class EventRetimingTests
     public void EveryEventFiresInTheHistoricalMonthlyRun()
     {
         Assert.Equal(GameOverCodes.MvpEnded, Run[Run.Count - 1].GameOver);
-        var missing = C.Events.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
+        // A consequence card (R-ALT-005) comes only on a road not taken, never in this run (R-ALT-012).
+        var record = C.Events.Where(e => e.Kind != EventKinds.Consequence).ToList();
+        var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
         Assert.True(missing.Count == 0, "never fired: " + string.Join(", ", missing));
-        Assert.Equal(32, C.Events.Count);
+        Assert.Equal(32, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
