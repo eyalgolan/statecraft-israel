@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `0a1982675eec8ef83f171a1b60b027869370e519d3265323253b88ae7ba71649` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `4f22e12b1bdf1c6831f9572cb11932d6cc34fd41c50e16c81cc84480a75ade97` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `4f22e12b1bdf1c6831f9572cb11932d6cc34fd41c50e16c81cc84480a75ade97` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -39,15 +39,15 @@ check `hash1950` and `hash1952`.
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc`.
+ministers): `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f" \
-  --expect "GOLDEN OK 1952 7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3" \
-  --expect "SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc"
+  --expect "GOLDEN OK 1950 0a1982675eec8ef83f171a1b60b027869370e519d3265323253b88ae7ba71649" \
+  --expect "GOLDEN OK 1952 4f22e12b1bdf1c6831f9572cb11932d6cc34fd41c50e16c81cc84480a75ade97" \
+  --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -258,3 +258,10 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 4 PR 6 | 1950 | `ef765972` | the veteran pioneer (R-VET-001, R-VET-002, D-D9, #790): the reference player's halutz group works the six turns of the Beit Kama build (still built on 1949-03-15), becomes a `veteran_halutz` with 6 turns of service (`1:veteran_halutz@-3,19/6`) and builds the other three sites in 3 turns each: Gilat on 1949-06-15 (was 1949-09-15), Mefalsim on 1949-09-15 and Re'im on 1949-12-15. The first-new-yishuv objective completes on 1949-09-15 and its card fires and is answered in the run (score 100, was 0), and the debt is IL 2m higher for the extra builds (was `37c51050`) |
 | GDD Phase 4 PR 6 | 1952 | `7b4bffe0` | same; Mefalsim is built on 1949-09-15 (was 1950-03-15) and Re'im on 1949-12-15 (was 1950-09-15). The objective still completes after its reference date with no timing bonus, so the score (100) and the debt do not change (was `7745031b`) |
 | GDD Phase 4 PR 6 | mvp-end | `7b4bffe0` | same; the same run as hash1952 (was `7745031b`) |
+| GDD Phase 3 PR 3 | 1950 | `0a198267` | GDD Phase 3 PR 3's housing (R-CITY-004, R-HOUSE-001 to R-HOUSE-004; Q-HOUSE-1, Q-HOUSE-5, Q-START-3; owner, 17 October 2026, Q-PR3-A (a)): no hard cap, so every refugee is housed on the next housing step (18 refugees waiting on 1 January 1950, the last turn's arrivals, was 269), the people beyond a city's housing are its overflow, and each city's housing condition (start 0.35) falls by 0.15 times its overflow share a turn; 11 of the 12 cities are at condition 0 by then (Rosh Pinna, with no overflow, keeps 0.35). The condition joins each `city{}` record. The national `housing` indicator's base is now the cities' people-weighted mean condition, so `housing` falls to 0.0850 (was 0.4345) and `housing_crisis` is on; through `homes_lift_morale`, Social cohesion (`morale`) falls to 0.4990 (was 0.5545), with `work_lifts_cohesion` lower too because more civilians share the same jobs; stability 0.4970 (was 0.5612). The national head count, the Treasury, the debt and the reference player's orders do not move (was `ef765972`) |
+| GDD Phase 3 PR 3 | 1952 | `4f22e12b` | same; 8 refugees waiting at the end (was 608), every city at condition 0; `housing` 0.0850 (was 0.4350), `housing_crisis` on, `morale` 0.4946 (was 0.5691), stability 0.4487 (was 0.5683) (was `7b4bffe0`) |
+| GDD Phase 3 PR 3 | mvp-end | `4f22e12b` | same; the same run as hash1952 (was `7b4bffe0`) |
+| GDD Phase 3 PR 3 | smoke5 | `3005405d` | the condition joins each `city{}` record; the first five turns have no overflow, so `housing` and `morale` are unchanged (was `2436927c`) |
+| GDD Phase 3 PR 3 | scenario-cautious | `6507ddc3` | the housing rules: `city{}`, `housing`, `morale`, its two links and stability (was `28fd1405`) |
+| GDD Phase 3 PR 3 | scenario-reckless | `8041988a` | same (was `af7b2abd`) |
+| GDD Phase 3 PR 3 | scenario-mvp-absorb-first | `a77a8f20` | same (was `b16a8740`) |
