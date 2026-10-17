@@ -366,17 +366,18 @@ public class TopBarTests
         }, widest: false);
     }
 
-    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level,
-    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, and on a phone held
-    /// upright, 390x844 (#642), in both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window, so on screen is the
-    /// font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
+    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the seven captions, Security's level,
+    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least
+    /// HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, and on phones held upright, 390x844
+    /// and 360x800 (#642), in both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window,
+    /// so on screen is the font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
     /// collides at these sizes.)</summary>
     [UnityTest]
     public IEnumerator TheBarsSmallTextKeepsTheFloorOnScreen()
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080), (390, 844) })
+            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080), (390, 844), (360, 800) })
                 yield return Rendered(w, h, hebrew, (root, text) =>
                 {
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h}";

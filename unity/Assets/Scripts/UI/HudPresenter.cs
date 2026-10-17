@@ -241,7 +241,7 @@ namespace Statecraft.Game.UI
             }
             return UnityEngine.Mathf.Max(0f, growth);
         }
-        // Statecraft.uss .turn-box width, .meter .meter-name max-width, .date-box width.
+        // Statecraft.uss .turn-box width, .meter .meter-name max-width (170 on the three-row bar, where the tier is fixed), .date-box width.
         const float TurnBoxPx = 150f, CaptionMaxPx = 120f, PlateWidthPx = 230f;
         /// <summary>The widest date line's width per px of font size, with a little to spare: the Hebrew 31 October 1956 is
         /// about 7.8 times its size (196 px at 25 px), the English "30 September 1956" 7.2 (TopBarScoreLayoutTests.WorstDate).</summary>

@@ -169,7 +169,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    fit a phone's width with the widest values (#380): they wrap to two lines (a consequence of the owner's "tighten + re-tier", 16 October 2026), and the bar is a meter line
    (96 px) taller than the six meters' 312 px. The owner's text floor (#642) raises the small text to 25 px on a 390x844
    phone: the plate, the meters and the attention line grow, and the bar takes 32 px more (with the widest values and
-   changes its rows end at about 435 px; each meter line already holds two caption lines, Security's level or "International
+   changes its rows end at about 431 px; each meter line already holds two caption lines, Security's level or "International
    support", so a caption that wraps once more does not add to it). */
 .hud-three-row .top-bar { height: 440px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
