@@ -133,6 +133,12 @@ def test_every_side_is_known():
         assert u['side'] in EXPECTED_SIDES, u['id']
 
 
+def books(srcs):
+    """The distinct sources that are not Wikipedia or Wikidata: an anchor's coordinates page never counts as a second
+    source (review of #860 at 00d3ba15, must-fix 2)."""
+    return {s['url'] for s in srcs if not wiki(s)}
+
+
 def arab_rows():
     return [u for u in UNITS if u['side'] != 'israel']
 
@@ -155,7 +161,7 @@ def test_strength_has_one_value_and_a_source():
         v = st.get('value')
         assert isinstance(v, int) and not isinstance(v, bool) and v > 0, f"{u['id']}: strength {v!r} is not one number"
         assert GAME_START <= day(st['as_of']) <= date(1948, 6, 11), f"{u['id']}: strength as_of {st['as_of']}"
-        assert st.get('sources'), f"{u['id']}: strength has no source"
+        assert len(books(st.get('sources') or [])) >= 2, f"{u['id']}: strength rests on fewer than two sources (Q-START-3)"
         assert not RANGE.search(str(st.get('note', ''))), f"{u['id']}: the strength note copies a range"
     # Every row the file has today gives the 15 May strength only: no source in the note dates a strength on 11 June
     # (arab-forces-1948.md, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented").
@@ -194,13 +200,13 @@ def test_no_anchor_rests_on_one_source_where_the_note_says_contested():
             assert u['side'] == 'ala' and covers(a, GAME_START) and not covers(a, date(1948, 6, 11)), \
                 f'{where}: al-Malikiyya is the ALA\'s on 15 May (ruling) and nobody\'s row on 11 June (contested)'
         else:
-            assert len({s['url'] for s in a['sources']}) >= 2, f'{where}: rests on one source'
+            assert len(books(a['sources'])) >= 2, f'{where}: rests on one source (a Wikipedia or Wikidata page for the coordinates does not count)'
     assert any(u['side'] == 'ala' and near(a, *MALIKIYYA) and covers(a, GAME_START) for u, a in anchors), 'the ALA at al-Malikiyya on 15 May'
     assert any(u['side'] == 'jordan' and near(a, *LATRUN) and covers(a, date(1948, 6, 11)) for u, a in anchors), 'the Legion at Latrun on 11 June'
 
 
 # The places the research note does not describe (arab-forces-1948.md, "Conventions"): the Arab rows say nothing of them.
-SENSITIVE = ('Kfar Etzion', 'Gush Etzion', 'Jewish Quarter', 'Nitzanim', 'Lydda', 'Lod', 'Ramla', 'Ramle')
+SENSITIVE = ('Kfar Etzion', 'Gush Etzion', 'Jewish Quarter', 'Nitzanim', 'Nitzanin', 'ניצנים', 'Lydda', 'Lod', 'Ramla', 'Ramle')
 
 
 def texts(x):
@@ -219,3 +225,23 @@ def test_the_arab_rows_name_no_sensitive_place():
         for t in texts(u):
             for name in SENSITIVE:
                 assert not re.search(rf'\b{name}\b', t), f"{u['id']}: {name!r} in {t[:80]!r}"
+
+
+ISDUD = (34.66167, 31.75361)
+MAJDAL = (34.56667, 31.66667)
+
+
+def test_the_egyptian_force_has_its_forward_and_its_rear_base_at_the_truce():
+    """Owner, 17 October 2026, on #860 (question 4): "both places. Isdud is the forward base and Majdal the rear base."
+    At the first truce the Egyptian row stands at both, each anchor with at least two sources. The two may overlap in
+    time only on a row the map does not draw (UnitRoster.OnMap)."""
+    egypt = next(u for u in UNITS if u['id'] == 'egyptian_expeditionary_force')
+    truce = [a for a in egypt['anchors'] if covers(a, date(1948, 6, 11))]
+    assert any(near(a, *ISDUD) for a in truce), 'Isdud, the forward base, at the truce'
+    assert any(near(a, *MAJDAL) for a in truce), 'Majdal, the rear base, at the truce'
+    for a in truce:
+        assert len(books(a['sources'])) >= 2, a['place']
+    for u in UNITS:
+        if u['side'] == 'israel':
+            ends = [(day(a['from']), day(a['to'])) for a in u['anchors']]
+            assert all(ends[i - 1][1] <= ends[i][0] for i in range(1, len(ends))), f"{u['id']}: an Israeli row is at one place at a time"

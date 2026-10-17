@@ -125,17 +125,21 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
 
 | Row | Side | 15 May 1948 | 11 June 1948 (the first truce, to 8 July) | Strength (15 May) |
 |---|---|---|---|---|
-| Egyptian Expeditionary Force | egypt | Gaza (to 21 May) | Isdud | 10,000 |
+| Egyptian Expeditionary Force | egypt | Gaza (to 21 May) | Isdud, the forward base, and Majdal, the rear base | 10,000 |
 | Arab Legion | jordan | Ramallah (to 11 June) | Latrun | 5,000 |
 | Syrian Army | syria | south of Lake Tiberias, before Samakh (to 18 May) | the Mishmar HaYarden bridgehead | 3,000 |
-| Iraqi Expeditionary Force | iraq | the high ground over Gesher (15 May only) | Jenin | 3,000 |
+| Iraqi Expeditionary Force | iraq | the high ground over Gesher (15 May only, by the owner's decision) | Jenin | 3,000 |
 | Lebanese Army | lebanon | hidden: no place two sources agree on | | 1,000 |
 | Arab Liberation Army | ala | al-Malikiyya (to 29 May) | | 4,000 |
 
 - **One value per strength** (CONTENT_POLICY section 1; Q-START-3): from an Israeli source where one gives it, else the
   value two of the note's sources agree on. Every row gives the 15 May strength only: no source in the note dates one on
   11 June (owner, 17 October 2026, #740: "15 May strength only for the rows that have no sourced 11 June figure ...
-  Nothing is invented"). The Syrian, Iraqi and Lebanese figures rest on two search snippets (`to_verify`).
+  Nothing is invented"). The Syrian, Iraqi and Lebanese figures rest on Glubb's figures alone (Rogan and Shlaim
+  reproduce them), merged as data only and marked `to_verify` (owner, 17 October 2026, on #860).
+- **Two places at once.** At the first truce the Egyptian row stands at both its forward base (Isdud) and its rear base
+  (Majdal) (owner, 17 October 2026, on #860). Its two anchors overlap in time. Only a row the map does not draw may do
+  that: a drawn row has one token, at one place at a time. How PR 17 draws such a row is its decision.
 - **Not drawn** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to `units_1948.yaml` and
   filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its sensitivity review. Nothing is
   drawn with IDF figures, and there is no placeholder art." `UnitRoster.OnMap` (not hidden, and `side: israel`) keeps

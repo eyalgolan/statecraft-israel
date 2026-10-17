@@ -85,6 +85,10 @@ public class UnitsInPlayTests
             Assert.AreEqual(new DateTime(1948, 5, 15), UnitData.Day(u.Strength.AsOf), $"{u.Id}: the 15 May strength only");
             Assert.IsNotEmpty(u.Strength.Sources, u.Id);
         }
+        // Owner, 17 October 2026, on #860: "Isdud is the forward base and Majdal the rear base" at the first truce.
+        var truce = new DateTime(1948, 6, 11);
+        CollectionAssert.AreEquivalent(new[] { "Isdud", "Majdal" }, units.Single(u => u.Id == "egyptian_expeditionary_force").Anchors
+            .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
             Assert.AreEqual("draft", u.Status, u.Id);
@@ -107,8 +111,11 @@ public class UnitsInPlayTests
                 if (u.Disbanded != null) Assert.LessOrEqual(UnitData.Day(a.To), UnitData.Day(u.Disbanded.Date), $"{at}: after its disbandment");
                 Assert.AreNotEqual("15 May 1948", a.Since, $"{at}: the game's first day is not a sourced arrival");
             }
-            for (int i = 1; i < u.Anchors.Count; i++)
-                Assert.LessOrEqual(UnitData.Day(u.Anchors[i - 1].To), UnitData.Day(u.Anchors[i].From), $"{u.Id}: anchor windows in order, not overlapping");
+            // A drawn row stands at one place at a time (one token per row). A row the map does not draw may stand at two
+            // at once: the Egyptian force's forward and rear bases at the first truce (owner, 17 October 2026, on #860).
+            if (UnitRoster.OnMap(u))
+                for (int i = 1; i < u.Anchors.Count; i++)
+                    Assert.LessOrEqual(UnitData.Day(u.Anchors[i - 1].To), UnitData.Day(u.Anchors[i].From), $"{u.Id}: anchor windows in order, not overlapping");
         }
         Assert.AreEqual(new DateTime(1949, 2, 24), UnitData.FrontArmistice["egypt"]);
         Assert.AreEqual(new DateTime(1949, 3, 23), UnitData.FrontArmistice["lebanon"]);
