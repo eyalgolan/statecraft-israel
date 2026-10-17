@@ -201,6 +201,23 @@ public class CityPanelTests
     }
 
     [Test]
+    public void ABuiltCampGivesItsCityTheTrainButton()
+    {
+        // R-CAMP-001 (Training.HasFacility): a city gains a facility from a built camp site, not only from cities.yaml.
+        var camp = C.Sites.First(x => Projects.IsCamp(x) && x.City != "" && x.Kinds.Contains("military_camp"));
+        Assert.IsFalse(C.Cities.Single(x => x.Id == camp.City).Facilities.Contains("military_camp"), "precondition: the city starts without a camp");
+        var hex = C.SettlementHexes.First(x => x.Id == camp.City);
+        foreach (var built in new[] { false, true })
+        {
+            using var ui = new UiTestKit();
+            var bridge = Bridge(En, s => s.Sites[camp.Id] = built ? SiteWork.Built(camp.Id, s.Date) : new SiteWork(camp.Id, AddHalutz(s), 2, null));
+            using var panel = Panel(ui, bridge, En);
+            panel.Show(hex.Q, hex.R);
+            Assert.AreEqual(built, ui.Root.Q<Button>("city-train-recruit") != null, built ? "a built camp trains recruits" : "a camp being built does not count yet");
+        }
+    }
+
+    [Test]
     public void ACohortShowsItsTurnsLeftAndCancelQueuesCancelTraining()
     {
         using var ui = new UiTestKit();
