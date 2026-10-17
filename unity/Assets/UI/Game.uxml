@@ -137,6 +137,8 @@
                     <ui:Button name="info-defence" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
+                <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381). -->
+                <ui:VisualElement name="info-gdd" class="info-gdd" />
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame filigree="true" />
         </ui:VisualElement>

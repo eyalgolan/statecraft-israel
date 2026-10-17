@@ -43,6 +43,8 @@ namespace Statecraft.Game.Map
 
         /// <summary>The marker box's edge (m) for a settlement type; the UI's label sits on its top.</summary>
         public static float MarkerHeightM(string type) => Marker[type].h;
+        /// <summary>The marker box's colour for a settlement type (SiteLayer draws a built site's box with the kibbutz's).</summary>
+        public static Color MarkerColour(string type) => Marker[type].c;
 
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
