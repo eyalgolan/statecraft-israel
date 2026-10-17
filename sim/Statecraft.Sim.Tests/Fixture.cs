@@ -207,6 +207,7 @@ series:
             ["cities.yaml"] = GddCities,
             ["unit_types.yaml"] = GddUnitTypes,
             ["sites.yaml"] = GddSites,
+            ["corridors.yaml"] = GddCorridors,
         };
         if (extra != null) foreach (var kv in extra) o[kv.Key] = kv.Value;
         return o;
@@ -222,6 +223,10 @@ mvp:
   city_arrivals_from: 1948-05-15
   build_yishuv_turns: 3
   build_yishuv_cost: 1.5
+  road_segment_turns: 3
+  road_segment_cost: 1.5
+  rail_segment_turns: 2
+  rail_segment_cost: 3
   objective_points: 100
   objective_bonus_per_month: 5
   objective_bonus_cap: 60
@@ -244,6 +249,32 @@ types:
   - { id: refugee, kind: population }
   - { id: recruit, kind: population, facility: military_camp, training_turns: 2, training_cost: 0.5 }
   - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: 0.25 }
+";
+
+    /// <summary>Two corridors on the fixture's land hexes, in file order: road_a, two segments along r = 0, and rail_a, one
+    /// segment along r = 1. Fixture values, not history.</summary>
+    public const string GddCorridors = @"
+corridors:
+  - id: road_a
+    kind: road
+    name: Road A
+    name_he: כביש א
+    route: road_a
+    segments:
+      - { to: X, hexes: [[2, 0], [3, 0]] }
+      - { to: Y, hexes: [[3, 0], [4, 0]] }
+    sources:
+      - { url: ""https://example.org/road_a"", checked: 2026-10-15 }
+    status: draft
+  - id: rail_a
+    kind: rail
+    name: Rail A
+    name_he: מסילה א
+    route: rail_a
+    segments: [{ to: Y, hexes: [[2, 1], [3, 1]] }]
+    sources:
+      - { url: ""https://example.org/rail_a"", checked: 2026-10-15 }
+    status: draft
 ";
 
     /// <summary>One designated site on a land hex next to town_a, with no settlement on it. Fixture values, not history.</summary>

@@ -179,6 +179,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the reference player's halutz group becomes a veteran after Beit Kama and builds Gilat, Mefalsim and Re'im in 3 turns
   each, so the first new yishuv completes on 1949-09-15 (was 1950-03-15), and by 1950 the score is 100 and the debt is
   IL 2m higher. The 1952 score and debt do not change.
+- GDD Phase 4 PR 2: corridors (refs #786, #384). Halutz units build the Burma Road (four segments, one between each
+  pair of its sourced waypoints) and the 1949 Haifa–Tel Aviv rail link (the Yarkon link, one segment) with
+  `PioneerWork(unit, build_road | build_rail, corridor:N)`, any segment in any order, one unit per segment (R-COR-001 to
+  R-COR-003; owner, 17 October 2026, #782). `content/corridors.yaml` holds the corridors; `tools/corridor_hexes.py`
+  derives each segment's hexes from the traced route and a CI test keeps them in step. Segment Money and turns are
+  labelled design values (road IL 2m and 6 turns, rail IL 4m and 6 turns). The map gains the rail link's route
+  (`yarkon_rail_link`, from 20 September 1949). The reference player builds segments once the yishuv sites are taken,
+  so hash1950, hash1952 and mvp-end move. A veteran builds a segment at 2 turns of progress a turn and a halutz's
+  segment work counts as service, as on a site (R-VET-001, R-VET-002). The Tel Aviv–Netanya road waits for a line (#786).
 - City and town pills start with their population tier, a gold disc with a number from 1 to 9 (refs #710). The tier is
   static: it comes from the city's 1948 people in `content/cities.yaml` (#821), not from the sim's live count (owner,
   15 October 2026). The scale is the design value proposed on #710 and not yet ruled: tiers double from 1,000, so under

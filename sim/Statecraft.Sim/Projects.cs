@@ -24,8 +24,9 @@ namespace Statecraft.Sim
         /// <summary>Whether a unit of <paramref name="type"/> does pioneer work: a halutz, or a veteran one (R-SITE-001, R-VET-001).</summary>
         public static bool IsPioneer(string type) => type == "halutz" || type == VeteranType;
 
-        /// <summary>Whether a site being built names <paramref name="unit"/>: the unit has a project (D-D6).</summary>
-        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
+        /// <summary>Whether a site or a corridor segment being built names <paramref name="unit"/>: the unit has a project
+        /// (D-D6).</summary>
+        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit) || Corridors.WorkOf(s, unit) != null;
 
         /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
         /// record. The Treasury pays build_yishuv_cost now and borrows what it lacks; the site gets build_yishuv_turns to go; the unit
@@ -38,6 +39,10 @@ namespace Statecraft.Sim
             if (!IsPioneer(u.Type)) return "Only halutzim do pioneer work";
             var busy = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
             if (busy != null) return $"That group of halutzim is already building {PlayerText.Site(c, busy.Site)}";
+            if (Corridors.WorkOf(s, unit) is var (cw, ci))
+                return $"That group of halutzim is already building {Corridors.SegmentName(c.Corridors.First(x => x.Id == cw.Id), ci)}";
+            // Phase 4 PR 2 (#786): build_road and build_rail take a corridor segment, "corridor:N" (R-COR-001).
+            if (Corridors.IsAction(action)) return Corridors.Start(c, s, unit, action, site, why);
             if (action != BuildYishuv) return "There is no such pioneer work";
             var place = c.Sites.FirstOrDefault(x => x.Id == site);
             if (place == null) return "There is no such site";
@@ -62,7 +67,7 @@ namespace Statecraft.Sim
         {
             if (!s.Units.ContainsKey(unit)) return "There is no such unit";
             var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
-            if (work == null) return "That group of halutzim is not building anything";
+            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : "That group of halutzim is not building anything";
             s.Sites.Remove(work.Site);
             why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned"));
             return null;
@@ -92,6 +97,7 @@ namespace Statecraft.Sim
                 s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service);
                 if (promoted) why.Add(new Cause("map", w.Site, 1, "A group of halutzim became veteran pioneers"));
             }
+            Corridors.Advance(c, s, next, why);   // R-COR-002: after the sites (Phase 4 PR 2)
         }
     }
 }

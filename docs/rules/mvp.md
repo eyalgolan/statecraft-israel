@@ -76,13 +76,23 @@ R-SITE-003: Each turn, in ordinal site id order, every site being built has one 
 
 ## Veteran pioneers
 
-R-VET-001: In step 5, after its site's progress, a halutz unit whose site is being built gains one turn of service, the turn the site is built included; an idle unit gains none. At `veteran_halutz_service` turns of service it becomes a `veteran_halutz` at the end of that turn, keeping its id, hex, service and project, and a cause says so. A veteran gains no more service. A unit's service is written into the state hash only when it is not 0 (D-D9; Q-VET-1, owner, 17 October 2026, #782).
+R-VET-001: In step 5, after its site's or segment's progress (R-COR-002), a halutz unit whose site or corridor segment is being built gains one turn of service, the turn it is built included; an idle unit gains none. At `veteran_halutz_service` turns of service it becomes a `veteran_halutz` at the end of that turn, keeping its id, hex, service and project, and a cause says so. A veteran gains no more service. A unit's service is written into the state hash only when it is not 0 (D-D9; Q-VET-1, owner, 17 October 2026, #782).
 
-R-VET-002: A veteran's site being built has `veteran_progress` turns less to go each turn, against a halutz's 1; one with that many or fewer left is built that turn. A veteran does the same pioneer work as a halutz (R-SITE-001) (D-D9; Q-VET-2, owner, 17 October 2026, #782).
+R-VET-002: A veteran's site or corridor segment being built has `veteran_progress` turns less to go each turn, against a halutz's 1; one with that many or fewer left is built that turn. A veteran does the same pioneer work as a halutz (R-SITE-001) (D-D9; Q-VET-2, owner, 17 October 2026, #782).
 
 R-SITE-004: Every designated site has one or more kinds from a fixed list: `yishuv`, `field`, `swamp`, `military_camp` and `hakhshara` (Phase 4, Q-FIELD-1, Q-SWAMP-1, Q-CAMP-3). A pioneer action is accepted only at a site of its kind; any other is refused with the state unchanged and the Attention refunded. A yishuv site has a founding date inside the MVP's years and no other kind has one. A camp site (`military_camp` or `hakhshara`) names a city of `cities.yaml`, the city it trains for (Q-CAMP-1), and no other kind names one. The loader refuses any other row, naming the file and field.
 
 R-SITE-005: At most one `yishuv` site sits in a hex, so a hex shows at most one new yishuv. A site of another kind may share a hex with a yishuv site, as a yishuv's field site does (Q-SITE-3).
+
+## Corridors
+
+Corridor work is step 5 too, after the sites (Phase 4 PR 2, #786; owner, 17 October 2026, #782: the plan's Q-COR-1 to Q-COR-7 and Q-RAIL-1). `content/corridors.yaml` holds each corridor's kind (`road` or `rail`), names, map route and segments; a segment's hexes are derived from the route's traced line by `tools/corridor_hexes.py`. The Money and turns per segment are labelled design values in `rules.yaml` `mvp:` (Q-COR-6). On screen a segment is its corridor's name and its number ("Burma Road, segment 2"), never a waypoint's name (Q-SENS-1).
+
+R-COR-001: `PioneerWork(unit, build_road | build_rail, corridor:N)` starts segment N (from 1) of a corridor whose kind the action builds (`build_road` a road, `build_rail` a railway), when the segment is neither being built nor built, with a halutz unit that has no other project (D-D6). Segments may be started in any order, one unit per segment, so several units can build one corridor at once (Q-COR-4); the unit works from where it stands (Q-COR-5). The Treasury pays the kind's `road_segment_cost` or `rail_segment_cost` at once and borrows the shortfall (R-MONEY-003). It is refused, with the state unchanged and the Attention refunded, for a busy unit, an unknown corridor or segment number, a kind the action does not build, or a segment being built or built; the legacy loop refuses it before charging Attention. Its Attention cost is 0 (D-A6).
+
+R-COR-002: Each turn, after the sites, in ordinal corridor id order and then segment order, every segment being built gains one turn of progress, or `veteran_progress` with a veteran (R-VET-002), counting the turn of the order. A segment whose progress reaches its kind's `road_segment_turns` or `rail_segment_turns` is built, on the turn's end date, and its unit is idle again. Corridors with a segment being built or built are written into the state hash only when there are some.
+
+R-COR-003: A corridor is complete when every one of its segments is built, in any order. `StopWork(unit)` on a unit building a segment ends it as R-SITE-002 does for a site: the segment is unbuilt and free again, the unit is idle, and the progress and the Money paid are lost (D-A3). A built corridor needs no upkeep and yields nothing in the MVP (Q-COR-7).
 
 ## Objectives
 

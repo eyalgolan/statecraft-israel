@@ -48,6 +48,7 @@ namespace Statecraft.Sim
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
         sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
+        sealed class CorridorsFile { public List<CorridorDef> Corridors { get; set; } = new List<CorridorDef>(); }
         sealed class ObjectivesFile { public List<Objective> Objectives { get; set; } = new List<Objective>(); }
 
         public const string HexesFile = "map/hexes.json";
@@ -354,6 +355,7 @@ namespace Statecraft.Sim
                 c.Cities = Read<CitiesFile>(readFile, "cities.yaml").Cities;
                 c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
                 c.Sites = Read<SitesFile>(readFile, "sites.yaml").Sites;   // sourced facts (Phase 1 PR 5)
+                c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 ValidateGdd(c, settlementIds);
             }
             c.BuildWindows();
@@ -1051,6 +1053,10 @@ namespace Statecraft.Sim
                 if (m.CityArrivalsFrom != c.Rules.Mvp!.CityArrivalsFrom) throw new ContentException(file, "mvp.city_arrivals_from", "must be the same in every era (the cities count arrivals from one day)");
                 if (m.BuildYishuvTurns < 1) throw new ContentException(file, "mvp.build_yishuv_turns", "must be >= 1");
                 if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
+                if (m.RoadSegmentTurns < 1) throw new ContentException(file, "mvp.road_segment_turns", "must be >= 1");
+                if (!(m.RoadSegmentCost >= 0 && IsFinite(m.RoadSegmentCost))) throw new ContentException(file, "mvp.road_segment_cost", "must be a finite number >= 0");
+                if (m.RailSegmentTurns < 1) throw new ContentException(file, "mvp.rail_segment_turns", "must be >= 1");
+                if (!(m.RailSegmentCost >= 0 && IsFinite(m.RailSegmentCost))) throw new ContentException(file, "mvp.rail_segment_cost", "must be a finite number >= 0");
                 // R-FOOD-001 to R-FOOD-003: required, so a missing key is never read as 0 (a stock term of 0, or no stock).
                 if (m.KFood == null) throw new ContentException(file, "mvp.k_food", "required when eras.yaml systems.loop is gdd");
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
@@ -1090,6 +1096,48 @@ namespace Statecraft.Sim
                 throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and before the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
             ValidateSites(c);
             ValidateObjectiveSites(c);
+            ValidateCorridors(c);
+        }
+
+        /// <summary>The corridors (corridors.yaml, Phase 4 PR 2): a known kind, names, a route id, and segments whose hexes are
+        /// land hexes of the map, each one step from the last, the first of a segment one step from (or on) the last of the one
+        /// before (Review focus 2: no corridor with a gap). That the route exists in map/routes_1948.yaml and the hexes are its
+        /// traced line's is checked by tools/tests/test_corridor_hexes.py: the sim does not read the map-only route files.</summary>
+        static void ValidateCorridors(Content c)
+        {
+            const string cf = "corridors.yaml";
+            Unique(cf, "corridors", c.Corridors.Select(x => x.Id));
+            foreach (var x in c.Corridors)
+            {
+                var at = $"corridors[{x.Id}]";
+                if (x.Kind != Corridors.Road && x.Kind != Corridors.Rail) throw new ContentException(cf, at + ".kind", $"unknown kind '{x.Kind}' (road, rail)");
+                Named(cf, at + ".name", x.Name);
+                Named(cf, at + ".name_he", x.NameHe);
+                if (string.IsNullOrWhiteSpace(x.Route)) throw new ContentException(cf, at + ".route", "required: the map route the corridor follows");
+                if (x.Segments.Count == 0) throw new ContentException(cf, at + ".segments", "needs at least one segment");
+                List<int>? prev = null;
+                for (int i = 0; i < x.Segments.Count; i++)
+                {
+                    var sat = FormattableString.Invariant($"{at}.segments[{i + 1}].hexes");
+                    var hexes = x.Segments[i].Hexes;
+                    if (hexes.Count == 0) throw new ContentException(cf, sat, "needs at least one hex");
+                    foreach (var h in hexes)
+                    {
+                        if (h == null || h.Count != 2) throw new ContentException(cf, sat, "must be [q, r] pairs");
+                        var hex = c.HexAt(h[0], h[1]);
+                        if (hex == null || !hex.Land)
+                            throw new ContentException(cf, sat, FormattableString.Invariant($"hex q={h[0]} r={h[1]} is not a land hex in {HexesFile}"));
+                        if (prev != null && MapActions.Distance(prev[0], prev[1], h[0], h[1]) > 1)
+                            throw new ContentException(cf, sat, FormattableString.Invariant($"hex q={h[0]} r={h[1]} is not next to q={prev[0]} r={prev[1]}"));
+                        prev = h;
+                    }
+                }
+                if (x.Sources.Count == 0) throw new ContentException(cf, at + ".sources", "required: a corridor is a historical fact");
+                for (int i = 0; i < x.Sources.Count; i++)
+                    if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)
+                        throw new ContentException(cf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
+                Status(cf, at + ".status", x.Status);
+            }
         }
 
         /// <summary>An objective's site (R-OBJ-001): a designated site of kind yishuv, whose sourced founding date is the

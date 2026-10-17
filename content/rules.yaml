@@ -35,6 +35,12 @@ mvp:
   city_arrivals_from: 1948-11-08         # https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf, checked 2026-10-15
   build_yishuv_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D6: turns a pioneer build takes)
   build_yishuv_cost: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D6: IL millions, paid at the start)
+  # Q-COR-6 (agents propose design values, owner, 15 October 2026, #375; taken with the plan on 17 October 2026, #782): a
+  # road segment as the Mefalsim build, a rail segment twice its Money at the same pace. Not historical figures.
+  road_segment_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: turns a road segment takes)
+  road_segment_cost: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: IL millions, paid at the start)
+  rail_segment_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: turns a rail segment takes)
+  rail_segment_cost: 4                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: IL millions, paid at the start)
   objective_points: 100                  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6: points per objective)
   objective_bonus_per_month: 5           # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: points per month early)
   objective_bonus_cap: 60                # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: the most bonus points)

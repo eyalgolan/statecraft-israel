@@ -93,6 +93,7 @@ is inside it (review C1):
 | road | Tel Aviv–Haifa | 1937 | The Hadera–Haifa section's date (OpenHistoricalMap), to-verify. |
 | road | Haifa–Acre–Ras an-Naqura | 1933 | OpenHistoricalMap way dates. |
 | track | Burma Road | 1948-06-14 | Completed on 14 June 1948. The first jeep attempt failed on the night of 30–31 May; a second got through on 31 May – 1 June. Drawn along the 1946 tracks (to-verify). It is hidden at the 15 May start. |
+| rail | Petah Tikva–Tel Aviv North rail link | 1949-09-20 | The 1949 Yarkon link (#786): new track from the Petah Tikva branch to a new Tel Aviv North station, which with the Tulkarm bypass carried the Haifa–Tel Aviv service from 20 September 1949. Drawn along the 1946 tracks (to-verify); the bypass is not drawn, no source gives its line. A GDD Phase 4 corridor (`content/corridors.yaml`). |
 
 **Left out, on purpose.**
 - The Afula–Nablus–Tulkarm branch: its service ended in 1932 and 1938 (Palestine Railways article). Freight on the

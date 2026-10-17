@@ -105,10 +105,14 @@ namespace Statecraft.Game.UI
                         ?? Unknown("training", t.Track, Content.UnitTypes.Where(x => !string.IsNullOrEmpty(x.Facility)).Select(x => x.Id));
                 case CancelTraining x:
                     return Unknown("cohort", x.Cohort.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Cohorts.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Pioneer work (#378): ids only; the sim refuses a busy unit, a built site or a short Treasury with its own reason.
+                // Pioneer work (#378, corridors #786): ids only; the sim refuses a busy unit, a built site or segment, a kind
+                // mismatch or a short Treasury with its own reason. A corridor action names "corridor:N", N from 1.
                 case PioneerWork w:
                     return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)))
-                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv }) ?? Unknown("site", w.Site, Content.Sites.Select(x => x.Id));
+                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv, Corridors.BuildRoad, Corridors.BuildRail })
+                        ?? (Corridors.IsAction(w.Action)
+                            ? Unknown("corridor_segment", w.Site, Content.Corridors.SelectMany(x => Enumerable.Range(1, x.Segments.Count).Select(n => x.Id + ":" + n.ToString(System.Globalization.CultureInfo.InvariantCulture))))
+                            : Unknown("site", w.Site, Content.Sites.Select(x => x.Id)));
                 case StopWork w: return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 default: return text["order.invalid"];
             }

@@ -101,7 +101,7 @@ public class RouteTests
         using var sha = System.Security.Cryptography.SHA256.Create();
         return string.Concat(sha.ComputeHash(bytes.ToArray()).Select(b => b.ToString("x2")));
     }
-    const string RailMeshHash = "e6b1710041c05f9ce18d1591e5173c003b933308e9cb84fa807e23b015f16fbd";   // #252: full width where only one side leaves the tolerance; #319: cut at the Old City's walls
+    const string RailMeshHash = "7a48e169031f093824b2f85f0f4d451d84ed14514f16ce35fc6390c6a3e9c55b";   // #252: full width where only one side leaves the tolerance; #319: cut at the Old City's walls; #786: the 1949 rail link
 
     [Test]
     public void TheMapBuildsRibbonsOnTheGroundAndTheTogglesHideThem()
@@ -349,7 +349,10 @@ public class RouteTests
             var groups = RoutesRoot(map).Find(RouteLayer.RibbonsName).GetComponentsInChildren<RouteGroup>(true).ToList();
             var burma = groups.Single(g => g.Window.From == new System.DateTime(1948, 6, 14));
             Assert.IsFalse(burma.gameObject.activeSelf, "built as at the game's start, 15 May 1948");
-            Assert.IsTrue(groups.Where(g => g != burma).All(g => g.gameObject.activeSelf), "the rest are on the 1946 map");
+            var start = new System.DateTime(1948, 5, 15);
+            Assert.IsTrue(groups.Where(g => g != burma && g.Window.From <= start).All(g => g.gameObject.activeSelf), "the rest are on the 1946 map");
+            // #786: the 1949 rail link (a Phase 4 corridor) is the one route built after the Burma Road, hidden at the start.
+            Assert.IsTrue(groups.Where(g => g.Window.From > start).All(g => g == burma || (g.Window.From == new System.DateTime(1949, 9, 20) && !g.gameObject.activeSelf)));
             RouteLayer.ShowAt(map, new System.DateTime(1948, 6, 13));
             Assert.IsFalse(burma.gameObject.activeSelf);
             RouteLayer.ShowAt(map, new System.DateTime(1948, 6, 14));

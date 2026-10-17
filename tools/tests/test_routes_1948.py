@@ -83,12 +83,14 @@ def test_each_trace_follows_its_symbol():
 
 def test_display_windows():
     """Every route has a display window; the Burma Road shows from its completion on 14 June 1948 (C1), so it is not on
-    the map at the 15 May 1948 start; the rest are on the 1946 map and show from 1946 at the latest."""
+    the map at the 15 May 1948 start, and the 1949 Yarkon rail link (a Phase 4 corridor, #786) from its opening on 20
+    September 1949; the rest are on the 1946 map and show from 1946 at the latest."""
     for src in ROUTES["routes"]:
         assert BY_ID[src["id"]]["from"] == src["from"] and BY_ID[src["id"]].get("to") == src.get("to")
-        if src["id"] != "burma_road":
+        if src["id"] not in ("burma_road", "yarkon_rail_link"):
             assert rt._as_date(src["from"]) <= rt._as_date("1946"), src["id"]
     assert BY_ID["burma_road"]["from"] == "1948-06-14"
+    assert BY_ID["yarkon_rail_link"]["from"] == "1949-09-20"
 
 
 @pytest.mark.parametrize("change, message", [
@@ -218,7 +220,10 @@ def test_no_sawtooth_on_straight_lines():
     15% of its points (the rest are real bends: the Sorek canyon, the hill roads, the Jericho descent)."""
     for r in PATHS:
         n = sawtooth(r["points"])
-        assert n <= 0.15 * len(r["points"]), (r["id"], n, len(r["points"]))
+        # #786: the 6 km Yarkon rail link's 11 points turn off the road onto the track to its station in one S-bend
+        # (two kinks), which 15% of 11 would count as a fault; every other route keeps the 15% bar.
+        limit = 2 if r["id"] == "yarkon_rail_link" else 0.15 * len(r["points"])
+        assert n <= limit, (r["id"], n, len(r["points"]))
         if r["id"] in ("hadera_haifa_railway", "kantara_main_line_south", "eastern_railway", "haifa_beirut_railway"):
             assert n <= 3, (r["id"], n)
 

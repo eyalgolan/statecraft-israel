@@ -103,15 +103,24 @@ public class ReferencePlayerTests
         Assert.Equal(new[] { (7, "build_yishuv", "beit_kama"), (8, "build_yishuv", "gilat") }, builds.Select(b => (b.Unit, b.Action, b.Site)));
         Assert.Empty(Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).Rejected);
 
+        // One site left: the second group takes the Burma Road's first segment (Phase 4 PR 2, #786).
         var oneLeft = s.Clone();
+        oneLeft.Units.Add(9, new Unit(9, "halutz", -3, 19));   // the group building Beit Kama: step 5 reads its type (R-VET-002)
+        oneLeft.NextId = 10;
         oneLeft.Sites["beit_kama"] = new SiteWork("beit_kama", 9, 3, null);
         oneLeft.Sites["gilat"] = SiteWork.Built("gilat", new DateTime(1949, 6, 15));
         oneLeft.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
-        var last = Assert.Single(ReferencePlayer.Commands(Mvp, oneLeft).OfType<PioneerWork>());   // one site left: the second group waits
-        Assert.Equal((7, "reim"), (last.Unit, last.Site));
+        Assert.Equal(new[] { (7, "build_yishuv", "reim"), (8, "build_road", "burma_road:1") },
+                     ReferencePlayer.Commands(Mvp, oneLeft).OfType<PioneerWork>().Select(p => (p.Unit, p.Action, p.Site)));
+        Assert.Empty(Simulation.Step(Mvp, oneLeft, ReferencePlayer.Commands(Mvp, oneLeft)).Rejected);
+        // No yishuv site left: each idle group takes the lowest free corridor segment; a busy one is not sent.
         var none = oneLeft.Clone();
         none.Sites["reim"] = new SiteWork("reim", 7, 3, null);
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, none), x => x is PioneerWork);
+        var road = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
+        Assert.Equal((8, "build_road", "burma_road:1"), (road.Unit, road.Action, road.Site));
+        none.Sites["reim"] = SiteWork.Built("reim", new DateTime(1949, 12, 15));
+        Assert.Equal(new[] { (7, "burma_road:1"), (8, "burma_road:2") },
+                     ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>().Select(p => (p.Unit, p.Site)));
         var poor = s.Clone();
         poor.Treasury = 0;
         Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);

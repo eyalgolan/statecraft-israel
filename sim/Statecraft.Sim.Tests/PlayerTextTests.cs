@@ -284,7 +284,8 @@ public class PlayerTextTests
                 bad.Add("money without a unit: " + w.Message);
             if (w.System == "map")   // "Built a housing project: cost IL 6.0m, Housing +3.0%, ...": every number with its unit
             {
-                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)", ""), @"[+-]?(IL |\$)\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
+                // A hex "(q, r)" and a corridor's "segment N" (R-COR-001, Q-SENS-1) are names, not amounts.
+                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+", ""), @"[+-]?(IL |\$)\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
                     bad.Add("map line number without a unit: " + w.Message);
             }
             else if (indicators.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?\d+(\.\d)?%", ""), @"\d"))

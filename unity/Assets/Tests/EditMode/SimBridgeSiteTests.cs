@@ -37,13 +37,25 @@ public class SimBridgeSiteTests
         Assert.IsInstanceOf<StopWork>(b.Queued[0]);
     }
 
+    // Corridors (#786): a road or rail order names a segment of corridors.yaml, "corridor:N".
+    [Test]
+    public void ACorridorOrderQueuesInTheSlice()
+    {
+        var (b, id) = WithAHalutz();
+        Assert.IsNull(b.Queue(new PioneerWork(id, Corridors.BuildRoad, "burma_road:4")));
+        Assert.IsNull(b.Queue(new PioneerWork(id, Corridors.BuildRail, "tlv_haifa_rail:1")));   // the same unit: replaces it
+        Assert.AreEqual(1, b.Queued.Count);
+    }
+
     [Test]
     public void AnUnknownIdIsRefusedAndNothingIsQueued()
     {
         var t = Text;
         var (b, id) = WithAHalutz();
         Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(99, Projects.BuildYishuv, "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "pioneer work"), b.Queue(new PioneerWork(id, "build_road", "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "pioneer work"), b.Queue(new PioneerWork(id, "dig_well", "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "corridor segment"), b.Queue(new PioneerWork(id, Corridors.BuildRoad, "burma_road:5")));
+        Assert.AreEqual(t.Format("order.unknown", "corridor segment"), b.Queue(new PioneerWork(id, Corridors.BuildRoad, "mefalsim")));
         Assert.AreEqual(t.Format("order.unknown", "site"), b.Queue(new PioneerWork(id, Projects.BuildYishuv, "yeruham")));
         Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(99)));
         Assert.AreEqual(0, b.Queued.Count);

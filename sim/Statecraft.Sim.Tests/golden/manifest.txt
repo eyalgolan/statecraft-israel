@@ -2,10 +2,10 @@
 # Tests read this file. To accept a deliberate change: STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln
 # rewrites this file, the snapshots and the GoldenRun.cs constants; then update docs/determinism.md and tools/web_check.py
 # (GoldenManifestTests names any place that is out of date) and add a row to the rebaseline history.
-hash1950 ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f
-hash1952 7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3
+hash1950 f5dc29715553b014f9f3bf6a0e9d0783a3cae9c6106e23c818ac090dc7c6c343
+hash1952 92405d82c8841af01cc12b2d4d5a60d7c62d2990f7194477316c38899d491d1d
 smoke5 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc
 scenario-reckless af7b2abd4c6e477cc78555700b09822030773e9fc6b856ffc0a7109bedc1e7dd
 scenario-cautious 28fd140536e326922fadf21571b64bdaae5125f97f2609b44b4baa5ca9bceda3
 scenario-mvp-absorb-first b16a87402c03324f6260b57b915a0b7767f12cc166420ace257a21b54b341dd4
-mvp-end 7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3
+mvp-end 92405d82c8841af01cc12b2d4d5a60d7c62d2990f7194477316c38899d491d1d

@@ -469,3 +469,29 @@ routes:
     checked: '2026-10-11'
   - url: https://www.openhistoricalmap.org/way/202064413
     checked: '2026-10-11'
+# --- Built 1949: GDD Phase 4 corridors (#786; owner, 17 October 2026, #782: Q-RAIL-1) -------------------------------
+# Later than the 1946 map, so it traces on the map's tracks (`trace: track`) between the places the sources name, as the
+# Burma Road does. Its sources carry the date of the research note that read them, research_notes/gdd-phase-4-sourcing.md
+# (15 October 2026); no person has re-read them for this file, so it stays draft.
+- id: yarkon_rail_link
+  name: Petah Tikva–Tel Aviv North rail link (1949)
+  kind: rail
+  trace: track
+  from: '1949-09-20'
+  status: draft
+  note: The new track Israel Railways laid in the summer of 1949 from the Rosh HaAyin–Petah Tikva branch west along the
+    Yarkon to a new Tel Aviv North station (renamed Bnei Brak after 1954), about 7 km. With the bypass west of Tulkarm it
+    carried the Haifa–Tel Aviv passenger service from 20 September 1949, the date the map shows it from (Israel Railways,
+    50 Years of Israel Railways, 1998, p. 15).
+  to_verify:
+  - Built after the 1946 map, so the trace follows the tracks the map shows between the two stations, not the 1949
+    alignment; where the new track left the branch is not given by any source read.
+  - The bypass west of Tulkarm is not drawn: no source read gives its line (research_notes/gdd-phase-4-sourcing.md).
+  via:
+  - {name: Petah Tikva railway station (1921), lon: 34.8813, lat: 32.0968, url: 'https://he.wikipedia.org/wiki/%D7%AA%D7%97%D7%A0%D7%AA_%D7%94%D7%A8%D7%9B%D7%91%D7%AA_%D7%94%D7%94%D7%99%D7%A1%D7%98%D7%95%D7%A8%D7%99%D7%AA_%D7%A9%D7%9C_%D7%A4%D7%AA%D7%97_%D7%AA%D7%A7%D7%95%D7%95%D7%94'}
+  - {name: Tel Aviv North railway station, lon: 34.831, lat: 32.1029, url: 'https://en.wikipedia.org/wiki/Bnei_Brak_railway_station'}
+  sources:
+  - url: https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf
+    checked: '2026-10-15'
+  - url: https://en.wikipedia.org/wiki/Bnei_Brak_railway_station
+    checked: '2026-10-15'

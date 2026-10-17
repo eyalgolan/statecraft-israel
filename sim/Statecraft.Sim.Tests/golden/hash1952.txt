@@ -44,7 +44,7 @@ pop{
 sit[
   fx_crisis
 treasury=0 [0000000000000000]
-debt=176.89012071283815 [40661C7BDE6EE43A]
+debt=188.89012071283815 [40679C7BDE6EE43A]
 fx=-12.990431328096559 [C029FB19D0A63796]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -142,6 +142,9 @@ site{
   gilat=done,1949-06-15
   mefalsim=done,1949-09-15
   reim=done,1949-12-15
+corr{
+  burma_road=done,1950-03-15;done,1950-06-15;done,1950-09-15;done,1950-12-15
+  tlv_haifa_rail=done,1951-03-15
 next=2
 obj{
   first_new_yishuv=1949-09-15

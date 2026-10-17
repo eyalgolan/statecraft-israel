@@ -92,6 +92,8 @@ order.kind.cohort: "מחזור הכשרה"
 order.kind.unit: "יחידה"
 order.kind.pioneer_work: "עבודה חלוצית"
 order.kind.site: "אתר"
+# For the native reviewer (#564): "a segment of a road or a railway" (#786).
+order.kind.corridor_segment: "קטע של כביש או מסילה"
 order.invalid: "הפקודה אינה תקפה"
 # order.failed: the turn failed and SimBridge.EndTurn cleared the queue, so the player gives the orders again (#622;
 # maintainer, 15 October 2026). For the native reviewer (#564).

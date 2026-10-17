@@ -74,7 +74,7 @@ public class ProjectsTests
         {
             case "unknown unit": order = Build(999); break;
             case "busy": s.Sites["site_b"] = new SiteWork("site_b", id, 2, null); break;
-            case "unknown action": order = new PioneerWork(id, "build_road", "site_a"); break;
+            case "unknown action": order = new PioneerWork(id, "dig_well", "site_a"); break;   // build_road is a corridor action since #786
             case "unknown site": order = Build(id, "nowhere"); break;
             case "not a yishuv site": order = Build(id, "site_b"); break;
             case "being built": s.Sites["site_a"] = new SiteWork("site_a", other, 2, null); break;   // question 15: one unit per site
