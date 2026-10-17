@@ -683,7 +683,7 @@ Each is a question with its options and what each costs. Recommended defaults ar
 - (c) As a company. Cost: a company and its bank account first.
 
 **O6. The name (D8) and the identity fields.**
-- **D8 decided (owner, 2026-10-14):** "keep the games name as is". The bundle ID is still open.
+- **Decided (owner, 2026-10-17):** "O6 bundle ID: io.github.eyalgolan.statecraftisrael". D8 was decided by the owner on 2026-10-14: "keep the games name as is".
 - (a) Settle D8 before the first tester build and set `productName`, `companyName` and the bundle ID once. Cost: the
   decision now; no migration later.
 - (b) Ship testers under the current names and rename later. Cost: a save migration, or testers lose saves.

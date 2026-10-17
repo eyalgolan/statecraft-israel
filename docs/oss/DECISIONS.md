@@ -36,14 +36,14 @@ are already public. If a check fails, the file is removed from the tip with the 
 ## Desktop builds and the release pipeline
 
 The owner's answers to the questions in section 9 of `docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`
-(issue #482). The owner gave them in a session on 2026-10-14; the quotes are verbatim. O6 (the bundle ID) is not yet answered;
-it is open in the plan, not here, because nothing in a web release depends on it.
+(issue #482). The owner gave them in a session on 2026-10-14 unless another date is shown; the quotes are verbatim.
 
 - [x] O1 and O7 Platforms and where builds run. Decided (owner, 2026-10-14): "ok lets do it - windows, mac and linux", in reply to the description "GitHub's machines build the game on every release, for free on a public repo, with Windows and Mac machines available". That plan could not stand. Unity's own pages rule out a Personal licence on CI machines (read 2026-10-14): "For Unity Personal, the Unity Hub is the only method for activating and returning licences" (Licence activation methods, 6000.3); the command-line procedures for headless builds "don't apply to Unity Personal" (Manage your licence through the command line, 6000.3 and 6000.4); and the Editor Software Terms (last updated June 30, 2026), §2.5: "You may not use Unity Build Server with the Unity Personal tier of the Unity Software." Given that and the options, the owner chose on 2026-10-14 "Build on this Mac (Recommended)", described as: "Free and within Unity's terms. The Mac and Linux builds are made locally; Windows uses Unity's other build type (Mono), made from the Mac. GitHub's machines only test the finished builds, which needs no licence." So: Windows, macOS and Linux, built locally on the owner's Mac (O7 (a)); GitHub runners only run the licence-free golden check on the built players.
 - [x] O2 Free or paid. Decided (owner, 2026-10-14): "free".
 - [x] O3 Apple Developer Program. Decided (owner, 2026-10-14): "we have apple development". The owner has an Apple Developer account. Only the owner acts on it: certificates, signing and notarization credentials.
 - [x] O4 Windows signing. Decided (owner, 2026-10-14): "no windows signing for now".
 - [x] O5 Steamworks account. Decided (owner, 2026-10-14): "lets open the steamworks account as an individual". Opening it, the fee and the tax and bank forms are the owner's actions.
+- [x] O6 Bundle ID. Decided (owner, 2026-10-17, #879, issuecomment-6233492763): "O6 bundle ID: io.github.eyalgolan.statecraftisrael".
 - [x] O8 Windows backend. Decided (owner, 2026-10-14): first "use the best windows build type" (IL2CPP, which Unity builds only on Windows), then, with O7, the Mac build option above: Windows is built with Mono from the Mac. IL2CPP for Windows would need a Windows PC.
 - [x] Linux backend. Decided (owner, 2026-10-14): "sounds good", to keeping Mono for the Linux player.
 - [x] O9 How testers get builds. Decided (owner, 2026-10-14): "lets go with github pre-release". A public GitHub pre-release.

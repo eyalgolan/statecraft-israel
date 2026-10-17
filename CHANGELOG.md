@@ -45,6 +45,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- The desktop players' bundle ID is `io.github.eyalgolan.statecraftisrael` (decision O6, owner, 17 Oct 2026, #879; refs #905). Only the Standalone identifier changes; the WebGL build does not read it.
 - The 50 people names in Hebrew are flagged agent-checked until a native speaker reads them (owner, #882).
 - The 3D-model credits in code comments and one test's failure message now name MATKOT, as the owner asked on 17 October 2026; credit text only, with no behaviour change.
 - People audit batch 1 (#457): shazar's name_he now cites the Knesset's member page instead of en.wiki; the
