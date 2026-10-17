@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.UI;
@@ -18,6 +19,25 @@ public class DefenceScreenTests
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
         new ToastPresenter(ui.Root, bridge, Text);
         return (ui, bridge, new DefencePresenter(ui.Root, bridge, Text));
+    }
+
+    /// <summary>In Hebrew the command line and the leaders' cards show the content's Hebrew names and titles (#558).</summary>
+    [Test]
+    public void InHebrewTheLeadersAreNamedInHebrew()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        using var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), he);
+        new DefencePresenter(ui.Root, bridge, he);
+        var minister = Cabinet.Holder(C, bridge.State, "defense_minister")!;
+        var chief = Cabinet.Holder(C, bridge.State, "chief_of_staff")!;
+        Assert.AreEqual($"שר הביטחון {minister.NameHe} · הרמטכ״ל {chief.NameHe}", ui.Q<Label>("defence-command").text);
+        Assert.AreEqual(chief.NameHe, ui.Q<Label>("lead-chief_of_staff-holder").text);
+        Assert.AreEqual(C.Offices.Single(o => o.Id == "chief_of_staff").TitleHe, ui.Q<Label>("lead-chief_of_staff-office").text);
+        // Ben-Gurion's card lists both his offices, one a line, each in Hebrew.
+        Assert.AreEqual(string.Join("\n", C.Offices.Single(o => o.Id == "prime_minister").TitleHe, C.Offices.Single(o => o.Id == "defense_minister").TitleHe),
+            ui.Q<Label>("lead-prime_minister-office").text);
     }
 
     [Test]

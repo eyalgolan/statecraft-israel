@@ -144,8 +144,9 @@ namespace Statecraft.Game.UI
                 row.EnableInClassList("rung-current", rung == s.Rung);
                 row.EnableInClassList("rung-target", rung == target && target != s.Rung);   // the level an order will move to
             }
+            string NameOrVacant(Person? p) => p == null ? text["cabinet.vacant"] : ContentNames.Of(text, p);
             screen.Q<Label>("defence-command").text = text.Format("defence.command",
-                Cabinet.Holder(c, s, "defense_minister")?.Name ?? text["cabinet.vacant"], Cabinet.Holder(c, s, "chief_of_staff")?.Name ?? text["cabinet.vacant"]);
+                NameOrVacant(Cabinet.Holder(c, s, "defense_minister")), NameOrVacant(Cabinet.Holder(c, s, "chief_of_staff")));
             // One card per person: a leader who holds several of these offices (Ben-Gurion, Prime Minister and Minister of
             // Defense) has one card listing them all; a vacancy keeps its own card.
             var lineup = Cabinet.Lineup(c, s);
@@ -157,8 +158,8 @@ namespace Statecraft.Game.UI
                 var shownEarlier = seat?.Holder != null && seats.Take(i).Any(x => x?.Holder?.Id == seat.Holder.Id);
                 card.style.display = seat == null || shownEarlier ? DisplayStyle.None : DisplayStyle.Flex;
                 if (seat == null || shownEarlier) continue;
-                var titles = seat.Holder == null ? seat.Office.Title
-                    : string.Join("\n", seats.Skip(i).Where(x => x?.Holder?.Id == seat.Holder.Id).Select(x => x!.Office.Title));   // one office a line: the narrow card measured "A · B" as two lines but drew one (a blank line at 1366x768)
+                var titles = seat.Holder == null ? ContentNames.Of(text, seat.Office, null)
+                    : string.Join("\n", seats.Skip(i).Where(x => x?.Holder?.Id == seat.Holder.Id).Select(x => ContentNames.Of(text, x!.Office, seat.Holder)));   // one office a line: the narrow card measured "A · B" as two lines but drew one (a blank line at 1366x768)
                 PersonCard.Fill(card, "lead-" + Leaders[i], c, s, seat.Holder, titles, seat.Appointed, text, portraits, LeaderPortrait);
             }
             var ceasefire = screen.Q<Label>("ceasefire");

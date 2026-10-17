@@ -54,6 +54,46 @@ public class CabinetScreenTests
         Assert.IsTrue(ui.Q<Button>("appoint-golda_meir").enabledSelf);
     }
 
+    /// <summary>In Hebrew the screen shows the content's Hebrew names (#558): people, office titles (in the feminine for a
+    /// woman who holds the office, Office.TitleHeFor), parties, the government and the legislature's body.</summary>
+    [Test]
+    public void InHebrewTheScreenShowsTheContentsHebrewNames()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        using var ui = Shown();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        var bridge = new SimBridge(g, he);
+        var cabinet = new CabinetPresenter(ui.Root, bridge, he, null);
+        Assert.AreEqual("ממשלת ישראל הראשונה", ui.Q<Label>("cabinet-government").text);
+        StringAssert.Contains(Offices.Legislature(C, g.State.Date)!.BodyHe, ui.Q<Label>("cabinet-legislature").text);
+        Assert.AreEqual("אליעזר קפלן", ui.Q<Label>("seat-finance_minister-holder").text);
+        Assert.AreEqual("שר האוצר", ui.Q<Label>("seat-finance_minister-office").text);
+        Assert.AreEqual("מפא״י", ui.Q<Label>("seat-finance_minister-party").text);
+        Assert.AreEqual("גולדה מאיר", ui.Q<Label>("seat-labour_minister-holder").text);
+        Assert.AreEqual("שרת העבודה", ui.Q<Label>("seat-labour_minister-office").text, "the feminine title for her");
+        var pm = Cabinet.Holder(C, g.State, CabinetPresenter.PrimeMinister)!;
+        Assert.AreEqual(pm.NameHe, ui.Q<Label>("seat-" + CabinetPresenter.PrimeMinister + "-holder").text);
+        StringAssert.StartsWith("מפא״י ", ui.Q<Label>("party-mapai-label").text);
+        StringAssert.Contains("מפא״י", ui.Q<Label>("cabinet-largest").text);
+        cabinet.Select("finance_minister");
+        Assert.AreEqual("מינוי לתפקיד שר האוצר", ui.Q<Label>("cabinet-pick-title").text);
+        StringAssert.StartsWith("גולדה מאיר · מפא״י · ", ui.Q<Button>("appoint-golda_meir").text);
+        StringAssert.StartsWith("אהרון ציזלינג · מפ״ם · ", ui.Q<Button>("appoint-zisling").text);
+        UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
+        StringAssert.StartsWith("ניתנה פקודה: גולדה מאיר לתפקיד ", ui.Q<Label>("cabinet-status").text);
+        // A row with no Hebrew form in the content keeps its English one: the rationing office has no title_he yet.
+        var rationing = C.Offices.Single(o => o.Id == "rationing_minister");
+        Assert.AreEqual("", rationing.TitleHe);
+        Assert.AreEqual(rationing.Title, ui.Q<Label>("seat-rationing_minister-office").text);
+        // Every other card and party chip is in Hebrew.
+        foreach (var t in ui.Q<VisualElement>("screen-cabinet").Query<TextElement>().ToList())
+            if (t.name != null && t.name != "seat-rationing_minister-office"
+                && (t.name.EndsWith("-holder") || t.name.EndsWith("-office") || t.name.EndsWith("-party") || t.name.StartsWith("party-")))
+                Assert.IsFalse((t.text ?? "").Any(ch => ch < 128 && char.IsLetter(ch)), $"'{t.name}': {t.text}");
+        cabinet.Dispose();
+    }
+
     [Test]
     public void AppointingTakesEffectAtEndTurn()
     {

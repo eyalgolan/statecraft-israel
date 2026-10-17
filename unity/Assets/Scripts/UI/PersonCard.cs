@@ -67,11 +67,12 @@ namespace Statecraft.Game.UI
             else portrait.style.backgroundImage = StyleKeyword.None;
             portrait.style.display = tex != null ? DisplayStyle.Flex : DisplayStyle.None;   // never an invented portrait
             var initials = card.Q<Label>(prefix + "-initials");
-            initials.text = person == null || tex != null ? "" : Initials(person.Name);
+            var name = person == null ? "" : ContentNames.Of(text, person);
+            initials.text = person == null || tex != null ? "" : Initials(name);
             initials.style.display = tex == null ? DisplayStyle.Flex : DisplayStyle.None;
 
             var holder = card.Q<Label>(prefix + "-holder");
-            holder.text = person == null ? text["cabinet.vacant"] : appointed ? text.Format("card.appointed_name", person.Name) : person.Name;
+            holder.text = person == null ? text["cabinet.vacant"] : appointed ? text.Format("card.appointed_name", name) : name;
             holder.EnableInClassList("appointed", appointed);
             card.Q<Label>(prefix + "-office").text = office;
 
@@ -82,7 +83,7 @@ namespace Statecraft.Game.UI
             card.Q(prefix + "-loyalty-row").style.display = shown;
             if (person == null) return;
             var partyId = Offices.PartyOf(c, person, s.Date);
-            var partyName = partyId == "" ? text["cabinet.no_party"] : c.Parties.First(x => x.Id == partyId).Name;
+            var partyName = partyId == "" ? text["cabinet.no_party"] : ContentNames.Of(text, c.Parties.First(x => x.Id == partyId));
             party.text = partyLabel ? text.Format("card.party", partyName) : partyName;
             SetStat(card, prefix + "-competence", person.Competence);
             SetStat(card, prefix + "-loyalty", person.Loyalty);
