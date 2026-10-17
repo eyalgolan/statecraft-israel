@@ -26,20 +26,22 @@ public class ReferencePlayerTests
     public void ItSendsHistoricalAIsOrdersThenFillsTheJobsThenTrainsOneHalutzGroup()
     {
         var s = Start();
+        s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(248, 96, 0);   // the start fills every job (Q-START-1): free 10
         var orders = ReferencePlayer.Commands(Mvp, s);
         var history = HistoricalAI.Commands(Mvp, s);
         Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
         Assert.Equal(history.Count + 2, orders.Count);
         var assign = Assert.IsType<AssignWorkers>(orders[history.Count]);
-        Assert.Equal(("tel_aviv", "job", 90), (assign.City, assign.Role, assign.Count));   // min(90 jobs, 100 civilians)
+        Assert.Equal(("tel_aviv", "job", 106), (assign.City, assign.Role, assign.Count));   // min(106 jobs, 248 civilians)
         var train = Assert.IsType<Train>(orders.Last());
-        Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 10 civilians left without work
+        Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 142 civilians left without work
         Assert.Empty(Simulation.Step(Mvp, s, orders).Rejected);
     }
 
-    /// <summary>The real start: the 15 May card (idf_founding) is answered first, at full war's price, and the jobs are
-    /// filled; the halutz group no longer fits that turn's 4 Attention (Q-CUT-5 keeps 4), so the player trains on the first
-    /// later turn that has the Attention (the turn from 15 August 1948 in the golden run), and every order it sends is taken.</summary>
+    /// <summary>The real start: the 15 May card (idf_founding) is answered first, at full war's price. The cities start with
+    /// every job filled (Q-START-1: job slots equal the start employed), so no AssignWorkers takes Attention, and the halutz
+    /// group fits the rest of that turn's 4 Attention (Q-CUT-5): the player trains on the first turn, 15 May 1948 (before
+    /// GDD Phase 3 PR 1 it filled Tel Aviv's jobs first and trained from 15 August 1948). Every order it sends is taken.</summary>
     [Fact]
     public void OnTheRealStartItAnswersTheCardFirstAndTrainsWhenAttentionAllows()
     {
@@ -47,8 +49,8 @@ public class ReferencePlayerTests
         Assert.Contains("idf_founding", s.PendingEvents);
         var first = ReferencePlayer.Commands(Mvp, s);
         Assert.IsType<ChooseEventOption>(first[0]);
-        Assert.Contains(first, x => x is AssignWorkers);
-        Assert.DoesNotContain(first, x => x is Train);
+        Assert.DoesNotContain(first, x => x is AssignWorkers);
+        Assert.Contains(first, x => x is Train);
         DateTime? trained = null;
         while (trained == null && s.GameOver == null && s.Turn < 1000)
         {
@@ -58,7 +60,7 @@ public class ReferencePlayerTests
             if (orders.Any(x => x is Train)) trained = s.Date;
             s = r.State;
         }
-        Assert.Equal(new DateTime(1948, 8, 15), trained);
+        Assert.Equal(new DateTime(1948, 5, 15), trained);
     }
 
     // R-TRAIN-001: the stated policy trains a halutz group only when there is none, none in training, a civilian without
@@ -79,7 +81,7 @@ public class ReferencePlayerTests
         trained.Units.Add(1, new Unit(1, "halutz", -3, 19));
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, trained), x => x is Train);
         var busy = s.Clone();
-        busy.Cities["tel_aviv"] = busy.Cities["tel_aviv"].WithCounts(90, 80, 0);   // 90 jobs: all of them filled
+        busy.Cities["tel_aviv"] = busy.Cities["tel_aviv"].WithCounts(106, 106, 0);   // 106 jobs: all filled, nobody free
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, busy), x => x is Train);
         var poor = s.Clone();
         poor.Treasury = 0;   // training borrows (owner decision, 2026-10-15): an empty Treasury does not hold it back
@@ -160,7 +162,7 @@ public class ReferencePlayerTests
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         var full = s.Clone();
-        full.Cities["tel_aviv"] = full.Cities["tel_aviv"].WithCounts(100, 90, 0);
+        full.Cities["tel_aviv"] = full.Cities["tel_aviv"].WithCounts(120, 106, 0);   // all 106 jobs filled
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, full), x => x is AssignWorkers);
         var tired = s.Clone();
         tired.Attention = 0;
@@ -171,7 +173,7 @@ public class ReferencePlayerTests
     public void ItFillsNoMoreJobsThanThereAreCivilians()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
-        s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(50, 40, 0);   // 90 jobs, 50 civilians
+        s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(50, 40, 0);   // 106 jobs, 50 civilians
         var assign = Assert.IsType<AssignWorkers>(ReferencePlayer.Commands(Mvp, s).Last());
         Assert.Equal(50, assign.Count);
     }

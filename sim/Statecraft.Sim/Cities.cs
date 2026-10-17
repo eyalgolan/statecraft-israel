@@ -10,6 +10,14 @@ namespace Statecraft.Sim
     {
         public const string Kind = "assign_workers";
 
+        /// <summary>R-CITY-007: a city's start people in units: the nearest unit (a half rounds up), and at least 1 for a city
+        /// with people (Q-START-2, owner, 15 October 2026), so a small town is not left empty.</summary>
+        public static int StartUnits(decimal people, int peoplePerUnit) => people > 0 ? Math.Max(1, NearestUnit(people, peoplePerUnit)) : 0;
+
+        /// <summary>R-CITY-007: people in units to the nearest unit, a half rounding up. Decimal, so it is exact on every runtime.</summary>
+        public static int NearestUnit(decimal people, int peoplePerUnit) =>
+            (int)Math.Round(people / peoplePerUnit, MidpointRounding.AwayFromZero);
+
         /// <summary>Fills the state's cities from cities.yaml, with no refugees yet. Does nothing in the legacy loop.</summary>
         public static void Init(Content c, GameState s)
         {

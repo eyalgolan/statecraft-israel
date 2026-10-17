@@ -61,8 +61,9 @@ public class SimBridgeGddTests
     {
         var t = Text;
         var b = Bridge(Slice);
-        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new AssignWorkers("haifa", "job", 1)));
-        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new Train("haifa", "halutz", 1)));
+        // jaffa is a 1948 settlement but not a GDD city (its own map row; Tel Aviv-Yafo is one city, GDD Phase 3 PR 1).
+        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new AssignWorkers("jaffa", "job", 1)));
+        Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new Train("jaffa", "halutz", 1)));
         Assert.AreEqual(t.Format("order.unknown", "training"), b.Queue(new Train("tel_aviv", "pilot", 1)));
         // civilian is a unit type, but nobody trains to it: it has no facility.
         Assert.AreEqual(t.Format("order.unknown", "training"), b.Queue(new Train("tel_aviv", "civilian", 1)));

@@ -6,19 +6,12 @@ namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Sea round 3 (#388): the dune coasts' wider beach, for the kits. The terrain draws it from coast.png, whose
     /// land side tools/terrain_bake.py bakes beach-scaled there (BEACH_EXTRA_M, BEACH_BANDS, beach_keep); KitGround does not
-    /// read coast.png, so this is its C# twin, pinned to the bake by tools/tests/test_terrain_bake.py.</summary>
+    /// read coast.png, so this is its C# twin: the bands are DuneCoasts.json, which the bake reads too (#690), and the
+    /// constants are pinned to the bake by tools/tests/test_terrain_bake.py.</summary>
     public static class BeachBands
     {
         /// <summary>The extra beach width (m) inside a band: ScShore's 900 m beach becomes about 2.7 km.</summary>
         public const float ExtraM = 1800f;
-        /// <summary>(lon west, lon east, lat south, lat north, ramp in degrees): Jaffa south to the map's southern coast, and
-        /// Haifa Bay from the Kishon's mouth to the Na'aman's, south of Acre (owner, 16 October 2026: Acre was not dune
-        /// country). The extra width falls to 0 over the ramp at each edge.</summary>
-        static readonly (double lon0, double lon1, double lat0, double lat1, double ramp)[] Bands =
-        {
-            (34.0, 34.86, 31.0, 32.07, 0.04),
-            (35.02, 35.2, 32.77, 32.91, 0.02),
-        };
         /// <summary>Option (c) (owner, 16 October 2026: each settlement's own lots and fields stay off the sand): the extra
         /// width is 0 inside a settlement's plot reach (SettlementKits.FootprintRadiusM x PlotReach) and comes back over this
         /// many metres beyond it.</summary>
@@ -35,9 +28,7 @@ namespace Statecraft.Game.Map.Kits
         /// the settlements' yield.</summary>
         public static float ExtraAt(double lon, double lat)
         {
-            double w = 0;
-            foreach (var (lon0, lon1, lat0, lat1, ramp) in Bands)
-                w = System.Math.Max(w, Smooth((lon - lon0) / ramp) * Smooth((lon1 - lon) / ramp) * Smooth((lat - lat0) / ramp) * Smooth((lat1 - lat) / ramp));
+            double w = DuneCoasts.Weight(lon, lat);   // the bands: DuneCoasts.json, the one definition (#690)
             return (float)(w * ExtraM);
         }
 
@@ -52,8 +43,8 @@ namespace Statecraft.Game.Map.Kits
                 float reach = SettlementKits.FootprintRadiusM(s, ground.HexSizeM) * SettlementKits.PlotReach, rim = reach + YieldRampM;
                 var (lonW, latS) = ground.Frame.ToLonLat(new Vector3(w.x - rim, 0f, w.z - rim));
                 var (lonE, latN) = ground.Frame.ToLonLat(new Vector3(w.x + rim, 0f, w.z + rim));
-                foreach (var (lon0, lon1, lat0, lat1, _) in Bands)
-                    if (lonE > lon0 && lonW < lon1 && latN > lat0 && latS < lat1) { list.Add((new Vector2(w.x, w.z), reach)); break; }
+                foreach (var b in DuneCoasts.Bands)
+                    if (lonE > b.lon0 && lonW < b.lon1 && latN > b.lat0 && latS < b.lat1) { list.Add((new Vector2(w.x, w.z), reach)); break; }
             }
             return list;
         }

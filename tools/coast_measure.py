@@ -14,11 +14,13 @@ those medians with BANDS (set from promo 03 before any change) and exits 1 when 
 
 Classes (sRGB 0-255): water: b > r + 15 (docs/visual-v1.md promo-sea's sea pixel); foam: luma >= 0.72 and max-min <= 30;
 sand: luma >= 0.60 and r - b >= 25; crown: any other pixel under luma 0.40 (a tree crown or its shadow). Per row: the
-shore is where the sea ends, the first run of 3 sand or crown pixels after >= 6 water/foam pixels: a crown stands on land,
-so one over the waterline (main's citrus south of Jaffa) marks the shore as sand would, instead of moving it to the sand
-past the crown. The beach is the sand run from the first 3 sand pixels at or after the shore, bridging gaps <= 12 px (a
-border band, a pebble); the foam band is the seaward stretch [shore-80, shore) from the farthest foam pixel in it; lace lines are foam runs >= 2 px in that band. Widths are corrected
-to across the coast with a least-squares fit of the shore's slope over the rows."""
+shore is where the sea ends, the first run of 3 sand or crown pixels after >= 6 water/foam pixels: a crown stands on
+land, so one over the waterline (main's citrus south of Jaffa) marks the shore as sand would, instead of moving it to
+the sand past the crown. The beach is the sand run from the first 3 sand pixels at or after the shore, bridging gaps <=
+12 px (a border band, a pebble); the foam band is the seaward stretch [shore-80, shore) from the farthest foam pixel in
+it; lace lines are foam runs >= 2 px in that band; stripe_rows is the share of rows with 3 or more of them (#690: evenly
+spaced white bands read as combed stripes; promo 03's frontage reads 0.05). Widths are corrected to across the coast
+with a least-squares fit of the shore's slope over the rows."""
 import argparse
 import statistics as st
 import sys
@@ -132,11 +134,12 @@ def measure(im: Image.Image, y0: int, y1: int, x0: int, x1: int, step: int = 2) 
             "foam_px": st.median(r["foam_px"] * f for r in rows),
             "lace_lines": st.median(r["lace_lines"] for r in rows),
             "foam_share": st.median(r["foam_share"] for r in rows),
+            "stripe_rows": sum(r["lace_lines"] >= 3 for r in rows) / len(rows),
             "sand_luma_p50": quantile(pool, 0.5) if pool else 0.0,
             "sand_luma_p90": quantile(pool, 0.9) if pool else 0.0}
 
 
-METRICS = ("beach_px", "foam_px", "lace_lines", "foam_share", "sand_luma_p50", "sand_luma_p90")
+METRICS = ("beach_px", "foam_px", "lace_lines", "foam_share", "stripe_rows", "sand_luma_p50", "sand_luma_p90")
 
 
 def combine(summaries: list[dict]) -> dict:
@@ -180,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
                       "lace_lines=%(lace_lines)d foam_share=%(foam_share).2f" % r)
         print(f"{path}: rows={len(s['rows'])} perp_factor={s['perp_factor']:.2f} beach_px={s['beach_px']:.1f} "
               f"(p25 {s['beach_p25']:.1f}, p75 {s['beach_p75']:.1f}) foam_px={s['foam_px']:.1f} "
-              f"lace_lines={s['lace_lines']} foam_share={s['foam_share']:.2f} "
+              f"lace_lines={s['lace_lines']} foam_share={s['foam_share']:.2f} stripe_rows={s['stripe_rows']:.2f} "
               f"sand_luma p50={s['sand_luma_p50']:.2f} p90={s['sand_luma_p90']:.2f}")
     med = combine(sums)
     print("MEDIAN " + " ".join(f"{m}={v:.2f}" for m, v in med.items()) if med else "MEDIAN no shore")

@@ -517,18 +517,43 @@ namespace Statecraft.Sim
         string? reviewedOn;
     }
 
-    /// <summary>A city's start values (cities.yaml, GDD "Cities and construction"). Counts are population units (D-A1).</summary>
+    /// <summary>One start value of a city (cities.yaml), with what it is (R-CITY-006): `sourced` (read from the source named),
+    /// `derived` (computed from sourced values), `wikipedia-only` (an owner-accepted Wikipedia figure) or `design` (a
+    /// labelled design value, not a historical figure; R-LOOP-005). The first three name their sources, with checked dates,
+    /// and the day (YYYY-MM-DD) or month (YYYY-MM) the value describes.</summary>
+    public sealed class CityValue
+    {
+        /// <summary>Read as a decimal, so a share converts to units exactly on every runtime (R-CITY-007).</summary>
+        public decimal Value { get; set; }
+        public string Status { get; set; } = "";
+        /// <summary>The day or month the value describes, as the file writes it ("" for a design value without one).</summary>
+        public string Date { get; set; } = "";
+        public List<Source> Sources { get; set; } = new List<Source>();
+    }
+
+    /// <summary>A city's start values (cities.yaml, GDD "Cities and construction"). The file gives people and shares, each
+    /// with its status (R-CITY-006); the loader turns them into the population units the sim counts (D-A1, R-CITY-007).</summary>
     public sealed class CityStart
     {
         /// <summary>A settlement id of map/settlements_1948.yaml.</summary>
         public string Id { get; set; } = "";
-        public int HousingCapacity { get; set; }
-        public int JobSlots { get; set; }
-        public int Civilians { get; set; }
-        /// <summary>The civilians in jobs at the start: part of <see cref="Civilians"/>.</summary>
-        public int Employed { get; set; }
+        /// <summary>Residents, all groups (the census basis; the owner, 15 October 2026, on #569).</summary>
+        public CityValue? People { get; set; }
+        /// <summary>The share of <see cref="People"/> in work at the start, from 0 to 1.</summary>
+        public CityValue? EmployedShare { get; set; }
+        /// <summary>Housing, in population units.</summary>
+        [YamlMember(Alias = "housing_capacity")] public CityValue? Housing { get; set; }
+        /// <summary>Job slots, in population units.</summary>
+        [YamlMember(Alias = "job_slots")] public CityValue? Jobs { get; set; }
         /// <summary>Training facilities in the city (military_camp, hakhshara). PR 4 uses them (D-D5).</summary>
         public List<string> Facilities { get; set; } = new List<string>();
+
+        // The units the sim starts from, set by the loader (R-CITY-007).
+        [YamlIgnore] public int HousingCapacity { get; internal set; }
+        [YamlIgnore] public int JobSlots { get; internal set; }
+        [YamlIgnore] public int Civilians { get; internal set; }
+        /// <summary>The civilians in jobs at the start: part of <see cref="Civilians"/>.</summary>
+        [YamlIgnore] public int Employed { get; internal set; }
     }
 
     /// <summary>A population or unit type (unit_types.yaml, GDD "Population and units"). `population`: a count per city;

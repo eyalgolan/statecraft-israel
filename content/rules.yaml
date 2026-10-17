@@ -74,8 +74,12 @@ fx_start: 40
 tax_per_capita_per_year: 0.0000545
 # Spending above taxes is borrowed. The gap is set so 1950-51 borrowing matches the rise in internal debt, IL 65.4m (1950)
 # + 33.0m (1951) = 98.4m (Michaely Table 5-2, same chapter). The 1951 fiscal tightening is not modelled, so the model
-# matches the two-year total, not each year: (98.4m - 6m reserve call-up) / ~2.40m person-years = 0.0000385 per person.
-spending_per_capita_per_year: 0.000093
+# matches the two-year total, not each year. Job income (R-CITY-002) also reaches the Treasury, so the gap must cover it
+# too (owner, 16 October 2026, #821, option (a)): the twelve cities' 211 employed units (cities.yaml; HistoricalAI assigns
+# no workers) x mvp.income_per_job_per_year 0.06 x 2 years = 25.32m, and (98.4m - 6m reserve call-up + 25.32m) / ~2.40m
+# person-years = 0.00004905 per person. Spending = tax 0.0000545 + 0.00004905 = 0.00010355, rounded to 0.0001036.
+# (M3's value was 0.0000545 + 0.0000385 = 0.000093, derived before job income existed.)
+spending_per_capita_per_year: 0.0001036
 # Exports cover under a third of imports (spec section 3; EconomyCalibrationTests checks it every turn of 1950-51).
 exports_per_year: 40
 imports_per_capita_per_year: 0.00025

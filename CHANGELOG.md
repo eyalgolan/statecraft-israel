@@ -8,6 +8,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Fixed
+- The loading screen's boot-failure line wraps inside the screen with a side margin (refs #765). In Hebrew at phone width
+  it ran past both edges, so the player could not read "reload the page"; `.loading-line` had no `white-space: normal`.
+  `UiLayoutTests.TheBootFailureLineWrapsInsideTheScreen` checks English and Hebrew at 390x844, 960x600 and 1280x720.
 - Player builds work again (refs #680). Since #680 every `Build.*` failed with "no CRC for the bundle", because Unity
   reads a bundle's CRC from its `.manifest` and the collection's bundles were copied into StreamingAssets without them.
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
@@ -16,6 +19,25 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The Negev's sand is a warmer orange, toward promo 02 (refs #709, #695, #388; the owner chose this step on 16 October
   2026): the desert ground colour has less blue (`MapPalette`), re-baked into `BiomeColours.bytes` and the minimap relief.
   The #519 grade is unchanged.
+- The overview's sea is a deeper blue, toward promo 02 (refs #709, #695, #388): the water haze, seen only beyond 120 km,
+  is bluer (`MapShaderGlobals.WaterHazeColour`), so the gameplay zoom's sea does not change. The #519 grade is unchanged.
+- A kibbutz no longer looks like a moshav or a moshava (refs #32). The five kibbutz game settlements and the kibbutz rows
+  of the 1948 localities get a dining hall near the heart, opposite the water tower (white, flat roof, a raised
+  clerestory), long one-storey members' houses under red tiles, and grey-roofed farm sheds on one side, the farm yard.
+  The plan follows Kauffmann's kibbutz layout: the dining hall at the centre, the farm kept apart from the houses
+  (he.wiki "גן הנוף הקיבוצי"). Nahalal's moshav ring and the moshavot are unchanged (their renders are pixel-identical),
+  and no other place moves; inside a kibbutz the hall's lot can take a plot. Yad Mordechai has no hall: no free ground is left near its heart, and a hall pushed to the edge
+  would take its houses.
+- The GDD game has its twelve cities (GDD Phase 3 PR 1, refs #732, #383; R-CITY-006, R-CITY-007): `content/cities.yaml`
+  holds the `city` and `town` rows of the 1948 settlements, each starting from its census population of 8 November 1948
+  (CBS Statistical Abstract No. 14, Table 11; Zikhron Ya'akov from No. 3; Rosh Pinna from Hebrew Wikipedia, as the owner
+  accepted on #569), with the CBS working share where one exists and labelled design values for the gaps (Q-START-1).
+  Every value carries a status (sourced, derived, wikipedia-only or design) and the loader refuses a historical value
+  without its sources and date. People become units to the nearest 1,000, at least 1 for a town with people
+  (Q-START-2): 511 units in all. With 211 employed units paying job income, `spending_per_capita_per_year` is re-derived
+  from the same Michaely anchor (IL 98.4m of internal debt over 1950-51) with that income included: 0.0001036, was
+  0.000093 (owner, 16 October 2026, #821, option (a)); the run's 1950-51 debt rise is 98.7m. Every golden moves
+  (docs/determinism.md, rebaseline history).
 - The top bar's Money figure is labelled net: "Money (net)", "כסף (נטו)" in Hebrew, and its tooltip says the same (refs
   #681; owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"). The value is unchanged,
   cash minus debt; the Budget screen still shows money and debt separately.
@@ -52,6 +74,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The olive crowns are darker, with pale tops (visual gap L2, refs #34; owner, 15 October 2026: "Darker, with pale
   sunlit tops"). At gameplay03 their body is luma 0.29 (main 0.50, promo 03 0.30) and their sunlit top stands 0.18 above
   it (main 0.14, promo 0.18). Vertex colours only: no tree count, size, shader or grade change.
+- The surf is wide on the dune coasts and narrow under the kurkar, as promo 03 draws it (refs #690, #388): 3.0 km from
+  Jaffa south and in Haifa Bay, 1.5 km elsewhere (2.4 km everywhere before). The dune coasts are one definition,
+  `unity/Assets/Resources/Map/DuneCoasts.json`, which the water pass reads through `MapShaderGlobals`. Presentation only.
 - The surf reaches further out to sea (refs #690, #388): the breakers' zone widens from 1.8 to 2.4 km, so south of Jaffa
   the white foam band reads 30.8 px at the gameplay zoom, inside promo 03's 25-55 px band (20.3 before; the promo reads
   44), and the northern frontage reads 25.0 px (18.3 before), inside its 6-30 px band. Presentation only.
@@ -103,10 +128,24 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the tilt-shift blur off and on, at once; the choice is kept per browser in `/idbfs/statecraft-settings/settings.txt`
   (a fixed folder, as the autosave's), never in the sim or the save, so the goldens do not move. `?notiltshift` still
   boots without the blur.
+- A scripted trailer capture from the real build (refs #45): `MapCapture.Trailer` renders the camera moves in
+  `TrailerShot.Default` (the whole country, down to the promo 03 ground and back up; 14 s from the existing promo
+  poses) at 1920 x 1080 and 60 fps on the desktop tier, as PNG frames with the water's clock pinned per frame, the units
+  of turn 1 of a game started with `-seed`, and a `trailer.txt` recording the commit, seed and settings.
+  `docs/RELEASING.md` "Capturing trailer footage" gives the command and the ffmpeg line. Map only (no UI, no sound);
+  the draft cut is still to come.
 - The info panel of Tiberias' hex adds "Tiberias is shown here because its own hex is water." (Hebrew too, with the
   town's Hebrew name), so the hillside hex's
   70 m does not read as the town's (refs #204). It is worked out in Unity from the town's own lon/lat and the hex grid
   (`InfoPanelPresenter.TownHex`), with no new `content/map/` field; an ordinary hex shows no such line.
+- A steam train runs on the Jaffa–Jerusalem railway in normal play from 2 March 1950, the date regular service resumed
+  (refs #668, #35; maintainer decision on #35, 16 October 2026). It runs from Lod to Jerusalem, sourced in
+  `content/map/routes_1948.yaml` (Israel Railways, 1998), with the date awaiting the human check. Tel Aviv South to Lod
+  is in the content too. It rests on Wikipedia alone, so it runs only once a person signs it off.
+  The model is Tal's (@pixelrenderai-hash) locomotive and tender from The 1948 Collection. It leads three of the
+  showcase's coaches, four articulated cars that ride the track (owner, 16 October 2026: "ride the track, cut walls"):
+  on the Sorek valley's tightest bends their sides pass into the gorge walls. It streams only once the game date reaches
+  the service, never at boot. If it does not stream, the game plays on without it and logs one warning.
 - Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins
@@ -813,6 +852,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   Hebrew waits for the native reviewer (#564). The chips also follow a coalition change in the middle of a government
   (`coalition_changes`, such as 25 May 1953), where before they kept their old colours. Presentation only: no golden
   moves.
+- PageUp, PageDown, Home and End scroll the open screen, such as a long Why list or the Defence screen, or the open
+  decision card's text when it runs long; those panels hold only text, so Tab never reached into them and the arrows
+  pan the map (accessibility audit H3, refs #41). With the focus in another list on the screen, such as the Cabinet's
+  candidates, the keys scroll that list. The arrows still pan the map. Presentation only: no golden moves.
 - Wheel zoom in the web build: one small wheel delta, such as a touchpad's half pixel, made every later frame zoom 27%,
   since Unity's player takes the smallest delta it has seen as one notch. The camera now counts the browser's wheel
   events itself (`WheelInput.jslib`): a touchpad's small pixel deltas zoom by how far the fingers move (100 px to a

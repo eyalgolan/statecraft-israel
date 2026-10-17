@@ -310,13 +310,17 @@ def test_the_committed_coast_draws_a_wide_beach_south_of_jaffa_and_a_narrow_one_
 
 
 def test_the_csharp_twin_of_the_beach_bands_matches_the_bake():
+    """#690: the bands are one file, DuneCoasts.json, which the bake and BeachBands (through DuneCoasts.cs) both read;
+    neither keeps a copy of them."""
+    import json
     import re
     cs = (ROOT / "unity/Assets/Scripts/Map/Kits/BeachBands.cs").read_text()
     hlsl = (ROOT / "unity/Assets/Shaders/StatecraftMap.hlsl").read_text()
     assert float(re.search(r"const float ExtraM = ([0-9.]+)f", cs).group(1)) == tb.BEACH_EXTRA_M
-    bands = [tuple(float(v) for v in m) for m in re.findall(
-        r"\(([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+)\)", cs.split("Bands =", 1)[1].split(";", 1)[0])]
-    assert bands == [tuple(b) for b in tb.BEACH_BANDS]
+    dune = json.loads((ROOT / "unity/Assets/Resources/Map/DuneCoasts.json").read_text(encoding="utf-8"))["bands"]
+    assert tb.BEACH_BANDS == tuple((b["lon0"], b["lon1"], b["lat0"], b["lat1"], b["ramp"]) for b in dune)
+    assert "DuneCoasts.Weight(lon, lat)" in cs and "DuneCoasts.Bands" in cs and "Bands =" not in cs, \
+        "BeachBands reads DuneCoasts.json, no copy of its own"
     beach = float(re.search(r"static const float ScBeachM = ([0-9.]+);", hlsl).group(1))
     full = float(re.search(r"const float FullSandM = ([0-9.]+)f", cs).group(1))
     assert full == pytest.approx(0.55 * 1.4 * beach, abs=0.5), "ScShore's widest full sand"

@@ -68,6 +68,17 @@ def test_a_crown_over_the_waterline_does_not_move_the_shore_or_the_foam():
     assert b["beach_px"] == 46                                 # the sand still reads from where it shows
 
 
+def test_stripe_rows_is_the_share_of_rows_with_3_or_more_foam_lines():
+    """#690: evenly spaced white bands on the northern frontage read as combed stripes; the share of rows with 3 or more
+    lines in the foam band counts them (promo 03's frontage: 0.05)."""
+    three = coast(beach=60, foam=[(0, 4), (10, 3), (20, 3)])
+    two = coast(beach=60, foam=[(0, 4), (10, 3)])
+    assert cm.measure(three, 0, 40, 100, 400)["stripe_rows"] == 1.0
+    assert cm.measure(two, 0, 40, 100, 400)["stripe_rows"] == 0.0
+    mixed = cm.combine([cm.measure(im, 0, 40, 100, 400) for im in (three, two, two)])
+    assert mixed["stripe_rows"] == 0.0
+
+
 def test_a_slanted_coast_is_measured_across_it():
     im = coast(beach=50, foam=[(0, 10)], h=200, slope=1.0)     # 45 degrees: rows cross the strip at sqrt(2) its width
     s = cm.measure(im, 0, 200, 100, 600)

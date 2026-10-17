@@ -682,4 +682,49 @@ public class UiLayoutTests
             Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
         }
     }
+
+    /// <summary>#765: a boot failure on the loading line wraps inside the screen with a side margin, in English and in
+    /// Hebrew (the longer line, which was clipped at both edges at phone width), at a phone upright, a small window and
+    /// 1280x720. The line is set the way GameRoot.OnBootFailed sets it: boot.failed with boot.reason_other, right to left
+    /// in the Hebrew face.</summary>
+    [UnityTest]
+    public IEnumerator TheBootFailureLineWrapsInsideTheScreen()
+    {
+        const float SideMargin = 16f;   // logical px the text keeps from each edge of the panel
+        var problems = new List<string>();
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (w, h) in new[] { (390, 844), (960, 600), (1280, 720) })
+            foreach (var (lang, text) in new[] { ("en", Text), ("he", he) })
+            {
+                var rt = new RenderTexture(w, h, 0);
+                var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+                ps.targetTexture = rt;
+                var go = new GameObject("LoadingLineTest");
+                go.SetActive(false);
+                var doc = go.AddComponent<UIDocument>();
+                doc.panelSettings = ps;
+                doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+                go.SetActive(true);
+                try
+                {
+                    var root = doc.rootVisualElement;
+                    bool hebrew = lang == "he";
+                    root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);
+                    var line = root.Q<Label>("loading");
+                    line.text = text.Format("boot.failed", text["boot.reason_other"]);
+                    line.languageDirection = hebrew ? LanguageDirection.RTL : LanguageDirection.Inherit;   // as GameRoot.Say: this Hebrew line starts with Hebrew, so RTL
+                    for (int i = 0; i < 20 && !(line.contentRect.width > 0); i++) yield return null;
+                    for (int i = 0; i < 4; i++) yield return null;
+                    var where = $"{w}x{h} {lang}";
+                    var panel = root.panel.visualTree.worldBound;
+                    var box = line.worldBound;
+                    if (box.xMin < panel.xMin - 0.5f || box.xMax > panel.xMax + 0.5f) problems.Add($"{where}: the line {box} leaves the panel {panel}");
+                    if (line.contentRect.width > panel.width - 2 * SideMargin + 0.5f)
+                        problems.Add($"{where}: the text may run to the panel's edge (box {line.contentRect.width:0} of {panel.width:0} px)");
+                    if (!TextFits(line)) problems.Add($"{where}: '{line.text}' does not fit its line {line.contentRect}");
+                }
+                finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
+            }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
 }
