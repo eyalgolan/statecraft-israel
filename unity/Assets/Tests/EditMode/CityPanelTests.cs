@@ -56,12 +56,13 @@ public class CityPanelTests
         using var panel = Panel(ui, bridge, En);
         panel.Show(CityHex.q, CityHex.r);
         var city = bridge.State.Cities[City];
+        Assert.AreEqual((0, 0), (city.Refugees, city.Recruits), "precondition: no refugees or recruits at the start (the plural forms below)");
         Assert.AreEqual(DisplayStyle.Flex, Host(ui).style.display.value, "the GDD part of the panel shows");
-        Assert.AreEqual(En.Format("city.housing", city.Civilians, city.HousingCapacity), ui.Q<Label>("city-housing").text);
+        Assert.AreEqual(En.Format("city.housing", city.Civilians, En.Format("city.groups", city.HousingCapacity)), ui.Q<Label>("city-housing").text);
         Assert.AreEqual(En.Format("city.jobs", city.Employed, city.JobSlots), ui.Q<Label>("city-jobs").text);
-        Assert.AreEqual(En.Format("city.refugees", city.Refugees), ui.Q<Label>("city-refugees").text);
-        Assert.AreEqual(En.Format("city.recruits", city.Recruits), ui.Q<Label>("city-recruits").text);
-        Assert.AreEqual(En.Format("city.workers", city.Employed), ui.Q<Label>("city-workers").text);
+        Assert.AreEqual(En.Format("city.refugees", En.Format("city.groups", city.Refugees)), ui.Q<Label>("city-refugees").text);
+        Assert.AreEqual(En.Format("city.recruits", En.Format("city.groups", city.Recruits)), ui.Q<Label>("city-recruits").text);
+        Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", city.Employed)), ui.Q<Label>("city-workers").text);
     }
 
     [Test]
@@ -76,7 +77,7 @@ public class CityPanelTests
         var order = bridge.QueuedLike(new AssignWorkers(City, "job", 0)) as AssignWorkers;
         Assert.IsNotNull(order, "the stepper queues an AssignWorkers order");
         Assert.AreEqual(employed - 1, order!.Count);
-        Assert.AreEqual(En.Format("city.workers", employed - 1), ui.Q<Label>("city-workers").text, "the stepper shows the ordered count");
+        Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", employed - 1)), ui.Q<Label>("city-workers").text, "the stepper shows the ordered count");
         UiTestKit.Press(ui.Q<Button>("city-workers-more"));
         Assert.IsNull(bridge.QueuedLike(new AssignWorkers(City, "job", 0)), "back at the current count: no order is left queued");
     }
@@ -109,7 +110,7 @@ public class CityPanelTests
         {
             var type = C.UnitTypes.Single(t => t.Id == track);
             var button = ui.Q<Button>("city-train-" + track);
-            Assert.AreEqual(En.Format("city.train_" + track, PlayerText.Money(C, "treasury", type.TrainingCost), type.TrainingTurns), button.text);
+            Assert.AreEqual(En.Format("city.train_" + track, PlayerText.Money(C, "treasury", type.TrainingCost), En.Format("city.turns", type.TrainingTurns)), button.text);
             UiTestKit.Press(button); UiTestKit.Press(ui.Q<Button>("city-train-" + track));
             var order = bridge.QueuedLike(new Train(City, track, 1)) as Train;
             Assert.IsNotNull(order, track);
@@ -141,9 +142,20 @@ public class CityPanelTests
         using var panel = Panel(ui, bridge, En);
         panel.Show(CityHex.q, CityHex.r);
         var row = ui.Q<Label>($"city-cohort-{id}");
-        Assert.AreEqual(En.Format("city.cohort", En["city.track_halutz"], 2, 3), row.text);
+        Assert.AreEqual(En.Format("city.cohort", En["city.track_halutz"], En.Format("city.groups", 2), En.Format("city.turns", 3)), row.text);
         UiTestKit.Press(ui.Q<Button>($"city-cohort-{id}-cancel"));
         Assert.IsNotNull(bridge.QueuedLike(new CancelTraining(id)), "Cancel queues CancelTraining");
+    }
+
+    [Test]
+    public void OneGroupAndOneTurnAreSingular()
+    {
+        using var ui = new UiTestKit();
+        int id = -1;
+        var bridge = Bridge(En, s => { id = s.NextId++; s.Cohorts.Add(id, new Cohort(id, "halutz", City, 1, 1)); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.AreEqual("Halutzim: 1 group in training, 1 turn left", ui.Q<Label>($"city-cohort-{id}").text);
     }
 
     [Test]
@@ -158,8 +170,8 @@ public class CityPanelTests
         Assert.AreEqual(En["site.available"], ui.Q<Label>("site-state").text);
         var r = C.RulesAt(bridge.State.Date).Mvp!;
         var first = ui.Q<Button>($"site-build-{a}");
-        Assert.AreEqual(En.Format("site.build", En.Format("site.group", a), PlayerText.Money(C, "treasury", r.BuildYishuvCost), r.BuildYishuvTurns), first.text);
-        Assert.IsNotNull(ui.Q<Button>($"site-build-{b}"), "every idle group has its button");
+        Assert.AreEqual(En.Format("site.build", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildYishuvCost), En.Format("city.turns", r.BuildYishuvTurns)), first.text);
+        StringAssert.Contains(En.Format("site.group", 2), ui.Q<Button>($"site-build-{b}").text, "every idle group has its button, numbered from 1");
         UiTestKit.Press(first);
         var order = bridge.QueuedLike(new PioneerWork(a, Projects.BuildYishuv, Site)) as PioneerWork;
         Assert.IsNotNull(order); Assert.AreEqual(Site, order!.Site);
@@ -184,7 +196,7 @@ public class CityPanelTests
         var bridge = Bridge(En, s => { a = AddHalutz(s); s.Sites[Site] = new SiteWork(Site, a, 4, null); });
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
-        Assert.AreEqual(En.Format("site.building", En.Format("site.group", a), 4), ui.Q<Label>("site-state").text);
+        Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", 4)), ui.Q<Label>("site-state").text);
         UiTestKit.Press(ui.Q<Button>("site-stop"));
         Assert.IsNotNull(bridge.QueuedLike(new StopWork(a)), "Stop queues StopWork");
     }
