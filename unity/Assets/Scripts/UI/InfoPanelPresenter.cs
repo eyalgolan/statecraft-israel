@@ -43,9 +43,9 @@ namespace Statecraft.Game.UI
         /// agreement (null: no region line).</param>
         /// <param name="townHex">The hex each settlement's own point lies in, by id (<see cref="TownHex"/>; null: no note on
         /// a town drawn from the water hex next door, #204).</param>
-        /// <param name="townNamesHe">Each settlement's Hebrew name (name_he), by id: the Hebrew UI names the town in that
-        /// note with it, or with the English name where it has none (null: English names). The "Settlements" line keeps the
-        /// English names (#558).</param>
+        /// <param name="townNamesHe">Each settlement's Hebrew name (name_he), by id: the Hebrew UI names the town with it in the
+        /// title, the "Settlements" line and that note (#899), or with the English name where it has none (null: English
+        /// names).</param>
         public InfoPanelPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, string> settlementNames,
             ScreenNav? nav = null, System.Func<PlacedToken?>? selectedUnit = null, MapRegions? regions = null,
             System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt = null,
@@ -170,13 +170,19 @@ namespace Statecraft.Game.UI
             side == Control1948.Side.Arab && holder != null && p.Fronts.Contains(holder);
 
         /// <summary>The "1948 localities" line for a hex: each place's 1948 name, with today's name where Localities.TodayName
-        /// allows ("Beisan (today: Beit She'an)"); empty for a hex with none.</summary>
+        /// allows ("Beisan (today: Beit She'an)"); empty for a hex with none. The Hebrew UI names a place by its name_he, by the
+        /// English name where it has none (#899), and drops a today name that is the same Hebrew word (Umm el Fahm and Umm al-Fahm
+        /// are both one name in Hebrew: 48 rows that would otherwise show a today name).</summary>
         public static string LocalitiesText(UiText text, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place> places)
         {
             if (places.Count == 0) return "";
             bool hebrew = text["ui.lang"] == "he";
-            var names = places.Select(p => Statecraft.Game.Map.Kits.Localities.TodayName(p, hebrew) is string today
-                ? text.Format("info.locality_today", p.Settlement.Name, today) : p.Settlement.Name);
+            var names = places.Select(p =>
+            {
+                var name = hebrew && !string.IsNullOrWhiteSpace(p.NameHe) ? p.NameHe! : p.Settlement.Name;
+                return Statecraft.Game.Map.Kits.Localities.TodayName(p, hebrew) is string today && today != name
+                    ? text.Format("info.locality_today", name, today) : name;
+            });
             return text.Format("info.localities", string.Join(", ", names));
         }
 
@@ -188,6 +194,11 @@ namespace Statecraft.Game.UI
             var at = settlements.ToDictionary(s => s.Id, s => HexPicker.FromLonLat(s.Lon, s.Lat, hexes.bounds, hexes.hex_size_km));
             return id => at[id];
         }
+
+        /// <summary>A settlement's name in the UI's language: its name_he under Hebrew, the English name where it has none.</summary>
+        string TownName(string id) =>
+            text["ui.lang"] == UiLanguage.Hebrew && townNamesHe != null && townNamesHe.TryGetValue(id, out var he)
+                && !string.IsNullOrWhiteSpace(he) ? he : settlementNames[id];
 
         void ShowLocalities(string line)
         {
@@ -235,7 +246,7 @@ namespace Statecraft.Game.UI
             var (q, r) = Selected.Value;
             var hex = c.HexAt(q, r);
             ShowThumb(hex?.Biome);
-            var owned = c.SettlementHexes.Where(x => x.Q == q && x.R == r).Select(x => settlementNames[x.Id]).ToList();   // strict: every settlement hex has a name (final review M4)
+            var owned = c.SettlementHexes.Where(x => x.Q == q && x.R == r).Select(x => TownName(x.Id)).ToList();   // strict: every settlement hex has a name (final review M4)
             title.text = owned.Count > 0 ? owned[0] : hex == null ? text["info.off_map"] : text["info.biome." + hex.Biome];
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)
             // The armistice zone in force, else the sub-district on 15 May 1948, and any armistice line in force through the
@@ -246,12 +257,7 @@ namespace Statecraft.Game.UI
             // so, so this hex's elevation does not read as the town's (#204).
             if (townHex != null)
                 foreach (var town in c.SettlementHexes.Where(x => x.Q == q && x.R == r && townHex(x.Id) != (q, r)))
-                {
-                    // The Hebrew UI names the town in Hebrew (name_he), and in English where it has no Hebrew name.
-                    var name = text["ui.lang"] == UiLanguage.Hebrew && townNamesHe != null && townNamesHe.TryGetValue(town.Id, out var he)
-                        && !string.IsNullOrWhiteSpace(he) ? he : settlementNames[town.Id];
-                    settlements.text += "\n" + text.Format("info.town_in_water", name);
-                }
+                    settlements.text += "\n" + text.Format("info.town_in_water", TownName(town.Id));
             ShowLocalities(localitiesAt == null ? "" : LocalitiesText(text, localitiesAt(q, r)));
             var here = MapActions.At(s, q, r);
             var queued = bridge.QueuedLike(new MapAction(MapActions.Housing, q, r)) as MapAction;

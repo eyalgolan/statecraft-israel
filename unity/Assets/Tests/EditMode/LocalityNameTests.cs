@@ -101,10 +101,27 @@ public class LocalityNameTests
     [Test]
     public void TheHebrewPanelUsesHebrewTodayNames()
     {
-        var p = map.Localities.First(x => Localities.TodayName(x, true) != null && !string.IsNullOrEmpty(x.TodayHe));
+        var p = map.Localities.First(x => Localities.TodayName(x, true) != null && !string.IsNullOrEmpty(x.TodayHe) && x.TodayHe != x.NameHe);   // #899 drops a today name equal to the Hebrew 1948 name
         var text = InfoPanelPresenter.LocalitiesText(He, new[] { p });
         StringAssert.Contains(p.TodayHe!, text);
         Assert.AreEqual("", InfoPanelPresenter.LocalitiesText(He, new Localities.Place[0]));
+    }
+
+    /// <summary>#899: under Hebrew each 1948 locality is named by its name_he (Beisan is ביסאן), and by the English name where the
+    /// row has none (Na'ana). Where the Hebrew 1948 name and the Hebrew today name are one word (Umm el Fahm and Umm al-Fahm
+    /// are both אום אל-פחם: 48 rows that would otherwise show a today name), the "today" part would repeat the name, so it is left out. English is unchanged.</summary>
+    [Test]
+    public void TheHebrewPanelNamesEach1948LocalityByItsHebrewName()
+    {
+        var by = map.Localities.ToDictionary(p => p.Settlement.Id);
+        var (beisan, naana, fahm) = (by["beit_shean"], by["naana"], by["umm_al_fahm"]);
+        Assert.IsNull(naana.NameHe, "Na'ana has no Hebrew name");
+        Assert.AreEqual(fahm.NameHe, fahm.TodayHe, "one Hebrew word for 1948 and today");
+        Assert.AreEqual("יישובים ב-1948: ביסאן (היום: בית שאן)", InfoPanelPresenter.LocalitiesText(He, new[] { beisan }));
+        Assert.AreEqual(He.Format("info.localities", "Na'ana"), InfoPanelPresenter.LocalitiesText(He, new[] { naana }));   // Format marks the Latin run
+        Assert.AreEqual("יישובים ב-1948: אום אל-פחם", InfoPanelPresenter.LocalitiesText(He, new[] { fahm }));
+        Assert.AreEqual("1948 localities: Beisan (today: Beit She'an), Na'ana, Umm el Fahm (today: Umm al-Fahm)",
+            InfoPanelPresenter.LocalitiesText(En, new[] { beisan, naana, fahm }));
     }
 
     /// <summary>The list wraps inside the info panel: the hex with the most localities (seven around Tel Aviv) at a desktop,

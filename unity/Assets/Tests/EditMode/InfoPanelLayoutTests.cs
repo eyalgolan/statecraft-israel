@@ -235,6 +235,30 @@ public class InfoPanelLayoutTests
         }
     }
 
+    /// <summary>#899: under Hebrew the panel's title and its "Settlements" line name the hex's towns by their name_he (all 25
+    /// settlement rows have one); under English both stay the English names.</summary>
+    [Test]
+    public void InHebrewTheTitleAndTheSettlementsLineAreTheTownsHebrewNames()
+    {
+        var namesHe = SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t => t.Id, t => t.NameHe);
+        var names = Names();
+        var lod = C.SettlementHexes.Single(s => s.Id == "lod");
+        var owned = C.SettlementHexes.Where(s => s.Q == lod.Q && s.R == lod.R).Select(s => s.Id).ToList();
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        Assert.AreEqual("לוד", namesHe["lod"]);
+        foreach (var (text, name) in new (UiText, System.Func<string, string>)[] { (Text, id => names[id]), (he, id => namesHe[id]!) })
+        {
+            using var ui = new UiTestKit();
+            var info = new InfoPanelPresenter(ui.Root, new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text), text, names,
+                townNamesHe: namesHe);
+            info.Show(lod.Q, lod.R);
+            Assert.AreEqual(name(owned[0]), ui.Q<Label>("info-title").text, $"{text["ui.lang"]}: the title");
+            Assert.AreEqual(text.Format("info.owned", string.Join(", ", owned.Select(name))), ui.Q<Label>("info-settlements").text,
+                $"{text["ui.lang"]}: the Settlements line");
+            info.Dispose();
+        }
+    }
+
     /// <summary>#204 drift guard: the note says "water hex" because a town's own hex (TownHex) differs from its drawn hex
     /// only where hexgrid.settlement_hex moved it off a water hex. Every such town's own hex is on the map and not land, and
     /// there is at least one (Tiberias), so the guard cannot pass on an empty list.</summary>

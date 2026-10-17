@@ -13,6 +13,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- Under `?lang=he` the hex info panel names its towns and 1948 localities in Hebrew: the title, the "Settlements"
+  line and the 1948 name in the localities line read the row's `name_he`, and the English name where a row has none
+  (13 of 271 localities). Where the Hebrew 1948 and today names are one word (48 rows that would otherwise show
+  a today name), the "today" part is left out. English is unchanged (refs #899).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
