@@ -167,18 +167,35 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). Seven meters do not
    fit a phone's width with the widest values (#380): they wrap to two lines (a consequence of the owner's "tighten + re-tier", 16 October 2026), and the bar is a meter line
-   (96 px) taller than the six meters' 312 px. */
-.hud-three-row .top-bar { height: 408px; }
+   (96 px) taller than the six meters' 312 px. The owner's text floor (#642) raises the small text to 25 px on a 390x844
+   phone: the plate, the meters and the attention line grow, and the bar takes 32 px more (with the widest values and
+   changes its rows end at about 431 px; each meter line already holds two caption lines, Security's level or "International
+   support", so a caption that wraps once more does not add to it). Smaller phones raise it further (26 px at 360x800, 30 px
+   at 375x667; the owner: the floor holds "down to 375x667", and the bar grows taller to fit, review of #859): the bar takes
+   its rows' height when that is more than 440 px, and the panels under it move down by what it grew (HudPresenter.PlaceUnderBar). */
+.hud-three-row .top-bar { height: 440px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
 /* Each meter a quarter of the row, so the seven always take two lines (four, then three) and the bar's second line is
    never an empty band (a phone's turn-1 values would otherwise fit one line). A quarter (~190 px) is wider than the widest
    meter there (~154 px). */
 .hud-three-row .meter { flex-basis: 25%; flex-grow: 0; flex-shrink: 0; }
-.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 424px; }
-/* The event layer keeps the same 96 px free at its bottom (padding, so its backdrop still reaches the window's bottom:
-   DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier), so the centred card stays where the six meters left it,
-   clear of the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
-.hud-three-row .event-layer { padding-bottom: 96px; }
+/* At the floor's 25 px (#642) a caption may take most of its quarter, not the 120 px that would break "Immigration" inside the
+   word (170 px: a phone's quarter, about 193 px, keeps 5% free, PromoHudTests), and "Security" and its level, too wide for a
+   quarter side by side, wrap the level under the caption. */
+.hud-three-row .meter .meter-name { max-width: 170px; }
+.hud-three-row .meter-caption-row { flex-wrap: wrap; }
+/* In Hebrew each caption, and Security's wrapped caption row, ends at the text column's right edge (review of #859: the
+   wrapped row had moved to the column's left). */
+.lang-he.hud-three-row .meter-body { align-items: flex-end; }
+.lang-he.hud-three-row .meter-caption-row { justify-content: flex-end; }
+.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 456px; }
+/* The owner's ruling on #859 (17 October 2026): on a phone no rail button sits under the decision card, Why? and Settings
+   included. The card starts right of the column (the layer's left padding, from its 16 px: the column's 60 px and a 12 px gap; padding, so
+   the backdrop still reaches the column, LeftColumnTests.OnAPhoneThePhotoCardLeavesTheRailClear) and hangs from the layer's
+   top, under the bar, rather than sitting in the middle: centred, the card at 375x667 reached the map's border label above
+   the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). The 88 px at the bottom keep the tallest card off
+   the window's foot (padding, so its backdrop still reaches it, DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier). */
+.hud-three-row .event-layer { justify-content: flex-start; padding-left: 72px; padding-bottom: 88px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
@@ -204,6 +221,14 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .left-column .rail-button { width: 56px; height: 56px; margin: 0 0 12px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
 .left-column .rail-button .nav-disc { top: 0; left: 0; width: 56px; height: 56px; padding: 13px; border-radius: 28px; }
+/* On a phone held upright the panel's scale falls to about 0.41 (375x667), where a 56 px disc is 22.8 px on screen: the
+   column's discs are 60 px there, at least 24 on screen (LeftColumnTests), and the backdrop's strip and the backdrop
+   follow the wider column. */
+.hud-three-row .left-column { width: 60px; }
+.hud-three-row .left-column > .rail-button { width: 60px; height: 60px; }
+.hud-three-row .left-column > .rail-button .nav-disc { width: 60px; height: 60px; padding: 14px; border-radius: 30px; }
+.hud-three-row .event-gutter { width: 76px; }
+.hud-three-row .event-scrim { left: 60px; }
 .right-gap { flex-grow: 1; flex-shrink: 0; min-height: 16px; }
 /* The decision layer: the room under the bar, top per HUD tier as the column's. While an event is open (event-open on the
    root) the map is blocked: the backdrop dims it and takes the pointer, so map clicks and drags stop at it, and

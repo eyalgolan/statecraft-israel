@@ -27,6 +27,7 @@ public class TopBarTests
     {
         (1920, 1080), (1280, 720), (1366, 768), (1760, 1000), (1920, 1200), (1440, 900), (1680, 1050), (1024, 768), (1280, 1024),
         (1024, 1024), (960, 1080), (800, 1000), (1531, 784), (2560, 1080), (1920, 900), (1600, 757), (1366, 657), (960, 600), (390, 844),
+        (360, 800), (375, 667),   // smaller phones held upright: the owner's floor holds "down to 375x667" (#642)
     };
 
     /// <summary>Windows at the one-row tier's edge (review of #624), by their logical width. The panel scales by the plain mean of
@@ -366,17 +367,18 @@ public class TopBarTests
         }, widest: false);
     }
 
-    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level,
-    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, in
-    /// both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window, so on screen is the
-    /// font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
-    /// collides at these sizes.)</summary>
+    /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the seven captions, Security's level,
+    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least
+    /// HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, and on phones held upright, 390x844,
+    /// 360x800 and 375x667 (#642; the owner: "down to 375x667"), in both languages; a 1080p window keeps the stylesheet's 15 px.
+    /// The panel scales with the window, so on screen is the font size times the window's pixels per panel pixel.
+    /// (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing collides at these sizes.)</summary>
     [UnityTest]
     public IEnumerator TheBarsSmallTextKeepsTheFloorOnScreen()
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080) })
+            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080), (390, 844), (360, 800), (375, 667) })
                 yield return Rendered(w, h, hebrew, (root, text) =>
                 {
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
@@ -393,6 +395,11 @@ public class TopBarTests
                         float onScreen = l.resolvedStyle.fontSize * perPanelPx;
                         TestContext.WriteLine($"{at}: {l.name}/{l.parent?.parent?.name} {l.resolvedStyle.fontSize:0.0} px, {onScreen:0.0} on screen");
                         if (onScreen < 12f - 0.05f) problems.Add($"{at}: {l.parent?.parent?.name} {l.name} '{l.text}' is {onScreen:0.0} px on screen, under the 12 px floor");
+                        // A wrapped caption breaks between words, never inside one (#642: at 25 px "Immigration" is wider than
+                        // the captions' 120 px max-width).
+                        foreach (var word in l.text.Split(' '))
+                            if (l.MeasureTextSize(word, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x > l.contentRect.width + 0.5f)
+                                problems.Add($"{at}: {l.parent?.parent?.name} {l.name} '{l.text}' breaks inside '{word}' ({l.contentRect.width:0.0} px wide)");
                         if (w == 1920 && Mathf.Abs(l.resolvedStyle.fontSize - 15f) > 0.01f) problems.Add($"{at}: {l.name} is {l.resolvedStyle.fontSize} px, not the stylesheet's 15");
                     }
                     // The plate's text keeps clear of its gilt frame (reviews of #624 in WebGL: the raised date, then the year,
@@ -419,6 +426,42 @@ public class TopBarTests
                         TestContext.WriteLine($"{at}: {name} top {r.yMin - plate.yMin:0.0}, bottom {plate.yMax - r.yMax:0.0}, corners TL {Room(corners[0]):0.0} TR {Room(corners[1]):0.0} BL {Room(corners[2]):0.0} BR {Room(corners[3]):0.0} (panel px; needs {clear} from the top and bottom, and >= 0 from each zone)");
                     }
                 });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Review of #859 at fb2a8dc (WebGL): on a phone held upright (390x844, 360x800, 375x667) the three-row bar wraps Security's
+    /// caption row, and Security's caption and level still end on the reading side, where the other captions do: in Hebrew at
+    /// the meter's content right edge (they had moved to the left), in English at its left edge (the level's 6 px gap from the
+    /// caption is its left margin); with turn 1's values and with the widest.</summary>
+    [UnityTest]
+    public IEnumerator OnThePhoneBarEachCaptionMeetsItsTextColumnsReadingEdge()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var widest in new[] { false, true })
+                foreach (var (w, h) in new[] { (390, 844), (360, 800), (375, 667) })
+                    yield return Rendered(w, h, hebrew, (root, text) =>
+                    {
+                        string at = $"{(hebrew ? "he" : "en")} {w}x{h}{(widest ? " widest" : " turn 1")}";
+                        if (!root.Q("root").ClassListContains("hud-three-row")) { problems.Add($"{at}: precondition: the three-row bar"); return; }
+                        int seen = 0;
+                        foreach (var l in root.Q("top-bar").Query<Label>(className: "meter-name").ToList())
+                        {
+                            if (!Shown(l) || string.IsNullOrEmpty(l.text) || !(l.worldBound.width > 0)) continue;
+                            var body = l.parent;
+                            while (body != null && !body.ClassListContains("meter-body")) body = body.parent;
+                            if (body == null) { problems.Add($"{at}: precondition: '{l.text}' is in a meter's text column"); continue; }
+                            seen++;
+                            var r = l.worldBound; var s = l.resolvedStyle; var align = s.unityTextAlign;
+                            float left = body.worldBound.xMin + body.resolvedStyle.paddingLeft, right = body.worldBound.xMax - body.resolvedStyle.paddingRight;
+                            bool reading = hebrew ? align == TextAnchor.UpperRight || align == TextAnchor.MiddleRight || align == TextAnchor.LowerRight
+                                                  : align == TextAnchor.UpperLeft || align == TextAnchor.MiddleLeft || align == TextAnchor.LowerLeft;
+                            float gap = hebrew ? right - (r.xMax + s.marginRight) : (r.xMin - s.marginLeft) - left;
+                            TestContext.WriteLine($"{at}: '{l.text}' {r}, column {left:0.0}-{right:0.0}, {gap:0.0} px from the reading edge");
+                            if (!reading || Mathf.Abs(gap) > 1f) problems.Add($"{at}: '{l.text}' {r} is {gap:0.0} px from its reading edge (column {left:0.0}-{right:0.0}, aligned {align})");
+                        }
+                        if (seen < 7) problems.Add($"{at}: precondition: the captions and Security's level show, found {seen}");
+                    }, widest: widest);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
