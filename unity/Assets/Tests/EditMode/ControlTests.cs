@@ -283,8 +283,8 @@ public class ControlTests
     }
 
     /// <summary>The longest legend label (English and Hebrew, a period with some fronts switched: legend and caption) fits
-    /// beside the minimap with the real HUD and the longest event card (which, being modal, may cover it: owner, 15 October
-    /// 2026), as ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard
+    /// beside the minimap with the real HUD and the longest event card (which hides it while open: owner, 17 October 2026,
+    /// #849), as ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard
     /// checks the older label: on screen, clear of the card, the minimap, the info panel and the top bar, its text not cut, at
     /// most six lines (the approved legend is about three of them in the narrow box).</summary>
     [UnityTest]
@@ -324,13 +324,9 @@ public class ControlTests
                     Assert.IsTrue(lb.xMin >= screen.xMin - 0.5f && lb.xMax <= screen.xMax + 0.5f && lb.yMin >= screen.yMin - 0.5f && lb.yMax <= screen.yMax + 0.5f,
                         $"{at}: the label {lb} leaves the screen {screen}");
                     Assert.IsFalse(lb.Overlaps(R("minimap")), $"{at}: the label {lb} overlaps the minimap {R("minimap")}");
-                    // Owner, 15 October 2026, on the longest card (bernadotte_assassination since the GDD cutover) covering the
-                    // legend at 390x844: "Accept it, the card is modal". A modal card (its backdrop dims the map and disables
-                    // the minimap column, ScreenNav.DisableCovered) may cover the legend at any size; a card that covers it must
-                    // be modal. Today every shown card is modal, so this fails only if a shown card stops being modal.
-                    if (lb.Overlaps(R("event-card")))
-                        Assert.IsTrue(root.Q("root").ClassListContains(EventCardPresenter.ModalClass),
-                            $"{at}: the event card {R("event-card")} covers the label {lb} and is not modal");
+                    // Not clear of the card: the owner's decision of 17 October 2026 (#849, issuecomment-6233870812, "Hide
+                    // legend under card", on desktop and phone alike) hides the legend while the modal card is open
+                    // (DecisionCardTests.TheLegendIsHiddenWhileTheCardIsOpen), so the card never covers it.
                     if (root.Q("info-panel").resolvedStyle.display == DisplayStyle.Flex)
                         Assert.IsFalse(lb.Overlaps(R("info-panel")), $"{at}: the info panel overlaps the label {lb}");
                     Assert.IsFalse(lb.Overlaps(R("top-bar")), $"{at}: the top bar overlaps the label");

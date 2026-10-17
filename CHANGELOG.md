@@ -13,6 +13,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- The map legend is hidden while the decision card is open, so no card, the photograph's included, covers it at any
+  window, desktop or phone; it comes back when the card is hidden or answered (Fixes #849; the owner's decision of
+  17 October 2026, "Hide legend under card"). The card and its photograph keep their full size.
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.

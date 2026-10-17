@@ -26,8 +26,9 @@ public class DecisionCardTests
         public readonly VisualElement Root; public readonly SimBridge Bridge; public readonly ScreenNav Nav; public readonly EventCardPresenter Card;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<System.IDisposable> owned = new List<System.IDisposable>();
 
-        public Rig(int w, int h, string eventId, bool photos = false)
+        public Rig(int w, int h, string eventId, bool photos = false, UiText? text = null)
         {
+            var t = text ?? Text;
             rt = new RenderTexture(w, h, 0);
             ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
@@ -39,11 +40,12 @@ public class DecisionCardTests
             go.SetActive(true);
             Root = doc.rootVisualElement;
             Root.Q("root").RemoveFromClassList("loading");
-            Bridge = new SimBridge(Pending(eventId), Text);
-            owned.Add(new HudPresenter(Root, Bridge, Text));
+            Root.Q("root").EnableInClassList(UiLanguage.HebrewClass, t["ui.lang"] == UiLanguage.Hebrew);   // as GameRoot
+            Bridge = new SimBridge(Pending(eventId), t);
+            owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
-            owned.Add(new InfoPanelPresenter(Root, Bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)));
-            Card = new EventCardPresenter(Root, Bridge, Text, null,
+            owned.Add(new InfoPanelPresenter(Root, Bridge, t, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)));
+            Card = new EventCardPresenter(Root, Bridge, t, null,
                 photos ? AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset") : null); owned.Add(Card);
         }
 
@@ -379,5 +381,47 @@ public class DecisionCardTests
         yield return Frames(3);
         Assert.IsNull(r.Card.Shown, "the only event is answered");
         Assert.AreSame(r.Root.Q<Button>("end-turn"), r.Focused, "End Turn has the focus");
+    }
+
+    /// <summary>#849, the owner's decision of 17 October 2026 ("Hide legend under card", on desktop and phone alike;
+    /// issuecomment-6233870812): while the modal decision card is open the map's legend (map-layer) is hidden, so no card,
+    /// the photograph's included, covers it; Hide brings it back, Decision waiting hides it again, and answering the event
+    /// brings it back. Only the legend: the minimap and the left column stay shown. Every window ArmisticeTests lists, in
+    /// English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator TheLegendIsHiddenWhileTheCardIsOpen()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var problems = new List<string>();
+        foreach (var t in new[] { Text, he })
+        foreach (var (w, h) in new[] { (1920, 1080), (1680, 1050), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
+                                       (960, 600), (1024, 768), (390, 844), (1600, 757), (1024, 1024), (960, 1080), (800, 1000) })
+        {
+            using var r = new Rig(w, h, "idf_founding", photos: true, text: t);
+            var legend = r.Root.Q<Label>("map-layer");
+            legend.text = "Held by Israel: blue"; legend.style.display = DisplayStyle.Flex;   // as GameRoot shows it while borders are drawn
+            yield return Frames(4);
+            var where = $"{t["ui.lang"]} {w}x{h}";
+            bool Seen() => legend.resolvedStyle.display == DisplayStyle.Flex && legend.resolvedStyle.visibility == Visibility.Visible;
+            void Expect(bool seen, string when)
+            {
+                if (Seen() != seen) problems.Add($"{where}: the legend is {(seen ? "hidden" : "shown")} {when}");
+            }
+            if (!r.Shows("event-card")) { problems.Add($"{where}: precondition, the card shows"); continue; }
+            Expect(false, "under the open card");
+            foreach (var n in new[] { "minimap", "left-column" })
+                if (r.Root.Q(n).resolvedStyle.visibility != Visibility.Visible || !r.Shows(n)) problems.Add($"{where}: {n} is hidden with the legend");
+            Press(r.Hide);
+            yield return Frames(3);
+            Expect(true, "after Hide");
+            Press(r.Waiting);
+            yield return Frames(3);
+            Expect(false, "with the card reopened");
+            Press(r.FirstOption);
+            yield return Frames(3);
+            if (r.Card.Shown != null) problems.Add($"{where}: precondition, the option answered the event");
+            Expect(true, "once the event is answered");
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 }
