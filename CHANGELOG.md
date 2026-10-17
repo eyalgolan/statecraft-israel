@@ -12,6 +12,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   adds free units at the military camp or a named city, `city_effects` moves one field by whole units, both
   apply after the numeric effects and show in the option's effect list, the loader refuses an unknown target, and a
   sensitive event may carry no grant or gain (R-EFX-003 to R-EFX-006; refs #806). No event uses them yet.
+- Events: an option that did not happen can record who put it forward, when and on what source, or that it is a design
+  assumption (`alternative`, R-ALT-003; optional until #949; refs #947, #939).
 - Events: `requires` is a list whose entries must all hold, and an entry can say `diverged: true` (any option but
   the historical one); the five events with a requirement move to the list form with the same meaning (R-ALT-001,
   R-ALT-002; refs #946, #939).

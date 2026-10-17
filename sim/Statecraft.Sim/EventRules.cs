@@ -73,6 +73,7 @@ namespace Statecraft.Sim
                     if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), ContentLoader.IdRule);
                     if (!optionIds.Add(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), "duplicate option id");
                     CheckPlaceholders(c, e, F($"options[{o.Id}].text"), o.Text, offices);
+                    if (o.Alternative != null) CheckAlternative(e, o, F($"options[{o.Id}].alternative"));
                     foreach (var kv in o.SetPolicy)
                     {
                         if (c.Policies.All(p => p.Id != kv.Key)) throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "unknown policy");
@@ -173,6 +174,29 @@ namespace Statecraft.Sim
                 if (o.Card != e.Id)
                     throw new ContentException(e.File, $"events[{e.Id}].objective", $"objective '{o.Id}' has another card, '{o.Card}'");
             }
+        }
+
+        /// <summary>R-ALT-003: the shape of an option's `alternative` record.</summary>
+        static void CheckAlternative(GameEvent e, EventOption o, string at)
+        {
+            var a = o.Alternative!;
+            if (o.Historical) throw new ContentException(e.File, at, "the historical option is the record, not an alternative");
+            if (a.Basis != OptionAlternative.Proposed && a.Basis != OptionAlternative.Debated && a.Basis != OptionAlternative.Design)
+                throw new ContentException(e.File, at + ".basis", $"'{a.Basis}' must be proposed, debated or design");
+            if (a.Basis == OptionAlternative.Design)
+            {
+                if (a.By != "" || a.Date.HasValue) throw new ContentException(e.File, at + ".by", "a design alternative names nobody and no date");
+            }
+            else
+            {
+                if (a.By.Trim() == "") throw new ContentException(e.File, at + ".by", "a proposed or debated alternative names who put it forward");
+                if (a.By.IndexOfAny(new[] { '{', '}' }) >= 0) throw new ContentException(e.File, at + ".by", "words only, no placeholder: name the body or office");
+                if (!a.Date.HasValue) throw new ContentException(e.File, at + ".date", "needs the date it was put forward");
+                if (a.Sources.Count == 0) throw new ContentException(e.File, at + ".sources", "needs at least one source");
+            }
+            foreach (var src in a.Sources)
+                if (!src.Url.StartsWith("https://", StringComparison.Ordinal) || src.Checked == default)
+                    throw new ContentException(e.File, at + ".sources", "needs an https url and a checked date");
         }
 
         /// <summary>R-ALT-001 and R-ALT-002: a requirement names an existing other event and either one of its options or

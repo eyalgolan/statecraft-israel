@@ -145,9 +145,31 @@ Each option has:
 | `set_policy` | no | A map of policy id to a level from 0 to 1. |
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
+| `alternative` | no (required later, #949) | On an option that did not happen: who put it forward, on what record. See below. |
 
 An event needs at least one option. `historical` is a statement of fact and needs a source; `recommended` is a game
 design choice and does not.
+
+### alternative
+
+An option that did not happen can say who put it forward, and on what record (R-ALT-003):
+
+```yaml
+  - id: road
+    text: The road not taken
+    alternative:
+      basis: debated            # proposed, debated or design
+      by: the Provisional State Council
+      date: 1948-06-20
+      sources: [{ url: "https://example.org/minutes", checked: 2026-10-17 }]
+```
+
+- `proposed` or `debated`: `by` names the body or office in words, never a person and never a `{placeholder}`;
+  `date` is the day it was put forward; `sources` (at least one, `https://`, with `checked`) support both.
+- `design`: nobody is recorded proposing it. It is a design assumption (GDD "Events and consequences"), so it has no
+  `by` and no `date`. Sources are optional.
+- The historical option carries none. For now the record is optional; #949 makes it required on every option that did
+  not happen, once the fact-check (#948) has checked each one.
 
 ### effects
 
@@ -265,6 +287,12 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `needs an option or diverged: true` | A `requires` entry names neither an option nor `diverged: true`. |
 | `not both` | A `requires` entry names an option and `diverged: true`. |
 | `has no historical option, so it cannot diverge` | `diverged: true` on an event with no historical option. |
+| `the historical option is the record, not an alternative` | An `alternative` on the option marked `historical: true`. |
+| `must be proposed, debated or design` | `alternative.basis` is another word. |
+| `names who put it forward` | A proposed or debated `alternative` with no `by`. |
+| `words only, no placeholder` | `alternative.by` has a `{` or `}`. |
+| `needs the date it was put forward` | A proposed or debated `alternative` with no `date`. |
+| `a design alternative names nobody and no date` | A `design` alternative with a `by` or a `date`. |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):

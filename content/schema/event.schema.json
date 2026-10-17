@@ -8,6 +8,29 @@
   "definitions": {
     "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "A day, YYYY-MM-DD." },
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Lowercase letters, digits and underscores, starting with a letter." },
+    "alternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis"],
+      "description": "Who put forward a non-historical option (R-ALT-003). proposed or debated: by (a body or office in words, never a person), date and sources; design: nobody is recorded proposing it, so no by and no date.",
+      "properties": {
+        "basis": { "enum": ["proposed", "debated", "design"] },
+        "by": { "type": "string" },
+        "date": { "$ref": "#/definitions/date" },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "checked"],
+            "properties": {
+              "url": { "type": "string", "pattern": "^https://" },
+              "checked": { "$ref": "#/definitions/date" }
+            }
+          }
+        }
+      }
+    },
     "requirement": {
       "type": "object",
       "additionalProperties": false,
@@ -97,7 +120,8 @@
                 "delta": { "type": "integer", "not": { "const": 0 } }
               }
             }
-          }
+          },
+          "alternative": { "$ref": "#/definitions/alternative" }
         }
       }
     },

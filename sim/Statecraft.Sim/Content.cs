@@ -716,6 +716,8 @@ namespace Statecraft.Sim
         public List<UnitGrant> GrantUnits { get; set; } = new List<UnitGrant>();
         /// <summary>R-EFX-004: changes to a city's housing capacity or job slots, in list order (D-H2, Q-HFX-1).</summary>
         public List<CityEffect> CityEffects { get; set; } = new List<CityEffect>();
+        /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
+        public OptionAlternative? Alternative { get; set; }
     }
 
     /// <summary>An option's grant of <see cref="N"/> units of a unit_types.yaml type of kind unit (R-EFX-003). They stand at
@@ -734,6 +736,20 @@ namespace Statecraft.Sim
         public string City { get; set; } = "";
         public string Field { get; set; } = "";
         public int Delta { get; set; }
+    }
+
+    /// <summary>Who put forward a non-historical option, and on what record (R-ALT-003). `proposed` and `debated` name a
+    /// body or office in words (never a person), the date and sources; `design` is the GDD's "design assumption": nobody is
+    /// recorded proposing it, so it names nobody and no date.</summary>
+    public sealed class OptionAlternative
+    {
+        public const string Proposed = "proposed", Debated = "debated", Design = "design";
+        public string Basis { get; set; } = "";
+        public string By { get; set; } = "";
+        public DateTime? Date { get; set; }
+        public List<Source> Sources { get; set; } = new List<Source>();
+        /// <summary>True for an alternative contemporaries are recorded proposing or debating (the Ferguson test).</summary>
+        [YamlIgnore] public bool IsConsidered => Basis == Proposed || Basis == Debated;
     }
 
     public sealed class GameEvent
