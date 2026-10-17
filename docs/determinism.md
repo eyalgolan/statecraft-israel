@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `e4ebff9b317a02b908434cedb18674608ae820e5e60769ef78272493884590c4` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `e0d8212a1f6ea8af9211166aa52b76c741c739807d4326b6b6664a5c5d26857f` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `e0d8212a1f6ea8af9211166aa52b76c741c739807d4326b6b6664a5c5d26857f` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `7cf678b6b2b3d55dc0fee7b2efdee9ec7688cdf18964dcaa6e5a7c0018e34a51` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `9496947232f0c97ed21c0a0b98e6727e7d59c892f9aff12049b5d7e5ee2230e8` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `9496947232f0c97ed21c0a0b98e6727e7d59c892f9aff12049b5d7e5ee2230e8` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -39,15 +39,15 @@ check `hash1950` and `hash1952`.
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc`.
+ministers): `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 e4ebff9b317a02b908434cedb18674608ae820e5e60769ef78272493884590c4" \
-  --expect "GOLDEN OK 1952 e0d8212a1f6ea8af9211166aa52b76c741c739807d4326b6b6664a5c5d26857f" \
-  --expect "SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc"
+  --expect "GOLDEN OK 1950 7cf678b6b2b3d55dc0fee7b2efdee9ec7688cdf18964dcaa6e5a7c0018e34a51" \
+  --expect "GOLDEN OK 1952 9496947232f0c97ed21c0a0b98e6727e7d59c892f9aff12049b5d7e5ee2230e8" \
+  --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -264,3 +264,10 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 4 PR 4 | 1950 | `e4ebff9b` | plow fields (R-FIELD-001, R-FIELD-002, #788), rebased on the training camps (#927): once the four yishuv sites are taken, the reference player's veteran group plows their fields in ordinal id order, before any camp. At the end of the 1950 run (1950-01-15) Beit Kama's field is still being plowed (`beit_kama_field=b,1,1`) instead of Camp 80 being built, and the debt is IL 1.5m lower (IL 0.5m for the field instead of IL 2m for the camp) (was `38c8a484`) |
 | GDD Phase 4 PR 4 | 1952 | `e0d8212a` | same; at 2 turns of progress a turn (R-VET-002) the fields are plowed on 1950-02-15 (Beit Kama), 1950-04-15 (Gilat), 1950-06-15 (Mefalsim) and 1950-08-15 (Re'im), so Camp 80 is built on 1950-11-15 (was 1950-03-15) and Tzrifin on 1951-02-15 (was 1950-06-15). The debt is IL 2m higher (4 x IL 0.5m), and the Food stock ends 4 units higher (2736, was 2732), which lifts food_supply and stability in the fourth decimal (was `1e21fcd3`) |
 | GDD Phase 4 PR 4 | mvp-end | `e0d8212a` | same; the same run as hash1952 (was `1e21fcd3`) |
+| GDD Phase 3 PR 3 | 1950 | `7cf678b6` | GDD Phase 3 PR 3's housing (R-CITY-004, R-HOUSE-001 to R-HOUSE-004; Q-HOUSE-1, Q-HOUSE-2, Q-HOUSE-5, Q-START-3; owner, 17 October 2026, Q-PR3-A (a)), re-pinned on main after #927 and #871: no hard cap, so every refugee is housed on the next housing step (18 refugees waiting on 1 January 1950, the last turn's arrivals, was 269), the people beyond a city's housing are its overflow, and each city's housing condition (start 0.35) falls by 0.15 times its overflow share a turn; 11 of the 12 cities are at condition 0 by then (Rosh Pinna, with no overflow, keeps 0.35). The condition joins each `city{}` record. The national `housing` indicator's base is now the cities' people-weighted mean condition, so `housing` falls to 0.0850 (was 0.4345) and `housing_crisis` is on; through `homes_lift_morale`, Social cohesion (`morale`) falls to 0.4990 (was 0.5545), with `work_lifts_cohesion` lower too because more civilians share the same jobs; stability 0.4970 (was 0.5612). The national head count, the Treasury, the debt, Food, the camp and field builds and the reference player's orders do not move (was `e4ebff9b`) |
+| GDD Phase 3 PR 3 | 1952 | `94969472` | same; 8 refugees waiting at the end (was 608), every city at condition 0; `housing` 0.0850 (was 0.4350), `housing_crisis` on, `morale` 0.4946 (was 0.5691), stability 0.4487 (was 0.5683); the `housing` shift reads -1.4e-17 (was 0), IEEE rounding of the level minus the moving inner value (was `e0d8212a`) |
+| GDD Phase 3 PR 3 | mvp-end | `94969472` | same; the same run as hash1952 (was `e0d8212a`) |
+| GDD Phase 3 PR 3 | smoke5 | `3005405d` | the condition joins each `city{}` record; the first five turns have no overflow, so `housing` and `morale` are unchanged (was `2436927c`) |
+| GDD Phase 3 PR 3 | scenario-cautious | `6507ddc3` | the housing rules: `city{}`, `housing`, `morale`, its two links and stability (was `28fd1405`) |
+| GDD Phase 3 PR 3 | scenario-reckless | `8041988a` | same (was `af7b2abd`) |
+| GDD Phase 3 PR 3 | scenario-mvp-absorb-first | `a77a8f20` | same (was `b16a8740`) |
