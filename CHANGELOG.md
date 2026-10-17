@@ -7,6 +7,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-18
+
 ### Added
 - Events: consequence cards (`kind: consequence`) for the roads not taken. They are soft, follow only a road
   contemporaries proposed or debated (the Ferguson test), lie at most 2 cards deep, carry the sensitive tags of the road
@@ -337,7 +339,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - MATKOT's 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins
-  these settings. The texture paths from Tal's machine inside each FBX are blanked. Nothing references the models yet,
+  these settings. The texture paths from the author's machine inside each FBX are blanked. Nothing references the models yet,
   so the game does not change and the WebGL build ships the same assets (its `.data` file differs by 56 bytes).
 - The 1948 Collection's 31 non-building models by MATKOT (from #507), streamed after the first frame
   (refs #664, #663): 12 people, 13 vehicles, ships and aircraft and 6 animals in `unity/Assets/Art/Collection/`, slimmed
