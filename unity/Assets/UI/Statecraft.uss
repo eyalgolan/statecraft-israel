@@ -300,6 +300,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-body { flex-grow: 1; flex-shrink: 1; min-width: 0; }
 .info-body > .row { flex-wrap: wrap; }
 .info-body > .row Button { margin-right: 6px; font-size: 18px; }
+/* The GDD loop's part (GddHexPanel, #381): a city's counts, its Assign stepper, Train and Cancel; a site's state and
+   Build/Stop. A second column beside the hex's facts, so the panel stays under the left column on a short window
+   (InfoPanelLayoutTests.TheGddCityAndSitePanelsFitEveryWindow): the panel widens to hold it. Its rows wrap their buttons,
+   a long button label wraps, and a row mirrors in Hebrew (.lang-he .row). */
+.info-panel.info-gdd-shown { width: 920px; }
+.info-gdd { flex-direction: column; width: 380px; flex-shrink: 0; margin-left: 14px; padding-left: 14px; border-left-width: 1px; border-color: var(--gold-dim); }
+.info-gdd-line { font-size: 17px; flex-shrink: 1; }
+.info-gdd-row { flex-wrap: wrap; align-items: center; }
+.info-gdd Button { margin: 2px 6px 2px 0; font-size: 17px; white-space: normal; flex-shrink: 1; }
 /* Before a hex is chosen only the hint shows (InfoPanelPresenter sets info-empty): a one-line chip that hugs its text, as
    the promo shows no panel until a tile is chosen (HUD round 1, #398). */
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }
@@ -730,3 +739,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .lang-he .end-turn { padding: 4px 40px 4px 14px; }
 /* A bar fills from the right: the whole bar is flipped, so its fill and its mark (placed from the left in code) follow. */
 .lang-he .ui-bar { scale: -1 1; }
+
+/* #381: in Hebrew the GDD column's rule and margins mirror; on the two- and three-row HUD (narrower windows, taller) the
+   panel keeps its 520 px and the GDD part stacks under the hex's facts, clear of the minimap. Last, so they win over the
+   rules above at equal specificity. */
+.lang-he .info-gdd { margin-left: 0; padding-left: 0; border-left-width: 0; margin-right: 14px; padding-right: 14px; border-right-width: 1px; }
+.lang-he .info-gdd Button { margin: 2px 0 2px 6px; }
+.hud-two-row .info-panel.info-gdd-shown { width: 520px; flex-wrap: wrap; }
+.hud-two-row .info-gdd { width: 100%; margin: 8px 0 0 0; padding: 8px 0 0 0; border-left-width: 0; border-right-width: 0; border-top-width: 1px; }
