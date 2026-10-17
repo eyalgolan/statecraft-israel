@@ -10,6 +10,19 @@ namespace Statecraft.Sim
     {
         public const string Kind = "assign_workers";
 
+        /// <summary>R-CITY-001: the most of the city's civilians AssignWorkers accepts in jobs: its job slots, and no more than
+        /// its civilians.</summary>
+        public static int MaxWorkers(City city) => Math.Min(city.JobSlots, city.Civilians);
+
+        /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train orders in
+        /// <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one of
+        /// them accepted, whatever order they run in. Other orders do not count.</summary>
+        public static int MaxWorkers(GameState s, string city, IEnumerable<Command> pending)
+        {
+            var x = s.Cities[city];
+            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians - Training.Ordered(city, pending)));
+        }
+
         /// <summary>R-CITY-007: a city's start people in units: the nearest unit (a half rounds up), and at least 1 for a city
         /// with people (Q-START-2, owner, 15 October 2026), so a small town is not left empty.</summary>
         public static int StartUnits(decimal people, int peoplePerUnit) => people > 0 ? Math.Max(1, NearestUnit(people, peoplePerUnit)) : 0;
@@ -36,8 +49,10 @@ namespace Statecraft.Sim
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             if (role != "job") return "There is no such role";   // craftsman: Phase 3 (D-D4)
             if (count < 0) return "The number of workers cannot be negative";
-            if (count > x.JobSlots) return FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs");
-            if (count > x.Civilians) return FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians} civilians");
+            if (count > MaxWorkers(x))
+                return count > x.JobSlots
+                    ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")
+                    : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians} civilians");
             s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees);
             why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work")));
             return null;

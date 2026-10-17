@@ -55,6 +55,40 @@ public class CitiesTests
         Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());   // as if the order had not been given: Attention refunded too
     }
 
+    // R-CITY-001: MaxWorkers is the limit Assign applies, so the panel can ask it instead of repeating the rule (#869). Town A
+    // has 20 jobs and 10 civilians; with 30 civilians the jobs are the limit.
+    [Theory]
+    [InlineData(10, 10)]
+    [InlineData(30, 20)]
+    public void MaxWorkersIsTheCountAssignAccepts(int civilians, int max)
+    {
+        var c = Town(Fixture.City("town_a", 40, 20, civilians, 6));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(max, Cities.MaxWorkers(s.Cities["town_a"]));
+        Assert.Empty(Step(c, s, new AssignWorkers("town_a", "job", max)).Rejected);
+        Assert.Single(Step(c, s, new AssignWorkers("town_a", "job", max + 1)).Rejected);
+    }
+
+    // R-CITY-001 with R-TRAIN-001: the queue's Train orders take their civilians first, so an Assign up to MaxWorkers(s, city,
+    // pending) and those orders are all accepted, in either order, and one more group is refused.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MaxWorkersWithTheQueueCountsItsTrainOrders(bool assignFirst)
+    {
+        var c = Town(Fixture.City("town_a", 12, 20, 10, 6, "[military_camp, hakhshara]"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Attention = 100;   // enough for three orders: Attention is not what this test is about
+        var trains = new Command[] { new Train("town_a", "recruit", 2), new Train("town_a", "halutz", 1), new Train("elsewhere", "recruit", 5) };
+        var max = Cities.MaxWorkers(s, "town_a", trains);
+        Assert.Equal(7, max);   // 10 civilians, 3 of them ordered to train; the other city's order does not count
+        Command[] Orders(int n) => assignFirst
+            ? new Command[] { new AssignWorkers("town_a", "job", n), trains[0], trains[1] }
+            : new Command[] { trains[0], trains[1], new AssignWorkers("town_a", "job", n) };
+        Assert.Empty(Step(c, s, Orders(max)).Rejected);
+        Assert.Single(Step(c, s, Orders(max + 1)).Rejected);
+    }
+
     // R-CITY-001
     [Fact]
     public void TheLegacyLoopRefusesTheOrderAndRefundsAttention()

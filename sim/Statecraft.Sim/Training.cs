@@ -29,6 +29,25 @@ namespace Statecraft.Sim
             c.Cities.First(k => k.Id == city).Facilities.Contains(facility)
             || c.Sites.Any(x => x.City == city && x.Kinds.Contains(facility) && s.Sites.TryGetValue(x.Id, out var w) && w.BuiltOn != null);
 
+        /// <summary>R-TRAIN-001: the city's civilians without work, the most a Train order there accepts.</summary>
+        public static int Idle(City city) => city.Civilians - city.Employed;
+
+        /// <summary>The groups the Train orders in <paramref name="pending"/> (this turn's queue) take from
+        /// <paramref name="city"/>, every track together.</summary>
+        public static int Ordered(string city, IEnumerable<Command> pending) => pending.OfType<Train>().Where(t => t.City == city).Sum(t => t.Count);
+
+        /// <summary>R-TRAIN-001 with R-CITY-001: the groups still free to train in <paramref name="city"/> once the orders in
+        /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there,
+        /// and less a pending AssignWorkers' rise in jobs. A count up to it keeps every one of those orders accepted, whatever
+        /// order they run in. A pending CancelTraining is not counted, since it may run after the Train.</summary>
+        public static int Available(GameState s, string city, IEnumerable<Command> pending)
+        {
+            var x = s.Cities[city];
+            var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
+            var employed = Math.Max(x.Employed, list.OfType<AssignWorkers>().Where(w => w.City == city).Select(w => w.Count).DefaultIfEmpty(0).Max());
+            return Math.Max(0, x.Civilians - employed - Ordered(city, list));
+        }
+
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as
         /// <paramref name="track"/>, a unit type with a facility. The Treasury pays count * training_cost now and borrows what it
         /// lacks. The trainees leave the civilians at once, and the cohort takes the next id. Refused, state untouched, when the
@@ -42,7 +61,7 @@ namespace Statecraft.Sim
             if (count < 1) return "Train at least one group";
             var name = PlayerText.Settlement(c, city);
             if (!HasFacility(c, s, city, type.Facility)) return $"{name} has no {Place(type.Facility)}";
-            var idle = x.Civilians - x.Employed;
+            var idle = Idle(x);
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             var cost = count * type.TrainingCost;
             // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.

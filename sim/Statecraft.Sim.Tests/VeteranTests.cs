@@ -94,6 +94,29 @@ public class VeteranTests
         Assert.Equal(3, TurnsToBuild("veteran_halutz"));   // 6 turns of progress at 2 a turn
     }
 
+    // R-SITE-003, R-VET-001, R-VET-002: TurnsToBuild is Advance's count, for a new build and for one under way, so the panel
+    // can show it (#869: it showed build_yishuv_turns for every group). A halutz promoted during the build speeds up.
+    [Theory]
+    [InlineData("halutz", 0, "veteran_halutz_service: 4", 3)]
+    [InlineData("veteran_halutz", 0, "veteran_halutz_service: 4", 2)]   // 3 turns of progress at 2 a turn
+    [InlineData("halutz", 0, "veteran_halutz_service: 1", 2)]           // promoted after its first turn: 1, then 2
+    [InlineData("halutz", 1, "veteran_halutz_service: 2", 2)]           // service carried from an earlier build
+    public void TurnsToBuildIsTheTurnsAdvanceTakes(string type, int service, string serviceRule, int expected)
+    {
+        var c = Town(("veteran_halutz_service: 4", serviceRule));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var id = s.NextId++;
+        s.Units.Add(id, new Unit(id, type, 1, 0, service));
+        Assert.Equal(expected, Projects.TurnsToBuild(c, s, id, c.Rules.Mvp!.BuildYishuvTurns));
+        s = Step(c, s, Build(id)).State;
+        for (int done = 1; ; done++)
+        {
+            if (s.Sites["site_a"].BuiltOn != null) { Assert.Equal(expected, done); break; }
+            Assert.Equal(expected - done, Projects.TurnsToBuild(c, s, id, s.Sites["site_a"].TurnsLeft));   // the turns left under way
+            s = Step(c, s).State;
+        }
+    }
+
     // R-VET-001, R-VET-002: both values are required in the GDD loop and at least 1, so a missing key is never read as 0.
     [Theory]
     [InlineData("  veteran_halutz_service: 4\n", "", "mvp.veteran_halutz_service", "required when eras.yaml systems.loop is gdd")]

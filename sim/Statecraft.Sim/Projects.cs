@@ -31,6 +31,35 @@ namespace Statecraft.Sim
         /// <summary>The kind of site a field may be plowed at (sites.yaml kinds). Built, a field site is plowed (R-FIELD-001).</summary>
         public const string FieldKind = "field";
 
+        /// <summary>Whether a yishuv may be built at <paramref name="site"/>: its kinds name one (R-SITE-001, R-SITE-004). A hex may
+        /// hold more than one site, as a yishuv hex holds a field one; the panel finds the yishuv by this, not by file order.</summary>
+        public static bool IsYishuvSite(Site site) => site.Kinds.Contains(YishuvKind);
+
+        /// <summary>The turns of progress <paramref name="unit"/>'s project gains in one turn: veteran_progress for a veteran,
+        /// else 1 (R-SITE-003, R-VET-002).</summary>
+        public static int Progress(MvpRules r, Unit unit) => unit.Type == VeteranType ? r.VeteranProgress!.Value : 1;
+
+        /// <summary>The turns, this one included, in which <paramref name="unit"/> builds a site with <paramref name="left"/>
+        /// turns of progress to go: Advance's count, a halutz promoted on the way (R-VET-001) building faster from the next turn
+        /// (R-SITE-003, R-VET-002). With build_yishuv_turns it is how long a Build ordered now takes. Read with the rules of
+        /// the current date, as Advance reads them; it changes no state.</summary>
+        public static int TurnsToBuild(Content c, GameState s, int unit, int left)
+        {
+            var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
+            var u = s.Units[unit];
+            for (int turns = 1; ; turns++)
+            {
+                var progress = Progress(r, u);
+                if (left <= progress) return turns;
+                left -= progress;
+                if (u.Type == "halutz")
+                {
+                    var service = u.Service + 1;
+                    u = new Unit(u.Id, service >= r.VeteranHalutzService!.Value ? VeteranType : u.Type, u.Q, u.R, service);
+                }
+            }
+        }
+
         /// <summary>Whether a site being built names <paramref name="unit"/>: the unit has a project (D-D6).</summary>
         public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
 
@@ -52,7 +81,7 @@ namespace Statecraft.Sim
             if (place == null) return "There is no such site";
             var camp = action == BuildCamp;
             var plow = action == PlowFields;
-            if (camp ? !IsCamp(place) : !place.Kinds.Contains(plow ? FieldKind : YishuvKind))
+            if (camp ? !IsCamp(place) : plow ? !place.Kinds.Contains(FieldKind) : !IsYishuvSite(place))
                 return camp ? $"{place.Name} is not a site for a training camp"
                     : plow ? $"{place.Name} is not a site for fields" : $"{place.Name} is not a site for a new yishuv";
             if (s.Sites.TryGetValue(site, out var work))
@@ -107,7 +136,7 @@ namespace Statecraft.Sim
             foreach (var w in s.Sites.Values.Where(x => x.BuiltOn == null).ToList())
             {
                 var u = s.Units[w.Unit!.Value];   // a site being built always names its unit (SiteWork)
-                var progress = u.Type == VeteranType ? r.VeteranProgress!.Value : 1;
+                var progress = Progress(r, u);
                 if (w.TurnsLeft > progress) s.Sites[w.Site] = w.WithTurnsLeft(w.TurnsLeft - progress);
                 else
                 {
