@@ -7,7 +7,6 @@ legislatures:
   - id: provisional_state_council
     body: Provisional State Council
     body_he: "מועצת המדינה הזמנית"
-    body_he_review: agent-checked
     body_he_sources:
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
       - { url: "https://he.wikipedia.org/wiki/מועצת_המדינה_הזמנית", checked: 2026-10-14 }
@@ -59,7 +58,6 @@ legislatures:
   - id: first_knesset
     body: Constituent Assembly (First Knesset)
     body_he: "האספה המכוננת (הכנסת הראשונה)"
-    body_he_review: agent-checked
     body_he_sources:
       - { url: "https://he.wikipedia.org/wiki/הכנסת_הראשונה", checked: 2026-10-14 }
       - { url: "https://he.wikipedia.org/wiki/הבחירות_לאספה_המכוננת", checked: 2026-10-14 }
@@ -105,7 +103,6 @@ legislatures:
   - id: second_knesset
     body: Second Knesset
     body_he: "הכנסת השנייה"
-    body_he_review: agent-checked
     body_he_sources:
       - { url: "https://he.wikipedia.org/wiki/הכנסת_השנייה", checked: 2026-10-14 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }
@@ -155,7 +152,6 @@ legislatures:
   - id: third_knesset
     body: Third Knesset
     body_he: "הכנסת השלישית"
-    body_he_review: agent-checked
     body_he_sources:
       - { url: "https://he.wikipedia.org/wiki/הכנסת_השלישית", checked: 2026-10-14 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_KnessetDates", checked: 2026-10-14 }

@@ -28,6 +28,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- Hebrew names: a native speaker read the 12 government and legislature names (#874) and 27 office rows, 29 titles (#876), and the start, new-game, save and loading UI strings (#877, no wording changed). The `agent-checked` flags on the names and titles were cleared; the 24 party names (#875) keep theirs (refs #564).
 - The 50 people names in Hebrew are flagged agent-checked until a native speaker reads them (owner, #882).
 - The 3D-model credits in code comments and one test's failure message now name MATKOT, as the owner asked on 17 October 2026; credit text only, with no behaviour change.
 - People audit batch 1 (#457): shazar's name_he now cites the Knesset's member page instead of en.wiki; the
