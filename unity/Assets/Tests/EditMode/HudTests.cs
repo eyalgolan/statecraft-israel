@@ -471,6 +471,28 @@ public class HudTests
         Assert.AreEqual("Not done: The turn could not run. Your orders were cleared. Give them again.", ui.Q<Label>("toast").text);   // "boom": the log only (#622)
     }
 
+    /// <summary>#912: the sim and autosave have advanced before End Turn notifies presenters. A broken presenter is
+    /// logged, but cannot leave every subscriber registered after it showing the previous turn.</summary>
+    [Test]
+    public void AThrowingEndTurnSubscriberDoesNotStopTheOthers()
+    {
+        var bridge = NewBridge();
+        var changed = 0;
+        var ended = 0;
+        bridge.Changed += () => throw new System.InvalidOperationException("changed presenter failed");
+        bridge.Changed += () => changed++;
+        bridge.TurnEnded += _ => throw new System.InvalidOperationException("turn-ended presenter failed");
+        bridge.TurnEnded += _ => ended++;
+        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("changed presenter failed"));
+        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("turn-ended presenter failed"));
+
+        Assert.DoesNotThrow(() => bridge.EndTurn());
+
+        Assert.AreEqual(1, bridge.State.Turn, "the simulation stepped exactly once");
+        Assert.AreEqual(1, changed, "later Changed subscribers still refresh");
+        Assert.AreEqual(1, ended, "later TurnEnded subscribers still run");
+    }
+
     /// <summary>Playtest 1, item 11: pressing the open screen's button closes it, every time, with every presenter
     /// GameRoot creates listening, with the button focused (as after a mouse click), and across End Turn.</summary>
     [Test]
