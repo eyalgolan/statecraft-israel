@@ -451,7 +451,7 @@ public class UiLayoutTests
     };
 
     /// <summary>Decision cards (2026-10-13), after Task 24 review I2: every real event, the tallest included, fits the
-    /// decision layer at every window shape, the narrow two- and three-row HUDs included: the card is centred, at most
+    /// decision layer at every window shape, the narrow two- and three-row HUDs included: the card is centred (between the layer's paddings), at most
     /// 1040 px wide, below the top bar and inside the layer; its option buttons stay inside it with their text; and its
     /// media header is 16:9 whenever the card has the height for it (on a full card it gives way first, as before).</summary>
     [UnityTest]
@@ -532,7 +532,10 @@ public class UiLayoutTests
         var card = root.Q("event-card"); var layer = root.Q("event-layer"); var bar = root.Q("top-bar");
         var c = card.worldBound; var l = layer.worldBound;
         if (!Inside(c, l)) problems.Add($"{where}: the card {c} leaves the decision layer {l}");
-        if (Mathf.Abs((c.xMin - l.xMin) - (l.xMax - c.xMax)) > 1f) problems.Add($"{where}: the card {c} is not centred in the layer {l}");
+        // Centred between the layer's paddings: on a phone held upright the layer keeps the left rail's room free at its left
+        // (the owner's ruling on #859: no rail button under the card), so the card centres right of the rail.
+        float padL = layer.resolvedStyle.paddingLeft, padR = layer.resolvedStyle.paddingRight;
+        if (Mathf.Abs((c.xMin - l.xMin - padL) - (l.xMax - padR - c.xMax)) > 1f) problems.Add($"{where}: the card {c} is not centred in the layer {l} (paddings {padL}, {padR})");
         if (c.width > CardMaxWidth + 1.5f) problems.Add($"{where}: the card is {c.width:0} px wide, over {CardMaxWidth}");
         if (c.yMin < bar.worldBound.yMax - 0.5f) problems.Add($"{where}: the card {c} starts over the top bar {bar.worldBound}");
         var hide = root.Q("event-hide").worldBound;

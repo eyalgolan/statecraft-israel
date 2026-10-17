@@ -21,7 +21,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   were 15 px, 7.4 px). The phone's bar is 32 px taller to hold them, a caption wraps between words, and Security's level
   goes under its caption; the plate keeps its width when the month changes (#642). Smaller phones down to 375x667
   keep the floor too (26 px at 360x800, 30 px at 375x667): there the bar grows to its rows' height and the panels
-  under it follow. On a phone held upright the decision card now starts right of the left rail, under the bar, so no
+  under it follow. On a phone held upright the decision card now starts right of the left rail and hangs under the bar instead of sitting centred, so no
   rail button sits under it (Why? and Settings did), and the rail's buttons are 60 px, at least 24 px on screen.
 - In the Hebrew UI the Budget's "no ministry until" date, the Why? screen's turn span and the info panel's build date
   name their months in Hebrew ("מ־15 במאי 1948 עד 15 ביוני 1948", "באוגוסט 1950") through the `date.*` strings, as

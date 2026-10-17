@@ -328,10 +328,11 @@ namespace Statecraft.Game.UI
         /// text of a smaller phone fits it (#642, the owner: "down to 375x667"), and the panels under it move down by what it
         /// grew: a top margin, not a top, so the stylesheet's other placements (the toast at the bottom beside a wide screen)
         /// still apply. Set here, not as height: auto in the stylesheet: there Yoga sized the wrapping bar as if each quarter-width
-        /// meter took a line of its own (about 1300 px). The bar's geometry event re-runs this (OnBarGeometry).</summary>
+        /// meter took a line of its own (about 1300 px). Its items' geometry events re-run this (OnRowGeometry), and so does SetCompact.</summary>
         void PlaceUnderBar()
         {
-            var rows = hudRoot.ClassListContains(ThreeRowClass) ? RowsHeight() : 0f;
+            // A hidden bar (the start screen) moves nothing: the start screen's toast keeps its own top (review of #859).
+            var rows = hudRoot.ClassListContains(ThreeRowClass) && bar.resolvedStyle.display != DisplayStyle.None ? RowsHeight() : 0f;
             var grown = rows - ThreeRowBarPx;
             bar.style.height = grown > 0.5f ? new StyleLength(rows) : new StyleLength(StyleKeyword.Null);
             var margin = grown > 0.5f ? new StyleLength(grown) : new StyleLength(StyleKeyword.Null);
