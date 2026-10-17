@@ -81,7 +81,9 @@ public class CabinetScreenTests
         StringAssert.StartsWith("גולדה מאיר · מפא״י · ", ui.Q<Button>("appoint-golda_meir").text);
         StringAssert.StartsWith("אהרון ציזלינג · מפ״ם · ", ui.Q<Button>("appoint-zisling").text);
         UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
-        StringAssert.StartsWith("ניתנה פקודה: גולדה מאיר לתפקיד ", ui.Q<Label>("cabinet-status").text);
+        // Finance has no feminine title_he_f (she never held it), so her order falls back to the masculine title, in Hebrew.
+        Assert.AreEqual("", C.Offices.Single(o => o.Id == "finance_minister").TitleHeF);
+        Assert.AreEqual("ניתנה פקודה: גולדה מאיר לתפקיד שר האוצר, בסיום התור", ui.Q<Label>("cabinet-status").text);
         // A row with no Hebrew form in the content keeps its English one: the rationing office has no title_he yet.
         var rationing = C.Offices.Single(o => o.Id == "rationing_minister");
         Assert.AreEqual("", rationing.TitleHe);

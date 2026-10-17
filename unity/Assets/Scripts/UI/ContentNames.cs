@@ -17,7 +17,8 @@ namespace Statecraft.Game.UI
 
         /// <summary>The office's title for <paramref name="holder"/> (null: the office itself, masculine). A woman is given
         /// the feminine title_he_f; an office she never held may have none (the loader checks only the offices people.yaml
-        /// gives her), and then the masculine title_he stands, which is still Hebrew.</summary>
+        /// gives her), and then the grammatically masculine title_he stands until the office gets a title_he_f: still Hebrew, so
+        /// the Hebrew line and its bidi stay whole, where an English title would break them.</summary>
         public static string Of(UiText text, Office o, Person? holder)
         {
             var hebrew = o.TitleHeFor(holder);
