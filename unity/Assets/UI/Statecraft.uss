@@ -160,6 +160,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .top-bar { height: 216px; padding-top: 6px; padding-bottom: 4px; flex-wrap: wrap; justify-content: space-between; align-content: space-around; }
 .hud-two-row .meters { width: 78%; flex-grow: 1; }
 .hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-gutter, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
+/* #380's re-tier gives a square window (1024x1024) the two-row bar: the event layer keeps the 92 px the bar grew by free at its
+   bottom (padding: the backdrop still reaches the window's bottom), so the centred card stays where the stacked bar left it,
+   clear of the map's border label (review B1 of #831; ArmisticeTests). */
+.hud-two-row .event-layer { padding-bottom: 92px; }
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). Seven meters do not
    fit a phone's width with the widest values (#380): they wrap to two lines (a consequence of the owner's "tighten + re-tier", 16 October 2026), and the bar is a meter line
@@ -171,9 +175,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    meter there (~154 px). */
 .hud-three-row .meter { flex-basis: 25%; flex-grow: 0; flex-shrink: 0; }
 .hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 424px; }
-/* The event layer gives up the same 96 px at its bottom, so the centred card stays where the six meters left it, clear of
-   the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
-.hud-three-row .event-layer { bottom: 112px; }
+/* The event layer keeps the same 96 px free at its bottom (padding, so its backdrop still reaches the window's bottom:
+   DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier), so the centred card stays where the six meters left it,
+   clear of the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
+.hud-three-row .event-layer { padding-bottom: 96px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
