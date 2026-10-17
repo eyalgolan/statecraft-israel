@@ -277,6 +277,16 @@ namespace Statecraft.Game.UI
         public static Bounds[] KitBounds(MapScene map, Settlement s, Vector3 markerTop) =>
             map.TryKitColumns(s.Id, out var columns) ? columns : MarkerBox(s, markerTop);
 
+        readonly List<Item> siteItems = new List<Item>();
+
+        /// <summary>GDD Phase 1 PR 8 (#381): the built sites' pills (SiteLayer.Places), replacing the last ones given. Each is
+        /// placed like a kibbutz's: after the game settlements and before the 1948 localities, against its kit's columns
+        /// (SiteLayer.Columns) or, with none, its marker box, under the same declutter and clearance rules as every pill.</summary>
+        public void SetSites(IReadOnlyList<(Settlement place, Bounds[]? columns)> sites) { }   // RED-FIRST STUB (#381)
+
+        /// <summary>The built sites' pills (SetSites), in the order given.</summary>
+        public IReadOnlyList<Label> SiteLabels { get { var l = new List<Label>(); foreach (var x in siteItems) l.Add(x.Label); return l; } }
+
         /// <summary>A settlement's marker box (what is drawn while the "kits" toggle is off).</summary>
         public static Bounds[] MarkerBox(Settlement s, Vector3 markerTop)
         {
@@ -604,6 +614,8 @@ namespace Statecraft.Game.UI
             occluders.Clear();
             foreach (var slot in Slots) slot.RemoveFromHierarchy();
             foreach (var slot in LocalitySlots) slot.RemoveFromHierarchy();
+            foreach (var it in siteItems) it.Slot.RemoveFromHierarchy();
+            siteItems.Clear();
             Tooltip.RemoveFromHierarchy();
             items.Clear(); settlementOrder.Clear();
         }

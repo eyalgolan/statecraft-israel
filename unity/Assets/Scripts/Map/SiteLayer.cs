@@ -31,6 +31,10 @@ namespace Statecraft.Game.Map
         readonly Dictionary<string, Bounds[]> columns = new Dictionary<string, Bounds[]>();
         /// <summary>Each built site's kit columns (KitMesh.Columns), by site id, as MapScene.TryKitColumns gives a town's.</summary>
         public IReadOnlyDictionary<string, Bounds[]> Columns => columns;
+        readonly List<Settlement> places = new List<Settlement>();
+        /// <summary>The built sites as places (Prefix + id, the site's name, a kibbutz on its hex), for their name pills
+        /// (MapLabelsPresenter.SetSites).</summary>
+        public IReadOnlyList<Settlement> Places => places;
 
         List<SiteWork>? lastSites; Content? lastContent; MapScene? lastMap; bool kitsShown;
 
@@ -52,7 +56,7 @@ namespace Statecraft.Game.Map
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); if (own != null) Destroy(own); }
                 else { DestroyImmediate(old); if (own != null) DestroyImmediate(own); }
             }
-            columns.Clear();
+            columns.Clear(); places.Clear();
             var list = sites.ToList();
             lastSites = list; lastContent = content; lastMap = map; kitsShown = map.KitsShown;
             var block = new MaterialPropertyBlock();
@@ -67,6 +71,7 @@ namespace Statecraft.Game.Map
                 if (w.BuiltOn == null) { Scaffold(Prefix + w.Site + ScaffoldSuffix, at, cube, map, block); continue; }
                 built.Add(new Settlement { Id = Prefix + w.Site, Name = site.Name, NameHe = site.NameHe, Type = "kibbutz", Lon = hex.Lon, Lat = hex.Lat });
             }
+            places.AddRange(built);
             var drawn = kitsShown && built.Count > 0 ? Kits(built, map) : new HashSet<string>();
             foreach (var s in built.Where(s => !drawn.Contains(s.Id)))
             {
