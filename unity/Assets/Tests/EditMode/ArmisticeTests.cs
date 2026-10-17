@@ -279,27 +279,20 @@ public class ArmisticeTests
 
     /// <summary>Review I-4: the longest label (from 22 Feb 1950: all four fronts, Jordan low-accuracy, the 1950 note) fits
     /// on screen beside the minimap with the real HUD (HudPresenter: one, two and three-row bars) and the longest event card,
-    /// at the card's window shapes and main's narrow ones: on screen, clear of the card, the minimap and the info panel, its
-    /// text not cut, at most four lines.</summary>
+    /// at the card's window shapes and main's narrow ones: on screen, clear of the minimap, the info panel and the top bar,
+    /// its text not cut, at most four lines. Not clear of the card: since the owner's decision of 17 October 2026 (#849,
+    /// issuecomment-6233870812, "Hide legend under card") the legend is hidden while the modal card is open
+    /// (DecisionCardTests.TheLegendIsHiddenWhileTheCardIsOpen).</summary>
     [UnityTest]
     public IEnumerator TheLongestMapLabelFitsBesideTheEventCard()
     {
         var c = Inputs.Content; var t = Text;
         var text = L(Regions(), new DateTime(1950, 3, 1));
         StringAssert.Contains("Jordan (low accuracy)", text);
-        // Each window with the longest text without a picture; the two-row shapes also with the longest text that has its
-        // photograph (the tallest card a player meets: review B1 of #831 saw it cover the label at 1024x1024 where the first
-        // did not). On main the photo card already touches the label at some one-row and stacked windows (1920x1080,
-        // 1680x1050, 1280x720, 1280x1024; noted in #831's review): a follow-up, so those are not pinned here.
-        var catalog = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
-        Assert.IsNotNull(catalog, "precondition: the photo catalog");
-        var pictured = new System.Collections.Generic.HashSet<string>(catalog.entries.Where(x => x.image != null).Select(x => x.eventId));
-        foreach (var (w, h, photo) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
-                                         (960, 600), (1024, 768), (390, 844), (1600, 757),
-                                         // the two-row bar's shapes (#380's re-tier gives a square window two rows; review B1 of #831)
-                                         (1024, 1024), (960, 1080), (800, 1000) }
-                                     .Select(x => (x.Item1, x.Item2, false))
-                                     .Concat(new[] { (1024, 1024, true), (960, 1080, true), (800, 1000, true) }))
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
+                                       (960, 600), (1024, 768), (390, 844), (1600, 757),
+                                       // the two-row bar's shapes (#380's re-tier gives a square window two rows; review B1 of #831)
+                                       (1024, 1024), (960, 1080), (800, 1000) })
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -311,11 +304,11 @@ public class ArmisticeTests
             var root = doc.rootVisualElement;
             var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), t);
             var hud = new HudPresenter(root, bridge, t);
-            var card = new EventCardPresenter(root, bridge, t, null, photo ? catalog : null);
+            var card = new EventCardPresenter(root, bridge, t, null, null);
             try
             {
                 var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
-                var e = c.Events.Where(x => !photo || pictured.Contains(x.Id)).OrderByDescending(x => x.Text.Length).First();
+                var e = c.Events.OrderByDescending(x => x.Text.Length).First();
                 g.State.Date = e.From; g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
                 bridge.Replace(g);
                 var label = root.Q<Label>("map-layer");
@@ -325,16 +318,15 @@ public class ArmisticeTests
                 var lb = label.worldBound;
                 var screen = root.worldBound;
                 Assert.IsTrue(lb.xMin >= screen.xMin - 0.5f && lb.xMax <= screen.xMax + 0.5f && lb.yMin >= screen.yMin - 0.5f && lb.yMax <= screen.yMax + 0.5f,
-                    $"{w}x{h}{(photo ? " (photo card)" : "")}: the label {lb} leaves the screen {screen}");
-                Assert.IsFalse(lb.Overlaps(R("minimap")), $"{w}x{h}{(photo ? " (photo card)" : "")}: the label {lb} overlaps the minimap {R("minimap")}");
-                Assert.IsFalse(lb.Overlaps(R("event-card")), $"{w}x{h}{(photo ? " (photo card)" : "")}: the event card {R("event-card")} overlaps the label {lb}");
+                    $"{w}x{h}: the label {lb} leaves the screen {screen}");
+                Assert.IsFalse(lb.Overlaps(R("minimap")), $"{w}x{h}: the label {lb} overlaps the minimap {R("minimap")}");
                 if (root.Q("info-panel").resolvedStyle.display == DisplayStyle.Flex)
-                    Assert.IsFalse(lb.Overlaps(R("info-panel")), $"{w}x{h}{(photo ? " (photo card)" : "")}: the info panel {R("info-panel")} overlaps the label {lb}");
-                Assert.IsFalse(lb.Overlaps(R("top-bar")), $"{w}x{h}{(photo ? " (photo card)" : "")}: the top bar overlaps the label");
+                    Assert.IsFalse(lb.Overlaps(R("info-panel")), $"{w}x{h}: the info panel {R("info-panel")} overlaps the label {lb}");
+                Assert.IsFalse(lb.Overlaps(R("top-bar")), $"{w}x{h}: the top bar overlaps the label");
                 var size = label.MeasureTextSize(text, lb.width - label.resolvedStyle.paddingLeft - label.resolvedStyle.paddingRight,
                     VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
-                Assert.LessOrEqual(size.y, lb.height + 1f, $"{w}x{h}{(photo ? " (photo card)" : "")}: the label's text is cut off");
-                Assert.LessOrEqual(size.y, 4 * label.resolvedStyle.fontSize * 1.4f, $"{w}x{h}{(photo ? " (photo card)" : "")}: the label takes more than four lines ({size.y} px)");
+                Assert.LessOrEqual(size.y, lb.height + 1f, $"{w}x{h}: the label's text is cut off");
+                Assert.LessOrEqual(size.y, 4 * label.resolvedStyle.fontSize * 1.4f, $"{w}x{h}: the label takes more than four lines ({size.y} px)");
             }
             finally { card.Dispose(); hud.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
         }

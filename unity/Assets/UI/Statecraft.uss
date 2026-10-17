@@ -317,6 +317,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* A phone upright (three-row bar): the info panel spans the bottom left, beside the minimap, but the column is tall, so the
    label goes back above the minimap, in the column's flow. */
 .hud-three-row .map-layer { position: relative; right: auto; bottom: auto; align-self: flex-end; max-width: 480px; margin-bottom: 6px; }
+/* While the modal decision card is open (event-modal, ScreenNav.DisableCovered) the legend is hidden: no card, the
+   photograph's included, covers it, and the card keeps its full size (owner, 17 October 2026, "Hide legend under card", on
+   desktop and phone alike; #849). Visibility, not display: GameRoot sets the label's display inline (borders shown or not),
+   and it comes back as it was when the card is hidden or answered. Only the label: the minimap and the map stay. */
+.event-modal .map-layer { visibility: hidden; }
 /* HUD round 2 (#398): promo 03's minimap, the painted relief picture with three round buttons beside it, in one frame. The
    picture's box is as wide as the tall picture needs at this height (MinimapPresenter fits the picture to it). */
 .minimap { align-self: flex-end; flex-shrink: 0; flex-direction: row; width: 222px; height: 380px; padding: 12px; background-color: rgba(9, 14, 26, 0.97); }
