@@ -147,6 +147,9 @@ spearhead to Artuf and another to Bethlehem" [V] AP, Amman, 13 June 1948. Spelli
 "Suweidam" and "Taluja" are read here as Iraq Suwaydan and Faluja, "Tarqumiva" as Tarqumiya; "Aijun" is not
 identified. The CIA's summary for the week ending 16 June agrees on Gaza to Isdud and a link to the Beersheba to
 Jerusalem area [V].
+- Reported in the JTA's Tel Aviv dispatch of 10 June (bulletin of 11 June): "the Egyptians trapped in the
+  Ishdud-Yibneh pocket for over a week made a new attempt to break out" [V] JTA bulletin, 11 June 1948, p. 1 (press;
+  matches the Isdud pocket above). The same dispatch has two Egyptian Spitfires over Rehovoth, one shot down.
 
 **Strength on 11 June** [C]
 - At Isdud: about 2,500 men under the deputy commander [V] Dupuy p. 58. The Givati Brigade's estimate on 31 May:
@@ -241,6 +244,14 @@ The Arab joint headquarters' truce line for the Legion: "Bethlehem south of Jeru
 highway, Ramle, Lydda, Beit Nabala, 11 miles east of Tel Aviv, Wilhelma, eight miles east of Tel Aviv, and Ramallan
 [sic], north of Jerusalem" [V] AP 13 June. Bayt Nabala 31.9856, 34.9567;
 Wilhelma 32.0233, 34.9136.
+- Reported in the JTA's Jerusalem dispatch of 13 June (bulletin of 14 June): the new six-mile supply track south of
+  Latrun "was constructed after a heavy Jewish attack failed to drive the Arab Legion out of positions controlling
+  the main highway at Latrun"; the dispatch names the Legion commander in Jerusalem as British Brigadier Norman Lash
+  (the OCR reads "Lesh") [V] JTA bulletin, 14 June 1948 (press; corroborates the Latrun rows above).
+- Reported in the JTA's dispatch of 14 June (bulletin of 15 June): the Jewish authorities handed the UN mediator's
+  staff a complaint over "the Legion's seizure of Deir Abuter" on Jerusalem's outskirts "after the cease-fire
+  deadline" [V] JTA bulletin, 15 June 1948 (press; the reading "Deir Abuter" = Deir Abu Tor is mine). A position
+  change inside the truce window. Deir Abu Tor 31.7636, 35.2326 (en.wiki, checked 2026-10-17).
 
 **Strength on 11 June** [C]
 - About 4,000 effective in the field after part of the Legion was withdrawn to Transjordan during the truce [V]
@@ -285,6 +296,17 @@ spearhead the attack" [V] Lorch, snippet; the 1st Brigade with elements of the 2
 [C] al-Malikiyya. The Arab joint headquarters listed "Mishmar Hay Yarden ... and El Malikya" as Syrian positions [V] AP
 13 June. The CIA summary of 16 June speaks of "two Syrian footholds at Malikya and south of Lake Hule" [V]. Dupuy has
 a combined Lebanese, ALA and Syrian attack on al-Malikiyya on 6 June, with the Lebanese taking it [V] p. 47.
+- Reported in the JTA's Tel Aviv dispatch of 10 June (bulletin of 11 June): Syrian units attacking "in the Mishmar
+  HaYarden sector in an attempt to straighten out their lines before the truce" [V] JTA bulletin, 11 June 1948,
+  p. 1 (press). The 13 June bulletin (Tel Aviv dispatch of 11 June) has Syrian units attacking Mishmar HaYarden and
+  a second place the OCR gives as "Metzudat Ussishkin" (not identified) "with artillery and aircraft" in the
+  pre-truce hours [V] JTA bulletin, 13 June 1948, p. 2 (press; place names as OCR'd).
+- Inside the truce: the Israeli radio announced officially that fighting with the Syrians in the "north ended
+  yesterday at 2 P.M." - 13 June [V] JTA bulletin, 15 June 1948 (Tel Aviv dispatch of 14 June; press relaying the
+  official announcement). The 16 June bulletin (dispatch of 15 June) reports Jewish and Syrian commanders meeting
+  UN truce observers at Mishmar HaYarden to settle the post-truce lines; the OCR is heavily garbled there but
+  appears to describe the village as captured after the cease-fire deadline [V] (press) - [C] against the 10 June
+  capture in the table above if that reading holds.
 
 **Strength on 11 June.** Not found for the date [GAP]. During the truce the bridgehead force was reorganised into two
 brigades of three small battalions each, about 2,500 men in and around it [V] O'Ballance p. 150. CIA, 27 July: 1,000 in Palestine, 1,500 near it [V].
@@ -327,6 +349,10 @@ Khalidi: the Iraqi sector "extended from Jisr al-Majami' south of Lake Tiberias 
 Jinin and Tulkarm, and then southward to Ras al-Ayn" [V] Munayyer, note 19, p. 97. Brigade sectors at the time of the
 Jenin battle (31 May to 4 June): 4th Brigade north, 1st Brigade west with two Palestinian battalions, one battalion south
 (Tal p. 233, [S, carried], snippet garbled).
+- Reported in the JTA's Tel Aviv dispatch of 10 June (bulletin of 11 June): "Iraqi artillery commenced shelling
+  Ramath Hakovesh" (near Kfar Saba) several hours after the Arab acceptance of the cease-fire terms was announced
+  [V] JTA bulletin, 11 June 1948, p. 1 (press; consistent with the Tulkarm to Qalqilya line above). Ramat HaKovesh
+  32.2175, 34.9381 (en.wiki, checked 2026-10-17).
 
 **Strength on 11 June** [C]
 - By the last week of May, two infantry brigades and an armoured brigade [V] Dupuy p. 51.
@@ -484,7 +510,10 @@ blown up [V] Munayyer p. 86. Before the game's window.
   printed pages should be checked before any figure is used.
 - Al-Tall's two tables (13 May and 15 May) need the printed page: the OCR mixes the columns. The 1st Brigade's 13 May
   stations are unreadable.
-- Lebanese, Syrian and Egyptian brigade and battalion numbers on 11 June are mostly missing.
+- Lebanese, Syrian and Egyptian brigade and battalion numbers on 11 June are mostly missing. The JTA daily
+  bulletins of 10 to 17 June 1948 (scans at pdfs.jta.org, OCR'd locally 2026-10-17) were searched for Syrian,
+  Egyptian, Legion and Iraqi formation numbers and for any strength dated 11 June: none found - the bulletins
+  carry operational mentions only (the items added to the per-army 11 June blocks above).
 - The Iraqi brigade at Gesher on 15 May (1st or 2nd) is unresolved.
 - The Arab Legion's 1st Brigade between 23 May and 11 June: only the 1st Battalion's hills are sourced.
 - The Holy War outside Jerusalem and Ramla (Hebron, Bethlehem, the Triangle) on these dates: not found.
