@@ -18,13 +18,15 @@ calls (D-D1 to D-D4, D-D8 in #375).
 ## Summary
 
 1. **Five of the eight missing towns now have a 1945 Village Statistics anchor [S]** - Nazareth 14,200; Acre
-   12,360; Tiberias 11,310; Beersheba 5,570; Afula 2,310 - **and Safed has the article's 13,700 "by 1948" figure
-   (unreferenced in the article, and not a 1945 anchor).** Since this note was written, three of the eight have
+   12,360; Tiberias 11,310; Beersheba 5,570; Afula 2,310 - **and Safed's 1945 anchor is now read from the Village
+   Statistics scan itself: Safad (Urban) 11,930, of them 9,530 Muslims and 2,400 Jews [V, read 2026-10-17].** Since this note was written, three of the eight have
    their census-day count on main (`content/cities.yaml`, CBS Statistical Abstract No. 14, Table 11): Tiberias
    5,555, Safed 2,317 and Petah Tikva 21,879 - the 1945 figures stay as background for those three. Petah Tikva was
-   about 22,000 after the municipal mergers the article dates only "after 14 May 1948". Of the other five towns,
+   about 22,000 after the municipal mergers; the article dates them only "after 14 May 1948", unreferenced, and
+   the he.wiki village articles disagree for three of the six (see the table) [C]. Of the other five towns,
    Nazareth, Acre and Beersheba are `arab_town` in `content/map/settlements_1948.yaml`, and Afula and Holon are not
-   on the map. Holon still has no readable 1945 figure [G]; for 1948 see the table.
+   on the map. Holon's 1945 anchor is now read from the Village Statistics scan itself: 3,280 (Urban) [V,
+   read 2026-10-17]; for 1948 see the table.
 2. **The ma'abarot conflict is resolved as two different categories and two different dates.** The 26,039 (end of 1951)
    counts immigrant camps and reception centres; the 250,000 is the ma'abarot scale, dated by the National Library of
    Israel to 1953 (about 130 ma'abarot), not 1951. One residual conflict: the English Wikipedia dates "127 ma'abarot
@@ -45,11 +47,11 @@ Conciliation Commission, April 1949).
 | Nazareth | 14,200 | 8,600 Christians, 5,600 Muslims | 1938 survey: 9,900 (100 Jews) |
 | Acre | 12,360 | 9,890 Muslims, 2,330 Christians, 50 Jews, 90 others | 1931 census: 7,897 |
 | Tiberias | 11,310 (sum of groups) | 6,000 Jews, 4,540 Muslims, 760 Christians, 10 others | - |
-| Safed | 13,700 "by 1948", overwhelmingly Arab (article text, unreferenced there, not Village Statistics) | - | 1922 census: 8,761 (5,431 Muslims, 2,986 Jews, 343 Christians) |
+| Safed | Safad (Urban) 11,930 (9,530 Muslims, 2,400 Jews; the volume spells it "Safad"), Safad Sub-District Table I (Continued), Village Statistics 1945 [V, scan read 2026-10-17, djvu.xml coordinates; the en.wiki 13,700 "by 1948" stays unreferenced] | - | 1922 census: 8,761 (5,431 Muslims, 2,986 Jews, 343 Christians) |
 | Beersheba | 5,570 (the article attributes it to the 1945 village survey but cites the UN Conciliation Commission, April 1949) | 5,360 Muslims, 200 Christians, 10 others | 1931 census: 2,959 |
 | Afula | 2,310 (sum of groups) | 2,300 Jews, 10 Muslims | - |
-| Petah Tikva | not in the article for 1945; about 22,000 after the adjoining villages (Amishav, Ein Ganim, Kiryat Matalon, Kfar Ganim, Mahaneh Yehuda, Kfar Avraham) merged into its boundaries after 14 May 1948 | Jewish | 1931 census: 6,880 |
-| Holon | [G] for 1945 - the article's historical population table starts in 1972 | - | [S] he.wiki: 9,600 in 1948 (population chart, no footnote); 28,000 at the 1940 founding |
+| Petah Tikva | not in the article for 1945; about 22,000 after the adjoining villages (Amishav, Ein Ganim, Kiryat Matalon, Kfar Ganim, Mahaneh Yehuda, Kfar Avraham) merged into its boundaries. The en.wiki sentence dates the mergers only "after 14 May 1948" and carries no footnote [S]; the he.wiki village articles date three of them differently: Mahaneh Yehuda joined in 1937 (the year Petah Tikva was declared a city), Ein Ganim was formally annexed in 1939, Kfar Ganim unified with the city in 1962 [C]. The merger dates for Kiryat Matalon, Kfar Avraham and Amishav were not found [G] | Jewish | 1931 census: 6,880 |
+| Holon | 3,280 (Urban), Village Statistics 1945, Jaffa Sub-District Table I [V, scan read 2026-10-17: the archive.org OCR splits the numerals from the names, so the figure was read off the djvu.xml word coordinates of the Holon (Urban) row; the row's group columns did not OCR readably] | - | [S] he.wiki: 9,600 in 1948 (population chart, no footnote); 28,000 at the 1940 founding |
 
 These are the pre-war baselines. Lod, Ramla, Ashkelon (Majdal) and Beersheba changed their populations in 1948-49, and
 Tiberias, Safed and Acre saw the same in 1948; a 1945 figure is therefore a "before" value, not the game start value.
@@ -58,6 +60,11 @@ Sensitivity: `docs/CONTENT_POLICY.md` and the plan §4 apply to any card about t
 Pages read: https://en.wikipedia.org/wiki/Nazareth , https://en.wikipedia.org/wiki/Acre%2C_Israel ,
 https://en.wikipedia.org/wiki/Tiberias , https://en.wikipedia.org/wiki/Safed , https://en.wikipedia.org/wiki/Beersheba ,
 https://en.wikipedia.org/wiki/Afula , https://en.wikipedia.org/wiki/Petah_Tikva , https://en.wikipedia.org/wiki/Holon .
+Village Statistics 1945 scan, Jaffa Sub-District Table I and Safad Sub-District Table I (Continued):
+https://archive.org/details/palestine-village-statistics-1945 (djvu.xml coordinates, read 2026-10-17).
+Petah Tikva merger dates: https://he.wikipedia.org/wiki/%D7%9E%D7%97%D7%A0%D7%94_%D7%99%D7%94%D7%95%D7%93%D7%94_(%D7%A4%D7%AA%D7%97_%D7%AA%D7%A7%D7%95%D7%95%D7%94) ,
+https://he.wikipedia.org/wiki/%D7%A2%D7%99%D7%9F_%D7%92%D7%A0%D7%99%D7%9D , https://he.wikipedia.org/wiki/%D7%9B%D7%A4%D7%A8_%D7%92%D7%A0%D7%99%D7%9D ,
+https://en.wikipedia.org/wiki/Petah_Tikva (all read 2026-10-17).
 
 ## Ma'abarot: the conflict resolved
 
