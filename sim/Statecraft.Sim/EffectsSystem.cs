@@ -77,10 +77,15 @@ namespace Statecraft.Sim
             : s.Indicators[id];
 
         /// <summary>clamp(base + effect contributions) to [0, 1], before event shifts. In the GDD loop food_supply also carries
-        /// the Food stock's term (R-FOOD-003), exactly 0 at a full cover.</summary>
+        /// the Food stock's term (R-FOOD-003), exactly 0 at a full cover, and housing's base is the cities' people-weighted
+        /// mean condition when anybody is housed (R-HOUSE-004).</summary>
         internal static double Inner(Content c, GameState s, Indicator i) =>
-            Math.Max(0, Math.Min(1, i.Base + c.At(s.Date).Effects.Where(e => e.Target == i.Id).Sum(e => s.EffectContributions[e.Id])
+            Math.Max(0, Math.Min(1, Base(c, s, i) + c.At(s.Date).Effects.Where(e => e.Target == i.Id).Sum(e => s.EffectContributions[e.Id])
                 + (i.Id == Pools.FoodIndicator ? Pools.FoodTerm(c, s) : 0.0)));
+
+        /// <summary>The indicator's base: model.yaml's, except housing's in the GDD loop (R-HOUSE-004).</summary>
+        static double Base(Content c, GameState s, Indicator i) =>
+            c.IsGdd && i.Id == Cities.HousingIndicator ? Cities.HousingLevel(s) ?? i.Base : i.Base;
 
         /// <summary>clamp(inner + event shift) to [0, 1].</summary>
         internal static double Level(Content c, GameState s, Indicator i) =>

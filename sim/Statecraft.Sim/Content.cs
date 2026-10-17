@@ -493,6 +493,12 @@ namespace Statecraft.Sim
         /// <summary>Turns of progress a veteran's project gains each turn, against a halutz's 1 (R-VET-002; D-D9, Q-VET-2).
         /// Required in the GDD loop, at least 1.</summary>
         public int? VeteranProgress { get; set; }
+        /// <summary>Every city's housing condition on the first day (R-HOUSE-001; D-D2, Q-START-3: one value for all the
+        /// cities). Required in the GDD loop, 0 to 1.</summary>
+        public double? HousingStartCondition { get; set; }
+        /// <summary>How far a city's housing condition falls in a turn when all its people are beyond its housing; a turn takes
+        /// this times the city's overflow share (R-HOUSE-002; D-D1, Q-HOUSE-1). Required in the GDD loop, 0 to 1.</summary>
+        public double? OverflowConditionLoss { get; set; }
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a

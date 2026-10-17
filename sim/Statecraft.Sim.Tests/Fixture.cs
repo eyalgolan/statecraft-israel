@@ -229,6 +229,8 @@ mvp:
   cover_months: 3
   veteran_halutz_service: 4
   veteran_progress: 2
+  housing_start_condition: 0.5
+  overflow_condition_loss: 0.2
 ";
 
     public static readonly string GddCities = "\ncities:\n" + City("town_a", 12, 8, 10, 6, "[military_camp, hakhshara]");

@@ -5,8 +5,8 @@ namespace Statecraft.Sim
 {
     /// <summary>A city in the GDD v0.1 loop (docs/GDD.md "Cities and construction"; owner decision D-A2: civilians and
     /// refugees are counts per city). Counts are population units, each a group (D-A1). Immutable, so GameState.Clone can copy
-    /// the map shallowly; a change replaces the record. Only the attributes approved decisions define are here: housing
-    /// condition and craftsmen arrive with the decisions that define them.</summary>
+    /// the map shallowly; a change replaces the record. Only the attributes approved decisions define are here: craftsmen
+    /// arrive with the decision that defines them (D-D4).</summary>
     public sealed class City
     {
         public string Id { get; }
@@ -21,24 +21,40 @@ namespace Statecraft.Sim
         /// <summary>The recruits who finished basic training here (GDD "Progression"; R-TRAIN-003). A count until Phase 5 makes
         /// soldiers units.</summary>
         public int Recruits { get; }
+        /// <summary>The city's housing condition, 0 to 1, an average over the city (GDD "Housing condition"; D-D2, Q-HOUSE-2;
+        /// R-HOUSE-001). Null only on a record made without one (a test's hand-built city); every GDD game's cities have one.</summary>
+        public double? Condition { get; }
 
-        public City(string id, int housingCapacity, int jobSlots, int civilians, int employed, int refugees, int recruits = 0)
+        public City(string id, int housingCapacity, int jobSlots, int civilians, int employed, int refugees, int recruits = 0, double? condition = null)
         {
             Id = id; HousingCapacity = housingCapacity; JobSlots = jobSlots; Civilians = civilians; Employed = employed; Refugees = refugees;
-            Recruits = recruits;
+            Recruits = recruits; Condition = condition;
         }
 
         /// <summary>The same city with new population counts.</summary>
-        public City WithCounts(int civilians, int employed, int refugees) => new City(Id, HousingCapacity, JobSlots, civilians, employed, refugees, Recruits);
+        public City WithCounts(int civilians, int employed, int refugees) => new City(Id, HousingCapacity, JobSlots, civilians, employed, refugees, Recruits, Condition);
 
         /// <summary>The same city with a new number of recruits.</summary>
-        public City WithRecruits(int recruits) => new City(Id, HousingCapacity, JobSlots, Civilians, Employed, Refugees, recruits);
+        public City WithRecruits(int recruits) => new City(Id, HousingCapacity, JobSlots, Civilians, Employed, Refugees, recruits, Condition);
 
-        /// <summary>The record as the state hash writes it. The recruits are written only when there are some, so a city with
-        /// none hashes as it did before training existed (R-LOOP-002's rule).</summary>
-        public string Canonical() =>
-            string.Format(CultureInfo.InvariantCulture, "{0}={1},{2},{3},{4},{5}", Id, HousingCapacity, JobSlots, Civilians, Employed, Refugees)
-            + (Recruits == 0 ? "" : "," + Recruits.ToString(CultureInfo.InvariantCulture));
+        /// <summary>The same city with a new housing condition.</summary>
+        public City WithCondition(double condition) => new City(Id, HousingCapacity, JobSlots, Civilians, Employed, Refugees, Recruits, condition);
+
+        /// <summary>The record as the state hash writes it. The recruits are written only when there are some, and the condition
+        /// only when it is set (",c" and its 64 bits in hex; readable, the value and then the bits), so a city with neither hashes
+        /// as it did before they existed (R-LOOP-002's rule).</summary>
+        public string Canonical(bool readable = false)
+        {
+            var text = string.Format(CultureInfo.InvariantCulture, "{0}={1},{2},{3},{4},{5}", Id, HousingCapacity, JobSlots, Civilians, Employed, Refugees)
+                + (Recruits == 0 ? "" : "," + Recruits.ToString(CultureInfo.InvariantCulture));
+            if (Condition is double c)
+            {
+                if (c == 0.0) c = 0.0;   // -0 and 0 hash alike, as GameState's numbers do
+                var bits = BitConverter.DoubleToInt64Bits(c).ToString("X16", CultureInfo.InvariantCulture);
+                text += readable ? ",c" + c.ToString("R", CultureInfo.InvariantCulture) + " [" + bits + "]" : ",c" + bits;
+            }
+            return text;
+        }
     }
 
     /// <summary>A movable unit in the GDD v0.1 loop (owner decision D-A2: halutzim and soldiers are movable units), a group
