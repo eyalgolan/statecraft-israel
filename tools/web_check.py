@@ -12,7 +12,9 @@ Usage (from the repo root):
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
-"SHOT" console lines, from ?shot, into DIR/<pose>.png; a "SHOT done" with an unfinished shot fails the run).
+"SHOT" console lines, from ?shot, into DIR/<pose>.png; a "SHOT done" with an unfinished shot fails the run),
+--persistence (play one normal turn, reload and Continue after a settling delay, then play another turn and reload
+immediately; both reloads must report the saved date, turn and hash).
 The page is opened over the DevTools protocol with its viewport fixed to 1920x1080 at the DPR before it loads
 (Emulation.setDeviceMetricsOverride: --window-size alone gives a 1920x937 viewport in --headless=new), and the run
 fails on any "res=" line, or any screenshot, of another size. Headed runs go through tools/headed.py.
@@ -234,6 +236,7 @@ class Page:
     def __init__(self, profile: str, url: str, width: int, height: int, dpr: float):
         self.profile, self.url, self.metrics = profile, url, viewport_override(width, height, dpr)
         self.ready, self.stop = threading.Event(), threading.Event()
+        self.commands: queue.Queue = queue.Queue()
         self.error: BaseException | None = None
         self.thread = threading.Thread(target=lambda: asyncio.run(self._run()), daemon=True)
 
@@ -247,6 +250,16 @@ class Page:
     def close(self) -> None:
         self.stop.set()
         self.thread.join(5)
+
+    def command(self, name: str) -> None:
+        """Runs one action on the page's CDP thread and waits for it: "reload", or "click:X,Y" (a left click at CSS
+        pixels X, Y of the viewport)."""
+        done, result = threading.Event(), []
+        self.commands.put((name, done, result))
+        if not done.wait(10):
+            raise ValueError(f"browser action {name} did not finish")
+        if result:
+            raise ValueError(f"browser action {name} failed: {result[0]}")
 
     async def _run(self) -> None:
         try:
@@ -277,7 +290,27 @@ class Page:
                 self.ready.set()
                 while not self.stop.is_set():
                     try:
-                        await asyncio.wait_for(ws.recv(), 0.5)
+                        name, done, result = self.commands.get_nowait()
+                    except queue.Empty:
+                        name = None
+                    if name is not None:
+                        try:
+                            if name.startswith("click:"):
+                                x, y = (float(v) for v in name[len("click:"):].split(","))
+                                await call("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y}, sid)
+                                for kind in ("mousePressed", "mouseReleased"):
+                                    await call("Input.dispatchMouseEvent", {"type": kind, "x": x, "y": y, "button": "left",
+                                                                            "clickCount": 1}, sid)
+                            elif name == "reload":
+                                await call("Page.reload", {"ignoreCache": True}, sid)
+                            else:
+                                raise ValueError(f"unknown command {name}")
+                        except Exception as e:
+                            result.append(e)
+                        finally:
+                            done.set()
+                    try:
+                        await asyncio.wait_for(ws.recv(), 0.1)
                     except asyncio.TimeoutError:
                         pass
         except Exception as e:  # reported by open(); after it, the browser closing ends the thread
@@ -325,7 +358,71 @@ def drain(inbox: queue.Queue) -> list:
             return batch
 
 
-def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=time.sleep, on_text=None, stall=0) -> int:
+# Button centres in CSS pixels of the fixed 1920x1080 viewport, measured on headless captures of this branch's WebGL
+# build: the start screen's New game (alone, a fresh profile) and Continue (beside New game, a saved game), and the top
+# bar's End turn (clickable while the first event card is open). Keys do not work here: Enter sent over CDP before any
+# click reaches no Unity button, and after New game the first event card, not End turn, takes the focus.
+NEW_GAME, CONTINUE, END_TURN = (960, 1002), (840, 1002), (1840, 45)
+GAME_STATE = re.compile(r"^GAME OK (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
+TURN_STATE = re.compile(r"^TURN (\d+) (\d{4}-\d{2}-\d{2}) hash ([0-9a-f]+)$")
+
+
+class PersistenceCheck:
+    """Drives and checks the two reloads of issue #910. `action` is Page.command (injected, so the unit tests need no
+    browser); a reload keeps the page's profile and origin, so its IndexedDB autosave."""
+
+    def __init__(self, action, settle=time.sleep):
+        self.action, self.settle = action, settle
+        self.stage, self.saved, self.done = "first_boot", None, False
+
+    def feed(self, text: str) -> None:
+        game, turn = GAME_STATE.match(text), TURN_STATE.match(text)
+        if game:
+            state, kind = (game.group(1), int(game.group(2)), game.group(3)), "GAME"
+        elif turn:
+            state, kind = (turn.group(2), int(turn.group(1)), turn.group(3)), "TURN"
+        else:
+            return
+        if self.stage == "first_boot" and kind == "GAME":
+            self.settle(3)                       # the start screen lays out and takes input
+            self.click(NEW_GAME)                 # normal mode: no ?smoke and no ?nostart
+            self.settle(2)
+            self.click(END_TURN)
+            self.stage = "first_turn"
+        elif self.stage == "first_turn" and kind == "TURN":
+            self.saved = state
+            self.settle(2)                       # ordinary reload: give IDBFS autosync time to settle
+            self.action("reload")
+            self.stage = "settled_reload"
+        elif self.stage == "settled_reload" and kind == "GAME":
+            self._same(state, "settled")
+            print(f"PERSISTENCE settled reload OK {state[0]} turn {state[1]} hash {state[2]}")
+            self.settle(3)
+            self.click(CONTINUE)
+            self.settle(2)
+            self.click(END_TURN)
+            self.stage = "second_turn"
+        elif self.stage == "second_turn" and kind == "TURN":
+            self.saved = state
+            self.action("reload")                # deliberately no settling delay after the TURN acknowledgement
+            self.stage = "immediate_reload"
+        elif self.stage == "immediate_reload" and kind == "GAME":
+            self._same(state, "immediate")
+            print(f"PERSISTENCE immediate reload OK {state[0]} turn {state[1]} hash {state[2]}")
+            self.done = True
+
+    def click(self, point: tuple[int, int]) -> None:
+        self.action(f"click:{point[0]},{point[1]}")
+
+    def _same(self, actual, pass_name: str) -> None:
+        if actual != self.saved:
+            date, turn, digest = self.saved
+            raise ValueError(f"PERSISTENCE FAIL {pass_name} reload got {actual[0]} turn {actual[1]} hash {actual[2]}; "
+                             f"saved {date} turn {turn} hash {digest}; file a follow-up save-persistence bug")
+
+
+def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=time.sleep, on_text=None, stall=0,
+          complete=None) -> int:
     """The check loop: 0 on PASS, 1 on a failure line, on BROWSER EXITED, on TIMEOUT, or (stall > 0) when no console
     message arrives for stall seconds (STALLED). poll() is the browser's returncode (None while running); join_reader()
     waits briefly for the stderr reader thread to hit EOF, so output written just before the exit is still scanned.
@@ -345,7 +442,7 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
         if status == "fail":
             print(f"FAIL: {texts[-1]}")
             return 1
-        if status == "pass":
+        if status == "pass" and (complete is None or complete()):
             print("PASS: saw " + ", ".join(expect))
             return 0
         return None
@@ -381,6 +478,7 @@ def main() -> int:
     ap.add_argument("--shots", type=Path)
     ap.add_argument("--dpr", type=float, default=1.0)
     ap.add_argument("--stall", type=float, default=0)
+    ap.add_argument("--persistence", action="store_true")
     a = ap.parse_args()
     if not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
@@ -415,8 +513,16 @@ def main() -> int:
             page = Page(profile, url, w, h, a.dpr)
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g} (expect res={res})")
+            persistence = PersistenceCheck(page.command) if a.persistence else None
+
+            def handle_text(text: str) -> bool:
+                consumed = on_text(text)
+                if persistence is not None:
+                    persistence.feed(text)
+                return consumed
             return watch(inbox, proc.poll, lambda: reader.join(2), list(a.expect), re.compile(a.fail), a.timeout,
-                         on_text=on_text, stall=a.stall)
+                         on_text=handle_text, stall=a.stall,
+                         complete=(lambda: persistence.done) if persistence is not None else None)
         except ValueError as e:
             print(f"FAIL: {e}")
             return 1
