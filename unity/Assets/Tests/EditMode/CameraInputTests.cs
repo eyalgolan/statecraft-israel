@@ -132,7 +132,7 @@ public class CameraInputTests
     }
 
     [Test]
-    public void TwoHalfSecondsOfZoomKeysEqualOneSecond()
+    public void ZoomKeysTwoHalfStepsEqualOneFullStep()
     {
         var a = NewRig(); var b = NewRig();
         try
@@ -161,6 +161,27 @@ public class CameraInputTests
             Assert.AreEqual(0f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null).KeyZoom, "no keys, no key zoom");
         }
         finally { Object.DestroyImmediate(go); }
+    }
+
+    /// <summary>The modifier read Update feeds Gather: each of Ctrl, Alt and Cmd on either side counts, Shift does not.</summary>
+    [Test]
+    public void CtrlAltAndCmdAreModifiersAndShiftIsNot()
+    {
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        try
+        {
+            Assert.IsFalse(CameraController.ModifierHeld(null));
+            foreach (var (key, want) in new[] { (Key.None, false), (Key.LeftShift, false), (Key.RightShift, false),
+                (Key.LeftCtrl, true), (Key.RightCtrl, true), (Key.LeftAlt, true), (Key.RightAlt, true), (Key.LeftMeta, true), (Key.RightMeta, true) })
+            {
+                var state = key == Key.None ? new UnityEngine.InputSystem.LowLevel.KeyboardState(Key.Equals)
+                    : new UnityEngine.InputSystem.LowLevel.KeyboardState(key, Key.Equals);
+                InputSystem.QueueStateEvent(keyboard, state); InputSystem.Update();
+                Assert.IsTrue(keyboard.equalsKey.isPressed, key + ": precondition, = is down");
+                Assert.AreEqual(want, CameraController.ModifierHeld(keyboard), key.ToString());
+            }
+        }
+        finally { InputSystem.RemoveDevice(keyboard); }
     }
 
     [Test]
