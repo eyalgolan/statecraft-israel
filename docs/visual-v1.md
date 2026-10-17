@@ -2672,6 +2672,15 @@ wide in a 1920 frame. Main drew white boxes of two to seven storeys, about 25-30
     nothing.
   - Each claims a lot, so no tree grows through one.
 - **#507:** everything is in `tel_aviv_kit`, so a model that turns the town's kit off hides all of it.
+- **Plaster (#658, follow-up):** Tel Aviv's walls and parapets are a warm cream, `TelAvivPlaster` (0.97, 0.90, 0.87),
+  and the terrace paving (0.87, 0.80, 0.75), where they were the shared lime white (0.94, 0.945, 0.94) and (0.84, 0.81,
+  0.76). Haifa's Hadar keeps `WhitePlaster`. Census mean wall: Tel Aviv (0.93, 0.93, 0.92) to (0.96, 0.90, 0.86); Jaffa
+  (0.76, 0.69, 0.60) and Haifa unchanged. Editor render, lit plaster (85th-percentile luma in Tel Aviv's box), gameplay03:
+  (0.886, 0.824, 0.714) to (0.902, 0.820, 0.706) at blue 0.84, the same median at 0.87; promo 03's Tel Aviv reads
+  (0.969, 0.855, 0.796).
+  The review measured a first cream, blue 0.84, as too yellow against the promo's balance (red minus blue past it), so
+  blue went to 0.87. Editor, the brightest 15% of the pixels that changed in Tel Aviv's box: red minus green 0.053 on
+  main, 0.080 at both blues; red minus blue 0.156 on main, 0.198 at 0.84, 0.191 at 0.87 (promo 0.114 and 0.173).
 
 **Result** (editor census, `TownCensusTests`; main 98515c52 → branch):
 

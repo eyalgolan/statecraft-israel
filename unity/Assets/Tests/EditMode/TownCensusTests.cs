@@ -350,6 +350,34 @@ public class TownCensusTests
     /// height spread (0.31).</summary>
     const float TelAvivMedianWidthM = 20.5f, TelAvivHeightSpread = 0.28f; const int TelAvivPalms = 23;
 
+    /// <summary>#658 (follow-up to #652): Tel Aviv's plaster is promo 03's warm cream, not a lime white. Its mean wall is
+    /// red-led (red over green by <see cref="CreamRedOverGreen"/>, red over blue by <see cref="CreamRedOverBlue"/>; main's
+    /// white was neutral), yet the White City stays white against Jaffa's sandstone: lighter than Jaffa's walls by
+    /// <see cref="WhiteOverJaffa"/> and at most <see cref="CreamOfJaffasTint"/> of their red-over-blue tint. Haifa's walls
+    /// (its Hadar shares the White City's style) keep main's mean.</summary>
+    [Test]
+    public void TelAvivsPlasterIsWarmCreamAndStillWhiterThanJaffa()
+    {
+        var map = OpenMap();
+        var rows = Census(map, out _).ToDictionary(r => r.Id);
+        Color ta = rows["tel_aviv"].MeanWall, jaffa = rows["jaffa"].MeanWall, haifa = rows["haifa"].MeanWall;
+        TestContext.WriteLine($"{rows["tel_aviv"]}\n{rows["jaffa"]}\n{rows["haifa"]}\nhaifa mean wall ({haifa.r:F4}, {haifa.g:F4}, {haifa.b:F4})");
+        float Luma(Color c) => 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+        Assert.GreaterOrEqual(ta.r - ta.g, CreamRedOverGreen, "Tel Aviv's plaster is not red-led (a lime or neutral white)");
+        Assert.GreaterOrEqual(ta.r - ta.b, CreamRedOverBlue, "Tel Aviv's plaster is not cream");
+        Assert.GreaterOrEqual(Luma(ta) - Luma(jaffa), WhiteOverJaffa, "Tel Aviv's plaster is not clearly lighter than Jaffa's stone");
+        Assert.LessOrEqual(ta.r - ta.b, CreamOfJaffasTint * (jaffa.r - jaffa.b), "Tel Aviv's cream reads as Jaffa's sandstone");
+        Assert.AreEqual(HaifaMeanWall.r, haifa.r, 0.002f, "Haifa's walls changed (red); if deliberate, update HaifaMeanWall");
+        Assert.AreEqual(HaifaMeanWall.g, haifa.g, 0.002f, "Haifa's walls changed (green); if deliberate, update HaifaMeanWall");
+        Assert.AreEqual(HaifaMeanWall.b, haifa.b, 0.002f, "Haifa's walls changed (blue); if deliberate, update HaifaMeanWall");
+    }
+
+    /// <summary>Bands for TelAvivsPlasterIsWarmCreamAndStillWhiterThanJaffa, in census mean-wall terms. Main: Tel Aviv
+    /// (0.93, 0.93, 0.92), r - g 0.000; Jaffa (0.76, 0.69, 0.60).</summary>
+    const float CreamRedOverGreen = 0.04f, CreamRedOverBlue = 0.08f, WhiteOverJaffa = 0.12f, CreamOfJaffasTint = 0.85f;
+    /// <summary>Haifa's census mean wall on main (2927defb), which #658 must not move.</summary>
+    static readonly Color HaifaMeanWall = new Color(0.8380f, 0.7945f, 0.7255f);
+
     [Test]
     public void TheCitiesCoverTheirGround()
     {

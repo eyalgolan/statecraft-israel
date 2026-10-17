@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Statecraft.Game.Map;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -74,6 +75,13 @@ namespace Statecraft.Game.UI
         /// <summary>The most of a kit's screen rectangle a pill may cover (issue #214): its own kit's, and any other
         /// visible kit's.</summary>
         public const float MaxKitCover = 0.1f;
+        /// <summary>The population-tier badge (issue #710) inside a city's or town's pill, and the class that makes room for it.</summary>
+        public const string TierClass = "map-label-tier", WithTierClass = "map-label-with-tier";
+        /// <summary>DESIGN VALUES (proposed on #710, not yet owner-ruled): tiers 1 to 9, doubling from 1,000 people (under
+        /// 1,000 is tier 1, 1,000-1,999 tier 2, ..., 128,000 and over tier 9), eight distinct tiers across the twelve cities.</summary>
+        public const int TierBase = 1000, TierCount = 9;
+        /// <summary>The badge's left edge inside its pill (Statecraft.uss ".map-label-with-tier" leaves the room).</summary>
+        const float TierInsetPx = 7f;
         /// <summary>The panels a pill never sits under (Game.uxml names).</summary>
         public static readonly string[] OccluderNames = { "top-bar", "date-plate", "left-column", "info-panel", "minimap", "map-layer", "event-card" };
 
@@ -131,6 +139,19 @@ namespace Statecraft.Game.UI
         public Label Tooltip { get; }
         Item? tapped, shownFor;   // the pill a tap opened; the pill the tooltip shows now
 
+        /// <summary>The static 1948 population tier of a city of <paramref name="people"/> (owner, 15 October 2026, on #398:
+        /// it does not follow the sim's live population).</summary>
+        public static int Tier(decimal people)
+        {
+            int tier = 1;
+            for (decimal bar = TierBase; tier < TierCount && people >= bar; bar *= 2) tier++;
+            return tier;
+        }
+
+        /// <summary>The default tier tooltip (tests; GameRoot passes the UI strings). Keep it equal to strings.en.yaml's map.tier.</summary>
+        public static string DefaultTierTip(int tier, decimal people) =>
+            string.Format(CultureInfo.InvariantCulture, "Population tier {0} of {1}: {2:N0} people in 1948", tier, TierCount, people);
+
         /// <summary>The default tooltip text (tests; GameRoot passes the UI strings): null when there is nothing to say.</summary>
         public static string? DefaultTip(Statecraft.Game.Map.Kits.Localities.Place p) =>
             TipOf(p, n => "Today: " + n, "Mixed locality");
@@ -147,7 +168,8 @@ namespace Statecraft.Game.UI
         }
 
         public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null,
-            Func<IReadOnlyList<Bounds[]>?>? keepClear = null)
+            Func<IReadOnlyList<Bounds[]>?>? keepClear = null, IReadOnlyDictionary<string, decimal>? population = null,
+            Func<int, decimal, string>? tierTip = null)
         {
             var tip = tipText ?? DefaultTip;
             this.keepClear = keepClear;
@@ -168,12 +190,31 @@ namespace Statecraft.Game.UI
                 label.AddToClassList("map-label-" + s.Type);
                 label.AddToClassList(anchorClass);
                 slot.Add(label);
+                // Issue #710: a pill with a 1948 figure (cities.yaml's people) starts with its tier; the rest have no badge.
+                // The badge is the pill's sibling, drawn over its left padding: a child would stop the Label sizing to its text.
+                string? tierText = null;
+                if (population != null && population.TryGetValue(s.Id, out var people))
+                {
+                    int tier = Tier(people);
+                    var badge = new Label(tier.ToString(CultureInfo.InvariantCulture)) { name = "tier-" + s.Id, pickingMode = PickingMode.Ignore };
+                    badge.AddToClassList(TierClass);
+                    label.AddToClassList(WithTierClass);
+                    slot.Add(badge);
+                    // The pill's USS anchor translates it by a share of its own size, so the badge follows its laid-out size.
+                    float anchorShare = anchorClass == Left ? 0f : anchorClass == Right ? 1f : 0.5f;
+                    label.RegisterCallback<GeometryChangedEvent>(e =>
+                    {
+                        badge.style.left = -anchorShare * e.newRect.width + TierInsetPx;
+                        badge.style.top = -0.5f * e.newRect.height;
+                    });
+                    tierText = (tierTip ?? DefaultTierTip)(tier, people);
+                }
                 container.Add(slot);
                 labels.Add(label); slots.Add(slot);
                 var top = MarkerTop(map, s);
                 settlementOrder.Add(new Item
                 {
-                    Settlement = s, MarkerTop = top, Kit = KitBounds(map, s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label, IsCity = s.Type == "city",
+                    Settlement = s, MarkerTop = top, Kit = KitBounds(map, s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label, IsCity = s.Type == "city", Tip = tierText,
                     First = anchorClass == Left ? Spot.AboveLeft : anchorClass == Right ? Spot.AboveRight : Spot.AboveCentre,
                 });
             }
@@ -479,7 +520,7 @@ namespace Statecraft.Game.UI
         }
 
         static Rect Grow(Rect r, float by) => new Rect(r.x - by, r.y - by, r.width + 2f * by, r.height + 2f * by);
-        static bool Hittable(Item it) => it.IsLocality && it.Tip != null && it.ShownLast;
+        static bool Hittable(Item it) => it.Tip != null && it.ShownLast;   // a locality with something to say, or a pill with a tier (#710)
 
         /// <summary>The hit test under Hover, at a point in the labels layer's coordinates: the shown locality pill (with
         /// something to say) that contains it, or none.</summary>

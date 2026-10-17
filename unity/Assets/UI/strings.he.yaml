@@ -233,6 +233,9 @@ info.locality_today: "{0} (היום: {1})"
 info.town_in_water: "{0} מוצגת כאן, כי המשושה שלה מכוסה במים."
 map.today: "היום: {0}"
 map.mixed: "יישוב מעורב"
+# map.tier: the tooltip of the population-tier badge on a city's pill (#710): {0} its tier, {1} the number of tiers, {2} its
+# 1948 people. For the native reviewer (#564).
+map.tier: "דרגת אוכלוסייה {0} מתוך {1}: {2} תושבים ב-1948"
 minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
 minimap.borders: "הצגה או הסתרה של גבולות האזורים"

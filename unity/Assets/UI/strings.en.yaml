@@ -238,6 +238,8 @@ info.locality_today: "{0} (today: {1})"
 info.town_in_water: "{0} is shown here because its own hex is water."
 map.today: "Today: {0}"
 map.mixed: "Mixed locality"
+# map.tier: the tooltip of the population-tier badge on a city's pill (#710): {0} its tier, {1} the number of tiers, {2} its 1948 people.
+map.tier: "Population tier {0} of {1}: {2} people in 1948"
 minimap.overview: "Zoom all the way out"
 minimap.labels: "Show or hide the settlement names"
 minimap.borders: "Show or hide the region borders"

@@ -40,12 +40,15 @@ namespace Statecraft.Game.Map.Kits
                 case TreeKind.Olive:
                 {
                     // Visual gap L2 (issue #34; owner, 15 Oct 2026: "Darker, with pale sunlit tops"): dark olive-brown lobes whose
-                    // tops pale to OliveTop, to promo 03's crowns (KitTests.TheHillOliveCrownsAreDarkWithPaleSunlitTops).
+                    // tops pale to OliveTop, to promo 03's crowns (KitTests.TheHillOliveCrownsAreDarkWithPaleSunlitTops). Issue #772: the
+                    // lobes' blue sits near their green (just above it on the biggest lobe) and OliveTop is greyer, because the grade
+                    // warms them: in the editor shot at gameplay03 they read grey olive (saturation 0.34, hue 27.5) like the promo's
+                    // (0.32, 28.2), not chocolate brown (0.41).
                     var top = C(OliveTop.r, OliveTop.g, OliveTop.b);
                     km.Shaft(new Vector3(0, -0.6f, 0), new Vector3(0.15f, 1.7f, 0.1f), 0.32f, 0.22f, C(0.36f, 0.31f, 0.25f), 4);
-                    km.Crown(new Vector3(0.5f, 2.9f, 0.2f), new Vector3(2.0f, 1.5f, 1.9f), C(0.28f, 0.255f, 0.225f), ref rnd, 0.16f, 7, 4, 0f, default, 0.35f, top, OliveTopFrom);
-                    km.Crown(new Vector3(-0.8f, 2.6f, -0.4f), new Vector3(1.6f, 1.3f, 1.5f), C(0.265f, 0.24f, 0.21f), ref rnd, 0.18f, 6, 4, 0f, default, 0.35f, top, OliveTopFrom);
-                    km.Crown(new Vector3(-0.1f, 3.5f, 0.6f), new Vector3(1.3f, 1.0f, 1.3f), C(0.30f, 0.275f, 0.24f), ref rnd, 0.15f, 6, 3, 0f, default, 0.35f, top, OliveTopFrom);
+                    km.Crown(new Vector3(0.5f, 2.9f, 0.2f), new Vector3(2.0f, 1.5f, 1.9f), C(0.28f, 0.255f, 0.26f), ref rnd, 0.16f, 7, 4, 0f, default, 0.35f, top, OliveTopFrom);
+                    km.Crown(new Vector3(-0.8f, 2.6f, -0.4f), new Vector3(1.6f, 1.3f, 1.5f), C(0.265f, 0.24f, 0.245f), ref rnd, 0.18f, 6, 4, 0f, default, 0.35f, top, OliveTopFrom);
+                    km.Crown(new Vector3(-0.1f, 3.5f, 0.6f), new Vector3(1.3f, 1.0f, 1.3f), C(0.30f, 0.275f, 0.275f), ref rnd, 0.15f, 6, 3, 0f, default, 0.35f, top, OliveTopFrom);
                     break;
                 }
                 case TreeKind.Palm:
@@ -89,7 +92,7 @@ namespace Statecraft.Game.Map.Kits
         public const float HillOliveSize = 1.7f, HillOliveShare = 0.6f;
         /// <summary>Visual gap L2 (issue #34): the olive crown's sunlit top colour, and the up component of the normal from which
         /// a lobe starts to pale towards it (all of it at the lobe's peak).</summary>
-        public static readonly Color OliveTop = new Color(0.57f, 0.52f, 0.46f);
+        public static readonly Color OliveTop = new Color(0.585f, 0.54f, 0.505f);
         public const float OliveTopFrom = 0.5f;
         /// <summary>The widest crown (m) the grove index is asked about (its query reach past a grove's disc).</summary>
         const float ScatterKeepM = 1500f;

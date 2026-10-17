@@ -12,7 +12,8 @@ using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
 /// <summary>The score in the top bar's date box (#380, 7b): a worst-case score stays inside the box's frame, on no other
-/// text, and whole, at every window size the HUD's tests use, in English and Hebrew.</summary>
+/// text, and whole, at every window size the HUD's tests use, in English and Hebrew. At the widest date the year, turn
+/// and date labels stay inside that frame too (#625).</summary>
 public class TopBarScoreLayoutTests
 {
     static readonly Content Gdd = ContentLoader.Load(Paths.Content);   // the real game: GDD since the cutover
@@ -21,10 +22,11 @@ public class TopBarScoreLayoutTests
 
     /// <summary>Five digits with the thousands separator: well past what a Phase 1 or MVP run can score.</summary>
     const int WorstScore = 99999;
-    /// <summary>The widest date line the box was sized for ("Turn 120  30 September 1956", Statecraft.uss .date-box). In Hebrew
-    /// (#687) the widest month is October, "31 באוקטובר 1956", 109.8 px at the plate's 15 px in Frank Ruhl Libre Medium
-    /// against 109.0 for "30 בספטמבר 1956" (Pillow's advance widths over the twelve months).</summary>
-    public static System.DateTime WorstDate(bool hebrew) => hebrew ? new System.DateTime(1956, 10, 31) : new System.DateTime(1956, 9, 30);
+    /// <summary>The widest date line the box is sized for (Statecraft.uss .date-box). In English (#625) the widest month is
+    /// November, "30 November 1956", 111.3 px at the plate's 15 px in EB Garamond Regular against 110.8 for "30 September
+    /// 1956"; in Hebrew (#687) October, "31 באוקטובר 1956", 109.8 px in Frank Ruhl Libre Medium against 109.0 for
+    /// "30 בספטמבר 1956" (Pillow's advance widths over the twelve months).</summary>
+    public static System.DateTime WorstDate(bool hebrew) => hebrew ? new System.DateTime(1956, 10, 31) : new System.DateTime(1956, 11, 30);
     const int WorstTurn = 120;
 
     static Rect ContentBox(VisualElement e)
@@ -90,8 +92,8 @@ public class TopBarScoreLayoutTests
                         var o = root.Q<Label>(other);
                         if (!Apart(score.worldBound, o.worldBound)) problems.Add($"{at}: '{score.text}' {score.worldBound} overlaps {other} '{o.text}' {o.worldBound}");
                         if (!Whole(o)) problems.Add($"{at}: {other} '{o.text}' is clipped in {o.contentRect}");
-                        // The turn and date labels' own fit in the frame at this widest date is #625 (on main before this PR,
-                        // worse in Hebrew); this test checks only that the score keeps clear of them.
+                        // #625: the year, turn and date labels lie inside the frame too, at the widest date.
+                        if (!Inside(o.worldBound, ContentBox(box))) problems.Add($"{at}: {other} '{o.text}' {o.worldBound} leaves the date box's frame {ContentBox(box)}");
                     }
                 }
                 finally

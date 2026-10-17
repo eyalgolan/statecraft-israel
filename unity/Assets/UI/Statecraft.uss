@@ -580,6 +580,22 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 }
 .map-label-city { font-size: 23px; color: rgb(250, 242, 224); }
 .map-label-town, .map-label-arab_town { font-size: 19px; }
+/* The population tier (#710): the city's static 1948 tier as a gold disc at the start of its name, over the pill's left
+   padding. The disc is the pill's sibling in its slot; MapLabelsPresenter sets its left and top from the pill's size. */
+.map-label-with-tier { padding-left: 36px; }
+.map-label-tier {
+    position: absolute;
+    translate: 0 -50%;
+    width: 23px;
+    height: 23px;
+    margin: 0;
+    padding: 0;
+    border-radius: 12px;
+    background-color: var(--gold);
+    color: rgb(14, 22, 38);
+    font-size: 17px;
+    -unity-text-align: middle-center;
+}
 /* The 1948 localities (named only at close zoom): the same pill, smaller and quieter; today's name in a tooltip under it. */
 .map-label-locality { font-size: 15px; padding: 0 9px 1px 9px; color: rgb(232, 222, 200); background-color: rgba(14, 22, 38, 0.72); }
 .map-label-tooltip {

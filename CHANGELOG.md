@@ -20,6 +20,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- Tel Aviv's White City is plastered a warm cream, as in promo 03, where it was a cooler lime white (refs #658). Walls,
+  parapets and roof terraces change in Tel Aviv only. Haifa's Hadar and every other town keep their colours, and Tel
+  Aviv stays clearly lighter than Jaffa's sandstone (`TownCensusTests.TelAvivsPlasterIsWarmCreamAndStillWhiterThanJaffa`).
 - The coalition can no longer end the GDD game (refs #730, R-GOV-001; D-C5, D-B5: "Coalition collapse is off in the
   MVP"). Its stability still follows public approval and still weights the coalition votes; the legacy loop keeps its
   collapse. R-GOV-002 pins what the GDD orders cost in Attention: each has a price, the unit orders are free, and a
@@ -89,6 +92,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The olive crowns are darker, with pale tops (visual gap L2, refs #34; owner, 15 October 2026: "Darker, with pale
   sunlit tops"). At gameplay03 their body is luma 0.29 (main 0.50, promo 03 0.30) and their sunlit top stands 0.18 above
   it (main 0.14, promo 0.18). Vertex colours only: no tree count, size, shader or grade change.
+- The olive crowns read grey olive, not chocolate brown (refs #772): their median saturation at gameplay03 (editor shot)
+  is 0.34 (main 0.41, promo 03 0.32) and their hue 27.5 degrees (main 31.7, promo 28.2), with more blue in the lobes
+  and a greyer sunlit top. Body luma 0.29 and top contrast 0.20 stay in promo 03's bands. Vertex colours only.
 - The surf is wide on the dune coasts and narrow under the kurkar, as promo 03 draws it (refs #690, #388): 3.0 km from
   Jaffa south and in Haifa Bay, 1.5 km elsewhere (2.4 km everywhere before). The dune coasts are one definition,
   `unity/Assets/Resources/Map/DuneCoasts.json`, which the water pass reads through `MapShaderGlobals`. Presentation only.
@@ -139,6 +145,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Q-CUT-8). Every golden moves; the cutover re-pins them once.
 
 ### Added
+- City and town pills start with their population tier, a gold disc with a number from 1 to 9 (refs #710). The tier is
+  static: it comes from the city's 1948 people in `content/cities.yaml` (#821), not from the sim's live count (owner,
+  15 October 2026). The scale is the design value proposed on #710 and not yet ruled: tiers double from 1,000, so under
+  1,000 is tier 1 and 128,000 or more is tier 9, which gives eight distinct tiers across the twelve cities. Pills with no
+  1948 figure (Arab towns, kibbutzim, moshavim, the 1948 localities) have no badge. Hovering or tapping a badged pill
+  shows a tooltip such as "Population tier 8 of 9: 98,618 people in 1948", in English and Hebrew.
+  `MapLabelTests.CitiesWearTheirStatic1948PopulationTier` checks the tier edges, the badges and the tooltip.
 - Map: Revivim, the one Negev outpost on the map, is drawn as the walled lookout it was in 1943-48 (refs #32), not as a
   moshava's red-roofed houses round a water tower. The three lookouts were built to one plan (he.wiki "שלושת המצפים"):
   a square yard closed by a wall, a lookout tower in its corner, the living quarters along one side and the service

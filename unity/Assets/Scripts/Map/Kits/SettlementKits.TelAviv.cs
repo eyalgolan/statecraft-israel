@@ -30,6 +30,9 @@ namespace Statecraft.Game.Map.Kits
         public const int TelAvivMinStoreys = 4, TelAvivMaxStoreys = 8;
         /// <summary>Share of Tel Aviv's blocks raised on pilotis: an open, recessed ground storey under the block.</summary>
         const float PilotisShare = 0.25f;
+        /// <summary>Tel Aviv's plaster (#658): promo 03's warm cream, red-led, where main used the shared lime white
+        /// (WhitePlaster, which Haifa's Hadar keeps). Still well lighter and paler than Jaffa's sandstone (StoneWall).</summary>
+        static readonly Color32 TelAvivPlaster = C(0.97f, 0.90f, 0.87f);
 
         /// <summary>A Tel Aviv block: four to eight storeys, taller near the heart.</summary>
         static Spec PickTelAviv(float t, ref KitRandom rnd, float m)
@@ -42,16 +45,16 @@ namespace Statecraft.Game.Map.Kits
             return new Spec { w = w * m, d = d * m, h = storeys * 3.3f * m, storeys = storeys, lotR = 0.5f * Mathf.Sqrt(w * w + d * d) * m };
         }
 
-        /// <summary>Draws one Tel Aviv block and records it in the census: lime-white plaster (a few cream), ribbon windows
+        /// <summary>Draws one Tel Aviv block and records it in the census: warm cream plaster (#658; a few a slightly yellower cream), ribbon windows
         /// along both long sides (Ribbons), a balcony band on every upper storey (WhiteBlockDetail), some on pilotis, some stepped, and a
         /// flat roof terrace behind a parapet with its stair head.</summary>
         static void TelAvivBlock(string id, Vector2 p, float yaw, Spec b, float bottom, float top, KitMesh km, ref KitRandom rnd)
         {
             float m = KitScale.CityBlocks, storey = 3.3f * m, a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             Vector2 At(float u, float v) => p + new Vector2(u * ca - v * sa, u * sa + v * ca);
-            var wall = rnd.Chance(0.08f) ? Jitter(C(0.93f, 0.90f, 0.83f), ref rnd, 0.03f) : Jitter(WhitePlaster, ref rnd, 0.025f);
+            var wall = rnd.Chance(0.08f) ? Jitter(C(0.93f, 0.90f, 0.83f), ref rnd, 0.03f) : Jitter(TelAvivPlaster, ref rnd, 0.025f);
             // The roof terrace's paving, a touch warmer and darker than the parapet, so the parapet reads as a rim.
-            var terrace = Jitter(C(0.84f, 0.81f, 0.76f), ref rnd, 0.03f);
+            var terrace = Jitter(C(0.87f, 0.80f, 0.75f), ref rnd, 0.03f);
             bool pilotis = rnd.Chance(PilotisShare);
             bool stepped = !pilotis && rnd.Chance(0.3f);
             // The main block (c, w x d, h tall) and, on a stepped block, a lower wing at one end.
