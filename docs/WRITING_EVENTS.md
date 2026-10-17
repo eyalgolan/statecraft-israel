@@ -127,8 +127,8 @@ requires: [{ event: other_event_id, diverged: true }]
 
 which holds when that event was resolved with any option except its historical one (R-ALT-002). The loader checks that
 every named event exists, that an entry gives an option or `diverged: true` (not both, not neither), that the option
-exists, that a `diverged` event has a historical option, that an event does not require itself, and that requirements
-do not form a cycle.
+exists, that a `diverged` event has a historical option, that no event is named twice in one list, that an event does
+not require itself, and that requirements do not form a cycle.
 
 ### options
 
@@ -265,6 +265,7 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `needs an option or diverged: true` | A `requires` entry names neither an option nor `diverged: true`. |
 | `not both` | A `requires` entry names an option and `diverged: true`. |
 | `has no historical option, so it cannot diverge` | `diverged: true` on an event with no historical option. |
+| `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):
 

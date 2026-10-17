@@ -43,7 +43,7 @@
         }
       }
     },
-    "requires": { "type": "array", "items": { "$ref": "#/definitions/requirement" }, "description": "Every entry must hold (R-ALT-001)." },
+    "requires": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/requirement" }, "description": "Every entry must hold (R-ALT-001)." },
     "options": {
       "type": "array",
       "minItems": 1,

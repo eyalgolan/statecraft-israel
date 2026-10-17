@@ -56,7 +56,13 @@ namespace Statecraft.Sim
                     if (cond.Max.HasValue) { ContentLoader.Finite(e.File, F($"conditions.{cond.Indicator}.max"), cond.Max.Value); ContentLoader.Unit(e.File, F($"conditions.{cond.Indicator}.max"), cond.Max.Value); }
                     if (cond.Min > cond.Max) throw new ContentException(e.File, F($"conditions.{cond.Indicator}.min"), "must not exceed max");
                 }
-                for (int i = 0; i < e.Requires.Count; i++) CheckRequirement(c, e, $"requires[{i}]", e.Requires[i]);
+                for (int i = 0; i < e.Requires.Count; i++)
+                {
+                    CheckRequirement(c, e, $"requires[{i}]", e.Requires[i]);
+                    // Two entries on one event can never both hold, or one makes the other redundant: either way it is a slip.
+                    if (e.Requires.Take(i).Any(r => r.Event == e.Requires[i].Event))
+                        throw new ContentException(e.File, F($"requires[{i}].event"), $"event '{e.Requires[i].Event}' is already required; give it one entry");
+                }
                 if (e.Options.Count == 0) throw new ContentException(e.File, F("options"), "at least one option required");
                 if (e.Options.Count(o => o.Historical) > 1) throw new ContentException(e.File, F("options"), "at most one option can be historical");
                 if (e.Anchor == "hard" && !e.Options.Any(o => o.Historical)) throw new ContentException(e.File, F("options"), "hard anchor needs a historical option");

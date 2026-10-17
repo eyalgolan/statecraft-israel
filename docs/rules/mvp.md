@@ -180,6 +180,6 @@ R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an
 
 The alternate-timeline mechanism ([the plan](../superpowers/plans/2026-10-17-alternate-timelines.md); the owner's answers, 17 October 2026, #945).
 
-R-ALT-001: An event's `requires` is a list, and the event is eligible only when every entry holds. An entry `{ event, option }` holds when that event was resolved (chosen or delegated) with that option.
+R-ALT-001: An event's `requires` is a list, and the event is eligible only when every entry holds. An entry `{ event, option }` holds when that event was resolved (chosen or delegated) with that option. A list names each event at most once.
 
 R-ALT-002: An entry `{ event, diverged: true }` holds when that event was resolved with any option except its historical one. An event with no historical option cannot diverge, and the loader refuses `diverged` on it.

@@ -232,12 +232,33 @@ options:
     [InlineData("requires: [{ event: first }]", "events[follow].requires[0]", "needs an option or diverged: true")]
     [InlineData("requires: [{ event: first, option: go, diverged: true }]", "events[follow].requires[0]", "an option or diverged: true, not both")]
     [InlineData("requires: [{ event: plain, diverged: true }]", "events[follow].requires[0].diverged", "event 'plain' has no historical option")]
+    [InlineData("requires: [{ event: first, option: go }, { event: first, diverged: true }]", "events[follow].requires[1].event", "event 'first' is already required")]
+    [InlineData("requires: [{ event: first, option: go }, { event: first, option: stay }]", "events[follow].requires[1].event", "event 'first' is already required")]
     public void ABadDivergedRequirementIsALoadError(string line, string field, string message)
     {
         var ex = Assert.Throws<ContentException>(() => LoadAll(Follow.Replace("requires: [{ event: first, option: go }]", line)));
         Assert.Equal("events/follow.yaml", ex.File);
         Assert.Equal(field, ex.Field);
         Assert.Contains(message, ex.Message);
+    }
+
+    // R-ALT-002: a delegated answer diverges as a chosen one does (Q-ALT-11, decided).
+    [Fact]
+    public void ADelegatedAlternativeDivergesToo()
+    {
+        var c = LoadAll(Follow);
+        var s = State(c);
+        var why = new List<Cause>();
+        EventSystem.Trigger(c, s, why);
+        for (ulong seed = 0; seed < 200 && !Timeline.Diverged(c, s, "first"); seed++)
+        {
+            s = State(c);
+            s.RngState = seed;
+            EventSystem.Trigger(c, s, why);
+            EventSystem.Delegate(c, s, why);      // soft and no office: a random pick half the time
+        }
+        Assert.Equal("stay", s.ChosenOptions["first"]);
+        Assert.True(Timeline.Diverged(c, s, "first"));
     }
 
     /// <summary>The cycle check walks every entry of the list, not only the first.</summary>
