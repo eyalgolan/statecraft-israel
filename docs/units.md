@@ -116,6 +116,39 @@ After the staff review the controller ruled:
   asks for them (`&units`, `-units`). The editor's promo renders draw them only with `-units`.
 - **The promo's badge, a wider trio, sourced headgear; the ring stays selection-only (I6).** See "Look".
 
+### The Arab forces: data only
+
+The file also holds the Arab forces of 15 May and 11 June 1948 (#740, Phase 5 PR 1), one row per force, with `side`,
+`echelon` and one `strength` (owner's decision on #570). The source is `research_notes/GDD phase 5/arab-forces-1948.md`,
+section 10: a row stands only where two or more of the note's sources agree on the place and the date, or where the owner
+ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
+
+| Row | Side | 15 May 1948 | 11 June 1948 (the first truce, to 8 July) | Strength (15 May) |
+|---|---|---|---|---|
+| Egyptian Expeditionary Force | egypt | Gaza (to 21 May) | Isdud | 10,000 |
+| Arab Legion | jordan | Ramallah (to 11 June) | Latrun | 5,000 |
+| Syrian Army | syria | south of Lake Tiberias, before Samakh (to 18 May) | the Mishmar HaYarden bridgehead | 3,000 |
+| Iraqi Expeditionary Force | iraq | the high ground over Gesher (15 May only) | Jenin | 3,000 |
+| Lebanese Army | lebanon | hidden: no place two sources agree on | | 1,000 |
+| Arab Liberation Army | ala | al-Malikiyya (to 29 May) | | 4,000 |
+
+- **One value per strength** (CONTENT_POLICY section 1; Q-START-3): from an Israeli source where one gives it, else the
+  value two of the note's sources agree on. Every row gives the 15 May strength only: no source in the note dates one on
+  11 June (owner, 17 October 2026, #740: "15 May strength only for the rows that have no sourced 11 June figure ...
+  Nothing is invented"). The Syrian, Iraqi and Lebanese figures rest on two search snippets (`to_verify`).
+- **Not drawn** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to `units_1948.yaml` and
+  filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its sensitivity review. Nothing is
+  drawn with IDF figures, and there is no placeholder art." `UnitRoster.OnMap` (not hidden, and `side: israel`) keeps
+  both the roster and the placer to Israel's rows, so the Arab rows give no token, take no spot and clear no ground for
+  the kits; the goldens do not move. Test: `UnitsInPlayTests.OnlyIsraelsRowsAreDrawnTheArabForcesAreDataOnly`.
+- **Not in the file yet:** the local Arab forces (the note places them only beside places its "Conventions" lists as
+  sensitive and does not describe), the Legion's Jerusalem battalions, the Egyptian eastern force, the ALA and
+  the Lebanese Army on 11 June (al-Malikiyya's holder is contested), and the Saudi, Sudanese and Yemeni contingents (not
+  units of their own, Q-START-4). The side `local_arab_forces` is known to the loader for them.
+- The Python tests check the same rules in CI (`tools/tests/test_units_1948.py`: `test_every_side_is_known`,
+  `test_strength_has_one_value_and_a_source`, `test_no_anchor_rests_on_one_source_where_the_note_says_contested`,
+  `test_the_arab_rows_name_no_sensitive_place`).
+
 ### What the player sees
 
 | Unit | Positions (dated, from the sources) | Ends |
@@ -345,8 +378,8 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   before measuring ours. The figures read darker than their base, as T29's (0.5–0.9 of its luma), at those looks and at
   gameplay03 (`TheFiguresReadDarkerThanTheirBaseAsT29`, #645: the shirts at 0.9 of #559's paint, read beside the chest
   brace, which #559's sample point hit).
-- **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row today; the Arab states' sides are known to the
-  loader for #226). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+- **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row the map draws; the Arab forces' rows are
+  data only, see "The Arab forces: data only"). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it

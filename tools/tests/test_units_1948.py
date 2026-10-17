@@ -1,6 +1,7 @@
 """content/map/units_1948.yaml (docs/units.md, "Units in play"): every position is sourced and every window ends for a
 stated reason (review C1). The C# side (UnitData.Parse, UnitsInPlayTests) enforces the same rules in the game; this
 keeps them in CI's Python job too."""
+import re
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlparse
@@ -27,6 +28,7 @@ def sources(u):
         out += t['sources']
     out += u.get('headgear_sources') or []
     out += (u.get('disbanded') or {}).get('sources') or []
+    out += (u.get('strength') or {}).get('sources') or []
     return out
 
 
@@ -76,7 +78,7 @@ def test_every_source_has_a_url_and_a_check_date_and_wikipedia_only_matches_its_
 
 
 def test_hidden_brigades_and_headgear():
-    assert {u['id'] for u in UNITS if u.get('hidden')} == {'brigade_8', 'oded'}
+    assert {u['id'] for u in UNITS if u.get('hidden') and u['side'] == 'israel'} == {'brigade_8', 'oded'}
     for u in UNITS:
         if u.get('hidden'):
             assert u['anchors'] == []
@@ -100,11 +102,120 @@ def test_a_window_ends_at_the_earliest_sourced_move():
     assert shown('carmeli', date(1948, 7, 10)) and not shown('carmeli', date(1948, 9, 1))
     assert shown('givati', date(1948, 10, 1)) and not shown('givati', date(1948, 12, 15))
 
-# The sides of 1948 a unit can belong to (UnitData.Sides): Israel and the Arab states whose armies entered the war. Every row
-# names its side; the map flies that side's flag where one is sourced (UnitFlags).
-SIDES = {'israel', 'egypt', 'jordan', 'syria', 'iraq', 'lebanon'}
+# The sides a unit can belong to, as the loader knows them (UnitData.Sides in the C# file the game reads).
+UNIT_DATA_CS = ROOT / 'unity/Assets/Scripts/Map/Units/UnitData.cs'
+
+
+def loader_sides():
+    text = UNIT_DATA_CS.read_text(encoding='utf-8')
+    m = re.search(r'Sides\s*=\s*new\[\]\s*\{([^}]*)\}', text)
+    assert m, 'UnitData.Sides not found'
+    israel = re.search(r'const string Israel = "([a-z_]+)"', text).group(1)
+    return {israel if x.strip() == 'Israel' else x.strip().strip('"') for x in m.group(1).split(',')}
+
+
+SIDES = loader_sides()
+# Q-START-4 (owner, 15 October 2026, "Armies + ALA + local forces"; #375): Israel, the five Arab states whose armies
+# entered the war, the Arab Liberation Army and the local Arab forces, each a side of its own (impact plan section 4.2).
+# The Saudi, Sudanese and Yemeni contingents are not sides of their own.
+EXPECTED_SIDES = {'israel', 'egypt', 'jordan', 'syria', 'iraq', 'lebanon', 'ala', 'local_arab_forces'}
+ECHELONS = {'force', 'division', 'brigade', 'battalion', 'company'}
 
 
 def test_every_unit_names_a_known_side():
     for u in UNITS:
         assert u.get('side') in SIDES, f"{u['id']}: side {u.get('side')!r} is not one of {sorted(SIDES)}"
+
+
+def test_every_side_is_known():
+    assert SIDES == EXPECTED_SIDES, f'the loader knows {sorted(SIDES)}; Q-START-4 names {sorted(EXPECTED_SIDES)}'
+    for u in UNITS:
+        assert u['side'] in EXPECTED_SIDES, u['id']
+
+
+def arab_rows():
+    return [u for u in UNITS if u['side'] != 'israel']
+
+
+# A copied range ("6,000 to 12,000", "2,000-3,000"): the research note keeps the conflicts; the file keeps one value.
+RANGE = re.compile(r'\d[\d,]*\s*(?:to|-|\u2013|\u2014)\s*\d')
+
+
+def test_strength_has_one_value_and_a_source():
+    """The owner's #570 decision: the Arab forces' rows carry `strength` and `echelon`. CONTENT_POLICY section 1: one
+    value per fact, never a range; Q-START-3: from an Israeli source where one gives it, else the value two of the note's
+    sources agree on. Every strength has its day (`as_of`) and its sources."""
+    rows = arab_rows()
+    assert rows, 'the Arab forces have rows (#740)'
+    for u in rows:
+        assert u.get('echelon') in ECHELONS, f"{u['id']}: echelon {u.get('echelon')!r} is not one of {sorted(ECHELONS)}"
+        st = u.get('strength')
+        assert isinstance(st, dict), f"{u['id']}: no strength"
+        assert set(st) <= {'value', 'as_of', 'note', 'sources'}, (u['id'], sorted(st))
+        v = st.get('value')
+        assert isinstance(v, int) and not isinstance(v, bool) and v > 0, f"{u['id']}: strength {v!r} is not one number"
+        assert GAME_START <= day(st['as_of']) <= date(1948, 6, 11), f"{u['id']}: strength as_of {st['as_of']}"
+        assert st.get('sources'), f"{u['id']}: strength has no source"
+        assert not RANGE.search(str(st.get('note', ''))), f"{u['id']}: the strength note copies a range"
+    # Every row the file has today gives the 15 May strength only: no source in the note dates a strength on 11 June
+    # (arab-forces-1948.md, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented").
+    assert all(u['strength']['as_of'] == '1948-05-15' for u in rows)
+
+
+def near(a, lon, lat, km=3.0):
+    # Close enough to name the same place (degrees at this latitude: about 111 km north-south, 95 km east-west).
+    return ((a['lon'] - lon) * 95) ** 2 + ((a['lat'] - lat) * 111) ** 2 <= km ** 2
+
+
+def covers(a, d):
+    return day(a['from']) <= d < day(a['to'])
+
+
+LATRUN = (34.98139, 31.83194)
+MALIKIYYA = (35.50806, 33.10528)
+JERUSALEM_OLD_CITY = (35.2342, 31.7767)
+
+
+def test_no_anchor_rests_on_one_source_where_the_note_says_contested():
+    """arab-forces-1948.md section 8 and section 10. Latrun on 15 May rests on al-Tall alone (item 1), so no Legion
+    anchor holds Latrun before 17 May; the Legion in Jerusalem on 15 May is contested (item 2), so none stands there.
+    al-Malikiyya on 15 May is contested and ruled the ALA's (item 12; #226 ruling 2): an ALA anchor stands there and no
+    Lebanese one does; who held it on 11 June is contested, so no row stands there then. Every other anchor of an Arab
+    row cites at least two sources."""
+    rows = arab_rows()
+    anchors = [(u, a) for u in rows for a in u['anchors']]
+    assert anchors, 'the Arab forces have anchors (#740)'
+    for u, a in anchors:
+        where = f"{u['id']} {a['place']}"
+        if u['side'] == 'jordan':
+            assert not (near(a, *LATRUN) and day(a['from']) < date(1948, 5, 17)), f'{where}: Latrun on 15 May rests on al-Tall alone'
+            assert not (near(a, *JERUSALEM_OLD_CITY, km=5) and covers(a, GAME_START)), f'{where}: the Legion in Jerusalem on 15 May is contested'
+        if near(a, *MALIKIYYA):
+            assert u['side'] == 'ala' and covers(a, GAME_START) and not covers(a, date(1948, 6, 11)), \
+                f'{where}: al-Malikiyya is the ALA\'s on 15 May (ruling) and nobody\'s row on 11 June (contested)'
+        else:
+            assert len({s['url'] for s in a['sources']}) >= 2, f'{where}: rests on one source'
+    assert any(u['side'] == 'ala' and near(a, *MALIKIYYA) and covers(a, GAME_START) for u, a in anchors), 'the ALA at al-Malikiyya on 15 May'
+    assert any(u['side'] == 'jordan' and near(a, *LATRUN) and covers(a, date(1948, 6, 11)) for u, a in anchors), 'the Legion at Latrun on 11 June'
+
+
+# The places the research note does not describe (arab-forces-1948.md, "Conventions"): the Arab rows say nothing of them.
+SENSITIVE = ('Kfar Etzion', 'Gush Etzion', 'Jewish Quarter', 'Nitzanim', 'Lydda', 'Lod', 'Ramla', 'Ramle')
+
+
+def texts(x):
+    if isinstance(x, dict):
+        for v in x.values():
+            yield from texts(v)
+    elif isinstance(x, list):
+        for v in x:
+            yield from texts(v)
+    elif isinstance(x, str):
+        yield x
+
+
+def test_the_arab_rows_name_no_sensitive_place():
+    for u in arab_rows():
+        for t in texts(u):
+            for name in SENSITIVE:
+                assert not re.search(rf'\b{name}\b', t), f"{u['id']}: {name!r} in {t[:80]!r}"

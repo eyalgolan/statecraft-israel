@@ -172,6 +172,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   a square yard closed by a wall, a lookout tower in its corner, the living quarters along one side and the service
   buildings along another. The larger living building is Revivim's kibbutz dining hall (he.wiki "רביבים": the fortress
   held "חדר אוכל"). `SettlementKits.Outpost.cs`; `NegevOutpostKitTests`.
+- The Arab forces of 15 May and 11 June 1948 are in `content/map/units_1948.yaml` as data only (refs #740, #385,
+  #226): the Egyptian Expeditionary Force, the Arab Legion, the Syrian Army, the Iraqi Expeditionary Force, the Lebanese
+  Army (hidden: no place two sources agree on) and the Arab Liberation Army, each with its `side`, an `echelon` and one
+  sourced 15 May `strength` (Q-START-3), from `research_notes/GDD phase 5/arab-forces-1948.md`. The map does not draw
+  them: `UnitRoster.OnMap` keeps the roster and the placer to Israel's rows until Phase 5 PR 17's figures and their
+  sensitivity review (owner, 17 October 2026), so no token, spot or kit clearing changes. `UnitData` reads `strength`,
+  `echelon` and the sides `ala` and `local_arab_forces` (Q-START-4). The rows are drafts for the owner's review.
 - A Settings screen, opened from a gear at the foot of the left column (refs #40, first slice). Its first option turns
   the tilt-shift blur off and on, at once; the choice is kept per browser in `/idbfs/statecraft-settings/settings.txt`
   (a fixed folder, as the autosave's), never in the sim or the save, so the goldens do not move. `?notiltshift` still
