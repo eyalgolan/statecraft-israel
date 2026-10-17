@@ -1051,6 +1051,10 @@ namespace Statecraft.Sim
                 if (m.CityArrivalsFrom != c.Rules.Mvp!.CityArrivalsFrom) throw new ContentException(file, "mvp.city_arrivals_from", "must be the same in every era (the cities count arrivals from one day)");
                 if (m.BuildYishuvTurns < 1) throw new ContentException(file, "mvp.build_yishuv_turns", "must be >= 1");
                 if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
+                if (m.PlowFieldsTurns < 1) throw new ContentException(file, "mvp.plow_fields_turns", "must be >= 1");
+                if (!(m.PlowFieldsCost >= 0 && IsFinite(m.PlowFieldsCost))) throw new ContentException(file, "mvp.plow_fields_cost", "must be a finite number >= 0");
+                if (m.FieldFoodPerTurn == null) throw new ContentException(file, "mvp.field_food_per_turn", "required when eras.yaml systems.loop is gdd");
+                if (m.FieldFoodPerTurn < 0) throw new ContentException(file, "mvp.field_food_per_turn", "must be >= 0");
                 // R-FOOD-001 to R-FOOD-003: required, so a missing key is never read as 0 (a stock term of 0, or no stock).
                 if (m.KFood == null) throw new ContentException(file, "mvp.k_food", "required when eras.yaml systems.loop is gdd");
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
@@ -1151,6 +1155,9 @@ namespace Statecraft.Sim
                 }
                 else if (x.Founded != default)
                     throw new ContentException(sf, at + ".founded", "only a yishuv site has a founding date");
+                // R-FIELD-001: a field site's built record is its plowed state, so no other action may build it.
+                if (x.Kinds.Contains(Projects.FieldKind) && x.Kinds.Count > 1)
+                    throw new ContentException(sf, at + ".kinds", "a field site has no other kind (its built record is its plowed state)");
                 // Q-CAMP-1: a camp belongs to one city, which a built camp gives the facility to.
                 if (x.Kinds.Any(k => CampKinds.Contains(k)))
                 {

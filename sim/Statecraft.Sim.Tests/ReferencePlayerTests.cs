@@ -107,11 +107,16 @@ public class ReferencePlayerTests
         oneLeft.Sites["beit_kama"] = new SiteWork("beit_kama", 9, 3, null);
         oneLeft.Sites["gilat"] = SiteWork.Built("gilat", new DateTime(1949, 6, 15));
         oneLeft.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
-        var last = Assert.Single(ReferencePlayer.Commands(Mvp, oneLeft).OfType<PioneerWork>());   // one site left: the second group waits
-        Assert.Equal((7, "reim"), (last.Unit, last.Site));
+        // One yishuv site left: the first group takes it, and the second plows the first ready field (R-FIELD-001).
+        var last = ReferencePlayer.Commands(Mvp, oneLeft).OfType<PioneerWork>().ToList();
+        Assert.Equal(new[] { (7, "build_yishuv", "reim"), (8, "plow_fields", "gilat_field") }, last.Select(b => (b.Unit, b.Action, b.Site)));
         var none = oneLeft.Clone();
         none.Sites["reim"] = new SiteWork("reim", 7, 3, null);
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, none), x => x is PioneerWork);
+        // Every yishuv site taken: the idle group plows the first ready field, gilat_field (beit_kama is still being built,
+        // so its field is not ready).
+        var plow = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
+        Assert.Equal((8, "plow_fields", "gilat_field"), (plow.Unit, plow.Action, plow.Site));
+        Assert.Empty(Simulation.Step(Mvp, none, ReferencePlayer.Commands(Mvp, none)).Rejected);
         var poor = s.Clone();
         poor.Treasury = 0;
         Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);

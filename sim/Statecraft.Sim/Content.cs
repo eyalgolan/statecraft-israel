@@ -475,6 +475,13 @@ namespace Statecraft.Sim
         public int BuildYishuvTurns { get; set; }
         /// <summary>IL millions a "build yishuv" costs, paid in full when it starts (R-SITE-001).</summary>
         public double BuildYishuvCost { get; set; }
+        /// <summary>Turns plowing a field takes, counting the turn it was ordered in (R-FIELD-001, as R-SITE-003).</summary>
+        public int PlowFieldsTurns { get; set; }
+        /// <summary>IL millions plowing a field costs, paid in full when it starts (R-FIELD-001, as R-SITE-001).</summary>
+        public double PlowFieldsCost { get; set; }
+        /// <summary>Food units a plowed field adds to the national stock each turn, in step 6 (R-FIELD-002; Q-FIELD-3). Required
+        /// in the GDD loop, so a missing key is never read as 0.</summary>
+        public int? FieldFoodPerTurn { get; set; }
         /// <summary>Points for each completed objective (R-OBJ-002; D-B6, #456).</summary>
         public int? ObjectivePoints { get; set; }
         /// <summary>Bonus points for each calendar month an objective is completed before its reference date's month (R-OBJ-002; D-B2, #456).</summary>
