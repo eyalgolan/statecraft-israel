@@ -8,8 +8,8 @@ On 2026-10-14 the owner reversed that for civilian boats ("Keep civilian boats")
 
 The [Locations specification](locations.md) defines map-production priorities; [Corridors](gdd/corridors.md) keeps
 the required construction routes and their reference-date decisions. Optional additional work on a town or immigrant
-camp does not make a required station or route waypoint optional. The MVP railway uses its sourced alignment via
-Rosh HaAyin, not the later coastal line.
+camp does not make a required station or route waypoint optional. The MVP railway is the 1949 link via Rosh HaAyin, not
+the later coastal line (Q-RAIL-1, decided by the owner on 17 October 2026, [#782](https://github.com/eyalgolan/statecraft-israel/issues/782#issuecomment-6231352128)).
 
 The [Map editor](gdd/map-editor.md) must report dependencies when a location or corridor endpoint moves. Authored
 gameplay placement is separate from sourced waypoint coordinates and traced geometry. A marker move must not silently
