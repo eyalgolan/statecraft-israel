@@ -8,6 +8,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- The 1948 unit roster gives 20 formations a sourced Hebrew name (`name_he`, agent-checked until #564's read); a
+  name's source does not count toward `wikipedia_only` (refs #902).
 - Event options can now move the national Food stock: `food` is an effect target in whole units, the loader
   validates it, and the sensitive-event no-gain rule covers it (R-EFX-001 and R-EFX-002; refs #729). The Arms
   target follows with its pool (#781).
@@ -21,6 +23,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The info panel now translates every map-action refusal from the sim's stable reason kind and invariant values. Under
   Hebrew, the 1948 availability reason and its date are Hebrew; English, CLI diagnostics and simulation state are unchanged
   (#881). The new Hebrew strings are flagged for native-speaker review (#564).
+- The 7th Brigade's card dates follow the IDF sources (owner, 17 October 2026): formed 14 May 1948, the day of the
+  founding order (was 16 May), and Operation Bin Nun ends on 31 May 1948 (was 1 June) (refs #902).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.

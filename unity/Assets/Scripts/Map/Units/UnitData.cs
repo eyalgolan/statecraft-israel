@@ -88,6 +88,13 @@ namespace Statecraft.Game.Map.Units
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
+        /// <summary>The sourced Hebrew name; empty when no accepted source gives one.</summary>
+        public string NameHe { get; set; } = "";
+        public List<UnitSource> NameHeSources { get; set; } = new List<UnitSource>();
+        /// <summary>"agent-checked" until a native Hebrew speaker reviews the name (#564).</summary>
+        public string? NameHeReview { get => nameHeReview; set { nameHeReview = value; NameHeReviewGiven = true; } }
+        [YamlIgnore] public bool NameHeReviewGiven { get; private set; }
+        string? nameHeReview;
         public string Number { get; set; } = "";
         public string Service { get; set; } = "";
         /// <summary>Whose formation it is (<see cref="UnitData.Sides"/>): the token flies that side's flag where one is
@@ -121,8 +128,17 @@ namespace Statecraft.Game.Map.Units
         public List<UnitAircraft>? Aircraft { get; set; }
         public List<UnitSource>? Sources { get; set; }
 
-        /// <summary>Every source of the row: its own, its anchors' and its aircraft's.</summary>
+        /// <summary>Every source of the row: its Hebrew name's and its facts' (<see cref="FactSources"/>).</summary>
         public IEnumerable<UnitSource> AllSources()
+        {
+            foreach (var s in NameHeSources) yield return s;
+            foreach (var s in FactSources()) yield return s;
+        }
+
+        /// <summary>The sources of the row's facts: its own, its anchors', its aircraft's, its headgear's, its disbandment's
+        /// and its strength's. A Hebrew name's source is not one: it does not check a fact, so it never clears
+        /// wikipedia_only (#902).</summary>
+        public IEnumerable<UnitSource> FactSources()
         {
             if (Sources != null) foreach (var s in Sources) yield return s;
             foreach (var a in Anchors)
@@ -215,6 +231,7 @@ namespace Statecraft.Game.Map.Units
                 if (!Services.Contains(u.Service)) throw new InvalidDataException($"{at} has unknown service '{u.Service}' (army, air or navy)");
                 if (!((IList<string>)Sides).Contains(u.Side)) throw new InvalidDataException($"{at} has unknown side '{u.Side}' ({string.Join(", ", Sides)})");
                 if (string.IsNullOrWhiteSpace(u.Name) || string.IsNullOrWhiteSpace(u.Sector)) throw new InvalidDataException($"{at} needs a name and a sector");
+                ValidateHebrewName(u, at);
                 if (u.Echelon != null && !((IList<string>)Echelons).Contains(u.Echelon)) throw new InvalidDataException($"{at} has unknown echelon '{u.Echelon}' ({string.Join(", ", Echelons)})");
                 if (u.Side != Israel && (u.Echelon == null || u.Strength == null)) throw new InvalidDataException($"{at} is a row of {u.Side}, so it needs an echelon and a strength (#570)");
                 if (u.Strength != null)
@@ -290,6 +307,21 @@ namespace Statecraft.Game.Map.Units
             return doc.Units;
         }
 
+        static void ValidateHebrewName(UnitEntry u, string at)
+        {
+            bool named = !string.IsNullOrWhiteSpace(u.NameHe);
+            if (u.NameHeReviewGiven && u.NameHeReview != "agent-checked")
+                throw new InvalidDataException($"{at} name_he_review must be agent-checked, or left out once reviewed");
+            if (!named)
+            {
+                if (u.NameHeSources.Count > 0) throw new InvalidDataException($"{at} name_he_sources is set without name_he");
+                if (u.NameHeReviewGiven) throw new InvalidDataException($"{at} name_he_review is set without name_he");
+                return;
+            }
+            if (!Regex.IsMatch(u.NameHe, "[א-ת]")) throw new InvalidDataException($"{at} name_he must contain Hebrew letters");
+            if (u.NameHeSources.Count == 0) throw new InvalidDataException($"{at} name_he_sources is empty");
+        }
+
         static void Window(string where, string? from, string? to, bool toRequired)
         {
             if (toRequired && string.IsNullOrEmpty(to)) throw new InvalidDataException($"{where}: to is empty (give the window's end)");
@@ -301,8 +333,9 @@ namespace Statecraft.Game.Map.Units
             catch (FormatException e) { throw new InvalidDataException($"{where} from/to: {e.Message}", e); }
         }
 
-        /// <summary>True when every source of the row is a Wikipedia article or a Wikidata item (the file's wikipedia_only).</summary>
-        public static bool IsWikipediaOnly(UnitEntry u) => IsWikipediaOnly(u.AllSources());
+        /// <summary>True when every source of the row's facts is a Wikipedia article or a Wikidata item (the file's
+        /// wikipedia_only); the Hebrew name's sources do not count.</summary>
+        public static bool IsWikipediaOnly(UnitEntry u) => IsWikipediaOnly(u.FactSources());
 
         /// <summary>True when every one of <paramref name="sources"/> is a Wikipedia article or a Wikidata item (the card's
         /// draft note, per anchor).</summary>
