@@ -475,6 +475,11 @@ namespace Statecraft.Sim
         public int BuildYishuvTurns { get; set; }
         /// <summary>IL millions a "build yishuv" costs, paid in full when it starts (R-SITE-001).</summary>
         public double BuildYishuvCost { get; set; }
+        /// <summary>Turns a "build camp" takes, counting the turn it was ordered in (R-CAMP-001; Q-CAMP-3). Required in the GDD
+        /// loop, at least 1.</summary>
+        public int? BuildCampTurns { get; set; }
+        /// <summary>IL millions a "build camp" costs, paid in full when it starts (R-CAMP-001). Required in the GDD loop.</summary>
+        public double? BuildCampCost { get; set; }
         /// <summary>Points for each completed objective (R-OBJ-002; D-B6, #456).</summary>
         public int? ObjectivePoints { get; set; }
         /// <summary>Bonus points for each calendar month an objective is completed before its reference date's month (R-OBJ-002; D-B2, #456).</summary>

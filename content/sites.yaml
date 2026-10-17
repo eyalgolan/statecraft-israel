@@ -1,10 +1,14 @@
 # GDD v0.1 designated sites (docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a new yishuv
 # takes its site's name). Phase 1 had one site (owner decision D-A4; the owner chose Mefalsim on #378, 14 October 2026).
 # Phase 4 PR 1 (#785) adds the MVP's other yishuv sites, Beit Kama, Re'im and Gilat (Q-SITE-1, owner, 17 October 2026, #782:
-# "take all of the plan's recommendations"), and a field site in each yishuv's hex (Q-FIELD-1). The Hula swamp site and the
-# camp sites wait for the owner (#785). Research for the three: research_notes/GDD objectives/settlements-1949-51.md, rows
+# "take all of the plan's recommendations"), and a field site in each yishuv's hex (Q-FIELD-1). The Hula swamp site waits
+# for the owner (#785). Research for the three: research_notes/GDD objectives/settlements-1949-51.md, rows
 # 22, 23 and 25. Their sources carry that note's checked date (14 October 2026); no person has re-read them since, so the
 # rows stay draft.
+# Phase 4 PR 3 (#787) adds the two camp sites (Q-CAMP-2, owner, 17 October 2026, #785: "Both"): Camp 80 near Pardes Hanna
+# and Tzrifin. Research: research_notes/gdd-phase-4-sourcing.md, rows C1 and C4, and the research recorded on #785
+# (issuecomment-6233553842). Their sources carry that note's checked date (15 October 2026). Only AI agents have read
+# them (the note's pass and the #785 research); no person has, so the rows stay draft.
 # The yishuv rows are sourced facts. The field rows are design placements, not facts (Q-FIELD-1). The build turns and cost
 # are labelled design values in rules.yaml mvp: (Q-CUT-1, owner, 15 October 2026; R-LOOP-005). The loader reads this file
 # only when eras.yaml systems.loop is gdd. Research: #459, research_notes/GDD objectives/designated-site-1.md.
@@ -148,4 +152,52 @@ sites:
     kinds: [field]
     sources:
       - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: camp_80
+    name: Camp 80
+    # For the native reviewer (#564): "Camp 80", the name Gshur and the Palmach archive use (מחנה 80, also מחנה שמונים).
+    name_he: מחנה 80
+    # Hex from the Hebrew Wikipedia point 32.4628 N, 34.9866 E (the Camp 80 article, today Bahad Dotan; tools/hexgrid.py),
+    # at the north-east entrance to Pardes Hanna-Karkur. No 1948 settlement in the hex.
+    q: 2
+    r: 13
+    # The kind is a design mapping, not a claim that the camp was an agricultural training farm: Gshur describes Gadna
+    # training that included five settlement nuclei, which became part of the Nahal's first intake (research on #785).
+    kinds: [hakhshara]
+    # Q-CAMP-1: the nearest MVP city, Hadera, one hex and about 6.7 km away (Zikhron Ya'akov and Netanya are two hexes).
+    city: hadera
+    # In the window: the Gadna training of the 1931-born intake, settlement nuclei among them, moved here from Kfar Yona on
+    # 13 July 1948, after artillery fire hit that camp during the Ten Days (Gshur, pp. 114-115). [GAP] The end of that first
+    # course has no single date. [GAP] No depopulated Arab locality was found in the sources read, but no historical GIS
+    # clearance has been done (#785). Sources read by AI agents only; status stays draft.
+    sources:
+      # Benny Gshur, "From a stocking cap to a tembel hat: the Nahal in its first year", Hevra, Tzava uBitahon Leumi 9
+      # (Maarachot, July 2025), pp. 114-115: the move to Camp 80 near Pardes Hanna on 13 July 1948.
+      - { url: "https://www.maarachot.idf.il/media/qyen3yoj/%D7%9E%D7%9B%D7%95%D7%91%D7%A2-%D7%92%D7%A8%D7%91-%D7%9C%D7%9B%D7%95%D7%91%D7%A2-%D7%98%D7%9E%D7%91%D7%9C-%D7%94%D7%A0%D7%97%D7%9C-%D7%91%D7%A9%D7%A0%D7%AA%D7%95-%D7%94%D7%A8%D7%90%D7%A9%D7%95%D7%A0%D7%94.pdf", checked: 2026-10-15 }
+      # Hebrew Wikipedia, "Batar Dotan" (Camp 80), the revision read for the note: the coordinates of the hex.
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=43463565", checked: 2026-10-15 }
+    status: draft
+  - id: tzrifin
+    name: Tzrifin
+    name_he: צריפין
+    # Hex from the Hebrew Wikipedia point 31.9587 N, 34.8395 E (the Tzrifin article; tools/hexgrid.py). [GAP] The exact
+    # position of the 1949-51 training base inside the camp is not sourced; the article's point stands for the camp. No
+    # 1948 settlement in the hex.
+    q: -3
+    r: 20
+    kinds: [military_camp]
+    # Q-CAMP-1: Rishon LeZion, about 3.9 km away. Petah Tikva, Rehovot and Tel Aviv are also one hex away; Rishon LeZion is
+    # the nearest by distance (research note row C4).
+    city: rishon_lezion
+    # In the window: taken by the Givati Brigade on 18-19 May 1948 and an IDF camp from then; from 1949 Bahad 4, the IDF's
+    # recruit training base, until 1967. SENSITIVE, owner review (#785): research note row C4 records a sensitivity
+    # flag for this site. Any card text built from it goes through D-F1 review. [GAP] No historical GIS clearance done.
+    # Sources read by AI agents only; status stays draft. The 1949 Bahad 4 date rests on Hebrew Wikipedia alone here (no
+    # citation there); the #785 research adds Israel Hayom and English Wikipedia, which no person has read either.
+    sources:
+      # Hebrew Wikipedia, "Tzrifin", the revision read for the note: the coordinates and the capture on 18-19 May 1948
+      # (citing Al HaMishmar and Haaretz, 20 May 1948, not read).
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=43963697", checked: 2026-10-15 }
+      # Hebrew Wikipedia, "Bahad 4", the revision read for the note: at Tzrifin from 1949 (year only, no citation).
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=43873223", checked: 2026-10-15 }
     status: draft

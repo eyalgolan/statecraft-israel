@@ -26,6 +26,8 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.income_per_job_per_year"),
         ("rules.yaml", "mvp.build_yishuv_turns"),
         ("rules.yaml", "mvp.build_yishuv_cost"),
+        ("rules.yaml", "mvp.build_camp_turns"),
+        ("rules.yaml", "mvp.build_camp_cost"),
         ("rules.yaml", "mvp.objective_points"),
         ("rules.yaml", "mvp.objective_bonus_per_month"),
         ("rules.yaml", "mvp.objective_bonus_cap"),

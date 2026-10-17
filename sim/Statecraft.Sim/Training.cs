@@ -6,7 +6,8 @@ namespace Statecraft.Sim
 {
     /// <summary>The GDD v0.1 training (docs/GDD.md "Progression"; Phase 1 PR 4): a city's civilians train in a military camp to
     /// become recruits, or in a Hakhshara to become halutzim, over several turns (D-A3). The facilities are read from
-    /// cities.yaml: one of each exists at the start (D-D5, a design assumption), and pioneers will build more (Phase 4). Runs only
+    /// cities.yaml: one of each exists at the start (D-D5, a design assumption), and pioneers build more at camp sites
+    /// (R-CAMP-001). Runs only
     /// when eras.yaml systems.loop is gdd. Its causes go to the "city" group of the Why screen: they move a city's people and
     /// pay for it, like the other city rules.</summary>
     public static class Training
@@ -22,10 +23,16 @@ namespace Statecraft.Sim
 
         static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
 
+        /// <summary>R-TRAIN-001, R-CAMP-001: whether <paramref name="city"/> has <paramref name="facility"/>: one it starts with
+        /// (cities.yaml, D-D5), or a camp site of that kind built for it (sites.yaml city). A camp being built does not count.</summary>
+        public static bool HasFacility(Content c, GameState s, string city, string facility) =>
+            c.Cities.First(k => k.Id == city).Facilities.Contains(facility)
+            || c.Sites.Any(x => x.City == city && x.Kinds.Contains(facility) && s.Sites.TryGetValue(x.Id, out var w) && w.BuiltOn != null);
+
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as
         /// <paramref name="track"/>, a unit type with a facility. The Treasury pays count * training_cost now and borrows what it
         /// lacks. The trainees leave the civilians at once, and the cohort takes the next id. Refused, state untouched, when the
-        /// city or track is unknown, the count is below 1, the city has no such facility, or it has fewer civilians without
+        /// city or track is unknown, the count is below 1, the city has no such facility (<see cref="HasFacility"/>), or it has fewer civilians without
         /// work. Step has already refused it in the legacy loop.</summary>
         public static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why)
         {
@@ -34,7 +41,7 @@ namespace Statecraft.Sim
             if (type == null) return "There is no such training";
             if (count < 1) return "Train at least one group";
             var name = PlayerText.Settlement(c, city);
-            if (!c.Cities.First(k => k.Id == city).Facilities.Contains(type.Facility)) return $"{name} has no {Place(type.Facility)}";
+            if (!HasFacility(c, s, city, type.Facility)) return $"{name} has no {Place(type.Facility)}";
             var idle = x.Civilians - x.Employed;
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             var cost = count * type.TrainingCost;

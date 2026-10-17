@@ -8,6 +8,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Pioneers can build a training camp: `PioneerWork(unit, build_camp, site)` at a camp site takes 6 turns and IL 2m
+  (labelled design values; the owner may override), and once built its city can train there from the next turn, with no
+  capacity limit (refs #787; GDD Phase 4 PR 3, D-D5, R-CAMP-001; R-TRAIN-001 reworded). `sites.yaml` gains the two camp
+  sites the owner chose (Q-CAMP-2, #785): Camp 80 near Pardes Hanna, a Hakhshara for Hadera, and Tzrifin, a military
+  camp for Rishon LeZion, both draft rows. The reference player builds them once every yishuv site is taken, so
+  `hash1950`, `hash1952` and `mvp-end` move (docs/determinism.md).
 - Event options can now move the national Food stock: `food` is an effect target in whole units, the loader
   validates it, and the sensitive-event no-gain rule covers it (R-EFX-001 and R-EFX-002; refs #729). The Arms
   target follows with its pool (#781).

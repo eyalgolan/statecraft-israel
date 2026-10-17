@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `38c8a4844a0d7cb25076c4286e05fea75f0df9294fd29943345bce57a0ddead3` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `1e21fcd3e5d99159b7bf2c803e8c92ca78ec52c36445aa511edbfeac082514f4` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `1e21fcd3e5d99159b7bf2c803e8c92ca78ec52c36445aa511edbfeac082514f4` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -45,8 +45,8 @@ Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f" \
-  --expect "GOLDEN OK 1952 7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3" \
+  --expect "GOLDEN OK 1950 38c8a4844a0d7cb25076c4286e05fea75f0df9294fd29943345bce57a0ddead3" \
+  --expect "GOLDEN OK 1952 1e21fcd3e5d99159b7bf2c803e8c92ca78ec52c36445aa511edbfeac082514f4" \
   --expect "SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc"
 ```
 
@@ -258,3 +258,6 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 4 PR 6 | 1950 | `ef765972` | the veteran pioneer (R-VET-001, R-VET-002, D-D9, #790): the reference player's halutz group works the six turns of the Beit Kama build (still built on 1949-03-15), becomes a `veteran_halutz` with 6 turns of service (`1:veteran_halutz@-3,19/6`) and builds the other three sites in 3 turns each: Gilat on 1949-06-15 (was 1949-09-15), Mefalsim on 1949-09-15 and Re'im on 1949-12-15. The first-new-yishuv objective completes on 1949-09-15 and its card fires and is answered in the run (score 100, was 0), and the debt is IL 2m higher for the extra builds (was `37c51050`) |
 | GDD Phase 4 PR 6 | 1952 | `7b4bffe0` | same; Mefalsim is built on 1949-09-15 (was 1950-03-15) and Re'im on 1949-12-15 (was 1950-09-15). The objective still completes after its reference date with no timing bonus, so the score (100) and the debt do not change (was `7745031b`) |
 | GDD Phase 4 PR 6 | mvp-end | `7b4bffe0` | same; the same run as hash1952 (was `7745031b`) |
+| GDD Phase 4 PR 3 | 1950 | `38c8a484` | build a training camp (R-CAMP-001, #787): once the four yishuv sites are taken, the reference player's veteran group builds the camp sites in ordinal id order. At the end of the 1950 run (1950-01-15) Camp 80 is being built (`camp_80=b,1,4`), and the debt is IL 2m higher (was `ef765972`) |
+| GDD Phase 4 PR 3 | 1952 | `1e21fcd3` | same; at 2 turns of progress a turn (R-VET-002) Camp 80 is built on 1950-03-15 and Tzrifin on 1950-06-15. The debt is IL 4m higher (2 x IL 2m). The reference player trains no group after the first, so the new facilities (a Hakhshara for Hadera, a military camp for Rishon LeZion) change nothing else (was `7b4bffe0`) |
+| GDD Phase 4 PR 3 | mvp-end | `1e21fcd3` | same; the same run as hash1952 (was `7b4bffe0`) |
