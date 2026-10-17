@@ -180,7 +180,7 @@ namespace Statecraft.Game.EditorTools
             var name = Arg("-compression") ?? "disabled";
             ProjectSetup.Apply();
             PlayerSettings.WebGL.compressionFormat = Compression(name);
-            PlayerSettings.WebGL.decompressionFallback = false;   // itch.io serves .br/.gz with Content-Encoding
+            PlayerSettings.WebGL.decompressionFallback = false;   // itch.io and web_check send .gz/.br with Content-Encoding; the release is gzip (#879)
             var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
             var sub = TextureSubtarget(Arg("-textureSubtarget"));
             if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;

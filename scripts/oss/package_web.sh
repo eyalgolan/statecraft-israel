@@ -3,7 +3,7 @@
 # (tools/package_release.py: it refuses until every sensitive event is sensitivity-reviewed), then prove the notices
 # are in the zip by listing it. no_human shipped a bundle whose notices file pointed at a script that never copied
 # them; this script checks the artefact itself.
-# Usage: bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-israel-vX.Y.Z-web.zip
+# Usage: bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-israel-vX.Y.Z-web.zip
 # PACKAGE_RELEASE overrides the zipping script (tests only).
 set -euo pipefail
 build="${1:?usage: package_web.sh BUILD_DIR ZIP_PATH}"

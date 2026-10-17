@@ -72,6 +72,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- The web release build is gzip-compressed instead of Brotli, one zip for GitHub Releases and itch.io (owner decision on
+  #879): itch.io's CDN sends a Brotli build's `.data` uncompressed, an estimated 46 MB to download against about 34 MB
+  with gzip. `docs/RELEASING.md` step 5 and `tools/package_release.py` default to `unity/Builds/Web-gzip`.
 - Hebrew names: a native speaker read the 12 government and legislature names (#874) and 27 office rows, 29 titles (#876), and the start, new-game, save and loading UI strings (#877, no wording changed). The `agent-checked` flags on the names and titles were cleared; the 24 party names (#875) keep theirs (refs #564).
 - In the Hebrew UI the population-tier badge sits on the right of a map pill, at the start of the Hebrew
   name, as the owner decided on #897 ("Yes, mirror it"; refs #880, #710). The English pill keeps it on the left.

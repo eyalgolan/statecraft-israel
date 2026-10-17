@@ -2,7 +2,7 @@
 event with a sensitive tag (spec 5.5; docs/m3-release.md). The gate is the sim's own (Statecraft.Cli --release-gate),
 run on the content INSIDE the build folder, so it checks exactly what would ship. Stdlib only (plus the .NET SDK).
 
-  python3 tools/package_release.py [--build unity/Builds/Web-brotli] [--zip unity/Builds/statecraft-m3-web.zip]
+  python3 tools/package_release.py [--build unity/Builds/Web-gzip] [--zip unity/Builds/statecraft-m3-web.zip]
 
 Exit 0 and "PACKAGED <zip> <bytes>" on success; exit 1 and "PACKAGE REFUSED ..." when the gate refuses or the build is
 not a WebGL build folder.
@@ -102,7 +102,7 @@ def package(build: Path, zip_path: Path) -> int:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--build", default=str(REPO / "unity/Builds/Web-brotli"))
+    p.add_argument("--build", default=str(REPO / "unity/Builds/Web-gzip"))
     p.add_argument("--zip", default=str(REPO / "unity/Builds/statecraft-m3-web.zip"))
     a = p.parse_args(argv)
     return package(Path(a.build), Path(a.zip))

@@ -80,4 +80,4 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
 - A player build rewrites some URP asset and player-setting fields as build-time caches; drop them afterwards with
   `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`.
 - Play a build locally: `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
-  A Brotli build needs `Content-Encoding: br`; serve it with web_check's handler (command in `docs/m3-release.md`).
+  A gzip or Brotli build needs `Content-Encoding`; serve it with web_check's handler (command in `docs/m3-release.md`).

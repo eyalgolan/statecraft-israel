@@ -45,7 +45,7 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   `run` checks one against GitHub's SHA-256 digest for the asset, unpacks it, checks the notices sit beside the player, runs it
   with `-batchmode -nographics -golden` and passes only on exit 0 with both `GOLDEN OK` lines from the golden manifest,
   printing the player log otherwise. Stdlib only; no Unity and no licence needed.
-- `package_release.py` zips a Brotli WebGL build for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses
+- `package_release.py` zips a WebGL release build (gzip, `unity/Builds/Web-gzip`; #879) for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses
   (exit 1) until every sensitive event is `sensitivity-reviewed` (docs/m3-release.md). The files under `Build/` are
   named by their content hash (issue #437); it reads their names from the build's `index.html`, zips only those and
   refuses a build that is missing one.

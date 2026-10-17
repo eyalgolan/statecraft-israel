@@ -16,14 +16,20 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
 5. **Build and package** on the owner's machine, from the merged `main`:
 
    ```bash
-   "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"
+   "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
-   uv run tools/web_check.py unity/Builds/Web-brotli --query "golden&smoke=5" \
+   uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" \
      --expect "GOLDEN OK 1950 e4ebff9b317a02b908434cedb18674608ae820e5e60769ef78272493884590c4" \
      --expect "GOLDEN OK 1952 e0d8212a1f6ea8af9211166aa52b76c741c739807d4326b6b6664a5c5d26857f" \
      --expect "SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc"
-   bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-israel-vX.Y.Z-web.zip
+   bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
+
+   The release build is gzip, not Brotli (owner decision on #879, 17 October 2026: "gzip for both", one zip for GitHub
+   Releases and itch.io). itch.io's CDN decodes a `.br` file and re-encodes it by content type, and it sends Unity's
+   `.data` (`application/octet-stream`) to the player uncompressed; a gzip `.data` stays gzip. Estimated from the 15 October
+   build's files, that is about 34 MB to download per player instead of about 46 MB. Both load in a browser with Decompression
+   Fallback off, as `Build.Web` sets it, and `web_check.py` serves `*.gz` with `Content-Encoding: gzip`.
 
    `package_web.sh` copies the licence and attribution files into the build folder, then runs
    `tools/package_release.py`, M3's sensitivity gate, which zips the folder and prints `PACKAGED …` or

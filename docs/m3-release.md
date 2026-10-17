@@ -4,7 +4,7 @@
 start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below are kept, marked "Deferred to M4".
 
 ## What ships
-- **Folder and zip:** `unity/Builds/Web-brotli/` uses Brotli compression with no decompression fallback. It is zipped as `unity/Builds/statecraft-m3-web.zip`, with `index.html` at the zip root. Both are build output and are not committed.
+- **Folder and zip:** `unity/Builds/Web-gzip/` uses gzip compression with no decompression fallback (it was Brotli until the owner's decision on #879, 17 October 2026: "gzip for both"; `docs/RELEASING.md`, step 5, says why). It is zipped as `unity/Builds/statecraft-m3-web.zip`, with `index.html` at the zip root. Both are build output and are not committed.
 - **File names:** the files under `Build/` are named by their content hash (issue #437), for example
   `Build/814d5f9032ce4b5847cf75e492700bbb.loader.js`, so a browser that cached an earlier build cannot mix its files into
   this one. The build's `index.html` names them; nothing else may assume a name. `index.html` keeps its fixed name and
@@ -13,11 +13,11 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   files (`content/`, `map/`, `video/` and the start screen's recording) keep their names; the player adds the build's
   id to every URL it fetches them by (`?b=<Application.buildGUID>`,
   `GameInputs.WithBuildId`), so a browser cannot serve one build's cached content to another.
-- **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed, and when the build's `event-photos.json` is missing, says the build was not `-shareable`, or lists an unreviewed sensitive event photograph). Never zip by hand.
+- **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed, and when the build's `event-photos.json` is missing, says the build was not `-shareable`, or lists an unreviewed sensitive event photograph). Never zip by hand.
 - **After building:** drop the build's rewrites of the settings with
   `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset` (as in `dev-setup.md`), so no
   build-cache change gets committed.
-- **Verified locally by:** `uv run tools/web_check.py unity/Builds/Web-brotli --query "golden&smoke=5"` with the three
+- **Verified locally by:** `uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5"` with the three
   full `--expect` values pinned in `docs/determinism.md` (both goldens and the smoke line). This runs both golden hashes
   in the WebGL IL2CPP player, then plays five turns through the UI's own buttons (answering two events through the card:
   the IDF founding order on turn 2, the first truce on turn 4).
@@ -58,9 +58,9 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
     real connection 4.3 MB less to fetch is worth far more (3.5 s at 10 Mbit/s).
   - **Goldens:** `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect`
     values from `docs/determinism.md`: PASS on both builds (the Brotli build too).
-- **Play it locally:** serve the folder with web_check's handler, which sends `Content-Encoding: br` for `*.br`. Plain `python3 -m http.server` does not, so the Brotli build would not load. Then open http://localhost:8000/.
+- **Play it locally:** serve the folder with web_check's handler, which sends `Content-Encoding: gzip` for `*.gz` (and `br` for `*.br`). Plain `python3 -m http.server` does not, so a compressed build would not load. Then open http://localhost:8000/.
   ```
-  uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-brotli')).serve_forever()"
+  uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-gzip')).serve_forever()"
   ```
   The uncompressed build also works with `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`.
 - **Console lines a browser check can rely on:**
@@ -280,7 +280,7 @@ Deferred to the start of M4, as a private Draft (owner ruling, 2026-10-10). The 
 owner's itch.io account and is never automated, and the build must pass the sensitivity gate above (`-shareable`).
 1. Sign in at https://itch.io. Go to Dashboard, then **Create new project**.
 2. Set the title to "Statecraft: Israel (M3 preview)", Kind of project to **HTML**, and Classification to Games.
-3. Under Uploads, upload the zip made by `bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-m3-web.zip` (it puts the licence and attribution files inside, then runs `tools/package_release.py`; see `docs/RELEASING.md`) and tick **This file will be played in the browser**.
+3. Under Uploads, upload the zip made by `bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-m3-web.zip` (it puts the licence and attribution files inside, then runs `tools/package_release.py`; see `docs/RELEASING.md`) and tick **This file will be played in the browser**.
 4. Embed options:
    - Viewport **1280 × 720**. It fits a 1366×768 or 1440×900 laptop page without scrolling, and under the UI's
      ScaleWithScreenSize (reference 1920×1080) it lays out exactly like 1920×1080; `UiLayoutTests` covers 1280×720.
@@ -292,7 +292,10 @@ owner's itch.io account and is never automated, and the build must pass the sens
    - Then choose **Restricted** (password) or **Public**.
 6. Record the page URL below under "Published at".
 
-itch.io serves `.br` files with `Content-Encoding: br`, because it detects the extension, so no server settings are needed.
+No server settings are needed. itch.io detects gzip from the bytes and sends it with `Content-Encoding: gzip`; it also
+detects `.br`, but its CDN decodes Brotli and re-encodes by content type, so a Brotli `.data` reached players
+uncompressed (checked with curl on two public Unity games, 17 October 2026). That is why the release build is gzip
+(#879); see https://itch.io/docs/creators/html5, "Compression".
 
 Published at: (owner fills in)
 

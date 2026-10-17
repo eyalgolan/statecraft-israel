@@ -74,3 +74,19 @@ def test_a_stale_zip_does_not_survive_a_refusal(tmp_path):
 def test_release_gate_uses_a_temp_file_not_a_fixed_path():
     text = (ROOT / "scripts/oss/release_gate.sh").read_text()
     assert "mktemp" in text and "/tmp/oss-release-scan.txt" not in text
+
+
+def test_the_release_web_build_is_gzip_end_to_end():
+    """Owner decision on #879 (17 Oct 2026, "gzip for both"): one gzip zip for GitHub Releases and itch.io. itch.io's
+    CDN passes a Brotli `.data` to the player uncompressed but keeps a gzip `.data` compressed. The release recipe in
+    RELEASING.md step 5 must build gzip and check and package that same folder, and the packager's default must agree."""
+    text = (ROOT / "docs/RELEASING.md").read_text()
+    step5 = text[text.index("5. **Build and package**"):text.index("6. **Tag and publish")]
+    build = re.search(r"^.*Build\.Web -compression (\S+).*$", step5, re.M)   # the first Build.Web line: the release build
+    assert build and build.group(1) == "gzip", "the release build must use -compression gzip"
+    assert "-decompressionFallback" not in build.group(0)   # itch.io sends Content-Encoding: no fallback (Build.Web)
+    assert "uv run tools/web_check.py unity/Builds/Web-gzip " in step5
+    assert "bash scripts/oss/package_web.sh unity/Builds/Web-gzip " in step5
+    assert "Web-brotli" not in step5
+    packager = (ROOT / "tools/package_release.py").read_text()
+    assert 'default=str(REPO / "unity/Builds/Web-gzip")' in packager
