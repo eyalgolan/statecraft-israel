@@ -81,11 +81,15 @@ options:
         Assert.Contains("a design alternative names nobody and no date", ex.Message);
         var dated = design.Replace("      by: the opposition benches\n", "");
         var ex2 = Assert.Throws<ContentException>(() => Load(("parent.yaml", dated)));
+        Assert.Equal("events[parent].options[road].alternative.date", ex2.Field);
         Assert.Contains("a design alternative names nobody and no date", ex2.Message);
         var bare = design.Replace("      by: the opposition benches\n      date: 1948-06-05\n", "");
         Assert.False(Road(Load(("parent.yaml", bare))).IsConsidered);
         var plain = Parent.Substring(0, Parent.IndexOf("      basis:", StringComparison.Ordinal)) + "      basis: design\n";
         Assert.Empty(Road(Load(("parent.yaml", plain))).Sources);   // sources are optional for a design alternative
+        var badSource = plain + "      sources: [{ url: \"http://example.org\", checked: 2026-10-17 }]\n";
+        var ex3 = Assert.Throws<ContentException>(() => Load(("parent.yaml", badSource)));   // but any it gives must be valid
+        Assert.Equal("events[parent].options[road].alternative.sources", ex3.Field);
     }
 
     // R-ALT-003

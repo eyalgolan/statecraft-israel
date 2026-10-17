@@ -185,7 +185,8 @@ namespace Statecraft.Sim
                 throw new ContentException(e.File, at + ".basis", $"'{a.Basis}' must be proposed, debated or design");
             if (a.Basis == OptionAlternative.Design)
             {
-                if (a.By != "" || a.Date.HasValue) throw new ContentException(e.File, at + ".by", "a design alternative names nobody and no date");
+                if (a.By != "" || a.Date.HasValue)
+                    throw new ContentException(e.File, at + (a.By != "" ? ".by" : ".date"), "a design alternative names nobody and no date");
             }
             else
             {

@@ -293,6 +293,8 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `words only, no placeholder` | `alternative.by` has a `{` or `}`. |
 | `needs the date it was put forward` | A proposed or debated `alternative` with no `date`. |
 | `a design alternative names nobody and no date` | A `design` alternative with a `by` or a `date`. |
+| `needs at least one source` | A proposed or debated `alternative` with no `sources`. |
+| `needs an https url and a checked date` | An `alternative` source without `https://` or without `checked`. |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):
