@@ -16,6 +16,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
+- In the Hebrew UI the Cabinet and Defence screens name people, offices, parties, the government and the legislature in
+  Hebrew, from the content's sourced Hebrew forms (refs #558): "ממשלת ישראל הראשונה", "אליעזר קפלן", "שר האוצר", "מפא״י".
+  A woman's office takes its feminine title (Golda Meir is "שרת העבודה"); where the content has no `title_he_f`, a
+  minister's title takes the feminine form ("שרת האוצר", "השרה לנפגעי מלחמה") and the Prime Minister stays "ראש הממשלה"
+  (Beri's wording as a native speaker). A card with no portrait shows the first name's initial and the surname
+  ("י. ידין"). A row with no Hebrew form yet keeps its English name (today only the Minister responsible for rationing).
+  English is unchanged.
 - In the Hebrew UI the Budget's "no ministry until" date, the Why? screen's turn span and the info panel's build date
   name their months in Hebrew ("מ־15 במאי 1948 עד 15 ביוני 1948", "באוגוסט 1950") through the `date.*` strings, as
   the top bar does since #696 (refs #701). English is unchanged. `info.built` in Hebrew now says "ב{1}" instead of
