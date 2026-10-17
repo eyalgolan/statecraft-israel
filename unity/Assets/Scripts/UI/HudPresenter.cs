@@ -72,7 +72,7 @@ namespace Statecraft.Game.UI
             ("nav-why", "hud.nav.why"), ("nav-settings", "hud.nav.settings"), ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         };
 
-        /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level
+        /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the seven captions, Security's level
         /// and the attention line, SmallTextPx in the stylesheet) stays at least this many pixels on screen. The panel scales
         /// with the window (about 0.67 at 1280x720, 0.62 at 1024x768), so at small windows the text is set larger in panel
         /// px (SmallTextSize).</summary>
@@ -141,7 +141,7 @@ namespace Statecraft.Game.UI
             }
             // The text floor: checked now and twice a second, since a window resized at the same shape changes the panel's
             // scale without changing its layout (no geometry event).
-            smallText = bar.Query<Label>(className: "meter-name").ToList();   // the six captions and Security's level
+            smallText = bar.Query<Label>(className: "meter-name").ToList();   // the seven captions and Security's level
             smallText.Add(root.Q<Label>("attention"));
             turnBox = bar.Q<VisualElement>(className: "turn-box");
             dateRow = bar.Q<VisualElement>(className: "date-row");

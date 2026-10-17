@@ -371,7 +371,7 @@ public class TopBarTests
     /// HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, and on phones held upright, 390x844
     /// and 360x800 (#642), in both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window,
     /// so on screen is the font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
-    /// collides at these sizes.)</summary>
+    /// collides at these sizes except 360x800, which its Windows leave out.)</summary>
     [UnityTest]
     public IEnumerator TheBarsSmallTextKeepsTheFloorOnScreen()
     {
@@ -425,6 +425,42 @@ public class TopBarTests
                         TestContext.WriteLine($"{at}: {name} top {r.yMin - plate.yMin:0.0}, bottom {plate.yMax - r.yMax:0.0}, corners TL {Room(corners[0]):0.0} TR {Room(corners[1]):0.0} BL {Room(corners[2]):0.0} BR {Room(corners[3]):0.0} (panel px; needs {clear} from the top and bottom, and >= 0 from each zone)");
                     }
                 });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Review of #859 at fb2a8dc (WebGL): on a phone held upright (390x844, 360x800) the three-row bar wraps Security's
+    /// caption row, and Security's caption and level still end on the reading side, where the other captions do: in Hebrew at
+    /// the meter's content right edge (they had moved to the left), in English at its left edge (the level's 6 px gap from the
+    /// caption is its left margin); with turn 1's values and with the widest.</summary>
+    [UnityTest]
+    public IEnumerator OnThePhoneBarEachCaptionMeetsItsTextColumnsReadingEdge()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var widest in new[] { false, true })
+                foreach (var (w, h) in new[] { (390, 844), (360, 800) })
+                    yield return Rendered(w, h, hebrew, (root, text) =>
+                    {
+                        string at = $"{(hebrew ? "he" : "en")} {w}x{h}{(widest ? " widest" : " turn 1")}";
+                        if (!root.Q("root").ClassListContains("hud-three-row")) { problems.Add($"{at}: precondition: the three-row bar"); return; }
+                        int seen = 0;
+                        foreach (var l in root.Q("top-bar").Query<Label>(className: "meter-name").ToList())
+                        {
+                            if (!Shown(l) || string.IsNullOrEmpty(l.text) || !(l.worldBound.width > 0)) continue;
+                            var body = l.parent;
+                            while (body != null && !body.ClassListContains("meter-body")) body = body.parent;
+                            if (body == null) { problems.Add($"{at}: precondition: '{l.text}' is in a meter's text column"); continue; }
+                            seen++;
+                            var r = l.worldBound; var s = l.resolvedStyle; var align = s.unityTextAlign;
+                            float left = body.worldBound.xMin + body.resolvedStyle.paddingLeft, right = body.worldBound.xMax - body.resolvedStyle.paddingRight;
+                            bool reading = hebrew ? align == TextAnchor.UpperRight || align == TextAnchor.MiddleRight || align == TextAnchor.LowerRight
+                                                  : align == TextAnchor.UpperLeft || align == TextAnchor.MiddleLeft || align == TextAnchor.LowerLeft;
+                            float gap = hebrew ? right - (r.xMax + s.marginRight) : (r.xMin - s.marginLeft) - left;
+                            TestContext.WriteLine($"{at}: '{l.text}' {r}, column {left:0.0}-{right:0.0}, {gap:0.0} px from the reading edge");
+                            if (!reading || Mathf.Abs(gap) > 1f) problems.Add($"{at}: '{l.text}' {r} is {gap:0.0} px from its reading edge (column {left:0.0}-{right:0.0}, aligned {align})");
+                        }
+                        if (seen < 7) problems.Add($"{at}: precondition: the captions and Security's level show, found {seen}");
+                    }, widest: widest);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 

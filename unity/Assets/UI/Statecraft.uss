@@ -182,12 +182,19 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    quarter side by side, wrap the level under the caption. */
 .hud-three-row .meter .meter-name { max-width: 170px; }
 .hud-three-row .meter-caption-row { flex-wrap: wrap; }
+/* In Hebrew each caption, and Security's wrapped caption row, ends at the text column's right edge (review of #859: the
+   wrapped row had moved to the column's left). */
+.lang-he.hud-three-row .meter-body { align-items: flex-end; }
+.lang-he.hud-three-row .meter-caption-row { justify-content: flex-end; }
 .hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 456px; }
-/* The event layer keeps the same 128 px free at its bottom (the 96 px meter line and the floor's 32 px, #642; padding, so its
-   backdrop still reaches the window's bottom: DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier), so the
-   centred card stays where the six meters left it, clear of the map's border label above the minimap
-   (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
-.hud-three-row .event-layer { padding-bottom: 128px; }
+/* The column moves down 32 px with the bar, and its buttons close up to 6 px apart, so Defence ends 20 px lower than on
+   main; the centred card moves down the same 20 px (the event layer keeps 88 px free at its bottom: padding, so its backdrop
+   still reaches the window's bottom, DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier). Defence then keeps
+   main's room above a photo card (review of #859: LeftColumnTests.OnAPhoneThePhotoCardLeavesTheFirstThreeButtonsClear),
+   and the card stays clear of the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard).
+   The 6 px and the 88 px follow the bar's 440/456 px: retune them together if the bar's height changes. */
+.hud-three-row .left-column > .rail-button { margin-bottom: 6px; }
+.hud-three-row .event-layer { padding-bottom: 88px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {

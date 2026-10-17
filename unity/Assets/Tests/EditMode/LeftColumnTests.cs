@@ -56,8 +56,9 @@ public class LeftColumnTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, in English or Hebrew, with the top bar, the screens'
     /// navigation, the decision card (open when the session has an event), the info panel on Lydda's hex, the minimap and the
-    /// border caption.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, GameSession g, System.Action<VisualElement, ScreenNav> check, System.Action<VisualElement, ScreenNav>? act = null)
+    /// border caption. <paramref name="photos"/>: the card shows its event's photograph (the taller card).</summary>
+    static IEnumerator Rendered(int w, int h, bool hebrew, GameSession g, System.Action<VisualElement, ScreenNav> check, System.Action<VisualElement, ScreenNav>? act = null,
+                                EventImageCatalog? photos = null)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -75,7 +76,7 @@ public class LeftColumnTests
         var bridge = new SimBridge(g, text);
         var hud = new HudPresenter(root, bridge, text);
         var nav = new ScreenNav(root);
-        var card = new EventCardPresenter(root, bridge, text, null);
+        var card = new EventCardPresenter(root, bridge, text, null, photos);
         var info = new InfoPanelPresenter(root, bridge, text, Names(), regions: Regions());
         var mini = new MinimapPresenter(root, Hexes, text);
         var layer = root.Q<Label>("map-layer");
@@ -159,6 +160,36 @@ public class LeftColumnTests
                         if (r.Overlaps(hull)) problems.Add($"{at}: the column {hull} overlaps {name} {r}");
                     if (!root.Q(Column).enabledInHierarchy) problems.Add($"{at}: the column is disabled under the open card (the top bar is not)");
                 });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Review of #859 at fb2a8dc (WebGL): on a phone held upright, 390x844 and 360x800, with the turn-0 photo card open
+    /// (One Army, taller than WithAnEventOpen's card, which the test above uses), Cabinet, Budget and Defence stay clear of
+    /// the card, as on main, in English and Hebrew. Not pinned: Why? and Settings, under the photo card on main too (put to
+    /// the owner in that review), and turn 1's The First Truce, which the editor draws taller than WebGL does: here it cuts
+    /// Defence on main too.</summary>
+    [UnityTest]
+    public IEnumerator OnAPhoneThePhotoCardLeavesTheFirstThreeButtonsClear()
+    {
+        var catalog = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
+        Assert.IsNotNull(catalog, "precondition: the photo catalog");
+        var problems = new List<string>();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        CollectionAssert.AreEqual(new[] { "idf_founding" }, g.State.PendingEvents, "precondition: One Army at turn 0");
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (390, 844), (360, 800) })
+                yield return Rendered(w, h, hebrew, g, (root, nav) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    if (!(root.Q("event-photo").worldBound.height > 0)) { problems.Add($"{at}: precondition: the card shows its photograph"); return; }
+                    var card = root.Q("event-card").worldBound;
+                    foreach (var name in new[] { "nav-cabinet", "nav-budget", "nav-defence" })
+                    {
+                        var b = root.Q(name).worldBound;
+                        TestContext.WriteLine($"{at}: {name} {b}, the card {card}");
+                        if (b.Overlaps(card)) problems.Add($"{at}: the card {card} cuts {name} {b}");
+                    }
+                }, photos: catalog);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
