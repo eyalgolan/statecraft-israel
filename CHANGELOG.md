@@ -13,6 +13,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- The info panel now translates every map-action refusal from the sim's stable reason kind and invariant values. Under
+  Hebrew, the 1948 availability reason and its date are Hebrew; English, CLI diagnostics and simulation state are unchanged
+  (#881). The new Hebrew strings are flagged for native-speaker review (#564).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.

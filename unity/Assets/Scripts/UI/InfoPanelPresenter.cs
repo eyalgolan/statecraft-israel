@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Units;
@@ -258,8 +259,10 @@ namespace Statecraft.Game.UI
             placement.text = queued != null ? text.Format("info.queued", PlayerText.Capitalised(PlayerText.MapAction(c, queued.Action)))
                 : here != null ? text.Format("info.built", PlayerText.Capitalised(PlayerText.MapAction(c, here.Action)),
                     Control1948.LineDateText(here.Date.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), k => text[k])) : "";   // PlayerText.Month is always English (#701)
-            var campWhy = MapActions.Check(c, s, MapActions.TransitCamp, q, r);
-            var housingWhy = MapActions.Check(c, s, MapActions.Housing, q, r);
+            var campReason = MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
+            var housingReason = MapActions.CheckReason(c, s, MapActions.Housing, q, r);
+            var campWhy = campReason == null ? null : MapActionReasonText(campReason, text);
+            var housingWhy = housingReason == null ? null : MapActionReasonText(housingReason, text);
             // eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason
             var allowed = c.SystemsAt(s.Date).MapActions;
             bool campOn = allowed.Contains(MapActions.TransitCamp), housingOn = allowed.Contains(MapActions.Housing);
@@ -275,6 +278,25 @@ namespace Statecraft.Game.UI
             camp.text = c.RulesAt(s.Date).MapActions.TryGetValue(MapActions.TransitCamp, out var cr) ? text.Format("info.build_camp", PlayerText.Money(c, "treasury", cr.Cost)) : text["info.build_camp_plain"];
             housing.text = c.RulesAt(s.Date).MapActions.TryGetValue(MapActions.Housing, out var hr) ? text.Format("info.build_housing", PlayerText.Money(c, "treasury", hr.Cost)) : text["info.build_housing_plain"];
             reason.text = string.Join("\n", new[] { campWhy, housingWhy }.Where(x => x != null).Distinct());   // the sim's reasons, each once
+        }
+
+        static string MapActionReasonText(MapActionReason reason, UiText text)
+        {
+            string Action(string id) => text["info.map_action." + id];
+            string Date(string iso) => Control1948.DateText(System.DateTime.ParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture), k => text[k]);
+            var key = "info.map_action_reason." + reason.Kind;
+            switch (reason.Kind)
+            {
+                case "action_from": case "action_until": return text.Format(key, PlayerText.Capitalised(Action(reason.Values[0])), Date(reason.Values[1]));
+                case "all_from": return text.Format(key, Date(reason.Values[0]));
+                case "too_far": {
+                    var distance = int.Parse(reason.Values[0], CultureInfo.InvariantCulture);
+                    return text.Format(key + (distance == 1 ? "_one" : "_many"), distance);
+                }
+                case "turn_cap": return text.Format(key, int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
+                case "occupied": return text.Format(key, Action(reason.Values[0]));
+                default: return text[key];
+            }
         }
     }
 }

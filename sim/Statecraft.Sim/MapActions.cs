@@ -14,6 +14,18 @@ namespace Statecraft.Sim
         public Placement(string action, int q, int r, DateTime date) { Action = action; Q = q; R = r; Date = date; }
     }
 
+    /// <summary>A map-action refusal's stable UI kind and invariant values, beside the English text used by the CLI.</summary>
+    public sealed class MapActionReason
+    {
+        public string Kind { get; }
+        public IReadOnlyList<string> Values { get; }
+        public string Text { get; }
+        public MapActionReason(string kind, string text, params string[] values)
+        {
+            Kind = kind; Text = text; Values = values;
+        }
+    }
+
     /// <summary>Map actions (M3 scope: absorption from 1950). A transit camp (ma'abara) or a housing project goes on a land
     /// hex within rules map_action_max_distance of a hex that owns a settlement (content/map/settlement_hexes.yaml). It
     /// costs treasury (a shortfall is borrowed, as in EconomySystem) and moves housing (absorption) and morale (support).
@@ -35,39 +47,50 @@ namespace Statecraft.Sim
 
         static int ActionsThisTurn(GameState s) => s.MapActionsTurnDate == s.Date ? s.MapActionsThisTurn : 0;
 
-
         /// <summary>Null when <paramref name="action"/> may be placed on (q, r) now, else the reason shown to the player.</summary>
-        public static string? Check(Content c, GameState s, string action, int q, int r)
+        public static string? Check(Content c, GameState s, string action, int q, int r) => CheckReason(c, s, action, q, r)?.Text;
+
+        /// <summary>Null when the action may be placed, else a stable kind and invariant values for a UI, plus English text.</summary>
+        public static MapActionReason? CheckReason(Content c, GameState s, string action, int q, int r)
         {
             // No id in either reason: a command from an old save or a stale UI may name an action this content lacks; the
             // replay refuses it here, before anything is formatted, so a placement always has its rule (fix round 3, m-6).
-            if (!Actions.Contains(action)) return "There is no such map action";
+            if (!Actions.Contains(action)) return new MapActionReason("unknown", "There is no such map action");
             // eras.yaml systems.map_actions: the actions this era allows
-            if (!c.SystemsAt(s.Date).MapActions.Contains(action)) return "That map action is not available in this chapter";
+            if (!c.SystemsAt(s.Date).MapActions.Contains(action)) return new MapActionReason("chapter", "That map action is not available in this chapter");
             var rules = c.RulesAt(s.Date);   // the era the turn starts in
             var rule = rules.MapActions.TryGetValue(action, out var x) ? x : null;
-            if (rule == null) return "That map action is not available in this game";
+            if (rule == null) return new MapActionReason("game", "That map action is not available in this game");
             // rules.yaml map_actions from/to (chapters spec 3.2): [from, to), like every content window. The reason names the day.
             if (!Window.Active(rule.From, rule.To, s.Date))
-                return s.Date < rule.From.GetValueOrDefault()
-                    ? $"{PlayerText.Capitalised(PlayerText.MapAction(c, action))} can be placed from {PlayerText.Date(rule.From!.Value)}"
-                    : $"{PlayerText.Capitalised(PlayerText.MapAction(c, action))} could be placed until {PlayerText.Date(rule.To!.Value.AddDays(-1))}";
+            {
+                var before = s.Date < rule.From.GetValueOrDefault();
+                var date = before ? rule.From!.Value : rule.To!.Value.AddDays(-1);
+                var words = before
+                    ? $"{PlayerText.Capitalised(PlayerText.MapAction(c, action))} can be placed from {PlayerText.Date(date)}"
+                    : $"{PlayerText.Capitalised(PlayerText.MapAction(c, action))} could be placed until {PlayerText.Date(date)}";
+                return new MapActionReason(before ? "action_from" : "action_until", words, action,
+                    date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            }
             if (s.Date < rules.MapActionsFrom)
-                return $"Transit camps and housing projects can be placed from {PlayerText.Date(rules.MapActionsFrom)}";
+                return new MapActionReason("all_from", $"Transit camps and housing projects can be placed from {PlayerText.Date(rules.MapActionsFrom)}",
+                    rules.MapActionsFrom.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
             if (action == TransitCamp && !(s.Policies.TryGetValue(MaabarotPolicy, out var m) && m >= 0.5))
-                return "Transit camps need the ma'abarot policy";
+                return new MapActionReason("maabarot_policy", "Transit camps need the ma'abarot policy");
             var hex = c.HexAt(q, r);
-            if (hex == null || !hex.Land) return "This hex is not land";
+            if (hex == null || !hex.Land) return new MapActionReason("not_land", "This hex is not land");
             var max = rules.MapActionMaxDistance;
             if (!c.SettlementHexes.Any(sh => Distance(q, r, sh.Q, sh.R) <= max))
-                return FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from a settlement");
+                return new MapActionReason("too_far", FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from a settlement"),
+                    max.ToString(System.Globalization.CultureInfo.InvariantCulture));
             var here = At(s, q, r);
             if (here != null && !(action == Housing && here.Action == TransitCamp))
-                return $"This hex already has {PlayerText.MapAction(c, here.Action)}";
+                return new MapActionReason("occupied", $"This hex already has {PlayerText.MapAction(c, here.Action)}", here.Action);
             // The cap comes last so a player who is over it still sees the specific reason an order is illegal. It counts
             // accepted actions (not surviving placements): housing on a camp removes the camp but still used an action.
             if (ActionsThisTurn(s) >= rules.MapActionsPerTurn)
-                return FormattableString.Invariant($"No more than {rules.MapActionsPerTurn} map actions in one turn");
+                return new MapActionReason("turn_cap", FormattableString.Invariant($"No more than {rules.MapActionsPerTurn} map actions in one turn"),
+                    rules.MapActionsPerTurn.ToString(System.Globalization.CultureInfo.InvariantCulture));
             return null;
         }
 
