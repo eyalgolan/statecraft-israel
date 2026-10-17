@@ -602,3 +602,46 @@ public class CameraInputTests
         finally { Object.DestroyImmediate(go); }
     }
 }
+
+/// <summary>The zoom keys through Unity's own input path (#890, owner's ask): a virtual keyboard from the Input System's
+/// test fixture, the project-wide Camera actions, and CameraController's frame (Tick, which Update calls), so a key that
+/// stops being read or a modifier that stops being passed on goes red. Edit mode sends no Awake/OnEnable/OnDisable, so
+/// the test sends them.</summary>
+public class CameraZoomKeysThroughTheInputSystemTests : InputTestFixture
+{
+    static void Send(CameraController c, string message) =>
+        typeof(CameraController).GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Invoke(c, null);
+
+    [Test]
+    public void HeldZoomKeysMoveTheCameraAndCtrlStopsThem()
+    {
+        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        var go = new GameObject("KeyZoomTest", typeof(Camera));
+        var rig = go.AddComponent<CameraRig>();
+        rig.LookAt = new Vector3(500000, 0, 500000); rig.Distance = 100000f;
+        var c = go.AddComponent<CameraController>();
+        c.Bounds = new Rect(0, 0, 1000000, 1000000);   // far larger than the view: no view clamp here
+        Send(c, "Awake"); Send(c, "OnEnable");
+        try
+        {
+            float AfterOneSecond(float from) => from * Mathf.Pow(1f - CameraController.ZoomPerStep, CameraController.ZoomKeysPerSecond);
+
+            Press(keyboard.equalsKey);
+            for (int i = 0; i < 10; i++) c.Tick(0.1f);
+            Assert.AreEqual(AfterOneSecond(100000f), rig.Distance, 1f, "= held for a second: six notches in");
+
+            Press(keyboard.leftCtrlKey);
+            var held = rig.Distance;
+            c.Tick(0.1f);
+            Assert.AreEqual(held, rig.Distance, 1e-3, "Ctrl with = is the browser's zoom, not the map's");
+            Release(keyboard.leftCtrlKey); Release(keyboard.equalsKey);
+
+            Press(keyboard.numpadMinusKey);
+            for (int i = 0; i < 10; i++) c.Tick(0.1f);
+            Assert.AreEqual(100000f, rig.Distance, 1f, "the numpad's - held for a second undoes it");
+        }
+        finally { Send(c, "OnDisable"); Object.DestroyImmediate(go); }
+    }
+}
