@@ -451,6 +451,156 @@ options:
         Assert.All(end.ChosenOptions, kv => Assert.False(Timeline.Diverged(Real, end, kv.Key), $"the historical run diverged at {kv.Key}"));
     }
 
+    // ---- Task 7 (#952): reconvergence events and variant text ----------------------------------------------------
+
+    internal const string Outside = @"
+id: outside
+kind: reconvergence
+title: The outside event
+text: 'It happened regardless.'
+from: 1948-07-01
+to: 1948-08-01
+options:
+  - id: record
+    text: As it happened
+    historical: true
+variants:
+  - when: [{ event: parent, diverged: true }]
+    title: The outside event, on your course
+    text: 'It happened regardless; on your course, the earlier decision went the other way.'
+    sources: [{ url: ""https://example.org/outside"", checked: 2026-10-17 }]
+";
+
+    [Theory]
+    // R-ALT-010
+    [InlineData("road", "The outside event, on your course", "It happened regardless; on your course")]
+    [InlineData("record", "The outside event", "It happened regardless.")]
+    public void TheFirstMatchingVariantSuppliesTheText(string picked, string title, string text)
+    {
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", Outside));
+        var s = NewState(c);
+        s.ChosenOptions["parent"] = picked;
+        var e = c.Events.Single(x => x.Id == "outside");
+        Assert.Equal(title, EventSystem.Title(c, s, e));
+        Assert.StartsWith(text, EventSystem.Render(c, s, e));
+        Assert.Equal("As it happened", e.Options.Single().Text);             // options never vary
+    }
+
+    // R-ALT-010
+    [Theory]
+    [InlineData("kind: reconvergence\n", "", "variants", "only a reconvergence event carries variants")]
+    [InlineData("  - when: [{ event: parent, diverged: true }]", "  - when: [{ event: parent, option: record }]", "variants[0].when", "a variant follows a road not taken")]
+    [InlineData("  - when: [{ event: parent, diverged: true }]", "  - when: []", "variants[0].when", "a variant follows a road not taken")]
+    [InlineData("    sources: [{ url: \"https://example.org/outside\", checked: 2026-10-17 }]\n", "", "variants[0].sources", "needs at least one source")]
+    [InlineData("on your course, the earlier", "on your course, {nobody} and the earlier", "variants[0].text", "unknown office placeholder '{nobody}'")]
+    [InlineData("    title: The outside event, on your course\n", "    title: '{nobody} on your course'\n", "variants[0].title", "unknown office placeholder '{nobody}'")]
+    [InlineData("    text: 'It happened regardless; on your course, the earlier decision went the other way.'\n", "    text: ' '\n", "variants[0].text", "a variant has text")]
+    [InlineData("    historical: true\nvariants:", "variants:", "options", "a reconvergence event happened: it has a historical option")]
+    [InlineData("{ event: parent, diverged: true }", "{ event: nowhere, diverged: true }", "variants[0].when[0].event", "unknown event 'nowhere'")]
+    public void ABadVariantIsALoadError(string from, string to, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("outside.yaml", Outside.Replace(from, to))));
+        Assert.Equal("events[outside]." + field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    [Fact]
+    // R-ALT-010, review focus 5
+    public void AVariantNeedsItsRoadClosedBeforeTheCardOpens()
+    {
+        var early = Outside.Replace("from: 1948-07-01", "from: 1948-06-05");   // parent's window runs to 11 June
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("outside.yaml", early)));
+        Assert.Equal("events[outside].variants[0].when[0]", ex.Field);
+        Assert.Contains("'parent' can still be open when this card opens", ex.Message);
+    }
+
+    [Fact]
+    // R-ALT-010: a road with an open window is never settled.
+    public void AVariantNeedsItsRoadToHaveAWindowThatCloses()
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent.Replace("to: 1948-06-11\n", "")), ("outside.yaml", Outside)));
+        Assert.Equal("events[outside].variants[0].when[0]", ex.Field);
+        Assert.Contains("'parent' can still be open when this card opens", ex.Message);
+    }
+
+    [Fact]
+    // R-ALT-010: variants are tried in file order; the first whose every entry holds wins.
+    public void TheFirstOfTwoMatchingVariantsWins()
+    {
+        var two = Outside + @"  - when: [{ event: parent, option: road }]
+    title: The second variant
+    text: 'Also on your course.'
+    sources: [{ url: ""https://example.org/outside"", checked: 2026-10-17 }]
+";
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", two));
+        var s = NewState(c);
+        s.ChosenOptions["parent"] = "road";
+        var e = c.Events.Single(x => x.Id == "outside");
+        Assert.Same(e.Variants[0], Timeline.Variant(c, s, e));
+        Assert.Equal("The outside event, on your course", EventSystem.Title(c, s, e));
+        var untitled = two.Replace("    title: The outside event, on your course\n", "");
+        var c2 = Load(("parent.yaml", Parent), ("outside.yaml", untitled));
+        var s2 = NewState(c2); s2.ChosenOptions["parent"] = "road";
+        Assert.Equal("The outside event", EventSystem.Title(c2, s2, c2.Events.Single(x => x.Id == "outside")));   // no title: the event's own
+    }
+
+    [Fact]
+    // R-ALT-010: every `when` entry must hold, not just one.
+    public void AVariantNeedsEveryEntryToHold()
+    {
+        var other = Parent.Replace("id: parent", "id: other").Replace("title: Parent", "title: Other");
+        var both = Outside.Replace("[{ event: parent, diverged: true }]", "[{ event: parent, diverged: true }, { event: other, option: road }]");
+        var c = Load(("parent.yaml", Parent), ("other.yaml", other), ("outside.yaml", both));
+        var s = NewState(c);
+        s.ChosenOptions["parent"] = "road"; s.ChosenOptions["other"] = "record";
+        var e = c.Events.Single(x => x.Id == "outside");
+        Assert.Null(Timeline.Variant(c, s, e));
+        Assert.Equal("It happened regardless.", EventSystem.Render(c, s, e));
+        s.ChosenOptions["other"] = "road";
+        Assert.Same(e.Variants[0], Timeline.Variant(c, s, e));
+    }
+
+    [Fact]
+    // R-ALT-010 with R-ALT-009, review focus 5: a rejoin makes a road's historical option hold, so a variant that names
+    // that option waits for every card that can rejoin the road, or its text could flip while the card is open.
+    public void AVariantOnTheRecordWaitsForEveryCardThatCanRejoinIt()
+    {
+        var other = Parent.Replace("id: parent", "id: other").Replace("title: Parent", "title: Other");
+        var withRejoin = Consequence.Replace("    text: Hold the course\n", "    text: Hold the course\n    rejoin: parent\n");   // open 15 June to 15 August
+        var onRecord = Outside.Replace("[{ event: parent, diverged: true }]", "[{ event: parent, option: record }, { event: other, diverged: true }]");
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("other.yaml", other), ("after_road.yaml", withRejoin), ("outside.yaml", onRecord)));
+        Assert.Equal("events[outside].variants[0].when[0]", ex.Field);
+        Assert.Contains("'after_road' can rejoin 'parent' while this card is open", ex.Message);
+        var later = onRecord.Replace("from: 1948-07-01\nto: 1948-08-01", "from: 1948-08-15\nto: 1948-09-01");
+        Assert.Single(Load(("parent.yaml", Parent), ("other.yaml", other), ("after_road.yaml", withRejoin), ("outside.yaml", later)).Events.Single(x => x.Id == "outside").Variants);
+        // A variant on the road itself never flips on a rejoin (the chosen option is not rewritten, diverged stays true).
+        foreach (var onRoad in new[] { Outside, Outside.Replace("{ event: parent, diverged: true }", "{ event: parent, option: road }") })
+            Assert.Single(Load(("parent.yaml", Parent), ("after_road.yaml", withRejoin), ("outside.yaml", onRoad)).Events.Single(x => x.Id == "outside").Variants);
+    }
+
+    [Fact]
+    // R-ALT-012
+    public void TheHistoricalRunShowsNoVariant()
+    {
+        var end = GoldenRun.PlayToEnd(Real);
+        foreach (var e in Real.Events.Where(x => x.Variants.Count > 0))
+            Assert.Null(Timeline.Variant(Real, end, e));
+    }
+
+    /// <summary>Review focus 5 on real content: at the state where the card first appears on its road, the variant applies.</summary>
+    [Fact]
+    public void EveryVariantShowsWhenItsRoadIsTaken()
+    {
+        foreach (var e in Real.Events.Where(x => x.Variants.Count > 0))
+            for (int i = 0; i < e.Variants.Count; i++)
+            {
+                var road = AltRun.RoadTo(Real, new GameEvent { Id = e.Id, Requires = e.Variants[i].When });
+                var fired = AltRun.Play(Real, road).FirstOrDefault(s => s.FiredEvents.Contains(e.Id));
+                Assert.NotNull(fired);
+                Assert.Same(e.Variants[i], Timeline.Variant(Real, fired!, e));
+            }
+    }
+
     /// <summary>Review focus 2: every consequence card in content/ fires in a run that takes its road (and, for a second
     /// card, the first card's option too), with the reference player's orders everywhere else. Until a content slice adds
     /// one, there is none; AltRunWalksTheRoadBack pins the helper on fixtures.</summary>

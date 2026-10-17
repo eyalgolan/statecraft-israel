@@ -37,8 +37,9 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
-| `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken. See below. |
+| `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken; `reconvergence` for an outside event with course-specific text. See below. |
 | `requires` | no | Fires only after every listed requirement holds. See below. |
+| `variants` | no | `kind: reconvergence` only. Course-specific title and text, each with `when`, `text`, optional `title` and `sources` (R-ALT-010). See "kind". |
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
@@ -154,6 +155,29 @@ a historical option (R-ALT-009). Choosing it makes requirements on that historic
 cards whose absolute windows are still open can fire. It does not erase the option the player actually chose: a
 `diverged: true` requirement on the same event remains true. The loader refuses `rejoin` on any other kind of event, an
 unknown or self target, or a target whose alternative road the card does not follow.
+
+A **reconvergence event**, `kind: reconvergence`, is a real outside event that happened regardless of the player's
+course. It has a historical option and may bend only its title and text to a road not taken (R-ALT-010):
+
+```yaml
+kind: reconvergence
+title: The outside event
+text: It happened regardless.
+from: 1948-07-01
+to: 1948-08-01
+variants:
+  - when: [{ event: parent_event, diverged: true }]
+    title: The outside event, on your course
+    text: It happened regardless; the earlier decision went the other way.
+    sources: [{ url: https://example.org/source, checked: 2026-10-18 }]
+```
+
+Variants are tested in file order; the first whose every `when` entry holds supplies the text and, when present, the
+title. Options and effects never vary. Each variant needs a source and at least one requirement on a road not taken.
+Every road it names must have a window that closes on or before the reconvergence event opens, so wording cannot change
+while the card is shown. A variant that names an event's historical option also needs every consequence card that can
+`rejoin` that event (R-ALT-009) to close by then, since a rejoin makes that option hold. Variant title and text use the same checked office placeholders as the event itself. Only a
+reconvergence event may carry `variants`.
 
 ### requires
 
@@ -351,6 +375,12 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `must be historical, consequence or reconvergence` | `kind` is another word. |
 | `only a consequence card rejoins the record` | An option of another kind of event has `rejoin`. |
 | `rejoins only an event whose road this card follows` | `rejoin` names an event the card does not follow on a road not taken, or one with no historical option. |
+| `only a reconvergence event carries variants` | An event with another `kind` has `variants`. |
+| `a reconvergence event happened` | A reconvergence event has no historical option. |
+| `a variant follows a road not taken` | A variant has no `when` requirement on a non-historical road. |
+| `can still be open when this card opens` | A variant names a road whose window has not closed by this event's `from`. |
+| `while this card is open` | A variant names an event's historical option, and a consequence card that rejoins that event can still be open when this card opens. |
+| `a variant has text` | A variant's `text` is empty. |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):

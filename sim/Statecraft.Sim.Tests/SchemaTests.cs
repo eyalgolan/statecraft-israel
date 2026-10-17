@@ -192,6 +192,7 @@ public class SchemaTests
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };
+        yield return new object[] { "event.schema.json", "/definitions/variant", typeof(EventVariant) };
         yield return new object[] { "event.schema.json", "/properties/options/items", typeof(EventOption) };
         yield return new object[] { "event.schema.json", "/definitions/alternative", typeof(OptionAlternative) };
         yield return new object[] { "event.schema.json", "/properties/options/items/properties/effects/items", typeof(OptionEffect) };

@@ -41,11 +41,35 @@
         "option": { "$ref": "#/definitions/id" },
         "diverged": { "type": "boolean" }
       }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "text", "sources"],
+      "description": "Alternative title and text for a reconvergence event on a road not taken (R-ALT-010). Options and effects do not vary.",
+      "properties": {
+        "when": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/requirement" } },
+        "title": { "type": "string", "description": "Optional; when absent, use the event's title." },
+        "text": { "type": "string", "minLength": 1 },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "checked"],
+            "properties": {
+              "url": { "type": "string", "pattern": "^https://" },
+              "checked": { "$ref": "#/definitions/date" }
+            }
+          }
+        }
+      }
     }
   },
   "properties": {
     "id": { "$ref": "#/definitions/id", "description": "Unique across all events." },
-    "kind": { "enum": ["historical", "consequence", "reconvergence"], "description": "Default historical. consequence: a soft card that exists only on a road not taken (R-ALT-005 to R-ALT-008). reconvergence: a real outside event that happened regardless (its variants arrive with #952)." },
+    "kind": { "enum": ["historical", "consequence", "reconvergence"], "description": "Default historical. consequence: a soft card that exists only on a road not taken (R-ALT-005 to R-ALT-008). reconvergence: a real outside event that may carry variants (R-ALT-010)." },
     "title": { "type": "string", "minLength": 1, "description": "May contain office placeholders such as {prime_minister}." },
     "text": { "type": "string", "minLength": 1, "description": "May contain office placeholders. No invented quotes." },
     "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre and war-casualties are sensitive." },
@@ -68,6 +92,7 @@
       }
     },
     "requires": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/requirement" }, "description": "Every entry must hold (R-ALT-001)." },
+    "variants": { "type": "array", "items": { "$ref": "#/definitions/variant" } },
     "options": {
       "type": "array",
       "minItems": 1,

@@ -700,6 +700,17 @@ namespace Statecraft.Sim
         public bool Diverged { get; set; }
     }
 
+    /// <summary>R-ALT-010: alternative wording of a reconvergence event for a course that left the record. Options and
+    /// effects never vary.</summary>
+    public sealed class EventVariant
+    {
+        public List<EventRequirement> When { get; set; } = new List<EventRequirement>();
+        /// <summary>Empty: the event's own title.</summary>
+        public string Title { get; set; } = "";
+        public string Text { get; set; } = "";
+        public List<Source> Sources { get; set; } = new List<Source>();
+    }
+
     public sealed class OptionEffect { public string Target { get; set; } = ""; public double Delta { get; set; } }
 
     public sealed class EventOption
@@ -764,7 +775,7 @@ namespace Statecraft.Sim
     public sealed class GameEvent
     {
         public string Id { get; set; } = "";
-        /// <summary>historical (the default), consequence (R-ALT-005) or reconvergence (its variants arrive with #952).</summary>
+        /// <summary>historical (the default), consequence (R-ALT-005) or reconvergence (R-ALT-010).</summary>
         public string Kind { get; set; } = EventKinds.Historical;
         public string Title { get; set; } = "";
         public string Text { get; set; } = "";
@@ -776,6 +787,7 @@ namespace Statecraft.Sim
         public List<EventCondition> Conditions { get; set; } = new List<EventCondition>();
         /// <summary>Eligible only once every one of these holds (R-ALT-001). Empty: no requirement.</summary>
         public List<EventRequirement> Requires { get; set; } = new List<EventRequirement>();
+        public List<EventVariant> Variants { get; set; } = new List<EventVariant>();
         public List<EventOption> Options { get; set; } = new List<EventOption>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";

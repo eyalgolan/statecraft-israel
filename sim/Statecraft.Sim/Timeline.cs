@@ -36,5 +36,9 @@ namespace Statecraft.Sim
 
         /// <summary>R-ALT-001: every requirement of the event holds (true when it has none).</summary>
         public static bool AllMet(Content c, GameState s, GameEvent e) => e.Requires.All(r => Met(c, s, r));
+
+        /// <summary>R-ALT-010: the first variant, in file order, whose every `when` entry holds; null for the event's own text.</summary>
+        public static EventVariant? Variant(Content c, GameState s, GameEvent e) =>
+            e.Variants.FirstOrDefault(v => v.When.All(r => Met(c, s, r)));
     }
 }

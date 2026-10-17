@@ -95,7 +95,7 @@ namespace Statecraft.Sim
                 }
             }
             CheckRequirementCycles(c);
-            CheckKinds(c);
+            CheckKinds(c, offices);
             CheckObjectives(c);
         }
 
@@ -190,9 +190,9 @@ namespace Statecraft.Sim
             return parent.Options.Any(o => o.Historical) && parent.Options.Any(o => o.Id == r.Option && !o.Historical);
         }
 
-        /// <summary>R-ALT-005 to R-ALT-007. Called after every requirement is known to exist and to form no cycle, so the depth
+        /// <summary>R-ALT-005 to R-ALT-007 and R-ALT-010. Called after every requirement is known to exist and to form no cycle, so the depth
         /// walk ends.</summary>
-        static void CheckKinds(Content c)
+        static void CheckKinds(Content c, HashSet<string> offices)
         {
             var byId = c.Events.ToDictionary(e => e.Id);
             var depth = new Dictionary<string, int>();
@@ -217,6 +217,35 @@ namespace Statecraft.Sim
                     if (!target.Options.Any(x => x.Historical) || !e.Requires.Any(r => r.Event == target.Id && IsAlternativeRoad(c, r)))
                         throw new ContentException(e.File, at, "rejoins only an event whose road this card follows, and which has a historical option");
                 }
+                if (e.Variants.Count > 0 && e.Kind != EventKinds.Reconvergence)
+                    throw new ContentException(e.File, F("variants"), "only a reconvergence event carries variants");
+                if (e.Kind == EventKinds.Reconvergence && !e.Options.Any(o => o.Historical))
+                    throw new ContentException(e.File, F("options"), "a reconvergence event happened: it has a historical option");
+                for (int i = 0; i < e.Variants.Count; i++)
+                {
+                    var v = e.Variants[i];
+                    var at = $"variants[{i}]";
+                    for (int j = 0; j < v.When.Count; j++)
+                    {
+                        CheckRequirement(c, e, $"{at}.when[{j}]", v.When[j]);
+                        var road = c.Events.First(x => x.Id == v.When[j].Event);
+                        // Review focus 5: the road is settled before the card opens, so the text never flips while it is shown.
+                        if (!road.To.HasValue || road.To.Value > e.From)
+                            throw new ContentException(e.File, F($"{at}.when[{j}]"), FormattableString.Invariant($"'{road.Id}' can still be open when this card opens: its window must close on or before {e.From:yyyy-MM-dd}"));
+                        // R-ALT-009 makes a requirement on the road's historical option hold once a consequence card rejoins it,
+                        // so every card that can rejoin the road is settled before this card opens too.
+                        if (!v.When[j].Diverged && road.Options.Any(o => o.Historical && o.Id == v.When[j].Option))
+                            foreach (var back in c.Events.Where(x => x.Options.Any(o => o.Rejoin == road.Id)))
+                                if (!back.To.HasValue || back.To.Value > e.From)
+                                    throw new ContentException(e.File, F($"{at}.when[{j}]"), FormattableString.Invariant($"'{back.Id}' can rejoin '{road.Id}' while this card is open: its window must close on or before {e.From:yyyy-MM-dd}"));
+                    }
+                    if (!v.When.Any(r => IsAlternativeRoad(c, r)))
+                        throw new ContentException(e.File, F($"{at}.when"), "a variant follows a road not taken: at least one entry names an option that did not happen, or diverged: true");
+                    if (v.Text.Trim() == "") throw new ContentException(e.File, F($"{at}.text"), "a variant has text");
+                    if (v.Sources.Count == 0) throw new ContentException(e.File, F($"{at}.sources"), "needs at least one source");
+                    if (v.Title != "") CheckPlaceholders(c, e, F($"{at}.title"), v.Title, offices);
+                    CheckPlaceholders(c, e, F($"{at}.text"), v.Text, offices);
+                }
                 if (e.Kind != EventKinds.Consequence)
                 {
                     // Only a consequence card may follow one: the record never raises a consequence card, and a historical
@@ -224,7 +253,6 @@ namespace Statecraft.Sim
                     for (int i = 0; i < e.Requires.Count; i++)
                         if (byId[e.Requires[i].Event].Kind == EventKinds.Consequence)
                             throw new ContentException(e.File, F($"requires[{i}]"), $"only a consequence card may follow a consequence card ('{e.Requires[i].Event}')");
-                    // kind: reconvergence carries no rule of its own until its variants arrive (#952).
                     continue;
                 }
                 if (e.Objective != "") throw new ContentException(e.File, F("objective"), "a consequence card is not an objective's card");

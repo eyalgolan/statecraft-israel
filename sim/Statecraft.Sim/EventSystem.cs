@@ -42,7 +42,7 @@ namespace Statecraft.Sim
             {
                 s.FiredEvents.Add(e.Id);
                 s.PendingEvents.Add(e.Id);
-                why.Add(new Cause("events", e.Id, 0, $"New: {Cabinet.Fill(c, s, e.Title, FillDate(e, s.Date))}"));
+                why.Add(new Cause("events", e.Id, 0, $"New: {Title(c, s, e)}"));
             }
         }
 
@@ -65,7 +65,7 @@ namespace Statecraft.Sim
             s.PendingEvents.Remove(eventId);
             s.ChosenOptions[eventId] = o.Id;
             var fillDate = FillDate(Get(c, eventId), s.Date);
-            var title = Cabinet.Fill(c, s, Get(c, eventId).Title, fillDate);
+            var title = Title(c, s, Get(c, eventId));
             why.Add(new Cause("events", eventId, 0, $"{how}: {Cabinet.Fill(c, s, o.Text, fillDate)}"));
             foreach (var fx in o.Effects.Where(fx => Reaches(s, fx.Target)))
             {
@@ -185,7 +185,15 @@ namespace Statecraft.Sim
 
         public static string Render(Content c, GameEvent e, DateTime date) => Offices.Fill(c, e.Text, FillDate(e, date));
 
-        /// <summary>Event text as the player sees it now: names follow the player's appointments.</summary>
-        public static string Render(Content c, GameState s, GameEvent e) => Cabinet.Fill(c, s, e.Text, FillDate(e, s.Date));
+        /// <summary>The card's title as the player sees it now: a matching variant's, else the event's (R-ALT-010).</summary>
+        public static string Title(Content c, GameState s, GameEvent e)
+        {
+            var v = Timeline.Variant(c, s, e);
+            return Cabinet.Fill(c, s, v != null && v.Title != "" ? v.Title : e.Title, FillDate(e, s.Date));
+        }
+
+        /// <summary>Event text as the player sees it now: a matching variant's, with names following the player's appointments.</summary>
+        public static string Render(Content c, GameState s, GameEvent e) =>
+            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text ?? e.Text, FillDate(e, s.Date));
     }
 }

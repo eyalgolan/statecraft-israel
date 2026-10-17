@@ -196,4 +196,6 @@ R-ALT-008: Consequence cards take a turn's soft slots before the other soft even
 
 R-ALT-009: An option of a consequence card may `rejoin` an event whose road the card follows (and which has a historical option). Once it is chosen, a requirement on that event's historical option holds, so the record's later cards fire again if their windows are still open. The event's own chosen option is not rewritten, and `diverged: true` on it still holds.
 
+R-ALT-010: An event of `kind: reconvergence` has a historical option and may carry `variants`. The first variant whose every `when` entry holds supplies the card's title (if it gives one) and text; options and effects never vary. Each variant follows a road not taken, carries sources, has its placeholders checked over the event's window, and names only roads whose windows close on or before the event's `from` (for a road's historical option, also every consequence card that can `rejoin` it, R-ALT-009). Only a reconvergence event carries variants.
+
 R-ALT-012: The historical run (the reference player's orders from 15 May 1948 to 15 January 1952) raises no consequence card and diverges nowhere.
