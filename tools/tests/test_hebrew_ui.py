@@ -17,6 +17,20 @@ def test_hebrew_keys_match_english_and_every_value_is_nonempty():
     assert all(isinstance(v, str) and v.strip() for v in he.values())
 
 
+def test_map_action_reasons_are_hebrew_and_their_english_action_names_are_the_rules_names():
+    """#881: the info panel builds the refusal from these strings; English must keep the sim's wording, which names
+    each action by its rules.yaml name."""
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    keys = [key for key in en if key.startswith('info.map_action')]
+    assert len(keys) == 14             # 2 action names and 12 reasons
+    assert all(not re.search('[A-Za-z]', he[key]) for key in keys)
+    rules = yaml12.load((ROOT / 'content/rules.yaml').read_text(encoding='utf-8'))
+    actions = rules['map_actions']
+    assert {k.split('.')[-1] for k in keys if k.startswith('info.map_action.')} == set(actions)
+    for action, rule in actions.items():
+        assert en['info.map_action.' + action] == rule['name']
+
+
 def test_hebrew_keeps_complete_format_tokens_and_logical_text_order():
     en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
     for key in en:

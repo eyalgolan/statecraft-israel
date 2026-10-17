@@ -67,6 +67,20 @@ public class MapActionUiTests
         Assert.AreEqual("Transit camps and housing projects can be placed from 1 January 1950", ui.Q<Label>("info-reason").text);
     }
 
+    /// <summary>#881: the sim supplies a refusal kind and ISO date; the Hebrew UI supplies both the words and Hebrew date.</summary>
+    [Test]
+    public void BeforeTheMaabarotTheHebrewPanelSaysWhyInHebrew()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, he);
+        var info = new InfoPanelPresenter(ui.Root, bridge, he, Towns.ToDictionary(t => t.Id, t => t.Name));
+        var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        info.Show(tlv.Q, tlv.R);
+        Assert.AreEqual("אפשר להקים מעברות ומיזמי דיור החל מ־1 בינואר 1950", ui.Q<Label>("info-reason").text);
+    }
+
     [Test]
     public void ATransitCampIsOrderedAndBuiltAtEndTurn()
     {
