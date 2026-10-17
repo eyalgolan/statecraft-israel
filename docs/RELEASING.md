@@ -87,8 +87,9 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
 
    Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). It downloads each player,
    checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on GitHub's
-   Windows and Linux machines (the Linux player under `xvfb-run -a`: with no display at all it crashes, issue #533), and the Mac app twice: on Apple silicon (`macos-15`, its arm64 slice) and on Intel
-   (`macos-15-intel`, its x86_64 slice; issue #548 tracks its end in August 2027). It fails when only one or two of the
+   Windows and Linux machines (the Linux player under `xvfb-run -a`: with no display at all it crashes, issue #533), and the Mac app twice on Apple silicon (`macos-15`):
+   its arm64 slice, and its x86_64 slice under Rosetta (`arch -x86_64`; GitHub retires its last Intel image,
+   `macos-15-intel`, in August 2027, issue #548). It fails when only one or two of the
    three archives are attached. A release with none (a web-only release, before desktop players ship) passes, but its
    run summary says UNCHECKED.
    - **The release stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release

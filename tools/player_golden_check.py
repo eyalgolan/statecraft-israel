@@ -21,7 +21,8 @@ player or the .app), runs it with
 `-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md), the Linux player under `xvfb-run -a`
 (DISPLAY_WRAPPER: it crashes with no display at all), and passes only when it exits 0 and its log
 holds `GOLDEN OK 1950 <hash1950>` and `GOLDEN OK 1952 <hash1952>` from the golden manifest, and no FAIL line. On failure
-it prints the whole player log. With --arch (the Mac app, run once per slice) the runner's `uname -m` must be that
+it prints the whole player log. With --arch (the Mac app, run once per slice) the player is started as
+`arch -<arch>` (the x86_64 slice under Rosetta on an arm64 runner), `uname -m` behind the same prefix must be that
 architecture and `lipo -archs` must list it. Exit 0 when the check passes, 1 when it fails, 2 on bad input.
 
 The release asset names are a contract with the release script (tools/release_build.py): see ASSETS.
@@ -56,13 +57,18 @@ ASSETS = {
 }
 # The GitHub-hosted runners each player is checked on (standard runners, free and unlimited for a public repository,
 # plan 6.1): (runner label, the CPU architecture it must report). The Universal Mac app runs twice, so each of its two
-# native IL2CPP slices is checked on its own CPU: macos-15 is Apple silicon, macos-15-intel is x86_64 (GitHub offers it
-# until August 2027, runner-images#13045; what replaces it is issue #548). An empty architecture is not checked.
+# native IL2CPP slices is checked on its own: both on macos-15 (Apple silicon), the x86_64 one under Rosetta (MAC_SLICE).
+# GitHub retires macos-15-intel, its last x86_64 image, in August 2027 (runner-images#13045; issue #548). An empty
+# architecture is not checked.
 RUNNERS = {
     "windows": [("windows-2025", "")],
     "linux": [("ubuntu-24.04", "")],
-    "macos": [("macos-15", "arm64"), ("macos-15-intel", "x86_64")],
+    "macos": [("macos-15", "arm64"), ("macos-15", "x86_64")],
 }
+# How the Mac player and the CPU probe are started for a slice. A Universal app started bare runs the machine's native
+# slice; `arch -x86_64` runs the x86_64 one under Rosetta (installed on GitHub's arm64 macOS images), and `arch -arm64`
+# fails on an Intel Mac. `uname -m` behind the same prefix reports the CPU the player will see (issue #548).
+MAC_SLICE = ["arch", "-{arch}"]
 
 # The notices every archive carries at its top level, beside the player (tools/release_build.py adds them and takes
 # this list; the web packager, scripts/oss/package_web.sh, copies the same files: test_release_build pins that).
@@ -234,20 +240,25 @@ def check_arch(exe: Path, arch: str, machine: str, archs: str) -> list[str]:
     return problems
 
 
-def player_command(exe: Path, log: Path, platform: str) -> list[str]:
+def slice_prefix(arch: str) -> list[str]:
+    """The MAC_SLICE prefix for a Mac slice; nothing when no architecture is checked."""
+    return [p.format(arch=arch) for p in MAC_SLICE] if arch else []
+
+
+def player_command(exe: Path, log: Path, platform: str, arch: str = "") -> list[str]:
     """The golden run's command line: the player with -batchmode -nographics -golden and an absolute -logFile, behind
-    the platform's DISPLAY_WRAPPER if it has one."""
-    return [*DISPLAY_WRAPPER.get(platform, []), str(exe), "-batchmode", "-nographics", "-golden", "-logFile",
-            str(log.resolve())]
+    the platform's DISPLAY_WRAPPER if it has one, and behind MAC_SLICE for a Mac slice."""
+    return [*DISPLAY_WRAPPER.get(platform, []), *slice_prefix(arch), str(exe), "-batchmode", "-nographics", "-golden",
+            "-logFile", str(log.resolve())]
 
 
-def run_player(exe: Path, log: Path, timeout: int, platform: str) -> int | None:
+def run_player(exe: Path, log: Path, timeout: int, platform: str, arch: str = "") -> int | None:
     """Runs the golden check; the exit code, or None on timeout. subprocess waits for a Windows GUI-subsystem player
     too, which a plain PowerShell call would not. On POSIX the run gets its own process group and a timeout stops the
     whole group: xvfb-run starts the player and Xvfb as its children, and killing only xvfb-run would leave them."""
     if os.name != "nt":
         exe.chmod(exe.stat().st_mode | 0o111)
-    cmd = player_command(exe, log, platform)
+    cmd = player_command(exe, log, platform, arch)
     print("RUN", " ".join(cmd), flush=True)
     with subprocess.Popen(cmd, cwd=exe.parent, start_new_session=os.name != "nt") as proc:
         try:
@@ -340,7 +351,8 @@ def cmd_run(a) -> int:
         if problems := layout_problems(work / "player", a.platform, exe):
             raise ValueError("; ".join(problems))
         if a.arch:
-            machine = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
+            machine = subprocess.run([*slice_prefix(a.arch), "uname", "-m"], capture_output=True, text=True,
+                                     check=True).stdout.strip()
             archs = subprocess.run(["lipo", "-archs", str(exe)], capture_output=True, text=True, check=True).stdout
             print(f"ARCH runner {machine}, player slices {archs.strip()}", flush=True)
             if problems := check_arch(exe, a.arch, machine, archs):
@@ -354,7 +366,7 @@ def cmd_run(a) -> int:
         return 2
     log = work / "player.log"
     try:
-        code = run_player(exe, log, a.timeout, a.platform)
+        code = run_player(exe, log, a.timeout, a.platform, a.arch or "")
     except OSError as e:   # the player could not be started at all (for example: Exec format error); it has no exit code
         code, start_error = None, f"the player could not be started: {e}"
     else:
