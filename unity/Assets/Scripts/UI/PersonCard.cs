@@ -77,7 +77,7 @@ namespace Statecraft.Game.UI
             portrait.style.display = tex != null ? DisplayStyle.Flex : DisplayStyle.None;   // never an invented portrait
             var initials = card.Q<Label>(prefix + "-initials");
             var name = person == null ? "" : ContentNames.Of(text, person);
-            initials.text = person == null || tex != null ? "" : person.NameHe != "" && name == person.NameHe ? InitialAndSurname(name) : Initials(name);
+            initials.text = person == null || tex != null ? "" : text["ui.lang"] == UiLanguage.Hebrew && person.NameHe != "" ? InitialAndSurname(name) : Initials(name);
             initials.style.display = tex == null ? DisplayStyle.Flex : DisplayStyle.None;
 
             var holder = card.Q<Label>(prefix + "-holder");

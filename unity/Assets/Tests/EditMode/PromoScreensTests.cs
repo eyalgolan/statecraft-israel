@@ -337,7 +337,7 @@ public class PromoScreensTests
                 {
                     nav.Open(s);
                     for (int i = 0; i < 6; i++) yield return null;
-                    if (s == "defence")
+                    if (s == "defence")   // no catalog here, so Yadin, the Chief of Staff in February 1950, has no portrait
                         Assert.AreEqual("י. ידין", root.Q<Label>("lead-chief_of_staff-initials").text, "Yadin's plate, no portrait");
                     var shown = root.Q("screen-" + s).Query<Label>(className: PersonCard.InitialsClass).ToList().Where(l => l.contentRect.width > 0).ToList();
                     if (shown.Count == 0) problems.Add($"{w}x{h} {s}: no plate laid out");
