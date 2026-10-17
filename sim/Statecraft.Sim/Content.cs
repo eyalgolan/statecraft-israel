@@ -691,8 +691,14 @@ namespace Statecraft.Sim
 
     public sealed class EventCondition { public string Indicator { get; set; } = ""; public double? Min { get; set; } public double? Max { get; set; } }
 
-    /// <summary>An event's precondition: <see cref="Event"/> must have been resolved with <see cref="Option"/>.</summary>
-    public sealed class EventRequirement { public string Event { get; set; } = ""; public string Option { get; set; } = ""; }
+    /// <summary>One precondition of an event: <see cref="Event"/> was resolved with <see cref="Option"/>, or, with
+    /// <see cref="Diverged"/>, with any option but its historical one (R-ALT-001, R-ALT-002).</summary>
+    public sealed class EventRequirement
+    {
+        public string Event { get; set; } = "";
+        public string Option { get; set; } = "";
+        public bool Diverged { get; set; }
+    }
 
     public sealed class OptionEffect { public string Target { get; set; } = ""; public double Delta { get; set; } }
 
@@ -741,8 +747,8 @@ namespace Statecraft.Sim
         public DateTime From { get; set; }
         public DateTime? To { get; set; }
         public List<EventCondition> Conditions { get; set; } = new List<EventCondition>();
-        /// <summary>Eligible only once this other event was resolved with this option (null: no requirement).</summary>
-        public EventRequirement? Requires { get; set; }
+        /// <summary>Eligible only once every one of these holds (R-ALT-001). Empty: no requirement.</summary>
+        public List<EventRequirement> Requires { get; set; } = new List<EventRequirement>();
         public List<EventOption> Options { get; set; } = new List<EventOption>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";

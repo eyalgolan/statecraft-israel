@@ -7,7 +7,18 @@
   "required": ["id", "title", "text", "from", "options", "sources"],
   "definitions": {
     "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "A day, YYYY-MM-DD." },
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Lowercase letters, digits and underscores, starting with a letter." }
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Lowercase letters, digits and underscores, starting with a letter." },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event"],
+      "description": "One precondition (R-ALT-001): the event was resolved with this option, or, with diverged: true, with any option but its historical one (R-ALT-002). Give option or diverged, not both.",
+      "properties": {
+        "event": { "$ref": "#/definitions/id" },
+        "option": { "$ref": "#/definitions/id" },
+        "diverged": { "type": "boolean" }
+      }
+    }
   },
   "properties": {
     "id": { "$ref": "#/definitions/id", "description": "Unique across all events." },
@@ -32,15 +43,7 @@
         }
       }
     },
-    "requires": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["event", "option"],
-      "properties": {
-        "event": { "$ref": "#/definitions/id" },
-        "option": { "$ref": "#/definitions/id" }
-      }
-    },
+    "requires": { "type": "array", "items": { "$ref": "#/definitions/requirement" }, "description": "Every entry must hold (R-ALT-001)." },
     "options": {
       "type": "array",
       "minItems": 1,

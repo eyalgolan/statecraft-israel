@@ -35,7 +35,7 @@ public class EventRulesGddTests
     public void HardAnchorsAlwaysFire()
     {
         Assert.Equal(GameOverCodes.MvpEnded, Run[Run.Count - 1].GameOver);
-        var plain = C.Events.Where(e => e.Anchor == "hard" && e.Requires == null && e.Conditions.Count == 0 && e.Objective == "").ToList();
+        var plain = C.Events.Where(e => e.Anchor == "hard" && e.Requires.Count == 0 && e.Conditions.Count == 0 && e.Objective == "").ToList();
         Assert.NotEmpty(plain);
         foreach (var e in plain)
         {

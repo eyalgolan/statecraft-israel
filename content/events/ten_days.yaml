@@ -21,7 +21,7 @@ office: defense_minister
 # accepted the first truce sees this card (its text is about the truce ending).
 from: 1948-07-10
 to: 1948-07-18
-requires: { event: first_truce, option: accept }
+requires: [{ event: first_truce, option: accept }]
 options:
   - id: central_front
     text: Keep the main effort in the centre with Operation Dani, toward the Jerusalem road

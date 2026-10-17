@@ -16,7 +16,7 @@ office: foreign_minister
 # the delay (owner decision, 15 October 2026, #567; docs/superpowers/specs/2026-10-14-event-timing-monthly.md).
 from: 1949-01-09
 to: 1949-01-13
-requires: { event: operation_horev, option: launch }
+requires: [{ event: operation_horev, option: launch }]
 options:
   - id: send_delegation
     text: Send a delegation to Rhodes

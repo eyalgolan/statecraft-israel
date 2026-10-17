@@ -15,7 +15,7 @@ office: prime_minister
 # Only a player who complied with the second truce sees this card (it is about breaking the truce).
 from: 1948-09-15
 to: 1948-09-27
-requires: { event: second_truce, option: comply }
+requires: [{ event: second_truce, option: comply }]
 options:
   - id: accept_vote
     text: Accept the cabinet's vote and keep the truce

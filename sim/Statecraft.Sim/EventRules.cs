@@ -56,14 +56,7 @@ namespace Statecraft.Sim
                     if (cond.Max.HasValue) { ContentLoader.Finite(e.File, F($"conditions.{cond.Indicator}.max"), cond.Max.Value); ContentLoader.Unit(e.File, F($"conditions.{cond.Indicator}.max"), cond.Max.Value); }
                     if (cond.Min > cond.Max) throw new ContentException(e.File, F($"conditions.{cond.Indicator}.min"), "must not exceed max");
                 }
-                if (e.Requires != null)
-                {
-                    if (e.Requires.Event == e.Id) throw new ContentException(e.File, F("requires.event"), "an event cannot require itself");
-                    var required = c.Events.FirstOrDefault(x => x.Id == e.Requires.Event)
-                        ?? throw new ContentException(e.File, F("requires.event"), $"unknown event '{e.Requires.Event}'");
-                    if (required.Options.All(o => o.Id != e.Requires.Option))
-                        throw new ContentException(e.File, F("requires.option"), $"event '{required.Id}' has no option '{e.Requires.Option}'");
-                }
+                for (int i = 0; i < e.Requires.Count; i++) CheckRequirement(c, e, $"requires[{i}]", e.Requires[i]);
                 if (e.Options.Count == 0) throw new ContentException(e.File, F("options"), "at least one option required");
                 if (e.Options.Count(o => o.Historical) > 1) throw new ContentException(e.File, F("options"), "at most one option can be historical");
                 if (e.Anchor == "hard" && !e.Options.Any(o => o.Historical)) throw new ContentException(e.File, F("options"), "hard anchor needs a historical option");
@@ -176,26 +169,50 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-ALT-001 and R-ALT-002: a requirement names an existing other event and either one of its options or
+        /// `diverged: true`, which needs that event to have a historical option.</summary>
+        internal static void CheckRequirement(Content c, GameEvent e, string at, EventRequirement r)
+        {
+            string F(string field) => $"events[{e.Id}].{at}{field}";
+            if (r.Event == e.Id) throw new ContentException(e.File, F(".event"), "an event cannot require itself");
+            var required = c.Events.FirstOrDefault(x => x.Id == r.Event)
+                ?? throw new ContentException(e.File, F(".event"), $"unknown event '{r.Event}'");
+            if (r.Diverged && r.Option != "") throw new ContentException(e.File, F(""), "give an option or diverged: true, not both");
+            if (!r.Diverged && r.Option == "") throw new ContentException(e.File, F(""), "needs an option or diverged: true");
+            if (r.Diverged && !required.Options.Any(o => o.Historical))
+                throw new ContentException(e.File, F(".diverged"), $"event '{required.Id}' has no historical option, so it cannot diverge");
+            if (!r.Diverged && required.Options.All(o => o.Id != r.Option))
+                throw new ContentException(e.File, F(".option"), $"event '{required.Id}' has no option '{r.Option}'");
+        }
+
         /// <summary>Re-review N4: a cycle of `requires` (A needs B, B needs A, ...) could never fire. Called after every
-        /// requirement's ids are known to exist; the error names the files around the cycle, starting from the first event
-        /// (in load order) that lies on it.</summary>
+        /// requirement's ids are known to exist. It walks each list in order; the error names the files around the first
+        /// cycle found, starting from the first event (in load order) that lies on one.</summary>
         static void CheckRequirementCycles(Content c)
         {
             var byId = c.Events.ToDictionary(e => e.Id);
             foreach (var start in c.Events)
             {
-                var path = new List<GameEvent> { start };
-                var seen = new HashSet<string> { start.Id };
-                for (var e = start; e.Requires != null; )
-                {
-                    e = byId[e.Requires.Event];
-                    path.Add(e);
-                    if (e.Id == start.Id)
-                        throw new ContentException(start.File, $"events[{start.Id}].requires",
-                            "requirements form a cycle: " + string.Join(" -> ", path.Select(x => x.File)));
-                    if (!seen.Add(e.Id)) break;   // a cycle that does not pass through start; reported from its own member
-                }
+                var cycle = CycleFrom(byId, start, start, new List<GameEvent> { start }, new HashSet<string> { start.Id });
+                if (cycle != null)
+                    throw new ContentException(start.File, $"events[{start.Id}].requires",
+                        "requirements form a cycle: " + string.Join(" -> ", cycle.Select(x => x.File)));
             }
+        }
+
+        static List<GameEvent>? CycleFrom(Dictionary<string, GameEvent> byId, GameEvent start, GameEvent at, List<GameEvent> path, HashSet<string> seen)
+        {
+            foreach (var r in at.Requires)
+            {
+                var next = byId[r.Event];
+                if (next.Id == start.Id) return new List<GameEvent>(path) { next };
+                if (!seen.Add(next.Id)) continue;   // already walked from start; a cycle not through start is reported from its own member
+                path.Add(next);
+                var found = CycleFrom(byId, start, next, path, seen);
+                if (found != null) return found;
+                path.RemoveAt(path.Count - 1);
+            }
+            return null;
         }
 
         static void CheckPlaceholders(Content c, GameEvent e, string field, string text, HashSet<string> offices)

@@ -16,7 +16,7 @@ office: prime_minister
 # 15 December, and the text states the signing.
 from: 1948-11-30
 to: 1948-12-16
-requires: { event: jerusalem_military_government, option: military_government }
+requires: [{ event: jerusalem_military_government, option: military_government }]
 options:
   - id: keep
     text: Keep to the Jerusalem cease-fire

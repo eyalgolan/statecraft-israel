@@ -175,3 +175,11 @@ R-EVT-003: An event the player leaves unanswered at End Turn is delegated to its
 R-EVT-004: An option's effects apply when it is chosen or delegated, on that turn, and never later; an option has no delayed form, and the loader refuses an unknown key such as `delay` (Q-EVT-3).
 
 R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an option in the order choosing it applies them: the numeric effects, the unit grants and city effects (R-EFX-006), the policies it sets (by id), then the security level, each with the option's own amount (Q-EVT-4). The event card will show this list (GDD Phase 7 PR 8), so no number will be computed in Unity.
+
+## Alternate timelines
+
+The alternate-timeline mechanism ([the plan](../superpowers/plans/2026-10-17-alternate-timelines.md); the owner's answers, 17 October 2026, #945).
+
+R-ALT-001: An event's `requires` is a list, and the event is eligible only when every entry holds. An entry `{ event, option }` holds when that event was resolved (chosen or delegated) with that option.
+
+R-ALT-002: An entry `{ event, diverged: true }` holds when that event was resolved with any option except its historical one. An event with no historical option cannot diverge, and the loader refuses `diverged` on it.

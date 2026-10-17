@@ -329,9 +329,10 @@ namespace Statecraft.Sim
             //   office                     the minister the event is delegated to
             //   from, to                   the window [from, to); it fires on the first turn that overlaps it
             //   conditions: [{ indicator, min, max }]   indicator bounds that must hold when it fires
-            //   requires: { event, option }   fires only once that other event was resolved (chosen or delegated)
-            //                              with that option; both ids must exist, an event cannot require itself and
-            //                              requirements cannot form a cycle (EventRules)
+            //   requires: [{ event, option } | { event, diverged: true }, ...]   fires only once every entry holds: that
+            //                              event was resolved (chosen or delegated) with that option, or with any option but
+            //                              its historical one (R-ALT-001, R-ALT-002); the ids must exist, an event cannot
+            //                              require itself and requirements cannot form a cycle (EventRules)
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
             //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }] }]
             //   sources: [{ url, checked }], status

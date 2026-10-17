@@ -21,7 +21,7 @@ office: prime_minister
 # 15 January, and the text states the withdrawal.
 from: 1949-01-02
 to: 1949-01-16
-requires: { event: operation_horev, option: launch }
+requires: [{ event: operation_horev, option: launch }]
 options:
   - id: withdraw
     text: Keep the forces behind the Negev frontier

@@ -37,7 +37,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
-| `requires` | no | Fires only after another event was resolved with a given option. See below. |
+| `requires` | no | Fires only after every listed requirement holds. See below. |
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
@@ -115,11 +115,20 @@ conditions:
 ### requires
 
 ```yaml
-requires: { event: other_event_id, option: other_option_id }
+requires: [{ event: other_event_id, option: other_option_id }]
 ```
 
-The event waits until `other_event_id` was resolved (chosen or delegated) with `other_option_id`. Both must exist, an
-event cannot require itself, and requirements cannot form a cycle.
+A list: the event waits until **every** entry holds (R-ALT-001). An entry holds when that event was resolved (chosen or
+delegated) with that option. An entry can instead say `diverged: true`:
+
+```yaml
+requires: [{ event: other_event_id, diverged: true }]
+```
+
+which holds when that event was resolved with any option except its historical one (R-ALT-002). The loader checks that
+every named event exists, that an entry gives an option or `diverged: true` (not both, not neither), that the option
+exists, that a `diverged` event has a historical option, that an event does not require itself, and that requirements
+do not form a cycle.
 
 ### options
 
@@ -250,9 +259,12 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `has another card` | `objective` names an objective whose `card` is a different event. |
 | `an objective's card has exactly one option` | An objective's card has more than one option. |
 | `must be a list` | A list field (such as `tags:`) written with no value. |
-| `an event cannot require itself` | `requires.event` is the event's own id. |
+| `an event cannot require itself` | `requires[n].event` is the event's own id. |
 | `requirements form a cycle` | Event A needs B and B needs A, directly or through others. |
-| `unknown event '` | `requires.event` names an event that does not exist. |
+| `unknown event '` | `requires[n].event` names an event that does not exist. |
+| `needs an option or diverged: true` | A `requires` entry names neither an option nor `diverged: true`. |
+| `not both` | A `requires` entry names an option and `diverged: true`. |
+| `has no historical option, so it cannot diverge` | `diverged: true` on an event with no historical option. |
 
 A full message looks like this (an effect target misspelled `securty`):
 

@@ -12,6 +12,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   adds free units at the military camp or a named city, `city_effects` moves one field by whole units, both
   apply after the numeric effects and show in the option's effect list, the loader refuses an unknown target, and a
   sensitive event may carry no grant or gain (R-EFX-003 to R-EFX-006; refs #806). No event uses them yet.
+- Events: `requires` is a list whose entries must all hold, and an entry can say `diverged: true` (any option but
+  the historical one); the five events with a requirement move to the list form with the same meaning (R-ALT-001,
+  R-ALT-002; refs #946, #939).
 - The 1948 unit roster gives 20 formations a sourced Hebrew name (`name_he`, agent-checked until #564's read); a
   name's source does not count toward `wikipedia_only` (refs #902).
 - Pioneers can build a training camp: `PioneerWork(unit, build_camp, site)` at a camp site takes 6 turns and IL 2m

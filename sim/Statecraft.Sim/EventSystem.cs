@@ -25,7 +25,7 @@ namespace Statecraft.Sim
             var start = turnStart ?? s.Date;
             var eligible = c.Events
                 .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
-                .Where(e => e.Requires == null || (s.ChosenOptions.TryGetValue(e.Requires.Event, out var picked) && picked == e.Requires.Option))
+                .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
                 .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.

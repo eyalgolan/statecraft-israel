@@ -86,8 +86,8 @@ public class WarEvents1948Tests
         Assert.True(historical.Recommended);
         Assert.Equal(row.Historical, e.Options[0].Id);   // the smoke run and the event card press the first option
         var chain = Chains.Where(x => x.Id == id).ToList();
-        if (chain.Count == 0) Assert.Null(e.Requires);
-        else { Assert.Equal(chain[0].Event, e.Requires!.Event); Assert.Equal(chain[0].Option, e.Requires.Option); }
+        if (chain.Count == 0) Assert.Empty(e.Requires);
+        else { var r = Assert.Single(e.Requires); Assert.Equal(chain[0].Event, r.Event); Assert.Equal(chain[0].Option, r.Option); }
     }
 
     [Theory]
