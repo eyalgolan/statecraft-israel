@@ -19,6 +19,8 @@ namespace Statecraft.Game.UI
         public const string RowClass = "info-row";
         /// <summary>On the panel while it shows a unit's card: the rows keep their lines but drop the hex signs (Statecraft.uss).</summary>
         public const string UnitClass = "info-unit";
+        /// <summary>On the panel while it shows the GDD loop's city or site part (#381): a second column (Statecraft.uss).</summary>
+        public const string GddClass = "info-gdd-shown";
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
@@ -201,6 +203,7 @@ namespace Statecraft.Game.UI
         public void Render()
         {
             RenderLines();
+            panel.EnableInClassList(GddClass, gdd.style.display.value == DisplayStyle.Flex);
             // A fact row shows only when its line has something to say (an empty row would leave a lone sign).
             foreach (var (row, line) in rows)
                 row.style.display = string.IsNullOrEmpty(line.text) ? DisplayStyle.None : DisplayStyle.Flex;
