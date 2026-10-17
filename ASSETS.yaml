@@ -6,23 +6,13 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
-  - glob: "promo/ref/people/David_Ben-Gurion.jpg"
-    licence: Public-Domain
-    source: "https://commons.wikimedia.org/wiki/File:David_Ben-Gurion_(D597-087).jpg"
-    status: owner-verify
-    note: "Retained prior GPO reference; PD-Israel only, no explicit US status. Not the active Ben-Gurion portrait."
-  - glob: "promo/ref/people/Moshe_Sharett.jpg"
-    licence: Public-Domain
-    source: "https://commons.wikimedia.org/wiki/File:Moshe_Sharett_Portrait.jpg"
-    status: owner-verify
-    note: "Retained prior GPO reference; PD-IsraelGov only, no explicit US status. Not the active Sharett portrait."
   # --- AI-generated concept art: CC0 / no rights claimed (LICENSING.md); published 2026-10-10 before D5 was checked ---
   - glob: "promo/final/0[1-8]-*.png"
     licence: CC0-1.0
     ai_generated: true
     source: "ElevenLabs Image API /v1/flows/image (GPT Image 2.5, Nano Banana Pro), prompts in promo/shots.json, generated 2026-10-08/09 by promo/gen.py; text fixes by promo/patch.py"
-    status: owner-verify
-    note: "Decision D5: the ElevenLabs Terms of Service for the account's plan at generation time, and the model providers' output terms, allow public redistribution. Concept art, not game footage. 04-cabinet-1948 and 08-defense-1955 are AI likenesses of real ministers made from public-domain reference sheets: never presented as photographs (docs/CONTENT_POLICY.md section 4)."
+    status: verified
+    note: "Decision D5: the ElevenLabs Terms of Service for the account's plan at generation time, and the model providers' output terms, allow public redistribution. Concept art, not game footage. 04-cabinet-1948 and 08-defense-1955 are AI likenesses of real ministers made from public-domain reference sheets: never presented as photographs (docs/CONTENT_POLICY.md section 4). Covered by D5, D-H and D-P. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Yes, flip all 3'."
   - glob: "promo/ref/*-src.jpg"
     licence: CC0-1.0
     ai_generated: true
@@ -33,8 +23,8 @@ rules:
     licence: CC0-1.0
     ai_generated: true
     source: "Web copy of promo/final/03-gameplay-1936.png (published 2026-10-10); same provenance as promo/final"
-    status: owner-verify
-    note: "Owner-ruled README hero, captioned as concept art. Blocker if D5 disallows redistribution: the owner rules, an agent never drops it. D-H: no Civilization VII icon, logo or wordmark."
+    status: verified
+    note: "Owner-ruled README hero, captioned as concept art. D-H: no Civilization VII icon, logo or wordmark. Covered by D5 and D-H. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Yes, flip all 3'."
   - glob: "unity/Assets/UI/StartScreen/declaration-hall.jpg"
     licence: CC0-1.0
     ai_generated: true
@@ -57,8 +47,8 @@ rules:
   - glob: "docs/sources/declaration-1948/*.txt"
     licence: Public-Domain
     source: "The Declaration of the Establishment of the State of Israel: the Hebrew as published in Iton Rishmi (Official Gazette) No. 1, 14 May 1948, via https://he.wikisource.org/wiki/הכרזה_על_הקמת_מדינת_ישראל; the English translation via https://avalon.law.yale.edu/20th_century/israel.asp, checked against the Israel MFA's https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel (all 2026-10-12)"
-    status: owner-verify
-    note: "The start screen quotes two lines of each (Game.uxml; StartScreenTests checks them against these files). No copyright is claimed or needed: an official State publication of 1948, and the State's copyright in its works (50 years from creation, Israeli Copyright Act 2007, s. 42) has expired in any case. Owner to confirm the legal reading."
+    status: verified
+    note: "The start screen quotes two lines of each (Game.uxml; StartScreenTests checks them against these files). No copyright is claimed or needed: an official State publication of 1948, and the State's copyright in its works (50 years from creation, Israeli Copyright Act 2007, s. 42) has expired in any case. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Approve both'."
   # --- Reference sheets composed from the public-domain portraits ---
   - glob: "promo/ref/*-sheet.jpg"
     licence: Public-Domain
@@ -154,14 +144,14 @@ rules:
     licence: CC0-1.0
     ai_generated: true
     source: "The frame at 3 s of the cinematic trailer published in README.md (the GitHub-hosted 1:23 video, the same cut as site/public/media/promo-trailer-720p.mp4; local file sha256 36322b1baca2df5248cb30dc3a36853566f7d8ef02d0d7cd07251fa0d6bffe4e), scaled to 1280 px with ffmpeg; the trailer was made with AI video tools from promo/final concept art"
-    status: owner-verify
-    note: "The website's poster for the trailer's click-to-play facade, labelled 'Cinematic promo — AI-generated, not gameplay'. Same terms question as promo/final (decision D5). The frame shows the sea and an on-screen line attributed to Theodor Herzl."
+    status: verified
+    note: "The website's poster for the trailer's click-to-play facade, labelled 'Cinematic promo — AI-generated, not gameplay'. Same terms question as promo/final (decision D5). The frame shows the sea and an on-screen line attributed to Theodor Herzl. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'the game is going to be free anyways'; accepted for the free, non-commercial release, as D-V did for AI video clips."
   - glob: "site/public/media/promo-trailer-720p.mp4"
     licence: CC0-1.0
     ai_generated: true
     source: "Web encodes of the cinematic trailer (demo 1), promo/demo/out/demo-16x9.mp4 (not in the repository; sha256 ef791cfbdca0868ae43d09157793d54558605cc9477547cf6231a088d9986951, 1920x1080, 83 s), scaled to 1280x720 with ffmpeg on 2026-10-13: H.264 High@3.1, two-pass 660 kb/s, with AAC 96 kb/s; no other change. The same cut as the video in README.md (that upload is a separate export of it, sha256 36322b1b...). The trailer was made with AI video tools from promo/final concept art; its music is AI-generated, made with ElevenLabs Music (owner, 2026-10-14; the licence is decision D-M)"
-    status: owner-verify
-    note: "Same terms question as promo/final (decision D5). Shown on the website only behind a click, labelled 'Cinematic promo — AI-generated, not gameplay'; captions in site/public/media/promo-trailer.*.vtt. Its on-screen quotations include a living person (Benjamin Netanyahu, 7 October 2023); the owner chose to show the trailer (2026-10-13)."
+    status: verified
+    note: "Shown on the website only behind a click, labelled 'Cinematic promo — AI-generated, not gameplay'; captions in site/public/media/promo-trailer.*.vtt. Its on-screen quotations include a living person (Benjamin Netanyahu, 7 October 2023); the owner chose to show the trailer (2026-10-13). Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'the game is going to be free anyways'; accepted for the free, non-commercial release, as D-V did for AI video clips."
   - glob: "site/public/favicon.svg"
     licence: CC-BY-4.0
     ai_generated: true
@@ -183,8 +173,8 @@ rules:
   - glob: "content/map/precip_stations.json"
     licence: IMS-data.gov.il
     source: "Israel Meteorological Service, data.gov.il dataset 481, via tools/ims_normals.py; licence 'Other (Open)' with no licence URL"
-    status: owner-verify
-    note: "Decision D6 (the M3 plan's deferred 'Legal review of map-data licences' row). Published 2026-10-10 before the check."
+    status: verified
+    note: "Decision D6 (the M3 plan's deferred 'Legal review of map-data licences' row). Published 2026-10-10 before the check. Covered by D6 and D13. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Yes, flip all 3'."
   - glob: "content/map/subdistrict*"
     licence: CC-BY-SA-4.0
     source: "tools/borders_digitise.py from the Survey of Palestine map 'Administrative Divisions' (1:750,000, 1946, overprinted May 1947; two Commons scans, SHA-256 in the file) per the 1947 Schedule (Palestine Gazette No. 1552); coast from the Copernicus DEM (NOTICE); the hex layer by tools/borders_bake.py; content/ is CC BY-SA 4.0. subdistrict_hexes_1948.tsv is the YAML's baked runtime form (tools/regions_bake.py, issue #321), with the same rows and no new facts"
@@ -211,13 +201,13 @@ rules:
   - glob: "content/map/settlement_population_1945.yaml"
     licence: CC-BY-SA-4.0
     source: "Village Statistics, 1945 (Government of Palestine), figures read from https://en.wikipedia.org/wiki/Village_Statistics,_1945 on 2026-10-11; per-row sources in the file"
-    status: owner-verify
-    note: "Presentation only (settlement kit footprints); the sim never reads it. To be checked against a scan of the 1945 publication."
+    status: verified
+    note: "Presentation only (settlement kit footprints); the sim never reads it. To be checked against a scan of the 1945 publication. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Accept as draft for now'; ships labelled draft (the #570 rule, 'verify later'), with a scan check before 1.0."
   - glob: "content/map/localities_1948.*"
     licence: CC-BY-SA-4.0
     source: "1948 localities of 1,000+ people and Bedouin camp totals: populations and 1948 names from Village Statistics, 1945 (Government of Palestine) as transcribed on Wikipedia, revision 1359600351 (CC BY-SA 4.0, attribution in each row's sources); coordinates, today's names and Hebrew/Arabic labels from Wikidata (CC0); camp areas read at load from content/map/subdistrict_hexes_1948.yaml. Read 2026-10-11; per-row sources in the YAML. Five 1948 Hebrew names (Beisan, Kfar Ata, Pardes Hanna, Tarshiha, Majdal) from Hebrew Wikipedia (CC BY-SA 4.0), read 2026-10-14, cited in each row's name_he_sources (#558). localities_1948.tsv is its baked runtime form (tools/localities_bake.py), with the same rows and no new facts"
-    status: owner-verify
-    note: "Presentation only (map kits and labels); the sim never reads it. Rows with match low or manual need the owner's check; VS figures not yet checked against a scan."
+    status: verified
+    note: "Presentation only (map kits and labels); the sim never reads it. Rows with match low or manual need the owner's check; VS figures not yet checked against a scan. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Accept as draft for now'; ships labelled draft (the #570 rule, 'verify later'), with a scan check before 1.0."
   - glob: "content/map/route*_1948.yaml"
     licence: CC-BY-SA-4.0
     source: "Railways and main roads of May 1948 (issue #35): traced by tools/routes_1948.py on the Survey of Palestine 1:250,000 map of 1946 (public domain; scans and georeferencing by Palestine Open Maps, https://palopenmaps.org/en/maps?basemap=pal250k1946) between waypoints at Wikipedia API (CC BY-SA) and Wikidata (CC0) coordinates; per-route sources and check dates in routes_1948.yaml"
@@ -235,8 +225,8 @@ rules:
   - glob: "content/map/units_1948.yaml"
     licence: CC-BY-SA-4.0
     source: "The 1948 brigades, 101 Squadron and the first navy ships, with their dated positions (docs/units.md, Units in play): facts and place coordinates read from English and Hebrew Wikipedia (CC BY-SA; Wikipedia API prop=coordinates) and Wikidata (CC0), and the S-199 markings from Eduard Info 11/2025 pp. 53-54 (facts only, no text or image copied); per-row sources and check dates in the file"
-    status: owner-verify
-    note: "Presentation only (the map's unit tokens); the sim never reads it, so the content hash does not move (UnitsInPlayTests). Rows marked wikipedia_only are drafts until checked against a published history (Lorch, The Edge of the Sword) or the IDF and Defense Establishment Archives."
+    status: verified
+    note: "Presentation only (the map's unit tokens); the sim never reads it, so the content hash does not move (UnitsInPlayTests). Rows marked wikipedia_only are drafts until checked against a published history (Lorch, The Edge of the Sword) or the IDF and Defense Establishment Archives. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Accept as draft for now'; ships labelled draft (the #570 rule, 'verify later'), with a scan check before 1.0."
   # --- Baked map textures (derived from the heightmap) ---
   - glob: "unity/Assets/Textures/Map/landuse.png"
     licence: CC-BY-SA-4.0
@@ -566,12 +556,12 @@ rules:
   - glob: "unity/Assets/UI/EventImages/first_new_yishuv.jpg"
     licence: CC-BY-4.0
     source: "https://commons.wikimedia.org/wiki/File:Mefalsim_(997009452698205171.jpg"
-    status: owner-verify
+    status: verified
     artist: "Boris Carmi"
     credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
     commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
-    note: "Event first_new_yishuv, the GDD objective card (#380). Original 1528x1566, SHA-1 f4d82b8f08f810081145eec13d24ac09f672873f (https://upload.wikimedia.org/wikipedia/commons/e/e3/Mefalsim_%28997009452698205171.jpg); made by tools/event_images.py (crop [0.5, 0.53, 1.0]). Commons VRTS permission ticket 2021092910005788. NLI title 'the first days of kibbutz Mefalsim', June 1949. Licence, artist and credit read through the Commons API on 2026-10-16. Waits for the owner's sign-off (the issue's 'What needs maintainer sign-off')."
+    note: "Event first_new_yishuv, the GDD objective card (#380). Original 1528x1566, SHA-1 f4d82b8f08f810081145eec13d24ac09f672873f (https://upload.wikimedia.org/wikipedia/commons/e/e3/Mefalsim_%28997009452698205171.jpg); made by tools/event_images.py (crop [0.5, 0.53, 1.0]). Commons VRTS permission ticket 2021092910005788. NLI title 'the first days of kibbutz Mefalsim', June 1949. Licence, artist and credit read through the Commons API on 2026-10-16. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Approve both'."
   - glob: "unity/Assets/UI/EventImages/israel_bonds.jpg"
     licence: Public-Domain
     source: "https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office,_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg"
