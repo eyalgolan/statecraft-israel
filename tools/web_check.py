@@ -384,12 +384,14 @@ class PersistenceCheck:
         else:
             return
         if self.stage == "first_boot" and kind == "GAME":
+            self._turn(state, 0, "first boot (a fresh profile has no save)")
             self.settle(3)                       # the start screen lays out and takes input
             self.click(NEW_GAME)                 # normal mode: no ?smoke and no ?nostart
             self.settle(2)
             self.click(END_TURN)
             self.stage = "first_turn"
         elif self.stage == "first_turn" and kind == "TURN":
+            self._turn(state, 1, "first End turn after New game")
             self.saved = state
             self.settle(2)                       # ordinary reload: give IDBFS autosync time to settle
             self.action("reload")
@@ -403,6 +405,9 @@ class PersistenceCheck:
             self.click(END_TURN)
             self.stage = "second_turn"
         elif self.stage == "second_turn" and kind == "TURN":
+            # Continue must have resumed the reloaded game: its next turn, not a new game's turn 1 (a click on the wrong
+            # button would otherwise pass).
+            self._turn(state, self.saved[1] + 1, "End turn after Continue")
             self.saved = state
             self.action("reload")                # deliberately no settling delay after the TURN acknowledgement
             self.stage = "immediate_reload"
@@ -413,6 +418,11 @@ class PersistenceCheck:
 
     def click(self, point: tuple[int, int]) -> None:
         self.action(f"click:{point[0]},{point[1]}")
+
+    @staticmethod
+    def _turn(state, expected: int, what: str) -> None:
+        if state[1] != expected:
+            raise ValueError(f"PERSISTENCE FAIL {what}: turn {state[1]} ({state[0]}), expected turn {expected}")
 
     def _same(self, actual, pass_name: str) -> None:
         if actual != self.saved:
@@ -429,6 +439,10 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
     on_text(text) -> True consumes a message (it is not printed)."""
     pending, deadline = list(expect), now() + timeout
     last = now()
+    end = ["the end of the --persistence run"] if complete is not None else []
+
+    def missing() -> str:
+        return ", ".join(pending + [e for e in end if not complete()]) or "nothing"
 
     def look():
         nonlocal pending, last
@@ -443,7 +457,7 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
             print(f"FAIL: {texts[-1]}")
             return 1
         if status == "pass" and (complete is None or complete()):
-            print("PASS: saw " + ", ".join(expect))
+            print("PASS: saw " + ", ".join(list(expect) + end))
             return 0
         return None
 
@@ -457,13 +471,13 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
             result = look()
             if result is not None:
                 return result
-            print(f"BROWSER EXITED code {code}; never saw " + ", ".join(pending))
+            print(f"BROWSER EXITED code {code}; never saw " + missing())
             return 1
         if stall and now() - last > stall:
-            print(f"STALLED: no console message for {stall:.0f} s; never saw " + ", ".join(pending))
+            print(f"STALLED: no console message for {stall:.0f} s; never saw " + missing())
             return 1
         sleep(0.2)
-    print("TIMEOUT: never saw " + ", ".join(pending))
+    print("TIMEOUT: never saw " + missing())
     return 1
 
 

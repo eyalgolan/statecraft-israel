@@ -8,6 +8,8 @@ import threading
 import time
 import urllib.request
 
+import pytest
+
 import web_check as wc
 
 
@@ -208,3 +210,43 @@ def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_save
         assert "PERSISTENCE FAIL immediate reload" in str(e) and "file a follow-up" in str(e)
     else:
         raise AssertionError("a lost immediate autosave must fail")
+
+
+def _played_to_the_settled_reload(check):
+    for text in ("GAME OK 1948-05-15 turn 0 hash aa", "TURN 1 1948-06-15 hash bb"):
+        check.feed(text)
+
+
+def test_persistence_check_fails_when_the_settled_reload_did_not_load_the_saved_turn():
+    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    with pytest.raises(ValueError, match="PERSISTENCE FAIL settled reload got 1948-05-15 turn 0"):
+        check.feed("GAME OK 1948-05-15 turn 0 hash aa")      # the reload came up with no save: a fresh game
+    assert not check.done
+
+
+def test_persistence_check_fails_when_continue_started_a_new_game():
+    """A click that misses Continue and starts a new game must not pass: the turn after Continue is the reloaded
+    game's next turn (2), not a new game's turn 1."""
+    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    with pytest.raises(ValueError, match="PERSISTENCE FAIL End turn after Continue: turn 1 .*expected turn 2"):
+        check.feed("TURN 1 1948-06-15 hash cc")
+    assert not check.done
+
+
+def test_persistence_check_fails_when_the_first_boot_is_not_a_fresh_game():
+    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
+    with pytest.raises(ValueError, match="PERSISTENCE FAIL first boot"):
+        check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+
+
+def test_watch_names_the_unfinished_persistence_run(capsys):
+    inbox = queue.Queue()
+    inbox.put("GAME OK 1948-05-15 turn 0 hash aa")
+    t = [0.0]
+    rc = wc.watch(inbox, lambda: None, lambda: None, [], re.compile("BOOT FAIL"), 5, now=lambda: t[0],
+                  sleep=lambda s: t.__setitem__(0, t[0] + 1), complete=lambda: False)
+    assert rc == 1
+    assert "TIMEOUT: never saw the end of the --persistence run" in capsys.readouterr().out
