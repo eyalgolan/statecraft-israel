@@ -79,6 +79,17 @@ public class MapActionTests
     }
 
     [Fact]
+    public void AReasonHasAStableKindAndInvariantValuesBesideItsEnglishText()
+    {
+        var s = Ready();
+        s.Date = new DateTime(1948, 5, 31);
+        var reason = MapActions.CheckReason(C, s, "housing", 2, 0)!;
+        Assert.Equal("all_from", reason.Kind);
+        Assert.Equal(new[] { "1948-06-01" }, reason.Values);
+        Assert.Equal("Transit camps and housing projects can be placed from 1 June 1948", reason.Text);
+    }
+
+    [Fact]
     public void TransitCampsNeedTheMaabarotPolicy()
     {
         var s = Ready(maabarot: false);
