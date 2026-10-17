@@ -29,7 +29,7 @@ namespace Statecraft.Game.Map.Kits
             /// <summary>The kit's and label's settlement record: id, the 1948 name, the repo type, coordinates.</summary>
             public Settlement Settlement = null!;
             /// <summary>The 1948 Hebrew name (#558: the form matching the English name, sourced in the YAML); null where the file
-            /// gives none (thirteen villages), when the map keeps the English. Data only until the UI wiring reads it.</summary>
+            /// gives none (thirteen villages), when the map keeps the English. The Hebrew UI's pill shows it (#880).</summary>
             public string? NameHe;
             /// <summary>The living place's name today (and in Hebrew), only where one carries on (owner ruling 2026-10-12);
             /// null for a place that did not: then no tooltip.</summary>

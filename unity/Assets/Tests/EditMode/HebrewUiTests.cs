@@ -297,6 +297,34 @@ public class HebrewUiTests
         }
     }
 
+    /// <summary>#880: in Hebrew every map name pill shows its row's name_he, and its English name where the row has none (a
+    /// 1948 locality such as Na'ana); an English restart puts the English names back.</summary>
+    [Test]
+    public void InHebrewEachMapPillShowsItsHebrewNameWhereTheRowHasOne()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Language = UiLanguage.Hebrew;
+        game.Begin(Inputs, 0);
+        Assert.AreEqual("נהלל", Ui.Q<Label>("label-nahalal").text);
+        Assert.AreEqual("תל אביב", Ui.Q<Label>("label-tel_aviv").text);
+        Assert.AreEqual("נשר", Ui.Q<Label>("label-nesher").text, "a 1948 locality with a name_he");
+        Assert.AreEqual("Na'ana", Ui.Q<Label>("label-naana").text, "no name_he: the English name stays");
+        foreach (var s in map.Settlements)
+            Assert.AreEqual(string.IsNullOrWhiteSpace(s.NameHe) ? s.Name : s.NameHe, Ui.Q<Label>("label-" + s.Id).text, s.Id);
+        foreach (var p in map.Localities)
+            Assert.AreEqual(string.IsNullOrWhiteSpace(p.NameHe) ? p.Settlement.Name : p.NameHe, Ui.Q<Label>("label-" + p.Settlement.Id).text, p.Settlement.Id);
+
+        game.Language = UiLanguage.English;
+        game.Begin(Inputs, 0);
+        Assert.AreEqual("Nahalal", Ui.Q<Label>("label-nahalal").text);
+        foreach (var s in map.Settlements) Assert.AreEqual(s.Name, Ui.Q<Label>("label-" + s.Id).text, $"after an English restart: {s.Id}");
+        foreach (var p in map.Localities) Assert.AreEqual(p.Settlement.Name, Ui.Q<Label>("label-" + p.Settlement.Id).text, $"after an English restart: {p.Settlement.Id}");
+    }
+
     /// <summary>The loading line is in the UI's language from the first frame, before Begin, in the Hebrew face and right to
     /// left; a boot failure keeps both. English keeps its line, its face and no direction.</summary>
     [Test]

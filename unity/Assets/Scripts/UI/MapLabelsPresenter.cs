@@ -169,7 +169,7 @@ namespace Statecraft.Game.UI
 
         public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null,
             Func<IReadOnlyList<Bounds[]>?>? keepClear = null, IReadOnlyDictionary<string, decimal>? population = null,
-            Func<int, decimal, string>? tierTip = null)
+            Func<int, decimal, string>? tierTip = null, bool hebrew = false)
         {
             var tip = tipText ?? DefaultTip;
             this.keepClear = keepClear;
@@ -185,7 +185,8 @@ namespace Statecraft.Game.UI
                 var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
                 slot.AddToClassList(SlotClass);
                 var anchorClass = AnchorClass.TryGetValue(s.Id, out var a) ? a : Centre;
-                var label = new Label(s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                // #880: the Hebrew UI shows the row's name_he, and the English name where the row has none.
+                var label = new Label(hebrew && !string.IsNullOrWhiteSpace(s.NameHe) ? s.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass);
                 label.AddToClassList("map-label-" + s.Type);
                 label.AddToClassList(anchorClass);
@@ -229,7 +230,7 @@ namespace Statecraft.Game.UI
                 var s = place.Settlement;
                 var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
                 slot.AddToClassList(SlotClass);
-                var label = new Label(s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                var label = new Label(hebrew && !string.IsNullOrWhiteSpace(place.NameHe) ? place.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass); label.AddToClassList(LocalityClass); label.AddToClassList(Centre);
                 slot.Add(label);
                 container.Add(slot);
