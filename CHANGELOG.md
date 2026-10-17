@@ -16,6 +16,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - In the Hebrew UI the map's name pills show each row's `name_he`: the game settlements ("נהלל", "תל אביב") and
   the 1948 localities that have one. The thirteen localities with no `name_he` keep their English name, and the
   English UI is unchanged. The tier badge stays on the left of the pill until the owner rules on mirroring it (#880).
+- End Turn now logs a throwing `Changed` or `TurnEnded` subscriber and continues notifying the remaining presenters,
+  so a successful turn cannot leave later UI or autosave handlers stale (#912).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
