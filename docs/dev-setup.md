@@ -59,6 +59,11 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
   (every UI pointer and submit event, screen toggle and map click, with its frame), `?vprofile` (the visual frame-time
   profile per feature), `?shot` (screenshots at the promo poses as `SHOT` console lines) and `?kitscale=N`, `?housescale=N`, `?treescale=N` (the settlement kits' symbolic scale for city blocks, houses and trees, clamped to 5–200; defaults 60, 100, 100). In the editor, `MapCapture.Kits` takes `-kitScale`, `-houseScale` and `-treeScale`. Desktop players take `-golden`,
   `-smoke N`, `-profile`, `-camlog`, `-bootlog`, `-navlog`, `-vprofile` and `-shot`. The console also shows `GAME OK <date> turn <n> hash <h>` at start and `TURN <n> <date> hash <h>` per turn.
+- First card in normal mode (#909): `?firstcard` keeps the start screen and decision video on, presses New Game at once
+  and logs `FIRST CARD OK event=<id> media=<photo|portrait fallback> wait=<ms> ms budget=<ms> ms`, or `FIRST CARD FAIL`
+  after the budget (10 s, proposed). Run it with `uv run tools/machine_lock.py --shared -- uv run tools/web_check.py <build>
+  --query firstcard --expect "BOOT event photos ready" --expect "FIRST CARD OK" --fail "FIRST CARD FAIL|BOOT FAIL|Exception"`,
+  and again with `--query "firstcard&lang=he"`.
 - Visual checks (docs/visual-v1.md): measure only under the machine lock, which also waits for any open Unity editor:
   `uv run tools/machine_lock.py --exclusive --wait-unity -- uv run tools/web_check.py <build> --query vprofile --expect "PROFILE visual done" --timeout 1800 --stall 120`
   (headless), `... -- uv run tools/headed.py profile --build <build> --dpr 1` (headed; `--dpr 2` is the

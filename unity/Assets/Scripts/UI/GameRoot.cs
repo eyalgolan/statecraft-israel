@@ -28,6 +28,9 @@ namespace Statecraft.Game.UI
     {
         /// <summary>Turns a bare smoke flag ("?smoke", "-smoke") plays.</summary>
         internal const int DefaultSmokeTurns = 5;
+        /// <summary>Maximum time after closing the start screen for the normal-media browser check's first card to become usable.
+        /// This proposed budget needs maintainer sign-off (#909).</summary>
+        internal const double FirstCardBudgetSeconds = 10;
 
         [SerializeField] GameBoot boot = null!;
         [SerializeField] UIDocument document = null!;
@@ -364,6 +367,11 @@ namespace Statecraft.Game.UI
 
             if (notes.Count > 0) toast.Show(notes);
             Debug.Log(FormattableString.Invariant($"GAME OK {bridge.State.Date:yyyy-MM-dd} turn {bridge.State.Turn} hash {bridge.State.Hash()}"));
+            // Unlike the other browser instruments, ?firstcard keeps the normal start screen, clip mapping and video players.
+            // It closes the screen through its real button immediately, then gives tools/web_check.py a bounded result to
+            // wait for. Console exceptions are collected by that browser-side check (#910).
+            if (Application.isPlaying && FirstCardCheckRequested())
+                StartCoroutine(FirstCardCheck(root, card!, Debug.Log));
             if (smoke > 0)
             {
                 if (Application.isPlaying) StartCoroutine(Smoke(root, bridge, card!, smoke, Debug.Log));
@@ -457,6 +465,46 @@ namespace Statecraft.Game.UI
             CameraLogRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
 
         internal static string CameraLine(float distance, float yaw) => FormattableString.Invariant($"CAMERA distance={distance:0} yaw={yaw:0.0}");
+
+        /// <summary>"firstcard" asks a player build to exercise the first card through the normal media path. It deliberately
+        /// is not one of StartScreenPresenter.Skipped or CardVideo.ForcedOff's automation flags.</summary>
+        internal static bool FirstCardCheckRequested(string? url, string[] args, bool webgl) =>
+            webgl ? UrlFlags.Has(url, "firstcard") : Array.IndexOf(args, "-firstcard") >= 0;
+
+        internal static bool FirstCardCheckRequested() =>
+            FirstCardCheckRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
+
+        /// <summary>Closes a fresh game's start screen at once through New Game and waits at most
+        /// <see cref="FirstCardBudgetSeconds"/> seconds for an enabled option plus the archival photograph or documented
+        /// minister-portrait fallback. The browser check treats FIRST CARD FAIL and console exceptions as failures.</summary>
+        internal static IEnumerator FirstCardCheck(VisualElement root, EventCardPresenter card, Action<string> log,
+            Func<double>? now = null)
+        {
+            now ??= () => Time.realtimeSinceStartupAsDouble;
+            var began = now();
+            var hud = root.Q("root") ?? root;
+            if (!hud.ClassListContains(StartScreenPresenter.OpenClass))
+            {
+                log("FIRST CARD FAIL start screen is not open");
+                yield break;
+            }
+            if (!Press(root.Q<Button>("start-new-game"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            while (now() - began <= FirstCardBudgetSeconds)
+            {
+                var option = root.Q<VisualElement>("event-options")?.Q<Button>();
+                bool photo = root.Q<VisualElement>("event-photo")?.style.display.value == DisplayStyle.Flex;
+                bool portrait = root.Q<VisualElement>("event-image")?.style.display.value == DisplayStyle.Flex;
+                if (!hud.ClassListContains(StartScreenPresenter.OpenClass) && card.Shown != null && !card.Collapsed &&
+                    !card.PhotoWaits && option != null && option.enabledInHierarchy && (photo || portrait))
+                {
+                    var wait = (now() - began) * 1000;
+                    log(FormattableString.Invariant($"FIRST CARD OK event={card.Shown.Id} media={(photo ? "photo" : "portrait fallback")} wait={wait:0} ms budget={FirstCardBudgetSeconds * 1000:0} ms"));
+                    yield break;
+                }
+                yield return null;
+            }
+            log(FormattableString.Invariant($"FIRST CARD FAIL not interactive after {FirstCardBudgetSeconds * 1000:0} ms"));
+        }
 
         /// <summary>After every Update (CameraController moves the camera in its Update), so the pills never trail the camera.</summary>
         void LateUpdate()

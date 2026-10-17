@@ -39,6 +39,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (#881). The new Hebrew strings are flagged for native-speaker review (#564).
 - The 7th Brigade's card dates follow the IDF sources (owner, 17 October 2026): formed 14 May 1948, the day of the
   founding order (was 16 May), and Operation Bin Nun ends on 31 May 1948 (was 1 June) (refs #902).
+- A WebGL `?firstcard` check now follows the normal first-card path: it closes the start screen through New Game,
+  leaves decision video enabled, records the event-photo load, and requires an interactive photo or portrait-fallback
+  card within a proposed 10-second budget (refs #909; budget needs maintainer sign-off).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
