@@ -126,7 +126,8 @@ namespace Statecraft.Game.UI
             if (pending == null) { Loads++; catalog = LoadNow(); }
             else catalog = pending();
             pending = null; Loaded = true;
-            if (Statecraft.Game.Boot.DiagLog.Boot)
+            // The normal-media browser check always records this line; other runs keep it behind ?bootlog.
+            if (Statecraft.Game.Boot.DiagLog.Boot || GameRoot.FirstCardCheckRequested())
                 Debug.Log(FormattableString.Invariant($"BOOT event photos ready ({how}) wait={watch.Elapsed.TotalMilliseconds:0} ms"));
             return catalog;
         }

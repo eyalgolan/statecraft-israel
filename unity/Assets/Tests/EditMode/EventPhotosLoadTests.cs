@@ -1,5 +1,7 @@
 #nullable enable
 using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
@@ -363,6 +365,42 @@ public class EventPhotosLoadTests
             Assert.AreEqual(DisplayStyle.Flex, band.style.display.value, "the photograph shows");
             Assert.AreEqual(entry.image, band.style.backgroundImage.value.texture);
             Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("event-image").style.display.value, "no portrait in its place");
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
+    }
+
+    /// <summary>#909: the browser's ?firstcard run is normal play (the start screen and video stay on). It presses New Game
+    /// immediately and reports only once the first option and its photo or documented portrait fallback are usable. The
+    /// proposed first-card budget is 10 seconds and needs maintainer sign-off.</summary>
+    [Test]
+    public void TheNormalMediaBrowserCheckClosesTheStartScreenAndFindsAnInteractiveFirstCard()
+    {
+        const string url = "http://localhost:8000/index.html?firstcard";
+        Assert.IsTrue(GameRoot.FirstCardCheckRequested(url, System.Array.Empty<string>(), webgl: true));
+        Assert.IsFalse(StartScreenPresenter.Skipped(url, System.Array.Empty<string>(), webgl: true), "normal start screen");
+        Assert.IsFalse(CardVideo.ForcedOff(url, System.Array.Empty<string>(), webgl: true), "normal clip mapping and players");
+        Assert.AreEqual(10, GameRoot.FirstCardBudgetSeconds, "the stated browser budget, in seconds");
+
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new SaveStore(saveDir);
+            game.Begin(inputs, 0, startScreen: true);
+            var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+            var lines = new List<string>();
+            double clock = 0;
+            IEnumerator check = GameRoot.FirstCardCheck(ui, game.Card!, lines.Add, () => clock++);
+            while (check.MoveNext()) { }
+
+            Assert.IsFalse(ui.Q("root").ClassListContains(StartScreenPresenter.OpenClass), "New Game closed the screen at once");
+            Assert.AreEqual(1, lines.Count, string.Join("\n", lines));
+            StringAssert.StartsWith("FIRST CARD OK event=idf_founding media=photo ", lines[0]);
+            StringAssert.EndsWith("budget=10000 ms", lines[0]);
+            Assert.IsTrue(EventPhotos.Loaded, "the card ran the real photo path");
+            Assert.IsTrue(ui.Q<VisualElement>("event-options").Q<Button>().enabledInHierarchy, "the first option is interactive");
         }
         finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
     }
