@@ -13,6 +13,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- In the Hebrew UI the info panel's build line is a date label with no verb, "{0} – תאריך הקמה: {1}" (refs #701), since
+  the fixed masculine "נבנה" read wrong for a feminine name ("מעברה נבנה"). Beri approved the wording as a native speaker.
+  English is unchanged.
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.

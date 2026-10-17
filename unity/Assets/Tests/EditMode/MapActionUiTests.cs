@@ -84,7 +84,8 @@ public class MapActionUiTests
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
     }
 
-    /// <summary>#701: in the Hebrew UI the build date names its month in Hebrew (date.month_year), not "August 1950".</summary>
+    /// <summary>#701: in the Hebrew UI the build date names its month in Hebrew (date.month_year), not "August 1950". The line
+    /// is a date label with no verb (Beri, 17 October 2026), since a fixed "נבנה" is wrong for a feminine name ("מעברה").</summary>
     [Test]
     public void InHebrewTheBuildDateIsAHebrewMonth()
     {
@@ -98,7 +99,9 @@ public class MapActionUiTests
         info.Show(tlv.Q, tlv.R);
         ui.Press("build-camp");
         bridge.EndTurn();
-        StringAssert.EndsWith("נבנה כאן באוגוסט 1950", ui.Q<Label>("info-placement").text);
+        var line = ui.Q<Label>("info-placement").text;
+        StringAssert.EndsWith(" – תאריך הקמה: אוגוסט 1950", line);
+        StringAssert.DoesNotContain("נבנה", line, "no gendered verb");
     }
 
     /// <summary>The minimap's painted relief (tools/minimap_bake.py) is north up over the hex grid's bounds: sea off Tel Aviv

@@ -240,8 +240,9 @@ minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
 minimap.borders: "הצגה או הסתרה של גבולות האזורים"
 ui.lang: "he"
-# #701: {1} is a month and a year ("אוגוסט 1950"), so "ב{1}" (באוגוסט 1950), not "בשנת {1}". For the native reviewer (#564).
-info.built: "{0} נבנה כאן ב{1}"
+# #701: {1} is a month and a year ("אוגוסט 1950"). A date label with no verb, since a fixed "נבנה" is wrong for a feminine
+# name ("מעברה"); Beri approved this wording as a native speaker (17 October 2026). For the native reviewer (#564).
+info.built: "{0} – תאריך הקמה: {1}"
 info.queued: "ניתנה פקודה: {0}, בסיום התור"
 info.build_camp: "הקמת מעברה ({0})"
 info.build_housing: "בניית דיור ({0})"
