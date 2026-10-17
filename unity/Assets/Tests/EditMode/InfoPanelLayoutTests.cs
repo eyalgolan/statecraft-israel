@@ -33,8 +33,10 @@ public class InfoPanelLayoutTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, out of its loading state, with the top bar, an open event
     /// card and the info panel (with the region lines) on the session given.</summary>
-    static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check)
+    static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
+                                UiText? text = null, bool hebrew = false)
     {
+        var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
@@ -46,10 +48,11 @@ public class InfoPanelLayoutTests
         go.SetActive(true);
         var root = doc.rootVisualElement;
         root.Q("root").RemoveFromClassList("loading");
-        var bridge = new SimBridge(g, Text);
-        var hud = new HudPresenter(root, bridge, Text);
-        var card = new EventCardPresenter(root, bridge, Text, null);
-        var info = new InfoPanelPresenter(root, bridge, Text, Names(), regions: Regions());
+        if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
+        var bridge = new SimBridge(g, t);
+        var hud = new HudPresenter(root, bridge, t);
+        var card = new EventCardPresenter(root, bridge, t, null);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions());
         try
         {
             act(root, info);
@@ -126,6 +129,43 @@ public class InfoPanelLayoutTests
                     if (!TextFits(l)) problems.Add($"{w}x{h}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
                 }
             });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>GDD Phase 1 PR 8 (#381): the city panel with two training cohorts (a Cancel each) and the
+    /// designated site's panel (two idle halutz groups, so two Build buttons), at every window size in English and Hebrew:
+    /// the panel lies in the window, clear of the minimap, the left column and the top bar, and every shown label and
+    /// button lies inside the panel with its text fitting its box.</summary>
+    [UnityTest]
+    public IEnumerator TheGddCityAndSitePanelsFitEveryWindow()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var city = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var site = C.Sites.Single(s => s.Id == "mefalsim");
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in Windows)
+                foreach (var (what, q, r) in new[] { ("city", city.Q, city.R), ("site", site.Q, site.R) })
+                {
+                    var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                    var s = g.State;
+                    for (int k = 0; k < 2; k++) { var id = s.NextId++; s.Cohorts.Add(id, new Cohort(id, k == 0 ? "recruit" : "halutz", "tel_aviv", 12, 4)); }
+                    for (int k = 0; k < 2; k++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "halutz", city.Q, city.R)); }
+                    var at = $"{(hebrew ? "he" : "en")} {w}x{h} {what}";
+                    yield return Rendered(w, h, g, (root, info) => info.Show(q, r), root =>
+                    {
+                        var panel = root.Q("info-panel"); var window = root.worldBound;
+                        if (root.Q(GddHexPanel.HostName).resolvedStyle.display != DisplayStyle.Flex) { problems.Add($"{at}: precondition: the GDD part shows"); return; }
+                        if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
+                        foreach (var other in new[] { "minimap", "left-column", "top-bar" })
+                            if (panel.worldBound.Overlaps(root.Q(other).worldBound)) problems.Add($"{at}: the panel {panel.worldBound} overlaps the {other} {root.Q(other).worldBound}");
+                        foreach (var l in panel.Query<TextElement>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
+                        {
+                            if (!Inside(l.worldBound, panel.worldBound)) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
+                            if (!TextFits(l)) problems.Add($"{at}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
+                        }
+                    }, hebrew ? he : Text, hebrew);
+                }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
