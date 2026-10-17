@@ -25,6 +25,9 @@
 #   spot would be the other side's ground, `toward` names a sourced place on the unit's own side and `place_hex` the hex
 #   next to the anchor on that side ([q, r] in content/map/hexes.json); the token stands in that hex, nearest the place.
 # Coordinates: the place's Wikipedia article (Wikipedia API prop=coordinates), or Wikidata (CC0) where it has none.
+# name_he, name_he_sources, name_he_review: the unit's Hebrew name, as an accepted source writes it, its sources (a comment
+#   above them quotes the line), and `agent-checked` until a native speaker reads it (#564; CONTENT_POLICY section 2,
+#   rule 6). A name's source does not check the row's facts, so it does not count for wikipedia_only (#902).
 # wikipedia_only: true when every source of the row is a Wikipedia article (English or Hebrew) or a Wikidata item (for
 #   coordinates only). Such a row is a draft until checked against a published history (Netanel Lorch, The Edge of the
 #   Sword, 1961) or the IDF and Defense Establishment Archives. The card computes the same note per anchor.
@@ -53,6 +56,9 @@ units:
 # --- Army: the twelve brigades of 1948 -------------------------------------------------------------------------------
 - id: golani
   name: Golani Brigade
+  name_he: "חטיבת גולני"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.mitgaisim.idf.il/כתבות/ראשי/כללי/אחד-מי-יודע/', checked: '2026-10-17'}]
   number: 1st Brigade
   service: army
   side: israel
@@ -91,6 +97,10 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/Julis,_Gaza', checked: '2026-10-11'}
 - id: carmeli
   name: Carmeli Brigade
+  name_he: "חטיבת כרמלי"
+  name_he_review: agent-checked
+  # Haganah Heritage lexicon, "Golani": "בסוף מאי רוכזו חטיבת כרמלי וחלק מגולני בעמק יזרעאל".
+  name_he_sources: [{url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47295', checked: '2026-10-17'}]
   number: 2nd Brigade
   service: army
   side: israel
@@ -131,6 +141,10 @@ units:
   - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
 - id: alexandroni
   name: Alexandroni Brigade
+  name_he: "חטיבת אלכסנדרוני"
+  name_he_review: agent-checked
+  # Netanya municipality heritage site (moreshet.netanya.muni.il), page heading "חטיבת אלכסנדרוני".
+  name_he_sources: [{url: 'https://moreshet.netanya.muni.il/timeline/?itemId=27824', checked: '2026-10-17'}]
   number: 3rd Brigade
   service: army
   side: israel
@@ -163,6 +177,10 @@ units:
   - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
 - id: kiryati
   name: Kiryati Brigade
+  name_he: "חטיבת קרייתי"
+  name_he_review: agent-checked
+  # Haganah Heritage lexicon, "Givati": "גרמו בפברואר 1948 להחלטה להקים בעיר את חטיבת קרייתי".
+  name_he_sources: [{url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47227', checked: '2026-10-17'}]
   number: 4th Brigade
   service: army
   side: israel
@@ -187,6 +205,9 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/Tel_Aviv', checked: '2026-10-11'}
 - id: givati
   name: Givati Brigade
+  name_he: "חטיבת גבעתי"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.mitgaisim.idf.il/כתבות/ראשי/כללי/אחד-מי-יודע/', checked: '2026-10-17'}]
   number: 5th Brigade
   service: army
   side: israel
@@ -213,6 +234,10 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/Gedera', checked: '2026-10-11'}
 - id: etzioni
   name: Etzioni Brigade
+  name_he: "חטיבת עציוני"
+  name_he_review: agent-checked
+  # Haganah Heritage lexicon, "Etzioni": "מחטיבת עציוני נבצר להכניס לרובע תגבורת מספקת".
+  name_he_sources: [{url: 'https://www.hahagana.org.il/lexicon/lexiconpage/?itemId=47926', checked: '2026-10-17'}]
   number: 6th Brigade
   service: army
   side: israel
@@ -245,14 +270,25 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/Jerusalem', checked: '2026-10-11'}
 - id: brigade_7
   name: 7th Brigade
+  name_he: "חטיבה 7"
+  name_he_review: agent-checked
+  # Ma'arachot 263-4 (June 1978), "קרבות לטרון", PDF p. 11 (a scan; read on the page image): "חטיבה 7 — חטיבת העתודה החדשה".
+  name_he_sources: [{url: 'https://www.maarachot.idf.il/media/aisluj2h/%D7%A9%D7%A2%D7%A8-3-%D7%94%D7%93%D7%99%D7%A4%D7%AA-%D7%94%D7%A4%D7%9C%D7%99%D7%A9%D7%94.pdf', checked: '2026-10-17'}]
   number: 7th Brigade
   service: army
   side: israel
-  formed: 16 May 1948
+  formed: 14 May 1948
   first_commander: Shlomo Shamir
-  sector: "The battles of Latrun (Operation Bin Nun, 24 May to 1 June 1948), from the headquarters at Hulda; in June 1948 it moved to the northern front, organising for a time at Ein Shemer."
-  wikipedia_only: true
+  sector: "The battles of Latrun (Operation Bin Nun, 24 to 31 May 1948), from the headquarters at Hulda; in June 1948 it moved to the northern front, organising for a time at Ein Shemer."
+  wikipedia_only: false
   status: draft
+  sources:
+  # Ma'arachot 263-4 (June 1978), "קרבות לטרון", PDF p. 11 (a scan; read on the page image): "ב־14 במאי יצאה פקודה להקמת
+  # חטיבת עתודה ... כמפקד החטיבה התמנה שלמה שמיר". The founding order's date (owner, 17 October 2026: "14 May (the order)").
+  - {url: 'https://www.maarachot.idf.il/media/aisluj2h/%D7%A9%D7%A2%D7%A8-3-%D7%94%D7%93%D7%99%D7%A4%D7%AA-%D7%94%D7%A4%D7%9C%D7%99%D7%A9%D7%94.pdf', checked: '2026-10-17'}
+  # IDF, Mishpat VeTzava 20, footnote 337 (printed p. 119; read on the rendered page): "מבצע "בן-נון א'", 24-25 במאי 1948,
+  # ובמבצע "בן-נון ב'", 30-31 במאי 1948". Bin Nun B ends on 31 May (owner, 17 October 2026: "31 May (the source)").
+  - {url: 'https://www.idf.il/media/oeshplbh/%D7%9E%D7%A9%D7%A4%D7%98-%D7%95%D7%A6%D7%91%D7%90-20_compressed.pdf', checked: '2026-10-17'}
   anchors:
   - place: Hulda (headquarters for the Latrun attacks)
     lon: 34.88333
@@ -261,7 +297,7 @@ units:
     since: 24 May 1948
     to: '1948-06-01'
     end_basis: source
-    end_note: "Operation Bin Nun Alef (24-25 May) and Bin Nun Bet (30 May-1 June); he.wiki: in June 1948 the brigade moved north."
+    end_note: "Operation Bin Nun Alef (24-25 May) and Bin Nun Bet (30-31 May; IDF, Mishpat VeTzava 20, the row's source); he.wiki: in June 1948 the brigade moved north."
     note: "The brigade attacked Latrun from the Israeli headquarters at Hulda (Battles of Latrun); Shlomo Shamir led both attacks. Anchored at Hulda, not Latrun: the Arab Legion held Latrun and the ridge behind it (Yalu, Bayt Nuba), and the ground between was contested until the area of Bayt Jiz and Bayt Susin was cleared on 28 May; Sar'a was taken only on 13-14 July."
     sources:
     - {url: 'https://en.wikipedia.org/wiki/Battles_of_Latrun_(1948)', checked: '2026-10-11'}
@@ -281,6 +317,10 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/Ein_Shemer', checked: '2026-10-11'}
 - id: brigade_8
   name: 8th Brigade
+  name_he: "חטיבה 8"
+  name_he_review: agent-checked
+  # Lehi Heritage Association, "June 1948 - 1951": "משבר אמון מחודש כלפי יוצאי לח"י בחטיבה 8".
+  name_he_sources: [{url: 'https://lehi.org.il/he/%d7%99%d7%95%d7%a0%d7%99-1948-1951/', checked: '2026-10-17'}]
   number: 8th Brigade
   service: army
   side: israel
@@ -303,6 +343,10 @@ units:
   - {url: 'https://en.wikipedia.org/wiki/Haganah', checked: '2026-10-15'}
 - id: oded
   name: Oded Brigade
+  name_he: "חטיבת עודד"
+  name_he_review: agent-checked
+  # Haganah Heritage lexicon, "Golani": "גדוד זה צורף לחטיבת עודד, עם הקמתה בסוף מאי 1948".
+  name_he_sources: [{url: 'https://www.hahagana.org.il/lexicon/lexiconpage/?itemId=47295', checked: '2026-10-17'}]
   number: 9th Brigade
   service: army
   side: israel
@@ -327,6 +371,9 @@ units:
   - {url: 'https://he.wikipedia.org/wiki/%D7%A7%D7%A8%D7%91_%D7%AA%D7%9C_%D7%A2%D7%96%D7%96%D7%99%D7%90%D7%AA_(1948)', checked: '2026-10-16'}
 - id: harel
   name: Harel Brigade
+  name_he: "חטיבת הראל"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=5523', checked: '2026-10-17'}]
   number: 10th Brigade (Palmach)
   service: army
   side: israel
@@ -362,6 +409,9 @@ units:
     - {url: "https://en.wikipedia.org/wiki/Sha'ar_HaGai", checked: '2026-10-11'}
 - id: yiftach
   name: Yiftach Brigade
+  name_he: "חטיבת יפתח"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=5523', checked: '2026-10-17'}]
   number: 11th Brigade (Palmach)
   service: army
   side: israel
@@ -388,6 +438,9 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/Lod', checked: '2026-10-11'}
 - id: negev
   name: Negev Brigade
+  name_he: "חטיבת הנגב"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=5523', checked: '2026-10-17'}]
   number: 12th Brigade (Palmach)
   service: army
   side: israel
@@ -417,6 +470,10 @@ units:
 # --- Air: the first fighter squadron ---------------------------------------------------------------------------------
 - id: squadron_101
   name: 101 Squadron
+  name_he: "טייסת 101"
+  name_he_review: agent-checked
+  # Palmach archive, veteran page: "מונה למפקד טייסת 101 ("טייסת הקרב הראשונה")". The IDF page first cited returned no text on re-fetch.
+  name_he_sources: [{url: 'https://www.palmach.org.il/veterans/veteranpage/?itemId=75303', checked: '2026-10-17'}]
   number: First Fighter Squadron
   service: air
   side: israel
@@ -509,6 +566,12 @@ units:
     - {url: 'https://www.wikidata.org/wiki/Q1376739', checked: '2026-10-11'}
 - id: ins_wedgwood
   name: INS Wedgwood
+  name_he: "ווג'ווד"
+  name_he_review: agent-checked
+  # Palmach archive, veteran page 76294: "נשלחה השייטת הגדולה (אח"י ווג'ווד, אח"י הגנה, אח"י נוגה)". The University of Haifa
+  # study writes it the same way ("'אח"י ווג'ווד' (ק- 18"). Other pages spell it "וג'ווד" or "וודג'ווד"; owner, 17 October
+  # 2026: "ווג'ווד".
+  name_he_sources: [{url: 'https://palmach.org.il/veterans/veteranpage/?itemId=76294', checked: '2026-10-17'}, {url: 'https://herzl.haifa.ac.il/images/anatkidron.pdf', checked: '2026-10-17'}]
   number: Corvette, commissioned 1948
   service: navy
   side: israel
@@ -543,6 +606,9 @@ units:
 # the note does not describe): see the PR for #740.
 - id: egyptian_expeditionary_force
   name: Egyptian Expeditionary Force
+  name_he: "חיל המשלוח המצרי"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=8476', checked: '2026-10-17'}]
   number: Two brigade groups (a coastal brigade group and an inland column)
   service: army
   side: egypt
@@ -616,6 +682,10 @@ units:
   - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
 - id: arab_legion
   name: Arab Legion
+  name_he: "הלגיון הערבי"
+  name_he_review: agent-checked
+  # IDF-hosted article on the 1948 war (PDF): "הלחימה נגד הכוחות המקומיים והכוחות הצבאיים — הלגיון הערבי במרכז". The IDF page first cited returned no text on re-fetch.
+  name_he_sources: [{url: 'https://www.idf.il/media/is5dlct2/%D7%A1%D7%A8%D7%99%D7%A7%D7%AA_%D7%9E%D7%90%D7%9E%D7%A8_%D7%90%D7%9C%D7%97%D7%A0%D7%9F_%D7%9E%D7%95%D7%92%D7%9E%D7%A8.pdf', checked: '2026-10-17'}]
   number: One division in the field (the 1st, 3rd and 4th brigades)
   service: army
   side: jordan
@@ -667,6 +737,10 @@ units:
   - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
 - id: syrian_army
   name: Syrian Army
+  name_he: "הצבא הסורי"
+  name_he_review: agent-checked
+  # IDF-hosted article on the 1948 war (PDF): "הצבא הסורי פלש לעמק הירדן, כבש את צמח, אבל נהדף בדגניה". The IDF page first cited returned no text on re-fetch.
+  name_he_sources: [{url: 'https://www.idf.il/media/is5dlct2/%D7%A1%D7%A8%D7%99%D7%A7%D7%AA_%D7%9E%D7%90%D7%9E%D7%A8_%D7%90%D7%9C%D7%97%D7%A0%D7%9F_%D7%9E%D7%95%D7%92%D7%9E%D7%A8.pdf', checked: '2026-10-17'}]
   number: The 1st and 2nd Infantry Brigades
   service: army
   side: syria
@@ -720,6 +794,9 @@ units:
   - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
 - id: iraqi_expeditionary_force
   name: Iraqi Expeditionary Force
+  name_he: "חיל המשלוח העיראקי"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.idf.il/media/rked3mfr/זרקור-הסברה-עיראק.pdf', checked: '2026-10-17'}]
   number: One infantry brigade and one armoured battalion
   service: army
   side: iraq
@@ -773,6 +850,9 @@ units:
   - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
 - id: lebanese_army
   name: Lebanese Army
+  name_he: "צבא לבנון"
+  name_he_review: agent-checked
+  name_he_sources: [{url: 'https://www.idf.il/media/is5dlct2/סריקת_מאמר_אלחנן_מוגמר.pdf', checked: '2026-10-17'}]
   number: The force that took the field
   service: army
   side: lebanon
@@ -802,6 +882,10 @@ units:
   - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
 - id: arab_liberation_army
   name: Arab Liberation Army
+  name_he: "צבא ההצלה"
+  name_he_review: agent-checked
+  # Haganah Heritage lexicon, "Golani": "מפני התקפות אפשריות של צבא ההצלה". The IDF page first cited returned no text on re-fetch.
+  name_he_sources: [{url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47295', checked: '2026-10-17'}]
   number: The Arab League's volunteer army
   service: army
   side: ala
