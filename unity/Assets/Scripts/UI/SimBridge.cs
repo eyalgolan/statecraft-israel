@@ -116,6 +116,22 @@ namespace Statecraft.Game.UI
 
         string? Refuse(string reason) { Refused?.Invoke(reason); return reason; }
 
+        static void Notify(Action? handlers)
+        {
+            if (handlers == null) return;
+            foreach (Action handler in handlers.GetInvocationList())
+                try { handler(); }
+                catch (Exception e) { UnityEngine.Debug.LogException(e); }
+        }
+
+        static void Notify<T>(Action<T>? handlers, T value)
+        {
+            if (handlers == null) return;
+            foreach (Action<T> handler in handlers.GetInvocationList())
+                try { handler(value); }
+                catch (Exception e) { UnityEngine.Debug.LogException(e); }
+        }
+
         /// <summary>Queues an order (replacing one with the same key). Returns null, or why it was refused here: an id
         /// the content does not have, the game is over, or the order costs more attention than is left. A refusal is
         /// also raised as <see cref="Refused"/>.</summary>
@@ -158,14 +174,14 @@ namespace Statecraft.Game.UI
                 LastBatch = Array.Empty<Command>();
                 var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
-                Changed?.Invoke();
-                TurnEnded?.Invoke(failed.Rejected);
+                Notify(Changed);
+                Notify(TurnEnded, failed.Rejected);
                 return failed;
             }
             LastBatch = batch; LastBatchDate = date;
             queue.Clear();
-            Changed?.Invoke();
-            TurnEnded?.Invoke(r.Rejected);
+            Notify(Changed);
+            Notify(TurnEnded, r.Rejected);
             return r;
         }
 

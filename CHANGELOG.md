@@ -13,6 +13,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- End Turn now logs a throwing `Changed` or `TurnEnded` subscriber and continues notifying the remaining presenters,
+  so a successful turn cannot leave later UI or autosave handlers stale (#912).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
