@@ -11,6 +11,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Event options can now move the national Food stock: `food` is an effect target in whole units, the loader
   validates it, and the sensitive-event no-gain rule covers it (R-EFX-001 and R-EFX-002; refs #729). The Arms
   target follows with its pool (#781).
+- `Build.Web -decompressionFallback`: a WebGL build variant for GitHub Pages (Unity's Decompression Fallback; Pages
+  cannot set response headers). When a release carries the variant's zip, the site's deploy serves it at `/demo/`.
 
 ### Fixed
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,

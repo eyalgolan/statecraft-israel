@@ -56,4 +56,4 @@ The site lives at `https://eyalgolan.github.io/statecraft-israel/` until there i
 
 ## Hosting the game here
 
-GitHub Pages cannot set response headers, so the browser build must use Unity's Decompression Fallback and stay single-threaded. The Play page explains this; today `Build.Web` turns the fallback off.
+GitHub Pages cannot set response headers, so the browser build for this site is made with Unity's Decompression Fallback and stays single-threaded (the Play page explains both). `docs/RELEASING.md` step 5 builds it as `statecraft-israel-vX.Y.Z-web-pages.zip` (`Build.Web -decompressionFallback`) on each release, and the deploy step in `.github/workflows/site.yml` unpacks the latest release's zip at `/demo/` - at deploy time, never from git. Until a release carries one, the site deploys without the demo and the Play page keeps saying there is no hosted build. Updating the Play page (and the root README's Play section) to link to `/demo/` is a follow-up step when the first such release ships.
