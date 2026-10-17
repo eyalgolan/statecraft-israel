@@ -294,3 +294,91 @@ def test_query_value():
     assert wc.query_value("lang=he&smoke", "lang") == "he"
     assert wc.query_value("smoke", "lang") is None
     assert wc.query_value("", "lang") is None
+
+
+def test_start_screen_check_english_recording_uses_the_english_layout():
+    actions = []
+    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=False, settle=lambda s: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
+    assert actions == _clicks(wc.PLAY_RECORDING, wc.NEW_GAME, wc.END_TURN)
+
+
+def _args(*argv):
+    return wc.parser().parse_args(["build", *argv])
+
+
+def _plan(*argv):
+    driver, fail, plan = wc.run_plan(_args(*argv), lambda action: None)
+    if driver is not None:
+        driver.settle = lambda seconds: None
+    return driver, fail, plan
+
+
+def test_every_run_fails_on_boot_fail_by_default():
+    _, fail, plan = _plan()
+    assert fail.search("BOOT FAIL manifest.json: timeout") and plan == {}
+
+
+@pytest.mark.parametrize("mode", ["new", "recording"])
+def test_a_start_screen_run_fails_on_boot_fail_exceptions_and_the_recording_whatever_fail_says(mode):
+    for argv in ((), ("--fail", "SOMETHING ELSE")):
+        _, fail, _ = _plan("--startscreen", mode, *argv)
+        for text in ("BOOT FAIL manifest.json: timeout", "NullReferenceException: Object reference not set",
+                     "RECORDING failed audio/declaration.wav: no audio"):
+            assert fail.search(text), (argv, text)
+    assert _plan("--startscreen", mode, "--fail", "SOMETHING ELSE")[1].search("SOMETHING ELSE")
+
+
+def test_the_start_screen_run_takes_the_hebrew_layout_from_the_query():
+    he, _, _ = _plan("--startscreen", "recording", "--query", "lang=he&smoke=0")
+    en, _, _ = _plan("--startscreen", "recording")
+    assert (he.play, he.end_turn) == (wc.PLAY_RECORDING_HE, wc.END_TURN_HE)
+    assert (en.play, en.end_turn) == (wc.PLAY_RECORDING, wc.END_TURN)
+
+
+def test_persistence_and_start_screen_are_separate_runs():
+    with pytest.raises(ValueError, match="separate runs"):
+        _plan("--persistence", "--startscreen", "new")
+
+
+def _run(plan_args, lines, late=()):
+    """Feeds `lines` to watch through run_plan's driver; `late` arrive at the first sleep, after them."""
+    driver, fail, plan = _plan(*plan_args)
+    inbox = queue.Queue()
+    for text in lines:
+        inbox.put(line(text))
+    t, late = [0.0], list(late)
+
+    def sleep(seconds):
+        while late:
+            inbox.put(line(late.pop(0)))
+        t[0] += seconds
+
+    return wc.watch(inbox, lambda: None, lambda: None, [], fail, 60, now=lambda: t[0], sleep=sleep,
+                    on_text=lambda text: driver.feed(text) and False, **plan)
+
+
+BOOTED_AND_TURNED = ["GAME OK 1948-05-15 turn 0 hash aa", "TURN 1 1948-06-15 hash bb"]
+
+
+def test_a_start_screen_run_passes_after_turn_1_and_names_itself(capsys):
+    assert _run(("--startscreen", "new"), BOOTED_AND_TURNED) == 0
+    assert "PASS: saw the end of the --startscreen new run" in capsys.readouterr().out
+
+
+def test_an_exception_logged_just_after_turn_1_still_fails_the_run(capsys):
+    assert _run(("--startscreen", "new"), BOOTED_AND_TURNED, late=["NullReferenceException: late presenter"]) == 1
+    assert "FAIL: NullReferenceException: late presenter" in capsys.readouterr().out
+
+
+def test_a_start_screen_run_that_never_reaches_turn_1_fails_naming_itself(capsys):
+    assert _run(("--startscreen", "recording"), ["GAME OK 1948-05-15 turn 0 hash aa"]) == 1
+    assert "TIMEOUT: never saw the end of the --startscreen recording run" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("bad", ["BOOT FAIL manifest.json: timeout", "RECORDING failed audio/declaration.wav: no audio",
+                                 "InvalidOperationException: presenter"])
+def test_a_failure_line_during_a_start_screen_run_fails_it(bad, capsys):
+    assert _run(("--startscreen", "recording"), ["GAME OK 1948-05-15 turn 0 hash aa", bad]) == 1
+    assert f"FAIL: {bad}" in capsys.readouterr().out

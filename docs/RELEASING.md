@@ -22,6 +22,10 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
      --expect "GOLDEN OK 1950 7cf678b6b2b3d55dc0fee7b2efdee9ec7688cdf18964dcaa6e5a7c0018e34a51" \
      --expect "GOLDEN OK 1952 9496947232f0c97ed21c0a0b98e6727e7d59c892f9aff12049b5d7e5ee2230e8" \
      --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
+   uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --query lang=he --timeout 300 --stall 90
    bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
 
@@ -30,6 +34,10 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    `.data` (`application/octet-stream`) to the player uncompressed; a gzip `.data` stays gzip. Estimated from the 15 October
    build's files, that is about 34 MB to download per player instead of about 46 MB. Both load in a browser with Decompression
    Fallback off, as `Build.Web` sets it, and `web_check.py` serves `*.gz` with `Content-Encoding: gzip`.
+
+   The four `--startscreen` passes (owner decision on #967, 17 October 2026) open the start screen every player sees
+   first, which the golden and smoke run skips: New game, and Play the recording then New game, in English and in
+   Hebrew. Each must print `PASS`. A console exception, `RECORDING failed` or `BOOT FAIL` fails it (#908).
 
    `package_web.sh` copies the licence and attribution files into the build folder, then runs
    `tools/package_release.py`, M3's sensitivity gate, which zips the folder and prints `PACKAGED …` or

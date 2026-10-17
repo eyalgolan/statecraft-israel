@@ -485,20 +485,23 @@ class StartScreenCheck:
 
 
 def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=time.sleep, on_text=None, stall=0,
-          complete=None, complete_what="the end of the --persistence run") -> int:
+          complete=None, complete_what="the end of the --persistence run", grace=0.0) -> int:
     """The check loop: 0 on PASS, 1 on a failure line, on BROWSER EXITED, on TIMEOUT, or (stall > 0) when no console
     message arrives for stall seconds (STALLED). poll() is the browser's returncode (None while running); join_reader()
     waits briefly for the stderr reader thread to hit EOF, so output written just before the exit is still scanned.
-    on_text(text) -> True consumes a message (it is not printed)."""
+    on_text(text) -> True consumes a message (it is not printed). With grace > 0, PASS waits that many seconds after
+    the run is complete, still reading, so a failure line that follows the last expected one (an exception logged
+    after TURN 1) fails the run instead of being lost when the browser closes."""
     pending, deadline = list(expect), now() + timeout
     last = now()
+    passes_at = None
     end = [complete_what] if complete is not None else []
 
     def missing() -> str:
         return ", ".join(pending + [e for e in end if not complete()]) or "nothing"
 
     def look():
-        nonlocal pending, last
+        nonlocal pending, last, passes_at
         status, pending, texts = scan(drain(inbox), pending, fail)
         if texts:
             last = now()
@@ -510,8 +513,11 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
             print(f"FAIL: {texts[-1]}")
             return 1
         if status == "pass" and (complete is None or complete()):
-            print("PASS: saw " + ", ".join(list(expect) + end))
-            return 0
+            if passes_at is None:
+                passes_at = now() + grace
+            if now() >= passes_at:
+                print("PASS: saw " + ", ".join(list(expect) + end))
+                return 0
         return None
 
     while now() < deadline:
@@ -534,7 +540,28 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
     return 1
 
 
-def main() -> int:
+# Failure lines every --startscreen run adds to --fail, whatever --fail says (#908).
+START_SCREEN_FAILS = r"BOOT FAIL|Exception|RECORDING failed"
+# Seconds a scripted run keeps reading after it is complete, before PASS (watch's grace).
+DRIVER_GRACE = 3.0
+
+
+def run_plan(a, command):
+    """What a run drives and fails on: (driver or None, the failure regex, watch's keyword arguments). `command` is
+    Page.command."""
+    if a.persistence and a.startscreen:
+        raise ValueError("--persistence and --startscreen are separate runs")
+    if a.startscreen:
+        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he")
+        fail, what = f"(?:{a.fail})|{START_SCREEN_FAILS}", f"the end of the --startscreen {a.startscreen} run"
+    elif a.persistence:
+        driver, fail, what = PersistenceCheck(command), a.fail, "the end of the --persistence run"
+    else:
+        return None, re.compile(a.fail), {}
+    return driver, re.compile(fail), {"complete": lambda: driver.done, "complete_what": what, "grace": DRIVER_GRACE}
+
+
+def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("build", type=Path)
     ap.add_argument("--query", default="")
@@ -547,7 +574,11 @@ def main() -> int:
     ap.add_argument("--stall", type=float, default=0)
     ap.add_argument("--persistence", action="store_true")
     ap.add_argument("--startscreen", choices=["new", "recording"])
-    a = ap.parse_args()
+    return ap
+
+
+def main() -> int:
+    a = parser().parse_args()
     if not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
     server, proc, page, profile = None, None, None, tempfile.mkdtemp(prefix="web-check-")
@@ -581,24 +612,15 @@ def main() -> int:
             page = Page(profile, url, w, h, a.dpr)
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g} (expect res={res})")
-            if a.persistence and a.startscreen:
-                raise ValueError("--persistence and --startscreen are separate runs")
-            driver = PersistenceCheck(page.command) if a.persistence else None
-            what = "the end of the --persistence run"
-            fail = a.fail
-            if a.startscreen:
-                driver = StartScreenCheck(page.command, a.startscreen == "recording", query_value(a.query, "lang") == "he")
-                what = f"the end of the --startscreen {a.startscreen} run"
-                fail += r"|Exception|RECORDING failed"
+            driver, fail, plan = run_plan(a, page.command)
 
             def handle_text(text: str) -> bool:
                 consumed = on_text(text)
                 if driver is not None:
                     driver.feed(text)
                 return consumed
-            return watch(inbox, proc.poll, lambda: reader.join(2), list(a.expect), re.compile(fail), a.timeout,
-                         on_text=handle_text, stall=a.stall,
-                         complete=(lambda: driver.done) if driver is not None else None, complete_what=what)
+            return watch(inbox, proc.poll, lambda: reader.join(2), list(a.expect), fail, a.timeout,
+                         on_text=handle_text, stall=a.stall, **plan)
         except ValueError as e:
             print(f"FAIL: {e}")
             return 1
