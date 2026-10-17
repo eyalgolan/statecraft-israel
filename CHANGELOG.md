@@ -289,17 +289,17 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   sensitivity review (owner, 17 October 2026), so no token, spot or kit clearing changes. `UnitData` reads `strength`,
   `echelon` and the sides `ala` and `local_arab_forces` (Q-START-4). At the first truce the Egyptian row stands at
   both its forward base, Isdud, and its rear base, Majdal (owner, 17 October 2026, on #860). The rows are drafts.
-- The GDD loop's city and site panels (GDD Phase 1 PR 8, refs #381). On a city hex the info panel shows the housing,
-  jobs, refugees waiting and recruits, and each training cohort with its turns left, with an Assign stepper, Train
-  recruits and Train halutzim (where `Training.HasFacility` says the city has the camp or Hakhshara, a built camp site
+- The GDD loop's city and site panels (GDD Phase 1 PR 8, refs #381). On a city hex the info panel shows the housing
+  (`Cities.Housed`, R-HOUSE-003: civilians, recruits and groups in training) against capacity, the housing condition
+  (R-HOUSE-001), jobs, refugees waiting and recruits, and each training cohort with its turns left, with an Assign
+  stepper, Train recruits and Train halutzim (where `Training.HasFacility` says the city has the camp or Hakhshara, a built camp site
   included) and Cancel. On the designated site's hex it shows
   the site's state, Build with each idle pioneer group (halutz or veteran) at the rules' cost and that group's own turns,
   and Stop while it is built. Every number is the sim's, and every order goes through the queue. The limits come from
   new public sim helpers that the rules call too, so nothing is repeated in the UI: `Cities.MaxWorkers` (R-CITY-001),
   `Training.Idle` and `Training.Available` (R-TRAIN-001, counting both tracks' and the Assign order in the queue),
   `Projects.TurnsToBuild` (R-SITE-003, R-VET-002) and `Projects.IsYishuvSite`. They change no rule, so the goldens do not
-  move. A new `SiteLayer` draws a site being built as a timber scaffold and a built site as a rural kit on its hex. The
-  housing "condition" the issue lists is not in the sim yet.
+  move. A new `SiteLayer` draws a site being built as a timber scaffold and a built site as a rural kit on its hex.
 - A Settings screen, opened from a gear at the foot of the left column (refs #40, first slice). Its first option turns
   the tilt-shift blur off and on, at once; the choice is kept per browser in `/idbfs/statecraft-settings/settings.txt`
   (a fixed folder, as the autosave's), never in the sim or the save, so the goldens do not move. `?notiltshift` still

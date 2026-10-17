@@ -303,6 +303,7 @@ save.write_failed: "Your game could not be saved."
 # The info panel in the GDD loop (GddHexPanel, #381): a city's counts and orders, in population groups (D-A1), and the
 # designated site's state and Build/Stop. {0}, {1}: numbers from the sim (State.Cities, unit_types.yaml, rules.yaml mvp).
 city.housing: "Housing: {0} of {1}"
+city.housing_condition: "Housing: {0} of {1}, condition {2}"
 city.jobs: "Jobs: {0} of {1} filled"
 city.refugees: "Refugees waiting: {0}"
 city.recruits: "Recruits: {0}"

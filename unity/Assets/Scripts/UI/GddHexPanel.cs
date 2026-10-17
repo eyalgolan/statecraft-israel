@@ -48,7 +48,13 @@ namespace Statecraft.Game.UI
         static void City(VisualElement host, SimBridge bridge, UiText text, string id)
         {
             var c = bridge.Content; var s = bridge.State; var city = s.Cities[id];
-            Line(host, "city-housing", text.Format("city.housing", city.Civilians, Groups(text, city.HousingCapacity)));
+            // R-HOUSE-003: the housed are the civilians, the recruits and the groups in training (Cities.Housed), against the
+            // capacity; R-HOUSE-001: the city's housing condition, 0 to 1, through the one percent formatter, on the same line
+            // so the panel is no taller (the GDD loop always has a condition; the plain form is for a city without one).
+            var housed = Cities.Housed(s, city); var capacity = Groups(text, city.HousingCapacity);
+            Line(host, "city-housing", city.Condition is double condition
+                ? text.Format("city.housing_condition", housed, capacity, PlayerText.Percent(condition))
+                : text.Format("city.housing", housed, capacity));
             Line(host, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
             Line(host, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
             Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));

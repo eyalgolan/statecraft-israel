@@ -306,6 +306,7 @@ boot.reason_other: "קבצי המשחק לא נטענו"
 save.write_failed: "לא ניתן היה לשמור את המשחק."
 # The info panel in the GDD loop (GddHexPanel, #381); the GDD's Hebrew for Halutz (חלוץ) and Hakhshara (הכשרה).
 city.housing: "דיור: {0} מתוך {1}"
+city.housing_condition: "דיור: {0} מתוך {1}, מצב {2}"
 city.jobs: "משרות: {0} מתוך {1} מאוישות"
 city.refugees: "פליטים ממתינים: {0}"
 city.recruits: "מגויסים: {0}"
