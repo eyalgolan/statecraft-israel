@@ -1,4 +1,5 @@
-"""Slims the 31 non-building models of The 1948 Collection (MATKOT's Tripo models from PR #507, issue #664) into the files
+"""Slims the 31 non-building models of The 1948 Collection (MATKOT's Tripo models from PR #507, issue #664), and #507's
+nine whole-town models (issue #663; owner ruling of 17 October 2026: "The nine whole-town models ship"), into the files
 the game ships, so only reduced meshes and compressed colour maps enter the repository (owner, 15 October 2026: "Plain
 git, slimmed first"; no masters, no Git LFS).
 
@@ -11,7 +12,7 @@ The source is #507 at 3ef0a7a5a36887aee7a24fd11ddf722507695f3c:
 
 For each model it writes, into <out>/<id>/:
   <id>-far.fbx    the strategic zoom: one static mesh of at most FAR_TRIS triangles (FAR_TRIS_VEHICLE for vehicles, ships
-                  and aircraft), no rig, no animation (posed at the idle clip's first frame when the model has one);
+                  and aircraft, FAR_TRIS_TOWN for a whole town), no rig, no animation (posed at the idle clip's first frame when the model has one);
   <id>-near.fbx   the close zoom, at most NEAR_TRIS triangles: for a model with an "idle" clip, the skinned mesh, its rig
                   and that one clip sampled every ANIM_STEP frames (every other clip is dropped); for any other model one
                   static mesh (#507 has those stand still too);
@@ -38,6 +39,7 @@ import oss_policy  # noqa: E402  (stdlib only; the home, temp and session path p
 
 FAR_TRIS = 1500          # people and animals at the strategic zoom
 FAR_TRIS_VEHICLE = 4500  # hard-surface models lose their shape below this (the collapse stalls on the locomotive at ~4,150)
+FAR_TRIS_TOWN = 4500     # a whole town is drawn only at the overview zoom, where it is a landmark some dozens of pixels across
 NEAR_TRIS = 8000
 ANIM_STEP = 2.0
 TEX_PX = 512
@@ -61,7 +63,12 @@ ANIMALS = [
     "figure-donkey-1948-v1", "figure-draught-horse-idle-1948-v2", "figure-dromedary-camel-1948-v1",
     "figure-nubian-ibex-1948-v1", "figure-sheep-idle-1948-v1", "figure-striped-hyena-1948-v1",
 ]
-IDS = PEOPLE + VEHICLES + ANIMALS
+# The nine whole-town models of #507 (the same files as #336's), each one static mesh.
+TOWNS = [
+    "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+    "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+]
+IDS = PEOPLE + VEHICLES + ANIMALS + TOWNS
 
 
 def tris(mesh) -> int:
@@ -229,7 +236,7 @@ def slim(bpy, src: Path, out: Path, mid: str) -> dict:
 
     meshes, arms = load(bpy, fbx)   # the far mesh starts again from the full mesh
     far = join_static(bpy, meshes, arms, find_idle(bpy, arms))
-    decimate(bpy, far, FAR_TRIS_VEHICLE if mid in VEHICLES else FAR_TRIS)
+    decimate(bpy, far, FAR_TRIS_TOWN if mid in TOWNS else FAR_TRIS_VEHICLE if mid in VEHICLES else FAR_TRIS)
     far.name = mid
     report["far"] = f"{tris(far.data)}tris"
     export(bpy, dest / f"{mid}-far.fbx", src, [far], animated=False)
@@ -250,7 +257,7 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--src", required=True, type=Path)
     p.add_argument("--out", required=True, type=Path)
-    p.add_argument("ids", nargs="*", help="model ids (default: all 31)")
+    p.add_argument("ids", nargs="*", help="model ids (default: all 40)")
     a = p.parse_args(argv)
     import bpy
 

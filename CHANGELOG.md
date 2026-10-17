@@ -29,6 +29,14 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the two camp sites the owner chose (Q-CAMP-2, #785), both military camps and draft rows: Camp 80 near Pardes Hanna for
   Hadera, and Tzrifin for Rishon LeZion, the nearest of four cities one hex away by km (R-CAMP-002). The reference player builds them once every yishuv site is taken, so
   `hash1950`, `hash1952` and `mvp-end` move (docs/determinism.md).
+- MATKOT's nine whole-town models from #507 stand as overview landmarks beside their towns (refs #663, #336, #885;
+  owner, 17 October 2026: "The nine whole-town models ship"). They are slimmed by `tools/slim_collection.py` into a
+  fourth streamed bundle, `collection-towns`, and drawn about 6 km across from a 110 km view distance, so from the
+  120 km starting view out to the overview (owner on #917: "Larger, from 120 km"); at the gameplay and close zooms the
+  per-building kits draw. Each stands on free ground clear of every kit, route and other landmark (`TownLandmarks`).
+  The towns follow #507's own mapping. The ma'abara stands by a transit camp only from 23 May 1950 (Davar, via
+  `maabarot_policy`), and the shikun by a housing project from 11 December 1949 (owner on #917: "Use 11 Dec 1949", a
+  single-source date; the exact first project is a gap), so from the 15 December 1949 turn.
 - Event options can now move the national Food stock: `food` is an effect target in whole units, the loader
   validates it, and the sensitive-event no-gain rule covers it (R-EFX-001 and R-EFX-002; refs #729). The Arms
   target follows with its pool (#781).

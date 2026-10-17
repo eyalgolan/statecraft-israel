@@ -10,7 +10,9 @@ namespace Statecraft.Game.Map.Collection
     public enum CollectionDetail { Far, Near }
 
     /// <summary>The 31 non-building models of The 1948 Collection, made by MATKOT with Tripo Studio and
-    /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026). They are slimmed by
+    /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026), and #507's nine whole-town models (issue
+    /// #663; owner, 17 October 2026: "The nine whole-town models ship"), drawn as overview landmarks (<see cref="TownLandmarks"/>).
+    /// They are slimmed by
     /// tools/slim_collection.py and live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
     /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
     /// (<see cref="CollectionStream"/>), so the first download does not grow. A category is one bundle, so a placement
@@ -60,7 +62,8 @@ namespace Statecraft.Game.Map.Collection
             return string.Concat(sha.ComputeHash(f).Select(x => x.ToString("x2")));
         }
 
-        public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals";
+        public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals",
+            Towns = "collection-towns";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles = new (string, string[])[]
@@ -86,6 +89,12 @@ namespace Statecraft.Game.Map.Collection
             {
                 "figure-donkey-1948-v1", "figure-draught-horse-idle-1948-v2", "figure-dromedary-camel-1948-v1",
                 "figure-nubian-ibex-1948-v1", "figure-sheep-idle-1948-v1", "figure-striped-hyena-1948-v1",
+            }),
+            (Towns, new[]
+            {
+                // the nine whole-town models of #507, each one static mesh
+                "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+                "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
             }),
         };
 
