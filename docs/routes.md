@@ -4,6 +4,18 @@ The map draws the railways and main roads of 1948, each from its sourced date, a
 `02-map-diorama.png`, and the 0:21 close-up of `promo/demo/out/demo-16x9.mp4`). Civilian boats are out of scope (owner).
 On 2026-10-14 the owner reversed that for civilian boats ("Keep civilian boats"); they are map art in #536, not routes.
 
+## Relationship to location authoring
+
+The [Locations specification](locations.md) defines map-production priorities; [Corridors](gdd/corridors.md) keeps
+the required construction routes and their reference-date decisions. Optional additional work on a town or immigrant
+camp does not make a required station or route waypoint optional. The MVP railway uses its sourced alignment via
+Rosh HaAyin, not the later coastal line.
+
+The [Map editor](gdd/map-editor.md) must report dependencies when a location or corridor endpoint moves. Authored
+gameplay placement is separate from sourced waypoint coordinates and traced geometry. A marker move must not silently
+retrace a route, replace historical source evidence or break a sim corridor's hex bindings. Resolve the dependency in
+the appropriate authoring inputs, then regenerate and validate affected traces, segment bindings and baked outputs.
+
 ## Files
 
 | What | Where |

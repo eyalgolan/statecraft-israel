@@ -2,7 +2,8 @@
 
 Core systems and player choices
 Version 0.1 | 12 October 2026
-The owner's game design of record, verbatim from the original document ([GDD-v0.1.pdf](GDD-v0.1.pdf)). The owner's rulings of the same day are at the end. Where an older spec or ruling disagrees, this document wins (`AGENTS.md`).
+Map and location specifications updated 17 October 2026.
+The owner's game design of record, based on the original document ([GDD-v0.1.pdf](GDD-v0.1.pdf)) with the additions dated above. The owner's rulings of 12 October 2026 are at the end. Where an older spec or ruling disagrees, this document wins (`AGENTS.md`).
 
 ## MVP scope 1948 to 1951
 
@@ -92,6 +93,44 @@ Veteran roles are part of the roster, but their progression is not yet specified
 
 Open: does a unit represent one person or a group? The answer must determine how units occupy housing and jobs, produce income, consume food, train and suffer casualties.
 
+## Map and locations
+
+### Locations specification
+
+The MVP location roster, must-have and optional priorities, location-record requirements, historical placement rules and sources are defined in the [Locations specification](locations.md). Use that companion document when authoring named locations and their map data.
+
+### Terrain type (tile/hex type): TBD
+
+The terrain-type catalogue and the meaning of a tile/hex type are **TBD**. The existing map's elevation, biome and presentation data do not settle the new gameplay terrain catalogue. The approved biome-based movement and defence framework in [Military and combat](gdd/military-combat.md) remains in place; this section leaves the new type definitions, mapping and unresolved values open.
+
+| Terrain decision | Status |
+|---|---|
+| Available terrain/hex types, names and classification | TBD |
+| Which properties belong to a terrain type and which are separate hex attributes or overlays | TBD |
+| Movement-cost values and access rules for new types, within the approved movement framework | TBD |
+| Type-specific combat and defence values, farming and construction eligibility | TBD |
+| Whether projects change terrain type, and the permitted conversions | TBD |
+| Visual representation and the mapping from source geography to gameplay types | TBD |
+
+No terrain catalogue or numerical terrain modifiers are selected in this specification. Existing sourced map data is retained while these decisions remain open.
+
+### Map editor tool
+
+Provide an internal authoring tool that lets designers inspect and change tiles/hexes and move named locations by dragging or entering hex coordinates. It must support undo/redo, show unsaved changes, and save and reload version-controlled map data with consistent logical and rendered placement.
+
+The full requirements and acceptance workflow are in [Map editor](gdd/map-editor.md). Location identities, sourced reference coordinates, historical names, dates and review metadata remain attached to each location. Moving a location must identify affected designated sites and corridor endpoints without silently changing sourced route geometry. The saved authoring changes must survive map-data regeneration.
+
+The editor's host environment, authoring-data format and exact editable hex-property list are **TBD**. Terrain types remain TBD as above. Campaign movement and construction continue to follow the simulation rules.
+
+### Alignment with existing feature decisions
+
+The location roster sets map-production priorities. It does not remove existing supported places, create a city economy for every marker, or make every location a required capture or founding objective. The detailed city, founding, corridor, military and settlement-control decisions remain applicable.
+
+- Keep Tel Aviv and Jaffa as distinct map locations while retaining the approved combined Tel Aviv–Yafo city economy in [Cities and absorption](gdd/cities.md).
+- Keep the Rishon LeZion winery; Zichron Ya'akov's additional industry opportunity has no new balance values or automatic winery implementation.
+- Keep the Mefalsim founding slice and its objective. Historical founding and opening dates are reference dates; designated-site availability follows [Build yishuv](gdd/build-yishuv.md), allowing earlier player completion.
+- Use sourced history for starting and reference control, and simulation state for ownership during a campaign. The map roster does not select the curated settlement-control target list or introduce enemy reinforcements.
+
 ## Cities and construction
 
 | City attribute | Meaning | Open rule |
@@ -161,6 +200,9 @@ Designated building sites and transport corridors bound the locations and routes
 
 | Decision | Why it changes production |
 |---|---|
+| MVP locations and map scale | The must-have and optional location roster is specified in [locations.md](locations.md). Use the existing grid in [Map units](units.md); any required extent or resolution change and the handling of closely spaced locations remain open. |
+| Terrain type (tile/hex type) | TBD: catalogue, classification, visuals, mapping to the approved movement/defence framework, unresolved values, construction rules and terrain conversions. |
+| Map editor tool | See [Map editor](gdd/map-editor.md) for hex editing, location moves, undo/redo, save/reload, regeneration and reference validation. Host environment, authoring format and editable-property list remain TBD. |
 | Road and rail corridors | Routes follow designated corridors. Each corridor needs predefined route geometry and construction states. The corridor list, costs and duration remain open. |
 | Unit population scale | A person or a group changes unit count, housing and job assignment, selection, movement and casualty representation. |
 | Population role model | Changing one unit between jobs and training differs from separate worker pools. Decide reassignment and return to civilian life. |
