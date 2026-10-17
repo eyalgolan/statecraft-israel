@@ -133,6 +133,46 @@ public class TownLandmarksTests
         Assert.AreEqual(CameraController.MaxDistance, 250000f, "the overview is within the camera's reach");
     }
 
+    /// <summary>Owner, 18 October 2026: the models "seem to be on their side on the map". Every Collection Far prefab's root
+    /// carries the FBX axis conversion (-90 degrees about X; the .fbx.meta files have bakeAxisConversion 0), so a landmark
+    /// must keep the prefab's own rotation under its yaw: its rotation is the yaw times the prefab's, and its height on the
+    /// map is the model's own height (at the landmark's scale), not its length.</summary>
+    [Test]
+    public void EveryLandmarkStandsUprightAsItsModelDoes()
+    {
+        var map = OpenMap();
+        var c = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), c)!;
+        AnswerAll();
+        Assert.Greater(t.Placed.Count, 0);
+        var heights = new Dictionary<string, float>();
+        foreach (var (key, model, _) in t.Placed)
+        {
+            var prefab = Far(model);
+            var child = t.transform.Find(key);
+            Assert.IsNotNull(child, key);
+            var want = t.transform.rotation * Quaternion.Euler(0f, TownLandmarks.YawOf(model), 0f) * prefab.transform.localRotation;
+            Assert.Less(Quaternion.Angle(want, child!.rotation), 0.01f, $"{key} ({model}) keeps its prefab's rotation under its yaw");
+            if (!heights.TryGetValue(model, out var h))
+            {
+                // The model as its prefab stands (unparented, its own rotation): a yaw about the vertical keeps this height.
+                var probe = Object.Instantiate(prefab);
+                try { heights[model] = h = WorldBounds(probe).size.y / probe.transform.localScale.y; }
+                finally { Object.DestroyImmediate(probe); }
+            }
+            float scale = child.localScale.y;
+            Assert.AreEqual(h * scale, WorldBounds(child.gameObject).size.y, 0.01f * h * scale, $"{key} ({model}) is as tall as its model");
+        }
+    }
+
+    static Bounds WorldBounds(GameObject go)
+    {
+        var rs = go.GetComponentsInChildren<Renderer>(true);
+        var b = rs[0].bounds;
+        foreach (var r in rs) b.Encapsulate(r.bounds);
+        return b;
+    }
+
     [Test]
     public void ASpotIsTheFirstFreeOneAndNoneWhenAllAreTaken()
     {

@@ -42,6 +42,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- MATKOT's nine whole-town landmarks stand upright (refs #663, #917; owner, 18 October 2026: the models "seem to be on
+  their side on the map"). Every Collection Far prefab's root carries the FBX axis conversion (-90 degrees about X),
+  and `TownLandmarks` set the rotation to the yaw alone, which overwrote it; the yaw now goes on top of the prefab's own
+  rotation, as `RouteTrain` already does.
 - Under `?lang=he` the hex info panel names its towns and 1948 localities in Hebrew: the title, the "Settlements"
   line and the 1948 name in the localities line read the row's `name_he`, and the English name where a row has none
   (13 of 271 localities). Where the Hebrew 1948 and today names are one word (48 rows that would otherwise show

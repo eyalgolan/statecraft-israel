@@ -264,7 +264,10 @@ namespace Statecraft.Game.Map.Collection
                 taken.Add((at.Value, r));
                 var go = Instantiate(prefab!, transform, false);
                 go.name = w.Key;
-                go.transform.rotation = Quaternion.Euler(0f, YawOf(w.Model), 0f);
+                // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
+                // conversion (-90 degrees about X; bakeAxisConversion is off), and setting the yaw alone laid each model on its
+                // side (owner, 18 October 2026: the models "seem to be on their side on the map").
+                go.transform.localRotation = Quaternion.Euler(0f, YawOf(w.Model), 0f) * prefab!.transform.localRotation;
                 var bounds = Bounds(go);
                 float edge = Mathf.Max(bounds.size.x, bounds.size.z);
                 go.transform.localScale *= edge > 1e-3f ? SizeM / edge : 1f;
