@@ -36,11 +36,13 @@ public class LeftColumnTests
         ("nav-settings", "hud.nav.settings", "gear"),
     };
 
-    /// <summary>InfoPanelLayoutTests' 19 window sizes.</summary>
+    /// <summary>InfoPanelLayoutTests' 19 window sizes, and the smaller phones held upright the owner's floor reaches (#642,
+    /// "down to 375x667"): 360x800 and 375x667.</summary>
     static readonly (int w, int h)[] Windows =
     {
         (1920, 1080), (1280, 720), (1366, 768), (1760, 1000), (1920, 1200), (1440, 900), (1680, 1050), (1024, 768), (1280, 1024),
         (1024, 1024), (960, 1080), (800, 1000), (1531, 784), (2560, 1080), (1920, 900), (1600, 757), (1366, 657), (960, 600), (390, 844),
+        (360, 800), (375, 667),
     };
 
     static GameSession WithAnEventOpen()
@@ -163,33 +165,36 @@ public class LeftColumnTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>Review of #859 at fb2a8dc (WebGL): on a phone held upright, 390x844 and 360x800, with the turn-0 photo card open
-    /// (One Army, taller than WithAnEventOpen's card, which the test above uses), Cabinet, Budget and Defence stay clear of
-    /// the card, as on main, in English and Hebrew. Not pinned: Why? and Settings, under the photo card on main too (put to
-    /// the owner in that review), and turn 1's The First Truce, which the editor draws taller than WebGL does: here it cuts
-    /// Defence on main too.</summary>
+    /// <summary>Review of #859 at fb2a8dc (WebGL) and the owner's ruling there (17 October 2026): on a phone held upright,
+    /// 390x844, 360x800 and 375x667, with a photo card open (turn 0's One Army and turn 1's The First Truce, taller than
+    /// WithAnEventOpen's card, which the test above uses), no rail button sits under the card, Why? and Settings included
+    /// (they did on main), in English and Hebrew.</summary>
     [UnityTest]
-    public IEnumerator OnAPhoneThePhotoCardLeavesTheFirstThreeButtonsClear()
+    public IEnumerator OnAPhoneThePhotoCardLeavesTheRailClear()
     {
         var catalog = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
         Assert.IsNotNull(catalog, "precondition: the photo catalog");
         var problems = new List<string>();
-        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        CollectionAssert.AreEqual(new[] { "idf_founding" }, g.State.PendingEvents, "precondition: One Army at turn 0");
-        foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (390, 844), (360, 800) })
-                yield return Rendered(w, h, hebrew, g, (root, nav) =>
-                {
-                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
-                    if (!(root.Q("event-photo").worldBound.height > 0)) { problems.Add($"{at}: precondition: the card shows its photograph"); return; }
-                    var card = root.Q("event-card").worldBound;
-                    foreach (var name in new[] { "nav-cabinet", "nav-budget", "nav-defence" })
+        var turn0 = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        CollectionAssert.AreEqual(new[] { "idf_founding" }, turn0.State.PendingEvents, "precondition: One Army at turn 0");
+        var turn1 = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        turn1.Step(new Command[0]);
+        Assert.IsNotEmpty(turn1.State.PendingEvents, "precondition: an event at turn 1");
+        foreach (var (turn, g) in new[] { (0, turn0), (1, turn1) })
+            foreach (var hebrew in new[] { false, true })
+                foreach (var (w, h) in new[] { (390, 844), (360, 800), (375, 667) })
+                    yield return Rendered(w, h, hebrew, g, (root, nav) =>
                     {
-                        var b = root.Q(name).worldBound;
-                        TestContext.WriteLine($"{at}: {name} {b}, the card {card}");
-                        if (b.Overlaps(card)) problems.Add($"{at}: the card {card} cuts {name} {b}");
-                    }
-                }, photos: catalog);
+                        string at = $"{(hebrew ? "he" : "en")} {w}x{h} turn {turn} {g.State.PendingEvents[0]}";
+                        if (!(root.Q("event-photo").worldBound.height > 0)) { problems.Add($"{at}: precondition: the card shows its photograph"); return; }
+                        var card = root.Q("event-card").worldBound;
+                        foreach (var (name, _, _) in Rail)
+                        {
+                            var b = root.Q(name).worldBound;
+                            TestContext.WriteLine($"{at}: {name} {b}, the card {card}");
+                            if (b.Overlaps(card)) problems.Add($"{at}: the card {card} covers {name} {b}");
+                        }
+                    }, photos: catalog);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 

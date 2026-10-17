@@ -105,6 +105,14 @@ namespace Statecraft.Game.UI
         public const string RailName = "left-column";
         readonly HoverTip? railTips, barTips;
 
+        /// <summary>The panels under the bar (Statecraft.uss: top 456 px under the three-row bar), which PlaceUnderBar moves
+        /// down by what the three-row bar grows past its 440 px.</summary>
+        readonly List<VisualElement> underBar;
+        /// <summary>The bar's items, whose rows set the three-row bar's height (RowsHeight).</summary>
+        readonly List<VisualElement> barItems;
+        /// <summary>Statecraft.uss .hud-three-row .top-bar height.</summary>
+        const float ThreeRowBarPx = 440f;
+
         public HudPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
             this.root = root; this.bridge = bridge; this.text = text;
@@ -144,6 +152,10 @@ namespace Statecraft.Game.UI
             smallText = bar.Query<Label>(className: "meter-name").ToList();   // the seven captions and Security's level
             smallText.Add(root.Q<Label>("attention"));
             turnBox = bar.Q<VisualElement>(className: "turn-box");
+            underBar = new[] { "right-column", "left-column", "event-gutter", "event-layer", "screen", "toast" }
+                .SelectMany(c => root.Query(className: c).ToList()).ToList();
+            barItems = bar.Children().ToList();
+            foreach (var k in barItems) k.RegisterCallback<GeometryChangedEvent>(OnRowGeometry);   // a row grows inside the fixed bar
             dateRow = bar.Q<VisualElement>(className: "date-row");
             plateText = dateRow?.Query<Label>().ToList() ?? new List<Label>();
             dateRow?.parent?.RegisterCallback<GeometryChangedEvent>(OnPlateGeometry);   // a wider raised plate needs room in the bar
@@ -161,6 +173,9 @@ namespace Statecraft.Game.UI
             floorCheck.Pause();
             foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
             turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
+            foreach (var k in barItems) k.UnregisterCallback<GeometryChangedEvent>(OnRowGeometry);
+            foreach (var e in underBar) e.style.marginTop = StyleKeyword.Null;
+            bar.style.height = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
             if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
@@ -180,6 +195,9 @@ namespace Statecraft.Game.UI
         void OnPlateGeometry(GeometryChangedEvent e) { if (smallTextSize > SmallTextPx && e.oldRect.width != e.newRect.width) SetCompact(bar.layout.width); }
 
         void OnMeterGeometry(GeometryChangedEvent e) => UpdateRoomy();
+
+        // The rows' height does not depend on the bar's (RowsHeight), so this settles in one pass.
+        void OnRowGeometry(GeometryChangedEvent e) => PlaceUnderBar();
 
         /// <summary>Roomy only on the one-row bar with icons; see RoomyClass.</summary>
         void UpdateRoomy()
@@ -306,6 +324,38 @@ namespace Statecraft.Game.UI
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
         }
 
+        /// <summary>The three-row bar takes its rows' height when that is more than its 440 px (Statecraft.uss), so the raised
+        /// text of a smaller phone fits it (#642, the owner: "down to 375x667"), and the panels under it move down by what it
+        /// grew: a top margin, not a top, so the stylesheet's other placements (the toast at the bottom beside a wide screen)
+        /// still apply. Set here, not as height: auto in the stylesheet: there Yoga sized the wrapping bar as if each quarter-width
+        /// meter took a line of its own (about 1300 px). The bar's geometry event re-runs this (OnBarGeometry).</summary>
+        void PlaceUnderBar()
+        {
+            var rows = hudRoot.ClassListContains(ThreeRowClass) ? RowsHeight() : 0f;
+            var grown = rows - ThreeRowBarPx;
+            bar.style.height = grown > 0.5f ? new StyleLength(rows) : new StyleLength(StyleKeyword.Null);
+            var margin = grown > 0.5f ? new StyleLength(grown) : new StyleLength(StyleKeyword.Null);
+            foreach (var e in underBar) e.style.marginTop = margin;
+        }
+
+        /// <summary>The height the bar's rows take: each row's tallest item (its children laid out in the flow, grouped by the
+        /// rows they share), with the bar's padding and border. It does not depend on the bar's own height (the rows' spacing,
+        /// align-content, is not counted), so a bar set to it keeps it. NaN before layout.</summary>
+        float RowsHeight()
+        {
+            float total = 0f, top = float.NaN, bottom = float.NaN;
+            foreach (var k in bar.Children().Where(k => k.resolvedStyle.position == Position.Relative && k.resolvedStyle.display != DisplayStyle.None).OrderBy(k => k.layout.y))
+            {
+                float t = k.layout.y - k.resolvedStyle.marginTop, b = k.layout.yMax + k.resolvedStyle.marginBottom;
+                if (t < bottom) { top = UnityEngine.Mathf.Min(top, t); bottom = UnityEngine.Mathf.Max(bottom, b); continue; }   // the same row
+                if (bottom > top) total += bottom - top;
+                top = t; bottom = b;
+            }
+            if (bottom > top) total += bottom - top;
+            var s = bar.resolvedStyle;
+            return total + s.paddingTop + s.paddingBottom + s.borderTopWidth + s.borderBottomWidth;
+        }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         // The panel scales by the canvas's device pixels, so a screen pixel here is a CSS pixel: the device's pixels / the
         // browser's devicePixelRatio (DevicePixelRatio.jslib).
@@ -325,6 +375,7 @@ namespace Statecraft.Game.UI
             hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx);
             hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
             StyleSmallText(raised);
+            PlaceUnderBar();
             ScreenNav.DisableCovered(hudRoot);   // two rows or one: what an open screen covers changes with it (#400)
         }
 

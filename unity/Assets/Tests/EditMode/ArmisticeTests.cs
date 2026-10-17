@@ -295,7 +295,7 @@ public class ArmisticeTests
         Assert.IsNotNull(catalog, "precondition: the photo catalog");
         var pictured = new System.Collections.Generic.HashSet<string>(catalog.entries.Where(x => x.image != null).Select(x => x.eventId));
         foreach (var (w, h, photo) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
-                                         (960, 600), (1024, 768), (390, 844), (1600, 757),
+                                         (960, 600), (1024, 768), (390, 844), (375, 667), (1600, 757),
                                          // the two-row bar's shapes (#380's re-tier gives a square window two rows; review B1 of #831)
                                          (1024, 1024), (960, 1080), (800, 1000) }
                                      .Select(x => (x.Item1, x.Item2, false))
