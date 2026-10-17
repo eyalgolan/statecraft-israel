@@ -285,7 +285,26 @@ namespace Statecraft.Game.UI
         /// <summary>GDD Phase 1 PR 8 (#381): the built sites' pills (SiteLayer.Places), replacing the last ones given. Each is
         /// placed like a kibbutz's: after the game settlements and before the 1948 localities, against its kit's columns
         /// (SiteLayer.Columns) or, with none, its marker box, under the same declutter and clearance rules as every pill.</summary>
-        public void SetSites(IReadOnlyList<(Settlement place, Bounds[]? columns)> sites) { }   // RED-FIRST STUB (#381)
+        public void SetSites(IReadOnlyList<(Settlement place, Bounds[]? columns)> sites)
+        {
+            foreach (var it in siteItems) { it.Slot.RemoveFromHierarchy(); items.Remove(it); settlementOrder.Remove(it); }
+            siteItems.Clear();
+            var at = items.FindIndex(x => x.IsLocality);   // the sites go before the localities
+            if (at < 0) at = items.Count;
+            foreach (var (s, columns) in sites)
+            {
+                var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
+                slot.AddToClassList(SlotClass);
+                var label = new Label(s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                label.AddToClassList(LabelClass); label.AddToClassList("map-label-" + s.Type); label.AddToClassList(Centre);
+                slot.Add(label);
+                container.Insert(System.Math.Max(0, container.IndexOf(Tooltip)), slot);   // under the tooltip, as the others
+                var top = MarkerTop(map, s);
+                var it = new Item { Settlement = s, MarkerTop = top, Kit = columns ?? MarkerBox(s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label, First = Spot.AboveCentre };
+                items.Insert(at++, it); settlementOrder.Add(it); siteItems.Add(it);
+            }
+            geometryDirty = true;
+        }
 
         /// <summary>The built sites' pills (SetSites), in the order given.</summary>
         public IReadOnlyList<Label> SiteLabels { get { var l = new List<Label>(); foreach (var x in siteItems) l.Add(x.Label); return l; } }
