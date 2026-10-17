@@ -27,10 +27,15 @@ public class CameraInputTests
     {
         var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
         var map = asset.FindActionMap("Camera", true);
-        foreach (var name in new[] { "Pan", "DragPan", "Zoom", "Orbit" }) Assert.IsNotNull(map.FindAction(name), name);
+        foreach (var name in new[] { "Pan", "DragPan", "Zoom", "ZoomKeys", "Orbit" }) Assert.IsNotNull(map.FindAction(name), name);
         Assert.AreEqual(8, map.FindAction("Pan").bindings.Count(b => b.isPartOfComposite && b.path.StartsWith("<Keyboard>/")));
         Assert.AreEqual(3, map.FindAction("DragPan").bindings.Count);
         Assert.AreEqual(1, map.FindAction("Zoom").bindings.Count);
+        // a11y B1a: = and -, and the numpad's + and -, as two 1D composites; the wheel's Zoom keeps its one binding.
+        CollectionAssert.AreEquivalent(new[] { "<Keyboard>/equals", "<Keyboard>/minus", "<Keyboard>/numpadPlus", "<Keyboard>/numpadMinus" },
+            map.FindAction("ZoomKeys").bindings.Where(b => b.isPartOfComposite).Select(b => b.path).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "<Keyboard>/equals", "<Keyboard>/numpadPlus" },   // positive = in, as the wheel
+            map.FindAction("ZoomKeys").bindings.Where(b => b.isPartOfComposite && b.name == "positive").Select(b => b.path).ToArray());
         Assert.AreEqual(3, map.FindAction("Orbit").bindings.Count);
         var added = new System.Collections.Generic.List<InputDevice>();
         if (Keyboard.current == null) added.Add(InputSystem.AddDevice<Keyboard>());
@@ -107,6 +112,55 @@ public class CameraInputTests
             Assert.Greater(rig.LookAt.z, 500000f);
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>a11y B1a: the zoom keys move the camera as keyboard pan does, also while the pointer rests over a panel,
+    /// at ZoomKeysPerSecond wheel notches a second held, so the closest to the farthest zoom takes about six seconds.</summary>
+    [Test]
+    public void ZoomKeysWorkOverTheUiAtSixNotchesASecond()
+    {
+        var rig = NewRig();
+        try
+        {
+            CameraController.Step(rig, new CameraInput { KeyZoom = 1, OverUi = true }, 1f, Map);
+            Assert.AreEqual(100000f * Mathf.Pow(1f - CameraController.ZoomPerStep, CameraController.ZoomKeysPerSecond), rig.Distance, 1f);
+            CameraController.Step(rig, new CameraInput { KeyZoom = -1, OverUi = true }, 1f, Map);
+            Assert.AreEqual(100000f, rig.Distance, 1f, "a second out undoes a second in");
+            Assert.AreEqual(6f, CameraController.ZoomKeysPerSecond, "the plan's rate (B1a option 1)");
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    [Test]
+    public void TwoHalfSecondsOfZoomKeysEqualOneSecond()
+    {
+        var a = NewRig(); var b = NewRig();
+        try
+        {
+            var inp = new CameraInput { KeyZoom = 1 };
+            CameraController.Step(a, inp, 0.1f, Map);
+            CameraController.Step(b, inp, 0.05f, Map); CameraController.Step(b, inp, 0.05f, Map);
+            Assert.AreEqual(a.Distance, b.Distance, 1e-1);
+            Assert.Less(a.Distance, 100000f);
+        }
+        finally { Object.DestroyImmediate(a.gameObject); Object.DestroyImmediate(b.gameObject); }
+    }
+
+    /// <summary>a11y B1a: only an unmodified press zooms the map, so Ctrl or Cmd with + and - stays the browser's own page
+    /// zoom (and Alt combinations stay the system's). Shift is allowed: + is Shift and = on a US keyboard.</summary>
+    [Test]
+    public void ZoomKeysCountOnlyWithoutCtrlAltOrCmd()
+    {
+        var c = NewController(out var go);
+        try
+        {
+            Assert.AreEqual(1f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, 1f, false).KeyZoom);
+            Assert.AreEqual(-1f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, -1f, false).KeyZoom);
+            Assert.AreEqual(0f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, 1f, true).KeyZoom);
+            Assert.AreEqual(1f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, 2f, false).KeyZoom, "both composites held count once");
+            Assert.AreEqual(0f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null).KeyZoom, "no keys, no key zoom");
+        }
+        finally { Object.DestroyImmediate(go); }
     }
 
     [Test]
