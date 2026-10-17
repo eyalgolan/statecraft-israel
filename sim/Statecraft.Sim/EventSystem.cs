@@ -15,7 +15,7 @@ namespace Statecraft.Sim
         /// <summary>Fires every unfired event whose `requires` (if any) is met, whose window [From, To) overlaps the turn just played,
         /// [<paramref name="turnStart"/>, s.Date), or contains s.Date; <paramref name="turnStart"/> defaults to s.Date
         /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
-        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (From, then id). The fired
+        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (consequence cards first, R-ALT-008, then From, then id). The fired
         /// events keep the usual order.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
         /// conditions are evaluated at the end of the turn, and its text is filled at the last in-window day
@@ -31,8 +31,8 @@ namespace Statecraft.Sim
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
-                // R-ALT-008: a road the player took is not crowded out of its window. With no consequence card eligible every key
-                // is equal and OrderBy is stable, so the order is the From-then-id order of before.
+                // R-ALT-008: a road the player took is not crowded out of its window. With no consequence card eligible the first
+                // key is the same for every event, and (From, id) is a total order (ids are unique), so the order is as before.
                 .OrderBy(e => e.Kind == EventKinds.Consequence ? 0 : 1).ThenBy(e => e.From).ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
             var hardCount = eligible.Count(e => e.Anchor == "hard");

@@ -141,7 +141,8 @@ The loader refuses a consequence card that:
 - follows a road nobody is recorded proposing (the Ferguson test, R-ALT-006, owner's answer Q-ALT-3): the option it
   follows must have `alternative.basis` `proposed` or `debated`. With `diverged: true`, every option that did not
   happen must;
-- does not carry each sensitive tag of the event it follows (R-ALT-007). The no-gain rule then covers it too;
+- does not carry each sensitive tag of every event it requires (R-ALT-007). The no-gain rule then covers it too;
+- has an `objective`, or is required by an event that is not itself a consequence card;
 - lies more than 2 cards deep from the record (`EventRules.MaxConsequenceDepth`, a design value, Q-ALT-5).
 
 Consequence cards take a turn's soft slots before the other soft events (R-ALT-008). They never fire in the historical
@@ -337,6 +338,8 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `which nobody is recorded proposing` | The road it follows has `basis: design`, or no record (R-ALT-006). |
 | `must carry '` | A consequence card lacks a sensitive tag of the event it follows (R-ALT-007). |
 | `cards deep; the most is` | A chain of consequence cards longer than `EventRules.MaxConsequenceDepth`, 2 (Q-ALT-5). |
+| `only a consequence card may follow a consequence card` | A historical event requires a consequence card. |
+| `a consequence card is not an objective's card` | A consequence card has `objective:`. |
 | `must be historical, consequence or reconvergence` | `kind` is another word. |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 

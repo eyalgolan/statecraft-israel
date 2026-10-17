@@ -208,7 +208,17 @@ namespace Statecraft.Sim
                 string F(string field) => $"events[{e.Id}].{field}";
                 if (e.Kind != EventKinds.Historical && e.Kind != EventKinds.Consequence && e.Kind != EventKinds.Reconvergence)
                     throw new ContentException(e.File, F("kind"), $"'{e.Kind}' must be historical, consequence or reconvergence");
-                if (e.Kind != EventKinds.Consequence) continue;
+                if (e.Kind != EventKinds.Consequence)
+                {
+                    // Only a consequence card may follow one: the record never raises a consequence card, and a historical
+                    // event in the middle of a chain would reset the depth cap.
+                    for (int i = 0; i < e.Requires.Count; i++)
+                        if (byId[e.Requires[i].Event].Kind == EventKinds.Consequence)
+                            throw new ContentException(e.File, F($"requires[{i}]"), $"only a consequence card may follow a consequence card ('{e.Requires[i].Event}')");
+                    // kind: reconvergence carries no rule of its own until its variants arrive (#952).
+                    continue;
+                }
+                if (e.Objective != "") throw new ContentException(e.File, F("objective"), "a consequence card is not an objective's card");
                 if (e.Anchor == "hard") throw new ContentException(e.File, F("anchor"), "a consequence card is soft: it exists only on a road not taken");
                 if (e.Options.Any(o => o.Historical)) throw new ContentException(e.File, F("options"), "a consequence card has no historical option");
                 if (!e.Requires.Any(r => IsAlternativeRoad(c, r)))
@@ -219,17 +229,17 @@ namespace Statecraft.Sim
                 for (int i = 0; i < e.Requires.Count; i++)
                 {
                     var r = e.Requires[i];
-                    if (!IsAlternativeRoad(c, r)) continue;
                     var parent = byId[r.Event];
+                    // R-ALT-007: the card carries the sensitive tags of every event it requires, so the no-gain rule covers it.
+                    foreach (var tag in parent.Tags.Where(SensitiveTags.Contains).OrderBy(t => t, StringComparer.OrdinalIgnoreCase))
+                        if (!e.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+                            throw new ContentException(e.File, F("tags"), $"must carry '{tag}', as '{parent.Id}' does");
+                    if (!IsAlternativeRoad(c, r)) continue;
                     // R-ALT-006, the Ferguson gate (Q-ALT-3 (a)): the road must be one contemporaries are recorded proposing or debating.
                     var roads = r.Diverged ? parent.Options.Where(o => !o.Historical) : parent.Options.Where(o => o.Id == r.Option);
                     var unrecorded = roads.FirstOrDefault(o => o.Alternative == null || !o.Alternative.IsConsidered);
                     if (unrecorded != null)
                         throw new ContentException(e.File, F($"requires[{i}]"), $"follows '{parent.Id}/{unrecorded.Id}', which nobody is recorded proposing ({(unrecorded.Alternative == null ? "no alternative record" : "basis: design")})");
-                    // R-ALT-007: a card on a sensitive road carries the road's sensitive tags, so the no-gain rule covers it.
-                    foreach (var tag in parent.Tags.Where(SensitiveTags.Contains).OrderBy(t => t, StringComparer.OrdinalIgnoreCase))
-                        if (!e.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
-                            throw new ContentException(e.File, F("tags"), $"must carry '{tag}', as '{parent.Id}' does");
                 }
                 if (Depth(e) > MaxConsequenceDepth)
                     throw new ContentException(e.File, F("requires"), FormattableString.Invariant($"this road runs {Depth(e)} cards deep; the most is {MaxConsequenceDepth} (Q-ALT-5)"));

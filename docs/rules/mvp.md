@@ -186,11 +186,11 @@ R-ALT-002: An entry `{ event, diverged: true }` holds when that event was resolv
 
 R-ALT-003: A non-historical option may carry `alternative: { basis, by, date, sources }`. `basis` is `proposed` or `debated` (a body or office, in words, is recorded putting it forward on that date; at least one https source with a checked date) or `design` (nobody is recorded proposing it: a design assumption, which names nobody and no date; sources optional). The historical option carries none.
 
-R-ALT-005: An event of `kind: consequence` is soft, has no historical option, has at least one requirement naming a road not taken (`diverged: true`, a non-historical option, or an option of another consequence card), carries an `alternative` record on every option, and lies at most 2 cards deep from the record (`EventRules.MaxConsequenceDepth`, a labelled design value, Q-ALT-5).
+R-ALT-005: An event of `kind: consequence` is soft, has no historical option, has at least one requirement naming a road not taken (`diverged: true`, a non-historical option, or an option of another consequence card), carries an `alternative` record on every option, and lies at most 2 cards deep from the record (`EventRules.MaxConsequenceDepth`, a labelled design value, Q-ALT-5). It is never an objective's card, and only a consequence card may require one.
 
 R-ALT-006: A consequence card may follow only an option whose `alternative.basis` is `proposed` or `debated`; with `diverged: true`, every non-historical option of that event must be (the Ferguson test, Q-ALT-3).
 
-R-ALT-007: A consequence card carries every sensitive tag (case aside) of each event whose road it follows, so the no-gain rule (R-EFX-002, R-EFX-005) covers it.
+R-ALT-007: A consequence card carries every sensitive tag (case aside) of each event it requires, so the no-gain rule (R-EFX-002, R-EFX-005) covers it.
 
 R-ALT-008: Consequence cards take a turn's soft slots before the other soft events, then by `from` and id (Q-ALT-14). A `front_quiet` armistice (Q-EVT-1, Phase 5 PR 13) will come before them. With no consequence card eligible the order is unchanged.
 

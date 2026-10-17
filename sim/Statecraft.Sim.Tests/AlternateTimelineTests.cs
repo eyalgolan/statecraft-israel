@@ -299,6 +299,50 @@ options:
         Assert.Equal(new[] { "a1", "a2", "a3" }, s.PendingEvents);
     }
 
+    // R-ALT-005 (review): only a consequence card may follow a consequence card, so a historical event never waits on a
+    // card the record never raises, and the depth cap cannot be reset by a historical event in the middle of a chain.
+    [Fact]
+    public void OnlyAConsequenceCardFollowsAConsequenceCard()
+    {
+        var historical = "id: later\ntitle: Later\ntext: x\nfrom: 1948-09-01\nrequires: [{ event: after_road, option: hold }]\noptions:\n  - id: ok\n    text: Ok\n";
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("after_road.yaml", Consequence), ("later.yaml", historical)));
+        Assert.Equal("events/later.yaml", ex.File);
+        Assert.Equal("events[later].requires[0]", ex.Field);
+        Assert.Contains("only a consequence card may follow a consequence card", ex.Message);
+    }
+
+    // R-ALT-006: with diverged: true, every option that did not happen must be proposed or debated, not only the first.
+    [Fact]
+    public void DivergedNeedsEveryAlternativeConsidered()
+    {
+        var two = Parent + "  - id: other_road\n    text: Another road\n    alternative: { basis: design }\n";
+        Load(("parent.yaml", two), ("after_road.yaml", Consequence));   // following the considered road alone is fine
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", two), ("after_road.yaml", Consequence.Replace("option: road", "diverged: true"))));
+        Assert.Contains("follows 'parent/other_road', which nobody is recorded proposing (basis: design)", ex.Message);
+    }
+
+    // R-ALT-007 (review): the tags come from every event the card requires, not only the road it follows, so a card shown
+    // after a sensitive event can never reward.
+    [Fact]
+    public void AConsequenceCarriesTheTagsOfEveryEventItRequires()
+    {
+        var sens = "id: sens\ntitle: Sens\ntext: x\nfrom: 1948-06-01\ntags: [Massacre]\noptions:\n  - id: rec\n    text: Rec\n    historical: true\n";
+        var both = Consequence.Replace("requires: [{ event: parent, option: road }]", "requires: [{ event: parent, option: road }, { event: sens, option: rec }]");
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("sens.yaml", sens), ("after_road.yaml", both)));
+        Assert.Equal("events[after_road].tags", ex.Field);
+        Assert.Contains("must carry 'Massacre', as 'sens' does", ex.Message);
+        Load(("parent.yaml", Parent), ("sens.yaml", sens), ("after_road.yaml", both.Replace("kind: consequence\n", "kind: consequence\ntags: [massacre]\n")));   // case aside
+    }
+
+    // R-ALT-005 (review): an objective's completion card is the record of a completed objective, never a road not taken.
+    [Fact]
+    public void AConsequenceCardIsNoObjectivesCard()
+    {
+        var ex = LoadError(Consequence.Replace("kind: consequence\n", "kind: consequence\nobjective: anything\n"));
+        Assert.Equal("events[after_road].objective", ex.Field);
+        Assert.Contains("a consequence card is not an objective's card", ex.Message);
+    }
+
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
     // R-ALT-012

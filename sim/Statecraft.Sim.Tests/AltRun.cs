@@ -16,6 +16,11 @@ public static class AltRun
                 .Select(o => o is ChooseEventOption ch && forced.TryGetValue(ch.EventId, out var opt) ? new ChooseEventOption(ch.EventId, opt) : o)
                 .ToList();
             s = Simulation.Step(c, s, orders).State;
+            // A forced choice goes only through an order the reference player sends; if Attention ran short and a minister
+            // answered instead, the run is not the road it claims to be, so it says so.
+            foreach (var kv in forced)
+                if (s.ChosenOptions.TryGetValue(kv.Key, out var got) && got != kv.Value)
+                    throw new System.InvalidOperationException($"AltRun: {kv.Key} was answered {got}, not the forced {kv.Value}");
             run.Add(s);
         }
         return run;
