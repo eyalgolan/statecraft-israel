@@ -8,6 +8,8 @@ As a player of the MVP, I want to send a group of halutzim to build a new yishuv
 
 - Building is allowed only at designated sites, listed with their sources in `content/sites.yaml`. The slice has one: Mefalsim, founded on 12 June 1949, the day of the ceremony of going onto the land [S4][S5]. The owner chose it on #378 [S3].
 - A site is available from the game's start. It may sit on an armistice line hex, as Mefalsim's hex does [S3].
+- The map roster supplements this slice: Kiryat Shmona and Beit Shemesh need designated founding-site representation, but do not replace Mefalsim or its objective. Historical founding and opening dates in the roster are reference dates, not new automatic availability gates [S6].
+- Moving a location in the authoring tool must preserve its identity and reference evidence, update the authored site binding consistently, and surface dependent references before saving [S6][S7].
 - `PioneerWork(unit, build_yishuv, site)` sends an idle halutz unit to build. It costs IL 2m, a placeholder paid in full at once, borrowing what the Treasury lacks (owner decision on #378 [S3]), and no Attention, because unit orders are free (D-A6). The unit works from where it stands (R-SITE-001).
 - It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), or the legacy loop (R-SITE-001).
 - `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
@@ -37,6 +39,8 @@ As a player of the MVP, I want to send a group of halutzim to build a new yishuv
 - [S3] GDD Phase 1 plan for PR 5 and the owner's decisions, https://github.com/eyalgolan/statecraft-israel/issues/378, checked 2026-10-14
 - [S4] Haim Gvati, 100 Years of Settlement, vol. 2, list of all Jewish rural settlements, https://benyehuda.org/read/14684, checked 2026-10-14
 - [S5] Yad Ben-Zvi, "Israel Revealed to the Eye", Kibbutz Mefalsim, https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%9E%D7%A4%D7%9C%D7%A1%D7%99%D7%9D/, checked 2026-10-14
+- [S6] MVP location roster and historical-reference versus site-availability rules, docs/locations.md
+- [S7] Internal map-authoring workflow, docs/gdd/map-editor.md
 
 ## Open questions
 
