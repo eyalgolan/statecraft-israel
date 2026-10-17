@@ -250,3 +250,47 @@ def test_watch_names_the_unfinished_persistence_run(capsys):
                   sleep=lambda s: t.__setitem__(0, t[0] + 1), complete=lambda: False)
     assert rc == 1
     assert "TIMEOUT: never saw the end of the --persistence run" in capsys.readouterr().out
+
+
+def _clicks(*points):
+    return [f"click:{x},{y}" for x, y in points]
+
+
+def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(capsys):
+    actions = []
+    check = wc.StartScreenCheck(actions.append, recording=False, hebrew=False, settle=lambda s: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    assert actions == _clicks(wc.NEW_GAME, wc.END_TURN)
+    assert not check.done
+    check.feed("TURN 1 1948-06-15 hash bb")
+    assert check.done
+    assert "START SCREEN OK New game reached the map: TURN 1" in capsys.readouterr().out
+
+
+def test_start_screen_check_plays_the_recording_first_and_waits_for_it_hebrew_layout():
+    actions = []
+    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=True, settle=lambda s: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    assert actions == _clicks(wc.PLAY_RECORDING_HE)
+    check.feed("TURN 1 1948-06-15 hash bb")            # no New game before the recording plays
+    assert actions == _clicks(wc.PLAY_RECORDING_HE) and not check.done
+    check.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
+    assert actions == _clicks(wc.PLAY_RECORDING_HE, wc.NEW_GAME, wc.END_TURN_HE)
+    check.feed("TURN 1 1948-06-15 hash bb")
+    assert check.done
+
+
+def test_start_screen_check_fails_on_a_saved_game_or_a_wrong_turn():
+    with pytest.raises(ValueError, match="START SCREEN FAIL the first boot is turn 3"):
+        wc.StartScreenCheck(lambda a: None, False, False, lambda s: None).feed("GAME OK 1948-08-15 turn 3 hash aa")
+    check = wc.StartScreenCheck(lambda a: None, False, False, lambda s: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    with pytest.raises(ValueError, match="START SCREEN FAIL End turn after New game logged turn 2"):
+        check.feed("TURN 2 1948-07-15 hash cc")
+    assert not check.done
+
+
+def test_query_value():
+    assert wc.query_value("lang=he&smoke", "lang") == "he"
+    assert wc.query_value("smoke", "lang") is None
+    assert wc.query_value("", "lang") is None
