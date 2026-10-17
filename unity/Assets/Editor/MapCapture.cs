@@ -207,14 +207,90 @@ public static class MapCapture
         finally { QualitySettings.SetQualityLevel(saved, true); }
     }
 
-    /// <summary>The units in play as a new game starts (golden seed, historical mode): what the player draws on turn 1, or, with
-    /// -unitsDate, on that day.</summary>
-    static void ShowStartUnits(MapScene map)
+    /// <summary>The scripted trailer capture (issue #45): flies the camera through TrailerShot.Default and renders every frame
+    /// at 1920x1080 on the desktop tier (PC) into &lt;-captureDir&gt; (default captures/trailer) as frame-NNNNN.png, one numbered
+    /// sequence across the shots, with the water's clock pinned to the frame's time so a re-run gives the same camera, state
+    /// and water on every frame (the pixels too, but for the unit badges' glyphs at the whole-country zoom; see
+    /// docs/RELEASING.md "Capturing trailer footage"). The map as a new game starts: the 1948 sub-districts and the units on
+    /// turn 1 of a historical game started with -seed (default the golden seed; turn 1's units do not depend on it today,
+    /// but the seed is what makes a later game moment repeatable). PNG frames, not video: a frame is written only once it is
+    /// rendered, so a slow software renderer gives the same footage, and ffmpeg encodes them. trailer.txt beside them
+    /// records the commit, seed and settings. Editor renders draw no UI Toolkit, so this is the map only.</summary>
+    public static void Trailer()
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        string Arg(string name) { int i = System.Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
+        var dir = Arg("-captureDir") ?? Path.Combine(CaptureDir, "trailer");
+        var seed = Arg("-seed") is string s ? ulong.Parse(s, System.Globalization.CultureInfo.InvariantCulture) : Statecraft.Sim.GoldenRun.Seed;
+        int tier = System.Array.IndexOf(QualitySettings.names, "PC");
+        if (tier < 0) throw new System.InvalidOperationException("no PC quality level: the trailer is captured on the desktop tier");
+        var map = OpenAndBuild();
+        ShowStartUnits(map, seed);
+        var subdistricts = Subdistricts1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName)));
+        new MapRegions(subdistricts, Armistice1949.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Armistice1949.FileName))))
+            .Apply(subdistricts.ShownFrom);
+        // Frames left from an earlier, longer run would end up in the encode (ffmpeg reads frame-%05d.png until a gap).
+        Directory.CreateDirectory(dir);
+        foreach (var old in Directory.GetFiles(dir, "frame-*.png")) File.Delete(old);
+        var rig = Camera.main.GetComponent<CameraRig>();
+        rig.TopInset = 0;
+        int saved = QualitySettings.GetQualityLevel(), frame = 0;
+        var shots = new System.Text.StringBuilder();
+        try
+        {
+            QualitySettings.SetQualityLevel(tier, true);
+            foreach (var shot in TrailerShot.Default)
+            {
+                shots.AppendLine($"shot {shot.Name}: {shot.From.Name} -> {shot.To.Name}, frames {frame}-{frame + shot.Frames - 1}");
+                for (int i = 0; i < shot.Frames; i++, frame++)
+                {
+                    shot.PoseAt(i).Apply(rig, map.Frame);
+                    MapShaderGlobals.PinWaterTime(100f + frame / (float)TrailerShot.Fps);
+                    Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(Camera.main.transform.position);
+                    foreach (var layer in Object.FindObjectsByType<Statecraft.Game.Map.Units.UnitLayer>(FindObjectsSortMode.None)) layer.FaceCamera(Camera.main);
+                    Save(Camera.main, 1920, 1080, Path.Combine(dir, $"frame-{frame:D5}.png"));
+                }
+            }
+        }
+        finally { MapShaderGlobals.PinWaterTime(null); QualitySettings.SetQualityLevel(saved, true); }
+        File.WriteAllText(Path.Combine(dir, "trailer.txt"),
+            $"commit: {Commit()}\nunity: {Application.unityVersion}\nseed: {seed}\nsize: 1920x1080\nfps: {TrailerShot.Fps}\n" +
+            $"tier: PC\nframes: {frame}\n{shots}");
+        Debug.Log($"TRAILER {frame} frames in {dir}");
+    }
+
+    /// <summary>The checked-out commit for trailer.txt, "-dirty" when the tree has uncommitted changes (they are in the frames
+    /// but not in the commit), or "unknown" when git cannot say.</summary>
+    static string Commit()
+    {
+        var sha = Git("rev-parse HEAD");
+        if (sha == null || sha.Length == 0) return "unknown";
+        var status = Git("status --porcelain");
+        return status == null ? sha + "-unknown-status" : status.Length > 0 ? sha + "-dirty" : sha;
+    }
+
+    /// <summary>git's trimmed output in the repo root, or null when git is missing or fails.</summary>
+    static string Git(string arguments)
+    {
+        try
+        {
+            using var git = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("git", arguments)
+                { WorkingDirectory = Paths.RepoRoot, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false });
+            if (git == null) return null;
+            var output = git.StandardOutput.ReadToEnd().Trim(); git.StandardError.ReadToEnd(); git.WaitForExit();
+            return git.ExitCode == 0 ? output : null;
+        }
+        catch (System.Exception e) when (e is System.ComponentModel.Win32Exception || e is System.InvalidOperationException) { return null; }
+    }
+
+    /// <summary>The units in play as a new game starts (golden seed unless the trailer passes its -seed, historical mode): what
+    /// the player draws on turn 1, or, with -unitsDate, on that day.</summary>
+    static void ShowStartUnits(MapScene map, ulong seed = Statecraft.Sim.GoldenRun.Seed)
     {
         var content = Statecraft.Sim.ContentLoader.Load(Paths.Content);
         var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
         var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, units, content.Hexes, still: true);
-        var state = Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical);
+        var state = Statecraft.Sim.Simulation.NewGame(content, seed, Statecraft.Sim.Mode.Historical);
         // -unitsDate YYYY-MM-DD: the units as on that day (a render of a unit outside the first turn; the sim never sees it).
         var args = System.Environment.GetCommandLineArgs();
         int at = System.Array.IndexOf(args, "-unitsDate");

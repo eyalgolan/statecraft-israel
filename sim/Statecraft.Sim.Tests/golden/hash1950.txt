@@ -41,7 +41,7 @@ pop{
   veterans=667938.2378207468 [4124624479C3A414]
 sit[
 treasury=0 [0000000000000000]
-debt=68.95239590417494 [40513CF40DF351A5]
+debt=71.50032828298673 [4051E00560EB2C47]
 fx=94.52989672613671 [4057A1E9D3F540F0]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -100,14 +100,25 @@ map[
 mapturn=0001-01-01:0;
 over=
 city{
-  tel_aviv=120,90,120,90,327
-coh=0.5148601398601399 [3FE079BBF8D6D33F]
+  hadera=12,5,12,5,0
+  haifa=99,42,99,42,0
+  jerusalem=84,29,84,29,0
+  netanya=12,5,12,5,0
+  petah_tikva=22,10,22,10,0
+  rehovot=13,5,13,5,0
+  rishon_lezion=10,5,10,5,0
+  rosh_pinna=1,0,1,0,0
+  safed=2,1,2,1,0
+  tel_aviv=248,106,248,106,347
+  tiberias=6,2,6,2,0
+  zikhron_yaakov=2,1,2,1,0
+coh=0.5106245923026744 [3FE05709628F2570]
 units[
   1:halutz@-3,19
 site{
-  mefalsim=done,1949-06-15
+  mefalsim=done,1949-03-15
 next=2
 obj{
-  first_new_yishuv=1949-06-15
-score=100
+  first_new_yishuv=1949-03-15
+score=115
 food=3003,1001,0

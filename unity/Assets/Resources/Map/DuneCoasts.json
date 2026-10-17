@@ -1,0 +1,8 @@
+{
+  "note": "The dune coasts (#388, #690): the sand coasts where the beach and the surf are wide. The one definition: tools/terrain_bake.py bakes the wider beach into coast.png from it, Kits/BeachBands.cs reads it through DuneCoasts.cs for the trees and lots, and MapShaderGlobals hands it to the water pass for the wider surf. Each band is a lon/lat box whose weight ramps from 0 to 1 over `ramp` degrees inside each edge.",
+  "bands": [
+    { "name": "Jaffa south to the map's southern coast", "lon0": 34.0, "lon1": 34.86, "lat0": 31.0, "lat1": 32.07, "ramp": 0.04 },
+    { "name": "Haifa Bay", "lon0": 35.02, "lon1": 35.2, "lat0": 32.77, "lat1": 32.91, "ramp": 0.02,
+      "source": "From the Kishon's mouth to the Na'aman's, at 32.909 N 35.081 E (he.wikipedia, \"נחל נעמן\", retrieved 2026-10-16), south of Acre (owner, 16 October 2026: Acre was not dune country)" }
+  ]
+}

@@ -77,7 +77,7 @@ public class RoutePathsRuntimeTests
         points[0] = lon.ToString("R", CultureInfo.InvariantCulture) + " " + first[1];
         c[10] = string.Join(";", points); lines[at] = string.Join("\t", c);
         int end = lines.FindIndex(l => l.StartsWith("meta\tbody_check\t"));
-        lines[end] = "meta\tbody_check\t" + RoutePaths.BodyCheck(lines.Where(l => l.StartsWith("route\t"))).ToString(CultureInfo.InvariantCulture);
+        lines[end] = "meta\tbody_check\t" + RoutePaths.BodyCheck(lines.Where(l => l.StartsWith("route\t") || l.StartsWith("service\t"))).ToString(CultureInfo.InvariantCulture);   // #668: the service rows too
         inputs.RoutesTsv = string.Join("\n", lines);
 
         var fallbacks = new List<string>();

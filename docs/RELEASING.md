@@ -19,9 +19,9 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-brotli --query "golden&smoke=5" \
-     --expect "GOLDEN OK 1950 ca953c983faa2a85216efdf264bf1da9167c9787a06d21a73c76717dfab0f8b4" \
-     --expect "GOLDEN OK 1952 b42380ab7935e4daabd0577fa3df231c474f3ad92f6006af0a05918a46743915" \
-     --expect "SMOKE OK 5 turns 1948-10-15 848969ce7236d5fb4b8af33c2e6a8445d0a437a002b93cb076d54450c3d79e0a"
+     --expect "GOLDEN OK 1950 ea730229392c12e007cdf30aa8b19e4668bcd1dfdbda0735dd8d7612301d5144" \
+     --expect "GOLDEN OK 1952 ca887e45cd413a41d4368c604caa37c3c0e19022195ac614001f7bfc507489ca" \
+     --expect "SMOKE OK 5 turns 1948-10-15 4104103f4e52fe4159f7b8d6acab9d2b651cd3c124952cfa74ebfd7333718ad5"
    bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
 
@@ -137,6 +137,47 @@ give a new image an `ASSETS.yaml` row, change `CONCEPT`, `CLIP` or `GRID` in `te
 and land it as a normal pull request. Whether a real build screenshot later replaces the concept art in "What is
 this?" is not decided.
 
+## Capturing trailer footage (issue #45)
+
+The trailer's map shots come from the real build: the editor renders the map frame by frame, so a capture can be run
+again and gives the same camera, state and water on every frame. The pixels match too, except the unit badges' glyphs
+at the whole-country zoom: two runs on the build server differed only there (1,288 of 6.2 million bytes per frame;
+the 60 km frames were byte-identical), where a glyph and its plate draw at almost the same depth. Build the sim DLLs
+first (`python3 tools/build_sim_for_unity.py`), run Unity with graphics (not `-nographics`; on Linux under
+`xvfb-run -a`), then encode the frames with ffmpeg:
+
+```sh
+"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity \
+  -executeMethod MapCapture.Trailer -captureDir "$PWD/captures/<name>" [-seed 1948] -logFile "$PWD/unity-trailer.log"
+ffmpeg -framerate 60 -i captures/<name>/frame-%05d.png -vf scale=out_color_matrix=bt709 \
+  -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
+  -movflags +faststart captures/<name>/trailer-map.mp4
+```
+
+Give `-captureDir` an absolute path (a relative one resolves against Unity's working directory) under the ignored
+`captures/` or outside the repo: frames anywhere else in the tree would mark the recorded commit `-dirty`. The capture
+deletes any `frame-*.png` already in it first, so an older, longer run cannot leak into the encode.
+
+- **What it renders:** the camera moves in `TrailerShot.Default` (`unity/Assets/Scripts/Map/TrailerShot.cs`), built only
+  from the promo poses the art checkpoint already compares (`PromoPose`): the whole country held for 2 s, down to the
+  Jaffa-Tel Aviv-Lydda ground of promo 03 (6 s), and back up to the whole country (6 s). 840 frames, 14 s, each move
+  eased in and out. That order is a placeholder; the shots are the owner's call. Change the list to change it.
+- **Settings:** 1920 x 1080 on the desktop (PC) tier, 60 fps, the water's clock pinned to each frame's time, the 1948
+  sub-districts and the units of turn 1 of a new historical game started with `-seed` (default the golden seed, 1948;
+  turn 1's units do not depend on the seed today, it is recorded so a later moment can be repeated). The frames are
+  `frame-00000.png` onwards, one sequence across the shots. `trailer.txt` beside them records the commit, Unity
+  version, seed, size, fps, tier and each shot's frame range.
+- **Not in it:** the UI (editor renders draw no UI Toolkit, so UI shots still come from the player), sound, and the cut.
+  The .mp4 has no audio track; Steam prefers AAC audio, which the cut adds.
+- **Why PNG frames:** a frame is written only when it is fully rendered, so a slow machine gives the same footage as a
+  fast one, and the Linux editor needs no video codec. On the software-rendered Linux build server (llvmpipe) the
+  default 840 frames took 15 to 25 minutes (907 s alone, 1,459 s beside another Unity run) and 2.3 GB of PNG; the
+  encode took under a minute. Delete the frames after encoding.
+- **Check the encode** before it goes anywhere:
+  `ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate,bit_rate captures/<name>/trailer-map.mp4`
+  must say h264, 1920 x 1080, 60/1, and a bit rate above Steam's 5,000 Kbps. If it is under (long still holds compress
+  well), encode again with `-b:v 8M -maxrate 12M -bufsize 16M` in place of `-crf 16`.
+
 ## Store-page checklist (issue #45; OWNER STEP)
 
 This is preparation, not a published store page or an answered content survey. The checklist does not clear the name,
@@ -163,9 +204,10 @@ assets or content for commercial use. Finish the release gates above first; the 
   08 as gameplay. Review each screenshot's age-suitability flag individually; never mark a sensitive scene suitable for
   all ages just to gain placement. If at least four genuinely qualify, mark them suitable for all ages; with fewer
   flagged, the game may not appear in some placements.
-- [ ] Prepare a trailer from the real build, not the M2 recruiting flythrough or concept-art target. The deterministic
-  1920 x 1080, 60 fps capture and draft cut are the separate trailer part of #45, still pending; this checklist does
-  not provide a capture script or a finished trailer. Record the build/seed and capture settings with the cut.
+- [ ] Prepare a trailer from the real build, not the M2 recruiting flythrough or concept-art target. Capture the map
+  footage with "Capturing trailer footage" above (1920 x 1080, 60 fps, deterministic); the draft cut is still pending
+  (#45), so this checklist does not provide a finished trailer. Keep the capture's `trailer.txt` (build commit, seed and
+  capture settings) with the cut.
   Steam requires a trailer and recommends that the first one be mostly gameplay; this project's rule (real build only)
   is stricter. Upload the highest resolution available, up to 1920 x 1080, at 30/29.97 or 60/59.94 fps and
   5,000+ Kbps, in a .mov, .wmv or .mp4 container; H.264 video with AAC audio is preferred

@@ -29,7 +29,9 @@ namespace Statecraft.Game.Map.Kits
             {
                 case Archetype.OldTown: return Mosque(s.Id, heart, ground, km, lots, ref rnd, 1.2f);
                 case Archetype.ArabTown: return Mosque(s.Id, heart, ground, km, lots, ref rnd, 1f);
-                case Archetype.Moshava: return WaterTower(s.Id, heart + new Vector2(R * 0.35f, -R * 0.2f), ground, km, lots);
+                case Archetype.Moshava:
+                    return WaterTower(s.Id, heart + new Vector2(R * 0.35f, -R * 0.2f), ground, km, lots)
+                        + (s.Type == "kibbutz" ? DiningHall(s.Id, heart, R, ground, km, lots) : 0);   // #32
                 default: return 0;
             }
         }

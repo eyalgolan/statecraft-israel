@@ -13,7 +13,8 @@ namespace Statecraft.Game.Map
             HazeRange = Shader.PropertyToID("_ScHazeRange"), WaterOn = Shader.PropertyToID("_ScWaterOn"), Grid = Shader.PropertyToID("_ScGrid"),
             WaterTime = Shader.PropertyToID("_ScWaterTime"), LandOn = Shader.PropertyToID("_ScLandOn"),
             SeaTexture = Shader.PropertyToID("_ScSeaTexture"), SeaCalm = Shader.PropertyToID("_ScSeaCalm"),
-            SeaFoam = Shader.PropertyToID("_ScSeaFoam");
+            SeaFoam = Shader.PropertyToID("_ScSeaFoam"), DuneRect = Shader.PropertyToID("_ScDuneRect"),
+            DuneRamp = Shader.PropertyToID("_ScDuneRamp"), DuneCount = Shader.PropertyToID("_ScDuneCount");
 
         /// <summary>Pins the water's clock (waves, surf) to the given seconds, or back to Unity's time with null: for tests and
         /// frame captures that must render chosen moments (promo-sea review I2, M5).</summary>
@@ -77,6 +78,12 @@ namespace Statecraft.Game.Map
             // Sea round 3 (#388, StatecraftMap.hlsl): the surf's lace net; its own toggle, so the profile prices it.
             Shader.SetGlobalFloat(SeaFoam, 1f);
             assets.OnTeardown(VisualToggles.Register("foam", on => Shader.SetGlobalFloat(SeaFoam, on ? 1f : 0f)));
+            // The dune coasts (#690, DuneCoasts.json): the water pass widens the surf there, in map metres.
+            var duneRect = new Vector4[DuneCoasts.MaxBands]; var duneRamp = new Vector4[DuneCoasts.MaxBands];
+            int dunes = DuneCoasts.ToMapMetres(new GeoFrame(meta.lon0, meta.lon1, meta.lat0, meta.lat1, size.x, size.z), duneRect, duneRamp);
+            Shader.SetGlobalVectorArray(DuneRect, duneRect);
+            Shader.SetGlobalVectorArray(DuneRamp, duneRamp);
+            Shader.SetGlobalFloat(DuneCount, dunes);
             assets.OnTeardown(VisualToggles.Register("haze", on =>
             {
                 Shader.SetGlobalVector(Haze, on ? haze : new Vector4(haze.x, haze.y, haze.z, 0f));

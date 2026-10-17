@@ -28,6 +28,18 @@ namespace Statecraft.Game.Map.Routes
         public double MaxGapM { get; set; }
         /// <summary>[lon, lat] pairs, in order along the route.</summary>
         public List<List<double>> Points { get; set; } = new List<List<double>>();
+        /// <summary>The railway's train service in normal play (issue #668), or null: from the runtime file's service row
+        /// (tools/route_paths_bake.py reads it from routes_1948.yaml); route_paths_1948.yaml never carries one.</summary>
+        [YamlIgnore] public RouteService? Service { get; set; }
+    }
+
+    /// <summary>A railway's train service (issue #668; maintainer decision on #35, 16 October 2026): the date regular
+    /// service on it resumed (a quoted 'YYYY-MM-DD', sourced in routes_1948.yaml) and the stretch the train runs, between
+    /// the line's points nearest Start and End (lon, lat).</summary>
+    public sealed class RouteService
+    {
+        public string From = "";
+        public double StartLon, StartLat, EndLon, EndLat;
     }
 
     public sealed class RoutePathFile { public List<RoutePath> Routes { get; set; } = new List<RoutePath>(); }
@@ -54,7 +66,7 @@ namespace Statecraft.Game.Map.Routes
         public const string RuntimeFileName = "route_paths_1948.tsv";
         /// <summary>Bump it, with tools/route_paths_bake.py's VERSION, when the runtime file's layout or its reading
         /// (ParseRuntime, RuntimeRows) changes; tools/tests/test_route_paths_bake.py pins a fingerprint of that code.</summary>
-        public const int RuntimeVersion = 2;   // 2: the body_check row (review of #547)
+        public const int RuntimeVersion = 3;   // 2: the body_check row (review of #547); 3: the service rows (#668)
         public const string Rail = "rail", Road = "road", Track = "track";
         static readonly HashSet<string> Kinds = new HashSet<string> { Rail, Road, Track };
         static readonly Regex IdRule = new Regex(@"^[a-z][a-z0-9_]*\z");
@@ -121,7 +133,7 @@ namespace Statecraft.Game.Map.Routes
             return new RoutePathFile { Routes = routes };
         }
 
-        /// <summary>The runtime file's body_check: FNV-1a over the UTF-8 bytes of its route rows, each followed by '\n', in
+        /// <summary>The runtime file's body_check: FNV-1a over the UTF-8 bytes of its route and service rows, each followed by '\n', in
         /// order (tools/route_paths_bake.py's body_check).</summary>
         public static int BodyCheck(IEnumerable<string> routeRows)
         {
@@ -157,6 +169,21 @@ namespace Statecraft.Game.Map.Routes
                 else if (c[0] == "meta" && c.Length == 3 && c[1] == "version") version = Int(c[2], "version", line);
                 else if (c[0] == "meta" && c.Length == 3 && c[1] == "yaml_check") check = Int(c[2], "yaml_check", line);
                 else if (c[0] == "meta" && c.Length == 3 && c[1] == "routes") count = Int(c[2], "routes", line);
+                else if (c[0] == "service")
+                {
+                    if (c.Length != 5) throw new InvalidDataException($"{file}:{line}: a service row has {c.Length} fields, not 5");
+                    rows.Add(text);
+                    var route = routes.Find(r => r.Id == c[1]) ?? throw new InvalidDataException($"{file}:{line}: a service for '{c[1]}', which no route row before it has");
+                    if (route.Service != null) throw new InvalidDataException($"{file}:{line}: a second service for '{c[1]}'");
+                    (double, double) End(string pair, string what)
+                    {
+                        int sp = pair.IndexOf(' ');
+                        if (sp < 0 || pair.IndexOf(' ', sp + 1) >= 0) throw new InvalidDataException($"{file}:{line}: {what} '{pair}' is not 'lon lat'");
+                        return (Num(pair.Substring(0, sp), what + " lon", line), Num(pair.Substring(sp + 1), what + " lat", line));
+                    }
+                    var (startLon, startLat) = End(c[3], "start"); var (endLon, endLat) = End(c[4], "end");
+                    route.Service = new RouteService { From = c[2], StartLon = startLon, StartLat = startLat, EndLon = endLon, EndLat = endLat };
+                }
                 else if (c[0] == "route")
                 {
                     if (c.Length != 11) throw new InvalidDataException($"{file}:{line}: a route row has {c.Length} fields, not 11");
@@ -242,11 +269,37 @@ namespace Statecraft.Game.Map.Routes
                     if (bounds is { } b && (p[0] < b.lon0 || p[0] > b.lon1 || p[1] < b.lat0 || p[1] > b.lat1))
                         throw new InvalidDataException(FormattableString.Invariant($"{at} point {i} ({p[0]}, {p[1]}) is outside the map"));
                 }
+                if (r.Service != null && !skipped.Contains(r) && ServiceProblem(r, bounds) is { } problem)
+                {
+                    // After the route's own checks, so one cause gives one warning. A bad service never costs the routes
+                    // (the train is cosmetic): the tolerant read drops the train with a warning; a strict read throws.
+                    if (skipBadWindow == null) throw new InvalidDataException($"{at} {problem}");
+                    skipBadWindow($"{at} {problem}; no train runs on it");
+                    r.Service = null;
+                }
             }
             doc.Routes.RemoveAll(skipped.Contains);
             return doc.Routes;
         }
 
         static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
+
+        /// <summary>Why the route's service cannot run (issue #668), or null: only on a railway, a 'YYYY-MM-DD' date inside the
+        /// route's window, and both ends finite and on the map.</summary>
+        static string? ServiceProblem(RoutePath r, (double lon0, double lon1, double lat0, double lat1)? bounds)
+        {
+            var s = r.Service!;
+            if (r.Kind != Rail) return "has a service but is not a railway";
+            DateTime from;
+            try { from = Bound(s.From); }
+            catch (FormatException e) { return $"service from: {e.Message}"; }
+            if (s.From.Length != 10) return $"service from '{s.From}' is not a day ('YYYY-MM-DD')";
+            try { if (!WindowOf(r).Covers(from)) return $"service from {s.From} is outside the route's window"; }
+            catch (FormatException) { return "service on a route with a bad window"; }
+            foreach (var (lon, lat, what) in new[] { (s.StartLon, s.StartLat, "start"), (s.EndLon, s.EndLat, "end") })
+                if (!IsFinite(lon) || !IsFinite(lat) || bounds is { } b && (lon < b.lon0 || lon > b.lon1 || lat < b.lat0 || lat > b.lat1))
+                    return FormattableString.Invariant($"service {what} ({lon}, {lat}) is outside the map");
+            return null;
+        }
     }
 }

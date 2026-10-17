@@ -533,8 +533,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .cabinet-house { justify-content: center; }
 
 /* Loading (playtest 2, P2-1): until GameRoot is ready only this line shows; the bar's values, the info panel and the
-   right-hand column are kept out of sight (visibility, so the layout does not jump when they appear). */
-.loading-line { display: none; position: absolute; left: 0; right: 0; top: 45%; -unity-text-align: middle-center; font-size: 28px; color: var(--ink); }
+   right-hand column are kept out of sight (visibility, so the layout does not jump when they appear). A boot failure is
+   longer than the panel at phone width, so the line wraps with a side margin instead of overflowing both edges (#765). */
+.loading-line { display: none; position: absolute; left: 0; right: 0; top: 45%; -unity-text-align: middle-center; font-size: 28px; color: var(--ink); white-space: normal; padding-left: 24px; padding-right: 24px; }
 .loading .loading-line { display: flex; }
 .root.loading { background-color: var(--navy-solid); }   /* the template's navy, not the default sky (final review M1) */
 .loading .date-box, .loading .meters, .loading .nav, .loading .left-column, .loading .turn-box, .loading .info-panel, .loading .right-column, .loading .event-layer { visibility: hidden; }

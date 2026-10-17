@@ -1,14 +1,102 @@
-# The GDD v0.1 cities and their start values (GDD "Cities and construction"; docs/rules/mvp.md R-CITY-001 to R-CITY-005).
-# Every number below is a design value: the owner's balance, set or accepted in review (Q-CUT-1, owner, 15 October 2026:
-# "Labelled design values"). None is a claim about Tel Aviv in 1948. Counts are population units of rules.yaml
-# mvp.people_per_unit people (D-A1). The MVP has one city so far (D-A4: Tel Aviv); Phase 3 adds the others.
-# DesignValuesTests lists every number here (R-LOOP-005); changing one is a balance edit that re-pins the goldens.
+# The MVP's twelve Jewish cities and towns (the `city` and `town` rows of map/settlements_1948.yaml) and their start values
+# (GDD "Cities and construction"; docs/rules/mvp.md R-CITY-001 to R-CITY-007; GDD Phase 3 PR 1, #732). The six kibbutzim and
+# moshavim are not cities in Phase 3 (Q-START-4, owner, 15 October 2026, #375).
+#
+# Every value says what it is (R-CITY-006):
+# - sourced: read from the source named. derived: computed from sourced values. wikipedia-only: an owner-accepted
+#   Wikipedia figure. These name their sources (with checked dates) and the day or month they describe.
+# - design: a labelled design value, not a historical figure for this city (Q-CUT-1, R-LOOP-005; DesignValuesTests lists
+#   each one, and changing one is a balance edit that re-pins the goldens).
+#
+# people: residents of all groups on the census day, 8 November 1948 (the Registration of Population), used as the start
+# on 15 May 1948 ("Census values + defaults", owner, 15 October 2026, on #569). The census counted the people who
+# arrived between May and November 1948; Phase 3 PR 2 handles them (Q-ARRV-3). Source: CBS, Statistical Abstract of
+# Israel No. 14 (1963), Table 11, "Population in settlements numbering above 5,000 inhabitants on 31 XII 1962
+# (1948-1962)", pp. 30-31, unless the row says otherwise. Research: #569, research_notes/GDD phase 3/.
+#
+# employed_share: the share of the people in work on 8 November 1948 (mobilised soldiers counted in their civilian
+# occupation, CBS note).
+# - Five cities: the city's share in CBS, Statistical Abstract of Israel No. 1 (1949/50), Registration of Population
+#   (8 XI 1948), Table 9, "Jewish population by occupational status and sex (%)", p. 26. It is a share of the Jewish
+#   population, applied here to all residents.
+# - Seven towns with no city share: the national share, 314,781 working of 716,678 Jews, 43.9% (CBS, Statistical
+#   Abstract of Israel No. 2 (1950/51), Table 9, p. 24), as a design value (Q-START-1, owner, 15 October 2026, #375).
+#
+# housing_capacity and job_slots: no source gives either for any city (#569: "Housing, 0 of 12"; the census counts
+# working people, not job slots). Design values (Q-START-1): housing equal to the start people, job slots equal to the
+# start employed, so every city starts full and every arrival needs a housing or industry project.
+#
+# Units (R-CITY-007): counts are population units of rules.yaml mvp.people_per_unit people (D-A1). The loader turns people
+# into units to the nearest unit (a half rounds up), with at least 1 for a city with people (Q-START-2, owner,
+# 15 October 2026, #375), and the employed to the nearest unit of people times employed_share. housing_capacity and
+# job_slots are already in units.
 cities:
-  - id: tel_aviv                         # a settlement id of map/settlements_1948.yaml
-    housing_capacity: 120                # DESIGN VALUE: owner-set balance, not a historical figure (D-A4)
-    job_slots: 90                        # DESIGN VALUE: owner-set balance, not a historical figure (D-A4)
-    civilians: 100                       # DESIGN VALUE: owner-set balance, not a historical figure (D-A4)
-    employed: 80                         # DESIGN VALUE: owner-set balance, not a historical figure (D-A4)
+  - id: jerusalem
+    people: { value: 83984, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.342, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf", checked: 2026-10-15 }] }
+    housing_capacity: { value: 84, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 29, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: tel_aviv
+    # CBS row "Tel Aviv-Yafo": one city, Jaffa included (owner, 15 October 2026, on #569).
+    people: { value: 248459, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.426, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf", checked: 2026-10-15 }] }
+    housing_capacity: { value: 248, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 106, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
     # D-D5 (owner, 14 October 2026): one military camp and one Hakhshara exist at the start, a design assumption, not a
     # claim about 1948. More are built by pioneers (Phase 4).
     facilities: [military_camp, hakhshara]
+  - id: haifa
+    people: { value: 98618, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.429, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf", checked: 2026-10-15 }] }
+    housing_capacity: { value: 99, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 42, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: tiberias
+    people: { value: 5555, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.334, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf", checked: 2026-10-15 }] }
+    housing_capacity: { value: 6, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 2, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: safed
+    people: { value: 2317, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.345, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf", checked: 2026-10-15 }] }
+    housing_capacity: { value: 2, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 1, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: petah_tikva
+    people: { value: 21879, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 22, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 10, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: rishon_lezion
+    # 10,433 by owner decision (CBS SA 14); the CBS 2006 release gives 11,100 (#569).
+    people: { value: 10433, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 10, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 5, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: zikhron_yaakov
+    # CBS SA No. 3 (1951/52), Settlements in Israel, p. 133: 1,935 on 8 November 1948. It replaces the owner-accepted Hebrew
+    # Wikipedia figure of about 1,900 (#569).
+    people: { value: 1935, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 2, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 1, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: rosh_pinna
+    # Hebrew Wikipedia: about 350 people in May 1948, accepted by the owner (15 October 2026, on #569). CBS SA No. 3,
+    # p. 144, lists Rosh Pinna with no population. 350 people round to 0 units; Q-START-2 gives a city with people at least 1.
+    people: { value: 350, status: wikipedia-only, date: 1948-05, sources: [{ url: "https://he.wikipedia.org/wiki/%D7%A8%D7%90%D7%A9_%D7%A4%D7%99%D7%A0%D7%94", checked: 2026-10-14 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 1, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 0, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: rehovot
+    people: { value: 12522, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 13, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 5, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: hadera
+    people: { value: 11811, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 12, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 5, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+  - id: netanya
+    people: { value: 11589, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
+    employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
+    housing_capacity: { value: 12, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
+    job_slots: { value: 5, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)

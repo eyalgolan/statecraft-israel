@@ -23,6 +23,11 @@
 # from / to: the window in which the map draws the route (RouteLayer shows it while the game date is inside it): a year
 # or a 'YYYY-MM-DD' date, quoted. `from` is the earliest date the cited sources support for the whole line as drawn
 # (1946, the map's date, where no source gives an earlier one); `to` is left out while the line still exists.
+# service (a railway only, optional): the train in normal play, from the sourced date regular service on the line
+# resumed (`from`), with its own status, to_verify and sources, and its stretches: in order along the line, each between
+# two named stations (start, end: with coordinates and a url, as the waypoints), with a status and sources; a stretch
+# with `gated: true` runs only once a person has signed it off. tools/route_paths_bake.py gives the map the span of the
+# stretches that run.
 map_source:
   name: Survey of Palestine, Palestine 1:250,000, 1946 (three sheets)
   url: https://palopenmaps.org/en/maps?basemap=pal250k1946
@@ -61,6 +66,56 @@ routes:
     checked: '2026-10-11'
   - url: https://en.wikipedia.org/wiki/Palestine_Railways
     checked: '2026-10-11'
+  # service: the train in normal play (maintainer decision on #35, 16 October 2026; issue #668), from the date regular
+  # service resumed after the 1948 war. No train runs on the line before `from`.
+  service:
+    from: '1950-03-02'
+    status: draft
+    note: Israel Railways opened a regular passenger service from Haifa to Jerusalem on 2 March 1950, one train a day
+      each way, about four hours, by the old Tel Aviv North station (Bnei Brak) on the Eastern Railway (Israel Railways,
+      50 Years of Israel Railways, 1998, p. 15; Jaffa–Jerusalem railway). That service joined this line at Lod, so on this
+      line it ran from Lod to Jerusalem. The symbolic first train to Jerusalem, which carried flour and Torah scrolls, was
+      not a regular service and is not counted; its date is in to_verify.
+    to_verify:
+    - The date awaits a human check against the cited sources (CONTENT_POLICY section 2.6). The 1998 booklet is a scan
+      with no text layer; its sentence was read from the page image. A contemporary report, Al HaMishmar of 1 March
+      1950 ("tomorrow a passenger train from Haifa and Tel Aviv to Jerusalem"), is cited by he Wikipedia and was not
+      opened.
+    - The sources disagree on the symbolic first train to Jerusalem, 17 August 1948 in the 1998 booklet (Israel Railways,
+      1998, p. 15, the same page as the 2 March 1950 service) and 7 August 1949 in Jaffa–Jerusalem railway (en
+      Wikipedia). The game uses neither date; it is left to the human check.
+    sources:
+    - url: https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf
+      checked: '2026-10-16'
+    - url: https://en.wikipedia.org/wiki/Jaffa%E2%80%93Jerusalem_railway
+      checked: '2026-10-16'
+    # stretches: the line's stretches the train may run, in order along it, each ending where the next starts. A gated
+    # stretch runs only once a person has signed it off (reviewed_by and reviewed_on beside its status, as every status
+    # row; docs/HISTORIAN_REVIEW.md); the others run from `from`. tools/route_paths_bake.py gives the map the span of the
+    # stretches that run.
+    stretches:
+    - start: {name: Tel Aviv South railway station (Beit Hadar, its 1920-1970 site), lon: 34.777, lat: 32.0636, url: 'https://en.wikipedia.org/wiki/Tel_Aviv_South_railway_station'}
+      end: {name: Lod railway station, lon: 34.87556, lat: 31.94583, url: 'https://en.wikipedia.org/wiki/Lod_railway_station'}
+      gated: true
+      status: draft
+      note: A connecting train between Tel Aviv South and Lod from 2 March 1950 (he Wikipedia, the Jaffa–Jerusalem
+        railway and Israel Railways). The 1998 booklet does not name it, so it rests on Wikipedia alone and runs only
+        once a person has checked it. The track from Tel Aviv South to Jaffa station was lifted in September 1949, when
+        Tel Aviv South became the terminus (Tel Aviv South railway station), so no train runs to Jaffa.
+      sources:
+      - url: https://he.wikipedia.org/wiki/%D7%9E%D7%A1%D7%99%D7%9C%D7%AA_%D7%94%D7%A8%D7%9B%D7%91%D7%AA_%D7%99%D7%A4%D7%95%E2%80%93%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D
+        checked: '2026-10-16'
+      - url: https://he.wikipedia.org/wiki/%D7%A8%D7%9B%D7%91%D7%AA_%D7%99%D7%A9%D7%A8%D7%90%D7%9C
+        checked: '2026-10-16'
+      - url: https://en.wikipedia.org/wiki/Tel_Aviv_South_railway_station
+        checked: '2026-10-16'
+    - start: {name: Lod railway station, lon: 34.87556, lat: 31.94583, url: 'https://en.wikipedia.org/wiki/Lod_railway_station'}
+      end: {name: Jerusalem (Khan) railway station, lon: 35.22471, lat: 31.76685, url: 'https://www.wikidata.org/wiki/Q2920513'}
+      status: draft
+      note: The Haifa–Jerusalem service's stretch on this line (Israel Railways, 1998, p. 15).
+      sources:
+      - url: https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf
+        checked: '2026-10-16'
 - id: kantara_main_line_south
   name: Haifa–El Kantara main line (Lydda to Rafah)
   kind: rail

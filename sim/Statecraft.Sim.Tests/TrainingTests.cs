@@ -13,7 +13,7 @@ public class TrainingTests
     static Content Town(string facilities = "[military_camp, hakhshara]") =>
         ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
         {
-            ["cities.yaml"] = "cities:\n  - { id: town_a, housing_capacity: 12, job_slots: 20, civilians: 10, employed: 6, facilities: " + facilities + " }\n",
+            ["cities.yaml"] = "cities:\n" + Fixture.City("town_a", 12, 20, 10, 6, facilities),
         })));
 
     static StepResult Step(Content c, GameState s, params Command[] commands) => Simulation.Step(c, s, commands);
@@ -22,7 +22,8 @@ public class TrainingTests
     [Fact]
     public void TheSliceStartsWithOneCampAndOneHakhshara()
     {
-        Assert.Equal(new[] { "military_camp", "hakhshara" }, Assert.Single(Mvp.Cities).Facilities);
+        Assert.Equal(new[] { "military_camp", "hakhshara" }, Assert.Single(Mvp.Cities, x => x.Facilities.Count > 0 && x.Id == "tel_aviv").Facilities);
+        Assert.Single(Mvp.Cities, x => x.Facilities.Count > 0);   // the twelve cities have one camp and one Hakhshara between them
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         Assert.Empty(s.Cohorts);
         Assert.Equal(0, s.Cities["tel_aviv"].Recruits);
@@ -269,8 +270,8 @@ public class TrainingTests
             ["map/settlement_hexes.yaml"] = "settlements:\n  - { id: town_a, q: 1, r: 0 }\n  - { id: town_b, q: 2, r: 1 }\n",
             ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"]
                 + "  - { id: town_b, name: Town B, lon: 34.42, lat: 33.28, type: town, founded: 1900, pre_modern: false }\n",
-            ["cities.yaml"] = "cities:\n  - { id: town_a, housing_capacity: 12, job_slots: 20, civilians: 10, employed: 6, facilities: [hakhshara] }\n"
-                + "  - { id: town_b, housing_capacity: 12, job_slots: 20, civilians: 10, employed: 6, facilities: [hakhshara] }\n",
+            ["cities.yaml"] = "cities:\n" + Fixture.City("town_a", 12, 20, 10, 6, "[hakhshara]")
+                + Fixture.City("town_b", 12, 20, 10, 6, "[hakhshara]"),
         })));
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         s.Attention = 10;   // two orders on the fixture's first turn

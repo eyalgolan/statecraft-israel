@@ -11,7 +11,8 @@ namespace Statecraft.Game.Map.Routes
     /// Statecraft/Route materials in Resources (no runtime Shader.Find, no new serialized field on MapScene). Each route
     /// shows only while the game date is inside its window (RoutePath.From/To; review C1: the Burma Road from 14 June
     /// 1948): routes are grouped by window, one ribbon pair per group, and <see cref="ShowAt"/> switches the groups. A
-    /// steam train on the Jaffa–Jerusalem line is a showcase, never normal play (review I1, <see cref="ModeFor"/>). Widths are symbolic, measured on the
+    /// steam train runs on the Jaffa–Jerusalem line: in normal play only from the sourced date regular service resumed
+    /// (<see cref="ServiceTrain"/>, issue #668), and as the promo's showcase in screenshots and `?train` (<see cref="ModeFor"/>). Widths are symbolic, measured on the
     /// promo's gameplay frame like the settlements and units (docs/routes.md): a road's pale core about 8 px and the railway
     /// about 16 px wide at 1920 px (the soft edges take about a sixth of the railway's width, so its bed is drawn 680 m), so they read at the gameplay zoom as the promo draws them. Registers the "routes" (ribbons)
     /// and "train" visual toggles, so the frame profile prices each. Pure geometry from the data: the same file gives the
@@ -35,10 +36,13 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Height above the highest ground sampled around each vertex; the shader's depth offset does the rest.</summary>
         public const float ClearanceM = 20f;
 
-        /// <summary>The showcase train's route and stretch: the Jaffa–Jerusalem railway from its Jaffa end to Lydda junction,
-        /// the stretch the promo's train runs (promo/final/03). It is ambience for the promo frames, not a timetable: no
-        /// regular trains ran here from the British withdrawal in May 1948 until Lydda was taken in July and service resumed
-        /// later (Palestine Railways), which is why normal play shows no train (<see cref="ModeFor"/>).</summary>
+        /// <summary>The train's route: the Jaffa–Jerusalem railway. The showcase runs from its Jaffa end to Lydda junction
+        /// (<see cref="TrainTurnAt"/>), the stretch the promo's train runs (promo/final/03): ambience for the promo frames, not
+        /// a timetable. No regular trains ran on the line from the British withdrawal in May 1948 until 2 March 1950, after
+        /// Lydda was taken in July 1948 and the 1949 armistice (Israel Railways; routes_1948.yaml), so normal play runs its
+        /// train only from then, on the stretches of the route's service that run (Lod to Jerusalem, the 1950 service's
+        /// stretch of this line; Tel Aviv South to Lod once a person signs it off): <see cref="ServiceTrain"/>, maintainer
+        /// decision on #35, 16 October 2026.</summary>
         public const string TrainRoute = "jaffa_jerusalem_railway";
         public static readonly (double lon, double lat) TrainTurnAt = (34.87556, 31.94583);   // Lod railway station
 
@@ -46,13 +50,15 @@ namespace Statecraft.Game.Map.Routes
         /// game's start, 15 May 1948.</summary>
         public static readonly DateTime DefaultDate = new DateTime(1948, 5, 15);
 
-        public enum TrainMode { None, Still, Moving }
+        /// <summary>None: no train. Still and Moving: the promo's showcase train. Service: normal play's (issue #668), from
+        /// the route's sourced service date only.</summary>
+        public enum TrainMode { None, Still, Moving, Service }
 
-        /// <summary>Whether there is a train and whether it moves (review I1): editor renders and screenshots (`?shot` /
-        /// `-shot`) show the promo's still train; `?train` or `?units` (desktop `-train` / `-units`) asks for the moving
-        /// showcase; normal play has none, as no service is sourced for the line at the game's dates.</summary>
+        /// <summary>Which train (review I1; issue #668): editor renders and screenshots (`?shot` / `-shot`) show the promo's
+        /// still train; `?train` or `?units` (desktop `-train` / `-units`) asks for the moving showcase; normal play runs the
+        /// service train, from the date regular service resumed (<see cref="ServiceTrain"/>).</summary>
         public static TrainMode ModeFor(bool playing, bool shot, bool requested) =>
-            !playing || shot ? TrainMode.Still : requested ? TrainMode.Moving : TrainMode.None;
+            !playing || shot ? TrainMode.Still : requested ? TrainMode.Moving : TrainMode.Service;
 
         public static bool TrainRequested(string? url, string[] args, bool webgl) =>
             webgl ? Boot.UrlFlags.Has(url, "train") || Boot.UrlFlags.Has(url, "units") : Array.IndexOf(args, "-train") >= 0 || Array.IndexOf(args, "-units") >= 0;
@@ -68,6 +74,8 @@ namespace Statecraft.Game.Map.Routes
             if (map == null) return;
             map.RouteDate = date;                   // a later rebuild of this map starts at the game's date (re-review nit 2)
             if (map.Terrain == null) return;
+            var service = map.Terrain.transform.Find($"{RootName}/{ServiceTrain.Name}");
+            if (service != null) service.GetComponent<ServiceTrain>().ShowAt(date);   // from the service date on (issue #668)
             var ribbons = map.Terrain.transform.Find($"{RootName}/{RibbonsName}");
             if (ribbons == null) return;
             foreach (var g in ribbons.GetComponentsInChildren<RouteGroup>(true)) g.gameObject.SetActive(g.Window.Covers(date));
@@ -182,7 +190,17 @@ namespace Statecraft.Game.Map.Routes
             assets.OnTeardown(VisualToggles.Register(RoutesToggle, on => { if (ribbons != null) ribbons.SetActive(on); }));
 
             var trainRoute = routes.FirstOrDefault(r => r.Id == TrainRoute);
-            if (trainRoute != null && train != TrainMode.None)
+            if (trainRoute != null && train == TrainMode.Service)
+            {
+                // Normal play: nothing is built or fetched before the route's service date (issue #668). No service (the YAML
+                // fallback carries none, or it was refused with a warning): no train.
+                if (trainRoute.Service != null)
+                {
+                    var service = ServiceTrain.Create(root.transform, assets, frame, trainRoute, data, origin, date);
+                    assets.OnTeardown(VisualToggles.Register(TrainToggle, on => { if (service != null) service.gameObject.SetActive(on); }));
+                }
+            }
+            else if (trainRoute != null && train != TrainMode.None)
             {
                 var go = RouteTrain.Spawn(root.transform, assets, World(frame, trainRoute), data, origin,
                     frame.ToWorld(TrainTurnAt.lon, TrainTurnAt.lat, 0), frame.ToWorld(RouteTrain.StillAt.lon, RouteTrain.StillAt.lat, 0),
