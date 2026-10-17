@@ -466,6 +466,8 @@ namespace Statecraft.Game.UI
                 siteLayer.transform.SetParent(placements.transform.parent, false);
             }
             siteLayer.Render(Bridge.State.Sites.Values, Bridge.Content, map);
+            // A built site's name is a map pill like a town's (#381), against its kit's columns.
+            labels?.SetSites(siteLayer.Places.Select(p => (p, siteLayer.Columns.TryGetValue(p.Id, out var c) ? c : (Bounds[]?)null)).ToList());
         }
 
         void SyncMinimap()
