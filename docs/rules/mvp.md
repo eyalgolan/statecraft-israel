@@ -174,7 +174,7 @@ R-EVT-003: An event the player leaves unanswered at End Turn is delegated to its
 
 R-EVT-004: An option's effects apply when it is chosen or delegated, on that turn, and never later; an option has no delayed form, and the loader refuses an unknown key such as `delay` (Q-EVT-3).
 
-R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an option in the order choosing it applies them: the numeric effects, the unit grants and city effects (R-EFX-006), the policies it sets (by id), then the security level, each with the option's own amount (Q-EVT-4). The event card will show this list (GDD Phase 7 PR 8), so no number will be computed in Unity.
+R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an option in the order choosing it applies them: the numeric effects, the unit grants and city effects (R-EFX-006), the policies it sets (by id), then the security level, then the way back to the record (`rejoin`, R-ALT-009), each with the option's own amount (Q-EVT-4). The event card will show this list (GDD Phase 7 PR 8), so no number will be computed in Unity.
 
 ## Alternate timelines
 
@@ -193,5 +193,7 @@ R-ALT-006: A consequence card may follow only an option whose `alternative.basis
 R-ALT-007: A consequence card carries every sensitive tag (case aside) of each event it requires, so the no-gain rule (R-EFX-002, R-EFX-005) covers it.
 
 R-ALT-008: Consequence cards take a turn's soft slots before the other soft events, then by `from` and id (Q-ALT-14). A `front_quiet` armistice (Q-EVT-1, Phase 5 PR 13) will come before them. With no consequence card eligible the order is unchanged.
+
+R-ALT-009: An option of a consequence card may `rejoin` an event whose road the card follows (and which has a historical option). Once it is chosen, a requirement on that event's historical option holds, so the record's later cards fire again if their windows are still open. The event's own chosen option is not rewritten, and `diverged: true` on it still holds.
 
 R-ALT-012: The historical run (the reference player's orders from 15 May 1948 to 15 January 1952) raises no consequence card and diverges nowhere.

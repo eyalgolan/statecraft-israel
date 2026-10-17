@@ -139,7 +139,7 @@ namespace Statecraft.Sim
             FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {field.Replace('_', ' ')} {(delta > 0 ? "+" : "")}{delta}");
 
         /// <summary>R-EVT-005: every effect of an option, in the order choosing it applies them (Resolve): the numeric
-        /// effects, the unit grants and city effects (R-EFX-006), the policies it sets (by id), then the security level.
+        /// effects, the unit grants and city effects (R-EFX-006), the policies it sets (by id), the security level, then rejoin.
         /// Each amount is the option's own; Resolve may apply less where an indicator meets its bound or the Food stock its floor, and rounds Food to whole units. The
         /// event card will read this list (Q-EVT-4, owner 17 October 2026; Phase 7 PR 8), so no number is computed in Unity.</summary>
         public static List<Cause> OptionEffects(Content c, GameState s, EventOption o)
@@ -151,6 +151,9 @@ namespace Statecraft.Sim
             lines.AddRange(o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal)
                 .Select(k => new Cause("events", k.Key, k.Value, $"{PlayerText.Target(c, k.Key)} set to {PlayerText.Percent(k.Value)}")));
             if (o.SetRung.HasValue) lines.Add(new Cause("events", "rung", o.SetRung.Value, FormattableString.Invariant($"Security level set to {o.SetRung.Value}")));
+            // R-ALT-009: the way back to the record is shown with the other effects (R-EVT-005).
+            if (o.Rejoin != "")
+                lines.Add(new Cause("events", "rejoin", 0, $"Returns to the recorded course: {Cabinet.Fill(c, s, c.Events.First(x => x.Id == o.Rejoin).Title, s.Date)}"));
             return lines;
         }
 

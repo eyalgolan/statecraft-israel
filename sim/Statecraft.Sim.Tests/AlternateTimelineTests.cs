@@ -130,6 +130,101 @@ options:
       sources: [{ url: ""https://example.org/cabinet"", checked: 2026-10-17 }]
 ";
 
+    static string WithRejoin => Consequence.Replace("    text: Hold the course\n", "    text: Hold the course\n    rejoin: parent\n");
+
+    internal const string RecordFollowUp = @"
+id: on_record
+title: On the record
+text: 'The next real decision.'
+from: 1948-07-01
+to: 1948-09-15
+requires: [{ event: parent, option: record }]
+options:
+  - id: ok
+    text: Ok
+";
+
+    [Fact]
+    // R-ALT-009
+    public void ARejoinReopensOnlyCardsStillInsideTheirWindow()
+    {
+        var c = Load(("parent.yaml", Parent), ("after_road.yaml", WithRejoin), ("on_record.yaml", RecordFollowUp));
+        var s = NewState(c);
+        s.ChosenOptions["parent"] = "road"; s.FiredEvents.Add("parent");
+        s.Date = new DateTime(1948, 7, 15);
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 6, 15));
+        Assert.DoesNotContain("on_record", s.FiredEvents);                 // off the record: the follow-up waits
+        Assert.Null(EventSystem.Choose(c, s, "after_road", "hold", new List<Cause>()));
+        Assert.True(Timeline.Rejoined(c, s, "parent"));
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 6, 15));
+        Assert.Contains("on_record", s.FiredEvents);                       // its window is still open
+
+        var late = NewState(c);
+        late.ChosenOptions["parent"] = "road"; late.ChosenOptions["after_road"] = "hold";
+        late.FiredEvents.Add("parent"); late.FiredEvents.Add("after_road");
+        late.Date = new DateTime(1948, 10, 15);
+        EventSystem.Trigger(c, late, new List<Cause>(), new DateTime(1948, 9, 15));
+        Assert.DoesNotContain("on_record", late.FiredEvents);             // its window closed on 15 September: no resurrection
+    }
+
+    [Fact]
+    // R-ALT-009
+    public void TheTimelineKeepsTheRoadAfterARejoin()
+    {
+        var c = Load(("parent.yaml", Parent), ("after_road.yaml", WithRejoin));
+        var s = NewState(c);
+        s.ChosenOptions["parent"] = "road";
+        Assert.False(Timeline.Rejoined(c, s, "parent"));                     // no rejoin until the card's option is chosen
+        Assert.False(Timeline.Met(c, s, new EventRequirement { Event = "parent", Option = "record" }));
+        s.ChosenOptions["after_road"] = "hold";
+        Assert.False(Timeline.Rejoined(c, s, "after_road"));                 // only the event named by `rejoin`
+        Assert.Equal("road", s.ChosenOptions["parent"]);                   // the record of the road is not rewritten
+        Assert.True(Timeline.Diverged(c, s, "parent"));
+        Assert.True(Timeline.Met(c, s, new EventRequirement { Event = "parent", Option = "record" }));
+        Assert.True(Timeline.Met(c, s, new EventRequirement { Event = "parent", Option = "road" }));   // and the road itself still holds
+        Assert.False(Timeline.Met(c, s, new EventRequirement { Event = "parent", Option = "elsewhere" }));   // only the record's own option
+    }
+
+    // R-ALT-009
+    [Theory]
+    [InlineData("rejoin: parent", "rejoin: nowhere", "rejoin", "unknown event 'nowhere'")]
+    [InlineData("rejoin: parent", "rejoin: after_road", "rejoin", "a card cannot rejoin itself")]
+    public void ABadRejoinIsALoadError(string from, string to, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("after_road.yaml", WithRejoin.Replace(from, to))));
+        Assert.Equal("events[after_road].options[hold]." + field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    [Fact]
+    // R-ALT-009
+    public void OnlyAConsequenceCardRejoinsAndOnlyARoadItFollows()
+    {
+        var other = "id: other\ntitle: Other\ntext: x\nfrom: 1948-06-01\noptions:\n  - id: a\n    text: A\n    historical: true\n  - id: b\n    text: B\n    alternative: { basis: design }\n";
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("other.yaml", other), ("after_road.yaml", WithRejoin.Replace("rejoin: parent", "rejoin: other"))));
+        Assert.Contains("rejoins only an event whose road this card follows", ex.Message);
+        var onRecord = RecordFollowUp.Replace("    text: Ok\n", "    text: Ok\n    rejoin: parent\n");
+        var ex2 = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("on_record.yaml", onRecord)));
+        Assert.Contains("only a consequence card rejoins", ex2.Message);
+        // A consequence card has no historical option, so a card that follows one has no record to rejoin there.
+        var deeper = Consequence.Replace("id: after_road", "id: deeper").Replace("{ event: parent, option: road }", "{ event: after_road, option: hold }")
+            .Replace("    text: Hold the course\n", "    text: Hold the course\n    rejoin: after_road\n");
+        var ex3 = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("after_road.yaml", Consequence), ("deeper.yaml", deeper)));
+        Assert.Equal("events[deeper].options[hold].rejoin", ex3.Field);
+        Assert.Contains("which has a historical option", ex3.Message);
+    }
+
+    [Fact]
+    // R-ALT-009, R-EVT-005: the card's effect list names the way back.
+    public void TheEffectListNamesTheRejoin()
+    {
+        var c = Load(("parent.yaml", Parent), ("after_road.yaml", WithRejoin));
+        var o = c.Events.Single(x => x.Id == "after_road").Options.Single();
+        var line = Assert.Single(EventSystem.OptionEffects(c, NewState(c), o));
+        Assert.Equal(("rejoin", 0.0), (line.Target, line.Delta));
+        Assert.Equal("Returns to the recorded course: Parent", line.Message);
+    }
+
     const string RecordToo = "options:\n  - id: record_too\n    text: As recorded\n    historical: true\n";
 
     static ContentException LoadError(string consequence) =>

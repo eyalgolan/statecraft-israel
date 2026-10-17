@@ -208,6 +208,15 @@ namespace Statecraft.Sim
                 string F(string field) => $"events[{e.Id}].{field}";
                 if (e.Kind != EventKinds.Historical && e.Kind != EventKinds.Consequence && e.Kind != EventKinds.Reconvergence)
                     throw new ContentException(e.File, F("kind"), $"'{e.Kind}' must be historical, consequence or reconvergence");
+                foreach (var o in e.Options.Where(o => o.Rejoin != ""))
+                {
+                    var at = F($"options[{o.Id}].rejoin");
+                    if (e.Kind != EventKinds.Consequence) throw new ContentException(e.File, at, "only a consequence card rejoins the record");
+                    if (o.Rejoin == e.Id) throw new ContentException(e.File, at, "a card cannot rejoin itself");
+                    var target = c.Events.FirstOrDefault(x => x.Id == o.Rejoin) ?? throw new ContentException(e.File, at, $"unknown event '{o.Rejoin}'");
+                    if (!target.Options.Any(x => x.Historical) || !e.Requires.Any(r => r.Event == target.Id && IsAlternativeRoad(c, r)))
+                        throw new ContentException(e.File, at, "rejoins only an event whose road this card follows, and which has a historical option");
+                }
                 if (e.Kind != EventKinds.Consequence)
                 {
                     // Only a consequence card may follow one: the record never raises a consequence card, and a historical

@@ -10,6 +10,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [0.1.0] - 2026-10-18
 
 ### Added
+- Events: a consequence card's option can rejoin the record (`rejoin`, R-ALT-009; refs #951, #939). No content uses it yet.
 - Events: consequence cards (`kind: consequence`) for the roads not taken. They are soft, follow only a road
   contemporaries proposed or debated (the Ferguson test), lie at most 2 cards deep, carry the sensitive tags of the road
   they follow and take the first soft slots of a turn (R-ALT-005 to R-ALT-008, R-ALT-012; refs #950, #939). No content

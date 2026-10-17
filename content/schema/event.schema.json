@@ -80,6 +80,7 @@
           "text": { "type": "string", "minLength": 1 },
           "historical": { "type": "boolean" },
           "recommended": { "type": "boolean" },
+          "rejoin": { "$ref": "#/definitions/id", "description": "A consequence card's option that returns the course to the record of this event (R-ALT-009)." },
           "effects": {
             "type": "array",
             "items": {

@@ -130,6 +130,7 @@ requires: [{ event: parent_event, option: road_not_taken }]   # or { event: pare
 options:
   - id: hold
     text: ...
+    rejoin: parent_event        # optional: this answer returns later cards to the recorded course
     alternative: { basis: debated, by: ..., date: ..., sources: [...] }   # every option carries one
 ```
 
@@ -147,6 +148,12 @@ The loader refuses a consequence card that:
 
 Consequence cards take a turn's soft slots before the other soft events (R-ALT-008). They never fire in the historical
 run (R-ALT-012), so `EventRetimingTests` counts only the other events.
+
+An option on a consequence card may `rejoin` the event whose alternative road the card follows, provided that event has
+a historical option (R-ALT-009). Choosing it makes requirements on that historical option hold again, but only later
+cards whose absolute windows are still open can fire. It does not erase the option the player actually chose: a
+`diverged: true` requirement on the same event remains true. The loader refuses `rejoin` on any other kind of event, an
+unknown or self target, or a target whose alternative road the card does not follow.
 
 ### requires
 
@@ -182,6 +189,7 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `alternative` | no (required later, #949) | On an option that did not happen: who put it forward, on what record. See below. |
+| `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
 An event needs at least one option. `historical` is a statement of fact and needs a source; `recommended` is a game
 design choice and does not.
@@ -341,6 +349,8 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `only a consequence card may follow a consequence card` | A historical event requires a consequence card. |
 | `a consequence card is not an objective's card` | A consequence card has `objective:`. |
 | `must be historical, consequence or reconvergence` | `kind` is another word. |
+| `only a consequence card rejoins the record` | An option of another kind of event has `rejoin`. |
+| `rejoins only an event whose road this card follows` | `rejoin` names an event the card does not follow on a road not taken, or one with no historical option. |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):

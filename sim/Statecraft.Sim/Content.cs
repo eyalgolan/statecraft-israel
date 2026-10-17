@@ -718,6 +718,8 @@ namespace Statecraft.Sim
         public List<CityEffect> CityEffects { get; set; } = new List<CityEffect>();
         /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
         public OptionAlternative? Alternative { get; set; }
+        /// <summary>The event whose historical course this consequence option rejoins (R-ALT-009), or empty.</summary>
+        public string Rejoin { get; set; } = "";
     }
 
     /// <summary>An option's grant of <see cref="N"/> units of a unit_types.yaml type of kind unit (R-EFX-003). They stand at

@@ -206,7 +206,8 @@ options:
             {
                 var expected = o.Effects.Select(fx => (fx.Target, fx.Delta))
                     .Concat(o.SetPolicy.OrderBy(k => k.Key, StringComparer.Ordinal).Select(k => (k.Key, k.Value)))
-                    .Concat(o.SetRung.HasValue ? new[] { ("rung", (double)o.SetRung.Value) } : new (string, double)[0]);
+                    .Concat(o.SetRung.HasValue ? new[] { ("rung", (double)o.SetRung.Value) } : new (string, double)[0])
+                    .Concat(o.Rejoin != "" ? new[] { ("rejoin", 0.0) } : new (string, double)[0]);
                 Assert.Equal(expected, EventSystem.OptionEffects(C, s, o).Select(l => (l.Target, l.Delta)));
                 checkedOptions++;
             }

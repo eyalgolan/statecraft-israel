@@ -19,11 +19,19 @@ namespace Statecraft.Sim
             return historical != null && picked != historical.Id;
         }
 
+        /// <summary>R-ALT-009: a consequence card's chosen option rejoined this event to the record.</summary>
+        public static bool Rejoined(Content c, GameState s, string eventId) =>
+            c.Events.Any(e => e.Kind == EventKinds.Consequence && s.ChosenOptions.TryGetValue(e.Id, out var o)
+                              && e.Options.Any(x => x.Id == o && x.Rejoin == eventId));
+
         /// <summary>R-ALT-001 and R-ALT-002: one requirement holds.</summary>
         public static bool Met(Content c, GameState s, EventRequirement r)
         {
             if (r.Diverged) return Diverged(c, s, r.Event);
-            return s.ChosenOptions.TryGetValue(r.Event, out var picked) && picked == r.Option;
+            if (!s.ChosenOptions.TryGetValue(r.Event, out var picked)) return false;
+            if (picked == r.Option) return true;
+            // R-ALT-009: after a rejoin, the record's own option counts as taken; `diverged` stays true.
+            return Rejoined(c, s, r.Event) && HistoricalOption(Get(c, r.Event))?.Id == r.Option;
         }
 
         /// <summary>R-ALT-001: every requirement of the event holds (true when it has none).</summary>

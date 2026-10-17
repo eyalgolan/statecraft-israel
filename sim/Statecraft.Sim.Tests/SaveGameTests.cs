@@ -50,6 +50,40 @@ public class SaveGameTests
         Assert.Equal(played.Previous!.Hash(), loaded.Previous!.Hash());  // "since last turn" survives a load
     }
 
+    [Fact]
+    // R-ALT-009
+    public void ARejoinedRoadRoundTripsThroughASave()
+    {
+        var consequence = AlternateTimelineTests.Consequence.Replace("    text: Hold the course\n", "    text: Hold the course\n    rejoin: parent\n");
+        var c = ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
+        {
+            ["parent.yaml"] = AlternateTimelineTests.Parent,
+            ["after_road.yaml"] = consequence,
+            ["on_record.yaml"] = AlternateTimelineTests.RecordFollowUp,
+        }));
+        var played = GameSession.New(c, 1, Mode.Historical);
+        // The fixture's turns are a week long: wait for each card, then answer it.
+        void Answer(string id, string option)
+        {
+            for (int i = 0; i < 20 && !played.State.PendingEvents.Contains(id); i++) played.Step(new Command[0]);
+            Assert.Contains(id, played.State.PendingEvents);
+            Assert.Empty(played.Step(new Command[] { new ChooseEventOption(id, option) }).Rejected);
+        }
+        Answer("parent", "road");
+        Answer("after_road", "hold");
+        for (int i = 0; i < 20 && !played.State.FiredEvents.Contains("on_record"); i++) played.Step(new Command[0]);
+        Assert.Equal("road", played.State.ChosenOptions["parent"]);
+        Assert.Equal("hold", played.State.ChosenOptions["after_road"]);
+        Assert.True(Timeline.Rejoined(c, played.State, "parent"));
+        Assert.Contains("on_record", played.State.FiredEvents);
+
+        var loaded = GameSession.Load(c, played.Save.Write(), out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(played.State.Hash(), loaded.State.Hash());
+        Assert.Equal(played.State.ChosenOptions.OrderBy(kv => kv.Key), loaded.State.ChosenOptions.OrderBy(kv => kv.Key));
+        Assert.True(Timeline.Rejoined(c, loaded.State, "parent"));
+    }
+
     /// <summary>#398 review S1: a load also keeps the step before the last, so a change that compares two steps (the top
     /// bar's arrivals) is the one the player saw before the reload. A new session and one step have none.</summary>
     [Fact]
