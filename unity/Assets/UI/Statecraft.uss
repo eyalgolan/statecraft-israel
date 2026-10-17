@@ -162,7 +162,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-gutter, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). Seven meters do not
-   fit a phone's width with the widest values (#380): they wrap to two lines (the owner's choice, 16 October 2026), and the bar is a meter line
+   fit a phone's width with the widest values (#380): they wrap to two lines (a consequence of the owner's "tighten + re-tier", 16 October 2026), and the bar is a meter line
    (96 px) taller than the six meters' 312 px. */
 .hud-three-row .top-bar { height: 408px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }

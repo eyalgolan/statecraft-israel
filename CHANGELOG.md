@@ -142,7 +142,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   loop only; it reads `GameState.Cohesion` (R-CITY-005; the owner's ruling of 15 October 2026, refs #380). The
   objective card's line under its text, completed early (both dates and the months), on time or later, in English and
   Hebrew (`Objectives.MonthsFromHistory`; the owner's wording on #379), and its photograph of Mefalsim's first days
-  (Boris Carmi, June 1949, CC BY 4.0, Meitar Collection; `ASSETS.yaml` row `owner-verify`).. With seven meters
+  (Boris Carmi, June 1949, CC BY 4.0, Meitar Collection; `ASSETS.yaml` row `owner-verify`). With seven meters
   the bar re-tiers (the owner's "tighten and re-tier", 16 October 2026): each meter's sides are 6 px narrower; 16:9 at
   1920x1080 keeps the one-row bar, while 16:10, 4:3, 1280x720 and 1366x768 take the stacked bar, 5:4 drops the icons, a
   square window takes two rows, and a phone's meters wrap to two lines. No golden moves.

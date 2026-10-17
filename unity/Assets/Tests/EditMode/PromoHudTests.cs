@@ -178,7 +178,7 @@ public class PromoHudTests
                 for (int i = 0; i < 6; i++) yield return null;
                 if (threeRow)
                 {
-                    // #380 (the owner's choice, 16 October 2026): a phone's seven meters take two lines with the turn-1 values
+                    // #380 (a consequence of the owner's "tighten + re-tier", 16 October 2026): a phone's seven meters take two lines with the turn-1 values
                     // too, so the bar's second meter line is never an empty band. A line's meters share their centre (.meters
                     // align-items: center); their tops differ with their captions' lines.
                     var lines = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None)
