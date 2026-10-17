@@ -13,7 +13,7 @@ namespace Statecraft.Game.Map
     /// <item>A built site is drawn as a rural kit on its hex (SettlementKits, as a kibbutz: the one archetype a new yishuv has
     /// in Phase 1), named <see cref="Prefix"/> + its id. With the map's "kits" toggle off, it is the kibbutz marker box, as the
     /// settlements are (KitLayer).</item>
-    /// <item>A site being built is a scaffold marker: a low, open frame of raw timber on its hex, named Prefix + id +
+    /// <item>A site being built is a scaffold marker: an open frame of raw timber on its hex, named Prefix + id +
     /// <see cref="ScaffoldSuffix"/>.</item>
     /// <item>An available site, with no record, draws nothing.</item>
     /// </list>
@@ -23,10 +23,11 @@ namespace Statecraft.Game.Map
     {
         public const string Prefix = "site_", ScaffoldSuffix = "_scaffold";
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-        /// <summary>The scaffold's raw timber, and its size (a post's height and the frame's side, m): smaller than a kibbutz
-        /// marker (600 m), so a site under way never reads as a founded place.</summary>
-        static readonly Color Timber = new Color(0.72f, 0.58f, 0.36f);
-        const float PostM = 260f, SideM = 900f, PostThickM = 70f;
+        /// <summary>The scaffold's light raw timber, and its size (a post's height, the frame's side and a post's thickness, m):
+        /// an open frame as wide as a small kibbutz kit and thick enough to read at the play distance (the first captures
+        /// showed 70 m posts as a speck), but open, so a site under way never reads as a founded place.</summary>
+        static readonly Color Timber = new Color(0.86f, 0.72f, 0.48f);
+        const float PostM = 450f, SideM = 1100f, PostThickM = 140f;
 
         readonly Dictionary<string, Bounds[]> columns = new Dictionary<string, Bounds[]>();
         /// <summary>Each built site's kit columns (KitMesh.Columns), by site id, as MapScene.TryKitColumns gives a town's.</summary>
@@ -118,10 +119,14 @@ namespace Statecraft.Game.Map
                 post.transform.localPosition = new Vector3(dx * SideM / 2, PostM / 2, dz * SideM / 2);
                 post.transform.localScale = new Vector3(PostThickM, PostM, PostThickM);
             }
-            var beam = Part(name + "_beam", cube, map, block, Timber);   // one beam across the top, so it reads as a frame
-            beam.transform.SetParent(frame.transform, false);
-            beam.transform.localPosition = new Vector3(0, PostM, -SideM / 2);
-            beam.transform.localScale = new Vector3(SideM + PostThickM, PostThickM, PostThickM);
+            // a beam along each top edge, so it reads as a frame from any side
+            foreach (var (x, z, alongX) in new[] { (0f, -SideM / 2, true), (0f, SideM / 2, true), (-SideM / 2, 0f, false), (SideM / 2, 0f, false) })
+            {
+                var beam = Part(name + "_beam", cube, map, block, Timber);
+                beam.transform.SetParent(frame.transform, false);
+                beam.transform.localPosition = new Vector3(x, PostM, z);
+                beam.transform.localScale = alongX ? new Vector3(SideM + PostThickM, PostThickM, PostThickM) : new Vector3(PostThickM, PostThickM, SideM + PostThickM);
+            }
         }
 
         GameObject Part(string name, Mesh cube, MapScene map, MaterialPropertyBlock block, Color colour)
