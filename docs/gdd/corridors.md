@@ -40,7 +40,7 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 
 ## Open questions
 
-- The corridor list: which roads join the railway and the Burma Road, if any (D-D7).
-- D-B3: the railway card's reference date. Option: the Haifa-Tel Aviv passenger service via Rosh HaAyin, 20 September 1949 [S3], in the MVP window; the coastal line opened in 1953, after it.
-- Segment counts, costs and durations: owner balance values.
-- Whether and how roads and rail affect movement (D-G2).
+- Decided (owner, 17 Oct 2026, #782): the corridor list is the 1949 Haifa to Tel Aviv link, the Burma Road, and the Tel Aviv to Netanya coastal road (D-D7).
+- Decided (owner, 17 Oct 2026, #782): the railway is the 1949 Haifa to Tel Aviv link: the Rosh HaAyin to Tel Aviv North link along the Yarkon and the bypass west of Tulkarm. If Task 2.0 finds no source for the bypass's alignment, the corridor is the Yarkon link alone. The card's reference date is 20 September 1949, worded "Haifa to Tel Aviv rail service restored" [S3] (D-B3).
+- Decided (owner, 17 Oct 2026, #782): one segment between each pair of consecutive sourced waypoints. A road segment costs IL 2m and takes 6 turns; a rail segment costs IL 4m and takes 6 turns. The numbers are labelled design values (D-D7).
+- Decided (owner, 15 Oct 2026, "Take all recommendations", #375; Phase 5 plan Q-MOVE-2): "Roads and rail cheaper", and "Only the corridors Phase 4 builds count" (D-G2). Phase 4 Q-COR-7 (owner, 17 Oct 2026, #782) adds that a built road or railway counts for movement in Phase 5.
