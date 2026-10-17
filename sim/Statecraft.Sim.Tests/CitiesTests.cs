@@ -96,31 +96,31 @@ public class CitiesTests
         Assert.Equal(6 * 1.2 * SimTime.YearFraction(TurnLength.Week), paid, 9);   // the fixture's first turn is a week
     }
 
-    // R-CITY-004
+    // R-CITY-004 (Q-HOUSE-1: no hard cap; the 3 beyond the housing for 12 are the city's overflow, HousingTests)
     [Fact]
-    public void RefugeesAreHousedOnlyUpToCapacity()
+    public void EveryRefugeeIsHousedWithNoHardCap()
     {
         var c = Town();
         var s = With(Simulation.NewGame(c, 1, Mode.Historical), "town_a", 10, 6, 5);
         var city = Step(c, s).State.Cities["town_a"];   // the first week brings under one unit of arrivals
-        Assert.Equal((12, 6, 3), (city.Civilians, city.Employed, city.Refugees));
+        Assert.Equal((15, 6, 0), (city.Civilians, city.Employed, city.Refugees));
     }
 
     // R-CITY-003, R-CITY-004 (D-A6: arrivals come after housing, so they are housed on the next turn)
     [Fact]
     public void ATurnsArrivalsAreHousedOnTheNextTurn()
     {
-        // Tel Aviv starts full (Q-START-1: housing equals the start people), so 20 of its people are moved out to free room.
         // The cities take arrivals from the census day, 8 November 1948 (Q-ARRV-3), so the turn from 15 November has some.
+        // Tel Aviv's civilians are set to 228 so the test reads them apart from the start count.
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         while (s.Date < new DateTime(1948, 11, 15)) s = Step(Mvp, s).State;
         s = With(s, "tel_aviv", 228, 106, 0);
         var one = Step(Mvp, s).State;
         var arrived = one.Cities["tel_aviv"].Refugees;
         Assert.True(arrived > 0);
-        Assert.Equal(228, one.Cities["tel_aviv"].Civilians);   // housing for 20 more was free, but it ran before they came
+        Assert.Equal(228, one.Cities["tel_aviv"].Civilians);   // the housing step ran before they came
         var two = Step(Mvp, one).State.Cities["tel_aviv"];
-        Assert.Equal(228 + Math.Min(arrived, 20), two.Civilians);
+        Assert.Equal(228 + arrived, two.Civilians);           // no hard cap (Q-HOUSE-1): all of them, on the next turn
     }
 
     /// <summary>D-A6: housing comes before Social cohesion in the turn. The effects web reads the cities' employed share after
@@ -136,10 +136,10 @@ public class CitiesTests
             ["model.yaml"] = Fixture.Files["model.yaml"].Replace("effects:\n", "effects:\n  - { id: work, source: employed_share, target: morale, k: 1, inertia: 1, name: Work }\n"),
         })));
         var s = With(Simulation.NewGame(c, 1, Mode.Historical), "town_a", 10, 6, 10);
-        var after = Step(c, s).State;                                             // 2 housed: 6 of 12 employed
-        Assert.Equal((12, 8), (after.Cities["town_a"].Civilians, after.Cities["town_a"].Refugees));
-        Assert.Equal(6.0 / 12, Cities.EmployedShare(after), 12);
-        Assert.Equal(6.0 / 12, after.EffectContributions["work"], 12);
+        var after = Step(c, s).State;                                             // all 10 housed (no hard cap): 6 of 20 employed
+        Assert.Equal((20, 0), (after.Cities["town_a"].Civilians, after.Cities["town_a"].Refugees));
+        Assert.Equal(6.0 / 20, Cities.EmployedShare(after), 12);
+        Assert.Equal(6.0 / 20, after.EffectContributions["work"], 12);
     }
 
     [Fact]

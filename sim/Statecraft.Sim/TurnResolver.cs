@@ -20,7 +20,8 @@ namespace Statecraft.Sim
             Cities.Produce(c, s, r, yearFraction, why);   // 6. production
             Pools.Harvest(c, s, r, why);                  //    and the plowed fields' Food (R-FIELD-002)
             Pools.Consume(c, s, r, why);                  // 7. consumption: the nation eats, then imports (R-FOOD-002)
-            Cities.House(c, s, why);                      // 8. housing; Social cohesion is morale, which the effects web moves after the resolution
+            Cities.House(c, s, why);                      // 8. housing, then the housing condition; Social cohesion is morale, which the effects web moves after the resolution
+            Cities.UpdateCondition(c, s, r, why);
             Cities.Arrive(c, s, r, next, why);            // 9. arrivals
             // 10. Occupation timers: Phase 6.
             Objectives.Complete(c, s, r, next, why);      // 11. objectives and score

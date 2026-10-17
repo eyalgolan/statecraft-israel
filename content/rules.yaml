@@ -63,6 +63,13 @@ mvp:
   # completed yishuv makes a veteran pioneer.
   veteran_halutz_service: 6              # DESIGN VALUE: owner-set balance, not a historical figure (D-D9, Q-VET-1: turns of work to become a veteran)
   veteran_progress: 2                    # DESIGN VALUE: owner-set balance, not a historical figure (D-D9, Q-VET-2: a veteran's turns of progress a turn)
+  # Housing condition (R-HOUSE-001, R-HOUSE-002; D-D1, D-D2): each city's average condition, 0 to 1. Every city starts at
+  # model.yaml's housing base, so the cities start where the national level does (Q-START-3), and each turn a city loses
+  # overflow_condition_loss times its overflow share (people beyond its housing over its people). 0.15 is model.yaml's
+  # homes_lift_morale k, borrowed: no closer comparable exists (Q-HOUSE-1). Agents proposed both numbers ("Agents propose
+  # design values", owner, 15 October 2026, #375); the owner may override them. Neither is a historical figure.
+  housing_start_condition: 0.35          # DESIGN VALUE: owner-set balance, not a historical figure (D-D2, Q-START-3: every city's start condition)
+  overflow_condition_loss: 0.15          # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-HOUSE-1: condition lost a turn at a full overflow share)
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06

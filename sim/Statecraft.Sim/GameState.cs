@@ -184,7 +184,7 @@ namespace Statecraft.Sim
                 foreach (var i in items) { Entry(); sb.Append(i); Sep(); }
                 Close(close);
             }
-            if (Cities.Count > 0) Section("city", '{', '}', Cities.Values.Select(x => x.Canonical()));
+            if (Cities.Count > 0) Section("city", '{', '}', Cities.Values.Select(x => x.Canonical(readable)));
             if (Units.Count > 0) Section("units", '[', ']', Units.Values.Select(x => x.Canonical()));
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));

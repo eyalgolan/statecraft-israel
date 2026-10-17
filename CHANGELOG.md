@@ -81,6 +81,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Refusing the reparations claim (`reparations_claim.refuse`) now costs $4 million of Foreign currency, so neither answer is free (owner, 17 Oct 2026, "A cost for refusing too", #938). The amount is a labelled design value, not a historical figure, and waits for the owner's sign-off on the PR. The reference runs send the claim, so no golden moves.
 - Refusing Egypt's armistice (`armistice_egypt.hold_out`) now sets the war to rung 4, like refusing Jordan's, Lebanon's or Syria's (owner, 17 Oct 2026, "Yes, match the others", #937). The reference runs sign every armistice, so no golden moves.
 - The desktop players' bundle ID is `io.github.eyalgolan.statecraftisrael` (decision O6, owner, 17 Oct 2026, #879; refs #905). Only the Standalone identifier changes; the WebGL build does not read it.
+- The GDD game's cities house every arriving immigrant, with no hard cap, and each city has a housing condition from 0
+  to 1 (GDD Phase 3 PR 3, refs #734, #383; R-CITY-004, R-HOUSE-001 to R-HOUSE-004). People beyond a city's housing are
+  its overflow, still counted in the city; people in training and recruits take housing, halutz units do not. Each turn
+  a city with overflow loses 0.15 times its overflow share of its condition, from a start of 0.35 (design values in
+  `rules.yaml`, `mvp.housing_start_condition` and `mvp.overflow_condition_loss`). The national Housing level's base
+  is now the cities' people-weighted mean condition (R-HOUSE-004), with policy, map actions and events still on top, so
+  a shortage shows on the Housing meter and lowers morale. Every golden is re-pinned.
 - The 50 people names in Hebrew are flagged agent-checked until a native speaker reads them (owner, #882).
 - The 3D-model credits in code comments and one test's failure message now name MATKOT, as the owner asked on 17 October 2026; credit text only, with no behaviour change.
 - People audit batch 1 (#457): shazar's name_he now cites the Knesset's member page instead of en.wiki; the
