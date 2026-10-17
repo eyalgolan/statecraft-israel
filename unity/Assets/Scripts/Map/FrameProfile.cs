@@ -40,6 +40,14 @@ namespace Statecraft.Game.Map
         public static bool MovingRequested(string? url, string[] args, bool webgl) =>
             webgl ? UrlFlags.Has(url, "vmoving") : args.Contains("-vmoving");
 
+        /// <summary>Issue #659: "vclose" with "vprofile" in the WebGL URL (or -vclose on desktop) also prices the close views
+        /// (PromoPose.CloseUps), where the towns are Tal's building models; their lines carry those poses' names.</summary>
+        public static bool CloseRequested() =>
+            CloseRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
+
+        public static bool CloseRequested(string? url, string[] args, bool webgl) =>
+            webgl ? UrlFlags.Has(url, "vclose") : args.Contains("-vclose");
+
         public static string Line(string label, string pose, string resolution, float renderScale, int rep, IReadOnlyList<float> frameMs)
         {
             var (avg, p95) = FrameStats.Summary(frameMs);
@@ -80,7 +88,9 @@ namespace Statecraft.Game.Map
             foreach (var name in VisualToggles.Names) configs.Add(("-" + name, name));
             configs.Add(("none", "*"));
             bool first = true;
-            foreach (var pose in PromoPose.All)
+            var poses = new List<PromoPose>(PromoPose.All);
+            if (CloseRequested()) poses.AddRange(PromoPose.CloseUps);
+            foreach (var pose in poses)
             {
                 pose.Apply(rig, frame);
                 if (first)

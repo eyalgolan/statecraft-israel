@@ -43,6 +43,7 @@ namespace Statecraft.Game.Map
         public static IEnumerator Run(CameraRig rig, GeoFrame frame, Action<string> log)
         {
             foreach (var pose in PromoPose.All) yield return Shoot(rig, frame, pose, log);
+            foreach (var pose in PromoPose.CloseUps) yield return Shoot(rig, frame, pose, log);   // issue #659: the models up close
             var off = TurnOff(OffForCloseChecks);
             try { foreach (var pose in PromoPose.CloseChecks) yield return Shoot(rig, frame, pose, log); }
             finally { TurnOn(off); }

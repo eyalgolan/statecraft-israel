@@ -386,6 +386,7 @@ MonoBehaviour:
   frameMaterial: {fileID: 2100000, guid: 556bff8d7fd140779e0903044df5cd10, type: 2}
   kitMaterial: {fileID: 2100000, guid: 24c1cceae1b22492e9c9f2be7c1a6b5e, type: 2}
   treeMaterial: {fileID: 2100000, guid: 2dd15539298814dafa803cdbc57e2426, type: 2}
+  townModels: {fileID: 11400000, guid: 13e34ffd21b0f4be28cdaddaabd3f94f, type: 2}
   terrainWaterMesh: {fileID: 4900000, guid: 51f85aaa1270842658cbc02738ff8df2, type: 3}
 --- !u!4 &1195372453
 Transform:

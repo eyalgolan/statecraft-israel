@@ -76,8 +76,12 @@ namespace Statecraft.Game.Map.Kits
             float yaw = GridYaw(owner);
             var (bottom, top) = GroundSpan(p, yaw, w, d, ground, m);
             var wall = WhitePlaster; var roof = C(0.86f, 0.85f, 0.82f);
+            // Issue #659: up close the hall is Tal's b07 dining hall, the clerestory's height included; far off, the kit's.
+            AddModel(owner, TownModel.B07DiningHall, p, yaw, w, d, h + 1.2f * m, bottom, top, km, m, exactHeight: false, flip: false);
+            var cut = km.CutStart();
             km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Plain, m);
             km.Box(p.x, p.y, yaw, w * 0.8f, d * 0.4f, top + h - 0.3f * m, top + h, 1.2f * m, wall, roof, Facade.Plain, m);
+            km.CutEnd(cut);
             Record(owner, "dining_hall", p, yaw, w, d, h, wall);
             kibbutzHalls++;
             return 1;

@@ -109,6 +109,12 @@ namespace Statecraft.Game.Map.Kits
             public int KibbutzHalls, FarmSheds;
             /// <summary>Landmarks each game settlement built (SettlementKits.Landmarks.cs: a city's own, else its archetype's).</summary>
             public Dictionary<string, int> TownLandmarks = new Dictionary<string, int>();
+            /// <summary>Every building's model (issue #659), towns and localities, in placement order.</summary>
+            public List<ModelInstance> Models = new List<ModelInstance>();
+            /// <summary>Issue #659 (owner ruling on #700: "Models up close only"): each town's and tile's close mesh, its kit
+            /// mesh without the buildings and with the models' plinths (KitMesh.ToCloseMesh), by the kit mesh's name; none
+            /// where nothing would be left.</summary>
+            public Dictionary<string, Mesh> Close = new Dictionary<string, Mesh>();
         }
 
         /// <summary>Side of the square tiles the localities' and camps' buildings are merged into (the trees' tile size).</summary>
@@ -121,6 +127,17 @@ namespace Statecraft.Game.Map.Kits
             KitGround ground, Dictionary<string, Bounds[]>? columns = null)
         {
             kibbutzHalls = farmSheds = 0;
+            var result = new Result();
+            models = result.Models; places = new Dictionary<string, Settlement>(); onceGiven = new HashSet<string>();
+            foreach (var s in towns) places[s.Id] = s;
+            foreach (var s in localities) places[s.Id] = s;
+            try { return Build(towns, localities, camps, ground, columns, result); }
+            finally { models = null; places = null; onceGiven = null; }
+        }
+
+        static Result Build(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
+            KitGround ground, Dictionary<string, Bounds[]>? columns, Result result)
+        {
             var merged = new HashSet<string>();
             foreach (var s in localities) merged.Add(s.Id);
             var order = new List<Settlement>(towns); order.AddRange(localities);
@@ -133,7 +150,6 @@ namespace Statecraft.Game.Map.Kits
                 centres[s.Id] = new Vector2(w.x, w.z);
                 ground.Footprints.Add((centres[s.Id], FootprintRadiusM(s, ground.HexSizeM), s.Id));
             }
-            var result = new Result();
             var tiles = new SortedDictionary<(int, int), KitMesh>();
             KitMesh Tile(Vector2 p)
             {
@@ -223,7 +239,9 @@ namespace Statecraft.Game.Map.Kits
             {
                 var (s, km, _, _, _) = gameTowns[i];
                 if (columns != null && km.VertexCount > 0) columns[s.Id] = km.Columns();
-                result.Towns.Add((s, km.ToMesh(s.Id + "_kit"), totals[i]));
+                var mesh = km.ToMesh(s.Id + "_kit");
+                if (km.ToCloseMesh(s.Id + "_close") is Mesh close) result.Close[mesh.name] = close;
+                result.Towns.Add((s, mesh, totals[i]));
             }
             // A locality's columns, from its own vertices in its tile (read before ToMesh drops the CPU copy).
             if (columns != null)
@@ -233,7 +251,12 @@ namespace Statecraft.Game.Map.Kits
                     foreach (var (km, from, to) in kv.Value) km.Positions(from, to, pts);
                     if (pts.Count > 0) columns[kv.Key] = KitMesh.Columns(pts);
                 }
-            foreach (var kv in tiles) result.Tiles.Add(($"Localities {kv.Key.Item1},{kv.Key.Item2}", kv.Value.ToMesh($"localities_{kv.Key.Item1}_{kv.Key.Item2}")));
+            foreach (var kv in tiles)
+            {
+                var mesh = kv.Value.ToMesh($"localities_{kv.Key.Item1}_{kv.Key.Item2}");
+                if (kv.Value.ToCloseMesh(mesh.name + "_close") is Mesh close) result.Close[mesh.name] = close;
+                result.Tiles.Add(($"Localities {kv.Key.Item1},{kv.Key.Item2}", mesh));
+            }
             result.Claimed = lots.List.ConvertAll(l => (centre: l.c, radius: l.r, id: l.id));
             result.KibbutzHalls = kibbutzHalls; result.FarmSheds = farmSheds;
             return result;
@@ -644,7 +667,7 @@ namespace Statecraft.Game.Map.Kits
                         if (shore && NearSea(p, yaw, b.w + 2f * BeachSetbackM, b.d + 2f * BeachSetbackM, ground)) continue;
                         lots.Add(new Lot { c = p, r = b.lotR, id = s.Id });
                         var drnd = new KitRandom(detail);
-                        var wall = Emit(arch, p, yaw, b, ground, km, ref drnd);
+                        var wall = Emit(s.Id, arch, p, yaw, b, ground, km, ref drnd);
                         Record(s.Id, "building", p, yaw, b.w, b.d, b.h, wall);
                         added++;
                     }
@@ -796,6 +819,17 @@ namespace Statecraft.Game.Map.Kits
         {
             float m = Grid(st).scale;
             var (bottom, top) = GroundSpan(p, yaw, b.w, b.d, ground, m);
+            // Issue #659: up close the building is its model; far off, its kit parts (marked, so the close mesh leaves them out).
+            PlaceModel(id, ModelsFor(st, id, b), p, yaw, b.w, b.d, ModelHeight(st, b), bottom, top, km, m, ExactHeight(st));
+            var cut = km.CutStart();
+            EmitParts(id, st, p, yaw, b, t, ground, km, bottom, top, m, ref rnd);
+            km.CutEnd(cut);
+        }
+
+        /// <summary>A plot's kit parts and its census record.</summary>
+        static void EmitParts(string id, Style st, Vector2 p, float yaw, Spec b, float t, KitGround ground, KitMesh km, float bottom, float top, float m,
+            ref KitRandom rnd)
+        {
             float storey = 3.3f * m;
             switch (st)
             {
@@ -1108,7 +1142,7 @@ namespace Statecraft.Game.Map.Kits
                     ? GridYaw(s.Id) + (rnd.Chance(0.15f) ? 90f : 0f) + rnd.Range(-4f, 4f)
                     : rnd.Range(0f, 90f);
                 lots.Add(new Lot { c = p, r = b.lotR, id = s.Id });
-                Emit(a2, p, yaw, b, ground, km, ref rnd);
+                Emit(s.Id, a2, p, yaw, b, ground, km, ref rnd);
                 placed++;
             }
             return placed;
@@ -1247,10 +1281,24 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Draws a locality's building (promo-villages).</summary>
         /// <returns>The wall colour (the census records it for a town's fallback houses, #317).</returns>
-        static Color32 Emit(Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, ref KitRandom rnd)
+        static Color32 Emit(string id, Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, ref KitRandom rnd)
         {
             float m = KitScale.For(arch);
             var (bottom, top) = GroundSpan(p, yaw, b.w, b.d, ground, m);
+            // Issue #659: up close the building is its model; far off, its kit parts (marked, so the close mesh leaves them out).
+            // A kibbutz's plot (#820, the default branch of EmitParts) by its part; the moshava's red-roofed house by its gable.
+            bool kibbutz = b.part != KibbutzPart.None && arch != Archetype.WhiteCity && arch != Archetype.OldTown && arch != Archetype.ArabTown;
+            var from = kibbutz ? TownModels.ForKibbutz(b.part) : TownModels.ForArchetype(arch, places![id]);
+            float rise = kibbutz ? KibbutzGable(b.part) : arch == Archetype.Moshava ? 0.42f : 0f;
+            PlaceModel(id, from, p, yaw, b.w, b.d, b.h + Mathf.Min(b.w, b.d) * rise, bottom, top, km, m, exactHeight: arch == Archetype.WhiteCity);
+            var cut = km.CutStart();
+            var wall = EmitParts(arch, p, yaw, b, ground, km, bottom, top, m, ref rnd);
+            km.CutEnd(cut);
+            return wall;
+        }
+
+        static Color32 EmitParts(Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, float bottom, float top, float m, ref KitRandom rnd)
+        {
             switch (arch)
             {
                 case Archetype.WhiteCity:
