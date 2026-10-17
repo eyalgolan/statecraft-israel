@@ -20,6 +20,20 @@ public class MoneyTests
         Assert.Equal("Foreign currency", PlayerText.Target(C, "fx_reserves"));
     }
 
+    // R-MONEY-001: before Phase 3 upkeep, the normal economy flow contains only tax, spending and mobilization.
+    [Fact]
+    public void TheTreasuryPaysNoUpkeep()
+    {
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        s.Treasury = 10_000;
+        var before = s.Treasury;
+        var flows = EconomySystem.Flows(C, s, 0.25);
+
+        EconomySystem.Apply(C, s, 0.25, new List<Cause>());
+
+        Assert.Equal(before + flows.Tax - flows.Spending - flows.Mobilization, s.Treasury, 9);
+    }
+
     // R-MONEY-001 (D-C3): a guard, not a change. The real game runs the GDD loop, its debt and foreign currency are in the
     // state hash, and the sourced 1951 crisis still happens: debt is taken on, and reserves run out after 19 October 1951
     // (FRUS 1951 v.V doc 513) and before the turn that covers the end of 1951, as EconomyCalibrationTests anchors.

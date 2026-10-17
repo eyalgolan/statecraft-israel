@@ -68,6 +68,11 @@ public class NationalParametersTests
         // Housing: the existing link (homes_lift_morale) stays.
         var cramped = s.Clone(); EffectsSystem.Shift(Mvp, cramped, "housing", -0.2);
         Assert.True(After(s) > After(cramped), "worse housing lowers Social cohesion");
+
+        // Security: the existing security link stays.
+        var lowSecurity = s.Clone(); EffectsSystem.Shift(Mvp, lowSecurity, "security", 0.2 - lowSecurity.Indicators["security"]);
+        var highSecurity = s.Clone(); EffectsSystem.Shift(Mvp, highSecurity, "security", 0.8 - highSecurity.Indicators["security"]);
+        Assert.True(After(highSecurity) > After(lowSecurity), "better security raises Social cohesion");
     }
 
     /// <summary>The cities' employed share, the effect web's source: employed over civilians summed over all cities, 1 with

@@ -111,4 +111,19 @@ public class ArrivalsTests
         }
         Assert.Equal(Mvp.End, s.Date);
     }
+
+    // R-CITY-008: with natural increase disabled, every change in the national population is an arrival.
+    [Fact]
+    public void TheNationalPopulationReceivesEveryArrival()
+    {
+        var files = Fixture.Gdd();
+        files["rules.yaml"] = files["rules.yaml"].Replace("natural_increase_per_year: 0.017", "natural_increase_per_year: 0");
+        var c = ContentLoader.Load(Fixture.Write(files));
+        var before = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var after = Step(c, before).State;
+        var arrived = PopulationSystem.Arrivals(c, before.Date, after.Date).Values.Sum();
+
+        Assert.True(arrived > 0, "the fixture's first turn has arrivals");
+        Assert.Equal(arrived, after.TotalPopulation - before.TotalPopulation, 9);
+    }
 }
