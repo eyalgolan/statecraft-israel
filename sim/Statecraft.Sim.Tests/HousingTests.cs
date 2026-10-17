@@ -176,9 +176,11 @@ public class HousingTests
 
     static Indicator Housing(Content c) => c.Indicators.Single(i => i.Id == "housing");
 
-    /// <summary>Owner, 17 October 2026 (Q-PR3-A, option (a)): "the people-weighted mean of city condition replaces housing's
-    /// base". Town A houses 10 at condition 0.5, town B 30 at 0.2: (0.5 * 10 + 0.2 * 30) / 40 = 0.275. The plain mean would
-    /// be 0.35, and the fixture's base is 0.3. The fixture has no effect on housing, so the inner level is the mean itself.</summary>
+    /// <summary>Decided (owner, 17 Oct 2026, option (a) of Q-PR3-A, relayed on #855 at 06:33Z,
+    /// https://github.com/eyalgolan/statecraft-israel/pull/855#issuecomment-6230731177): the national housing base is the
+    /// people-weighted mean of city condition. Town A houses 10 at condition 0.5, town B 30 at 0.2:
+    /// (0.5 * 10 + 0.2 * 30) / 40 = 0.275. The plain mean would be 0.35, and the fixture's base is 0.3. The fixture has no
+    /// effect on housing, so the inner level is the mean itself.</summary>
     // R-HOUSE-004
     [Fact]
     public void TheNationalHousingLevelIsThePeopleWeightedMeanCondition()
