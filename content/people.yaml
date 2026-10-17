@@ -28,6 +28,7 @@ people:
   - id: ben_gurion
     name: David Ben-Gurion
     name_he: דוד בן-גוריון
+    name_he_review: agent-checked
     born: 1886-10-16
     died: 1973-12-01
     biography_sources:
@@ -135,6 +136,7 @@ people:
   - id: zisling
     name: Aharon Zisling
     name_he: אהרון ציזלינג
+    name_he_review: agent-checked
     born: 1901-02-26
     died: 1964-01-16
     biography_sources:
@@ -154,6 +156,7 @@ people:
   - id: kaplan
     name: Eliezer Kaplan
     name_he: אליעזר קפלן
+    name_he_review: agent-checked
     born: 1891-01-27
     living: false
     # Died in office on 13 July 1952.
@@ -201,6 +204,7 @@ people:
   - id: sharett
     name: Moshe Sharett
     name_he: משה שרת
+    name_he_review: agent-checked
     # The Knesset member pages (English and Hebrew) give 16 October 1894; en.wiki gives 15 October. The official record
     # is kept (docs/CONTENT_POLICY.md, section 1; issue #457).
     born: 1894-10-16
@@ -240,6 +244,7 @@ people:
   - id: shapira
     name: Haim-Moshe Shapira
     name_he: חיים משה שפירא
+    name_he_review: agent-checked
     born: 1902-03-26
     died: 1970-07-16
     biography_sources:
@@ -292,6 +297,7 @@ people:
   - id: gruenbaum
     name: Yitzhak Gruenbaum
     name_he: יצחק גרינבוים
+    name_he_review: agent-checked
     born: 1879-11-24
     died: 1970-09-07
     biography_sources:
@@ -309,6 +315,7 @@ people:
   - id: rosen
     name: Pinchas Rosen
     name_he: פנחס רוזן
+    name_he_review: agent-checked
     born: 1887-05-01
     died: 1978-05-03
     biography_sources:
@@ -338,6 +345,7 @@ people:
   - id: bentov
     name: Mordechai Bentov
     name_he: מרדכי בנטוב
+    name_he_review: agent-checked
     born: 1900-03-28
     died: 1985-01-18
     biography_sources:
@@ -356,6 +364,7 @@ people:
   - id: sheetrit
     name: Bechor-Shalom Sheetrit
     name_he: בכור-שלום שטרית
+    name_he_review: agent-checked
     born: 1895-01-20
     died: 1967-01-28
     biography_sources:
@@ -387,6 +396,7 @@ people:
   - id: maimon
     name: Yehuda Leib Maimon
     name_he: יהודה לייב מימון
+    name_he_review: agent-checked
     # Hebrew biography date chosen; the conflicting English/dictionary dates are recorded in research_notes/person-biographies.md.
     born: 1875-12-11
     died: 1962-07-10
@@ -416,6 +426,7 @@ people:
   - id: bernstein
     name: Peretz Bernstein
     name_he: פרץ ברנשטיין
+    name_he_review: agent-checked
     born: 1890-06-12
     died: 1971-03-21
     biography_sources:
@@ -446,6 +457,7 @@ people:
   - id: remez
     name: David Remez
     name_he: דוד רמז
+    name_he_review: agent-checked
     born: 1886-05-23
     biography_sources:
       name_he: [{ url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Person(2613)", checked: 2026-10-14 }]
@@ -466,6 +478,7 @@ people:
   - id: levin
     name: Yitzhak-Meir Levin
     name_he: יצחק-מאיר לוין
+    name_he_review: agent-checked
     born: 1893-01-30
     died: 1971-08-07
     biography_sources:
@@ -492,6 +505,7 @@ people:
   - id: dov_yosef
     name: Dov Yosef
     name_he: דב יוסף
+    name_he_review: agent-checked
     born: 1899-05-27
     died: 1980-01-07
     biography_sources:
@@ -543,6 +557,7 @@ people:
   - id: shazar
     name: Zalman Shazar
     name_he: זלמן שז״ר
+    name_he_review: agent-checked
     # The President's Office page gives 24 November 1889; the Knesset member page gives 22 December 1889 (issue #457).
     born: 1889-11-24
     died: 1974-10-05
@@ -565,6 +580,7 @@ people:
   - id: golda_meir
     name: Golda Meir
     name_he: גולדה מאיר
+    name_he_review: agent-checked
     title_he_form: feminine
     born: 1898-05-03
     died: 1978-12-08
@@ -592,6 +608,7 @@ people:
   - id: lavon
     name: Pinhas Lavon
     name_he: פנחס לבון
+    name_he_review: agent-checked
     born: 1904-07-12
     died: 1976-01-24
     biography_sources:
@@ -627,6 +644,7 @@ people:
   - id: geri
     name: Ya'akov Geri
     name_he: יעקב גרי
+    name_he_review: agent-checked
     born: 1901-09-18
     died: 1974-12-18
     biography_sources:
@@ -645,6 +663,7 @@ people:
   - id: eshkol
     name: Levi Eshkol
     name_he: לוי אשכול
+    name_he_review: agent-checked
     born: 1895-10-25
     died: 1969-02-26
     biography_sources:
@@ -673,6 +692,7 @@ people:
   - id: dinur
     name: Ben-Zion Dinur
     name_he: בן ציון דינור
+    name_he_review: agent-checked
     born: 1884-01-02
     died: 1973-07-08
     biography_sources:
@@ -694,6 +714,7 @@ people:
   - id: burg
     name: Yosef Burg
     name_he: שלמה יוסף בורג
+    name_he_review: agent-checked
     born: 1909-01-31
     died: 1999-10-15
     biography_sources:
@@ -719,6 +740,7 @@ people:
   - id: pinkas
     name: David-Zvi Pinkas
     name_he: דוד-צבי פנקס
+    name_he_review: agent-checked
     born: 1895-12-05
     died: 1952-08-14
     biography_sources:
@@ -736,6 +758,7 @@ people:
   - id: naftali
     name: Peretz Naftali
     name_he: פרץ נפתלי
+    name_he_review: agent-checked
     born: 1888-03-19
     died: 1961-04-30
     biography_sources:
@@ -759,6 +782,7 @@ people:
   - id: haim_cohn
     name: Haim Cohn
     name_he: חיים כהן
+    name_he_review: agent-checked
     born: 1911-03-11
     died: 2002-04-10
     biography_sources:
@@ -776,6 +800,7 @@ people:
   - id: nurock
     name: Mordechai Nurock
     name_he: מרדכי נורוק
+    name_he_review: agent-checked
     born: 1879-11-07
     died: 1962-11-08
     biography_sources:
@@ -793,6 +818,7 @@ people:
   - id: rokach
     name: Israel Rokach
     name_he: ישראל רוקח
+    name_he_review: agent-checked
     born: 1896-12-31
     died: 1959-09-13
     biography_sources:
@@ -812,6 +838,7 @@ people:
   - id: serlin
     name: Yosef Serlin
     name_he: יוסף סרלין
+    name_he_review: agent-checked
     born: 1906-02-24
     died: 1974-01-15
     biography_sources:
@@ -838,6 +865,7 @@ people:
   - id: yosef_sapir
     name: Yosef Sapir
     name_he: יוסף ספיר
+    name_he_review: agent-checked
     born: 1902-01-27
     died: 1972-02-26
     biography_sources:
@@ -858,6 +886,7 @@ people:
   - id: aran
     name: Zalman Aran
     name_he: זלמן ארן
+    name_he_review: agent-checked
     born: 1899-03-01
     died: 1970-09-06
     biography_sources:
@@ -876,6 +905,7 @@ people:
   - id: luz
     name: Kadish Luz
     name_he: קדיש לוז
+    name_he_review: agent-checked
     born: 1895-01-10
     died: 1972-12-04
     biography_sources:
@@ -892,6 +922,7 @@ people:
   - id: pinchas_sapir
     name: Pinchas Sapir
     name_he: פנחס ספיר
+    name_he_review: agent-checked
     born: 1906-10-15
     died: 1975-08-12
     biography_sources:
@@ -909,6 +940,7 @@ people:
   - id: barzilai
     name: Yisrael Barzilai
     name_he: ישראל ברזילי
+    name_he_review: agent-checked
     born: 1913-10-01
     died: 1970-06-12
     biography_sources:
@@ -925,6 +957,7 @@ people:
   - id: bar_yehuda
     name: Yisrael Bar-Yehuda
     name_he: ישראל בר-יהודה
+    name_he_review: agent-checked
     born: 1895-11-15
     died: 1965-05-04
     biography_sources:
@@ -943,6 +976,7 @@ people:
   - id: carmel
     name: Moshe Carmel
     name_he: משה כרמל
+    name_he_review: agent-checked
     born: 1911-01-17
     died: 2003-08-14
     biography_sources:
@@ -961,6 +995,7 @@ people:
   - id: namir
     name: Mordechai Namir
     name_he: מרדכי נמיר
+    name_he_review: agent-checked
     born: 1897-02-23
     died: 1975-02-22
     biography_sources:
@@ -978,6 +1013,7 @@ people:
   - id: weizmann
     name: Chaim Weizmann
     name_he: חיים ויצמן
+    name_he_review: agent-checked
     born: 1874-11-27
     died: 1952-11-09
     biography_sources:
@@ -1003,6 +1039,7 @@ people:
   - id: ben_zvi
     name: Yitzhak Ben-Zvi
     name_he: יצחק בן-צבי
+    name_he_review: agent-checked
     # Gregorian date; en.wikipedia gives 24 November 1884, the Julian date then used in Russia (he.wikipedia's note).
     born: 1884-12-06
     died: 1963-04-23
@@ -1025,6 +1062,7 @@ people:
   - id: dori
     name: Yaakov Dori
     name_he: יעקב דורי
+    name_he_review: agent-checked
     born: 1899-10-08
     died: 1973-01-22
     biography_sources:
@@ -1042,6 +1080,7 @@ people:
   - id: yadin
     name: Yigael Yadin
     name_he: יגאל ידין
+    name_he_review: agent-checked
     born: 1917-03-20
     died: 1984-06-28
     biography_sources:
@@ -1059,6 +1098,7 @@ people:
   - id: maklef
     name: Mordechai Maklef
     name_he: מרדכי מקלף
+    name_he_review: agent-checked
     born: 1920-01-19
     died: 1978-02-22
     biography_sources:
@@ -1074,6 +1114,7 @@ people:
   - id: dayan
     name: Moshe Dayan
     name_he: משה דיין
+    name_he_review: agent-checked
     born: 1915-05-20
     died: 1981-10-16
     biography_sources:
@@ -1091,6 +1132,7 @@ people:
   - id: efrati
     name: Yosef Efrati
     name_he: יוסף אפרתי
+    name_he_review: agent-checked
     born: 1897-02-19
     died: 1975-02-08
     biography_sources:
@@ -1123,6 +1165,7 @@ people:
   - id: shari
     name: Reuven Shari
     name_he: ראובן שרי
+    name_he_review: agent-checked
     born: 1903-04-07
     died: 1989-07-06
     biography_sources:
@@ -1149,6 +1192,7 @@ people:
   - id: kahana
     name: Kalman Kahana
     name_he: קלמן כהנא
+    name_he_review: agent-checked
     born: 1910-05-31
     died: 1991-08-20
     biography_sources:
@@ -1173,6 +1217,7 @@ people:
   - id: warhaftig
     name: Zorach Warhaftig
     name_he: זרח ורהפטיג
+    name_he_review: agent-checked
     born: 1906-02-02
     died: 2002-09-26
     biography_sources:
@@ -1197,6 +1242,7 @@ people:
   - id: ben_meir
     name: Shlomo-Yisrael Ben-Meir
     name_he: שלמה-ישראל בן-מאיר
+    name_he_review: agent-checked
     born: 1910-08-13
     died: 1971-04-04
     biography_sources:
@@ -1220,6 +1266,7 @@ people:
   - id: susayeff
     name: Zalman Susayeff
     name_he: זלמן סוזאיב
+    name_he_review: agent-checked
     born: 1911-02-14
     died: 1981-02-25
     biography_sources:
@@ -1237,6 +1284,7 @@ people:
   - id: tzur
     name: Ze'ev Tzur
     name_he: זאב צור
+    name_he_review: agent-checked
     born: 1911-09-11
     died: 1994-09-28
     biography_sources:
@@ -1253,6 +1301,7 @@ people:
   - id: unna
     name: Moshe Unna
     name_he: משה אונא
+    name_he_review: agent-checked
     born: 1902-11-22
     died: 1989-02-21
     biography_sources:
@@ -1271,6 +1320,7 @@ people:
   - id: assaf
     name: Ami Assaf
     name_he: עמי אסף
+    name_he_review: agent-checked
     born: 1903-07-22
     died: 1963-05-17
     biography_sources:
