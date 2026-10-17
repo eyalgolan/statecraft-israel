@@ -62,11 +62,57 @@ public class CityPanelTests
         var city = bridge.State.Cities[City];
         Assert.AreEqual((0, 0), (city.Refugees, city.Recruits), "precondition: no refugees or recruits at the start (the plural forms below)");
         Assert.AreEqual(DisplayStyle.Flex, Host(ui).style.display.value, "the GDD part of the panel shows");
-        Assert.AreEqual(En.Format("city.housing", city.Civilians, En.Format("city.groups", city.HousingCapacity)), ui.Q<Label>("city-housing").text);
+        Assert.AreEqual(En.Format("city.housing_condition", Cities.Housed(bridge.State, city), En.Format("city.groups", city.HousingCapacity), PlayerText.Percent(city.Condition!.Value)), ui.Q<Label>("city-housing").text);
         Assert.AreEqual(En.Format("city.jobs", city.Employed, city.JobSlots), ui.Q<Label>("city-jobs").text);
         Assert.AreEqual(En.Format("city.refugees", En.Format("city.groups", city.Refugees)), ui.Q<Label>("city-refugees").text);
         Assert.AreEqual(En.Format("city.recruits", En.Format("city.groups", city.Recruits)), ui.Q<Label>("city-recruits").text);
         Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", city.Employed)), ui.Q<Label>("city-workers").text);
+    }
+
+    [Test]
+    public void TheHousingLineCountsRecruitsAndGroupsInTraining()
+    {
+        // R-HOUSE-003: the people who take a city's housing are its civilians, its recruits and its groups in training
+        // (Cities.Housed), not its civilians alone. 10 civilians, 3 recruits and a cohort of 2 are 15 housed.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s =>
+        {
+            s.Cities[City] = s.Cities[City].WithCounts(10, 0, 0).WithRecruits(3);
+            var id = s.NextId++;
+            s.Cohorts.Add(id, new Cohort(id, "halutz", City, 2, 3));
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var city = bridge.State.Cities[City];
+        Assert.AreEqual(15, Cities.Housed(bridge.State, city), "precondition: the sim houses the recruits and the trainees too");
+        Assert.AreEqual(En.Format("city.housing_condition", 15, En.Format("city.groups", city.HousingCapacity), PlayerText.Percent(city.Condition!.Value)), ui.Q<Label>("city-housing").text);
+    }
+
+    [Test]
+    public void TheCityHexShowsItsHousingConditionFromTheSim()
+    {
+        // R-HOUSE-001: each city's housing condition, 0 to 1, on the Housing line (so the panel is no taller), shown with the
+        // one percent formatter.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Cities[City] = s.Cities[City].WithCondition(0.42));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var city = bridge.State.Cities[City];
+        Assert.AreEqual(En.Format("city.housing_condition", Cities.Housed(bridge.State, city), En.Format("city.groups", city.HousingCapacity), "42%"), ui.Q<Label>("city-housing").text);
+        Assert.AreEqual("42%", PlayerText.Percent(0.42), "precondition: the formatter's reading");
+    }
+
+    [Test]
+    public void ACityWithoutAConditionShowsThePlainHousingLine()
+    {
+        // City.Condition is null only on a hand-built record; the line then shows the count without a made-up condition.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { var x = s.Cities[City]; s.Cities[City] = new Statecraft.Sim.City(x.Id, x.HousingCapacity, x.JobSlots, 10, 0, 0, 3); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var city = bridge.State.Cities[City];
+        Assert.IsNull(city.Condition, "precondition: no condition");
+        Assert.AreEqual(En.Format("city.housing", 13, En.Format("city.groups", city.HousingCapacity)), ui.Q<Label>("city-housing").text);
     }
 
     [Test]
@@ -410,7 +456,7 @@ public class CityPanelTests
         Assert.AreEqual(He["site.available"], ui.Q<Label>("site-state").text);
         panel.Show(CityHex.q, CityHex.r);
         var city = bridge.State.Cities[City];
-        Assert.AreEqual(He.Format("city.housing", city.Civilians, He.Format("city.groups", city.HousingCapacity)), ui.Q<Label>("city-housing").text);
+        Assert.AreEqual(He.Format("city.housing_condition", Cities.Housed(bridge.State, city), He.Format("city.groups", city.HousingCapacity), PlayerText.Percent(city.Condition!.Value)), ui.Q<Label>("city-housing").text);
     }
 
     [Test]
