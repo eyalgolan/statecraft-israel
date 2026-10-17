@@ -179,6 +179,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the reference player's halutz group becomes a veteran after Beit Kama and builds Gilat, Mefalsim and Re'im in 3 turns
   each, so the first new yishuv completes on 1949-09-15 (was 1950-03-15), and by 1950 the score is 100 and the debt is
   IL 2m higher. The 1952 score and debt do not change.
+- The GDD loop's event rules have IDs and tests (D-H1; GDD Phase 7 PR 1, refs #805): R-EVT-001 to R-EVT-005 in
+  `docs/rules/mvp.md`, as the owner decided Q-EVT-1 to Q-EVT-4 on 17 October 2026 (#784). Hard anchors always fire, at
+  most 3 soft events a turn in order of `from` then id, unanswered events are delegated, and no effect is delayed; no
+  behaviour changes and no golden moves. `EventSystem.OptionEffects` lists every effect of an option for the event card.
 - City and town pills start with their population tier, a gold disc with a number from 1 to 9 (refs #710). The tier is
   static: it comes from the city's 1948 people in `content/cities.yaml` (#821), not from the sim's live count (owner,
   15 October 2026). The scale is the design value proposed on #710 and not yet ruled: tiers double from 1,000, so under

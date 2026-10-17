@@ -63,8 +63,7 @@ namespace Statecraft.Sim
             var fillDate = FillDate(Get(c, eventId), s.Date);
             var title = Cabinet.Fill(c, s, Get(c, eventId).Title, fillDate);
             why.Add(new Cause("events", eventId, 0, $"{how}: {Cabinet.Fill(c, s, o.Text, fillDate)}"));
-            // A late-fired event can be resolved after a dated record's window has ended (chapters design 3.2): nothing reaches it.
-            foreach (var fx in o.Effects.Where(fx => EventRules.SpecialTargets.Contains(fx.Target) || s.Indicators.ContainsKey(fx.Target)))
+            foreach (var fx in o.Effects.Where(fx => Reaches(s, fx.Target)))
             {
                 var change = fx.Delta;
                 if (fx.Target == "treasury")
@@ -95,6 +94,24 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})"));
             }
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
+        }
+
+        /// <summary>A late-fired event can be resolved after a dated record's window has ended (chapters design 3.2): an
+        /// effect on a target that no longer exists reaches nothing.</summary>
+        static bool Reaches(GameState s, string target) => EventRules.SpecialTargets.Contains(target) || s.Indicators.ContainsKey(target);
+
+        /// <summary>R-EVT-005: every effect of an option, in the order choosing it applies them (Resolve): the numeric
+        /// effects, the policies it sets (by id), then the security level. Each amount is the option's own; Resolve may
+        /// apply less where an indicator meets its bound or the Food stock its floor, and rounds Food to whole units. The
+        /// event card will read this list (Q-EVT-4, owner 17 October 2026; Phase 7 PR 8), so no number is computed in Unity.</summary>
+        public static List<Cause> OptionEffects(Content c, GameState s, EventOption o)
+        {
+            var lines = o.Effects.Where(fx => Reaches(s, fx.Target))
+                .Select(fx => new Cause("events", fx.Target, fx.Delta, PlayerText.Change(c, fx.Target, fx.Delta))).ToList();
+            lines.AddRange(o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal)
+                .Select(k => new Cause("events", k.Key, k.Value, $"{PlayerText.Target(c, k.Key)} set to {PlayerText.Percent(k.Value)}")));
+            if (o.SetRung.HasValue) lines.Add(new Cause("events", "rung", o.SetRung.Value, FormattableString.Invariant($"Security level set to {o.SetRung.Value}")));
+            return lines;
         }
 
         /// <summary>Unanswered events go to the responsible minister: with probability competence/10 they pick the

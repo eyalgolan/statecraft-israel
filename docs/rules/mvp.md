@@ -133,3 +133,17 @@ R-NAT-004: "Low international support" (`low_intl_support`) is a situation on `i
 R-EFX-001: An option's effect may target an indicator id from `model.yaml`, `treasury` or `fx_reserves` (game money), or `food`, the national Food stock: the effect moves the stock by whole units (the delta rounds half away from zero) and the stock never drops below 0, so a cut larger than the stock applies only to what is there. Any other target is a load error naming file and field. The Arms stock becomes a target with its pool (#781).
 
 R-EFX-002: An option of an event tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot raise `treasury`, `fx_reserves`, `food`, `food_supply`, `morale` or `intl_standing` (Q-EFX-2, decided 15 October 2026: the no-gain rule covers all five resources, with the legacy indicators standing for Food, Social cohesion and International Support; `food` is Food's own target, and Arms joins the rule with its pool, #781). A cost stays allowed. The rule for the Phase 6 `displacement` tag is Q-DEP-6 (open).
+
+## Events
+
+D-H1 in the GDD loop (GDD Phase 7 PR 1, #805). The owner took the plan's recommendations for Q-EVT-1 to Q-EVT-4 on 17 October 2026 (#784). As the plan's Decided rows record them (`docs/superpowers/plans/2026-10-15-gdd-phase-7.md`), that keeps windows, hard anchors and the cap of 3 soft events a turn, keeps delegation, adds no delayed effects in the MVP, and shows every effect of every option from the sim's preview. These rules state what the code already does; no behaviour changed.
+
+R-EVT-001: An event fires on the first turn whose span overlaps its window `[from, to)` (or at the new game, when the start date is in it), once its `requires` is met and its conditions hold; an objective's card also waits for its objective (R-OBJ-003). Every eligible hard anchor fires. At most 3 soft events fire a turn (`EventSystem.MaxSoftEventsPerTurn`); they take the slots the hard anchors leave, `max(0, 3 - hard anchors)`, and the rest wait for a later turn (Q-CUT-6).
+
+R-EVT-002: The soft events take the free slots in order of `from`, then id (ordinal). The decided place of an early armistice ahead of the other soft events (Q-EVT-1, through `front_quiet`, Q-OBJ-1) lands with that key in Phase 5 PR 13 (#752), and this rule is reworded then.
+
+R-EVT-003: An event the player leaves unanswered at End Turn is delegated to its office's holder (Q-EVT-2): with probability competence/10 the holder picks the recommended option (else the first), otherwise a random option. In Historical mode a hard anchor takes its historical option, and an objective's card its one option, with no RNG draw.
+
+R-EVT-004: An option's effects apply when it is chosen or delegated, on that turn, and never later; an option has no delayed form, and the loader refuses an unknown key such as `delay` (Q-EVT-3).
+
+R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an option in the order choosing it applies them: the numeric effects, the policies it sets (by id), then the security level, each with the option's own amount (Q-EVT-4). The event card will show this list (GDD Phase 7 PR 8), so no number will be computed in Unity.
