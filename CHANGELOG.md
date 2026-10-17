@@ -20,6 +20,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   name their months in Hebrew ("מ־15 במאי 1948 עד 15 ביוני 1948", "באוגוסט 1950") through the `date.*` strings, as
   the top bar does since #696 (refs #701). English is unchanged. `info.built` in Hebrew now says "ב{1}" instead of
   "בשנת {1}", since its value is a month and a year.
+- The surf south of Jaffa no longer reads as evenly combed white lines (refs #716, #690). On the dune coasts the
+  breakers draw apart offshore, as a shoaling swell's do: 450 m apart at the shore, 1.5 km at the 3 km zone's edge
+  (`ScBreakerChirp` in `StatecraftMap.hlsl`). `coast_measure`'s stripe_rows for the south window falls from 0.47 to 0.25
+  (promo 03 0.30) on gameplay03 editor renders, with the foam band at 34.7 px (35.6 before) and 2 lace lines. The kurkar
+  coast is unchanged. `SeaTests.TheDuneCoastsSurfIsNotCombedIntoEvenLines` measures it.
 - The loading screen's boot-failure line wraps inside the screen with a side margin (refs #765). In Hebrew at phone width
   it ran past both edges, so the player could not read "reload the page"; `.loading-line` had no `white-space: normal`.
   `UiLayoutTests.TheBootFailureLineWrapsInsideTheScreen` checks English and Hebrew at 390x844, 960x600 and 1280x720.
