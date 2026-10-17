@@ -219,8 +219,6 @@ series:
 mvp:
   people_per_unit: 10
   income_per_job_per_year: 1.2
-  cohesion_housing_weight: 0.5
-  cohesion_jobs_weight: 0.5
   city_arrivals_from: 1948-05-15
   build_yishuv_turns: 3
   build_yishuv_cost: 1.5
@@ -229,6 +227,8 @@ mvp:
   objective_bonus_cap: 60
   k_food: 0.1
   cover_months: 3
+  veteran_halutz_service: 4
+  veteran_progress: 2
 ";
 
     public static readonly string GddCities = "\ncities:\n" + City("town_a", 12, 8, 10, 6, "[military_camp, hakhshara]");

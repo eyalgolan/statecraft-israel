@@ -46,7 +46,7 @@ namespace Statecraft.Sim
             // Read every source before writing anything, so effect order cannot change results.
             var v = c.At(s.Date);
             var targets = v.Effects.ToDictionary(e => e.Id, e =>
-                e.K * (s.Policies.TryGetValue(e.Source, out var p) ? p : s.Indicators[e.Source]) * Multiplier(c, s, e.Office));
+                e.K * Source(s, e.Source) * Multiplier(c, s, e.Office));
             var moved = new HashSet<string>();
             foreach (var e in v.Effects)
             {
@@ -68,6 +68,13 @@ namespace Statecraft.Sim
             }
             UpdateSituations(c, s, why);
         }
+
+        /// <summary>An effect's source level: a policy, an indicator, or the cities' employed share (R-CITY-005). The legacy
+        /// loop has no cities, so there the share reads 0 and the effect adds nothing (not 1, which would lift morale).</summary>
+        static double Source(GameState s, string id) =>
+            s.Policies.TryGetValue(id, out var p) ? p
+            : id == Cities.EmployedShareSource ? (s.Cities.Count == 0 ? 0.0 : Cities.EmployedShare(s))
+            : s.Indicators[id];
 
         /// <summary>clamp(base + effect contributions) to [0, 1], before event shifts. In the GDD loop food_supply also carries
         /// the Food stock's term (R-FOOD-003), exactly 0 at a full cover.</summary>

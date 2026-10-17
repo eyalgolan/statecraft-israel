@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-/// <summary>Tal's 23 Tripo building models (issue #659, from #507) are imported to load light, the maintainer's gate of
+/// <summary>MATKOT's 23 Tripo building models (issue #659, from #507) are imported to load light, the maintainer's gate of
 /// 15 October 2026: "we need to make sure this is built in a way that doesnt make the game extremely hard to load". No
 /// model sits under a Resources folder (Unity ships every file there whether used or not); each mesh is a static,
 /// compressed, non-readable mesh with no animation, rig, blend shapes, cameras, lights, colliders or tangents; each

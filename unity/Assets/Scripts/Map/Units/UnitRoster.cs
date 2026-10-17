@@ -37,13 +37,20 @@ namespace Statecraft.Game.Map.Units
     /// <summary>Which units the map draws, from the sim's state and the map-only unit data (docs/units.md, "Units in play").
     /// Pure and read-only: it reads the date, the security level and the reserve call-up, and never writes the state, so
     /// the sim and its goldens cannot move (UnitsInPlayTests). Rules (owner, 2026-10-11):
-    /// a unit shows while the date is inside one of its sourced anchor windows, and never when its row is hidden;
+    /// a unit shows while the date is inside one of its sourced anchor windows, and never when its row is hidden or is not
+    /// Israel's (<see cref="OnMap"/>);
     /// an army token has 3 figures at a call-up of at least the security-level-4 floor (rules.yaml rung_min_mobilization,
     /// 0.4), 2 at the level-3 floor (0.15), else 1; an air unit flies at security level 4 or 5 and stands parked below it,
     /// as the aircraft type of its dated window (the Avia S-199, then the Spitfire).</summary>
     public static class UnitRoster
     {
         public const int FlyingFromRung = 4;
+
+        /// <summary>Whether the map draws <paramref name="u"/> at all: not hidden, and Israel's. The Arab forces' rows are
+        /// data only until Phase 5 PR 17's figures land, after its sensitivity review (owner, 17 October 2026, #740: "Nothing
+        /// is drawn with IDF figures, and there is no placeholder art"). The roster and the placer both skip every other
+        /// row, so such a row draws no token, takes no spot and clears no ground for the kits.</summary>
+        public static bool OnMap(UnitEntry u) => u.Hidden == null && u.Side == UnitData.Israel;
 
         public static List<UnitToken> Build(IReadOnlyList<UnitEntry> units, Content content, GameState state)
         {
@@ -58,7 +65,7 @@ namespace Statecraft.Game.Map.Units
             var list = new List<UnitToken>();
             foreach (var u in units)
             {
-                if (u.Hidden != null) continue;
+                if (!OnMap(u)) continue;
                 var anchor = AnchorAt(u, date);
                 if (anchor == null) continue;
                 switch (u.Service)

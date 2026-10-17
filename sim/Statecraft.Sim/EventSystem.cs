@@ -75,7 +75,17 @@ namespace Statecraft.Sim
                     else s.Treasury += fx.Delta;
                     continue;
                 }
-                if (fx.Target == "fx_reserves") s.FxReserves += fx.Delta;
+                if (fx.Target == Pools.FoodTarget)
+                {
+                    // R-EFX-001: an event moves the national Food stock by whole units (the delta rounds half away
+                    // from zero, and the loader bounds it to the int range). The stock stays in 0..int.MaxValue,
+                    // computed in long so nothing wraps, and the cause carries the change that applied.
+                    var want = (long)Math.Round(fx.Delta, MidpointRounding.AwayFromZero);
+                    var applied = Math.Max(-(long)s.Food, Math.Min(want, (long)int.MaxValue - s.Food));
+                    s.Food = (int)(s.Food + applied);
+                    change = applied;
+                }
+                else if (fx.Target == "fx_reserves") s.FxReserves += fx.Delta;
                 else change = EffectsSystem.Shift(c, s, fx.Target, fx.Delta);
                 why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})"));
             }

@@ -7,7 +7,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Added
+- Event options can now move the national Food stock: `food` is an effect target in whole units, the loader
+  validates it, and the sensitive-event no-gain rule covers it (R-EFX-001 and R-EFX-002; refs #729). The Arms
+  target follows with its pool (#781).
+
 ### Fixed
+- The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
+  legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
+  (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
 - In the Hebrew UI the Budget's "no ministry until" date, the Why? screen's turn span and the info panel's build date
   name their months in Hebrew ("מ־15 במאי 1948 עד 15 ביוני 1948", "באוגוסט 1950") through the `date.*` strings, as
   the top bar does since #696 (refs #701). English is unchanged. `info.built` in Hebrew now says "ב{1}" instead of
@@ -20,6 +28,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   The checks file is now written in the bundle cache and copied beside the shipped bundles.
 
 ### Changed
+- The 3D-model credits in code comments and one test's failure message now name MATKOT, as the owner asked on 17 October 2026; credit text only, with no behaviour change.
+- People audit batch 1 (#457): shazar's name_he now cites the Knesset's member page instead of en.wiki; the
+  batch's source-coverage findings (some MK pages - Kaplan, Pinkas - carry the birth year only, so those exact
+  birth dates keep their citations pending a JPress pass; the Zisling spelling conflict) are recorded in the PR. No values changed.
+- The MVP has four designated yishuv sites, where it had Mefalsim alone (refs #785, #384; Q-SITE-1, owner, #782):
+  Beit Kama (18 April 1949), Re'im (20 October 1949) and Gilat (4 December 1949) join it in `content/sites.yaml`, each
+  with a field site in its hex. A site now has kinds (`yishuv`, `field`, `swamp`, `military_camp`, `hakhshara`); an
+  action is accepted only at a site of its kind (R-SITE-004), and a hex holds at most one yishuv site (R-SITE-005). The
+  reference player builds the four in id order, so `hash1950`, `hash1952` and `mvp-end` move (docs/determinism.md).
 - Tel Aviv's White City is plastered a warm cream, as in promo 03, where it was a cooler lime white (refs #658). Walls,
   parapets and roof terraces change in Tel Aviv only. Haifa's Hadar and every other town keep their colours, and Tel
   Aviv stays clearly lighter than Jaffa's sandstone (`TownCensusTests.TelAvivsPlasterIsWarmCreamAndStillWhiterThanJaffa`).
@@ -27,11 +44,20 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   MVP"). Its stability still follows public approval and still weights the coalition votes; the legacy loop keeps its
   collapse. R-GOV-002 pins what the GDD orders cost in Attention: each has a price, the unit orders are free, and a
   refused order is refunded. No golden moves: no reference run's stability falls below 0.2.
+- Social cohesion is now the `morale` indicator, shown as "Social cohesion" (refs #728; GDD Phase 2 PR 4, D-C1).
+  The cities' employed share and `food_supply` feed it through the effects web beside homes and safety, so idle workers
+  and a Food shortage lower it (Q-NAT-2). "Low social cohesion" and "Low international support" are new situations,
+  on below 30% and off above 45%. Phase 1's separate cohesion value, its `coh=` hash line and its two weights are gone;
+  the top bar's meter reads `morale`. The new numbers are labelled design values. Every golden is re-pinned.
 - The Negev's sand is a warmer orange, toward promo 02 (refs #709, #695, #388; the owner chose this step on 16 October
   2026): the desert ground colour has less blue (`MapPalette`), re-baked into `BiomeColours.bytes` and the minimap relief.
   The #519 grade is unchanged.
 - The overview's sea is a deeper blue, toward promo 02 (refs #709, #695, #388): the water haze, seen only beyond 120 km,
   is bluer (`MapShaderGlobals.WaterHazeColour`), so the gameplay zoom's sea does not change. The #519 grade is unchanged.
+- Nahalal, the map's moshav, is laid out as Kauffmann's ring (refs #32): a public building at the hub, across from the water
+  tower (plastered, a red tiled gable, longer than a farmstead), and its farmsteads turned with the long side along the
+  ring street instead of square to one grid. The basis is en.wiki "Nahalal": "the public buildings ... in the centre",
+  "then a ring street with the farmers' homesteads bordering on it on the outside". No other place moves.
 - A kibbutz no longer looks like a moshav or a moshava (refs #32). The five kibbutz game settlements and the kibbutz rows
   of the 1948 localities get a dining hall near the heart, opposite the water tower (white, flat roof, a raised
   clerestory), long one-storey members' houses under red tiles, and grey-roofed farm sheds on one side, the farm yard.
@@ -145,6 +171,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (Q-CUT-8). Every golden moves; the cutover re-pins them once.
 
 ### Added
+- A halutz group becomes a veteran pioneer (`veteran_halutz`) after 6 turns of work, one yishuv's build, and a
+  veteran builds twice as fast: 2 turns of progress a turn (refs #790; GDD Phase 4 PR 6, D-D9, R-VET-001, R-VET-002).
+  Only turns whose project progressed count. Both numbers are labelled design values from the Phase 4 plan, which the
+  owner took on #782. A unit's service is hashed only when it is not 0. hash1950, hash1952 and mvp-end are re-pinned:
+  the reference player's halutz group becomes a veteran after Beit Kama and builds Gilat, Mefalsim and Re'im in 3 turns
+  each, so the first new yishuv completes on 1949-09-15 (was 1950-03-15), and by 1950 the score is 100 and the debt is
+  IL 2m higher. The 1952 score and debt do not change.
 - City and town pills start with their population tier, a gold disc with a number from 1 to 9 (refs #710). The tier is
   static: it comes from the city's 1948 people in `content/cities.yaml` (#821), not from the sim's live count (owner,
   15 October 2026). The scale is the design value proposed on #710 and not yet ruled: tiers double from 1,000, so under
@@ -157,6 +190,14 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   a square yard closed by a wall, a lookout tower in its corner, the living quarters along one side and the service
   buildings along another. The larger living building is Revivim's kibbutz dining hall (he.wiki "רביבים": the fortress
   held "חדר אוכל"). `SettlementKits.Outpost.cs`; `NegevOutpostKitTests`.
+- The Arab forces of 15 May and 11 June 1948 are in `content/map/units_1948.yaml` as data only (refs #740, #385,
+  #226): the Egyptian Expeditionary Force, the Arab Legion, the Syrian Army, the Iraqi Expeditionary Force, the Lebanese
+  Army (hidden: no place two sources agree on) and the Arab Liberation Army, each with its `side`, an `echelon` and one
+  sourced 15 May `strength` (Q-START-3), from `research_notes/GDD phase 5/arab-forces-1948.md`. The map does not draw
+  them: `UnitRoster.OnMap` keeps the roster and the placer to Israel's rows until Phase 5 PR 17's figures and their
+  sensitivity review (owner, 17 October 2026), so no token, spot or kit clearing changes. `UnitData` reads `strength`,
+  `echelon` and the sides `ala` and `local_arab_forces` (Q-START-4). At the first truce the Egyptian row stands at
+  both its forward base, Isdud, and its rear base, Majdal (owner, 17 October 2026, on #860). The rows are drafts.
 - A Settings screen, opened from a gear at the foot of the left column (refs #40, first slice). Its first option turns
   the tilt-shift blur off and on, at once; the choice is kept per browser in `/idbfs/statecraft-settings/settings.txt`
   (a fixed folder, as the autosave's), never in the sim or the save, so the goldens do not move. `?notiltshift` still

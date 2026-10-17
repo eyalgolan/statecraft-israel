@@ -11,7 +11,7 @@ Thanks for helping. This file covers how to get set up, the rules every change f
 
 If you're unsure where to start, open an issue first and describe what you want to do.
 
-**Picking an issue.** Issues with the label `ready for a contributor` are the easiest to start. They come from the **Task** issue form: a goal, the files likely touched, the commands that must pass, the agreed sources, what needs the maintainer's sign-off, and whether Unity is needed. When every field is filled, you can finish the work without asking the maintainer. If a field is missing or unclear, ask in the issue before you start. The label `needs-unity` marks an issue you cannot finish without Unity (see "Without Unity" in [docs/dev-setup.md](docs/dev-setup.md)); `area: unity` only says the issue touches `unity/`.
+**Picking an issue.** Start with an open [`good first issue`](https://github.com/eyalgolan/statecraft-israel/issues?q=is%3Aopen+label%3A%22good+first+issue%22). If you read Hebrew, you can take one of the native-speaker review slices. Comment "Taking this" before you start. Issues with the label `ready for a contributor` come from the **Task** issue form: a goal, the files likely touched, the commands that must pass, the agreed sources, what needs the maintainer's sign-off, and whether Unity is needed. When every field is filled, you can finish the work without asking the maintainer. If a field is missing or unclear, ask in the issue before you start. The label `needs-unity` marks an issue you cannot finish without Unity (see "Without Unity" in [docs/dev-setup.md](docs/dev-setup.md)); `area: unity` only says the issue touches `unity/`.
 
 ## Licence of your contribution
 

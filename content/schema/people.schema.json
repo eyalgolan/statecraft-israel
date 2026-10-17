@@ -32,6 +32,7 @@
         "id": { "$ref": "#/definitions/id", "description": "Unique across people." },
         "name": { "type": "string", "minLength": 1 },
         "name_he": { "type": "string" },
+        "name_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of name_he. agent-checked: an AI agent checked the name against its sources and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
         "title_he_form": { "enum": ["feminine"], "description": "feminine: the person's Hebrew office titles take the offices' title_he_f (שרת העבודה). Leave out for the masculine title_he. Source it in biography_sources.title_he_form." },
         "born": { "$ref": "#/definitions/date" },
         "died": { "$ref": "#/definitions/date", "description": "Every office term must end by this day." },

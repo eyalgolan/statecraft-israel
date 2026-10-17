@@ -65,6 +65,16 @@ namespace Statecraft.Game.Map.Units
         public List<UnitSource> Sources { get; set; } = new List<UnitSource>();
     }
 
+    /// <summary>A force's sourced strength: one number (CONTENT_POLICY section 1, never a range), the day it is for, and
+    /// its sources (the owner's decision on #570; Q-START-3 picks the value).</summary>
+    public sealed class UnitStrength
+    {
+        public int Value { get; set; }
+        public string AsOf { get; set; } = "";
+        public string? Note { get; set; }
+        public List<UnitSource> Sources { get; set; } = new List<UnitSource>();
+    }
+
     /// <summary>A unit's sourced disbandment: no window may run past it.</summary>
     public sealed class UnitDisbanded
     {
@@ -83,6 +93,10 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Whose formation it is (<see cref="UnitData.Sides"/>): the token flies that side's flag where one is
         /// sourced (<see cref="UnitFlags"/>).</summary>
         public string Side { get; set; } = "";
+        /// <summary>The formation's level (<see cref="UnitData.Echelons"/>); every row of a side other than Israel gives it.</summary>
+        public string? Echelon { get; set; }
+        /// <summary>The force's sourced strength; every row of a side other than Israel gives it.</summary>
+        public UnitStrength? Strength { get; set; }
         public string? Formed { get; set; }
         public string? FirstCommander { get; set; }
         public string Sector { get; set; } = "";
@@ -119,6 +133,7 @@ namespace Statecraft.Game.Map.Units
             if (Aircraft != null) foreach (var t in Aircraft) foreach (var s in t.Sources) yield return s;
             if (HeadgearSources != null) foreach (var s in HeadgearSources) yield return s;
             if (Disbanded != null) foreach (var s in Disbanded.Sources) yield return s;
+            if (Strength != null) foreach (var s in Strength.Sources) yield return s;
         }
     }
 
@@ -130,11 +145,14 @@ namespace Statecraft.Game.Map.Units
     {
         public const string DefaultFileName = "units_1948.yaml";
         public const string Army = "army", Air = "air", Navy = "navy";
-        /// <summary>The sides of 1948 a unit can belong to: Israel and the Arab states whose armies entered the war (the
-        /// fronts of <see cref="FrontArmistice"/>, and Iraq). Only Israel's formations are in the file today (#226 adds the
-        /// Arab forces).</summary>
+        /// <summary>The sides of 1948 a unit can belong to (Q-START-4, owner, 15 October 2026: "Armies + ALA + local
+        /// forces"): Israel, the Arab states whose armies entered the war (the fronts of <see cref="FrontArmistice"/>, and
+        /// Iraq), the Arab Liberation Army and the local Arab forces, each under its own name. The map draws only Israel's
+        /// rows (<see cref="UnitRoster.OnMap"/>; owner, 17 October 2026, #740).</summary>
         public const string Israel = "israel";
-        public static readonly IReadOnlyList<string> Sides = new[] { Israel, "egypt", "jordan", "syria", "iraq", "lebanon" };
+        public static readonly IReadOnlyList<string> Sides = new[] { Israel, "egypt", "jordan", "syria", "iraq", "lebanon", "ala", "local_arab_forces" };
+        /// <summary>The levels a row's formation can be: a state's whole force in the field, or one formation of it.</summary>
+        public static readonly IReadOnlyList<string> Echelons = new[] { "force", "division", "brigade", "battalion", "company" };
         public const string AviaS199 = "avia-s199", Spitfire = "spitfire";
         public const string EndBySource = "source", EndByFrontArmistice = "front_armistice";
         public const string SlouchHat = "slouch_hat", SteelHelmet = "steel_helmet", WoolCap = "wool_cap";
@@ -197,6 +215,16 @@ namespace Statecraft.Game.Map.Units
                 if (!Services.Contains(u.Service)) throw new InvalidDataException($"{at} has unknown service '{u.Service}' (army, air or navy)");
                 if (!((IList<string>)Sides).Contains(u.Side)) throw new InvalidDataException($"{at} has unknown side '{u.Side}' ({string.Join(", ", Sides)})");
                 if (string.IsNullOrWhiteSpace(u.Name) || string.IsNullOrWhiteSpace(u.Sector)) throw new InvalidDataException($"{at} needs a name and a sector");
+                if (u.Echelon != null && !((IList<string>)Echelons).Contains(u.Echelon)) throw new InvalidDataException($"{at} has unknown echelon '{u.Echelon}' ({string.Join(", ", Echelons)})");
+                if (u.Side != Israel && (u.Echelon == null || u.Strength == null)) throw new InvalidDataException($"{at} is a row of {u.Side}, so it needs an echelon and a strength (#570)");
+                if (u.Strength != null)
+                {
+                    if (u.Strength.Value <= 0) throw new InvalidDataException($"{at} strength must be one number above 0");
+                    try { Day(u.Strength.AsOf); }
+                    catch (FormatException e) { throw new InvalidDataException($"{at} strength as_of: {e.Message}", e); }
+                    u.Strength.Sources ??= new List<UnitSource>();
+                    if (u.Strength.Sources.Count == 0) throw new InvalidDataException($"{at} strength has no source");
+                }
                 var signOff = Statecraft.Sim.ReviewRecord.Problem(u.ReviewedByGiven, u.ReviewedBy, u.ReviewedOnGiven, u.ReviewedOn);
                 if (signOff != null) throw new InvalidDataException($"{at} {signOff.Value.field}: {signOff.Value.message}");
                 if (u.Disbanded != null)

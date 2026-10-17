@@ -58,7 +58,7 @@ Before writing or editing content, review:
 - `uv run scripts/oss/check_repo.py` runs the repository policy checks that CI runs.
 - If you change `sim/`, `content/` or `unity/`, add a line under `## [Unreleased]` in `CHANGELOG.md`.
 - If the PR finishes a Phase 1 PR or a phase of #374, update the Roadmap table in `README.md` and `README.he.md` (`CONTRIBUTING.md`, rule 9).
-- `scripts/check.sh` runs every check CI runs in one command: the changelog rule, the policy checker tests, `check_repo.py`, the sim build and tests, and the tools tests. It stops at the first failure.
+- `scripts/check.sh` runs every check CI runs in one command: the changelog rule, the reviewed_by guard, the GDD lint, the policy checker tests, `check_repo.py`, the rule IDs, the sim build, the sim tests and the tools tests. It stops at the first failure.
 
 ## Helpers (they write or report, they are not checks)
 

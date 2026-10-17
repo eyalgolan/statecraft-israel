@@ -68,7 +68,9 @@ public class HebrewNameTests
         var flagged = Replace("offices.yaml", "    title: Prime Minister\n",
             $"    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: {Src}\n    title_he_review: agent-checked\n");
         flagged["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("name: Town A,", $"name: Town A, name_he: עיר א, name_he_sources: {Src}, name_he_review: agent-checked,");
+        flagged["people.yaml"] = Fixture.Files["people.yaml"].Replace("    name: Pm One\n", $"    name: Pm One\n    name_he: ראש א\n    name_he_review: agent-checked\n    biography_sources: {{ name_he: {Src} }}\n");
         Assert.Equal(HebrewReview.AgentChecked, Load(flagged).Offices.Single(o => o.Id == "prime_minister").TitleHeReview);
+        Assert.Equal(HebrewReview.AgentChecked, Load(flagged).People.Single(p => p.Id == "pm_one").NameHeReview);
         var cleared = Replace("offices.yaml", "    title: Prime Minister\n",
             $"    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: {Src}\n");
         Assert.Equal("", Load(cleared).Offices.Single(o => o.Id == "prime_minister").TitleHeReview);
@@ -91,6 +93,11 @@ public class HebrewNameTests
     [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: '',", "settlements[town_a].name_he_review")]
     [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: ~,", "settlements[town_a].name_he_review")]
     [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_review: [agent-checked],", "settlements[town_a].name_he_review")]
+    // People rows carry the same flag (#862); their name_he sources sit in biography_sources.
+    [InlineData("people.yaml", "    name: Pm One\n", "    name: Pm One\n    name_he: ראש א\n    name_he_review: yes\n    biography_sources: { name_he: " + Src + " }\n", "people[pm_one].name_he_review")]
+    [InlineData("people.yaml", "    name: Pm One\n", "    name: Pm One\n    name_he: ראש א\n    name_he_review: ''\n    biography_sources: { name_he: " + Src + " }\n", "people[pm_one].name_he_review")]
+    [InlineData("people.yaml", "    name: Pm One\n", "    name: Pm One\n    name_he: ראש א\n    name_he_review: ~\n    biography_sources: { name_he: " + Src + " }\n", "people[pm_one].name_he_review")]
+    [InlineData("people.yaml", "    name: Pm One\n", "    name: Pm One\n    name_he_review: agent-checked\n", "people[pm_one].name_he")]
     // The sim reads settlements untyped, so it checks the keys itself: a misspelt flag is an error, not a reviewed name.
     [InlineData("map/settlements_1948.yaml", "name: Town A,", "name: Town A, name_he: עיר א, name_he_sources: " + Src + ", name_he_reveiw: agent-checked,", "settlements[town_a].name_he_reveiw")]
     public void AReviewFlagIsAgentCheckedAndSitsOnAName(string file, string from, string to, string field)

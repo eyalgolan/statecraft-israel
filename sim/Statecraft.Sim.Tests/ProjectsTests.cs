@@ -56,14 +56,16 @@ public class ProjectsTests
 
     /// <summary>Site B, on (3, 0), for the refusals that need a second site; <paramref name="kinds"/> its kinds.</summary>
     static string TwoSites(string kinds = "[yishuv]") => Fixture.GddSites + Fixture.GddSites.Replace("sites:\n", "")
-        .Replace("site_a", "site_b").Replace("Site A", "Site B").Replace("q: 2", "q: 3").Replace("kinds: [yishuv]", "kinds: " + kinds);
+        .Replace("site_a", "site_b").Replace("Site A", "Site B").Replace("q: 2", "q: 3").Replace("kinds: [yishuv]", "kinds: " + kinds)
+        .Replace("    founded: 1949-06-12\n", kinds == "[yishuv]" ? "    founded: 1949-06-12\n" : "");   // only a yishuv has a founding date
 
-    // R-SITE-001: each refusal leaves the state as a step with no order would, so Attention is refunded too.
+    // R-SITE-001: each refusal leaves the state as a step with no order would, so Attention is refunded too. R-SITE-004:
+    // "not a yishuv site" is build_yishuv at a field site.
     [Theory]
     [MemberData(nameof(Refusals))]
     public void TheLimitsAreRefusedAndChangeNothing(string limit, string reason)
     {
-        var c = Town(new Dictionary<string, string> { ["sites.yaml"] = TwoSites(limit == "not a yishuv site" ? "[]" : "[yishuv]") });
+        var c = Town(new Dictionary<string, string> { ["sites.yaml"] = TwoSites(limit == "not a yishuv site" ? "[field]" : "[yishuv]") });
         var s = WithHalutz(c, out var id, limit == "not a halutz" ? "recruit" : "halutz");
         var other = s.NextId++;
         s.Units.Add(other, new Unit(other, "halutz", 1, 0));
@@ -212,6 +214,27 @@ public class ProjectsTests
         Assert.Equal(built.Date, built.Sites["mefalsim"].BuiltOn);
     }
 
+    /// <summary>Q-SITE-1 (#782): every MVP yishuv site builds as Mefalsim does, in build_yishuv_turns from the order.</summary>
+    // R-SITE-001, R-SITE-003, R-SITE-004
+    [Theory]
+    [InlineData("beit_kama")]
+    [InlineData("gilat")]
+    [InlineData("mefalsim")]
+    [InlineData("reim")]
+    public void EveryYishuvSiteBuildsAsMefalsimDoes(string site)
+    {
+        var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
+        var id = s.NextId++;
+        s.Units.Add(id, new Unit(id, "halutz", -3, 19));
+        var r = Step(Mvp, s, Build(id, site));
+        Assert.Empty(r.Rejected);
+        s = r.State;
+        for (int turn = 1; turn <= 4; turn++) s = Step(Mvp, s).State;
+        Assert.Null(s.Sites[site].BuiltOn);
+        var built = Step(Mvp, s).State;
+        Assert.Equal(built.Date, built.Sites[site].BuiltOn);
+    }
+
     // R-SITE-003, R-TRAIN-003: training (step 4) runs in the resolver, after the orders, so a halutz group that finishes
     // training on turn T is a unit from the end of T and can be ordered on T+1, not on T.
     [Fact]
@@ -267,8 +290,9 @@ public class ProjectsTests
         for (int i = 0; i < 2; i++) { built = Step(c, built).State; idle = Step(c, idle).State; }
         Assert.NotNull(built.Sites["site_a"].BuiltOn);
         Assert.Equal(idle.Cities.Values.Select(x => x.Canonical()), built.Cities.Values.Select(x => x.Canonical()));
-        Assert.Equal(idle.Units.Values.Select(x => x.Canonical()), built.Units.Values.Select(x => x.Canonical()));
-        Assert.Equal(idle.Cohesion, built.Cohesion);
+        // The unit's service is the one change (R-VET-001, VeteranTests); its type and hex stay.
+        Assert.Equal(idle.Units.Values.Select(x => (x.Id, x.Type, x.Q, x.R)), built.Units.Values.Select(x => (x.Id, x.Type, x.Q, x.R)));
+        Assert.Equal(idle.Indicators["morale"], built.Indicators["morale"]);   // Social cohesion
         Assert.Equal(idle.Treasury - 1.5, built.Treasury, 9);   // only the cost paid at the start: founding adds no Money
         Assert.Equal(idle.Debt, built.Debt);
     }

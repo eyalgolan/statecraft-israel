@@ -653,6 +653,9 @@ namespace Statecraft.Sim
             var parties = new HashSet<string>(c.Parties.Select(p => p.Id));
             var indicators = new HashSet<string>(c.Indicators.Select(i => i.Id));
             var sources = new HashSet<string>(c.Policies.Select(p => p.Id).Concat(indicators));
+            // The cities' employed share (R-CITY-005). Accepted in both loops, so the real content still loads with the loop
+            // switch taken out (Unity's SimBridgeGddTests.Legacy); with no cities it reads 0 (EffectsSystem.Source).
+            sources.Add(Cities.EmployedShareSource);
             Unique("offices.yaml", "offices", c.Offices.Select(o => o.Id));
             Unique("parties.yaml", "parties", c.Parties.Select(p => p.Id));
             Unique("people.yaml", "people", c.People.Select(p => p.Id));
@@ -684,6 +687,13 @@ namespace Statecraft.Sim
             foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources, p.NameHeReview, p.NameHeReviewGiven);
             foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources, l.BodyHeReview, l.BodyHeReviewGiven);
             foreach (var g in c.Governments) HebrewName("governments.yaml", $"governments[{g.Id}]", "name_he", g.NameHe, g.NameHeSources, g.NameHeReview, g.NameHeReviewGiven);
+            // People keep their name_he sources in biography_sources (checked below), so only the review flag is checked here (#862).
+            foreach (var p in c.People)
+            {
+                if (p.NameHeReviewGiven && p.NameHeReview != HebrewReview.AgentChecked)
+                    throw new ContentException("people.yaml", $"people[{p.Id}].name_he_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                if (p.NameHeReviewGiven && p.NameHe == "") throw new ContentException("people.yaml", $"people[{p.Id}].name_he", "required: name_he_review is set but the name is empty");
+            }
             foreach (var a in c.Money)
             {
                 if (Array.IndexOf(PlayerText.MoneyIds, a.Id) < 0)
@@ -1036,10 +1046,6 @@ namespace Statecraft.Sim
                 if (m.PeoplePerUnit != c.Rules.Mvp!.PeoplePerUnit)
                     throw new ContentException(file, "mvp.people_per_unit", "must be the same in every era (arrivals are counted in one unit size)");
                 if (!(m.IncomePerJobPerYear >= 0 && IsFinite(m.IncomePerJobPerYear))) throw new ContentException(file, "mvp.income_per_job_per_year", "must be a finite number >= 0");
-                Unit(file, "mvp.cohesion_housing_weight", m.CohesionHousingWeight);
-                Unit(file, "mvp.cohesion_jobs_weight", m.CohesionJobsWeight);
-                if (Math.Abs(m.CohesionHousingWeight + m.CohesionJobsWeight - 1) > 1e-9)
-                    throw new ContentException(file, "mvp.cohesion_jobs_weight", "the two cohesion weights must sum to 1");
                 // R-CITY-003: the cities count arrivals from one day; another day in a later era would lose or double-count units.
                 if (m.CityArrivalsFrom == default) throw new ContentException(file, "mvp.city_arrivals_from", "required when eras.yaml systems.loop is gdd");
                 if (m.CityArrivalsFrom != c.Rules.Mvp!.CityArrivalsFrom) throw new ContentException(file, "mvp.city_arrivals_from", "must be the same in every era (the cities count arrivals from one day)");
@@ -1050,6 +1056,12 @@ namespace Statecraft.Sim
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
                 if (m.CoverMonths == null) throw new ContentException(file, "mvp.cover_months", "required when eras.yaml systems.loop is gdd");
                 if (m.CoverMonths < 1) throw new ContentException(file, "mvp.cover_months", "must be >= 1");
+                // R-VET-001, R-VET-002: required, so a missing key is not read as 0 (a veteran after no work, or one that builds nothing).
+                foreach (var (key, v) in new[] { ("veteran_halutz_service", m.VeteranHalutzService), ("veteran_progress", m.VeteranProgress) })
+                {
+                    if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
+                    if (v < 1) throw new ContentException(file, "mvp." + key, "must be >= 1");
+                }
                 if (c.Indicators.All(i => i.Id != Pools.FoodIndicator))
                     throw new ContentException(file, "mvp.k_food", "the Food stock feeds the food_supply indicator, which model.yaml must define");
                 // One game has one last day (R-LOOP-004): an era cannot move it.
@@ -1099,8 +1111,10 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>What a designated site may be built as (sites.yaml kinds). Phase 1 has "build yishuv" only.</summary>
-        static readonly string[] SiteKinds = { Projects.YishuvKind };
+        /// <summary>What a designated site may be built as (sites.yaml kinds; R-SITE-004, the GDD's pioneer actions and D-D5's two
+        /// facilities). A camp site is a military_camp or a hakhshara (Q-CAMP-3).</summary>
+        static readonly string[] SiteKinds = { Projects.YishuvKind, "field", "swamp", "military_camp", "hakhshara" };
+        static readonly string[] CampKinds = { "military_camp", "hakhshara" };
 
         /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement,
         /// founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file is display only, and a
@@ -1111,6 +1125,7 @@ namespace Statecraft.Sim
             Unique(sf, "sites", c.Sites.Select(x => x.Id));
             var from = new DateTime(1948, 5, 15);
             var to = new DateTime(1952, 1, 1);
+            var yishuvAt = new Dictionary<(int, int), string>();
             foreach (var x in c.Sites)
             {
                 var at = $"sites[{x.Id}]";
@@ -1122,10 +1137,28 @@ namespace Statecraft.Sim
                 var settled = c.SettlementHexes.FirstOrDefault(h => h.Q == x.Q && h.R == x.R);
                 if (settled != null)
                     throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} holds the 1948 settlement {settled.Id} ({SettlementHexesFileName})"));
+                if (x.Kinds.Count == 0) throw new ContentException(sf, at + ".kinds", "required: one or more of " + string.Join(", ", SiteKinds));
                 foreach (var k in x.Kinds)
-                    if (!SiteKinds.Contains(k)) throw new ContentException(sf, at + ".kinds", $"unknown kind '{k}' (yishuv)");
-                if (x.Founded < from || x.Founded >= to)
-                    throw new ContentException(sf, at + ".founded", "required, between 15 May 1948 and 31 December 1951 (the MVP's years, D-B1)");
+                    if (!SiteKinds.Contains(k)) throw new ContentException(sf, at + ".kinds", $"unknown kind '{k}' ({string.Join(", ", SiteKinds)})");
+                if (x.Kinds.Contains(Projects.YishuvKind))
+                {
+                    // R-SITE-005 (Q-SITE-3): one yishuv per hex, so SettlementPlacer keeps one kit per hex; other kinds may share it.
+                    if (yishuvAt.TryGetValue((x.Q, x.R), out var first))
+                        throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} already holds the yishuv site {first}"));
+                    yishuvAt[(x.Q, x.R)] = x.Id;
+                    if (x.Founded < from || x.Founded >= to)
+                        throw new ContentException(sf, at + ".founded", "required, between 15 May 1948 and 31 December 1951 (the MVP's years, D-B1)");
+                }
+                else if (x.Founded != default)
+                    throw new ContentException(sf, at + ".founded", "only a yishuv site has a founding date");
+                // Q-CAMP-1: a camp belongs to one city, which a built camp gives the facility to.
+                if (x.Kinds.Any(k => CampKinds.Contains(k)))
+                {
+                    if (string.IsNullOrWhiteSpace(x.City)) throw new ContentException(sf, at + ".city", "required for a camp site (military_camp, hakhshara)");
+                    if (!c.Cities.Any(y => y.Id == x.City)) throw new ContentException(sf, at + ".city", $"unknown city '{x.City}' (cities.yaml)");
+                }
+                else if (x.City != "")
+                    throw new ContentException(sf, at + ".city", "only a camp site has a city");
                 if (x.Sources.Count == 0) throw new ContentException(sf, at + ".sources", "required: a designated site is a historical fact");
                 for (int i = 0; i < x.Sources.Count; i++)
                     if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)

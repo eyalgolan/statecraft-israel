@@ -547,7 +547,9 @@ people:
     born: 1889-11-24
     died: 1974-10-05
     biography_sources:
-      name_he: [{ url: "https://en.wikipedia.org/wiki/Zalman_Shazar", checked: 2026-10-11 }]
+      # The Knesset's member page: "נולד בשם שניאור זלמן רובשוב ... לימים שינה את שמו לשזר, ראשי התיבות של שמו המלא."
+      # It writes שזר without gershayim; en.wiki gives שז״ר.
+      name_he: [{ url: "https://web.archive.org/web/20170930193513/http://www.knesset.gov.il:80/mk/heb/mk.asp?mk_individual_id_t=681", checked: 2026-10-16 }, { url: "https://en.wikipedia.org/wiki/Zalman_Shazar", checked: 2026-10-17 }]
       born: [&shazar_pres { url: "https://web.archive.org/web/20160522045213/http://www.president.gov.il:80/Presidency_In_Israel/Presidents_Of_Israel/Pages/ZalmanShazar.aspx", checked: 2026-10-14 }]
       died: [*shazar_pres, { url: "https://web.archive.org/web/20170930193513/http://www.knesset.gov.il:80/mk/heb/mk.asp?mk_individual_id_t=681", checked: 2026-10-14 }]
     living: false

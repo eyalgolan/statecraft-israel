@@ -27,7 +27,7 @@ namespace Statecraft.Sim.Reference
             var halutz = c.UnitTypes.FirstOrDefault(t => t.Id == "halutz");
             if (halutz == null) return list;
             Build(c, s, list, ref left);
-            if (s.Units.Values.Any(u => u.Type == halutz.Id) || s.Cohorts.Values.Any(k => k.Type == halutz.Id)) return list;
+            if (s.Units.Values.Any(u => Projects.IsPioneer(u.Type)) || s.Cohorts.Values.Any(k => k.Type == halutz.Id)) return list;
             var trainCost = AttentionSystem.Cost(c, s, Training.TrainKind);
             if (trainCost > left + 1e-9) return list;   // training borrows, so the Treasury does not hold it back
             foreach (var city in s.Cities.Values)
@@ -40,13 +40,13 @@ namespace Statecraft.Sim.Reference
             return list;
         }
 
-        /// <summary>Sends each idle halutz unit, in id order, to the first yishuv site without a record, in ordinal id order,
+        /// <summary>Sends each idle halutz unit, veterans too, in id order, to the first yishuv site without a record, in ordinal id order,
         /// while the turn's Attention lasts. Pioneer work borrows, so the Treasury does not hold it back.</summary>
         static void Build(Content c, GameState s, List<Command> list, ref double left)
         {
             var cost = AttentionSystem.Cost(c, s, Projects.PioneerKind);
             var taken = new HashSet<string>(s.Sites.Keys, StringComparer.Ordinal);
-            foreach (var u in s.Units.Values.Where(u => u.Type == "halutz" && !Projects.IsBusy(s, u.Id)))
+            foreach (var u in s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && !Projects.IsBusy(s, u.Id)))
             {
                 var site = c.Sites.Where(x => x.Kinds.Contains(Projects.YishuvKind) && !taken.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault();
                 if (site == null || cost > left + 1e-9) return;

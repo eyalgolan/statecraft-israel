@@ -67,12 +67,28 @@ public class UnitsInPlayTests
     public void EveryRowIsSourcedDatedAndOnTheMap()
     {
         var units = Units;
-        Assert.AreEqual(12, units.Count(u => u.Service == UnitData.Army), "the twelve brigades of 1948");
-        Assert.AreEqual(1, units.Count(u => u.Service == UnitData.Air));
-        Assert.AreEqual(2, units.Count(u => u.Service == UnitData.Navy));
-        CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, units.Where(u => u.Hidden != null).Select(u => u.Id),
+        var israel = units.Where(u => u.Side == UnitData.Israel).ToList();
+        Assert.AreEqual(12, israel.Count(u => u.Service == UnitData.Army), "the twelve brigades of 1948");
+        Assert.AreEqual(1, israel.Count(u => u.Service == UnitData.Air));
+        Assert.AreEqual(2, israel.Count(u => u.Service == UnitData.Navy));
+        CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, israel.Where(u => u.Hidden != null).Select(u => u.Id),
             "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (from 9 July 1948, by Mishmar HaYarden) and Alexandroni are placed (refs #385)");
         double lon0 = C.Hexes.Min(h => h.Lon), lon1 = C.Hexes.Max(h => h.Lon), lat0 = C.Hexes.Min(h => h.Lat), lat1 = C.Hexes.Max(h => h.Lat);
+        // The Arab forces (#740): data only, each with its echelon and its 15 May strength (owner, 17 October 2026).
+        var arab = units.Where(u => u.Side != UnitData.Israel).ToList();
+        CollectionAssert.AreEquivalent(new[] { "egypt", "jordan", "syria", "iraq", "lebanon", "ala" }, arab.Select(u => u.Side).Distinct());
+        foreach (var u in arab)
+        {
+            CollectionAssert.Contains(UnitData.Echelons, u.Echelon, u.Id);
+            Assert.IsNotNull(u.Strength, u.Id);
+            Assert.Greater(u.Strength.Value, 0, u.Id);
+            Assert.AreEqual(new DateTime(1948, 5, 15), UnitData.Day(u.Strength.AsOf), $"{u.Id}: the 15 May strength only");
+            Assert.IsNotEmpty(u.Strength.Sources, u.Id);
+        }
+        // Owner, 17 October 2026, on #860: "Isdud is the forward base and Majdal the rear base" at the first truce.
+        var truce = new DateTime(1948, 6, 11);
+        CollectionAssert.AreEquivalent(new[] { "Isdud", "Majdal" }, units.Single(u => u.Id == "egyptian_expeditionary_force").Anchors
+            .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
             Assert.AreEqual("draft", u.Status, u.Id);
@@ -95,8 +111,11 @@ public class UnitsInPlayTests
                 if (u.Disbanded != null) Assert.LessOrEqual(UnitData.Day(a.To), UnitData.Day(u.Disbanded.Date), $"{at}: after its disbandment");
                 Assert.AreNotEqual("15 May 1948", a.Since, $"{at}: the game's first day is not a sourced arrival");
             }
-            for (int i = 1; i < u.Anchors.Count; i++)
-                Assert.LessOrEqual(UnitData.Day(u.Anchors[i - 1].To), UnitData.Day(u.Anchors[i].From), $"{u.Id}: anchor windows in order, not overlapping");
+            // A drawn row stands at one place at a time (one token per row). A row the map does not draw may stand at two
+            // at once: the Egyptian force's forward and rear bases at the first truce (owner, 17 October 2026, on #860).
+            if (UnitRoster.OnMap(u))
+                for (int i = 1; i < u.Anchors.Count; i++)
+                    Assert.LessOrEqual(UnitData.Day(u.Anchors[i - 1].To), UnitData.Day(u.Anchors[i].From), $"{u.Id}: anchor windows in order, not overlapping");
         }
         Assert.AreEqual(new DateTime(1949, 2, 24), UnitData.FrontArmistice["egypt"]);
         Assert.AreEqual(new DateTime(1949, 3, 23), UnitData.FrontArmistice["lebanon"]);
@@ -126,6 +145,11 @@ public class UnitsInPlayTests
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, headgear: [wool_cap, wool_cap, wool_cap], anchors: [" + Anchor + "]}", "headgear has no source")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: air, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "without aircraft")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, colour: red, sector: s, status: draft, wikipedia_only: true, anchors: []}", "colour")]
+    // The Arab forces' rows (#570, #740): an echelon and one strength, never a range (CONTENT_POLICY section 1).
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: egypt, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "needs an echelon and a strength")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: egypt, echelon: corps, strength: {value: 10, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "unknown echelon 'corps'")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: egypt, echelon: force, strength: {value: '6,000 to 12,000', as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "u.yaml")]
+    [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: egypt, echelon: force, strength: {value: 10, as_of: '1948-05-15', sources: []}, sector: s, status: draft, wikipedia_only: true, anchors: [" + Anchor + "]}", "strength has no source")]
     // A person's sign-off (#375): both or neither, a GitHub handle (never an email), a day.
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: eyalgolan, wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_on")]
     [TestCase("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, reviewed_by: a@example.org, reviewed_on: '2026-10-15', wikipedia_only: true, anchors: [" + Anchor + "]}", "reviewed_by")]
@@ -169,6 +193,30 @@ public class UnitsInPlayTests
         CollectionAssert.AreEqual(new[] { UnitData.WoolCap, UnitData.SteelHelmet, UnitData.WoolCap }, tokens.Single(t => t.Unit.Id == "negev").Headgear,
             "the Negev Brigade's headgear is sourced to its 1948 photographs");
         CollectionAssert.AreEqual(UnitData.DefaultHeadgear, tokens.Single(t => t.Unit.Id == "givati").Headgear, "no source: the uniform default");
+    }
+
+    /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
+    /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
+    /// no placeholder art." The 15 May roster keeps exactly the Israeli tokens, no row of another side gives a token on any
+    /// day of the war, and the placer gives such a row no spot (so the kits clear no ground for it).</summary>
+    [Test]
+    public void OnlyIsraelsRowsAreDrawnTheArabForcesAreDataOnly()
+    {
+        var units = Units;
+        var others = units.Where(u => u.Side != UnitData.Israel).ToList();
+        Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
+        var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s)), "the 15 May roster is Israel's tokens, exactly");
+        for (var d = C.Rules.Start; d < LastArmistice; d = d.AddDays(1))
+        {
+            var tokens = UnitRoster.Build(units, C.Rules, d, 5, 0.8);
+            Assert.IsTrue(tokens.All(t => t.Unit.Side == UnitData.Israel), $"{d:yyyy-MM-dd}: {string.Join(",", tokens.Where(t => t.Unit.Side != UnitData.Israel))}");
+        }
+        var hexes = C.Hexes;
+        var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
+        Assert.IsFalse(others.SelectMany(u => u.Anchors).Any(spots.ContainsKey), "no spot for a row the map does not draw");
+        Assert.IsEmpty(UnitPlacer.SkipMessages(others, spots), "and no warning for it either");
     }
 
     [TestCase(0.80, 3)]
@@ -290,7 +338,7 @@ public class UnitsInPlayTests
             var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
             float hex = map.Hexes.hex_size_km * 1000f;
             var hexAt = C.Hexes.ToDictionary(h => (h.Q, h.R));
-            var anchors = units.Where(u => u.Hidden == null).SelectMany(u => u.Anchors.Select(a => (u, a))).ToList();
+            var anchors = units.Where(UnitRoster.OnMap).SelectMany(u => u.Anchors.Select(a => (u, a))).ToList();
             var log = new List<string>();
             foreach (var (u, a) in anchors)
             {
@@ -371,7 +419,7 @@ public class UnitsInPlayTests
         var units = Units;
         var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
         int outside = 0, inTown = 0;
-        foreach (var u in units.Where(u => u.Hidden == null && u.Service != UnitData.Navy))
+        foreach (var u in units.Where(u => UnitRoster.OnMap(u) && u.Service != UnitData.Navy))
             foreach (var a in u.Anchors)
             {
                 var at = $"{u.Id} {a.Place}";

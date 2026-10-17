@@ -41,7 +41,7 @@ public class SitesContentTests
     public void TheSliceHasMefalsimFromContent()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        var site = Assert.Single(c.Sites);
+        var site = Assert.Single(c.Sites, x => x.Id == "mefalsim");
         Assert.Equal(("mefalsim", "Mefalsim", "מפלסים", -10, 27), (site.Id, site.Name, site.NameHe, site.Q, site.R));
         Assert.Equal(new[] { "yishuv" }, site.Kinds);
         Assert.Equal(new DateTime(1949, 6, 12), site.Founded);
@@ -64,8 +64,39 @@ public class SitesContentTests
         var root = RealContentTests.ContentRoot();
         var map = new DeserializerBuilder().Build().Deserialize<Dictionary<string, object>>(File.ReadAllText(Path.Combine(root, "map", "armistice_hexes_1949.yaml")));
         var lineHexes = ((List<object>)map["line_hexes"]).Cast<List<object>>().Select(x => (int.Parse((string)x[0], CultureInfo.InvariantCulture), int.Parse((string)x[1], CultureInfo.InvariantCulture)));
-        var site = Assert.Single(ContentLoader.Load(root).Sites);
+        var site = Assert.Single(ContentLoader.Load(root).Sites, x => x.Id == "mefalsim");
         Assert.Contains((site.Q, site.R), lineHexes);
+    }
+
+    /// <summary>R-SITE-004, Q-SITE-1 and Q-SITE-2 (owner, 17 October 2026, #782: "take all of the plan's recommendations"): the
+    /// MVP's yishuv sites are the four of the settlements note whose founding day two sources agree on (criteria 1, 2 and 4 of
+    /// Task 5.0). Each is founded inside the MVP's years and cites at least two sources with a checked date.</summary>
+    [Fact]
+    public void TheMvpYishuvSitesAreTheSourcedList()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var yishuvim = c.Sites.Where(x => x.Kinds.Contains("yishuv")).ToList();
+        Assert.Equal(new[] { "beit_kama", "gilat", "mefalsim", "reim" }, yishuvim.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal));
+        var founded = yishuvim.ToDictionary(x => x.Id, x => x.Founded);
+        Assert.Equal(new DateTime(1949, 4, 18), founded["beit_kama"]);
+        Assert.Equal(new DateTime(1949, 12, 4), founded["gilat"]);
+        Assert.Equal(new DateTime(1949, 6, 12), founded["mefalsim"]);
+        Assert.Equal(new DateTime(1949, 10, 20), founded["reim"]);
+        Assert.All(yishuvim, x => Assert.True(x.Sources.Count(s => s.Checked != default) >= 2, x.Id));
+    }
+
+    /// <summary>Q-FIELD-1 and Q-SITE-3 (#782): each yishuv site has one field site in its own hex, and no other site shares a
+    /// yishuv's hex (R-SITE-005 allows it only for another kind).</summary>
+    [Fact]
+    public void EachYishuvSiteHasOneFieldSiteInItsHex()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        foreach (var y in c.Sites.Where(x => x.Kinds.Contains("yishuv")))
+        {
+            var others = c.Sites.Where(x => x != y && x.Q == y.Q && x.R == y.R).ToList();
+            var field = Assert.Single(others);
+            Assert.Equal(new[] { "field" }, field.Kinds);
+        }
     }
 
     [Fact]
@@ -102,6 +133,39 @@ public class SitesContentTests
         new object[] { "rules.yaml", Rules(Fixture.GddRules).Replace(", pioneer_work: 0", ""), "attention_cost.pioneer_work", "missing cost" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules).Replace(", stop_work: 0", ""), "attention_cost.stop_work", "missing cost" },
     };
+
+    /// <summary>A second fixture site, site_b, at site_a's hex (2, 0); <paramref name="row"/> replaces its founding line.</summary>
+    static string Second(string kinds, string row) => Fixture.GddSites + Fixture.GddSites.Replace("sites:\n", "")
+        .Replace("site_a", "site_b").Replace("Site A", "Site B").Replace("kinds: [yishuv]", "kinds: " + kinds)
+        .Replace("    founded: 1949-06-12\n", row);
+
+    // R-SITE-004, R-SITE-005
+    public static IEnumerable<object[]> BadKinds() => new List<object[]>
+    {
+        new object[] { Site("kinds: [yishuv]", "kinds: [airfield]"), "sites[site_a].kinds", "unknown kind 'airfield'" },
+        new object[] { Site("kinds: [yishuv]", "kinds: []"), "sites[site_a].kinds", "required" },
+        new object[] { Second("[yishuv]", "    founded: 1949-06-12\n"), "sites[site_b].q", "hex q=2 r=0 already holds the yishuv site site_a" },
+        new object[] { Second("[military_camp]", ""), "sites[site_b].city", "required for a camp site" },
+        new object[] { Second("[hakhshara]", "    city: nowhere\n"), "sites[site_b].city", "unknown city 'nowhere'" },
+        new object[] { Second("[field]", "    city: town_a\n"), "sites[site_b].city", "only a camp site has a city" },
+        new object[] { Second("[field]", "    founded: 1949-06-12\n"), "sites[site_b].founded", "only a yishuv site has a founding date" },
+    };
+
+    [Theory]
+    [MemberData(nameof(BadKinds))]
+    public void BadKindsFailLoad(string text, string field, string message)
+        => ABadValueFailsNamingTheFileAndField("sites.yaml", text, field, message);
+
+    /// <summary>Sites of other kinds may share a yishuv's hex (Q-SITE-3), and a camp names a city of cities.yaml (Q-CAMP-1).</summary>
+    [Fact]
+    public void AFieldAndACampMayShareAYishuvsHex()
+    {
+        var text = Second("[field]", "") + Second("[military_camp]", "    city: town_a\n").Replace(Fixture.GddSites, "").Replace("site_b", "site_c").Replace("Site B", "Site C");
+        var c = Load(new Dictionary<string, string> { ["sites.yaml"] = text });
+        Assert.Equal(new[] { "site_a", "site_b", "site_c" }, c.Sites.Select(x => x.Id));
+        Assert.Equal("town_a", c.Sites[2].City);
+        Assert.Equal(default, c.Sites[1].Founded);
+    }
 
     [Theory]
     [MemberData(nameof(BadRows))]

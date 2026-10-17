@@ -35,6 +35,7 @@ Unity, a Unity licence and macOS are only needed for `unity/`. The sim, the cont
 | New event file (skeleton with every required field) | `uv run scripts/new_event.py <id> [--from D] [--to D]` | none (helper) |
 | Every place a record id is read, in content and code | `uv run scripts/id_references.py <id>` | none (helper) |
 | Changelog line | `uv run scripts/oss/changelog_check.py --base origin/main` | Changelog |
+| Only a person signs a row off (`reviewed_by` and `reviewed_on`) | `uv run scripts/oss/reviewed_by_guard.py --base origin/main` | Changelog |
 
 `scripts/check.sh` runs all the checks in one go, cheapest first, plus a sim build with warnings as errors. It stops at the first failure and shows the end of its output. It takes the base ref as its argument (default `origin/main`); set `CHECK_NO_CHANGELOG=1` if the PR has the `no-changelog` label.
 

@@ -27,8 +27,8 @@ rules:
     licence: CC0-1.0
     ai_generated: true
     source: "Earlier promo/gen.py outputs used as edit inputs for the *_fix shots in promo/shots.json (commit d42bd6b)"
-    status: owner-verify
-    note: "Decision D-P: the owner confirms these are our own earlier generations, not third-party screenshots; D5 applies."
+    status: verified
+    note: "Decision D-P: the owner confirms these are our own earlier generations, not third-party screenshots; D5 applies. D-P (owner, 17 Oct 2026)."
   - glob: "docs/images/hero-concept-1936.jpg"
     licence: CC0-1.0
     ai_generated: true
@@ -50,9 +50,9 @@ rules:
   - glob: "unity/Assets/Art/Settlements/Prototype/Models/b*"
     licence: CC0-1.0
     ai_generated: true
-    source: "Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio, by Tal (GitHub @pixelrenderai-hash, PR #507). Building modules decimated to 3,608-8,000 triangles in Blender 4.4; colour maps made at 1024 px and committed at 512 px (2x2 box average, JPEG quality 90, issue #659; owner ruling of 15 October 2026: plain git, only what ships, no masters). The masters and per-model records (prompts, task ids, credits) are kept outside the repository. The texture paths from the author's machine inside each FBX are blanked to same-length placeholders (owner ruling, 15 October 2026, PR #675)."
+    source: "Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio, by MATKOT (PR #507). Building modules decimated to 3,608-8,000 triangles in Blender 4.4; colour maps made at 1024 px and committed at 512 px (2x2 box average, JPEG quality 90, issue #659; owner ruling of 15 October 2026: plain git, only what ships, no masters). The masters and per-model records (prompts, task ids, credits) are kept outside the repository. The texture paths from the author's machine inside each FBX are blanked to same-length placeholders (owner ruling, 15 October 2026, PR #675)."
     status: verified
-    artist: "Tal (@pixelrenderai-hash)"
+    artist: "MATKOT"
     note: "The 23 single-building models of PR #507, brought over on their own in issue #659 (step 1). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issue #659): 'they are ok to use'."
   - glob: "docs/sources/declaration-1948/*.txt"
     licence: Public-Domain
@@ -63,8 +63,8 @@ rules:
   - glob: "promo/ref/*-sheet.jpg"
     licence: Public-Domain
     source: "Reference sheets composed for the edit model (cabinet 1948, defense 1955) from the public-domain portraits in promo/ref/people/"
-    status: owner-verify
-    note: "Decision D-P: the owner confirms the sheets contain only the public-domain portraits and our plain layout."
+    status: verified
+    note: "Decision D-P: the owner confirms the sheets contain only the public-domain portraits and our plain layout. D-P (owner, 17 Oct 2026)."
   # --- Our own captures and drawings: CC BY 4.0 ---
   - glob: "promo/final/09-m2-flythrough.mp4"
     licence: CC-BY-4.0
@@ -261,9 +261,9 @@ rules:
   - glob: "unity/Assets/StreamingAssets/audio/declaration-1948-isa-00113hj.wav"
     licence: Israel State Archives terms of use
     source: "Israel State Archives, item ISA-Collections-Recordings-00113hj, 'העתק מן המקור של הקלטת ההכרזה על הקמת מדינת ישראל, כולל טקס החתימה', recorded by Ralph Hellinger of Radio Doctor (the archive's description), as published on the archive's YouTube channel (https://www.youtube.com/watch?v=K5Q6Mrv4fGw, uploaded 2023-05-22). Downloaded 2026-10-13 as format 251 (Opus 48 kHz stereo in WebM, 22,845,078 B, sha256 0d464f4ad06181364fe5bed86baeabb741429965c83694456be0db1261878cb8). The excerpt 468.01-477.30 s, David Ben-Gurion reading «אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל», cut by ffmpeg stream copy (its 465 Opus packets are the download's, byte for byte; Ogg, 147,033 B, sha256 1e3d01c89b674cffad0658b6d4f87c6503debb37af0757be4c16b25f668b29a2), then decoded to 16-bit PCM WAV with no other processing (the commands are in docs/declaration-recording.md): 48 kHz stereo, 9.29 s, 1,784,396 B, sha256 24e7bc48f5d0134bbe28f0f81b3668235398e3a4bfd83d54aa8650aeae2da370 (pinned in DeclarationRecording.Sha256 and its test)"
-    status: owner-verify
+    status: verified
     credit: "Recording: Ralph Hellinger, Israel State Archives"
-    note: "Played only from the start screen's 'Play the recording' button, over the still painting, with the declaration's own Hebrew and English text as captions and the credit on screen; never automatic. Rights basis and open questions: docs/oss/DECISIONS.md D-R (the terms' commercial clause, a copy taken from the archive's YouTube channel, the creator's rights, the US status)."
+    note: "Played only from the start screen's 'Play the recording' button, over the still painting, with the declaration's own Hebrew and English text as captions and the credit on screen; never automatic. Rights basis and open questions: docs/oss/DECISIONS.md D-R (the terms' commercial clause, a copy taken from the archive's YouTube channel, the creator's rights, the US status). D-R (owner, 17 Oct 2026)."
   # --- Decision-card illustration loops: silent AI clips behind the Illustration switch (docs/event-videos.md; owner ruling D-V) ---
   # Made by tools/encode_event_videos.py from promo shots that are not in the repository (path and SHA-256 per row in
   # unity/Assets/Resources/EventVideos/event-videos.yaml). Rights: owner ruling D-V, 2026-10-13 (docs/oss/DECISIONS.md, merged in #449):
@@ -584,8 +584,8 @@ rules:
   - glob: "unity/Assets/Art/Collection/*"
     licence: CC0-1.0
     ai_generated: true
-    source: "Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio, by Tal (GitHub @pixelrenderai-hash, PR #507 at 3ef0a7a5a36887aee7a24fd11ddf722507695f3c): the 31 non-building models of The 1948 Collection (12 people, 9 road and rail vehicles, 4 ships and aircraft, 6 animals). Slimmed for the repository by tools/slim_collection.py (Blender 5.2.2, issue #664): a far mesh of at most 1,500 triangles (4,500 for vehicles, ships and aircraft) and a near mesh of at most 8,000 per model, the near mesh keeping its rig and only the idle clip on the 13 models that have one, every other clip dropped; colour maps 1024 px resized to 512 px. The masters, #507's full-detail FBX files and the per-model records (prompts, task ids, credits) are kept outside the repository."
+    source: "Tripo Studio (tripo3d.ai), paid Max plan, account pixelrenderai, made 10-13 October 2026 from concept images generated in the same studio, by MATKOT (PR #507 at 3ef0a7a5a36887aee7a24fd11ddf722507695f3c): the 31 non-building models of The 1948 Collection (12 people, 9 road and rail vehicles, 4 ships and aircraft, 6 animals). Slimmed for the repository by tools/slim_collection.py (Blender 5.2.2, issue #664): a far mesh of at most 1,500 triangles (4,500 for vehicles, ships and aircraft) and a near mesh of at most 8,000 per model, the near mesh keeping its rig and only the idle clip on the 13 models that have one, every other clip dropped; colour maps 1024 px resized to 512 px. The masters, #507's full-detail FBX files and the per-model records (prompts, task ids, credits) are kept outside the repository."
     status: verified
-    artist: "Tal (@pixelrenderai-hash)"
+    artist: "MATKOT"
     note: "Issue #664 (umbrella #663). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issues #659 and #663): 'they are ok to use'. Owner ruling 2026-10-15 on repository size: plain git, slimmed first, no masters and no Git LFS. The prefabs, controllers and materials beside the models are under the code row of LICENSING.md."
 removed: []

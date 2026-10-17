@@ -12,12 +12,12 @@ As a player of the MVP, I want to put Tel Aviv's people to work and house the im
 - Production: each employed unit earns `income_per_job_per_year` IL millions a year, for the turn's share of a year (R-CITY-002).
 - Arrivals: the CBS series in `content/aliyah.yaml` arrives as refugees, in whole units, counted cumulatively so that no unit is lost or counted twice (R-CITY-003, D-A5 [S2]). With twelve cities they are spread over all of them: see `cities.md`.
 - Housing: refugees become civilians, without a job, up to the city's housing capacity. The cap is a placeholder while D-D1 is open (R-CITY-004).
-- Social cohesion: a share from 0% to 100%, the weighted housed share and employed share over all cities (R-CITY-005). No other system reads it; the top bar shows it as a resource meter, in the GDD loop only (the owner's ruling of 15 October 2026 [S4]).
+- Social cohesion: a share from 0% to 100%, the weighted housed share and employed share over all cities (R-CITY-005). At first no other system read it; the top bar shows it as a resource meter, in the GDD loop only (the owner's ruling of 15 October 2026 [S4]). It is now the `morale` indicator (R-NAT-001), which approval and the `low_cohesion` situation read; the employed share is one of its effect-web sources and housing reaches it through the `housing` indicator.
 
 ## Data touched
 
 - `cities.yaml`, `unit_types.yaml` and `rules.yaml` `mvp:` and `attention_cost.assign_workers`: labelled design values in `content/` since the cutover (Q-CUT-1, R-LOOP-005), the overlay's placeholders before it (ruling 2 [S3]).
-- `GameState`: `Cities` (counts), `Cohesion` (hashed as `coh=` when the state has cities), `Treasury`.
+- `GameState`: `Cities` (counts), `Cohesion` (hashed as `coh=` when the state has cities; since removed: folded into `morale`, R-NAT-001), `Treasury`.
 - Save files: the `work CITY ROLE N` line. Scenarios: `assign_workers` (and `content: mvp` until the cutover).
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` was new.
 

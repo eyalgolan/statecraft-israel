@@ -75,6 +75,60 @@ options:
         Assert.Equal("That event is not waiting for a decision", EventSystem.Choose(c, s, "shortage", "ration", why));
     }
 
+    /// <summary>R-EFX-001: a `food` effect moves the stock by whole units, rounding half away from zero, and the
+    /// stock stays in 0..int.MaxValue even at the range edge.</summary>
+    [Theory]
+    [InlineData("7", 0, 7)]
+    [InlineData("2.5", 100, 103)]
+    [InlineData("-2.5", 100, 97)]
+    [InlineData("2147483647", 100, 2147483647)]
+    public void AnOptionCanMoveTheFoodStock(string delta, int start, int expected)
+    {
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: food\n        delta: " + delta);
+        var c = Load(new Dictionary<string, string> { ["shortage.yaml"] = ev });
+        var s = State(c, new DateTime(1948, 6, 1)); s.Food = start; var why = new List<Cause>();
+        EventSystem.Trigger(c, s, why);
+        Assert.Null(EventSystem.Choose(c, s, "shortage", "import", why));
+        Assert.Equal(expected, s.Food);
+        Assert.Contains(why, w => w.Target == "food" && w.Delta == expected - start);
+    }
+
+    /// <summary>R-EFX-001: beyond the int range the loader refuses the delta, naming file and field (an out-of-range
+    /// double-to-int cast is not the same on every runtime, docs/determinism.md).</summary>
+    [Fact]
+    public void AFoodDeltaBeyondTheIntRangeIsALoadError()
+    {
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: food\n        delta: 3000000000");
+        var ex = Assert.Throws<ContentException>(() => Load(new Dictionary<string, string> { ["shortage.yaml"] = ev }));
+        Assert.Equal("events/shortage.yaml", ex.File);
+        Assert.Equal("events[shortage].options[import].effects.food", ex.Field);
+        Assert.Contains("food delta out of range", ex.Message);
+    }
+
+    [Fact]
+    public void AFoodCutStopsAtAnEmptyStock()
+    {
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: food\n        delta: -10");
+        var c = Load(new Dictionary<string, string> { ["shortage.yaml"] = ev });
+        var s = State(c, new DateTime(1948, 6, 1)); s.Food = 3; var why = new List<Cause>();
+        EventSystem.Trigger(c, s, why);
+        Assert.Null(EventSystem.Choose(c, s, "shortage", "import", why));
+        Assert.Equal(0, s.Food);
+        Assert.Contains(why, w => w.Target == "food" && w.Delta == -3);
+    }
+
+    /// <summary>R-EFX-001: any target that is not an indicator, `treasury`, `fx_reserves` or `food` is a load error
+    /// naming file and field. `arms` pins the boundary: the Arms stock becomes a target with its pool (#781).</summary>
+    [Fact]
+    public void AnUnknownTargetNamesTheField()
+    {
+        var ev = Shortage.Replace("target: fx_reserves", "target: arms");
+        var ex = Assert.Throws<ContentException>(() => Load(new Dictionary<string, string> { ["shortage.yaml"] = ev }));
+        Assert.Equal("events/shortage.yaml", ex.File);
+        Assert.Equal("events[shortage].options[import].effects.arms", ex.Field);
+        Assert.Contains("unknown target", ex.Message);
+    }
+
     [Fact]
     public void EventIndicatorEffectPersistsThroughEffectsRebuilds()
     {
@@ -443,12 +497,14 @@ options:
             ["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:\n", "indicators:\n  - id: intl_standing\n    base: 0.5\n    name: International standing\n"),
         }, new Dictionary<string, string> { ["shortage.yaml"] = ev }));
 
-    /// <summary>Owner decision of 15 October 2026 on Q-EFX-2, "Extend it": a sensitive option may not raise any resource. The
-    /// legacy indicators stand for Food (food_supply), Social cohesion (morale) and International Support (intl_standing).</summary>
+    /// <summary>R-EFX-002 (owner decision of 15 October 2026 on Q-EFX-2, "Extend it"): a sensitive option may not raise any
+    /// resource. The legacy indicators stand for Food (food_supply), Social cohesion (morale) and International Support
+    /// (intl_standing); `food` is Food's own target.</summary>
     [Theory]
     [InlineData("food_supply")]
     [InlineData("morale")]
     [InlineData("intl_standing")]
+    [InlineData("food")]
     public void SensitiveEventCannotRaiseFoodCohesionOrSupport(string target)
     {
         var ex = Assert.Throws<ContentException>(() => LoadWithStanding(Sensitive("war-casualties", target, "0.02")));
@@ -460,6 +516,8 @@ options:
     [Theory]
     [InlineData("food_supply", "0")]
     [InlineData("morale", "-0.02")]
+    [InlineData("food", "0")]
+    [InlineData("food", "-5")]
     [InlineData("intl_standing", "-0.05")]
     public void SensitiveEventMayCostOrNotChangeFoodCohesionOrSupport(string target, string delta)
     {

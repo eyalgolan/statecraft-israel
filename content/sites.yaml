@@ -1,8 +1,13 @@
 # GDD v0.1 designated sites (docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a new yishuv
-# takes its site's name). Phase 1 has one site (owner decision D-A4; the owner chose Mefalsim on #378, 14 October 2026).
-# Sourced facts only: the build turns and cost are labelled design values in rules.yaml mvp: (Q-CUT-1, owner, 15 October
-# 2026; R-LOOP-005). The loader reads this file only when eras.yaml systems.loop is gdd. Research: #459,
-# research_notes/GDD objectives/designated-site-1.md.
+# takes its site's name). Phase 1 had one site (owner decision D-A4; the owner chose Mefalsim on #378, 14 October 2026).
+# Phase 4 PR 1 (#785) adds the MVP's other yishuv sites, Beit Kama, Re'im and Gilat (Q-SITE-1, owner, 17 October 2026, #782:
+# "take all of the plan's recommendations"), and a field site in each yishuv's hex (Q-FIELD-1). The Hula swamp site and the
+# camp sites wait for the owner (#785). Research for the three: research_notes/GDD objectives/settlements-1949-51.md, rows
+# 22, 23 and 25. Their sources carry that note's checked date (14 October 2026); no person has re-read them since, so the
+# rows stay draft.
+# The yishuv rows are sourced facts. The field rows are design placements, not facts (Q-FIELD-1). The build turns and cost
+# are labelled design values in rules.yaml mvp: (Q-CUT-1, owner, 15 October 2026; R-LOOP-005). The loader reads this file
+# only when eras.yaml systems.loop is gdd. Research: #459, research_notes/GDD objectives/designated-site-1.md.
 sites:
   - id: mefalsim
     name: Mefalsim
@@ -29,3 +34,118 @@ sites:
       # Wikidata Q2890190: the names (Mefalsim, מפלסים) and the coordinates the hex is computed from (tools/hexgrid.py).
       - { url: "https://www.wikidata.org/wiki/Q2890190", checked: 2026-10-14 }
     status: fact-checked
+  - id: mefalsim_field
+    name: Mefalsim fields
+    # For the native reviewer (#564): "the fields of Mefalsim".
+    name_he: שדות מפלסים
+    # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's. No new place and no new
+    # fact: the source is Mefalsim's hex.
+    q: -10
+    r: 27
+    kinds: [field]
+    sources:
+      - { url: "https://www.wikidata.org/wiki/Q2890190", checked: 2026-10-14 }
+    status: draft
+  - id: beit_kama
+    name: Beit Kama
+    name_he: בית קמה
+    # Hex from the Central Bureau of Statistics point 31.44853 N, 34.76108 E (tools/hexgrid.py; Hebrew Wikipedia 39 m away).
+    # No 1948 settlement, line hex or 1948 locality within one hex (settlements note, row 22).
+    q: -8
+    r: 28
+    kinds: [yishuv]
+    # Going onto the land of Tel Maliha on 19 Nisan 5709, 18 April 1949, by the Hashomer Hatzair group then called Sefiah
+    # (renamed Beit Kama in June 1951, per the Beit Kama archive page). Gvati gives 18.4.49, and English Wikipedia agrees.
+    # Hebrew Wikipedia gives 19 April 1949 [conflict, one day], citing an Al HaMishmar item of 19 April 1949 that no one has
+    # read yet.
+    founded: 1949-04-18
+    sources:
+      # Gvati, 100 Years of Settlement, vol. 2, list of all Jewish rural settlements: Beit Kama, 18.4.49.
+      - { url: "https://benyehuda.org/read/14684", checked: 2026-10-14 }
+      # Kibbutz mynet: the founding scroll, "onto the land of Tel Maliha on 19 Nisan 5709".
+      - { url: "https://kibbutz.mynet.co.il/local_news/article/m_154712", checked: 2026-10-14 }
+      # Beit Kama heritage archive page (israeliana.org): the first name Sefiah, renamed Beit Kama in June 1951.
+      - { url: "https://www.israeliana.org/post/%D7%90%D7%A8%D7%9B%D7%99%D7%95%D7%9F-%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%91%D7%99%D7%AA-%D7%A7%D7%9E%D7%94", checked: 2026-10-14 }
+      # Hebrew Wikipedia, the revision read for the note: 19 April 1949, citing an Al HaMishmar item (not read).
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=43790184", checked: 2026-10-14 }
+      # English Wikipedia, the revision read for the note: 18 April 1949.
+      - { url: "https://en.wikipedia.org/w/index.php?oldid=1375255214", checked: 2026-10-14 }
+      # Central Bureau of Statistics, localities file 2024: the founding year (1949) and the coordinates of the hex.
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: beit_kama_field
+    name: Beit Kama fields
+    # For the native reviewer (#564): "the fields of Beit Kama".
+    name_he: שדות בית קמה
+    # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
+    q: -8
+    r: 28
+    kinds: [field]
+    sources:
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: reim
+    name: Re'im
+    name_he: רעים
+    # Hex from the Central Bureau of Statistics point 31.38552 N, 34.45932 E (tools/hexgrid.py; Hebrew Wikipedia 7 m away).
+    # Next to the Egypt line hexes shown from 22 February 1950 in map/armistice_hexes_1949.yaml (display only; a site may sit
+    # by a line, #378, question 2). No 1948 locality within one hex (settlements note, row 25).
+    q: -12
+    r: 29
+    kinds: [yishuv]
+    # Founded 20 October 1949 as a lookout settlement on Tel Jemmeh, by the Hebrew Scouts garin Vav from the Na'an hachshara,
+    # first called Tel Re'im. Gvati gives 20.10.49, and two Palmach database entries the same day. The record covers the
+    # founding only (owner, 17 October 2026, #782, Q-SENS-1), as Mefalsim's does (#378, question 4).
+    founded: 1949-10-20
+    sources:
+      # Gvati, 100 Years of Settlement, vol. 2: Re'im, 20.10.49.
+      - { url: "https://benyehuda.org/read/14684", checked: 2026-10-14 }
+      # Palmach database: founded on 20 October 1949 by the Na'an-Schiller hachshara, a lookout settlement on Tel Jemmeh.
+      - { url: "https://palmach.org.il/history/database/?itemId=7953", checked: 2026-10-14 }
+      - { url: "https://palmach.org.il/history/database/?itemId=5312", checked: 2026-10-14 }
+      # Yad Ben-Zvi, "Israel Revealed to the Eye", Kibbutz Re'im: founded 1949 by a Scouts garin Vav, first called Tel Re'im.
+      - { url: "https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%A8%D7%A2%D7%99%D7%9D/", checked: 2026-10-14 }
+      # Central Bureau of Statistics, localities file 2024: the founding year (1949) and the coordinates of the hex.
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: reim_field
+    name: Re'im fields
+    # For the native reviewer (#564): "the fields of Re'im".
+    name_he: שדות רעים
+    # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
+    q: -12
+    r: 29
+    kinds: [field]
+    sources:
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: gilat
+    name: Gilat
+    name_he: גילת
+    # Hex from the Central Bureau of Statistics point 31.32798 N, 34.65203 E (tools/hexgrid.py; Hebrew Wikipedia 3 m away).
+    # Tifrah's hex too (designated-site-1.md), which is not a site; no line hex or 1948 locality within one hex (row 23).
+    q: -10
+    r: 30
+    kinds: [yishuv]
+    # Going onto the land on 13 Kislev 5710, 4 December 1949, by immigrants from Tunisia (a moshav of Tnuat HaMoshavim).
+    # Gvati gives 4.12.49, and Hebrew Wikipedia the Hebrew date.
+    founded: 1949-12-04
+    sources:
+      # Gvati, 100 Years of Settlement, vol. 2: Gilat, 4.12.49.
+      - { url: "https://benyehuda.org/read/14684", checked: 2026-10-14 }
+      # Hebrew Wikipedia, the revision read for the note: going onto the land on 13 Kislev 5710.
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=43560845", checked: 2026-10-14 }
+      # Central Bureau of Statistics, localities file 2024: the founding year (1949) and the coordinates of the hex.
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: gilat_field
+    name: Gilat fields
+    # For the native reviewer (#564): "the fields of Gilat".
+    name_he: שדות גילת
+    # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
+    q: -10
+    r: 30
+    kinds: [field]
+    sources:
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft

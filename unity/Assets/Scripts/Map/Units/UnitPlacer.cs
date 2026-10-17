@@ -72,7 +72,7 @@ namespace Statecraft.Game.Map.Units
             var result = new Dictionary<UnitAnchor, AnchorSpot>();
             foreach (var u in units)
             {
-                if (u.Hidden != null) continue;
+                if (!UnitRoster.OnMap(u)) continue;
                 bool sea = u.Service == UnitData.Navy;
                 foreach (var a in u.Anchors)
                 {
@@ -130,7 +130,7 @@ namespace Statecraft.Game.Map.Units
             var list = new List<string>();
             foreach (var u in units)
             {
-                if (u.Hidden != null) continue;
+                if (!UnitRoster.OnMap(u)) continue;
                 foreach (var a in u.Anchors) if (!spots.ContainsKey(a)) list.Add(SkipMessage(u, a));
             }
             return list;

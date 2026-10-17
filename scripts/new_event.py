@@ -29,6 +29,8 @@ from: @FROM@
   - id: todo_option   # lower_snake_case, like every id
     text: TODO what the player does
     effects:
+      # targets: an indicator id (morale, food_supply, ...), treasury or fx_reserves (game money),
+      # or food (the national Food stock, in whole units); policies go in set_policy
       - { target: morale, delta: 0.0 }
 sources: []   # each { url: "https://...", checked: YYYY-MM-DD }
 status: draft

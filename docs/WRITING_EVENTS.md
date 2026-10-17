@@ -75,7 +75,7 @@ Write plain description. Do not put words in anyone's mouth: no invented quotes
 Tags are free-form, but these four are sensitive (checked without regard to case): `holocaust`, `terror`, `massacre`,
 `war-casualties`. An event with any of them:
 
-- cannot give a positive delta to any resource in any option: `treasury`, `fx_reserves`, `food_supply`, `morale`
+- cannot give a positive delta to any resource in any option: `treasury`, `fx_reserves`, `food`, `food_supply`, `morale`
   (standing for Social cohesion) or `intl_standing` (standing for International Support). The loader refuses: it would
   reward the atrocity. Owner decision of 15 October 2026 (Q-EFX-2, "Extend it"); until then the rule covered money only;
 - needs `status: sensitivity-reviewed` before any build is shared. That status is set by the maintainer, not by you.
@@ -144,7 +144,12 @@ design choice and does not.
 
 - an indicator id from `content/model.yaml`: `morale`, `food_supply`, `housing`, `security`, `intl_standing`. These
   live between 0 and 1, so a delta of `0.03` is three points of the scale. Keep deltas small, as the example does;
-- `treasury` or `fx_reserves`, in game money.
+- `treasury` or `fx_reserves`, in game money;
+- `food`, the national Food stock, in whole units (one unit is one population unit's food for a month). The delta
+  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. The
+  Arms stock becomes a target with its pool (#781). Note that the monthly import (R-FOOD-002) refills the stock to
+  `cover_months` of the need unless the foreign-currency crisis is on, so outside a crisis a cut only matters if it
+  leaves less than one month's need; a gain stays.
 
 `delta` must be a finite number. Any other target is an error. Policy ids (`rationing`, ...) are not effect targets;
 use `set_policy` for those.
@@ -210,8 +215,8 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `at least one option required` | `options` is empty. |
 | `at most one option can be historical` | Two options have `historical: true`. |
 | `hard anchor needs a historical option` | `anchor: hard` and no option is `historical`. |
-| `unknown target` | An effect `target` is neither an indicator nor `treasury` or `fx_reserves`. |
-| `sensitive events cannot reward` | A sensitive-tagged event with a positive `treasury`, `fx_reserves`, `food_supply`, `morale` or `intl_standing` delta. |
+| `unknown target` | An effect `target` is neither an indicator nor `treasury`, `fx_reserves` or `food`. |
+| `sensitive events cannot reward` | A sensitive-tagged event with a positive `treasury`, `fx_reserves`, `food`, `food_supply`, `morale` or `intl_standing` delta. |
 | `must be 1-5` | `set_rung` outside 1 to 5. |
 | `unknown policy` | `set_policy` names a policy that does not exist. |
 | `unknown objective` | `objective` names an objective that is not in `objectives.yaml`. |

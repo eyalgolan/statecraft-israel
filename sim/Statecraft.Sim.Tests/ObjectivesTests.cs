@@ -264,11 +264,14 @@ eras:
     [Fact]
     public void TheGoldenRunCompletesTheFirstNewYishuvOnTheBuildDate()
     {
-        var s = GoldenRun.Play(Real, GoldenRun.Until1950);
+        var s = GoldenRun.Play(Real, GoldenRun.Until1952);
         var built = s.Sites["mefalsim"].BuiltOn!.Value;
-        Assert.Equal(new DateTime(1949, 3, 15), built);
+        // Since Phase 4 PR 1 (#785) the reference player builds the yishuv sites in id order, one after another as its halutzim
+        // come free: Beit Kama and Gilat first. Since Phase 4 PR 6 (#790) its group is a veteran after Beit Kama and builds in
+        // 3 turns, so Mefalsim is built in September 1949, three months after its founding date (12 June 1949); it was March 1950.
+        Assert.Equal(new DateTime(1949, 9, 15), built);
         Assert.Equal(built, s.Objectives["first_new_yishuv"]);
-        Assert.Equal(100 + 3 * 5, s.Score);   // D-B6 and D-B2: +5 a month for three months early
+        Assert.Equal(100, s.Score);   // D-B6; no D-B2 bonus, as it is built after the reference date
         Assert.Equal("continue", s.ChosenOptions["first_new_yishuv"]);
     }
 
@@ -323,7 +326,7 @@ eras:
         new object[] { "objectives.yaml", "objectives: []\n", Card, "events/first_card.yaml", "events[first_card].objective", "unknown objective 'first_goal'" },
         new object[] { "objectives.yaml", Objective("site_built: site_a", "site_built: nowhere"), Card, "objectives.yaml", "objectives[first_goal].completes_when.site_built", "unknown site 'nowhere'" },
         new object[] { "objectives.yaml", Objective("reference_date: 1949-06-12", "reference_date: 1949-06-08"), Card, "objectives.yaml", "objectives[first_goal].reference_date", "must be 1949-06-12, the founding date of site 'site_a'" },
-        new object[] { "sites.yaml", Fixture.GddSites.Replace("kinds: [yishuv]", "kinds: []"), Card, "objectives.yaml", "objectives[first_goal].completes_when.site_built", "cannot be built as a yishuv" },
+        new object[] { "sites.yaml", Fixture.GddSites.Replace("kinds: [yishuv]", "kinds: [field]").Replace("    founded: 1949-06-12\n", ""), Card, "objectives.yaml", "objectives[first_goal].completes_when.site_built", "cannot be built as a yishuv" },
         new object[] { "rules.yaml", GddRules("  objective_points: 100\n", ""), Card, "rules.yaml", "mvp.objective_points", "required when eras.yaml systems.loop is gdd" },
         new object[] { "rules.yaml", GddRules("objective_bonus_per_month: 5", "objective_bonus_per_month: -5"), Card, "rules.yaml", "mvp.objective_bonus_per_month", "must be >= 0" },
         new object[] { "rules.yaml", GddRules("objective_bonus_cap: 60", "objective_bonus_cap: -1"), Card, "rules.yaml", "mvp.objective_bonus_cap", "must be >= 0" },

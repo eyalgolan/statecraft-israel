@@ -23,7 +23,7 @@ namespace Statecraft.Game.UI
     {
         public string Year = "", Turn = "", Date = "", Attention = "", SecurityLevel = "", Score = "";
         public Meter Treasury, Immigration, Security, Support, Standing, Fx;
-        /// <summary>Social cohesion (GameState.Cohesion, R-CITY-005) on the 0-100 scale, shown only in the GDD loop
+        /// <summary>Social cohesion (the morale indicator, R-NAT-001) on the 0-100 scale, shown only in the GDD loop
         /// (ShowsCohesion; the owner's ruling of 15 October 2026, #380). Empty in the legacy loop.</summary>
         public Meter Cohesion = new Meter("", "", 0, "", "");
         public bool ShowsCohesion;
@@ -90,7 +90,7 @@ namespace Statecraft.Game.UI
                 Standing = Points(s.Indicators["intl_standing"], prev?.Indicators["intl_standing"]),
                 Fx = Money("fx_reserves", s.FxReserves, prev?.FxReserves),
                 ShowsCohesion = c.IsGdd,
-                Cohesion = c.IsGdd ? Points(s.Cohesion, prev?.Cohesion) : new Meter("", "", 0, "", ""),
+                Cohesion = c.IsGdd ? Points(s.Indicators["morale"], prev?.Indicators["morale"]) : new Meter("", "", 0, "", ""),
             };
         }
     }

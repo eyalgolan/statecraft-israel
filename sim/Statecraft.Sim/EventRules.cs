@@ -9,12 +9,13 @@ namespace Statecraft.Sim
     static class EventRules
     {
         public static readonly HashSet<string> SensitiveTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "holocaust", "terror", "massacre", "war-casualties" };
-        public static readonly HashSet<string> SpecialTargets = new HashSet<string> { "treasury", "fx_reserves" };
+        public static readonly HashSet<string> SpecialTargets = new HashSet<string> { "treasury", "fx_reserves", Pools.FoodTarget };
         /// <summary>Targets a sensitive event's options may not raise (CONTENT_POLICY section 4: no mechanic rewards violence against
         /// civilians). Owner decision of 15 October 2026 on Q-EFX-2, "Extend it": every resource, not money alone. Until the
         /// GDD resources exist as targets the legacy indicators stand for them: Money (treasury, fx_reserves), Food
-        /// (food_supply), Social cohesion (morale) and International Support (intl_standing). Arms has no target yet.</summary>
-        public static readonly HashSet<string> NoGainTargets = new HashSet<string> { "treasury", "fx_reserves", "food_supply", "morale", "intl_standing" };
+        /// (food_supply), Social cohesion (morale) and International Support (intl_standing). Food also has its own target
+        /// (`food`, R-EFX-001); Arms has no target yet and joins the rule with its pool (#781).</summary>
+        public static readonly HashSet<string> NoGainTargets = new HashSet<string> { "treasury", "fx_reserves", Pools.FoodTarget, "food_supply", "morale", "intl_standing" };
 
         public static void Validate(Content c, HashSet<string> offices, HashSet<string> indicators)
         {
@@ -86,6 +87,8 @@ namespace Statecraft.Sim
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "unknown target");
                         Active(F($"options[{o.Id}].effects.{fx.Target}"), fx.Target);
                         ContentLoader.Finite(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), fx.Delta);
+                        if (fx.Target == Pools.FoodTarget && Math.Abs(fx.Delta) > int.MaxValue)
+                            throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "food delta out of range");
                         if (sensitive && NoGainTargets.Contains(fx.Target) && fx.Delta > 0)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"sensitive events cannot reward {fx.Target}");
                     }

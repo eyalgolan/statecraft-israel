@@ -62,8 +62,8 @@ public class EventRetimingTests
     [InlineData("armistice_lebanon", "1949-04-15")]
     [InlineData("armistice_jordan", "1949-04-15")]
     [InlineData("austerity_1949", "1949-05-15")]
-    [InlineData("first_new_yishuv", "1949-03-15")]                 // R-OBJ-003: the turn the reference player builds Mefalsim (1949-06-15 before GDD Phase 3 PR 1)
     [InlineData("armistice_syria", "1949-08-15")]
+    [InlineData("first_new_yishuv", "1949-09-15")]                 // R-OBJ-003: the turn the reference player builds Mefalsim (1950-03-15 before GDD Phase 4 PR 6's veteran; 1949-03-15 before GDD Phase 4 PR 1, when it was the only site; 1949-06-15 before GDD Phase 3 PR 1)
     [InlineData("frumkin_commission", "1950-01-15")]
     [InlineData("maabarot_policy", "1950-04-15")]
     [InlineData("law_of_return", "1950-07-15")]

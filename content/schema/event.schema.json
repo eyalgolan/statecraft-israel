@@ -60,7 +60,7 @@
               "additionalProperties": false,
               "required": ["target", "delta"],
               "properties": {
-                "target": { "type": "string", "minLength": 1 },
+                "target": { "type": "string", "minLength": 1, "description": "An indicator id from model.yaml, or a special target: treasury or fx_reserves (game money), food (the national Food stock, whole units; the Arms target arrives with its pool, #781)." },
                 "delta": { "type": "number" }
               }
             }

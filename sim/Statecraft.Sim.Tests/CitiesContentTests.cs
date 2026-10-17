@@ -23,7 +23,7 @@ public class CitiesContentTests
         Assert.Equal(("unit", "hakhshara", 3, 0.25), (halutz.Kind, halutz.Facility, halutz.TrainingTurns, halutz.TrainingCost));
         Assert.Equal("", c.UnitTypes.Single(t => t.Id == "civilian").Facility);
         var mvp = c.RulesAt(c.Eras[0].From).Mvp!;
-        Assert.Equal((10, 1.2, 0.5, 0.5, new DateTime(1948, 5, 15)), (mvp.PeoplePerUnit, mvp.IncomePerJobPerYear, mvp.CohesionHousingWeight, mvp.CohesionJobsWeight, mvp.CityArrivalsFrom));
+        Assert.Equal((10, 1.2, new DateTime(1948, 5, 15)), (mvp.PeoplePerUnit, mvp.IncomePerJobPerYear, mvp.CityArrivalsFrom));
         Assert.Equal("Town A", c.SettlementNames["town_a"]);
     }
 
@@ -194,8 +194,6 @@ public class CitiesContentTests
         new object[] { "unit_types.yaml", "types:\n  - { id: civilian, kind: crowd }\n", "types[civilian].kind", "must be population or unit" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("people_per_unit: 10", "people_per_unit: 0")), "mvp.people_per_unit", "must be >= 1" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("income_per_job_per_year: 1.2", "income_per_job_per_year: -1")), "mvp.income_per_job_per_year", "must be a finite number >= 0" },
-        new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("cohesion_housing_weight: 0.5", "cohesion_housing_weight: 1.5")), "mvp.cohesion_housing_weight", "must be a number from 0 to 1" },
-        new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("cohesion_jobs_weight: 0.5", "cohesion_jobs_weight: 0.4")), "mvp.cohesion_jobs_weight", "the two cohesion weights must sum to 1" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("  city_arrivals_from: 1948-05-15\n", "")), "mvp.city_arrivals_from", "required when eras.yaml systems.loop is gdd" },
         new object[] { "rules.yaml", Rules(""), "mvp", "required when eras.yaml systems.loop is gdd" },
         new object[] { "rules.yaml", Fixture.Files["rules.yaml"] + Fixture.GddRules, "attention_cost.assign_workers", "missing cost" },

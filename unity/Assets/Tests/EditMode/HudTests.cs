@@ -153,10 +153,10 @@ public class HudTests
         Assert.AreEqual("Score 150", label.text);
     }
 
-    // ---- Social cohesion (#380): a resource meter, only in the GDD loop, from GameState.Cohesion ----
+    // ---- Social cohesion (#380): a resource meter, only in the GDD loop, from the morale indicator ----
 
     /// <summary>The owner's ruling of 15 October 2026 (#380): Social cohesion on the top bar as a resource meter, in the GDD
-    /// loop. Its value is GameState.Cohesion (R-CITY-005) on the 0-100 scale, as the other 0..1 meters; after a turn it
+    /// loop. Its value is the morale indicator (R-NAT-001) on the 0-100 scale, as the other 0..1 meters; after a turn it
     /// shows the change, and its tooltip says both, under the caption the bar shows (Hebrew: לכידות חברתית).</summary>
     [Test]
     public void TheGddGameShowsSocialCohesion()
@@ -168,19 +168,19 @@ public class HudTests
         Assert.AreEqual(DisplayStyle.Flex, meter.style.display.value, "shown in the GDD loop");
         Assert.AreEqual("Social cohesion", meter.Q<Label>(className: "meter-name").text);
         Assert.AreEqual("rings", meter.Q<UiIcon>().Glyph);
-        Assert.Greater(bridge.State.Cohesion, 0.0, "precondition: the cities have set it at the start");
-        Assert.AreEqual(PlayerText.Percent(bridge.State.Cohesion), ui.Q<Label>("cohesion-value").text);
+        Assert.Greater(bridge.State.Indicators["morale"], 0.0, "precondition: the indicator starts at its base");
+        Assert.AreEqual(PlayerText.Percent(bridge.State.Indicators["morale"]), ui.Q<Label>("cohesion-value").text);
         Assert.AreEqual("", ui.Q<Label>("cohesion-delta").text, "no change before the first turn");
-        Assert.AreEqual($"Social cohesion: {PlayerText.Percent(bridge.State.Cohesion)}", meter.tooltip);
+        Assert.AreEqual($"Social cohesion: {PlayerText.Percent(bridge.State.Indicators["morale"])}", meter.tooltip);
         bridge.EndTurn();
         var prev = bridge.Session.Previous!; var now = bridge.State;
-        now.Cohesion = 0.634; prev.Cohesion = 0.584;                        // 58% -> 63%: up 5 points
+        now.Indicators["morale"] = 0.634; prev.Indicators["morale"] = 0.584;         // 58% -> 63%: up 5 points
         hud.Render();
         Assert.AreEqual("63%", ui.Q<Label>("cohesion-value").text);
         Assert.AreEqual("+5%", ui.Q<Label>("cohesion-delta").text);
         Assert.IsTrue(ui.Q<Label>("cohesion-delta").ClassListContains("delta-up"));
         Assert.AreEqual("Social cohesion: 63%, up 5 points since last turn", meter.tooltip);
-        now.Cohesion = 0.574;                                               // 58% -> 57%: down 1 point
+        now.Indicators["morale"] = 0.574;                                     // 58% -> 57%: down 1 point
         hud.Render();
         Assert.AreEqual("-1%", ui.Q<Label>("cohesion-delta").text);
         Assert.IsTrue(ui.Q<Label>("cohesion-delta").ClassListContains("delta-down"));

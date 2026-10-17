@@ -30,8 +30,21 @@
 #   Sword, 1961) or the IDF and Defense Establishment Archives. The card computes the same note per anchor.
 # headgear: the riflemen's headgear, only where a source ties it to the unit (otherwise the uniform default: bush hat,
 #   steel helmet, bush hat; docs/units.md).
-# side: whose formation it is: israel (every row here), or egypt, jordan, syria, iraq, lebanon (#226). The token flies
-#   that side's flag where the repo has a sourced one (Israel's only, for now; docs/units.md, "The plinth and the flag").
+# side: whose formation it is: israel, or egypt, jordan, syria, iraq, lebanon, ala (the Arab Liberation Army) or
+#   local_arab_forces (Q-START-4, owner, 15 October 2026: "Armies + ALA + local forces"; #226). The token flies that side's
+#   flag where the repo has a sourced one (Israel's only, for now; docs/units.md, "The plinth and the flag"). Data only:
+#   the map draws Israel's rows alone until Phase 5 PR 17's figures land, after its sensitivity review (owner, 17 October
+#   2026, #740: "Nothing is drawn with IDF figures, and there is no placeholder art").
+# echelon: the formation's level: force (a state's whole force in the field, or the ALA), division, brigade, battalion or
+#   company. Every row of a side other than israel gives it, with the formations in `number` and their sources in the
+#   row's `sources`.
+# strength: one number, never a range (docs/CONTENT_POLICY.md section 1), with `as_of` (the day it is for), `sources` and
+#   an optional `note`. The value follows Q-START-3 (owner, 15 October 2026, "Take all recommendations"): from an Israeli
+#   official or mainstream source where one gives it, otherwise the value two of the research note's sources agree on.
+#   The note's other figures and its conflicts stay in the note (research_notes/GDD phase 5/arab-forces-1948.md,
+#   sections 1 to 8), not here. Every row gives the 15 May strength only: no source found dates a strength on 11 June
+#   (the note, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented"). Every row of a
+#   side other than israel gives it.
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian.
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
@@ -519,3 +532,309 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/HMCS_Norsyd', checked: '2026-10-11'}
     - {url: 'https://en.wikipedia.org/wiki/Israeli_Navy', checked: '2026-10-11'}
     - {url: 'https://www.wikidata.org/wiki/Q1376739', checked: '2026-10-11'}
+# --- The Arab forces (#226, #740): data only, the map does not draw them yet ----------------------------------------
+# One row per force, on 15 May 1948 and at the first truce (11 June 1948), at the places research_notes/GDD phase 5/
+# arab-forces-1948.md (section 10) places with two or more sources, or by the owner's ruling where it says so. Book
+# sources were read for that note on 2026-10-13 (its "How it was researched"): O'Ballance and Dupuy in full text, the
+# Ben-Gurion diary, al-Tall, al-Qawuqji, FRUS and the CIA summaries as documents, and Glubb, Lorch, Morris and Rogan and
+# Shlaim only as full-text search snippets without page numbers (the note's section 9: check the printed pages first).
+# The page each claim rests on is in the comment above its source. Wikipedia gives the coordinates and, where cited,
+# the truce's end and al-Malikiyya (checked 2026-10-17). Not placed (the note gives no two sources, or the place is one
+# the note does not describe): see the PR for #740.
+- id: egyptian_expeditionary_force
+  name: Egyptian Expeditionary Force
+  number: Two brigade groups (a coastal brigade group and an inland column)
+  service: army
+  side: egypt
+  echelon: force
+  sector: "The Egyptian Army's force in Palestine. The coastal brigade group crossed at Rafah on 15 May 1948 and entered Gaza that evening; the inland column crossed at al-Auja. At the first truce its forward base was at Isdud and its rear base, its headquarters from 24 May, at Majdal, with the force along the road from Gaza and a link east through Faluja to Bayt Jibrin."
+  wikipedia_only: false
+  status: draft
+  strength:
+    value: 10000
+    as_of: '1948-05-15'
+    note: "The force that entered on 15 May. Two of the note's sources agree on the value (O'Ballance; the CIA's summary for the week to 19 May), and Glubb's snippet gives it too. No Israeli source in the note gives one."
+    sources:
+    # O'Ballance, The Arab-Israeli War 1948 (1956), pp. 77 and 90: "hard put to raise 10,000 men for the initial invasion force".
+    - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
+    # CIA Near East/Africa Branch, Intelligence Summary, week ending 19 May 1948: 10,000 Egyptian troops near the border, some already in Palestine.
+    - {url: 'https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010003-6', checked: '2026-10-13'}
+    # Glubb, A Soldier with the Arabs (1957), full-text search snippet: Egypt 10,000 of the troops "which took the field on May 15th, 1948".
+    - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
+  anchors:
+  - place: Gaza
+    lon: 34.45972
+    lat: 31.5075
+    from: '1948-05-15'
+    to: '1948-05-21'
+    end_basis: source
+    end_note: "Dupuy p. 58: the coastal force reached Majdal about 21 to 24 May; the window ends on the first of those days."
+    note: "Dupuy pp. 56-57: the coastal brigade group crossed at Rafah and entered Gaza in the early evening of 15 May. The Arab armies' joint headquarters gave Gaza as the start of the Egyptian line (AP, 13 June)."
+    sources:
+    # Dupuy, Elusive Victory (1978), pp. 56-57.
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    # The joint headquarters' truce lines, AP, Amman, 13 June 1948 (San Francisco Chronicle, 14 June): "Beginning at Gaza and running northward to Majdal and Isdud".
+    - {url: 'https://cojs.org/arabs_give_front-line_positions-_associated_press-_san_francisco_chronicle-_june_14-_1948/', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/Gaza_City', checked: '2026-10-17'}
+  - place: Isdud, the forward base
+    lon: 34.66167
+    lat: 31.75361
+    from: '1948-06-11'
+    to: '1948-07-08'
+    end_basis: source
+    end_note: "en.wiki 1948 Arab-Israeli War: the first truce ran from 11 June to 8 July 1948, when the Egyptian forces renewed the fighting. Dupuy p. 73: the four weeks of truce expired on 8 July; p. 80: the Egyptian attack on the morning of 8 July."
+    note: "The force's forward post at the first truce, dug in north of the town (Dupuy p. 58; O'Ballance p. 93; the joint headquarters' line, AP, 13 June). It stands together with the rear base at Majdal (owner, 17 October 2026, on #860: \"Isdud is the forward base and Majdal the rear base\")."
+    sources:
+    # Dupuy p. 58: Isdud entered on 29 May; dug in north of the town.
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    # O'Ballance p. 93.
+    - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
+    - {url: 'https://cojs.org/arabs_give_front-line_positions-_associated_press-_san_francisco_chronicle-_june_14-_1948/', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+    - {url: 'https://en.wikipedia.org/wiki/Isdud', checked: '2026-10-17'}
+  # The rear base, at the same dates as the forward base (owner, 17 October 2026, on #860). This row is not drawn, so its
+  # two anchors may overlap; a drawn row stands at one place at a time.
+  - place: Majdal, the rear base
+    lon: 34.56667
+    lat: 31.66667
+    from: '1948-06-11'
+    since: 24 May 1948
+    to: '1948-07-08'
+    end_basis: source
+    end_note: "en.wiki 1948 Arab-Israeli War: the first truce ran from 11 June to 8 July 1948, when the Egyptian forces renewed the fighting. Dupuy p. 73: the four weeks of truce expired on 8 July; p. 80: the Egyptian attack on the morning of 8 July."
+    note: "en.wiki 1948 Arab-Israeli War: on 24 May the Egyptians reached Majdal and made it their headquarters. Dupuy p. 58: the coastal force reached Majdal about 21 to 24 May. The joint headquarters' truce line runs from Gaza northward to Majdal and Isdud (AP, 13 June). The coordinates are modern Ashkelon's (the research note's convention)."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+    # Dupuy p. 58.
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    # AP, Amman, 13 June 1948: "Beginning at Gaza and running northward to Majdal and Isdud".
+    - {url: 'https://cojs.org/arabs_give_front-line_positions-_associated_press-_san_francisco_chronicle-_june_14-_1948/', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/Ashkelon', checked: '2026-10-17'}
+  sources:
+  # O'Ballance pp. 89-90 and Dupuy p. 55: two brigade groups of unequal size; Dupuy p. 55: the inland column crossed at al-Auja.
+  - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
+  - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+- id: arab_legion
+  name: Arab Legion
+  number: One division in the field (the 1st, 3rd and 4th brigades)
+  service: army
+  side: jordan
+  echelon: division
+  sector: "Transjordan's army. On 15 May 1948 its division headquarters was at Ramallah, with the 1st Brigade on the hills northwest of Jerusalem and the 3rd Brigade behind Bab al-Wad. At the first truce it held Latrun and the hills over the Tel Aviv-Jerusalem road."
+  wikipedia_only: false
+  status: draft
+  strength:
+    value: 5000
+    as_of: '1948-05-15'
+    note: "The Legion in the field at the start (O'Ballance; as_of is his date). The IDF chief of operations' count, in Ben-Gurion's diary, gives the same figure for the Legion in Palestine on 20 May."
+    sources:
+    # O'Ballance pp. 80 and 137: about 6,000 in all, about 5,000 in the field.
+    - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
+    # Ben-Gurion's diary, 20 May 1948 (Ben-Gurion Archive, English translation): about 5,000 of the Legion in Palestine, by the report of the IDF chief of operations.
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/13741', checked: '2026-10-13'}
+  anchors:
+  - place: Ramallah
+    lon: 35.20167
+    lat: 31.89694
+    from: '1948-05-15'
+    to: '1948-06-11'
+    end_basis: source
+    end_note: "From 11 June the row stands at Latrun, the Legion's position at the first truce (al-Tall pp. 180-181; Dupuy p. 65; AP, 13 June). Ramallah stayed in its hands: the row moves to the front, not the headquarters."
+    note: "al-Tall pp. 84-85: the division's headquarters at Ramallah on 15 May, with the 3rd and 5th battalions; al-Qawuqji has the 4th Brigade's commander and staff in Ramallah on 18 May."
+    sources:
+    # al-Tall, Karithat Filastin (1959), pp. 84-85: the positions of the army's units on 15 May 1948 (Arabic OCR; the column alignment is reconstructed).
+    - {url: 'https://archive.org/details/elshandawily9575', checked: '2026-10-13'}
+    # al-Qawuqji, "Memoirs, 1948, Part II", Journal of Palestine Studies 2(1), pp. 29-30.
+    - {url: 'https://www.palquest.org/sites/default/files/al-Qawuqji_-_part_II.pdf', checked: '2026-10-13'}
+    - {url: 'https://www.wikidata.org/wiki/Q158119', checked: '2026-10-17'}
+  - place: Latrun
+    lon: 34.98139
+    lat: 31.83194
+    from: '1948-06-11'
+    to: '1948-07-08'
+    end_basis: source
+    end_note: "en.wiki 1948 Arab-Israeli War: the first truce ran from 11 June to 8 July 1948. Dupuy p. 73: the four weeks of truce expired on 8 July."
+    note: "al-Tall pp. 180-181: the 4th Battalion held Latrun to the truce; Dupuy p. 65: the 2nd and 4th held it by early June; the joint headquarters' line names it (AP, 13 June). No date before 17 May is used: Latrun on 15 May rests on al-Tall alone (the note, section 8)."
+    sources:
+    - {url: 'https://archive.org/details/elshandawily9575', checked: '2026-10-13'}
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    - {url: 'https://cojs.org/arabs_give_front-line_positions-_associated_press-_san_francisco_chronicle-_june_14-_1948/', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+    - {url: 'https://en.wikipedia.org/wiki/Latrun', checked: '2026-10-17'}
+  sources:
+  # al-Tall pp. 84-85: the 1st Brigade (1st and 3rd battalions), the 3rd (2nd and 4th) and the 4th (5th and 6th), and the division's headquarters; O'Ballance p. 136: the division in the field.
+  - {url: 'https://archive.org/details/elshandawily9575', checked: '2026-10-13'}
+  - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
+- id: syrian_army
+  name: Syrian Army
+  number: The 1st and 2nd Infantry Brigades
+  service: army
+  side: syria
+  echelon: force
+  sector: "Syria's force on the Jordan. The 1st Infantry Brigade crossed south of Lake Tiberias on 15 May 1948 toward Samakh, and the 2nd had its base at the Bnot Yaakov bridge. At the first truce it held a bridgehead west of the Jordan at Mishmar HaYarden, taken on 10 June."
+  wikipedia_only: false
+  status: draft
+  to_verify:
+  - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
+  strength:
+    value: 3000
+    as_of: '1948-05-15'
+    note: "The Syrian troops that took the field on 15 May. No Israeli source in the note gives a figure."
+    sources:
+    # Glubb (1957), snippet: Syria 3,000 of the troops "which took the field on May 15th, 1948".
+    - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
+    # Rogan and Shlaim (eds.), The War for Palestine (2nd ed., 2007), snippet: "10,000 Egyptian troops, 3,000 Syrians, 3,000 Iraqis, and 1,000 Lebanese".
+    - {url: 'https://archive.org/details/warforpalestiner0000unse_t0u0', checked: '2026-10-13'}
+  anchors:
+  - place: South of Lake Tiberias, before Samakh
+    lon: 35.5875
+    lat: 32.705
+    from: '1948-05-15'
+    to: '1948-05-18'
+    end_basis: source
+    end_note: "Dupuy p. 48: the brigade took Samakh on 18 May."
+    note: "Dupuy p. 47: the 1st Brigade crossed south of the lake at 09:00 on 15 May toward Samakh and was pinned down near the Samakh position. Morris (snippet; p. 251 as the arab-units-research note carries it) has its camp at Tel al-Qasr on 15-16 May. The coordinates are Samakh's."
+    sources:
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    - {url: 'https://archive.org/details/1948historyoffir00morr', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/Samakh,_Tiberias', checked: '2026-10-17'}
+  - place: The bridgehead at Mishmar HaYarden
+    lon: 35.59972
+    lat: 33.00278
+    from: '1948-06-11'
+    to: '1948-07-08'
+    end_basis: source
+    end_note: "en.wiki 1948 Arab-Israeli War: the first truce ran from 11 June to 8 July 1948. Dupuy p. 73: the four weeks of truce expired on 8 July."
+    note: "Taken on 10 June (Dupuy p. 50; Lorch, snippet), and listed as a Syrian position by the joint headquarters (AP, 13 June) and by the CIA's summary for the week to 16 June. Which Syrian brigade took it is contested (the note, section 8, item 11), so the row names none."
+    sources:
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    # Lorch, The Edge of the Sword (1961), full-text search snippet.
+    - {url: 'https://archive.org/details/edgeofsword00lorc', checked: '2026-10-13'}
+    - {url: 'https://cojs.org/arabs_give_front-line_positions-_associated_press-_san_francisco_chronicle-_june_14-_1948/', checked: '2026-10-13'}
+    # CIA Intelligence Summary, week ending 16 June 1948.
+    - {url: 'https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010007-2', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+    - {url: 'https://en.wikipedia.org/wiki/Mishmar_HaYarden_(moshava)', checked: '2026-10-17'}
+  sources:
+  # Dupuy p. 47: the 1st Infantry Brigade (two infantry battalions, an armoured car battalion and a tank company); p. 49: the 2nd Infantry Brigade near the Bnot Yaakov bridge.
+  - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+- id: iraqi_expeditionary_force
+  name: Iraqi Expeditionary Force
+  number: One infantry brigade and one armoured battalion
+  service: army
+  side: iraq
+  echelon: force
+  sector: "Iraq's force in Palestine. On 15 May 1948 it forded the Jordan south of Ma'ad and took the high ground over Gesher; it then crossed at the Damiya and Allenby bridges to Nablus and took over that sector from the Arab Legion. At the first truce it held a line from Jisr al-Majami through Jenin and Tulkarm south to Ras al-Ayn."
+  wikipedia_only: false
+  status: draft
+  to_verify:
+  - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
+  - "The 15 May window holds the game's first day only, by the owner's decision (17 October 2026, on #860), though Dupuy p. 51 has the force at Gesher on 16 and 17 May too and the diary of 16 May has it attacking farms in the Jordan Valley."
+  strength:
+    value: 3000
+    as_of: '1948-05-15'
+    note: "The Iraqi troops that took the field on 15 May. No Israeli source in the note gives a figure."
+    sources:
+    # Glubb (1957), snippet: Iraq 3,000 of the troops "which took the field on May 15th, 1948".
+    - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
+    # Rogan and Shlaim (eds., 2007), snippet: "... 3,000 Iraqis ...".
+    - {url: 'https://archive.org/details/warforpalestiner0000unse_t0u0', checked: '2026-10-13'}
+  anchors:
+  - place: The high ground over Gesher
+    lon: 35.55222
+    lat: 32.62139
+    from: '1948-05-15'
+    to: '1948-05-16'
+    end_basis: source
+    end_note: "Dupuy p. 51 has the force attacking Gesher the next afternoon (16 May) and again the next day (17 May), and Ben-Gurion's diary of 16 May has the Iraqi army attacking farms in the Jordan Valley. The window keeps 15 May only, by the owner's decision (17 October 2026, on #860)."
+    note: "Dupuy p. 51: the main force forded the Jordan near the pipeline south of Ma'ad and took the high ground over Gesher. Ben-Gurion's diary, 16 May: attacks on the Jordan valley farms from the direction of Naharayim. The coordinates are Gesher's."
+    sources:
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    # Ben-Gurion's diary, 16 May 1948.
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/12540', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/Gesher,_Israel', checked: '2026-10-17'}
+  - place: Jenin
+    lon: 35.3
+    lat: 32.46111
+    from: '1948-06-11'
+    to: '1948-07-08'
+    end_basis: source
+    end_note: "en.wiki 1948 Arab-Israeli War: the first truce ran from 11 June to 8 July 1948. Dupuy p. 73: the four weeks of truce expired on 8 July."
+    note: "The northern part of the Iraqi line at the first truce, from Jisr al-Majami to Lajjun and Jenin (the joint headquarters' line, AP, 13 June; Dupuy p. 52)."
+    sources:
+    - {url: 'https://cojs.org/arabs_give_front-line_positions-_associated_press-_san_francisco_chronicle-_june_14-_1948/', checked: '2026-10-13'}
+    # Dupuy p. 52.
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+    - {url: 'https://en.wikipedia.org/wiki/Jenin', checked: '2026-10-17'}
+  sources:
+  # Dupuy p. 50: one infantry brigade and one armoured battalion; p. 51: the crossings to Nablus; O'Ballance p. 115: it took over the Nablus sector from a Legion battalion.
+  - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+  - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
+- id: lebanese_army
+  name: Lebanese Army
+  number: The force that took the field
+  service: army
+  side: lebanon
+  echelon: force
+  sector: "Lebanon's army. On 15 May 1948 it stood at the frontier (the CIA's summary for the week to 26 May: on the frontier and in no hurry to attack). The fighting at al-Malikiyya on 15 May was the Arab Liberation Army's (owner ruling, #226). On 5-6 June its 3rd Battalion, with the ALA and a Syrian battalion, retook al-Malikiyya and Qadas."
+  hidden: "No place two sources agree on for 15 May or 11 June 1948: on 15 May the sources put it only at the frontier, and who held al-Malikiyya on 11 June is contested (the note, section 8, item 12)."
+  wikipedia_only: false
+  status: draft
+  to_verify:
+  - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). O'Ballance (p. 82) and Morris (p. 258, carried) count the whole army instead, in a larger figure. Check the printed pages (the note, section 9)."
+  strength:
+    value: 1000
+    as_of: '1948-05-15'
+    note: "The Lebanese troops that took the field on 15 May. No Israeli source in the note gives a figure."
+    sources:
+    # Glubb (1957), snippet: Lebanon 1,000 of the troops "which took the field on May 15th, 1948".
+    - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
+    # Rogan and Shlaim (eds., 2007), snippet: "... and 1,000 Lebanese".
+    - {url: 'https://archive.org/details/warforpalestiner0000unse_t0u0', checked: '2026-10-13'}
+  anchors: []
+  sources:
+  # CIA Intelligence Summary, week ending 26 May 1948.
+  - {url: 'https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010004-5', checked: '2026-10-13'}
+  # en.wiki: on 5-6 June the Lebanese Army's 3rd Battalion, with ALA fighters and a Syrian battalion, retook al-Malkiyya and Qadas.
+  - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+  # Dupuy p. 47: the combined attack that retook al-Malikiyya on 6 June.
+  - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+- id: arab_liberation_army
+  name: Arab Liberation Army
+  number: The Arab League's volunteer army
+  service: army
+  side: ala
+  echelon: force
+  sector: "The Arab League's volunteer army, in Palestine from January 1948, with its headquarters at Jaba' from March. On 15 May 1948 it was withdrawing from central Palestine as the regular armies entered; its Second Yarmuk Battalion held the al-Malikiyya, Qadas and Bar'am sector on the Lebanese border."
+  wikipedia_only: false
+  status: draft
+  to_verify:
+  - "al-Malikiyya on 15 May follows the owner's ruling for the later research (#226, ruling 2), which he.wiki reports; Lorch has a Lebanese counter-attack there. The anchor rests on he.wiki until the later research (the Lebanese official account) is read."
+  strength:
+    value: 4000
+    as_of: '1948-05-15'
+    note: "The army's size as it was raised from January 1948, not the al-Malikiyya garrison. Both sources give it undated (the Journal of Palestine Studies' editors; Shlaim); as_of is the game's first day. No Israeli source in the note gives one."
+    sources:
+    # al-Qawuqji, "Memoirs, 1948, Part I", Journal of Palestine Studies 1(4), editor's note, p. 27: almost 4,000.
+    - {url: 'https://www.palquest.org/sites/default/files/al-Qawuqji_-_part_I.pdf', checked: '2026-10-13'}
+    # Shlaim, Oxford seminar page (archived copy; the live page returns 404): about 4,000.
+    - {url: 'https://web.archive.org/web/2015/http://users.ox.ac.uk/~ssfc0005/Session%201%20-%20Introduction.html', checked: '2026-10-13'}
+  anchors:
+  - place: al-Malikiyya
+    lon: 35.50806
+    lat: 33.10528
+    from: '1948-05-15'
+    to: '1948-05-29'
+    end_basis: source
+    end_note: "he.wiki Battles of Malkiyya: a Yiftach Brigade armoured column crossed into Lebanon on the night of 28 May, and the village's defenders left it to the Palmach."
+    note: "he.wiki Battles of Malkiyya: the research agrees that the Lebanese Army did not invade on 15 May and that the Palmach met ALA units at al-Malikiyya; the Second Yarmuk Battalion held the al-Malikiyya, Qadas and Bar'am sector. The owner ruled for this account (#226, ruling 2)."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%A7%D7%A8%D7%91%D7%95%D7%AA_%D7%9E%D7%9C%D7%9B%D7%99%D7%94', checked: '2026-10-17'}
+    - {url: 'https://en.wikipedia.org/wiki/Al-Malkiyya', checked: '2026-10-17'}
+  sources:
+  # al-Qawuqji, part I, p. 27: the headquarters at Jaba' from March; the editor's note: in Palestine from January 1948. Part II, p. 30: units withdrawn from the Jerusalem area by 18 May.
+  - {url: 'https://www.palquest.org/sites/default/files/al-Qawuqji_-_part_I.pdf', checked: '2026-10-13'}
+  - {url: 'https://www.palquest.org/sites/default/files/al-Qawuqji_-_part_II.pdf', checked: '2026-10-13'}
+  # en.wiki: the Second Yarmuk Battalion entered Palestine on 8 January 1948.
+  - {url: 'https://en.wikipedia.org/wiki/Arab_Liberation_Army', checked: '2026-10-17'}

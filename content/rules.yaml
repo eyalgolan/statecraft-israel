@@ -29,8 +29,6 @@ mvp:
   end: 1952-01-15
   people_per_unit: 1000                  # DESIGN VALUE: owner-set balance, not a historical figure (D-A1: people in one population unit)
   income_per_job_per_year: 0.06          # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per employed unit a year)
-  cohesion_housing_weight: 0.5           # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, until Phase 2 PR 4)
-  cohesion_jobs_weight: 0.5              # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, until Phase 2 PR 4; the two weights sum to 1)
   # The day the cities start taking arrivals (R-CITY-003; Q-ARRV-3, owner, 15 October 2026, #375): the census day of their
   # start values, 8 November 1948 (CBS Statistical Abstract of Israel No. 14, Table 11, pp. 30-31). The census already
   # counts the people who arrived from 15 May, so the cities take none before it; the national head count takes them all.
@@ -49,6 +47,11 @@ mvp:
   # about what the legacy direct cut (fx_crisis_food_per_year) took over the same weeks. Neither is a historical figure.
   k_food: 0.1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-C2: food_supply lost with an empty Food stock)
   cover_months: 3                        # DESIGN VALUE: owner-set balance, not a historical figure (D-C2: months of need a full Food stock holds)
+  # The veteran pioneer (R-VET-001, R-VET-002; D-D9). Agent-proposed design values the owner took on 17 October 2026 (#782:
+  # "take all of the plan's recommendations"; Phase 4 plan Q-VET-1, Q-VET-2). Service is build_yishuv_turns, so one
+  # completed yishuv makes a veteran pioneer.
+  veteran_halutz_service: 6              # DESIGN VALUE: owner-set balance, not a historical figure (D-D9, Q-VET-1: turns of work to become a veteran)
+  veteran_progress: 2                    # DESIGN VALUE: owner-set balance, not a historical figure (D-D9, Q-VET-2: a veteran's turns of progress a turn)
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06

@@ -552,6 +552,14 @@ namespace Statecraft.Game.Map.Kits
                 // The cheap tests first (the boot budget): the cell and the quarter, then the terrain samples.
                 if (!ground.Inside(p.x, p.y) || !Mine(p) || !Allows(s, L, p, t, ground) || ground.Water(p.x, p.y)) continue;
                 if (!Fit(L, p, yaw, t, spec, L.Group, out var b, out var q)) continue;
+                // A moshav (#32): the farmstead turns its long side along the ring street (its jitter kept). The lot is a
+                // circle, so only the footprint's water and beach tests (they turn with the yaw) run again.
+                if (s.Type == "moshav")
+                {
+                    yaw += RingYaw(q - centre) - L.Yaw;
+                    if (CornerInWater(q, yaw, b.w, b.d, ground)) continue;
+                    if (shore && NearSea(q, yaw, b.w + 2f * BeachSetbackM, b.d + 2f * BeachSetbackM, ground)) continue;
+                }
                 lots.Add(new Lot { c = q, r = b.lotR, id = s.Id, group = L.Group });
                 var drnd = new KitRandom(detail);
                 Emit(s.Id, L.Style, q, yaw, b, t, ground, km, ref drnd);
@@ -616,6 +624,9 @@ namespace Statecraft.Game.Map.Kits
                         var b = Pick(arch, r / R, ref srnd, m, s.Type == "kibbutz");
                         b.lotR = 0.5f * Mathf.Sqrt(b.w * b.w + b.d * b.d);   // the whole footprint, as a plot's (round 1's lot let a corner reach a road)
                         float yaw = arch == Archetype.Moshava || arch == Archetype.WhiteCity ? GridYaw(s.Id) + srnd.Range(-4f, 4f) : srnd.Range(0f, 90f);
+                        // A moshav (#32): along the ring street, as its lattice's farmsteads (Nahalal's lattice places fewer than
+                        // SmallTownFloor, so its fallback runs; MoshavKitTests checks every house it places).
+                        if (s.Type == "moshav") yaw += RingYaw(new Vector2(Mathf.Cos(ang), Mathf.Sin(ang))) - GridYaw(s.Id);
                         spots.Add((r, i, centre + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * r, yaw, b, srnd.Next()));
                     }
                     spots.Sort((x, y) => x.r != y.r ? x.r.CompareTo(y.r) : x.i.CompareTo(y.i));

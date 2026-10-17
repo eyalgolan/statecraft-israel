@@ -35,3 +35,29 @@ def test_title_badge_escape_and_case(make_repo):
         'docs/a.md': '[up](..) [up2](../)\n', 'docs/b c.md': 'x\n', 'img.svg': 'x\n', 'LICENSING.md': 'x\n',
     })
     assert m.dead_links(root) == [('README.md', 'GONE.md'), ('README.md', 'Docs/a.md')]
+
+
+def test_links_in_inline_code_and_tilde_or_long_fences_are_not_links(make_repo):
+    root = make_repo({
+        'README.md': 'Write links as `` `[text](path/to/file.md)` `` and `[x](gone1.md)`.\n\n'
+                     '~~~\n[t](gone2.md)\n~~~\n\n'
+                     '````\n```\n[f](gone3.md)\n```\n````\n',
+    })
+    assert m.dead_links(root) == []
+
+
+def test_a_real_dead_link_next_to_an_inline_code_span_is_still_found(make_repo):
+    root = make_repo({'README.md': 'Use `[a](shown.md)` then [real](missing.md) and `code` [ok](README.md).\n'})
+    assert m.dead_links(root) == [('README.md', 'missing.md')]
+
+
+def test_stray_backtick_and_shorter_fence_run_do_not_hide_real_links(make_repo):
+    root = make_repo({
+        'README.md': 'a ` b\n\n[one](gone1.md)\n\n````\n```\n[in](x.md)\n````\n[two](gone2.md)\n',
+    })
+    assert m.dead_links(root) == [('README.md', 'gone1.md'), ('README.md', 'gone2.md')]
+
+
+def test_an_inline_span_does_not_cross_a_blank_line(make_repo):
+    root = make_repo({'README.md': 'a ` b\n\n[one](gone1.md)\n\nc ` d\n'})
+    assert m.dead_links(root) == [('README.md', 'gone1.md')]

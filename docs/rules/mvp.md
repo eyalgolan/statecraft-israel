@@ -48,7 +48,7 @@ R-CITY-008: `GameState.Population` is the one record of the nation's people: it 
 
 R-CITY-004: Each turn, `min(refugees, max(0, housing_capacity - civilians))` of a city's refugees become civilians without a job. The cap is a placeholder while overflow (D-D1) is open.
 
-R-CITY-005: Social cohesion is `clamp(0, 1, cohesion_housing_weight * housed + cohesion_jobs_weight * employed)`, where `housed` is civilians over civilians and refugees (1 with nobody) and `employed` is employed over civilians (1 with none), over all cities. It is a placeholder while D-C1 is open: no other system reads it.
+R-CITY-005: The cities' employed share (employed over civilians, summed over all cities; 1 with no civilians) is an effect-web source of `morale`, Social cohesion (`work_lifts_cohesion`, source id `employed_share`), read after the turn's housing. The legacy loop has no cities, so there it reads 0 and adds nothing. Housing reaches Social cohesion through the existing `housing` link (`homes_lift_morale`) until Phase 3 makes it the cities' aggregate (Q-NAT-2, decided 15 October 2026). Phase 1's separate cohesion value and its two weights are gone (D-C1, Reading 2).
 
 R-CITY-006: The cities are the `city` and `town` rows of `map/settlements_1948.yaml`, in that file's order, and their start values are `cities.yaml`'s. Each of a city's values (`people`, `employed_share`, `housing_capacity`, `job_slots`) is required and has a status: `sourced` (read from the source named), `derived` (computed from sourced values), `wikipedia-only` (an owner-accepted Wikipedia figure) or `design` (a labelled design value, R-LOOP-005). A `sourced`, `derived` or `wikipedia-only` value has at least one source, each with a url and a checked date, and the day (YYYY-MM-DD) or month (YYYY-MM) it describes; the loader refuses a value without them, naming the file and field (GDD Phase 3 plan, review focus 3).
 
@@ -68,11 +68,21 @@ R-TRAIN-003: Each turn, in ascending id, every cohort has one turn less to go. A
 
 Construction is step 5 of the turn in the approved order (§2.3, D-A6): after training, before production. The designated sites are sourced facts in `content/sites.yaml`; Phase 1 has one, Mefalsim (owner decision on #378). The answers below are the plan's recommendations, which the owner took on 14 October 2026 (#378).
 
-R-SITE-001: `PioneerWork(unit, build_yishuv, site)` starts building a yishuv at a designated site whose kinds include `yishuv` and which is neither being built nor built, with a halutz unit that has no other project (D-D6: one project per unit). The Treasury pays `build_yishuv_cost` at once. When the Treasury holds less, the shortfall is borrowed, as for map actions: it is added to the debt and the Treasury stops at 0 (owner decision "Allow borrowing", 15 October 2026). The site has `build_yishuv_turns` to go, counting the turn of the order. The unit does not move. It is refused, with the state unchanged and the Attention refunded, for an unknown unit, a unit that is not a halutz or is busy, an unknown action or site, a site that is not for a yishuv, or a site being built or built (one unit per site). The legacy loop refuses it before charging Attention. Its Attention cost is 0 (D-A6: unit orders are free).
+R-SITE-001: `PioneerWork(unit, build_yishuv, site)` starts building a yishuv at a designated site whose kinds include `yishuv` and which is neither being built nor built, with a halutz or veteran halutz unit that has no other project (D-D6: one project per unit). The Treasury pays `build_yishuv_cost` at once. When the Treasury holds less, the shortfall is borrowed, as for map actions: it is added to the debt and the Treasury stops at 0 (owner decision "Allow borrowing", 15 October 2026). The site has `build_yishuv_turns` to go, counting the turn of the order. The unit does not move. It is refused, with the state unchanged and the Attention refunded, for an unknown unit, a unit that is not a halutz or veteran halutz or is busy, an unknown action or site, a site that is not for a yishuv, or a site being built or built (one unit per site). The legacy loop refuses it before charging Attention. Its Attention cost is 0 (D-A6: unit orders are free).
 
 R-SITE-002: `StopWork(unit)` ends the unit's build: the site is available again, the unit is idle, and the progress and the Money paid are lost (D-A3). A unit that does not exist or is not building is refused with the state unchanged. Its Attention cost is 0.
 
-R-SITE-003: Each turn, in ordinal site id order, every site being built has one turn less to go. A site that reaches 0 is built, on the turn's end date, and its unit is idle again. The unit stays a halutz unit, and no city, housing, job, population or Social cohesion changes. Sites being built or built are written into the state hash only when there are some.
+R-SITE-003: Each turn, in ordinal site id order, every site being built has one turn less to go. A site that reaches 0 is built, on the turn's end date, and its unit is idle again. A veteran's site has `veteran_progress` turns less to go (R-VET-002), and the unit's type changes only by R-VET-001. No city, housing, job, population or Social cohesion changes. Sites being built or built are written into the state hash only when there are some.
+
+## Veteran pioneers
+
+R-VET-001: In step 5, after its site's progress, a halutz unit whose site is being built gains one turn of service, the turn the site is built included; an idle unit gains none. At `veteran_halutz_service` turns of service it becomes a `veteran_halutz` at the end of that turn, keeping its id, hex, service and project, and a cause says so. A veteran gains no more service. A unit's service is written into the state hash only when it is not 0 (D-D9; Q-VET-1, owner, 17 October 2026, #782).
+
+R-VET-002: A veteran's site being built has `veteran_progress` turns less to go each turn, against a halutz's 1; one with that many or fewer left is built that turn. A veteran does the same pioneer work as a halutz (R-SITE-001) (D-D9; Q-VET-2, owner, 17 October 2026, #782).
+
+R-SITE-004: Every designated site has one or more kinds from a fixed list: `yishuv`, `field`, `swamp`, `military_camp` and `hakhshara` (Phase 4, Q-FIELD-1, Q-SWAMP-1, Q-CAMP-3). A pioneer action is accepted only at a site of its kind; any other is refused with the state unchanged and the Attention refunded. A yishuv site has a founding date inside the MVP's years and no other kind has one. A camp site (`military_camp` or `hakhshara`) names a city of `cities.yaml`, the city it trains for (Q-CAMP-1), and no other kind names one. The loader refuses any other row, naming the file and field.
+
+R-SITE-005: At most one `yishuv` site sits in a hex, so a hex shows at most one new yishuv. A site of another kind may share a hex with a yishuv site, as a yishuv's field site does (Q-SITE-3).
 
 ## Objectives
 
@@ -107,3 +117,19 @@ D-C5 as decided (12 October 2026): the cabinet and Attention stay, the coalition
 R-GOV-001: In the GDD loop the coalition's stability never ends the game: it still moves toward public approval each turn and still weights the coalition votes, but a value below 0.2 (`PoliticsSystem.CollapseBelow`) sets no `coalition_collapse` (D-B5: "Coalition collapse is off in the MVP"). The legacy loop keeps its collapse while the legacy code exists (D-E1).
 
 R-GOV-002: Every GDD order kind has an `attention_cost` in the real rules (a design value, R-LOOP-005), the unit orders `pioneer_work` and `stop_work` cost 0 (D-A6: unit orders are free), and a refused order costs nothing: its Attention is refunded before the next order in the turn is priced.
+
+## National parameters
+
+The GDD's Social cohesion and International Support (D-C1, decided 15 October 2026: "0–1 indicators through the effects web. Cohesion replaces `morale` on screen. Thresholds as situations"). Their numbers are labelled design values in `model.yaml` (Reading 1).
+
+R-NAT-001: Social cohesion is the 0 to 1 `morale` indicator, shown to the player as Social cohesion; its id stays, so no event changes (Reading 2). Its sources are the existing homes, rationing and security links, the cities' employed share (R-CITY-005) and `food_supply`, so a Food shortage lowers it (`food_lifts_cohesion`; Q-NAT-2). Approval keeps its weights, which now read Social cohesion through `morale` (Q-NAT-5).
+
+R-NAT-002: "Low social cohesion" (`low_cohesion`) is a situation on `morale`: on below 0.30, off above 0.45, as `food_crisis`. It has no mechanical effect of its own; events can read it through their indicator conditions (Q-NAT-3).
+
+R-NAT-003: International Support is the 0 to 1 `intl_standing` indicator, shown as International support; event effects on `intl_standing` move it (Q-NAT-4).
+
+R-NAT-004: "Low international support" (`low_intl_support`) is a situation on `intl_standing` with the same bands and, likewise, no effect of its own (Q-NAT-3).
+
+R-EFX-001: An option's effect may target an indicator id from `model.yaml`, `treasury` or `fx_reserves` (game money), or `food`, the national Food stock: the effect moves the stock by whole units (the delta rounds half away from zero) and the stock never drops below 0, so a cut larger than the stock applies only to what is there. Any other target is a load error naming file and field. The Arms stock becomes a target with its pool (#781).
+
+R-EFX-002: An option of an event tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot raise `treasury`, `fx_reserves`, `food`, `food_supply`, `morale` or `intl_standing` (Q-EFX-2, decided 15 October 2026: the no-gain rule covers all five resources, with the legacy indicators standing for Food, Social cohesion and International Support; `food` is Food's own target, and Arms joins the rule with its pool, #781). A cost stays allowed. The rule for the Phase 6 `displacement` tag is Q-DEP-6 (open).

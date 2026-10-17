@@ -120,13 +120,14 @@ public class UnitPlinthTests
 
     // ---- The flag matches the side --------------------------------------------------------------------------------
 
-    /// <summary>Every row of the unit file names its side, and every formation in it is Israel's (the file is the IDF's
-    /// 1948 order of battle); only Israel has a flag (built from the 1948 specification), so no flag is invented.</summary>
+    /// <summary>Every row of the unit file names its side, and every formation the map draws is Israel's (the Arab forces'
+    /// rows are data only until Phase 5 PR 17; owner, 17 October 2026, #740); only Israel has a flag (built from the 1948
+    /// specification), so no flag is invented.</summary>
     [Test]
     public void TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn()
     {
         var units = UnitData.Parse(CommittedYaml);
-        Assert.IsTrue(units.All(u => u.Side == UnitData.Israel), "every 1948 formation in the file is Israel's");
+        Assert.IsTrue(units.Where(UnitRoster.OnMap).All(u => u.Side == UnitData.Israel), "every formation the map draws is Israel's");
         Assert.IsTrue(UnitFlags.Has(UnitData.Israel));
         foreach (var side in UnitData.Sides.Where(s => s != UnitData.Israel))
         {
@@ -134,17 +135,17 @@ public class UnitPlinthTests
             Assert.IsNull(UnitFlags.Build(side), side);
         }
 
-        // An Arab side's token (as #226 will add): the same plinth and rim, and no flag.
+        // An Arab side's row draws nothing: no IDF figures, no placeholder (owner, 17 October 2026, #740). The file with
+        // every Israeli row relabelled Egypt's (each given an echelon and a strength, as such a row needs) draws no token.
         var map = BuildMap();
         try
         {
-            var egypt = UnitData.Parse(CommittedYaml.Replace("side: israel", "side: egypt"));
+            var egypt = UnitData.Parse(CommittedYaml.Replace("side: israel", "side: egypt\n  echelon: brigade\n  strength: {value: 1, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}"));
+            Assert.Greater(egypt.Count(u => u.Side == "egypt" && u.Service == UnitData.Army), 3);
             var layer = UnitLayer.Create(map, egypt, C.Hexes, still: true);
             layer.Show(C, StateAt(Dates[0]));
-            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            var army = layer.Tokens.Where(p => p.Token.Unit.Service == UnitData.Army).ToList();
-            Assert.Greater(army.Count, 3);
-            foreach (var p in army) AssertPlinth(map, tokens.Find(p.Token.Unit.Id), "egypt", p.Token.Unit.Id);
+            Assert.IsEmpty(layer.Tokens, "a row that is not Israel's is not drawn");
+            Assert.AreEqual(0, map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").childCount);
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }

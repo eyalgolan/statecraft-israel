@@ -24,8 +24,6 @@ public class DesignValuesTests
         ("rules.yaml", "attention_cost.stop_work"),
         ("rules.yaml", "mvp.people_per_unit"),
         ("rules.yaml", "mvp.income_per_job_per_year"),
-        ("rules.yaml", "mvp.cohesion_housing_weight"),
-        ("rules.yaml", "mvp.cohesion_jobs_weight"),
         ("rules.yaml", "mvp.build_yishuv_turns"),
         ("rules.yaml", "mvp.build_yishuv_cost"),
         ("rules.yaml", "mvp.objective_points"),
@@ -33,6 +31,8 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.objective_bonus_cap"),
         ("rules.yaml", "mvp.k_food"),
         ("rules.yaml", "mvp.cover_months"),
+        ("rules.yaml", "mvp.veteran_halutz_service"),
+        ("rules.yaml", "mvp.veteran_progress"),
         // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's
         // housing is its start people and its job slots its start employed; seven towns with no CBS working share take
         // the national one. The census people and the five CBS shares are sourced, not design values (R-CITY-006).
@@ -71,17 +71,27 @@ public class DesignValuesTests
         ("unit_types.yaml", "types[recruit].training_cost"),
         ("unit_types.yaml", "types[halutz].training_turns"),
         ("unit_types.yaml", "types[halutz].training_cost"),
+        // Social cohesion's two new inputs and the national parameters' thresholds (Phase 2 PR 4; Q-NAT-2, Q-NAT-3; Reading 1).
+        ("model.yaml", "effects[work_lifts_cohesion].k"),
+        ("model.yaml", "effects[work_lifts_cohesion].inertia"),
+        ("model.yaml", "effects[food_lifts_cohesion].k"),
+        ("model.yaml", "effects[food_lifts_cohesion].inertia"),
+        ("model.yaml", "situations[low_cohesion].on_below"),
+        ("model.yaml", "situations[low_cohesion].off_above"),
+        ("model.yaml", "situations[low_intl_support].on_below"),
+        ("model.yaml", "situations[low_intl_support].off_above"),
     };
 
 
     /// <summary>Every number in the GDD files and blocks, as (file, key path, the line it is on). Scope: all of cities.yaml and
     /// unit_types.yaml, rules.yaml mvp:, and the GDD kinds under rules.yaml attention_cost. A value whose own mapping says
     /// `status: sourced`, `derived` or `wikipedia-only` is a historical figure, not balance: the loader holds it to its
-    /// sources and date instead (cities.yaml, R-CITY-006), so it is left out.</summary>
+    /// sources and date instead (cities.yaml, R-CITY-006), so it is left out. model.yaml predates the rule (its header calls
+    /// every number there a design value), so only its tagged lines are in scope: the numbers Phase 2 PR 4 added.</summary>
     public static List<(string File, string Key, string Line)> Numbers(string root)
     {
         var found = new List<(string, string, string)>();
-        foreach (var file in new[] { "rules.yaml", "cities.yaml", "unit_types.yaml" })
+        foreach (var file in new[] { "rules.yaml", "cities.yaml", "unit_types.yaml", "model.yaml" })
         {
             var path = Path.Combine(root, file);
             if (!File.Exists(path)) continue;
@@ -100,7 +110,7 @@ public class DesignValuesTests
                         {
                             var k = ((YamlScalarNode)kv.Key).Value!;
                             var child = key == "" ? k : key + "." + k;
-                            var scope = inScope || file != "rules.yaml" || k == "mvp" || (key == "attention_cost" && AttentionSystem.IsGddKind(k));
+                            var scope = inScope || (file != "rules.yaml" && file != "model.yaml") || (file == "rules.yaml" && k == "mvp") || (key == "attention_cost" && AttentionSystem.IsGddKind(k));
                             Walk(kv.Value, child, scope);
                         }
                         break;
@@ -113,7 +123,7 @@ public class DesignValuesTests
                             i++;
                         }
                         break;
-                    case YamlScalarNode sc when inScope && sc.Style == YamlDotNet.Core.ScalarStyle.Plain
+                    case YamlScalarNode sc when (inScope || (file == "model.yaml" && lines[(int)sc.Start.Line - 1].Contains(Tag))) && sc.Style == YamlDotNet.Core.ScalarStyle.Plain
                                                   && double.TryParse(sc.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _):
                         found.Add((file, key, lines[(int)sc.Start.Line - 1]));
                         break;
@@ -146,7 +156,7 @@ public class DesignValuesTests
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var m = c.Rules.Mvp!;
-        Assert.Equal((1000, 0.06, 0.5, 0.5), (m.PeoplePerUnit, m.IncomePerJobPerYear, m.CohesionHousingWeight, m.CohesionJobsWeight));
+        Assert.Equal((1000, 0.06), (m.PeoplePerUnit, m.IncomePerJobPerYear));
         Assert.Equal((0.5, 1.0, 0.5), (c.Rules.AttentionCost["assign_workers"], c.Rules.AttentionCost["train"], c.Rules.AttentionCost["cancel_training"]));
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));

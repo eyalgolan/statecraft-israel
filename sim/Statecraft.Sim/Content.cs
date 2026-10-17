@@ -164,6 +164,12 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string NameHe { get; set; } = "";
+        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564, #862); empty once
+        /// reviewed. Its sources are biography_sources.name_he.</summary>
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
         /// <summary>"feminine" when the person's Hebrew office titles take the feminine form (<see cref="Office.TitleHeF"/>),
         /// sourced in biography_sources.title_he_form; empty (the key left out) for the masculine <see cref="Office.TitleHe"/>.
         /// Display only: no rule reads it.</summary>
@@ -460,10 +466,6 @@ namespace Statecraft.Sim
         public int PeoplePerUnit { get; set; }
         /// <summary>Money each employed unit earns a year, in IL millions (R-CITY-002).</summary>
         public double IncomePerJobPerYear { get; set; }
-        /// <summary>Social cohesion's weight on the housed share (R-CITY-005). A placeholder while D-C1 is open.</summary>
-        public double CohesionHousingWeight { get; set; }
-        /// <summary>Social cohesion's weight on the employed share (R-CITY-005). A placeholder while D-C1 is open.</summary>
-        public double CohesionJobsWeight { get; set; }
         /// <summary>The day the cities start taking arrivals: the census day their start values count (R-CITY-003, Q-ARRV-3).</summary>
         public DateTime CityArrivalsFrom { get; set; }
         /// <summary>The day the GDD game ends (R-LOOP-004; D-E5, 15 January 1952 in the real content), or null for the last
@@ -485,6 +487,12 @@ namespace Statecraft.Sim
         /// <summary>The months of the nation's need the Food stock holds when full: the start stock and the level the monthly
         /// imports keep (R-FOOD-001, R-FOOD-002). Required in the GDD loop, at least 1.</summary>
         public int? CoverMonths { get; set; }
+        /// <summary>Turns of work after which a halutz unit becomes a veteran_halutz (R-VET-001; D-D9, Q-VET-1). Required in
+        /// the GDD loop, at least 1.</summary>
+        public int? VeteranHalutzService { get; set; }
+        /// <summary>Turns of progress a veteran's project gains each turn, against a halutz's 1 (R-VET-002; D-D9, Q-VET-2).
+        /// Required in the GDD loop, at least 1.</summary>
+        public int? VeteranProgress { get; set; }
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
@@ -496,10 +504,13 @@ namespace Statecraft.Sim
         public string NameHe { get; set; } = "";
         public int Q { get; set; }
         public int R { get; set; }
-        /// <summary>What pioneers may build here (yishuv).</summary>
+        /// <summary>What pioneers may build here: one or more of yishuv, field, swamp, military_camp, hakhshara (R-SITE-004).</summary>
         public List<string> Kinds { get; set; } = new List<string>();
-        /// <summary>The historical founding date: the objective card's reference date (PR 6).</summary>
+        /// <summary>A yishuv site's historical founding date: the objective card's reference date (PR 6). Unset for other kinds.</summary>
         public DateTime Founded { get; set; }
+        /// <summary>A camp site's city (cities.yaml id), the city a built camp gives the facility to (Q-CAMP-1, Phase 4 PR 3).
+        /// Empty for other kinds.</summary>
+        public string City { get; set; } = "";
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,

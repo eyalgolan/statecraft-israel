@@ -15,3 +15,4 @@ types:
     facility: hakhshara
     training_turns: 4                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3)
     training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3: IL millions per group)
+  - { id: veteran_halutz, kind: unit }  # a halutz unit after rules.yaml mvp.veteran_halutz_service turns of work (R-VET-001; D-D9); not trained

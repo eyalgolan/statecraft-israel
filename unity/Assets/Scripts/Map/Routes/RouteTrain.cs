@@ -13,7 +13,7 @@ namespace Statecraft.Game.Map.Routes
     /// A still train (screenshots, editor renders) stands at <see cref="StillAt"/>, heading inland, every run alike. Cheap:
     /// six transforms set per frame from a precomputed table; no physics, no allocation after Spawn. A showcase for the
     /// promo frames and `?train` / `?units` (RouteLayer.ModeFor, review I1): the run is ambience, not a sourced timetable.
-    /// Normal play's train is <see cref="SpawnModel"/>'s (issue #668, <see cref="ServiceTrain"/>): Tal's streamed
+    /// Normal play's train is <see cref="SpawnModel"/>'s (issue #668, <see cref="ServiceTrain"/>): MATKOT's streamed
     /// locomotive and tender leading three of this showcase's coaches, four articulated cars on the stretch and from the
     /// date the content gives, each riding the line (owner, 16 October 2026: "ride the track, cut walls";
     /// <see cref="MaxLiftM"/>).</summary>
@@ -206,7 +206,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Normal play's train (issue #668): <paramref name="cars"/> articulated cars of equal length, together
         /// <see cref="ModelRealLengthM"/> at <see cref="Scale"/> times <paramref name="sizeShare"/> long and each
         /// <paramref name="carWidthM"/> wide (its height scaled with its width): first an instance of <paramref name="model"/>
-        /// (Tal's streamed locomotive and tender, <see cref="ServiceTrain"/>), then this showcase's coaches
+        /// (MATKOT's streamed locomotive and tender, <see cref="ServiceTrain"/>), then this showcase's coaches
         /// (<see cref="TrainModels.Coach"/>, their meshes, palette and material owned by <paramref name="assets"/>). Each car is
         /// placed at its own distance along the line, faces along it and rides it (<see cref="Place"/>, <see cref="MaxLiftM"/>);
         /// the train shuttles, the locomotive leading each way, between the line's points nearest <paramref name="startAt"/>

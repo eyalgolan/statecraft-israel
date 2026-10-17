@@ -14,6 +14,9 @@ namespace Statecraft.Sim
         /// <summary>The indicator the Food stock feeds (model.yaml; the loader requires it in the GDD loop).</summary>
         public const string FoodIndicator = "food_supply";
 
+        /// <summary>The event-effect target that moves the Food stock itself (R-EFX-001).</summary>
+        public const string FoodTarget = "food";
+
         /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
         public static void Init(Content c, GameState s)
         {

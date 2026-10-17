@@ -17,31 +17,31 @@ rules:
 - glob: promo/ref/people/Aharon_Zisling.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Aharon_Zisling.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Théodore Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: unity/Assets/UI/Portraits/zisling.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Aharon_Zisling.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Théodore Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: promo/ref/people/Eliezer_Kaplan.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Eliezer_Kaplan.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Théodore Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: unity/Assets/UI/Portraits/kaplan.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Eliezer_Kaplan.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Théodore Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: promo/ref/people/Moshe_Sharett_CC0_1948.jpg
   licence: CC0-1.0
   source: https://commons.wikimedia.org/wiki/File:Moshe_Sharett,_de_eerste_minister_van_buitenlandse_zaken_van_de_staat_Israel,_tu,_Bestanddeelnr_255-1438.jpg
@@ -69,31 +69,31 @@ rules:
 - glob: promo/ref/people/Yitzhak_Gruenbaum.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Yitzhak_Gruenbaum_1948.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Israeli GPO phtographer
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: unity/Assets/UI/Portraits/gruenbaum.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Yitzhak_Gruenbaum_1948.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Israeli GPO phtographer
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: promo/ref/people/Pinchas_Rosen.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Pinchas_Rosen.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Théodore Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: unity/Assets/UI/Portraits/rosen.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Pinchas_Rosen.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Théodore Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: promo/ref/people/Mordechai_Bentov_CCBYSA_Knesset.jpg
   licence: CC-BY-SA-4.0
   source: https://commons.wikimedia.org/wiki/File:Mordechai_Bentov_(00330019).jpg
@@ -111,17 +111,17 @@ rules:
 - glob: promo/ref/people/Bechor-Shalom_Sheetrit.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Bechor-Shalom_Shitreet.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: David Eldan
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: unity/Assets/UI/Portraits/sheetrit.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Bechor-Shalom_Shitreet.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: David Eldan
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: promo/ref/people/Yehuda_Leib_Maimon_CCBYSA_Knesset.jpg
   licence: CC-BY-SA-4.0
   source: https://commons.wikimedia.org/wiki/File:Yehuda_Leib_Maimon_(00320507).jpg
@@ -139,17 +139,17 @@ rules:
 - glob: promo/ref/people/Peretz_Bernstein.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Peretz_Bernstein.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Teddy Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: unity/Assets/UI/Portraits/bernstein.jpg
   licence: Public-Domain
   source: https://commons.wikimedia.org/wiki/File:Peretz_Bernstein.jpg
-  status: owner-verify
+  status: verified
   commons: Public domain; PD-Israel, PD-Israel/en, PD-Israel/layout, PD-Layout, PD-old-warning-text
   artist: Teddy Brauner
-  note: no explicit US status template on the Commons page
+  note: no explicit US status template on the Commons page; D-P (owner, 17 Oct 2026)
 - glob: promo/ref/people/David_Remez_CCBY_1950.jpg
   licence: CC-BY-4.0
   source: https://commons.wikimedia.org/wiki/File:David_Remez_(997009452176205171).jpg

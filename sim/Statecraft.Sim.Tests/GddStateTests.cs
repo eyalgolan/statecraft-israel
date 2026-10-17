@@ -27,19 +27,6 @@ public class GddStateTests
         Assert.EndsWith("over=", text);
     }
 
-    // R-LOOP-002, R-CITY-005
-    [Fact]
-    public void CohesionIsHashedWithTheCities()
-    {
-        var s = new GameState { Cohesion = 0.5 };
-        Assert.DoesNotContain("coh=", s.Describe());   // no cities: the legacy loop's text is unchanged whatever the field holds
-        s.Cities["x"] = new City("x", 1, 1, 1, 0, 0);
-        Assert.Contains("coh=0.5 [3FE0000000000000]", s.Describe());
-        var before = s.Hash();
-        s.Cohesion = 0.25;
-        Assert.NotEqual(before, s.Hash());
-    }
-
     // R-LOOP-002
     [Fact]
     public void EachNewSectionAppearsOnlyWhenSetAndMovesTheHash()
@@ -74,7 +61,8 @@ public class GddStateTests
         var cities = new[] { new City("a", 1, 1, 1, 1, 1), new City("b", 1, 1, 1, 1, 1), new City("a", 2, 1, 1, 1, 1), new City("a", 1, 2, 1, 1, 1),
                              new City("a", 1, 1, 2, 1, 1), new City("a", 1, 1, 1, 2, 1), new City("a", 1, 1, 1, 1, 2) };
         Assert.Equal(cities.Length, new HashSet<string>(Array.ConvertAll(cities, H)).Count);
-        var units = new[] { new Unit(1, "halutz", 0, 0), new Unit(2, "halutz", 0, 0), new Unit(1, "recruit", 0, 0), new Unit(1, "halutz", 1, 0), new Unit(1, "halutz", 0, 1) };
+        var units = new[] { new Unit(1, "halutz", 0, 0), new Unit(2, "halutz", 0, 0), new Unit(1, "recruit", 0, 0), new Unit(1, "halutz", 1, 0), new Unit(1, "halutz", 0, 1),
+                            new Unit(1, "halutz", 0, 0, 1) };
         Assert.Equal(units.Length, new HashSet<string>(Array.ConvertAll(units, U)).Count);
         string K(Cohort k) { var s = new GameState(); s.Cohorts.Add(k.Id, k); return s.Hash(); }
         var cohorts = new[] { new Cohort(1, "recruit", "a", 1, 1), new Cohort(2, "recruit", "a", 1, 1), new Cohort(1, "halutz", "a", 1, 1),
@@ -92,6 +80,14 @@ public class GddStateTests
     {
         Assert.Equal("mefalsim=b,4,5", new SiteWork("mefalsim", 4, 5, null).Canonical());
         Assert.Equal("mefalsim=done,1949-06-15", SiteWork.Built("mefalsim", new DateTime(1949, 6, 15)).Canonical());
+    }
+
+    // R-LOOP-002, R-VET-001: a unit's service reaches the hash, and a unit with none hashes as it did before Phase 4 PR 6.
+    [Fact]
+    public void ServiceReachesTheHashOnlyWhenThereIsSome()
+    {
+        Assert.Equal("1:halutz@0,0", new Unit(1, "halutz", 0, 0).Canonical());
+        Assert.Equal("1:veteran_halutz@0,0/6", new Unit(1, "veteran_halutz", 0, 0, 6).Canonical());
     }
 
     // R-SITE-003: a built site holds no unit. Unit ids start at 0, so "no unit" is null, never 0: unit 0 is free once its

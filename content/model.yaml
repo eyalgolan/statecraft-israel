@@ -1,7 +1,9 @@
 # Game design values (not historical facts): indicators run 0..1. Every indicator, policy, effect and situation has a
 # `name`: the display name Cause text shows the player (required; ids never reach the screen).
 indicators:
-  - { id: morale, base: 0.55, name: Morale }
+  # morale is the GDD's Social cohesion (D-C1, decided 15 October 2026; Reading 2, #375): the id stays, so no event file
+  # changes, and the player sees it as Social cohesion (R-NAT-001). intl_standing is International Support (R-NAT-003).
+  - { id: morale, base: 0.55, name: Social cohesion }
   - { id: food_supply, base: 0.40, name: Food supply }
   - { id: housing, base: 0.35, name: Housing }
   - { id: security, base: 0.30, name: Security }
@@ -20,14 +22,22 @@ policies:
   - { id: maabarot, from: 1948-05-15, default: 0.0, office: prime_minister, name: Transit camps (ma'abarot) }
 effects:
   - { id: rationing_feeds, source: rationing, target: food_supply, k: 0.40, inertia: 2, office: rationing_minister, name: Rations share out food }
-  - { id: rationing_grates, from: 1948-05-15, source: rationing, target: morale, k: -0.15, inertia: 1, name: Rationing wears on morale }
+  - { id: rationing_grates, from: 1948-05-15, source: rationing, target: morale, k: -0.15, inertia: 1, name: Rationing wears on cohesion }
   - { id: building_houses, from: 1948-05-15, source: housing_construction, target: housing, k: 0.35, inertia: 4, office: labour_minister, name: New housing }
-  - { id: homes_lift_morale, source: housing, target: morale, k: 0.15, inertia: 2, name: Homes lift morale }
+  - { id: homes_lift_morale, source: housing, target: morale, k: 0.15, inertia: 2, name: Homes lift cohesion }
   - { id: border_villages_secure, from: 1948-05-15, source: border_settlement, target: security, k: 0.30, inertia: 4, office: agriculture_minister, name: Border villages }
-  - { id: safety_lifts_morale, source: security, target: morale, k: 0.10, inertia: 2, name: Safety lifts morale }
+  - { id: safety_lifts_morale, source: security, target: morale, k: 0.10, inertia: 2, name: Safety lifts cohesion }
+  # Social cohesion's two GDD inputs beside homes and safety (Q-NAT-2, decided 15 October 2026, #375): the cities' employed
+  # share (employed_share, a GDD-only source: Cities.EmployedShare) and food_supply, so a Food shortage lowers it (R-CITY-005).
+  - { id: work_lifts_cohesion, source: employed_share, target: morale, k: 0.10, inertia: 2, name: Work lifts cohesion }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-NAT-2)
+  - { id: food_lifts_cohesion, source: food_supply, target: morale, k: 0.10, inertia: 2, name: Food lifts cohesion }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-NAT-2)
 situations:
   - { id: food_crisis, indicator: food_supply, on_below: 0.30, off_above: 0.45, name: Food crisis }
   - { id: housing_crisis, indicator: housing, on_below: 0.25, off_above: 0.40, name: Housing crisis }
+  # The national parameters' thresholds as situations, with food_crisis's bands and no mechanical effect of their own: events
+  # can read them through their indicator conditions (Q-NAT-3, decided 15 October 2026, #375; R-NAT-002, R-NAT-004).
+  - { id: low_cohesion, indicator: morale, on_below: 0.30, off_above: 0.45, name: Low social cohesion }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-NAT-3)
+  - { id: low_intl_support, indicator: intl_standing, on_below: 0.30, off_above: 0.45, name: Low international support }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-NAT-3)
 # Money the sim tracks (these three ids, in millions): the name and the currency prefix the player sees.
 # The treasury is the GDD's Money (R-MONEY-001; spec §1.2 "Treasury becomes Money", owner, 15 October 2026, Q-MONEY-4).
 # Debt and foreign currency stay internal, under Money (D-C3, Q-MONEY-1).

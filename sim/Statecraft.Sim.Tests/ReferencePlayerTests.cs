@@ -98,16 +98,20 @@ public class ReferencePlayerTests
         s.Units.Add(8, new Unit(8, "halutz", -3, 19));
         s.NextId = 9;
         s.Treasury = 10;
-        var build = Assert.Single(ReferencePlayer.Commands(Mvp, s).OfType<PioneerWork>());   // one site: the second group waits
-        Assert.Equal((7, "build_yishuv", "mefalsim"), (build.Unit, build.Action, build.Site));
+        // Two groups, four yishuv sites (Q-SITE-1, #785): each group takes the next free site in ordinal id order.
+        var builds = ReferencePlayer.Commands(Mvp, s).OfType<PioneerWork>().ToList();
+        Assert.Equal(new[] { (7, "build_yishuv", "beit_kama"), (8, "build_yishuv", "gilat") }, builds.Select(b => (b.Unit, b.Action, b.Site)));
         Assert.Empty(Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).Rejected);
 
-        var building = s.Clone();
-        building.Sites["mefalsim"] = new SiteWork("mefalsim", 7, 3, null);
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, building), x => x is PioneerWork);
-        var built = s.Clone();
-        built.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, built), x => x is PioneerWork);
+        var oneLeft = s.Clone();
+        oneLeft.Sites["beit_kama"] = new SiteWork("beit_kama", 9, 3, null);
+        oneLeft.Sites["gilat"] = SiteWork.Built("gilat", new DateTime(1949, 6, 15));
+        oneLeft.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
+        var last = Assert.Single(ReferencePlayer.Commands(Mvp, oneLeft).OfType<PioneerWork>());   // one site left: the second group waits
+        Assert.Equal((7, "reim"), (last.Unit, last.Site));
+        var none = oneLeft.Clone();
+        none.Sites["reim"] = new SiteWork("reim", 7, 3, null);
+        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, none), x => x is PioneerWork);
         var poor = s.Clone();
         poor.Treasury = 0;
         Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);

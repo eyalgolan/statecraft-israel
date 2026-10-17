@@ -40,7 +40,7 @@ public class PlayerTextTests
         var messages = HistoricalCauseMessages();
         Assert.Contains(messages, m => m.EndsWith("immigrants arrived (the Americas and Oceania)", StringComparison.Ordinal));
         Assert.Contains(messages, m => m.EndsWith("immigrants arrived (country of origin not recorded)", StringComparison.Ordinal));
-        Assert.Contains(messages, m => m.StartsWith("Morale ", StringComparison.Ordinal) && m.Contains("Homes lift morale"));
+        Assert.Contains(messages, m => m.StartsWith("Social cohesion ", StringComparison.Ordinal) && m.Contains("Homes lift cohesion"));
         Assert.Contains(messages, m => m.StartsWith("International support +5.0% (Armistice with Egypt)", StringComparison.Ordinal));
         Assert.Contains(messages, m => m.Contains("elected 25 January 1949"));
     }
@@ -265,7 +265,7 @@ public class PlayerTextTests
     [Theory]
     [InlineData("chosen: Impose rationing")]
     [InlineData("Built a housing project: cost IL 1.5m, Housing +3.0%, Morale +1.0%")]
-    [InlineData("Morale -10.9% (Rationing wears on morale, Homes lift morale, Safety lifts morale)")]
+    [InlineData("Social cohesion -10.9% (Rationing wears on cohesion, Homes lift cohesion, Safety lifts cohesion)")]
     [InlineData("reserve call-up raised to 80%, the minimum for security level 5")]
     public void TheGuardLeavesPlainEnglishAlone(string message) => Assert.Empty(Leaks(Real, new[] { message }));
 
@@ -307,7 +307,7 @@ public class PlayerTextTests
         Assert.Equal("55%", PlayerText.Percent(0.55));
         Assert.Equal("+4.1%", PlayerText.PercentChange(0.041));
         Assert.Equal("Money -IL 2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
-        Assert.Equal("Morale +5.0%", PlayerText.Change(Real, "morale", 0.05));
+        Assert.Equal("Social cohesion +5.0%", PlayerText.Change(Real, "morale", 0.05));
         Assert.Equal("Foreign currency", PlayerText.Target(Real, "fx_reserves"));
     }
 
@@ -453,4 +453,22 @@ public class PlayerTextTests
     [Fact]
     public void EveryRealPortraitHasAFocalPoint() =>
         Assert.All(Real.People.Where(p => p.Portrait != null && p.Portrait.File != ""), p => Assert.InRange(p.Portrait!.FocusY ?? -1, 0.05, 0.95));
+
+    /// <summary>R-EFX-001: whole-unit national stocks read in units, not percent.</summary>
+    [Theory]
+    [InlineData(7, "+7 units")]
+    [InlineData(-3, "-3 units")]
+    [InlineData(0, "0 units")]
+    public void UnitsChangeRendersAWholeUnitStock(double change, string shown)
+    {
+        Assert.Equal(shown, PlayerText.UnitsChange(change));
+    }
+
+    [Fact]
+    public void ChangeRendersTheFoodStockInUnits()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        Assert.Equal("Food +7 units", PlayerText.Change(c, Pools.FoodTarget, 7));
+    }
 }
+

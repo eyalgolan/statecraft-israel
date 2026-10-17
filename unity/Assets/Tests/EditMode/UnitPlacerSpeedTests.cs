@@ -168,7 +168,8 @@ public class UnitPlacerSpeedTests
         {
             var skippedA = new List<string>(); var skippedB = new List<string>();
             var fast = UnitPlacer.PlaceAll(units, hexes, hexSizeM, toXZ, clear, overlap, skippedA.Add);
-            var reference = Reference.PlaceAll(units, hexes, hexSizeM, toXZ, clear, overlap, skippedB.Add);
+            // The reference places what the map draws (UnitRoster.OnMap): the fast placer skips the other rows (#740).
+            var reference = Reference.PlaceAll(units.Where(UnitRoster.OnMap).ToList(), hexes, hexSizeM, toXZ, clear, overlap, skippedB.Add);
             CollectionAssert.AreEqual(skippedB, skippedA, name);
             Assert.AreEqual(reference.Count, fast.Count, name);
             var here = new SortedSet<(int, int)>();

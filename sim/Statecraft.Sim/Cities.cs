@@ -23,7 +23,6 @@ namespace Statecraft.Sim
         {
             if (!c.IsGdd) return;
             foreach (var x in c.Cities) s.Cities[x.Id] = new City(x.Id, x.HousingCapacity, x.JobSlots, x.Civilians, x.Employed, 0);
-            UpdateCohesion(s, c.RulesAt(s.Date).Mvp!);
         }
 
         /// <summary>R-CITY-001: sets the number of the city's civilians in jobs (a standing order). Refused, state untouched,
@@ -67,16 +66,17 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>R-CITY-005, a placeholder while D-C1 is open: over all cities, the housed share (civilians of civilians and
-        /// refugees; 1 with nobody) and the employed share (employed of civilians; 1 with no civilians), weighted by the mvp
-        /// cohesion weights, clamped to 0 to 1. Counts are summed as integers, so city order cannot change the result.</summary>
-        public static void UpdateCohesion(GameState s, MvpRules r)
+        /// <summary>The effect source id of the cities' employed share (R-CITY-005): a GDD-only source of `morale`, Social
+        /// cohesion, read by the effects web after the turn's housing (D-A6). Phase 1's separate cohesion value is folded into it.</summary>
+        public const string EmployedShareSource = "employed_share";
+
+        /// <summary>R-CITY-005: employed over civilians, summed over all cities as integers (so city order cannot change it);
+        /// 1 with no civilians, as nobody is out of work.</summary>
+        public static double EmployedShare(GameState s)
         {
-            long civilians = 0, employed = 0, refugees = 0;
-            foreach (var x in s.Cities.Values) { civilians += x.Civilians; employed += x.Employed; refugees += x.Refugees; }
-            var housed = civilians + refugees == 0 ? 1.0 : (double)civilians / (civilians + refugees);
-            var working = civilians == 0 ? 1.0 : (double)employed / civilians;
-            s.Cohesion = Math.Max(0, Math.Min(1, r.CohesionHousingWeight * housed + r.CohesionJobsWeight * working));
+            long civilians = 0, employed = 0;
+            foreach (var x in s.Cities.Values) { civilians += x.Civilians; employed += x.Employed; }
+            return civilians == 0 ? 1.0 : (double)employed / civilians;
         }
 
         /// <summary>R-CITY-003 (D-A5, Q-ARRV-1): the turn's immigrants (the CBS series, aliyah.yaml) arrive as refugees, in whole

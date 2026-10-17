@@ -48,7 +48,8 @@ map tokens; this note narrows to the two dates and adds strength figures and Ara
   intelligence summaries for weeks ending 19 May, 26 May, 2 June, 9 June and 16 June 1948 (Internet Archive copies of
   the CIA reading room). Ben-Gurion's diary, English translation, Ben-Gurion Archive, entries for 16, 18, 20 and
   31 May 1948. The Associated Press report of the Arab armies' joint headquarters' truce lines (Amman,
-  13 June 1948), as transcribed by the Center for Online Judaic Studies.
+  13 June 1948), as transcribed by the Center for Online Judaic Studies. The Jewish Telegraphic Agency daily
+  bulletins of 10 to 17 June 1948 (pdfs.jta.org scans, OCR'd locally 2026-10-17; URLs in the Sources list).
 - **Search snippets only.** Internet Archive full-text search returns a few lines around each hit for lending-library
   books. It was used for Glubb, *A Soldier with the Arabs* (1957); Netanel Lorch, *The Edge of the Sword* (1961);
   Benny Morris, *1948* (2008); Kenneth Pollack, *Arabs at War* (2002); and Rogan and Shlaim (eds.), *The War for
@@ -360,12 +361,23 @@ Jenin battle (31 May to 4 June): 4th Brigade north, 1st Brigade west with two Pa
 **Positions on 11 June**
 - Ras en-Naqoura on the coast [V] AP 13 June (Arab joint headquarters). An-Naqoura 33.1183, 35.1400 (the village on
   the Lebanese side; the crossing point is a few kilometres south).
+- Reported in the JTA's Tel Aviv dispatch of 10 June (bulletin of 11 June): Lebanese forces attacked Jewish-held
+  Ramat Naphtali and the Nebi Yusha police station [V] JTA bulletin, 11 June 1948, p. 1 (press attribution to the
+  Lebanese Army - the same ALA-vs-Lebanese caution as the 15 May al-Malikiyya item applies). JTA calls the
+  fortress one that "dominates several major roads in western Galilee" (its words, about the roads); Nebi Yusha police fort
+  (Metzudat Koach) 33.1147, 35.5561 (en.wiki, checked 2026-10-17).
+- The Ras el Nakur police station "on the Lebanese border was recaptured by Jews after its seizure earlier by
+  Lebanese troops" [V] JTA bulletin, 13 June 1948, p. 2 (Tel Aviv dispatch of 11 June). [C] against the AP
+  13 June line above (the Arab joint headquarters holding Ras en-Naqoura) if Ras el Nakur is read as
+  Ras en-Naqoura - that reading is mine. The 13 June bulletin does not mention Nebi Yusha.
 - Al-Malikiyya and Qadas retaken on 6 June by a combined force [V] Dupuy p. 47 (Lebanese); "an enemy force consisting
   of almost two brigades, including units of the Liberation" Army and others [V] Lorch, snippet (cut off there). The branch note carries the
   Lebanese 3rd Battalion with a Syrian battalion and the ALA (Morris p. 260 via en.wiki, [S, carried]). Qadas
   33.1116, 35.5295.
 
-**Strength on 11 June.** Not found [GAP]. CIA, 27 July: none inside Palestine, 1,800 near it [V].
+**Strength on 11 June.** Not found [GAP]. CIA, 27 July: none inside Palestine, 1,800 near it [V]. Searched and
+  not found: the JTA daily bulletins of 10 to 17 June 1948 (scans at pdfs.jta.org, OCR'd locally 2026-10-17) carry
+  Lebanese operational mentions but no strength figure.
 
 ## 6. Arab Liberation Army (#232)
 
@@ -532,6 +544,10 @@ Israeli:
   https://bengurionarchive.bgu.ac.il/en/node/5151
 - Lorch, Netanel. *The Edge of the Sword: Israel's War of Independence, 1947-1949*. Putnam, 1961. Full-text search
   snippets only: https://archive.org/details/edgeofsword00lorc
+- Jewish Telegraphic Agency, daily bulletins, 10 to 17 June 1948. PDF scans, read via local OCR 2026-10-17:
+  11 June (No. 135) http://pdfs.jta.org/1948/1948-06-11_135.pdf ; 13 June (No. 136)
+  http://pdfs.jta.org/1948/1948-06-13_136.pdf ; 10 June is 1948-06-10_134 and 14 to 17 June are 1948-06-14_137
+  to 1948-06-17_140 in the same pattern (the https form timed out; http worked).
 
 Western, British and "new historians":
 - Glubb, John Bagot. *A Soldier with the Arabs*. Hodder and Stoughton, 1957. Full-text search snippets only:
