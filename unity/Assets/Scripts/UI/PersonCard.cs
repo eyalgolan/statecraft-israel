@@ -29,6 +29,15 @@ namespace Statecraft.Game.UI
             return words.Length == 1 ? words[0].Substring(0, 1) : words[0].Substring(0, 1) + words[words.Length - 1].Substring(0, 1);
         }
 
+        /// <summary>The plate's text in Hebrew (Beri, native speaker, 17 October 2026): the first name's initial and the
+        /// surname, "י. ידין", since two Hebrew letters ("יי") read as a gershayim more than as a name.</summary>
+        public static string InitialAndSurname(string name)
+        {
+            var words = name.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0) return "";
+            return words.Length == 1 ? words[0] : words[0].Substring(0, 1) + ". " + words[words.Length - 1];
+        }
+
         /// <summary>Makes the card's elements inside <paramref name="card"/> (cleared first), empty.</summary>
         public static void Build(VisualElement card, string prefix, UiText text)
         {
@@ -68,7 +77,7 @@ namespace Statecraft.Game.UI
             portrait.style.display = tex != null ? DisplayStyle.Flex : DisplayStyle.None;   // never an invented portrait
             var initials = card.Q<Label>(prefix + "-initials");
             var name = person == null ? "" : ContentNames.Of(text, person);
-            initials.text = person == null || tex != null ? "" : Initials(name);
+            initials.text = person == null || tex != null ? "" : person.NameHe != "" && name == person.NameHe ? InitialAndSurname(name) : Initials(name);
             initials.style.display = tex == null ? DisplayStyle.Flex : DisplayStyle.None;
 
             var holder = card.Q<Label>(prefix + "-holder");

@@ -694,6 +694,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen { -unity-text-align: middle-center; }
 .lang-he .card-stat-name { -unity-text-align: middle-right; }
 .lang-he .card-stat-value { -unity-text-align: middle-left; }
+/* The Hebrew plate shows the first name's initial and the surname ("י. ידין", PersonCard.InitialAndSurname), not two
+   letters: at 36 px the longest, "פ. ברנשטיין" (164 px), fits the narrowest plate (176 px; PromoScreensTests). */
+.lang-he .card-initials { font-size: 36px; }
 .lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
