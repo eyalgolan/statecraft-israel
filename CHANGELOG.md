@@ -13,6 +13,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   target follows with its pool (#781).
 
 ### Fixed
+- A boot download that receives nothing for 30 seconds is aborted and retried like a dropped connection (up to four
+  attempts), then shows the boot failure, instead of leaving the loading screen up forever. A slow download that keeps
+  receiving data is never cut off (#911).
 - The content loader now checks `name_he_review` on people rows the way it does for parties, governments,
   legislatures, offices and settlements: the flag is `agent-checked` or left out, and only beside a `name_he`
   (CONTENT_POLICY section 2, rule 6; #862). No people row carries the flag yet, so no row changes.
