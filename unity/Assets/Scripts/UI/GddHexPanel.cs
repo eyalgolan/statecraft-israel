@@ -9,7 +9,7 @@ namespace Statecraft.Game.UI
     /// <summary>GDD Phase 1 PR 8 (#381): the info panel's part for the GDD loop (Content.IsGdd), built into the
     /// <see cref="HostName"/> element on every render.
     /// <para>On a city hex (State.Cities), its counts (housing, jobs, refugees waiting, recruits) and training cohorts with
-    /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001) and Cancel
+    /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001, R-CAMP-001) and Cancel
     /// (R-TRAIN-002). On a yishuv site's hex (sites.yaml, Projects.IsYishuvSite), its state, and Build with each idle pioneer
     /// group (Projects.IsPioneer: a halutz or a veteran one), with the rules' cost and the unit's own turns (Projects.TurnsToBuild;
     /// R-SITE-001, R-VET-002), or Stop while it is built (R-SITE-002).</para>
@@ -63,11 +63,11 @@ namespace Statecraft.Game.UI
             Line(workers, "city-workers", text.Format("city.workers", Groups(text, target)));
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
 
-            // Train, for each facility the city has (D-D5): each press orders one more group; R-TRAIN-001 takes only civilians
-            // without work, and the sim counts every track's order and the Assign order in the queue against them.
-            var facilities = c.Cities.First(x => x.Id == id).Facilities;
+            // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
+            // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's
+            // order and the Assign order in the queue against them.
             var free = Training.Available(s, id, bridge.Queued);
-            foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && facilities.Contains(t.Facility)))
+            foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
                 var ordered = (bridge.QueuedLike(new Train(id, type.Id, 1)) as Train)?.Count ?? 0;
                 var row = Row(host, $"city-train-{type.Id}-row");

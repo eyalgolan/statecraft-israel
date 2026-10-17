@@ -291,7 +291,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   both its forward base, Isdud, and its rear base, Majdal (owner, 17 October 2026, on #860). The rows are drafts.
 - The GDD loop's city and site panels (GDD Phase 1 PR 8, refs #381). On a city hex the info panel shows the housing,
   jobs, refugees waiting and recruits, and each training cohort with its turns left, with an Assign stepper, Train
-  recruits and Train halutzim (where the city has the camp or Hakhshara) and Cancel. On the designated site's hex it shows
+  recruits and Train halutzim (where `Training.HasFacility` says the city has the camp or Hakhshara, a built camp site
+  included) and Cancel. On the designated site's hex it shows
   the site's state, Build with each idle pioneer group (halutz or veteran) at the rules' cost and that group's own turns,
   and Stop while it is built. Every number is the sim's, and every order goes through the queue. The limits come from
   new public sim helpers that the rules call too, so nothing is repeated in the UI: `Cities.MaxWorkers` (R-CITY-001),
