@@ -41,6 +41,18 @@ namespace Statecraft.Game.Map
             new PromoPose("tel_aviv30", 34.78, 32.08, 30000f, 10f), new PromoPose("jaffa12", 34.755, 32.052, 12000f, 10f),
         };
 
+        /// <summary>Issue #659: the other town types up close, for the main / branch captures the issue's done-when asks for:
+        /// Jerusalem and Haifa at 12 km, the moshava Rishon LeZion (its b23 winery) at 8 km and the kibbutz Degania Alef at
+        /// 6 km, each over its settlements_1948.yaml point; and start120, the 120 km starting distance over the centre, where
+        /// #917's whole-town landmarks draw and the kits do. Capture poses only: VisualShots shoots them after CloseUps;
+        /// FrameProfile and the model tests keep to CloseUps (a kibbutz at 6 km holds fewer models than their floors).</summary>
+        public static IReadOnlyList<PromoPose> TownChecks { get; } = new[]
+        {
+            new PromoPose("jerusalem12", 35.2256, 31.7789, 12000f, 10f), new PromoPose("haifa12", 34.9992, 32.8192, 12000f, 10f),
+            new PromoPose("rishon08", 34.80, 31.95, 8000f, 10f), new PromoPose("degania06", 35.5747, 32.7081, 6000f, 10f),
+            new PromoPose("start120", 35.00, 32.20, 120000f, 0f),
+        };
+
         public void Apply(CameraRig rig, GeoFrame frame)
         {
             rig.LookAt = frame.ToWorld(Lon, Lat, 0); rig.Distance = Distance; rig.Yaw = Yaw; rig.Apply();
