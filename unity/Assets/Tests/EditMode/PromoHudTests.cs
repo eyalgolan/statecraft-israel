@@ -181,8 +181,10 @@ public class PromoHudTests
                     // #380 (a consequence of the owner's "tighten + re-tier", 16 October 2026): a phone's seven meters take two lines with the turn-1 values
                     // too, so the bar's second meter line is never an empty band. A line's meters share their centre (.meters
                     // align-items: center); their tops differ with their captions' lines.
-                    var lines = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None)
-                        .Select(m => Mathf.Round(m.worldBound.center.y)).Distinct().Count();
+                    // (Within a line the centres can differ by a pixel: review of #831, so lines are 3 px apart or more.)
+                    var centres = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None)
+                        .Select(m => m.worldBound.center.y).OrderBy(y => y).ToList();
+                    var lines = 1 + centres.Zip(centres.Skip(1), (a, b) => b - a).Count(d => d > 3f);
                     Assert.AreEqual(2, lines, $"{w}x{h}: the meters' lines with the turn-1 values");
                 }
                 if ((w, h) == (1920, 1080) || (w, h) == (2560, 1080))
@@ -250,6 +252,18 @@ public class PromoHudTests
                 var used = meters[meters.Count - 1].worldBound.xMax - meters[0].worldBound.xMin;
                 var limit = twoRow ? barRect.xMax - 14f : root.Q("nav").worldBound.xMin;
                 Assert.GreaterOrEqual(limit - meters[meters.Count - 1].worldBound.xMax, 0.05f * used, $"{where}: the meters use {used:0} of {limit - meters[0].worldBound.xMin:0} px");
+                // On a phone the meters wrap into quarters (#380), so the rule above holds by construction there: each meter's
+                // labels keep 5% of its own quarter free instead (review of #831).
+                if (threeRow)
+                    foreach (var m in meters.Where(m => m.resolvedStyle.display != DisplayStyle.None))
+                        foreach (var l in m.Query<Label>().ToList().Where(l => !string.IsNullOrEmpty(l.text)))
+                        {
+                            // The text's own width (a caption's box stretches to its column), at most its box (a wrapped caption).
+                            var natural = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+                            var right = l.worldBound.xMin + Mathf.Min(natural, l.worldBound.width);
+                            Assert.LessOrEqual(right, m.worldBound.xMax - 0.05f * m.worldBound.width,
+                                $"{where}: '{l.text}' ends at {right:0} and leaves less than 5% of {m.name} {m.worldBound}");
+                        }
                 // Review P2: every screen button's caption fits its button (an icon-only button draws no caption: part 3).
                 foreach (var nb in root.Q("nav").Query<Button>().ToList().Where(b => b.resolvedStyle.color.a > 0.01f))
                 {

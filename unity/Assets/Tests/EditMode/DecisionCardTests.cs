@@ -86,6 +86,23 @@ public class DecisionCardTests
 
     static readonly (int w, int h)[] Tiers = { (1920, 1080), (960, 1080) };
 
+    /// <summary>#380: the taller two- and three-row bars raise the centred card (the event layer keeps room at its bottom), and
+    /// the backdrop must still reach the window's bottom and right edges, so no strip of map stays live under an open card.</summary>
+    [UnityTest]
+    public IEnumerator TheBackdropReachesTheWindowsEdgesAtEveryTier()
+    {
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 1024), (1024, 1024), (960, 1080), (800, 1000), (390, 844) })
+        {
+            using var r = new Rig(w, h, "law_of_return");
+            yield return Frames(4);
+            var where = $"{w}x{h}";
+            Assert.IsTrue(r.Shows("event-scrim"), $"{where}: the backdrop shows");
+            var screen = r.Root.worldBound; var scrim = r.Root.Q("event-scrim").worldBound;
+            Assert.GreaterOrEqual(scrim.yMax, screen.yMax - 0.5f, $"{where}: the backdrop {scrim} reaches the window's bottom {screen.yMax}");
+            Assert.GreaterOrEqual(scrim.xMax, screen.xMax - 0.5f, $"{where}: the backdrop {scrim} reaches the window's right edge {screen.xMax}");
+        }
+    }
+
     [UnityTest]
     public IEnumerator TheOpenCardTakesThePointerAndThePanelsUnderIt()
     {

@@ -288,7 +288,9 @@ public class ArmisticeTests
         var text = L(Regions(), new DateTime(1950, 3, 1));
         StringAssert.Contains("Jordan (low accuracy)", text);
         foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
-                                         (960, 600), (1024, 768), (390, 844), (1600, 757) })
+                                         (960, 600), (1024, 768), (390, 844), (1600, 757),
+                                         // the two-row bar's shapes (#380's re-tier gives a square window two rows; review B1 of #831)
+                                         (1024, 1024), (960, 1080), (800, 1000) })
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
