@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Statecraft.Sim;
 
-/// <summary>`requires: { event, option }`: an event is eligible only after another event was resolved with that option
+/// <summary>`requires: [{ event, option }, ...]`: an event is eligible only after every listed event was resolved with its option
 /// (fix round 1, I2: a follow-up card must not contradict the player's earlier choice).</summary>
 public class EventRequiresTests
 {
