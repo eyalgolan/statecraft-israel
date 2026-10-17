@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Statecraft.Sim
 {
@@ -29,6 +30,21 @@ namespace Statecraft.Sim
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);
+
+        /// <summary>R-FIELD-002, step 6 after the cities' production (D-A6): in ordinal site id order, every plowed field (a built
+        /// field site, R-FIELD-001) adds field_food_per_turn to the stock, with no workers (Q-FIELD-2). It comes before the
+        /// nation eats in step 7, so in a turn with imports the import only tops the stock up by less.</summary>
+        public static void Harvest(Content c, GameState s, MvpRules r, List<Cause> why)
+        {
+            var yield = r.FieldFoodPerTurn!.Value;   // the loader requires it in the GDD loop
+            if (yield == 0) return;
+            foreach (var f in c.Sites.Where(x => x.Kinds.Contains(Projects.FieldKind)).OrderBy(x => x.Id, StringComparer.Ordinal))
+            {
+                if (!(s.Sites.TryGetValue(f.Id, out var w) && w.BuiltOn != null)) continue;
+                s.Food += yield;
+                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {yield} units of Food")));
+            }
+        }
 
         /// <summary>R-FOOD-002, step 7: the nation eats the turn's need from the stock, as far as the stock goes (it stops at
         /// 0, and the rest is unmet), then the import brings the stock back to cover_months of the need, unless foreign

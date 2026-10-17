@@ -84,6 +84,10 @@ R-SITE-004: Every designated site has one or more kinds from a fixed list: `yish
 
 R-SITE-005: At most one `yishuv` site sits in a hex, so a hex shows at most one new yishuv. A site of another kind may share a hex with a yishuv site, as a yishuv's field site does (Q-SITE-3).
 
+R-FIELD-001: `PioneerWork(unit, plow_fields, site)` plows a field at a site whose kinds include `field`, by R-SITE-001 to R-SITE-003's rules, with `plow_fields_turns` and `plow_fields_cost` (labelled design values, Q-FIELD-3, decided 17 October 2026). A field site in a yishuv site's hex is ready only once that yishuv is built; before that the order is refused with the state unchanged and the Attention refunded (Q-FIELD-1, decided 17 October 2026). Built, the field site is plowed. A field site is not also a yishuv site, so building a yishuv cannot plow it; the loader refuses a row that gives it both kinds.
+
+R-FIELD-002: Each turn in step 6, after the cities' production and in ordinal site id order, every plowed field adds `field_food_per_turn` Food units to the national stock (R-FOOD-001), with no workers (Q-FIELD-2, decided 17 October 2026). A field being plowed adds nothing. The Food arrives before the nation eats in step 7, so in a turn with imports (R-FOOD-002) the import tops the stock up by that much less. `field_food_per_turn` is 1, a labelled design value (Q-FIELD-3: "1 Food a turn"), and required in the GDD loop.
+
 ## Objectives
 
 R-OBJ-001: An objective (`objectives.yaml`) names its condition, `completes_when: { site_built: <site> }`, a designated site of kind yishuv whose `founded` date must equal the objective's `reference_date`. In the last step of each GDD turn (spec §2.3, step 11; D-A6), in id order, an objective whose site is built and that is not yet recorded is recorded once, with the turn's end date (the site's `BuiltOn`). Recording it again, or in the legacy loop, changes nothing; a stopped build completes nothing.

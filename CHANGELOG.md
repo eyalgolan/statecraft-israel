@@ -177,6 +177,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the reference player's halutz group becomes a veteran after Beit Kama and builds Gilat, Mefalsim and Re'im in 3 turns
   each, so the first new yishuv completes on 1949-09-15 (was 1950-03-15), and by 1950 the score is 100 and the debt is
   IL 2m higher. The 1952 score and debt do not change.
+- Halutzim can plow fields (refs #788, #384; D-D10, Q-FIELD-1 to Q-FIELD-3, owner, #782): `PioneerWork(unit, plow_fields,
+  site)` at a yishuv's field site, ready once that yishuv is built, takes 3 turns and IL 0.5m (R-FIELD-001). Each turn
+  after the cities' production, every plowed field adds 1 unit of Food to the national stock, with no workers
+  (R-FIELD-002). All three numbers are labelled design values in `rules.yaml`. The reference player plows the four
+  fields once the yishuv sites are taken, so `hash1950`, `hash1952` and `mvp-end` move (docs/determinism.md).
 - City and town pills start with their population tier, a gold disc with a number from 1 to 9 (refs #710). The tier is
   static: it comes from the city's 1948 people in `content/cities.yaml` (#821), not from the sim's live count (owner,
   15 October 2026). The scale is the design value proposed on #710 and not yet ruled: tiers double from 1,000, so under
