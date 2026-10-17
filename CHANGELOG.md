@@ -48,6 +48,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   their side on the map"). Every Collection Far prefab's root carries the FBX axis conversion (-90 degrees about X),
   and `TownLandmarks` set the rotation to the yaw alone, which overwrote it; the yaw now goes on top of the prefab's own
   rotation, as `RouteTrain` already does.
+- The Sinai withdrawal card now records that a force remained west of Rafah after 2 January 1949 and describes its
+  alternative as refusing to pull that blocking force back, matching the IDF-published Michelson study and the owner's
+  source decision (refs #939).
 - Under `?lang=he` the hex info panel names its towns and 1948 localities in Hebrew: the title, the "Settlements"
   line and the 1948 name in the localities line read the row's `name_he`, and the English name where a row has none
   (13 of 271 localities). Where the Hebrew 1948 and today names are one word (48 rows that would otherwise show
