@@ -8,6 +8,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- MATKOT's nine whole-town models from #507 stand as overview landmarks beside their towns (refs #663, #336, #885;
+  owner, 17 October 2026: "The nine whole-town models ship"). They are slimmed by `tools/slim_collection.py` into a
+  fourth streamed bundle, `collection-towns`, and drawn about 6 km across from a 110 km view distance, so from the
+  120 km starting view out to the overview (owner on #917: "Larger, from 120 km"); at the gameplay and close zooms the
+  per-building kits draw. Each stands on free ground clear of every kit, route and other landmark (`TownLandmarks`). The towns follow #507's own
+  mapping; the ma'abara stands by a transit camp only from 23 May 1950 (Davar, via `maabarot_policy`), and the shikun
+  is not drawn until a source gives its date.
 - Event options can now move the national Food stock: `food` is an effect target in whole units, the loader
   validates it, and the sensitive-event no-gain rule covers it (R-EFX-001 and R-EFX-002; refs #729). The Arms
   target follows with its pool (#781).

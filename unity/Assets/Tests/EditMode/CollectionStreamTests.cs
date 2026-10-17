@@ -74,6 +74,29 @@ public class CollectionStreamTests
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
 
+    /// <summary>Issue #663 (owner, 17 October 2026: the nine whole-town models are "streamed after the first frame"): a town
+    /// model comes from the towns bundle, after the frame that asked for it, as every other model does.</summary>
+    [Test]
+    public void AWholeTownModelIsServedFromTheTownsBundleAfterTheFrameThatAskedForIt()
+    {
+        var go = new GameObject("prefab");
+        try
+        {
+            var src = new FakeSource { Prefab = go };
+            var stream = new CollectionStream(src);
+            var got = new List<GameObject?>();
+            Assert.IsTrue(stream.Enqueue("tel-aviv-white-city-v1", CollectionDetail.Far, got.Add));
+            var run = stream.Run();
+            Assert.IsTrue(run.MoveNext());
+            CollectionAssert.IsEmpty(got, "nothing comes back in the frame of the request");
+            CollectionAssert.IsEmpty(src.Opened, "nothing is fetched in the frame of the request");
+            Step(run, 10);
+            CollectionAssert.AreEqual(new[] { go }, got);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.Towns }, src.Opened, "only the towns bundle");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
     [Test]
     public void AMissingBundleWarnsOnceAndEveryRequestForItGetsNull()
     {

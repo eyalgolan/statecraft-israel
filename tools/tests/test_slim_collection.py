@@ -15,22 +15,33 @@ IMPORT_TESTS = REPO / "unity/Assets/Tests/EditMode/CollectionImportTests.cs"
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
     bundles = {}
-    for name, body in re.findall(r"\((People|Vehicles|Animals), new\[\]\s*\{(.*?)\}\)", text, re.S):
+    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns), new\[\]\s*\{(.*?)\}\)", text, re.S):
         bundles[name] = re.findall(r'"([a-z0-9-]+)"', body)
     return bundles
 
 
-def test_the_tool_slims_the_31_models_the_catalog_streams():
+def test_the_tool_slims_the_40_models_the_catalog_streams():
     bundles = catalog_bundles()
-    assert bundles == {"People": slim.PEOPLE, "Vehicles": slim.VEHICLES, "Animals": slim.ANIMALS}
-    assert len(slim.IDS) == len(set(slim.IDS)) == 31
+    assert bundles == {"People": slim.PEOPLE, "Vehicles": slim.VEHICLES, "Animals": slim.ANIMALS, "Towns": slim.TOWNS}
+    assert len(slim.IDS) == len(set(slim.IDS)) == 40
     assert all(not i.startswith("b") for i in slim.IDS), "the buildings are #659's"
+
+
+def test_the_nine_whole_town_models_are_the_ones_tal_offered_in_507():
+    # Owner ruling, 17 October 2026 (#663): "The nine whole-town models ship". Each is #507's folder name; the Jerusalem
+    # 3denhance variant is #336's only, under its custom licence, and waits for its author's licence line (#708, #886).
+    assert slim.TOWNS == [
+        "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+        "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+    ]
+    assert "jerusalem-stone-city-v1-3denhance" not in slim.IDS
 
 
 def test_the_caps_match_the_unity_import_tests():
     text = IMPORT_TESTS.read_text(encoding="utf-8")
     assert f"FarTriangles = {slim.FAR_TRIS}," in text
     assert f"FarTrianglesVehicle = {slim.FAR_TRIS_VEHICLE}," in text
+    assert f"FarTrianglesTown = {slim.FAR_TRIS_TOWN}," in text
     assert f"NearTriangles = {slim.NEAR_TRIS}" in text
     assert f"MaxTextureSize = {slim.TEX_PX}" in text
 
