@@ -43,7 +43,7 @@ pop{
   veterans=667938.2378207468 [4124624479C3A414]
 sit[
 treasury=0 [0000000000000000]
-debt=77.50032828298673 [4053600560EB2C47]
+debt=79.50032828298673 [4053E00560EB2C47]
 fx=94.52989672613671 [4057A1E9D3F540F0]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -118,6 +118,7 @@ units[
   1:veteran_halutz@-3,19/6
 site{
   beit_kama=done,1949-03-15
+  camp_80=b,1,4
   gilat=done,1949-06-15
   mefalsim=done,1949-09-15
   reim=done,1949-12-15

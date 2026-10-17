@@ -35,6 +35,10 @@ mvp:
   city_arrivals_from: 1948-11-08         # https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf, checked 2026-10-15
   build_yishuv_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D6: turns a pioneer build takes)
   build_yishuv_cost: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D6: IL millions, paid at the start)
+  # Build a training camp (R-CAMP-001; D-D5, Q-CAMP-3). Proposed by an agent under "Agents propose design values" (owner,
+  # 15 October 2026, #375); the owner may override: the yishuv build's pair, since no source sets a camp's cost in game units.
+  build_camp_turns: 6                    # DESIGN VALUE: owner-set balance, not a historical figure (D-D5, Q-CAMP-3: turns a camp build takes)
+  build_camp_cost: 2                     # DESIGN VALUE: owner-set balance, not a historical figure (D-D5, Q-CAMP-3: IL millions, paid at the start)
   objective_points: 100                  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6: points per objective)
   objective_bonus_per_month: 5           # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: points per month early)
   objective_bonus_cap: 60                # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: the most bonus points)

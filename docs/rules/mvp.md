@@ -56,9 +56,9 @@ R-CITY-007: A city starts with `civilians` = `people / people_per_unit` to the n
 
 ## Training
 
-Training is step 4 of the turn in the approved order (§2.3, D-A6): it runs before production. One military camp and one Hakhshara exist in Tel Aviv at the start, a labelled design assumption (D-D5); pioneers will build more.
+Training is step 4 of the turn in the approved order (§2.3, D-A6): it runs before production. One military camp and one Hakhshara exist in Tel Aviv at the start, a labelled design assumption (D-D5); pioneers build more at camp sites (R-CAMP-001).
 
-R-TRAIN-001: `Train(city, track, n)` takes `n` of the city's civilians without a job into a cohort that trains as `track` (a unit type with a `facility`: `recruit` in a military camp, `halutz` in a Hakhshara) for the type's `training_turns`, counting the turn it was ordered in. The Treasury pays `n * training_cost` at once. When the Treasury holds less, the shortfall is borrowed, as for map actions: it is added to the debt and the Treasury stops at 0 (owner decision "Allow borrowing", 15 October 2026). The trainees leave the civilians at once; the cohort takes the next id, which units share. It is refused, with the state unchanged and the Attention refunded, when the city or track is unknown, `n` is below 1, the city lacks the facility, or it has fewer civilians without a job. The legacy loop refuses it before charging Attention.
+R-TRAIN-001: `Train(city, track, n)` takes `n` of the city's civilians without a job into a cohort that trains as `track` (a unit type with a `facility`: `recruit` in a military camp, `halutz` in a Hakhshara) for the type's `training_turns`, counting the turn it was ordered in. The Treasury pays `n * training_cost` at once. When the Treasury holds less, the shortfall is borrowed, as for map actions: it is added to the debt and the Treasury stops at 0 (owner decision "Allow borrowing", 15 October 2026). The trainees leave the civilians at once; the cohort takes the next id, which units share. It is refused, with the state unchanged and the Attention refunded, when the city or track is unknown, `n` is below 1, the city lacks the facility, or it has fewer civilians without a job. A city has a facility when `cities.yaml` gives it one at the start or a camp site of that kind built for it is in the state (R-CAMP-001). The legacy loop refuses it before charging Attention.
 
 R-TRAIN-002: `CancelTraining(cohort)` returns the cohort's people to its city as civilians without a job and refunds none of the Money paid (D-A3). A cohort that does not exist, or has finished, is refused with the state unchanged.
 
@@ -83,6 +83,10 @@ R-VET-002: A veteran's site being built has `veteran_progress` turns less to go 
 R-SITE-004: Every designated site has one or more kinds from a fixed list: `yishuv`, `field`, `swamp`, `military_camp` and `hakhshara` (Phase 4, Q-FIELD-1, Q-SWAMP-1, Q-CAMP-3). A pioneer action is accepted only at a site of its kind; any other is refused with the state unchanged and the Attention refunded. A yishuv site has a founding date inside the MVP's years and no other kind has one. A camp site (`military_camp` or `hakhshara`) names a city of `cities.yaml`, the city it trains for (Q-CAMP-1), and no other kind names one. The loader refuses any other row, naming the file and field.
 
 R-SITE-005: At most one `yishuv` site sits in a hex, so a hex shows at most one new yishuv. A site of another kind may share a hex with a yishuv site, as a yishuv's field site does (Q-SITE-3).
+
+## Camps
+
+R-CAMP-001: `PioneerWork(unit, build_camp, site)` builds a training camp at a site whose kinds include `military_camp` or `hakhshara`, by R-SITE-001 to R-SITE-003's rules, with `build_camp_turns` and `build_camp_cost` (labelled design values, required in the GDD loop). One action builds either facility, as the site's kind says (Q-CAMP-3, owner, 17 October 2026, #782). Built, on the turn's end date, the camp gives the site's city (Q-CAMP-1) the site's facility, with no capacity limit, so `Train` accepts that city for the matching track from the next turn (R-TRAIN-001). A camp being built gives nothing. The facility is read from the built site's record, so the state hash gains nothing beyond the site's own record. The MVP's camp sites are Camp 80 (a `hakhshara`, for Hadera) and Tzrifin (a `military_camp`, for Rishon LeZion) (Q-CAMP-2, owner, 17 October 2026, #785).
 
 ## Objectives
 

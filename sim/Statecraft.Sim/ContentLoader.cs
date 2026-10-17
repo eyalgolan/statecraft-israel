@@ -1051,6 +1051,11 @@ namespace Statecraft.Sim
                 if (m.CityArrivalsFrom != c.Rules.Mvp!.CityArrivalsFrom) throw new ContentException(file, "mvp.city_arrivals_from", "must be the same in every era (the cities count arrivals from one day)");
                 if (m.BuildYishuvTurns < 1) throw new ContentException(file, "mvp.build_yishuv_turns", "must be >= 1");
                 if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
+                // R-CAMP-001: required, so a missing key is not read as 0 (a camp built at once, or for nothing).
+                if (m.BuildCampTurns == null) throw new ContentException(file, "mvp.build_camp_turns", "required when eras.yaml systems.loop is gdd");
+                if (m.BuildCampTurns < 1) throw new ContentException(file, "mvp.build_camp_turns", "must be >= 1");
+                if (m.BuildCampCost == null) throw new ContentException(file, "mvp.build_camp_cost", "required when eras.yaml systems.loop is gdd");
+                if (!(m.BuildCampCost >= 0 && IsFinite(m.BuildCampCost.Value))) throw new ContentException(file, "mvp.build_camp_cost", "must be a finite number >= 0");
                 // R-FOOD-001 to R-FOOD-003: required, so a missing key is never read as 0 (a stock term of 0, or no stock).
                 if (m.KFood == null) throw new ContentException(file, "mvp.k_food", "required when eras.yaml systems.loop is gdd");
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");

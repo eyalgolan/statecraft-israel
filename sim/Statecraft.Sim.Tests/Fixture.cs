@@ -222,6 +222,8 @@ mvp:
   city_arrivals_from: 1948-05-15
   build_yishuv_turns: 3
   build_yishuv_cost: 1.5
+  build_camp_turns: 2
+  build_camp_cost: 1
   objective_points: 100
   objective_bonus_per_month: 5
   objective_bonus_cap: 60

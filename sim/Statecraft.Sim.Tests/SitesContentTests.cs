@@ -85,6 +85,16 @@ public class SitesContentTests
         Assert.All(yishuvim, x => Assert.True(x.Sources.Count(s => s.Checked != default) >= 2, x.Id));
     }
 
+    /// <summary>Q-CAMP-2 (owner, 17 October 2026, #785: "Both"): the camp sites are Camp 80 near Pardes Hanna and Tzrifin, each
+    /// with the facility the #785 research proposes and its nearest MVP city (Q-CAMP-1).</summary>
+    [Fact]
+    public void TheMvpCampSitesAreCamp80AndTzrifin()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var camps = c.Sites.Where(Projects.IsCamp).Select(x => (x.Id, x.Name, string.Join(",", x.Kinds), x.City));
+        Assert.Equal(new[] { ("camp_80", "Camp 80", "hakhshara", "hadera"), ("tzrifin", "Tzrifin", "military_camp", "rishon_lezion") }, camps);
+    }
+
     /// <summary>Q-FIELD-1 and Q-SITE-3 (#782): each yishuv site has one field site in its own hex, and no other site shares a
     /// yishuv's hex (R-SITE-005 allows it only for another kind).</summary>
     [Fact]
