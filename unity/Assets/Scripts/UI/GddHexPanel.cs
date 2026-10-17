@@ -46,10 +46,10 @@ namespace Statecraft.Game.UI
         static void City(VisualElement host, SimBridge bridge, UiText text, string id)
         {
             var c = bridge.Content; var s = bridge.State; var city = s.Cities[id];
-            Line(host, "city-housing", text.Format("city.housing", city.Civilians, city.HousingCapacity));
+            Line(host, "city-housing", text.Format("city.housing", city.Civilians, Groups(text, city.HousingCapacity)));
             Line(host, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
-            Line(host, "city-refugees", text.Format("city.refugees", city.Refugees));
-            Line(host, "city-recruits", text.Format("city.recruits", city.Recruits));
+            Line(host, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits;
             // stepping back to the current count withdraws the order.
@@ -58,7 +58,7 @@ namespace Statecraft.Game.UI
             var max = Math.Min(city.JobSlots, city.Civilians);
             var workers = Row(host, "city-workers-row");
             Button(workers, "city-workers-less", "−", () => Workers(bridge, id, city.Employed, target - 1)).SetEnabled(target > 0);
-            Line(workers, "city-workers", text.Format("city.workers", target));
+            Line(workers, "city-workers", text.Format("city.workers", Groups(text, target)));
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
 
             // Train, for each facility the city has (D-D5): each press orders one more group; R-TRAIN-001 takes only civilians
@@ -68,7 +68,7 @@ namespace Statecraft.Game.UI
             {
                 var ordered = (bridge.QueuedLike(new Train(id, type.Id, 1)) as Train)?.Count ?? 0;
                 var row = Row(host, $"city-train-{type.Id}-row");
-                Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), type.TrainingTurns),
+                Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1))).SetEnabled(ordered + 1 <= city.Civilians - city.Employed);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
@@ -76,7 +76,7 @@ namespace Statecraft.Game.UI
             foreach (var k in s.Cohorts.Values.Where(x => x.City == id))
             {
                 var row = Row(host, $"city-cohort-{k.Id}-row");
-                Line(row, $"city-cohort-{k.Id}", text.Format("city.cohort", text["city.track_" + k.Type], k.Count, k.TurnsLeft));
+                Line(row, $"city-cohort-{k.Id}", text.Format("city.cohort", text["city.track_" + k.Type], Groups(text, k.Count), Turns(text, k.TurnsLeft)));
                 var cancelled = bridge.QueuedLike(new CancelTraining(k.Id)) != null;
                 Button(row, $"city-cohort-{k.Id}-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
                     () => bridge.Queue(new CancelTraining(k.Id))).SetEnabled(!cancelled);
@@ -104,19 +104,28 @@ namespace Statecraft.Game.UI
                     // PioneerWork and StopWork share the unit's key: an order for this unit at this site is this button's.
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id)) is PioneerWork p && p.Site == site.Id;
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
-                            : text.Format("site.build", text.Format("site.group", u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost), rules.BuildYishuvTurns),
+                            : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost), Turns(text, rules.BuildYishuvTurns)),
                         () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
-                Line(host, "site-state", text.Format("site.building", text.Format("site.group", unit), work.TurnsLeft));
+                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, work.TurnsLeft)));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }
             else Line(host, "site-state", text.Format("site.built", Date(text, work.BuiltOn.Value)));
         }
+
+        /// <summary>"1 group" or "n groups" (population groups, D-A1), in the UI's language.</summary>
+        public static string Groups(UiText t, int n) => n == 1 ? t["city.groups_one"] : t.Format("city.groups", n);
+        /// <summary>"1 turn" or "n turns", in the UI's language.</summary>
+        public static string Turns(UiText t, int n) => n == 1 ? t["city.turns_one"] : t.Format("city.turns", n);
+        /// <summary>A halutz group's name for the player: "halutz group n", numbered from 1 among the halutz units in id order
+        /// (unit ids are shared with cohorts and start at 0, so they are no names).</summary>
+        public static string Group(UiText t, GameState s, int unit) =>
+            t.Format("site.group", 1 + s.Units.Values.Where(u => u.Type == "halutz").Select(u => u.Id).TakeWhile(id => id != unit).Count());
 
         /// <summary>A date in the UI's language, as the event card writes it (EventCardPresenter.ObjectiveLine).</summary>
         static string Date(UiText t, DateTime d) => t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);

@@ -224,7 +224,7 @@ public class CityPanelTests
         Assert.AreEqual(He["site.available"], ui.Q<Label>("site-state").text);
         panel.Show(CityHex.q, CityHex.r);
         var city = bridge.State.Cities[City];
-        Assert.AreEqual(He.Format("city.housing", city.Civilians, city.HousingCapacity), ui.Q<Label>("city-housing").text);
+        Assert.AreEqual(He.Format("city.housing", city.Civilians, He.Format("city.groups", city.HousingCapacity)), ui.Q<Label>("city-housing").text);
     }
 
     [Test]
