@@ -16,6 +16,9 @@ namespace Statecraft.Game.Map
         /// <summary>The art spike's procedural settlement kits and trees (Kit.mat, Tree.mat: Statecraft/Kit). Optional: without
         /// them the map keeps the placeholder marker boxes.</summary>
         [SerializeField] Material kitMaterial, treeMaterial;
+        /// <summary>Tal's building models the towns draw up close (issue #659; Kits.TownModels.SetPath): they load with the
+        /// map, never from a Resources folder. Without them (or with one missing) the towns keep their kits at every zoom.</summary>
+        [SerializeField] Kits.TownModelSet townModels;
         /// <summary>The terrain water's mesh, baked (MapTexturePaths.WaterMesh, issue #195). Optional: without it, or when it
         /// is for other heights, the map derives the mesh at load (about 90 ms at the boot budget's CPU throttling).</summary>
         [SerializeField] TextAsset terrainWaterMesh;
@@ -139,6 +142,8 @@ namespace Statecraft.Game.Map
 
         /// <summary>The settlement kits' and trees' materials (null, null: placeholder markers only).</summary>
         public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
+        /// <summary>Sets the town models (issue #659): the editor bake saves them in the scene; tests set a broken list.</summary>
+        public void ConfigureTownModels(Kits.TownModelSet set) => townModels = set;
 
         /// <summary>Each settlement's footprint on the ground plane (centre x, z; radius m): the kits' discs
         /// (SettlementKits.FootprintRadiusM) of the game settlements and, with the kits, of the 1948 localities, so the units
@@ -386,6 +391,7 @@ namespace Statecraft.Game.Map
                 // The units' clearings go in as corridors (village houses and tents keep off them too); the tokens outside
                 // the towns are kept off by the Bedouin camps, the one kit placed where no footprint is (review I5).
                 var kits = Kits.KitLayer.Build(list, localitySettlements, localities.Encampments, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
+                    townModels != null ? townModels : null,   // a missing asset reference is Unity's fake null: pass a real null
                     terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
                     RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
                     unitRings);
