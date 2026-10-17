@@ -10,6 +10,8 @@ As a player of the MVP, I want to send a group of halutzim to build a new yishuv
 - Since the GDD phase of pioneer sites (#785) the MVP has four yishuv sites: Mefalsim, Beit Kama (18 April 1949), Re'im (20 October 1949) and Gilat (4 December 1949) [S4][S6]. The owner took the plan's recommendation on #782 [S7]. The Re'im and Mefalsim records cover the founding only.
 - Each site has one or more kinds: `yishuv`, `field`, `swamp`, `military_camp` or `hakhshara`. A pioneer action is accepted only at a site of its kind, so `build_yishuv` is refused at a field site (R-SITE-004). A camp site names the city it trains for. At most one `yishuv` site sits in a hex; a site of another kind may share it, as each yishuv's field site does (R-SITE-005). Plowing, draining and building camps come with later PRs of that phase.
 - A site is available from the game's start. It may sit on an armistice line hex, as Mefalsim's hex does [S3].
+- The map roster supplements this slice: the owner approved Kiryat Shmona and Beit Shemesh as designated founding sites on 17 October 2026 ([#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6233524779)). The owner's sensitivity sign-off for them is open (#782), so they join Phase four's site list only once it is given; until then the yishuv sites are the four above. They do not replace Mefalsim or its objective. Historical founding and opening dates in the roster are reference dates, not new automatic availability gates [S8].
+- Moving a location in the authoring tool must preserve its identity and reference evidence, update the authored site binding consistently, and surface dependent references before saving [S8][S9].
 - `PioneerWork(unit, build_yishuv, site)` sends an idle halutz unit to build. It costs IL 2m, a placeholder paid in full at once, borrowing what the Treasury lacks (owner decision on #378 [S3]), and no Attention, because unit orders are free (D-A6). The unit works from where it stands (R-SITE-001).
 - It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), or the legacy loop (R-SITE-001).
 - `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
@@ -41,6 +43,8 @@ As a player of the MVP, I want to send a group of halutzim to build a new yishuv
 - [S5] Yad Ben-Zvi, "Israel Revealed to the Eye", Kibbutz Mefalsim, https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%9E%D7%A4%D7%9C%D7%A1%D7%99%D7%9D/, checked 2026-10-14
 - [S6] Settlements founded in 1949-1951, rows 22, 23 and 25, research_notes/GDD objectives/settlements-1949-51.md
 - [S7] GDD Phase 4 owner answers, https://github.com/eyalgolan/statecraft-israel/issues/782, checked 2026-10-17
+- [S8] MVP location roster and historical-reference versus site-availability rules, docs/locations.md
+- [S9] Internal map-authoring workflow, docs/gdd/map-editor.md
 
 ## Open questions
 

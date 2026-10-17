@@ -1,14 +1,15 @@
 # Statecraft Israel Game Design
 
 Core systems and player choices
-Version 0.1 | 12 October 2026
-The owner's game design of record, verbatim from the original document ([GDD-v0.1.pdf](GDD-v0.1.pdf)). The owner's rulings of the same day are at the end. Where an older spec or ruling disagrees, this document wins (`AGENTS.md`).
+Version 0.2 | 17 October 2026 (version 0.1: 12 October 2026)
+Map and location specifications updated 17 October 2026.
+The owner's game design of record, based on the original document ([GDD-v0.1.pdf](GDD-v0.1.pdf)) with the additions dated above. The owner's rulings of 12 and 17 October 2026 are at the end. Where an older spec or ruling disagrees, this document wins (`AGENTS.md`).
 
 ## MVP scope 1948 to 1951
 
 The MVP tells the story of the Liberation War, the austerity period (תקופת הצנע), and immigration during 1948-1951.
 
-Each turn advances history by one month. The MVP targets approximately 48 turns, giving the player time to finish the war, house and employ immigrants, construct the Tel-Aviv to Haifa railway and the Burma Road, and establish new yishuvim.
+Each turn advances history by one month. The MVP runs from 15 May 1948 to 15 January 1952, 44 monthly turns on the 15th (owner rulings D-B1 and D-E5, "End on 15 Jan 1952", [impact plan §5](superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md); `content/rules.yaml` `mvp.end`), giving the player time to finish the war, house and employ immigrants, construct the Tel-Aviv to Haifa railway and the Burma Road, and establish new yishuvim.
 
 ### Objectives
 
@@ -49,7 +50,7 @@ The player can choose ministers. TBD: minister roles, available candidates, appo
 | Resource or parameter | Role | Still to define |
 |---|---|---|
 | Money | Funds development and other paid actions. Craftsmen earn more money. | Income per job, construction costs and upkeep. |
-| Arms | Available military equipment. | Supply sources; whether training, attacks or replacements consume it. |
+| Arms | Available military equipment. | Decided, D-G6: "From events (sourced arms deals) and Money. Training and attacks consume it" ([impact plan §5](superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md)). Open, asked of Amir ([#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231351946), #781): the stock on 15 May 1948 and what one unit is, the price in IL millions, Arms per recruit, and the Attention cost of the buy order. Whether replacements consume it is open. |
 | Food | Available food supply. | Production, imports, consumption and storage; stockpile or supply capacity. |
 | Social cohesion (לכידות חברתית) | National parameter describing cohesion in society. Proposed influences include housing, employment and shortages. | Scale, thresholds and gameplay effects; effects of military decisions and events. |
 | International Support | National parameter describing support from other countries. Proposed influences include military decisions and events. | Scale, thresholds and gameplay effects. |
@@ -91,6 +92,44 @@ These transitions are open:
 Veteran roles are part of the roster, but their progression is not yet specified.
 
 Open: does a unit represent one person or a group? The answer must determine how units occupy housing and jobs, produce income, consume food, train and suffer casualties.
+
+## Map and locations
+
+### Locations specification
+
+The MVP location roster, must-have and optional priorities, location-record requirements, historical placement rules and sources are defined in the [Locations specification](locations.md). Use that companion document when authoring named locations and their map data.
+
+### Terrain type (tile/hex type): new types TBD
+
+For the MVP the terrain types are the eight biomes in `hexes.json`, each with an integer movement cost; lakes and the sea are impassable (Q-MOVE-1, decided by the owner on 15 October 2026; [Military and combat](gdd/military-combat.md)). Only new terrain types beyond those biomes, and their extra properties, are **TBD**. They do not block the MVP or Phase 5's movement PR.
+
+| Terrain decision | Status |
+|---|---|
+| New terrain/hex types beyond the eight biomes, their names and classification | TBD |
+| Which properties belong to a terrain type and which are separate hex attributes or overlays | TBD |
+| Movement-cost values and access rules for new types, within the approved movement framework | TBD |
+| Type-specific combat and defence values, farming and construction eligibility | TBD |
+| Whether projects change terrain type, and the permitted conversions | TBD |
+| Visual representation and the mapping from source geography to gameplay types | TBD |
+
+No new terrain catalogue or numerical terrain modifiers are selected in this specification. Existing sourced map data is retained while these decisions remain open.
+
+### Map editor tool
+
+Provide an internal authoring tool that lets designers inspect and change tiles/hexes and move named locations by dragging or entering hex coordinates. It must support undo/redo, show unsaved changes, and save and reload version-controlled map data with consistent logical and rendered placement.
+
+The full requirements and acceptance workflow are in [Map editor](gdd/map-editor.md). Location identities, sourced reference coordinates, historical names, dates and review metadata remain attached to each location. Moving a location must identify affected designated sites and corridor endpoints without silently changing sourced route geometry. The saved authoring changes must survive map-data regeneration.
+
+The editor's host environment, authoring-data format and exact editable hex-property list are **TBD**. New terrain types remain TBD as above. Campaign movement and construction continue to follow the simulation rules.
+
+### Alignment with existing feature decisions
+
+The location roster sets map-production priorities. It does not remove existing supported places, create a city economy for every marker, or make every location a required capture or founding objective. The detailed city, founding, corridor, military and settlement-control decisions remain applicable.
+
+- Keep Tel Aviv and Jaffa as distinct map locations while retaining the approved combined Tel Aviv–Yafo city economy in [Cities and absorption](gdd/cities.md).
+- Keep the Rishon LeZion winery; Zichron Ya'akov's additional industry opportunity has no new balance values or automatic winery implementation.
+- Keep the Mefalsim founding slice and its objective. Historical founding and opening dates are reference dates; designated-site availability follows [Build yishuv](gdd/build-yishuv.md), allowing earlier player completion.
+- Use sourced history for starting and reference control, and simulation state for ownership during a campaign. The map roster does not select the curated settlement-control target list or introduce enemy reinforcements.
 
 ## Cities and construction
 
@@ -161,6 +200,9 @@ Designated building sites and transport corridors bound the locations and routes
 
 | Decision | Why it changes production |
 |---|---|
+| MVP locations and map scale | The must-have and optional location roster is specified in [locations.md](locations.md). Use the existing grid in [Map units](units.md); any required extent or resolution change and the handling of closely spaced locations remain open. |
+| Terrain type (tile/hex type) | MVP: the eight `hexes.json` biomes with a movement cost per biome (Q-MOVE-1, decided). TBD: any new types, their catalogue, classification, visuals, extra properties, construction rules and terrain conversions. |
+| Map editor tool | See [Map editor](gdd/map-editor.md) for hex editing, location moves, undo/redo, save/reload, regeneration and reference validation. Host environment, authoring format and editable-property list remain TBD. |
 | Road and rail corridors | Routes follow designated corridors. Each corridor needs predefined route geometry and construction states. The corridor list, costs and duration remain open. |
 | Unit population scale | A person or a group changes unit count, housing and job assignment, selection, movement and casualty representation. |
 | Population role model | Changing one unit between jobs and training differs from separate worker pools. Decide reassignment and return to civilian life. |
@@ -171,7 +213,7 @@ Designated building sites and transport corridors bound the locations and routes
 ## MVP completion rules
 
 The MVP years, monthly turns and three objectives are fixed above. These remain to decide:
-- the exact starting month, map extent, starting unit counts, event count and session length;
+- the map extent, starting unit counts, event count and the session's target play time (asked of Amir, [#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231565826)); the span is 15 May 1948 to 15 January 1952, as above;
 - when the war-survival objective is complete, which immigrants must have housing and employment, and which new yishuvim are required.
 
 Each objective needs a specific historical event and reference date for the completion card. For ongoing processes such as immigrant absorption, choose a defined milestone with a sourced date. Bonus amounts, the timing formula, defeat conditions and whether all objectives are required to finish the MVP remain open.
@@ -194,3 +236,9 @@ Reference files from the repository snapshot reviewed on 12 October 2026:
 
 1. **Deport outcome: honest cost, no reward.** It stays as a historical possibility but never pays. It carries large Social cohesion and International Support penalties, creates refugees, has permanent consequences, and is shown soberly through sourced event cards. CONTENT_POLICY §4 is updated to say how this is handled ("no mechanic may reward violence against civilians, from any side").
 2. **Adoption: spec and impact plan first.** The GDD is committed as the design of record and analysed against the current code. The phased build plan and open decisions are proposed, and the owner approves before any code changes. Visual and promo work continues meanwhile.
+
+## Owner rulings, 2026-10-17
+
+1. **Map and location additions (B1-B7): approved as written** ([#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6230935027)): the location roster (approved as 31 must-have and 16 optional; review edit A2 then moved Hadera and Tiberias, already managed cities, to must-have, giving 33 and 14), the West/East Jerusalem split, the new location kinds (reception camp, forts, passes, bridges), the Arab-held towns on the map but not as targets, the Zichron Ya'akov industry, the map editor as a new tool, and the existing grid.
+2. **Four further additions: approved** ([#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6233524779)): Kiryat Shmona and Beit Shemesh as designated founding sites, Nir Am's infrastructure-protection objective, Umm Rashrash (future Eilat) as an end-of-war milestone, and Zichron Ya'akov as a must-have location for its vineyards and winery. The sensitivity sign-off for Kiryat Shmona and Beit Shemesh is open (#782); Phase 4's site list follows once it is given.
+3. **Session span** (Q-DOC-1, [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937)): the MVP is 44 monthly turns, 15 May 1948 to 15 January 1952. The session's target play time is open, asked of Amir ([#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231565826)).
