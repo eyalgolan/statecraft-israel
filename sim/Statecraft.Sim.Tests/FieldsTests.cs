@@ -51,6 +51,7 @@ public class FieldsTests
         var plowed = without.Clone();
         plowed.Sites["site_a_field"] = SiteWork.Built("site_a_field", new DateTime(1948, 5, 15));
         var plowing = without.Clone();
+        plowing.Units.Add(99, new Unit(99, "halutz", 1, 0));   // a site being built names its unit (SiteWork, R-VET-002)
         plowing.Sites["site_a_field"] = new SiteWork("site_a_field", 99, 5, null);   // still being plowed: no Food yet
 
         var a = Step(c, without).State;
@@ -86,20 +87,26 @@ public class FieldsTests
     {
         var c = Town();
         var s = WithHalutz(c, out var id);
-        if (yishuv == "being built") s.Sites["site_a"] = new SiteWork("site_a", 99, 2, null);
+        if (yishuv == "being built")
+        {
+            s.Units.Add(99, new Unit(99, "halutz", 1, 0));   // a site being built names its unit (SiteWork, R-VET-002)
+            s.Sites["site_a"] = new SiteWork("site_a", 99, 2, null);
+        }
         var r = Step(c, s, Plow(id));
         Assert.Equal("Site A fields can be plowed once Site A is built", Assert.Single(r.Rejected).Reason);
         Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
     }
 
     // R-FIELD-001: plowing follows R-SITE-001 to R-SITE-003. It pays in full at the start and takes its turns, counting the
-    // order's; built, the field is plowed and the unit is idle again.
+    // order's; built, the field is plowed and the unit is idle again. R-FIELD-002, D-A6: plowing ends in step 5, so the field
+    // already yields in step 6 of the turn it is done (imports cut, so an import cannot hide the Food).
     [Fact]
     public void PlowingPaysAtTheStartAndIsDoneAfterItsTurns()
     {
         var c = Town();
-        var s = WithHalutz(c, out var id);
-        s.Sites["site_a"] = SiteWork.Built("site_a", new DateTime(1948, 5, 15));
+        var s = NoImports(c);
+        var id = s.NextId++;
+        s.Units.Add(id, new Unit(id, "halutz", 1, 0));
         var r = Step(c, s, Plow(id));
         Assert.Empty(r.Rejected);
         Assert.Equal(("site_a_field", (int?)id, 1), (r.State.Sites["site_a_field"].Site, r.State.Sites["site_a_field"].Unit, r.State.Sites["site_a_field"].TurnsLeft));
@@ -111,6 +118,28 @@ public class FieldsTests
         Assert.False(Projects.IsBusy(done.State, id));
         Assert.Contains(done.Why, x => x.System == "map" && x.Message == "Site A fields plowed");
         Assert.DoesNotContain(done.Why, x => x.Message.Contains("founded"));
+        var unplowed = r.State.Clone();
+        unplowed.Sites.Remove("site_a_field");
+        Assert.Equal(Step(c, unplowed).State.Food + 7, done.State.Food);   // this turn's step 6, not the next turn's
+    }
+
+    // R-FIELD-001 follows R-SITE-002 (D-A3): a plow can be stopped; the progress is lost and the IL 0.5m is not returned.
+    [Fact]
+    public void StoppingAPlowFreesTheUnitAndTheFieldAndReturnsNoMoney()
+    {
+        var c = Town();
+        var s = WithHalutz(c, out var id);
+        s.Sites["site_a"] = SiteWork.Built("site_a", new DateTime(1948, 5, 15));
+        var started = Step(c, s, Plow(id));
+        var stopped = Step(c, started.State, new StopWork(id));
+        Assert.Empty(stopped.Rejected);
+        Assert.False(stopped.State.Sites.ContainsKey("site_a_field"));
+        Assert.False(Projects.IsBusy(stopped.State, id));
+        Assert.Equal(Step(c, started.State).State.Treasury, stopped.State.Treasury, 9);   // the IL 0.5m paid stays paid
+        Assert.Contains(stopped.Why, x => x.System == "map" && x.Message == "Site A fields: the halutzim stopped building; the Money spent is not returned");
+        var again = Step(c, stopped.State, Plow(id));   // the field is available again, from the start
+        Assert.Empty(again.Rejected);
+        Assert.Equal(started.State.Sites["site_a_field"].TurnsLeft, again.State.Sites["site_a_field"].TurnsLeft);
     }
 
     // R-SITE-004, R-FIELD-001: each action only at its own kind of site.
@@ -124,16 +153,22 @@ public class FieldsTests
         Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
     }
 
-    // R-FIELD-001: a field site's built record is its plowed state, so a field site has no other kind (a built yishuv on it
-    // would yield Food), and the field rules are required in the GDD loop, so a missing key is never read as 0.
+    // R-FIELD-001: a field site's built record is its plowed state, so a field site is not also a yishuv site (a built yishuv
+    // on it would yield Food), and the field rules are required in the GDD loop, so a missing key is never read as 0.
     [Theory]
-    [InlineData("kinds", "sites.yaml", "a field site has no other kind")]
+    [InlineData("kinds", "sites.yaml", "a field site cannot also be a yishuv site")]
     [InlineData("plow_fields_turns", "rules.yaml", "mvp.plow_fields_turns")]
+    [InlineData("plow_fields_cost", "rules.yaml", "mvp.plow_fields_cost")]
     [InlineData("field_food_per_turn", "rules.yaml", "mvp.field_food_per_turn")]
     public void BadFieldContentFailsLoad(string what, string file, string message)
     {
-        var files = Fixture.Gdd(new Dictionary<string, string> { ["sites.yaml"] = Fixture.GddSites + FieldSite(what == "kinds" ? "[field, swamp]" : "[field]") });
-        if (what != "kinds") files["rules.yaml"] = files["rules.yaml"].Replace(what == "plow_fields_turns" ? "  plow_fields_turns: 2\n" : "  field_food_per_turn: 7\n", "");
+        var files = Fixture.Gdd(new Dictionary<string, string> { ["sites.yaml"] = Fixture.GddSites + FieldSite(what == "kinds" ? "[field, yishuv]" : "[field]") });
+        if (what != "kinds") files["rules.yaml"] = files["rules.yaml"].Replace(what switch
+        {
+            "plow_fields_turns" => "  plow_fields_turns: 2\n",
+            "plow_fields_cost" => "  plow_fields_cost: 0.5\n",
+            _ => "  field_food_per_turn: 7\n",
+        }, "");
         var e = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files)));
         Assert.Equal(file, e.File);
         Assert.Contains(message, e.Message);
@@ -145,7 +180,7 @@ public class FieldsTests
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var m = c.Rules.Mvp!;
-        Assert.Equal((1, 3, 0.5), (m.FieldFoodPerTurn!.Value, m.PlowFieldsTurns, m.PlowFieldsCost));
+        Assert.Equal((1, 3, 0.5), (m.FieldFoodPerTurn!.Value, m.PlowFieldsTurns, m.PlowFieldsCost!.Value));
         foreach (var f in c.Sites.Where(x => x.Kinds.Contains(Projects.FieldKind)))
             Assert.Contains(c.Sites, y => y.Kinds.Contains(Projects.YishuvKind) && (y.Q, y.R) == (f.Q, f.R));
     }

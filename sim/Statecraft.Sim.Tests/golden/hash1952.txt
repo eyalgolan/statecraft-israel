@@ -1,6 +1,6 @@
 1952-01-15;1948;Historical;44;
 ind{
-  food_supply=0.8555155874508137 [3FEB606239AA391F]
+  food_supply=0.8556115107122045 [3FEB612B6412E1DF]
   housing=0.43504947742483624 [3FDBD7D9C36B9EB6]
   intl_standing=0.7800000000000002 [3FE8F5C28F5C28F8]
   morale=0.5690955554429493 [3FE23607E1DDA540]
@@ -44,11 +44,11 @@ pop{
 sit[
   fx_crisis
 treasury=0 [0000000000000000]
-debt=176.89012071283815 [40661C7BDE6EE43A]
+debt=178.89012071283815 [40665C7BDE6EE43A]
 fx=-12.990431328096559 [C029FB19D0A63796]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.5682965036166527 [3FE22F7C262EDE92]
+stab=0.5682985020179316 [3FE22F8057110CC0]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -139,11 +139,15 @@ units[
   1:veteran_halutz@-3,19/6
 site{
   beit_kama=done,1949-03-15
+  beit_kama_field=done,1950-02-15
   gilat=done,1949-06-15
+  gilat_field=done,1950-04-15
   mefalsim=done,1949-09-15
+  mefalsim_field=done,1950-06-15
   reim=done,1949-12-15
+  reim_field=done,1950-08-15
 next=2
 obj{
   first_new_yishuv=1949-09-15
 score=100
-food=2732,1390,0
+food=2736,1390,0

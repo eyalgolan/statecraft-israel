@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `e4ebff9b317a02b908434cedb18674608ae820e5e60769ef78272493884590c4` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `d1b9a487fd54e253a0692811522121b48104e782e87ea128cb94810de0370821` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `d1b9a487fd54e253a0692811522121b48104e782e87ea128cb94810de0370821` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -45,8 +45,8 @@ Check every build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 ef765972402fabcca48d07a6f630783279c132ab3660b7aa46d3aba105921f0f" \
-  --expect "GOLDEN OK 1952 7b4bffe079beebac7608eca3334fd606810a786af5a3dcab91c1db0af59b76d3" \
+  --expect "GOLDEN OK 1950 e4ebff9b317a02b908434cedb18674608ae820e5e60769ef78272493884590c4" \
+  --expect "GOLDEN OK 1952 d1b9a487fd54e253a0692811522121b48104e782e87ea128cb94810de0370821" \
   --expect "SMOKE OK 5 turns 1948-10-15 2436927c8b24f28c42be0e7b5a6fe30900f2f6c6a3ba77e4be943c1f50db57cc"
 ```
 
@@ -258,5 +258,6 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 4 PR 6 | 1950 | `ef765972` | the veteran pioneer (R-VET-001, R-VET-002, D-D9, #790): the reference player's halutz group works the six turns of the Beit Kama build (still built on 1949-03-15), becomes a `veteran_halutz` with 6 turns of service (`1:veteran_halutz@-3,19/6`) and builds the other three sites in 3 turns each: Gilat on 1949-06-15 (was 1949-09-15), Mefalsim on 1949-09-15 and Re'im on 1949-12-15. The first-new-yishuv objective completes on 1949-09-15 and its card fires and is answered in the run (score 100, was 0), and the debt is IL 2m higher for the extra builds (was `37c51050`) |
 | GDD Phase 4 PR 6 | 1952 | `7b4bffe0` | same; Mefalsim is built on 1949-09-15 (was 1950-03-15) and Re'im on 1949-12-15 (was 1950-09-15). The objective still completes after its reference date with no timing bonus, so the score (100) and the debt do not change (was `7745031b`) |
 | GDD Phase 4 PR 6 | mvp-end | `7b4bffe0` | same; the same run as hash1952 (was `7745031b`) |
-| GDD Phase 4 PR 4 | 1952 | `9d56c4cf` | plow fields (R-FIELD-001, R-FIELD-002, #788): once the four yishuv sites are taken, the reference player plows their fields in ordinal id order, Beit Kama's on 1950-12-15, Gilat's on 1951-03-15, Mefalsim's on 1951-06-15 and Re'im's on 1951-09-15. The debt is IL 2m higher (4 x IL 0.5m), and the Food stock ends 4 units higher (2736, was 2732), which lifts food_supply and stability in the fourth decimal (was `7745031b`) |
-| GDD Phase 4 PR 4 | mvp-end | `9d56c4cf` | same; the same run as hash1952 (was `7745031b`) |
+| GDD Phase 4 PR 4 | 1950 | `e4ebff9b` | plow fields (R-FIELD-001, R-FIELD-002, #788): once the four yishuv sites are taken, the reference player's veteran group plows their fields in ordinal id order. On 1 January 1950 Beit Kama's field is being plowed (`beit_kama_field=b,1,1`), and the debt is IL 0.5m higher (was `ef765972`) |
+| GDD Phase 4 PR 4 | 1952 | `d1b9a487` | same; at 2 turns of progress a turn (R-VET-002) the fields are plowed on 1950-02-15 (Beit Kama), 1950-04-15 (Gilat), 1950-06-15 (Mefalsim) and 1950-08-15 (Re'im). The debt is IL 2m higher (4 x IL 0.5m), and the Food stock ends 4 units higher (2736, was 2732), which lifts food_supply and stability in the fourth decimal (was `7b4bffe0`) |
+| GDD Phase 4 PR 4 | mvp-end | `d1b9a487` | same; the same run as hash1952 (was `7b4bffe0`) |

@@ -1052,7 +1052,8 @@ namespace Statecraft.Sim
                 if (m.BuildYishuvTurns < 1) throw new ContentException(file, "mvp.build_yishuv_turns", "must be >= 1");
                 if (!(m.BuildYishuvCost >= 0 && IsFinite(m.BuildYishuvCost))) throw new ContentException(file, "mvp.build_yishuv_cost", "must be a finite number >= 0");
                 if (m.PlowFieldsTurns < 1) throw new ContentException(file, "mvp.plow_fields_turns", "must be >= 1");
-                if (!(m.PlowFieldsCost >= 0 && IsFinite(m.PlowFieldsCost))) throw new ContentException(file, "mvp.plow_fields_cost", "must be a finite number >= 0");
+                if (m.PlowFieldsCost == null) throw new ContentException(file, "mvp.plow_fields_cost", "required when eras.yaml systems.loop is gdd");
+                if (!(m.PlowFieldsCost >= 0 && IsFinite(m.PlowFieldsCost.Value))) throw new ContentException(file, "mvp.plow_fields_cost", "must be a finite number >= 0");
                 if (m.FieldFoodPerTurn == null) throw new ContentException(file, "mvp.field_food_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (m.FieldFoodPerTurn < 0) throw new ContentException(file, "mvp.field_food_per_turn", "must be >= 0");
                 // R-FOOD-001 to R-FOOD-003: required, so a missing key is never read as 0 (a stock term of 0, or no stock).
@@ -1144,6 +1145,10 @@ namespace Statecraft.Sim
                 if (x.Kinds.Count == 0) throw new ContentException(sf, at + ".kinds", "required: one or more of " + string.Join(", ", SiteKinds));
                 foreach (var k in x.Kinds)
                     if (!SiteKinds.Contains(k)) throw new ContentException(sf, at + ".kinds", $"unknown kind '{k}' ({string.Join(", ", SiteKinds)})");
+                // R-FIELD-001: a field site's built record is its plowed state, so a built yishuv on it would yield Food. Only that
+                // pair is refused; other kinds may share a field site (a drained swamp is PR 5's question, Q-SWAMP-1).
+                if (x.Kinds.Contains(Projects.FieldKind) && x.Kinds.Contains(Projects.YishuvKind))
+                    throw new ContentException(sf, at + ".kinds", "a field site cannot also be a yishuv site (its built record is its plowed state)");
                 if (x.Kinds.Contains(Projects.YishuvKind))
                 {
                     // R-SITE-005 (Q-SITE-3): one yishuv per hex, so SettlementPlacer keeps one kit per hex; other kinds may share it.
@@ -1155,9 +1160,6 @@ namespace Statecraft.Sim
                 }
                 else if (x.Founded != default)
                     throw new ContentException(sf, at + ".founded", "only a yishuv site has a founding date");
-                // R-FIELD-001: a field site's built record is its plowed state, so no other action may build it.
-                if (x.Kinds.Contains(Projects.FieldKind) && x.Kinds.Count > 1)
-                    throw new ContentException(sf, at + ".kinds", "a field site has no other kind (its built record is its plowed state)");
                 // Q-CAMP-1: a camp belongs to one city, which a built camp gives the facility to.
                 if (x.Kinds.Any(k => CampKinds.Contains(k)))
                 {

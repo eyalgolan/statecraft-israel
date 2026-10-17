@@ -104,6 +104,8 @@ public class ReferencePlayerTests
         Assert.Empty(Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).Rejected);
 
         var oneLeft = s.Clone();
+        oneLeft.Units.Add(9, new Unit(9, "halutz", -3, 19));   // a site being built names its unit (SiteWork, R-VET-002)
+        oneLeft.NextId = 10;
         oneLeft.Sites["beit_kama"] = new SiteWork("beit_kama", 9, 3, null);
         oneLeft.Sites["gilat"] = SiteWork.Built("gilat", new DateTime(1949, 6, 15));
         oneLeft.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));

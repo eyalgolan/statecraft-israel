@@ -18,14 +18,14 @@ As a player of the MVP, I want to send a group of halutzim to plow the fields of
 ## Data touched
 
 - `rules.yaml` `mvp.plow_fields_turns`, `mvp.plow_fields_cost` and `mvp.field_food_per_turn`: labelled design values, required in the GDD loop.
-- `content/sites.yaml`: the four field rows of #785, unchanged. The loader now refuses a field site with another kind.
+- `content/sites.yaml`: the four field rows of #785, unchanged. The loader now refuses a field site that is also a yishuv site.
 - `GameState.Sites` (a plowed field is a built field site, so the hash format is unchanged), `GameState.Food`, `Treasury` and debt.
 - No save or scenario format change: `pioneer UNIT plow_fields SITE` uses the existing line.
 
 ## Done when
 
 - `dotnet test sim/Statecraft.sln` passes, including `FieldsTests`, `ProjectsTests` and `ReferencePlayerTests`.
-- `hash1952` and `mvp-end` move and are re-pinned with history rows in `docs/determinism.md`; `hash1950`, `smoke5` and the three scenarios do not move.
+- `hash1950`, `hash1952` and `mvp-end` move and are re-pinned with history rows in `docs/determinism.md`; `smoke5` and the three scenarios do not move.
 
 ## Out of scope
 
