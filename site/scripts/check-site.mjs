@@ -204,7 +204,7 @@ for (const z of [shotsZip, artZip]) {
     }
     if (!/AI likeness/.test(first) || !/not photographs?/.test(first)) problems.push(`downloads/${z.zip}: README.txt's first line does not say the likenesses are not photographs`);
   } else {
-    if (!text.includes('In-engine capture') || !text.includes('CC BY 4.0')) problems.push(`downloads/${z.zip}: README.txt lacks the label or the licence`);
+    if (!text.includes('In-engine capture') || !text.includes('CC BY-SA 4.0')) problems.push(`downloads/${z.zip}: README.txt lacks the label or the licence`);
     for (const n of names) if (/concept|hero|social|trailer|cinematic|\.(mp4|webm|png)$/i.test(n)) problems.push(`downloads/${z.zip}: ${n} is not an in-engine screenshot`);
   }
   for (const lang of ['en', 'he']) {

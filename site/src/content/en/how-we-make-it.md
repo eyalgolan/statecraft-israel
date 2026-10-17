@@ -1,9 +1,9 @@
-This project is built with heavy AI assistance. This page says what that means, using itch.io's disclosure categories, and what is not made with AI.
+This project is built with heavy AI assistance. Here is what that means, in itch.io's disclosure categories.
 
 ## What AI is used for
 
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images are AI-generated. The cinematic trailer was made with AI video tools from that concept art. The game's start-screen painting is AI-generated and shows no identifiable person. The game's tab icon and this website's icon were drawn with AI help.
+- **Graphics:** the concept and promo images are AI-generated, and the cinematic trailer was made from them with AI video tools. The start-screen painting is AI-generated and shows no identifiable person. The 3D models are by MATKOT, made with Tripo Studio. The tab icons were drawn with AI help.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
 - **Sound:** none in the game yet. The cinematic trailer has music; its source is awaiting the owner's check.
 
@@ -26,4 +26,4 @@ Nothing is generated live while you play.
 
 ## This website
 
-The website's code and text were written with an AI coding agent, and the owner reviews them before they are published. Its pictures and videos are the project's own: the game's screenshots and recordings, the concept art and the cinematic trailer, each shown with its label.
+The site's code and text were written with an AI coding agent and reviewed by the owner. Every picture and video on it is the project's own, shown with its label.

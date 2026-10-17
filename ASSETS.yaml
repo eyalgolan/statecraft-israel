@@ -69,13 +69,15 @@ rules:
     source: "Drawn by promo/refmap.py from gazetteer coordinates"
     status: verified
   - glob: "docs/images/build-*.jpg"
-    licence: CC-BY-4.0
-    source: "Real screenshots of the game's own WebGL build, dated in the README caption; map derived from Copernicus DEM, portraits public domain or CC0, the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE), the start screen's painting AI-generated (CC0, its row above)"
+    licence: CC-BY-SA-4.0
+    source: "In-engine capture: real screenshots of the game's own WebGL build (main at f32ba67, Unity 6000.3.25f1, Build.Web with -compression disabled), taken 2026-10-18 in headed Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with tools/headed.py's Browser (?nostart; build-he-map.jpg with ?nostart&lang=he; build-m3-start.jpg with no flag), scaled to 1568x882 and saved as JPEG (quality 74). Map derived from Copernicus DEM (NOTICE); the portraits on the Cabinet screen are the rows in ASSETS.portraits.yaml; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE); the start screen's painting AI-generated (CC0, its row above)"
     status: verified
+    note: "Screenshots of the game, not AI images; the AI-made parts they show are the start screen's painting and MATKOT's 3D models (Tripo Studio, their rows above). CC BY-SA 4.0 as for the Steam kit's screenshots (coordinator ruling, 2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13 (landuse.png, BiomeColours.bytes, RouteRibbons.bytes)."
   - glob: "docs/images/hero-engine-*.jpg"
-    licence: CC-BY-4.0
-    source: "In-engine render of the game's own map with no interface (no AI): MapCapture.Promo (unity/Assets/Editor/MapCapture.cs) with -extraPose hero_c:34.76:32.06:36000:12 on the Mobile quality tier (the WebGL tier), 1920x1080, Unity 6000.3.25f1, commit 98515c5, 2026-10-15; saved as JPEG (quality 84). Map derived from Copernicus DEM. The website's home page hero"
+    licence: CC-BY-SA-4.0
+    source: "In-engine render of the game's own map with no interface (a screenshot of the game, not an AI image; the AI-made parts it shows are MATKOT's 3D models, Tripo Studio, their rows above): MapCapture.Promo (unity/Assets/Editor/MapCapture.cs) with -extraPose hero_c:34.76:32.06:36000:12 on the Mobile quality tier (the WebGL tier), 1920x1080, Unity 6000.3.25f1, main at f32ba67, 2026-10-18; saved as JPEG (quality 84). Map derived from Copernicus DEM. The website's home page hero"
     status: verified
+    note: "CC BY-SA 4.0 as for the Steam kit's renders (coordinator ruling, 2026-10-15): the render shows the CC BY-SA 4.0 bakes of D13."
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
     source: "In-engine capture: about 11 seconds of real play recorded from the game's own WebGL build (commit f93fd5e, 2026-10-13) in headed Chrome at 1920x1080; the animated WebP for the README, the MP4 (H.264) and WebM (VP9) for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"
@@ -100,8 +102,8 @@ rules:
     source: "The owner's game design document (Statecraft-Israel-GDD-v0.1.pages), exported to PDF on 2026-10-12; text copy in docs/GDD.md"
     status: verified
   - glob: "docs/images/social-preview.jpg"
-    licence: CC-BY-4.0
-    source: "Padded copy of docs/images/build-m3-map.jpg, 1280x640, for the GitHub social preview (a real build image, not concept art)"
+    licence: CC-BY-SA-4.0
+    source: "Padded copy of docs/images/build-m3-map.jpg (main at f32ba67, 2026-10-18), 1280x640, for the GitHub social preview (a real build image, not concept art)"
     status: verified
   - glob: "spikes/m0/evidence/*.jpg"
     licence: CC-BY-4.0

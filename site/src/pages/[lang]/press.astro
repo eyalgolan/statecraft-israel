@@ -23,8 +23,8 @@ const mb = (z: ReturnType<typeof plan>[number]) =>
       <li>
         <a href={asset(`downloads/${shots.zip}`)} download>{he ? 'צילומי מסך מתוך המשחק' : 'In-engine screenshots'}</a>{' '}
         <span dir="ltr">(zip, {mb(shots)})</span>{he
-          ? `: ${shots.entries.length} צילומי מסך מהגרסה הנוכחית, ברישיון CC BY 4.0. בלי אמנות קונספט ובלי הטריילר.`
-          : `: ${shots.entries.length} screenshots of the current build, CC BY 4.0. No concept art and no trailer.`}
+          ? `: ${shots.entries.length} צילומי מסך מהגרסה הנוכחית, ברישיון CC BY-SA 4.0. בלי אמנות קונספט ובלי הטריילר.`
+          : `: ${shots.entries.length} screenshots of the current build, CC BY-SA 4.0. No concept art and no trailer.`}
       </li>
       <li>
         <a href={asset(`downloads/${art.zip}`)} download>{he ? 'אמנות קונספט שנוצרה בבינה מלאכותית' : 'AI concept art'}</a>{' '}

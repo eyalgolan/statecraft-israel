@@ -124,27 +124,6 @@ export function markdownSection(rel: string, heading: string): string {
   return lines.slice(start + 1, end < 0 ? undefined : end).join('\n').trim();
 }
 
-// The roadmap table in README.md and README.he.md ("| 0 | what it adds | status | [#375](url) |"), read as it is, so the
-// home page never says something the README does not. An unknown status word fails the build instead of guessing.
-export type PhaseState = 'done' | 'now' | 'next' | 'later';
-export interface Phase { n: string; what: { text: string; href?: string }[]; status: string; state: PhaseState; issue: string; url: string }
-const STATES: [RegExp, PhaseState][] = [[/^(Done|הושלם)/, 'done'], [/^(In progress|בתהליך)/, 'now'], [/^(Next|הבא)/, 'next'], [/^(Later|בהמשך)/, 'later']];
-export function roadmap(lang: 'en' | 'he'): Phase[] {
-  const md = read(lang === 'he' ? 'README.he.md' : 'README.md');
-  const rows = [...md.matchAll(/^\| (\d) \| (.+?) \| (.+?) \| \[(#\d+)\]\(([^)]+)\) \|$/gm)];
-  if (rows.length < 8) throw new Error(`site: the roadmap table in ${lang === 'he' ? 'README.he.md' : 'README.md'} has ${rows.length} phase rows, expected 8`);
-  return rows.map(([, n, what, status, issue, url]) => {
-    const state = STATES.find(([re]) => re.test(status))?.[1];
-    if (!state) throw new Error(`site: roadmap phase ${n} has an unknown status: ${status}`);
-    // Markdown links in the cell become links; a repository path is resolved against the repository on GitHub.
-    const parts = what.split(/(\[[^\]]+\]\([^)]+\))/).filter(Boolean).map((seg) => {
-      const m = seg.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-      return m ? { text: m[1], href: /^https?:/.test(m[2]) ? m[2] : `https://github.com/eyalgolan/statecraft-israel/blob/main/${m[2]}` } : { text: seg };
-    });
-    return { n, what: parts, status, state, issue, url };
-  });
-}
-
 // The Cabinet page: everyone who held an office in the game's years, read from content/people.yaml, offices.yaml and
 // parties.yaml as they are: terms from the state's founding on 14 May 1948 (the game starts the next day) to the end of
 // 1951. Nothing here is written for the website: the tagline is built from the sourced offices and dates, never a quote
