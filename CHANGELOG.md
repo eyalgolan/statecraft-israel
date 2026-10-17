@@ -239,6 +239,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   ends at the walls too (owner: "Cut it at the walls"); its station stands outside the real walls. The route ribbons are
   re-baked.
   Map only: no golden and no content hash moves.
+- The map's towns use Tal's (@pixelrenderai-hash) building models up close (refs #659, step 2; owner ruling on #700:
+  "Models up close only"): below about 40 km of zoom (tel_aviv30, the close views) every building the town kits place is
+  one of Tal's models, by town type, fitted to the plot the kit already laid out; from about 45 km out (gameplay03, the
+  overview) the towns are the kits as before. The layout and the town census do not change. The models load with the map
+  (never from `Resources/`) and draw with GPU instancing, each with three lighter levels of detail.
 - The Treasury is now shown as Money, כסף in Hebrew, on the top bar, the Budget screen and in the causes (refs #382,
   R-MONEY-001; spec §1.2, owner, 15 October 2026, Q-MONEY-4 and Q-HUD-3). Debt and foreign currency stay in the sim
   (D-C3). No upkeep yet: per Q-MONEY-2 it waits for Phase 3. No golden moves; the content hash does (the name is in

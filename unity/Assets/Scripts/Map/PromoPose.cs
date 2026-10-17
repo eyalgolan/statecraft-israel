@@ -33,6 +33,14 @@ namespace Statecraft.Game.Map
             new PromoPose("hero06judea", 35.15, 31.78, 6000f, 0f), new PromoPose("hero06negev", 34.90, 30.60, 6000f, 0f),
         };
 
+        /// <summary>Issue #659 (owner ruling on #700: "Models up close only"): the close views where Tal's building models
+        /// draw instead of the kits (TownModelLayer.CloseEnterM): Tel Aviv at 30 km and Jaffa's old town at 12 km. Not promo
+        /// matches: VisualShots shoots them after All (everything on), and FrameProfile prices them under "vclose".</summary>
+        public static IReadOnlyList<PromoPose> CloseUps { get; } = new[]
+        {
+            new PromoPose("tel_aviv30", 34.78, 32.08, 30000f, 10f), new PromoPose("jaffa12", 34.755, 32.052, 12000f, 10f),
+        };
+
         public void Apply(CameraRig rig, GeoFrame frame)
         {
             rig.LookAt = frame.ToWorld(Lon, Lat, 0); rig.Distance = Distance; rig.Yaw = Yaw; rig.Apply();

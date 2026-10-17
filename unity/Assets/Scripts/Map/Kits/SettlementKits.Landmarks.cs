@@ -365,8 +365,11 @@ namespace Statecraft.Game.Map.Kits
                     if (!(ToLand(along + new Vector2(0f, 10f * m), Vector2.down, ground, 4000f) is Vector2 land)) continue;
                     if (!Claim(lots, land + new Vector2(0f, -6f * m), 8f * m, s.Id, ground, out var q)) continue;
                     var (b, y) = GroundSpan(q, 0f, 15f * m, 6f * m, ground, m);
+                    AddModel(s.Id, TownModel.B32CargoShed, q, 0f, 15f * m, 6f * m, 5.1f * m, b, y, km, m, exactHeight: false, flip: false);   // #659
+                    var cut = km.CutStart();
                     km.Box(q.x, q.y, 0f, 15f * m, 6f * m, b, y, 3.5f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
                     km.Gable(q.x, q.y, 0f, 15f * m, 6f * m, y + 3.5f * m, 1.6f * m, C(0.58f, 0.55f, 0.52f), shed);
+                    km.CutEnd(cut);
                     Record(s.Id, "warehouse", q, 0f, 15f * m, 6f * m, 5.1f * m, shed);
                     n++;
                 }
@@ -427,8 +430,11 @@ namespace Statecraft.Game.Map.Kits
                 // Behind the beach strip (BeachSetbackM), so the sand stays open in front of them.
                 if (!Claim(lots, l + new Vector2(BeachSetbackM + 4f * m, (i - 1) * 17f * m), 8.5f * m, s.Id, ground, out var q)) continue;
                 var (bt, gy) = GroundSpan(q, 90f, 15f * m, 6f * m, ground, m);
+                AddModel(s.Id, TownModel.B32CargoShed, q, 90f, 15f * m, 6f * m, 5f * m, bt, gy, km, m, exactHeight: false, flip: false);   // #659
+                var cut = km.CutStart();
                 km.Box(q.x, q.y, 90f, 15f * m, 6f * m, bt, gy, 3.2f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
                 km.Gable(q.x, q.y, 90f, 15f * m, 6f * m, gy + 3.2f * m, 1.8f * m, C(0.60f, 0.58f, 0.55f), shed);
+                km.CutEnd(cut);
                 Record(s.Id, "warehouse", q, 90f, 15f * m, 6f * m, 5f * m, shed);
                 n++;
             }
@@ -512,13 +518,17 @@ namespace Statecraft.Game.Map.Kits
             return true;
         }
 
-        static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size = 1f)
+        /// <summary>A Jewish place's water tower: the kit's, and up close Tal's b28 model (issue #659), unless
+        /// <paramref name="model"/> is false (a ma'abara's, drawn by PlacementLayer with the kit's parts only).</summary>
+        static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size = 1f, bool model = true)
         {
             float m = KitScale.Houses * size;
             if (!Claim(lots, want, 4f * m, owner, ground, out var p)) return 0;
             float y = ground.Y(p.x, p.y);
             var concrete = C(0.82f, 0.80f, 0.76f);
             Record(owner, "water_tower", p, 0f, 6f * m, 6f * m, 14.7f * m, concrete);
+            if (model) AddModel(owner, TownModel.B28WaterTower, p, 0f, 6f * m, 6f * m, 14.7f * m, y - 2f * m, y, km, m, exactHeight: true, flip: false);
+            var cut = km.CutStart();
             for (int i = 0; i < 4; i++)
             {
                 float a = Mathf.PI * 0.5f * i + 0.6f;
@@ -527,6 +537,7 @@ namespace Statecraft.Game.Map.Kits
             }
             km.Shaft(new Vector3(p.x, y + 9f * m, p.y), new Vector3(p.x, y + 13.5f * m, p.y), 3f * m, 3f * m, concrete, 10);
             km.Cone(new Vector3(p.x, y + 13.5f * m, p.y), 3.1f * m, 1.2f * m, C(0.66f, 0.64f, 0.60f), 10);
+            if (model) km.CutEnd(cut);   // up close the model stands here instead
             return 1;
         }
     }
