@@ -1,6 +1,6 @@
 # Alternate timelines: follow-up cards for the roads not taken. Design spec and implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **The owner reviews this plan before any code.** Every task names the owner questions it waits on, and a task does not start until those answers are recorded (Task 0). Agents draft and the owner edits: nothing is built until it is signed off (the owner's process for #783, 17 October 2026, which #939 adopts).
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **The owner reviewed this plan and accepted every recommendation (17 October 2026, #945).** Every task names the questions it rests on; Task 0 recorded the answers. Agents draft and the owner edits: nothing is built until it is signed off (the owner's process for #783, 17 October 2026, which #939 adopts).
 
 **Goal:** When the player picks an option that did not happen, the game brings the sourced follow-up dilemmas that contemporaries expected from that road, bends the later historical cards to fit, and folds the story back into the record at the real outside events.
 
@@ -12,14 +12,14 @@
 
 **The owner's request, verbatim (17 October 2026):** "we also need followup cards - if the player chose an option that didnt happen in real life - we need followup cards for dilemas and events that didnt happen. this is very delecate as we need a mechanisem that would take the historical reality that was at the original timeline, and bend it per the user's choises - to create the events and dilemas they would face in the alternative timeline they got into. create an in depth plan using the superpowers and do a deep research online as to how games handle this types of challenges. then create issues to fix this gap in the game"
 
-**Status (17 October 2026):** proposed. Nothing in it is decided. The owner questions are in Part A §A.5, each with options and a recommendation.
+**Status (17 October 2026):** the owner accepted every recommendation for Q-ALT-1 to Q-ALT-15 ("Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)). The answers are recorded in Part A §A.5. Q-ALT-4 is (a), so the optional relative-windows task is dropped. Tasks map to issues #945 to #958 and #939 (the task list).
 
 ## Global Constraints
 
 - **Span and turns:** monthly turns on the 15th, 15 May 1948 to 15 January 1952, 44 turns (GDD "MVP scope"; R-LOOP-004). A consequence card's window lies inside that span.
 - **The GDD wins** over every older spec (`AGENTS.md`). Anything it marks Open, Proposal or TBD needs an owner decision before it is built. No task decides an owner question; Task 0 records the answers.
 - **Determinism** (`docs/determinism.md`): ordinal ordering for every id comparison and sort (`StringComparer.Ordinal`); no clock; no new RNG and no new draws; no floats in any new rule decision (depth, ordering and matching are integers, booleans and ordinal strings); no unordered iteration into state.
-- **State and saves:** this plan adds no `GameState` field and no command in Tasks 1 to 14, so the save format and `SaveGame.SchemaVersion` (2, `SaveGame.cs:47`) stay. Any `GameState` or save change (only Task 15, if the owner picks it) bumps the save version and re-pins the goldens.
+- **State and saves:** this plan adds no `GameState` field and no command in Tasks 1 to 14, so the save format and `SaveGame.SchemaVersion` (2, `SaveGame.cs:47`) stay. Any `GameState` or save change bumps the save version and re-pins the goldens; none is planned (Q-ALT-4 is (a)).
 - **Goldens:** re-pinned only from a real `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln` run, followed by a plain run, with a history row in `docs/determinism.md` and the reason in the commit and the PR. Never typed by hand. Golden-moving PRs merge one at a time, each rebased on the last.
 - **Sources (CONTENT_POLICY §2.1):** every fact in `content/` carries `sources:` with an `https://` URL and a `checked:` date on or after 2026-10-09. A consequence card's text states only: what a party publicly threatened or promised, what officials recorded that they feared or expected (UN records, FRUS, cabinet and Knesset minutes, the contemporary press), and indicator changes as labelled design values. Never what "would have happened".
 - **Framing (CONTENT_POLICY §1):** Israeli framing; one value per fact; no opposing-narrative panels. Not reopened.
@@ -129,12 +129,12 @@ Per-front drift (the research's pattern 5) stays available as a later step if th
 |---|---|---|---|
 | historical | option (`historical: true`, existing) | What really happened | Unchanged: at most one per event; every hard anchor has one |
 | considered | option (`alternative.basis: proposed` or `debated`) | An alternative a named body or office is recorded proposing or debating at the time | `alternative.by` (words, no braces, no person's name by review rule), `alternative.date`, `alternative.sources` (at least one, `https://`, checked) (R-ALT-003) |
-| design | option (`alternative.basis: design`) | An alternative nobody is recorded proposing: the GDD's "design assumption" (`GDD.md:195`) | `by` empty, no `date`; sources optional (R-ALT-003). No consequence card may follow it if Q-ALT-3 is (a) |
+| design | option (`alternative.basis: design`) | An alternative nobody is recorded proposing: the GDD's "design assumption" (`GDD.md:195`) | `by` empty, no `date`; sources optional (R-ALT-003). No consequence card may follow it (Q-ALT-3 (a), decided) |
 | historical (event) | event (`kind` omitted or `historical`) | Every event on `main` today | Unchanged |
 | consequence | event (`kind: consequence`) | A card that exists only because the player left the record | Soft; no historical option; at least one requirement is an alternative road; every option has an `alternative`; depth at most 2; inherits the parent's sensitive tags (R-ALT-005 to R-ALT-007) |
 | reconvergence | event (`kind: reconvergence`) | A real outside event that happened regardless, which may carry `variants` | Has a historical option; only this kind may carry `variants` (R-ALT-010) |
 
-**The Ferguson gate in the loader (R-ALT-006):** a consequence card's alternative-road requirement must name an option whose `alternative.basis` is `proposed` or `debated`. For `diverged: true`, every non-historical option of that event must be. A chain's second card follows an option of the first card, which must also be `proposed` or `debated`. If the owner picks Q-ALT-3 (b), the rule allows `design` and the card's text is limited to the stated threats of outside parties.
+**The Ferguson gate in the loader (R-ALT-006):** a consequence card's alternative-road requirement must name an option whose `alternative.basis` is `proposed` or `debated`. For `diverged: true`, every non-historical option of that event must be. A chain's second card follows an option of the first card, which must also be `proposed` or `debated`. Q-ALT-3 is decided (a), so a `design` alternative gets no follow-up card.
 
 **Why the gate matters here:** the leads inventory (§A.6) shows that some alternatives have sourced *consequences* but no recorded Israeli *advocate*. `first_truce.yaml` itself says: "the notes found no Israeli voice for refusing". Under (a), refusing the first truce gets no follow-up card even though the Security Council's warning is on record. That is the delicate trade-off, and it is the owner's call.
 
@@ -145,7 +145,7 @@ Per-front drift (the research's pattern 5) stays available as a later step if th
 - **A list, all of which must hold (R-ALT-001).** `requires: [{ event: a, option: x }, { event: b, option: y }]`. The five existing files change from `requires: { ... }` to `requires: [{ ... }]` with the same meaning (Task 1). The schema validator in `SchemaTests` supports no `oneOf`, so the list is the only form.
 - **Any alternative of an event (R-ALT-002).** `{ event: a, diverged: true }`. The loader refuses `diverged` on an event with no historical option, and an entry with both `option` and `diverged`, or neither.
 - **No OR and no negation.** Two roads to one card are two cards (the fallback pattern). YAGNI.
-- **Relative timing ("N turns after").** **Proposed (Q-ALT-4, recommended (a)):** absolute windows only. Every parent fires on a fixed turn in a run that reaches it (hard anchors at their window; soft ones at most a cap-delay later), so an absolute window after the parent's window does the job. It needs no resolution date in state, which Q-EVT-3 decided against ("a delay would add pending state to the hash"). A late parent is caught by the reachability test (Review Focus 2). If the owner picks (b), Task 15 adds it with a save-version bump.
+- **Relative timing ("N turns after").** **Decided (Q-ALT-4 (a), owner, 17 October 2026, #945):** absolute windows only. Every parent fires on a fixed turn in a run that reaches it (hard anchors at their window; soft ones at most a cap-delay later), so an absolute window after the parent's window does the job. It needs no resolution date in state, which Q-EVT-3 decided against ("a delay would add pending state to the hash"). A late parent is caught by the reachability test (Review Focus 2).
 
 ### A.4.4 Reconvergence, foldback and broken premises
 
@@ -183,7 +183,7 @@ Consequence cards take the first soft slots of a turn (R-ALT-008), after any `fr
 | G4. Owner ruling | The owner, in words | Accept, change or reject, per card | Any YAML |
 | G5. PR | An agent or contributor | YAML exactly as ruled; tests; `status: fact-checked` only after a person checked each claim (CONTENT_POLICY §2.6) | Merge |
 | G6. Sensitivity review | The owner | `status: sensitivity-reviewed` on a sensitive card | A shareable build |
-| G7. Sign-off | The reviewer, in their own commit | `reviewed_by`, `reviewed_on` | A shareable build (R-ALT-011, if Q-ALT-9 is (a)) |
+| G7. Sign-off | The reviewer, in their own commit | `reviewed_by`, `reviewed_on` | A shareable build (R-ALT-011; Q-ALT-9 (a), decided) |
 
 ### A.4.9 How this fits Phases 5 to 7
 
@@ -196,7 +196,7 @@ Consequence cards take the first soft slots of a turn (R-ALT-008), after any `fr
 
 ### A.4.10 Out of scope (YAGNI)
 
-A stored drift number; per-front drift; OR or NOT requirements; relative windows (unless Q-ALT-4 is (b)); delayed effects; probabilistic timing; procedural text; invented characters; unit-order effects on consequence cards (Phase 7 PR 2); alternative effects in variants; a new game mode; any change to the effects of `armistice_egypt/hold_out` (#937) or `reparations_claim/refuse` (#938).
+A stored drift number; per-front drift; OR or NOT requirements; relative windows (Q-ALT-4 is (a)); delayed effects; probabilistic timing; procedural text; invented characters; unit-order effects on consequence cards (Phase 7 PR 2); alternative effects in variants; a new game mode; any change to the effects of `armistice_egypt/hold_out` (#937) or `reparations_claim/refuse` (#938).
 
 ### A.4.11 Determinism, saves and goldens
 
@@ -212,29 +212,28 @@ A stored drift number; per-front drift; OR or NOT requirements; relative windows
 | 8 timeline helper, release gate, report | none | none |
 | 9, 10 Unity | none | `smoke5` unchanged (first options are historical) |
 | 11-14 content slices | none | `scenario-reckless` moves if a card follows `first_truce/refuse`; other goldens move only if a scripted run takes the road; re-pinned from a real run |
-| 15 relative timing (only if Q-ALT-4 (b)) | `ResolvedOn` map, hashed only when non-empty; save version 2 to 3 | historical runs unchanged; `scenario-reckless` moves; re-pinned from a real run |
 
 ## A.5 Owner questions
 
-Each needs an answer in words before the task that waits on it starts. The recommendation is a proposal, not a decision.
+The owner answered every row on 17 October 2026: "Accept all recommendations" ([#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172); recorded on #943). Each row quotes the recommendation that is now the answer.
 
-| Id | Question | Options | Recommendation | Waits |
+| Id | Question | Options | Answer | Waits |
 |---|---|---|---|---|
-| Q-ALT-1 | **Which mode carries the alternate timeline?** Historical mode is the only startable mode; a player can already take an alternative there, and an explicit answer is never overridden. | (a) Historical mode, as today; (b) only Open mode, so Historical mode keeps the player on the record (needs Open mode, M4, which cannot start today); (c) Historical mode now and Open mode later, with a start-screen note that choices can leave the record | (a): it needs nothing new, and the Historical-mode rule ("an unanswered hard anchor takes its historical option") already means "history unless you choose otherwise" | Tasks 5 to 14 |
-| Q-ALT-2 | **How is divergence measured?** | (a) derived from the choices, no stored number; (b) derived per-front counts (Jerusalem, the south, the north, the home front) from a front tag on each event, for gating and display; (c) a stored drift value shown to the player | (a): `requires` can gate every card the leads support; (b) can be added later with no golden move | Task 5 |
-| Q-ALT-3 | **The Ferguson gate: which alternatives may get follow-up cards?** | (a) only alternatives with a sourced contemporary proposal or debate (`proposed` or `debated`); (b) also `design` alternatives, with the card's text limited to what outside parties had publicly threatened or promised; (c) no gate | (a): it is the editorial rule a historian can apply, and it keeps invented history out. It excludes `first_truce/refuse` unless an Israeli advocate is found | Task 5, Tasks 11 to 14 |
-| Q-ALT-4 | **Relative timing ("N turns after").** | (a) absolute windows only; (b) an `after: { event, turns }` key, which stores each divergent answer's date in state (save version 3, re-pinned goldens) | (a): consistent with Q-EVT-3 ("None in the MVP … a delay would add pending state to the hash") | Task 15 runs only on (b) |
-| Q-ALT-5 | **How far does a road run before it folds back?** (a labelled design value) | (a) 1 card; (b) 2 cards; (c) 3 cards | (b): the research's 1-3 range; plausibility drops with each unsourced step, and the leads rarely support a third | Task 5 |
-| Q-ALT-6 | **Foldback.** | (a) `rejoin` on a consequence option makes the parent count as historical for later requirements, keeping the record of the road; (b) no rejoin: once off the record, its later historical cards stay suppressed; (c) OR requirements instead of rejoin | (a): honest bottlenecks, smallest change, no lost history | Task 6 |
-| Q-ALT-7 | **When is "Not adopted, proposed by …" shown?** | (a) after the choice: on the follow-up card and in the timeline; (b) on the option before choosing; (c) both | (a): the choice stays a dilemma, and the label still teaches the record | Task 9 |
-| Q-ALT-8 | **The two-column timeline screen.** | (a) a screen in the MVP, reached from the HUD; (b) later; (c) only on the end screen (Phase 7 PR 9) | (a): the research's strongest respect signal, and the data is a pure helper | Task 10 |
-| Q-ALT-9 | **The release gate for alternative content.** | (a) a shareable build needs a person's sign-off (`reviewed_by`) on every consequence card and every variant; (b) the status rules only, as for any card; (c) (a) plus a recorded historian review | (a): it is the #783 rule ("nothing is built until it's signed off") enforced in code | Task 8 |
-| Q-ALT-10 | **Do metadata-only edits reset a reviewed card?** Adding an `alternative` record to an option, or changing `requires: {…}` to `requires: [{…}]` with the same meaning, touches six `sensitivity-reviewed` cards (`altalena`, `bernadotte_assassination`, `ten_days`, `operation_yoav`, `operation_hiram`, `operation_horev`). Q-CUT-4: "A card whose text or options change goes back to `fact-checked`." | (a) no: neither changes text, effects or what the player sees on the card, so the review stays; (b) yes: each goes back to `fact-checked` for the owner to re-review; (c) the requirement form keeps the review, the `alternative` record resets it | (a), with the diff listed in the PR for the owner to see | Tasks 1, 4 |
-| Q-ALT-11 | **Does a minister's delegated alternative count?** A soft card left unanswered can be delegated to an alternative (random pick with probability 1 - competence/10). | (a) yes, the government chose, and the banner says the minister decided; (b) no, only the player's own answer diverges (needs a stored "how", a state change); (c) in Historical mode delegation always takes the historical option of any event that has one (moves `smoke5` and every run that leaves cards to ministers) | (a): it is how `requires` already works, and it needs no state | Task 5 |
-| Q-ALT-12 | **The alternatives with no sourced consequence.** About ten alternatives have no qualifying expected consequence in the leads (§A.6). | (a) keep them, with `basis: design` where nobody proposed them, and no follow-up; (b) rewrite each toward an alternative that was proposed; (c) remove the option (changes option counts that tests pin) | (a): honest labelling, no content churn | Task 4 |
-| Q-ALT-13 | **The first slice (#939: "A few in the MVP").** Which 3 to 5 roads first? | (a) the leads with the strongest records: `second_truce/defy`, `operation_yoav/push_to_hebron`, `sinai_withdrawal/hold_el_arish`, `jerusalem_military_government/accept_demilitarisation`, `operation_hiram/advance_into_lebanon`; (b) #939's original list (adds `first_truce/refuse` and `operation_horev/hold`, which have no recorded advocate or no lead); (c) the owner's own list | (a), subject to the fact-check (G2) and Q-ALT-3 | Tasks 11, 12 |
-| Q-ALT-14 | **Consequence cards and the soft cap.** | (a) they take the first soft slots, after a `front_quiet` armistice; (b) the usual order by `From`, then id | (a): a road the player took should not be crowded out of its window | Task 5 |
-| Q-ALT-15 | **The rule-ID area.** | (a) `R-ALT`; (b) under `R-EVT` (Phase 7's area) | (a): one area keeps the mechanism's rules together | Task 1 |
+| Q-ALT-1 | **Which mode carries the alternate timeline?** Historical mode is the only startable mode; a player can already take an alternative there, and an explicit answer is never overridden. | (a) Historical mode, as today; (b) only Open mode, so Historical mode keeps the player on the record (needs Open mode, M4, which cannot start today); (c) Historical mode now and Open mode later, with a start-screen note that choices can leave the record | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): it needs nothing new, and the Historical-mode rule ("an unanswered hard anchor takes its historical option") already means "history unless you choose otherwise" | Tasks 5 to 14 |
+| Q-ALT-2 | **How is divergence measured?** | (a) derived from the choices, no stored number; (b) derived per-front counts (Jerusalem, the south, the north, the home front) from a front tag on each event, for gating and display; (c) a stored drift value shown to the player | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): `requires` can gate every card the leads support; (b) can be added later with no golden move | Task 5 |
+| Q-ALT-3 | **The Ferguson gate: which alternatives may get follow-up cards?** | (a) only alternatives with a sourced contemporary proposal or debate (`proposed` or `debated`); (b) also `design` alternatives, with the card's text limited to what outside parties had publicly threatened or promised; (c) no gate | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): it is the editorial rule a historian can apply, and it keeps invented history out. It excludes `first_truce/refuse` unless an Israeli advocate is found | Task 5, Tasks 11 to 14 |
+| Q-ALT-4 | **Relative timing ("N turns after").** | (a) absolute windows only; (b) an `after: { event, turns }` key, which stores each divergent answer's date in state (save version 3, re-pinned goldens) | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): consistent with Q-EVT-3 ("None in the MVP … a delay would add pending state to the hash") | none (the relative-windows task is dropped) |
+| Q-ALT-5 | **How far does a road run before it folds back?** (a labelled design value) | (a) 1 card; (b) 2 cards; (c) 3 cards | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (b): the research's 1-3 range; plausibility drops with each unsourced step, and the leads rarely support a third | Task 5 |
+| Q-ALT-6 | **Foldback.** | (a) `rejoin` on a consequence option makes the parent count as historical for later requirements, keeping the record of the road; (b) no rejoin: once off the record, its later historical cards stay suppressed; (c) OR requirements instead of rejoin | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): honest bottlenecks, smallest change, no lost history | Task 6 |
+| Q-ALT-7 | **When is "Not adopted, proposed by …" shown?** | (a) after the choice: on the follow-up card and in the timeline; (b) on the option before choosing; (c) both | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): the choice stays a dilemma, and the label still teaches the record | Task 9 |
+| Q-ALT-8 | **The two-column timeline screen.** | (a) a screen in the MVP, reached from the HUD; (b) later; (c) only on the end screen (Phase 7 PR 9) | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): the research's strongest respect signal, and the data is a pure helper | Task 10 |
+| Q-ALT-9 | **The release gate for alternative content.** | (a) a shareable build needs a person's sign-off (`reviewed_by`) on every consequence card and every variant; (b) the status rules only, as for any card; (c) (a) plus a recorded historian review | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): it is the #783 rule ("nothing is built until it's signed off") enforced in code | Task 8 |
+| Q-ALT-10 | **Do metadata-only edits reset a reviewed card?** Adding an `alternative` record to an option, or changing `requires: {…}` to `requires: [{…}]` with the same meaning, touches six `sensitivity-reviewed` cards (`altalena`, `bernadotte_assassination`, `ten_days`, `operation_yoav`, `operation_hiram`, `operation_horev`). Q-CUT-4: "A card whose text or options change goes back to `fact-checked`." | (a) no: neither changes text, effects or what the player sees on the card, so the review stays; (b) yes: each goes back to `fact-checked` for the owner to re-review; (c) the requirement form keeps the review, the `alternative` record resets it | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a), with the diff listed in the PR for the owner to see | Tasks 1, 4 |
+| Q-ALT-11 | **Does a minister's delegated alternative count?** A soft card left unanswered can be delegated to an alternative (random pick with probability 1 - competence/10). | (a) yes, the government chose, and the banner says the minister decided; (b) no, only the player's own answer diverges (needs a stored "how", a state change); (c) in Historical mode delegation always takes the historical option of any event that has one (moves `smoke5` and every run that leaves cards to ministers) | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): it is how `requires` already works, and it needs no state | Task 5 |
+| Q-ALT-12 | **The alternatives with no sourced consequence.** About ten alternatives have no qualifying expected consequence in the leads (§A.6). | (a) keep them, with `basis: design` where nobody proposed them, and no follow-up; (b) rewrite each toward an alternative that was proposed; (c) remove the option (changes option counts that tests pin) | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): honest labelling, no content churn | Task 4 |
+| Q-ALT-13 | **The first slice (#939: "A few in the MVP").** Which 3 to 5 roads first? | (a) the leads with the strongest records: `second_truce/defy`, `operation_yoav/push_to_hebron`, `sinai_withdrawal/hold_el_arish`, `jerusalem_military_government/accept_demilitarisation`, `operation_hiram/advance_into_lebanon`; (b) #939's original list (adds `first_truce/refuse` and `operation_horev/hold`, which have no recorded advocate or no lead); (c) the owner's own list | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a), subject to the fact-check (G2) and Q-ALT-3 | Tasks 11, 12 |
+| Q-ALT-14 | **Consequence cards and the soft cap.** | (a) they take the first soft slots, after a `front_quiet` armistice; (b) the usual order by `From`, then id | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): a road the player took should not be crowded out of its window | Task 5 |
+| Q-ALT-15 | **The rule-ID area.** | (a) `R-ALT`; (b) under `R-EVT` (Phase 7's area) | **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** (a): one area keeps the mechanism's rules together | Task 1 |
 
 ## A.6 Leads for the content slices (UNVERIFIED)
 
@@ -261,26 +260,25 @@ These are leads from a research pass of 17 October 2026 (OpenAI Codex). They are
 
 ## The task list
 
-| Task | Branch | Issue | What | Waits on (owner) |
+| Task | Branch | Issue | What | Rests on (decided 17 Oct 2026) |
 |---|---|---|---|---|
-| 0 | `docs/alternate-timelines-answers` | #939 | Record the answers in this plan, the Phase 5 plan note, `docs/gdd/alternate-timelines.md` | the answers |
-| 1 | `sim/alt-requires-list` | new | `requires` as a list (AND) and `diverged: true`; the five files migrated | Q-ALT-10, Q-ALT-15 |
-| 2 | `sim/alt-option-alternative` | new | The `alternative` record on options (shape only, optional) | none beyond Task 0 |
-| 3 | `research/alt-roads-checked` | new | Gate G2: the independent fact-check and the premise table | none |
-| 4 | `content/alt-alternatives-backfill` | new | `alternative` on all 30 alternatives; the loader then requires it | Q-ALT-10, Q-ALT-12 |
-| 5 | `sim/alt-consequence-cards` | new | `kind: consequence`, the Ferguson gate, the depth cap, tag inheritance, the soft-slot priority, `AltRun` | Q-ALT-1, Q-ALT-2, Q-ALT-3, Q-ALT-5, Q-ALT-11, Q-ALT-14 |
-| 6 | `sim/alt-rejoin` | new | `rejoin` foldback | Q-ALT-6 |
-| 7 | `sim/alt-variants` | new | `kind: reconvergence` and `variants` | none beyond Task 0 |
-| 8 | `sim/alt-timeline-gate` | new | `Timeline.Entries` and `Origin`, the release gate, the CLI coverage report | Q-ALT-9 |
-| 9 | `unity/alt-card-banner` | new | The banner on consequence cards and the rejoin line | Q-ALT-7 |
-| 10 | `unity/alt-timeline-screen` | new | The two-column timeline screen | Q-ALT-8 |
+| 0 | `docs/alternate-timelines-answers` | #945 | Record the answers in this plan, the Phase 5 plan note, `docs/gdd/alternate-timelines.md` | the answers |
+| 1 | `sim/alt-requires-list` | #946 | `requires` as a list (AND) and `diverged: true`; the five files migrated | Q-ALT-10, Q-ALT-15 |
+| 2 | `sim/alt-option-alternative` | #947 | The `alternative` record on options (shape only, optional) | none beyond Task 0 |
+| 3 | `research/alt-roads-checked` | #948 | Gate G2: the independent fact-check and the premise table | none |
+| 4 | `content/alt-alternatives-backfill` | #949 | `alternative` on all 30 alternatives; the loader then requires it | Q-ALT-10, Q-ALT-12 |
+| 5 | `sim/alt-consequence-cards` | #950 | `kind: consequence`, the Ferguson gate, the depth cap, tag inheritance, the soft-slot priority, `AltRun` | Q-ALT-1, Q-ALT-2, Q-ALT-3, Q-ALT-5, Q-ALT-11, Q-ALT-14 |
+| 6 | `sim/alt-rejoin` | #951 | `rejoin` foldback | Q-ALT-6 |
+| 7 | `sim/alt-variants` | #952 | `kind: reconvergence` and `variants` | none beyond Task 0 |
+| 8 | `sim/alt-timeline-gate` | #953 | `Timeline.Entries` and `Origin`, the release gate, the CLI coverage report | Q-ALT-9 |
+| 9 | `unity/alt-card-banner` | #954 | The banner on consequence cards and the rejoin line | Q-ALT-7 |
+| 10 | `unity/alt-timeline-screen` | #955 | The two-column timeline screen | Q-ALT-8 |
 | 11 | `docs/alt-slice-1-drafts` | #939 | Gate G3 for slice 1: sourced card drafts posted on #939 | Q-ALT-13 |
-| 12 | `content/alt-slice-1` | #939 | The cards the owner accepted from Task 11 | the per-card rulings |
-| 13 | `content/alt-slice-2` | new | The home-front and Jerusalem roads: drafts, ruling, cards | the per-card rulings |
-| 14 | `content/alt-reconvergence-variants` | new | Variants on the outside events the slices bend; suppressions and replacements from the premise table | the per-card rulings |
-| 15 | `sim/alt-relative-windows` | new | Only if Q-ALT-4 is (b): `after:` and the save-version bump | Q-ALT-4 (b) |
+| 12 | `content/alt-slice-1` | #956 | The cards the owner accepted from Task 11 | the per-card rulings |
+| 13 | `content/alt-slice-2` | #957 | The home-front and Jerusalem roads: drafts, ruling, cards | the per-card rulings |
+| 14 | `content/alt-reconvergence-variants` | #958 | Variants on the outside events the slices bend; suppressions and replacements from the premise table | the per-card rulings |
 
-**Sequencing.** Task 0 first. Tasks 1, 2 and 3 can run in parallel (different files). Task 4 needs 2 and 3. Task 5 needs 1 and 2. Tasks 6 and 7 need 5 (7 needs only 1, but shares `EventRules.cs` with 5, so it follows to avoid conflicts). Task 8 needs 5, 6 and 7. Task 11 needs 3. Task 12 needs 4, 5, 6, 8 and the rulings on Task 11. Tasks 9 and 10 need 8 and at least one consequence card on `main` (Task 12). Tasks 13 and 14 follow 12. Task 15 is independent of 6 to 14 and runs only on Q-ALT-4 (b). Golden-moving PRs (12, 13, 14, 15 when they move one) merge one at a time.
+**Sequencing.** Task 0 first. Tasks 1, 2 and 3 can run in parallel (different files). Task 4 needs 2 and 3. Task 5 needs 1 and 2. Tasks 6 and 7 need 5 (7 needs only 1, but shares `EventRules.cs` with 5, so it follows to avoid conflicts). Task 8 needs 5, 6 and 7. Task 11 needs 3. Task 12 needs 4, 5, 6, 8 and the rulings on Task 11. Tasks 9 and 10 need 8 and at least one consequence card on `main` (Task 12). Tasks 13 and 14 follow 12. Golden-moving PRs (12, 13, 14 when they move one) merge one at a time.
 
 ## File map
 
@@ -300,7 +298,7 @@ These are leads from a research pass of 17 October 2026 (OpenAI Codex). They are
 
 ---
 
-### Task 0: record the owner's answers
+### Task 0 (#945): record the owner's answers
 
 **Files:**
 - Modify: `docs/superpowers/plans/2026-10-17-alternate-timelines.md` (§A.5: each row's answer, quoted, with the comment URL; each task's "Waits on")
@@ -311,9 +309,9 @@ These are leads from a research pass of 17 October 2026 (OpenAI Codex). They are
 - Consumes: the owner's answers to Q-ALT-1 to Q-ALT-15, in words.
 - Produces: decided rows every later task cites by id.
 
-- [ ] **Step 1: Copy each answer verbatim** into §A.5's Recommendation column as `**Decided (owner, <date>, <comment URL>):** "<the owner's words>"`. A row with no answer stays as it is.
-- [ ] **Step 2: Write `docs/gdd/alternate-timelines.md`** with the template's sections (Player story, Rules, Data touched, Done when, Out of scope, Sources, Open questions). Rules lists only decided rows, each citing `[S<n>]`; Sources lists the owner's comment URLs and this plan, each with a checked date. Every number carries a unit or `(unitless)`.
-- [ ] **Step 3: Run the doc checks.**
+- [x] **Step 1: Copy each answer verbatim** into §A.5's Answer column as `**Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](...)):**` followed by the recommended option. Done; Q-ALT-4 (a) dropped the relative-windows task.
+- [x] **Step 2: Write `docs/gdd/alternate-timelines.md`** with the template's sections (Player story, Rules, Data touched, Done when, Out of scope, Sources, Open questions). Rules lists only decided rows, each citing `[S<n>]`; Sources lists the owner's comment URLs and this plan, each with a checked date. Every number carries a unit or `(unitless)`.
+- [x] **Step 3: Run the doc checks.**
 
 ```bash
 echo "uv run scripts/oss/gdd_lint.py && uv run scripts/oss/md_links.py && uv run scripts/oss/check_repo.py"
@@ -321,16 +319,16 @@ uv run scripts/oss/gdd_lint.py && uv run scripts/oss/md_links.py && uv run scrip
 ```
 Expected: no findings, exit 0.
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
 
 ```bash
 git add docs/superpowers/plans/2026-10-17-alternate-timelines.md docs/superpowers/plans/2026-10-15-gdd-phase-5.md docs/gdd/alternate-timelines.md
-git commit -m "docs(plan): record the owner's alternate-timeline answers (refs #939)"
+git commit -m "docs(plan): record the owner's alternate-timeline answers (refs #945, #939)"
 ```
 
 ---
 
-### Task 1: `requires` as a list, and `diverged: true`
+### Task 1 (#946): `requires` as a list, and `diverged: true`
 
 **Files:**
 - Modify: `sim/Statecraft.Sim/Content.cs:675-676` (`EventRequirement`), `:703-704` (`Requires`)
@@ -674,11 +672,11 @@ git add sim/Statecraft.Sim/Content.cs sim/Statecraft.Sim/Timeline.cs sim/Statecr
 git commit -m "sim: requires as a list, and diverged: true (R-ALT-001, R-ALT-002; refs #939)"
 ```
 
-**Golden impact:** none (Step 5). **Unity:** rebuild the DLL and run EditMode; no `unity/` change. Q-ALT-10 decides whether `ten_days` (sensitivity-reviewed) keeps its status through the one-line form change; the PR lists the diff for the owner.
+**Golden impact:** none (Step 5). **Unity:** rebuild the DLL and run EditMode; no `unity/` change. Q-ALT-10 is decided (a): `ten_days` (sensitivity-reviewed) keeps its status through the one-line form change; the PR lists the diff for the owner to see.
 
 ---
 
-### Task 2: the `alternative` record on options
+### Task 2 (#947): the `alternative` record on options
 
 **Files:**
 - Modify: `sim/Statecraft.Sim/Content.cs` (new `OptionAlternative`; `EventOption.Alternative`)
@@ -859,7 +857,7 @@ git commit -m "sim: the alternative record on options (R-ALT-003; refs #939)"
 
 ---
 
-### Task 3: gate G2, the independent fact-check and the premise table
+### Task 3 (#948): gate G2, the independent fact-check and the premise table
 
 **Files:**
 - Create: `research_notes/Alternate timelines/roads-checked.md`
@@ -883,7 +881,7 @@ git commit -m "research: the roads not taken, fact-checked, with the premise tab
 
 ---
 
-### Task 4: `alternative` on all 30 alternatives; the loader then requires it
+### Task 4 (#949): `alternative` on all 30 alternatives; the loader then requires it
 
 **Files:**
 - Modify: the 25 `content/events/*.yaml` files that have a non-historical option (each such option)
@@ -934,7 +932,7 @@ In `RealContentTests.cs`:
       sources: [{ url: "<the checked URL>", checked: <the day it was opened> }]
 ```
 
-A row with no recorded advocate (as Q-ALT-12 is answered):
+A row with no recorded advocate (Q-ALT-12 (a), decided):
 
 ```yaml
     alternative: { basis: design }
@@ -959,7 +957,7 @@ R-ALT-004: Every non-historical option of an event that has a historical option 
 - [ ] **Step 4: Run the whole suite.** `dotnet test sim/Statecraft.sln`. Expected: pass, 0 warnings.
 - [ ] **Step 5: Confirm no golden moved** (the Task 1 Step 5 command). Expected: no file listed.
 - [ ] **Step 6: Fail-open check.** Remove the `alternative` block from `first_truce.yaml`'s `refuse`; run `dotnet test sim/Statecraft.sln --filter FullyQualifiedName~RealContentTests`; expected: a load error naming `content/events/first_truce.yaml`. Restore.
-- [ ] **Step 7: Paste `uv run scripts/pr_content_summary.py origin/main` into the PR.** List the six sensitivity-reviewed files touched, for Q-ALT-10. If Q-ALT-10 is (b) or (c), set those files' `status` back to `fact-checked` in this PR, as the answer says.
+- [ ] **Step 7: Paste `uv run scripts/pr_content_summary.py origin/main` into the PR.** List the six sensitivity-reviewed files touched, for Q-ALT-10. Q-ALT-10 is decided (a), so their status stays.
 - [ ] **Step 8: `scripts/check.sh`, then commit.**
 
 ```bash
@@ -971,7 +969,7 @@ git commit -m "content: who proposed each road not taken (R-ALT-004; refs #939)"
 
 ---
 
-### Task 5: consequence cards, the Ferguson gate, the depth cap, tag inheritance, the soft-slot priority
+### Task 5 (#950): consequence cards, the Ferguson gate, the depth cap, tag inheritance, the soft-slot priority
 
 **Files:**
 - Modify: `sim/Statecraft.Sim/Content.cs` (`GameEvent.Kind`)
@@ -1313,11 +1311,11 @@ git add sim/Statecraft.Sim/Content.cs sim/Statecraft.Sim/EventRules.cs sim/State
 git commit -m "sim: consequence cards with the Ferguson gate (R-ALT-005 to R-ALT-008, R-ALT-012; refs #939)"
 ```
 
-**Golden impact:** none (no consequence card in content). **Unity:** DLL rebuild and EditMode. If Q-ALT-3 is answered (b), drop the R-ALT-006 throw and `NoConsequenceFollowsADesignAlternative`, and reword R-ALT-006 to the answer; if Q-ALT-14 is (b), drop the ordering change and its two tests, and R-ALT-008.
+**Golden impact:** none (no consequence card in content). **Unity:** DLL rebuild and EditMode.
 
 ---
 
-### Task 6: `rejoin`, the foldback
+### Task 6 (#951): `rejoin`, the foldback
 
 **Files:**
 - Modify: `sim/Statecraft.Sim/Content.cs` (`EventOption.Rejoin`)
@@ -1487,11 +1485,11 @@ git add sim/Statecraft.Sim/Content.cs sim/Statecraft.Sim/Timeline.cs sim/Statecr
 git commit -m "sim: rejoin, the foldback to the record (R-ALT-009; refs #939)"
 ```
 
-**Golden impact:** none. **Unity:** DLL rebuild and EditMode. If Q-ALT-6 is (b), this task is dropped; if (c), it is replaced by an owner-specified OR form and re-planned in Task 0.
+**Golden impact:** none. **Unity:** DLL rebuild and EditMode.
 
 ---
 
-### Task 7: reconvergence events and variant text
+### Task 7 (#952): reconvergence events and variant text
 
 **Files:**
 - Modify: `sim/Statecraft.Sim/Content.cs` (new `EventVariant`; `GameEvent.Variants`)
@@ -1681,7 +1679,7 @@ git commit -m "sim: reconvergence events and variant text (R-ALT-010; refs #939)
 
 ---
 
-### Task 8: the timeline helper, the release gate and the coverage report
+### Task 8 (#953): the timeline helper, the release gate and the coverage report
 
 **Files:**
 - Modify: `sim/Statecraft.Sim/Timeline.cs` (`TimelineEntry`, `Entries`, `Origin`)
@@ -1807,11 +1805,11 @@ git add sim/Statecraft.Sim/Timeline.cs sim/Statecraft.Sim/ReleaseGate.cs sim/Sta
 git commit -m "sim: the timeline helper, the alternate-card release gate and the coverage report (R-ALT-011; refs #939)"
 ```
 
-**Golden impact:** none. **Unity:** DLL rebuild and EditMode. If Q-ALT-9 is (b), drop `AlternateUnsigned`, its CLI lines, its test and R-ALT-011.
+**Golden impact:** none. **Unity:** DLL rebuild and EditMode.
 
 ---
 
-### Task 9: the banner on a consequence card (Unity)
+### Task 9 (#954): the banner on a consequence card (Unity)
 
 **Files:**
 - Modify: `unity/Assets/UI/Game.uxml:162-163` (a label `event-alt-banner` above `event-title`)
@@ -1902,11 +1900,11 @@ git add unity/Assets/UI/Game.uxml unity/Assets/Scripts/UI/EventCardPresenter.cs 
 git commit -m "unity: the consequence card's banner and the rejoin line (refs #939)"
 ```
 
-**Golden impact:** none (`smoke5` presses first options, which are historical). **Unity:** yes. If Q-ALT-7 is (b) or (c), also show `event.alt_proposed` under each considered option before the choice, with a test that a considered option of the armistice card shows its `by` and `date`.
+**Golden impact:** none (`smoke5` presses first options, which are historical). **Unity:** yes. Q-ALT-7 is decided (a): `event.alt_proposed` is shown after the choice only (on the follow-up card and in the timeline), never on the button before choosing.
 
 ---
 
-### Task 10: the two-column timeline screen (Unity)
+### Task 10 (#955): the two-column timeline screen (Unity)
 
 **Files:**
 - Create: `unity/Assets/Scripts/UI/TimelinePresenter.cs`
@@ -1989,11 +1987,11 @@ git add unity/Assets/Scripts/UI/TimelinePresenter.cs unity/Assets/Scripts/UI/Gam
 git commit -m "unity: the timeline screen, your course beside the record (refs #939)"
 ```
 
-**Golden impact:** none. **Unity:** yes. If Q-ALT-8 is (b), this task waits; if (c), it moves into Phase 7 PR 9's end screen.
+**Golden impact:** none. **Unity:** yes.
 
 ---
 
-### Task 11: gate G3 for slice 1, the drafts on #939
+### Task 11 (#939): gate G3 for slice 1, the drafts on #939
 
 **Files:** none in the repo (an issue comment).
 
@@ -2001,7 +1999,7 @@ git commit -m "unity: the timeline screen, your course beside the record (refs #
 - Consumes: Task 3's checked note; Q-ALT-3 and Q-ALT-13.
 - Produces: one draft per road on #939, which the owner rules on.
 
-- [ ] **Step 1: For each road in Q-ALT-13's answer**, check in the checked note that it passes the Ferguson gate as Q-ALT-3 is answered. A road that fails is listed in the comment as "no card: <why>", not drafted.
+- [ ] **Step 1: For each road in Q-ALT-13's answer**, check in the checked note that it passes the Ferguson gate (Q-ALT-3 (a): `proposed` or `debated` only). A road that fails is listed in the comment as "no card: <why>", not drafted.
 - [ ] **Step 2: Draft each card** in the comment, in this order: the road (event/option, its `alternative` record); the card's id, `kind: consequence`, window (absolute, opening after the parent's window closes, at least two turns long), office; title and text using office placeholders and only the checked consequences, each sentence followed by its source number; two or three options, each with its `alternative` record from the note, one of them a `rejoin` if the record offers a way back; each option's effects as labelled design values with the reparations wording; sensitive tags inherited from the parent; and the premise table rows this card bends (suppress / replace / variant), as proposals. No quotes beyond the note's verbatim excerpts under 15 words; no person named in any text.
 - [ ] **Step 3: Post one comment on #939** headed "Drafts for the owner to edit (not decided). Nothing is built until the owner signs off each card." Put no owner email or identifier in it. Link the checked note on `main`.
 - [ ] **Step 4: Record the owner's ruling** per card (accept / change / reject, in their words) in a follow-up comment and in Task 12's PR body.
@@ -2010,7 +2008,7 @@ git commit -m "unity: the timeline screen, your course beside the record (refs #
 
 ---
 
-### Task 12: slice 1, the accepted cards
+### Task 12 (#956): slice 1, the accepted cards
 
 **Files:**
 - Create: `content/events/<id>.yaml` for each card the owner accepted in Task 11
@@ -2064,7 +2062,7 @@ git commit -m "content: the first roads not taken get their sourced follow-up ca
 
 ---
 
-### Task 13: slice 2, the home-front and Jerusalem roads
+### Task 13 (#957): slice 2, the home-front and Jerusalem roads
 
 **Files:** as Task 12, for the roads in §A.6 not in slice 1 that pass the gate (the leads name `austerity_1949/decline`, `clothing_rationing_1950/relax`, and, if not in slice 1, `jerusalem_military_government/accept_demilitarisation`; `reparations_claim/refuse` only after #938 lands, and as a sensitive card).
 
@@ -2080,7 +2078,7 @@ git commit -m "content: the first roads not taken get their sourced follow-up ca
 
 ---
 
-### Task 14: variants, suppressions and replacements at the outside events
+### Task 14 (#958): variants, suppressions and replacements at the outside events
 
 **Files:**
 - Modify: the reconvergence events the premise table names for the roads that now have cards (likely candidates from the inventory: the four armistices, `elections_1949`, `rhodes_talks`), adding `kind: reconvergence` and `variants`
@@ -2091,33 +2089,11 @@ git commit -m "content: the first roads not taken get their sourced follow-up ca
 
 - [ ] **Step 1: Drafts on a new issue:** for each row, the card on `main`, the road, the proposed variant text (sourced; office placeholders; it names the difference without saying what "would have happened") or the suppression and its replacement. Owner rules per row.
 - [ ] **Step 2: Failing tests:** `EveryVariantShowsWhenItsRoadIsTaken` covers each variant; add one `[InlineData]` per suppressed card to a theory asserting that on its road the card does not fire and its replacement does.
-- [ ] **Step 3: Edit the files exactly as ruled.** A card whose text changes follows Q-CUT-4 (its review resets); a variant leaves the card's own text, options and effects unchanged, and Q-ALT-10 decides whether adding `kind` and `variants` resets it.
+- [ ] **Step 3: Edit the files exactly as ruled.** A card whose text changes follows Q-CUT-4 (its review resets); a variant leaves the card's own text, options and effects unchanged, and under Q-ALT-10 (a) adding `kind` and `variants` keeps its review.
 - [ ] **Step 4: Whole suite; goldens from a real run** (only scripted runs that take a road can move; cause text is not hashed).
 - [ ] **Step 5: Coverage report in the PR, fail-open check (delete one variant's `when`: the loader refuses it), `scripts/check.sh`, commit** with `git commit -m "content: the outside events bend to the player's course (refs #939)"`. This is the last slice: "Fixes #939" if the owner agrees the gap is closed.
 
 **Golden impact:** as above. **Unity:** none (Task 7 already routes the title).
-
----
-
-### Task 15 (only if Q-ALT-4 is (b)): relative windows
-
-**Files:**
-- Modify: `sim/Statecraft.Sim/GameState.cs:45-48` (a `ResolvedOn` map), `:85-106` (`Clone`), `:178-200` (a hash section written only when non-empty)
-- Modify: `sim/Statecraft.Sim/EventSystem.cs` (`Resolve` records the date of a divergent answer; `Trigger` checks `after`)
-- Modify: `sim/Statecraft.Sim/Content.cs` (`EventAfter { string Event; int Turns }`; `GameEvent.After`), `EventRules.cs`, `event.schema.json`
-- Modify: `sim/Statecraft.Sim/SaveGame.cs:47` (`SchemaVersion = 3`; version 2 read as before, its replay is unchanged)
-- Modify: tests, `docs/rules/mvp.md`, `docs/determinism.md`, `CHANGELOG.md`
-
-**Interfaces:**
-- Produces: `SortedDictionary<string, DateTime> GameState.ResolvedOn` (ordinal; only events resolved on a road not taken); `EventAfter? GameEvent.After`.
-
-- [ ] **Step 1: Failing tests:** a fixture card with `after: { event: parent, turns: 2 }` fires on the second turn after `parent` was answered with `road`, not before and not on `record`; `GameState.Clone` copies `ResolvedOn`; the hash text has no `resolved` section when it is empty and changes when it is not (R-LOOP-002's pattern); a version 2 save loads and replays to its recorded hash; a version 3 save round-trips.
-- [ ] **Step 2: Run them to see them fail.**
-- [ ] **Step 3: Implement.** In `Resolve`, after `s.ChosenOptions[eventId] = o.Id;`: `if (Timeline.Diverged(c, s, eventId)) s.ResolvedOn[eventId] = s.Date; else s.ResolvedOn.Remove(eventId);`. In `Trigger`, a further `.Where(e => e.After == null || (s.ResolvedOn.TryGetValue(e.After.Event, out var d) && SimTime.TurnsBetween(c, d, s.Date) >= e.After.Turns))`, using the existing turn-date helper in `SimTime.cs` (read it first; if it has no turn count between two dates, count the 15ths between them as integers). The loader requires `after.event` to be one of the card's alternative-road requirements and `turns` from 1 to 44. Hash section: `if (ResolvedOn.Count > 0) Section("resolved", '{', '}', ResolvedOn.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));`. `SaveGame.SchemaVersion = 3`, accepting 2 and 1 as today.
-- [ ] **Step 4: Whole suite; goldens from a real run.** Historical runs are unchanged (the section is empty); `scenario-reckless` moves (it refuses the first truce). History row and reason in `docs/determinism.md`.
-- [ ] **Step 5: Fail-open check** (drop the `after` filter: the "not before" row fails), `rule_ids.py`, `scripts/check.sh`, Unity EditMode and `web_check`, commit with `git commit -m "sim: relative windows on a road not taken; save version 3 (refs #939)"`.
-
-**Golden impact:** `scenario-reckless`; the save version. **Unity:** DLL rebuild, EditMode and `web_check`.
 
 ---
 
@@ -2126,7 +2102,7 @@ git commit -m "content: the first roads not taken get their sourced follow-up ca
 **1. Spec coverage.**
 - The divergence model: §A.4.1, Task 1 (`Timeline.Diverged`), Q-ALT-2.
 - The option kinds and the Ferguson gate in the loader: §A.4.2, Tasks 2, 4 and 5 (R-ALT-003 to R-ALT-006), Q-ALT-3; the release gate: Task 8 (R-ALT-011), Q-ALT-9.
-- The `requires` extensions: the list (AND) and `diverged` in Task 1; relative timing as Q-ALT-4, with Task 15 if chosen.
+- The `requires` extensions: the list (AND) and `diverged` in Task 1; relative timing decided out (Q-ALT-4 (a)).
 - Reconvergence, foldback and broken premises: §A.4.4, Task 6 (`rejoin`), Task 14 (suppress / replace / variant), Q-ALT-6.
 - Variant text: §A.4.5, Task 7.
 - The UI: the banner in Task 9, the timeline in Task 10, Q-ALT-7 and Q-ALT-8.
