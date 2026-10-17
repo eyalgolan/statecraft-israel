@@ -488,7 +488,8 @@ public class PromoHudTests
                     Assert.AreSame(start, start.focusController.focusedElement, $"{name}: a {d} move left focus where it was");
                 }
                 foreach (var key in new[] { KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D, KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.Q, KeyCode.E,
-                                          KeyCode.PageUp, KeyCode.PageDown, KeyCode.Home, KeyCode.End })
+                                          KeyCode.PageUp, KeyCode.PageDown, KeyCode.Home, KeyCode.End,
+                                          KeyCode.Equals, KeyCode.Minus, KeyCode.KeypadPlus, KeyCode.KeypadMinus })
                 {
                     using (var e = KeyDownEvent.GetPooled((char)0, key, EventModifiers.None)) { e.target = start; start.SendEvent(e); }
                     yield return null;
