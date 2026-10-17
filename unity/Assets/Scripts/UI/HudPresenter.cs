@@ -221,9 +221,9 @@ namespace Statecraft.Game.UI
             SetCompact(bar.layout.width);
         }
 
-        /// <summary>Whether the floor raises the text at this bar width. Not on the three-row bar (a phone held upright, about
-        /// 0.49 scale): its fixed rows have no room for 25 px captions, so it keeps the stylesheet's size (a follow-up, by the owner's answer).</summary>
-        bool FloorRaises(float width) => smallTextSize > SmallTextPx && !(width < ThreeRowBelowPx);
+        /// <summary>Whether the floor raises the text at this bar width: at every tier, the three-row bar of a phone held upright
+        /// (about 0.49 scale, 25 px) included (#642).</summary>
+        bool FloorRaises(float width) => smallTextSize > SmallTextPx;
 
         /// <summary>The room the raised text takes beyond what the tiers were set for (the 15 px captions, wrapped at their 120 px
         /// max-width, and the 150 px turn box): each caption on one line at the larger size (text width scales with font
@@ -243,6 +243,9 @@ namespace Statecraft.Game.UI
         }
         // Statecraft.uss .turn-box width, .meter .meter-name max-width, .date-box width.
         const float TurnBoxPx = 150f, CaptionMaxPx = 120f, PlateWidthPx = 230f;
+        /// <summary>The widest date line's width per px of font size, with a little to spare: the Hebrew 31 October 1956 is
+        /// about 7.8 times its size (196 px at 25 px), the English "30 September 1956" 7.2 (TopBarScoreLayoutTests.WorstDate).</summary>
+        const float DateLinePerPx = 8f;
 
         /// <summary>The raised plate's laid-out width (PadPlate lets it size to its widest line, at least the stylesheet's 230 px;
         /// at 23 px, 960x600, the date is wider), or 230 before it is laid out.</summary>
@@ -294,7 +297,10 @@ namespace Statecraft.Game.UI
         {
             // Raised, the plate sizes to its widest line (the turn and the date, a line each, never wrapped), at least 230 px.
             plate.style.width = raised ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
-            plate.style.minWidth = raised ? new StyleLength(PlateWidthPx) : new StyleLength(StyleKeyword.Null);
+            // At least the widest date line too, so the plate keeps its width when the month changes (PromoHudTests): at 25 px
+            // (a phone upright, #642) the Hebrew 31 October 1956 is about 196 px, wider than 230 px less the padding.
+            plate.style.minWidth = raised ? new StyleLength(UnityEngine.Mathf.Max(PlateWidthPx, DateLinePerPx * smallTextSize + 2f * PlateSidePx + 2f))
+                                          : new StyleLength(StyleKeyword.Null);
             StyleLength Px(float v) => raised ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
             plate.style.paddingTop = Px(PlateEdgePx); plate.style.paddingBottom = Px(PlateEdgePx);
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);

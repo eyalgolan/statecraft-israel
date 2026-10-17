@@ -367,8 +367,8 @@ public class TopBarTests
     }
 
     /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level,
-    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, in
-    /// both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window, so on screen is the
+    /// the attention line, and, by the owner's second answer, the plate's turn and date line) is at least HudPresenter.TextFloorPx (12) on screen at small windows, 1280x720 and 1024x768, and on a phone held
+    /// upright, 390x844 (#642), in both languages; a 1080p window keeps the stylesheet's 15 px. The panel scales with the window, so on screen is the
     /// font size times the window's pixels per panel pixel. (TheBarFitsEveryWindowInEnglishAndHebrew checks that nothing
     /// collides at these sizes.)</summary>
     [UnityTest]
@@ -376,7 +376,7 @@ public class TopBarTests
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080) })
+            foreach (var (w, h) in new[] { (1280, 720), (1024, 768), (1920, 1080), (390, 844) })
                 yield return Rendered(w, h, hebrew, (root, text) =>
                 {
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
@@ -393,6 +393,11 @@ public class TopBarTests
                         float onScreen = l.resolvedStyle.fontSize * perPanelPx;
                         TestContext.WriteLine($"{at}: {l.name}/{l.parent?.parent?.name} {l.resolvedStyle.fontSize:0.0} px, {onScreen:0.0} on screen");
                         if (onScreen < 12f - 0.05f) problems.Add($"{at}: {l.parent?.parent?.name} {l.name} '{l.text}' is {onScreen:0.0} px on screen, under the 12 px floor");
+                        // A wrapped caption breaks between words, never inside one (#642: at 25 px "Immigration" is wider than
+                        // the captions' 120 px max-width).
+                        foreach (var word in l.text.Split(' '))
+                            if (l.MeasureTextSize(word, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x > l.contentRect.width + 0.5f)
+                                problems.Add($"{at}: {l.parent?.parent?.name} {l.name} '{l.text}' breaks inside '{word}' ({l.contentRect.width:0.0} px wide)");
                         if (w == 1920 && Mathf.Abs(l.resolvedStyle.fontSize - 15f) > 0.01f) problems.Add($"{at}: {l.name} is {l.resolvedStyle.fontSize} px, not the stylesheet's 15");
                     }
                     // The plate's text keeps clear of its gilt frame (reviews of #624 in WebGL: the raised date, then the year,

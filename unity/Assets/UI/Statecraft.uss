@@ -167,18 +167,27 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Narrower still (a phone upright; HudPresenter adds hud-three-row with hud-two-row): the badge, the meters and the
    screen buttons with End Turn take a row each, and the panels move down under the taller bar (#210). Seven meters do not
    fit a phone's width with the widest values (#380): they wrap to two lines (a consequence of the owner's "tighten + re-tier", 16 October 2026), and the bar is a meter line
-   (96 px) taller than the six meters' 312 px. */
-.hud-three-row .top-bar { height: 408px; }
+   (96 px) taller than the six meters' 312 px. The owner's text floor (#642) raises the small text to 25 px on a 390x844
+   phone: the plate, the meters and the attention line grow, and the bar takes 32 px more (with the widest values and
+   changes its rows end at about 435 px; each meter line already holds two caption lines, Security's level or "International
+   support", so a caption that wraps once more does not add to it). */
+.hud-three-row .top-bar { height: 440px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
 /* Each meter a quarter of the row, so the seven always take two lines (four, then three) and the bar's second line is
    never an empty band (a phone's turn-1 values would otherwise fit one line). A quarter (~190 px) is wider than the widest
    meter there (~154 px). */
 .hud-three-row .meter { flex-basis: 25%; flex-grow: 0; flex-shrink: 0; }
-.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 424px; }
-/* The event layer keeps the same 96 px free at its bottom (padding, so its backdrop still reaches the window's bottom:
-   DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier), so the centred card stays where the six meters left it,
-   clear of the map's border label above the minimap (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
-.hud-three-row .event-layer { padding-bottom: 96px; }
+/* At the floor's 25 px (#642) a caption may take most of its quarter, not the 120 px that would break "Immigration" inside the
+   word (170 px: a phone's quarter, about 193 px, keeps 5% free, PromoHudTests), and "Security" and its level, too wide for a
+   quarter side by side, wrap the level under the caption. */
+.hud-three-row .meter .meter-name { max-width: 170px; }
+.hud-three-row .meter-caption-row { flex-wrap: wrap; }
+.hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 456px; }
+/* The event layer keeps the same 128 px free at its bottom (the 96 px meter line and the floor's 32 px, #642; padding, so its
+   backdrop still reaches the window's bottom: DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier), so the
+   centred card stays where the six meters left it, clear of the map's border label above the minimap
+   (ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard). */
+.hud-three-row .event-layer { padding-bottom: 128px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
