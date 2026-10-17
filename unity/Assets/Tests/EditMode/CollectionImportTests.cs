@@ -9,7 +9,7 @@ using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-/// <summary>The 1948 Collection's 31 non-building models (issue #664; Tal's Tripo models from #507, slimmed by
+/// <summary>The 1948 Collection's 31 non-building models (issue #664; MATKOT's Tripo models from #507, slimmed by
 /// tools/slim_collection.py under the owner's ruling of 15 October 2026, "Plain git, slimmed first") are imported to load
 /// light (the maintainer's gate: "we need to make sure this is built in a way that doesnt make the game extremely hard to
 /// load"): nothing under a Resources folder; each model a far mesh of at most 1,500 triangles (4,500 for a vehicle, ship

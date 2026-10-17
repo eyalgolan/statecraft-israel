@@ -1,4 +1,4 @@
-"""Slims the 31 non-building models of The 1948 Collection (Tal's Tripo models from PR #507, issue #664) into the files
+"""Slims the 31 non-building models of The 1948 Collection (MATKOT's Tripo models from PR #507, issue #664) into the files
 the game ships, so only reduced meshes and compressed colour maps enter the repository (owner, 15 October 2026: "Plain
 git, slimmed first"; no masters, no Git LFS).
 
