@@ -300,6 +300,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-body { flex-grow: 1; flex-shrink: 1; min-width: 0; }
 .info-body > .row { flex-wrap: wrap; }
 .info-body > .row Button { margin-right: 6px; font-size: 18px; }
+/* The GDD loop's part (GddHexPanel, #381): a city's counts, its Assign stepper, Train and Cancel; a site's state and
+   Build/Stop. A column of lines and rows; a row wraps its buttons in a narrow panel, and mirrors in Hebrew (.lang-he .row). */
+.info-gdd { flex-direction: column; margin-top: 4px; }
+.info-gdd-line { font-size: 17px; flex-shrink: 1; }
+.info-gdd-row { flex-wrap: wrap; align-items: center; }
+.info-gdd Button { margin: 2px 6px 2px 0; font-size: 17px; }
+.lang-he .info-gdd Button { margin: 2px 0 2px 6px; }
 /* Before a hex is chosen only the hint shows (InfoPanelPresenter sets info-empty): a one-line chip that hugs its text, as
    the promo shows no panel until a tile is chosen (HUD round 1, #398). */
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }

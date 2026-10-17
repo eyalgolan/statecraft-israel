@@ -59,6 +59,8 @@ namespace Statecraft.Game.UI
         OutcomePresenter? outcomes;
         CameraRig? rig;
         List<(string, int, int, DateTime)>? drawn;
+        /// <summary>The designated sites on the map (#381), made on first use beside the placements; and their states as drawn.</summary>
+        SiteLayer? siteLayer; List<string>? drawnSites;
 
         public SimBridge? Bridge { get; private set; }
         /// <summary>Where the autosave lives; null (the default) = SaveStore.ForPlatform(). Tests set a temporary folder.</summary>
@@ -349,7 +351,7 @@ namespace Statecraft.Game.UI
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
             }));
-            drawn = null;
+            drawn = null; drawnSites = null;
             RenderPlacementsIfChanged();
             SyncMinimap();
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
@@ -429,7 +431,7 @@ namespace Statecraft.Game.UI
             if (card != null) { owned.Remove(card); card.Dispose(); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; rig = null; drawn = null; units = null; Regions = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -443,10 +445,27 @@ namespace Statecraft.Game.UI
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date);   // dated routes (the Burma Road from June 1948)
             // MATKOT's whole-town models as overview landmarks, streamed after the first frame (#663); the ma'abara from its date.
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
+            RenderSitesIfChanged();
             var now = Bridge.State.Placements.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
             if (drawn != null && drawn.SequenceEqual(now)) return;
             drawn = now;
             placements.Render(Bridge.State.Placements, Bridge.Content, map);
+        }
+
+        /// <summary>Draws the designated sites (#381) only when a site's state differs from what was drawn: being built, or
+        /// built on its date.</summary>
+        void RenderSitesIfChanged()
+        {
+            if (Bridge == null) return;
+            var now = Bridge.State.Sites.Values.Select(w => w.Site + ":" + (w.BuiltOn?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? "building")).ToList();
+            if (drawnSites != null && drawnSites.SequenceEqual(now)) return;
+            drawnSites = now;
+            if (siteLayer == null)
+            {
+                siteLayer = new GameObject("Sites").AddComponent<SiteLayer>();
+                siteLayer.transform.SetParent(placements.transform.parent, false);
+            }
+            siteLayer.Render(Bridge.State.Sites.Values, Bridge.Content, map);
         }
 
         void SyncMinimap()
