@@ -209,8 +209,12 @@ def scan(text: str, rel: str) -> list[Entry]:
             m = FLAG_KEY.match(key)
             if m and _scalar(node) == FLAG:
                 name = m.group("field")
+                source_node = keys.get(name + "_sources")
+                # People keep a field's sources under biography_sources.<field> (content/people.yaml).
+                if source_node is None and isinstance(keys.get("biography_sources"), yaml.MappingNode):
+                    source_node = {_scalar(k): v for k, v in keys["biography_sources"].value}.get(name)
                 entries.append(Entry("flag", rel, node.start_mark.line + 1, label, name, _scalar(keys.get(name)) if name in keys else "",
-                                     _urls(keys[name + "_sources"]) if name + "_sources" in keys else []))
+                                     _urls(source_node) if source_node is not None else []))
         status = keys.get("status")
         if status is not None and _scalar(status) in STATUSES:
             # A whole sign-off by a person (#375) takes the row out of the queue; a malformed one does not (fail closed).

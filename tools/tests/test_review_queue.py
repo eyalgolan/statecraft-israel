@@ -33,6 +33,14 @@ sources:
   - { url: "https://example.org/truce", checked: 2026-10-10 }
 status: sensitivity-reviewed
 """
+PEOPLE = """people:
+  - id: example
+    name: Example Person
+    name_he: איש לדוגמה
+    name_he_review: agent-checked
+    biography_sources:
+      name_he: [{ url: "https://example.org/hebrew-name", checked: 2026-10-14 }]
+"""
 
 
 def git(repo: Path, *args: str, env: dict | None = None) -> str:
@@ -65,6 +73,12 @@ def test_scan_finds_flags_and_reviewed_statuses_with_their_lines():
     event = rq.scan(EVENT, "content/events/truce.yaml")
     assert [(e.kind, e.line, e.row, e.value) for e in event] == [("status", 5, "truce", "sensitivity-reviewed")]
     assert rq.scan("rows:\n  - { id: x, name_he_review: reviewed }\n", "c.yaml") == []   # only agent-checked is a flag
+
+
+def test_people_name_uses_its_biography_source_in_the_page():
+    entries = rq.scan(PEOPLE, "content/people.yaml")
+    text = rq.page(entries, 0, "0123456789abcdef")
+    assert "| example | name_he | איש לדוגמה | <https://example.org/hebrew-name> |" in text
 
 
 def test_queue_lists_agent_set_statuses_and_every_flag_and_counts_the_rest(tmp_path):
