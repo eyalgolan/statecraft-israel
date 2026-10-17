@@ -266,7 +266,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   (refs #668, #35; maintainer decision on #35, 16 October 2026). It runs from Lod to Jerusalem, sourced in
   `content/map/routes_1948.yaml` (Israel Railways, 1998), with the date awaiting the human check. Tel Aviv South to Lod
   is in the content too. It rests on Wikipedia alone, so it runs only once a person signs it off.
-  The model is Tal's (@pixelrenderai-hash) locomotive and tender from The 1948 Collection. It leads three of the
+  The model is MATKOT's locomotive and tender from The 1948 Collection. It leads three of the
   showcase's coaches, four articulated cars that ride the track (owner, 16 October 2026: "ride the track, cut walls"):
   on the Sorek valley's tightest bends their sides pass into the gorge walls. It streams only once the game date reaches
   the service, never at boot. If it does not stream, the game plays on without it and logs one warning.
@@ -278,12 +278,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the bar re-tiers (the owner's "tighten and re-tier", 16 October 2026): each meter's sides are 6 px narrower; 16:9 at
   1920x1080 keeps the one-row bar, while 16:10, 4:3, 1280x720 and 1366x768 take the stacked bar, 5:4 drops the icons, a
   square window takes two rows, and a phone's meters wrap to two lines. No golden moves.
-- Tal's (@pixelrenderai-hash) 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
+- MATKOT's 23 single-building Tripo models from #507, imported for the strategic map (refs #659, step
   1): `unity/Assets/Art/Settlements/Prototype/Models/b*`, outside every `Resources/` folder, meshes compressed with no
   animation, rig, tangents or Read/Write, colour maps committed and crunched at 512 px; `BuildingModelImportTests` pins
   these settings. The texture paths from Tal's machine inside each FBX are blanked. Nothing references the models yet,
   so the game does not change and the WebGL build ships the same assets (its `.data` file differs by 56 bytes).
-- The 1948 Collection's 31 non-building models by Tal (@pixelrenderai-hash, from #507), streamed after the first frame
+- The 1948 Collection's 31 non-building models by MATKOT (from #507), streamed after the first frame
   (refs #664, #663): 12 people, 13 vehicles, ships and aircraft and 6 animals in `unity/Assets/Art/Collection/`, slimmed
   by `tools/slim_collection.py` (owner, 15 October 2026: "Plain git, slimmed first"): a far mesh of at most 1,500
   triangles (4,500 for vehicles) and a near mesh of at most 8,000 per model, the idle clip kept on the 13 models that have one, colour maps
