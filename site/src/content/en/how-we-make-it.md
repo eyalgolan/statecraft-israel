@@ -13,7 +13,7 @@ Nothing is generated live while you play.
 
 - **Screenshots and footage** marked “In-engine capture” are recorded from the game itself.
 - **The terrain** comes from real elevation data (Copernicus DEM), and the rainfall from CHELSA and the Israel Meteorological Service.
-- **The ministers' portraits** are public-domain or CC0 photographs.
+- **The ministers' portraits** are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs.
 - **The event-card photographs** are real archival photographs, each with its photographer, collection and licence. They are never AI images.
 
 ## The rules we keep

@@ -171,7 +171,7 @@ You need Unity **6000.3.25f1 (6.3 LTS)** with Web Build Support; the exact versi
 
 This project is built with heavy AI assistance, disclosed here using itch.io's categories:
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. The game's terrain comes from real elevation data. The portraits are public-domain, CC0 or CC BY 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such.
+- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
 - **Sound:** no AI sound. The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives).
 
@@ -183,7 +183,7 @@ Nothing is generated live while you play.
 - **Original art, docs and data:** [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 - **Game content text** (`content/`, which paraphrases its sources, many from Wikipedia): [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt).
 - **AI-generated images:** marked [CC0](LICENSES/CC0-1.0.txt), with no rights claimed.
-- **Third-party material:** fonts, public-domain, CC0 and CC BY 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
+- **Third-party material:** fonts, public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
 
 Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
 

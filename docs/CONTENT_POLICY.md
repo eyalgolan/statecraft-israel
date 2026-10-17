@@ -77,8 +77,11 @@ Facts are open to correction. The framing (section 1) is not.
   civilians, such as the GDD's Deport outcome, may exist only as a historical possibility that never pays: it carries its
   real costs (refugees, Social cohesion, International Support), gives no reward, and is shown soberly through sourced
   events (owner ruling, 12 October 2026).
-- Images of real people that are not public domain or CC0. One narrow exception, by owner ruling 2026-10-11
-  (summarised): archival photographs of events (not portraits) under CC BY 4.0 are allowed, on these terms:
+- Images of real people that are not public domain or CC0, with two exceptions. Portraits may also be CC BY 4.0 or
+  CC BY-SA 4.0 photographs, on the terms of principle 5 in section 1 (owner ruling, 17 October 2026: "Allow CC BY /
+  BY-SA"): each is credited in `NOTICE`, and a portrait cropped from a CC BY-SA 4.0 photograph is itself released under
+  CC BY-SA 4.0. The other exception is narrow, by owner ruling 2026-10-11 (summarised): archival photographs of events
+  (not portraits) under CC BY 4.0 are allowed, on these terms:
   - Each carries a credit line naming the photographer and collection (for the Meitar Collection: photographer,
     Meitar Collection, National Library of Israel, The Pritzker Family National Photography Collection), with the
     licence, both on screen with the picture and in `NOTICE`.
