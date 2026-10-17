@@ -10,10 +10,12 @@ namespace Statecraft.Game.UI
     /// <see cref="HostName"/> element on every render.
     /// <para>On a city hex (State.Cities), its counts (housing, jobs, refugees waiting, recruits) and training cohorts with
     /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001) and Cancel
-    /// (R-TRAIN-002). On the designated site's hex (sites.yaml), its state, and Build with each idle halutz group, with the
-    /// cost and turns from the rules (R-SITE-001), or Stop while it is built (R-SITE-002).</para>
+    /// (R-TRAIN-002). On a yishuv site's hex (sites.yaml, Projects.IsYishuvSite), its state, and Build with each idle pioneer
+    /// group (Projects.IsPioneer: a halutz or a veteran one), with the rules' cost and the unit's own turns (Projects.TurnsToBuild;
+    /// R-SITE-001, R-VET-002), or Stop while it is built (R-SITE-002).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
-    /// runs. No rule lives here; a button is disabled only where the sim would refuse the order anyway.</para></summary>
+    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available), asked with
+    /// the queue, and a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
@@ -32,7 +34,7 @@ namespace Statecraft.Game.UI
             {
                 foreach (var at in c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)))
                     City(host, bridge, text, at.Id);
-                var site = c.Sites.FirstOrDefault(x => x.Q == q && x.R == r);
+                var site = c.Sites.FirstOrDefault(x => x.Q == q && x.R == r && Projects.IsYishuvSite(x));
                 if (site != null)
                 {
                     title = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
@@ -51,25 +53,26 @@ namespace Statecraft.Game.UI
             Line(host, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
             Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));
 
-            // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits;
-            // stepping back to the current count withdraws the order.
+            // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
+            // the sim gives them with this turn's Train orders; stepping back to the current count withdraws the order.
             var queued = bridge.QueuedLike(new AssignWorkers(id, "job", 0)) as AssignWorkers;
             var target = queued?.Count ?? city.Employed;
-            var max = Math.Min(city.JobSlots, city.Civilians);
+            var max = Cities.MaxWorkers(s, id, bridge.Queued);
             var workers = Row(host, "city-workers-row");
             Button(workers, "city-workers-less", "−", () => Workers(bridge, id, city.Employed, target - 1)).SetEnabled(target > 0);
             Line(workers, "city-workers", text.Format("city.workers", Groups(text, target)));
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
 
             // Train, for each facility the city has (D-D5): each press orders one more group; R-TRAIN-001 takes only civilians
-            // without work.
+            // without work, and the sim counts every track's order and the Assign order in the queue against them.
             var facilities = c.Cities.First(x => x.Id == id).Facilities;
+            var free = Training.Available(s, id, bridge.Queued);
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && facilities.Contains(t.Facility)))
             {
                 var ordered = (bridge.QueuedLike(new Train(id, type.Id, 1)) as Train)?.Count ?? 0;
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
-                    () => bridge.Queue(new Train(id, type.Id, ordered + 1))).SetEnabled(ordered + 1 <= city.Civilians - city.Employed);
+                    () => bridge.Queue(new Train(id, type.Id, ordered + 1))).SetEnabled(free >= 1);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 
@@ -97,21 +100,25 @@ namespace Statecraft.Game.UI
             {
                 Line(host, "site-state", text["site.available"]);
                 var rules = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
-                var idle = s.Units.Values.Where(u => u.Type == "halutz" && !Projects.IsBusy(s, u.Id)).ToList();
+                var idle = s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && !Projects.IsBusy(s, u.Id)).ToList();
                 if (idle.Count == 0) Line(host, "site-no-halutz", text["site.no_halutz"]);
+                // One unit builds a site (question 15): once a group is ordered here, the others' Build is off, as the sim
+                // would refuse the second order ("already being built").
+                var taken = bridge.Queued.OfType<PioneerWork>().Any(w => w.Site == site.Id);
                 foreach (var u in idle)
                 {
                     // PioneerWork and StopWork share the unit's key: an order for this unit at this site is this button's.
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id)) is PioneerWork p && p.Site == site.Id;
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
-                            : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost), Turns(text, rules.BuildYishuvTurns)),
-                        () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered);
+                            : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost),
+                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, rules.BuildYishuvTurns))),
+                        () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered && !taken);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
-                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, work.TurnsLeft)));
+                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, work.TurnsLeft))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }
@@ -122,10 +129,11 @@ namespace Statecraft.Game.UI
         public static string Groups(UiText t, int n) => n == 1 ? t["city.groups_one"] : t.Format("city.groups", n);
         /// <summary>"1 turn" or "n turns", in the UI's language.</summary>
         public static string Turns(UiText t, int n) => n == 1 ? t["city.turns_one"] : t.Format("city.turns", n);
-        /// <summary>A halutz group's name for the player: "halutz group n", numbered from 1 among the halutz units in id order
-        /// (unit ids are shared with cohorts and start at 0, so they are no names).</summary>
+        /// <summary>A pioneer group's name for the player: "halutz group n", numbered from 1 among the pioneer units (halutz and
+        /// veteran, Projects.IsPioneer) in id order, so a group keeps its number when it becomes a veteran (unit ids are shared
+        /// with cohorts and start at 0, so they are no names).</summary>
         public static string Group(UiText t, GameState s, int unit) =>
-            t.Format("site.group", 1 + s.Units.Values.Where(u => u.Type == "halutz").Select(u => u.Id).TakeWhile(id => id != unit).Count());
+            t.Format("site.group", 1 + s.Units.Values.Where(u => Projects.IsPioneer(u.Type)).Select(u => u.Id).TakeWhile(id => id != unit).Count());
 
         /// <summary>A date in the UI's language, as the event card writes it (EventCardPresenter.ObjectiveLine).</summary>
         static string Date(UiText t, DateTime d) => t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);
