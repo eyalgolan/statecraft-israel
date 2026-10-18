@@ -15,14 +15,19 @@ namespace Statecraft.Game.Map.Kits
     public static partial class SettlementKits
     {
         /// <summary>One placed model: its town (or locality) id, the model, its world matrix (the model's mesh space to the
-        /// world), and the fitted box it fills: centre, yaw (degrees, the kit's), width along the yaw and depth (m), the ground
-        /// level it stands on and its height (m).</summary>
+        /// world), and the box it fills: centre, yaw (degrees, the kit's), width along the yaw and depth (m), the ground
+        /// level it stands on and its height (m); and the centre of the kit plot it stands on (<see cref="Plot"/>: a plot
+        /// holds several models at the world scale, <see cref="PlaceModel"/>).</summary>
         public readonly struct ModelInstance
         {
             public readonly string Id; public readonly TownModel Model; public readonly Matrix4x4 M;
-            public readonly Vector2 C; public readonly float Yaw, W, D, Ground, H;
+            public readonly Vector2 C, Plot; public readonly float Yaw, W, D, Ground, H;
             public ModelInstance(string id, TownModel model, Matrix4x4 m, Vector2 c, float yaw, float w, float d, float ground, float h)
-            { Id = id; Model = model; M = m; C = c; Yaw = yaw; W = w; D = d; Ground = ground; H = h; }
+                : this(id, model, m, c, yaw, w, d, ground, h, c) { }
+            public ModelInstance(string id, TownModel model, Matrix4x4 m, Vector2 c, float yaw, float w, float d, float ground, float h, Vector2 plot)
+            { Id = id; Model = model; M = m; C = c; Yaw = yaw; W = w; D = d; Ground = ground; H = h; Plot = plot; }
+            /// <summary>This instance on the kit plot centred at <paramref name="plot"/>.</summary>
+            public ModelInstance OnPlot(Vector2 plot) => new ModelInstance(Id, Model, M, C, Yaw, W, D, Ground, H, plot);
 
             /// <summary>The fitted box's eight corners (world space): the map labels keep clear of them (issue #214).</summary>
             public void Corners(List<Vector3> into)
@@ -89,12 +94,46 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Places one of <paramref name="from"/> on a plot (TownModels.Pick; a place's first house is its
         /// <see cref="TownModels.Once"/> building), with its plinth on <paramref name="km"/> where the ground falls away.</summary>
+        /// <summary>The gap between the models a plot holds, as a share of a model's narrower side.</summary>
+        public const float PlotGapShare = 0.25f;
+        /// <summary>The most models a plot holds along either of its sides.</summary>
+        public const int MaxPerSide = 4;
+
+        /// <summary>Fills a house's or block's plot with models at the world scale (<see cref="ModelScale"/>): the plot is the
+        /// kit's building at the kit's symbolic scale, several times the building at the world scale, so it holds a grid of
+        /// them (as many as fit along each side with <see cref="PlotGapShare"/> between them, at most
+        /// <see cref="MaxPerSide"/> a side), each one of <paramref name="from"/> (TownModels.Pick at its own spot), turned
+        /// with the plot and centred on it, on the plot's ground level. A place's first house is its
+        /// <see cref="TownModels.Once"/> building, alone on its plot. One plinth stands under the group where the ground falls
+        /// away.</summary>
         static void PlaceModel(string id, TownModel[] from, Vector2 p, float yaw, float w, float d, float h, float bottom, float top, KitMesh km,
             float m, bool exactHeight)
         {
-            var model = TownModels.Pick(from, id, p, out bool flip);
-            if (places != null && places.TryGetValue(id, out var s) && TownModels.Once(s) is TownModel once && onceGiven!.Add(id)) model = once;
-            AddModel(id, model, p, yaw, w, d, h, bottom, top, km, m, exactHeight, flip);
+            if (models == null) throw new System.InvalidOperationException("a town model was placed outside SettlementKits.Build");
+            var first = TownModels.Pick(from, id, p, out bool flip);
+            bool once = places != null && places.TryGetValue(id, out var s) && TownModels.Once(s) is TownModel o && onceGiven!.Add(id) && (first = o) == o;
+            // The grid's cell holds the widest and deepest of the models the plot may take, so none reaches past its cell.
+            float cw = 0f, cd = 0f;
+            foreach (var cand in once ? new[] { first } : from)
+                foreach (bool f in new[] { false, true })
+                {
+                    var probe = Fit(id, cand, p, yaw, w, d, h, top, exactHeight, f, m);
+                    cw = Mathf.Max(cw, probe.W); cd = Mathf.Max(cd, probe.D);
+                }
+            float gap = PlotGapShare * Mathf.Min(cw, cd), pu = cw + gap, pv = cd + gap;
+            int nu = once ? 1 : Mathf.Clamp(Mathf.FloorToInt((w + gap) / pu), 1, MaxPerSide);
+            int nv = once ? 1 : Mathf.Clamp(Mathf.FloorToInt((d + gap) / pv), 1, MaxPerSide);
+            float a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            for (int i = 0; i < nu; i++)
+                for (int j = 0; j < nv; j++)
+                {
+                    float u = (i - 0.5f * (nu - 1)) * pu, v = (j - 0.5f * (nv - 1)) * pv;
+                    var q = p + new Vector2(u * ca - v * sa, u * sa + v * ca);
+                    var model = i == 0 && j == 0 ? first : TownModels.Pick(from, id, q, out flip);
+                    models.Add(Fit(id, model, q, yaw, w, d, h, top, exactHeight, flip, m).OnPlot(p));
+                }
+            if (top - bottom > PlinthRiseM * m)
+                km.Plinths.Box(p.x, p.y, yaw, nu * pu - gap, nv * pv - gap, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
         }
 
         static void AddModel(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float bottom, float top, KitMesh km,
