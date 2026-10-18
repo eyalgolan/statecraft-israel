@@ -8,6 +8,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Ten more models by Tal Heuberger, offered only in #336, are imported into the 1948 Collection and stream after the
+  first frame: the eight figures of #708 (an Arab villager, a builder, an elder immigrant, an immigrant child, an
+  immigrant woman, a kibbutz woman, a 1948 soldier and a Yemenite immigrant) and #886's pioneer farmer in the people
+  bundle, and a second Jerusalem town in the towns bundle, beside the first. They are slimmed like the earlier figures,
+  nothing is in `Resources/`, and the first download does not grow. Nothing places them yet (refs #708, #886).
 - A short How to play screen in the side menu explains the monthly loop, Attention, cities, training, event decisions,
   the top bar, End turn and delegation, and the Why screen in English and Hebrew (refs #1041, #42).
 - After End Turn, a short turn report names each top-bar number that changed, with the change the bar shows and its main

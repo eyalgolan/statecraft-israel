@@ -64,10 +64,10 @@ public class CollectionImportTests
     public void TheCatalogHasThe31ModelsNineTownsAndFiveSpecialBuildingsInFiveBundles()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(45, ids.Count);
+        Assert.AreEqual(55, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        CollectionAssert.AreEqual(new[] { 12, 13, 6, 9, 5 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people, vehicles, animals, towns, special buildings");
-        Assert.AreEqual(13, CollectionCatalog.Animated.Count);
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people (#507's 12 and #336's 9), vehicles, animals, towns (#507's 9 and #336's Jerusalem variant), special buildings");
+        Assert.AreEqual(21, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -91,7 +91,8 @@ public class CollectionImportTests
 
     /// <summary>Issue #663, owner ruling of 17 October 2026: "The nine whole-town models ship ... slimmed, streamed after the
     /// first frame, and pass the load gate". MATKOT's nine from #507 are the towns bundle, streamed like
-    /// the rest; the Jerusalem 3denhance variant is #336's only, under its custom licence, so it is not here (#708).</summary>
+    /// the rest, with #336's Jerusalem 3denhance variant after them, an extra beside #507's Jerusalem (#886; owner, 19 October
+    /// 2026: "Yes, both").</summary>
     [Test]
     public void TheNineWholeTownModelsOf507AreTheStreamedTownsBundleAndNoneIsUnderResources()
     {
@@ -99,6 +100,7 @@ public class CollectionImportTests
         {
             "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
             "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+            "jerusalem-stone-city-v1-3denhance",
         };
         foreach (var id in towns)
         {
@@ -112,12 +114,38 @@ public class CollectionImportTests
             }
         }
         CollectionAssert.AreEqual(towns, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Towns).Ids);
-        Assert.IsNull(CollectionCatalog.BundleOf("jerusalem-stone-city-v1-3denhance"), "#336 only: waits for its author's licence line (#708, #886)");
         var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         Assert.IsTrue(builds.Any(b => b.assetBundleName == CollectionCatalog.Towns), "the towns are built as their own bundle");
         // No copy of a town model anywhere under a Resources folder (#507 shipped them all in one).
         CollectionAssert.IsEmpty(towns.SelectMany(id => AssetDatabase.FindAssets(id)).Select(AssetDatabase.GUIDToAssetPath).Where(UnderResources));
+    }
+
+    /// <summary>Issue #708, owner ruling of 18 October 2026: "the 8 figures in #708 can be merged without his license line";
+    /// and #886, owner ruling of 19 October 2026: "Yes, both" (the pioneer farmer and the Jerusalem variant, on the same
+    /// terms). The nine figures offered only in #336 are slimmed like #507's people and stream in the people bundle after its
+    /// twelve; eight keep their idle clip, and the soldier, which #336 ships with no rig, is static at both zooms. Placing
+    /// them is #666, #665, #200 and #886's work, not this import's.</summary>
+    [Test]
+    public void TheNineFiguresOf336StreamInThePeopleBundleAfterThe12Of507()
+    {
+        var nine = new[]
+        {
+            "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
+            "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
+            "figure-pioneer-farmer-v1-tpose",
+        };
+        var people = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.People).Ids;
+        CollectionAssert.AreEqual(nine, people.Skip(12).ToArray());
+        CollectionAssert.AreEqual(nine.Where(id => id != "figure-soldier-1948-v1"), nine.Where(Animated));
+        foreach (var id in nine)
+            foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
+            {
+                var path = CollectionCatalog.PrefabPath(id, d);
+                Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(path), path);
+                Assert.IsFalse(UnderResources(path), path);
+            }
+        CollectionAssert.IsEmpty(nine.SelectMany(id => AssetDatabase.FindAssets(id)).Select(AssetDatabase.GUIDToAssetPath).Where(UnderResources));
     }
 
     [Test]
