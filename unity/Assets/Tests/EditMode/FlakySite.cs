@@ -5,7 +5,6 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 
 /// <summary>A minimal HTTP/1.0 server over a staged site (one connection per request, like web_check's) that fails
 /// chosen files for their first <c>times</c> requests: "drop" resets the connection before any response (what
@@ -31,20 +30,22 @@ sealed class FlakySite : IDisposable
         this.root = root; this.faults = faults;
         listener.Start();
         BaseUrl = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
-        Task.Run(Loop);
+        // Own threads, not the thread pool: a "stall" answer blocks its thread until Dispose, so on pool threads stalled
+        // handlers can hold up the accept loop (the suspected cause of a stall test once counting 3 hits for 4 attempts).
+        new Thread(Loop) { IsBackground = true, Name = "FlakySite accept" }.Start();
     }
 
     /// <summary>Requests seen for a site path (e.g. "content/people.yaml").</summary>
     public int Hits(string rel) => hits.TryGetValue(rel, out var n) ? n : 0;
 
-    async Task Loop()
+    void Loop()
     {
         while (true)
         {
             TcpClient client;
-            try { client = await listener.AcceptTcpClientAsync(); }
+            try { client = listener.AcceptTcpClient(); }
             catch (Exception) { return; }   // stopped
-            _ = Task.Run(() => Serve(client));
+            new Thread(() => Serve(client)) { IsBackground = true, Name = "FlakySite request" }.Start();
         }
     }
 
