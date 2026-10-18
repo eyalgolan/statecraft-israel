@@ -329,6 +329,19 @@
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
+        <!-- The turn report (#1037, TurnReportPresenter): after End Turn, each top-bar number that changed and the sim's causes.
+             A backdrop over the HUD (ScreenNav.DisableCovered disables what it covers), under the outcome clips' layer. -->
+        <ui:VisualElement name="turn-report" class="turn-report">
+            <ui:VisualElement name="turn-report-panel" class="panel turn-report-panel">
+                <ui:VisualElement class="screen-header"><ui:Label name="turn-report-title" class="title" /><ui:Label name="turn-report-intro" class="muted" /></ui:VisualElement>
+                <ui:ScrollView name="turn-report-rows" class="turn-report-rows" />
+                <ui:VisualElement class="row turn-report-actions">
+                    <ui:Button name="turn-report-all" />
+                    <ui:Button name="turn-report-close" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <!-- The End Turn outcome clip (OutcomePresenter): the historical order the player gave, as a 3.5 s silent clip in the
              middle, captioned as the order; a click, Enter or Space skips it, Esc skips them all. After the screens, so it
              is drawn over them (an open screen is also closed when a clip starts); only the start screen and the toast come
@@ -381,5 +394,12 @@
         <!-- The name of an icon-only button, beside it on hover and on keyboard focus (HoverTip; UI Toolkit draws `tooltip`
              only in Editor UI). Last, so it draws over the panels; it takes no clicks. -->
         <ui:Label name="hud-tip" class="hud-tip" picking-mode="Ignore" />
+        <!-- A top-bar number's explanation under the bar, on hover or after a tap (MeterTip, #1037); it takes no clicks. Two
+             lines of their own: the meter in the UI's words, then the sim's causes, which are English (#55), so each label
+             takes its own direction in the Hebrew UI (UiDirection). -->
+        <ui:VisualElement name="meter-tip" class="meter-tip" picking-mode="Ignore">
+            <ui:Label name="meter-tip-words" class="meter-tip-line" picking-mode="Ignore" />
+            <ui:Label name="meter-tip-causes" class="meter-tip-line" picking-mode="Ignore" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -28,9 +28,11 @@ namespace Statecraft.Game.UI
         /// column and the info panel; a wide screen covers the info panel; the open decision card's backdrop
         /// (EventCardPresenter.OpenClass, with no start screen or screen over it: ModalClass, set here) covers the minimap
         /// column and the info panel; an End Turn outcome clip (OutcomePresenter.OpenClass) covers the top bar, the minimap
-        /// column, the info panel and the decision layer. Called wherever one of those classes changes (StartScreenPresenter,
-        /// Open, HudPresenter's tier, EventCardPresenter, OutcomePresenter), so no caller re-enables a panel another still
-        /// covers.</summary>
+        /// column, the info panel and the decision layer. The turn report (TurnReportPresenter.OpenClass, #1037) covers them
+        /// too, and is itself enabled only while it shows and no start screen or outcome clip covers it; when it comes out it
+        /// takes the focus (OnUncovered on its element). Called wherever one of those classes changes (StartScreenPresenter,
+        /// Open, HudPresenter's tier, EventCardPresenter, OutcomePresenter, TurnReportPresenter), so no caller re-enables a
+        /// panel another still covers.</summary>
         public static void DisableCovered(VisualElement root)
         {
             var r = root.Q("root") ?? root;
@@ -38,18 +40,26 @@ namespace Statecraft.Game.UI
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
             bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
+            bool report = r.ClassListContains(TurnReportPresenter.OpenClass);   // the turn report covers the HUD under it
             bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
-            r.Q("top-bar")?.SetEnabled(!(start || outcome));
-            r.Q("left-column")?.SetEnabled(!(start || outcome));   // the screens' buttons: usable wherever the top bar is
-            r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome));
-            r.Q("info-panel")?.SetEnabled(!(start || full || modal || outcome || r.ClassListContains(WideOpenClass)));
+            r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
+            r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
+            r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome || report));
+            r.Q("info-panel")?.SetEnabled(!(start || full || modal || outcome || report || r.ClassListContains(WideOpenClass)));
             var layer = r.Q("event-layer");
             if (layer != null)
             {
-                bool was = layer.enabledSelf, now = !(start || screen || outcome);
+                bool was = layer.enabledSelf, now = !(start || screen || outcome || report);
                 layer.SetEnabled(now);
                 if (!was && now) (layer.userData as System.Action)?.Invoke();   // EventCardPresenter: the open card takes the focus
+            }
+            var panel = r.Q(TurnReportPresenter.ElementName);
+            if (panel != null)
+            {
+                bool was = panel.enabledSelf, now = report && !(start || outcome);
+                panel.SetEnabled(now);
+                if (!was && now) (panel.userData as System.Action)?.Invoke();   // TurnReportPresenter: Close takes the focus
             }
         }
 

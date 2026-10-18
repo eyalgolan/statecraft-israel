@@ -433,6 +433,21 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 
 .why-group { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); color: var(--gold); letter-spacing: 1px; margin-top: 10px; border-bottom-width: 1px; border-color: rgba(196, 160, 92, 0.25); }
 .why-line { white-space: normal; padding-left: 12px; }
+/* The turn report (#1037): a backdrop over the HUD, as the outcome clips', with a reading panel in the middle. */
+.turn-report { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
+.turn-report-panel { width: 640px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
+.turn-report-rows { flex-shrink: 1; min-height: 0; }
+.turn-report-row { margin-bottom: 10px; }
+.turn-report-heading { white-space: normal; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
+.turn-report-causes { white-space: normal; padding-left: 12px; }
+.turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
+.turn-report-actions > Button { margin-left: 8px; }
+/* A top-bar number's explanation (MeterTip, #1037): under the bar, wrapped, kept inside the window by MeterTip. */
+.meter-tip {
+    display: none; position: absolute; max-width: 420px; padding: 6px 10px;
+    background-color: var(--navy-solid); border-color: var(--gold); border-width: 1px; border-radius: 3px;
+}
+.meter-tip-line { font-size: 16px; white-space: normal; color: var(--ink); margin: 0; padding: 0; }
 
 /* Wide screens (Cabinet and Defence, laid out as promo/final/04 and 08): from the left edge to the minimap column, over the
    info panel (an opaque reading screen; the info panel is about a hex, not needed while reading a screen). The event card
@@ -732,7 +747,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    in it. Each rule above that names EB Garamond is listed here; HebrewUiTests fails for one that is missed, including the
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
-.lang-he .why-group, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
+.lang-he .why-group, .lang-he .turn-report-heading, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
 .lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;

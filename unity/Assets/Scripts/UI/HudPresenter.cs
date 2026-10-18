@@ -105,6 +105,8 @@ namespace Statecraft.Game.UI
         /// <summary>The left icon column (promo 03): the screens' buttons (ScreenNav.Screens).</summary>
         public const string RailName = "left-column";
         readonly HoverTip? railTips, barTips;
+        /// <summary>The meters' explanations under the bar (#1037): their words and the turn's causes.</summary>
+        readonly MeterTip? meterTip;
 
         /// <summary>The panels under the bar (Statecraft.uss: top 456 px under the three-row bar), which PlaceUnderBar moves
         /// down by what the three-row bar grows past its 440 px.</summary>
@@ -142,12 +144,13 @@ namespace Statecraft.Game.UI
                 if (root.Q<Label>(HoverTip.TipName) != null)
                     barTips = new HoverTip(root, new[] { newGame }, () => hudRoot.ClassListContains(UiLanguage.HebrewClass) ? HoverTip.Side.Right : HoverTip.Side.Left);
             }
-            foreach (var id in new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" })
+            foreach (var id in HudModel.MeterIds)
             {
                 var meter = root.Q<VisualElement>("meter-" + id); var caption = text["hud.caption." + id];
                 meter.Q<Label>(className: "meter-name").text = caption;   // the bar shows the words its tooltip says
                 said[id] = (meter, caption);
             }
+            if (root.Q(MeterTip.TipName) != null) meterTip = new MeterTip(root, bridge, text, said.Values.Select(x => x.element));
             // The text floor: checked now and twice a second, since a window resized at the same shape changes the panel's
             // scale without changing its layout (no geometry event).
             smallText = bar.Query<Label>(className: "meter-name").ToList();   // the seven captions and Security's level
@@ -170,7 +173,7 @@ namespace Statecraft.Game.UI
         /// <summary>Unsubscribes from the bridge and the button (the owner calls this when it is disabled).</summary>
         public void Dispose()
         {
-            railTips?.Dispose(); barTips?.Dispose();
+            railTips?.Dispose(); barTips?.Dispose(); meterTip?.Dispose();
             floorCheck.Pause();
             foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
             turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
@@ -418,6 +421,7 @@ namespace Statecraft.Game.UI
             Set("cohesion", m.Cohesion);
             said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);
+            meterTip?.Refresh();   // an open tip follows the new words
         }
     }
 }
