@@ -383,7 +383,13 @@ namespace Statecraft.Game.UI
             if (h < needs - 0.5f) SetPhotoShown(false);
         }
 
-        void OnPhotoGeometry(GeometryChangedEvent evt) => FitPhoto();
+        void OnPhotoGeometry(GeometryChangedEvent evt)
+        {
+            // A padding change can resize the header without changing the card's outer rectangle (#649).
+            // The existing width guard prevents the height update from chasing its own geometry events.
+            OnCardGeometry(evt);
+            FitPhoto();
+        }
 
         /// <summary>The decision layer changed size (the window did; the card's content never moves it, as the layer is pinned
         /// to the window on every side). A shown photograph is checked again; a dropped one comes back only when the room now
