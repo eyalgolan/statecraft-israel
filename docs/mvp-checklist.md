@@ -1,6 +1,6 @@
 # MVP master checklist
 
-Current state on `main` at `55780c2a`, 18 October 2026. Part of #374.
+Current state on `main` at `527be944`, 18 October 2026. Part of #374.
 
 The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". The implementation is split across the seven approved phase plans in `docs/superpowers/plans/`. **Done** means the requirement is on `main`; **open** cites its open issue, and an open pull request for it is named beside it; **blocked on owner decision** cites both the issue and the design question that prevents implementation.
 
@@ -9,13 +9,13 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [ ] **Blocked on owner decision: #781.** Arms start stock and unit, price, Arms per recruit and Attention cost are the owner questions on #781. [The GDD](GDD.md#resources-and-national-parameters) decides only where Arms come from (D-G6).
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-4.md`.** The Phase 4 rulings (#782, then Q-CAMP-2's camp sites, Q-SWAMP-3's Hula clearance and the Kiryat Shmona and Beit Shemesh sign-off) are recorded in the plan's status line and decision rows.
 - [ ] **Blocked on owner decision: #783.** The 37 questions marked `OWNER PICK` in `docs/superpowers/plans/2026-10-15-gdd-phase-6.md` (Q-TGT-1 to Q-TGT-3, Q-DEP-1 to Q-DEP-7 and the rest) are unanswered; agents draft, the owner edits.
-- [ ] **Blocked on owner decision: #784.** Q-DEF-2, Q-DEF-4, Q-MIN-2, Q-NEW-3, Q-END-3 and Q-OPEN-3 through Q-OPEN-5 remain owner picks in `docs/superpowers/plans/2026-10-15-gdd-phase-7.md`.
-- [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.** Q-ART-2 and its selected artillery and armoured-car models are recorded on `main`; Q-ART-3 remains part of open implementation issue #756.
+- [ ] **Blocked on owner decision: #784.** Q-DEF-4 and Q-OPEN-3 through Q-OPEN-5 remain owner picks in `docs/superpowers/plans/2026-10-15-gdd-phase-7.md`; Q-DEF-2, Q-MIN-2, Q-NEW-3 and Q-END-3 were decided on 18 October and recorded there (#997).
+- [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.** Q-ART-2 and its selected artillery and armoured-car models are recorded on `main`, and so is Q-ART-3, the owner as the unit-art reviewer, with MATKOT's models counted as reviewed (#997).
 - [x] **Done: `ASSETS.yaml`.** The `first_new_yishuv` photograph's row is verified (CHANGELOG: "Its `ASSETS.yaml` row became `verified` in #913").
 - [x] **Done: #382 ([owner sign-off, 17 Oct](https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6231566027)).** The cutover reviews (the re-timed event windows and the `DesignValuesTests` list) are signed off.
 - [ ] **Blocked on owner decision: #884.** Money upkeep and the per-head tax await the Q-MONEY-2 choices stated in #884.
-- [ ] **Blocked on owner decision: #879.** Publishing v0.1.0 awaits the owner's release call (version PR #969); the release procedure is `docs/RELEASING.md`.
-- [ ] **Open, no issue.** The human check of the twelve cities' census figures against the CBS scans. The owner ruled "merge now and check later" ([#821](https://github.com/eyalgolan/statecraft-israel/pull/821#issuecomment-6228845606)); the ruling left it on #569, which is a merged pull request, so nothing open tracks it now.
+- [x] **Done: the v0.1.0 and v0.1.1 GitHub pre-releases.** Both are published, web only (#969, #993); #879 can close. The desktop players are #905.
+- [ ] **Open: #1005.** The human check of the twelve cities' census figures against the CBS scans. The owner ruled "merge now and check later" ([#821](https://github.com/eyalgolan/statecraft-israel/pull/821#issuecomment-6228845606)).
 
 ## Phase 1: the vertical slice
 
@@ -47,17 +47,17 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [ ] **Open: #735.** PR 4 city projects.
 - [ ] **Open: #736.** PR 5 the craftsman.
 - [ ] **Open: #737.** PR 6 the winery; its dated 1948–1951 vineyard source and city remain part of that issue.
-- [ ] **Open: #738.** PR 7 objective 2, absorb immigrants.
+- [ ] **Open: #738.** PR 7 objective 2, absorb immigrants; the condition and the card's draft status are owner questions on #738.
 - [ ] **Open: #739.** PR 8 Unity city panel at twelve cities.
 - [ ] **Blocked on owner decision: #884.** Money upkeep and the per-head tax after the twelve cities.
 
 ## Phase 4: pioneers, sites and corridors
 
-- [ ] **Open: #785.** PR 1 designated sites. The four yishuv sites and their fields are on `main` (CHANGELOG, "The MVP has four designated yishuv sites"), and the two camp sites are on `main` (CHANGELOG, "Pioneers can build a training camp"); the remaining Hula, Kiryat Shmona and Beit Shemesh site work stays in #785 (Kiryat Shmona and Beit Shemesh: PR #944).
-- [ ] **Open: #786.** PR 2 corridors: Burma Road, Haifa–Tel Aviv rail link and Tel Aviv–Netanya road (PR #870).
+- [ ] **Open: #785.** PR 1 designated sites. The four yishuv sites and their fields are on `main` (CHANGELOG, "The MVP has four designated yishuv sites"), and the two camp sites are on `main` (CHANGELOG, "Pioneers can build a training camp"); Kiryat Shmona and Beit Shemesh (#944) and the Hula (#968) are on `main` too, so all 16 site rows are; a person's check of the 15 `draft` rows remains in #785.
+- [ ] **Open: #786.** PR 2 corridors: Burma Road, Haifa–Tel Aviv rail link and Tel Aviv–Netanya road (draft PR #870); the Tel Aviv–Netanya road's line is an owner question on #786.
 - [x] **Done: CHANGELOG entry "Pioneers can build a training camp".** PR 3 build a camp or Hakhshara (#927; `docs/rules/mvp.md`, R-CAMP-001 and R-CAMP-002).
 - [x] **Done: CHANGELOG entry "every plowed field adds 1 unit of Food".** PR 4 plow fields (#871; `docs/rules/mvp.md`, R-FIELD-001 and R-FIELD-002).
-- [ ] **Open: #789.** PR 5 dry swamp at the Hula (PR #968); Q-SWAMP-3 is decided, so it is not owner-gated.
+- [x] **Done: CHANGELOG entry "Pioneers can drain the Hula swamp".** PR 5 dry swamp at the Hula (#968, fixes #789; `docs/rules/mvp.md`, R-SWAMP-001 and R-SWAMP-002).
 - [x] **Done: CHANGELOG entry "A halutz group becomes a veteran pioneer".** PR 6 veteran pioneer (#868; `docs/rules/mvp.md`, R-VET-001 and R-VET-002).
 - [ ] **Open: #791.** PR 7 objective 3, key infrastructure, three cards.
 - [ ] **Open: #792.** PR 8 Unity corridors, kits and pioneer orders.
@@ -80,14 +80,14 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [ ] **Open: #753.** PR 14 Unity roster from the state.
 - [ ] **Open: #754.** PR 15 Unity unit card with orders.
 - [ ] **Open: #755.** PR 16 Unity Defence screen.
-- [ ] **Open: #756.** PR 17 art for the new units; Q-ART-2 is recorded in `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.
+- [ ] **Open: #756.** PR 17 art for the new units; Q-ART-2 and Q-ART-3 are recorded in `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.
 - [ ] **Open: #757.** PR 18 close: WebGL frame budget and playtest.
 
 ## Phase 6: settlement control
 
 The phase is **blocked on owner decision: #783**. The unanswered questions are marked `OWNER PICK` in `docs/superpowers/plans/2026-10-15-gdd-phase-6.md`.
 
-- [ ] **Open: #793.** PR 1 target-list research (PR #977).
+- [ ] **Open: #793.** PR 1 target-list research; the research note is on `main` (#977), and the owner's pick of the list waits on #783.
 - [ ] **Open: #794.** PR 2 `displacement` tag and release gate.
 - [ ] **Open: #795.** PR 3 target list and settlement state.
 - [ ] **Open: #796.** PR 4 capture.
@@ -104,17 +104,17 @@ The phase is **blocked on owner decision: #783**. The unanswered questions are m
 ## Phase 7: events, ministers and the end
 
 - [x] **Done: CHANGELOG entry "The GDD loop's event rules have IDs and tests".** PR 1 event rules in the GDD loop (#898; `docs/rules/mvp.md`, R-EVT-001 to R-EVT-005).
-- [ ] **Open: #806.** PR 2 event effects on units, cities and projects. Unit grants plus housing-capacity and job-slot effects are on `main` (CHANGELOG, "Event options in the GDD loop can grant units"; `docs/rules/mvp.md`, R-EFX-003 to R-EFX-006); condition and project unlock remain.
+- [ ] **Open: #806.** PR 2 event effects on units, cities and projects. Unit grants plus housing-capacity and job-slot effects are on `main` (CHANGELOG, "Event options in the GDD loop can grant units"; `docs/rules/mvp.md`, R-EFX-003 to R-EFX-006), and so is the housing-condition effect (#1002); project unlock remains.
 - [ ] **Open: #807.** PR 3 the MVP event set.
-- [ ] **Open: #808.** PR 4 ministers on the GDD systems; Q-MIN-2 is blocked on owner decision #784.
-- [ ] **Open: #8.** PR 5 defeat; Q-DEF-2 and Q-DEF-4 are blocked on owner decision #784.
+- [ ] **Open: #808.** PR 4 ministers on the GDD systems; Q-MIN-2 is decided ("Output", #997).
+- [ ] **Open: #8.** PR 5 defeat; Q-DEF-2 is decided (3 turns, #997) and the economy half is PR #989; Q-DEF-4 is blocked on owner decision #784.
 - [ ] **Open: #809.** PR 6 every objective card and score parts.
 - [ ] **Open: #810.** PR 7 end report.
 - [ ] **Open: #811.** PR 8 Unity event-card effects.
-- [ ] **Open: #812.** PR 9 Unity end screen; Q-END-3 is blocked on owner decision #784.
+- [ ] **Open: #812.** PR 9 Unity end screen; Q-END-3 is decided ("Prisoners returned", #997), and Q-DEF-4 is blocked on owner decision #784.
 - [ ] **Open: #530.** PR 10 opening cutscene; Q-OPEN-3 through Q-OPEN-5 are blocked on owner decision #784.
 - [ ] **Open: #42.** PR 11 onboarding for the GDD loop.
-- [ ] **Open: #813.** PR 12 balance pass.
+- [ ] **Open: #813.** PR 12 balance pass; it tunes to the session's target play time, which is still open (below).
 - [ ] **Open: #814.** PR 13 MVP release: `mvp-end`, `smoke-mvp`, WebGL and macOS IL2CPP parity and GitHub pre-release.
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-3.md`, `-phase-5.md` and `-phase-6.md`.** The plans contain the 17 October rulings (#918).
 
@@ -125,31 +125,41 @@ The phase is **blocked on owner decision: #783**. The unanswered questions are m
 3. **Open: #785 and #786.** Finish Phase 4 sites and corridors, then #791 and #792; #789 remains alongside.
 4. **Open: #741.** Build the Phase 5 sequence through #757; #742 and #747 also depend on owner decision #781.
 5. **Blocked on owner decision: #783.** Phase 6 implementation starts after the owner-pick rows and Phase 5.
-6. **Blocked on owner decision: #784.** Phase 7's remaining owner picks gate #808, #8, #812 and #530; the implementation path ends at #814.
+6. **Blocked on owner decision: #784.** Phase 7's remaining owner picks gate #8 and #812 (Q-DEF-4) and #530 (Q-OPEN-3 to Q-OPEN-5); the implementation path ends at #814.
 
 ## Release before the MVP: v0.1.0
 
-- [ ] **Blocked on owner decision: #879.** Run `docs/RELEASING.md` steps 1–7 and publish after the owner's release call. D-P and D-R are already ticked in `docs/oss/DECISIONS.md`.
+- [x] **Done: v0.1.0 (#969) and v0.1.1 (#993).** `docs/RELEASING.md` was run for both web pre-releases. D-P and D-R are ticked in `docs/oss/DECISIONS.md`.
 
 ## Parallel track: "looks like demo2"
 
 The art and map issues under #18 remain a parallel track, not a substitute for the phase work above.
 
-- [ ] **Open: #659, #707, #665, #666, #667, #725, #669, #670, #708, #886.** Remaining model placement and art work (#659: draft PR #700).
+- [ ] **Open: #659, #707, #665, #666, #667, #725, #669, #670, #708, #886.** Remaining model placement and art work (#659: #700 merged, #994 open).
 - [x] **Done: CHANGELOG entry "MATKOT's nine whole-town models".** The nine whole-town landmarks (#917). #885 stays open.
+- [ ] **Open: #1004.** The building models stand far bigger than the train, and Jaffa's over Tel Aviv's (v0.1.1); a fix is in progress.
 - [x] **Done: `NOTICE`.** The MATKOT credit is present (`NOTICE:12`). #887 stays open for the owner's follow-up: whether the `ASSETS.yaml` artist field also names MATKOT.
 
 ## Follow-ups
 
-- [x] **Done: CHANGELOG entry "the map's name pills show each row's `name_he`".** Map name pills use `name_he` (#897). #880 stays open for the tier badge's place in the Hebrew pill.
+- [x] **Done: CHANGELOG entry "the map's name pills show each row's `name_he`".** Map name pills use `name_he` (#897). The tier badge sits on the right in Hebrew (#940); #880 stays open for PR #964's test.
 - [x] **Done: CHANGELOG entry "The info panel now translates every map-action refusal".** Hebrew map-action reasons (#924, fixes #881).
 - [x] **Done: CHANGELOG entry "The 50 people names in Hebrew are flagged agent-checked".** People-row review flags (#907, fixes #882).
 - [ ] **Blocked on owner decision: #388.** The owner may accept or re-bar the palette distance (diorama02 reads 0.57 against the issue's 0.56 bar).
 
 ## Open design calls outside the phase checklist
 
-- [ ] **Blocked on owner decision: `docs/GDD.md`, "Terrain type" and "Map editor tool".** The GDD v0.2 additions leave new terrain types, the editor host, authoring format and editable-property list TBD. These do not block the current MVP movement rules.
-- [ ] **Blocked on owner decision: `docs/GDD.md`, "MVP completion rules".** The session's target play time is open, asked of Amir on #856.
+- [ ] **Blocked on owner decision: `docs/GDD.md`, "Terrain type".** The GDD v0.2 additions leave new terrain types TBD. They do not block the current MVP movement rules.
+- [ ] **Blocked on owner decision: `docs/GDD.md`, "MVP completion rules".** The session's target play time is open, asked of Amir on #856; #813 tunes to it.
+
+## GDD v0.2 additions outside the phase plans
+
+The owner approved these on 17 October on #856 (the location roster and the map editor: [B1-B7](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6230935027); Nir Am and Umm Rashrash: [the four further additions](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6233524779)); no phase plan covers them yet.
+
+- [ ] **Blocked on owner decision: #1006.** Nir Am's infrastructure-protection objective: what it is, its condition and its card.
+- [ ] **Blocked on owner decision: #1007.** Umm Rashrash (future Eilat) as an end-of-war milestone: what it is, its condition and its card.
+- [ ] **Open: #1008.** The must-have locations not on the map yet (`docs/locations.md`): Negba, Hulda, Nir Am, Latrun, Iraq Suwaydan fort, Sha'ar HaGai, Ad Halom, Sha'ar HaAliyah, and the West and East Jerusalem split.
+- [ ] **Blocked on owner decision: #1009.** The map editor (`docs/gdd/map-editor.md`): its host, authoring format and editable-property list are TBD.
 
 ## After the MVP
 
