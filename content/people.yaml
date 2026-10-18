@@ -130,9 +130,8 @@ people:
     status: fact-checked
   - id: zisling
     name: Aharon Zisling
-    # name_he: the Knesset member page spells the first name אהרן; the owner ruled for אהרון (18 October 2026, #457).
+    # name_he: the Knesset member page spells the first name אהרן; the owner ruled for אהרון (18 October 2026, #457), and on 19 October that the ruling is the native-speaker read, so no review flag.
     name_he: אהרון ציזלינג
-    name_he_review: agent-checked
     born: 1901-02-26
     died: 1964-01-16
     biography_sources:
