@@ -77,8 +77,9 @@ namespace Statecraft.Game.UI
         public const float MaxKitCover = 0.1f;
         /// <summary>The population-tier badge (issue #710) inside a city's or town's pill, and the class that makes room for it.</summary>
         public const string TierClass = "map-label-tier", WithTierClass = "map-label-with-tier";
-        /// <summary>DESIGN VALUES (proposed on #710, not yet owner-ruled): tiers 1 to 9, doubling from 1,000 people (under
-        /// 1,000 is tier 1, 1,000-1,999 tier 2, ..., 128,000 and over tier 9), eight distinct tiers across the twelve cities.</summary>
+        /// <summary>OWNER-APPROVED DESIGN VALUES (#710, 18 October 2026, "Accept as shipped"): tiers 1 to 9, doubling
+        /// from 1,000 people (under 1,000 is tier 1, 1,000-1,999 tier 2, ..., 128,000 and over tier 9). The badge is at
+        /// the start of the name, mirrored in Hebrew, and remains part of the pill at every zoom where the pill is shown.</summary>
         public const int TierBase = 1000, TierCount = 9;
         /// <summary>The badge's inset from its pill's edge (Statecraft.uss ".map-label-with-tier" leaves the room), and its width
         /// (".map-label-tier"); in the Hebrew UI the badge is inset from the right edge (owner, on #897).</summary>

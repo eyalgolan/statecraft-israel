@@ -340,18 +340,36 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
-    /// <summary>Issue #710 (owner, 15 October 2026): a city's or town's pill starts with its static 1948 population tier, from
-    /// cities.yaml's people; a pill with no 1948 figure (an Arab town, a kibbutz, a locality) has no badge. The tiers double
-    /// from 1,000 (the proposed design values): 999 is tier 1, 1,000 tier 2, 128,000 and up tier 9, which gives eight distinct
-    /// tiers across the twelve rows. The badge sits inside its pill, at the left, before the name; with the pointer over
-    /// Haifa's pill the tooltip explains the number.</summary>
-    [UnityTest]
-    public IEnumerator CitiesWearTheirStatic1948PopulationTier()
+    /// <summary>Owner, 18 October 2026, on #710 ("Accept as shipped"): tiers 1 to 9, doubling from 1,000 people. 999 is
+    /// tier 1, 1,000 tier 2, 128,000 and up tier 9.</summary>
+    [Test]
+    public void PopulationTierBoundariesDoubleFromOneThousandAndCapAtNine()
     {
         Assert.AreEqual(1, MapLabelsPresenter.Tier(999)); Assert.AreEqual(2, MapLabelsPresenter.Tier(1000));
         Assert.AreEqual(2, MapLabelsPresenter.Tier(1999)); Assert.AreEqual(3, MapLabelsPresenter.Tier(2000));
         Assert.AreEqual(8, MapLabelsPresenter.Tier(127999)); Assert.AreEqual(9, MapLabelsPresenter.Tier(128000));
         Assert.AreEqual(9, MapLabelsPresenter.Tier(248459));
+    }
+
+    /// <summary>Owner, 18 October 2026, on #710 ("Keep tier 1 from 350"): Rosh Pinna's badge comes from its May 1948 figure
+    /// of 350, which is Hebrew Wikipedia only (CBS lists no population), so the data marks it wikipedia-only.</summary>
+    [Test]
+    public void RoshPinnaKeepsTierOneFromItsWikipediaOnlyFigure()
+    {
+        var roshPinna = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).Cities.Single(c => c.Id == "rosh_pinna");
+        var people = roshPinna.People ?? throw new AssertionException("Rosh Pinna has no population figure");
+        Assert.AreEqual("wikipedia-only", people.Status);
+        Assert.AreEqual(350m, people.Value); Assert.AreEqual("1948-05", people.Date);
+        Assert.AreEqual(1, MapLabelsPresenter.Tier(people.Value));
+    }
+
+    /// <summary>Issue #710 (owner, 15 October 2026): a city's or town's pill starts with its static 1948 population tier, from
+    /// cities.yaml's people; a pill with no 1948 figure (an Arab town, a kibbutz, a locality) has no badge. The tiers double
+    /// from 1,000 (owner-approved, 18 October 2026), which gives eight distinct tiers across the twelve rows. The badge sits
+    /// inside its pill, at the left, before the name; with the pointer over Haifa's pill the tooltip explains the number.</summary>
+    [UnityTest]
+    public IEnumerator CitiesWearTheirStatic1948PopulationTier()
+    {
         // The game's tooltip comes from map.tier (GameRoot); both languages format it with the tier, the count and the people.
         var en = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");

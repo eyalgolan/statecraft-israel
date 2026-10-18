@@ -52,6 +52,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   pennant, only once those figures arrive; the other Arab forces stay data only. Until a model arrives, and if its
   bundle is missing, the code-built Israeli figures stay. The pioneer veteran's model now stands at his walk's first
   frame instead of a T-pose.
+### Changed
+- The population-tier badge on the twelve city and town pills keeps the values it shipped with, now owner-approved: tiers 1
+  to 9 doubling from 1,000 people, at every zoom, at the start of the name and mirrored in Hebrew (owner, 18 October 2026,
+  "Accept as shipped"). Rosh Pinna keeps tier 1 from its May 1948 figure of 350, which the data marks `wikipedia-only`
+  ("Keep tier 1 from 350"). Nothing changes in the game; EditMode tests pin both rulings (#710).
 
 ### Fixed
 - The Unity golden checks play every golden in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`,
