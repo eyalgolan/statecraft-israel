@@ -1,20 +1,21 @@
 # MVP master checklist
 
-Current state on `main` at `527be944`, 18 October 2026. Part of #374.
+Current state on `main` at `6ef26c92`, 18 October 2026 (evening). Part of #374.
 
 The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". The implementation is split across the seven approved phase plans in `docs/superpowers/plans/`. **Done** means the requirement is on `main`; **open** cites its open issue, and an open pull request for it is named beside it; **blocked on owner decision** cites both the issue and the design question that prevents implementation.
 
 ## Owner gates (blocking the critical path)
 
-- [ ] **Decided (owner, 18 Oct 2026, "all defaults"; [#781](https://github.com/eyalgolan/statecraft-israel/issues/781#issuecomment-6249500301)):** agents propose the four Arms numbers as labelled DESIGN VALUE lines. The four values are Arms start stock and unit, price, Arms per recruit and Attention cost (#781). [The GDD](GDD.md#resources-and-national-parameters) decides only where Arms come from (D-G6).
+- [ ] **Decided (owner, 18 Oct 2026, "Approve as drafted"; [#781](https://github.com/eyalgolan/statecraft-israel/issues/781#issuecomment-6251995002)):** the four Arms values, as labelled DESIGN VALUE lines: one Arms is the equipment for one 1,000-person recruit group; 12 Arms on 15 May 1948; IL 1m per Arms (borrowing applies); training consumes 1 Arms per recruit group when it starts; 1 Attention per purchase order. The build is open on #781. [The GDD](GDD.md#resources-and-national-parameters) decides only where Arms come from (D-G6).
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-4.md`.** The Phase 4 rulings (#782, then Q-CAMP-2's camp sites, Q-SWAMP-3's Hula clearance and the Kiryat Shmona and Beit Shemesh sign-off) are recorded in the plan's status line and decision rows.
-- [ ] **Blocked on owner decision: #783.** The 37 questions marked `OWNER PICK` in `docs/superpowers/plans/2026-10-15-gdd-phase-6.md` (Q-TGT-1 to Q-TGT-3, Q-DEP-1 to Q-DEP-7 and the rest) are unanswered; agents draft, the owner edits.
-- [ ] **Blocked on owner decision: #784.** Q-DEF-4 and Q-OPEN-3 through Q-OPEN-5 remain owner picks in `docs/superpowers/plans/2026-10-15-gdd-phase-7.md`; Q-DEF-2, Q-MIN-2, Q-NEW-3 and Q-END-3 were decided on 18 October and recorded there (#997).
+- [ ] **Blocked on owner decision: #783.** The owner decided these Phase 6 picks in four batches on 18 October ([#783](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6249796458) to [the Q-ANNEX-1 follow-ups](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6249967916)): Q-TGT-1 to Q-TGT-3, Q-DEP-6, Q-GATE-1, Q-CAP-1 to Q-CAP-3, Q-RAID-1, Q-REF-1, Q-HIST-1, Q-OCC-1 to Q-OCC-3, Q-PUP-1 (no puppet regime in the MVP), Q-ANNEX-1 and Q-ANNEX-2, and the seven technical rows. Still `OWNER PICK` in `docs/superpowers/plans/2026-10-15-gdd-phase-6.md`: Q-DEP-1 to Q-DEP-5, Q-DEP-7, Q-SENS-2, Q-CARD-1 to Q-CARD-3, Q-SENS-1b, Q-UI-1 to Q-UI-4 and Q-STORE-1; after #793's research, the owner also picks the target list. The plan does not record the 18 October answers yet.
+- [ ] **Blocked on owner decision: #784.** Q-DEF-4 and Q-OPEN-3 through Q-OPEN-5 remain owner picks in `docs/superpowers/plans/2026-10-15-gdd-phase-7.md`; Q-DEF-2, Q-MIN-2, Q-NEW-3 and Q-END-3 were decided on 18 October and recorded there (#997). Q-DEF-1's IL 250m ceiling is kept, "Keep 250m; balance pass decides" ([#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6250529654)).
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.** Q-ART-2 and its selected artillery and armoured-car models are recorded on `main`, and so is Q-ART-3, the owner as the unit-art reviewer, with MATKOT's models counted as reviewed (#997).
 - [x] **Done: `ASSETS.yaml`.** The `first_new_yishuv` photograph's row is verified (CHANGELOG: "Its `ASSETS.yaml` row became `verified` in #913").
 - [x] **Done: #382 ([owner sign-off, 17 Oct](https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6231566027)).** The cutover reviews (the re-timed event windows and the `DesignValuesTests` list) are signed off.
 - [ ] **Decided (owner, 18 Oct 2026, "all defaults"; [#884](https://github.com/eyalgolan/statecraft-israel/issues/884#issuecomment-6249500511)):** option 3: no upkeep for civilian places in the MVP, plus the per-head tax draft. The work is tracked on #884.
-- [x] **Done: the v0.1.0 and v0.1.1 GitHub pre-releases.** Both are published, web only (#969, #993); #879 can close. The desktop players are #905.
+- [x] **Done: the v0.1.0 and v0.1.1 GitHub pre-releases.** Both are published, web only (#969, #993); #879 is closed. The desktop players are #905.
+- [ ] **Blocked on owner decision: #791.** The Burma Road card's photograph: the 7 December 1948 Road of Valour opening frame (Rothenberg 997008137268105171) or the June-July 1948 track frame (Rothenberg 997008136513105171), and whether the card is flagged sensitive ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6226235251)).
 - [ ] **Open: #1005.** The human check of the twelve cities' census figures against the CBS scans. The owner ruled "merge now and check later" ([#821](https://github.com/eyalgolan/statecraft-israel/pull/821#issuecomment-6228845606)).
 
 ## Phase 1: the vertical slice
@@ -33,9 +34,9 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: `docs/rules/mvp.md`, R-LOOP-004.** PR 1 and 1a: 44 monthly turns ending 15 January 1952 (#600).
 - [x] **Done: `docs/rules/mvp.md`, R-MONEY-001 and R-MONEY-003.** PR 2 Money as the Treasury (#688, #684, #727). R-MONEY-002 is separately blocked on #884.
 - [x] **Done: `docs/rules/mvp.md`, R-FOOD-001 to R-FOOD-003.** PR 3 Food pool (#712).
-- [ ] **Blocked on owner decision: #781.** PR 3b Arms pool, R-ARMS-001 to R-ARMS-003.
+- [ ] **Open: #781.** PR 3b Arms pool, R-ARMS-001 to R-ARMS-003; the four values are decided (owner gates, above).
 - [x] **Done: CHANGELOG entry "Social cohesion is now the `morale` indicator".** PR 4 Social cohesion and International Support (#857).
-- [ ] **Open: #729.** PR 5 effects on all five resources. Food and the no-gain rule are on `main` (`docs/rules/mvp.md`, R-EFX-001 and R-EFX-002); Arms waits on #781.
+- [ ] **Open: #729.** PR 5 effects on all five resources. Food and the no-gain rule are on `main` (`docs/rules/mvp.md`, R-EFX-001 and R-EFX-002); Arms waits on #781's pool.
 - [x] **Done: `docs/rules/mvp.md`, R-GOV-001 and R-GOV-002.** PR 6 cabinet, coalition and Attention (#830).
 - [ ] **Open: #731.** PR 7 HUD for the five resources; the Social cohesion meter is on `main` (CHANGELOG, "Social cohesion on the top bar"), while Food and Arms remain.
 
@@ -44,12 +45,12 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: CHANGELOG entry "The GDD game has its twelve cities".** PR 1 twelve cities' start values (#821).
 - [x] **Done: CHANGELOG entry "The GDD game's immigrants arrive in all twelve cities".** PR 2 arrivals over the cities (#847).
 - [x] **Done: CHANGELOG entry "The GDD game's cities house every arriving immigrant".** PR 3 housing capacity, condition and overflow (#855; `docs/rules/mvp.md`, R-HOUSE-001 to R-HOUSE-004).
-- [ ] **Open: #735.** PR 4 city projects.
+- [ ] **Open: #735.** PR 4 city projects. Housing types and industry are on `main` (#982; `docs/rules/mvp.md`, R-PROJ-001 to R-PROJ-003); R-PROJ-004 (map actions refused in the GDD loop) remains.
 - [ ] **Open: #736.** PR 5 the craftsman.
-- [ ] **Open: #737.** PR 6 the winery; its dated 1948–1951 vineyard source and city remain part of that issue.
+- [ ] **Open: #737.** PR 6 the winery (open PR #1025); its dated 1948–1951 vineyard source and city remain part of that issue.
   **Decided (owner, 18 Oct 2026, "all defaults"; [#737](https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6249501060)):** the city is Zikhron Ya'akov, flagged `to_verify`.
-- [ ] **Open: #738.** PR 7 objective 2, absorb immigrants; the condition and the card's draft status are owner questions on #738.
-  **Decided (owner, 18 Oct 2026, "all defaults"; [#738](https://github.com/eyalgolan/statecraft-israel/issues/738#issuecomment-6249499957)):** the condition is Jewish population 1,000,000, then overflow <= 10% and employed >= 40%; the AI-drafted card text goes in the PR body for review.
+- [ ] **Open: #738.** PR 7 objective 2, absorb immigrants (open PR #1019, the condition); the real objective and its card are #1039.
+  **Decided (owner, 18 Oct 2026, "all defaults"; [#738](https://github.com/eyalgolan/statecraft-israel/issues/738#issuecomment-6249499957)):** the condition is Jewish population 1,000,000, then overflow <= 10% and employed >= 40%. **Then decided (owner, 18 Oct 2026; [#738](https://github.com/eyalgolan/statecraft-israel/issues/738#issuecomment-6251539054)):** the card follows in a later PR after a person checks its sources (option (iii)).
 - [ ] **Open: #739.** PR 8 Unity city panel at twelve cities.
 - [ ] **Decided (owner, 18 Oct 2026, "all defaults"; [#884](https://github.com/eyalgolan/statecraft-israel/issues/884#issuecomment-6249500511)):** option 3: no upkeep for civilian places in the MVP, plus the per-head tax draft. Money upkeep and the per-head tax after the twelve cities.
 
@@ -62,19 +63,19 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: CHANGELOG entry "every plowed field adds 1 unit of Food".** PR 4 plow fields (#871; `docs/rules/mvp.md`, R-FIELD-001 and R-FIELD-002).
 - [x] **Done: CHANGELOG entry "Pioneers can drain the Hula swamp".** PR 5 dry swamp at the Hula (#968, fixes #789; `docs/rules/mvp.md`, R-SWAMP-001 and R-SWAMP-002).
 - [x] **Done: CHANGELOG entry "A halutz group becomes a veteran pioneer".** PR 6 veteran pioneer (#868; `docs/rules/mvp.md`, R-VET-001 and R-VET-002).
-- [ ] **Open: #791.** PR 7 objective 3, key infrastructure, three cards.
+- [ ] **Open: #791.** PR 7 objective 3, key infrastructure, three cards; the Burma Road card's photograph and its sensitivity flag are blocked on owner decision (#791).
 - [ ] **Open: #792.** PR 8 Unity corridors, kits and pioneer orders.
 
 ## Phase 5: military units, movement and combat
 
 - [x] **Done: CHANGELOG entry "The Arab forces of 15 May and 11 June 1948".** PR 1 Arab-forces data rows (#860).
-- [ ] **Open: #741.** PR 2 military unit record and types.
-- [ ] **Open: #742.** PR 3 recruits become units; the Arms cost is blocked on #781.
+- [x] **Done: `docs/rules/mvp.md`, R-UNIT-001 and R-UNIT-002.** PR 2 military unit record and types (#1024; #741 closed).
+- [ ] **Open: #742.** PR 3 recruits become units; the Arms cost needs #781's pool.
 - [ ] **Open: #743.** PR 4 sourced starting forces (research: PR #906; the force count is still open).
 - [ ] **Open: #744.** PR 5 movement.
 - [ ] **Open: #745.** PR 6 roads and rail in movement; depends on #786.
 - [ ] **Open: #746.** PR 7 fortify and hold.
-- [ ] **Open: #747.** PR 8 combat; Arms per attack is blocked on #781.
+- [ ] **Open: #747.** PR 8 combat; Arms per attack needs #781's pool.
 - [ ] **Open: #748.** PR 9 artillery and the armoured car.
 - [ ] **Open: #749.** PR 10 enemy AI.
 - [ ] **Open: #750.** PR 11 war state, call-up retirement and truces.
@@ -88,15 +89,15 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 
 ## Phase 6: settlement control
 
-The phase is **blocked on owner decision: #783**. The unanswered questions are marked `OWNER PICK` in `docs/superpowers/plans/2026-10-15-gdd-phase-6.md`.
+PRs 1 to 7 have their owner answers (#783, 18 October); PRs 8 to 12 are **blocked on owner decision: #783** (the picks listed under the owner gates, above).
 
-- [ ] **Open: #793.** PR 1 target-list research; the research note is on `main` (#977), and the owner's pick of the list waits on #783.
+- [ ] **Open: #793.** PR 1 target-list research; the research note is on `main` (#977). Q-TGT-1 (a) and Q-TGT-3 (b) are decided, and Q-ANNEX-1 adds each place's sourced outcome (fled or stayed); the owner picks the list after the research.
 - [ ] **Open: #794.** PR 2 `displacement` tag and release gate.
 - [ ] **Open: #795.** PR 3 target list and settlement state.
 - [ ] **Open: #796.** PR 4 capture.
 - [ ] **Open: #797.** PR 5 Raid and withdraw.
 - [ ] **Open: #798.** PR 6 Occupy.
-- [ ] **Open: #799.** PR 7 puppet or annex.
+- [ ] **Open: #799.** PR 7 annex or withdraw (Q-PUP-1: no puppet regime in the MVP).
 - [ ] **Open: #800.** PR 8 Deport, honest cost, no reward.
 - [ ] **Open: #801.** PR 9 displacement cards.
 - [ ] **Open: #802.** PR 10 Unity capture dialogs.
@@ -110,24 +111,34 @@ The phase is **blocked on owner decision: #783**. The unanswered questions are m
 - [ ] **Open: #806.** PR 2 event effects on units, cities and projects. Unit grants plus housing-capacity and job-slot effects are on `main` (CHANGELOG, "Event options in the GDD loop can grant units"; `docs/rules/mvp.md`, R-EFX-003 to R-EFX-006), and so is the housing-condition effect (#1002); project unlock remains.
 - [ ] **Open: #807.** PR 3 the MVP event set.
 - [ ] **Open: #808.** PR 4 ministers on the GDD systems; Q-MIN-2 is decided ("Output", #997).
-- [ ] **Open: #8.** PR 5 defeat; Q-DEF-2 is decided (3 turns, #997) and the economy half is PR #989; Q-DEF-4 is blocked on owner decision #784.
+- [ ] **Open: #8.** PR 5 defeat. The economy half is on `main` (#989; `docs/rules/mvp.md`, R-END-001 and R-END-002); the war loss, R-END-003, waits on #749 and #750; Q-DEF-4 is blocked on owner decision #784.
 - [ ] **Open: #809.** PR 6 every objective card and score parts.
 - [ ] **Open: #810.** PR 7 end report.
 - [ ] **Open: #811.** PR 8 Unity event-card effects.
 - [ ] **Open: #812.** PR 9 Unity end screen; Q-END-3 is decided ("Prisoners returned", #997), and Q-DEF-4 is blocked on owner decision #784.
 - [ ] **Open: #530.** PR 10 opening cutscene; Q-OPEN-3 through Q-OPEN-5 are blocked on owner decision #784.
-- [ ] **Open: #42.** PR 11 onboarding for the GDD loop.
-- [ ] **Open: #813.** PR 12 balance pass; it tunes to the session's target play time, which is still open (below).
+- [ ] **Open: #42.** PR 11 onboarding for the GDD loop. Until it lands, a short How to play screen is #1041 (player feedback, #1038).
+- [ ] **Open: #813.** PR 12 balance pass; the target is a 60 to 90 minute session (below), and it also decides the IL 250m debt ceiling and the loyalty floor of 5 (owner, 18 Oct 2026).
 - [ ] **Open: #814.** PR 13 MVP release: `mvp-end`, `smoke-mvp`, WebGL and macOS IL2CPP parity and GitHub pre-release.
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-3.md`, `-phase-5.md` and `-phase-6.md`.** The plans contain the 17 October rulings (#918).
 
+## Player feedback on v0.1.1 (#1038)
+
+The first outside play-test (18 October). The plan of record for these is #1038.
+
+- [ ] **Open: #1034.** A decision card with no Attention left looks frozen; the card says that End turn hands it to the minister.
+- [ ] **Open: #1035.** A close (X) button on every side-menu screen (open PR #1027).
+- [ ] **Open: #1036.** A language switch, English and Hebrew, in Settings.
+- [ ] **Open: #1037.** A turn report after End turn, and top-bar numbers that explain their change.
+- [ ] **Open: #1041.** A short How to play screen until #42 lands.
+
 ## Critical path
 
-1. **Blocked on owner decision: #781.** Decide Arms, then finish open Phase 2 issues #729 and #731.
+1. **Open: #781.** Arms is decided; build the pool, then finish open Phase 2 issues #729 and #731.
 2. **Open: #735.** Phase 3 PR 3 is done; city projects are next, followed by #737 and #739, with #736 and #738 alongside.
-3. **Open: #785 and #786.** Finish Phase 4 sites and corridors, then #791 and #792; #789 remains alongside.
-4. **Open: #741.** Build the Phase 5 sequence through #757; #742 and #747 also depend on owner decision #781.
-5. **Blocked on owner decision: #783.** Phase 6 implementation starts after the owner-pick rows and Phase 5.
+3. **Open: #785 and #786.** Finish Phase 4 sites and corridors, then #791 and #792 (#789 is done, #968).
+4. **Open: #744 and #746.** PR 2 (#741) is done; build the Phase 5 sequence through #757; #742 and #747 also need #781's pool.
+5. **Open: #793 and #794; blocked on owner decision: #783 for PRs 8 to 12.** Phase 6 PRs 3 to 7 follow #793's list and Phase 5.
 6. **Blocked on owner decision: #784.** Phase 7's remaining owner picks gate #8 and #812 (Q-DEF-4) and #530 (Q-OPEN-3 to Q-OPEN-5); the implementation path ends at #814.
 
 ## Release before the MVP: v0.1.0
@@ -138,15 +149,14 @@ The phase is **blocked on owner decision: #783**. The unanswered questions are m
 
 The art and map issues under #18 remain a parallel track, not a substitute for the phase work above.
 
-- [ ] **Open: #659, #707, #665, #666, #667, #725, #669, #670, #708, #886.** Remaining model placement and art work (#659: #700 merged, #994 open).
+- [ ] **Open: #659, #707, #665, #666, #667, #669, #708, #886.** Remaining model placement and art work (#659: #700 and #1030 merged, #994 open). #670 and #725 are closed (#1022, #1028); a sourced end date for the Burma Road vehicles is #1040.
 - [x] **Done: CHANGELOG entry "MATKOT's nine whole-town models".** The nine whole-town landmarks (#917). #885 stays open.
-- [ ] **Open: #1004.** The building models stand far bigger than the train, and Jaffa's over Tel Aviv's (v0.1.1); a fix is in progress.
-- [x] **Done: `NOTICE`.** The MATKOT credit is present (`NOTICE:12`). #887 stays open for the owner's follow-up: whether the `ASSETS.yaml` artist field also names MATKOT.
-  **Decided (owner, 18 Oct 2026, "all defaults"; [#887](https://github.com/eyalgolan/statecraft-israel/issues/887#issuecomment-6249500690)):** yes, the `ASSETS.yaml` artist field for The 1948 Collection also says MATKOT.
+- [ ] **Open: #1004.** The building models stand far bigger than the train, and Jaffa's over Tel Aviv's (v0.1.1). #1030 puts every building model at 24x real (owner: "Merge, then fix landmarks + grids"); the kit landmarks and plot grids are #1032, and townspeople and wildlife at the same scale are #1033 (blocks v0.1.2).
+- [x] **Done: `NOTICE` and `ASSETS.yaml`.** The MATKOT credit is present (`NOTICE:12`), and The 1948 Collection's `ASSETS.yaml` artist is MATKOT (#895), as the owner confirmed on 18 October ([#887](https://github.com/eyalgolan/statecraft-israel/issues/887#issuecomment-6249500690)); #887 is closed.
 
 ## Follow-ups
 
-- [x] **Done: CHANGELOG entry "the map's name pills show each row's `name_he`".** Map name pills use `name_he` (#897). The tier badge sits on the right in Hebrew (#940); #880 stays open for PR #964's test.
+- [x] **Done: CHANGELOG entry "the map's name pills show each row's `name_he`".** Map name pills use `name_he` (#897). The tier badge sits on the right in Hebrew (#940), with its test across the size matrix (#964); #880 stays open for the WebGL `?lang=he` check.
 - [x] **Done: CHANGELOG entry "The info panel now translates every map-action refusal".** Hebrew map-action reasons (#924, fixes #881).
 - [x] **Done: CHANGELOG entry "The 50 people names in Hebrew are flagged agent-checked".** People-row review flags (#907, fixes #882).
 - [ ] **Blocked on owner decision: #388.** The owner may accept or re-bar the palette distance (diorama02 reads 0.57 against the issue's 0.56 bar).
@@ -154,7 +164,7 @@ The art and map issues under #18 remain a parallel track, not a substitute for t
 ## Open design calls outside the phase checklist
 
 - [ ] **Blocked on owner decision: `docs/GDD.md`, "Terrain type".** The GDD v0.2 additions leave new terrain types TBD. They do not block the current MVP movement rules.
-- [ ] **Blocked on owner decision: `docs/GDD.md`, "MVP completion rules".** The session's target play time is open, asked of Amir on #856; #813 tunes to it.
+- [ ] **Decided (owner, 18 Oct 2026, "60-90 minutes"; [#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6249771314)):** the session's target play time, 60 to 90 minutes. `docs/GDD.md`, "MVP completion rules", still lists it as open; #813 tunes to it.
 
 ## GDD v0.2 additions outside the phase plans
 
