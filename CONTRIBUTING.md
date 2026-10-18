@@ -57,7 +57,7 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 - **Every fact needs a source.** Every event, minister, office term, date and number in `content/` carries `sources:` with a URL and the date you checked it. A claim without a source can't be merged.
 - **No invented quotes.** Paraphrase, and never put words in a real person's mouth.
 - **Framing.** The project tells the story from the Israeli perspective. Contested narratives are not shown as parallel accounts.
-- **Sensitive events.** Events tagged `holocaust`, `terror`, `massacre` or `war-casualties` need the maintainer's sensitivity review before they can ship. A release build refuses to package until that review is done.
+- **Sensitive events.** Events tagged `holocaust`, `terror`, `massacre`, `war-casualties` or `displacement` need the maintainer's sensitivity review before they can ship. A release build refuses to package until that review is done.
 - **Reporting a mistake.** Use the **Historical accuracy** issue form; it asks for the source that shows the correct fact.
 
 ## AI-assisted contributions

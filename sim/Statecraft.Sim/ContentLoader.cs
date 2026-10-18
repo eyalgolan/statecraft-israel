@@ -329,7 +329,7 @@ namespace Statecraft.Sim
             //   id, title, text            text may name office holders only through {office_id} placeholders, which
             //                              must have a holder on every day of the window
             //   anchor: hard | soft        hard needs a historical option; in Historical mode it resolves to it
-            //   tags: [...]                holocaust, terror, massacre, war-casualties are sensitive (no money reward)
+            //   tags: [...]                holocaust, terror, massacre, war-casualties, displacement are sensitive (no gain)
             //   office                     the minister the event is delegated to
             //   from, to                   the window [from, to); it fires on the first turn that overlaps it
             //   conditions: [{ indicator, min, max }]   indicator bounds that must hold when it fires

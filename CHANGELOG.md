@@ -13,6 +13,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - After End Turn, a short turn report names each top-bar number that changed, with the change the bar shows and its main
   causes, the sim's own cause messages, and a link to the Why screen; hovering or tapping a top-bar number shows the same
   explanation under the bar. English and Hebrew; no rule or number is computed in the UI (refs #1037).
+- The `displacement` event tag now has an absolute no-gain rule and blocks a shareable build until the event is
+  sensitivity-reviewed (R-EFX-007, R-GATE-001; refs #794). No content uses the tag, so no golden moves.
 - The military unit record (GDD Phase 5 PR 2): a unit can hold a side, a strength and a standing order with its target,
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the

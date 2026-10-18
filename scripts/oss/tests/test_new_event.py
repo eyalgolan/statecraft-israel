@@ -5,6 +5,8 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
 import yaml12  # noqa: E402  (tools/yaml12.py: YAML 1.2, no 1.1 coercions)
@@ -46,3 +48,10 @@ def test_refuses_overwrite_bad_id_and_bad_dates(tmp_path):
     assert m.main(['e3', '--from', '1949-02-01', '--to', '1949-01-01'], root=tmp_path) == 2
     assert m.main(['e4', '--from', '19490101'], root=tmp_path) == 2
     assert not (tmp_path / 'content/events/e2.yaml').exists()
+
+
+def test_help_names_the_displacement_tag(capsys):
+    with pytest.raises(SystemExit) as ex:
+        m.main(['--help'])
+    assert ex.value.code == 0
+    assert 'displacement' in capsys.readouterr().out
