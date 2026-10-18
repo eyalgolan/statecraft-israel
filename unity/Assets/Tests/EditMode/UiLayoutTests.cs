@@ -390,7 +390,7 @@ public class UiLayoutTests
             {
                 new HudPresenter(root, bridge, text), new EventCardPresenter(root, bridge, text, null),
                 new CabinetPresenter(root, bridge, text, null), new BudgetPresenter(root, bridge, text),
-                new DefencePresenter(root, bridge, text), new WhyPresenter(root, bridge, text),
+                new DefencePresenter(root, bridge, text), new WhyPresenter(root, bridge, text), new HowToPlayPresenter(root, text),
             };
             var nav = new ScreenNav(root);
             try

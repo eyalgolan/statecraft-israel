@@ -218,14 +218,17 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
 .event-gutter { display: none; position: absolute; left: 0; top: 112px; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
 .event-modal .event-gutter { display: flex; }
-.left-column .rail-button { width: 56px; height: 56px; margin: 0 0 12px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.left-column .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
-.left-column .rail-button .nav-disc { top: 0; left: 0; width: 56px; height: 56px; padding: 13px; border-radius: 28px; }
+/* Six discs since How to play (#1041): 50 px, 6 px apart, so the column ends at 112 + 336 px (the five 56 px discs: 340),
+   above the info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests); the column keeps its 56 px width,
+   so the backdrop, the screens and the toast keep their places. */
+.left-column .rail-button .nav-disc { top: 0; left: 0; width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
 /* On a phone held upright the panel's scale falls to about 0.41 (375x667), where a 56 px disc is 22.8 px on screen: the
    column's discs are 60 px there, at least 24 on screen (LeftColumnTests), and the backdrop's strip and the backdrop
    follow the wider column. */
 .hud-three-row .left-column { width: 60px; }
-.hud-three-row .left-column > .rail-button { width: 60px; height: 60px; }
+.hud-three-row .left-column > .rail-button { width: 60px; height: 60px; margin: 0 0 12px 0; }
 .hud-three-row .left-column > .rail-button .nav-disc { width: 60px; height: 60px; padding: 14px; border-radius: 30px; }
 .hud-three-row .event-gutter { width: 76px; }
 .hud-three-row .event-scrim { left: 60px; }
@@ -398,6 +401,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .screen .row.grow > .grow { min-height: 0; flex-shrink: 1; }
 /* Settings (#40): an option's name takes the row's width and wraps; its button keeps room for "On" / "Off". */
 .settings-row { margin-top: 8px; }
+.how-to-play-body { min-height: 0; }
+.how-to-play-line { white-space: normal; margin-bottom: 12px; font-size: 18px; }
 .settings-name { flex-grow: 1; flex-shrink: 1; min-width: 0; white-space: normal; }
 .settings-switch { flex-shrink: 0; min-width: 96px; -unity-text-align: middle-center; }
 /* The quality choice's buttons sit side by side; the one that is set is marked by a gold fill and dark text, not only a

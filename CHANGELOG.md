@@ -8,6 +8,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- A short How to play screen in the side menu explains the monthly loop, Attention, cities, training, event decisions,
+  the top bar, End turn and delegation, and the Why screen in English and Hebrew (refs #1041, #42).
 - The military unit record (GDD Phase 5 PR 2): a unit can hold a side, a strength and a standing order with its target,
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the

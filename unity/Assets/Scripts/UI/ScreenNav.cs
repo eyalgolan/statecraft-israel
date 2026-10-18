@@ -4,13 +4,13 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The top-bar buttons open the Cabinet, Budget, Defence, Why and Settings screens, one at a time; pressing the open
+    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, How to play and Settings screens, one at a time; pressing the open
     /// screen's button again closes it. Every press toggles, synchronously, with no debounce: two presses in one frame (a
     /// double click, or a click plus Enter) open and close again, so the result depends only on the number of presses
     /// (HudTests.TwoPressesInOneFrameToggleTwice; playtest 1, item 11).</summary>
     public sealed class ScreenNav : System.IDisposable
     {
-        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "settings" };
+        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "how-to-play", "settings" };
         /// <summary>The class on the open screen's button (Statecraft.uss lights its ring).</summary>
         public const string OpenClass = "nav-open";
         /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence) is

@@ -465,7 +465,7 @@ public class TopBarTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>The audit's Tab order is kept: Cabinet, Budget, Defence, Why?, Settings (the left column), New Game, End Turn, then the
+    /// <summary>The audit's Tab order is kept: the side-menu screens, New Game, End Turn, then the
     /// minimap's buttons.</summary>
     [UnityTest]
     public IEnumerator TheTabOrderIsKept()
@@ -475,7 +475,7 @@ public class TopBarTests
             {
                 var order = root.Query<Button>().ToList().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0)
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-settings", "new-game", "end-turn", "minimap-overview", "minimap-labels", "minimap-borders" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-settings", "new-game", "end-turn", "minimap-overview", "minimap-labels", "minimap-borders" },
                     order, (hebrew ? "he" : "en") + ": the Tab order");
             }, widest: false);
     }

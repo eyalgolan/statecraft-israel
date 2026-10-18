@@ -41,7 +41,7 @@ namespace Statecraft.Game.UI
         static readonly Dictionary<string, Painter> Painters = new Dictionary<string, Painter>
         {
             ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote, ["rings"] = Rings,
-            ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["restart"] = Restart, ["gear"] = Gear,
+            ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["book"] = Book, ["restart"] = Restart, ["gear"] = Gear,
             ["chevron"] = Chevron, ["chevron-back"] = ChevronBack, ["hourglass"] = Hourglass,
             ["region"] = Region, ["house"] = House, ["village"] = Village, ["flag"] = Flag,
             ["peaks"] = Peaks, ["skyline"] = Skyline, ["ledger"] = Ledger,
@@ -245,6 +245,24 @@ namespace Statecraft.Game.UI
             p.Arc(at(12, 8.6f), 4.6f * s, Angle.Degrees(180), Angle.Degrees(405));
             p.LineTo(at(12, 14.6f)); p.LineTo(at(12, 15.8f)); p.Stroke();
             p.fillColor = gold; Circle(p, at(12, 20), 1.6f * s); p.Fill();
+        }
+
+        /// <summary>An open book (How to play, #1041): two pages from a middle spine, two text lines on each, in gold line, so
+        /// its disc is not Why?'s question mark.</summary>
+        static void Book(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
+        {
+            p.strokeColor = gold; p.lineWidth = 1.6f * s;
+            p.BeginPath(); p.MoveTo(at(12, 6.4f)); p.LineTo(at(12, 19.6f)); p.Stroke();
+            p.BeginPath(); p.MoveTo(at(12, 6.4f)); p.BezierCurveTo(at(9.4f, 4.8f), at(6, 4.6f), at(3, 5.6f)); p.LineTo(at(3, 18.8f));
+            p.BezierCurveTo(at(6, 17.8f), at(9.4f, 18f), at(12, 19.6f)); p.Stroke();
+            p.BeginPath(); p.MoveTo(at(12, 6.4f)); p.BezierCurveTo(at(14.6f, 4.8f), at(18, 4.6f), at(21, 5.6f)); p.LineTo(at(21, 18.8f));
+            p.BezierCurveTo(at(18, 17.8f), at(14.6f, 18f), at(12, 19.6f)); p.Stroke();
+            p.lineWidth = 1f * s;
+            foreach (var y in new[] { 10f, 13.6f })
+            {
+                p.BeginPath(); p.MoveTo(at(5.4f, y)); p.LineTo(at(9.8f, y + 0.6f)); p.Stroke();
+                p.BeginPath(); p.MoveTo(at(14.2f, y + 0.6f)); p.LineTo(at(18.6f, y)); p.Stroke();
+            }
         }
 
         static void Restart(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
