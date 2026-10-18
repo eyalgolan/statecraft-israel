@@ -7,6 +7,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-18
+
 ### Added
 - Pioneers can drain the Hula swamp: `PioneerWork(unit, dry_swamp, site)` at the new `hula` swamp site takes 12 turns
   and IL 4m (labelled design values, Q-SWAMP-1), and once drained the Hula field site in its hex can be plowed
