@@ -1352,6 +1352,20 @@ namespace Statecraft.Sim
                         throw new ContentException(lf, at + ".starting_control", $"unknown control '{x.StartingControl}' ({string.Join(", ", StartingControls)})");
                     if (x.ControlDate == default) throw new ContentException(lf, at + ".control_date", "required with starting_control");
                 }
+                if (x.ControlChange != null)
+                {
+                    var change = x.ControlChange;
+                    var cat = at + ".control_change";
+                    if (x.ControlDate == default) throw new ContentException(lf, cat + ".date", "requires control_date");
+                    if (change.Date <= x.ControlDate) throw new ContentException(lf, cat + ".date", "must be after control_date");
+                    if (!StartingControls.Contains(change.Control))
+                        throw new ContentException(lf, cat + ".control", $"unknown control '{change.Control}' ({string.Join(", ", StartingControls)})");
+                    if (change.Sources == null || change.Sources.Count == 0)
+                        throw new ContentException(lf, cat + ".sources", "required: a control change is a historical fact");
+                    for (int i = 0; i < change.Sources.Count; i++)
+                        if (change.Sources[i] == null || !change.Sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || change.Sources[i].Checked == default)
+                            throw new ContentException(lf, FormattableString.Invariant($"{cat}.sources[{i}]"), "needs an https url and a checked date");
+                }
                 if (x.Sources.Count == 0) throw new ContentException(lf, at + ".sources", "required: a map location is a historical fact");
                 for (int i = 0; i < x.Sources.Count; i++)
                     if (x.Sources[i] == null || !x.Sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || x.Sources[i].Checked == default)

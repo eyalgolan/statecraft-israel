@@ -36,6 +36,54 @@ public class MapContentTests
     }
 
     [Fact]
+    public void AMapLocationControlChangeLoads()
+    {
+        var yaml = Fixture.Files["map/locations_1948.yaml"].Replace(
+            "    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]",
+            "    starting_control: israeli\n    control_date: 1948-05-15\n    control_change: { date: 1948-05-28, control: arab_forces, sources: [{ url: 'https://example.org/control', checked: 2026-10-18 }] }\n    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]");
+
+        var location = Assert.Single(ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+            { ["map/locations_1948.yaml"] = yaml })).MapLocations);
+
+        Assert.Equal(new System.DateTime(1948, 5, 28), location.ControlChange!.Date);
+        Assert.Equal("arab_forces", location.ControlChange.Control);
+        Assert.Equal("https://example.org/control", Assert.Single(location.ControlChange.Sources).Url);
+    }
+
+    [Theory]
+    [InlineData("1948-05-14", "arab_forces", "[{ url: 'https://example.org/control', checked: 2026-10-18 }]", "date", "must be after control_date")]
+    [InlineData("1948-05-28", "foreign_army", "[{ url: 'https://example.org/control', checked: 2026-10-18 }]", "control", "unknown control")]
+    [InlineData("1948-05-28", "arab_forces", "[]", "sources", "required")]
+    [InlineData("1948-05-28", "arab_forces", "[{ url: 'http://example.org/control', checked: 2026-10-18 }]", "sources[0]", "needs an https url and a checked date")]
+    public void AnInvalidMapLocationControlChangeIsALoadError(string date, string control, string sources, string field, string message)
+    {
+        var yaml = Fixture.Files["map/locations_1948.yaml"].Replace(
+            "    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]",
+            $"    starting_control: israeli\n    control_date: 1948-05-15\n    control_change: {{ date: {date}, control: {control}, sources: {sources} }}\n    sources: [{{ url: 'https://example.org/town-a', checked: 2026-10-18 }}]");
+
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+            { ["map/locations_1948.yaml"] = yaml })));
+
+        Assert.Equal("map/locations_1948.yaml", ex.File);
+        Assert.Equal($"locations[town_a].control_change.{field}", ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    [Fact]
+    public void AMapLocationControlChangeWithoutAControlDateIsALoadError()
+    {
+        var yaml = Fixture.Files["map/locations_1948.yaml"].Replace(
+            "    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]",
+            "    control_change: { date: 1948-05-28, control: arab_forces, sources: [{ url: 'https://example.org/control', checked: 2026-10-18 }] }\n    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]");
+
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+            { ["map/locations_1948.yaml"] = yaml })));
+
+        Assert.Equal("locations[town_a].control_change.date", ex.Field);
+        Assert.Contains("requires control_date", ex.Message);
+    }
+
+    [Fact]
     public void ASettlementOnASeaHexIsALoadError()
     {
         var bad = Fixture.Files["map/settlement_hexes.yaml"].Replace("q: 1, r: 0", "q: 0, r: 0");
@@ -113,6 +161,9 @@ public class MapContentTests
         Assert.Equal(10, c.MapLocations.Count);
         Assert.Contains(c.SettlementHexes, s => s.Id == "tiberias");
         Assert.Contains(c.MapLocations, x => x.Id == "jerusalem" && x.Name == "West Jerusalem" && x.StartingControl == "israeli");
-        Assert.Contains(c.MapLocations, x => x.Id == "east_jerusalem_old_city" && x.StartingControl == "contested");
+        var eastJerusalem = Assert.Single(c.MapLocations, x => x.Id == "east_jerusalem_old_city");
+        Assert.Equal("israeli", eastJerusalem.StartingControl);
+        Assert.Equal(new System.DateTime(1948, 5, 28), eastJerusalem.ControlChange!.Date);
+        Assert.Equal("arab_forces", eastJerusalem.ControlChange.Control);
     }
 }

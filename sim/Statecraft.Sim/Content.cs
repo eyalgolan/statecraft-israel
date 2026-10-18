@@ -9,6 +9,13 @@ namespace Statecraft.Sim
 
     public sealed class Source { public string Url { get; set; } = ""; public DateTime Checked { get; set; } }
 
+    public sealed class MapLocationControlChange
+    {
+        public DateTime Date { get; set; }
+        public string Control { get; set; } = "";
+        public List<Source> Sources { get; set; } = new List<Source>();
+    }
+
     /// <summary>A named place on the GDD v0.2 map roster. This is map metadata, not a city, capture target or build site;
     /// those roles are explicit booleans so map inclusion cannot silently grant gameplay behavior.</summary>
     public sealed class MapLocation
@@ -34,6 +41,8 @@ namespace Statecraft.Sim
         /// <summary>Optional sourced holder at the campaign start. Empty where this issue does not establish one.</summary>
         public string StartingControl { get; set; } = "";
         public DateTime ControlDate { get; set; }
+        /// <summary>An optional sourced later historical control, recorded as metadata only.</summary>
+        public MapLocationControlChange? ControlChange { get; set; }
         /// <summary>An optional sourced historical reference, never an availability or unlock rule.</summary>
         public string HistoricalReference { get; set; } = "";
         public List<Source> Sources { get; set; } = new List<Source>();
