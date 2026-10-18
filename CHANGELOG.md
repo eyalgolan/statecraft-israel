@@ -12,6 +12,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the
   loader refuses a military type without both (R-UNIT-001, R-UNIT-002; refs #741, #385). Nothing uses them yet.
+- Farm and village life from MATKOT's 1948 Collection: three tractors by kibbutz fields, three horse wagons and three
+  draught horses by moshav and moshava fields, three flocks of five sheep and three donkeys by villages, and three camels
+  by Bedouin camp areas, each anchor chosen by a fixed hash and kept clear of the kits, routes, unit tokens, water,
+  civilians (#666) and wildlife (#670), with the kit trees over them left out.
+  They stand at the #700 buildings' one world scale (24x real: a tractor about a third of the steam train's locomotive,
+  a sheep about a seventh), stream after the first frame, and play their idle clip only at close zoom (40 km) (#667).
 - Kiryat Shmona (founded 18 July 1949) and Beit Shemesh (15 December 1950, the National Library's December 1950
   under the monthly turn) join the yishuv sites in `content/sites.yaml`, each with a field site in its hex; the
   founding days are the owner's (#785), and the rows stay draft. The reference player builds them in id order, so

@@ -450,6 +450,8 @@ namespace Statecraft.Game.UI
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
             // MATKOT's civilian figures at towns and transit camps, ambience only and streamed after the first frame (#666).
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
+            // MATKOT's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
+            Statecraft.Game.Map.Collection.RuralLife.Show(map);
             RenderSitesIfChanged();
             var now = Bridge.State.Placements.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
             if (drawn != null && drawn.SequenceEqual(now)) return;
