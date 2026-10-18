@@ -59,7 +59,14 @@ namespace Statecraft.Game.UI
     /// The 1948 localities (MapScene.Localities, owner rulings 2026-10-11) get smaller pills with their 1948 names, placed
     /// after every game settlement by the same rules and only nearer than LocalityDistanceM (farther out they are skipped
     /// outright, so the overview pays nothing for them); Hover shows today's name in a tooltip under the pill the pointer
-    /// is over.</summary>
+    /// is over.
+    ///
+    /// The GDD v0.2 map locations (#1008, content/map/locations_1948.yaml through the sim's Content.MapLocations) are named
+    /// too. A location that reuses a game settlement's id renames that settlement's pill (Jerusalem's reads "West
+    /// Jerusalem"); each other location gets its own pill after the game settlements and before the built sites and the
+    /// localities, placed by the same rules against a marker box at its sourced point (LabelType: a kibbutz's, a city's,
+    /// or a village's for a fort, pass, bridge or reception camp). Two locations in one hex (Negba and the Iraq Suwaydan
+    /// fort; Jerusalem and the Old City) are two pills, and the own-marker rule keeps them apart.</summary>
     public sealed class MapLabelsPresenter : IDisposable
     {
         public const string ContainerName = "map-labels", SlotClass = "map-label-slot", LabelClass = "map-label";
@@ -135,6 +142,15 @@ namespace Statecraft.Game.UI
         /// <summary>The 1948 localities' pills (smaller, named only within LocalityDistanceM), in localities_1948.yaml order.</summary>
         public IReadOnlyList<Label> LocalityLabels { get; }
         public IReadOnlyList<VisualElement> LocalitySlots { get; }
+        /// <summary>The map locations' own pills (#1008), in locations_1948.yaml order; a location that renames a game
+        /// settlement's pill has none here.</summary>
+        public IReadOnlyList<Label> LocationLabels { get; }
+        public IReadOnlyList<VisualElement> LocationSlots { get; }
+        public const string LocationClass = "map-label-location";
+
+        /// <summary>The settlement type whose marker size, pill style and declutter a map location's pill borrows (#1008):
+        /// a city's or a kibbutz's for those kinds, a village's (a minor place) for a fort, pass, bridge or reception camp.</summary>
+        public static string LabelType(string kind) => kind == "city" || kind == "kibbutz" ? kind : "village";
         /// <summary>The tooltip of the locality whose pill the pointer is over: today's name where a living place carries on
         /// ("Today: Beit She'an" under "Beisan"; owner ruling 2026-10-12: none for a place that did not), "Mixed locality" for
         /// Nesher; hidden otherwise, and never for a pill with nothing to say. Ignores the pointer, like the pills.</summary>
@@ -171,7 +187,7 @@ namespace Statecraft.Game.UI
 
         public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null,
             Func<IReadOnlyList<Bounds[]>?>? keepClear = null, IReadOnlyDictionary<string, decimal>? population = null,
-            Func<int, decimal, string>? tierTip = null, bool hebrew = false)
+            Func<int, decimal, string>? tierTip = null, bool hebrew = false, IReadOnlyList<Statecraft.Sim.MapLocation>? locations = null)
         {
             var tip = tipText ?? DefaultTip;
             this.keepClear = keepClear;
@@ -189,6 +205,9 @@ namespace Statecraft.Game.UI
                 var anchorClass = AnchorClass.TryGetValue(s.Id, out var a) ? a : Centre;
                 // #880: the Hebrew UI shows the row's name_he, and the English name where the row has none.
                 var label = new Label(hebrew && !string.IsNullOrWhiteSpace(s.NameHe) ? s.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                // #1008: a map location with this settlement's id names it (Jerusalem's pill reads "West Jerusalem").
+                var renamed = FindLocation(locations, s.Id);
+                if (renamed != null) label.text = LocationName(renamed, hebrew);
                 label.AddToClassList(LabelClass);
                 label.AddToClassList("map-label-" + s.Type);
                 label.AddToClassList(anchorClass);
@@ -226,6 +245,27 @@ namespace Statecraft.Game.UI
             for (int p = 0; p <= 2; p++)
                 foreach (var it in settlementOrder) if (Priority(it.Settlement.Type) == p) items.Add(it);
             Labels = labels; Slots = slots;
+            // #1008: the map locations that are no game settlement, after the settlements and before the sites and localities.
+            var locationLabels = new List<Label>(); var locationSlots = new List<VisualElement>();
+            var settlementIds = new HashSet<string>();
+            foreach (var s in map.Settlements) settlementIds.Add(s.Id);
+            if (locations != null)
+                foreach (var loc in locations)
+                {
+                    if (settlementIds.Contains(loc.Id)) continue;
+                    var s = new Settlement { Id = loc.Id, Name = loc.Name, NameHe = loc.NameHe, Type = LabelType(loc.Kind), Lon = loc.Lon, Lat = loc.Lat };
+                    var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
+                    slot.AddToClassList(SlotClass);
+                    var label = new Label(LocationName(loc, hebrew)) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                    label.AddToClassList(LabelClass); label.AddToClassList("map-label-" + s.Type); label.AddToClassList(LocationClass); label.AddToClassList(Centre);
+                    slot.Add(label);
+                    container.Add(slot);
+                    locationLabels.Add(label); locationSlots.Add(slot);
+                    var top = MarkerTop(map, s);
+                    var it = new Item { Settlement = s, MarkerTop = top, Kit = KitBounds(map, s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label, IsCity = s.Type == "city", First = Spot.AboveCentre };
+                    settlementOrder.Add(it); items.Add(it);
+                }
+            LocationLabels = locationLabels; LocationSlots = locationSlots;
             // The 1948 localities after every game settlement, largest first (the file's order): presentation only.
             var localityLabels = new List<Label>(); var localitySlots = new List<VisualElement>();
             foreach (var place in map.Localities)
@@ -266,6 +306,15 @@ namespace Statecraft.Game.UI
             removeToggle = VisualToggles.Register("labels", on => container.style.display = on ? new StyleEnum<DisplayStyle>(StyleKeyword.Null) : DisplayStyle.None);
             Refresh(force: true);
         }
+
+        static Statecraft.Sim.MapLocation? FindLocation(IReadOnlyList<Statecraft.Sim.MapLocation>? locations, string id)
+        {
+            if (locations != null) foreach (var l in locations) if (l.Id == id) return l;
+            return null;
+        }
+
+        /// <summary>A map location's pill text: its Hebrew name in the Hebrew UI (the English where it has none), else its name.</summary>
+        public static string LocationName(Statecraft.Sim.MapLocation l, bool hebrew) => hebrew && !string.IsNullOrWhiteSpace(l.NameHe) ? l.NameHe : l.Name;
 
         /// <summary>The top of a settlement's marker box: the point a pill over its kit hangs from, and the point that says
         /// whether the place is on screen.</summary>
@@ -637,6 +686,7 @@ namespace Statecraft.Game.UI
             occluders.Clear();
             foreach (var slot in Slots) slot.RemoveFromHierarchy();
             foreach (var slot in LocalitySlots) slot.RemoveFromHierarchy();
+            foreach (var slot in LocationSlots) slot.RemoveFromHierarchy();
             foreach (var it in siteItems) it.Slot.RemoveFromHierarchy();
             siteItems.Clear();
             Tooltip.RemoveFromHierarchy();

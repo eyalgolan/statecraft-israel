@@ -14,6 +14,25 @@ public class MapContentTests
         Assert.Equal("hills", c.HexAt(2, 1)!.Biome);
         Assert.Null(c.HexAt(9, 9));
         Assert.Equal(("town_a", 1, 0), (c.SettlementHexes[0].Id, c.SettlementHexes[0].Q, c.SettlementHexes[0].R));
+        Assert.Equal(("town_a", "city", "must_have"), (c.MapLocations[0].Id, c.MapLocations[0].Kind, c.MapLocations[0].Priority));
+    }
+
+    [Theory]
+    [InlineData("kind: city", "kind: citty", "locations[town_a].kind", "unknown kind")]
+    [InlineData("priority: must_have", "priority: urgent", "locations[town_a].priority", "unknown priority")]
+    [InlineData("    name_he: עיר א\n", "", "locations[town_a].name_he", "required")]
+    [InlineData("    name_he_sources: [{ url: 'https://example.org/town-a-he', checked: 2026-10-18 }]\n", "", "locations[town_a].name_he_sources", "needs a source")]
+    [InlineData("    name_he: עיר א\n", "    name_he: עיר א\n    name_he_review: checked\n", "locations[town_a].name_he_review", "not agent-checked")]
+    [InlineData("q: 1", "q: 9", "locations[town_a].q", "not a land hex")]
+    [InlineData("    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]\n", "", "locations[town_a].sources", "required")]
+    [InlineData("    status: draft", "    starting_control: arab_forces\n    status: draft", "locations[town_a].control_date", "required with starting_control")]
+    public void AMapLocationRecordIsValidated(string before, string after, string field, string message)
+    {
+        var bad = Fixture.Files["map/locations_1948.yaml"].Replace(before, after);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["map/locations_1948.yaml"] = bad })));
+        Assert.Equal("map/locations_1948.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
     }
 
     [Fact]
@@ -91,6 +110,9 @@ public class MapContentTests
         Assert.Equal(1102, c.Hexes.Count);
         Assert.Equal(870, c.Hexes.Count(h => h.Land));
         Assert.Equal(25, c.SettlementHexes.Count);
+        Assert.Equal(10, c.MapLocations.Count);
         Assert.Contains(c.SettlementHexes, s => s.Id == "tiberias");
+        Assert.Contains(c.MapLocations, x => x.Id == "jerusalem" && x.Name == "West Jerusalem" && x.StartingControl == "israeli");
+        Assert.Contains(c.MapLocations, x => x.Id == "east_jerusalem_old_city" && x.StartingControl == "contested");
     }
 }

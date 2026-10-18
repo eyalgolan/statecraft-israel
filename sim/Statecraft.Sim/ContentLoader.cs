@@ -45,6 +45,7 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
+        sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
         sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
@@ -54,6 +55,7 @@ namespace Statecraft.Sim
         public const string HexesFile = "map/hexes.json";
         public const string SettlementHexesFileName = "map/settlement_hexes.yaml";
         public const string SettlementsFileName = "map/settlements_1948.yaml";
+        public const string MapLocationsFileName = "map/locations_1948.yaml";
 
         /// <summary>The ids and names of settlements_1948.yaml, which the tools own (its other keys are not the sim's business),
         /// so it is read as plain maps rather than through the strict content types.</summary>
@@ -319,6 +321,7 @@ namespace Statecraft.Sim
             c.PopulationAnchors = Read<PopulationFile>(readFile, "population.yaml").Anchors;
             c.Hexes = Read<MapFile>(readFile, HexesFile).Hexes;
             c.SettlementHexes = Read<SettlementHexesFile>(readFile, SettlementHexesFileName).Settlements;
+            c.MapLocations = Read<MapLocationsFile>(readFile, MapLocationsFileName).Locations;
             var settlements = ReadSettlements(readFile);
             var settlementIds = settlements.Select(x => x.id).ToList();
             foreach (var (id, name) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
@@ -934,6 +937,7 @@ namespace Statecraft.Sim
                 if (a.Date == default) throw new ContentException("population.yaml", path + ".date", "required");
                 Count("population.yaml", path + ".jews", a.Jews);
             }
+            ValidateMapLocations(c, settlementIds);
             ValidateMap(c, settlementIds);
             ValidateWindows(c);
             EventRules.Validate(c, offices, indicators);
@@ -1301,6 +1305,58 @@ namespace Statecraft.Sim
                         throw new ContentException(sf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
                 Status(sf, at + ".status", x.Status);
                 Review(sf, at, x.ReviewedBy, x.ReviewedByGiven, x.ReviewedOn, x.ReviewedOnGiven);
+            }
+        }
+
+        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp" };
+        static readonly string[] MapLocationPriorities = { "must_have", "optional" };
+        static readonly string[] StartingControls = { "israeli", "arab_forces", "contested" };
+
+        /// <summary>GDD v0.2 named map locations: sourced metadata on a land hex. A location's explicit role flags keep this
+        /// roster from creating a managed city, designated site or settlement-control target by implication.</summary>
+        static void ValidateMapLocations(Content c, List<string> settlementIds)
+        {
+            const string lf = MapLocationsFileName;
+            Unique(lf, "locations", c.MapLocations.Select(x => x.Id));
+            var settlements = new HashSet<string>(settlementIds);
+            foreach (var x in c.MapLocations)
+            {
+                var at = $"locations[{x.Id}]";
+                Named(lf, at + ".name", x.Name);
+                Named(lf, at + ".name_he", x.NameHe);   // the map labels it in both languages (#1008)
+                if (x.NameHeReview != "" && x.NameHeReview != "agent-checked")
+                    throw new ContentException(lf, at + ".name_he_review", $"'{x.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                if (x.NameHeSources.Count == 0) throw new ContentException(lf, at + ".name_he_sources", "required: a Hebrew name needs a source");
+                for (int i = 0; i < x.NameHeSources.Count; i++)
+                    if (x.NameHeSources[i] == null || !x.NameHeSources[i].Url.StartsWith("https://", StringComparison.Ordinal) || x.NameHeSources[i].Checked == default)
+                        throw new ContentException(lf, FormattableString.Invariant($"{at}.name_he_sources[{i}]"), "needs a url and checked date");
+                if (!MapLocationKinds.Contains(x.Kind))
+                    throw new ContentException(lf, at + ".kind", $"unknown kind '{x.Kind}' ({string.Join(", ", MapLocationKinds)})");
+                if (!MapLocationPriorities.Contains(x.Priority))
+                    throw new ContentException(lf, at + ".priority", $"unknown priority '{x.Priority}' ({string.Join(", ", MapLocationPriorities)})");
+                Finite(lf, at + ".lon", x.Lon);
+                Finite(lf, at + ".lat", x.Lat);
+                if (x.Lon < -180 || x.Lon > 180) throw new ContentException(lf, at + ".lon", "must be from -180 to 180");
+                if (x.Lat < -90 || x.Lat > 90) throw new ContentException(lf, at + ".lat", "must be from -90 to 90");
+                var hex = c.HexAt(x.Q, x.R);
+                if (hex == null || !hex.Land)
+                    throw new ContentException(lf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
+                if (!x.Marker) throw new ContentException(lf, at + ".marker", "must be true: this file is the map-location roster");
+                if (x.ManagedCity && !settlements.Contains(x.Id))
+                    throw new ContentException(lf, at + ".managed_city", $"needs the same id in {SettlementsFileName}");
+                if (x.StartingControl == "" && x.ControlDate != default)
+                    throw new ContentException(lf, at + ".starting_control", "required with control_date");
+                if (x.StartingControl != "")
+                {
+                    if (!StartingControls.Contains(x.StartingControl))
+                        throw new ContentException(lf, at + ".starting_control", $"unknown control '{x.StartingControl}' ({string.Join(", ", StartingControls)})");
+                    if (x.ControlDate == default) throw new ContentException(lf, at + ".control_date", "required with starting_control");
+                }
+                if (x.Sources.Count == 0) throw new ContentException(lf, at + ".sources", "required: a map location is a historical fact");
+                for (int i = 0; i < x.Sources.Count; i++)
+                    if (x.Sources[i] == null || !x.Sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || x.Sources[i].Checked == default)
+                        throw new ContentException(lf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
+                Status(lf, at + ".status", x.Status);
             }
         }
 

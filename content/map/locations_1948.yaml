@@ -1,0 +1,224 @@
+# GDD v0.2 named map locations. Coordinates are sourced reference positions; q/r is authored by
+# tools/hexgrid.py settlement_hex. A marker is not, by itself, a managed city, designated site or
+# settlement-control target (docs/locations.md). Historical references are not unlock dates.
+locations:
+- id: negba
+  name: Negba
+  name_he: נגבה
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/נגבה', checked: 2026-10-18 }
+  kind: kibbutz
+  lon: 34.6830556
+  lat: 31.6608333
+  q: -7
+  r: 25
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q1019154', checked: 2026-10-18 }
+  status: draft
+
+- id: hulda
+  name: Hulda
+  name_he: חולדה
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/חולדה_(קיבוץ)', checked: 2026-10-18 }
+  kind: kibbutz
+  lon: 34.8833333
+  lat: 31.8322222
+  q: -4
+  r: 23
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q2916639', checked: 2026-10-18 }
+  status: draft
+
+- id: nir_am
+  name: Nir Am
+  name_he: ניר עם
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/ניר_עם', checked: 2026-10-18 }
+  kind: kibbutz
+  lon: 34.5808333
+  lat: 31.5194444
+  q: -9
+  r: 27
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q2891278', checked: 2026-10-18 }
+  status: draft
+
+- id: latrun_fort
+  name: Latrun police fort
+  name_he: משטרת לטרון
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/משטרת_לטרון', checked: 2026-10-18 }
+  kind: fort
+  lon: 34.98036
+  lat: 31.8381
+  q: -2
+  r: 22
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker, not issue #707's 3D model.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this fort is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q16129570', checked: 2026-10-18 } # coordinates (P625) and identity: the Latrun Tegart fort
+  status: draft
+
+- id: iraq_suwaydan_fort
+  name: Iraq Suwaydan police fort
+  name_he: משטרת עיראק סווידאן
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/משטרת_עיראק_סווידאן', checked: 2026-10-18 }
+  kind: fort
+  lon: 34.6818194
+  lat: 31.6480118
+  q: -7
+  r: 25
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this fort is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q97971283', checked: 2026-10-18 } # coordinates (P625): Fort Yoav, the Iraq Suwaydan police fort
+  - { url: 'https://en.wikipedia.org/wiki/Operation_Shmone', checked: 2026-10-18 } # identity: "the Egyptian-held police fort of Iraq Suwaydan"
+  status: draft
+
+- id: shaar_hagai
+  name: Bab al-Wad (Sha'ar HaGai)
+  name_he: באב אל-ואד (שער הגיא)
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/שער_הגיא', checked: 2026-10-18 }
+  kind: pass
+  lon: 35.024865
+  lat: 31.814508
+  q: -2
+  r: 23
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this pass is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q1282220', checked: 2026-10-18 } # coordinates (P625)
+  - { url: "https://en.wikipedia.org/wiki/Sha'ar_HaGai", checked: 2026-10-18 } # the name: Bab al-Wad, used in Hebrew as well in 1948
+  status: draft
+
+- id: ad_halom_bridge
+  name: Jisr Isdud (Ad Halom bridge)
+  name_he: גשר עד הלום
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/גשר_עד_הלום', checked: 2026-10-18 }
+  kind: bridge
+  lon: 34.6694067
+  lat: 31.7820937
+  q: -6
+  r: 23
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker, separate from nearby Isdud.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this bridge is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q124414245', checked: 2026-10-18 } # coordinates (P625); en.wiki Jisr Isdud: "also known as the Ad Halom Bridge"
+  - { url: 'https://en.wikipedia.org/wiki/Jisr_Isdud', checked: 2026-10-18 }
+  status: draft
+
+- id: shaar_haaliyah
+  name: Sha'ar HaAliyah
+  name_he: שער העלייה
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/שער_העלייה', checked: 2026-10-18 }
+  kind: reception_camp
+  lon: 34.95745
+  lat: 32.8160806
+  q: 5
+  r: 8
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this reception camp is not a yishuv founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  historical_reference: March 1949
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q10395086', checked: 2026-10-18 } # coordinates (P625)
+  - { url: 'https://www.bgu.ac.il/media/gedf3fo2/bguphd2009.pdf', checked: 2026-10-18 } # Seidelman, abstract: "opened in March, 1949 on the Haifa coast"
+  status: draft
+
+# `jerusalem` deliberately reuses the existing settlement and cities.yaml identity. Its map name is the western
+# half; the one city economy remains keyed by `jerusalem`.
+- id: jerusalem
+  name: West Jerusalem
+  name_he: מערב ירושלים
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/מערב_ירושלים', checked: 2026-10-18 }
+  kind: city
+  lon: 35.2194444
+  lat: 31.7819444
+  q: 0
+  r: 23
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: true # DESIGN VALUE: reuse the existing Jerusalem city economy.
+  designated_site: false # DESIGN VALUE: Jerusalem is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: the roster does not select capture targets.
+  starting_control: israeli
+  control_date: 1948-05-15
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q2213440', checked: 2026-10-18 } # coordinates (P625)
+  # starting_control: on 14 May 1948, as the British left, "the Israeli forces began to take over compounds held by the
+  # Mandatory government" (Knesset); Operation Pitchfork (13-18 May) captured "the Jewish suburbs of Jerusalem" (en.wiki).
+  - { url: 'https://m.knesset.gov.il/En/About/Documents/JerEnPDF1.pdf', checked: 2026-10-18 }
+  - { url: 'https://en.wikipedia.org/wiki/Operation_Pitchfork', checked: 2026-10-18 }
+  status: draft
+
+- id: east_jerusalem_old_city
+  name: East Jerusalem / Old City
+  name_he: מזרח ירושלים / העיר העתיקה
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/מזרח_ירושלים', checked: 2026-10-18 }
+  - { url: 'https://he.wikipedia.org/wiki/העיר_העתיקה', checked: 2026-10-18 }
+  kind: city
+  lon: 35.2341667
+  lat: 31.7766667
+  q: 0
+  r: 23
+  priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
+  marker: true # DESIGN VALUE: this is a second map marker, not a second city economy.
+  managed_city: false # DESIGN VALUE: cities.yaml keeps one Jerusalem economy.
+  designated_site: false # DESIGN VALUE: the Old City is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: the roster does not select capture targets.
+  starting_control: contested
+  control_date: 1948-05-15
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q213274', checked: 2026-10-18 } # coordinates (P625): the Old City
+  # starting_control (SENSITIVE, owner review): Knesset, "Liberation of Jerusalem": "both sides – the Jews and the Arabs –
+  # tried to take control of the city"; "On May 18, the Arab Legion reached Jerusalem and entered the Old City"; the siege
+  # of the Jewish Quarter went on until "On May 28, the Jewish Quarter fell into the hands of the Jordanians". So on
+  # 15 May 1948 the Old City was held in part (the besieged Jewish Quarter) and fought over: contested.
+  - { url: 'https://m.knesset.gov.il/En/About/Documents/JerEnPDF1.pdf', checked: 2026-10-18 }
+  status: draft

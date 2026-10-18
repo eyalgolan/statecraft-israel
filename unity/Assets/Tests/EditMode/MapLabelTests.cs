@@ -203,6 +203,127 @@ public class MapLabelTests
         Assert.AreEqual(StyleKeyword.Null, container.style.display.keyword, "on clears the inline display, so the loading rule still wins (review M1)");
     }
 
+    static System.Collections.Generic.List<Statecraft.Sim.MapLocation> Locations() => Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).MapLocations;
+
+    /// <summary>Issue #1008: every GDD v0.2 map location in content/map/locations_1948.yaml is named on the map, in English and
+    /// in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's pill, so Jerusalem reads
+    /// "West Jerusalem" with no second pill; each other location has exactly one pill of its own, which ignores the pointer.</summary>
+    [Test]
+    public void EveryMapLocationIsNamedOnceInEnglishAndHebrew()
+    {
+        var locations = Locations();
+        var settlementIds = map.Settlements.Select(s => s.Id).ToHashSet();
+        var own = locations.Where(l => !settlementIds.Contains(l.Id)).ToList();
+        Assert.AreEqual(10, locations.Count, "the #1008 roster");
+        Assert.AreEqual(new[] { "jerusalem" }, locations.Where(l => settlementIds.Contains(l.Id)).Select(l => l.Id).ToArray());
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var ui = new UiTestKit();
+            using var labels = new MapLabelsPresenter(ui.Root, map, cam, hebrew: hebrew, locations: locations);
+            var container = ui.Q<VisualElement>(MapLabelsPresenter.ContainerName);
+            CollectionAssert.AreEqual(own.Select(l => hebrew ? l.NameHe : l.Name).ToArray(), labels.LocationLabels.Select(l => l.text).ToArray(), hebrew ? "he" : "en");
+            foreach (var l in own)
+            {
+                Assert.AreEqual(1, container.Query<VisualElement>("slot-" + l.Id).ToList().Count, l.Id + ": one pill");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(hebrew ? l.NameHe : l.Name), l.Id);
+            }
+            foreach (var l in labels.LocationLabels)
+            {
+                Assert.IsTrue(l.ClassListContains(MapLabelsPresenter.LabelClass) && l.ClassListContains(MapLabelsPresenter.LocationClass), l.text);
+                Assert.AreEqual(PickingMode.Ignore, l.pickingMode, l.text + " must not catch map clicks");
+            }
+            Assert.AreEqual(1, container.Query<VisualElement>("slot-jerusalem").ToList().Count, "Jerusalem keeps one pill");
+            Assert.AreEqual(hebrew ? "מערב ירושלים" : "West Jerusalem", labels.Labels[map.Settlements.ToList().FindIndex(s => s.Id == "jerusalem")].text);
+            Assert.AreEqual(map.Settlements.Count + own.Count + map.Localities.Count + 1, container.childCount, "settlements, locations, localities and the tooltip");
+        }
+        Assert.AreEqual("village", MapLabelsPresenter.LabelType("fort"));
+        Assert.AreEqual("kibbutz", MapLabelsPresenter.LabelType("kibbutz"));
+        Assert.AreEqual("city", MapLabelsPresenter.LabelType("city"));
+    }
+
+    /// <summary>Issue #1008: two locations in one hex stay two readable pills. Negba and the Iraq Suwaydan police fort share
+    /// hex (-7, 25), and West Jerusalem (the jerusalem settlement's pill) and East Jerusalem / Old City share (0, 23). Close up,
+    /// in English and in Hebrew, both pills of each pair are shown, and no two shown pills overlap.</summary>
+    [UnityTest]
+    public IEnumerator LocationsSharingAHexAreBothNamedAndNeverOverlap()
+    {
+        var locations = Locations();
+        var failures = new System.Collections.Generic.List<string>();
+        foreach (var hebrew in new[] { false, true })
+        {
+            var hd = new HdPanel(cam);
+            if (hebrew) (hd.Root.Q("root") ?? hd.Root).AddToClassList(UiLanguage.HebrewClass);
+            var labels = new MapLabelsPresenter(hd.Root, map, cam, hebrew: hebrew, locations: locations);
+            try
+            {
+                foreach (var (a, b, lon, lat) in new[] { ("negba", "iraq_suwaydan_fort", 34.6825, 31.6545), ("jerusalem", "east_jerusalem_old_city", 35.23, 31.778) })
+                {
+                    Pose(lon, lat, 20000f);
+                    for (int i = 0; i < 20 && labels.LocationLabels.Concat(labels.Labels).Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    var all = labels.Slots.Concat(labels.LocationSlots).Concat(labels.LocalitySlots).ToList();
+                    string lang = hebrew ? "he" : "en";
+                    foreach (var id in new[] { a, b })
+                        if (!Shown(all.Single(s => s.name == "slot-" + id))) failures.Add($"{lang} at {lon},{lat}: {id} is not shown");
+                    var shown = all.Where(Shown).Select(x => (id: x.name, rect: x.Q<Label>().worldBound)).ToList();
+                    TestContext.WriteLine($"{lang} 20 km over {a}/{b}: {string.Join(" ", shown.Select(x => x.id + "@" + x.rect))}");
+                    for (int i = 0; i < shown.Count; i++)
+                        for (int j = i + 1; j < shown.Count; j++)
+                            if (shown[i].rect.Overlaps(shown[j].rect)) failures.Add($"{lang}: {shown[i].id} overlaps {shown[j].id}");
+                }
+            }
+            finally { labels.Dispose(); hd.Dispose(); }
+        }
+        Assert.IsEmpty(failures, string.Join("\n", failures));
+    }
+
+    /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and MATKOT's Tegart fort model (SpecialBuildingModels,
+    /// streamed close up from 15 May 1948) do not cover each other. With the real prefab placed and the camera at 30 km over
+    /// Latrun (inside the model's close zoom), the pill is shown and its rectangle clears the model's projected bounds.</summary>
+    [UnityTest]
+    public IEnumerator TheLatrunFortsPillClearsTheTegartFortModel()
+    {
+        var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;
+        Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = (id, detail, done) =>
+            done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+        var hd = new HdPanel(cam);
+        MapLabelsPresenter? labels = null;
+        try
+        {
+            var layer = Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, new System.DateTime(1948, 5, 15))!;
+            var fort = layer.transform.Find("latrun_tegart");
+            Assert.IsNotNull(fort, "the Tegart fort model stands at Latrun on 15 May 1948");
+            labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
+            Pose(34.98, 31.835, 30000f);
+            for (int i = 0; i < 20 && labels.LocationLabels.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+            labels.Refresh(force: true); yield return null;
+            labels.Refresh(force: true); yield return null;
+            var slot = labels.LocationSlots.Single(s => s.name == "slot-latrun_fort");
+            Assert.IsTrue(Shown(slot), "the Latrun police fort is named at 30 km");
+            var pill = slot.Q<Label>().worldBound;
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var r in fort!.GetComponentsInChildren<Renderer>(true))
+            {
+                var b = r.bounds;
+                for (int c = 0; c < 8; c++)
+                {
+                    var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
+                    var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
+                    x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                }
+            }
+            var model = Rect.MinMaxRect(x0, y0, x1, y1);
+            TestContext.WriteLine($"latrun_fort pill {pill}; Tegart model {model}");
+            Assert.IsFalse(pill.Overlaps(model), $"the pill {pill} covers the fort model {model}");
+        }
+        finally
+        {
+            labels?.Dispose(); hd.Dispose();
+            Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = saved;
+        }
+    }
+
     [Test]
     public void LabelsOffScreenAreHiddenAndComeBack()
     {

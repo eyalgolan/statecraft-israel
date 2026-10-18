@@ -188,6 +188,25 @@ settlements:
 settlements:
   - { id: town_a, name: Town A, lon: 34.29, lat: 33.35, type: town, founded: 1900, pre_modern: false }
 ",
+        ["map/locations_1948.yaml"] = @"
+locations:
+  - id: town_a
+    name: Town A
+    name_he: עיר א
+    name_he_sources: [{ url: 'https://example.org/town-a-he', checked: 2026-10-18 }]
+    kind: city
+    lon: 34.29
+    lat: 33.35
+    q: 1
+    r: 0
+    priority: must_have
+    marker: true
+    managed_city: true
+    designated_site: false
+    settlement_control_target: false
+    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]
+    status: draft
+",
         ["aliyah.yaml"] = @"
 regions:
   - { id: europe, name: Europe }
