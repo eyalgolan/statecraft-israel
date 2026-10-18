@@ -14,6 +14,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   Mefalsim is built in March 1950 and the goldens move (refs #785, #782).
 
 ### Fixed
+- Event city effects preserve the city's housing condition when changing its housing capacity or job slots (#1000).
 - The Cabinet's Hebrew "already holds" refusal uses the holder's office title, including the feminine form for a woman;
   English is unchanged (#990).
 - On a phone held upright (390x844) the top bar's small text keeps the owner's 12 px floor too: the seven captions,

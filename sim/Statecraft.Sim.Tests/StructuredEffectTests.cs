@@ -95,6 +95,19 @@ from: 1948-05-15
         Assert.Contains(why, w => w.System == "events" && w.Target == "town_a.job_slots" && w.Delta == x.Employed - x.JobSlots);
     }
 
+    // R-EFX-004: changing a city's capacity or slots preserves its housing condition with every other unnamed field.
+    [Fact]
+    public void ACityEffectKeepsTheHousingCondition()
+    {
+        var c = Load(Event(Grants));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Cities["town_a"] = s.Cities["town_a"].WithCondition(0.73);
+
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", new List<Cause>()));
+
+        Assert.Equal(0.73, s.Cities["town_a"].Condition);
+    }
+
     // R-EFX-006: the structured effects apply after the numeric ones, in the option's list order (grants, then city effects).
     [Fact]
     public void TheyApplyAfterTheNumericEffectsInListOrder()
