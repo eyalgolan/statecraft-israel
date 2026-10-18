@@ -16,8 +16,9 @@ namespace Statecraft.Game.Map.Collection
     /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
     /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
     /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are MATKOT's models, "Whole model
-    /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, centred on its kit footprint
-    /// (MapScene.KitFootprints) and as wide as it, tilted to its ground and seated so it never floats (<see cref="SeatOn"/>).
+    /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
+    /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
+    /// that core, tilted to its ground and seated so it never floats (<see cref="SeatOn"/>).
     /// Up close, where #700's building models draw the same town (TownModelLayer.CloseAt, with its hysteresis), the
     /// whole-town model hides (<see cref="Choose"/>). The town's procedural houses never draw, at any zoom: its kit mesh gives
     /// way to its close mesh (the kit without its buildings; its mosques, churches, walls and port stay, as #700 keeps them)
@@ -156,6 +157,53 @@ namespace Statecraft.Game.Map.Collection
         }
 
         public const int Rings = 8, Bearings = 16;
+
+        /// <summary>The share of a town's building plots (#700's models at the world scale, SettlementKits.ModelScale) its
+        /// core holds: the whole-town model is as wide as the disc round them (<see cref="CoreOf"/>).</summary>
+        public const float CoreShare = 0.7f;
+        /// <summary>The most of the ground under a whole-town model that may be water (a coastal town keeps its shore).</summary>
+        public const float MaxWaterShare = 0.2f;
+        /// <summary>A whole-town model's half edge stays under this share of the distance to the nearest other game settlement,
+        /// so its ground rectangle (its corners reach about 1.41 half edges out) never covers that town.</summary>
+        public const float NeighbourShare = 0.65f;
+
+        /// <summary>A town's core (owner, 18 October 2026, through the coordinator: sized "so Tel Aviv doesn't cover Jaffa and
+        /// Haifa doesn't reach into the bay"): the centroid of the <see cref="CoreShare"/> of its building plots
+        /// (<paramref name="plots"/>) nearest its centre (<paramref name="centre"/>), and the radius that holds that share round
+        /// it, no more than its kit footprint (<paramref name="footprint"/>), under <see cref="NeighbourShare"/> of the distance
+        /// to the nearest of <paramref name="others"/>, then pulled in (by tenths, to a third of where it started) while more
+        /// than <see cref="MaxWaterShare"/> of the disc is water. With fewer than five plots: the centre and the footprint,
+        /// under the same two limits.</summary>
+        public static (Vector2 centre, float radius) CoreOf(Vector2 centre, float footprint, IReadOnlyList<Vector2> plots, IEnumerable<Vector2> others,
+            Func<float, float, bool> water)
+        {
+            Vector2 c = centre; float r = footprint;
+            if (plots.Count >= 5)
+            {
+                var near = plots.OrderBy(p => (p - centre).sqrMagnitude).Take(Mathf.Max(5, Mathf.CeilToInt(CoreShare * plots.Count))).ToList();
+                c = near.Aggregate(Vector2.zero, (a, p) => a + p) / near.Count;
+                var d = near.Select(p => (p - c).magnitude).OrderBy(x => x).ToList();
+                r = Mathf.Min(footprint, d[d.Count - 1]);
+            }
+            foreach (var o in others) r = Mathf.Min(r, NeighbourShare * (o - c).magnitude);
+            float floor = r / 3f;
+            for (int i = 0; i < 12 && r > floor && WaterShare(c, r, water) > MaxWaterShare; i++) r = Mathf.Max(floor, 0.9f * r);
+            return (c, r);
+        }
+
+        /// <summary>The share of 11 x 11 points in the disc at <paramref name="c"/> of <paramref name="r"/> that are water.</summary>
+        public static float WaterShare(Vector2 c, float r, Func<float, float, bool> water)
+        {
+            int n = 0, wet = 0;
+            for (int i = 0; i <= 10; i++)
+                for (int k = 0; k <= 10; k++)
+                {
+                    var q = c + new Vector2(-r + 2f * r * i / 10f, -r + 2f * r * k / 10f);
+                    if ((q - c).sqrMagnitude > r * r * 1.0001f) continue;
+                    n++; if (water(q.x, q.y)) wet++;
+                }
+            return n == 0 ? 0f : (float)wet / n;
+        }
 
         /// <summary>The steepest a whole-town model leans with its ground (degrees).</summary>
         public const float MaxTiltDeg = 10f;
@@ -305,6 +353,9 @@ namespace Statecraft.Game.Map.Collection
                 return !ground.OnRoute(p, rad) && !ground.OnToken(p, rad) && !ground.OnToken(p, rad, date);
             }
             var layer = Layer();
+            // Every game settlement's centre (its kit footprint's), for the cores' neighbour limit.
+            var gameIds = new HashSet<string>(map.Settlements.Select(x => x.Id), StringComparer.Ordinal);
+            var townCentres = map.KitFootprints.Where(f => gameIds.Contains(f.id)).Select(f => (c: f.centre, id: f.id)).ToList();
             foreach (var w in wants)
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
@@ -312,8 +363,13 @@ namespace Statecraft.Game.Map.Collection
                 Vector2 at; float edge, baseY; Vector3 normal = Vector3.up;
                 if (w.OnTown)
                 {
-                    at = w.At; edge = 2f * w.Radius;
-                    (normal, baseY) = SeatOn(at, w.Radius, ground.Y, ground.Water);
+                    // On the town's core, not its whole kit footprint (Tel Aviv's held Jaffa, Haifa's the bay).
+                    var plots = layer == null ? (IReadOnlyList<Vector2>)Array.Empty<Vector2>()
+                        : layer.InstancesOf(w.Key).Select(m => m.Plot).Distinct().ToList();
+                    var others = wants.Where(o => o.OnTown && o.Key != w.Key).Select(o => o.At).Concat(townCentres.Where(o => o.id != w.Key).Select(o => o.c));
+                    var (core, rad) = CoreOf(w.At, w.Radius, plots, others, ground.Water);
+                    at = core; edge = 2f * rad;
+                    (normal, baseY) = SeatOn(at, rad, ground.Y, ground.Water);
                 }
                 else
                 {

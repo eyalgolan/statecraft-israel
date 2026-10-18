@@ -108,11 +108,11 @@ public class TownLandmarksTests
     }
 
     /// <summary>Owner ruling, 18 October 2026 (on #917, #663, #659 and #700): the towns are MATKOT's models, "Whole model far,
-    /// buildings near". Far off, each mapped town's whole-town model stands ON its town: centred on the settlement's kit
-    /// footprint (MapScene.KitFootprints) and as wide as that footprint (its largest horizontal edge is the footprint's
-    /// diameter), not beside the town at a fixed 6 km.</summary>
+    /// buildings near". Far off, each mapped town's whole-town model stands ON its town, inside its kit footprint
+    /// (MapScene.KitFootprints), as wide as its core (TownLandmarks.CoreOf: where most of its building models stand), not
+    /// beside the town at a fixed 6 km.</summary>
     [Test]
-    public void EveryTownLandmarkStandsOnItsTownSizedToItsFootprint()
+    public void EveryTownLandmarkStandsOnItsTownSizedToItsCore()
     {
         var map = OpenMap();
         var t = ShowAll(map);
@@ -127,9 +127,62 @@ public class TownLandmarksTests
             Assert.IsNotNull(child, s.Id + " has its landmark");
             var (centre, radius) = footprint[s.Id];
             var b = WorldBounds(child!.gameObject);
-            Assert.Less(new Vector2(b.center.x - centre.x, b.center.z - centre.y).magnitude, 0.1f * radius, $"{s.Id} stands on its town");
-            Assert.AreEqual(2f * radius, Mathf.Max(b.size.x, b.size.z), 0.12f * 2f * radius, $"{s.Id} is as wide as its footprint ({radius:0} m radius)");
+            Assert.Less(new Vector2(b.center.x - centre.x, b.center.z - centre.y).magnitude, radius, $"{s.Id} stands on its town");
+            Assert.LessOrEqual(Mathf.Max(b.size.x, b.size.z), 1.12f * 2f * radius, $"{s.Id} is no wider than its footprint ({radius:0} m radius)");
+            Assert.IsTrue(t.Seats.TryGetValue(s.Id, out var seat), s.Id);
+            Assert.AreEqual(seat.Edge, Mathf.Max(b.size.x, b.size.z), 0.12f * seat.Edge, $"{s.Id} is as wide as its core ({0.5f * seat.Edge:0} m radius)");
         }
+    }
+
+    /// <summary>The coordinator for the owner, 18 October 2026: the whole-town model is sized to its town's core, "so Tel Aviv
+    /// doesn't cover Jaffa and Haifa doesn't reach into the bay". No town's whole-town model covers another game settlement:
+    /// no other settlement's kit footprint centre lies inside its ground rectangle (its world bounds on x/z).</summary>
+    [Test]
+    public void NoTownLandmarkCoversAnotherSettlement()
+    {
+        var map = OpenMap();
+        var t = ShowAll(map);
+        var ids = map.Settlements.Select(s => s.Id).ToHashSet();
+        var centres = new Dictionary<string, Vector2>();
+        foreach (var (c, _, id) in map.KitFootprints) if (ids.Contains(id) && !centres.ContainsKey(id)) centres[id] = c;
+        var bad = new List<string>();
+        foreach (var s in Mapped(map))
+        {
+            var b = WorldBounds(t.transform.Find(s.Id)!.gameObject);
+            foreach (var (id, c) in centres)
+                if (id != s.Id && c.x > b.min.x && c.x < b.max.x && c.y > b.min.z && c.y < b.max.z) bad.Add($"{s.Id}'s model covers {id}");
+        }
+        CollectionAssert.IsEmpty(bad);
+    }
+
+    /// <summary>No whole-town model reaches far into the sea or a lake: at most TownLandmarks.MaxWaterShare
+    /// (a fifth; a coastal town keeps its shore) of the ground under its disc (its largest edge across) is water.</summary>
+    [Test]
+    public void NoTownLandmarkReachesIntoTheSea()
+    {
+        var map = OpenMap();
+        var t = ShowAll(map);
+        var ground = PlacementLayer.CampGround(map);
+        var bad = new List<string>(); var lines = new List<string>();
+        foreach (var s in Mapped(map))
+        {
+            var b = WorldBounds(t.transform.Find(s.Id)!.gameObject);
+            var c = new Vector2(b.center.x, b.center.z);
+            float r = 0.5f * Mathf.Max(b.size.x, b.size.z);
+            int n = 0, wet = 0;
+            for (int i = 0; i <= 10; i++)
+                for (int k = 0; k <= 10; k++)
+                {
+                    var q = c + new Vector2(-r + 2f * r * i / 10f, -r + 2f * r * k / 10f);
+                    if ((q - c).sqrMagnitude > r * r) continue;
+                    n++; if (ground.Water(q.x, q.y)) wet++;
+                }
+            float share = n == 0 ? 0f : (float)wet / n;
+            lines.Add($"{s.Id} {share:0.00}");
+            if (share > 0.2f + 1e-3f) bad.Add($"{s.Id}: {share:P0} of its model's ground is water");
+        }
+        TestContext.WriteLine(string.Join(", ", lines));
+        CollectionAssert.IsEmpty(bad);
     }
 
     /// <summary>The swap with #700's building models: the landmarks draw where TownModelLayer draws the kits' far view and
