@@ -20,7 +20,8 @@ using Object = UnityEngine.Object;
 /// train").</summary>
 public class RoadVehiclesTests
 {
-    static readonly DateTime Start = new DateTime(1948, 5, 15), BurmaOpen = new DateTime(1948, 6, 14), TrainDate = new DateTime(1950, 3, 2);
+    static readonly DateTime Start = new DateTime(1948, 5, 15), BurmaOpen = new DateTime(1948, 6, 14),
+        BurmaConvoysEnd = new DateTime(1948, 12, 7), TrainDate = new DateTime(1950, 3, 2);
 
     Action<string, CollectionDetail, Action<GameObject>> saved, savedTrain;
     readonly List<(string id, CollectionDetail detail, Action<GameObject> done)> asked =
@@ -102,8 +103,8 @@ public class RoadVehiclesTests
             RoadVehicles.Plans.Select(p => p.Model).Distinct(), "all four of MATKOT's road vehicles are placed");
         CollectionAssert.AreEqual(new[]
         {
-            (RoadVehicles.SandwichConvoy, "burma_road", "1948-06-14", (string)null, 1),
-            (RoadVehicles.CanvasLorry, "burma_road", "1948-06-14", (string)null, 1),
+            (RoadVehicles.SandwichConvoy, "burma_road", "1948-06-14", "1948-12-07", 1),
+            (RoadVehicles.CanvasLorry, "burma_road", "1948-06-14", "1948-12-07", 1),
             (RoadVehicles.IntercityBus, "tel_aviv_haifa_road", "1948-05-15", (string)null, 2),
             (RoadVehicles.CitrusTruck, "tel_aviv_haifa_road", "1948-05-15", (string)null, 2),
         }, RoadVehicles.Plans.Select(p => (p.Model, p.Route, p.From.ToString("yyyy-MM-dd"), p.To?.ToString("yyyy-MM-dd"), p.Count)));
@@ -111,6 +112,21 @@ public class RoadVehiclesTests
         // The Burma Road's date is its route record's (content, sourced): the convoy runs only while the road is drawn.
         Assert.AreEqual(RoutePaths.Bound(routes["burma_road"].From), BurmaOpen);
         Assert.IsFalse(RoadVehicles.Plans.Any(p => p.Route == "jaffa_jerusalem_road"), "no convoy date on the Latrun road is sourced in the game window");
+    }
+
+    [Test]
+    public void BurmaRoadVehiclesStopOn7DecemberWhileOtherRoutesContinue()
+    {
+        var on6December = RoadVehicles.Plans.Where(p => p.Covers(BurmaConvoysEnd.AddDays(-1))).ToArray();
+        var on7December = RoadVehicles.Plans.Where(p => p.Covers(BurmaConvoysEnd)).ToArray();
+
+        CollectionAssert.AreEquivalent(new[] { RoadVehicles.SandwichConvoy, RoadVehicles.CanvasLorry },
+            on6December.Where(p => p.Route == "burma_road").Select(p => p.Model), "6 December: both Burma Road vehicles");
+        CollectionAssert.IsEmpty(on7December.Where(p => p.Route == "burma_road"), "7 December: neither Burma Road vehicle");
+        CollectionAssert.AreEquivalent(new[] { RoadVehicles.IntercityBus, RoadVehicles.CitrusTruck },
+            on6December.Where(p => p.Route == "tel_aviv_haifa_road").Select(p => p.Model), "6 December: other routes unchanged");
+        CollectionAssert.AreEquivalent(new[] { RoadVehicles.IntercityBus, RoadVehicles.CitrusTruck },
+            on7December.Where(p => p.Route == "tel_aviv_haifa_road").Select(p => p.Model), "7 December: other routes unchanged");
     }
 
     [Test]
@@ -239,6 +255,7 @@ public class RoadVehiclesTests
     [Test]
     public void EveryVehicleReadsSmallerThanTheLocomotive()
     {
+        float locoLong, locoHigh;
         var (map, layer) = Build(TrainDate, RouteLayer.TrainMode.Service);
         try
         {
@@ -248,23 +265,39 @@ public class RoadVehiclesTests
             var service = RouteTests.RoutesRoot(map).Find(ServiceTrain.Name).GetComponent<ServiceTrain>();
             var loco = service.Train.Cars[0];
             Assert.AreEqual("Locomotive", loco.name);
-            var (locoLong, _, locoHigh) = Extent(loco, new Vector2(loco.forward.x, loco.forward.z));
+            (locoLong, _, locoHigh) = Extent(loco, new Vector2(loco.forward.x, loco.forward.z));
             Assert.AreEqual(RoadVehicles.LocomotiveCarM, locoLong, 0.05f * locoLong, "the locomotive's car as drawn");
 
             AnswerAll();
-            Assert.AreEqual(6, layer.Placed.Count);
-            float figure = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
-            foreach (var p in layer.Placed)
-            {
-                var (len, _, high) = Extent(p.Transform, p.Along);
-                float share = len / locoLong;
-                TestContext.WriteLine($"{p.Model}: {len:0} m long, {high:0} m high; locomotive {locoLong:0} m long, {locoHigh:0} m high; share {share:0.00}");
-                Assert.That(share, Is.InRange(0.3f, 0.8f), $"{p.Model}: {len:0} m against the locomotive's {locoLong:0} m");
-                Assert.Less(high, locoHigh, $"{p.Model} stands lower than the locomotive");
-                Assert.Less(high, figure, $"{p.Model} stands lower than a unit figure");
-            }
+            Assert.AreEqual(4, layer.Placed.Count, "the Burma Road convoy truck and lorry have stopped by 1950 (BurmaConvoysEnd)");
+            AssertBelowTheLocomotive(layer, locoLong, locoHigh);
         }
         finally { Object.DestroyImmediate(map.gameObject); }
+
+        // The two Burma Road models run only until 7 December 1948, before the service train: measure them on 6 December
+        // against the locomotive car as drawn above.
+        var (map48, layer48) = Build(BurmaConvoysEnd.AddDays(-1));
+        try
+        {
+            AnswerAll();
+            Assert.That(layer48.Placed.Count(p => p.Model == RoadVehicles.SandwichConvoy || p.Model == RoadVehicles.CanvasLorry), Is.EqualTo(2));
+            AssertBelowTheLocomotive(layer48, locoLong, locoHigh);
+        }
+        finally { Object.DestroyImmediate(map48.gameObject); }
+    }
+
+    static void AssertBelowTheLocomotive(RoadVehicles layer, float locoLong, float locoHigh)
+    {
+        float figure = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
+        foreach (var p in layer.Placed)
+        {
+            var (len, _, high) = Extent(p.Transform, p.Along);
+            float share = len / locoLong;
+            TestContext.WriteLine($"{p.Model}: {len:0} m long, {high:0} m high; locomotive {locoLong:0} m long, {locoHigh:0} m high; share {share:0.00}");
+            Assert.That(share, Is.InRange(0.3f, 0.8f), $"{p.Model}: {len:0} m against the locomotive's {locoLong:0} m");
+            Assert.Less(high, locoHigh, $"{p.Model} stands lower than the locomotive");
+            Assert.Less(high, figure, $"{p.Model} stands lower than a unit figure");
+        }
     }
 
     [Test]

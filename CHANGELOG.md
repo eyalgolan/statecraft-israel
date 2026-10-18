@@ -34,6 +34,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   earns twice the job income, all labelled design values (Q-CRAFT-1 to Q-CRAFT-3). Each city's free jobs now fill on the
   housing step at no Attention cost until an `AssignWorkers` order fixes that city's number (Q-JOBS-1). The reference
   player stops sending `AssignWorkers`; only `scenario-mvp-absorb-first` moves (`,jobs=manual` on Tel Aviv).
+- The GDD v0.2 must-have map roster gains sourced records (`content/map/locations_1948.yaml`, all draft) for Negba,
+  Hulda, Nir Am, the Latrun and Iraq Suwaydan police forts, Bab al-Wad (Sha'ar HaGai), the Ad Halom bridge, Sha'ar
+  HaAliyah, and separate West and East Jerusalem / Old City markers. The loader validates their kinds, priorities,
+  explicit gameplay roles, sources, Hebrew names, land hexes and optional sourced control changes; the existing
+  `jerusalem` identity still owns the single Jerusalem city economy. East Jerusalem / the Old City is recorded as
+  Israeli-held from 15 May until its 28 May change to Arab forces. The map names each location in English and Hebrew,
+  and Jerusalem's pill reads "West Jerusalem" (#1008).
 - Kiryat Shmona (founded 18 July 1949) and Beit Shemesh (15 December 1950, the National Library's December 1950
   under the monthly turn) join the yishuv sites in `content/sites.yaml`, each with a field site in its hex; the
   founding days are the owner's (#785), and the rows stay draft. The reference player builds them in id order, so
@@ -82,6 +89,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   goldens do not move (refs #107).
 
 ### Changed
+- The Burma Road convoy truck and lorry stop on 7 December 1948, the approximate boundary when the Road of Valour
+  replaced the Burma Road for regular Jerusalem traffic; the Burma Road itself stays drawn (refs #1040, #1051).
 - MATKOT's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom
   (refs #663, #917, #659; owner, 18 October 2026: "Whole model far, buildings near"). Each mapped town's model stands
   on the town's core (where most of its building models stand, inside its kit footprint, clear of the next town and of

@@ -9,6 +9,46 @@ namespace Statecraft.Sim
 
     public sealed class Source { public string Url { get; set; } = ""; public DateTime Checked { get; set; } }
 
+    public sealed class MapLocationControlChange
+    {
+        public DateTime Date { get; set; }
+        public string Control { get; set; } = "";
+        public List<Source> Sources { get; set; } = new List<Source>();
+    }
+
+    /// <summary>A named place on the GDD v0.2 map roster. This is map metadata, not a city, capture target or build site;
+    /// those roles are explicit booleans so map inclusion cannot silently grant gameplay behavior.</summary>
+    public sealed class MapLocation
+    {
+        public string Id { get; set; } = "";
+        /// <summary>The period-appropriate display name.</summary>
+        public string Name { get; set; } = "";
+        /// <summary>The Hebrew display name the Hebrew UI's map label shows, with its own sources (as settlements_1948.yaml's name_he).</summary>
+        public string NameHe { get; set; } = "";
+        /// <summary>"agent-checked" while no person has read the Hebrew name (CONTENT_POLICY section 2, rule 6); empty once reviewed.</summary>
+        public string NameHeReview { get; set; } = "";
+        public List<Source> NameHeSources { get; set; } = new List<Source>();
+        public string Kind { get; set; } = "";
+        public double Lon { get; set; }
+        public double Lat { get; set; }
+        public int Q { get; set; }
+        public int R { get; set; }
+        public string Priority { get; set; } = "";
+        public bool Marker { get; set; }
+        public bool ManagedCity { get; set; }
+        public bool DesignatedSite { get; set; }
+        public bool SettlementControlTarget { get; set; }
+        /// <summary>Optional sourced holder at the campaign start. Empty where this issue does not establish one.</summary>
+        public string StartingControl { get; set; } = "";
+        public DateTime ControlDate { get; set; }
+        /// <summary>An optional sourced later historical control, recorded as metadata only.</summary>
+        public MapLocationControlChange? ControlChange { get; set; }
+        /// <summary>An optional sourced historical reference, never an availability or unlock rule.</summary>
+        public string HistoricalReference { get; set; } = "";
+        public List<Source> Sources { get; set; } = new List<Source>();
+        public string Status { get; set; } = "";
+    }
+
     /// <summary>The shape of a sign-off's `reviewed_by`: a GitHub handle (letters and digits, single hyphens between them,
     /// at most 39 characters, and at least one letter, so a bare number such as 1234 reads the same in every reader), so never an email, an @-name, a display name or a bot account ("name[bot]"). Shared with
     /// the map's readers in Unity.</summary>
@@ -1040,6 +1080,8 @@ namespace Statecraft.Sim
             }
         }
         public List<SettlementHex> SettlementHexes = new List<SettlementHex>();
+        /// <summary>Named GDD map locations. Presentation metadata only; gameplay roles remain in their owning systems.</summary>
+        public List<MapLocation> MapLocations = new List<MapLocation>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>
         public Dictionary<string, string> SettlementNames = new Dictionary<string, string>();
         /// <summary>The GDD cities' start values (cities.yaml), in file order. Empty in the legacy loop.</summary>

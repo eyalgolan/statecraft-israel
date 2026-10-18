@@ -20,7 +20,9 @@ recording and waits for RECORDING playing; then End turn must log TURN 1; any co
 BOOT FAIL fails the run; add --query lang=he for the Hebrew layout).
 The page is opened over the DevTools protocol with its viewport fixed to 1920x1080 at the DPR before it loads
 (Emulation.setDeviceMetricsOverride: --window-size alone gives a 1920x937 viewport in --headless=new), and the run
-fails on any "res=" line, or any screenshot, of another size. Headed runs go through tools/headed.py.
+fails on any "res=" line, or any screenshot, of another size. --viewport WxH checks another window - 390x844 is the
+phone the HUD's three-row bar is tuned for - and --mobile adds the phone emulation (meta viewport, touch events).
+Headed runs go through tools/headed.py.
 Pre-compressed builds: *.br and *.gz files are served with Content-Encoding, *.wasm(.br/.gz) as application/wasm.
 Brotli needs a secure context; http://localhost is one."""
 import argparse
@@ -55,9 +57,18 @@ KEEP_AWAKE = ["--disable-backgrounding-occluded-windows", "--disable-renderer-ba
 RES = re.compile(r"\bres=(\d+x\d+)\b")
 
 
-def viewport_override(width: int, height: int, dpr: float) -> dict:
-    """Emulation.setDeviceMetricsOverride parameters: exactly width x height CSS pixels at dpr, desktop (review ruling 1)."""
-    return {"width": width, "height": height, "deviceScaleFactor": dpr, "mobile": False}
+def viewport_override(width: int, height: int, dpr: float, mobile: bool = False) -> dict:
+    """Emulation.setDeviceMetricsOverride parameters: exactly width x height CSS pixels at dpr, desktop (review ruling 1)
+    unless --mobile asks for the phone emulation (the meta viewport and touch events a phone sends)."""
+    return {"width": width, "height": height, "deviceScaleFactor": dpr, "mobile": mobile}
+
+
+def parse_viewport(text: str) -> tuple[int, int]:
+    """A --viewport value, WIDTHxHEIGHT in CSS pixels ("390x844"); the default VIEWPORT keeps the desktop ruling."""
+    m = re.fullmatch(r"(\d{3,4})x(\d{3,4})", text.strip().lower())
+    if not m:
+        raise ValueError(f"--viewport wants WIDTHxHEIGHT in CSS pixels, e.g. 390x844, got {text!r}")
+    return int(m.group(1)), int(m.group(2))
 
 
 def expected_res(width: int, height: int, dpr: float) -> str:
@@ -237,8 +248,8 @@ class Page:
     """Opens url in a new tab of the Chrome using `profile`, over the DevTools protocol, with the viewport fixed before
     the first load; the connection (and with it the override) is held on a background thread until close()."""
 
-    def __init__(self, profile: str, url: str, width: int, height: int, dpr: float):
-        self.profile, self.url, self.metrics = profile, url, viewport_override(width, height, dpr)
+    def __init__(self, profile: str, url: str, width: int, height: int, dpr: float, mobile: bool = False):
+        self.profile, self.url, self.metrics = profile, url, viewport_override(width, height, dpr, mobile)
         self.ready, self.stop = threading.Event(), threading.Event()
         self.commands: queue.Queue = queue.Queue()
         self.error: BaseException | None = None
@@ -571,6 +582,9 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--swiftshader", action="store_true")
     ap.add_argument("--shots", type=Path)
     ap.add_argument("--dpr", type=float, default=1.0)
+    ap.add_argument("--viewport", default=f"{VIEWPORT[0]}x{VIEWPORT[1]}",
+                    help="viewport in CSS pixels, WIDTHxHEIGHT (default %(default)s, the desktop ruling); a phone's is 390x844")
+    ap.add_argument("--mobile", action="store_true", help="emulate a phone: the meta viewport applies and touch events are sent")
     ap.add_argument("--stall", type=float, default=0)
     ap.add_argument("--persistence", action="store_true")
     ap.add_argument("--startscreen", choices=["new", "recording"])
@@ -582,7 +596,10 @@ def main() -> int:
     if not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
     server, proc, page, profile = None, None, None, tempfile.mkdtemp(prefix="web-check-")
-    w, h = VIEWPORT
+    try:
+        w, h = parse_viewport(a.viewport)
+    except ValueError as e:
+        sys.exit(str(e))
     res = expected_res(w, h, a.dpr)
     shots = ShotCollector(a.shots, size=(round(w * a.dpr), round(h * a.dpr)))
 
@@ -609,9 +626,9 @@ def main() -> int:
         reader = threading.Thread(target=read, daemon=True)
         reader.start()
         try:
-            page = Page(profile, url, w, h, a.dpr)
+            page = Page(profile, url, w, h, a.dpr, a.mobile)
             page.open()
-            print(f"viewport {w}x{h} at DPR {a.dpr:g} (expect res={res})")
+            print(f"viewport {w}x{h} at DPR {a.dpr:g}{' mobile' if a.mobile else ''} (expect res={res})")
             driver, fail, plan = run_plan(a, page.command)
 
             def handle_text(text: str) -> bool:
