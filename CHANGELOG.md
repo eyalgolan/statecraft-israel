@@ -82,6 +82,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   goldens do not move (refs #107).
 
 ### Changed
+- The Burma Road convoy truck and lorry stop on 7 December 1948, the approximate boundary when the Road of Valour
+  replaced the Burma Road for regular Jerusalem traffic; the Burma Road itself stays drawn (refs #1040, #1051).
 - MATKOT's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom
   (refs #663, #917, #659; owner, 18 October 2026: "Whole model far, buildings near"). Each mapped town's model stands
   on the town's core (where most of its building models stand, inside its kit footprint, clear of the next town and of

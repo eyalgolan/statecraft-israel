@@ -56,6 +56,9 @@ namespace Statecraft.Game.Map.Routes
         }
 
         static readonly DateTime Start = new DateTime(1948, 5, 15), BurmaOpen = new DateTime(1948, 6, 14);
+        // Approximate: Road of Valour inaugurated 7 December 1948, a proxy for the last convoy under the owner's #949 rule.
+        // Source: research_notes/Map/burma-road-convoy-end.md (#1051).
+        static readonly DateTime BurmaConvoysEnd = new DateTime(1948, 12, 7);
 
         /// <summary>Where each model runs (content/map/routes_1948.yaml): the convoy truck and the canvas-tilt lorry on the
         /// Burma Road, Jerusalem's supply road from its completion on 14 June 1948 (the route's `from`, Burma Road (Israel));
@@ -64,8 +67,8 @@ namespace Statecraft.Game.Map.Routes
         /// map, from 1937) from the game's start. On every date a vehicle stands only where the control layer has Israel.</summary>
         public static readonly IReadOnlyList<Plan> Plans = new[]
         {
-            new Plan(SandwichConvoy, "burma_road", BurmaOpen, null, 1),
-            new Plan(CanvasLorry, "burma_road", BurmaOpen, null, 1),
+            new Plan(SandwichConvoy, "burma_road", BurmaOpen, BurmaConvoysEnd, 1),
+            new Plan(CanvasLorry, "burma_road", BurmaOpen, BurmaConvoysEnd, 1),
             new Plan(IntercityBus, "tel_aviv_haifa_road", Start, null, 2),
             new Plan(CitrusTruck, "tel_aviv_haifa_road", Start, null, 2),
         };
