@@ -265,3 +265,75 @@ main body counts.
 - The Government of Palestine's *Village Statistics, April 1945* scan was not checked; all seven baselines stay the
   repo's `owner-verify` transcription. [GAP]
 - The 13 May 1948 Jaffa agreement and instructions were not read in the original. [GAP]
+
+## Extension after the owner's rulings: option (a) rows (DRAFT for the owner's sensitivity review)
+
+**DRAFT. Owner sensitivity review required before any of this is used. Nothing here goes into `content/`.** Added
+18 October 2026, after the owner's rulings on #783: Q-TGT-1 (a), "only the `arab_town` rows of
+`settlements_1948.yaml` that a sourced operation names", and the Q-ANNEX-1 follow-up on the residents' outcome, in the
+owner's words: "default is fled, unless you have super credible israeli sources that say otherwise". This section
+summarises the place sections above as row-ready data; it adds no new claim about Morris's text. The scope paragraph
+at the top of this note predates those rulings.
+
+**How this section was checked (18 October 2026).** Each URL below was re-opened. The Knesset PDF was read in full
+(text extracted from the PDF). Morris's text could not be re-opened in this pass: the Archive.org copy is
+access-restricted and the Cambridge record shows only the chapter page ranges, which match the cited pages. The
+Morris page claims are therefore carried from this note's sections above, which #977's review checked against the
+text. Where a claim rests on Morris alone, the row says so. English Wikipedia was read as a cross-check only, and it
+agrees on the main points for Lydda and Ramle, Nazareth, Acre and Beersheba. [W] marks a claim that rests on
+Wikipedia alone.
+
+What the official sources themselves say, read 18 October 2026:
+
+- **Knesset** ([PDF](https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf)): British intervention
+  prevented the capture of Jaffa, and "the city surrendered in May" (no day); the table dates Hametz 27-30 April,
+  "כיתור יפו" (the encirclement of Jaffa), and Ben-Ami 14-19 May, "שחרור הגליל המערבי" (Western Galilee), without
+  naming Acre; Dekel took Lower Galilee "and in it the city of Nazareth"; Dani took Ramle and Lydda "from the Arab
+  Legion"; Yoav took Beersheba on 21 October, and the table names "מבצע משה" for that capture; after Horev the
+  Egyptian forces in the Gaza Strip were in danger of being cut off. The Knesset text says nothing about any town's
+  residents.
+- **IDF account, Operation Danny** ([page](https://jewishvirtuallibrary.org/jsource/History/Danny.html)): "On July
+  12, Kiryati units took Ramle, which surrendered after a brief engagement." It gives no day for Lydda and says
+  nothing about residents.
+- **IDF account, Operation Yoav** ([page](https://jewishvirtuallibrary.org/jsource/History/Yoav.html)): "by 09:00
+  hrs that morning [21 October], Beersheba - capital of the Negev had surrendered". Nothing about residents.
+- **IDF and Defence Establishment Archives**: the Rabin exhibition says Operation Danny captured "the cities of Lydda
+  and Ramle" ([page](https://archives.mod.gov.il/sites/English/Exhibitions/Pages/Yitzhak-Rabin.aspx)); the Haganah
+  publications catalogue lists *כיבוש לוד, יולי 1948* (Kadish, Sela and Golan, 2000) and *המערכה על יפו בתש"ח*
+  (Golan, Pelag, Kadish and Bendman, 2017), not read
+  ([catalogue](https://archives.mod.gov.il/sites/HaHagana/Publications/Pages/warbooks.aspx)); the Horev page dates
+  the operation 22 December 1948 to 7 January 1949 and does not mention Gaza
+  ([page](https://archives.mod.gov.il/FocusOn/Pages/050115.aspx)).
+- **Armistice** ([transcription](https://avalon.law.yale.edu/20th_century/arm01.asp)): signed at Rhodes on
+  24 February 1949; art. VI sets the Gaza-Rafah demarcation line.
+
+### Row-ready summary
+
+"Fled", "stayed" and "expelled" below are the wording of the cited source, not a game outcome. Morris is Benny
+Morris, *The Birth of the Palestinian Refugee Problem Revisited* (common source 1), an Israeli historian; it is the
+only source read here that gives each town's residents' outcome. Every row was checked 18 October 2026.
+
+| id | on the list under (a)? | held on 15 May 1948 | operation and date | residents' outcome (owner's rule applied) | sources | confidence |
+|---|---|---|---|---|---|---|
+| `jaffa` | **No (proposed; the owner decides).** Jaffa was already under Haganah control at the 15 May start, so there is nothing to capture in play; #569 also makes it part of Tel Aviv-Yafo. | Israeli-held | Hametz (27-30 April, Knesset) encircled Jaffa; it did not take the city. Surrender agreement 12-13 May; Haganah occupation **14 May 1948** (Morris). [C] 13 May rests on one uncited en.wiki sentence [W]. | Not a target. For the record: most residents had fled before the occupation; about 4,100 remained (Morris, p. 219). Default "fled" stands. | Morris pp. 211-221; Knesset | High that it is off-list; medium for one fall day |
+| `acre` | Yes | Arab-held | Ben-Ami; surrendered on the night of **17-18 May 1948** (Morris). The Knesset dates Ben-Ami 14-19 May but does not name Acre. [C] start 13 or 14 May. | **Owner pick [C].** Many residents fled before the assault. About 5,000 people remained after the surrender, many of them refugees from Haifa and non-local workers; Morris says no expulsion order was issued (p. 231). The source does not say most residents stayed, so the default "fled" applies unless the owner rules that this remaining population counts as "stayed". | Morris pp. 228-232 (Morris alone for residents; en.wiki agrees on 5,000-6,000); Knesset | High for the range; medium for the outcome |
+| `nazareth` | Yes | Arab-held (Arab Liberation Army) | Dekel; occupied and surrendered **16 July 1948** (Morris; the Knesset names Nazareth in Dekel). | **Stayed (most).** An expulsion order was issued on 17 July; the military governor refused to carry it out and Ben-Gurion vetoed it (Morris, p. 419). The one clear exception to the default. | Morris pp. 418-421; Knesset | High |
+| `lod` | Yes | Arab-held | Dani; the town was entered on **11 July 1948**, and the police fort held out until 13 July (Morris). [C] Khalidi gives 10-14 July. The Knesset and the IDF Archives say Dani took Lydda; neither gives a day. | **Expelled (most), after some earlier flight.** Morris records an order of 12 July to expel the inhabitants; most left on 13 July; about 100 remained (pp. 429-434). The source says otherwise than "fled", so the row follows it. | Morris pp. 423-435 (Morris alone for residents; en.wiki agrees); Knesset; IDF Archives | High for operation and outcome; medium for one day |
+| `ramla` | Yes | Arab-held | Dani; surrendered and entered **12 July 1948** (Morris, IDF account). | **Expelled (most), after earlier flight.** Morris records departures from 12 July, the bulk on 13 July, and calls the departures from both towns an expulsion (pp. 429-432). Several hundred remained in the two towns together; there is no count for Ramle alone. | Morris pp. 425-432 (Morris alone for residents); IDF account; Knesset | High |
+| `gaza` | **No.** No Israeli operation took Gaza in 1948-1949. | Arab-held (Egyptian; arrival 15 or 19 May, [C]) | None. Morris: in October "Gaza was not overrun"; the Knesset says only that Egyptian forces in the Gaza Strip were in danger of being cut off after Horev; it stayed on the Egyptian side of the 1949 line. | Not applicable: no capture. Morris records that the town received refugees (p. 467). | Morris pp. 467, 471-472; Knesset; IDF Archives (Horev dates); armistice | High |
+| `beersheba` | Yes | Arab-held (Egyptian control from 17, 19 or 20 May, [C]) | Yoav (Operation Moshe in the Knesset table); surrendered by 09:00 on **21 October 1948** (IDF account, Knesset). | **Fled (most).** Mass flight began on 19 October. About 350 people remained after the capture; Morris records that around 25 October the women, children and elderly were taken by truck to the Gaza lines, and that the men were held for labour and later sent to prisoner-of-war camps or across the lines. By 30 October no Arab inhabitants remained (p. 467). | Morris pp. 466-467 (Morris alone for residents; en.wiki agrees); IDF account; Knesset | High |
+
+### Open points for the owner (not decided here)
+
+- **Jaffa:** proposed off the list because it is Israeli-held at the start. The owner confirms. [C] 13 or 14 May for
+  the fall, if any text needs a day.
+- **Acre:** does a remaining population of about 5,000, many of them not local, count as "stayed"? Without a ruling
+  the default "fled" applies.
+- **Lydda, Ramle and Beersheba:** the source's word for most residents (Lydda, Ramle) and for those who remained
+  (Beersheba) is "expelled", not "fled". This section applies the owner's rule by following the source. How a card
+  words it is for the owner's sensitivity review (Q-TGT-3 (b)).
+- **Lydda:** one day if a row needs it: 11 July (entry) or 13 July (police fort). [C]
+- **Gaza:** off the list under (a). The Egyptian arrival day (15 or 19 May) does not change that.
+- **Beersheba:** the May Egyptian arrival day (17, 19 or 20 May) does not change its Arab-held status on 15 May.
+- **Not reached:** Mustafa Abbasi's article on Nazareth in *Iyunim Bitkumat Israel* 22 (Ben-Gurion University), the
+  two Haganah Archives books above, and the Israel State Archives. None of them is cited for any claim here.
