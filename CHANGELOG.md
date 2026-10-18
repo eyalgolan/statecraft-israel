@@ -109,6 +109,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   goldens do not move (refs #107).
 
 ### Changed
+- Hebrew vote text (`budget.no_vote`, `budget.vote_advisory`, `cabinet.legislature_advisory`) is reworded so it needs
+  no grammatical gender for the Knesset or the Provisional State Council, and legislatures get no gender field (owner,
+  18 October 2026: "Neutral wording"); a native speaker still reads it (refs #564).
 - The Burma Road convoy truck and lorry stop on 7 December 1948, the approximate boundary when the Road of Valour
   replaced the Burma Road for regular Jerusalem traffic; the Burma Road itself stays drawn (refs #1040, #1051).
 - MATKOT's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom

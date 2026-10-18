@@ -55,6 +55,9 @@ def test_hebrew_is_not_enabled_without_runtime_review():
 def test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms():
     he = strings('strings.he.yaml')
     assert he['event.more'] == 'החלטות ממתינות נוספות: {0}'
+    assert he['budget.no_vote'] == 'אין הצבעה ב־{0} על התקציב'
+    assert he['budget.vote_advisory'] == 'התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}'
+    assert he['cabinet.legislature_advisory'] == 'מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות'
     # A seat count's unit is its own string, by the body (CabinetPresenter.SeatUnit): the Knesset's seats are
     # "מנדטים", the appointed Provisional State Council's members "חברים"; no template hard-codes either.
     assert he['cabinet.seats'] == 'מנדטים'
