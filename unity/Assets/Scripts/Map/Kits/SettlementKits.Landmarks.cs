@@ -169,8 +169,8 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>How far inside the walls the Old City's houses keep (and outside them the new city's).</summary>
         const float OldCityInset = 220f;
 
-        /// <summary>Jerusalem: Suleiman's walls (1537-41) round a symbolic square Old City with five gates (Jaffa Gate on the
-        /// west, Damascus Gate on the north wall's west side, Lions' Gate on the east, Zion and Dung Gates on the south) and a
+        /// <summary>Jerusalem: Suleiman's walls (1537-41) round a symbolic square Old City with its seven gates open in 1948
+        /// (Jaffa west; New, Damascus and Herod's north; Lions' east; Zion and Dung south) and a
         /// gap wherever a 1948 road or the railway crosses the line, the citadel near Jaffa Gate, and the Haram al-Sharif in
         /// the city's east: its platform, the Dome of the Rock (blue and white Ottoman tiles; its dome blackened lead until
         /// the 1959-64 restoration) and the Al-Aqsa Mosque at the platform's south end (its dome lead). The rest of the
@@ -182,19 +182,22 @@ namespace Statecraft.Game.Map.Kits
             float wallT = 380f, wallH = 900f;
             var stone = C(0.82f, 0.72f, 0.55f); var top = C(0.86f, 0.78f, 0.62f);
             int n = 0;
-            // The Haram al-Sharif in the city's south-east (in the real city it fills the east side down to the south wall):
-            // its platform, the Dome of the Rock and Al-Aqsa, where the platform keeps clear of the drawn Jericho road. The
-            // roads left no room for the real platform's north-south length, so it is wider than long and Al-Aqsa stands in
-            // its south-east corner rather than across its south end (docs/visual-v1.md, "Towns round 2"). Since #319 the
-            // roads stop at the walls; reshaping the platform is the rest of that issue.
-            float pw = 1300f, pl = 1100f;
-            var pc = oc + new Vector2(350f, -1200f);
+            // The Haram al-Sharif / Temple Mount in the Old City's south-east, against its east and south walls: "in the
+            // southeast corner of the Old City" (L. Nees, Age of Transition, Metropolitan Museum 2015, p. 94,
+            // https://resources.metmuseum.org/resources/metpublications/pdf/Age_of_Transition_Byzantine_Culture_in_the_Islamic_World.pdf).
+            // Its platform measures 488 m along the west, 470 m along the east, 315 m along the north and 280 m along the
+            // south (https://en.wikipedia.org/wiki/Temple_Mount), about 1.6 times as long north-south as east-west; the
+            // symbolic one keeps that shape (1.1 x 1.7 km). Both checked 18 October 2026. The 1948 roads are drawn only
+            // outside the walls (RouteLayer.Drawn, #319), so their traced lines inside the walls (the corridors) do not
+            // move it; it still keeps off the units' clearings (TownCensusTests.NoBuildingStandsOnARouteOrInTheSea).
+            float pw = 1100f, pl = 1700f;
+            var pc = oc + new Vector2(1300f, -1000f);
             var paving = C(0.86f, 0.82f, 0.72f);
-            if (RectClear(pc, pw, pl, ground) && lots.Free(pc, 0.5f * Mathf.Sqrt(pw * pw + pl * pl)))   // first in the Old City
+            if (lots.Free(pc, 0.5f * Mathf.Sqrt(pw * pw + pl * pl)))   // first in the Old City
             {
                 var (pb, pg) = GroundSpan(pc, 0f, pw, pl, ground, 1f);
                 km.Box(pc.x, pc.y, 0f, pw, pl, pb, pg, 80f, C(0.80f, 0.72f, 0.58f), paving, Facade.Plain, 10f);
-                // Its lots: discs over the platform, each clear of the routes (RectClear checked the whole platform).
+                // Its lots: discs over the platform, each clear of the routes.
                 for (float u = -pw * 0.5f + 150f; u < pw * 0.5f; u += 260f)
                     for (float v = -pl * 0.5f + 150f; v < pl * 0.5f; v += 260f)
                     {
@@ -204,12 +207,12 @@ namespace Statecraft.Game.Map.Kits
                 Record(s.Id, "haram", pc, 0f, pw, pl, 80f, paving);
                 n++;
                 float deck = pg + 80f;
-                // The Dome of the Rock in the platform's west (18x across: the 52 m octagon about 0.95 km; its walls and drum 30x
+                // The Dome of the Rock on the raised platform near the Haram's centre (18x across: the 52 m octagon about 0.95 km; its walls and drum 30x
                 // high, so it rises over the Old City's roofs): marble below, blue and white tiles above, a tiled drum and the
                 // lead dome (dark: before the 1959-64 restoration).
                 float k = 18f, kv = 30f;
                 float rOct = 27f * k;
-                var dc = pc + new Vector2(-0.5f * pw + rOct + 30f, 0f);
+                var dc = pc + new Vector2(-40f, 260f);
                 var marble = C(0.88f, 0.86f, 0.80f); var tiles = C(0.36f, 0.50f, 0.64f); var lead = C(0.26f, 0.27f, 0.29f);
                 km.Shaft(new Vector3(dc.x, deck - 60f, dc.y), new Vector3(dc.x, deck + 5f * kv, dc.y), rOct, rOct, marble, 8);
                 km.Shaft(new Vector3(dc.x, deck + 5f * kv, dc.y), new Vector3(dc.x, deck + 11f * kv, dc.y), rOct, rOct, tiles, 8);
@@ -218,9 +221,11 @@ namespace Statecraft.Game.Map.Kits
                 km.Dome(dc.x, dc.y, deck + 19f * kv, 11f * k, lead, 16, 6);
                 Record(s.Id, "dome_of_the_rock", dc, 0f, 2f * rOct, 2f * rOct, 19f * kv + 11f * k, tiles);
                 n++;
-                // Al-Aqsa in the platform's south-east corner: a hall running north-south (16x) and its lead dome.
-                float aw = 230f, al = 480f;
-                var ac = pc + new Vector2(0.5f * pw - 0.5f * aw - 40f, -0.5f * pl + 0.5f * al + 40f);
+                // Al-Aqsa (the Qibli Mosque) "located on the south wall of the compound"
+                // (https://en.wikipedia.org/wiki/Al-Aqsa_Mosque, checked 18 October 2026): a hall across the platform's south
+                // end (16x) and its lead dome.
+                float aw = 700f, al = 360f;
+                var ac = pc + new Vector2(0f, -0.5f * pl + 0.5f * al + 40f);
                 km.Box(ac.x, ac.y, 0f, aw, al, deck - 60f, deck, 300f, C(0.84f, 0.77f, 0.62f), C(0.70f, 0.70f, 0.68f), Facade.Stone, 16f);
                 km.Dome(ac.x, ac.y + 0.3f * al, deck + 280f, 0.45f * aw, C(0.55f, 0.56f, 0.57f), 12, 5);
                 Record(s.Id, "al_aqsa", ac, 0f, aw, al, 300f, C(0.84f, 0.77f, 0.62f));
@@ -228,7 +233,21 @@ namespace Statecraft.Game.Map.Kits
             }
 
             // Gates: (side, position along it as a share of the half side). Sides: 0 north, 1 east, 2 south, 3 west.
-            var gates = new (int side, float at)[] { (3, 0.05f), (0, -0.15f), (1, 0.6f), (2, -0.45f), (2, -0.05f) };
+            // The seven gates open before the 1948 war; the eighth, the Gate of Mercy (the Golden Gate) in the Haram's east
+            // wall, has been blocked for centuries and is not drawn. The Israel Ministry of Tourism lists them
+            // counter-clockwise from the south: Zion, Dung (leading to the Western Wall), Mercy, Lion's, Herod's
+            // (north-facing), Damascus (north), New and Jaffa (https://israel.travel/the-gates-of-jerusalem/). The New Gate,
+            // the only one not in Suleiman's design, opened in 1887 or 1889 (https://en.wikipedia.org/wiki/Gates_of_the_Old_City_of_Jerusalem
+            // and https://en.wikipedia.org/wiki/New_Gate); Herod's Gate has its present opening since 1875
+            // (https://en.wikipedia.org/wiki/Herod%27s_Gate). All checked 18 October 2026. Where a road's corridor meets the
+            // wall at a gate's spot, the gate moves along the same wall to the nearest clear spot.
+            var gates = new (int side, float at)[]
+            {
+                (3, 0.05f),                           // Jaffa: west
+                (0, -0.85f), (0, -0.5f), (0, 0.35f),  // New, Damascus, Herod's: north, west to east, where the north wall is clear
+                (1, -0.35f),                          // Lion's: east, north of the Haram (and of the Gate of Mercy)
+                (2, -0.21f), (2, 0.125f),             // Dung (by the Haram's south-west corner), Zion (west of it): south
+            };
             const int pieces = 12;
             float len = 2f * half / pieces, pieceR = 0.5f * Mathf.Sqrt(len * len + wallT * wallT);   // a piece's half-diagonal
             int built = 0;
@@ -261,13 +280,24 @@ namespace Statecraft.Game.Map.Kits
                         if (ground.OnRoute(t, 0.5f * tw + 10f)) continue;   // the tower itself stays off the road
                         var (tb, ty) = GroundSpan(t, yaw, tw, tw, ground, 1f);
                         km.Box(t.x, t.y, yaw, tw, tw, tb, ty, th, stone, top, byRoad ? Facade.Stone : Facade.Plain, KitScale.Houses);
-                        if (byRoad) Record(s.Id, "gate", t, yaw, tw, tw, th, stone);
                     }
                 }
                 foreach (var (gs, at) in gates)
                 {
                     if (gs != side) continue;
                     var gp = oc + a0 + dir * (half + at * half);
+                    // A road corridor may meet the wall at a gate. Put the symbolic gatehouse beside that opening, on the
+                    // same wall and nearest clear side, rather than dropping the sourced gate from the census.
+                    if (ground.OnRoute(gp, 330f))
+                    {
+                        for (int step = 1; step <= 3 && ground.OnRoute(gp, 330f); step++)
+                        {
+                            var before = gp - dir * (step * 380f);
+                            var after = gp + dir * (step * 380f);
+                            if (!ground.OnRoute(before, 330f)) gp = before;
+                            else if (!ground.OnRoute(after, 330f)) gp = after;
+                        }
+                    }
                     if (ground.OnRoute(gp, 330f)) continue;
                     var (gb, gy) = GroundSpan(gp, yaw, 650f, 420f, ground, 1f);
                     km.Box(gp.x, gp.y, yaw, 650f, 420f, gb, gy, wallH + 400f, stone, top, Facade.Stone, KitScale.Houses);
@@ -290,17 +320,6 @@ namespace Statecraft.Game.Map.Kits
                 n++;
             }
             return n;
-        }
-
-        /// <summary>True when a north-aligned w x l rectangle at <paramref name="c"/> keeps 60 m off every route corridor
-        /// (sampled every ScanStepM, edges included).</summary>
-        static bool RectClear(Vector2 c, float w, float l, KitGround ground)
-        {
-            int nx = Mathf.CeilToInt(w / ScanStepM), nz = Mathf.CeilToInt(l / ScanStepM);
-            for (int i = 0; i <= nx; i++)
-                for (int j = 0; j <= nz; j++)
-                    if (ground.OnRoute(c + new Vector2(-0.5f * w + w * i / nx, -0.5f * l + l * j / nz), 60f)) return false;
-            return true;
         }
 
         // ---- Haifa ----------------------------------------------------------------------------------------------------

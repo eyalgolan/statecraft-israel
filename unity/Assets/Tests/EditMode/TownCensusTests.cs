@@ -157,7 +157,25 @@ public class TownCensusTests
             foreach (var k in expect) if (!kinds.Contains(k)) missing.Add($"{s.Id}: {k}");
         }
         CollectionAssert.IsEmpty(missing, "landmarks left out");
-        Assert.GreaterOrEqual(placed.Count(p => p.Id == "jerusalem" && p.Kind == "gate"), 3, "most of the Old City's gates stand");
+        // Eight gates, all open but the Gate of Mercy (the Golden Gate), Israel Ministry of Tourism,
+        // https://israel.travel/the-gates-of-jerusalem/, checked 18 October 2026; the seventh, the New Gate, opened in 1887
+        // or 1889 (https://en.wikipedia.org/wiki/Gates_of_the_Old_City_of_Jerusalem and
+        // https://en.wikipedia.org/wiki/New_Gate, both checked 18 October 2026), so seven stood open before the 1948 war.
+        var gates = placed.Where(p => p.Id == "jerusalem" && p.Kind == "gate").ToList();
+        Assert.AreEqual(7, gates.Count, "the Old City's seven open gates stand");
+        // Seven distinct gatehouses: none overlaps another, or none would read as two gates.
+        for (int i = 0; i < gates.Count; i++)
+            for (int j = i + 1; j < gates.Count; j++)
+                Assert.GreaterOrEqual((gates[i].C - gates[j].C).magnitude, gates[i].W, $"gates at {gates[i].C} and {gates[j].C} overlap");
+
+        // The Haram al-Sharif / Temple Mount: 488 m along the west, 470 m along the east, 315 m along the north and 280 m
+        // along the south (https://en.wikipedia.org/wiki/Temple_Mount, checked 18 October 2026): longer north-south.
+        // Al-Aqsa stands on its south wall (https://en.wikipedia.org/wiki/Al-Aqsa_Mosque, checked 18 October 2026).
+        var haram = placed.Single(p => p.Id == "jerusalem" && p.Kind == "haram");
+        var aqsa = placed.Single(p => p.Id == "jerusalem" && p.Kind == "al_aqsa");
+        Assert.Greater(haram.D, 1.4f * haram.W, "the Haram runs north-south, about 1.6 times as long as it is wide");
+        Assert.Less(aqsa.C.y - 0.5f * aqsa.D, haram.C.y - 0.5f * haram.D + 0.1f * haram.D, "Al-Aqsa stands at the Haram's south end");
+        Assert.Greater(aqsa.W, aqsa.D, "Al-Aqsa runs across the south end, not down it");
     }
 
     /// <summary>No building or landmark stands on a railway or a road (their corridors, RouteLayer.Corridors, and the units'
@@ -175,7 +193,19 @@ public class TownCensusTests
             bool building = p.Kind == "building" || p.Kind == "wing";
             float reach = building ? 0.5f * Mathf.Sqrt(p.W * p.W + p.D * p.D) : 0.5f * Mathf.Min(p.W, p.D);
             if (p.Kind == "wing") reach = 0.5f * Mathf.Min(p.W, p.D);   // inside its block's plot, which was checked whole
-            if (g.OnRoute(p.C, reach)) bad.Add($"{p.Id} {p.Kind} on a route at {p.C}");
+            // The Haram, the Dome of the Rock and Al-Aqsa (#319): the roads' traced lines still run inside the Old City's
+            // walls as corridors (RouteLayer.Corridors), but no road is drawn there (RouteLayer.Drawn cuts every road and
+            // the railway at the walls), and the real roads ran outside the real walls. So these three must stand wholly
+            // inside the walls, where no ribbon is drawn, and off every unit's clearing; other corridors do not move them.
+            bool oldCitySanctuary = p.Id == "jerusalem" && (p.Kind == "haram" || p.Kind == "dome_of_the_rock" || p.Kind == "al_aqsa");
+            if (oldCitySanctuary)
+            {
+                var (oc, half) = SettlementKits.OldCityWalls(map.Frame);
+                if (Mathf.Abs(p.C.x - oc.x) + 0.5f * p.W > half || Mathf.Abs(p.C.y - oc.y) + 0.5f * p.D > half) bad.Add($"{p.Id} {p.Kind} outside the Old City's walls at {p.C}");
+                foreach (var (cc, cr) in map.UnitClearings)
+                    if (Mathf.Abs(cc.x - p.C.x) < 0.5f * p.W + cr && Mathf.Abs(cc.y - p.C.y) < 0.5f * p.D + cr) bad.Add($"{p.Id} {p.Kind} on a unit's clearing at {cc}");
+            }
+            else if (g.OnRoute(p.C, reach)) bad.Add($"{p.Id} {p.Kind} on a route at {p.C}");
             if (g.Water(p.C.x, p.C.y)) bad.Add($"{p.Id} {p.Kind} in the sea at {p.C}");
             if (!building) continue;
             float a = p.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);

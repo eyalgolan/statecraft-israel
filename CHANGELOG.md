@@ -13,6 +13,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `?golden`) read the manifest, the players ship it and the scenario files, and an unknown or failing golden is a
   `GOLDEN FAIL` line. The lines now name the golden (`GOLDEN OK hash1950 <hash>`, was `GOLDEN OK 1950 <hash>`), and the
   smoke and era-golden play code moved into `GoldenRun` so Unity plays the .NET runs (#394).
+- Jerusalem's symbolic Haram al-Sharif / Temple Mount runs north-south in its sourced proportions against the Old City's
+  east and south walls, Al-Aqsa stands across its south end, and the walls have the seven gates open before the 1948 war
+  on their real sides, the Golden Gate sealed: 7 gates, not one per road gap (13) (#319).
 
 ## [0.1.0] - 2026-10-18
 

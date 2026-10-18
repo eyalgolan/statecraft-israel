@@ -2265,9 +2265,12 @@ blocks, village houses, red-roofed villas), Jaffa 6 → 7, Tel Aviv 8 → 7.
   - It is 4 km across, about 4 times the real one. The drawn 1948 roads (300 m ribbons) meet by Jaffa Gate and loop
     round the north and east, so at any readable size they cross inside the square, through gaps in the walls.
     Since #319 the map cuts each road and the railway at the walls (`docs/routes.md`, "Jerusalem's Old City"), so none
-    runs inside them. The Haram's shape below, and the gates, are still as round 2 placed them.
-  - Only one place in its south-east quadrant fits a platform clear of every route: 1.3 x 1.1 km, wider than long. Al-Aqsa
-    therefore stands in its south-east corner, not across its south end.
+    runs inside them.
+  - Round 2 fitted the Haram's platform where it kept clear of every route's traced line: 1.3 x 1.1 km, wider than long,
+    with Al-Aqsa in its south-east corner, and it drew a gate wherever a road met the walls (13). Since #319 the platform
+    runs north-south (1.1 x 1.7 km, the real one's shape) against the east and south walls, Al-Aqsa stands across its
+    south end, and the walls have the seven gates open before 1948 on their real sides, the Golden Gate left sealed
+    (sources in `SettlementKits.Jerusalem`). The roads' traced lines inside the walls still keep houses off them.
   - The citadel is moved east off the drawn Hebron road.
   - The houses inside the walls are capped at two storeys, and the Dome's walls and drum are 30x high, so the walls and
     the Dome stand above the roofs.
