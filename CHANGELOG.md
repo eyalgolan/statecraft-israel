@@ -27,6 +27,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   "ראש הממשלה"; Beri's wording as a native speaker). A card with no portrait shows the first name's initial and the surname
   ("י. ידין"). A row with no Hebrew form yet keeps its English name (today only the Minister responsible for rationing).
   English is unchanged.
+- Under `?lang=he` the Budget rows and vote line, and the event card's office line, use the content's Hebrew office,
+  holder and legislature names; a missing Hebrew name keeps its English form (refs #900, #558).
 
 ## [0.1.0] - 2026-10-18
 

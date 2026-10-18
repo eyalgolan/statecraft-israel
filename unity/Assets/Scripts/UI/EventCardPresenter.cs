@@ -217,7 +217,8 @@ namespace Statecraft.Game.UI
                     new Length(PortraitFraming.PositionYPercent(portrait.width, portrait.height, PortraitWidth, PortraitHeight, entry!.Value.focusY), LengthUnit.Percent));
             card.Q<Label>("event-draft").style.display = e.Status == "draft" ? DisplayStyle.Flex : DisplayStyle.None;
             card.Q<Label>("event-title").text = EventSystem.Title(c, s, e);
-            card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", c.Offices.First(o => o.Id == e.Office).Title, holder.Name);
+            var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
+            card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder), ContentNames.Of(text, holder));
             card.Q<Label>("event-text").text = EventSystem.Render(c, s, e);
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);

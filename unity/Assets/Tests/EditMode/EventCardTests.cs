@@ -52,6 +52,21 @@ public class EventCardTests
     }
 
     [Test]
+    public void InHebrewTheOfficeLineUsesTheFeminineTitleAndHebrewName()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.First(x => x.Id == "armistice_egypt");
+        e.Office = "labour_minister";
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = new System.DateTime(1950, 2, 1);
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        using var ui = new UiTestKit();
+        new EventCardPresenter(ui.Root, new SimBridge(g, he), he, null);
+        Assert.AreEqual("שרת העבודה: גולדה מאיר", ui.Q<Label>("event-office").text);
+    }
+
+    [Test]
     public void AMinisterWithoutAPortraitShowsNoImage()
     {
         using var ui = new UiTestKit();
