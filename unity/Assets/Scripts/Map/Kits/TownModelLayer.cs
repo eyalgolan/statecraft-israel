@@ -38,6 +38,8 @@ namespace Statecraft.Game.Map.Kits
         readonly List<(Renderer kit, Renderer? close)> swaps = new List<(Renderer, Renderer?)>();
         /// <summary>Each camera's last choice (by instance id), for the hysteresis.</summary>
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
+        /// <summary>The towns whose kit buildings never draw (<see cref="Suppress"/>), by settlement id.</summary>
+        readonly HashSet<string> suppressed = new HashSet<string>(System.StringComparer.Ordinal);
         TownModelSet? set;
         public bool Draw { get; set; } = true;
         /// <summary>Whether the layer has a complete model list (else the towns keep their kits at every zoom).</summary>
@@ -94,6 +96,21 @@ namespace Statecraft.Game.Map.Kits
             Show(false);
         }
 
+        /// <summary>Owner ruling of 18 October 2026 ("Whole model far, buildings near"; no procedural houses in a town with a
+        /// whole-town model, at any zoom): the towns <paramref name="ids"/> (the settlement ids TownLandmarks stood a
+        /// whole-town model on) show their close mesh at every zoom, their kit mesh at none. Far off their whole-town model
+        /// stands on them, up close these models do. Replaces the last list; an empty list gives every town #700's swap back.
+        /// It holds without a complete model list too (the whole-town model then draws at every zoom: TownLandmarks).</summary>
+        public void Suppress(IEnumerable<string> ids)
+        {
+            suppressed.Clear();
+            suppressed.UnionWith(ids);
+            Show(set != null && LastClose);
+        }
+
+        /// <summary>Whether town <paramref name="id"/>'s kit buildings never draw (a test aid).</summary>
+        public bool Suppressed(string id) => suppressed.Contains(id);
+
         /// <summary>The models placed for a town or locality (a test aid).</summary>
         public int CountFor(string id) => perPlace.TryGetValue(id, out var l) ? l.Count : 0;
 
@@ -132,13 +149,15 @@ namespace Statecraft.Game.Map.Kits
             foreach (var t in tiles) foreach (var m in t.m) yield return (t.model, m);
         }
 
-        /// <summary>Kit buildings (false) or close meshes (true) for the camera about to render.</summary>
+        /// <summary>Kit buildings (false) or close meshes (true) for the camera about to render; a suppressed town's close mesh
+        /// at either.</summary>
         void Show(bool close)
         {
             foreach (var (kit, closeR) in swaps)
             {
-                if (kit != null) kit.forceRenderingOff = close;
-                if (closeR != null) closeR.forceRenderingOff = !close;
+                bool c = close || (kit != null && suppressed.Contains(kit.name));
+                if (kit != null) kit.forceRenderingOff = c;
+                if (closeR != null) closeR.forceRenderingOff = !c;
             }
         }
 

@@ -1,11 +1,13 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Kits;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -85,52 +87,121 @@ public class TownLandmarksTests
         Assert.IsNull(TownLandmarks.ModelFor("no_such_action", new DateTime(1951, 1, 1)));
     }
 
-    /// <summary>The overview switch itself: a camera at the 120 km start view draws the landmarks, one at the 60 km gameplay
-    /// view does not (forceRenderingOff on every landmark renderer, as the camera is about to render).</summary>
-    [Test]
-    public void TheLandmarksDrawAtTheStartViewAndNotAtTheGameplayView()
+    /// <summary>The towns with a whole-town model, in the file's order.</summary>
+    static List<Settlement> Mapped(MapScene map) => map.Settlements.Where(s => TownLandmarks.ModelFor(s) != null).ToList();
+
+    TownLandmarks ShowAll(MapScene map)
     {
-        var map = OpenMap();
         var c = ContentLoader.Load(Statecraft.Game.Paths.Content);
         var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), c)!;
         AnswerAll();
-        var renderers = t.GetComponentsInChildren<Renderer>(true);
-        Assert.Greater(renderers.Length, 0);
-        Camera At(float distanceM)
-        {
-            var cam = new GameObject($"cam {distanceM}").AddComponent<Camera>();
-            cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
-            cam.transform.position = new Vector3(50000f, 0f, 50000f) - cam.transform.forward * distanceM;
-            Assert.AreEqual(distanceM, TownLandmarks.ViewDistance(cam), 1f);
-            return cam;
-        }
-        var start = At(120000f); var play = At(60000f);
-        t.Choose(default, start);
-        Assert.IsTrue(renderers.All(r => !r.forceRenderingOff), "drawn at the 120 km start view");
-        t.Choose(default, play);
-        Assert.IsTrue(renderers.All(r => r.forceRenderingOff), "hidden at the 60 km gameplay view");
-        Object.DestroyImmediate(start.gameObject); Object.DestroyImmediate(play.gameObject);
+        return t;
     }
 
-    [Test]
-    public void TheOverviewSwitchHasHysteresis()
+    /// <summary>Renders the map's own camera at <paramref name="distanceM"/> over <paramref name="at"/> (the hooks run as
+    /// in the player: RenderPipelineManager.beginCameraRendering).</summary>
+    static void RenderAt(MapScene map, Vector2 at, float distanceM)
     {
-        // Owner on #917 (17 October 2026): "Larger, from 120 km" (enter at 110 km).
-        var rig = new GameObject("rig").AddComponent<CameraRig>();
-        try { Assert.IsTrue(TownLandmarks.OverviewAt(rig.Distance, null), "the starting view (CameraRig.Distance, 120 km)"); }
-        finally { Object.DestroyImmediate(rig.gameObject); }
-        Assert.IsTrue(TownLandmarks.OverviewAt(110000f, null), "on from 110 km");
-        Assert.IsFalse(TownLandmarks.OverviewAt(109000f, null));
-        Assert.IsFalse(TownLandmarks.OverviewAt(60000f, null), "gameplay03: the per-building kits draw");
-        Assert.IsFalse(TownLandmarks.OverviewAt(60000f, true), "gameplay03, coming in from the overview");
-        Assert.IsTrue(TownLandmarks.OverviewAt(250000f, null), "the farthest zoom");
-        Assert.IsTrue(TownLandmarks.OverviewAt(100000f, true), "stays on in the band");
-        Assert.IsFalse(TownLandmarks.OverviewAt(100000f, false), "stays off in the band");
-        Assert.IsFalse(TownLandmarks.OverviewAt(97000f, true));
-        Assert.Greater(TownLandmarks.OverviewEnterM / TownLandmarks.OverviewExitM, 1f / (1f - CameraController.ZoomPerStep),
-            "the band is wider than one wheel notch");
-        Assert.AreEqual(6000f, TownLandmarks.SizeM, "about 6 km across");
-        Assert.AreEqual(CameraController.MaxDistance, 250000f, "the overview is within the camera's reach");
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        rig.LookAt = new Vector3(at.x, 0f, at.y); rig.Distance = distanceM; rig.Yaw = 0f; rig.Apply();
+        RenderSample.Render(cam, 320, 180);
+    }
+
+    /// <summary>Owner ruling, 18 October 2026 (on #917, #663, #659 and #700): the towns are MATKOT's models, "Whole model far,
+    /// buildings near". Far off, each mapped town's whole-town model stands ON its town: centred on the settlement's kit
+    /// footprint (MapScene.KitFootprints) and as wide as that footprint (its largest horizontal edge is the footprint's
+    /// diameter), not beside the town at a fixed 6 km.</summary>
+    [Test]
+    public void EveryTownLandmarkStandsOnItsTownSizedToItsFootprint()
+    {
+        var map = OpenMap();
+        var t = ShowAll(map);
+        CollectionAssert.IsEmpty(t.Missing);
+        var footprint = new Dictionary<string, (Vector2 centre, float radius)>();
+        foreach (var (centre, radius, id) in map.KitFootprints) if (!footprint.ContainsKey(id)) footprint[id] = (centre, radius);
+        var mapped = Mapped(map);
+        Assert.Greater(mapped.Count, 20);
+        foreach (var s in mapped)
+        {
+            var child = t.transform.Find(s.Id);
+            Assert.IsNotNull(child, s.Id + " has its landmark");
+            var (centre, radius) = footprint[s.Id];
+            var b = WorldBounds(child!.gameObject);
+            Assert.Less(new Vector2(b.center.x - centre.x, b.center.z - centre.y).magnitude, 0.1f * radius, $"{s.Id} stands on its town");
+            Assert.AreEqual(2f * radius, Mathf.Max(b.size.x, b.size.z), 0.12f * 2f * radius, $"{s.Id} is as wide as its footprint ({radius:0} m radius)");
+        }
+    }
+
+    /// <summary>The swap with #700's building models: the landmarks draw where TownModelLayer draws the kits' far view and
+    /// hide where it draws the building models (TownModelLayer.CloseAt: in below CloseEnterM, out above CloseExitM), with
+    /// the same hysteresis, at the start view (120 km), the gameplay view (60 km), both sides of the band and the closest
+    /// zoom.</summary>
+    [Test]
+    public void TheLandmarksSwapWithTheBuildingModelsAtTheThreshold()
+    {
+        var map = OpenMap();
+        var t = ShowAll(map);
+        var layer = map.transform.Find(KitLayer.RootName).GetComponentInChildren<TownModelLayer>();
+        Assert.IsTrue(layer.HasModels);
+        var renderers = t.GetComponentsInChildren<Renderer>(true);
+        Assert.Greater(renderers.Length, 0);
+        var tel = map.KitFootprints.First(f => f.id == "tel_aviv").centre;
+        foreach (var (d, close, why) in new[]
+        {
+            (120000f, false, "the start view"), (60000f, false, "the gameplay view"),
+            (TownModelLayer.CloseEnterM + 1000f, false, "inside the band, coming in"), (TownModelLayer.CloseEnterM - 1000f, true, "past the threshold"),
+            (TownModelLayer.CloseExitM - 2000f, true, "inside the band, going out"), (TownModelLayer.CloseExitM + 1000f, false, "out of the band"),
+            (CameraController.MinDistance, true, "the closest zoom"),
+        })
+        {
+            RenderAt(map, tel, d);
+            Assert.AreEqual(close, layer.LastClose, $"{d / 1000f} km, {why}: the building models");
+            Assert.IsTrue(renderers.All(r => r.forceRenderingOff == close), $"{d / 1000f} km, {why}: the whole-town models " + (close ? "hide" : "draw"));
+        }
+    }
+
+    /// <summary>No procedural houses in a mapped town at any zoom (owner, 18 October 2026): its kit mesh never draws, its
+    /// close mesh (the kit without its buildings: its mosques, churches, walls and port, as #700 keeps them) draws far and
+    /// near. A town without a whole-town model keeps #700's swap: its kit far off, its close mesh up close.</summary>
+    [Test]
+    public void AMappedTownDrawsNoProceduralHousesAtAnyZoom()
+    {
+        var map = OpenMap();
+        var t = ShowAll(map);
+        var root = map.transform.Find(KitLayer.RootName);
+        var mapped = Mapped(map);
+        var plain = map.Settlements.First(s => TownLandmarks.ModelFor(s) == null);
+        var plainKit = root.Find(plain.Id).GetComponent<MeshRenderer>();
+        foreach (var (d, close) in new[] { (120000f, false), (60000f, false), (TownModelLayer.CloseEnterM - 1000f, true), (CameraController.MinDistance, true) })
+        {
+            RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, d);
+            foreach (var s in mapped)
+            {
+                Assert.IsTrue(root.Find(s.Id).GetComponent<MeshRenderer>().forceRenderingOff, $"{s.Id}'s kit houses at {d / 1000f} km");
+                var closeR = root.Find(s.Id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+                if (closeR != null) Assert.IsFalse(closeR.forceRenderingOff, $"{s.Id}'s landmarks and ground at {d / 1000f} km");
+            }
+            Assert.AreEqual(close, plainKit.forceRenderingOff, $"{plain.Id} (no whole-town model) keeps #700's swap at {d / 1000f} km");
+        }
+    }
+
+    /// <summary>The fail-open check: without #700's building models (no model list) nothing would draw a mapped town up
+    /// close, so its whole-town model stays at every zoom, and its kit houses still never draw.</summary>
+    [UnityTest]
+    public IEnumerator WithoutTheBuildingModelsTheWholeTownModelStaysUpClose()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.ConfigureTownModels(null!);
+        LogAssert.Expect(LogType.Error, new Regex("town models: the map scene has no model list"));
+        map.Build();
+        yield return null;
+        var t = ShowAll(map);
+        var root = map.transform.Find(KitLayer.RootName);
+        Assert.IsFalse(root.GetComponentInChildren<TownModelLayer>().HasModels);
+        RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, CameraController.MinDistance);
+        Assert.IsTrue(t.GetComponentsInChildren<Renderer>(true).All(r => !r.forceRenderingOff), "the whole-town models draw at the closest zoom");
+        Assert.IsTrue(root.Find("tel_aviv").GetComponent<MeshRenderer>().forceRenderingOff, "Tel Aviv's kit houses still never draw");
     }
 
     /// <summary>Owner, 18 October 2026: the models "seem to be on their side on the map". Every Collection Far prefab's root
@@ -151,8 +222,9 @@ public class TownLandmarksTests
             var prefab = Far(model);
             var child = t.transform.Find(key);
             Assert.IsNotNull(child, key);
-            var want = t.transform.rotation * Quaternion.Euler(0f, TownLandmarks.YawOf(model), 0f) * prefab.transform.localRotation;
-            Assert.Less(Quaternion.Angle(want, child!.rotation), 0.01f, $"{key} ({model}) keeps its prefab's rotation under its yaw");
+            var tilt = t.Seats.TryGetValue(key, out var seat) ? Quaternion.FromToRotation(Vector3.up, seat.Normal) : Quaternion.identity;
+            var want = t.transform.rotation * tilt * Quaternion.Euler(0f, TownLandmarks.YawOf(model), 0f) * prefab.transform.localRotation;
+            Assert.Less(Quaternion.Angle(want, child!.rotation), 0.01f, $"{key} ({model}) keeps its prefab's rotation under its yaw and its seat's tilt");
             if (!heights.TryGetValue(model, out var h))
             {
                 // The model as its prefab stands (unparented, its own rotation): a yaw about the vertical keeps this height.
@@ -160,8 +232,11 @@ public class TownLandmarksTests
                 try { heights[model] = h = WorldBounds(probe).size.y / probe.transform.localScale.y; }
                 finally { Object.DestroyImmediate(probe); }
             }
+            // Untilted (the seat's tilt taken off about the base), the landmark is as tall as its model at its scale.
+            var keep = child.rotation; child.rotation = Quaternion.Inverse(tilt) * child.rotation;
             float scale = child.localScale.y;
-            Assert.AreEqual(h * scale, WorldBounds(child.gameObject).size.y, 0.01f * h * scale, $"{key} ({model}) is as tall as its model");
+            try { Assert.AreEqual(h * scale, WorldBounds(child.gameObject).size.y, 0.01f * h * scale, $"{key} ({model}) is as tall as its model"); }
+            finally { child.rotation = keep; }
         }
     }
 
@@ -171,6 +246,40 @@ public class TownLandmarksTests
         var b = rs[0].bounds;
         foreach (var r in rs) b.Encapsulate(r.bounds);
         return b;
+    }
+
+    /// <summary>The whole-town model on a slope (the kibbutz model cut into its hill at the closest zoom, on #917): each one
+    /// is tilted to the least-squares plane of the ground under its footprint (at most TownLandmarks.MaxTiltDeg) and seated at
+    /// its lowest point, so it never floats: no land under its footprint lies below its base plane. Degania Alef stands on a
+    /// slope, so its model leans with the ground.</summary>
+    [Test]
+    public void AWholeTownModelFollowsItsGroundAndNeverFloats()
+    {
+        var map = OpenMap();
+        var t = ShowAll(map);
+        var ground = PlacementLayer.CampGround(map);
+        var lines = new List<string>();
+        foreach (var s in Mapped(map))
+        {
+            Assert.IsTrue(t.Seats.TryGetValue(s.Id, out var seat), s.Id);
+            float tilt = Vector3.Angle(Vector3.up, seat.Normal);
+            Assert.LessOrEqual(tilt, TownLandmarks.MaxTiltDeg + 0.01f, s.Id);
+            float r = 0.5f * seat.Edge, deepest = 0f;
+            for (int i = 0; i <= 10; i++)
+                for (int k = 0; k <= 10; k++)
+                {
+                    var q = seat.Centre + new Vector2(-r + 2f * r * i / 10f, -r + 2f * r * k / 10f);
+                    if ((q - seat.Centre).sqrMagnitude > 0.999f * r * r || !ground.Inside(q.x, q.y) || ground.Water(q.x, q.y)) continue;
+                    var d = q - seat.Centre;
+                    float plane = seat.BaseY - (seat.Normal.x * d.x + seat.Normal.z * d.y) / seat.Normal.y;
+                    float above = ground.Y(q.x, q.y) - plane;
+                    Assert.GreaterOrEqual(above, -0.5f, $"{s.Id} floats {-above:0.0} m above its ground at {q}");
+                    deepest = Mathf.Max(deepest, above);
+                }
+            lines.Add($"{s.Id} tilt {tilt:0.0} deg, ground up to {deepest:0} m above its base");
+        }
+        TestContext.WriteLine(string.Join("; ", lines));
+        Assert.Greater(Vector3.Angle(Vector3.up, t.Seats["degania_alef"].Normal), 0.5f, "Degania Alef leans with its slope");
     }
 
     [Test]
@@ -188,7 +297,7 @@ public class TownLandmarksTests
     /// <summary>Nothing is drawn until the stream answers (it never serves a request in the frame that made it), and only
     /// the strategic zoom's mesh is asked for, once per model.</summary>
     [Test]
-    public void TheLandmarksStreamInAndStandClearOfEveryKitAndEachOther()
+    public void TheLandmarksStreamInOncePerModel()
     {
         var map = OpenMap();
         var c = ContentLoader.Load(Statecraft.Game.Paths.Content);
@@ -210,24 +319,6 @@ public class TownLandmarksTests
         // Owner on #917 (17 October 2026): "Keep at all seven" arab_town rows.
         Assert.AreEqual(7, map.Settlements.Count(s => s.Type == "arab_town"));
         Assert.AreEqual(7, t.Placed.Count(p => p.Model == TownLandmarks.StoneVillage), "the stone village at all seven");
-        float r = 0.5f * TownLandmarks.SizeM;
-        var at = t.Placed.Select(p => new Vector2(p.At.x, p.At.z)).ToList();
-        foreach (var (p, (key, _, _)) in at.Zip(t.Placed, (p, q) => (p, q)))
-        {
-            foreach (var f in map.KitFootprints)
-                Assert.GreaterOrEqual((p - f.centre).magnitude, f.radius + r - 1f, $"{key} stands on {f.id}'s kit");
-            foreach (var q in at) if (q != p) Assert.GreaterOrEqual((p - q).magnitude, 2f * r - 1f, $"{key} on another landmark");
-            var w = t.Wanted.Single(x => x.Key == key);
-            Assert.Less((p - w.At).magnitude, w.Radius + r * (TownLandmarks.Rings + 1), $"{key} is beside its town");
-        }
-        foreach (Transform child in t.transform)
-        {
-            var b = child.GetComponentsInChildren<Renderer>().Select(x => x.bounds).Aggregate((a, x) => { a.Encapsulate(x); return a; });
-            Assert.AreEqual(TownLandmarks.SizeM, Mathf.Max(b.size.x, b.size.z), 1f, child.name + " is drawn at the landmark size");
-            var spot = t.Placed.Single(p => p.Key == child.name).At;
-            Assert.Less(new Vector2(b.center.x - spot.x, b.center.z - spot.z).magnitude, 1f, child.name + " is centred on its spot");
-            Assert.AreEqual(spot.y, b.min.y, 1f, child.name + " stands on the ground");
-        }
     }
 
     [Test]

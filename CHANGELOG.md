@@ -101,6 +101,14 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   keep the floor too (26 px at 360x800, 30 px at 375x667): there the bar grows to its rows' height and the panels
   under it follow. On a phone held upright the decision card now starts right of the left rail and hangs under the bar instead of sitting centred, so no
   rail button sits under it (Why? and Settings did), and the rail's buttons are 60 px, at least 24 px on screen.
+### Changed
+- MATKOT's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom
+  (refs #663, #917, #659; owner, 18 October 2026: "Whole model far, buildings near"). Each mapped town's model is
+  centred on the town's kit footprint and as wide as it, upright, tilted to its ground (at most 10 degrees) and seated
+  at its lowest point, so it never floats and a hillside no longer cuts through it. Below about 40 km it gives way to
+  the single building models (#700), with the same hysteresis band. Mosques, churches, walls and ports keep the kit.
+  The 110 km view-distance switch and the "beside the town" spot are gone; a ma'abara or shikun still stands beside its
+  camp or housing project.
 
 ## [0.1.1] - 2026-10-18
 

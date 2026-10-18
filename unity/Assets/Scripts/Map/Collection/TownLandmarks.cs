@@ -8,36 +8,34 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>The nine whole-town models of The 1948 Collection as overview landmarks (issue #663; owner ruling of 17 October
-    /// 2026: "The nine whole-town models ship (this reverses the 15 Oct 'layout references only' ruling). They are slimmed,
-    /// streamed after the first frame, and pass the load gate. The ma'abara and the shikun appear only from their sourced
-    /// 1950s dates."). The models are MATKOT's, made with Tripo Studio and offered in #507; which town each
-    /// stands at is #507's own mapping (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the
-    /// port city at Haifa, the moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the
-    /// stone village at every Arab town, the ma'abara at a transit camp and the shikun at a housing project.
-    /// Each stands beside its town, never on it: on the nearest free ground clear of every kit footprint (towns, 1948
-    /// localities, Bedouin camps: MapScene.KitFootprints), every route corridor, the water, the units and every other
-    /// landmark (<see cref="Spot"/>), so the settlement kits (#820) and the close-zoom building models (#700) are untouched.
-    /// They draw only at the overview zoom (a camera's view distance from <see cref="OverviewEnterM"/> on, back off below
-    /// <see cref="OverviewExitM"/>), where a kit town is a few pixels across; at the gameplay and close zooms nothing changes.
+    /// <summary>The nine whole-town models of The 1948 Collection (issue #663; owner ruling of 17 October 2026: "The nine
+    /// whole-town models ship (this reverses the 15 Oct 'layout references only' ruling). They are slimmed, streamed after
+    /// the first frame, and pass the load gate. The ma'abara and the shikun appear only from their sourced 1950s dates.").
+    /// The models are MATKOT's, made with Tripo Studio and offered in #507; which town each stands at is #507's own mapping
+    /// (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the port city at Haifa, the
+    /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
+    /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
+    /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are MATKOT's models, "Whole model
+    /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, centred on its kit footprint
+    /// (MapScene.KitFootprints) and as wide as it, tilted to its ground and seated so it never floats (<see cref="SeatOn"/>).
+    /// Up close, where #700's building models draw the same town (TownModelLayer.CloseAt, with its hysteresis), the
+    /// whole-town model hides (<see cref="Choose"/>). The town's procedural houses never draw, at any zoom: its kit mesh gives
+    /// way to its close mesh (the kit without its buildings; its mosques, churches, walls and port stay, as #700 keeps them)
+    /// for good (TownModelLayer.Suppress). A placement's landmark (the ma'abara, the shikun) still stands beside its camp or
+    /// housing project, on free ground (<see cref="Spot"/>), <see cref="SizeM"/> across, and hides up close too.
     /// Each model is the strategic zoom's mesh (CollectionDetail.Far, at most 4,500 triangles), asked of
-    /// <see cref="CollectionStream"/> when the first landmark needs it, so it is never fetched before the first frame, and
-    /// the spots are worked out only once a model has come. It fails open: a model that does not stream logs one warning
-    /// and its landmarks are not drawn; the map and the game run on.</summary>
+    /// <see cref="CollectionStream"/> when the first landmark needs it, so it is never fetched before the first frame. It fails
+    /// open: a model that does not stream logs one warning, its landmarks are not drawn and its towns keep their kit houses
+    /// far off (they are not suppressed); without #700's building models (TownModelLayer.HasModels false) the whole-town
+    /// models draw at every zoom, so no mapped town is ever left without buildings.</summary>
+    [ExecuteAlways]
     public sealed class TownLandmarks : MonoBehaviour
     {
         public const string Name = "TownLandmarks";
 
-        /// <summary>The view distances (m) of the switch, with hysteresis: from 110 km on the landmarks draw, below 98 km they
-        /// go (owner on #917, 17 October 2026: "Larger, from 120 km"). The game starts at 120 km (CameraRig.Distance), so the
-        /// player sees them at once, as at the overview (diorama02 and the minimap's whole-map button:
-        /// CameraController.MaxDistance, 250 km); the gameplay view (60 km, gameplay03) and every closer zoom, where the
-        /// per-building kits draw, do not. The band is wider than one wheel notch (CameraController.ZoomPerStep, 10% of the
-        /// distance).</summary>
-        public const float OverviewEnterM = 110000f, OverviewExitM = 98000f;
-
-        /// <summary>A landmark's largest edge on the ground (m): about 41 px across at 250 km and 86 px at 120 km on a 1080 px
-        /// screen (CameraRig.Fov 35 degrees). Symbolic, like the kits' scale (owner on #917: "Larger", about 6 km).</summary>
+        /// <summary>A placement's landmark's largest edge on the ground (m), beside its camp or housing project: about 41 px
+        /// across at 250 km and 86 px at 120 km on a 1080 px screen (CameraRig.Fov 35 degrees; owner on #917: "Larger", about
+        /// 6 km). A town's whole-town model is as wide as the town's kit footprint instead.</summary>
         public const float SizeM = 6000f;
 
         /// <summary>The ma'abara from the date the first one is reported: Kachansky, "The Ma'abarot" (Yad Ben-Zvi, 1987),
@@ -97,32 +95,34 @@ namespace Statecraft.Game.Map.Collection
         public static string? ModelFor(string action, DateTime date) =>
             ByAction.TryGetValue(action, out var row) && row.From is { } from && date >= from ? row.Model : null;
 
-        /// <summary>One landmark to draw: its key (the settlement id, or the placement's box name), its model, and the centre
-        /// and radius (m, world x/z) of the ground its town or placement holds.</summary>
+        /// <summary>One landmark to draw: its key (the settlement id, or the placement's box name), its model, the centre
+        /// and radius (m, world x/z) of the ground its town or placement holds, and whether it stands on that ground (a town)
+        /// or beside it (a placement).</summary>
         public readonly struct Want : IEquatable<Want>
         {
-            public readonly string Key, Model; public readonly Vector2 At; public readonly float Radius;
-            public Want(string key, string model, Vector2 at, float radius) { Key = key; Model = model; At = at; Radius = radius; }
-            public bool Equals(Want o) => Key == o.Key && Model == o.Model && At == o.At && Radius == o.Radius;
+            public readonly string Key, Model; public readonly Vector2 At; public readonly float Radius; public readonly bool OnTown;
+            public Want(string key, string model, Vector2 at, float radius, bool onTown)
+            { Key = key; Model = model; At = at; Radius = radius; OnTown = onTown; }
+            public bool Equals(Want o) => Key == o.Key && Model == o.Model && At == o.At && Radius == o.Radius && OnTown == o.OnTown;
             public override bool Equals(object? o) => o is Want w && Equals(w);
-            public override int GetHashCode() => (Key, Model, At, Radius).GetHashCode();
+            public override int GetHashCode() => (Key, Model, At, Radius, OnTown).GetHashCode();
         }
 
-        /// <summary>The landmarks the map wants as at <paramref name="date"/>: one per mapped settlement (its kit footprint's
-        /// radius, or its marker box's half edge without kits) and one per mapped placement from its date (its hex's
-        /// half width), in a fixed order: settlements as the file lists them, then placements as placed.</summary>
+        /// <summary>The landmarks the map wants as at <paramref name="date"/>: one per mapped settlement, on its kit footprint
+        /// (its centre and radius; without kits its marker box's half edge), and one per mapped placement from its date (its
+        /// hex's half width), in a fixed order: settlements as the file lists them, then placements as placed.</summary>
         public static List<Want> Wants(MapScene map, DateTime date, IEnumerable<Placement> placements, Content content)
         {
-            var radius = new Dictionary<string, float>(StringComparer.Ordinal);
-            foreach (var (_, r, id) in map.KitFootprints) if (!radius.ContainsKey(id)) radius[id] = r;
+            var footprint = new Dictionary<string, (Vector2 centre, float radius)>(StringComparer.Ordinal);
+            foreach (var (c, r, id) in map.KitFootprints) if (!footprint.ContainsKey(id)) footprint[id] = (c, r);
             var wants = new List<Want>();
             foreach (var s in map.Settlements)
             {
                 var model = ModelFor(s);
                 if (model == null) continue;
                 var w = map.Frame.ToWorld(s.Lon, s.Lat, 0);
-                float r = radius.TryGetValue(s.Id, out var kr) ? kr : 0.5f * SettlementPlacer.MarkerHeightM(s.Type);
-                wants.Add(new Want(s.Id, model, new Vector2(w.x, w.z), r));
+                var (at, r) = footprint.TryGetValue(s.Id, out var f) ? f : (new Vector2(w.x, w.z), 0.5f * SettlementPlacer.MarkerHeightM(s.Type));
+                wants.Add(new Want(s.Id, model, at, r, onTown: true));
             }
             float hexHalf = 500f * map.Hexes.hex_size_km;
             foreach (var p in placements)
@@ -131,7 +131,7 @@ namespace Statecraft.Game.Map.Collection
                 var hex = model == null ? null : content.HexAt(p.Q, p.R);
                 if (hex == null) continue;
                 var w = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
-                wants.Add(new Want($"{p.Action}_{p.Q}_{p.R}", model!, new Vector2(w.x, w.z), hexHalf));
+                wants.Add(new Want($"{p.Action}_{p.Q}_{p.R}", model!, new Vector2(w.x, w.z), hexHalf, onTown: false));
             }
             return wants;
         }
@@ -157,6 +157,50 @@ namespace Statecraft.Game.Map.Collection
 
         public const int Rings = 8, Bearings = 16;
 
+        /// <summary>The steepest a whole-town model leans with its ground (degrees).</summary>
+        public const float MaxTiltDeg = 10f;
+        /// <summary>Samples across the footprint's square (per side) for <see cref="SeatOn"/>.</summary>
+        public const int SeatSamples = 11;
+
+        /// <summary>Where a whole-town model sits: the centre of its town (world x/z), its largest horizontal edge (m), the
+        /// normal of its base plane and that plane's height (m) at the centre.</summary>
+        public readonly struct Seat
+        {
+            public readonly Vector2 Centre; public readonly float Edge; public readonly Vector3 Normal; public readonly float BaseY;
+            public Seat(Vector2 centre, float edge, Vector3 normal, float baseY) { Centre = centre; Edge = edge; Normal = normal; BaseY = baseY; }
+        }
+
+        /// <summary>The base plane of a model over the disc at <paramref name="centre"/> of <paramref name="radius"/>: the
+        /// least-squares plane of the ground heights <paramref name="y"/> at <see cref="SeatSamples"/> squared points in the disc
+        /// (water points left out, <paramref name="water"/>), its slope clamped to <see cref="MaxTiltDeg"/>, then lowered to
+        /// the lowest of them, so no land point lies below it: the model follows its slope and never floats (the kibbutz cut
+        /// into its hill on #917 when it stood level at its centre's height). Returns the plane's normal and its height at the
+        /// centre; on flat or all-water ground, level at the centre's height.</summary>
+        public static (Vector3 normal, float baseY) SeatOn(Vector2 centre, float radius, Func<float, float, float> y, Func<float, float, bool> water)
+        {
+            var pts = new List<(float dx, float dz, float h)>();
+            for (int i = 0; i < SeatSamples; i++)
+                for (int k = 0; k < SeatSamples; k++)
+                {
+                    float dx = radius * (2f * i / (SeatSamples - 1) - 1f), dz = radius * (2f * k / (SeatSamples - 1) - 1f);
+                    if (dx * dx + dz * dz > radius * radius * 1.0001f || water(centre.x + dx, centre.y + dz)) continue;   // the rim kept despite rounding
+                    pts.Add((dx, dz, y(centre.x + dx, centre.y + dz)));
+                }
+            if (pts.Count < 3) return (Vector3.up, y(centre.x, centre.y));
+            // Least squares h = a + b dx + c dz (in doubles: the sums of squares of 10 km offsets).
+            double n = pts.Count, sx = 0, sz = 0, sh = 0, sxx = 0, szz = 0, sxz = 0, sxh = 0, szh = 0;
+            foreach (var (dx, dz, h) in pts) { sx += dx; sz += dz; sh += h; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; sxh += dx * h; szh += dz * h; }
+            double mx = sx / n, mz = sz / n, mh = sh / n;
+            double cxx = sxx / n - mx * mx, czz = szz / n - mz * mz, cxz = sxz / n - mx * mz, cxh = sxh / n - mx * mh, czh = szh / n - mz * mh;
+            double det = cxx * czz - cxz * cxz;
+            double b = det > 1e-6 ? (cxh * czz - czh * cxz) / det : 0, c = det > 1e-6 ? (czh * cxx - cxh * cxz) / det : 0;
+            double slope = Math.Sqrt(b * b + c * c), max = Math.Tan(MaxTiltDeg * Mathf.Deg2Rad);
+            if (slope > max) { b *= max / slope; c *= max / slope; }
+            double low = double.MaxValue;
+            foreach (var (dx, dz, h) in pts) low = Math.Min(low, h - (b * dx + c * dz));
+            return (new Vector3((float)-b, 1f, (float)-c).normalized, (float)low);
+        }
+
         /// <summary>Whether a disc at <paramref name="p"/> of radius <paramref name="r"/> stays off every disc of
         /// <paramref name="discs"/> (edge to edge).</summary>
         public static bool Clear(Vector2 p, float r, IEnumerable<(Vector2 centre, float radius)> discs)
@@ -170,7 +214,8 @@ namespace Statecraft.Game.Map.Collection
         MapScene? map;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
-        readonly Dictionary<int, bool> overviewFor = new Dictionary<int, bool>();
+        /// <summary>Each camera's last choice (by instance id): TownModelLayer.CloseAt's hysteresis.</summary>
+        readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
         List<Want> wants = new List<Want>();
         DateTime date;
@@ -180,8 +225,10 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
         /// <summary>The landmarks wanted but not drawn: their model did not stream, or no spot was free (a test aid).</summary>
         public readonly List<string> Missing = new List<string>();
-        /// <summary>For the last camera: whether it drew the landmarks.</summary>
-        public bool LastOverview { get; private set; }
+        /// <summary>Where each town's whole-town model sits, by settlement id (a test aid).</summary>
+        public readonly Dictionary<string, Seat> Seats = new Dictionary<string, Seat>(StringComparer.Ordinal);
+        /// <summary>For the last camera: whether it hid the landmarks (up close, where #700's building models draw).</summary>
+        public bool LastHidden { get; private set; }
         public IReadOnlyList<Want> Wanted => wants;
 
         /// <summary>Shows the landmarks the map wants as at <paramref name="date"/> (GameRoot calls it on every change, beside
@@ -233,10 +280,11 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject;
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            renderers.Clear(); Placed.Clear(); Missing.Clear();
+            renderers.Clear(); Placed.Clear(); Missing.Clear(); Seats.Clear();
             if (!wants.Any(w => prefabs.TryGetValue(w.Model, out var p) && p != null))
             {
                 Missing.AddRange(wants.Where(w => prefabs.ContainsKey(w.Model)).Select(w => w.Key));
+                Layer()?.Suppress(Array.Empty<string>());
                 return;
             }
             var ground = PlacementLayer.CampGround(map);
@@ -256,34 +304,53 @@ namespace Statecraft.Game.Map.Collection
                 }
                 return !ground.OnRoute(p, rad) && !ground.OnToken(p, rad) && !ground.OnToken(p, rad, date);
             }
+            var layer = Layer();
             foreach (var w in wants)
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
-                var at = prefab == null ? null : Spot(w.At, w.Radius, r, Free);
-                if (at == null) { Missing.Add(w.Key); continue; }
-                taken.Add((at.Value, r));
-                var go = Instantiate(prefab!, transform, false);
+                if (prefab == null) { Missing.Add(w.Key); continue; }
+                Vector2 at; float edge, baseY; Vector3 normal = Vector3.up;
+                if (w.OnTown)
+                {
+                    at = w.At; edge = 2f * w.Radius;
+                    (normal, baseY) = SeatOn(at, w.Radius, ground.Y, ground.Water);
+                }
+                else
+                {
+                    var spot = Spot(w.At, w.Radius, r, Free);
+                    if (spot == null) { Missing.Add(w.Key); continue; }
+                    at = spot.Value; edge = SizeM; baseY = ground.Y(at.x, at.y);
+                    taken.Add((at, r));
+                }
+                var go = Instantiate(prefab, transform, false);
                 go.name = w.Key;
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X; bakeAxisConversion is off), and setting the yaw alone laid each model on its
-                // side (owner, 18 October 2026: the models "seem to be on their side on the map").
-                go.transform.localRotation = Quaternion.Euler(0f, YawOf(w.Model), 0f) * prefab!.transform.localRotation;
+                // side (owner, 18 October 2026: the models "seem to be on their side on the map"; #979).
+                go.transform.localRotation = Quaternion.Euler(0f, YawOf(w.Model), 0f) * prefab.transform.localRotation;
                 var bounds = Bounds(go);
-                float edge = Mathf.Max(bounds.size.x, bounds.size.z);
-                go.transform.localScale *= edge > 1e-3f ? SizeM / edge : 1f;
-                var pos = new Vector3(at.Value.x, ground.Y(at.Value.x, at.Value.y), at.Value.y);
-                // The model's base, after the scale, stands on the ground at its spot.
+                float size = Mathf.Max(bounds.size.x, bounds.size.z);
+                go.transform.localScale *= size > 1e-3f ? edge / size : 1f;
+                // The model's base, after the scale, stands on its seat, centred on its town or spot; then it leans with the
+                // ground about that point (level for a placement).
+                var pos = new Vector3(at.x, baseY, at.y);
                 go.transform.position = pos;
                 var b = Bounds(go);
                 go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
+                var tilt = Quaternion.FromToRotation(Vector3.up, normal);
+                go.transform.SetPositionAndRotation(pos + tilt * (go.transform.position - pos), tilt * go.transform.rotation);
                 foreach (var rr in go.GetComponentsInChildren<Renderer>(true))
                 {
                     rr.shadowCastingMode = ShadowCastingMode.On;
-                    rr.forceRenderingOff = !LastOverview;
+                    rr.forceRenderingOff = LastHidden;
                     renderers.Add(rr);
                 }
+                if (w.OnTown) Seats[w.Key] = new Seat(at, edge, normal, baseY);
                 Placed.Add((w.Key, w.Model, pos));
             }
+            // The towns that have their whole-town model never draw their kit houses (owner, 18 October 2026: no procedural
+            // houses in those towns at any zoom); a town whose model did not stream keeps them.
+            if (layer != null) layer.Suppress(Seats.Keys);
             Debug.Log($"LANDMARKS: {Placed.Count} town landmarks placed, {Missing.Count} not drawn");
         }
 
@@ -296,31 +363,29 @@ namespace Statecraft.Game.Map.Collection
             return b;
         }
 
-        /// <summary>The camera's view distance (m): along its view ray to the map's ground plane (y = 0, where the camera rig's
-        /// look-at stands), so it is the rig's zoom (CameraRig.Distance). A camera looking up or level sees no ground: far.</summary>
-        public static float ViewDistance(Camera cam)
-        {
-            var t = cam.transform;
-            return t.forward.y < -1e-4f ? t.position.y / -t.forward.y : float.PositiveInfinity;
-        }
+        /// <summary>The camera's view distance (m), as TownModelLayer measures it (the rig's zoom); the people, wildlife and
+        /// road vehicle layers read it from here.</summary>
+        public static float ViewDistance(Camera cam) => Kits.TownModelLayer.ViewDistance(cam);
 
-        /// <summary>Whether a camera at <paramref name="distanceM"/> draws the landmarks, given its last choice
-        /// (<paramref name="was"/>, null for none).</summary>
-        public static bool OverviewAt(float distanceM, bool? was) =>
-            was == true ? distanceM >= OverviewExitM : distanceM >= OverviewEnterM;
+        /// <summary>#700's building layer of this map (null without kits).</summary>
+        Kits.TownModelLayer? Layer() => map == null ? null : map.GetComponentInChildren<Kits.TownModelLayer>(true);
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
         void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
 
-        /// <summary>Before each camera culls: the landmarks on at its overview zoom, off otherwise.</summary>
+        /// <summary>Before each camera culls: the landmarks hide where #700's building models draw the towns
+        /// (TownModelLayer.CloseAt at the camera's view distance, with its hysteresis), and draw everywhere else. Without the
+        /// building models (no kits, or TownModelLayer.HasModels false) they draw at every zoom.</summary>
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
+            var layer = Layer();
             int id = cam.GetInstanceID();
-            bool on = OverviewAt(ViewDistance(cam), overviewFor.TryGetValue(id, out var was) ? was : (bool?)null);
-            overviewFor[id] = on;
-            LastOverview = on;
-            foreach (var r in renderers) if (r != null) r.forceRenderingOff = !on;
+            bool close = Kits.TownModelLayer.CloseAt(Kits.TownModelLayer.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
+            closeFor[id] = close;
+            bool hide = close && layer != null && layer.HasModels;
+            LastHidden = hide;
+            foreach (var r in renderers) if (r != null) r.forceRenderingOff = hide;
         }
     }
 }

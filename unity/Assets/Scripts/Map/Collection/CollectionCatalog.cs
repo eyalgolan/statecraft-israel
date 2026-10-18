@@ -11,7 +11,7 @@ namespace Statecraft.Game.Map.Collection
 
     /// <summary>The 31 non-building models of The 1948 Collection, made by MATKOT with Tripo Studio and
     /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026), and #507's nine whole-town models (issue
-    /// #663; owner, 17 October 2026: "The nine whole-town models ship"), drawn as overview landmarks (<see cref="TownLandmarks"/>).
+    /// #663; owner, 17 October 2026: "The nine whole-town models ship"), standing on their towns far off (<see cref="TownLandmarks"/>).
     /// They are slimmed by
     /// tools/slim_collection.py and live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
     /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
