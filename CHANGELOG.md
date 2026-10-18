@@ -126,6 +126,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   and stream after the first frame (#725).
 
 ### Fixed
+- Official records for three sourcing calls (owner, 18 October 2026, #457): the Provisional Government keeps its
+  14 May 1948 start (the Knesset position records), Education is vacant from 19 May to 8 October 1951 (no official term
+  follows Remez's, row 3860), and `education_registration_1951` opens on 12 February 1951, its first cited plenum record
+  (was 29 November 1950). The card now fires on 15 February 1951, so `hash1952`, `mvp-end` and `scenario-mvp-defeat`
+  move (coalition stability only) and are re-pinned (`docs/determinism.md`).
 - MATKOT's building models up close (#700) stand at one world scale, set by the steam train the map runs: a typical
   8.5 m house is as long as the locomotive's car (about 204 m), so every model is 24x its building's real size
   (`SettlementKits.ModelScale`), keeps its own proportions and no longer fills the kit's plot; a plot holds a small

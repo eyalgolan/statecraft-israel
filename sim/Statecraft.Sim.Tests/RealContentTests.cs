@@ -313,7 +313,9 @@ public class RealContentTests
         string Who(string office, int y, int m, int d) => Offices.Holder(C, office, new DateTime(y, m, d))?.Id ?? "(vacant)";
         Assert.Equal("shazar", Who("education_minister", 1950, 10, 31));
         Assert.Equal("remez", Who("education_minister", 1950, 11, 1));
-        Assert.Equal("ben_gurion", Who("education_minister", 1951, 5, 19));
+        Assert.Equal("remez", Who("education_minister", 1951, 5, 18));
+        Assert.Equal("(vacant)", Who("education_minister", 1951, 5, 19));
+        Assert.Equal("(vacant)", Who("education_minister", 1951, 10, 7));
         Assert.Equal("dinur", Who("education_minister", 1951, 10, 8));
         Assert.Equal("lavon", Who("rationing_minister", 1950, 11, 1));
         Assert.Equal("lavon", Who("rationing_minister", 1951, 10, 7));
@@ -350,6 +352,25 @@ public class RealContentTests
         Assert.Equal("united_religious_front", Offices.PartyOf(C, levin, new DateTime(1951, 8, 19)));
         Assert.Equal("agudat_yisrael", Offices.PartyOf(C, levin, new DateTime(1951, 8, 20)));
         Assert.Equal("", Offices.PartyOf(C, C.People.Single(p => p.Id == "geri"), new DateTime(1951, 1, 1)));
+    }
+
+    /// <summary>#457: the owner ruled for אהרון (18 October 2026) over the Knesset page's אהרן.</summary>
+    [Fact]
+    public void ZislingsHebrewNameIsTheOwnersSpelling() =>
+        Assert.Equal("אהרון ציזלינג", C.People.Single(p => p.Id == "zisling").NameHe);
+
+    [Fact]
+    public void TheSimulationStepsWithEducationVacant()
+    {
+        var s = GoldenRun.Play(C, new DateTime(1951, 6, 1));
+        Assert.Equal(new DateTime(1951, 6, 15), s.Date);
+        Assert.Null(Cabinet.Holder(C, s, "education_minister"));
+        Assert.Contains(Cabinet.Lineup(C, s), seat => seat.Office.Id == "education_minister" && seat.Holder == null);
+
+        var next = Simulation.Step(C, s, GoldenRun.Orders(C, s)).State;
+
+        Assert.Equal(new DateTime(1951, 7, 15), next.Date);
+        Assert.Null(Cabinet.Holder(C, next, "education_minister"));
     }
 
     [Fact]
