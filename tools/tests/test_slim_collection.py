@@ -37,6 +37,14 @@ def test_the_nine_whole_town_models_are_the_ones_matkot_offered_in_507():
     assert "jerusalem-stone-city-v1-3denhance" not in slim.IDS
 
 
+def test_a_pose_clip_poses_only_a_person_without_an_idle_clip():
+    # Issue #665: C05 has no idle clip and a T-pose rest, so his static meshes stand at his walk's first frame.
+    assert slim.POSE_CLIP == {"figure-c05-pioneer-veteran-v2": "idle_walk"}
+    animated = re.search(r"Animated = new HashSet<string>.*?\{(.*?)\};", CATALOG.read_text(encoding="utf-8"), re.S).group(1)
+    for mid in slim.POSE_CLIP:
+        assert mid in slim.PEOPLE and f'"{mid}"' not in animated, mid
+
+
 def test_the_caps_match_the_unity_import_tests():
     text = IMPORT_TESTS.read_text(encoding="utf-8")
     assert f"FarTriangles = {slim.FAR_TRIS}," in text

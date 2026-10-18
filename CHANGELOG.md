@@ -14,6 +14,14 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   while the player's works at the Hula are in progress (R-SWAMP-002, Q-SWAMP-2); its text, options and sources are
   unchanged. The reference player drains no swamp, so the card no longer fires in its run and `hash1952` and `mvp-end`
   move (docs/determinism.md). The loader refuses a swamp site that is also a field, yishuv or camp site.
+- Map: the army tokens wear MATKOT's figures from The 1948 Collection, streamed after the first frame (#665). Israeli
+  riflemen are the sabra pioneer, the young recruit and the veteran fighter by their headgear, with the pioneer
+  veteran as the third figure and the Palmach scout as Harel's. The 65 mm gun stands with the brigades given guns in
+  the 11 July 1948 distribution, and the Willys jeep with Harel (from 1 June 1948) and Negev (from 2 June 1948), each
+  from its sourced day. The Arab Legion and the Arab Liberation Army are drawn with their own figures under a neutral
+  pennant, only once those figures arrive; the other Arab forces stay data only. Until a model arrives, and if its
+  bundle is missing, the code-built Israeli figures stay. The pioneer veteran's model now stands at his walk's first
+  frame instead of a T-pose.
 
 ### Fixed
 - The Unity golden checks play every golden in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`,

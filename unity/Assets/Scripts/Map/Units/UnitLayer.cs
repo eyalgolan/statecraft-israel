@@ -37,6 +37,10 @@ namespace Statecraft.Game.Map.Units
         /// destroyed when the tokens are rebuilt and with the layer, so no roster change leaks them (review of #559, M1).</summary>
         readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
+        /// <summary>What <see cref="Show"/> last drew from, so a Collection model's arrival can draw the tokens that waited for
+        /// it (an Arab force's, issue #665).</summary>
+        Content? shownContent;
+        GameState? shownState;
         List<PlacedToken> placed = new List<PlacedToken>();
         Transform tokensRoot = null!;
         readonly List<Transform> badges = new List<Transform>();
@@ -133,6 +137,12 @@ namespace Statecraft.Game.Map.Units
             // off: a plain screenshot run (HiddenInCaptures) keeps every tree, so its checkpoints stay comparable.
             layer.assets.OnTeardown(() => UnitShowcase.HideTrees(map, ToggleName, Array.Empty<(Vector2, float)>()));
             layer.assets.OnTeardown(layer.FreeTokenMeshes);
+            // The Collection's figures (issue #665): an Arab force's token waits for its figure, so ask for each one the map
+            // can draw (nothing is fetched before the frame after the request, CollectionStream), and draw again when one arrives.
+            UnitFigures.ModelArrived += layer.OnModelArrived;
+            layer.assets.OnTeardown(() => UnitFigures.ModelArrived -= layer.OnModelArrived);
+            foreach (var u in units)
+                if (UnitRoster.OnMap(u) && u.Side != UnitData.Israel) UnitFigures.Prefetch(UnitFigures.SideFigure(u.Side)!);
             layer.assets.OnTeardown(VisualToggles.Register(ToggleName, on =>
             {
                 if (root != null) root.SetActive(on);
@@ -227,7 +237,8 @@ namespace Statecraft.Game.Map.Units
         /// changed; returns true when it did. A selected unit that is no longer drawn is deselected.</summary>
         public bool Show(Content content, GameState state)
         {
-            var now = UnitRoster.Build(units, content, state);
+            shownContent = content; shownState = state;
+            var now = UnitRoster.Build(units, content, state, UnitFigures.Arrived);
             if (roster != null && roster.SequenceEqual(now)) return false;
             roster = now;
             placed = UnitPlacer.Place(now, spots);
@@ -235,6 +246,18 @@ namespace Statecraft.Game.Map.Units
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             return true;
         }
+
+        /// <summary>A Collection model arrived: draws the tokens again if it lets a new one show (an Arab force's figure).</summary>
+        void OnModelArrived(string id)
+        {
+            if (this == null || shownContent == null || shownState == null) return;
+            Show(shownContent, shownState);
+        }
+
+        /// <summary>Where a token's vehicles stand on its base (shares of the base's radius, x east and z north, for camera
+        /// yaw 0) and their headings: on the front of the base, before the trio, side-on to the camera, so the figures do
+        /// not hide them (behind the trio they were hidden at 30 km; issue #665). The first on the west, a second on the east.</summary>
+        internal static readonly (Vector2 at, float heading)[] VehicleSlots = { (new Vector2(-0.42f, -0.55f), 270f), (new Vector2(0.42f, -0.55f), 90f) };
 
         /// <summary>What a click on hex (q, r) selects: the unit standing there, unless it is already selected (a second
         /// click shows the hex, so a token never hides the hex's map actions) or the "units" toggle hides the layer; null
@@ -335,19 +358,37 @@ namespace Statecraft.Game.Map.Units
                         treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)
-                        figures = new (Transform, Vector3, float)[offsets.Length];
+                        bool israel = t.Unit.Side == UnitData.Israel;
+                        int vehicles = Mathf.Min(t.Vehicles.Count, VehicleSlots.Length);
+                        figures = new (Transform, Vector3, float)[offsets.Length + vehicles];
                         for (int i = 0; i < offsets.Length; i++)
                         {
                             // The pose and heading are the trio position's; the headgear is the unit's (sourced, or the default).
                             var (_, _, pose, faded, heading) = UnitShowcase.Trio[i];
-                            var hat = Hat(t.Headgear[i]);
-                            var type = UnitRoster.RiflemanType(t.Headgear[i]);
                             var at = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * k;
                             at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
                             highest = Mathf.Max(highest, at.y);
-                            var figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
-                                paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _);
-                            figures[i] = (figure.transform, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
+                            Transform figure;
+                            if (israel)
+                            {
+                                var hat = Hat(t.Headgear[i]);
+                                var type = UnitRoster.RiflemanType(t.Headgear[i]);
+                                figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
+                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
+                            }
+                            else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
+                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null));   // the Collection's figure, once streamed (#665)
+                            figures[i] = (figure, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
+                        }
+                        for (int j = 0; j < vehicles; j++)
+                        {
+                            var (slot, heading) = VehicleSlots[j];
+                            var offset = new Vector3(slot.x, 0f, slot.y) * plinth;
+                            var at = centre + offset;
+                            at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
+                            var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
+                            UnitFigures.Dress(vehicle, t.Vehicles[j]);   // the gun or the jeep: drawn only once streamed (#665)
+                            figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
@@ -416,6 +457,16 @@ namespace Statecraft.Game.Map.Units
                 if (box is Bounds b) { b.Encapsulate(w); box = b; } else box = w;
             }
             return box;
+        }
+
+        /// <summary>A piece with no code-built model (an Arab force's figure, a vehicle): the Collection's model goes under it.</summary>
+        static Transform EmptyPiece(Transform parent, string name, Vector3 at, float heading)
+        {
+            var piece = new GameObject(name).transform;
+            piece.SetParent(parent, false);
+            piece.SetPositionAndRotation(at, Quaternion.Euler(0, heading, 0));
+            piece.localScale = Vector3.one * UnitShowcase.FigureScale;
+            return piece;
         }
 
         static void AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)

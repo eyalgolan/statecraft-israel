@@ -218,26 +218,47 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." The 15 May roster keeps exactly the Israeli tokens, no row of another side gives a token on any
-    /// day of the war, and the placer gives such a row no spot (so the kits clear no ground for it).</summary>
+    /// no placeholder art." MATKOT's figures have landed for two forces (issue #665; owner, 17 October 2026, #756: MATKOT's
+    /// unit models count as reviewed and approved): the Arab Legion and the Arab Liberation Army. Every other side's rows
+    /// stay data only, on every day of the war, and the placer gives them no spot (so the kits clear no ground for them).
+    /// The two forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
+    /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
-    public void OnlyIsraelsRowsAreDrawnTheArabForcesAreDataOnly()
+    public void OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived()
     {
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
+        var drawn = new[] { "arab_legion", "arab_liberation_army" };
+        CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
-        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s)), "the 15 May roster is Israel's tokens, exactly");
+        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s)), "before any figure arrives: Israel's tokens, exactly");
+        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s, id => false)), "nor while none has");
+        var seen = new HashSet<string>();
         for (var d = C.Rules.Start; d < LastArmistice; d = d.AddDays(1))
         {
-            var tokens = UnitRoster.Build(units, C.Rules, d, 5, 0.8);
-            Assert.IsTrue(tokens.All(t => t.Unit.Side == UnitData.Israel), $"{d:yyyy-MM-dd}: {string.Join(",", tokens.Where(t => t.Unit.Side != UnitData.Israel))}");
+            var none = UnitRoster.Build(units, C.Rules, d, 5, 0.8);
+            Assert.IsTrue(none.All(t => t.Unit.Side == UnitData.Israel), $"{d:yyyy-MM-dd}: no figure has arrived: {string.Join(",", none.Where(t => t.Unit.Side != UnitData.Israel))}");
+            foreach (var t in UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => true).Where(t => t.Unit.Side != UnitData.Israel))
+            {
+                CollectionAssert.Contains(drawn, t.Unit.Id, $"{d:yyyy-MM-dd}");
+                Assert.AreEqual(UnitFigures.SideFigure(t.Unit.Side), t.ArtType, $"{t}: its own figure");
+                Assert.AreEqual(3, t.Figures, $"{t}: Q-UI-3 at full strength (owner, 17 October 2026, #226)");
+                Assert.IsEmpty(t.Headgear, $"{t}: no IDF rifleman's headgear");
+                Assert.IsEmpty(t.Vehicles, $"{t}: no vehicle");
+                seen.Add(t.Unit.Id);
+            }
+            var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
+            Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
+        CollectionAssert.AreEquivalent(drawn, seen, "both forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
-        Assert.IsFalse(others.SelectMany(u => u.Anchors).Any(spots.ContainsKey), "no spot for a row the map does not draw");
-        Assert.IsEmpty(UnitPlacer.SkipMessages(others, spots), "and no warning for it either");
+        var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();
+        Assert.IsFalse(dataOnly.SelectMany(u => u.Anchors).Any(spots.ContainsKey), "no spot for a row the map does not draw");
+        Assert.IsEmpty(UnitPlacer.SkipMessages(dataOnly, spots), "and no warning for it either");
+        Assert.IsTrue(others.Where(u => drawn.Contains(u.Id)).SelectMany(u => u.Anchors).All(spots.ContainsKey), "a spot for each drawn force's anchor");
     }
 
     [TestCase(0.80, 3)]
@@ -325,8 +346,10 @@ public class UnitsInPlayTests
     }
 
     // GDD Phase 2 PR 1 (the cutover): the golden run is 20 monthly turns with the reference player (was f07b1655).
-    const string RosterGolden1950 = "573f30998628a434e6b4156cba5d20f8d974ca28b62f74388f9480de84592baa";
-    const string WeeklyGolden = "323cbe046b9666b1d9ab46abeb139540d6e06e394a65ad03e043aa0912cba96e";
+    // Issue #665: each token's line now ends with its sourced vehicles ("+figure-vehicle-..."), the 65 mm gun and the jeep
+    // (was 573f3099... and 323cbe04...; every line is otherwise the same, checked against main's logged rosters).
+    const string RosterGolden1950 = "0612f518c91b436ab5dbe1bf75a52d266a7c617255a4622030d01e51d852a03b";
+    const string WeeklyGolden = "db15a031d3d15961053161ab132363c19566d98e5ad310dc08ce2e79f742a4fc";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 

@@ -12,10 +12,11 @@ The source is #507 at 3ef0a7a5a36887aee7a24fd11ddf722507695f3c:
 
 For each model it writes, into <out>/<id>/:
   <id>-far.fbx    the strategic zoom: one static mesh of at most FAR_TRIS triangles (FAR_TRIS_VEHICLE for vehicles, ships
-                  and aircraft, FAR_TRIS_TOWN for a whole town), no rig, no animation (posed at the idle clip's first frame when the model has one);
+                  and aircraft, FAR_TRIS_TOWN for a whole town), no rig, no animation (posed at the idle clip's first frame when the model has one,
+                  or at the first frame of its POSE_CLIP);
   <id>-near.fbx   the close zoom, at most NEAR_TRIS triangles: for a model with an "idle" clip, the skinned mesh, its rig
                   and that one clip sampled every ANIM_STEP frames (every other clip is dropped); for any other model one
-                  static mesh (#507 has those stand still too);
+                  static mesh (#507 has those stand still too), posed as the far mesh;
   <id>_basecolor.jpg   the colour map at TEX_PX px (Unity imports it crunched).
 A model's parts (a vehicle's wheels) are joined into one mesh, so it draws as one instanced mesh. Decimation is
 Blender's collapse decimator, which keeps the vertex weights, so the cut mesh still follows its rig.
@@ -69,6 +70,10 @@ TOWNS = [
     "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
 ]
 IDS = PEOPLE + VEHICLES + ANIMALS + TOWNS
+# A model with no "idle" clip whose rest pose is a T-pose has its static meshes posed at the first frame of this clip of its
+# own instead (issue #665): C05's only clips are a walk and a run, and the walk's first frame stands with the arms down,
+# mid-step. Without it he stood on the army tokens with his arms straight out.
+POSE_CLIP = {"figure-c05-pioneer-veteran-v2": "idle_walk"}
 
 
 def tris(mesh) -> int:
@@ -205,6 +210,17 @@ def find_idle(bpy, arms):
     return next((a for a in bpy.data.actions if a.name.split("|")[-1] == "idle"), None) if arms else None
 
 
+def find_pose(bpy, arms, mid: str):
+    """The clip whose first frame poses the static meshes: the idle clip, else the model's POSE_CLIP, else none (rest)."""
+    idle = find_idle(bpy, arms)
+    if idle is not None or mid not in POSE_CLIP:
+        return idle
+    pose = next((a for a in bpy.data.actions if a.name.split("|")[-1] == POSE_CLIP[mid]), None) if arms else None
+    if pose is None:
+        raise SystemExit(f"{mid}: no clip {POSE_CLIP[mid]!r} to pose it")
+    return pose
+
+
 def slim(bpy, src: Path, out: Path, mid: str) -> dict:
     fbx = src / mid / f"{mid}.fbx"
     dest = out / mid
@@ -228,14 +244,14 @@ def slim(bpy, src: Path, out: Path, mid: str) -> dict:
         report["near"] = f"{tris(meshes[0].data)}tris+idle"
         export(bpy, dest / f"{mid}-near.fbx", src, [meshes[0], arms[0]], animated=True)
     else:
-        near = join_static(bpy, meshes, arms, None)
+        near = join_static(bpy, meshes, arms, find_pose(bpy, arms, mid))
         decimate(bpy, near, NEAR_TRIS)
         near.name = mid
         report["near"] = f"{tris(near.data)}tris"
         export(bpy, dest / f"{mid}-near.fbx", src, [near], animated=False)
 
     meshes, arms = load(bpy, fbx)   # the far mesh starts again from the full mesh
-    far = join_static(bpy, meshes, arms, find_idle(bpy, arms))
+    far = join_static(bpy, meshes, arms, find_pose(bpy, arms, mid))
     decimate(bpy, far, FAR_TRIS_TOWN if mid in TOWNS else FAR_TRIS_VEHICLE if mid in VEHICLES else FAR_TRIS)
     far.name = mid
     report["far"] = f"{tris(far.data)}tris"

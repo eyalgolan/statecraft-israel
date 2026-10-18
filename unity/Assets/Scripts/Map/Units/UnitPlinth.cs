@@ -247,7 +247,8 @@ namespace Statecraft.Game.Map.Units
         public static Mesh Upload(Mesh m) { if (!KeepMeshesReadable) m.UploadMeshData(true); return m; }
 
         /// <summary>Builds the draped base, its lip and its ring, of radius <paramref name="radius"/> at
-        /// <paramref name="centre"/> under <paramref name="token"/>, and <paramref name="side"/>'s flag when it has one.
+        /// <paramref name="centre"/> under <paramref name="token"/>, and <paramref name="side"/>'s flag when it has one (the neutral
+        /// pennant when the map draws the side without one, <see cref="UnitFlags.HasPennant"/>).
         /// <paramref name="own"/> takes ownership of each per-token mesh; <paramref name="shared"/> returns the shared flag
         /// mesh for a key. Returns the base's top at its centre.</summary>
         public static float Build(MapScene map, Transform token, Vector3 centre, float radius, string side, Func<Mesh, Mesh> own,
@@ -261,16 +262,19 @@ namespace Statecraft.Game.Map.Units
             ring.transform.localScale = scale;
             var r = ring.GetComponent<MeshRenderer>();
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
-            if (UnitFlags.Has(side))
+            bool pennant = UnitFlags.HasPennant(side);
+            if (UnitFlags.Has(side) || pennant)
             {
                 float edge = FlagEdgeShare * radius;
                 float east = Mathf.Min(edge * 0.95f, Mathf.Max(FlagEastShare * radius, UnitBadge.SizeM / 2f + FlagClearOfBadgeM));
                 float north = Mathf.Sqrt(edge * edge - east * east);
                 var foot = new Vector3(centre.x + east, 0f, centre.z + north);
                 foot.y = FigureY(map, radius, foot.x, foot.z);
-                var flag = UnitShowcase.Piece(token, FlagName, shared("unit-flag-" + side, () => UnitFlags.Build(side)!), paint, foot, Quaternion.identity,
-                    UnitBadge.FigureHeightM * UnitShowcase.FigureScale);
-                flag.GetComponent<MeshRenderer>().sharedMaterials = new[] { paint, flagWhite, flagBlue };
+                var flag = pennant
+                    ? UnitShowcase.Piece(token, FlagName, shared("unit-pennant", UnitFlags.BuildPennant), paint, foot, Quaternion.identity, UnitBadge.FigureHeightM * UnitShowcase.FigureScale)
+                    : UnitShowcase.Piece(token, FlagName, shared("unit-flag-" + side, () => UnitFlags.Build(side)!), paint, foot, Quaternion.identity,
+                        UnitBadge.FigureHeightM * UnitShowcase.FigureScale);
+                if (!pennant) flag.GetComponent<MeshRenderer>().sharedMaterials = new[] { paint, flagWhite, flagBlue };
                 flag.AddComponent<UnitFlagFacing>();   // owner ruling, 2026-10-15: the cloth turns about the pole to face the camera
                 var cam = Camera.main; if (cam != null) UnitFlagFacing.Face(flag.transform, cam.transform.position);
             }

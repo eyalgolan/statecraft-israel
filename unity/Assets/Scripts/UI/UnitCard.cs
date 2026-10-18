@@ -10,9 +10,9 @@ namespace Statecraft.Game.UI
     /// <summary>The info panel's text for a selected unit (read only; no orders: the panel links to the Defence screen):
     /// its name, number and service; where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
-    /// source's words; the national values its token reflects (the reserve call-up sets its figures, the security level
-    /// whether its aircraft fly); and its sources, with a draft note that says "Wikipedia only" when the position's own
-    /// sources are (review M8).</summary>
+    /// source's words; on Israel's units, the national values its token reflects (the reserve call-up sets its figures, the
+    /// security level whether its aircraft fly); and its sources, with a draft note that says "Wikipedia only" when the
+    /// position's own sources are (review M8).</summary>
     public sealed class UnitCard
     {
         public string Title = "", Subtitle = "", Body = "", Footer = "", Note = "";
@@ -36,7 +36,9 @@ namespace Statecraft.Game.UI
                 Title = u.Name,
                 Subtitle = text.Format("unit.subtitle", u.Number, text["unit.service." + u.Service]),
                 Body = string.Join("\n", lines),
-                Footer = text.Format("unit.national", PlayerText.Percent(state.Mobilization), state.Rung) + "\n" + text.Format("unit.sources", string.Join(", ", hosts)),
+                // Israel's call-up and security level set only Israel's tokens; an Arab force's token reflects neither (#665).
+                Footer = (u.Side == UnitData.Israel ? text.Format("unit.national", PlayerText.Percent(state.Mobilization), state.Rung) + "\n" : "")
+                    + text.Format("unit.sources", string.Join(", ", hosts)),
                 Note = UnitData.IsWikipediaOnly(a.Sources) ? text["unit.draft_wikipedia"] : text["unit.draft"],
             };
         }
