@@ -447,6 +447,8 @@ namespace Statecraft.Game.UI
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             // MATKOT's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
+            // MATKOT's civilian figures at towns and transit camps, ambience only and streamed after the first frame (#666).
+            Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
             var now = Bridge.State.Placements.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
             if (drawn != null && drawn.SequenceEqual(now)) return;

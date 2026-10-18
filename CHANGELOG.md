@@ -41,6 +41,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the ibex on level ledges of the Judean Desert west of the Dead Sea, the hyenas in the hills of Mount Carmel and the
   central hill country, the ranges their sources give. Seeded, so the same spots every game; streamed after the first
   frame (refs #670, #663).
+- Map: MATKOT's five civilian figures from The 1948 Collection stand in small seeded groups beside the cities, towns,
+  kibbutzim and the moshav (a townsman, a smith and a nurse), and an arriving man and woman beside each transit camp from
+  the day it is placed. They are scenery, never units; the static figures stream after the first frame and the animated
+  ones only at close zoom (refs #666, #663).
 
 ### Changed
 - The population-tier badge on the twelve city and town pills keeps the values it shipped with, now owner-approved: tiers 1
