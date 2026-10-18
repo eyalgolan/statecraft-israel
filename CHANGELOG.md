@@ -37,6 +37,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Release gate: consequence cards and variants need a person's sign-off (`reviewed_by`) before a build is shared;
   `Statecraft.Cli --timeline-report` lists each road not taken and what follows it, and `Timeline.Entries` /
   `Timeline.Origin` give the timeline screen its rows (R-ALT-011; refs #939, #953).
+- Map: MATKOT's Nubian ibex and striped hyena from The 1948 Collection, three of each, at close zoom (from 40 km in):
+  the ibex on level ledges of the Judean Desert west of the Dead Sea, the hyenas in the hills of Mount Carmel and the
+  central hill country, the ranges their sources give. Seeded, so the same spots every game; streamed after the first
+  frame (refs #670, #663).
 
 ### Changed
 - The population-tier badge on the twelve city and town pills keeps the values it shipped with, now owner-approved: tiers 1
