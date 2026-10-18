@@ -6,7 +6,6 @@ using System.Linq;
 using Statecraft.Game.Map;
 using Statecraft.Sim;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Statecraft.Game.Boot
 {
@@ -45,7 +44,7 @@ namespace Statecraft.Game.Boot
 
     /// <summary>Everything the game loads at start: the sim content and the map inputs. Desktop and the editor read
     /// files (FromDisk); WebGL cannot read StreamingAssets with System.IO, so it fetches them with UnityWebRequest from
-    /// the manifest (FetchAsync, tech notes section 2).</summary>
+    /// the content bundle (FetchAsync, tech notes section 2; one file for every content text, #1054).</summary>
     public sealed class GameInputs
     {
         public Content Content = null!;
@@ -118,92 +117,18 @@ namespace Statecraft.Game.Boot
         public static string StreamingUrl() =>
             Application.streamingAssetsPath.Contains("://") ? Application.streamingAssetsPath : new Uri(Application.streamingAssetsPath).AbsoluteUri;
 
-        static readonly HashSet<UnityWebRequest> open = new HashSet<UnityWebRequest>();
-        /// <summary>Requests started and not yet released (diagnostic; 0 once a fetch has ended, whether it succeeded or failed).</summary>
-        public static int OpenRequests => open.Count;
-
-        static UnityWebRequest Start(string url)
+        static async Awaitable<string> Text(StreamingFetch.Download d, string name, float stallSeconds)
         {
-            var r = UnityWebRequest.Get(url);
-            open.Add(r);
-            r.SendWebRequest();
-            return r;
+            await StreamingFetch.Done(d, name, stallSeconds);
+            try { return d.Request.downloadHandler.text; }
+            finally { d.Release(); }
         }
 
-        /// <summary>Aborts (when still running) and disposes a request; safe to call twice.</summary>
-        static void Release(UnityWebRequest r)
+        static async Awaitable<byte[]> Bytes(StreamingFetch.Download d, string name, float stallSeconds)
         {
-            if (!open.Remove(r)) return;
-            if (!r.isDone) r.Abort();
-            r.Dispose();
-        }
-
-        /// <summary>Attempts per file, the first included. The boot fetches every file at once; one transient failure
-        /// (a reset connection, a busy server) used to fail the whole boot (BOOT FAIL israel_bonds.yaml under load).</summary>
-        internal const int MaxAttempts = 4;
-
-        /// <summary>Seconds to wait before attempt <paramref name="attempt"/> + 1: 0.5, 1, 2.</summary>
-        internal static float Backoff(int attempt) => 0.5f * (1 << (attempt - 1));
-
-        /// <summary>Worth another attempt: no response at all (reset, refused, timed out) or a server-side status (408, 429,
-        /// 5xx). A 404 or any other client error, and a body that failed to decode, fail at once.</summary>
-        internal static bool Transient(UnityWebRequest.Result result, long status) =>
-            result == UnityWebRequest.Result.ConnectionError
-            || (result == UnityWebRequest.Result.ProtocolError && (status >= 500 || status == 408 || status == 429));
-
-        /// <summary>Seconds a download may go without receiving a byte before it is aborted as stalled and retried like a
-        /// dropped connection (#911). A limit on silence, not on the whole download: the 4 MB heightmap on a slow
-        /// connection keeps receiving bytes and is never cut off, while a server that accepts the request and never
-        /// answers reaches the retry and then BOOT FAIL instead of leaving the loading screen up forever. A fixed limit on
-        /// the whole fetch failed slow but healthy fetches before (#503). The value needs the maintainer's sign-off (#911).</summary>
-        internal const float StallSeconds = 30f;
-
-        /// <summary>Waits a frame at a time (no threads on WebGL; an Awaitable is never awaited twice) until r is done, or
-        /// aborts it when no byte has arrived for <paramref name="stallSeconds"/>. On a transient failure (a stall counts as
-        /// a connection error) r is released and its URL fetched again after Backoff, up to MaxAttempts in all. Returns the
-        /// request that succeeded (the caller releases it); on a final failure every attempt is released and an
-        /// IOException names the file. Retrying changes only when a file arrives, never its bytes or the parse order.</summary>
-        static async Awaitable<UnityWebRequest> Done(UnityWebRequest r, string name, float stallSeconds)
-        {
-            for (var attempt = 1; ; attempt++)
-            {
-                var stalled = false;
-                var bytes = r.downloadedBytes;
-                var lastByte = Time.realtimeSinceStartup;
-                while (!r.isDone)
-                {
-                    if (r.downloadedBytes != bytes) { bytes = r.downloadedBytes; lastByte = Time.realtimeSinceStartup; }
-                    else if (Time.realtimeSinceStartup - lastByte > stallSeconds) { stalled = true; break; }
-                    await Awaitable.NextFrameAsync();
-                }
-                if (!stalled && r.result == UnityWebRequest.Result.Success) return r;
-                var error = stalled
-                    ? FormattableString.Invariant($"{name}: no data for {stallSeconds:0.#} s ({r.url})")
-                    : $"{name}: {r.error} ({r.url})";
-                var retry = attempt < MaxAttempts
-                    && (stalled ? Transient(UnityWebRequest.Result.ConnectionError, 0) : Transient(r.result, r.responseCode));
-                var url = r.url;
-                Release(r);
-                if (!retry) throw new IOException(attempt > 1 ? $"{error} after {attempt} attempts" : error);
-                Debug.LogWarning($"{error}; attempt {attempt + 1} of {MaxAttempts} in {Backoff(attempt):0.#} s");
-                var until = Time.realtimeSinceStartup + Backoff(attempt);
-                while (Time.realtimeSinceStartup < until) await Awaitable.NextFrameAsync();
-                r = Start(url);
-            }
-        }
-
-        static async Awaitable<string> Text(UnityWebRequest r, string name, float stallSeconds)
-        {
-            r = await Done(r, name, stallSeconds);
-            try { return r.downloadHandler.text; }
-            finally { Release(r); }
-        }
-
-        static async Awaitable<byte[]> Bytes(UnityWebRequest r, string name, float stallSeconds)
-        {
-            r = await Done(r, name, stallSeconds);
-            try { return r.downloadHandler.data; }
-            finally { Release(r); }
+            await StreamingFetch.Done(d, name, stallSeconds);
+            try { return d.Request.downloadHandler.data; }
+            finally { d.Release(); }
         }
 
         /// <summary>Issue #437: <paramref name="url"/> with b=<paramref name="buildId"/> added to its query when it is an
@@ -213,29 +138,30 @@ namespace Statecraft.Game.Boot
             buildId.Length == 0 || !(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 ? url : url + (url.IndexOf('?') >= 0 ? "&" : "?") + "b=" + Uri.EscapeDataString(buildId);
 
-        /// <summary>Fetches the manifest, then starts every download before awaiting any (parallel), then loads. A transient
-        /// failure is retried (Done). When one download fails for good, the others still running are aborted and disposed.
-        /// Every URL carries <paramref name="buildId"/> (WithBuildId; the player passes Application.buildGUID).</summary>
-        public static Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId = "") => FetchAsync(baseUrl, buildId, StallSeconds);
+        /// <summary>Fetches the content bundle (every content text in one file, ContentManifest.BundleFileName, so the boot
+        /// makes a handful of requests and not one per file: #1054) and the heightmap's two files at once, then loads. A
+        /// transient failure is retried (StreamingFetch.Done). When one download fails for good, the others still running are
+        /// aborted and disposed. Every URL carries <paramref name="buildId"/> (WithBuildId; the player passes
+        /// Application.buildGUID).</summary>
+        public static Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId = "") => FetchAsync(baseUrl, buildId, StreamingFetch.StallSeconds);
 
         /// <summary>FetchAsync with another stall limit (the stalled-server test uses a short one).</summary>
         internal static async Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId, float stallSeconds)
         {
-            var manifest = ContentManifest.Parse(await Text(Start(WithBuildId(baseUrl + "/content/" + ContentManifest.FileName, buildId)), ContentManifest.FileName, stallSeconds));
-            var goldenText = GoldenCheck.Requested()
-                ? await Text(Start(WithBuildId(baseUrl + "/golden/manifest.txt", buildId)), "golden/manifest.txt", stallSeconds) : "";
-            var scenarioNames = goldenText.Length == 0 ? new List<string>() : GoldenData.Parse(goldenText).Select(x => x.name).Where(n => n.StartsWith("scenario-", StringComparison.Ordinal)).Select(n => n.Substring("scenario-".Length)).ToList();
-            var requests = manifest.Select(f => (file: f, request: Start(WithBuildId(baseUrl + "/content/" + f, buildId)))).ToList();
-            var scenarioRequests = scenarioNames.Select(n => (name: n, request: Start(WithBuildId(baseUrl + "/golden/scenarios/" + n + ".yaml", buildId)))).ToList();
-            var meta = Start(WithBuildId(baseUrl + "/map/heightmap.json", buildId));
-            var r16z = Start(WithBuildId(baseUrl + "/map/" + HeightmapCodec.FileName, buildId));
+            StreamingFetch.Download Get(string path) => StreamingFetch.Get(WithBuildId(baseUrl + "/" + path, buildId));
+            var bundle = Get("content/" + ContentManifest.BundleFileName);
+            var meta = Get("map/heightmap.json");
+            var r16z = Get("map/" + HeightmapCodec.FileName);
+            var scenarioRequests = new List<(string name, StreamingFetch.Download request)>();
             try
             {
-                var texts = new Dictionary<string, string>();
-                foreach (var (file, request) in requests) texts[file] = await Text(request, file, stallSeconds);
+                var goldenText = GoldenCheck.Requested() ? await Text(Get("golden/manifest.txt"), "golden/manifest.txt", stallSeconds) : "";
+                var scenarioNames = goldenText.Length == 0 ? new List<string>() : GoldenData.Parse(goldenText).Select(x => x.name).Where(n => n.StartsWith("scenario-", StringComparison.Ordinal)).Select(n => n.Substring("scenario-".Length)).ToList();
+                foreach (var n in scenarioNames) scenarioRequests.Add((n, Get("golden/scenarios/" + n + ".yaml")));
+                var (manifest, texts) = ContentManifest.ParseBundle(await Text(bundle, ContentManifest.BundleFileName, stallSeconds));
                 var metaText = await Text(meta, "heightmap.json", stallSeconds);
                 var r16zBytes = await Bytes(r16z, HeightmapCodec.FileName, stallSeconds);
-                DiagLog.BootPhase($"downloaded {texts.Count + 3} files");
+                DiagLog.BootPhase($"downloaded {texts.Count + 2} files");
                 var inputs = FromTexts(texts, manifest, metaText, r16zBytes);
                 inputs.Goldens = new GoldenData { Manifest = goldenText };
                 foreach (var (name, request) in scenarioRequests) inputs.Goldens.Scenarios[name] = await Text(request, "golden/scenarios/" + name + ".yaml", stallSeconds);
@@ -244,9 +170,8 @@ namespace Statecraft.Game.Boot
             }
             finally
             {
-                foreach (var (_, request) in requests) Release(request);
-                foreach (var (_, request) in scenarioRequests) Release(request);
-                Release(meta); Release(r16z);
+                foreach (var (_, request) in scenarioRequests) request.Release();
+                bundle.Release(); meta.Release(); r16z.Release();
             }
         }
     }
