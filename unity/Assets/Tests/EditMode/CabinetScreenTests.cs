@@ -13,6 +13,7 @@ public class CabinetScreenTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
 
     /// <summary>The UI with the Cabinet screen open, as ScreenNav opens it (a hidden screen does not re-render).</summary>
     static UiTestKit Shown()
@@ -52,6 +53,18 @@ public class CabinetScreenTests
         Assert.IsFalse(ui.Q<Button>("appoint-zisling").enabledSelf);
         Assert.AreEqual("Aharon Zisling's party (Mapam) is not in the coalition", ui.Q<Label>("cand-zisling-reason").text);
         Assert.IsTrue(ui.Q<Button>("appoint-golda_meir").enabledSelf);
+    }
+
+    /// <summary>#901: candidate refusal arguments are content ids from the sim; the Hebrew UI resolves and formats them.</summary>
+    [Test]
+    public void ARefusedCandidateHasAHebrewReasonInTheHebrewUi()
+    {
+        using var ui = Shown();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        var cabinet = new CabinetPresenter(ui.Root, new SimBridge(g, He), He, null);
+        cabinet.Select("finance_minister");
+        Assert.AreEqual("אהרון ציזלינג ממפלגת מפ״ם, שאינה בקואליציה", ui.Q<Label>("cand-zisling-reason").text);
     }
 
     [Test]
@@ -101,17 +114,17 @@ public class CabinetScreenTests
             cabinet.Select(office);
             var list = Cabinet.Candidates(C, bridge.State, office);
             // #215: a refusal shared by every candidate (the office itself) is said once under the heading.
-            var shared = list.All(x => x.reason != null && x.reason == list[0].reason) ? list[0].reason : null;
+            var shared = list.All(x => x.reason != null && x.reason.Text == list[0].reason!.Text) ? list[0].reason : null;
             Assert.AreEqual(office == "prime_minister" || office == "president", shared != null, office + ": an office-level refusal");
-            Assert.AreEqual(shared ?? "", ui.Q<Label>("cabinet-pick-reason").text, office);
+            Assert.AreEqual(shared?.Text ?? "", ui.Q<Label>("cabinet-pick-reason").text, office);
             Assert.AreEqual(shared == null ? DisplayStyle.None : DisplayStyle.Flex, ui.Q<Label>("cabinet-pick-reason").style.display.value, office);
             foreach (var (person, reason) in list)
             {
-                Assert.AreEqual(Cabinet.Check(C, bridge.State, office, person.Id), reason, office + " " + person.Id);   // Candidates is Check, row by row
+                Assert.AreEqual(Cabinet.Check(C, bridge.State, office, person.Id), reason?.Text, office + " " + person.Id);   // Candidates is CheckReason, row by row
                 Assert.AreEqual(reason == null, ui.Q<Button>("appoint-" + person.Id).enabledSelf, office + " " + person.Id);
                 var row = ui.Q<Label>("cand-" + person.Id + "-reason");
                 if (shared != null) Assert.AreEqual(DisplayStyle.None, row.style.display.value, office + " " + person.Id + ": not repeated");
-                else if (reason != null) Assert.AreEqual(reason, row.text);
+                else if (reason != null) Assert.AreEqual(reason.Text, row.text);
             }
         }
     }

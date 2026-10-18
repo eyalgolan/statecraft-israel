@@ -1,5 +1,7 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Sim;
 using UnityEngine;
@@ -256,17 +258,37 @@ namespace Statecraft.Game.UI
             var list = Cabinet.Candidates(c, s, Selected);
             // A refusal about the office itself (the Prime Minister's or the President's, an abolished one) is the same for
             // everyone: it is said once under the heading, not under every name (#215).
-            var shared = list.Count > 0 && list.All(x => x.reason != null && x.reason == list[0].reason) ? list[0].reason : null;
+            var shared = list.Count > 0 && list.All(x => x.reason != null && x.reason.Text == list[0].reason!.Text) ? list[0].reason : null;
             var common = screen.Q<Label>("cabinet-pick-reason");
-            common.text = shared ?? "";
+            common.text = shared == null ? "" : ReasonText(c, shared);
             common.style.display = shared == null ? DisplayStyle.None : DisplayStyle.Flex;
             foreach (var (person, reason) in list)
             {
                 if (!rows.TryGetValue(person.Id, out var r)) continue;
                 r.appoint.text = Describe(person);
                 r.appoint.SetEnabled(reason == null);
-                r.reason.text = shared == null ? reason ?? "" : "";
+                r.reason.text = shared == null && reason != null ? ReasonText(c, reason) : "";
                 r.reason.style.display = reason == null || shared != null ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+        }
+
+        string ReasonText(Content c, CabinetReason reason)
+        {
+            bool he = text["ui.lang"] == UiLanguage.Hebrew;
+            string Person(string id) { var p = c.People.First(x => x.Id == id); return he && p.NameHe != "" ? p.NameHe : p.Name; }
+            string Office(string id) { var o = c.Offices.First(x => x.Id == id); return he && o.TitleHe != "" ? o.TitleHe : o.Title; }
+            string Party(string id) { var p = c.Parties.First(x => x.Id == id); return he && p.NameHe != "" ? p.NameHe : p.Name; }
+            string Date(string iso) => Statecraft.Game.Map.Control1948.DateText(System.DateTime.ParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture), k => text[k]);
+            var key = "cabinet.reason." + reason.Kind;
+            switch (reason.Kind)
+            {
+                case "historical_office": case "several_holders": return text.Format(key, Office(reason.Values[0]));
+                case "abolished": case "not_established": return text.Format(key, Office(reason.Values[0]), Date(reason.Values[1]));
+                case "died": return text.Format(key, Person(reason.Values[0]), Date(reason.Values[1]));
+                case "is_president": case "is_chief_of_staff": case "not_career_officer": return text.Format(key, Person(reason.Values[0]));
+                case "already_holds": return text.Format(key, Person(reason.Values[0]), Office(reason.Values[1]));
+                case "party_not_coalition": return text.Format(key, Person(reason.Values[0]), Party(reason.Values[1]));
+                default: return text[key];
             }
         }
 

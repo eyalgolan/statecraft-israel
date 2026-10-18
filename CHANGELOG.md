@@ -16,6 +16,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Jerusalem's symbolic Haram al-Sharif / Temple Mount runs north-south in its sourced proportions against the Old City's
   east and south walls, Al-Aqsa stands across its south end, and the walls have the seven gates open before the 1948 war
   on their real sides, the Golden Gate sealed: 7 gates, not one per road gap (13) (#319).
+- Under `?lang=he`, the Cabinet's candidate refusal reasons use Hebrew UI strings and Hebrew person, office, party and
+  date values instead of displaying the simulation's English prose; English is unchanged (refs #901, #564).
 
 ## [0.1.0] - 2026-10-18
 

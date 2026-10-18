@@ -76,16 +76,19 @@ public class CabinetTests
     }
 
     [Theory]
-    [InlineData("prime_minister", "loyalist", "You are the Prime Minister: that office is not yours to fill")]
-    [InlineData("finance_minister", "outsider", "Out Sider's party (Beta) is not in the coalition")]
-    [InlineData("finance_minister", "gone", "Gone Early died on 1 May 1948")]
-    [InlineData("finance_minister", "def_two", "Def Two already holds the office of Minister of Finance")]
-    [InlineData("finance_minister", "nobody", "That person is not in this game")]
-    [InlineData("treasurer", "loyalist", "That office does not exist in this game")]
-    public void IllegalAppointmentsAreRejectedWithAReason(string office, string person, string reason)
+    [InlineData("prime_minister", "loyalist", "prime_minister", "You are the Prime Minister: that office is not yours to fill")]
+    [InlineData("finance_minister", "outsider", "party_not_coalition", "Out Sider's party (Beta) is not in the coalition")]
+    [InlineData("finance_minister", "gone", "died", "Gone Early died on 1 May 1948")]
+    [InlineData("finance_minister", "def_two", "already_holds", "Def Two already holds the office of Minister of Finance")]
+    [InlineData("finance_minister", "nobody", "person_unknown", "That person is not in this game")]
+    [InlineData("treasurer", "loyalist", "office_unknown", "That office does not exist in this game")]
+    public void IllegalAppointmentsAreRejectedWithAStableCodeAndUnchangedEnglish(string office, string person, string kind, string reason)
     {
         var s = Simulation.NewGame(C, 42, Mode.Historical);
         var before = s.Hash();
+        var coded = Cabinet.CheckReason(C, s, office, person)!;
+        Assert.Equal(kind, coded.Kind);
+        Assert.Equal(reason, coded.Text);
         Assert.Equal(reason, Cabinet.Appoint(C, s, office, person, new List<Cause>()));
         Assert.Equal(before, s.Hash());
     }

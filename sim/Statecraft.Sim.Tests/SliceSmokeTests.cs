@@ -118,7 +118,7 @@ public class SliceSmokeTests
         foreach (var seat in Cabinet.Lineup(c, s))
         {
             yield return (seat.Office.Title + ": " + string.Join(", ", seat.Holders.Select(p => p.Name)), false);
-            foreach (var reason in Cabinet.Candidates(c, s, seat.Office.Id).Select(x => x.reason).Where(x => x != null).Distinct())
+            foreach (var reason in Cabinet.Candidates(c, s, seat.Office.Id).Select(x => x.reason?.Text).Where(x => x != null).Distinct())
                 yield return (reason!, false);
         }
         // InfoPanelPresenter: why a build is not possible on a hex (a sample of the map).
