@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Statecraft.Sim.Reference;
 
 namespace Statecraft.Sim
@@ -41,5 +42,56 @@ namespace Statecraft.Sim
 
         /// <summary>The mvp-end golden: the whole game, to its end (Content.End, R-LOOP-004).</summary>
         public static GameState PlayToEnd(Content c) => Play(c ?? throw new ArgumentNullException(nameof(c)), c.End);
+
+        /// <summary>A fresh start of one era (#292), the run the era goldens pin (EraGolden; golden manifest names
+        /// hash_&lt;era&gt;_&lt;year&gt;): the golden seed, Historical mode and <see cref="Orders"/>, as <see cref="Play"/>,
+        /// except that the turn that would reach the era's <c>to</c> is not taken (that turn's state already holds the next
+        /// era's rules). An era later than the first fails here with a message saying so: NewGame reads only the base
+        /// rules' start values. Here, not in the test project, so Unity's golden check plays the same run.</summary>
+        public static GameState PlayEra(Content c, string eraId, DateTime until, ulong seed = Seed)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            var era = c.Eras.FirstOrDefault(e => e.Id == eraId) ?? throw new ArgumentException($"no era '{eraId}' (known: {string.Join(", ", c.Eras.Select(e => e.Id))})");
+            if (era.From != c.Rules.Start)
+                throw new NotSupportedException($"era '{eraId}' starts {era.From:yyyy-MM-dd}, but a new game starts {c.Rules.Start:yyyy-MM-dd}: a fresh start of a later era needs that era's start values, which are not read yet (chapters design section 6).");
+            if (until <= era.From || until > era.To) throw new ArgumentException($"until {until:yyyy-MM-dd} is outside era '{eraId}' ({era.From:yyyy-MM-dd} to {era.To:yyyy-MM-dd})");
+            var s = Simulation.NewGame(c, seed, Mode.Historical);
+            for (int turn = 0; turn < 1000 && s.Date < until && s.GameOver == null; turn++)
+            {
+                var next = Simulation.Step(c, s, Orders(c, s)).State;
+                if (next.Date >= era.To) break;
+                s = next;
+            }
+            return s;
+        }
+
+        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: each open event,
+        /// in the card's order, answered with its first option while the turn's Attention pays for an answer; the rest go
+        /// to their ministers at the turn's end (docs/determinism.md). SliceSmokeTests plays the same policy.</summary>
+        public static List<Command> SmokeOrders(Content c, GameState s)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            var answers = new List<Command>();
+            var left = s.Attention;
+            foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
+            {
+                var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
+                var price = AttentionSystem.Cost(c, s, cmd.Kind);
+                if (price > left + 1e-9) break;
+                left -= price;
+                answers.Add(cmd);
+            }
+            return answers;
+        }
+
+        /// <summary>The smoke5 golden: the golden seed, Historical mode, <paramref name="turns"/> turns of <see cref="SmokeOrders"/>.</summary>
+        public static GameState PlaySmoke(Content c, int turns)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            var s = Simulation.NewGame(c, Seed, Mode.Historical);
+            for (int turn = 0; turn < turns && s.Date < Until1952 && s.GameOver == null; turn++)
+                s = Simulation.Step(c, s, SmokeOrders(c, s)).State;
+            return s;
+        }
     }
 }

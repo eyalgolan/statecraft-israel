@@ -19,7 +19,7 @@ import player_golden_check as pg
 REPO = Path(__file__).resolve().parents[2]
 H50, H52 = "a" * 64, "b" * 64
 MANIFEST = f"# comment\nhash1950 {H50}\nhash1952 {H52}\nsmoke5 {'c' * 64}\n"
-EXPECTED = [f"GOLDEN OK 1950 {H50}", f"GOLDEN OK 1952 {H52}"]
+EXPECTED = [f"GOLDEN OK hash1950 {H50}", f"GOLDEN OK hash1952 {H52}", f"GOLDEN OK smoke5 {'c' * 64}"]
 
 
 def digest(name):
@@ -223,10 +223,10 @@ def test_plan_command_writes_the_matrix_to_the_github_output(tmp_path, monkeypat
 
 def test_expected_lines_come_from_the_manifest_and_the_real_manifest_has_them():
     assert pg.expected_lines(pg.read_manifest(MANIFEST)) == EXPECTED
-    with pytest.raises(ValueError, match="hash1952"):
-        pg.expected_lines(pg.read_manifest(f"hash1950 {H50}\n"))
+    with pytest.raises(ValueError, match="bad"):
+        pg.expected_lines(pg.read_manifest("bad nope\n"))
     real = pg.read_manifest((REPO / "sim/Statecraft.Sim.Tests/golden/manifest.txt").read_text(encoding="utf-8"))
-    assert [l.split()[2] for l in pg.expected_lines(real)] == ["1950", "1952"]
+    assert [l.split()[2] for l in pg.expected_lines(real)] == list(real)
 
 
 def test_a_passing_log_needs_both_lines_and_exit_zero():
@@ -234,17 +234,17 @@ def test_a_passing_log_needs_both_lines_and_exit_zero():
     assert pg.check_log(log, EXPECTED, 0) == []
     assert pg.check_log(log, EXPECTED, 1) == ["the player exited 1"]
     assert pg.check_log(log, EXPECTED, None) == ["the player did not exit before the timeout"]
-    assert pg.check_log(EXPECTED[0], EXPECTED, 0) == [f"missing line: {EXPECTED[1]}"]
+    assert pg.check_log(EXPECTED[0], EXPECTED, 0) == [f"missing line: {line}" for line in EXPECTED[1:]]
 
 
 def test_a_wrong_hash_or_a_fail_line_fails():
-    wrong = f"GOLDEN OK 1950 {H50}\nGOLDEN FAIL 1952 {'d' * 64} expected {H52}\n"
+    wrong = f"GOLDEN OK hash1950 {H50}\nGOLDEN FAIL hash1952 {'d' * 64} expected {H52}\n"
     assert pg.check_log(wrong, EXPECTED, 1) == ["the player exited 1", f"missing line: {EXPECTED[1]}",
-                                                 f"failure line: GOLDEN FAIL 1952 {'d' * 64} expected {H52}"]
+                                                 f"missing line: {EXPECTED[2]}", f"failure line: GOLDEN FAIL hash1952 {'d' * 64} expected {H52}"]
     assert pg.check_log("\n".join(EXPECTED) + "\nBOOT FAIL content missing", EXPECTED, 0) == [
         "failure line: BOOT FAIL content missing"]
     # A hash prefix or a line with more after it is not the line.
-    assert pg.check_log(f"GOLDEN OK 1950 {H50[:8]}\nGOLDEN OK 1952 {H52}x", EXPECTED, 0) == [
+    assert pg.check_log(f"GOLDEN OK hash1950 {H50[:8]}\nGOLDEN OK hash1952 {H52}x\n{EXPECTED[2]}", EXPECTED, 0) == [
         f"missing line: {EXPECTED[0]}", f"missing line: {EXPECTED[1]}"]
 
 
@@ -447,7 +447,7 @@ def test_the_pass_rule_matches_the_real_player_log_format():
     # more hex digit, is not the expected line.
     assert pg.check_log("Loading content\n" + "\n".join(EXPECTED) + "\n", EXPECTED, 0) == []
     assert pg.check_log("\n".join("12:00:01 " + l for l in EXPECTED), EXPECTED, 0) == [f"missing line: {l}" for l in EXPECTED]
-    assert pg.check_log(EXPECTED[0] + "a\n" + EXPECTED[1], EXPECTED, 0) == [f"missing line: {EXPECTED[0]}"]
+    assert pg.check_log(EXPECTED[0] + "a\n" + "\n".join(EXPECTED[1:]), EXPECTED, 0) == [f"missing line: {EXPECTED[0]}"]
 
 
 def test_the_release_script_shares_the_asset_names_the_tag_rule_and_the_pass_rule():
@@ -455,7 +455,7 @@ def test_the_release_script_shares_the_asset_names_the_tag_rule_and_the_pass_rul
     import release_build as rb
     assert rb.ARCHIVES == {"mac": pg.ASSETS["macos"], "linux": pg.ASSETS["linux"], "windows": pg.ASSETS["windows"]}
     assert rb.TAG is pg.TAG
-    expected = {"1950": H50, "1952": H52}
+    expected = {"hash1950": H50, "hash1952": H52, "smoke5": "c" * 64}
     logs = ["\n".join(EXPECTED), "\n".join("12:00:01 " + l for l in EXPECTED), EXPECTED[0] + "a\n" + EXPECTED[1],
             "\n".join(EXPECTED) + "\nBOOT FAIL x", EXPECTED[0], ""]
     for log in logs:

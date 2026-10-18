@@ -7,6 +7,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Fixed
+- The Unity golden checks play every golden in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`,
+  `smoke5`, `mvp-end` and each scenario), not only the 1950 and 1952 runs: one EditMode test and `GoldenCheck` (`-golden`,
+  `?golden`) read the manifest, the players ship it and the scenario files, and an unknown or failing golden is a
+  `GOLDEN FAIL` line. The lines now name the golden (`GOLDEN OK hash1950 <hash>`, was `GOLDEN OK 1950 <hash>`), and the
+  smoke and era-golden play code moved into `GoldenRun` so Unity plays the .NET runs (#394).
+
 ## [0.1.0] - 2026-10-18
 
 ### Added

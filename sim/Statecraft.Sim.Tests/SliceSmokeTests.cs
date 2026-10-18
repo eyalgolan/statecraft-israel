@@ -30,22 +30,8 @@ public class SliceSmokeTests
 
     delegate List<Command> Policy(Content c, GameState s, int turn);
 
-    /// <summary>What GameRoot.Smoke does: answer each open event, in the card's order, with its first option button, while
-    /// the turn's Attention pays for an answer; the rest go to their ministers at the turn's end.</summary>
-    static List<Command> FirstOption(Content c, GameState s, int turn)
-    {
-        var answers = new List<Command>();
-        var left = s.Attention;
-        foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
-        {
-            var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
-            var price = AttentionSystem.Cost(c, s, cmd.Kind);
-            if (price > left + 1e-9) break;
-            left -= price;
-            answers.Add(cmd);
-        }
-        return answers;
-    }
+    /// <summary>What GameRoot.Smoke does (GoldenRun.SmokeOrders, shared with Unity's golden check).</summary>
+    static List<Command> FirstOption(Content c, GameState s, int turn) => GoldenRun.SmokeOrders(c, s);
 
     /// <summary>The golden runs' player (GoldenRun.Orders): HistoricalAI's orders, then the reference player's GDD orders.</summary>
     static List<Command> Historical(Content c, GameState s, int turn) => GoldenRun.Orders(c, s).ToList();
@@ -246,6 +232,8 @@ public class SliceSmokeTests
         var expected = WebSmoke5;   // read before an update rewrites the manifest, so a moved value still fails this run
         if (GoldenManifest.UpdateRequested) GoldenManifest.Update("smoke5", five.Hash());
         Assert.Equal(expected, FormattableString.Invariant($"SMOKE OK 5 turns {five.Date:yyyy-MM-dd} {five.Hash()}"));
+        // The library's run (Unity's golden check, #394) ends on the same state as the session run above.
+        Assert.Equal(five.Hash(), GoldenRun.PlaySmoke(Real, 5).Hash());
         Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
     }
 

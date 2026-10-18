@@ -50,6 +50,7 @@ namespace Statecraft.Game.Boot
     {
         public Content Content = null!;
         public MapInputs Map = null!;
+        public GoldenData Goldens = null!;
 
         public static MapInputs MapFromDisk(string contentDir, string mapDir) => new MapInputs
         {
@@ -74,8 +75,17 @@ namespace Statecraft.Game.Boot
         /// <summary>A map-only, cosmetic input: "" when the file is missing (the map then skips that layer with a warning).</summary>
         static string ReadIfExists(string path) => File.Exists(path) ? File.ReadAllText(path) : "";
 
-        public static GameInputs FromDisk(string contentDir, string mapDir) =>
-            new GameInputs { Content = ContentLoader.Load(contentDir), Map = MapFromDisk(contentDir, mapDir) };
+        /// <summary>The inputs from disk. The golden data (#394) is read in the editor (the repository's manifest and
+        /// scenarios) and, in a player, only for a -golden run (the copies ContentSync ships), so a normal boot never
+        /// depends on it.</summary>
+        public static GameInputs FromDisk(string contentDir, string mapDir)
+        {
+            var root = Application.isEditor
+                ? Path.Combine(Paths.RepoRoot, "sim", "Statecraft.Sim.Tests", "golden")
+                : Path.Combine(Application.streamingAssetsPath, "golden");
+            var goldens = Application.isEditor || GoldenCheck.Requested() ? GoldenData.FromDisk(root) : new GoldenData();
+            return new GameInputs { Content = ContentLoader.Load(contentDir), Map = MapFromDisk(contentDir, mapDir), Goldens = goldens };
+        }
 
         /// <summary>Builds the inputs from fetched texts (keys are manifest paths) and the packed heightmap's bytes.</summary>
         public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z)
@@ -212,7 +222,11 @@ namespace Statecraft.Game.Boot
         internal static async Awaitable<GameInputs> FetchAsync(string baseUrl, string buildId, float stallSeconds)
         {
             var manifest = ContentManifest.Parse(await Text(Start(WithBuildId(baseUrl + "/content/" + ContentManifest.FileName, buildId)), ContentManifest.FileName, stallSeconds));
+            var goldenText = GoldenCheck.Requested()
+                ? await Text(Start(WithBuildId(baseUrl + "/golden/manifest.txt", buildId)), "golden/manifest.txt", stallSeconds) : "";
+            var scenarioNames = goldenText.Length == 0 ? new List<string>() : GoldenData.Parse(goldenText).Select(x => x.name).Where(n => n.StartsWith("scenario-", StringComparison.Ordinal)).Select(n => n.Substring("scenario-".Length)).ToList();
             var requests = manifest.Select(f => (file: f, request: Start(WithBuildId(baseUrl + "/content/" + f, buildId)))).ToList();
+            var scenarioRequests = scenarioNames.Select(n => (name: n, request: Start(WithBuildId(baseUrl + "/golden/scenarios/" + n + ".yaml", buildId)))).ToList();
             var meta = Start(WithBuildId(baseUrl + "/map/heightmap.json", buildId));
             var r16z = Start(WithBuildId(baseUrl + "/map/" + HeightmapCodec.FileName, buildId));
             try
@@ -223,12 +237,15 @@ namespace Statecraft.Game.Boot
                 var r16zBytes = await Bytes(r16z, HeightmapCodec.FileName, stallSeconds);
                 DiagLog.BootPhase($"downloaded {texts.Count + 3} files");
                 var inputs = FromTexts(texts, manifest, metaText, r16zBytes);
+                inputs.Goldens = new GoldenData { Manifest = goldenText };
+                foreach (var (name, request) in scenarioRequests) inputs.Goldens.Scenarios[name] = await Text(request, "golden/scenarios/" + name + ".yaml", stallSeconds);
                 DiagLog.BootPhase("content parsed and validated");
                 return inputs;
             }
             finally
             {
                 foreach (var (_, request) in requests) Release(request);
+                foreach (var (_, request) in scenarioRequests) Release(request);
                 Release(meta); Release(r16z);
             }
         }

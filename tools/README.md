@@ -43,7 +43,7 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `player_golden_check.py` is the logic of `.github/workflows/player-golden.yml`: `plan` lists the desktop players a
   GitHub Release carries (their asset names are the contract with the release script) and refuses a partial set, and
   `run` checks one against GitHub's SHA-256 digest for the asset, unpacks it, checks the notices sit beside the player, runs it
-  with `-batchmode -nographics -golden` and passes only on exit 0 with both `GOLDEN OK` lines from the golden manifest,
+  with `-batchmode -nographics -golden` and passes only on exit 0 with every `GOLDEN OK` line from the golden manifest,
   printing the player log otherwise. Stdlib only; no Unity and no licence needed.
 - `package_release.py` zips a WebGL release build (gzip, `unity/Builds/Web-gzip`; #879) for sharing (`unity/Builds/statecraft-m3-web.zip`) and refuses
   (exit 1) until every sensitive event is `sensitivity-reviewed` (docs/m3-release.md). The files under `Build/` are

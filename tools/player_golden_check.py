@@ -20,7 +20,7 @@ into an empty folder, finds the player, checks the layout (the notices of REQUIR
 player or the .app), runs it with
 `-batchmode -nographics -golden -logFile <absolute path>` (docs/determinism.md), the Linux player under `xvfb-run -a`
 (DISPLAY_WRAPPER: it crashes with no display at all), and passes only when it exits 0 and its log
-holds `GOLDEN OK 1950 <hash1950>` and `GOLDEN OK 1952 <hash1952>` from the golden manifest, and no FAIL line. On failure
+holds one `GOLDEN OK <name> <hash>` line for every entry in the golden manifest, and no FAIL line. On failure
 it prints the whole player log. With --arch (the Mac app, run once per slice) the runner's `uname -m` must be that
 architecture and `lipo -archs` must list it. Exit 0 when the check passes, 1 when it fails, 2 on bad input.
 
@@ -82,7 +82,6 @@ DISPLAY_WRAPPER = {"linux": ["xvfb-run", "-a"]}
 # Seconds a timed-out run gets between SIGTERM and SIGKILL (stop_group).
 TERM_GRACE = 5
 
-GOLDENS = (("1950", "hash1950"), ("1952", "hash1952"))
 FAIL = re.compile(r"\b(GOLDEN FAIL|BOOT FAIL)\b")
 
 
@@ -140,10 +139,12 @@ def read_manifest(text: str) -> dict[str, str]:
 
 
 def expected_lines(manifest: dict[str, str]) -> list[str]:
-    missing = [key for _, key in GOLDENS if not re.fullmatch(r"[0-9a-f]{64}", manifest.get(key, ""))]
-    if missing:
-        raise ValueError(f"the golden manifest has no SHA-256 for {', '.join(missing)}")
-    return [f"GOLDEN OK {year} {manifest[key]}" for year, key in GOLDENS]
+    if not manifest:
+        raise ValueError("the golden manifest has no entries")
+    bad = [name for name, value in manifest.items() if not re.fullmatch(r"[0-9a-f]{64}", value)]
+    if bad:
+        raise ValueError(f"the golden manifest has no SHA-256 for {', '.join(bad)}")
+    return [f"GOLDEN OK {name} {value}" for name, value in manifest.items()]
 
 
 def check_log(log: str, expected: list[str], exit_code: int | None) -> list[str]:

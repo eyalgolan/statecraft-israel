@@ -34,19 +34,22 @@ final `GameState.Hash()` is pinned:
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
-later end date moves only `mvp-end`. `mvp-end` is pinned in the manifest and its snapshot; the players and `web_check`
-check `hash1950` and `hash1952`.
+later end date moves only `mvp-end`. `mvp-end` is pinned in the manifest and its snapshot; Unity EditMode and every
+player check enumerate the manifest, so it and every scenario are checked without another hand-written list.
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
 ministers): `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
-Check every build with:
+Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
 ```
-uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" \
-  --expect "GOLDEN OK 1950 7cf678b6b2b3d55dc0fee7b2efdee9ec7688cdf18964dcaa6e5a7c0018e34a51" \
-  --expect "GOLDEN OK 1952 9496947232f0c97ed21c0a0b98e6727e7d59c892f9aff12049b5d7e5ee2230e8" \
+golden_expect=()
+while read -r name hash; do
+  [[ -z "$name" || "$name" == \#* ]] && continue
+  golden_expect+=(--expect "GOLDEN OK $name $hash")
+done < sim/Statecraft.Sim.Tests/golden/manifest.txt
+uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
   --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
 ```
 
@@ -131,8 +134,10 @@ compare against it. These places must agree with it, and `GoldenManifestTests` f
 
 `tools/art_checkpoint.sh` reads its expected hashes from the manifest, so it needs no edit.
 
-`unity/Assets/Tests/EditMode/SimSmokeTests.cs` runs the same playthroughs inside Unity against `GoldenRun`'s constants
-(run `uv run tools/build_sim_for_unity.py` first so Unity has the current DLLs).
+`unity/Assets/Tests/EditMode/GoldenCheckTests.cs` reads the manifest and runs every entry inside Unity Mono. `GoldenCheck`
+does the same in macOS and WebGL IL2CPP; `ContentSync` ships the manifest and scenario YAML, and the WebGL loader fetches
+them before the check. `tools/player_golden_check.py` and `tools/release_build.py` also derive their required OK lines
+from the complete manifest. Run `uv run tools/build_sim_for_unity.py` first so Unity has the current DLLs.
 
 Verified on .NET, Unity editor Mono, a macOS IL2CPP player (Apple clang, no `-ffp-contract=off` needed) and a WebGL
 IL2CPP player in Chrome (M3 Task 22). The platform checks below used the prior `73590e32` 1952 baseline. The issue #2
@@ -155,11 +160,19 @@ Re-checked on macOS after the issue #2 correction (2026-10-14, commit `bd683ee0`
 Re-check with:
 
 ```
-"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression disabled -logFile unity-build-web.log
-uv run tools/web_check.py unity/Builds/Web-disabled --query golden --expect "GOLDEN OK 1950" --expect "GOLDEN OK 1952"
-"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod Statecraft.Game.EditorTools.Build.Mac -logFile unity-build-mac.log
-"unity/Builds/Mac/Statecraft.app/Contents/MacOS/Statecraft Israel" -batchmode -nographics -golden -logFile "$PWD/unity-golden-mac.log"; echo exit=$?
+uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -projectPath unity -runTests -testPlatform EditMode -testFilter GoldenCheckTests -testResults "$PWD/unity-editmode.xml" -logFile "$PWD/unity-editmode.log"
+uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression disabled -logFile unity-build-web.log
+golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
+uv run tools/web_check.py unity/Builds/Web-disabled --query golden "${golden_expect[@]}"
+uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod Statecraft.Game.EditorTools.Build.Mac -logFile unity-build-mac.log
+uv run tools/machine_lock.py --shared -- "unity/Builds/Mac/Statecraft.app/Contents/MacOS/Statecraft Israel" -batchmode -nographics -golden -logFile "$PWD/unity-golden-mac.log"; echo exit=$?
 ```
+
+Last full-set run (all seven manifest goldens, one `GOLDEN OK <name> <hash>` line each, every hash equal to the
+manifest), 18 October 2026, commit `6d29976b` (#394) on `30fbe580`: Unity editor Mono EditMode (`GoldenCheckTests`,
+in a full run of 1,321 tests, 0 failed); WebGL IL2CPP in Chrome (`Web-disabled`, `?golden&smoke=5`, `PASS` with the
+`SMOKE OK` line too); and a macOS IL2CPP Universal player on Apple silicon (arm64 slice, `-golden`, exit 0). The x86_64
+slice, Windows and Linux players were not run then (the `Player golden` workflow checks them on a release).
 
 The player needs an absolute `-logFile` path: with a relative one it wrote no log file in the check run. The editor
 commands are fine with relative paths.

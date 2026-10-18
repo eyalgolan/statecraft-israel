@@ -29,7 +29,7 @@ def repo(tmp_path):
     (root / "sim/Statecraft.Sim").mkdir(parents=True)
     (root / "sim/Statecraft.Sim/SimInfo.cs").write_text('        public const string Version = "0.1.0";\n')
     (root / "sim/Statecraft.Sim.Tests/golden").mkdir(parents=True)
-    (root / "sim/Statecraft.Sim.Tests/golden/manifest.txt").write_text(f"# pinned\nhash1950 {H1950}\nhash1952 {H1952}\nsmoke5 abc\n")
+    (root / "sim/Statecraft.Sim.Tests/golden/manifest.txt").write_text(f"# pinned\nhash1950 {H1950}\nhash1952 {H1952}\nsmoke5 {'c' * 64}\n")
     for name in ("LICENSE", "NOTICE", "THIRD-PARTY-NOTICES.md"):
         (root / name).write_text(f"{name} text\n")
     (root / "LICENSES").mkdir()
@@ -111,8 +111,8 @@ class Fake:
                 code = 1
         elif "-golden" in cmd:
             log = Path(cmd[cmd.index("-logFile") + 1])
-            second = f"GOLDEN OK 1952 {H1952}" if self.golden_ok else f"GOLDEN FAIL 1952 {'f' * 64} expected {H1952}"
-            log.write_text(f"boot\nGOLDEN OK 1950 {H1950}\n{second}\n")
+            second = f"GOLDEN OK hash1952 {H1952}" if self.golden_ok else f"GOLDEN FAIL hash1952 {'f' * 64} expected {H1952}"
+            log.write_text(f"boot\nGOLDEN OK hash1950 {H1950}\n{second}\nGOLDEN OK smoke5 {'c' * 64}\n")
             code = 0 if self.golden_ok else 1
         elif cmd[0] == "ditto":
             # Plays `ditto -c -k --norsrc --keepParent SRC ZIP`: a real zip, SRC's name as the top folder.
@@ -302,9 +302,8 @@ def test_a_failed_unity_exit_fails_even_when_a_player_is_left_behind(repo, edito
     assert not [c for c in fake.calls if "-golden" in c]
 
 
-def test_a_manifest_missing_one_golden_never_passes():
-    """Mutation M6: both pinned hashes are required, even if the manifest lost one."""
-    assert rb.golden_status(f"GOLDEN OK 1950 {H1950}\n", 0, {"1950": H1950}) == "fail"
+def test_an_empty_or_malformed_manifest_never_passes():
+    assert rb.golden_status("GOLDEN OK one nope\n", 0, {"one": "nope"}) == "fail"
     assert rb.golden_status("", 0, {}) == "fail"
 
 
@@ -327,7 +326,7 @@ def test_the_record_says_whether_the_tree_stayed_clean(repo, editor, monkeypatch
 def test_unity_version_and_goldens_come_from_the_repository(repo, monkeypatch):
     monkeypatch.setattr(rb, "REPO", repo)
     assert rb.unity_version() == ("6000.3.25f1", "e1dba0a9aba4")
-    assert rb.expected_goldens() == {"1950": H1950, "1952": H1952}
+    assert rb.expected_goldens() == {"hash1950": H1950, "hash1952": H1952, "smoke5": "c" * 64}
     assert rb.versions() == {"bundle_version": "0.1.0", "sim_version": "0.1.0"}
 
 
@@ -508,7 +507,7 @@ def test_the_record_holds_commit_unity_date_hashes_sizes_and_goldens(repo, edito
     assert exe.is_file()
 
     assert mac["golden"]["status"] == "pass"
-    assert mac["golden"]["lines"] == [f"GOLDEN OK 1950 {H1950}", f"GOLDEN OK 1952 {H1952}"]
+    assert mac["golden"]["lines"] == [f"GOLDEN OK hash1950 {H1950}", f"GOLDEN OK hash1952 {H1952}", f"GOLDEN OK smoke5 {'c' * 64}"]
     assert mac["golden"]["exit_code"] == 0
     for name in ("linux", "windows"):
         assert arts[name]["golden"]["status"] == "unchecked"
@@ -540,7 +539,7 @@ def test_a_failed_golden_is_recorded_and_fails_the_run(repo, editor, monkeypatch
     assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
     mac = json.loads((out / "build-record.json").read_text())["artifacts"][0]
     assert mac["golden"]["status"] == "fail" and mac["golden"]["exit_code"] == 1
-    assert any(line.startswith("GOLDEN FAIL 1952") for line in mac["golden"]["lines"])
+    assert any(line.startswith("GOLDEN FAIL hash1952") for line in mac["golden"]["lines"])
 
 
 def test_golden_lines_must_match_the_pinned_hashes_not_just_say_ok():

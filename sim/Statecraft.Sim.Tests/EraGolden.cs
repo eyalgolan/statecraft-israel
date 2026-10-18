@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Statecraft.Sim;
 
 /// <summary>Adds a golden for one era in a few lines (#292): <c>EraGolden.Check("hash_founding_1950", c, "founding", new DateTime(1950, 1, 1))</c>
@@ -14,21 +13,7 @@ using Statecraft.Sim;
 public static class EraGolden
 {
     public static GameState Play(Content c, string eraId, DateTime until, ulong seed = GoldenRun.Seed)
-    {
-        var era = c.Eras.FirstOrDefault(e => e.Id == eraId) ?? throw new ArgumentException($"no era '{eraId}' (known: {string.Join(", ", c.Eras.Select(e => e.Id))})");
-        if (era.From != c.Rules.Start)
-            throw new NotSupportedException($"era '{eraId}' starts {era.From:yyyy-MM-dd}, but a new game starts {c.Rules.Start:yyyy-MM-dd}: a fresh start of a later era needs that era's start values, which are not read yet (chapters design section 6).");
-        if (until <= era.From || until > era.To) throw new ArgumentException($"until {until:yyyy-MM-dd} is outside era '{eraId}' ({era.From:yyyy-MM-dd} to {era.To:yyyy-MM-dd})");
-        // GoldenRun.Play's loop, except that a turn ending on or after the era's end is not taken.
-        var s = Simulation.NewGame(c, seed, Mode.Historical);
-        for (int turn = 0; turn < 1000 && s.Date < until && s.GameOver == null; turn++)
-        {
-            var next = Simulation.Step(c, s, GoldenRun.Orders(c, s)).State;
-            if (next.Date >= era.To) break;
-            s = next;
-        }
-        return s;
-    }
+        => GoldenRun.PlayEra(c, eraId, until, seed);
 
     public static void Check(string name, Content c, string eraId, DateTime until, ulong seed = GoldenRun.Seed)
     {
