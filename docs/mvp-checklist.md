@@ -6,14 +6,14 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 
 ## Owner gates (blocking the critical path)
 
-- [ ] **Blocked on owner decision: #781.** Arms start stock and unit, price, Arms per recruit and Attention cost are the owner questions on #781. [The GDD](GDD.md#resources-and-national-parameters) decides only where Arms come from (D-G6).
+- [ ] **Decided (owner, 18 Oct 2026, "all defaults"; [#781](https://github.com/eyalgolan/statecraft-israel/issues/781#issuecomment-6249500301)):** agents propose the four Arms numbers as labelled DESIGN VALUE lines. The four values are Arms start stock and unit, price, Arms per recruit and Attention cost (#781). [The GDD](GDD.md#resources-and-national-parameters) decides only where Arms come from (D-G6).
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-4.md`.** The Phase 4 rulings (#782, then Q-CAMP-2's camp sites, Q-SWAMP-3's Hula clearance and the Kiryat Shmona and Beit Shemesh sign-off) are recorded in the plan's status line and decision rows.
 - [ ] **Blocked on owner decision: #783.** The 37 questions marked `OWNER PICK` in `docs/superpowers/plans/2026-10-15-gdd-phase-6.md` (Q-TGT-1 to Q-TGT-3, Q-DEP-1 to Q-DEP-7 and the rest) are unanswered; agents draft, the owner edits.
 - [ ] **Blocked on owner decision: #784.** Q-DEF-4 and Q-OPEN-3 through Q-OPEN-5 remain owner picks in `docs/superpowers/plans/2026-10-15-gdd-phase-7.md`; Q-DEF-2, Q-MIN-2, Q-NEW-3 and Q-END-3 were decided on 18 October and recorded there (#997).
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.** Q-ART-2 and its selected artillery and armoured-car models are recorded on `main`, and so is Q-ART-3, the owner as the unit-art reviewer, with MATKOT's models counted as reviewed (#997).
 - [x] **Done: `ASSETS.yaml`.** The `first_new_yishuv` photograph's row is verified (CHANGELOG: "Its `ASSETS.yaml` row became `verified` in #913").
 - [x] **Done: #382 ([owner sign-off, 17 Oct](https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6231566027)).** The cutover reviews (the re-timed event windows and the `DesignValuesTests` list) are signed off.
-- [ ] **Blocked on owner decision: #884.** Money upkeep and the per-head tax await the Q-MONEY-2 choices stated in #884.
+- [ ] **Decided (owner, 18 Oct 2026, "all defaults"; [#884](https://github.com/eyalgolan/statecraft-israel/issues/884#issuecomment-6249500511)):** option 3: no upkeep for civilian places in the MVP, plus the per-head tax draft. The work is tracked on #884.
 - [x] **Done: the v0.1.0 and v0.1.1 GitHub pre-releases.** Both are published, web only (#969, #993); #879 can close. The desktop players are #905.
 - [ ] **Open: #1005.** The human check of the twelve cities' census figures against the CBS scans. The owner ruled "merge now and check later" ([#821](https://github.com/eyalgolan/statecraft-israel/pull/821#issuecomment-6228845606)).
 
@@ -47,14 +47,17 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [ ] **Open: #735.** PR 4 city projects.
 - [ ] **Open: #736.** PR 5 the craftsman.
 - [ ] **Open: #737.** PR 6 the winery; its dated 1948–1951 vineyard source and city remain part of that issue.
+  **Decided (owner, 18 Oct 2026, "all defaults"; [#737](https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6249501060)):** the city is Zikhron Ya'akov, flagged `to_verify`.
 - [ ] **Open: #738.** PR 7 objective 2, absorb immigrants; the condition and the card's draft status are owner questions on #738.
+  **Decided (owner, 18 Oct 2026, "all defaults"; [#738](https://github.com/eyalgolan/statecraft-israel/issues/738#issuecomment-6249499957)):** the condition is Jewish population 1,000,000, then overflow <= 10% and employed >= 40%; the AI-drafted card text goes in the PR body for review.
 - [ ] **Open: #739.** PR 8 Unity city panel at twelve cities.
-- [ ] **Blocked on owner decision: #884.** Money upkeep and the per-head tax after the twelve cities.
+- [ ] **Decided (owner, 18 Oct 2026, "all defaults"; [#884](https://github.com/eyalgolan/statecraft-israel/issues/884#issuecomment-6249500511)):** option 3: no upkeep for civilian places in the MVP, plus the per-head tax draft. Money upkeep and the per-head tax after the twelve cities.
 
 ## Phase 4: pioneers, sites and corridors
 
 - [ ] **Open: #785.** PR 1 designated sites. The four yishuv sites and their fields are on `main` (CHANGELOG, "The MVP has four designated yishuv sites"), and the two camp sites are on `main` (CHANGELOG, "Pioneers can build a training camp"); Kiryat Shmona and Beit Shemesh (#944) and the Hula (#968) are on `main` too, so all 16 site rows are; a person's check of the 15 `draft` rows remains in #785.
 - [ ] **Open: #786.** PR 2 corridors: Burma Road, Haifa–Tel Aviv rail link and Tel Aviv–Netanya road (draft PR #870); the Tel Aviv–Netanya road's line is an owner question on #786.
+  **Decided (owner, 18 Oct 2026, "all defaults"; [#786](https://github.com/eyalgolan/statecraft-israel/issues/786#issuecomment-6249500143)):** the Tel Aviv–Netanya line is drawn as straight draft lines between the five sourced places, and the rail corridor's floors are kept.
 - [x] **Done: CHANGELOG entry "Pioneers can build a training camp".** PR 3 build a camp or Hakhshara (#927; `docs/rules/mvp.md`, R-CAMP-001 and R-CAMP-002).
 - [x] **Done: CHANGELOG entry "every plowed field adds 1 unit of Food".** PR 4 plow fields (#871; `docs/rules/mvp.md`, R-FIELD-001 and R-FIELD-002).
 - [x] **Done: CHANGELOG entry "Pioneers can drain the Hula swamp".** PR 5 dry swamp at the Hula (#968, fixes #789; `docs/rules/mvp.md`, R-SWAMP-001 and R-SWAMP-002).
@@ -139,6 +142,7 @@ The art and map issues under #18 remain a parallel track, not a substitute for t
 - [x] **Done: CHANGELOG entry "MATKOT's nine whole-town models".** The nine whole-town landmarks (#917). #885 stays open.
 - [ ] **Open: #1004.** The building models stand far bigger than the train, and Jaffa's over Tel Aviv's (v0.1.1); a fix is in progress.
 - [x] **Done: `NOTICE`.** The MATKOT credit is present (`NOTICE:12`). #887 stays open for the owner's follow-up: whether the `ASSETS.yaml` artist field also names MATKOT.
+  **Decided (owner, 18 Oct 2026, "all defaults"; [#887](https://github.com/eyalgolan/statecraft-israel/issues/887#issuecomment-6249500690)):** yes, the `ASSETS.yaml` artist field for The 1948 Collection also says MATKOT.
 
 ## Follow-ups
 

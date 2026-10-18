@@ -883,6 +883,8 @@ git commit -m "research: the roads not taken, fact-checked, with the premise tab
 
 ### Task 4 (#949): `alternative` on all 30 alternatives; the loader then requires it
 
+> **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** Q-ALT-10 and Q-ALT-12 as recorded above. **Then decided (owner, 18 Oct 2026, "all defaults"; [#949](https://github.com/eyalgolan/statecraft-israel/issues/949#issuecomment-6249500866)):** roads with only a date range use the first day of the range in the `YYYY-MM-DD` field, flagged approximate.
+
 **Files:**
 - Modify: the 25 `content/events/*.yaml` files that have a non-historical option (each such option)
 - Modify: `sim/Statecraft.Sim/EventRules.cs` (the option loop)
