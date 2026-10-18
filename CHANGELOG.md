@@ -59,6 +59,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   checked every row against the Village Statistics 1945 scan and #490 applied the corrections. No other field changes.
   Open from #488, not touched here: the six split-or-merge rows, Dayr al-Qassi's landmark, 'Ilut. The localities are
   outside the content hash, so no golden moves (#200).
+- MATKOT's road vehicles from The 1948 Collection stand on the 1948 roads up close: the intercity bus and the citrus
+  truck on the Tel Aviv–Haifa road, the sandwich-armoured convoy truck and the canvas-tilt lorry on the Burma Road from
+  14 June 1948. They stand only on ground Israel held on the game date, half as long as the steam train's locomotive,
+  and stream after the first frame (#725).
 
 ### Fixed
 - The sim tests no longer leave a temp folder behind for every `Fixture.Write` call (about 1,150 per run): the

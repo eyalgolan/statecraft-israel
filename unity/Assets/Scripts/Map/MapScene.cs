@@ -54,6 +54,9 @@ namespace Statecraft.Game.Map
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
+        /// <summary>Who held which hex on a date (content/map/control_hexes_1948_49.yaml), as GameRoot read it for the borders,
+        /// or null before it has: the road vehicles (issue #725) stand only on ground Israel held. Display only.</summary>
+        public Control1948 Control { get; set; }
 
         /// <summary>The selected hex's outline: a child of the terrain (so a rebuild destroys it).</summary>
         public const string SelectionName = "HexSelection";
@@ -406,7 +409,7 @@ namespace Statecraft.Game.Map
             // the service train from its sourced date (issue #668), streamed then, never at boot. The ribbons are
             // placed from their bake when it was made from these inputs (issue #321), else derived.
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
-                Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml));
+                Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();

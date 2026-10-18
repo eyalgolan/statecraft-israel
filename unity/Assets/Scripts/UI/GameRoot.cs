@@ -244,6 +244,7 @@ namespace Statecraft.Game.UI
                 string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
                 string.IsNullOrWhiteSpace(inputs.Map.ControlYaml) ? null : Control1948.ReadRuntimeOrYaml(inputs.Map.ControlTsv, inputs.Map.ControlYaml, Debug.LogWarning));
             Regions = regions;
+            map.Control = regions.Control;   // the road vehicles stand only where Israel held the ground (#725)
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {

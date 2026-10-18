@@ -76,6 +76,8 @@ namespace Statecraft.Game.Map.Routes
             if (map.Terrain == null) return;
             var service = map.Terrain.transform.Find($"{RootName}/{ServiceTrain.Name}");
             if (service != null) service.GetComponent<ServiceTrain>().ShowAt(date);   // from the service date on (issue #668)
+            var vehicles = map.Terrain.transform.Find($"{RootName}/{RoadVehicles.Name}");
+            if (vehicles != null) vehicles.GetComponent<RoadVehicles>().ShowAt(date);
             var ribbons = map.Terrain.transform.Find($"{RootName}/{RibbonsName}");
             if (ribbons == null) return;
             foreach (var g in ribbons.GetComponentsInChildren<RouteGroup>(true)) g.gameObject.SetActive(g.Window.Covers(date));
@@ -146,7 +148,7 @@ namespace Statecraft.Game.Map.Routes
         /// is refused with a warning and the ribbons derived at load, the same meshes, only slower (issue #321). Without it
         /// they are derived.</summary>
         public static GameObject Build(Terrain terrain, GeoFrame frame, IReadOnlyList<RoutePath> routes, TrainMode train, DateTime date,
-            RouteRibbonFile.Source? baked = null)
+            RouteRibbonFile.Source? baked = null, MapScene? map = null)
         {
             if (terrain == null) throw new ArgumentNullException(nameof(terrain));
             if (routes == null) throw new ArgumentNullException(nameof(routes));
@@ -188,6 +190,8 @@ namespace Statecraft.Game.Map.Routes
                 r.receiveShadows = true;
             }
             assets.OnTeardown(VisualToggles.Register(RoutesToggle, on => { if (ribbons != null) ribbons.SetActive(on); }));
+
+            if (map != null) RoadVehicles.Create(root.transform, map, routes, date);
 
             var trainRoute = routes.FirstOrDefault(r => r.Id == TrainRoute);
             if (trainRoute != null && train == TrainMode.Service)
