@@ -337,3 +337,13 @@ only source read here that gives each town's residents' outcome. Every row was c
 - **Beersheba:** the May Egyptian arrival day (17, 19 or 20 May) does not change its Arab-held status on 15 May.
 - **Not reached:** Mustafa Abbasi's article on Nazareth in *Iyunim Bitkumat Israel* 22 (Ben-Gurion University), the
   two Haganah Archives books above, and the Israel State Archives. None of them is cited for any claim here.
+
+### Owner rulings on these rows (18 Oct 2026, [#793](https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065))
+
+The findings above record what each source says; these rulings set what the game uses.
+
+- **Jaffa** stays on the list ("Keep Jaffa on"). Still open for the owner: how Jaffa, which is Israeli-held on 15 May 1948, can be a target in play.
+- **Gaza** is off the list: no Israeli operation took it.
+- **Lydda, Ramle and the last residents of Beersheba** take the default "fled". In the owner's words: "Default 'fled'; Morris isn't enough". Morris alone does not meet the owner's "super credible israeli sources" bar, and the official Israeli sources consulted do not describe the residents.
+- **Acre** counts as "stayed" ("Count as stayed"), so its residents join the player's population on annexation (Q-ANNEX-1).
+- **Nazareth** reads "stayed", as sourced above.
