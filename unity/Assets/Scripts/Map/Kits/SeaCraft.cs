@@ -31,7 +31,7 @@ namespace Statecraft.Game.Map.Kits
         /// x, z) and how many boats. Jaffa's, Tel Aviv's and Haifa's are the points the settlement kits build those ports at
         /// (docs/visual-v1.md, "Towns round 2"); Bat Yam's, Acre's and Gaza's are approximate points on their shores, chosen
         /// for placement only.</summary>
-        static readonly (string place, double lon, double lat, Vector2 seaward, int boats)[] Coasts =
+        internal static readonly (string place, double lon, double lat, Vector2 seaward, int boats)[] Coasts =
         {
             ("jaffa", 34.7505056, 32.0534583, Vector2.left, 3),
             ("tel_aviv", 34.7732528, 32.0964833, Vector2.left, 2),
@@ -85,7 +85,7 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>How far out the boats under way sail (world m at the default landmark scale, 60): from past the surf to the
         /// edge of the gameplay pose's view of the coast.</summary>
-        const float OffshoreNearM = 2400f, OffshoreM = 7500f;
+        internal const float OffshoreNearM = 2400f, OffshoreM = 7500f;
 
         /// <summary>A harbour's water as the settlement kits record it: Jaffa's a circle (its breakwater's centre and radius,
         /// SettlementKits.Port), Tel Aviv's and Haifa's a box (centre, width east-west, depth north-south). Returns how far
@@ -143,7 +143,7 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
-        static Vector2? FirstWater(Vector2 from, Vector2 dir, KitGround ground, float maxM)
+        internal static Vector2? FirstWater(Vector2 from, Vector2 dir, KitGround ground, float maxM)
         {
             for (float d = 0f; d <= maxM; d += 125f)
             {
@@ -157,7 +157,7 @@ namespace Statecraft.Game.Map.Kits
         /// its samples all lie in open sea (not a lake: the rift lakes are below sea level), it meets no harbour work
         /// (<paramref name="works"/>, each piece's own rectangle), and its centre keeps clear of every boat already
         /// placed.</summary>
-        static bool Clear(Craft c, KitGround ground, List<SettlementKits.Placed> works, List<Craft> list, float margin)
+        internal static bool Clear(Craft c, KitGround ground, List<SettlementKits.Placed> works, List<Craft> list, float margin)
         {
             var f = c.Forward; var side = new Vector2(-f.y, f.x);
             float half = 0.5f * c.Length + margin, beam = 0.5f * Beam * c.Length + margin;

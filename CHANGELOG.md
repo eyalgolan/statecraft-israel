@@ -29,6 +29,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   that the year-level date starts after that year. Like the other #707 buildings it draws only close up, streams after
   the first frame in `collection-special-buildings`, and keeps clear of the towns, routes, unit tokens, civilians and
   wildlife (refs #707, #1068).
+- MATKOT's 1948 Collection ships and C-54 are on the map, at the steam train's 24x scale: the immigrant steamer off Haifa,
+  a fishing boat off Jaffa and one off Acre, the Altalena off Tel Aviv on the Altalena card's turn (15 June 1948), and a
+  C-54 at Lod Airport from July 1949 to September 1950, during Operation Magic Carpet. They stream after the first frame,
+  keep clear of the surf, the harbour works, the other boats and the labels, and a model that does not stream is left out
+  (#669).
 - The military unit record (GDD Phase 5 PR 2): a unit can hold a side, a strength and a standing order with its target,
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the

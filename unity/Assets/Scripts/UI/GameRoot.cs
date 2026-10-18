@@ -332,11 +332,20 @@ namespace Statecraft.Game.UI
             var labelCamera = cameraController.GetComponent<Camera>();
             labels = Own(new MapLabelsPresenter(root, map, labelCamera, null,
                 p => MapLabelsPresenter.TipOf(p, n => text.Format("map.today", n), text["map.mixed"], hebrew),
-                () =>   // the names keep clear of the unit tokens (issue #197), their badges and flags as this camera will draw them
-                {
-                    if (unitLayer == null) return null;
-                    unitLayer.FaceCamera(labelCamera);
-                    return unitLayer.KeepClear;
+                () =>   // the names keep clear of the unit tokens (issue #197), their badges and flags as this camera will draw them,
+                {       // and of the 1948 Collection's ships and C-54 (#669)
+                    IReadOnlyList<Bounds[]>? tokens = null;
+                    if (unitLayer != null) { unitLayer.FaceCamera(labelCamera); tokens = unitLayer.KeepClear; }
+                    var craft = seaAir != null ? seaAir.KeepClear : null;
+                    if (craft == null || craft.Count == 0) return tokens;
+                    if (tokens == null || tokens.Count == 0) return craft;
+                    // One merged list per pair of lists, so the labels see a new list only when either changes (they refresh then).
+                    if (!ReferenceEquals(tokens, keptTokens) || !ReferenceEquals(craft, keptCraft))
+                    {
+                        keptTokens = tokens; keptCraft = craft;
+                        var merged = new List<Bounds[]>(tokens); merged.AddRange(craft); keptBoth = merged;
+                    }
+                    return keptBoth;
                 },
                 // Issue #710: the static 1948 tier from cities.yaml's people, not the sim's live count (owner, 15 October 2026).
                 bridge.Content.Cities.Where(c => c.People != null).ToDictionary(c => c.Id, c => c.People!.Value),
@@ -470,6 +479,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>Draws the placements only when State.Placements differs from what was drawn (every order and every turn
         /// raises Changed; rebuilding the markers each time would be wasted work).</summary>
+        Statecraft.Game.Map.Collection.SeaAirCollection? seaAir;   // the 1948 Collection's craft (#669), for the labels to keep clear of
+        IReadOnlyList<Bounds[]>? keptTokens, keptCraft, keptBoth;
+
         void RenderPlacementsIfChanged()
         {
             if (Bridge == null) return;
@@ -484,6 +496,8 @@ namespace Statecraft.Game.UI
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
             // MATKOT's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
             Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date);
+            // MATKOT's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
+            seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
             var now = Bridge.State.Placements.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
             if (drawn != null && drawn.SequenceEqual(now)) return;
