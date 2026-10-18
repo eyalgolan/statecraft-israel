@@ -45,8 +45,17 @@ sealed class FlakySite : IDisposable
             TcpClient client;
             try { client = listener.AcceptTcpClient(); }
             catch (Exception) { return; }   // stopped
-            new Thread(() => Serve(client)) { IsBackground = true, Name = "FlakySite request" }.Start();
+            new Thread(() => ServeQuietly(client)) { IsBackground = true, Name = "FlakySite request" }.Start();
         }
+    }
+
+    /// <summary>Serve, where a client that hangs up mid-answer (the fetch aborts its other downloads once one fails for
+    /// good) ends that request quietly: on a thread of its own the exception would reach Unity's log and fail the test
+    /// that happens to be running.</summary>
+    void ServeQuietly(TcpClient client)
+    {
+        try { Serve(client); }
+        catch (Exception e) when (e is IOException || e is SocketException || e is ObjectDisposedException) { }
     }
 
     void Serve(TcpClient client)

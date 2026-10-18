@@ -139,6 +139,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   keep the floor too (26 px at 360x800, 30 px at 375x667): there the bar grows to its rows' height and the panels
   under it follow. On a phone held upright the decision card now starts right of the left rail and hangs under the bar instead of sitting centred, so no
   rail button sits under it (Why? and Settings did), and the rail's buttons are 60 px, at least 24 px on screen.
+- The web build no longer loses its boot or its 1948 Collection models to a rate-limited host (players got HTTP 429
+  from itch.io, #1054). The content texts are packed into one file at build time (`content/bundle.json`), so a boot
+  makes 9 StreamingAssets requests instead of 70 (main, measured headless); the content hash is unchanged. Every
+  StreamingAssets fetch at boot, the collection's checks file and bundles included (they had no retry), now goes
+  through one retry helper (`StreamingFetch`): 408, 429, 5xx and no response are retried after 0.5, 1 and 2 s, or a
+  longer `Retry-After` up to 10 s, four attempts in all, and then fail as before. Desktop and the editor still read
+  the files.
 
 ## [0.1.1] - 2026-10-18
 
