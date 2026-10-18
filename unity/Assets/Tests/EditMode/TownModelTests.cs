@@ -12,7 +12,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using M = Statecraft.Game.Map.Kits.TownModel;
 
-/// <summary>Issue #659 step 2: the towns are built from Tal's (@pixelrenderai-hash) building models, by town type (the
+/// <summary>Issue #659 step 2: the towns are built from MATKOT's building models, by town type (the
 /// issue's table), one model per placed building, fitted to the kit's footprints (the layout and census unchanged), loaded
 /// with the map through the scene (never through a Resources folder), drawn instanced with baked levels of detail.</summary>
 public class TownModelTests
@@ -140,6 +140,49 @@ public class TownModelTests
         }
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} mismatches");
         Assert.Greater(built.Models.Count, got.Count, "the 1948 localities' houses are models too");
+    }
+
+    /// <summary>Owner ruling, 18 October 2026: "Whole model far, buildings near". Every town
+    /// with a whole-town model (TownLandmarks.ModelFor: the cities, the six moshavot, every kibbutz, the moshav and every
+    /// Arab town) is built of the single building models up close: every house, hall, water tower and warehouse its kit
+    /// places is a model on its plot. What keeps the kit up close is a landmark no model fits (the list below), Nahalal's
+    /// public building (#851: no model of a moshav's school or offices) and Revivim's walled lookout (#825: no model of a
+    /// 1943 walled outpost); those two are the gaps the PR lists. A new kind of building in these towns fails here until it
+    /// is given a model or named as a gap.</summary>
+    [Test]
+    public void EveryTownWithAWholeTownModelIsTheBuildingModelsUpClose()
+    {
+        var map = OpenMap();
+        var built = Build(map, out var placed);
+        var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null).ToList();
+        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model: {string.Join(", ", mapped.Select(s => s.Id))}");
+        var ids = mapped.Select(s => s.Id).ToHashSet();
+        CollectionAssert.IsSubsetOf(new[] { "tel_aviv", "jerusalem", "haifa", "rishon_lezion", "degania_alef", "nahalal", "nazareth" }, ids);
+        Assert.AreEqual(new[] { "arab_town", "city", "kibbutz", "moshav", "town" }, mapped.Select(s => s.Type).Distinct().OrderBy(t => t).ToArray());
+        var modelled = new HashSet<string> { "building", "dining_hall", "water_tower", "warehouse" };
+        var landmarks = new HashSet<string>
+        {
+            "al_aqsa", "breakwater", "church", "citadel", "clock_tower", "dome_of_the_rock", "gate", "german_colony", "haram",
+            "lighthouse", "mosque", "palm", "port", "village_mosque", "walls", "white_tower",
+        };
+        var outposts = Outposts(placed);
+        CollectionAssert.AreEqual(new[] { "revivim" }, outposts.Where(ids.Contains).ToArray(), "the one walled lookout (a listed gap)");
+        var at = built.Models.ToLookup(m => (m.Id, Mathf.RoundToInt(m.C.x), Mathf.RoundToInt(m.C.y)));
+        var bad = new List<string>();
+        int houses = 0;
+        foreach (var p in placed.Where(p => ids.Contains(p.Id) && !outposts.Contains(p.Id)))
+        {
+            if (p.Kind == "wing") continue;   // a stepped block's lower wing: inside its block's plot, which its model fills
+            if (modelled.Contains(p.Kind))
+            {
+                houses++;
+                if (!at[(p.Id, Mathf.RoundToInt(p.C.x), Mathf.RoundToInt(p.C.y))].Any()) bad.Add($"{p.Id}: a {p.Kind} at {p.C} with no model");
+            }
+            else if (!landmarks.Contains(p.Kind) && !(p.Id == "nahalal" && p.Kind == "public_building")) bad.Add($"{p.Id}: {p.Kind} keeps the kit up close");
+        }
+        TestContext.WriteLine($"{houses} buildings in those towns, all models: {bad.Count == 0}");
+        Assert.Greater(houses, 100);
+        CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} kit buildings left up close");
     }
 
     /// <summary>A model fills its plot: its world bounds are the plot's footprint and height (city blocks exactly; a house

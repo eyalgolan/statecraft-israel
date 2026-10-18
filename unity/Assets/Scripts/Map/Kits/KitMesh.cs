@@ -22,7 +22,7 @@ namespace Statecraft.Game.Map.Kits
 
         public int VertexCount => pos.Count;
         // ---- Issue #659: the close mesh (owner ruling on #700: "Models up close only") --------------------------------
-        // Up close the towns' buildings are Tal's models (TownModelLayer); far off they are this mesh's kit buildings, as
+        // Up close the towns' buildings are MATKOT's models (TownModelLayer); far off they are this mesh's kit buildings, as
         // before. The close mesh is this mesh without its buildings (their vertex and index spans, CutStart/CutEnd), plus
         // the stone plinths under the models (Plinths).
 

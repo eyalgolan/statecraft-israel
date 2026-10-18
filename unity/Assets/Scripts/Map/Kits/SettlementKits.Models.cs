@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Issue #659, owner ruling on #700: "Models up close only". Every building the kit places also gets one of
-    /// Tal's (@pixelrenderai-hash) building models (<see cref="TownModel"/>), fitted to the same plot (<see cref="Fit"/>),
+    /// MATKOT's building models (<see cref="TownModel"/>), fitted to the same plot (<see cref="Fit"/>),
     /// standing on the plot's ground level with a stone plinth below it where the ground falls away. Far off the kit's
     /// own buildings draw, exactly as before; up close (TownModelLayer.CloseEnterM) the models draw instead, with each
     /// town's close mesh (KitMesh.ToCloseMesh: its landmarks and palms without the kit buildings, plus the plinths). The

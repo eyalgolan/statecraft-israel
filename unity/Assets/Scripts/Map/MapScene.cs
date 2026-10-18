@@ -16,7 +16,7 @@ namespace Statecraft.Game.Map
         /// <summary>The art spike's procedural settlement kits and trees (Kit.mat, Tree.mat: Statecraft/Kit). Optional: without
         /// them the map keeps the placeholder marker boxes.</summary>
         [SerializeField] Material kitMaterial, treeMaterial;
-        /// <summary>Tal's building models the towns draw up close (issue #659; Kits.TownModels.SetPath): they load with the
+        /// <summary>MATKOT's building models the towns draw up close (issue #659; Kits.TownModels.SetPath): they load with the
         /// map, never from a Resources folder. Without them (or with one missing) the towns keep their kits at every zoom.</summary>
         [SerializeField] Kits.TownModelSet townModels;
         /// <summary>The terrain water's mesh, baked (MapTexturePaths.WaterMesh, issue #195). Optional: without it, or when it

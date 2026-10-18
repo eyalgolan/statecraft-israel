@@ -251,7 +251,7 @@ shift
 case "$1" in
   tools/machine_lock.py) exit 0 ;;
   tools/web_check.py) while [[ $# -gt 0 && "$1" != --shots ]]; do shift; done
-    for p in gameplay03 diorama02 hero06judea hero06negev tel_aviv30 jaffa12 jerusalem12 haifa12 rishon08 degania06 start120; do echo x > "$2/$p.png"; done ;;
+    for p in gameplay03 diorama02 hero06judea hero06negev tel_aviv30 jaffa12 jerusalem12 haifa12 rishon08 degania06 nazareth08 nahalal06 start120; do echo x > "$2/$p.png"; done ;;
   tools/art_compare.py) mkdir -p "$2/editor"; echo x > "$2/gameplay03-compare.png"; echo x > "$2/editor/a-compare.png"
     printf '%b' "$STUB_ART_OUT"; exit "$STUB_ART_EXIT" ;;
 esac

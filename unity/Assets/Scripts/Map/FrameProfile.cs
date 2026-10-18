@@ -41,7 +41,7 @@ namespace Statecraft.Game.Map
             webgl ? UrlFlags.Has(url, "vmoving") : args.Contains("-vmoving");
 
         /// <summary>Issue #659: "vclose" with "vprofile" in the WebGL URL (or -vclose on desktop) also prices the close views
-        /// (PromoPose.CloseUps), where the towns are Tal's building models; their lines carry those poses' names.</summary>
+        /// (PromoPose.CloseUps), where the towns are MATKOT's building models; their lines carry those poses' names.</summary>
         public static bool CloseRequested() =>
             CloseRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
 

@@ -518,7 +518,7 @@ namespace Statecraft.Game.Map.Kits
             return true;
         }
 
-        /// <summary>A Jewish place's water tower: the kit's, and up close Tal's b28 model (issue #659), unless
+        /// <summary>A Jewish place's water tower: the kit's, and up close MATKOT's b28 model (issue #659), unless
         /// <paramref name="model"/> is false (a ma'abara's, drawn by PlacementLayer with the kit's parts only).</summary>
         static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size = 1f, bool model = true)
         {
