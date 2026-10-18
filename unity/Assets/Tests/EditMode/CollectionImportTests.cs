@@ -24,7 +24,7 @@ public class CollectionImportTests
     static string Dir(string id) => $"{Folder}/{id}";
     static string Model(string id, string level) => $"{Dir(id)}/{id}-{level}.fbx";
     static string ColourMap(string id) => $"{Dir(id)}/{id}_basecolor.jpg";
-    static IEnumerable<string> Ids => CollectionCatalog.Ids;
+    static IEnumerable<string> Ids => CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings);
     static bool Animated(string id) => CollectionCatalog.Animated.Contains(id);
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
@@ -61,17 +61,32 @@ public class CollectionImportTests
     }
 
     [Test]
-    public void TheCatalogHasThe31ModelsOfIssue664AndTheNineTownsInFourBundles()
+    public void TheCatalogHasThe31ModelsNineTownsAndFiveSpecialBuildingsInFiveBundles()
     {
-        var ids = Ids.ToList();
-        Assert.AreEqual(40, ids.Count);
+        var ids = CollectionCatalog.Ids.ToList();
+        Assert.AreEqual(45, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        CollectionAssert.AreEqual(new[] { 12, 13, 6, 9 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people, vehicles, animals, towns");
+        CollectionAssert.AreEqual(new[] { 12, 13, 6, 9, 5 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people, vehicles, animals, towns, special buildings");
         Assert.AreEqual(13, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
         Assert.IsNull(CollectionCatalog.BundleOf("b07-kibbutz-dining-hall-v2"), "the buildings are #659's");
+    }
+
+    [Test]
+    public void TheFiveSpecialBuildingsUsePrototypeAssetsInTheirOwnStreamedBundle()
+    {
+        var ids = new[] { "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b18-military-barracks-v2", "b21-artisan-workshop-v2", "b22-industrial-factory-v2" };
+        CollectionAssert.AreEqual(ids, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Buildings).Ids);
+        foreach (var id in ids)
+        {
+            Assert.AreEqual(CollectionCatalog.Buildings, CollectionCatalog.BundleOf(id));
+            var path = CollectionCatalog.PrefabPath(id, CollectionDetail.Near);
+            StringAssert.StartsWith("Assets/Art/Settlements/Prototype/Models/", path);
+            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(path), path);
+            Assert.IsFalse(UnderResources(path));
+        }
     }
 
     /// <summary>Issue #663, owner ruling of 17 October 2026: "The nine whole-town models ship ... slimmed, streamed after the
@@ -285,7 +300,8 @@ public class CollectionImportTests
         {
             var entries = ids.SelectMany(id => new[] { CollectionDetail.Far, CollectionDetail.Near }.Select(d => CollectionCatalog.PrefabPath(id, d))).ToArray();
             foreach (var e in entries) Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(e), e);
-            var folders = ids.Select(id => Dir(id) + "/").ToArray();
+            var folders = ids.Select(id => CollectionCatalog.BundleOf(id) == CollectionCatalog.Buildings
+                ? $"Assets/Art/Settlements/Prototype/Models/{id}/" : Dir(id) + "/").ToArray();
             var deps = AssetDatabase.GetDependencies(entries, true);
             var outside = deps.Where(d => !folders.Any(f => d.StartsWith(f, StringComparison.Ordinal))
                 && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)).ToArray();
@@ -303,7 +319,7 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }),
+            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct(),
                 b.assetNames, bundle);
     }
 }

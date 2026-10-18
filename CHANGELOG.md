@@ -18,6 +18,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   civilians (#666) and wildlife (#670), with the kit trees over them left out.
   They stand at the #700 buildings' one world scale (24x real: a tractor about a third of the steam train's locomotive,
   a sheep about a seventh), stream after the first frame, and play their idle clip only at close zoom (40 km) (#667).
+- MATKOT's Tegart fort, military barracks and factory models stand at their sourced places from their sourced days,
+  close up only (#700's switch): the Latrun police fort from 15 May 1948, the Tzrifin camp from 19 May 1948, Camp 80
+  from 13 July 1948 and Netanya's industrial zone from 28 July 1950, clear of the towns, routes, unit tokens, civilians
+  (#666) and wildlife (#670), with the kit trees on them left out. They are sized at the #700 buildings' one world
+  scale (24x real, an 8.5 m house as long as the steam train's locomotive), and stream after the first frame in a new
+  `collection-special-buildings` bundle with the shikun and the workshop, which stay unplaced until a place and date are
+  sourced (refs #707).
 - Kiryat Shmona (founded 18 July 1949) and Beit Shemesh (15 December 1950, the National Library's December 1950
   under the monthly turn) join the yishuv sites in `content/sites.yaml`, each with a field site in its hex; the
   founding days are the owner's (#785), and the rows stay draft. The reference player builds them in id order, so

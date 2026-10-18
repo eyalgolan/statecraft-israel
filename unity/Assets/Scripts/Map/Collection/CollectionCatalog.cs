@@ -63,7 +63,7 @@ namespace Statecraft.Game.Map.Collection
         }
 
         public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals",
-            Towns = "collection-towns";
+            Towns = "collection-towns", Buildings = "collection-special-buildings";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles = new (string, string[])[]
@@ -96,6 +96,11 @@ namespace Statecraft.Game.Map.Collection
                 "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
                 "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
             }),
+            (Buildings, new[]
+            {
+                "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b18-military-barracks-v2",
+                "b21-artisan-workshop-v2", "b22-industrial-factory-v2",
+            }),
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
@@ -118,8 +123,14 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
+        /// <summary>Where #675 imported MATKOT's single-building models; the special-buildings bundle's prefabs (#707) sit
+        /// beside each model there, one prefab for both details (the buildings draw only close up).</summary>
+        public const string BuildingsFolder = "Assets/Art/Settlements/Prototype/Models";
+
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
-            $"{Folder}/{id}/{id}-{(detail == CollectionDetail.Far ? "far" : "near")}.prefab";
+            BundleOf(id) == Buildings
+                ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"
+                : $"{Folder}/{id}/{id}-{(detail == CollectionDetail.Far ? "far" : "near")}.prefab";
     }
 }
