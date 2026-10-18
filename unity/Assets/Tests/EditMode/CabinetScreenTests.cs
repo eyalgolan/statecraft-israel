@@ -135,6 +135,22 @@ public class CabinetScreenTests
         Assert.AreEqual("אהרון ציזלינג ממפלגת מפ״ם, שאינה בקואליציה", ui.Q<Label>("cand-zisling-reason").text);
     }
 
+    [TestCase(true, "labour_minister", "golda_meir", "גולדה מאיר כבר בתפקיד שרת העבודה")]
+    [TestCase(false, "labour_minister", "golda_meir", "Golda Meir already holds the office of Minister of Labour")]
+    [TestCase(true, "finance_minister", "kaplan", "אליעזר קפלן כבר בתפקיד שר האוצר")]
+    [TestCase(false, "finance_minister", "kaplan", "Eliezer Kaplan already holds the office of Minister of Finance")]
+    public void AlreadyHeldOfficeUsesTheHoldersTitle(bool hebrew, string office, string person, string expected)
+    {
+        using var ui = Shown();
+        var text = hebrew ? He : Text;
+        var bridge = new SimBridge(In1950().Session, text);
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, text, null);
+        cabinet.Select(office);
+        Assert.AreEqual("already_holds", Cabinet.CheckReason(C, bridge.State, office, person)!.Kind);
+        Assert.IsFalse(ui.Q<Button>("appoint-" + person).enabledSelf);
+        Assert.AreEqual(expected, ui.Q<Label>("cand-" + person + "-reason").text);
+    }
+
     [Test]
     public void AppointingTakesEffectAtEndTurn()
     {

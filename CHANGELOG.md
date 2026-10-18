@@ -8,6 +8,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Fixed
+- The Cabinet's Hebrew "already holds" refusal uses the holder's office title, including the feminine form for a woman;
+  English is unchanged (#990).
 - On a phone held upright (390x844) the top bar's small text keeps the owner's 12 px floor too: the seven captions,
   Security's level, the attention line and the plate's turn and date are 25 px in the panel, 12.3 px on screen (they
   were 15 px, 7.4 px). The phone's bar is 32 px taller to hold them, a caption wraps between words, and Security's level

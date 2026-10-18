@@ -289,7 +289,7 @@ namespace Statecraft.Game.UI
                 case "abolished": case "not_established": return text.Format(key, Office(reason.Values[0]), Date(reason.Values[1]));
                 case "died": return text.Format(key, Person(reason.Values[0]), Date(reason.Values[1]));
                 case "is_president": case "is_chief_of_staff": case "not_career_officer": return text.Format(key, Person(reason.Values[0]));
-                case "already_holds": return text.Format(key, Person(reason.Values[0]), Office(reason.Values[1]));
+                case "already_holds": return text.Format(key, Person(reason.Values[0]), ContentNames.Of(text, c.Offices.First(o => o.Id == reason.Values[1]), c.People.First(p => p.Id == reason.Values[0])));
                 case "party_not_coalition": return text.Format(key, Person(reason.Values[0]), Party(reason.Values[1]));
                 default: return text[key];
             }
