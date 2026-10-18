@@ -13,7 +13,7 @@
 #     build: main abc1234      # optional; defaults to the build above
 #     date: 2026-10-13         # optional; defaults to the date above
 # A build-*.mp4 or .webm that is not listed there fails the site's build.
-build: main f32ba67
+build: main 6c54c95
 date: 2026-10-18
 video:
   files: [build-gameplay.webm, build-gameplay.mp4]
@@ -31,7 +31,7 @@ video:
 # -extraPose, on the Mobile tier, which is the WebGL tier (docs/visual-v1.md).
 hero:
   file: hero-engine-coast.jpg
-  build: main f32ba67
+  build: main 6c54c95
   date: 2026-10-18
   title: { en: "Tel Aviv, Jaffa and the coast, without the interface", he: "תל אביב, יפו והחוף, בלי הממשק" }
   alt:
@@ -67,5 +67,5 @@ images:
   - file: build-he-map.jpg
     title: { en: "The map in the Hebrew interface", he: "המפה בממשק העברי" }
     alt:
-      en: "The current build in the Hebrew interface (?lang=he), 15 May 1948: the coastal plain from Hadera to Jerusalem with the town names in Hebrew, the top bar and the legend in Hebrew, the front lines and the minimap."
-      he: "הגרסה הנוכחית בממשק העברי (?lang=he), 15 במאי 1948: מישור החוף מחדרה ועד ירושלים עם שמות היישובים בעברית, הסרגל העליון והמקרא בעברית, קווי החזית והמפה הקטנה."
+      en: "The current build in the Hebrew interface (?lang=he), 15 May 1948: the coastal plain from Hadera to Jerusalem with the town names in Hebrew and the towns' landmark models, the top bar and the legend in Hebrew, the front lines and the minimap."
+      he: "הגרסה הנוכחית בממשק העברי (?lang=he), 15 במאי 1948: מישור החוף מחדרה ועד ירושלים עם שמות היישובים בעברית ודגמי הבניינים הבולטים של הערים, הסרגל העליון והמקרא בעברית, קווי החזית והמפה הקטנה."

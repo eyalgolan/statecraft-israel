@@ -53,7 +53,7 @@ The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 20
   <br>
   <img src="docs/images/build-m3-cabinet.jpg" alt="Current build: the Cabinet screen with the Provisional State Council as a half circle of seats and the ministers' portrait cards" width="405">
   <img src="docs/images/build-m3-why.jpg" alt="Current build: the Why panel after the first turn, listing each change and its cause" width="405">
-  <br><em>Real screenshots from build 0.1.0 (M3), 2026-10-18. Taken at commit f32ba67. The start screen's painting is AI-generated.</em>
+  <br><em>Real screenshots from build 0.1.0 (M3), 2026-10-18. Taken at commit 6c54c95. The start screen's painting is AI-generated.</em>
 </p>
 
 ## Is this any good?

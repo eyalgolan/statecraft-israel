@@ -38,7 +38,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 <div dir="rtl">
 
-<p align="center"><em>צילומי מסך אמיתיים מגרסה 0.1.0 (M3), 2026-10-18, בקומיט <span dir="ltr">f32ba67</span>. הציור במסך הפתיחה נוצר בבינה מלאכותית.</em></p>
+<p align="center"><em>צילומי מסך אמיתיים מגרסה 0.1.0 (M3), 2026-10-18, בקומיט <span dir="ltr">6c54c95</span>. הציור במסך הפתיחה נוצר בבינה מלאכותית.</em></p>
 
 </div>
 
