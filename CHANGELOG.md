@@ -8,6 +8,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- Unit cards show the sourced Hebrew unit name in the Hebrew UI, with an English fallback. INS Haganah gains its
+  sourced Hebrew name, still flagged for a native speaker's review (#902).
 - Ten more models by Tal Heuberger, offered only in #336, are imported into the 1948 Collection and stream after the
   first frame: the eight figures of #708 (an Arab villager, a builder, an elder immigrant, an immigrant child, an
   immigrant woman, a kibbutz woman, a 1948 soldier and a Yemenite immigrant) and #886's pioneer farmer in the people
