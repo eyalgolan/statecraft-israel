@@ -74,6 +74,8 @@ namespace Statecraft.Sim
         public int NextId;
         /// <summary>The date each completed objective was completed, by objective id (ordinal).</summary>
         public SortedDictionary<string, DateTime> Objectives = new SortedDictionary<string, DateTime>(StringComparer.Ordinal);
+        /// <summary>Settlement control by target id, ordinal (R-CTRL-002).</summary>
+        public SortedDictionary<string, SettlementControl> Settlements = new SortedDictionary<string, SettlementControl>(StringComparer.Ordinal);
         /// <summary>The player's score (GDD "Objectives": bonus points). An int assumes whole-number points; the point values and
         /// the timing bonus are open decisions with the owner (D-B2, D-B6), so the type is revisited when they are set.</summary>
         public int Score;
@@ -109,6 +111,7 @@ namespace Statecraft.Sim
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
+            c.Settlements = new SortedDictionary<string, SettlementControl>(Settlements, StringComparer.Ordinal);
             return c;
         }
 
@@ -199,6 +202,8 @@ namespace Statecraft.Sim
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+            if (Settlements.Count > 0)
+                Section("ctrl", '{', '}', Settlements.Select(kv => kv.Key + "=" + kv.Value.Canonical()));
             if (Score != 0) { Sep(); Nl(); sb.Append("score=").Append(Score.ToString(CultureInfo.InvariantCulture)); }
             if (Food != 0 || FoodNeed != 0 || FoodUnmet != 0)
             {

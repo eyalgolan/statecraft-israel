@@ -18,6 +18,14 @@ public class RealContentTests
     static readonly Content C = ContentLoader.Load(ContentRoot());
     static readonly DateTime Checked = new DateTime(2026, 10, 9);
 
+    // R-CTRL-001: rows ship only after research, a person's check and sensitivity review.
+    [Fact]
+    public void SettlementTargetsAreSensitivityReviewed()
+    {
+        Assert.Empty(C.SettlementTargets);
+        Assert.All(C.SettlementTargets, target => Assert.Equal(ReleaseGate.ReviewedStatus, target.Status));
+    }
+
     [Fact]
     public void MaimonBirthUsesHebrewBiographyDateAndSource()
     {

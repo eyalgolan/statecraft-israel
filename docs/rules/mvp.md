@@ -28,6 +28,14 @@ R-LOOP-005: Every balance number of the GDD loop (all of `cities.yaml` and `unit
 
 The ID R-LOOP-003 (the Phase 1 overlay, `MvpSlice.Overlay`) is retired with the overlay at the cutover and is not reused.
 
+## Settlement control
+
+R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list is empty until researched rows have a person's check and the sensitivity review (D-F5).
+
+R-CTRL-002: Settlement control is an ordinal `SortedDictionary<string, SettlementControl>`. It is written to the state hash as `ctrl{...}` only when non-empty, in ordinal id order; each record field is written only when it differs from its default (R-LOOP-002).
+
+R-CTRL-003: Residents and combatants are distinct fields. Residents are a state, inhabited or depopulated, not a count (Q-CAP-2 (b)). No rule reads residents as combatants, prisoners, refugee units, labour or a resource; annexation is the one place a later owner-approved rule may say otherwise.
+
 ## Saves
 
 R-SAVE-001: A save names the ruleset it was played under (`ruleset legacy` or `ruleset gdd-0.1`, save schema 2). A game refuses a save made under another ruleset. A schema 1 save has no ruleset line and is legacy, so the GDD game refuses it as made under earlier rules. The refusal carries a code (`older_rules`) the UI translates, and the sim's reason does not itself ask for a new game: the player reads that once (N4).

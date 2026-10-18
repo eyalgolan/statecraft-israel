@@ -1,0 +1,6 @@
+# GDD Phase 6 settlement-control targets (docs/gdd/settlement-control.md; R-CTRL-001). Owner ruling Q-TGT-1 (a), 18 October
+# 2026 (#783): only the `arab_town` rows of map/settlements_1948.yaml that a sourced operation names. Each row:
+#   { id, q, r, operation, sources: [{ url, checked }], status }
+# The list ships empty. Rows come from research_notes/GDD phase 6/settlement-targets.md in a later content PR, after a
+# person has checked each one and the sensitivity review is complete (Q-TGT-3).
+targets: []
