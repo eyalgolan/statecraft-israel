@@ -4,8 +4,9 @@ title: Schools in the Transit Camps
 text: 'The coalition is split over schooling for immigrant children in the transit camps: the religious parties oppose a religious stream run by the labour movement. {education_minister} brings a registration plan to the Knesset.'
 anchor: hard
 office: education_minister
-# Dispute from 29 November 1950; the Knesset rejected the proposals and the government resigned on 14 February 1951.
-from: 1950-11-29
+# The event opens on its first cited plenum record, 12 February 1951 (owner ruling, 18 October 2026, #457 item 9);
+# the Knesset rejected the proposals and the government resigned on 14 February 1951.
+from: 1951-02-12
 to: 1951-02-14
 options:
   - id: press_plan

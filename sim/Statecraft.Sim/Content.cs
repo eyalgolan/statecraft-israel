@@ -983,6 +983,19 @@ namespace Statecraft.Sim
         public int R { get; set; }
     }
 
+    /// <summary>A curated settlement-control target (settlement_targets.yaml). The operation and sources are historical
+    /// evidence for including the place; no capture behaviour reads this record yet (R-CTRL-001).</summary>
+    public sealed class SettlementTarget
+    {
+        public string Id { get; set; } = "";
+        public int Q { get; set; }
+        public int R { get; set; }
+        public string Operation { get; set; } = "";
+        public List<Source> Sources { get; set; } = new List<Source>();
+        /// <summary>Required on every row; empty means the key was missing and is rejected by the loader.</summary>
+        public string Status { get; set; } = "";
+    }
+
     public sealed class Content
     {
         public List<Office> Offices = new List<Office>();
@@ -1082,6 +1095,8 @@ namespace Statecraft.Sim
         public List<SettlementHex> SettlementHexes = new List<SettlementHex>();
         /// <summary>Named GDD map locations. Presentation metadata only; gameplay roles remain in their owning systems.</summary>
         public List<MapLocation> MapLocations = new List<MapLocation>();
+        /// <summary>The curated settlement-control targets, in file order (R-CTRL-001).</summary>
+        public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>
         public Dictionary<string, string> SettlementNames = new Dictionary<string, string>();
         /// <summary>The GDD cities' start values (cities.yaml), in file order. Empty in the legacy loop.</summary>

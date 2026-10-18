@@ -72,7 +72,7 @@
     "kind": { "enum": ["historical", "consequence", "reconvergence"], "description": "Default historical. consequence: a soft card that exists only on a road not taken (R-ALT-005 to R-ALT-008). reconvergence: a real outside event that may carry variants (R-ALT-010)." },
     "title": { "type": "string", "minLength": 1, "description": "May contain office placeholders such as {prime_minister}." },
     "text": { "type": "string", "minLength": 1, "description": "May contain office placeholders. No invented quotes." },
-    "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre and war-casualties are sensitive." },
+    "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre, war-casualties and displacement are sensitive. A displacement option cannot raise Money, Food, Arms, Social cohesion, International Support or score (R-EFX-007), and the event must be sensitivity-reviewed before release (R-GATE-001)." },
     "anchor": { "enum": ["hard", "soft"], "description": "Default soft. A hard anchor needs a historical option." },
     "office": { "$ref": "#/definitions/id", "description": "The office the event goes to when the player does not answer." },
     "objective": { "$ref": "#/definitions/id", "description": "The objective (objectives.yaml) whose completion card this is. It fires only once that objective is completed, and has exactly one option." },

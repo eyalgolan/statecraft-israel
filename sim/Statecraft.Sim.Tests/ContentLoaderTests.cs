@@ -5,6 +5,60 @@ using Statecraft.Sim;
 
 public class ContentLoaderTests
 {
+    const string Target = @"
+targets:
+  - id: town_a
+    q: 1
+    r: 0
+    operation: fixture_operation
+    sources: [{ url: ""https://example.org/operation"", checked: 2026-10-18 }]
+    status: sensitivity-reviewed
+";
+
+    /// <summary>The fixture with town_a as an arab_town row (Q-TGT-1 (a)) and <paramref name="targets"/> as the target list.</summary>
+    static Dictionary<string, string> WithTargets(string targets) => new Dictionary<string, string>
+    {
+        ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town,", "type: arab_town,"),
+        ["settlement_targets.yaml"] = targets,
+    };
+
+    // R-CTRL-001
+    [Fact]
+    public void AValidSettlementTargetLoads()
+    {
+        var target = Assert.Single(ContentLoader.Load(Fixture.Write(WithTargets(Target))).SettlementTargets);
+        Assert.Equal("town_a", target.Id);
+        Assert.Equal((1, 0), (target.Q, target.R));
+        Assert.Equal("fixture_operation", target.Operation);
+        Assert.Equal("sensitivity-reviewed", target.Status);
+    }
+
+    // R-CTRL-001
+    [Theory]
+    [InlineData("town_a", "unknown", ".id", "is not an arab_town row of map/settlements_1948.yaml")]
+    [InlineData("    q: 1\n", "    q: 0\n", ".q", "is not a land hex")]
+    [InlineData("    operation: fixture_operation\n", "", ".operation", "required")]
+    [InlineData("    sources: [{ url: \"https://example.org/operation\", checked: 2026-10-18 }]\n", "", ".sources", "needs at least one source")]
+    [InlineData(", checked: 2026-10-18", "", ".sources[0]", "needs an https url and a checked date")]
+    [InlineData("    status: sensitivity-reviewed\n", "", ".status", "unknown status")]
+    public void SettlementTargetsNeedAnArabTownLandHexOperationSourcesAndStatus(string before, string after, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(WithTargets(Target.Replace(before, after)))));
+        Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
+        Assert.Contains(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    // R-CTRL-001: Q-TGT-1 (a) admits only arab_town rows, so a settlement of another type is refused.
+    [Fact]
+    public void ASettlementThatIsNotAnArabTownIsNotATarget()
+    {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(
+            new Dictionary<string, string> { ["settlement_targets.yaml"] = Target })));
+        Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
+        Assert.Equal("targets[town_a].id", ex.Field);
+    }
+
     [Fact]
     public void LoadsValidFixture()
     {

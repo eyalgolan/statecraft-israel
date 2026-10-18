@@ -5,7 +5,7 @@ using System.Linq;
 namespace Statecraft.Sim
 {
     /// <summary>The release gate for sensitive content (spec 5.5; M3 final review I4). An event with a sensitive tag
-    /// (holocaust, terror, massacre, war-casualties) needs the owner's sensitivity review, recorded by moving its YAML
+    /// (holocaust, terror, massacre, war-casualties, displacement) needs the owner's sensitivity review, recorded by moving its YAML
     /// <c>status</c> to <c>sensitivity-reviewed</c>, before any build is shared. Build.Web -shareable refuses to build while
     /// <see cref="SensitiveUnreviewed"/> is not empty. Setting that status is an OWNER step (docs/m3-release.md).</summary>
     public static class ReleaseGate

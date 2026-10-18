@@ -5,9 +5,9 @@
         <ui:Label name="loading" text="Loading the map of 1948…" class="loading-line" picking-mode="Ignore" />
         <!-- Settlement names, positioned by MapLabelsPresenter under every panel; clicks pass through to the map. -->
         <ui:VisualElement name="map-labels" class="map-labels" picking-mode="Ignore" />
-        <!-- HUD round 2, part 2 (#398): promo 03's left icon column, the four screens (ScreenNav), icon-only; each one's name
+        <!-- HUD round 2, part 2 (#398): promo 03's left icon column, the screens (ScreenNav), icon-only; each one's name
              is its text (the event log records it), hidden, and its tooltip, shown beside it on hover and on focus
-             (HoverTip). Before the top bar in the tree, so Tab still runs Cabinet, Budget, Defence, Why?, Settings, New Game, End Turn. -->
+             (HoverTip). Before the top bar in the tree, so Tab runs the side-menu screens, New Game, then End Turn. -->
         <!-- The left column's strip of the decision card's backdrop (review of #602): dimmed and taking the pointer while the
              card is open (event-modal), so the map is blocked between and below the discs as it is everywhere else; before
              the column in the tree, so the column's buttons stay above it and usable. -->
@@ -17,6 +17,7 @@
             <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-how-to-play" text="How to play" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-settings" text="Settings" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="gear" class="nav-disc" /></ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="top-bar" class="panel top-bar">
@@ -294,6 +295,21 @@
             <ui:ScrollView name="why-rows" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
+        <!-- A short guide to the existing loop (#1041). It is a normal side-menu screen, so ScreenNav owns opening and closing. -->
+        <ui:VisualElement name="screen-how-to-play" class="panel screen">
+            <ui:VisualElement class="screen-header"><ui:Label name="how-to-play-title" text="How to play" class="title" /></ui:VisualElement>
+            <ui:ScrollView name="how-to-play-body" class="grow how-to-play-body">
+                <ui:Label name="how-to-play-turn" class="how-to-play-line" />
+                <ui:Label name="how-to-play-attention" class="how-to-play-line" />
+                <ui:Label name="how-to-play-city" class="how-to-play-line" />
+                <ui:Label name="how-to-play-training" class="how-to-play-line" />
+                <ui:Label name="how-to-play-events" class="how-to-play-line" />
+                <ui:Label name="how-to-play-top-bar" class="how-to-play-line" />
+                <ui:Label name="how-to-play-end-turn" class="how-to-play-line" />
+                <ui:Label name="how-to-play-why" class="how-to-play-line" />
+            </ui:ScrollView>
+            <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
         <!-- Settings (#40, SettingsPresenter): the player's presentation options, kept per browser (SettingsStore), never in
              the sim or the save. Each option is a row: its name, and a button that says what is set. -->
         <ui:VisualElement name="screen-settings" class="panel screen">
@@ -311,7 +327,29 @@
                     <ui:Button name="settings-quality-low" text="Low" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- The UI's language (#1036): SettingsPresenter names each language in itself; the one in use carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-language-label" text="Language" class="settings-name" />
+                <ui:VisualElement class="row settings-choices">
+                    <ui:Button name="settings-language-en" class="settings-switch" />
+                    <ui:Button name="settings-language-he" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
             <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
+        <!-- The turn report (#1037, TurnReportPresenter): after End Turn, each top-bar number that changed and the sim's causes.
+             A backdrop over the HUD (ScreenNav.DisableCovered disables what it covers), under the outcome clips' layer. -->
+        <ui:VisualElement name="turn-report" class="turn-report">
+            <ui:VisualElement name="turn-report-panel" class="panel turn-report-panel">
+                <ui:VisualElement class="screen-header"><ui:Label name="turn-report-title" class="title" /><ui:Label name="turn-report-intro" class="muted" /></ui:VisualElement>
+                <ui:ScrollView name="turn-report-rows" class="turn-report-rows" />
+                <ui:VisualElement class="row turn-report-actions">
+                    <ui:Button name="turn-report-all" />
+                    <ui:Button name="turn-report-close" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
         </ui:VisualElement>
         <!-- The End Turn outcome clip (OutcomePresenter): the historical order the player gave, as a 3.5 s silent clip in the
              middle, captioned as the order; a click, Enter or Space skips it, Esc skips them all. After the screens, so it
@@ -365,5 +403,12 @@
         <!-- The name of an icon-only button, beside it on hover and on keyboard focus (HoverTip; UI Toolkit draws `tooltip`
              only in Editor UI). Last, so it draws over the panels; it takes no clicks. -->
         <ui:Label name="hud-tip" class="hud-tip" picking-mode="Ignore" />
+        <!-- A top-bar number's explanation under the bar, on hover or after a tap (MeterTip, #1037); it takes no clicks. Two
+             lines of their own: the meter in the UI's words, then the sim's causes, which are English (#55), so each label
+             takes its own direction in the Hebrew UI (UiDirection). -->
+        <ui:VisualElement name="meter-tip" class="meter-tip" picking-mode="Ignore">
+            <ui:Label name="meter-tip-words" class="meter-tip-line" picking-mode="Ignore" />
+            <ui:Label name="meter-tip-causes" class="meter-tip-line" picking-mode="Ignore" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -73,7 +73,7 @@ public class EventRetimingTests
     [InlineData("law_of_return", "1950-07-15")]
     [InlineData("clothing_rationing_1950", "1950-07-15")]
     [InlineData("ministry_supply_crisis", "1950-10-15")]
-    [InlineData("education_registration_1951", "1950-12-15")]
+    [InlineData("education_registration_1951", "1951-02-15")]
     [InlineData("reparations_claim", "1951-03-15")]
     [InlineData("iraqi_exodus", "1951-03-15")]
     [InlineData("israel_bonds", "1951-05-15")]

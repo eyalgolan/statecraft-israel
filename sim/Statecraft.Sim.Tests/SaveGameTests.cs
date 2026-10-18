@@ -204,6 +204,16 @@ public class SaveGameTests
         Assert.NotEqual(a.Hash, map.Hash);
     }
 
+    [Fact]
+    public void TheContentHashCoversSettlementTargets()
+    {
+        var before = ContentLoader.Load(Fixture.Write()).Hash;
+        var edited = Fixture.Files["settlement_targets.yaml"] + "# edited\n";
+        var after = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+            { ["settlement_targets.yaml"] = edited })).Hash;
+        Assert.NotEqual(before, after);
+    }
+
     /// <summary>Every command type the sim has must be savable: the played session uses each one, and a new Command type
     /// that the save format cannot write fails here.</summary>
     [Fact]

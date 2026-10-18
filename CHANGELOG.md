@@ -8,6 +8,17 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- A short How to play screen in the side menu explains the monthly loop, Attention, cities, training, event decisions,
+  the top bar, End turn and delegation, and the Why screen in English and Hebrew (refs #1041, #42).
+- After End Turn, a short turn report names each top-bar number that changed, with the change the bar shows and its main
+  causes, the sim's own cause messages, and a link to the Why screen; hovering or tapping a top-bar number shows the same
+  explanation under the bar. English and Hebrew; no rule or number is computed in the UI (refs #1037).
+- The `displacement` event tag now has an absolute no-gain rule and blocks a shareable build until the event is
+  sensitivity-reviewed (R-EFX-007, R-GATE-001; refs #794). No content uses the tag, so no golden moves.
+- The settlement target list and the settlement-control state (GDD Phase 6 PR 3): `settlement_targets.yaml` admits
+  only sourced `arab_town` rows of `settlements_1948.yaml` and ships empty until a person and the sensitivity review
+  have checked its rows. The state is written into the state hash only when set, so no golden moves (R-CTRL-001 to
+  R-CTRL-003; refs #795).
 - The military unit record (GDD Phase 5 PR 2): a unit can hold a side, a strength and a standing order with its target,
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the
@@ -48,6 +59,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Event options in the GDD loop can move a city's housing condition: `city_effects` takes `field: condition` with a
   change from -1 to 1, the condition stays from 0 to 1, and a sensitive event may only lower it (R-EFX-004, R-EFX-005;
   refs #806). No event uses them yet.
+- Settings: a language choice, English or עברית, under the quality choice (#1036). The Hebrew UI (#193) no longer needs
+  `?lang=he` in the address: a press puts every screen in the other language at once, with no reload, over the same
+  game and this turn's orders, and the choice is kept in `settings.txt` for the next visit. `?lang=` in the address
+  (or `-lang` on the desktop) still decides for that visit. A line under the choice says the event cards are still in
+  English only (#55).
 - Settings: a graphics quality choice, Automatic, High or Low (refs #40, second slice; owner decision of 18 Oct 2026).
   Automatic is what the game did before: the tier the device gets, and on the web the frame-time fallback steps down
   when frames are slow. High is the PC tier at render scale 1.0 and Low the Mobile tier at 0.8, both fixed, so the
@@ -115,8 +131,16 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   and stream after the first frame (#725).
 
 ### Fixed
-
 - Keep the event photograph header at 16:9 when card padding changes without an outer resize (#649).
+- MATKOT's townspeople (#666) and wildlife (#670) stand at the same 24x train scale as the building models
+  (`SettlementKits.ModelScale`, #1030): a man is about 43 m tall, an ibex about 31 m and a striped hyena about 26 m
+  long, all smaller than a house and about a fifth of the locomotive's car or less. Before, a man was about 2.5 km and
+  an animal about 1.9 km, sized like the unit pieces, which keep their symbolic size (#1033).
+- Official records for three sourcing calls (owner, 18 October 2026, #457): the Provisional Government keeps its
+  14 May 1948 start (the Knesset position records), Education is vacant from 19 May to 8 October 1951 (no official term
+  follows Remez's, row 3860), and `education_registration_1951` opens on 12 February 1951, its first cited plenum record
+  (was 29 November 1950). The card now fires on 15 February 1951, so `hash1952`, `mvp-end` and `scenario-mvp-defeat`
+  move (coalition stability only) and are re-pinned (`docs/determinism.md`).
 - MATKOT's building models up close (#700) stand at one world scale, set by the steam train the map runs: a typical
   8.5 m house is as long as the locomotive's car (about 204 m), so every model is 24x its building's real size
   (`SettlementKits.ModelScale`), keeps its own proportions and no longer fills the kit's plot; a plot holds a small
@@ -136,6 +160,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   keep the floor too (26 px at 360x800, 30 px at 375x667): there the bar grows to its rows' height and the panels
   under it follow. On a phone held upright the decision card now starts right of the left rail and hangs under the bar instead of sitting centred, so no
   rail button sits under it (Why? and Settings did), and the rail's buttons are 60 px, at least 24 px on screen.
+- The web build no longer loses its boot or its 1948 Collection models to a rate-limited host (players got HTTP 429
+  from itch.io, #1054). The content texts are packed into one file at build time (`content/bundle.json`), so a boot
+  makes 9 StreamingAssets requests instead of 70 (main, measured headless); the content hash is unchanged. Every
+  StreamingAssets fetch at boot, the collection's checks file and bundles included (they had no retry), now goes
+  through one retry helper (`StreamingFetch`): 408, 429, 5xx and no response are retried after 0.5, 1 and 2 s, or a
+  longer `Retry-After` up to 10 s, four attempts in all, and then fail as before. Desktop and the editor still read
+  the files.
 
 ## [0.1.1] - 2026-10-18
 

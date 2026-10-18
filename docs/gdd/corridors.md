@@ -13,6 +13,7 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - Corridor work is multi-turn, with one project per pioneer unit at a time (D-D6 [S2]). Segment counts, costs and durations are balance values the owner sets; until then they are placeholders in the dev and test overlay, never in `content/` [S2].
 - Completing the Tel Aviv-Haifa railway completes the railway part of the third objective, "Establish key infrastructure" (GDD "MVP scope" [S1]). The completion card's reference date is the owner's open decision D-B3 [S2]; one option is the Haifa-Tel Aviv passenger service that opened on 20 September 1949 [S3].
 - The Burma Road corridor to Jerusalem is the Burma Road part of the third objective: the owner decided on 14 October 2026 that it is in the MVP (G1 [S5], GDD "MVP scope" [S1]). Its completion card's reference date is the opening of the Road of Valour, which replaced the Burma Road track, on 7 December 1948 [S4].
+- Nir Am's infrastructure-protection rule is part of the third objective: the Negev water line that began there must stay in Israeli hands until the armistice with Egypt on 24 February 1949. Its card tells the pipeline's 1947–48 history from sources, with `checked:` dates and a person's fact check. Its points are a labelled design value for the balance pass; no value is selected here. **Then decided (owner, 18 Oct 2026, "Part of objective 3"; [#1006](https://github.com/eyalgolan/statecraft-israel/issues/1006#issuecomment-6254333583))** [S8]. (unitless)
 - One military camp and one Hakhshara exist at the start, and pioneers build further camps (D-D5 [S2]); building a camp is one of the GDD's pioneer actions (GDD "Pioneer work" [S1]).
 
 ## Data touched
@@ -41,6 +42,7 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - [S5] Owner decisions, G1 (the Burma Road in the MVP, 14 October 2026), docs/oss/DECISIONS.md
 - [S6] MVP map priorities and transport anchors, docs/locations.md
 - [S7] Internal map-authoring requirements, docs/gdd/map-editor.md; route geometry and bake pipeline, docs/routes.md
+- [S8] [Owner decision on Nir Am's objective](https://github.com/eyalgolan/statecraft-israel/issues/1006#issuecomment-6254333583), 18 October 2026, checked 2026-10-18.
 
 ## Open questions
 

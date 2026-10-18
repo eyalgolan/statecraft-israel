@@ -1,8 +1,39 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Statecraft.Sim
 {
+    /// <summary>One settlement's control state. Residents are a state, inhabited (the default) or depopulated, never a count
+    /// or a combatant field (Q-CAP-2 (b); R-CTRL-003). Immutable so <see cref="GameState.Clone"/> can copy the containing map
+    /// shallowly.</summary>
+    public sealed class SettlementControl
+    {
+        public string Owner { get; }
+        public string State { get; }
+        public DateTime Since { get; }
+        public bool Depopulated { get; }
+        public int Combatants { get; }
+        public string Buildings { get; }
+
+        public SettlementControl(string owner = "", string state = "", DateTime since = default, bool depopulated = false, int combatants = 0, string buildings = "")
+        {
+            Owner = owner; State = state; Since = since; Depopulated = depopulated; Combatants = combatants; Buildings = buildings;
+        }
+
+        public string Canonical()
+        {
+            var fields = new List<string>();
+            if (Owner != "") fields.Add("owner=" + Owner);
+            if (State != "") fields.Add("state=" + State);
+            if (Since != default) fields.Add("since=" + Since.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            if (Depopulated) fields.Add("depopulated=1");
+            if (Combatants != 0) fields.Add("combatants=" + Combatants.ToString(CultureInfo.InvariantCulture));
+            if (Buildings != "") fields.Add("buildings=" + Buildings);
+            return string.Join(",", fields);
+        }
+    }
+
     /// <summary>A city in the GDD v0.1 loop (docs/GDD.md "Cities and construction"; owner decision D-A2: civilians and
     /// refugees are counts per city). Counts are population units, each a group (D-A1). Immutable, so GameState.Clone can copy
     /// the map shallowly; a change replaces the record. Only the attributes approved decisions define are here.</summary>

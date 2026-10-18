@@ -168,6 +168,9 @@ budget_start: { finance_minister: 1.0 }
         ["population.yaml"] = @"
 anchors: []
 ",
+        ["settlement_targets.yaml"] = @"
+targets: []
+",
         // A 5 x 2 map: one sea hex, the rest land; one settlement at (1, 0).
         ["map/hexes.json"] = @"{""attribution"":[""test""],""bounds"":{""lon0"":34.2,""lon1"":35.9,""lat0"":29.45,""lat1"":33.35},""hex_size_km"":5.0,""layout"":""pointy"",""hexes"":[
 {""q"":0,""r"":0,""lon"":34.2,""lat"":33.35,""elev_m"":0.0,""land"":false,""biome"":""sea""},

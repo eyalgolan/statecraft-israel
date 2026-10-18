@@ -147,7 +147,7 @@ public class GameSceneTests
             float h = Screen.height;
             Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
             Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
-            Rect a = ui.Q("nav-cabinet").worldBound, b = ui.Q("nav-budget").worldBound, last = ui.Q("nav-why").worldBound;
+            Rect a = ui.Q("nav-cabinet").worldBound, b = ui.Q("nav-budget").worldBound, last = ui.Q("nav-settings").worldBound;
             var probes = new (string where, Vector2 p)[]
             {
                 ("left of a disc", new Vector2(a.xMin - 6f, a.center.y)),

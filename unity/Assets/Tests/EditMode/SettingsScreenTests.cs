@@ -318,7 +318,8 @@ public class SettingsScreenTests
                 Assert.IsTrue(Inside(screen, root.worldBound), $"{at}: the screen {screen} leaves the window {root.worldBound}");
                 Assert.GreaterOrEqual(screen.yMin, root.Q("top-bar").worldBound.yMax - 0.5f, at + ": the screen starts below the top bar");
                 foreach (var name in new[] { "settings-screen-title", "settings-tiltshift-label", "settings-tiltshift",
-                    "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low" })
+                    "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low",
+                    "settings-language-label", "settings-language-en", "settings-language-he", "settings-language-note" })
                 {
                     var e = root.Q<TextElement>(name);
                     Assert.IsFalse(string.IsNullOrWhiteSpace(e.text), $"{at}: {name} has its text");

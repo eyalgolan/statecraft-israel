@@ -29,11 +29,12 @@ def px(body: str, prop: str) -> float:
 
 def test_the_column_click_points_follow_the_uss():
     col, button = rule(".left-column"), rule(".left-column .rail-button")
-    left, top, size = px(col, "left"), px(col, "top"), px(button, "height")
+    left, top, width, size = px(col, "left"), px(col, "top"), px(col, "width"), px(button, "height")
     gap = float(re.search(r"margin:\s*0 0 ([0-9.]+)px 0", button).group(1))
     h = headed()
     w, hh = h.WINDOW
     scale = ((w / 1920) * (hh / 1080)) ** 0.5
     for i in range(4):
-        assert h.left_column_button(i) == (round((left + size / 2) * scale), round((top + (size + gap) * i + size / 2) * scale))
+        # The column centres its discs (align-items: center), so a disc's middle is the column's.
+        assert h.left_column_button(i) == (round((left + width / 2) * scale), round((top + (size + gap) * i + size / 2) * scale))
     assert h.WHY == h.left_column_button(3)

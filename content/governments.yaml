@@ -10,8 +10,8 @@ governments:
       - { url: "https://he.wikipedia.org/wiki/הממשלה_הזמנית", checked: 2026-10-14 }
     # from: every KNS_PersonToPosition row for GovernmentNum 0 starts 1948-05-14. The Declaration's clause 12
     # (minutes of 14 May 1948, 0_ptm_258580) puts Minhelet HaAm in office "from the termination of the Mandate,
-    # tonight", i.e. 15 May; the 14/15 May question is open as #457 item 2. to: the day the First Government was
-    # sworn in.
+    # tonight", i.e. 15 May. The owner ruled for the position records' 14 May ("Follow the official records",
+    # 18 October 2026, #457 item 2). to: the day the First Government was sworn in.
     # coalition: the two en.wiki articles below. The records name the 13 ministers across 17 ministry rows with
     # null factions, so they do not carry the 11-list value. One exception (#457): en.wiki lists Gruenbaum as an
     # independent, but his Knesset 0 faction row (PersonID 5904) reads "הציונים הכלליים" (General Zionists), so he
