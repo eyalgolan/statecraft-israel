@@ -28,7 +28,7 @@ public class HousingTests
 
     /// <summary>Everyone the city holds: civilians, refugees, recruits and the groups in training there.</summary>
     static int People(GameState s, string city) =>
-        s.Cities[city].Civilians + s.Cities[city].Refugees + s.Cities[city].Recruits + s.Cohorts.Values.Where(k => k.City == city).Sum(k => k.Count);
+        s.Cities[city].Civilians + s.Cities[city].Craftsmen + s.Cities[city].Refugees + s.Cities[city].Recruits + s.Cohorts.Values.Where(k => k.City == city).Sum(k => k.Count);
 
     // R-HOUSE-001
     [Fact]
@@ -51,7 +51,7 @@ public class HousingTests
         var s = With(Simulation.NewGame(c, 1, Mode.Historical), "town_a", 10, 6, 5);
         var after = Step(c, s);   // the fixture's first week brings no unit of arrivals
         var x = after.Cities["town_a"];
-        Assert.Equal((15, 6, 0), (x.Civilians, x.Employed, x.Refugees));   // no hard cap: every refugee is housed
+        Assert.Equal((15, 15, 0), (x.Civilians, x.Employed, x.Refugees));   // no hard cap: every refugee is housed (and R-CITY-009 fills 15 of the 20 jobs)
         Assert.Equal(People(s, "town_a"), People(after, "town_a"));
         Assert.Equal(15, Cities.Housed(after, x));
         Assert.Equal(3, Cities.Overflow(after, x));                     // 15 people in housing for 12

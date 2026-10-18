@@ -5,8 +5,8 @@ using System.Linq;
 namespace Statecraft.Sim.Reference
 {
     /// <summary>Test policy for the GDD goldens (D-A7): a stated simple policy, not game AI and not historical. It sends
-    /// HistoricalAI's orders, then fills each city's jobs with as many civilians as there are jobs, then, when no city
-    /// project is being built, starts a housing project in the city with the most overflow that has a hex for it, then sends each idle halutz
+    /// HistoricalAI's orders and no AssignWorkers (R-CITY-009's default fills the jobs, and an order would turn it off), then,
+    /// when no city project is being built, starts a housing project in the city with the most overflow that has a hex for it, then sends each idle halutz
     /// unit to the first available yishuv site (then to the first ready field, then to the first available camp site), then,
     /// when there is no halutz and none in training, trains one halutz group in
     /// the first city with a Hakhshara and a civilian left without work, while the turn's Attention lasts (both orders borrow). It lives in Statecraft.Sim only so Unity can replay the goldens (#394; GoldenRun); no game mode or UI may reach it
@@ -17,15 +17,6 @@ namespace Statecraft.Sim.Reference
         {
             var list = new List<Command>(HistoricalAI.Commands(c, s));
             var left = s.Attention - list.Sum(x => AttentionSystem.Cost(c, s, x.Kind));
-            foreach (var city in s.Cities.Values)
-            {
-                var want = Math.Min(city.JobSlots, city.Civilians);
-                if (want == city.Employed) continue;
-                var cost = AttentionSystem.Cost(c, s, Cities.Kind);
-                if (cost > left + 1e-9) continue;   // AttentionSystem.TrySpend's rule
-                list.Add(new AssignWorkers(city.Id, "job", want));
-                left -= cost;
-            }
             House(c, s, list, ref left);
             var halutz = c.UnitTypes.FirstOrDefault(t => t.Id == "halutz");
             if (halutz == null) return list;
@@ -35,8 +26,7 @@ namespace Statecraft.Sim.Reference
             if (trainCost > left + 1e-9) return list;   // training borrows, so the Treasury does not hold it back
             foreach (var city in s.Cities.Values)
             {
-                var employed = list.OfType<AssignWorkers>().Where(a => a.City == city.Id).Select(a => a.Count).DefaultIfEmpty(city.Employed).Last();
-                if (city.Civilians - employed < 1 || !Training.HasFacility(c, s, city.Id, halutz.Facility)) continue;
+                if (Training.Idle(city) < 1 || !Training.HasFacility(c, s, city.Id, halutz.Facility)) continue;
                 list.Add(new Train(city.Id, halutz.Id, 1));
                 break;
             }

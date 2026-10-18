@@ -467,6 +467,8 @@ namespace Statecraft.Sim
         public int PeoplePerUnit { get; set; }
         /// <summary>Money each employed unit earns a year, in IL millions (R-CITY-002).</summary>
         public double IncomePerJobPerYear { get; set; }
+        /// <summary>What an employed craftsman earns, as a multiple of <see cref="IncomePerJobPerYear"/> (R-CRAFT-002, Q-CRAFT-2).</summary>
+        public double CraftsmanIncomeMultiple { get; set; }
         /// <summary>Annual civilian-place upkeep in IL millions (R-MONEY-002). Required in the GDD loop; the MVP values are 0.</summary>
         public double? CityUpkeepPerYear { get; set; }
         public double? HousingUpkeepPerYear { get; set; }

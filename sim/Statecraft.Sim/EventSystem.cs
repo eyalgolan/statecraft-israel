@@ -123,7 +123,7 @@ namespace Statecraft.Sim
                 var delta = (int)x.Delta;
                 var housing = x.Field == HousingField ? Math.Max(0, city.HousingCapacity + delta) : city.HousingCapacity;
                 var jobs = x.Field == JobsField ? Math.Max(city.Employed, city.JobSlots + delta) : city.JobSlots;
-                s.Cities[x.City] = new City(city.Id, housing, jobs, city.Civilians, city.Employed, city.Refugees, city.Recruits, city.Condition);
+                s.Cities[x.City] = new City(city.Id, housing, jobs, city.Civilians, city.Employed, city.Refugees, city.Recruits, city.Condition, city.Craftsmen, city.JobsDefault);
                 var applied = housing - city.HousingCapacity + jobs - city.JobSlots;
                 why.Add(new Cause("events", x.City + "." + x.Field, applied, $"{CityChange(c, x.City, x.Field, applied)} ({title})"));
             }

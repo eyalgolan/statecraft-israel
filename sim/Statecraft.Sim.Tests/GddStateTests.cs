@@ -119,6 +119,18 @@ public class GddStateTests
         Assert.Equal(4, none.WithRecruits(4).WithCounts(5, 1, 0).Recruits);   // a change of counts keeps the recruits
     }
 
+    // R-LOOP-002, R-CRAFT-001, R-CITY-009: defaults preserve the old text; only non-zero craftsmen and a manual job
+    // standing order add fields.
+    [Fact]
+    public void CraftsmenAndTheJobDefaultReachTheHashOnlyWhenSet()
+    {
+        var none = new City("a", 1, 2, 3, 1, 0);
+        Assert.Equal("a=1,2,3,1,0", none.Canonical());
+        Assert.Equal("a=1,2,3,1,0,craftsmen=2", none.WithCraftsmen(2).Canonical());
+        Assert.Equal("a=1,2,3,1,0,jobs=manual", none.WithJobsDefault(false).Canonical());
+        Assert.Equal(2, none.WithCraftsmen(2).WithCounts(4, 1, 0).Craftsmen);
+    }
+
     [Fact]
     public void CloneCopiesEveryNewCollection()
     {

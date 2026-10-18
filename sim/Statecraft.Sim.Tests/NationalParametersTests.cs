@@ -54,8 +54,8 @@ public class NationalParametersTests
         var s = Played();
         double After(GameState x) => Step(Mvp, x).State.Indicators["morale"];
 
-        // Employment: the same city with more of its civilians in work.
-        var city = s.Cities["tel_aviv"];
+        // Employment: the same city with more of its civilians in work, each number fixed (R-CITY-009's default off).
+        var city = s.Cities["tel_aviv"].WithJobsDefault(false);
         Assert.True(city.Employed > 0 && city.Employed < city.Civilians, "precondition: room to move employment both ways");
         var idle = s.Clone(); idle.Cities["tel_aviv"] = city.WithCounts(city.Civilians, 0, city.Refugees);
         var busy = s.Clone(); busy.Cities["tel_aviv"] = city.WithCounts(city.Civilians, Math.Min(city.Civilians, city.JobSlots), city.Refugees);

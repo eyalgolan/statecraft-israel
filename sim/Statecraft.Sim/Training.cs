@@ -5,7 +5,8 @@ using System.Linq;
 namespace Statecraft.Sim
 {
     /// <summary>The GDD v0.1 training (docs/GDD.md "Progression"; Phase 1 PR 4): a city's civilians train in a military camp to
-    /// become recruits, or in a Hakhshara to become halutzim, over several turns (D-A3). The facilities are read from
+    /// become recruits, in a Hakhshara to become halutzim, or in a city with a completed industry project to become craftsmen
+    /// (D-D4, Q-CRAFT-1), over several turns (D-A3). The facilities are read from
     /// cities.yaml: one of each exists at the start (D-D5, a design assumption), and pioneers build more at camp sites
     /// (R-CAMP-001). Runs only
     /// when eras.yaml systems.loop is gdd. Its causes go to the "city" group of the Why screen: they move a city's people and
@@ -15,22 +16,31 @@ namespace Statecraft.Sim
         public const string TrainKind = "train";
         public const string CancelKind = "cancel_training";
 
+        /// <summary>The craftsman's unit type id (D-D4; R-CRAFT-001).</summary>
+        public const string Craftsman = "craftsman";
+
+        /// <summary>The facility a craftsman trains at: a completed city project of this kind (projects.yaml; Q-CRAFT-1).</summary>
+        public const string Industry = "industry";
+
         /// <summary>The facility's name in text the player reads.</summary>
-        static string Place(string facility) => facility == "military_camp" ? "military camp" : "Hakhshara";
+        static string Place(string facility) => facility == "military_camp" ? "military camp" : facility == Industry ? "completed industry project" : "Hakhshara";
 
         /// <summary>The course the facility gives, in text the player reads.</summary>
-        static string Course(string facility) => facility == "military_camp" ? "basic training" : "pioneer training";
+        static string Course(string facility) => facility == "military_camp" ? "basic training" : facility == Industry ? "craft training" : "pioneer training";
 
         static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
 
-        /// <summary>R-TRAIN-001, R-CAMP-001: whether <paramref name="city"/> has <paramref name="facility"/>: one it starts with
-        /// (cities.yaml, D-D5), or a camp site of that kind built for it (sites.yaml city). A camp being built does not count.</summary>
+        /// <summary>R-TRAIN-001, R-CAMP-001, R-CRAFT-001: whether <paramref name="city"/> has <paramref name="facility"/>: one it
+        /// starts with (cities.yaml, D-D5), a camp site of that kind built for it (sites.yaml city), or, for industry, a
+        /// completed industry project in it (R-PROJ-003). A camp or a project being built does not count.</summary>
         public static bool HasFacility(Content c, GameState s, string city, string facility) =>
             c.Cities.First(k => k.Id == city).Facilities.Contains(facility)
+            || (facility == Industry && s.CityProjects.Values.Any(p => p.City == city && p.Kind == Industry && p.BuiltOn != null))
             || c.Sites.Any(x => x.City == city && x.Kinds.Contains(facility) && s.Sites.TryGetValue(x.Id, out var w) && w.BuiltOn != null);
 
-        /// <summary>R-TRAIN-001: the city's civilians without work, the most a Train order there accepts.</summary>
-        public static int Idle(City city) => city.Civilians - city.Employed;
+        /// <summary>R-TRAIN-001: the city's civilians without work, the most a Train order there accepts. Craftsmen take the
+        /// city's jobs first (R-CRAFT-002), so only the employed beyond its craftsmen are civilians in work.</summary>
+        public static int Idle(City city) => city.Civilians - Math.Max(0, city.Employed - city.Craftsmen);
 
         /// <summary>The groups the Train orders in <paramref name="pending"/> (this turn's queue) take from
         /// <paramref name="city"/>, every track together.</summary>
@@ -45,7 +55,8 @@ namespace Statecraft.Sim
             var x = s.Cities[city];
             var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
             var employed = Math.Max(x.Employed, list.OfType<AssignWorkers>().Where(w => w.City == city).Select(w => w.Count).DefaultIfEmpty(0).Max());
-            return Math.Max(0, x.Civilians - employed - Ordered(city, list));
+            var ordinaryEmployed = Math.Max(0, employed - x.Craftsmen);
+            return Math.Max(0, x.Civilians - ordinaryEmployed - Ordered(city, list));
         }
 
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as
@@ -95,8 +106,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-TRAIN-003, step 4 of the turn (spec 2026-10-12 section 2.3, D-A6): in ascending id, each cohort has one turn
-        /// less to go. One that reaches 0 leaves the state: recruits join the city's count, and halutzim become one movable unit
-        /// per group at the city's settlement hex, taking the next ids in turn.</summary>
+        /// less to go. One that reaches 0 leaves the state: recruits and craftsmen join the city's counts (R-CRAFT-001), and
+        /// halutzim become one movable unit per group at the city's settlement hex, taking the next ids in turn.</summary>
         public static void Progress(Content c, GameState s, List<Cause> why)
         {
             foreach (var k in s.Cohorts.Values.ToList())
@@ -110,6 +121,12 @@ namespace Statecraft.Sim
                     var hex = c.SettlementHexes.First(h => h.Id == k.City);   // every settlement has one (ValidateMap)
                     for (int i = 0; i < k.Count; i++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, type.Id, hex.Q, hex.R)); }
                     why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type.Facility)} and are halutzim"));
+                }
+                else if (type.Id == Craftsman)
+                {
+                    var x = s.Cities[k.City];
+                    s.Cities[k.City] = x.WithCraftsmen(x.Craftsmen + k.Count);
+                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type.Facility)} and are craftsmen"));
                 }
                 else
                 {

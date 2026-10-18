@@ -10,9 +10,9 @@ namespace Statecraft.Sim
     {
         public const string Kind = "assign_workers";
 
-        /// <summary>R-CITY-001: the most of the city's civilians AssignWorkers accepts in jobs: its job slots, and no more than
-        /// its civilians.</summary>
-        public static int MaxWorkers(City city) => Math.Min(city.JobSlots, city.Civilians);
+        /// <summary>R-CITY-001: the most of the city's people AssignWorkers accepts in jobs: its job slots, and no more than its
+        /// civilians and craftsmen (a craftsman fills an ordinary job slot, R-CRAFT-002). R-CITY-009's default fills to it.</summary>
+        public static int MaxWorkers(City city) => Math.Min(city.JobSlots, city.Civilians + city.Craftsmen);
 
         /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train orders in
         /// <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one of
@@ -20,7 +20,7 @@ namespace Statecraft.Sim
         public static int MaxWorkers(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];
-            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians - Training.Ordered(city, pending)));
+            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians + x.Craftsmen - Training.Ordered(city, pending)));
         }
 
         /// <summary>R-CITY-007: a city's start people in units: the nearest unit (a half rounds up), and at least 1 for a city
@@ -41,30 +41,33 @@ namespace Statecraft.Sim
             if (housing != null) s.Indicators[housing.Id] = EffectsSystem.Level(c, s, housing);   // R-HOUSE-004 from the first day
         }
 
-        /// <summary>R-CITY-001: sets the number of the city's civilians in jobs (a standing order). Refused, state untouched,
-        /// when the city or role is unknown or the count is negative, above the job slots or above the civilians. Step has
-        /// already refused it in the legacy loop.</summary>
+        /// <summary>R-CITY-001: sets the number of the city's people in jobs (a standing order), and turns that city's job
+        /// default off (R-CITY-009). Refused, state untouched, when the city or role is unknown or the count is negative, above
+        /// the job slots or above the civilians and craftsmen. Step has already refused it in the legacy loop.</summary>
         public static string? Assign(Content c, GameState s, string city, string role, int count, List<Cause> why)
         {
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
-            if (role != "job") return "There is no such role";   // craftsman: Phase 3 (D-D4)
+            // Craftsmen fill ordinary job slots (Q-CRAFT-2, R-CRAFT-002), so "job" stays the only role.
+            if (role != "job") return "There is no such role";
             if (count < 0) return "The number of workers cannot be negative";
             if (count > MaxWorkers(x))
                 return count > x.JobSlots
                     ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")
-                    : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians} civilians");
-            s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees);
+                    : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians + x.Craftsmen} civilians and craftsmen");
+            s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees).WithJobsDefault(false);
             why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work")));
             return null;
         }
 
-        /// <summary>R-CITY-002: each city's employed units earn income_per_job_per_year for the turn's share of a year.</summary>
+        /// <summary>R-CITY-002, R-CRAFT-002: each city's employed units earn income_per_job_per_year for the turn's share of a
+        /// year. Craftsmen take the jobs first, and each employed craftsman earns craftsman_income_multiple times that.</summary>
         public static void Produce(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
         {
             foreach (var x in s.Cities.Values)
             {
                 if (x.Employed == 0) continue;
-                var paid = x.Employed * r.IncomePerJobPerYear * yearFraction;
+                var craftsmen = Math.Min(x.Craftsmen, x.Employed);
+                var paid = ((x.Employed - craftsmen) + craftsmen * r.CraftsmanIncomeMultiple) * r.IncomePerJobPerYear * yearFraction;
                 s.Treasury += paid;
                 why.Add(new Cause("city", x.Id, paid, $"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, "treasury", paid)}"));
             }
@@ -96,23 +99,31 @@ namespace Statecraft.Sim
 
         /// <summary>R-CITY-004 (D-A5; D-D1, Q-HOUSE-1): no hard cap. Every refugee becomes a civilian, without a job, on the
         /// housing step; the people beyond the city's housing are its overflow (<see cref="Overflow"/>), still counted in it.
-        /// Residents are housed automatically (Q-HOUSE-4).</summary>
+        /// Residents are housed automatically (Q-HOUSE-4). Then R-CITY-009 (Q-JOBS-1): in ascending city id, a city whose job
+        /// default is on fills its free job slots from its people without a job, at no Attention cost.</summary>
         public static void House(Content c, GameState s, List<Cause> why)
         {
             foreach (var x in s.Cities.Values.ToList())
             {
-                if (x.Refugees == 0) continue;
-                s.Cities[x.Id] = x.WithCounts(x.Civilians + x.Refugees, x.Employed, 0);
-                why.Add(new Cause("city", x.Id, x.Refugees, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {x.Refugees} groups of immigrants housed")));
+                var housed = x.Refugees == 0 ? x : x.WithCounts(x.Civilians + x.Refugees, x.Employed, 0);
+                if (x.Refugees != 0)
+                    why.Add(new Cause("city", x.Id, x.Refugees, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {x.Refugees} groups of immigrants housed")));
+                var work = MaxWorkers(housed);
+                if (housed.JobsDefault && work != housed.Employed)
+                {
+                    why.Add(new Cause("city", x.Id, work - housed.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {work} groups in work")));
+                    housed = housed.WithCounts(housed.Civilians, work, housed.Refugees);
+                }
+                s.Cities[x.Id] = housed;
             }
         }
 
-        /// <summary>R-HOUSE-003 (Q-HOUSE-5): the people who take the city's housing: its civilians, its recruits and its groups
+        /// <summary>R-HOUSE-003 (Q-HOUSE-5): the people who take the city's housing: its civilians, craftsmen, recruits and groups
         /// in training (a halutz group too, until it becomes a movable unit and leaves). Refugees wait for housing and are not
         /// in it. Summed as integers, so the order of the training groups cannot change it.</summary>
         public static int Housed(GameState s, City x)
         {
-            var n = x.Civilians + x.Recruits;
+            var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
             return n;
         }
@@ -163,12 +174,12 @@ namespace Statecraft.Sim
         /// cohesion, read by the effects web after the turn's housing (D-A6). Phase 1's separate cohesion value is folded into it.</summary>
         public const string EmployedShareSource = "employed_share";
 
-        /// <summary>R-CITY-005: employed over civilians, summed over all cities as integers (so city order cannot change it);
-        /// 1 with no civilians, as nobody is out of work.</summary>
+        /// <summary>R-CITY-005: employed over civilians and craftsmen, summed over all cities as integers (so city order cannot
+        /// change it); 1 with none, as nobody is out of work.</summary>
         public static double EmployedShare(GameState s)
         {
             long civilians = 0, employed = 0;
-            foreach (var x in s.Cities.Values) { civilians += x.Civilians; employed += x.Employed; }
+            foreach (var x in s.Cities.Values) { civilians += x.Civilians + x.Craftsmen; employed += x.Employed; }
             return civilians == 0 ? 1.0 : (double)employed / civilians;
         }
 

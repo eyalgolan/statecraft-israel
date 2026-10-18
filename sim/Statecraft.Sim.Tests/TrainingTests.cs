@@ -39,7 +39,7 @@ public class TrainingTests
         var r = Step(c, s, new Train("town_a", "recruit", 3));
         Assert.Empty(r.Rejected);
         var city = r.State.Cities["town_a"];
-        Assert.Equal((7, 6, 0), (city.Civilians, city.Employed, city.Recruits));   // in training: neither civilians nor recruits
+        Assert.Equal((7, 7, 0), (city.Civilians, city.Employed, city.Recruits));   // in training: neither civilians nor recruits; the job default (R-CITY-009) employs the 7
         var k = Assert.Single(r.State.Cohorts.Values);
         Assert.Equal((id, "recruit", "town_a", 3, 1), (k.Id, k.Type, k.City, k.Count, k.TurnsLeft));   // 2 turns, one of them this one
         Assert.Equal(id + 1, r.State.NextId);
@@ -165,6 +165,7 @@ public class TrainingTests
     {
         var c = Town();
         var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Cities["town_a"] = s.Cities["town_a"].WithJobsDefault(false);   // R-TRAIN-002 alone: the job default (R-CITY-009) would refill the jobs
         var trained = Step(c, s, new Train("town_a", "halutz", 4)).State;
         var id = Assert.Single(trained.Cohorts.Keys);
         var cancelled = Step(c, trained, new CancelTraining(id));

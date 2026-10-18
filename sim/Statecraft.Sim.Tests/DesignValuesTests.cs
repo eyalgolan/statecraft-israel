@@ -24,6 +24,7 @@ public class DesignValuesTests
         ("rules.yaml", "attention_cost.stop_work"),
         ("rules.yaml", "mvp.people_per_unit"),
         ("rules.yaml", "mvp.income_per_job_per_year"),
+        ("rules.yaml", "mvp.craftsman_income_multiple"),
         ("rules.yaml", "mvp.city_upkeep_per_year"),
         ("rules.yaml", "mvp.housing_upkeep_per_year"),
         ("rules.yaml", "mvp.industry_upkeep_per_year"),
@@ -92,6 +93,8 @@ public class DesignValuesTests
         ("unit_types.yaml", "types[recruit].training_cost"),
         ("unit_types.yaml", "types[halutz].training_turns"),
         ("unit_types.yaml", "types[halutz].training_cost"),
+        ("unit_types.yaml", "types[craftsman].training_turns"),
+        ("unit_types.yaml", "types[craftsman].training_cost"),
         // Social cohesion's two new inputs and the national parameters' thresholds (Phase 2 PR 4; Q-NAT-2, Q-NAT-3; Reading 1).
         ("model.yaml", "effects[work_lifts_cohesion].k"),
         ("model.yaml", "effects[work_lifts_cohesion].inertia"),
@@ -198,6 +201,7 @@ public class DesignValuesTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var m = c.Rules.Mvp!;
         Assert.Equal((1000, 0.06), (m.PeoplePerUnit, m.IncomePerJobPerYear));
+        Assert.Equal(2.0, m.CraftsmanIncomeMultiple);   // Q-CRAFT-2
         Assert.Equal((0.0000545, 0.0001036), (c.Rules.TaxPerCapitaPerYear, c.Rules.SpendingPerCapitaPerYear));
         Assert.Equal((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), (m.CityUpkeepPerYear!.Value, m.HousingUpkeepPerYear!.Value,
             m.IndustryUpkeepPerYear!.Value, m.TransitCampUpkeepPerYear!.Value, m.MilitaryCampUpkeepPerYear!.Value, m.HakhsharaUpkeepPerYear!.Value));
@@ -210,7 +214,7 @@ public class DesignValuesTests
         Assert.Equal(12, c.Cities.Count);
         foreach (var x in c.Cities)   // the listed housing and job values are the ones Cities.Init starts from
             Assert.Equal(((int)x.Housing!.Value, (int)x.Jobs!.Value), (x.HousingCapacity, x.JobSlots));
-        Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5) },
+        Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5), ("craftsman", 3, 0.5) },   // the craftsman: Q-CRAFT-3
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.TrainingTurns, t.TrainingCost)));
     }
 

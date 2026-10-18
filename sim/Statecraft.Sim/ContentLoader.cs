@@ -979,6 +979,10 @@ namespace Statecraft.Sim
         /// <summary>Facilities a city may have (cities.yaml facilities): the GDD's training places (D-D5).</summary>
         static readonly string[] Facilities = { "military_camp", "hakhshara" };
 
+        /// <summary>Where a unit type may train (unit_types.yaml facility): a start facility, or a city's completed industry
+        /// project (<see cref="Training.Industry"/>; R-CRAFT-001), which no city starts with.</summary>
+        static readonly string[] TrainingFacilities = Facilities.Concat(new[] { Training.Industry }).ToArray();
+
         /// <summary>A military type's sides (unit_types.yaml side): units_1948.yaml's side ids (Q-START-4, owner, 15 October 2026).</summary>
         static readonly string[] Sides = { "israel", "egypt", "jordan", "syria", "iraq", "lebanon", "ala", "local_arab_forces" };
 
@@ -1064,11 +1068,16 @@ namespace Statecraft.Sim
                     if (x.TrainingCost != 0) throw new ContentException(uf, at + ".training_cost", "only a type with a facility trains");
                     continue;
                 }
-                if (!Facilities.Contains(x.Facility)) throw new ContentException(uf, at + ".facility", $"unknown facility '{x.Facility}' (military_camp or hakhshara)");
+                if (!TrainingFacilities.Contains(x.Facility)) throw new ContentException(uf, at + ".facility", $"unknown facility '{x.Facility}' (military_camp, hakhshara or industry)");
+                // A trained count lands in City.Recruits or City.Craftsmen (R-TRAIN-003, R-CRAFT-001); other trained counts
+                // wait for their decisions.
+                if (x.Kind == "population" && x.Id != "recruit" && x.Id != Training.Craftsman)
+                    throw new ContentException(uf, at + ".kind", "only recruit and craftsman are trained counts");
+                // Q-CRAFT-1 (owner, 15 October 2026): a craftsman trains in a city with a completed industry project.
+                if (x.Id == Training.Craftsman && x.Facility != Training.Industry)
+                    throw new ContentException(uf, at + ".facility", "a craftsman trains at industry (Q-CRAFT-1)");
                 if (x.TrainingTurns < 1) throw new ContentException(uf, at + ".training_turns", "must be >= 1");
                 if (!(x.TrainingCost >= 0 && IsFinite(x.TrainingCost))) throw new ContentException(uf, at + ".training_cost", "must be a finite number >= 0");
-                // A trained count lands in City.Recruits (R-TRAIN-003); other trained counts wait for their decisions (D-D4).
-                if (x.Kind == "population" && x.Id != "recruit") throw new ContentException(uf, at + ".kind", "only recruit is a trained count until Phase 5");
             }
             // R-CITY-003: the arrivals are spread over the cities, so there must be one to take them.
             if (c.Cities.Count == 0) throw new ContentException(cf, "cities", "the GDD loop needs at least one city to take the arrivals");
@@ -1081,6 +1090,9 @@ namespace Statecraft.Sim
                 if (m.PeoplePerUnit != c.Rules.Mvp!.PeoplePerUnit)
                     throw new ContentException(file, "mvp.people_per_unit", "must be the same in every era (arrivals are counted in one unit size)");
                 if (!(m.IncomePerJobPerYear >= 0 && IsFinite(m.IncomePerJobPerYear))) throw new ContentException(file, "mvp.income_per_job_per_year", "must be a finite number >= 0");
+                // R-CRAFT-002 (GDD "Population and units": a craftsman "Generates more money than an ordinary civilian"): a missing key reads 0 and is refused.
+                if (!(m.CraftsmanIncomeMultiple > 1 && IsFinite(m.CraftsmanIncomeMultiple)))
+                    throw new ContentException(file, "mvp.craftsman_income_multiple", "must be a finite number > 1");
                 // R-MONEY-002: explicit values keep an omitted kind from silently becoming free upkeep.
                 foreach (var (key, v) in new[] {
                     ("city_upkeep_per_year", m.CityUpkeepPerYear), ("housing_upkeep_per_year", m.HousingUpkeepPerYear),

@@ -22,20 +22,24 @@ public class ReferencePlayerTests
         return s;
     }
 
+    /// <summary>It sends no AssignWorkers: R-CITY-009's default fills the jobs on the housing step, and an order would turn
+    /// that city's default off (GDD Phase 3 PR 5; before it, the player sent min(jobs, civilians) itself).</summary>
     [Fact]
-    public void ItSendsHistoricalAIsOrdersThenFillsTheJobsThenTrainsOneHalutzGroup()
+    public void ItSendsHistoricalAIsOrdersThenTrainsOneHalutzGroupAndLeavesTheJobsToTheDefault()
     {
         var s = Start();
         s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(248, 96, 0);   // the start fills every job (Q-START-1): free 10
         var orders = ReferencePlayer.Commands(Mvp, s);
         var history = HistoricalAI.Commands(Mvp, s);
         Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
-        Assert.Equal(history.Count + 2, orders.Count);
-        var assign = Assert.IsType<AssignWorkers>(orders[history.Count]);
-        Assert.Equal(("tel_aviv", "job", 106), (assign.City, assign.Role, assign.Count));   // min(106 jobs, 248 civilians)
+        Assert.Equal(history.Count + 1, orders.Count);
+        Assert.DoesNotContain(orders, x => x is AssignWorkers);
         var train = Assert.IsType<Train>(orders.Last());
-        Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 142 civilians left without work
-        Assert.Empty(Simulation.Step(Mvp, s, orders).Rejected);
+        Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 152 civilians without work
+        var r = Simulation.Step(Mvp, s, orders);
+        Assert.Empty(r.Rejected);
+        var city = r.State.Cities["tel_aviv"];
+        Assert.Equal((247, 106, true), (city.Civilians, city.Employed, city.JobsDefault));   // min(106 jobs, 247 civilians)
     }
 
     /// <summary>The real start: the 15 May card (idf_founding) is answered first, at full war's price. The cities start with
@@ -193,13 +197,18 @@ public class ReferencePlayerTests
         Assert.Empty(ReferencePlayer.Commands(Mvp, tired));
     }
 
+    /// <summary>With more jobs than civilians, the default (not the player) fills no more jobs than there are civilians.</summary>
     [Fact]
     public void ItFillsNoMoreJobsThanThereAreCivilians()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(50, 40, 0);   // 106 jobs, 50 civilians
-        var assign = Assert.IsType<AssignWorkers>(ReferencePlayer.Commands(Mvp, s).Last());
-        Assert.Equal(50, assign.Count);
+        var orders = ReferencePlayer.Commands(Mvp, s);
+        Assert.DoesNotContain(orders, x => x is AssignWorkers);
+        var r = Simulation.Step(Mvp, s, orders);
+        Assert.Empty(r.Rejected);
+        var city = r.State.Cities["tel_aviv"];
+        Assert.Equal((city.Civilians, true), (city.Employed, city.JobsDefault));   // every civilian left (training takes its group first)
     }
 
     [Fact]

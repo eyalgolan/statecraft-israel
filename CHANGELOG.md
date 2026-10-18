@@ -29,6 +29,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   scale (24x real, an 8.5 m house as long as the steam train's locomotive), and stream after the first frame in a new
   `collection-special-buildings` bundle with the shikun and the workshop, which stay unplaced until a place and date are
   sourced (refs #707).
+- The craftsman and the job default (GDD Phase 3 PR 5; R-CRAFT-001, R-CRAFT-002, R-CITY-009; #736): a civilian trains
+  as a craftsman in a city with a completed industry project (3 turns, IL 0.5m a group), fills an ordinary job slot and
+  earns twice the job income, all labelled design values (Q-CRAFT-1 to Q-CRAFT-3). Each city's free jobs now fill on the
+  housing step at no Attention cost until an `AssignWorkers` order fixes that city's number (Q-JOBS-1). The reference
+  player stops sending `AssignWorkers`; only `scenario-mvp-absorb-first` moves (`,jobs=manual` on Tel Aviv).
 - Kiryat Shmona (founded 18 July 1949) and Beit Shemesh (15 December 1950, the National Library's December 1950
   under the monthly turn) join the yishuv sites in `content/sites.yaml`, each with a field site in its hex; the
   founding days are the owner's (#785), and the rows stay draft. The reference player builds them in id order, so

@@ -247,7 +247,7 @@ namespace Statecraft.Sim
                 var k = c.ProjectKinds.First(x => x.Id == p.Kind);
                 var x = s.Cities[p.City];
                 var condition = x.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
-                s.Cities[p.City] = new City(x.Id, x.HousingCapacity + k.Capacity, x.JobSlots + k.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition);
+                s.Cities[p.City] = new City(x.Id, x.HousingCapacity + k.Capacity, x.JobSlots + k.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition, x.Craftsmen, x.JobsDefault);
                 why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished"));
             }
         }

@@ -16,6 +16,11 @@ types:
     training_turns: 4                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3)
     training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3: IL millions per group)
   - { id: veteran_halutz, kind: unit }  # a halutz unit after rules.yaml mvp.veteran_halutz_service turns of work (R-VET-001; D-D9); not trained
+  - id: craftsman                        # civilian to craftsman, through craft training (D-D4, Q-CRAFT-1; R-CRAFT-001)
+    kind: population                     # a count per city (D-A2)
+    facility: industry                   # a city with a completed industry project (projects.yaml, R-PROJ-003)
+    training_turns: 3                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3, D-D4: Q-CRAFT-3)
+    training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3, D-D4: Q-CRAFT-3, IL millions per group)
 # Phase 5's military types (R-UNIT-001; Q-UNIT-1, owner, 15 October 2026; #741, owner, 18 October 2026: "all defaults").
 # A side and a class only: movement points come with movement (Phase 5 PR 5), strength from the unit's sourced row or
 # its cohort (Q-UNIT-4) and upkeep with Phase 5 PR 3. The recruit stays a count per city until PR 3; the enemy types come in PR 4.

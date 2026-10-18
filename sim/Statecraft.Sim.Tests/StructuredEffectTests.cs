@@ -91,7 +91,8 @@ from: 1948-05-15
         var y = s.Cities["town_a"];
         Assert.Equal(x.HousingCapacity + 3, y.HousingCapacity);
         Assert.Equal(x.Employed, y.JobSlots);
-        Assert.Equal((x.Civilians, x.Employed, x.Refugees, x.Recruits), (y.Civilians, y.Employed, y.Refugees, y.Recruits));
+        Assert.Equal((x.Civilians, x.Employed, x.Refugees, x.Recruits, x.Craftsmen, x.JobsDefault),
+            (y.Civilians, y.Employed, y.Refugees, y.Recruits, y.Craftsmen, y.JobsDefault));
         Assert.Contains(why, w => w.System == "events" && w.Target == "town_a.housing_capacity" && w.Delta == 3);
         Assert.Contains(why, w => w.System == "events" && w.Target == "town_a.job_slots" && w.Delta == x.Employed - x.JobSlots);
     }
@@ -197,8 +198,8 @@ from: 1948-05-15
         var y = s.Cities["town_a"];
         var want = Math.Min(1.0, Math.Max(0.0, start + delta));
         Assert.Equal(want, y.Condition!.Value, 12);
-        Assert.Equal((x.HousingCapacity, x.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits),
-            (y.HousingCapacity, y.JobSlots, y.Civilians, y.Employed, y.Refugees, y.Recruits));
+        Assert.Equal((x.HousingCapacity, x.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, x.Craftsmen, x.JobsDefault),
+            (y.HousingCapacity, y.JobSlots, y.Civilians, y.Employed, y.Refugees, y.Recruits, y.Craftsmen, y.JobsDefault));
         Assert.Equal(other, s.Cities["town_b"].Canonical());   // R-HOUSE-001: per city
         var cause = Assert.Single(why, w => w.Target == "town_a.condition");
         Assert.Equal(want - start, cause.Delta, 12);

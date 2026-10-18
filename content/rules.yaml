@@ -31,6 +31,7 @@ mvp:
   end: 1952-01-15
   people_per_unit: 1000                  # DESIGN VALUE: owner-set balance, not a historical figure (D-A1: people in one population unit)
   income_per_job_per_year: 0.06          # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per employed unit a year)
+  craftsman_income_multiple: 2           # DESIGN VALUE: owner-set balance, not a historical figure (D-D4, Q-CRAFT-2: an employed craftsman earns this times income_per_job_per_year; R-CRAFT-002)
   # R-MONEY-002, option 3 (owner, 18 October 2026, #884): ordinary spending already represents aggregate public expense,
   # so no civilian place pays upkeep in the MVP. These are design values, not claims that historical upkeep was zero.
   city_upkeep_per_year: 0.0              # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per city a year)

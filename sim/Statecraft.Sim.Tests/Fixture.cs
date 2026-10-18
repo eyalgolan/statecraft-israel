@@ -224,6 +224,7 @@ series:
 mvp:
   people_per_unit: 10
   income_per_job_per_year: 1.2
+  craftsman_income_multiple: 2
   city_upkeep_per_year: 0
   housing_upkeep_per_year: 0
   industry_upkeep_per_year: 0
@@ -268,6 +269,7 @@ types:
   - { id: refugee, kind: population }
   - { id: recruit, kind: population, facility: military_camp, training_turns: 2, training_cost: 0.5 }
   - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: 0.25 }
+  - { id: craftsman, kind: population, facility: industry, training_turns: 3, training_cost: 0.75 }
 ";
 
     /// <summary>The three city project kinds (R-PROJ-001). Fixture values, not the game's.</summary>
