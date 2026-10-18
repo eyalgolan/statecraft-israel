@@ -6,6 +6,11 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
+  - glob: "docs/evidence/998/*.png"
+    licence: CC-BY-4.0
+    source: "Unity EditMode UI captures for issue #998, 18 October 2026: the repository's Game.uxml, PanelSettings, fonts and presenters. Cropped from English 1280x720 and Hebrew 390x844 renders before and after the hint change."
+    status: verified
+    note: "UI only, against a black background; no world scene. Screenshots are engine output, not generated artwork. See docs/evidence/998/README.md for the test results and capture method."
   # --- AI-generated concept art: CC0 / no rights claimed (LICENSING.md); published 2026-10-10 before D5 was checked ---
   - glob: "promo/final/0[1-8]-*.png"
     licence: CC0-1.0

@@ -110,7 +110,7 @@ public class GameSceneTests
         var root = Boot();
         Assert.IsNotNull(root.Bridge);
         Assert.AreEqual(root.Bridge!.State.Date.Year.ToString(System.Globalization.CultureInfo.InvariantCulture), Ui.Q<Label>("year").text);
-        Assert.AreEqual("Click the map to inspect a hex", Ui.Q<Label>("info-title").text);
+        Assert.AreEqual("Click the map to inspect a hex; right-drag to move the map", Ui.Q<Label>("info-title").text);
         Assert.AreEqual(new DateTime(1948, 5, 15), root.Bridge.State.Date, "no autosave: a new game");
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         Assert.AreSame(Object.FindFirstObjectByType<MapScene>(), pointer.Map);

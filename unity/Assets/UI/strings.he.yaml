@@ -183,7 +183,7 @@ card.offices_separator: " · "
 # The tag on the selected Cabinet seat's card (PersonCard; #41 M6). Not "נבחר": on a minister's card in a game about the
 # Knesset it reads as "elected". "מסומן" agrees with the card (כרטיס), masculine. For the native reviewer (#564).
 card.selected: "מסומן"
-info.hint: "יש ללחוץ על המפה כדי לבדוק משושה"
+info.hint: "לחיצה על המפה לבדיקת משושה; גרירה בלחצן הימני להזזת המפה"
 info.off_map: "מחוץ למפה"
 info.hex: "{0} · גובה {1:N0} מ׳"
 info.region: "{0}, {1} (נפות המנדט, 1947)"

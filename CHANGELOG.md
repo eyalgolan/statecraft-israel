@@ -106,6 +106,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   and stream after the first frame (#725).
 
 ### Fixed
+- The map's English and Hebrew hints explain that dragging with the right mouse button moves the map (#998).
 - MATKOT's building models up close (#700) stand at one world scale, set by the steam train the map runs: a typical
   8.5 m house is as long as the locomotive's car (about 204 m), so every model is 24x its building's real size
   (`SettlementKits.ModelScale`), keeps its own proportions and no longer fills the kit's plot; a plot holds a small
