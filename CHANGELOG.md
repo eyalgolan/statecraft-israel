@@ -19,6 +19,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   only sourced `arab_town` rows of `settlements_1948.yaml` and ships empty until a person and the sensitivity review
   have checked its rows. The state is written into the state hash only when set, so no golden moves (R-CTRL-001 to
   R-CTRL-003; refs #795).
+- MATKOT's shikun housing model stands at Ramat HaHayal, Tel Aviv (Wikidata Q2776362), from 1 January 1951: most
+  families moved in during 1950 (Balslev, Iyunim Bitkumat Israel 23, p. 247), and the owner ruled on 18 October 2026
+  that the year-level date starts after that year. Like the other #707 buildings it draws only close up, streams after
+  the first frame in `collection-special-buildings`, and keeps clear of the towns, routes, unit tokens, civilians and
+  wildlife (refs #707, #1068).
 - The military unit record (GDD Phase 5 PR 2): a unit can hold a side, a strength and a standing order with its target,
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the
@@ -42,8 +47,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   from 13 July 1948 and Netanya's industrial zone from 28 July 1950, clear of the towns, routes, unit tokens, civilians
   (#666) and wildlife (#670), with the kit trees on them left out. They are sized at the #700 buildings' one world
   scale (24x real, an 8.5 m house as long as the steam train's locomotive), and stream after the first frame in a new
-  `collection-special-buildings` bundle with the shikun and the workshop, which stay unplaced until a place and date are
-  sourced (refs #707).
+  `collection-special-buildings` bundle with the shikun and the workshop; the workshop stays unplaced until a place and
+  date are sourced (refs #707).
 - The craftsman and the job default (GDD Phase 3 PR 5; R-CRAFT-001, R-CRAFT-002, R-CITY-009; #736): a civilian trains
   as a craftsman in a city with a completed industry project (3 turns, IL 0.5m a group), fills an ordinary job slot and
   earns twice the job income, all labelled design values (Q-CRAFT-1 to Q-CRAFT-3). Each city's free jobs now fill on the

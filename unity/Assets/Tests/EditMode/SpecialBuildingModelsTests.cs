@@ -30,7 +30,10 @@ namespace Statecraft.Game.Tests
             var industry = SpecialBuildingModels.Placements(new DateTime(1950, 7, 28));
             Assert.AreEqual(1, industry.Count(x => x.Model == SpecialBuildingModels.Factory), "Netanya's sourced industrial zone");
             CollectionAssert.DoesNotContain(industry.Select(x => x.Model), SpecialBuildingModels.Workshop, "no sourced workshop placement");
-            CollectionAssert.DoesNotContain(industry.Select(x => x.Model), SpecialBuildingModels.Shikun, "no sourced named estate");
+            CollectionAssert.DoesNotContain(SpecialBuildingModels.Placements(new DateTime(1950, 12, 31)).Select(x => x.Model),
+                SpecialBuildingModels.Shikun, "Ramat HaHayal starts after the sourced year 1950");
+            Assert.AreEqual(1, SpecialBuildingModels.Placements(new DateTime(1951, 1, 1))
+                .Count(x => x.Model == SpecialBuildingModels.Shikun), "Ramat HaHayal on the owner-ruled year-level date");
         }
 
         [Test]
@@ -102,7 +105,7 @@ namespace Statecraft.Game.Tests
                 done(found ? AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)) : null);
         }
 
-        static readonly DateTime After = new DateTime(1950, 8, 1);
+        static readonly DateTime After = new DateTime(1951, 1, 1);
 
         /// <summary>Each sourced model stands near its sourced point, clear of the towns' footprints (and so their labels),
         /// the routes, the unit tokens present from that day and each other, upright on the prefab's own axis conversion,
@@ -121,10 +124,10 @@ namespace Statecraft.Game.Tests
             var props = people.Wanted.Select(w => (new Vector2(w.At.x, w.At.z), CivilianPeople.FigureClearanceM))
                 .Concat(WildlifeLayer.Wants(map).Select(w => (w.At, 0.5f * WildlifeLayer.SizeM))).ToList();
             var layer = SpecialBuildingModels.ShowAt(map, After)!;
-            CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory },
+            CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun },
                 asked.Select(a => a.id), "one request per placed model");
             AnswerAll();
-            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory" }, layer.Placed.Select(p => p.Key));
+            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun" }, layer.Placed.Select(p => p.Key));
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var wants = SpecialBuildingModels.Placements(After).ToDictionary(w => w.Key);
@@ -177,7 +180,7 @@ namespace Statecraft.Game.Tests
 
         /// <summary>The owner on v0.1.1 (18 October 2026): MATKOT's buildings were "way bigger then the train". The #707
         /// buildings stand at the #700 buildings' one world scale (an 8.5 m house as long as the steam train's locomotive car,
-        /// about 204 m: 24x real): the fort and the factory are 3 to 4 locomotive cars long, the barracks 2.5 to 3.25, and
+        /// about 204 m: 24x real): the fort, the factory and the shikun are 3 to 4 locomotive cars long, the barracks 2.5 to 3.25, and
         /// none is longer than the whole service train (about 816 m).</summary>
         [Test]
         public void EveryModelIsSizedAgainstTheLocomotive()
@@ -191,8 +194,9 @@ namespace Statecraft.Game.Tests
             var bands = new Dictionary<string, (float lo, float hi)>
             {
                 [SpecialBuildingModels.Tegart] = (3f, 4f), [SpecialBuildingModels.Factory] = (3f, 4f), [SpecialBuildingModels.Barracks] = (2.5f, 3.25f),
+                [SpecialBuildingModels.Shikun] = (3f, 4f),
             };
-            Assert.AreEqual(4, layer.Placed.Count);
+            Assert.AreEqual(5, layer.Placed.Count);
             foreach (var p in layer.Placed)
             {
                 var b = layer.transform.Find(p.Key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
@@ -219,7 +223,7 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(fort != null && fort.transform.parent == layer.transform, "the same date keeps the same models");
             SpecialBuildingModels.ShowAt(map, After);
             AnswerAll();
-            Assert.AreEqual(4, layer.Placed.Count);
+            Assert.AreEqual(5, layer.Placed.Count);
             SpecialBuildingModels.ShowAt(map, new DateTime(1948, 5, 16));
             CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");
             Assert.AreEqual(1, layer.transform.childCount);
