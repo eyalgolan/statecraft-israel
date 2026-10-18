@@ -186,7 +186,8 @@ public class HebrewNameTests
     }
 
     /// <summary>The owner's 2026-10-14 answers: places in their 1948 form, parties by their short common names, the First
-    /// Knesset mirroring its English name, a feminine title where a woman held the office.</summary>
+    /// Knesset mirroring its English name, a feminine title where a woman held the office; and of 2026-10-18 (#875):
+    /// Hatzohar by its full name, not the acronym.</summary>
     [Fact]
     public void TheOwnerRulingsHold()
     {
@@ -196,6 +197,7 @@ public class HebrewNameTests
         Assert.Equal("לוד", Settlement("lod"));
         Assert.Equal("מפא״י", C.Parties.Single(p => p.Id == "mapai").NameHe);
         Assert.Equal("מק״י", C.Parties.Single(p => p.Id == "maki").NameHe);
+        Assert.Equal("התנועה הרוויזיוניסטית", C.Parties.Single(p => p.Id == "hatzohar").NameHe);
         Assert.Equal("האספה המכוננת (הכנסת הראשונה)", C.Legislatures.Single(l => l.Id == "first_knesset").BodyHe);
         var labour = C.Offices.Single(o => o.Id == "labour_minister");
         Assert.Equal(("שר העבודה", "שרת העבודה"), (labour.TitleHe, labour.TitleHeF));
