@@ -121,6 +121,10 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   in its text, not the acronym הצה״ר; it stays flagged `agent-checked` for a native speaker (refs #875, #564).
 - The Burma Road convoy truck and lorry stop on 7 December 1948, the approximate boundary when the Road of Valour
   replaced the Burma Road for regular Jerusalem traffic; the Burma Road itself stays drawn (refs #1040, #1051).
+- Up close, the unit tokens' figures are MATKOT's skinned 1948 Collection figures playing their idle clip: below the town
+  models' 40 km switch, back to the still far mesh beyond 45 km. The near figures are asked for only once the camera first
+  comes close, streamed like the far ones, and the far mesh stays when one is missing. C05, the pioneer veteran, has no
+  idle clip and keeps his still model (owner, 18 October 2026: "Keep its still model") (refs #665).
 - MATKOT's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom
   (refs #663, #917, #659; owner, 18 October 2026: "Whole model far, buildings near"). Each mapped town's model stands
   on the town's core (where most of its building models stand, inside its kit footprint, clear of the next town and of

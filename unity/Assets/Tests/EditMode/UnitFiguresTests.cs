@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 using UnityEditor;
@@ -64,6 +65,7 @@ public class UnitFiguresTests
         .SelectMany(t => t.Cast<Transform>().Where(x => prefixes.Any(x.name.StartsWith))).ToList();
 
     static GameObject Prefab(string id) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
+    static GameObject NearPrefab(string id) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
 
     /// <summary>The model ids a token draws: its figures', then its vehicles'.</summary>
     static IEnumerable<string> ModelsOf(UnitToken t) =>
@@ -222,6 +224,8 @@ public class UnitFiguresTests
                 var centre = v.parent.Find(UnitPlinth.PlinthName).position;
                 Assert.Less(new Vector2(v.position.x - centre.x, v.position.z - centre.z).magnitude, 0.75f * plinth, $"{v.parent.name}/{v.name}: on its base");
             }
+            Assert.IsTrue(map.Terrain.transform.Find(UnitLayer.RootName).TryGetComponent<UnitFigureDetail>(out _),
+                "the close-zoom switch stands on the unit layer's root, and goes with it");
             // A roster change rebuilds the tokens: the new pieces are dressed at once, with no new request.
             int n = asked.Count;
             Assert.IsTrue(layer.Show(C, StateAt(July12, 0.3)), "the call-up changes the roster");
@@ -230,6 +234,136 @@ public class UnitFiguresTests
             Assert.AreEqual(n, asked.Count, "a model that has arrived is not asked for again");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>A figure standing on its own (a showcase figure, by the code-built rifleman), dressed with model
+    /// <paramref name="id"/> once its far model is answered.</summary>
+    static Transform DressedFigure(Transform root, string name, string id, Vector3 at, List<(string id, CollectionDetail detail, Action<GameObject> done)> asked)
+    {
+        var piece = UnitShowcase.Piece(root, name, UnitModels.Rifleman(UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, name),
+            Load("Terrain"), at, Quaternion.Euler(0f, 30f, 0f), UnitShowcase.FigureScale).transform;
+        UnitFigures.Dress(piece, id);
+        asked.Single(a => a.id == id && a.detail == CollectionDetail.Far).done(Prefab(id));
+        Assert.IsTrue(UnitFigures.Dressed(piece), $"{name}: the far model is on");
+        return piece;
+    }
+
+    static Renderer[] FarOf(Transform piece) => piece.Find(UnitFigures.ModelName).GetChild(0).GetComponentsInChildren<Renderer>(true);
+    static Transform NearOf(Transform piece) => piece.Find(UnitFigures.ModelName).Find(UnitFigureDetail.NearName);
+
+    /// <summary>Issue #665, close zoom (#663: "full detail and the idle clip only at close zoom"): a camera that comes in
+    /// below TownModelLayer.CloseEnterM asks for the near model (and not before); once it arrives the figure shows it, skinned
+    /// and playing its idle clip, as tall as the far model and on its feet, under the same holder (so the camera's yaw, #644,
+    /// turns it too); the far mesh is off. The band's hysteresis holds it to CloseExitM; beyond, the far mesh is back and the
+    /// clip stops. Coming close again asks for nothing new.</summary>
+    [Test]
+    public void AFigureShowsItsSkinnedIdleModelOnlyCloseUp()
+    {
+        var root = new GameObject("Units");
+        var asked = new List<(string id, CollectionDetail detail, Action<GameObject> done)>();
+        UnitFigures.Source = (id, detail, done) => asked.Add((id, detail, done));
+        var camera = TopDownCamera(root.transform);
+        try
+        {
+            var piece = DressedFigure(root.transform, "Rifleman0", UnitFigures.SabraPioneer, Vector3.zero, asked);
+            Assert.IsTrue(root.TryGetComponent<UnitFigureDetail>(out var detail), "the switch stands on the figures' root");
+            int Nears() => asked.Count(a => a.detail == CollectionDetail.Near);
+
+            View(detail, camera, TownModelLayer.CloseEnterM + 1f);
+            Assert.AreEqual(0, Nears(), "just beyond the switch the near model is not asked for");
+            Assert.IsNull(NearOf(piece));
+            Assert.IsTrue(FarOf(piece).All(r => !r.forceRenderingOff), "far off: the far mesh draws");
+
+            View(detail, camera, TownModelLayer.CloseEnterM - 1f);
+            Assert.AreEqual(1, Nears(), "close: the near model is asked for, once");
+            Assert.IsTrue(FarOf(piece).All(r => !r.forceRenderingOff), "the far mesh draws while the near one streams");
+            asked.Single(a => a.detail == CollectionDetail.Near).done(NearPrefab(UnitFigures.SabraPioneer));
+
+            var holder = piece.Find(UnitFigures.ModelName);
+            var near = NearOf(piece);
+            Assert.IsNotNull(near, "the near model stands beside the far one");
+            Assert.AreEqual(holder, near.parent, "under the same holder, so the figure's yaw turns it (#644)");
+            Assert.AreEqual(NearPrefab(UnitFigures.SabraPioneer).transform.localRotation, near.localRotation, "the prefab keeps its own rotation (the FBX axis turn)");
+            Assert.IsTrue(near.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length > 0, "the near model is the skinned one");
+            Assert.IsTrue(FarOf(piece).All(r => r.forceRenderingOff), "close: the far mesh is off");
+            Assert.IsTrue(near.GetComponentsInChildren<Renderer>(true).All(r => !r.forceRenderingOff), "close: the near model draws");
+            var animators = near.GetComponentsInChildren<Animator>(true);
+            Assert.Greater(animators.Length, 0, "the near model has its animator");
+            Assert.IsTrue(animators.All(a => a.enabled && a.runtimeAnimatorController != null), "close: the idle clip plays");
+            // Sized by what Unity draws: the renderers' own world bounds (a skinned mesh's through its bones), not by BoxIn.
+            var far = WorldBounds(holder.GetChild(0)); var box = WorldBounds(near);
+            Assert.AreEqual(far.size.y, box.size.y, 0.05f * far.size.y, "as tall as the far model");
+            Assert.AreEqual(far.min.y, box.min.y, 0.05f * far.size.y, "feet where the far model's are");
+            Assert.AreEqual(0f, new Vector2(box.center.x - far.center.x, box.center.z - far.center.z).magnitude, 0.1f * far.size.y, "centred over them");
+
+            View(detail, camera, TownModelLayer.CloseExitM - 1f);
+            Assert.IsTrue(FarOf(piece).All(r => r.forceRenderingOff), "the band's hysteresis: still close inside CloseExitM");
+            View(detail, camera, TownModelLayer.CloseExitM + 1f);
+            Assert.IsTrue(FarOf(piece).All(r => !r.forceRenderingOff), "beyond the band: the far mesh again");
+            Assert.IsTrue(near.GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff), "and the near model off");
+            Assert.IsTrue(animators.All(a => !a.enabled), "the idle clip stops far off");
+
+            View(detail, camera, TownModelLayer.CloseEnterM - 1f);
+            Assert.AreEqual(1, Nears(), "close again: nothing asked for anew");
+            Assert.AreEqual(1, piece.Find(UnitFigures.ModelName).Cast<Transform>().Count(c => c.name == UnitFigureDetail.NearName), "one near model");
+            Assert.IsTrue(animators.All(a => a.enabled), "the idle clip plays again");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    /// <summary>Close up, a near model that never comes (null: a missing or damaged bundle) leaves the far mesh drawing (fail
+    /// open); and C05, the pioneer veteran, has no idle clip (walk and run only), so his near model is never asked for and he
+    /// keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"), while the figures beside him swap.</summary>
+    [Test]
+    public void AMissingNearModelKeepsTheFarMeshAndC05KeepsHisStillModel()
+    {
+        var root = new GameObject("Units");
+        var asked = new List<(string id, CollectionDetail detail, Action<GameObject> done)>();
+        UnitFigures.Source = (id, detail, done) => asked.Add((id, detail, done));
+        var camera = TopDownCamera(root.transform);
+        try
+        {
+            var c04 = DressedFigure(root.transform, "C04", UnitFigures.SabraPioneer, Vector3.zero, asked);
+            var c05 = DressedFigure(root.transform, "C05", UnitFigures.PioneerVeteran, Vector3.right, asked);
+            var c06 = DressedFigure(root.transform, "C06", UnitFigures.YoungRecruit, Vector3.left, asked);
+            Assert.IsNotNull(NearPrefab(UnitFigures.PioneerVeteran), "C05 has a near prefab, so leaving it out is a choice (not a vacuous pass)");
+            View(root.GetComponent<UnitFigureDetail>(), camera, TownModelLayer.CloseEnterM - 1f);
+            var nears = asked.Where(a => a.detail == CollectionDetail.Near).ToList();
+            CollectionAssert.AreEquivalent(new[] { UnitFigures.SabraPioneer, UnitFigures.YoungRecruit }, nears.Select(a => a.id),
+                "C05 has no idle clip: his near model is never asked for");
+            nears.Single(a => a.id == UnitFigures.SabraPioneer).done(null);
+            nears.Single(a => a.id == UnitFigures.YoungRecruit).done(NearPrefab(UnitFigures.YoungRecruit));
+            Assert.IsNull(NearOf(c04), "C04's near model did not come");
+            Assert.IsTrue(FarOf(c04).All(r => !r.forceRenderingOff), "so C04's far mesh draws (fail open)");
+            Assert.IsNull(NearOf(c05), "C05 has no near model");
+            Assert.IsTrue(FarOf(c05).All(r => !r.forceRenderingOff), "C05 keeps his still far model close up");
+            Assert.IsNotNull(NearOf(c06), "C06 swaps beside him");
+            Assert.IsTrue(FarOf(c06).All(r => r.forceRenderingOff));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    static Bounds WorldBounds(Transform model)
+    {
+        var rs = model.GetComponentsInChildren<Renderer>(true);
+        var b = rs[0].bounds;
+        foreach (var r in rs) b.Encapsulate(r.bounds);
+        return b;
+    }
+
+    static Camera TopDownCamera(Transform parent)
+    {
+        var camera = new GameObject("Camera").AddComponent<Camera>();
+        camera.transform.SetParent(parent, false);
+        camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);   // looking straight down: the view distance is its height
+        return camera;
+    }
+
+    static void View(UnitFigureDetail detail, Camera camera, float distanceM)
+    {
+        camera.transform.position = new Vector3(0f, distanceM, 0f);
+        Assert.AreEqual(distanceM, TownModelLayer.ViewDistance(camera), 1f);
+        detail.Choose(default, camera);
     }
 
     /// <summary>The Arab Legion and the Arab Liberation Army are drawn only once their own figure has arrived, three of it on

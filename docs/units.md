@@ -186,10 +186,16 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   the figures as the aircraft and the ship are, not to scale, so it fits on the base.
 - **C05's pose:** he had no idle clip and shipped in his rest pose, a T-pose. His static meshes are now posed at the first
   frame of his own walk (`tools/slim_collection.py`, `POSE_CLIP`).
+- **Close zoom:** below the town models' switch (`TownModelLayer.CloseEnterM`, 40 km; far again beyond `CloseExitM`,
+  45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
+  clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
+  camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"). The vehicles
+  stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
-  fail open).
+  fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 
 ### What the player sees
 
