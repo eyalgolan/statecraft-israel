@@ -31,6 +31,14 @@ mvp:
   end: 1952-01-15
   people_per_unit: 1000                  # DESIGN VALUE: owner-set balance, not a historical figure (D-A1: people in one population unit)
   income_per_job_per_year: 0.06          # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per employed unit a year)
+  # R-MONEY-002, option 3 (owner, 18 October 2026, #884): ordinary spending already represents aggregate public expense,
+  # so no civilian place pays upkeep in the MVP. These are design values, not claims that historical upkeep was zero.
+  city_upkeep_per_year: 0.0              # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per city a year)
+  housing_upkeep_per_year: 0.0           # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per permanent-housing project a year)
+  industry_upkeep_per_year: 0.0          # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per industry project a year)
+  transit_camp_upkeep_per_year: 0.0      # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per transit camp a year)
+  military_camp_upkeep_per_year: 0.0     # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per military camp a year)
+  hakhshara_upkeep_per_year: 0.0         # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per Hakhshara a year)
   # The day the cities start taking arrivals (R-CITY-003; Q-ARRV-3, owner, 15 October 2026, #375): the census day of their
   # start values, 8 November 1948 (CBS Statistical Abstract of Israel No. 14, Table 11, pp. 30-31). The census already
   # counts the people who arrived from 15 May, so the cities take none before it; the national head count takes them all.
@@ -114,7 +122,7 @@ treasury_start: 20
 fx_start: 40
 # Taxes finance the ordinary budget: FY 1950/51 IL 60 million, approved 29 June 1950
 # (https://en.wikipedia.org/wiki/1950_in_Israel, checked 2026-10-10). 60m / ~1.10m Jews (CBS average 1950) = 0.0000545.
-tax_per_capita_per_year: 0.0000545
+tax_per_capita_per_year: 0.0000545       # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: derived ordinary-revenue abstraction retained by #884)
 # Spending above taxes is borrowed. The gap is set so 1950-51 borrowing matches the rise in internal debt, IL 65.4m (1950)
 # + 33.0m (1951) = 98.4m (Michaely Table 5-2, same chapter). The 1951 fiscal tightening is not modelled, so the model
 # matches the two-year total, not each year. Job income (R-CITY-002) also reaches the Treasury, so the gap must cover it
@@ -122,7 +130,7 @@ tax_per_capita_per_year: 0.0000545
 # no workers) x mvp.income_per_job_per_year 0.06 x 2 years = 25.32m, and (98.4m - 6m reserve call-up + 25.32m) / ~2.40m
 # person-years = 0.00004905 per person. Spending = tax 0.0000545 + 0.00004905 = 0.00010355, rounded to 0.0001036.
 # (M3's value was 0.0000545 + 0.0000385 = 0.000093, derived before job income existed.)
-spending_per_capita_per_year: 0.0001036
+spending_per_capita_per_year: 0.0001036  # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: derived debt-path calibration retained by #884)
 # Exports cover under a third of imports (spec section 3; EconomyCalibrationTests checks it every turn of 1950-51).
 exports_per_year: 40
 imports_per_capita_per_year: 0.00025

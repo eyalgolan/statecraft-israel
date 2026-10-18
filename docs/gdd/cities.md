@@ -39,7 +39,10 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - The yishuvim part of D-B4: Phase 4.
 - Kit density on the map by housing condition (Q-UI-1): left out of this phase (decided 15 October 2026 [S3]).
 - No text in this phase names abandoned Arab housing; the panel and the absorb card describe housing in general terms, and any later text goes through D-F1 review (Q-SENS-1, owner, 15 October 2026 [S3]).
-- Upkeep (D-C6): Q-MONEY-2 adds no upkeep "until Phase 3 has cities to charge" (the Phase 2 plan's Q-MONEY-2 row [S12]), and `docs/gdd/cutover-resource-layer.md` says the values arrive in Phase 3, but no Phase 3 PR owns them yet; recorded for the owner to assign. Income is owned: Q-MONEY-2 keeps the legacy per-head tax and spending until Phase 3, with job income on top, and `income_per_job_per_year` stays a labelled design value [S12].
+- Upkeep and income (D-C6): the owner chose option 3 on 18 October 2026 (#884). Cities, permanent housing, industry,
+  transit camps, military camps and Hakhsharot each have IL 0m annual upkeep in the MVP; the values are labelled design
+  values, not historical claims. Step 7 pays a kind only when its configured rate is non-zero (R-MONEY-002). The MVP
+  keeps the per-head tax and spending alongside job income at the accepted calibrated values. Phase 5 owns unit upkeep.
 
 ## Sources
 

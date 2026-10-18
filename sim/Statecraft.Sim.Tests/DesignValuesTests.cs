@@ -24,6 +24,14 @@ public class DesignValuesTests
         ("rules.yaml", "attention_cost.stop_work"),
         ("rules.yaml", "mvp.people_per_unit"),
         ("rules.yaml", "mvp.income_per_job_per_year"),
+        ("rules.yaml", "mvp.city_upkeep_per_year"),
+        ("rules.yaml", "mvp.housing_upkeep_per_year"),
+        ("rules.yaml", "mvp.industry_upkeep_per_year"),
+        ("rules.yaml", "mvp.transit_camp_upkeep_per_year"),
+        ("rules.yaml", "mvp.military_camp_upkeep_per_year"),
+        ("rules.yaml", "mvp.hakhshara_upkeep_per_year"),
+        ("rules.yaml", "tax_per_capita_per_year"),
+        ("rules.yaml", "spending_per_capita_per_year"),
         ("rules.yaml", "mvp.build_yishuv_turns"),
         ("rules.yaml", "mvp.build_yishuv_cost"),
         ("rules.yaml", "mvp.build_camp_turns"),
@@ -141,7 +149,9 @@ public class DesignValuesTests
                         {
                             var k = ((YamlScalarNode)kv.Key).Value!;
                             var child = key == "" ? k : key + "." + k;
-                            var scope = inScope || (file != "rules.yaml" && file != "model.yaml") || (file == "rules.yaml" && k == "mvp") || (key == "attention_cost" && AttentionSystem.IsGddKind(k));
+                            var scope = inScope || (file != "rules.yaml" && file != "model.yaml") || (file == "rules.yaml" && k == "mvp")
+                                || (file == "rules.yaml" && (k == "tax_per_capita_per_year" || k == "spending_per_capita_per_year"))
+                                || (key == "attention_cost" && AttentionSystem.IsGddKind(k));
                             Walk(kv.Value, child, scope);
                         }
                         break;
@@ -188,6 +198,9 @@ public class DesignValuesTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var m = c.Rules.Mvp!;
         Assert.Equal((1000, 0.06), (m.PeoplePerUnit, m.IncomePerJobPerYear));
+        Assert.Equal((0.0000545, 0.0001036), (c.Rules.TaxPerCapitaPerYear, c.Rules.SpendingPerCapitaPerYear));
+        Assert.Equal((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), (m.CityUpkeepPerYear!.Value, m.HousingUpkeepPerYear!.Value,
+            m.IndustryUpkeepPerYear!.Value, m.TransitCampUpkeepPerYear!.Value, m.MilitaryCampUpkeepPerYear!.Value, m.HakhsharaUpkeepPerYear!.Value));
         Assert.Equal((0.5, 1.0, 0.5), (c.Rules.AttentionCost["assign_workers"], c.Rules.AttentionCost["train"], c.Rules.AttentionCost["cancel_training"]));
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));
@@ -221,5 +234,7 @@ public class DesignValuesTests
         Assert.Contains("attention_cost.train", rules);
         Assert.DoesNotContain("attention_cost.set_policy", rules);
         Assert.DoesNotContain("treasury_start", rules);
+        Assert.Contains("tax_per_capita_per_year", rules);
+        Assert.Contains("spending_per_capita_per_year", rules);
     }
 }

@@ -82,6 +82,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the single building models (#700), with the same hysteresis band. Mosques, churches, walls and ports keep the kit.
   The 110 km view-distance switch and the "beside the town" spot are gone; a ma'abara or shikun still stands beside its
   camp or housing project.
+- Money keeps both the calibrated per-head tax and city job income. Resolution step 7 now supports civilian-place upkeep (R-MONEY-002), with the owner-approved MVP rate of IL 0m a year for cities, permanent housing, industry, transit camps, military camps and Hakhsharot; military-unit upkeep remains Phase 5 (refs #884).
 - The population-tier badge on the twelve city and town pills keeps the values it shipped with, now owner-approved: tiers 1
   to 9 doubling from 1,000 people, at every zoom, at the start of the name and mirrored in Hebrew (owner, 18 October 2026,
   "Accept as shipped"). Rosh Pinna keeps tier 1 from its May 1948 figure of 350, which the data marks `wikipedia-only`

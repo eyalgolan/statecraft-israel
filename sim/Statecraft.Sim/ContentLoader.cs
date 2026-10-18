@@ -1081,6 +1081,15 @@ namespace Statecraft.Sim
                 if (m.PeoplePerUnit != c.Rules.Mvp!.PeoplePerUnit)
                     throw new ContentException(file, "mvp.people_per_unit", "must be the same in every era (arrivals are counted in one unit size)");
                 if (!(m.IncomePerJobPerYear >= 0 && IsFinite(m.IncomePerJobPerYear))) throw new ContentException(file, "mvp.income_per_job_per_year", "must be a finite number >= 0");
+                // R-MONEY-002: explicit values keep an omitted kind from silently becoming free upkeep.
+                foreach (var (key, v) in new[] {
+                    ("city_upkeep_per_year", m.CityUpkeepPerYear), ("housing_upkeep_per_year", m.HousingUpkeepPerYear),
+                    ("industry_upkeep_per_year", m.IndustryUpkeepPerYear), ("transit_camp_upkeep_per_year", m.TransitCampUpkeepPerYear),
+                    ("military_camp_upkeep_per_year", m.MilitaryCampUpkeepPerYear), ("hakhshara_upkeep_per_year", m.HakhsharaUpkeepPerYear) })
+                {
+                    if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
+                    if (!(v >= 0 && IsFinite(v.Value))) throw new ContentException(file, "mvp." + key, "must be a finite number >= 0");
+                }
                 // R-CITY-003: the cities count arrivals from one day; another day in a later era would lose or double-count units.
                 if (m.CityArrivalsFrom == default) throw new ContentException(file, "mvp.city_arrivals_from", "required when eras.yaml systems.loop is gdd");
                 if (m.CityArrivalsFrom != c.Rules.Mvp!.CityArrivalsFrom) throw new ContentException(file, "mvp.city_arrivals_from", "must be the same in every era (the cities count arrivals from one day)");

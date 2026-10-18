@@ -46,6 +46,15 @@ namespace Statecraft.Sim
             s.Treasury = 0;
         }
 
+        /// <summary>R-MONEY-002: pays civilian-place upkeep in step 7, prorated by the turn's share of a year.</summary>
+        public static void PayCivilianUpkeep(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
+        {
+            var cost = Cities.AnnualUpkeep(c, s, r) * yearFraction;
+            if (cost == 0) return;
+            why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (civilian upkeep)"));
+            PayOrBorrow(c, s, cost, "for civilian upkeep", why);
+        }
+
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
         {
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;

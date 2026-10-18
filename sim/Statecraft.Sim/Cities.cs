@@ -70,6 +70,30 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-MONEY-002: annual Money upkeep for the civilian places that exist at the start of step 7. Only completed
+        /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP.</summary>
+        public static double AnnualUpkeep(Content c, GameState s, MvpRules r)
+        {
+            var total = s.Cities.Count * r.CityUpkeepPerYear!.Value;
+            foreach (var p in s.CityProjects.Values)
+            {
+                if (p.BuiltOn == null) continue;
+                if (p.Kind == "housing") total += r.HousingUpkeepPerYear!.Value;
+                else if (p.Kind == "industry") total += r.IndustryUpkeepPerYear!.Value;
+                else if (p.Kind == "transit_camp") total += r.TransitCampUpkeepPerYear!.Value;
+            }
+            var military = c.Cities.Sum(x => x.Facilities.Count(f => f == "military_camp"));
+            var hakhsharot = c.Cities.Sum(x => x.Facilities.Count(f => f == "hakhshara"));
+            foreach (var w in s.Sites.Values)
+            {
+                if (w.BuiltOn == null) continue;
+                var site = c.Sites.First(x => x.Id == w.Site);
+                if (site.Kinds.Contains("military_camp")) military++;
+                if (site.Kinds.Contains("hakhshara")) hakhsharot++;
+            }
+            return total + military * r.MilitaryCampUpkeepPerYear!.Value + hakhsharot * r.HakhsharaUpkeepPerYear!.Value;
+        }
+
         /// <summary>R-CITY-004 (D-A5; D-D1, Q-HOUSE-1): no hard cap. Every refugee becomes a civilian, without a job, on the
         /// housing step; the people beyond the city's housing are its overflow (<see cref="Overflow"/>), still counted in it.
         /// Residents are housed automatically (Q-HOUSE-4).</summary>

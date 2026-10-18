@@ -224,6 +224,12 @@ series:
 mvp:
   people_per_unit: 10
   income_per_job_per_year: 1.2
+  city_upkeep_per_year: 0
+  housing_upkeep_per_year: 0
+  industry_upkeep_per_year: 0
+  transit_camp_upkeep_per_year: 0
+  military_camp_upkeep_per_year: 0
+  hakhshara_upkeep_per_year: 0
   city_arrivals_from: 1948-05-15
   build_yishuv_turns: 3
   build_yishuv_cost: 1.5

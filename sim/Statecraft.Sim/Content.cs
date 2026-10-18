@@ -467,6 +467,13 @@ namespace Statecraft.Sim
         public int PeoplePerUnit { get; set; }
         /// <summary>Money each employed unit earns a year, in IL millions (R-CITY-002).</summary>
         public double IncomePerJobPerYear { get; set; }
+        /// <summary>Annual civilian-place upkeep in IL millions (R-MONEY-002). Required in the GDD loop; the MVP values are 0.</summary>
+        public double? CityUpkeepPerYear { get; set; }
+        public double? HousingUpkeepPerYear { get; set; }
+        public double? IndustryUpkeepPerYear { get; set; }
+        public double? TransitCampUpkeepPerYear { get; set; }
+        public double? MilitaryCampUpkeepPerYear { get; set; }
+        public double? HakhsharaUpkeepPerYear { get; set; }
         /// <summary>The day the cities start taking arrivals: the census day their start values count (R-CITY-003, Q-ARRV-3).</summary>
         public DateTime CityArrivalsFrom { get; set; }
         /// <summary>The day the GDD game ends (R-LOOP-004; D-E5, 15 January 1952 in the real content), or null for the last

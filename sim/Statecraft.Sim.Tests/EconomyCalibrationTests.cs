@@ -14,7 +14,8 @@ using Statecraft.Sim;
 ///   (98.4m - 6m reserve call-up + 211 employed units x 0.06 x 2 years = 25.32m) / ~2.40m person-years = 0.00004905, so
 ///   spending = 0.0000545 + 0.00004905 = 0.0001036 (rounded); the run gives 98.7m. Before GDD Phase 3 PR 1 it was 0.000093
 ///   and the run gave 88.7m, the 9.6m of Tel Aviv's job income below the anchor;
-/// - the FY 1950/51 ordinary budget was IL 60m (en.wiki "1950 in Israel"): tax_per_capita is derived from it;
+/// - the FY 1950/51 ordinary budget was IL 60m (en.wiki "1950 in Israel"): tax_per_capita is derived from it and remains
+///   alongside job income (owner, 18 October 2026, #884, the accepted per-head-tax draft);
 /// - exports covered under a third of imports (spec section 3): exports and imports were chosen to satisfy it;
 /// - foreign currency ran out in autumn 1951 (FRUS 1951 v.V doc 513): capital_inflow_per_year is tuned to it.
 /// M3 has NO fully independent economy anchor. The one loose INDEPENDENT check: external debt rose IL 65.7m over 1950-51
