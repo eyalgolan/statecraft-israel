@@ -1,11 +1,13 @@
 #nullable enable
 using System.Collections.Generic;
+using Statecraft.Game.Map.Routes;
 using UnityEngine;
 
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Issue #659, owner ruling on #700: "Models up close only". Every building the kit places also gets one of
-    /// MATKOT's building models (<see cref="TownModel"/>), fitted to the same plot (<see cref="Fit"/>),
+    /// MATKOT's building models (<see cref="TownModel"/>), stood on the same plot at one world scale (<see cref="Fit"/>,
+    /// <see cref="ModelScale"/>),
     /// standing on the plot's ground level with a stone plinth below it where the ground falls away. Far off the kit's
     /// own buildings draw, exactly as before; up close (TownModelLayer.CloseEnterM) the models draw instead, with each
     /// town's close mesh (KitMesh.ToCloseMesh: its landmarks and palms without the kit buildings, plus the plinths). The
@@ -38,6 +40,19 @@ namespace Statecraft.Game.Map.Kits
         [System.ThreadStatic] static Dictionary<string, Settlement>? places;
         [System.ThreadStatic] static HashSet<string>? onceGiven;
 
+        /// <summary>The house the world scale is set by (m, real): the middle of the kit's default house, 7.5 to 10 m long
+        /// (SettlementKits.Pick).</summary>
+        public const float ReferenceHouseM = 8.5f;
+
+        /// <summary>The one world scale of MATKOT's building models (the owner on v0.1.1, 18 October 2026: the buildings were
+        /// "way bigger then the train" and Jaffa's stood over Tel Aviv's): the reference house is as long as the locomotive's
+        /// car of the steam train the map runs (ServiceTrain: MATKOT's locomotive and tender at RouteTrain.Scale x
+        /// ServiceTrain.ModelSize, about 816 m in ServiceTrain.Cars cars of about 204 m), so 204 / 8.5 = 24x a building's real
+        /// size, for every model. Before, each model filled its kit plot, at the kits' own symbolic 60x (city blocks) and 100x
+        /// (houses): a Tel Aviv block up to 1.6 km and a house 800 m, and Jaffa's 100x houses beside Tel Aviv's 60x blocks.
+        /// The kits far off keep their own scale.</summary>
+        public const float ModelScale = RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize / ServiceTrain.Cars / ReferenceHouseM;
+
         /// <summary>How far a house's model may be stretched or squashed upright from its own proportions to meet the kit's
         /// height (a one-room village house of two storeys would otherwise stand twice as tall as its model). The city blocks
         /// (Tel Aviv's four to eight storeys, #652; Jerusalem's, Haifa's and the moshava centres') take the kit's height exactly.</summary>
@@ -47,26 +62,29 @@ namespace Statecraft.Game.Map.Kits
         /// included) across its footprint.</summary>
         const float PlinthRiseM = 2.5f;
 
-        /// <summary>Fits <paramref name="model"/> to a plot: its longer side along the plot's longer side (turned a half turn
-        /// when <paramref name="flip"/>), scaled to fill <paramref name="w"/> x <paramref name="d"/>, standing on
-        /// <paramref name="ground"/>, <paramref name="h"/> tall (<paramref name="exactHeight"/>), or as near
-        /// <paramref name="h"/> as <see cref="MinStretch"/>..<see cref="MaxStretch"/> of the model's own proportions allow.</summary>
-        public static ModelInstance Fit(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float ground, bool exactHeight, bool flip)
+        /// <summary>Stands <paramref name="model"/> on a plot at the world scale: the plot's building is <paramref name="w"/> x
+        /// <paramref name="d"/> x <paramref name="h"/> at the kit's scale <paramref name="kitScale"/> (its real size times
+        /// that), so its real size times <see cref="ModelScale"/> is what the model stands for. The model keeps its own
+        /// proportions on the ground (one scale on both axes, its longer side along the plot's longer side, as long as the
+        /// building's longer side at the world scale; turned a half turn when <paramref name="flip"/>), centred on the plot,
+        /// on <paramref name="ground"/>, as tall as the building at the world scale (<paramref name="exactHeight"/>: the city
+        /// blocks' storeys), or as near that as <see cref="MinStretch"/>..<see cref="MaxStretch"/> of its own proportions
+        /// allow. The plot keeps the space around it.</summary>
+        public static ModelInstance Fit(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float ground, bool exactHeight, bool flip,
+            float kitScale)
         {
             var size = TownModels.Size[(int)model];
-            float mw = w, md = d, my = yaw + (flip ? 180f : 0f);
-            if ((size.x >= size.y) != (w >= d)) { mw = d; md = w; my += 90f; }
-            float kx = mw / size.x, ky = md / size.y, H = h;
-            if (!exactHeight)
-            {
-                float natural = size.z * Mathf.Sqrt(kx * ky);
-                H = Mathf.Clamp(h, MinStretch * natural, MaxStretch * natural);
-            }
+            float toWorld = ModelScale / kitScale, bh = h * toWorld, my = yaw + (flip ? 180f : 0f);
+            bool turn = (size.x >= size.y) != (w >= d);
+            if (turn) my += 90f;
+            float k = Mathf.Max(w, d) * toWorld / Mathf.Max(size.x, size.y);
+            float natural = size.z * k;
+            float H = exactHeight ? bh : Mathf.Clamp(bh, MinStretch * natural, MaxStretch * natural);
             // Tripo's meshes are Z-up: a quarter turn about x stands them up (mesh z to world y, mesh y to world -z), then the
             // kit's yaw (counter-clockwise in x-z, so a negative turn about Unity's y).
-            var m = Matrix4x4.TRS(new Vector3(p.x, ground, p.y), Quaternion.Euler(0f, -my, 0f), new Vector3(kx, H / size.z, ky))
+            var m = Matrix4x4.TRS(new Vector3(p.x, ground, p.y), Quaternion.Euler(0f, -my, 0f), new Vector3(k, H / size.z, k))
                 * Matrix4x4.Rotate(Quaternion.Euler(-90f, 0f, 0f));
-            return new ModelInstance(id, model, m, p, yaw, w, d, ground, H);
+            return new ModelInstance(id, model, m, p, yaw, (turn ? size.y : size.x) * k, (turn ? size.x : size.y) * k, ground, H);
         }
 
         /// <summary>Places one of <paramref name="from"/> on a plot (TownModels.Pick; a place's first house is its
@@ -83,8 +101,10 @@ namespace Statecraft.Game.Map.Kits
             float m, bool exactHeight, bool flip)
         {
             if (models == null) throw new System.InvalidOperationException("a town model was placed outside SettlementKits.Build");
-            models.Add(Fit(id, model, p, yaw, w, d, h, top, exactHeight, flip));
-            if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, w, d, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
+            var mi = Fit(id, model, p, yaw, w, d, h, top, exactHeight, flip, m);
+            models.Add(mi);
+            // The plinth under the model itself, not the whole plot.
+            if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, mi.W, mi.D, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
         }
 
         /// <summary>A town plot's models by its style and its place (issue #659's table).</summary>

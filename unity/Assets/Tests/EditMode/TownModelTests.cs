@@ -115,7 +115,8 @@ public class TownModelTests
         placed.Where(p => p.Kind == "outpost_yard").Select(p => p.Id).ToHashSet();
 
     /// <summary>Every building the census records (and every water tower and port warehouse) is one model at its plot's
-    /// centre, filling its footprint; no other model is placed.</summary>
+    /// centre, turned with it and inside its footprint (at the world scale, SettlementKits.ModelScale, it no longer fills
+    /// the kit's plot); no other model is placed.</summary>
     [Test]
     public void EveryPlacedBuildingIsOneModelOnItsPlot()
     {
@@ -136,7 +137,7 @@ public class TownModelTests
             var at = byKey[(p.Id, Mathf.RoundToInt(p.C.x), Mathf.RoundToInt(p.C.y))].ToList();
             if (at.Count != 1) { bad.Add($"{p.Id} {p.Kind} at {p.C}: {at.Count} models"); continue; }
             var mi = at[0];
-            if (Mathf.Abs(mi.W - p.W) > 0.5f || Mathf.Abs(mi.D - p.D) > 0.5f || Mathf.Abs(mi.Yaw - p.Yaw) > 0.01f) bad.Add($"{p.Id} {p.Kind} at {p.C}: footprint");
+            if (mi.W > p.W + 0.5f || mi.D > p.D + 0.5f || Mathf.Abs(mi.Yaw - p.Yaw) > 0.01f) bad.Add($"{p.Id} {p.Kind} at {p.C}: outside its plot");
         }
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} mismatches");
         Assert.Greater(built.Models.Count, got.Count, "the 1948 localities' houses are models too");
@@ -185,39 +186,40 @@ public class TownModelTests
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} kit buildings left up close");
     }
 
-    /// <summary>A model fills its plot: its world bounds are the plot's footprint and height (city blocks exactly; a house
-    /// within its stretch limits), standing on the plot's ground level, at any yaw and with the model's long side turned
-    /// to the plot's.</summary>
+    /// <summary>A model stands on its plot at the world scale (SettlementKits.ModelScale, the owner on v0.1.1: the buildings
+    /// were "way bigger then the train"): a plot w x d x h at the kit's scale k stands for a building w/k x d/k x h/k real,
+    /// so the model's longer side is max(w, d) / k x ModelScale along the plot's longer side, one scale on both ground axes
+    /// (its own proportions, not stretched to the plot), centred on the plot, on the ground, as tall as h / k x ModelScale
+    /// (city blocks exactly; a house within its stretch limits), at any yaw, never mirrored.</summary>
     [Test]
-    public void AModelFillsItsFootprint([Values(0f, 20f, 90f, 137f)] float yaw, [Values(false, true)] bool flip)
+    public void AModelStandsOnItsPlotAtTheWorldScale([Values(0f, 20f, 90f, 137f)] float yaw, [Values(false, true)] bool flip)
     {
+        const float kit = 60f;
+        float toWorld = SettlementKits.ModelScale / kit;
         foreach (M model in Enum.GetValues(typeof(M)))
             foreach (var (w, d) in new[] { (840f, 600f), (500f, 900f) })
             {
-                var mi = SettlementKits.Fit("t", model, new Vector2(1000f, 2000f), yaw, w, d, 1200f, 50f, exactHeight: true, flip);
+                var mi = SettlementKits.Fit("t", model, new Vector2(1000f, 2000f), yaw, w, d, 1200f, 50f, exactHeight: true, flip, kit);
                 var s = TownModels.Size[(int)model];
                 var lo = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue); var hi = -lo;
-                for (int i = 0; i < 8; i++)
-                {
-                    var c = mi.M.MultiplyPoint3x4(new Vector3(((i & 1) - 0.5f) * s.x, (((i >> 1) & 1) - 0.5f) * s.y, ((i >> 2) & 1) * s.z));
-                    lo = Vector3.Min(lo, c); hi = Vector3.Max(hi, c);
-                }
-                Assert.AreEqual(50f, lo.y, 0.01f, $"{model} stands on the ground"); Assert.AreEqual(1250f, hi.y, 0.05f, $"{model} height");
-                // In the plot's own frame the box is w x d.
                 float a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
                 float maxU = 0f, maxV = 0f;
                 for (int i = 0; i < 8; i++)
                 {
                     var c = mi.M.MultiplyPoint3x4(new Vector3(((i & 1) - 0.5f) * s.x, (((i >> 1) & 1) - 0.5f) * s.y, ((i >> 2) & 1) * s.z));
+                    lo = Vector3.Min(lo, c); hi = Vector3.Max(hi, c);
                     float dx = c.x - 1000f, dz = c.z - 2000f;
                     maxU = Mathf.Max(maxU, Mathf.Abs(dx * ca + dz * sa)); maxV = Mathf.Max(maxV, Mathf.Abs(-dx * sa + dz * ca));
                 }
-                Assert.AreEqual(0.5f * w, maxU, 0.05f, $"{model} width at yaw {yaw}"); Assert.AreEqual(0.5f * d, maxV, 0.05f, $"{model} depth at yaw {yaw}");
+                Assert.AreEqual(50f, lo.y, 0.01f, $"{model} stands on the ground"); Assert.AreEqual(50f + 1200f * toWorld, hi.y, 0.05f, $"{model} height");
+                float along = 2f * (w >= d ? maxU : maxV), across = 2f * (w >= d ? maxV : maxU);
+                Assert.AreEqual(Mathf.Max(w, d) * toWorld, along, 0.05f, $"{model}: its longer side at the world scale, yaw {yaw}");
+                Assert.AreEqual(Mathf.Min(s.x, s.y) / Mathf.Max(s.x, s.y), across / along, 1e-3f, $"{model} keeps its own proportions");
+                Assert.AreEqual(2f * maxU, mi.W, 0.05f, $"{model}: W along the yaw"); Assert.AreEqual(2f * maxV, mi.D, 0.05f, $"{model}: D across");
                 Assert.Greater(mi.M.determinant, 0f, $"{model}: not mirrored (the faces keep their winding)");
-                var house = SettlementKits.Fit("t", model, Vector2.zero, yaw, w, d, 99999f, 0f, exactHeight: false, flip);
+                var house = SettlementKits.Fit("t", model, Vector2.zero, yaw, w, d, 99999f, 0f, exactHeight: false, flip, kit);
                 float natural = house.H / SettlementKits.MaxStretch;
-                Assert.AreEqual(natural, s.z * Mathf.Sqrt((w >= d) == (s.x >= s.y) ? w / s.x * (d / s.y) : d / s.x * (w / s.y)), natural * 1e-3f,
-                    $"{model}: a house's height stops at its stretch limit");
+                Assert.AreEqual(s.z * Mathf.Max(w, d) * toWorld / Mathf.Max(s.x, s.y), natural, natural * 1e-3f, $"{model}: a house's height stops at its stretch limit");
             }
     }
 

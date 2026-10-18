@@ -77,6 +77,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   keep the floor too (26 px at 360x800, 30 px at 375x667): there the bar grows to its rows' height and the panels
   under it follow. On a phone held upright the decision card now starts right of the left rail and hangs under the bar instead of sitting centred, so no
   rail button sits under it (Why? and Settings did), and the rail's buttons are 60 px, at least 24 px on screen.
+### Fixed
+- MATKOT's building models up close (#700) stand at one world scale, set by the steam train the map runs: a typical
+  8.5 m house is as long as the locomotive's car (about 204 m), so every model is 24x its building's real size
+  (`SettlementKits.ModelScale`), keeps its own proportions and no longer fills the kit's plot. In v0.1.1 they filled the
+  kits' symbolic 60x and 100x plots, so a house was about 800 m, a Tel Aviv block up to 1.6 km, both bigger than the
+  816 m train, and Jaffa's 100x houses stood as tall as Tel Aviv's 60x blocks (owner, 18 October 2026). The kits far off
+  keep their scale.
 
 ## [0.1.1] - 2026-10-18
 
