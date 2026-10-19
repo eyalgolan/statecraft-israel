@@ -19,19 +19,23 @@ meant for game text. The player-facing draft names offices, not people (`docs/WR
 | Source | What it is | Reached |
 |---|---|---|
 | JTA, 26 April 1949 | "Israeli Knesseth to Debate Rationing Program Today; Plan to Be Presented by Ben Gurion" (https://www.jta.org/archive/israeli-knesseth-to-debate-rationing-program-today-plan-to-be-presented-by-ben-gurion) | yes |
+| JTA, original Daily News Bulletin, 26 April 1949, PDF page 3 | Dispatch datelined 25 April (http://pdfs.jta.org/1949/1949-04-26_094.pdf#page=3) | reached by Codex agent, 2026-10-19 UTC |
 | he.wiki, "תקופת הצנע" | https://he.wikipedia.org/wiki/תקופת_הצנע (MediaWiki API, plaintext) | yes |
 | Knesset 1, 25th sitting | Plenum protocol, 26 April 1949 (https://fs.knesset.gov.il/1/Plenum/1_ptm_250102.pdf) | **not reached** (the host geo-blocks this location; the 14 October 2026 read is recorded in `content/events/austerity_1949.yaml` and is used from there, tagged as such) |
 
+Codex agent verification, 2026-10-19 UTC: the original JTA bulletin's publication date and dispatch dateline were checked separately. This agent check is not a person's EN review or a native-speaker HE review; the author's location-specific minutes-access report and human review queue below remain unchanged.
+
 ## What the sources establish
 
-- **26 April 1949 is the day the plan came to the Knesset, not the day rationing began.** he.wiki: the decision on a
+- **Presentation to the Knesset is documented on 26 April 1949; an operational start date is not established here.** he.wiki: the decision on a
   rationing policy was taken at the first elected government's first sitting on 26 April 1949, and later that day the
   Prime Minister announced it to the Knesset as a temporary arrangement forced by circumstances ("הודיע ... לכנסת על
   הנהגת המדיניות כהוראת שעה הנובעת מכורח המציאות") [S, he.wiki]. The 14 October read of the minutes records the plan
   presented to the plenum of 26 April, with saving foreign currency among its principles [V as recorded on
-  2026-10-14]. JTA of 26 April says the cabinet had discussed the plan "yesterday" (25 April) and decided to refer it
-  to the parliament, and that the Knesset debate would follow [V]. The decision-to-presentation chain spans 25-26
-  April; 26 April is the sourced public date.
+  2026-10-14]. The JTA item published on 26 April has the dispatch dateline "TEL AVIV, April 25" in the original
+  bulletin (PDF page 3). Its "yesterday" places the cabinet discussion on 24 April, and its "tomorrow" places the
+  Knesset presentation on 26 April [V, JTA; Codex agent check, 2026-10-19 UTC]. Publication, dispatch and cabinet
+  discussion are separate dates; 26 April is the sourced public presentation date.
 - **The scale the plan answered.** The 14 October read of the minutes records the Prime Minister's figures: more than
   210,000 arrivals since the state was founded, more than 102,000 of them since January 1949 [V as recorded on
   2026-10-14]. he.wiki gives the same rationale (mass immigration, no preparation, no foreign-currency reserves
@@ -49,7 +53,7 @@ meant for game text. The player-facing draft names offices, not people (`docs/WR
 ## The precision the owner asked for
 
 The approved short line stays untouched. The note ties the defeat to **26 April 1949 as the day the rationing plan
-came before the Knesset** - a decision and presentation date, sourced as above. It does not say rationing began that
+came before the Knesset** - a documented public presentation date, sourced as above. It does not say rationing began that
 day, does not give loss figures, and changes no threshold, count or balance value.
 
 ## Draft history note (EN, for native-speaker review in HE)
