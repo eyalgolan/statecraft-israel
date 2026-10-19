@@ -16,7 +16,7 @@ COUNTRY = ["--regions", str(REGIONS), "--id", "israel", "--all", "--env-ring", "
 def known_prototypes():
     ids = set()
     for f in (HEX_TILES / "Prototypes").glob("*.cs"):
-        ids |= set(re.findall(r'\[HexPrototype\("([a-z0-9_]+)"\)\]', f.read_text(encoding="utf-8")))
+        ids |= set(re.findall(r'\[HexPrototype\("([a-z0-9_]+)"[,)]', f.read_text(encoding="utf-8")))
     return ids
 
 
