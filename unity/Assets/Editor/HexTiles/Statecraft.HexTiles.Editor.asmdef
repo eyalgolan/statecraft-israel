@@ -1,0 +1,9 @@
+{
+    "name": "Statecraft.HexTiles.Editor",
+    "rootNamespace": "Statecraft.HexTiles",
+    "references": ["Statecraft.Game", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
+    "includePlatforms": ["Editor"],
+    "allowUnsafeCode": false,
+    "autoReferenced": true,
+    "noEngineReferences": false
+}

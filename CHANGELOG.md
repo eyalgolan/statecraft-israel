@@ -8,6 +8,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- An opt-in Civilization-style hex-tile map (`?hex-tiles`, desktop `-hex-tiles`; `?hex-tiles=tel_aviv_crop` for the
+  Tel Aviv crop): one-file hex prototypes (towns, orchards, fields, forests, hills), units as their own layer, painted
+  ground, a landscape ring round the play hexes and a warmer light while it is on. Presentation only; off by default,
+  the shipped map is unchanged. Its models are local until their assets clear, so other machines draw stand-ins
+  (docs/hex-tiles/README.md; refs #18).
 - The Cabinet disc in the side menu shows a small gold badge while a post is vacant that the player can fill this turn,
   and its tip says so in English and Hebrew. The sim's `Cabinet.Vacancies` decides it (a vacant seat, someone may be
   appointed, no appointment to it queued, the game not over, and enough Attention left after this turn's queued orders,
@@ -16,6 +21,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   sourced Hebrew name, still flagged for a native speaker's review (#902).
 ### Fixed
 - Hebrew budget vote labels use the legislature as their subject, following the native review, so names beginning with ה no longer follow an uninflected ב־ prefix (refs #564).
+- Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.
+- Keep the capsule-collider dependency used while creating hex unit stand-ins in stripped player builds; the temporary collider is still removed.
+- Missing unit models on the opt-in hex-tile map use an owned copy of the shipped material in player builds.
+- The opt-in hex-tile map regenerates cached stand-in meshes released by an editor scene change.
+- The opt-in hex-tile map preserves settlement marker visibility when removed or rebuilt, and missing vehicle models
+  keep their declared box stand-in and footprint size.
 - The Cabinet, Budget, Defence, Why, How to play and Settings screens each gain an X in the header that closes
   them (the same close as Escape): a phone has no Escape key, and re-tapping the lit rail button was the only way
   out (v0.1.1 playtest feedback).
