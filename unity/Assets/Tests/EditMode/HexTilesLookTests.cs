@@ -66,6 +66,39 @@ public class HexTilesLookTests
     }
 
     [Test]
+    public void TheBoardCanBeAppliedAfterReopeningTheEditorScene()
+    {
+        try
+        {
+            for (int pass = 0; pass < 2; pass++)
+            {
+                EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+                var map = Object.FindFirstObjectByType<MapScene>();
+                Assert.IsNotNull(map);
+                map.Build();
+                // No cache reset or manual mesh destruction: reopening the real scene releases procedural assets.
+                Assert.DoesNotThrow(() => HexTilesLook.Apply(map, true), "supported board, scene pass " + pass);
+                Assert.IsNotNull(map.transform.Find(HexTilesLook.RootName));
+                foreach (StandIn kind in Enum.GetValues(typeof(StandIn)))
+                {
+                    var parts = HexModels.StandInParts(kind);
+                    Assert.IsTrue(parts.All(part => part.mesh != null), kind + ": cached meshes are alive");
+                    Assert.AreSame(parts, HexModels.StandInParts(kind), kind + ": live cached parts are reused");
+                    Assert.Greater(HexModels.StandInTriangles(kind), 0, kind.ToString());
+                }
+                HexTilesLook.Apply(map, false);
+                Assert.IsNull(map.transform.Find(HexTilesLook.RootName));
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            ShadowFit.Restore(); VisualToggles.Clear(); Statecraft.Game.Map.Kits.KitScale.Reset();
+        }
+    }
+
+    [Test]
     public void RemovingAReplacementBoardRestoresTheDefaultMarkerStates()
     {
         try

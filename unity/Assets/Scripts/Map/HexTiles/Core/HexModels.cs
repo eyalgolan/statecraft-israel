@@ -108,7 +108,8 @@ namespace Statecraft.HexTiles
 
         public static (Mesh mesh, string colour, Matrix4x4 local)[] StandInParts(StandIn kind)
         {
-            if (standIns.TryGetValue(kind, out var p)) return p;
+            // Editor scene changes can release procedural meshes while this static cache survives.
+            if (standIns.TryGetValue(kind, out var p) && p.All(part => part.mesh != null)) return p;
             (Mesh, string, Matrix4x4)[] From(HexStandIns.Shape shape, Vector3 scale) =>
                 HexStandIns.Build(shape).Select(part => (part.mesh, part.colour, Matrix4x4.Scale(scale))).ToArray();
             return standIns[kind] = kind switch
