@@ -55,7 +55,7 @@ namespace Statecraft.HexTiles.Prototypes
             OliveLeaf = new Color(0.42f, 0.50f, 0.34f);
 
         const float Half = 0.48f;
-        const int MaxHouses = 20, MaxYards = 3, MaxBoats = 2;
+        const int MaxHouses = 20, MaxYards = 3, MaxBoats = 1;   // one boat: the proto fishing boat is heavy, and it is placed only beside water, which the test hex lacks
 
         /// <summary>House lot centres on each frame axis, as shares of S; the wider gap about 0 leaves the cross streets open.</summary>
         static readonly float[] Lots = { -0.36f, -0.23f, -0.10f, 0.10f, 0.23f, 0.36f };

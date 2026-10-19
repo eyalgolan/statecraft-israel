@@ -38,7 +38,8 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Tiberias, the basalt town by the lake (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 60000;
+        // Measured 64,357 on the israel board, where the lake brings the boat in (the flat test hex has none); plus 15%.
+        public int TriangleBudget => 75000;
 
         // Explicit house ids for the newer houses: kit_jerusalem_4 is the mosque-like b17 mesh.
         static readonly string[] NewHouses = { "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3", "sandbox:kit_stone_village_2" };
@@ -53,7 +54,7 @@ namespace Statecraft.HexTiles.Prototypes
 
         /// <summary>The landward wall's a, and the north and south walls' b, as shares of S.</summary>
         const float WestA = -0.40f, NorthB = -0.44f, SouthB = 0.36f;
-        const int MaxHouses = 16, MaxBoats = 2, MaxPalms = 10;
+        const int MaxHouses = 16, MaxBoats = 1, MaxPalms = 10;   // one boat: the proto fishing boat is heavy, and it is placed only beside water, which the test hex lacks
 
         static readonly float[] LotsA = { -0.30f, -0.17f, 0.10f, 0.23f, 0.36f };
         static readonly float[] LotsB = { -0.30f, -0.17f, 0.10f, 0.23f };
