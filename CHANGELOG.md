@@ -7,6 +7,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-19
+
 ### Added
 - Ten more models by Tal Heuberger, offered only in #336, are imported into the 1948 Collection and stream after the
   first frame: the eight figures of #708 (an Arab villager, a builder, an elder immigrant, an immigrant child, an
