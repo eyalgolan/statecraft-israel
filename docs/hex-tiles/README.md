@@ -62,13 +62,24 @@ overrides file (see "Painting hexes by hand"). `tel_aviv` stays the small test b
 python3 tools/hex_tiles/make_board.py --regions tools/hex_tiles/regions.yaml --id israel --all --env-ring 1
 ```
 
-That writes `Boards/israel.json`: 920 hexes in seven regions. Capture it with `HexBoardCapture -board israel
--boardOnly`, or open it in the Hex Painter. In the game it would be `?hex-tiles=israel`, but that has not been tried yet:
-it builds 920 tiles on the real map, so check the load time before relying on it. `--regions` needs PyYAML. With
-`--regions`, the generator works like this:
+That writes `Boards/israel.json`: 537 hexes in 18 regions, clipped to the play area (see below). Capture it with
+`HexBoardCapture -board israel -boardOnly`, or open it in the Hex Painter. In the game it would be `?hex-tiles=israel`,
+but that has not been tried yet: it builds about 500 tiles on the real map, so check the load time before relying on
+it. `--regions` needs PyYAML. With `--regions`, the generator works like this:
 
-- **Regions.** Galilee and the north, the coastal plain, the central hills, Jerusalem, the Negev, the Arava and the
-  Jordan valley. Each is a `polygon` of `[lon, lat]` points, or a `hexes` list of `q, r` pairs. A hex goes to:
+- **Play area.** `defaults.clip` in the recipes, or `--clip`, bounds the board.
+  - `mandate` keeps the land of Mandatory Palestine on 15 May 1948. That is every hex the map's own sub-district layer
+    (`content/map/subdistrict_hexes_1948.yaml`) puts in a sub-district. One hex of the land outside stays as
+    environment, so the edge reads as land going on. The sea stays within `--sea-ring` hexes of playing land, and the
+    rest of the game map (south Lebanon, the Golan, Transjordan, Sinai) is dropped.
+  - `none` keeps every hex of the game map (920).
+  - Which line bounds the play area is a design call. The Mandate outline is the stand-in until Tal and the owner
+    choose. The 1949 armistice lines are the other option, and they are not built.
+- **Regions.** Eighteen landscape zones: the Hula, the Upper Galilee, the Dead Sea shore, the Jordan valley, the
+  Carmel, the Jezreel valley, the Lower Galilee, the Sharon, the coastal plain, Jerusalem, the Judean desert, the
+  Judean hills, the Shephelah, the northern Negev's loess, the Ramon highlands, the Arava, the central Negev and the
+  central hills (Samaria). Each is a `polygon` of `[lon, lat]` points, or a `hexes` list of `q, r` pairs. A hex goes
+  to:
   - the first region that lists it;
   - else the first region whose polygon holds its centre;
   - else `defaults.region`.
@@ -85,7 +96,9 @@ it builds 920 tiles on the real map, so check the load time before relying on it
   - `terrain`;
   - `biome`.
 - **Other land.** The region's `nature` rules, then the defaults'. A rule can match on `terrain`, `biome` and `coastal`.
-  It sets a `prototype`, or a weighted `pick` drawn by a stable per-hex value, and it may set a `ground`.
+  It sets a `prototype`, or a weighted `pick` drawn by a stable per-hex value. It may also set a `ground`, and a
+  `set_terrain` for a tile that wants a different presentation terrain. For example, the Hula swamp flattens its valley
+  hexes, whose average height reads as hills.
 - **Roads.** They follow the traced 1948 main roads (`content/map/route_paths_1948.tsv`), hex centre to hex centre.
 - **Environment.** `--env-ring N` makes the land within N hexes of the board's edge environment: landscape with no tiles
   and no hex lines. Each region's `flora` sets the trees and rocks on its environment hexes (see below).
@@ -106,11 +119,14 @@ The recipes plant, by region:
 
 | Region | Trees | Rocks |
 |---|---|---|
-| North | Tabor oak and Aleppo pine | |
-| Coast | Citrus and date palm | |
-| Negev and Arava | Acacia | Desert rock |
+| Hula | Papyrus (stand-in) and Tabor oak | |
+| Upper and Lower Galilee | Tabor oak, Aleppo pine, olive and carob | |
+| Carmel | Aleppo pine, oak and carob | |
+| Jezreel valley | Cypress windbreaks and carob | |
+| Sharon and the coastal plain | Citrus and date palm | |
+| Jerusalem, the Judean hills and the Shephelah | Olive, carob, cypress and pine | |
+| Judean desert, Dead Sea, Negev, Ramon and Arava | Acacia, and date palm at the Dead Sea and in the Arava | Desert rock |
 | Jordan valley | Date palm and acacia | |
-| Jerusalem | Olive, cypress and pine | |
 
 A hex with no region, as on every board made before regions, gets the built-in mix: olive and carob on the flat, oak
 and pine on hills, limestone outcrops on hills.

@@ -210,8 +210,14 @@ def _pick(rule, q, r):
 
 def apply_rules(rules, q, r, **facts):
     """The first rule whose keys all match the facts: its prototype (or pick) and its ground, if it sets one."""
+    return apply_rule(rules, q, r, **facts)[:2]
+
+
+def apply_rule(rules, q, r, **facts):
+    """apply_rules, plus the rule's `set_terrain` (a presentation terrain the tile wants, as a valley floor whose
+    average height reads as hills wants flat), or None."""
     for rule in rules:
-        if _matches(rule, **facts): return _pick(rule, q, r), rule.get('ground')
+        if _matches(rule, **facts): return _pick(rule, q, r), rule.get('ground'), rule.get('set_terrain')
     raise ValueError(f'no rule matches hex ({q},{r}) {facts}')
 
 
@@ -290,6 +296,41 @@ def map_overrides(path=None):
     return terrain, locations
 
 
+# --- The play area ----------------------------------------------------------------------------------------------------
+
+def mandate_hexes(path=None):
+    """The land hexes inside Mandatory Palestine on 15 May 1948: every hex of content/map/subdistrict_hexes_1948.yaml
+    (the map's own sub-district layer, hex-snapped by tools/borders_bake.py from the sensitivity-reviewed true lines)
+    whose region is not 'outside'. Read with a regex, so the built-in mode still needs no YAML library."""
+    path = path or os.path.join(ROOT, 'content/map/subdistrict_hexes_1948.yaml')
+    text = open(path, encoding='utf-8').read()
+    outside = {int(m.group(1)) for m in re.finditer(r'^\s*- \{ id: (\d+), key: outside\b', text, re.M)}
+    rows = re.finditer(r'^\s*- \[(-?\d+), (-?\d+), (\d+)\]', text, re.M)
+    return {(int(m.group(1)), int(m.group(2))) for m in rows if int(m.group(3)) not in outside}
+
+
+def clip_area(cells, mode, fringe, sea_ring):
+    """The hexes a clipped board keeps and those it draws as environment. mode 'mandate': the land inside the Mandate
+    sub-districts plays; land outside within `fringe` steps of it stays as environment (landscape with no tiles or hex
+    lines, so the edge reads as land going on, not a cliff); water stays within `sea_ring` steps of playing land; the
+    rest is dropped. Returns (kept keys, environment keys)."""
+    if mode == 'none': return set(cells), set()
+    if mode != 'mandate':
+        raise ValueError(f"clip '{mode}' is not built: 'mandate' or 'none' (the 1949 armistice option waits on a design call)")
+    inside = mandate_hexes() & {k for k, h in cells.items() if h['land']}
+    def near(k, ring, of): return any(hex_distance(k, o) <= ring for o in of)
+    # Only hexes within reach of the playing land need the distance test.
+    reach = max(fringe, sea_ring)
+    lo_q, hi_q = min(q for q, _ in inside) - reach, max(q for q, _ in inside) + reach
+    lo_r, hi_r = min(r for _, r in inside) - reach, max(r for _, r in inside) + reach
+    keep, env = set(inside), set()
+    for k, h in cells.items():
+        if k in inside or not (lo_q <= k[0] <= hi_q and lo_r <= k[1] <= hi_r): continue
+        if h['land'] and fringe > 0 and near(k, fringe, inside): keep.add(k); env.add(k)
+        elif not h['land'] and near(k, sea_ring, inside): keep.add(k)
+    return keep, env
+
+
 # --- The board --------------------------------------------------------------------------------------------------------
 
 def parse(argv=None):
@@ -306,6 +347,9 @@ def parse(argv=None):
     ap.add_argument('--regions', help='region recipes (tools/hex_tiles/regions.yaml); without it, the built-in choices')
     ap.add_argument('--out', help='write here instead of unity/Assets/Resources/HexTiles/Boards/<id>.json')
     ap.add_argument('--map-overrides', help='the map editor\'s overrides (default content/map/overrides.yaml)')
+    ap.add_argument('--clip', choices=['none', 'mandate'], help="the play area: 'mandate' keeps the land of Mandatory "
+                    "Palestine (15 May 1948) and a fringe of environment around it; default: the recipes' "
+                    "defaults.clip, else none")
     return ap.parse_args(argv)
 
 
@@ -344,6 +388,14 @@ def build_board(a):
     land = {(h['q'], h['r']) for h in inside if h['land']}
     keep = [h for h in inside if h['land'] or any(hex_distance((h['q'], h['r']), k) <= a.sea_ring for k in land)]
     cells = {(h['q'], h['r']): h for h in keep}
+    clip = getattr(a, 'clip', None) or (recipes.defaults.get('clip', {}).get('mode', 'none') if recipes else 'none')
+    if clip != 'none':
+        # The play area: the board keeps only the clipped land, its fringe and its sea (clip_area).
+        fringe = int(recipes.defaults.get('clip', {}).get('fringe', 1)) if recipes else 1
+        kept, fringe_env = clip_area(cells, clip, fringe, a.sea_ring)
+        cells = {k: h for k, h in cells.items() if k in kept}
+        box_env = env_of
+        env_of = lambda k: k in fringe_env or box_env(k)
     in_box = lambda s: a.lat[0] <= s['lat'] <= a.lat[1] and a.lon[0] <= s['lon'] <= a.lon[1]
 
     def nearest(lon, lat):
@@ -410,7 +462,8 @@ def build_board(a):
                 e['note'] = s['id']
                 if e['prototype'] in ('tel_aviv_city', 'moshava_village', 'kibbutz') and terrain == 'mountain': e['terrain'] = 'hills'
             elif recipes:
-                e['prototype'], ground = apply_rules(recipes.rules(region, 'nature'), k[0], k[1], terrain=terrain, biome=h['biome'], coastal=coastal)
+                e['prototype'], ground, set_terrain = apply_rule(recipes.rules(region, 'nature'), k[0], k[1], terrain=terrain, biome=h['biome'], coastal=coastal)
+                if set_terrain: e['terrain'] = set_terrain
             else:
                 e['prototype'] = nature_tile(h, terrain, coastal)
                 if e['prototype'] == 'coastal_dunes': e['ground'] = 'beach'

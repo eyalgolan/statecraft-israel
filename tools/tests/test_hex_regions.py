@@ -79,11 +79,45 @@ def test_the_recipes_name_only_known_prototypes_grounds_and_shapes():
     assert {u["unit"] for u in recipes.defaults["units"]} <= known_units()
 
 
-def test_environment_is_only_the_ring_and_carries_no_tiles(country):
+def test_environment_carries_no_tiles(country):
     env = [h for h in country["hexes"] if h["env"]]
     assert env, "an --env-ring board has environment hexes"
     assert all(h["prototype"] == "" and h["unit"] == "" and h["terrain"] != "mountain" for h in env)
-    assert sum(not h["env"] for h in country["hexes"]) > 5 * len(env)
+    assert sum(not h["env"] for h in country["hexes"]) > 4 * len(env)
+
+
+def test_the_play_area_is_the_mandate_clipped_to_land(country):
+    """defaults.clip mandate: every playing land hex is inside a Mandate sub-district; the land outside is a one-hex
+    environment fringe round it, and the rest of the game map (Lebanon, the Golan, Transjordan, Sinai) is dropped."""
+    inside = mb.mandate_hexes()
+    land = [h for h in country["hexes"] if h["terrain"] != "water"]
+    play = {(h["q"], h["r"]) for h in land if not h["env"]}
+    assert play and play <= inside
+    outside = [(h["q"], h["r"]) for h in land if (h["q"], h["r"]) not in inside]
+    assert outside, "the fringe keeps some outside land as landscape"
+    assert all(any(mb.hex_distance(k, i) <= 1 for i in inside) for k in outside)
+    assert all(h["env"] for h in land if (h["q"], h["r"]) not in inside)
+    # Every Mandate land hex the game map has is on the board: none of it is lost to the clip.
+    hexes = json.loads((ROOT / "content/map/hexes.json").read_text())["hexes"]
+    mandate_land = {(h["q"], h["r"]) for h in hexes if h["land"] and (h["q"], h["r"]) in inside}
+    assert mandate_land <= {(h["q"], h["r"]) for h in land}
+    # Water stays only next to playing land.
+    for h in country["hexes"]:
+        if h["terrain"] == "water":
+            assert any(mb.hex_distance((h["q"], h["r"]), k) <= 1 for k in play), h
+
+
+def test_clip_none_keeps_the_whole_game_map():
+    whole, _ = mb.build_board(mb.parse(COUNTRY + ["--clip", "none"]))
+    clipped, _ = mb.build_board(mb.parse(COUNTRY))
+    assert len(whole["hexes"]) > len(clipped["hexes"])
+    assert {(h["q"], h["r"]) for h in clipped["hexes"]} <= {(h["q"], h["r"]) for h in whole["hexes"]}
+
+
+def test_a_rule_can_set_the_presentation_terrain():
+    rules = [{"biome": "lowland", "prototype": "hula_swamp", "set_terrain": "flat"}, {"prototype": "b"}]
+    assert mb.apply_rule(rules, 0, 0, biome="lowland", terrain="hills") == ("hula_swamp", None, "flat")
+    assert mb.apply_rule(rules, 0, 0, biome="hills", terrain="hills") == ("b", None, None)
 
 
 def test_settlements_take_their_tier_and_type_tiles(country):
@@ -91,8 +125,16 @@ def test_settlements_take_their_tier_and_type_tiles(country):
     assert by_note["tel_aviv"] == "tel_aviv_city"
     assert by_note["jerusalem"] == "jerusalem_old_city"
     assert by_note["jaffa"] == "jaffa_old_city"
-    assert by_note["haifa"] == "tel_aviv_city_mixed"   # a city-tier Jewish or mixed city (1945: 138,300)
+    assert by_note["haifa"] == "haifa_port"   # its own tile, by id, ahead of the city-tier rule
+    assert by_note["kiryat_ata"] == "haifa_bay"   # Haifa's edge: the bay's suburbs and industry
     assert by_note["rosh_pinna"] == "moshava_village"
+    assert by_note["lod"] == "lydda_town" and by_note["ramla"] == "ramla_town"
+    # A kibbutz takes its region's kibbutz: Galilee green in the north, a Negev outpost in the south.
+    regions = {h["note"]: h["region"] for h in country["hexes"] if h["note"]}
+    for note, proto in by_note.items():
+        if proto in ("kibbutz_galilee", "kibbutz_negev"):
+            assert regions[note] in (("hula", "upper_galilee", "lower_galilee", "jezreel", "jordan_valley") if proto == "kibbutz_galilee" else ("negev", "negev_loess")), note
+    assert "maabara_camp" not in by_note.values()   # the camps date from 1950: a painter tile, not on the 1948 board
     # One place per hex: no hex note repeats.
     notes = [h["note"] for h in country["hexes"] if h["note"]]
     assert len(notes) == len(set(notes))
@@ -140,14 +182,14 @@ def test_overrides_are_applied_last_and_survive_regeneration(tmp_path, capsys):
         "ground": [edit(*ta, "plains")],
         "unit": [edit(*sq, "")],
         "facing": [edit(*sq, "0")],
-        "region": [edit(ring["q"], ring["r"], "north")],
+        "region": [edit(ring["q"], ring["r"], "upper_galilee")],
     }))
     mb.main(COUNTRY + ["--out", str(out)])
     assert "(999,999)" in capsys.readouterr().out
     after = {(h["q"], h["r"]): h for h in json.loads(out.read_text())["hexes"]}
     assert (after[ta]["prototype"], after[ta]["ground"]) == ("kibbutz", "plains")
     assert (after[sq]["unit"], after[sq]["facing"]) == ("", 0.0)
-    assert after[(ring["q"], ring["r"])]["region"] == "north"
+    assert after[(ring["q"], ring["r"])]["region"] == "upper_galilee"
     # Only the edited fields move.
     assert after[ta]["terrain"] == tel_aviv["terrain"] and after[sq]["prototype"] == squad["prototype"]
     edited = {ta, sq, (ring["q"], ring["r"])}
@@ -168,7 +210,7 @@ def test_boards_follow_the_map_editors_terrain_and_location_moves(tmp_path):
     tel_aviv = next(k for k, h in hexes.items() if h["note"] == "tel_aviv")
     # A flat central-hills hex with no settlement, made desert by the map editor; Rosh Pinna moved to a free land hex.
     flat = next(k for k, h in hexes.items() if h["region"] == "central_hills" and h["terrain"] == "flat" and not h["note"] and not h["env"])
-    free = next(k for k, h in hexes.items() if h["region"] == "north" and h["terrain"] != "water" and not h["note"] and not h["env"])
+    free = next(k for k, h in hexes.items() if h["region"] == "upper_galilee" and h["terrain"] != "water" and not h["note"] and not h["env"])
     ov = tmp_path / "overrides.yaml"
     ov.write_text(f"terrain:\n- hex: {{q: {flat[0]}, r: {flat[1]}}}\n  value: desert\n"
                   f"control: []\nlocations:\n- id: rosh_pinna\n  hex: {{q: {free[0]}, r: {free[1]}}}\n")
