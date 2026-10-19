@@ -40,7 +40,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Acre, the walled old city (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 80000;
+        // Measured 150,895 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 170000;
 
         // Explicit house ids: kit_jaffa and kit_jerusalem_4 are the mosque-like b17 mesh, kept out of the house rows.
         static readonly string[] Houses = { "sandbox:kit_jaffa_2", "sandbox:kit_jaffa_3", "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3" };

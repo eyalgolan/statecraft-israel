@@ -35,7 +35,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Haifa Bay, refinery and workers' suburbs (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 25000;
+        // Measured 45,541 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 55000;
 
         const string House = "sandbox:kit_kibbutz", Hall = "sandbox:kit_port", ShadeTree = "sandbox:tabor_oak_lite",
             Tank = "tiles:haifa_bay/tank", Stack = "tiles:haifa_bay/stack", Process = "tiles:haifa_bay/process_block";

@@ -31,7 +31,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Ramla, market town of the plain (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 80000;
+        // Measured 162,461 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 180000;
 
         // Explicit ids: kit_jaffa, kit_jerusalem_4 and kit_stone_village are the mosque-like b17 mesh.
         static readonly string[] Houses = { "sandbox:kit_stone_village_2", "sandbox:kit_jaffa_2", "sandbox:kit_jerusalem", "sandbox:kit_jaffa_3", "sandbox:kit_jerusalem_2" };

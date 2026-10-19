@@ -31,7 +31,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Nazareth, the town in its bowl of hills (1948)";
         public HexTerrain Terrain => HexTerrain.Hills;
         public string Ground => "hills";
-        public int TriangleBudget => 55000;
+        // Measured 126,214 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 140000;
 
         // Explicit house ids: kit_jerusalem_4 and kit_stone_village are the mosque-like b17 mesh, kept out of the rings.
         static readonly string[] Houses = { "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3", "sandbox:kit_stone_village_2" };

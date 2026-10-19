@@ -42,7 +42,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Haifa, the port and lower town (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 70000;
+        // Measured 114,894 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 130000;
 
         // Explicit kit ids: kit_haifa_3 is the moshava farmhouse mesh and kit_moshava_3 is a barn.
         static readonly string[] Downtown = { "sandbox:kit_haifa", "sandbox:kit_haifa_2" };

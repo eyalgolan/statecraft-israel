@@ -32,7 +32,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Hadera, moshava in its eucalyptus groves (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 50000;
+        // Measured 88,429 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 100000;
 
         // Explicit ids: the wildcard kit_moshava* would also pick the barn.
         const string Farmhouse = "sandbox:kit_moshava", TwoStorey = "sandbox:kit_moshava_2", Barn = "sandbox:kit_moshava_3",

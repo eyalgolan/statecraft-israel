@@ -27,7 +27,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Netanya, town on the sea cliff (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 62000;
+        // Measured 109,323 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 125000;
 
         static readonly string[] Houses = { "sandbox:kit_white_city", "sandbox:kit_moshava_2", "sandbox:kit_white_city_2", "sandbox:kit_white_city_3", "sandbox:kit_white_city_4" };
         static readonly string[] People = { "proto:figure-sabra-pioneer-c04-1948-v2", "proto:figure-woman-blue-dress-c10-1948-v2" };

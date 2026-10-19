@@ -37,7 +37,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Galilee kibbutz, stockade and fishponds (1940s)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "grass";
-        public int TriangleBudget => 50000;
+        // Measured 50,821 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 60000;
 
         // Explicit kit ids, not "kit_kibbutz*": the wildcard would mix the dining hall, barn and water tower into the rows.
         const string DiningHall = "proto:kibbutz-dining-hall-v1", Quarters = "sandbox:kit_kibbutz", Cowshed = "sandbox:kit_kibbutz_3",

@@ -50,7 +50,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Beersheba, the Ottoman grid town (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "desert";
-        public int TriangleBudget => 36000;
+        // Measured 110,332 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 125000;
 
         // Explicit house ids: kit_stone_village, kit_negev (the first variant), kit_jaffa and kit_jerusalem_4 are the
         // mosque-like b17 mesh, so no wildcard that could pick one.

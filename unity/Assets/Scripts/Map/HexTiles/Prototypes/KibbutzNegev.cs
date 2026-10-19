@@ -35,7 +35,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Negev outpost kibbutz (1946 to 1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "desert";
-        public int TriangleBudget => 20000;
+        // Measured 36,633 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 45000;
 
         // Explicit ids: kit_kibbutz* would mix in the concrete water tower (kit_kibbutz_4), which this tile does not use.
         const string DiningHut = "sandbox:kit_kibbutz_2", Hut = "sandbox:kit_negev_2", Hut2 = "sandbox:kit_negev_3", Tent = "tiles:kibbutz_negev/tent",

@@ -37,7 +37,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Jerusalem, the New City and the Old City (1948)";
         public HexTerrain Terrain => HexTerrain.Hills;
         public string Ground => "hills";
-        public int TriangleBudget => 85000;
+        // Measured 142,764 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 160000;
 
         // Explicit ids: kit_jerusalem_4 is the mosque-like b17 mesh.
         static readonly string[] Houses = { "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3" };

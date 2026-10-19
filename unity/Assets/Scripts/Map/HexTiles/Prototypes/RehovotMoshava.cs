@@ -30,7 +30,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Rehovot, moshava in its citrus groves (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 80000;
+        // Measured 126,852 triangles worst case with the buildings drawn as the shipped b*-v2 town models at full
+        // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
+        public int TriangleBudget => 140000;
 
         // Explicit ids: the wildcard kit_moshava* would also pick the barn.
         const string Farmhouse = "sandbox:kit_moshava", TwoStorey = "sandbox:kit_moshava_2", Citrus = "sandbox:citrus_lite",
