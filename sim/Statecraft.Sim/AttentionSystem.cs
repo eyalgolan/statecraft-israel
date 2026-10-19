@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace Statecraft.Sim
 {
@@ -27,6 +28,14 @@ namespace Statecraft.Sim
             var r = c.RulesAt(s.Date);   // the era the turn starts in (docs/determinism.md, "Rules per era")
             return r.AttentionCost[kind] * (1 + r.RungAttentionStep * ((rung ?? s.Rung) - 1));
         }
+
+        /// <summary>The order's Attention price at this turn's prices (0 for a kind Attention does not price): what the UI's
+        /// queue charges for it.</summary>
+        public static double Price(Content c, GameState s, Command cmd) => IsCommandKind(cmd.Kind) ? Cost(c, s, cmd.Kind) : 0;
+
+        /// <summary>Attention left after paying for <paramref name="pending"/> (this turn's queue) at this turn's prices: what
+        /// the UI's queue still has to spend (#1110: the Cabinet badge and SimBridge.Queue read the same number).</summary>
+        public static double Left(Content c, GameState s, IEnumerable<Command> pending) => s.Attention - pending.Sum(x => Price(c, s, x));
 
         /// <summary>Returns null and deducts on success, or the reason it could not be afforded.
         /// <paramref name="rung"/> prices the command at that security level (the turn's starting rung).</summary>

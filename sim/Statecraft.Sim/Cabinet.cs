@@ -133,6 +133,22 @@ namespace Statecraft.Sim
         public static IReadOnlyList<(Person person, CabinetReason? reason)> Candidates(Content c, GameState s, string officeId) =>
             c.People.Select(p => (p, CheckReason(c, s, officeId, p.Id))).ToList();
 
+        /// <summary>#1109: the playable offices that are vacant now (<see cref="Lineup"/>, no holder), that someone may be
+        /// appointed to (<see cref="CheckReason"/>), and that no Appoint in <paramref name="pending"/> (this turn's queue)
+        /// fills. Empty when no appointment can be queued this turn, for SimBridge.Queue's reasons: the game is over, or the
+        /// Attention left after <paramref name="pending"/> does not pay for one (#1110 review). A query only: the side menu's
+        /// Cabinet badge reads it.</summary>
+        public static IReadOnlyList<Office> Vacancies(Content c, GameState s, IEnumerable<Command> pending)
+        {
+            var queued = pending.ToList();
+            if (s.GameOver != null || AttentionSystem.Cost(c, s, "appoint") > AttentionSystem.Left(c, s, queued) + 1e-9)
+                return new Office[0];
+            var filled = queued.OfType<Appoint>().Select(a => a.Office).ToList();
+            return Lineup(c, s)
+                .Where(x => x.Holders.Count == 0 && !filled.Contains(x.Office.Id) && c.People.Any(p => CheckReason(c, s, x.Office.Id, p.Id) == null))
+                .Select(x => x.Office).ToList();
+        }
+
         /// <summary>Returns null and appoints, or the reason (state untouched). Replacing a minister costs coalition
         /// stability: rules appoint_stability_cost_other_party when the seat leaves the displaced minister's party (a
         /// non-party appointee counts as another party), appoint_stability_cost_same_party otherwise. A vacant seat costs

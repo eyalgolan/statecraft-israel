@@ -33,7 +33,7 @@ namespace Statecraft.Game.UI
             var hosts = u.AllSources().Select(s => new Uri(s.Url).Host).Distinct(StringComparer.Ordinal).OrderBy(h => h, StringComparer.Ordinal);
             return new UnitCard
             {
-                Title = u.Name,
+                Title = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(u.NameHe) ? u.NameHe : u.Name,
                 Subtitle = text.Format("unit.subtitle", u.Number, text["unit.service." + u.Service]),
                 Body = string.Join("\n", lines),
                 // Israel's call-up and security level set only Israel's tokens; an Arab force's token reflects neither (#665).

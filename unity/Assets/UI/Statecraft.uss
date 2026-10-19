@@ -226,6 +226,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    above the info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests); the column keeps its 56 px width,
    so the backdrop, the screens and the toast keep their places. */
 .left-column .rail-button .nav-disc { top: 0; left: 0; width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
+/* A screen with something to do this turn (#1109, HudPresenter.ActionClass): a small gold dot on the disc's upper right,
+   ringed in the column's navy so it reads against the rim; the gold-light of End Turn's waiting highlight (#1034). */
+.nav-badge {
+    display: none; position: absolute; top: 1px; right: 1px; width: 14px; height: 14px;
+    border-radius: 7px; border-width: 2px; border-color: var(--navy-deep); background-color: var(--gold-light);
+}
+.nav-action .nav-badge { display: flex; }
 /* On a phone held upright the panel's scale falls to about 0.41 (375x667), where a 56 px disc is 22.8 px on screen: the
    column's discs are 60 px there, at least 24 on screen (LeftColumnTests), and the backdrop's strip and the backdrop
    follow the wider column. */
@@ -390,12 +397,23 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Full screens (Cabinet, Budget, Defence, Why, Settings) open in the centre, one at a time. */
 /* Hidden until ScreenNav opens one (never visible while loading; playtest 2, P2-1). Right edge clear of the 480px column. */
 .screen { display: none; position: absolute; left: 552px; right: 512px; top: 112px; bottom: 16px; padding: 18px; background-color: rgb(11, 18, 32); }   /* opaque: a reading screen, and the map labels must not show through */
-.screen-header { flex-direction: column; align-items: stretch; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 10px; padding-bottom: 4px; }
+.screen-header { flex-direction: column; align-items: stretch; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 10px; padding-bottom: 4px; }   /* the X's side padding is set inline by ScreenNav.FitCloseButtons (it grows with the X) */
 /* Screen titles and section names in gold, letter-spaced, as the promo's "DEFENSE" and "LEADERSHIP". */
 .screen-header > .title { color: var(--gold-light); letter-spacing: 1px; }
 /* The subtitle sits under the title, the screen's full width, and wraps in a narrow window (#211). A column, not a
    wrapping row: a shrinking, wrapping label in a row re-measured itself every frame (PromoScreensTests idle test). */
 .screen-header > .muted { white-space: normal; }
+
+/* An X on an open screen (ScreenNav adds one to every screen-header): a phone has no Escape (playtest v0.1.1). */
+.screen-close {
+    position: absolute; top: 6px; right: 8px;
+    width: 44px; height: 44px; margin: 0; padding: 0;
+    background-color: rgba(0, 0, 0, 0); border-width: 1px; border-color: var(--gold-dim); border-radius: 22px;
+    color: var(--gold-light); font-size: 20px; -unity-font-style: bold; -unity-text-align: middle-center;
+}
+.screen-close:hover, .screen-close:focus { border-color: var(--gold-light); }
+/* Hebrew mirrors: the X sits on the left, and the header's free side moves with it (#1035). */
+.lang-he .screen-close { right: auto; left: 8px; }
 .screen .meter-name { color: var(--gold); letter-spacing: 2px; font-size: 16px; margin-top: 8px; }
 .row { flex-direction: row; align-items: center; }
 .grow { flex-grow: 1; }
