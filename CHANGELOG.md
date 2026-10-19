@@ -8,6 +8,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Fixed
+- The Cabinet, Budget, Defence, Why, How to play and Settings screens each gain an X in the header that closes
+  them (the same close as Escape): a phone has no Escape key, and re-tapping the lit rail button was the only way
+  out (v0.1.1 playtest feedback).
 - The event photograph keeps its 16:9 header when card padding changes without an outer resize (#649).
 
 ## [0.1.2] - 2026-10-19
