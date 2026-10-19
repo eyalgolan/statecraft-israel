@@ -333,6 +333,8 @@ namespace Statecraft.Game.UI
             var camRig = rig = cameraController.GetComponent<CameraRig>();
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
             Own(new SafeAreaFit(root));                                    // the HUD keeps clear of the phone's notch
+            // the map's keyboard stop (#41 B1b): Enter or Space picks the hex under the look-at point, as a click there would
+            Own(new MapFocusPresenter(root, cameraController.GetComponent<Camera>(), camRig, at => pointer.PickAt(at)));
             var mini = minimap = Own(new MinimapPresenter(root, map.Hexes, text));
             var labelCamera = cameraController.GetComponent<Camera>();
             labels = Own(new MapLabelsPresenter(root, map, labelCamera, null,
