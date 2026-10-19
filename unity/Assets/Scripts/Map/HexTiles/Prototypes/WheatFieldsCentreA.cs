@@ -16,9 +16,9 @@ namespace Statecraft.HexTiles.Prototypes
         static readonly string[] Mix = { "wheat", "wheat", "ploughed", "wheat", "green_crop" };
         protected override string[] Crops => Mix;
         protected override int PastureOneIn => 9;
-        static readonly float[] Lines = { -1.5f };
+        static readonly float[] Lines = { -1.0f };
         protected override float[] HedgeLines => Lines;
-        protected override int HedgeGapOneIn => 6;
+        protected override int HedgeGapOneIn => 4;
         protected override string TrackLayer => "beach";
         static readonly Color CypressLeaf = new Color(0.12f, 0.26f, 0.13f);
         protected override (string model, StandIn standIn, Color? tint, float height) HedgeTree(HexTileContext ctx) =>

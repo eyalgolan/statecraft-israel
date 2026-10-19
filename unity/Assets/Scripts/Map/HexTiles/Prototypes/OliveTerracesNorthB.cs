@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Statecraft.HexTiles.Prototypes
 {
-    /// <summary>North, b: four narrower terraces on grass, the trees in denser rows, with Aleppo pines among the olives. Caps:
+    /// <summary>North, b: four narrower ploughed terraces, the trees in denser rows, with Aleppo pines among the olives. Caps:
     /// at most 24 olives x ~1,600 = 38,400, 4 pines x ~1,600 = 6,400, 12 limestone x ~700 = 8,400 and the hut ~700 =
     /// 53,900; budget 60,000.</summary>
     [HexPrototype("olive_terraces_north_b", Kind = "farm", Region = "north")]
@@ -16,7 +16,7 @@ namespace Statecraft.HexTiles.Prototypes
         protected override float[] Bands => Narrow;
         protected override float[] Risers => NarrowRisers;
         protected override float BandWidth => 0.085f;
-        protected override string BandLayer => "grass";
+        protected override string BandLayer => "ploughed";
         protected override int MiddleRow => 16;
         protected override int UpperRow => 11;
         protected override int OuterCorners => 12;

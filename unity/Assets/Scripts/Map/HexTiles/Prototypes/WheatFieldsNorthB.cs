@@ -20,7 +20,7 @@ namespace Statecraft.HexTiles.Prototypes
         protected override int PastureOneIn => 6;
         protected override void Pasture(HexTileContext ctx, Vector3 at, float yaw, float width, float depth) =>
             ctx.PaintGround("grass", at, yaw, width, depth, 0.15f, 0.9f);
-        static readonly float[] Lines = { -1.5f };
+        static readonly float[] Lines = { -1.0f };
         protected override float[] HedgeLines => Lines;
         protected override int HedgeGapOneIn => 4;
         protected override float TrackAcross => 1.5f;
