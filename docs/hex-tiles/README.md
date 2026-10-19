@@ -437,6 +437,19 @@ the shipped b*-v2 town models at full detail.
   - `HexModelCapture.Run` shoots every building alias from four sides.
   - On Tripo meshes, open-edge counts are noise. Only see-through rays find holes.
 
+## Figures: the Collection's whole characters
+
+- **One character per unit.** A character unit is one model × 8 (`HexUnitTypes.Squad(title, model)`), never a mix.
+  `palmach_squad` is 8 Palmach scouts (c12f).
+- **Where the figures come from.** In the editor (captures, painter, tests), the `proto:figure-*` ids draw the cleared
+  Collection figures (`HexModels.FigureAliases`, `Assets/Art/Collection/<figure>/<figure>-near|far.prefab`).
+  - Our own decimated copies (`characters_to_fbx.py`) had lost faces, 2.7 to 6.5% see-through.
+  - Soldiers take `near`. Townspeople take `far`, except c01, whose far level is holed.
+- **In a player** the Collection streams from bundles, so the hex tiles still draw the local proto figures, then
+  stand-ins. Wiring the bundles in is a follow-up.
+- **No walk cycle.** The Collection's near figures have an idle clip only, so a moving squad glides.
+- **Checking a figure:** `HexUnitTests` checks one model per unit, whole figures, facing, height and the fallback.
+
 ## Time of day
 
 - **Turning it on:** add `&hex-time=dusk` or `&hex-time=night` to a `?hex-tiles` URL (desktop: `-hex-time dusk|night`).

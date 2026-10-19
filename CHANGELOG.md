@@ -34,6 +34,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
     saved to any board.
   - **Hex Painter:** a palette of every tile, by kind and region, and every unit, with thumbnails. A brush paints
     tiles, units are placed with a facing, and day, dusk, night and under attack can be previewed.
+  - **Units:** a character unit is one model × 8. The hex figures draw the Collection's whole figures in the editor;
+    our decimated copies showed the ground through clothes and faces.
   - **Board capture:** the whole-board shot no longer cuts off the board's south edge.
   (docs/hex-tiles/README.md; refs #18)
 - The Cabinet disc in the side menu shows a small gold badge while a post is vacant that the player can fill this turn,
