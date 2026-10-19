@@ -12,25 +12,30 @@ using Object = UnityEngine.Object;
 namespace Statecraft.HexTiles.Capture
 {
     /// <summary>Whether a building's mesh is whole, measured in the placement's unit frame (HexModels.Parts: y up whatever
-    /// the source mesh's). The test is what the player sees: the buildings' materials cull back faces, so where a view ray
-    /// meets a back face first (the inside of the far wall, through a missing face) the ground behind shows through
-    /// (SeeThrough, of the rays that meet the model at all, from eight sides at the board camera's elevations). Open
-    /// (boundary) edges, after welding vertices by position (UV and normal seams split them), are reported beside it but
-    /// do not decide: Tripo's meshes are full of T-junctions and cracks that never show, and are open underneath. Also how
-    /// a sandbox prefab and the town model drawn for it line up (Facing).</summary>
+    /// the source mesh's). The test is what the player sees: the buildings' materials cull back faces and Tripo's
+    /// buildings are open underneath, so a view ray that meets the model but no front face of it (in through a missing
+    /// wall face, out past the culled inside of the far wall) shows the ground through the building (SeeThrough, of the
+    /// rays that meet the model at all, from eight sides at the board camera's elevations). Rays whose first face is a
+    /// back face (BackFirst) are reported but do not decide: one-sided railings and awnings seen from behind count there,
+    /// and the wall behind them still shows (measured on b02b, 19 October 2026). Open (boundary) edges, after welding
+    /// vertices by position (UV and normal seams split them), are reported too: the shipped meshes have thousands
+    /// (T-junctions and hairline cracks) that never show. Also how a sandbox prefab and the town model drawn for it line
+    /// up (Facing).</summary>
     public static class HexMeshCheck
     {
         public readonly struct Result
         {
-            public readonly int Triangles, Open, OpenOffBase, NonManifold, Hits, SeeThrough;
-            public Result(int triangles, int open, int offBase, int nonManifold, int hits, int seeThrough)
+            public readonly int Triangles, Open, OpenOffBase, NonManifold, Hits, BackFirst, SeeThrough;
+            public Result(int triangles, int open, int offBase, int nonManifold, int hits, int backFirst, int seeThrough)
             {
-                Triangles = triangles; Open = open; OpenOffBase = offBase; NonManifold = nonManifold; Hits = hits; SeeThrough = seeThrough;
+                Triangles = triangles; Open = open; OpenOffBase = offBase; NonManifold = nonManifold; Hits = hits; BackFirst = backFirst; SeeThrough = seeThrough;
             }
-            /// <summary>The share of view rays on the model that see through it.</summary>
+            /// <summary>The share of view rays on the model that see the ground through it.</summary>
             public float SeeThroughShare => Hits == 0 ? 0f : SeeThrough / (float)Hits;
+            /// <summary>The share of view rays on the model whose first face is a back face.</summary>
+            public float BackFirstShare => Hits == 0 ? 0f : BackFirst / (float)Hits;
             public override string ToString() =>
-                $"{Triangles} tris, {SeeThroughShare:P2} see-through ({SeeThrough} of {Hits} rays), {Open} open edges ({OpenOffBase} off the base), {NonManifold} non-manifold";
+                $"{Triangles} tris, {SeeThroughShare:P2} see-through ({SeeThrough} of {Hits} rays), {BackFirstShare:P2} back face first, {Open} open edges ({OpenOffBase} off the base), {NonManifold} non-manifold";
         }
 
         /// <summary>The view elevations (degrees down) and sides the rays come from, and the ray grid's side per view.</summary>
@@ -56,11 +61,11 @@ namespace Statecraft.HexTiles.Capture
                     tris.AddRange(mesh.GetTriangles(s).Select(i => i + start));
                 }
             }
-            if (pts.Count == 0) return new Result(0, 0, 0, 0, 0, 0);
+            if (pts.Count == 0) return new Result(0, 0, 0, 0, 0, 0, 0);
             var b = new Bounds(pts[0], Vector3.zero); foreach (var p in pts) b.Encapsulate(p);
             var (open, offBase, nonManifold) = Edges(pts, tris, b, weld);
-            var (hits, through) = Rays(pts, tris, b);
-            return new Result(tris.Count / 3, open, offBase, nonManifold, hits, through);
+            var (hits, backFirst, through) = Rays(pts, tris, b);
+            return new Result(tris.Count / 3, open, offBase, nonManifold, hits, backFirst, through);
         }
 
         /// <summary>Open edges (one face), those off the base plane (min y + 0.5% of the height) and non-manifold edges
@@ -98,12 +103,13 @@ namespace Statecraft.HexTiles.Capture
         }
 
         /// <summary>Parallel view rays from <see cref="Sides"/> sides at each of <see cref="Elevations"/>, on a
-        /// <see cref="Grid"/>-square grid over the model: how many meet a triangle, and how many of those meet a back face
-        /// first (Unity's front face winds clockwise to the viewer, so Cross(b - a, c - a) points at it). A software
+        /// <see cref="Grid"/>-square grid over the model: how many meet a triangle, how many of those meet a back face
+        /// first, and how many meet no front face at all (Unity's front face winds clockwise to the viewer, so
+        /// Cross(b - a, c - a) points at it). A software
         /// orthographic raster: each view bins the projected triangles by grid cell.</summary>
-        static (int hits, int through) Rays(List<Vector3> pts, List<int> tris, Bounds b)
+        static (int hits, int backFirst, int through) Rays(List<Vector3> pts, List<int> tris, Bounds b)
         {
-            int hits = 0, through = 0, n = tris.Count / 3;
+            int hits = 0, backFirst = 0, through = 0, n = tris.Count / 3;
             float radius = b.extents.magnitude, cell = 2f * radius / Grid;
             var bins = new List<int>[Grid * Grid];
             for (int i = 0; i < bins.Length; i++) bins[i] = new List<int>();
@@ -132,7 +138,7 @@ namespace Statecraft.HexTiles.Capture
                     {
                         // The ray through the cell's centre: its nearest triangle, and which side of it faces the ray.
                         float rx = -radius + (c % Grid + 0.5f) * cell, ry = -radius + (c / Grid + 0.5f) * cell, near = float.MaxValue;
-                        bool back = false;
+                        bool back = false, front = false;
                         foreach (var t in bins[c])
                         {
                             Vector3 p0 = uv[tris[3 * t]], p1 = uv[tris[3 * t + 1]], p2 = uv[tris[3 * t + 2]];
@@ -142,17 +148,19 @@ namespace Statecraft.HexTiles.Capture
                             float w2 = ((p1.x - p0.x) * (ry - p0.y) - (rx - p0.x) * (p1.y - p0.y)) / area;
                             if (w1 < 0f || w2 < 0f || w1 + w2 > 1f) continue;
                             float z = p0.z + w1 * (p1.z - p0.z) + w2 * (p2.z - p0.z);
-                            if (z >= near) continue;
-                            near = z;
                             var a = pts[tris[3 * t]];
-                            back = Vector3.Dot(Vector3.Cross(pts[tris[3 * t + 1]] - a, pts[tris[3 * t + 2]] - a), dir) > 0f;
+                            bool isBack = Vector3.Dot(Vector3.Cross(pts[tris[3 * t + 1]] - a, pts[tris[3 * t + 2]] - a), dir) > 0f;
+                            front |= !isBack;
+                            if (z >= near) continue;
+                            near = z; back = isBack;
                         }
                         if (near == float.MaxValue) continue;
                         hits++;
-                        if (back) through++;
+                        if (back) backFirst++;
+                        if (!front) through++;
                     }
                 }
-            return (hits, through);
+            return (hits, backFirst, through);
         }
 
         /// <summary>The names of <see cref="Facing"/>'s scores: quarter turns about y, and the same mirrored in x.</summary>
@@ -216,8 +224,12 @@ namespace Statecraft.HexTiles.Capture
             }
         }
 
-        /// <summary>The building ids the hex tiles may draw: every sandbox id with a town model, and its variants.</summary>
-        static IEnumerable<string> Ids() => HexModels.TownAliases.Select(a => a.id).Distinct().OrderBy(i => i, StringComparer.Ordinal);
+        /// <summary>The building ids the hex tiles may draw: every sandbox id with a town model; with -allTown also every
+        /// town model at its full and mid level.</summary>
+        static IEnumerable<string> Ids() => HexModels.TownAliases.Select(a => a.id).Distinct().OrderBy(i => i, StringComparer.Ordinal)
+            .Concat(Environment.GetCommandLineArgs().Contains("-allTown")
+                ? Statecraft.Game.Map.Kits.TownModels.Ids.SelectMany(t => new[] { HexModels.TownPrefix + t, HexModels.TownPrefix + t + HexModels.MidSuffix })
+                : Enumerable.Empty<string>());
 
         static void Capture(string dir, int width, int height)
         {
@@ -231,8 +243,8 @@ namespace Statecraft.HexTiles.Capture
             var lines = new List<string>();
             foreach (var id in Ids())
             {
-                var name = id.Replace("sandbox:", "");
-                var before = Resources.Load<GameObject>(HexModels.PathOf(id));
+                var name = id.Replace("sandbox:", "").Replace(HexModels.TownPrefix, "town-").Replace(HexModels.MidSuffix, "-mid");
+                var before = id.StartsWith(HexModels.TownPrefix, StringComparison.Ordinal) ? null : Resources.Load<GameObject>(HexModels.PathOf(id));
                 var after = HexModels.Prefab(id);
                 if (before != null) Sheet(cam, before, Path.Combine(dir, $"{name}-before.png"), width, height);
                 if (after != null) Sheet(cam, after, Path.Combine(dir, $"{name}-after.png"), width, height);

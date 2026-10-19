@@ -21,7 +21,7 @@ namespace Statecraft.HexTiles
             public Part(Mesh mesh, int subMesh, Material material, Matrix4x4 local) { Mesh = mesh; SubMesh = subMesh; Material = material; Local = local; }
         }
 
-        public const string TownPrefix = "town:";
+        public const string TownPrefix = "town:", MidSuffix = "@mid";
         /// <summary>Stands a Z-up town mesh up (mesh z to y, mesh y to -z), as SettlementKits.Fit does.</summary>
         public static readonly Matrix4x4 TownTurn = Matrix4x4.Rotate(Quaternion.Euler(-90f, 0f, 0f));
         public static readonly (string id, string town, bool same)[] TownAliases = Array.Empty<(string, string, bool)>();

@@ -10,9 +10,10 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>Buildings must be whole (Tal, 19 October 2026: a Tel Aviv block with its walls missing, grass through its
-/// windows). The buildings' materials cull back faces, so wherever a view ray meets a back face first the ground shows
-/// through: every building mesh the hex tiles resolve to (ids "sandbox:hq_*", "sandbox:kit_*" and "town:*") keeps that
-/// share of its view rays within <see cref="Tolerance"/> (HexMeshCheck). Open edges are not the test: the shipped b*-v2
+/// windows). The buildings' materials cull back faces and Tripo's buildings are open underneath, so a view ray that meets
+/// a building but none of its front faces shows the ground through it: every building mesh the hex tiles resolve to (ids
+/// "sandbox:hq_*", "sandbox:kit_*" and "town:*") keeps that share of its view rays within <see cref="Tolerance"/>
+/// (HexMeshCheck.SeeThrough). Open edges are not the test: the shipped b*-v2
 /// meshes have thousands (T-junctions, hairline cracks and the open base), so they are reported only. The decimated
 /// sandbox kit (planar dissolve) dropped faces; the shipped b*-v2 town models (TownModelSet) are whole. It writes the
 /// measurements of every candidate mesh (the local sandbox prefabs and the set's full and mid meshes) to
@@ -125,14 +126,16 @@ public class HexModelMeshTests
     {
         var lines = new List<string>
         {
-            "Hex-tile building meshes. seeThru: share of view rays (8 sides x 20/35/50 degrees down, 96x96 each) whose first",
-            "hit is a back face (culled, so the ground shows): the test. open: boundary edges after welding by position;",
-            "offBase: those above the base plane (min height + 0.5%); nonMan: edges of 3+ faces (informational only: the",
-            "shipped meshes have thousands of T-junction and crack edges that never show). Written by HexModelMeshTests.",
+            "Hex-tile building meshes. seeThru: share of view rays on the model (8 sides x 20/35/50 degrees down, 96x96 each)",
+            "that meet no front face of it (back faces are culled, so the ground shows through): the test. Informational:",
+            "backFirst: rays whose first face is a back face (also one-sided railings and awnings seen from behind);",
+            "open: boundary edges after welding by position; offBase: those above the base plane (min height + 0.5%);",
+            "nonMan: edges of 3+ faces (the shipped meshes have thousands of T-junction and crack edges that never show).",
+            "Written by HexModelMeshTests.",
             "",
-            $"{"mesh",-58} {"tris",6} {"seeThru",8} {"open",6} {"offBase",8} {"nonMan",7}",
+            $"{"mesh",-58} {"tris",6} {"seeThru",8} {"backFirst",9} {"open",6} {"offBase",8} {"nonMan",7}",
         };
-        void Row(string name, HexMeshCheck.Result r) => lines.Add($"{name,-58} {r.Triangles,6} {r.SeeThroughShare,8:P2} {r.Open,6} {r.OpenOffBase,8} {r.NonManifold,7}");
+        void Row(string name, HexMeshCheck.Result r) => lines.Add($"{name,-58} {r.Triangles,6} {r.SeeThroughShare,8:P2} {r.BackFirstShare,9:P2} {r.Open,6} {r.OpenOffBase,8} {r.NonManifold,7}");
         lines.Add("-- local sandbox prefabs (Resources/HexSandbox, git-ignored) --");
         foreach (var go in Resources.LoadAll<GameObject>("HexSandbox").Where(g => g.name.StartsWith("hq_") || g.name.StartsWith("kit_")).OrderBy(g => g.name, System.StringComparer.Ordinal))
             Row("sandbox:" + go.name, HexMeshCheck.Of(go));
