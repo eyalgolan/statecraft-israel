@@ -6,8 +6,9 @@ using UnityEditor.Build.Reporting;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>Copies the repository's content/ into Assets/StreamingAssets/content with a manifest.json before every
-    /// player build (git-ignored output), so players read the same content the editor reads from the repo.
+    /// <summary>Copies the repository's content/ into Assets/StreamingAssets/content with a manifest.json and a bundle.json
+    /// (every text in one file, which the web boot fetches: #1054) before every player build (git-ignored output), so
+    /// players read the same content the editor reads from the repo.
     /// Run alone: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.ContentSync.Sync</summary>
     public sealed class ContentSync : IPreprocessBuildWithReport
     {

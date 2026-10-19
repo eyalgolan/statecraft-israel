@@ -145,6 +145,7 @@ public class SchemaTests
         yield return new object[] { "people.yaml", "people.schema.json" };
         yield return new object[] { "offices.yaml", "offices.schema.json" };
         yield return new object[] { "parties.yaml", "parties.schema.json" };
+        yield return new object[] { "map/overrides.yaml", "map-overrides.schema.json" };
         foreach (var f in Directory.GetFiles(Path.Combine(Root, "events"), "*.yaml").OrderBy(f => f, StringComparer.Ordinal))
             yield return new object[] { "events/" + Path.GetFileName(f), "event.schema.json" };
     }
@@ -189,6 +190,11 @@ public class SchemaTests
         yield return new object[] { "people.schema.json", "/definitions/person/properties/portrait", typeof(Portrait) };
         yield return new object[] { "people.schema.json", "/definitions/person/properties/offices/items", typeof(OfficeTerm) };
         yield return new object[] { "people.schema.json", "/definitions/source", typeof(Source) };
+        yield return new object[] { "map-overrides.schema.json", "", typeof(MapOverrides) };
+        yield return new object[] { "map-overrides.schema.json", "/definitions/hex", typeof(MapHexRef) };
+        yield return new object[] { "map-overrides.schema.json", "/properties/terrain/items", typeof(TerrainOverride) };
+        yield return new object[] { "map-overrides.schema.json", "/properties/control/items", typeof(ControlOverride) };
+        yield return new object[] { "map-overrides.schema.json", "/properties/locations/items", typeof(LocationOverride) };
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };

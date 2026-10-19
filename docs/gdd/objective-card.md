@@ -18,7 +18,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 
 ## Data touched
 
-- `content/objectives.yaml` (`id`, `name`, `completes_when.site_built` or `completes_when.absorbed` with `population_at_least`, `overflow_at_most`, `employed_at_least`, `reference_date`, `card`), read in both loops when present: `first_new_yishuv` on Mefalsim.
+- `content/objectives.yaml` (`id`, `name`, `completes_when.site_built` or `completes_when.absorbed` with `population_at_least`, `overflow_at_most`, `employed_at_least`, `reference_date`, `card`), read in both loops when present: `first_new_yishuv` on Mefalsim, and `absorb_immigrants` on the Jewish population, overflow and employment (#1039).
 - `content/events/first_new_yishuv.yaml`, the card: two sentences from the site's sources [S4][S5], `status: fact-checked`.
 - An event's `objective` key (`content/schema/event.schema.json`, `docs/WRITING_EVENTS.md`).
 - `rules.yaml` `mvp.objective_points`, `objective_bonus_per_month`, `objective_bonus_cap`, required in the GDD loop, as design values (R-LOOP-005). The score reads the rules of the date the turn starts from.
@@ -31,7 +31,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 
 ## Out of scope
 
-- The war, absorption and railway objectives (Phase 2 and later); the card's photograph and its "completed on, historically" line in English and Hebrew (PR 7); the score on the HUD is already in (#598).
+- The war and railway objectives (Phase 2 and later); the card's photograph and its "completed on, historically" line in English and Hebrew (PR 7); the score on the HUD is already in (#598).
 
 ## Sources
 

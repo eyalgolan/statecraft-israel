@@ -13,10 +13,10 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
-/// <summary>HUD round 2, part 2 (#398): promo/final/03's left icon column. It holds the four screens' buttons, moved from
-/// the top bar (no new action): Cabinet, Budget, Defence, Why?. They are round icons with no caption; each one's name is its
+/// <summary>HUD round 2, part 2 (#398): promo/final/03's left icon column. It holds the screens' buttons, moved from
+/// the top bar. They are round icons with no caption; each one's name is its
 /// text (clear) and its tooltip, which HoverTip shows beside it. The Hebrew UI mirrors rows, not the screen's corners (#550),
-/// so the column stays at the left. Tab still runs Cabinet, Budget, Defence, Why?, then Settings (#40), New Game, End Turn.</summary>
+/// so the column stays at the left. Tab runs the side-menu screens, New Game, then End Turn.</summary>
 public class LeftColumnTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
@@ -33,6 +33,7 @@ public class LeftColumnTests
     {
         ("nav-cabinet", "hud.nav.cabinet", "columns"), ("nav-budget", "hud.nav.budget", "ledger"),
         ("nav-defence", "hud.nav.defence", "helmet"), ("nav-why", "hud.nav.why", "question"),
+        ("nav-how-to-play", "hud.nav.how_to_play", "book"),
         ("nav-settings", "hud.nav.settings", "gear"),
     };
 
@@ -100,7 +101,7 @@ public class LeftColumnTests
         }
     }
 
-    /// <summary>The column holds the four screens, in the top bar's old order, then Settings (#40), each a round icon whose name is its text and
+    /// <summary>The column holds every ScreenNav screen in order, each a round icon whose name is its text and
     /// its tooltip in both languages; the top bar keeps New Game and End Turn only. No new button: the screens are ScreenNav's.</summary>
     [Test]
     public void TheColumnHoldsTheScreensAsRoundIconsNamedInBothLanguages()
@@ -114,6 +115,8 @@ public class LeftColumnTests
             var column = ui.Q<VisualElement>(Column);
             CollectionAssert.AreEqual(Rail.Select(r => r.name).ToArray(), column.Query<Button>().ToList().Select(b => b.name).ToArray(), "the column's buttons, in order");
             CollectionAssert.AreEquivalent(ScreenNav.Screens.Select(s => "nav-" + s).ToArray(), Rail.Select(r => r.name).ToArray(), "exactly ScreenNav's screens");
+            // The discs have no caption, so each glyph alone tells them apart (How to play is not a second Why? mark, #1041).
+            CollectionAssert.AllItemsAreUnique(column.Query<UiIcon>(className: "nav-disc").ToList().Select(i => i.Glyph).ToArray(), "each disc its own glyph");
             foreach (var (name, key, glyph) in Rail)
             {
                 var b = ui.Q<Button>(name);
@@ -238,7 +241,7 @@ public class LeftColumnTests
     static Rect Hull(VisualElement root) => root.Q(Column).Query<Button>().ToList().Select(b => b.worldBound)
         .Aggregate((a, b) => Rect.MinMaxRect(Mathf.Min(a.xMin, b.xMin), Mathf.Min(a.yMin, b.yMin), Mathf.Max(a.xMax, b.xMax), Mathf.Max(a.yMax, b.yMax)));
 
-    /// <summary>The audit's focus order is kept: Cabinet, Budget, Defence, Why?, Settings, New Game, End Turn (then the minimap's
+    /// <summary>The audit's focus order is kept: the side-menu screens, New Game, End Turn (then the minimap's
     /// buttons, out of reach under the open card). The column is out of Tab's reach under the start screen and an outcome clip, as the top bar is, and usable
     /// under the decision card, as the top bar is.</summary>
     [UnityTest]
@@ -252,7 +255,7 @@ public class LeftColumnTests
                 var order = root.Query<VisualElement>().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0 && e is Button).ToList()
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
                 // Under the open card the minimap column is out of reach (the backdrop covers it); the column and the bar are not.
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-settings", "new-game", "end-turn" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-settings", "new-game", "end-turn" },
                     order, $"{at}: the Tab order under the open card");
                 var r = root.Q("root");
                 Assert.IsTrue(r.ClassListContains(EventCardPresenter.ModalClass), at + ": precondition: the card is open");

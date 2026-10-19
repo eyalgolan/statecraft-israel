@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Small groups of MATKOT's civilian figures at the Israeli towns, kibbutzim, moshavim and the player's transit
+    /// <summary>Small groups of Tal Heuberger's civilian figures at the Israeli towns, kibbutzim, moshavim and the player's transit
     /// camps (issue #666 and #663's owner ruling that every delivered model is used). They are period-generic ambience,
     /// never units and never simulation state. C02, C03 and C13 stand at the settled places; C01 and C10 stand at a transit
     /// camp from the day it is placed. The Arab towns get none of this set: #666 maps it to the towns, kibbutzim, moshavim and
@@ -34,10 +34,13 @@ namespace Statecraft.Game.Map.Collection
 
         public const int SettledGroupSize = 3;   // design value: one small, legible group at a permanent settlement
         public const int CampGroupSize = 2;      // design value: one arriving pair at a transit camp
-        public const float FigureScale = UnitShowcase.FigureScale;   // design value: reuse the established symbolic figure scale
+        // The owner on #1033 ("Train scale for all ambient life"): the building models' world scale, a man about 43 m tall
+        // beside the 204 m locomotive car. Only the unit pieces keep their symbolic size (UnitShowcase.FigureScale).
+        public const float FigureScale = SettlementKits.ModelScale;
         public const float FigureHeightM = UnitBadge.FigureHeightM * FigureScale;
-        public const float FigureSpacingM = 1200f;   // design value: separates silhouettes without reading as a crowd
-        public const float FigureClearanceM = 500f;  // design value: conservative half-width/clearance for one symbolic figure
+        // Design values (#666), kept in proportion to the figure: 1,200 m and 500 m beside a man drawn at the units' scale.
+        public const float FigureSpacingM = 1200f * FigureScale / UnitShowcase.FigureScale;   // separates silhouettes without reading as a crowd
+        public const float FigureClearanceM = 500f * FigureScale / UnitShowcase.FigureScale;  // conservative half-width/clearance for one figure
         public const float LabelClearanceM = 400f;   // design value: extra ground outside the labelled settlement footprint
         public const float SearchStepM = 1400f;      // design value: outward step when the nearest ring is occupied
         public const int SearchRings = 8, SearchBearings = 16;   // design values: bounded cosmetic placement search

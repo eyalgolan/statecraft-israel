@@ -3,13 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Game.Map.Kits;
-using Statecraft.Game.Map.Units;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>MATKOT's two wild-animal models from The 1948 Collection (issue #670), placed sparsely and deterministically
+    /// <summary>Tal Heuberger's two wild-animal models from The 1948 Collection (issue #670), placed sparsely and deterministically
     /// by terrain zone, each zone from its source:
     /// - Nubian ibex on steep desert or mountain hexes of the Judean Desert, west of the Dead Sea: the Israel Nature and Parks
     ///   Authority's En Avdat brochure, "Ibexes are common in the Negev, the Eilat Mountains and the Judean Desert near the
@@ -36,11 +35,14 @@ namespace Statecraft.Game.Map.Collection
 
         // Design values (#670): sparse enough that the whole map contains only a handful.
         public const int IbexCount = 3, HyenaCount = 3;
-        /// <summary>An animal's largest ground edge (m): sized against the man, as the units' symbolic scale sizes everything
-        /// (UnitShowcase.FigureScale: a man about 2.5 km tall), at <see cref="LengthOverMan"/> of his height, about 1.9 km.
-        /// A real-scale animal would be a speck beside the kits' houses and groves.</summary>
-        public const float LengthOverMan = 0.75f;   // design value: a quadruped's length against a standing man
-        public const float SizeM = LengthOverMan * UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
+        /// <summary>An animal's real length (m), drawn as its largest ground edge at the building models' world scale
+        /// (<see cref="SettlementKits.ModelScale"/>, the owner on #1033: "Train scale for all ambient life"): an ibex about
+        /// 31 m and a hyena about 26 m, beside the 204 m locomotive car.</summary>
+        public const float IbexLengthM = 1.3f, HyenaLengthM = 1.1f;
+        public static float LengthM(string model) => (model == Ibex ? IbexLengthM : HyenaLengthM) * SettlementKits.ModelScale;
+        /// <summary>The ground edge (m) every animal's spacing, clearance and level ground are measured over: the larger
+        /// animal's, the ibex.</summary>
+        public const float SizeM = IbexLengthM * SettlementKits.ModelScale;
         // Design value: no two animals closer than two lengths, so they never overlap or read as a herd.
         public const float MinSpacingM = 2f * SizeM;
         /// <summary>The close zoom (view distance, m) they draw at, with hysteresis: in from 40 km, out beyond 45 km, the band
@@ -217,7 +219,7 @@ namespace Statecraft.Game.Map.Collection
                 go.transform.localRotation = Quaternion.Euler(0f, w.Yaw, 0f) * prefab.transform.localRotation;
                 var bounds = Bounds(go);
                 float edge = Mathf.Max(bounds.size.x, bounds.size.z);
-                go.transform.localScale *= edge > 1e-3f ? SizeM / edge : 1f;
+                go.transform.localScale *= edge > 1e-3f ? LengthM(w.Model) / edge : 1f;
                 var pos = new Vector3(w.At.x, BaseY(ground, w.At), w.At.y);
                 go.transform.position = pos;
                 var placed = Bounds(go);

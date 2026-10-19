@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Statecraft.Game.Boot;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -158,9 +159,9 @@ namespace Statecraft.Game.Map.Collection
 
         static IEnumerator Done() { yield break; }
 
-        /// <summary>Reads the bundles from a folder: by URL on WebGL (StreamingAssets is served beside the page), from disk
-        /// elsewhere. Each bundle must match its line of <see cref="CollectionCatalog.ChecksFile"/>, written by the bundle
-        /// build: Unity is given the bundle's CRC on both paths, and on disk a missing file, one that is not a whole
+        /// <summary>Reads the bundles from a folder: by URL on WebGL (StreamingAssets is served beside the page; StreamingFetch
+        /// retries a dropped connection, a 429 or a 5xx, #1054), from disk elsewhere. Each bundle must match its line of
+        /// <see cref="CollectionCatalog.ChecksFile"/>, written by the bundle build: Unity is given the bundle's CRC on both paths, and on disk a missing file, one that is not a whole
         /// AssetBundle by its header (<see cref="CheckHeader"/>) or one whose size or SHA-256 differs from the build fails at
         /// once without asking Unity to open it, so it logs this class's one warning and not Unity's own errors too.</summary>
         public sealed class BundleSource : ISource
@@ -182,11 +183,16 @@ namespace Statecraft.Game.Map.Collection
                     yield return ReadChecks();
                     var (check, why) = Lookup(bundle);
                     if (check == null) { done(why); yield break; }
-                    // Unity checks the CRC as it reads, and refuses a bundle that does not match (the request then fails).
-                    using var req = UnityWebRequestAssetBundle.GetAssetBundle(folder + "/" + bundle, check.Value.Crc);
-                    yield return req.SendWebRequest();
-                    if (req.result != UnityWebRequest.Result.Success) { done(req.error ?? "request failed"); yield break; }
-                    b = DownloadHandlerAssetBundle.GetContent(req);
+                    // Unity checks the CRC as it reads, and refuses a bundle that does not match (the request then fails,
+                    // and is not retried: only no response or a server-side status is, StreamingFetch).
+                    var url = folder + "/" + bundle;
+                    var crc = check.Value.Crc;
+                    var download = StreamingFetch.Start(() => UnityWebRequestAssetBundle.GetAssetBundle(url, crc));
+                    string? failed = null;
+                    yield return Await(StreamingFetch.Done(download, bundle, StreamingFetch.StallSeconds), e => failed = e);
+                    if (failed != null) { done(failed); yield break; }
+                    try { b = DownloadHandlerAssetBundle.GetContent(download.Request); }
+                    finally { download.Release(); }
                 }
                 else
                 {
@@ -221,10 +227,15 @@ namespace Statecraft.Game.Map.Collection
                 string? text = null;
                 if (folder.Contains("://"))
                 {
-                    using var req = UnityWebRequest.Get(folder + "/" + CollectionCatalog.ChecksFile);
-                    yield return req.SendWebRequest();
-                    if (req.result == UnityWebRequest.Result.Success) text = req.downloadHandler.text;
-                    else checksError = $"no {CollectionCatalog.ChecksFile} ({req.error})";
+                    var download = StreamingFetch.Get(folder + "/" + CollectionCatalog.ChecksFile);
+                    string? failed = null;
+                    yield return Await(StreamingFetch.Done(download, CollectionCatalog.ChecksFile, StreamingFetch.StallSeconds), e => failed = e);
+                    if (failed != null) checksError = $"no {CollectionCatalog.ChecksFile} ({failed})";
+                    else
+                    {
+                        try { text = download.Request.downloadHandler.text; }
+                        finally { download.Release(); }
+                    }
                 }
                 else
                 {
@@ -234,6 +245,16 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (text != null && (checks = CollectionCatalog.ParseChecks(text)) == null)
                     checksError = $"a damaged {CollectionCatalog.ChecksFile}";
+            }
+
+            /// <summary>Waits a frame at a time for a StreamingFetch download (with its retries) to end; a final failure
+            /// (the IOException naming the file) goes to <paramref name="failed"/>.</summary>
+            static IEnumerator Await(Awaitable fetch, Action<string> failed)
+            {
+                var a = fetch.GetAwaiter();
+                while (!a.IsCompleted) yield return null;
+                try { a.GetResult(); }
+                catch (IOException e) { failed(e.Message); }
             }
 
             /// <summary>The bundle's line of the checks file, or null and why not.</summary>

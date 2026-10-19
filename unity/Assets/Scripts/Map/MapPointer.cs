@@ -6,8 +6,35 @@ using UnityEngine.InputSystem;
 
 namespace Statecraft.Game.Map
 {
+    /// <summary>The tap rule, with no devices: a finger becomes a tap only when it lifts within
+    /// <see cref="SlopPixels"/> of where it landed and no second finger was down while it was held. A moved finger
+    /// drags the camera and two fingers pinch (CameraController), so neither may also select a hex.</summary>
+    public struct TapPress
+    {
+        /// <summary>How far the finger may wander, in screen pixels, before the press stops being a tap (about
+        /// Android's 8 dp touch slop at 3x).</summary>
+        public const float SlopPixels = 30f;
+
+        Vector2 start;
+        bool down, moved, pinched;
+
+        /// <summary>One frame of the watched finger: its pressed and released edges, where it is, and whether any
+        /// other finger is down. The tap's position on a release frame that still qualifies, otherwise null.</summary>
+        public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown)
+        {
+            if (pressed) { start = position; down = true; moved = false; pinched = false; }
+            if (!down) return null;
+            if (otherFingerDown) pinched = true;                       // a pinch is never a tap, even a still thumb
+            if ((position - start).sqrMagnitude > SlopPixels * SlopPixels) moved = true;   // latched: coming back helps not
+            if (!released) return null;
+            down = false;
+            return moved || pinched ? (Vector2?)null : start;
+        }
+    }
+
     /// <summary>Left click on the map (not on the UI) selects the hex under the pointer: a ray from the camera hits the
-    /// terrain's collider, the hit becomes lon/lat (GeoFrame) and then a hex (HexPicker).</summary>
+    /// terrain's collider, the hit becomes lon/lat (GeoFrame) and then a hex (HexPicker). On a touchscreen a tap (press and
+    /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.</summary>
     public sealed class MapPointer : MonoBehaviour
     {
         public MapScene? Map;
@@ -19,6 +46,8 @@ namespace Statecraft.Game.Map
         // never all at the frame's last pointer position (playtest 2, P2-4).
         readonly Queue<Vector2> presses = new Queue<Vector2>();
         InputAction? press;
+
+        TapPress tap;
 
         void OnEnable()
         {
@@ -47,7 +76,20 @@ namespace Statecraft.Game.Map
             while (presses.Count > 0) HandleClick(presses.Dequeue());
         }
 
-        void Update() => ProcessPresses();
+        void Update()
+        {
+            ProcessPresses();
+            var ts = Touchscreen.current;
+            if (ts == null) return;
+            var t = ts.primaryTouch;
+            var pressed = 0;
+            foreach (var touch in ts.touches)
+                if (touch.press.isPressed) pressed++;
+            // any other finger down cancels the tap (TapPress): a releasing pinch's thumb is inside the slop, yet must not select
+            var tapAt = tap.Step(t.press.wasPressedThisFrame, t.press.wasReleasedThisFrame,
+                t.position.ReadValue(), pressed > (t.press.isPressed ? 1 : 0));
+            if (tapAt.HasValue) OnPress(tapAt.Value);   // a tap selects where the finger landed, like a click
+        }
 
         /// <summary>A left click at <paramref name="pos"/> (screen pixels): ignored over the UI (the same IsOverUi the camera
         /// uses), otherwise the hex under the pointer is raised as HexClicked. Returns whether a hex was picked.</summary>

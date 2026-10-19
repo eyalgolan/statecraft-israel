@@ -8,7 +8,7 @@ namespace Statecraft.Sim
     /// <summary>Load-time checks for events, including the sensitive-content rule.</summary>
     static class EventRules
     {
-        public static readonly HashSet<string> SensitiveTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "holocaust", "terror", "massacre", "war-casualties" };
+        public static readonly HashSet<string> SensitiveTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "holocaust", "terror", "massacre", "war-casualties", "displacement" };
         public static readonly HashSet<string> SpecialTargets = new HashSet<string> { "treasury", "fx_reserves", Pools.FoodTarget };
         /// <summary>Targets a sensitive event's options may not raise (CONTENT_POLICY section 4: no mechanic rewards violence against
         /// civilians). Owner decision of 15 October 2026 on Q-EFX-2, "Extend it": every resource, not money alone. Until the

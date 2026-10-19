@@ -8,7 +8,7 @@ using Statecraft.Game.Map.Kits;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>Issue #659: makes the towns' model list (Kits.TownModels.SetPath) from MATKOT's building models, bakes each
+    /// <summary>Issue #659: makes the towns' model list (Kits.TownModels.SetPath) from Tal Heuberger's building models, bakes each
     /// model's three lighter levels of detail into it as sub-assets, and points the map scene's MapScene at the list, so the
     /// models load with the map (owner, 16 October 2026) and never through a Resources folder. Idempotent: the baked meshes
     /// are made again from the models each run.

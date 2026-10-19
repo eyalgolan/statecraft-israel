@@ -1,13 +1,14 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Statecraft.Game.Map.Collection;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Units
 {
-    /// <summary>The 1948 Collection on the army tokens (issue #665, part of #663; models by MATKOT, #507): the figures and the
+    /// <summary>The 1948 Collection on the army tokens (issue #665, part of #663; models by Tal Heuberger, #507): the figures and the
     /// vehicles each token draws, streamed after the first frame (<see cref="CollectionStream"/>). Which model goes where is
     /// in the tables below (docs/units.md, "The 1948 Collection on the tokens").
     /// An Israeli token is built with its code-built riflemen as before; each figure then asks for its model, and when the
@@ -18,7 +19,8 @@ namespace Statecraft.Game.Map.Units
     /// #740: "Nothing is drawn with IDF figures, and there is no placeholder art"): the roster draws it only once its model
     /// has arrived (<see cref="Arrived"/>). A vehicle has no code-built model either: it appears when it arrives. A model
     /// that has arrived once is put on new tokens at once (a roster change rebuilds them), so a rebuild never shows the
-    /// code-built figures for a frame.</summary>
+    /// code-built figures for a frame. Up close (<see cref="UnitFigureDetail"/>), each figure whose model has an idle clip
+    /// shows its skinned near model playing it instead.</summary>
     public static class UnitFigures
     {
         /// <summary>The name of the model's object under its figure or vehicle.</summary>
@@ -30,7 +32,7 @@ namespace Statecraft.Game.Map.Units
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2";
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
-        /// default), as MATKOT's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
+        /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
         /// Mk II steel helmet the young recruit (C06), the Palmach's knitted stocking cap the veteran fighter (C07).</summary>
         public static readonly IReadOnlyDictionary<string, string> ByHeadgear = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -51,7 +53,7 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Arab force's figures, by its side: the Arab Legion (C08) for Transjordan's army, the irregular (C09) for
         /// the Arab Liberation Army, "an irregular army" of volunteers (https://en.wikipedia.org/wiki/Arab_Liberation_Army,
-        /// checked 2026-10-18). Unit models by MATKOT count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
+        /// checked 2026-10-18). Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
         /// No other side has a figure, so its rows stay off the map (<see cref="UnitRoster.OnMap"/>).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -59,7 +61,7 @@ namespace Statecraft.Game.Map.Units
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"
-        /// (owner, 17 October 2026, #756: MATKOT's H02 is the gun), the jeep H03, the Willys.</summary>
+        /// (owner, 17 October 2026, #756: Tal Heuberger's H02 is the gun), the jeep H03, the Willys.</summary>
         public static readonly IReadOnlyDictionary<string, string> ByVehicle = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [UnitData.Gun65mm] = Napoleonchik, [UnitData.Jeep] = WillysJeep,
@@ -101,12 +103,16 @@ namespace Statecraft.Game.Map.Units
         static readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>The figures and vehicles waiting for each asked-for model.</summary>
         static readonly Dictionary<string, List<Transform>> waiting = new Dictionary<string, List<Transform>>(StringComparer.Ordinal);
+        /// <summary>The near prefabs answered (null: missing or damaged, so the far model stays), and the callers waiting for
+        /// each near prefab asked for.</summary>
+        static readonly Dictionary<string, GameObject?> near = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
+        static readonly Dictionary<string, List<Action>> nearWaiting = new Dictionary<string, List<Action>>(StringComparer.Ordinal);
 
         /// <summary>Raised once for each model when it first arrives (the unit layer then draws the tokens that waited for it).</summary>
         public static event Action<string>? ModelArrived;
 
         /// <summary>Forgets every model and request (tests, and a change of <see cref="Source"/>).</summary>
-        public static void Forget() { arrived.Clear(); asked.Clear(); waiting.Clear(); }
+        public static void Forget() { arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); }
 
         /// <summary>True when model <paramref name="id"/> has arrived (and its prefab still exists).</summary>
         public static bool Arrived(string id) => arrived.TryGetValue(id, out var p) && p != null;
@@ -125,6 +131,28 @@ namespace Statecraft.Game.Map.Units
             list.Add(piece);
             Ask(id);
         }
+
+        /// <summary>Asks once for model <paramref name="id"/>'s near (close-zoom) prefab and calls <paramref name="ready"/> when
+        /// it is answered (at once if it already was), found or not: <see cref="Near"/> then gives it, or null.</summary>
+        internal static void RequestNear(string id, Action ready)
+        {
+            if (near.ContainsKey(id)) { ready(); return; }
+            var ask = Requester;
+            if (ask == null) return;
+            if (!nearWaiting.TryGetValue(id, out var list)) nearWaiting[id] = list = new List<Action>();
+            list.Add(ready);
+            if (list.Count > 1) return;   // asked already
+            ask(id, CollectionDetail.Near, prefab =>
+            {
+                near[id] = prefab;   // null: fail open, the far model stays (the stream has warned once)
+                if (!nearWaiting.TryGetValue(id, out var done)) return;
+                nearWaiting.Remove(id);
+                foreach (var callback in done) callback();
+            });
+        }
+
+        /// <summary>Model <paramref name="id"/>'s near prefab once it has arrived, else null.</summary>
+        internal static GameObject? Near(string id) => near.TryGetValue(id, out var prefab) ? prefab : null;
 
         static void Ask(string id)
         {
@@ -166,20 +194,7 @@ namespace Statecraft.Game.Map.Units
             var renderers = model.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length > 0)
             {
-                // The box in the holder's frame, from each mesh's own bounds (Renderer.bounds is empty while the layer is off).
-                var inv = holder.worldToLocalMatrix;
-                Bounds? box = null;
-                foreach (var f in model.GetComponentsInChildren<MeshFilter>(true))
-                {
-                    if (f.sharedMesh == null) continue;
-                    var b = f.sharedMesh.bounds; var m = inv * f.transform.localToWorldMatrix;
-                    for (int c = 0; c < 8; c++)
-                    {
-                        var p = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
-                        if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
-                    }
-                }
-                if (box is Bounds have && have.size.y > 1e-6f)
+                if (BoxIn(holder, model.transform) is Bounds have && have.size.y > 1e-6f)
                 {
                     float k;
                     bool vehicle = ByVehicleId(id);
@@ -200,6 +215,29 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             if (code != null) code.enabled = false;
+            if (CollectionCatalog.Animated.Contains(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+        }
+
+        /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own
+        /// bounds (Renderer.bounds is empty while the layer is off). A skinned mesh is drawn through its bones, so its box is
+        /// the renderer's local bounds in its root bone's space (as Unity bounds it), not its mesh's. Null with no mesh.</summary>
+        internal static Bounds? BoxIn(Transform frame, Transform model)
+        {
+            var inv = frame.worldToLocalMatrix;
+            Bounds? box = null;
+            void Add(Bounds b, Transform at)
+            {
+                var m = inv * at.localToWorldMatrix;
+                for (int c = 0; c < 8; c++)
+                {
+                    var p = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+                    if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
+                }
+            }
+            foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) Add(f.sharedMesh.bounds, f.transform);
+            foreach (var s in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (s.sharedMesh != null) Add(s.localBounds, s.rootBone != null ? s.rootBone : s.transform);
+            return box;
         }
 
         static bool ByVehicleId(string id) => id == Napoleonchik || id == WillysJeep;

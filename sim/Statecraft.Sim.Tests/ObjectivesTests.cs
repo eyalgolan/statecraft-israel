@@ -247,7 +247,7 @@ eras:
     [Fact]
     public void TheObjectiveIsTheFirstNewYishuvAtMefalsim()
     {
-        var o = Assert.Single(Real.Objectives);
+        var o = Real.Objectives.Single(x => x.Id == "first_new_yishuv");   // absorb_immigrants is the other (#1039)
         Assert.Equal(("first_new_yishuv", "mefalsim", "first_new_yishuv"), (o.Id, o.CompletesWhen!.SiteBuilt, o.Card));
         Assert.Equal(Real.Sites.Single(x => x.Id == "mefalsim").Founded, o.ReferenceDate);
         Assert.Equal(new DateTime(1949, 6, 12), o.ReferenceDate);
@@ -255,6 +255,19 @@ eras:
         Assert.Equal(("first_new_yishuv", "soft"), (card.Objective, card.Anchor));
         Assert.True(Assert.Single(card.Options).Historical);
         Assert.Empty(card.Tags);
+    }
+
+    // The real content: the absorb objective as #738 decides it (Q-ABS-1's 1,000,000; Q-ABS-2's 10% and 40%), its reference
+    // date Ingathering of the Exiles Day, and its card (#1039). Nothing else pins these values.
+    [Fact]
+    public void TheAbsorbObjectiveIsTheMillionMilestone()
+    {
+        var o = Real.Objectives.Single(x => x.Id == "absorb_immigrants");
+        var a = o.CompletesWhen!.Absorbed!;
+        Assert.Equal((1_000_000L, 0.10m, 0.40m), (a.PopulationAtLeast, a.OverflowAtMost!.Value, a.EmployedAtLeast));
+        Assert.Equal(new DateTime(1949, 12, 20), o.ReferenceDate);
+        Assert.Equal("absorb_immigrants", o.Card);
+        Assert.Equal("absorb_immigrants", Real.Events.Single(e => e.Id == o.Card).Objective);
     }
 
     // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 March 1950, after its 12 June 1949
@@ -284,14 +297,19 @@ eras:
         var root = RealContentTests.ContentRoot();
         var legacy = ContentLoader.Load(Fixture.Write(
             new Dictionary<string, string> { ["objectives.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "objectives.yaml")) },
-            new Dictionary<string, string> { ["first_new_yishuv.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "first_new_yishuv.yaml")) }));
+            new Dictionary<string, string>
+            {
+                ["first_new_yishuv.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "first_new_yishuv.yaml")),
+                ["absorb_immigrants.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "absorb_immigrants.yaml")),   // objectives.yaml's second card (#1039)
+            }));
         Assert.False(legacy.IsGdd);
-        Assert.Single(legacy.Objectives);
+        Assert.Equal(2, legacy.Objectives.Count);
         var s = Simulation.NewGame(legacy, GoldenRun.Seed, Mode.Historical);
         for (int i = 0; i < 40 && s.GameOver == null; i++)
         {
             s = Step(legacy, s).State;
             Assert.DoesNotContain("first_new_yishuv", s.FiredEvents);
+            Assert.DoesNotContain("absorb_immigrants", s.FiredEvents);
         }
         Assert.Empty(s.Objectives);
         Assert.Equal(0, s.Score);
@@ -314,23 +332,6 @@ eras:
     const string AbsorbYaml = "objectives:\n  - { id: first_goal, name: First goal, completes_when: { absorbed: { population_at_least: 1500, overflow_at_most: 0.10, employed_at_least: 0.40 } }, reference_date: 1949-06-12, card: first_card }\n";
 
     static Content LoadAbsorb(string objectives = AbsorbYaml) => Load(gdd: true, new Dictionary<string, string> { ["objectives.yaml"] = objectives });
-
-    /// <summary>The real content with the absorb objective as #738 decides it (Jewish population 1,000,000, overflow at most
-    /// 10%, employed at least 40%), built in memory: its card is a person's to add (#738, card option (i)), and nothing here
-    /// reads the card.</summary>
-    static Content RealWithAbsorb()
-    {
-        var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        c.Objectives = c.Objectives.Append(new Objective
-        {
-            Id = "absorb_immigrants",
-            Name = "Absorb the immigrants",
-            CompletesWhen = new ObjectiveCondition { Absorbed = new AbsorbCondition { PopulationAtLeast = 1_000_000, OverflowAtMost = 0.10m, EmployedAtLeast = 0.40m } },
-            ReferenceDate = D("1949-12-20"),
-            Card = "absorb_immigrants",
-        }).OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
-        return c;
-    }
 
     // R-OBJ-004: town_a houses 10 units and its people are civilians only, so overflow = civilians - 10. Each row is just
     // inside or just outside one bound; the shares are "at or below" and "at or above".
@@ -371,7 +372,7 @@ eras:
     [Fact]
     public void TheStartValuesDoNotCompleteItOnTheFirstTurn()
     {
-        var c = RealWithAbsorb();
+        var c = Real;
         var s = Step(c, Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical)).State;
         Assert.Equal(0, s.Cities.Values.Sum(x => x.Refugees));
         Assert.Equal(0, s.Cities.Values.Sum(x => Cities.Overflow(s, x)));
@@ -384,7 +385,7 @@ eras:
     [Fact]
     public void ArrivalAloneDoesNotComplete()
     {
-        var c = RealWithAbsorb();
+        var c = Real;
         var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
         var passed = false;
         while (s.GameOver == null)

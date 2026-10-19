@@ -175,6 +175,10 @@ namespace Statecraft.Sim
             return lines;
         }
 
+        /// <summary>The minister <see cref="Delegate"/> hands the event to in this state: its office's holder today, or null
+        /// (no office, or nobody holds it: the cabinet decides). Simulation.DelegatedTo asks it after the queued orders.</summary>
+        public static Person? DelegatedTo(Content c, GameState s, GameEvent e) => e.Office == "" ? null : Cabinet.Holder(c, s, e.Office);
+
         /// <summary>Unanswered events go to the responsible minister: with probability competence/10 they pick the
         /// recommended option (else the first), otherwise a random option. In Historical mode a hard-anchor event
         /// resolves to its historical option without drawing from the RNG (major anchors happen). An objective's card has one
@@ -189,7 +193,7 @@ namespace Statecraft.Sim
             foreach (var id in s.PendingEvents.ToList())
             {
                 var e = Get(c, id);
-                var minister = e.Office == "" ? null : Cabinet.Holder(c, s, e.Office);
+                var minister = DelegatedTo(c, s, e);
                 if (e.Objective != "")
                 {
                     Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why);

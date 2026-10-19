@@ -25,9 +25,9 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567 section 4 item 8: all 32 events fire in the historical monthly run (#567's 31 and the first new yishuv
-    /// card, R-OBJ-003). Before the re-timing, sinai_withdrawal and rhodes_talks never fired (Horev's card came after both
-    /// windows had closed). Since GDD Phase 4 PR 5 every event but hula_drainage, which needs the player's works (R-SWAMP-002).</summary>
+    /// <summary>#567 section 4 item 8: all but two of the 33 events fire in the historical monthly run (#567's 31, the first new yishuv
+    /// card, R-OBJ-003, and absorb_immigrants, #1039). Before the re-timing, sinai_withdrawal and rhodes_talks never fired (Horev's card came after both
+    /// windows had closed). Since GDD Phase 4 PR 5 every event but absorb_immigrants and hula_drainage, which needs the player's works (R-SWAMP-002).</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
     {
@@ -35,10 +35,11 @@ public class EventRetimingTests
         // A consequence card (R-ALT-005) comes only on a road not taken, never in this run (R-ALT-012).
         var record = C.Events.Where(e => e.Kind != EventKinds.Consequence).ToList();
         // R-SWAMP-002: hula_drainage fires only while the player's works at the Hula are in progress, and the reference
-        // player drains no swamp, so it is the one historical card the run never shows.
+        // player drains no swamp, so the run never shows it. absorb_immigrants (#1039) is raised only when its objective
+        // completes (R-OBJ-004), and the reference player never completes it in this run.
         var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
-        Assert.True(missing.SequenceEqual(new[] { "hula_drainage" }), "never fired: " + string.Join(", ", missing));
-        Assert.Equal(32, record.Count);
+        Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "hula_drainage" }), "never fired: " + string.Join(", ", missing));
+        Assert.Equal(33, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
@@ -73,7 +74,7 @@ public class EventRetimingTests
     [InlineData("law_of_return", "1950-07-15")]
     [InlineData("clothing_rationing_1950", "1950-07-15")]
     [InlineData("ministry_supply_crisis", "1950-10-15")]
-    [InlineData("education_registration_1951", "1950-12-15")]
+    [InlineData("education_registration_1951", "1951-02-15")]
     [InlineData("reparations_claim", "1951-03-15")]
     [InlineData("iraqi_exodus", "1951-03-15")]
     [InlineData("israel_bonds", "1951-05-15")]

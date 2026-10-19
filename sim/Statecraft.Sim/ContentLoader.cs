@@ -45,6 +45,8 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
+        sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
+        sealed class SettlementTargetsFile { public List<SettlementTarget> Targets { get; set; } = new List<SettlementTarget>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
         sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
@@ -54,10 +56,14 @@ namespace Statecraft.Sim
         public const string HexesFile = "map/hexes.json";
         public const string SettlementHexesFileName = "map/settlement_hexes.yaml";
         public const string SettlementsFileName = "map/settlements_1948.yaml";
+        public const string MapLocationsFileName = "map/locations_1948.yaml";
+        public const string SettlementTargetsFileName = "settlement_targets.yaml";
+        /// <summary>The settlements_1948.yaml row type a settlement target must have (Q-TGT-1 (a)).</summary>
+        public const string ArabTown = "arab_town";
 
         /// <summary>The ids and names of settlements_1948.yaml, which the tools own (its other keys are not the sim's business),
         /// so it is read as plain maps rather than through the strict content types.</summary>
-        static List<(string id, string name)> ReadSettlements(Func<string, string?> readFile)
+        static List<(string id, string name, string type)> ReadSettlements(Func<string, string?> readFile)
         {
             string? text;
             try { text = readFile(SettlementsFileName); }
@@ -81,7 +87,7 @@ namespace Statecraft.Sim
                     HebrewName(SettlementsFileName, $"settlements[{sid}]", "name_he", r.TryGetValue("name_he", out var he) && he is string hs ? hs : "",
                         SettlementSources(r, $"settlements[{sid}].name_he_sources"),
                         r.TryGetValue("name_he_review", out var rv) && rv is string rs ? rs : "", r.ContainsKey("name_he_review"));
-                    return (sid, sname);
+                    return (sid, sname, r.TryGetValue("type", out var ty) && ty is string ts ? ts : "");
                 }).ToList();
             }
             catch (YamlException e) { throw new ContentException(SettlementsFileName, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
@@ -319,14 +325,17 @@ namespace Statecraft.Sim
             c.PopulationAnchors = Read<PopulationFile>(readFile, "population.yaml").Anchors;
             c.Hexes = Read<MapFile>(readFile, HexesFile).Hexes;
             c.SettlementHexes = Read<SettlementHexesFile>(readFile, SettlementHexesFileName).Settlements;
+            c.MapLocations = Read<MapLocationsFile>(readFile, MapLocationsFileName).Locations;
             var settlements = ReadSettlements(readFile);
             var settlementIds = settlements.Select(x => x.id).ToList();
-            foreach (var (id, name) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
+            foreach (var (id, name, _) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
+            c.SettlementTargets = Read<SettlementTargetsFile>(readFile, SettlementTargetsFileName).Targets;
+            ValidateSettlementTargets(c, settlements.Where(x => x.type == ArabTown).Select(x => x.id));
             // Event files (content/events/*.yaml), one GameEvent each. Keys, for content authors:
             //   id, title, text            text may name office holders only through {office_id} placeholders, which
             //                              must have a holder on every day of the window
             //   anchor: hard | soft        hard needs a historical option; in Historical mode it resolves to it
-            //   tags: [...]                holocaust, terror, massacre, war-casualties are sensitive (no money reward)
+            //   tags: [...]                holocaust, terror, massacre, war-casualties, displacement are sensitive (no gain)
             //   office                     the minister the event is delegated to
             //   from, to                   the window [from, to); it fires on the first turn that overlaps it
             //   conditions: [{ indicator, min, max }]   indicator bounds that must hold when it fires
@@ -352,6 +361,7 @@ namespace Statecraft.Sim
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives
                 .OrderBy(o => o.Id, StringComparer.Ordinal).ToList() ?? new List<Objective>();
             Validate(c, settlementIds);
+            ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
             if (c.IsGdd)
             {
                 // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so
@@ -366,6 +376,20 @@ namespace Statecraft.Sim
             c.BuildWindows();
             c.Hash = HashOf(read);
             return c;
+        }
+
+        /// <summary>The map editor's overrides (#1009), applied last, once the generated map inputs have been read and
+        /// checked: terrain and location moves here, so every caller of the sim sees them; control in the map, the only
+        /// reader of the control file. The file is optional (no file, no overrides) and is in the content hash.</summary>
+        static void ApplyMapOverrides(Func<string, string?> readFile, Content c, List<string> settlementIds)
+        {
+            string? text;
+            try { text = readFile(MapOverrides.FileName); }
+            catch (IOException e) { throw new ContentException(MapOverrides.FileName, "(file)", e.Message); }
+            catch (UnauthorizedAccessException e) { throw new ContentException(MapOverrides.FileName, "(file)", e.Message); }
+            var overrides = MapOverrides.Parse(text);
+            overrides.ValidateMap(c.Hexes, settlementIds.Concat(c.MapLocations.Select(l => l.Id)));
+            overrides.ApplyTo(c);
         }
 
         /// <summary>SHA-256 over "path\nlength\ntext" for each file, CRLF normalised to LF (a Windows checkout hashes alike).</summary>
@@ -934,6 +958,7 @@ namespace Statecraft.Sim
                 if (a.Date == default) throw new ContentException("population.yaml", path + ".date", "required");
                 Count("population.yaml", path + ".jews", a.Jews);
             }
+            ValidateMapLocations(c, settlementIds);
             ValidateMap(c, settlementIds);
             ValidateWindows(c);
             EventRules.Validate(c, offices, indicators);
@@ -1304,6 +1329,72 @@ namespace Statecraft.Sim
             }
         }
 
+        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp" };
+        static readonly string[] MapLocationPriorities = { "must_have", "optional" };
+        static readonly string[] StartingControls = { "israeli", "arab_forces", "contested" };
+
+        /// <summary>GDD v0.2 named map locations: sourced metadata on a land hex. A location's explicit role flags keep this
+        /// roster from creating a managed city, designated site or settlement-control target by implication.</summary>
+        static void ValidateMapLocations(Content c, List<string> settlementIds)
+        {
+            const string lf = MapLocationsFileName;
+            Unique(lf, "locations", c.MapLocations.Select(x => x.Id));
+            var settlements = new HashSet<string>(settlementIds);
+            foreach (var x in c.MapLocations)
+            {
+                var at = $"locations[{x.Id}]";
+                Named(lf, at + ".name", x.Name);
+                Named(lf, at + ".name_he", x.NameHe);   // the map labels it in both languages (#1008)
+                if (x.NameHeReview != "" && x.NameHeReview != "agent-checked")
+                    throw new ContentException(lf, at + ".name_he_review", $"'{x.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                if (x.NameHeSources.Count == 0) throw new ContentException(lf, at + ".name_he_sources", "required: a Hebrew name needs a source");
+                for (int i = 0; i < x.NameHeSources.Count; i++)
+                    if (x.NameHeSources[i] == null || !x.NameHeSources[i].Url.StartsWith("https://", StringComparison.Ordinal) || x.NameHeSources[i].Checked == default)
+                        throw new ContentException(lf, FormattableString.Invariant($"{at}.name_he_sources[{i}]"), "needs a url and checked date");
+                if (!MapLocationKinds.Contains(x.Kind))
+                    throw new ContentException(lf, at + ".kind", $"unknown kind '{x.Kind}' ({string.Join(", ", MapLocationKinds)})");
+                if (!MapLocationPriorities.Contains(x.Priority))
+                    throw new ContentException(lf, at + ".priority", $"unknown priority '{x.Priority}' ({string.Join(", ", MapLocationPriorities)})");
+                Finite(lf, at + ".lon", x.Lon);
+                Finite(lf, at + ".lat", x.Lat);
+                if (x.Lon < -180 || x.Lon > 180) throw new ContentException(lf, at + ".lon", "must be from -180 to 180");
+                if (x.Lat < -90 || x.Lat > 90) throw new ContentException(lf, at + ".lat", "must be from -90 to 90");
+                var hex = c.HexAt(x.Q, x.R);
+                if (hex == null || !hex.Land)
+                    throw new ContentException(lf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
+                if (!x.Marker) throw new ContentException(lf, at + ".marker", "must be true: this file is the map-location roster");
+                if (x.ManagedCity && !settlements.Contains(x.Id))
+                    throw new ContentException(lf, at + ".managed_city", $"needs the same id in {SettlementsFileName}");
+                if (x.StartingControl == "" && x.ControlDate != default)
+                    throw new ContentException(lf, at + ".starting_control", "required with control_date");
+                if (x.StartingControl != "")
+                {
+                    if (!StartingControls.Contains(x.StartingControl))
+                        throw new ContentException(lf, at + ".starting_control", $"unknown control '{x.StartingControl}' ({string.Join(", ", StartingControls)})");
+                    if (x.ControlDate == default) throw new ContentException(lf, at + ".control_date", "required with starting_control");
+                }
+                if (x.ControlChange != null)
+                {
+                    var change = x.ControlChange;
+                    var cat = at + ".control_change";
+                    if (x.ControlDate == default) throw new ContentException(lf, cat + ".date", "requires control_date");
+                    if (change.Date <= x.ControlDate) throw new ContentException(lf, cat + ".date", "must be after control_date");
+                    if (!StartingControls.Contains(change.Control))
+                        throw new ContentException(lf, cat + ".control", $"unknown control '{change.Control}' ({string.Join(", ", StartingControls)})");
+                    if (change.Sources == null || change.Sources.Count == 0)
+                        throw new ContentException(lf, cat + ".sources", "required: a control change is a historical fact");
+                    for (int i = 0; i < change.Sources.Count; i++)
+                        if (change.Sources[i] == null || !change.Sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || change.Sources[i].Checked == default)
+                            throw new ContentException(lf, FormattableString.Invariant($"{cat}.sources[{i}]"), "needs an https url and a checked date");
+                }
+                if (x.Sources.Count == 0) throw new ContentException(lf, at + ".sources", "required: a map location is a historical fact");
+                for (int i = 0; i < x.Sources.Count; i++)
+                    if (x.Sources[i] == null || !x.Sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || x.Sources[i].Checked == default)
+                        throw new ContentException(lf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
+                Status(lf, at + ".status", x.Status);
+            }
+        }
+
         static void ValidateMap(Content c, List<string> settlementIds)
         {
             if (c.Hexes.Count == 0) throw new ContentException(HexesFile, "hexes", "no hexes");
@@ -1329,6 +1420,32 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(s.Q, s.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementHexesFileName, $"settlements[{s.Id}]", FormattableString.Invariant($"hex q={s.Q} r={s.R} is not a land hex in {HexesFile}"));
+            }
+        }
+
+        /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex, with a
+        /// sourced operation and a review status.</summary>
+        static void ValidateSettlementTargets(Content c, IEnumerable<string> arabTownIds)
+        {
+            Unique(SettlementTargetsFileName, "targets", c.SettlementTargets.Select(x => x.Id));
+            var known = new HashSet<string>(arabTownIds, StringComparer.Ordinal);
+            foreach (var x in c.SettlementTargets)
+            {
+                var at = $"targets[{x.Id}]";
+                if (!known.Contains(x.Id))
+                    throw new ContentException(SettlementTargetsFileName, at + ".id", $"is not an {ArabTown} row of {SettlementsFileName}");
+                var hex = c.HexAt(x.Q, x.R);
+                if (hex == null || !hex.Land)
+                    throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
+                if (string.IsNullOrWhiteSpace(x.Operation)) throw new ContentException(SettlementTargetsFileName, at + ".operation", "required");
+                if (x.Sources.Count == 0) throw new ContentException(SettlementTargetsFileName, at + ".sources", "needs at least one source");
+                for (int i = 0; i < x.Sources.Count; i++)
+                {
+                    var source = x.Sources[i];
+                    if (!Uri.TryCreate(source.Url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || source.Checked == default)
+                        throw new ContentException(SettlementTargetsFileName, at + $".sources[{i}]", "needs an https url and a checked date");
+                }
+                Status(SettlementTargetsFileName, at + ".status", x.Status);
             }
         }
     }

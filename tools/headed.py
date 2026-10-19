@@ -48,12 +48,13 @@ END_TURN, OPTION, MAP_UNDER_WHY = (1516, 42), (608, 520), (1180, 300)
 
 def left_column_button(index: int, window: tuple[int, int] = WINDOW) -> tuple[int, int]:
     """The centre of the left icon column's button `index` (0 Cabinet, 1 Budget, 2 Defence, 3 Why?) in CSS pixels, from
-    Statecraft.uss (HUD round 2, #398): the column at left 16 px and top 112 px (the one-row bar), 56 px discs 68 px apart,
+    Statecraft.uss (HUD round 2, #398): the column at left 16 px and top 112 px (the one-row bar), 50 px discs 56 px apart
+    (six since How to play, #1041),
     in panel units the PanelSettings scale to the window (1920x1080 reference, match 0.5: the geometric mean of the two
     ratios). Derived, so a moved column is one change in the USS and here, not a re-measured capture."""
     w, h = window
     scale = ((w / 1920) * (h / 1080)) ** 0.5
-    return round((16 + 28) * scale), round((112 + 68 * index + 28) * scale)
+    return round((16 + 28) * scale), round((112 + 56 * index + 25) * scale)   # the discs are centred in the 56 px column
 
 
 WHY = left_column_button(3)   # Why? moved from the top bar to the left icon column (#602)

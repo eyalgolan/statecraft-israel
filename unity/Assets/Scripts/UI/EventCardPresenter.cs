@@ -27,6 +27,9 @@ namespace Statecraft.Game.UI
         public const string ModalClass = "event-modal";
         /// <summary>The media header's width over its height (the photographs and the clips are 960x540).</summary>
         public const float MediaAspect = 16f / 9f;
+        /// <summary>On End Turn while the shown card cannot be answered with the Attention left (#1034): Statecraft.uss
+        /// highlights it, as ending the turn is then the way on (EventSystem.Delegate hands the card to its minister).</summary>
+        public const string EndTurnWaitingClass = "end-turn-waiting";
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -39,7 +42,8 @@ namespace Statecraft.Game.UI
         readonly bool hiddenInCapture;
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
-        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit;
+        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit, delegateLine;
+        readonly Button? endTurn;
         readonly Button hide, reopen, illustrationSwitch;
         readonly System.Action onHide, onReopen, onUncovered;
         readonly EventCallback<PointerDownEvent> onHidePointer;
@@ -86,7 +90,9 @@ namespace Statecraft.Game.UI
             // size it was dropped at gets no geometry event of its own; the head below it always moves, so it checks too.
             head = card.Q<VisualElement>(className: "event-head");
             scroll = card.Q<VisualElement>("event-scroll"); options = card.Q<VisualElement>("event-options");
+            delegateLine = card.Q<Label>("event-delegate");
             layer = card.parent; hudRoot = root.Q("root") ?? root;
+            endTurn = hudRoot.Q<Button>("end-turn");
             hide = card.Q<Button>("event-hide"); reopen = layer.Q<Button>("event-reopen");
             hide.text = text["event.hide"]; reopen.text = text["event.reopen"];
             card.Q<Label>("event-draft").text = text["event.draft"];
@@ -145,6 +151,7 @@ namespace Statecraft.Game.UI
             card.Q<VisualElement>("event-options")?.Clear(); card.style.display = DisplayStyle.None;
             reopen.style.display = DisplayStyle.None;
             hudRoot.RemoveFromClassList(OpenClass);
+            endTurn?.RemoveFromClassList(EndTurnWaitingClass);
             ScreenNav.DisableCovered(hudRoot);
         }
 
@@ -196,6 +203,13 @@ namespace Statecraft.Game.UI
             reopen.style.display = !hiddenInCapture && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
             hudRoot.EnableInClassList(OpenClass, shown);
             ScreenNav.DisableCovered(hudRoot);
+            // An answer is an order and costs Attention (choose_event_option): the bridge prices it and checks it as Queue
+            // does. When the turn's Attention left cannot pay, every option would be refused (#1034, #1043): the options are
+            // greyed out with their price, the card says End Turn hands it to its minister, and End Turn is highlighted.
+            var answer = Shown == null ? null : new ChooseEventOption(Shown.Id, "");
+            var price = answer == null ? 0 : bridge.Price(answer);
+            var unpaid = answer != null && !bridge.CanPay(answer);
+            endTurn?.EnableInClassList(EndTurnWaitingClass, !hiddenInCapture && unpaid);
             if (Shown == null || Collapsed) video?.Stop();
             if (Shown == null) { clip = null; clipAlt = null; ShowPhoto(null); return; }
             var e = Shown;
@@ -223,13 +237,19 @@ namespace Statecraft.Game.UI
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            // The minister End Turn hands the card to, after this turn's queued orders (an appointment included): the sim's answer.
+            var minister = unpaid ? bridge.DelegatedTo(e) : null;
+            delegateLine.text = unpaid ? text.Format("event.no_attention", minister == null ? text["event.cabinet"] : ContentNames.Of(text, minister)) : "";
+            delegateLine.style.display = unpaid ? DisplayStyle.Flex : DisplayStyle.None;
             var options = card.Q<VisualElement>("event-options");
             options.Clear();
             foreach (var o in e.Options)
             {
                 var option = o;
-                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = Cabinet.Fill(c, s, o.Text, date) };
+                var label = Cabinet.Fill(c, s, o.Text, date);
+                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price > 0 ? text.Format("event.option_cost", label, price) : label };
                 b.AddToClassList(OptionClass);
+                b.SetEnabled(!unpaid);
                 b.generateVisualContent += PaintSign;                      // the promo's round sign at the option's left
                 options.Add(b);
             }

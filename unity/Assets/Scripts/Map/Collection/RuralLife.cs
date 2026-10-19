@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Period-generic farm and village life from MATKOT's 1948 Collection (issue #667, whose sourced setting is:
+    /// <summary>Period-generic farm and village life from Tal Heuberger's 1948 Collection (issue #667, whose sourced setting is:
     /// tractors and horse-drawn work at kibbutz, moshav and moshava fields; sheep and donkeys at villages; camels at
     /// Bedouin areas). This is presentation only: the figures are scenery, never civilian or combat units.
     ///
@@ -34,9 +34,9 @@ namespace Statecraft.Game.Map.Collection
         public const int MaxAnchorsPerModel = 3;
         /// <summary>The house the world scale is set by (m, real): the middle of the kit's default house, 7.5 to 10 m long.</summary>
         public const float ReferenceHouseM = 8.5f;
-        /// <summary>The one world scale of the map's MATKOT models up close (the owner on v0.1.1, 18 October 2026: the
+        /// <summary>The one world scale of the map's Tal Heuberger models up close (the owner on v0.1.1, 18 October 2026: the
         /// buildings were "way bigger then the train"): the reference house is as long as the locomotive's car of the steam
-        /// train the map runs (ServiceTrain: MATKOT's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize,
+        /// train the map runs (ServiceTrain: Tal Heuberger's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize,
         /// about 816 m, in ServiceTrain.Cars cars of about 204 m), so 204 / 8.5 = 24x real. The same rule as the #700
         /// buildings' scale fix (branch map/town-models-world-scale, SettlementKits.ModelScale), so a tractor stands beside
         /// a kibbutz house at their real proportion. (Tripo's meshes are all about one unit across, so one shared scale

@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #670: MATKOT's Nubian ibex and striped hyena, sparse and deterministic in their sourced ranges, streamed
+/// <summary>Issue #670: Tal Heuberger's Nubian ibex and striped hyena, sparse and deterministic in their sourced ranges, streamed
 /// through CollectionStream only for close zoom and failing open when the animals bundle is unavailable.</summary>
 public class WildlifeLayerTests
 {
@@ -94,7 +94,7 @@ public class WildlifeLayerTests
             var (lo, hi) = WildlifeLayer.GroundSpan(ground, new Vector2(p.At.x, p.At.z));
             Assert.LessOrEqual(hi - b.min.y, 0.5f * WildlifeLayer.MaxReliefM + 0.5f, p.Key + " is not buried in the ground under it");
             Assert.LessOrEqual(b.min.y - lo, 0.5f * WildlifeLayer.MaxReliefM + 0.5f, p.Key + " does not float over the ground under it");
-            Assert.AreEqual(WildlifeLayer.SizeM, Mathf.Max(b.size.x, b.size.z), 0.5f, p.Key + " is its symbolic size");
+            Assert.AreEqual(WildlifeLayer.LengthM(p.Model), Mathf.Max(b.size.x, b.size.z), 0.5f, p.Key + " is its size at the world scale");
             // Standing as the model stands: its height is the prefab's own standing height times the layer's scale (a yaw
             // about the vertical never changes a height; a model laid on its side would have its width as its height).
             var rest = Object.Instantiate(prefab);
@@ -109,6 +109,29 @@ public class WildlifeLayerTests
         float band = 0.5f * (WildlifeLayer.CloseEnterM + WildlifeLayer.CloseExitM);
         Assert.IsTrue(WildlifeLayer.CloseAt(band, true));
         Assert.IsFalse(WildlifeLayer.CloseAt(band, false));
+    }
+
+    /// <summary>Issue #1033 (the owner, 18 October 2026: "Train scale for all ambient life"): each animal is drawn at the
+    /// building models' world scale (SettlementKits.ModelScale), an ibex of about 1.3 m about 31 m long and a striped hyena
+    /// of about 1.1 m about 26 m, smaller than the reference house and a sixth or so of the steam train's locomotive car
+    /// (RoadVehicles.LocomotiveCarM, about 204 m), where before each was about 1.9 km.</summary>
+    [Test]
+    public void EveryAnimalIsSmallerThanAHouseAndMuchSmallerThanTheLocomotiveCar()
+    {
+        var map = OpenMap();
+        var layer = WildlifeLayer.Show(map)!;
+        foreach (var (id, _, done) in asked.ToList()) done(Near(id));
+        Assert.AreEqual(WildlifeLayer.IbexCount + WildlifeLayer.HyenaCount, layer.Placed.Count);
+        float house = Statecraft.Game.Map.Kits.SettlementKits.ReferenceHouseM * Statecraft.Game.Map.Kits.SettlementKits.ModelScale;
+        float car = Statecraft.Game.Map.Routes.RoadVehicles.LocomotiveCarM;
+        foreach (var p in layer.Placed)
+        {
+            var rs = layer.transform.Find(p.Key).GetComponentsInChildren<Renderer>();
+            var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+            float longest = Mathf.Max(b.size.x, b.size.y, b.size.z);
+            Assert.Less(longest, house, $"{p.Key}: {longest:0} m against the {house:0} m reference house");
+            Assert.That(longest / car, Is.InRange(0.1f, 0.2f), $"{p.Key}: {longest:0} m against the {car:0} m locomotive car");
+        }
     }
 
     [Test]

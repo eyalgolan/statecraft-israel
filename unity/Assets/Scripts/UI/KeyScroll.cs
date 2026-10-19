@@ -18,6 +18,7 @@ namespace Statecraft.Game.UI
         static readonly Dictionary<string, string> MainViews = new Dictionary<string, string>
         {
             ["cabinet"] = "cabinet-seats", ["budget"] = "budget-rows", ["defence"] = "defence-body", ["why"] = "why-rows",
+            ["how-to-play"] = "how-to-play-body",
         };
 
         /// <summary>A page is the view's height less about one line of text, so the line at the edge stays in sight.</summary>

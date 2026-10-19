@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Statecraft.Game.Map.Kits
 {
-    /// <summary>The building models the towns are built from (issue #659): MATKOT's Tripo models from #507,
+    /// <summary>The building models the towns are built from (issue #659): Tal Heuberger's Tripo models from #507,
     /// imported in #675 under Assets/Art/Settlements/Prototype/Models. Only the models a town kit places are listed, so only
     /// these enter a build (through <see cref="TownModelSet"/>, referenced by the map scene: they load with the map). b11
     /// shikun, b21 workshop, b22 factory, b12 Tegart fort and b18 barracks have no plot in today's 1948 town kits and are not

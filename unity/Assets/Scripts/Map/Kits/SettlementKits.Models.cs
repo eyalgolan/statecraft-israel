@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Issue #659, owner ruling on #700: "Models up close only". Every building the kit places also gets one of
-    /// MATKOT's building models (<see cref="TownModel"/>), stood on the same plot at one world scale (<see cref="Fit"/>,
+    /// Tal Heuberger's building models (<see cref="TownModel"/>), stood on the same plot at one world scale (<see cref="Fit"/>,
     /// <see cref="ModelScale"/>),
     /// standing on the plot's ground level with a stone plinth below it where the ground falls away. Far off the kit's
     /// own buildings draw, exactly as before; up close (TownModelLayer.CloseEnterM) the models draw instead, with each
@@ -49,9 +49,9 @@ namespace Statecraft.Game.Map.Kits
         /// (SettlementKits.Pick).</summary>
         public const float ReferenceHouseM = 8.5f;
 
-        /// <summary>The one world scale of MATKOT's building models (the owner on v0.1.1, 18 October 2026: the buildings were
+        /// <summary>The one world scale of Tal Heuberger's building models (the owner on v0.1.1, 18 October 2026: the buildings were
         /// "way bigger then the train" and Jaffa's stood over Tel Aviv's): the reference house is as long as the locomotive's
-        /// car of the steam train the map runs (ServiceTrain: MATKOT's locomotive and tender at RouteTrain.Scale x
+        /// car of the steam train the map runs (ServiceTrain: Tal Heuberger's locomotive and tender at RouteTrain.Scale x
         /// ServiceTrain.ModelSize, about 816 m in ServiceTrain.Cars cars of about 204 m), so 204 / 8.5 = 24x a building's real
         /// size, for every model. Before, each model filled its kit plot, at the kits' own symbolic 60x (city blocks) and 100x
         /// (houses): a Tel Aviv block up to 1.6 km and a house 800 m, and Jaffa's 100x houses beside Tel Aviv's 60x blocks.

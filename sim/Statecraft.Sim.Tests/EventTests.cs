@@ -524,6 +524,26 @@ options:
         Assert.Single(LoadWithStanding(Sensitive("terror", target, delta)).Events);
     }
 
+    /// <summary>R-EFX-007 (Q-DEP-6(a)): a displacement option cannot raise any available resource target. Arms and
+    /// score are kept in this test as explicit boundaries: neither is an event-effect target on this HEAD, so the
+    /// loader refuses them as unknown rather than inventing a target in this PR.</summary>
+    [Theory]
+    [InlineData("treasury", "sensitive events cannot reward")]
+    [InlineData("fx_reserves", "sensitive events cannot reward")]
+    [InlineData("food", "sensitive events cannot reward")]
+    [InlineData("food_supply", "sensitive events cannot reward")]
+    [InlineData("morale", "sensitive events cannot reward")]
+    [InlineData("intl_standing", "sensitive events cannot reward")]
+    [InlineData("arms", "unknown target")]
+    [InlineData("score", "unknown target")]
+    public void ADisplacementOptionCannotRaiseAnything(string target, string reason)
+    {
+        var ex = Assert.Throws<ContentException>(() => LoadWithStanding(Sensitive("displacement", target, "0.02")));
+        Assert.Equal("events/shortage.yaml", ex.File);
+        Assert.Equal($"events[shortage].options[import].effects.{target}", ex.Field);
+        Assert.Contains(reason, ex.Message);
+    }
+
     /// <summary>A non-sensitive event may still raise them.</summary>
     [Fact]
     public void AnUntaggedEventMayRaiseCohesionAndSupport()

@@ -3,7 +3,7 @@ This project is built with heavy AI assistance. Here is what that means, in itch
 ## What AI is used for
 
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images are AI-generated, and the cinematic trailer was made from them with AI video tools. The start-screen painting is AI-generated and shows no identifiable person. The 3D models are by MATKOT, made with Tripo Studio. The tab icons were drawn with AI help.
+- **Graphics:** the concept and promo images are AI-generated, and the cinematic trailer was made from them with AI video tools. The start-screen painting is AI-generated and shows no identifiable person. The 3D models are by Tal Heuberger, made with Tripo Studio. The tab icons were drawn with AI help.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
 - **Sound:** none in the game yet. The cinematic trailer has music; its source is awaiting the owner's check.
 

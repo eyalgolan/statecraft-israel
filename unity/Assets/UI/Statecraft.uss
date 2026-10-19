@@ -203,6 +203,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     border-color: var(--gold); border-width: 1.5px; color: var(--gold-light); padding: 2px 12px 2px 38px;
 }
 .end-turn:hover { border-color: var(--gold-light); }
+/* A card waits that the Attention left cannot answer (#1034): End Turn is the way on, so it stands out. */
+.end-turn-waiting { border-color: var(--gold-light); border-width: 3px; background-color: rgba(196, 160, 92, 0.35); }
 
 /* The decision card in the middle (decision cards, 2026-10-13), the info panel at the bottom-left, the minimap at the
    bottom-right. The right-hand column keeps its 480 px width, so the screens and the border layer's caption stay where
@@ -218,14 +220,17 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
 .event-gutter { display: none; position: absolute; left: 0; top: 112px; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
 .event-modal .event-gutter { display: flex; }
-.left-column .rail-button { width: 56px; height: 56px; margin: 0 0 12px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.left-column .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
-.left-column .rail-button .nav-disc { top: 0; left: 0; width: 56px; height: 56px; padding: 13px; border-radius: 28px; }
+/* Six discs since How to play (#1041): 50 px, 6 px apart, so the column ends at 112 + 336 px (the five 56 px discs: 340),
+   above the info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests); the column keeps its 56 px width,
+   so the backdrop, the screens and the toast keep their places. */
+.left-column .rail-button .nav-disc { top: 0; left: 0; width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
 /* On a phone held upright the panel's scale falls to about 0.41 (375x667), where a 56 px disc is 22.8 px on screen: the
    column's discs are 60 px there, at least 24 on screen (LeftColumnTests), and the backdrop's strip and the backdrop
    follow the wider column. */
 .hud-three-row .left-column { width: 60px; }
-.hud-three-row .left-column > .rail-button { width: 60px; height: 60px; }
+.hud-three-row .left-column > .rail-button { width: 60px; height: 60px; margin: 0 0 12px 0; }
 .hud-three-row .left-column > .rail-button .nav-disc { width: 60px; height: 60px; padding: 14px; border-radius: 30px; }
 .hud-three-row .event-gutter { width: 76px; }
 .hud-three-row .event-scrim { left: 60px; }
@@ -315,6 +320,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-text { white-space: normal; margin-bottom: 8px; }
 /* An objective card's line under its text (#380): when it was completed against history. */
 .event-objective { white-space: normal; margin-bottom: 8px; }
+/* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
+.event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
 /* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. */
 .info-panel { position: absolute; left: 16px; bottom: 16px; width: 520px; min-height: 160px; flex-direction: row; align-items: flex-start; }
@@ -398,6 +405,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .screen .row.grow > .grow { min-height: 0; flex-shrink: 1; }
 /* Settings (#40): an option's name takes the row's width and wraps; its button keeps room for "On" / "Off". */
 .settings-row { margin-top: 8px; }
+.how-to-play-body { min-height: 0; }
+.how-to-play-line { white-space: normal; margin-bottom: 12px; font-size: 18px; }
 .settings-name { flex-grow: 1; flex-shrink: 1; min-width: 0; white-space: normal; }
 .settings-switch { flex-shrink: 0; min-width: 96px; -unity-text-align: middle-center; }
 /* The quality choice's buttons sit side by side; the one that is set is marked by a gold fill and dark text, not only a
@@ -407,6 +416,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The regular cut's thin strokes fade on the gold. Only as specific as ".lang-he Button", which comes later and keeps
    the Hebrew face in Hebrew. */
 Button.settings-choice-selected { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
+/* The language choice (#1036): "עברית" is in the Hebrew face in the English UI too (EB Garamond has no Hebrew), by id so
+   that it beats the selected button's face above. The note under the row wraps. */
+#settings-language-he {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
+    -unity-text-generator: advanced;
+}
+.settings-note { white-space: normal; margin-top: 4px; }
 
 /* The toast sits in the map's free top-left corner, above the info panel: opaque, and never over an open screen's title or
    the minimap column (B7). */
@@ -428,6 +444,21 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 
 .why-group { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); color: var(--gold); letter-spacing: 1px; margin-top: 10px; border-bottom-width: 1px; border-color: rgba(196, 160, 92, 0.25); }
 .why-line { white-space: normal; padding-left: 12px; }
+/* The turn report (#1037): a backdrop over the HUD, as the outcome clips', with a reading panel in the middle. */
+.turn-report { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
+.turn-report-panel { width: 640px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
+.turn-report-rows { flex-shrink: 1; min-height: 0; }
+.turn-report-row { margin-bottom: 10px; }
+.turn-report-heading { white-space: normal; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
+.turn-report-causes { white-space: normal; padding-left: 12px; }
+.turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
+.turn-report-actions > Button { margin-left: 8px; }
+/* A top-bar number's explanation (MeterTip, #1037): under the bar, wrapped, kept inside the window by MeterTip. */
+.meter-tip {
+    display: none; position: absolute; max-width: 420px; padding: 6px 10px;
+    background-color: var(--navy-solid); border-color: var(--gold); border-width: 1px; border-radius: 3px;
+}
+.meter-tip-line { font-size: 16px; white-space: normal; color: var(--ink); margin: 0; padding: 0; }
 
 /* Wide screens (Cabinet and Defence, laid out as promo/final/04 and 08): from the left edge to the minimap column, over the
    info panel (an opaque reading screen; the info panel is about a hex, not needed while reading a screen). The event card
@@ -727,7 +758,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    in it. Each rule above that names EB Garamond is listed here; HebrewUiTests fails for one that is missed, including the
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
-.lang-he .why-group, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
+.lang-he .why-group, .lang-he .turn-report-heading, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
 .lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;

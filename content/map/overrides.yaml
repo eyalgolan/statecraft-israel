@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=../schema/map-overrides.schema.json
+terrain: []
+control: []
+locations: []

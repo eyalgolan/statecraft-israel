@@ -20,7 +20,7 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
    # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 9922495a92307f87d7b5338cd8501fb60ad0424ea6b19ef2d1ec55c44a8bdfb8"
-   # and "GOLDEN OK hash1952 548a6acce93c677f566e7d6febdeb50ed6aeba0e4f61a884708ef0fc38774d87"
+   # and "GOLDEN OK hash1952 722d90a214d8f328fa9e534ab19a8e973de21cdee645aaa6983fe88b3cc55c08"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
      --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
@@ -125,8 +125,9 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
 
    Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). It downloads each player,
    checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on GitHub's
-   Windows and Linux machines (the Linux player under `xvfb-run -a`: with no display at all it crashes, issue #533), and the Mac app twice: on Apple silicon (`macos-15`, its arm64 slice) and on Intel
-   (`macos-15-intel`, its x86_64 slice; issue #548 tracks its end in August 2027). It fails when only one or two of the
+   Windows and Linux machines (the Linux player under `xvfb-run -a`: with no display at all it crashes, issue #533), and the Mac app twice on Apple silicon (`macos-15`):
+   its arm64 slice, and its x86_64 slice under Rosetta (`arch -x86_64`; GitHub retires its last Intel image,
+   `macos-15-intel`, in August 2027, issue #548). It fails when only one or two of the
    three archives are attached. A release with none (a web-only release, before desktop players ship) passes, but its
    run summary says UNCHECKED.
    - **The release stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release

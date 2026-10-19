@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Kits
 {
-    /// <summary>Issue #659, owner ruling on #700: "Models up close only". Up close the towns' buildings are MATKOT's building
+    /// <summary>Issue #659, owner ruling on #700: "Models up close only". Up close the towns' buildings are Tal Heuberger's building
     /// models, drawn with GPU instancing (Graphics.RenderMeshInstanced: one batch list per model and <see cref="TileM"/> tile,
     /// culled per tile, as <see cref="VegetationLayer"/> draws the trees); far off they are the kits' own buildings, as on
     /// main. Each camera picks by its view distance (the camera rig's zoom: <see cref="ViewDistance"/>) with hysteresis:

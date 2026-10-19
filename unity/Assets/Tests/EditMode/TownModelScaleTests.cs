@@ -10,8 +10,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using M = Statecraft.Game.Map.Kits.TownModel;
 
-/// <summary>The owner on v0.1.1 (18 October 2026): "the sizes in 0.1.1 dont make any sense - [MATKOT's] buildings are way
-/// bigger then the train. this also makes jaffa's buildings be over tel avivs buildings". MATKOT's building models (#700)
+/// <summary>The owner on v0.1.1 (18 October 2026): "the sizes in 0.1.1 dont make any sense - [Tal Heuberger's] buildings are way
+/// bigger then the train. this also makes jaffa's buildings be over tel avivs buildings". Tal Heuberger's building models (#700)
 /// stand at one world scale, measured against the steam train the map runs (ServiceTrain): a house about one locomotive
 /// long, a city block no longer and no taller than the whole train, and no settlement's models over another's.</summary>
 public class TownModelScaleTests
@@ -23,7 +23,7 @@ public class TownModelScaleTests
         KitScale.Reset();
     }
 
-    /// <summary>The service train's length on the map (m): MATKOT's locomotive and tender at RouteTrain.Scale times
+    /// <summary>The service train's length on the map (m): Tal Heuberger's locomotive and tender at RouteTrain.Scale times
     /// ServiceTrain.ModelSize, about 816 m, in ServiceTrain.Cars cars of about 204 m: the locomotive's own car.</summary>
     static float TrainM => RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize;
     static float LocoM => TrainM / ServiceTrain.Cars;

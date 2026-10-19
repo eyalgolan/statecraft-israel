@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #666: MATKOT's civilian figures stand in small deterministic groups at the Israeli towns,
+/// <summary>Issue #666: Tal Heuberger's civilian figures stand in small deterministic groups at the Israeli towns,
 /// kibbutzim, moshavim and placed transit camps. They are ambience, never combat units, and stream after the first frame.</summary>
 public sealed class CivilianPeopleTests
 {
@@ -151,8 +151,31 @@ public sealed class CivilianPeopleTests
             var prefab = Prefab(p.Model, CollectionDetail.Far);
             var expected = layer.transform.rotation * Quaternion.Euler(0f, p.Yaw, 0f) * prefab.transform.localRotation;
             Assert.Less(Quaternion.Angle(expected, child!.rotation), 0.01f, p.Key + " upright");
-            Assert.AreEqual(CivilianPeople.FigureHeightM, WorldBounds(child.gameObject).size.y, CivilianPeople.FigureHeightM * 0.02f, p.Key + " symbolic height");
+            Assert.AreEqual(CivilianPeople.FigureHeightM, WorldBounds(child.gameObject).size.y, CivilianPeople.FigureHeightM * 0.02f, p.Key + " height at the world scale");
             Assert.IsTrue(child.GetComponentsInChildren<Renderer>(true).All(r => r.sharedMaterial.enableInstancing), p.Key + " is GPU-instanced");
+        }
+    }
+
+    /// <summary>Issue #1033 (the owner, 18 October 2026: "Train scale for all ambient life"): a townsperson is drawn at
+    /// the building models' world scale (SettlementKits.ModelScale), a 1.78 m man about 43 m tall, so he is smaller than
+    /// the reference house and a fifth of the steam train's locomotive car (RoadVehicles.LocomotiveCarM, about 204 m),
+    /// where before he was about 2.5 km tall, twelve locomotive cars.</summary>
+    [Test]
+    public void EveryFigureIsSmallerThanAHouseAndMuchSmallerThanTheLocomotiveCar()
+    {
+        var map = OpenMap();
+        var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var layer = CivilianPeople.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+        Answer(CollectionDetail.Far);
+        Assert.Greater(layer.Placed.Count, 0);
+        float house = Statecraft.Game.Map.Kits.SettlementKits.ReferenceHouseM * Statecraft.Game.Map.Kits.SettlementKits.ModelScale;
+        float car = Statecraft.Game.Map.Routes.RoadVehicles.LocomotiveCarM;
+        foreach (var p in layer.Placed)
+        {
+            var size = WorldBounds(layer.transform.Find(p.Key + "/Far").gameObject).size;
+            float tallest = Mathf.Max(size.x, size.y, size.z);
+            Assert.Less(tallest, house, $"{p.Key}: {tallest:0} m against the {house:0} m reference house");
+            Assert.That(tallest / car, Is.InRange(0.1f, 0.25f), $"{p.Key}: {tallest:0} m against the {car:0} m locomotive car");
         }
     }
 

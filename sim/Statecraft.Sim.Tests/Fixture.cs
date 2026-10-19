@@ -168,6 +168,9 @@ budget_start: { finance_minister: 1.0 }
         ["population.yaml"] = @"
 anchors: []
 ",
+        ["settlement_targets.yaml"] = @"
+targets: []
+",
         // A 5 x 2 map: one sea hex, the rest land; one settlement at (1, 0).
         ["map/hexes.json"] = @"{""attribution"":[""test""],""bounds"":{""lon0"":34.2,""lon1"":35.9,""lat0"":29.45,""lat1"":33.35},""hex_size_km"":5.0,""layout"":""pointy"",""hexes"":[
 {""q"":0,""r"":0,""lon"":34.2,""lat"":33.35,""elev_m"":0.0,""land"":false,""biome"":""sea""},
@@ -187,6 +190,25 @@ settlements:
         ["map/settlements_1948.yaml"] = @"
 settlements:
   - { id: town_a, name: Town A, lon: 34.29, lat: 33.35, type: town, founded: 1900, pre_modern: false }
+",
+        ["map/locations_1948.yaml"] = @"
+locations:
+  - id: town_a
+    name: Town A
+    name_he: עיר א
+    name_he_sources: [{ url: 'https://example.org/town-a-he', checked: 2026-10-18 }]
+    kind: city
+    lon: 34.29
+    lat: 33.35
+    q: 1
+    r: 0
+    priority: must_have
+    marker: true
+    managed_city: true
+    designated_site: false
+    settlement_control_target: false
+    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]
+    status: draft
 ",
         ["aliyah.yaml"] = @"
 regions:

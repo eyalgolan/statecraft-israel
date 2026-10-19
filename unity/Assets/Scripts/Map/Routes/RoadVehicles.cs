@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Routes
 {
-    /// <summary>MATKOT's four civilian road vehicles of The 1948 Collection (H01, H04, H06, H10) on their 1948 roads (issue
+    /// <summary>Tal Heuberger's four civilian road vehicles of The 1948 Collection (H01, H04, H06, H10) on their 1948 roads (issue
     /// #725). Presentation only: a few parked vehicles, never units, never in the sim. The near prefabs stream through
     /// <see cref="CollectionStream"/> (nothing is fetched before the frame after the request, so never for the first frame)
     /// and draw only at the close zoom. Each vehicle stands on its road's drawn line, faces along it, keeps clear of the
@@ -28,11 +28,11 @@ namespace Statecraft.Game.Map.Routes
         public const int Seed = 19480725;
         /// <summary>The close zoom (design value): the vehicles draw from 30 km of camera distance in, and off again beyond 36 km.</summary>
         public const float CloseEnterM = 30000f, CloseExitM = 36000f;
-        /// <summary>The locomotive's car of the service train on the map (m): MATKOT's locomotive and tender at
+        /// <summary>The locomotive's car of the service train on the map (m): Tal Heuberger's locomotive and tender at
         /// RouteTrain.Scale times ServiceTrain.ModelSize, in ServiceTrain.Cars cars (about 204 m).</summary>
         public const float LocomotiveCarM = RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize / ServiceTrain.Cars;
         /// <summary>A vehicle's length as a share of the locomotive's car (design value; the owner on v0.1.1, 18 October
-        /// 2026: MATKOT's models were "way bigger then the train"): every road vehicle reads smaller than the locomotive,
+        /// 2026: Tal Heuberger's models were "way bigger then the train"): every road vehicle reads smaller than the locomotive,
         /// about 102 m.</summary>
         public const float LengthShare = 0.5f;
         public const float VehicleLengthM = LengthShare * LocomotiveCarM;
@@ -56,6 +56,9 @@ namespace Statecraft.Game.Map.Routes
         }
 
         static readonly DateTime Start = new DateTime(1948, 5, 15), BurmaOpen = new DateTime(1948, 6, 14);
+        // Approximate: Road of Valour inaugurated 7 December 1948, a proxy for the last convoy under the owner's #949 rule.
+        // Source: research_notes/Map/burma-road-convoy-end.md (#1051).
+        static readonly DateTime BurmaConvoysEnd = new DateTime(1948, 12, 7);
 
         /// <summary>Where each model runs (content/map/routes_1948.yaml): the convoy truck and the canvas-tilt lorry on the
         /// Burma Road, Jerusalem's supply road from its completion on 14 June 1948 (the route's `from`, Burma Road (Israel));
@@ -64,8 +67,8 @@ namespace Statecraft.Game.Map.Routes
         /// map, from 1937) from the game's start. On every date a vehicle stands only where the control layer has Israel.</summary>
         public static readonly IReadOnlyList<Plan> Plans = new[]
         {
-            new Plan(SandwichConvoy, "burma_road", BurmaOpen, null, 1),
-            new Plan(CanvasLorry, "burma_road", BurmaOpen, null, 1),
+            new Plan(SandwichConvoy, "burma_road", BurmaOpen, BurmaConvoysEnd, 1),
+            new Plan(CanvasLorry, "burma_road", BurmaOpen, BurmaConvoysEnd, 1),
             new Plan(IntercityBus, "tel_aviv_haifa_road", Start, null, 2),
             new Plan(CitrusTruck, "tel_aviv_haifa_road", Start, null, 2),
         };

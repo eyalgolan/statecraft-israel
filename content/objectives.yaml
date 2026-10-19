@@ -1,7 +1,7 @@
 # GDD v0.1 objectives (docs/GDD.md "Objectives" and "Historical events on objective completion"; docs/gdd/objective-card.md).
 # Completing an objective records it, scores it and fires its card (R-OBJ-001 to R-OBJ-003); only the GDD loop completes one.
 # Sourced facts and links only: the points and the timing bonus are design values in rules.yaml's mvp: block (D-B6 and D-B2,
-# #456). Phase 1 has one objective, the first new yishuv (D-A4).
+# #456). Phase 1 has two objectives, the first new yishuv (D-A4) and absorbing the immigrants (#738).
 objectives:
   - id: first_new_yishuv
     name: First new yishuv
@@ -9,3 +9,15 @@ objectives:
     # Mefalsim's founding, the ceremony of 12 June 1949 (sites.yaml has the sources). The loader refuses any other date.
     reference_date: 1949-06-12
     card: first_new_yishuv                     # content/events/first_new_yishuv.yaml
+  - id: absorb_immigrants
+    name: Absorb the immigrants
+    # R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached the milestone,
+    # the cities' overflow is at most a share of the people they house and their employed at least a share of civilians.
+    completes_when:
+      absorbed:
+        population_at_least: 1000000   # Q-ABS-1's milestone: the Jewish population passes 1,000,000 (JTA, 22 November 1949)
+        overflow_at_most: 0.10         # DESIGN VALUE (Q-ABS-2, proposed, owner may override, #375): no comparable historical value
+        employed_at_least: 0.40        # DESIGN VALUE (Q-ABS-2): the 1948 national working share, 43.9% (CBS SA 2, Table 9), rounded down
+    # Ingathering of the Exiles Day, 20 December 1949 (JTA; content/events/absorb_immigrants.yaml has the sources).
+    reference_date: 1949-12-20
+    card: absorb_immigrants                    # content/events/absorb_immigrants.yaml

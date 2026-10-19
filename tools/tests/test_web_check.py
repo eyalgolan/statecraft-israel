@@ -382,3 +382,18 @@ def test_a_start_screen_run_that_never_reaches_turn_1_fails_naming_itself(capsys
 def test_a_failure_line_during_a_start_screen_run_fails_it(bad, capsys):
     assert _run(("--startscreen", "recording"), ["GAME OK 1948-05-15 turn 0 hash aa", bad]) == 1
     assert f"FAIL: {bad}" in capsys.readouterr().out
+
+
+def test_viewport_parses_width_x_height_css_pixels():
+    assert wc.parse_viewport("390x844") == (390, 844)   # the phone the HUD's three-row bar is tuned for
+    assert wc.parse_viewport("1920x1080") == (1920, 1080)
+    assert wc.parse_viewport(" 390X844 ") == (390, 844)
+    for bad in ("", "abc", "39x84", "390x", "x844", "390-844"):
+        with pytest.raises(ValueError):
+            wc.parse_viewport(bad)
+
+
+def test_mobile_only_flips_the_emulation_flag():
+    assert wc.viewport_override(1920, 1080, 1.0)["mobile"] is False          # the desktop default (review ruling 1)
+    phone = wc.viewport_override(390, 844, 3.0, True)
+    assert phone == {"width": 390, "height": 844, "deviceScaleFactor": 3.0, "mobile": True}

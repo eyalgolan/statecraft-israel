@@ -28,6 +28,14 @@ R-LOOP-005: Every balance number of the GDD loop (all of `cities.yaml` and `unit
 
 The ID R-LOOP-003 (the Phase 1 overlay, `MvpSlice.Overlay`) is retired with the overlay at the cutover and is not reused.
 
+## Settlement control
+
+R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list is empty until researched rows have a person's check and the sensitivity review (D-F5).
+
+R-CTRL-002: Settlement control is an ordinal `SortedDictionary<string, SettlementControl>`. It is written to the state hash as `ctrl{...}` only when non-empty, in ordinal id order; each record field is written only when it differs from its default (R-LOOP-002).
+
+R-CTRL-003: Residents and combatants are distinct fields. Residents are a state, inhabited or depopulated, not a count (Q-CAP-2 (b)). No rule reads residents as combatants, prisoners, refugee units, labour or a resource; annexation is the one place a later owner-approved rule may say otherwise.
+
 ## Saves
 
 R-SAVE-001: A save names the ruleset it was played under (`ruleset legacy` or `ruleset gdd-0.1`, save schema 2). A game refuses a save made under another ruleset. A schema 1 save has no ruleset line and is legacy, so the GDD game refuses it as made under earlier rules. The refusal carries a code (`older_rules`) the UI translates, and the sim's reason does not itself ask for a new game: the player reads that once (N4).
@@ -194,7 +202,9 @@ R-NAT-004: "Low international support" (`low_intl_support`) is a situation on `i
 
 R-EFX-001: An option's effect may target an indicator id from `model.yaml`, `treasury` or `fx_reserves` (game money), or `food`, the national Food stock: the effect moves the stock by whole units (the delta rounds half away from zero) and the stock never drops below 0, so a cut larger than the stock applies only to what is there. Any other target is a load error naming file and field. The Arms stock becomes a target with its pool (#781).
 
-R-EFX-002: An option of an event tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot raise `treasury`, `fx_reserves`, `food`, `food_supply`, `morale` or `intl_standing` (Q-EFX-2, decided 15 October 2026: the no-gain rule covers all five resources, with the legacy indicators standing for Food, Social cohesion and International Support; `food` is Food's own target, and Arms joins the rule with its pool, #781). A cost stays allowed. The rule for the Phase 6 `displacement` tag is Q-DEP-6 (open).
+R-EFX-002: An option of an event tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot raise `treasury`, `fx_reserves`, `food`, `food_supply`, `morale` or `intl_standing` (Q-EFX-2, decided 15 October 2026: the no-gain rule covers all five resources, with the legacy indicators standing for Food, Social cohesion and International Support; `food` is Food's own target, and Arms joins the rule with its pool, #781). A cost stays allowed.
+
+R-EFX-007: An option of an event tagged `displacement` cannot raise Money (`treasury` or `fx_reserves`), Food (`food` or `food_supply`), Arms, Social cohesion (`morale`), International Support (`intl_standing`) or score, with no exception (Q-DEP-6(a), owner ruling of 18 October 2026). Arms and score are not event-effect targets yet and remain unknown targets under R-EFX-001; when those targets exist, this rule covers them. The tag also receives R-EFX-005's ban on unit grants and positive city effects.
 
 D-H2 in the GDD loop (GDD Phase 7 PR 2, #806). The owner took the plan's recommendations for Q-HFX-1 to Q-HFX-3 on 17 October 2026 (#784): grants of units, a city's housing capacity, condition and job slots, and project unlock, each validated at load; a grant is free and stands at the military camp or at the site the event names (in this slice, a city the event names: a site waits until sites carry a date, R-EFX-006); the no-reward rule covers them. The first slice built unit grants and the housing capacity and job slots; the second adds the housing condition (#855); project unlock comes with the records it acts on (#735).
 
@@ -202,7 +212,9 @@ R-EFX-003: An option's `grant_units` entry `{ type, n, at }` adds `n` (at least 
 
 R-EFX-004: An option's `city_effects` entry `{ city, field, delta }` changes only that city's `housing_capacity` or `job_slots`, by a whole, non-zero `delta`, or its housing `condition` by a non-zero `delta` from -1 to 1. Housing capacity never drops below 0, and job slots never drop below the city's employed, so a larger cut applies only to what is free. Capacity may fall below the city's civilians, as overcrowding already can. The condition stays from 0 to 1 (R-HOUSE-001). The other fields of the city, its condition included, do not change. The cause carries the change that applied.
 
-R-EFX-005: An option of an event tagged `holocaust`, `terror`, `massacre` or `war-casualties` carries no unit grant and no `city_effects` gain, whether capacity, slots or condition (Q-HFX-3; extends R-EFX-002). A cut stays allowed.
+R-EFX-005: An option of an event carrying any sensitive tag (`holocaust`, `terror`, `massacre`, `war-casualties` or `displacement`) carries no unit grant and no `city_effects` gain, whether capacity, slots or condition (Q-HFX-3; extends R-EFX-002 and R-EFX-007). A cut stays allowed.
+
+R-GATE-001: An event tagged `displacement` must have `status: sensitivity-reviewed` before a shareable build. The release gate lists every such event whose status is not reviewed and refuses the build (Q-GATE-1(c), owner ruling of 18 October 2026).
 
 R-EFX-006: The structured effects apply after the numeric effects, grants first and then city effects, each in the option's list order. A target that does not exist on the date (an unbuilt site, a city not yet in the game) is refused at load with file and field, never skipped at run time; so is an unknown type, city or field. Every `cities.yaml` city is in the game from the first turn. A site has no window and starts unbuilt, so a site id as `at` is refused until sites carry a date. The legacy loop, which has no cities or units, refuses them. The preview (R-EVT-005) lists them in the same order.
 

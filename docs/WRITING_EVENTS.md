@@ -32,7 +32,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `title` | yes | The card title. May contain office placeholders. |
 | `text` | yes | The card body. May contain office placeholders. |
 | `anchor` | no (default `soft`) | `hard` or `soft`. See below. |
-| `tags` | no | A list of free-form labels. Four are sensitive. See below. |
+| `tags` | no | A list of free-form labels. Five are sensitive. See below. |
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
@@ -75,8 +75,8 @@ Write plain description. Do not put words in anyone's mouth: no invented quotes
 
 ### tags and the sensitive review
 
-Tags are free-form, but these four are sensitive (checked without regard to case): `holocaust`, `terror`, `massacre`,
-`war-casualties`. An event with any of them:
+Tags are free-form, but these five are sensitive (checked without regard to case): `holocaust`, `terror`, `massacre`,
+`war-casualties`, `displacement`. An event with any of them:
 
 - cannot give a positive delta to any resource in any option: `treasury`, `fx_reserves`, `food`, `food_supply`, `morale`
   (standing for Social cohesion) or `intl_standing` (standing for International Support). The loader refuses: it would
@@ -85,6 +85,11 @@ Tags are free-form, but these four are sensitive (checked without regard to case
   Submit it as `fact-checked`. `Statecraft.Cli --release-gate`, the `-shareable` build and `tools/package_release.py`
   refuse to release while any sensitive event is not `sensitivity-reviewed`, and a test requires every sensitive event
   in `content/` to carry exactly that status once reviewed.
+
+For `displacement`, the no-gain rule has no exception: no option may raise Money, Food, Arms, Social cohesion,
+International Support or score (R-EFX-007). Arms and score are not event-effect targets yet, so the loader already
+refuses them as unknown; do not add either target to an event. The rule applies when those targets exist. No event in
+`content/` uses `displacement` yet.
 
 The other tag used so far is `security`. It has no rule attached.
 
