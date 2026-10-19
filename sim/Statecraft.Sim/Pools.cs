@@ -18,6 +18,12 @@ namespace Statecraft.Sim
         /// <summary>The event-effect target that moves the Food stock itself (R-EFX-001).</summary>
         public const string FoodTarget = "food";
 
+        /// <summary>The event-effect target that moves the Arms stock (R-EFX-001, #781).</summary>
+        public const string ArmsTarget = "arms";
+
+        /// <summary>The command kind that buys Arms with Money (R-ARMS-002).</summary>
+        public const string BuyArmsKind = "buy_arms";
+
         /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
         public static void Init(Content c, GameState s)
         {
@@ -26,6 +32,21 @@ namespace Statecraft.Sim
             s.FoodNeed = Need(s, r);
             s.Food = r.CoverMonths!.Value * s.FoodNeed;
             s.FoodUnmet = 0;
+            s.Arms = r.ArmsStart!.Value;   // R-ARMS-001; the loader requires it in the GDD loop
+        }
+
+        /// <summary>R-ARMS-002 (D-G6): <paramref name="count"/> Arms join the stock at once, and the Treasury pays
+        /// count * arms_price, borrowing what it lacks (R-MONEY-003). Refused, state untouched, for fewer than one unit or a
+        /// stock that would pass a whole number's range. Step has already refused it in the legacy loop.</summary>
+        public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
+        {
+            if (count < 1) return "Buy at least 1 Arms";
+            if ((long)s.Arms + count > int.MaxValue) return "That is more Arms than the stock can hold";
+            var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
+            EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why);
+            s.Arms += count;
+            why.Add(new Cause("economy", "arms", count, FormattableString.Invariant($"Bought {count} Arms, cost {PlayerText.Money(c, "treasury", cost)}")));
+            return null;
         }
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>

@@ -87,6 +87,8 @@ namespace Statecraft.Sim
         public int FoodUnmet;
         /// <summary>Consecutive turn ends with Money and Food both exhausted (R-END-001, R-END-002); 0 when either was not.</summary>
         public int ExhaustedTurns;
+        /// <summary>The national Arms stock (R-ARMS-001; D-G6): one Arms is the equipment package for one 1,000-person recruit group. Never below 0.</summary>
+        public int Arms;
 
         public double TotalPopulation => Population.Values.Sum();
 
@@ -212,6 +214,7 @@ namespace Statecraft.Sim
                   .Append(',').Append(FoodUnmet.ToString(CultureInfo.InvariantCulture));
             }
             if (ExhaustedTurns != 0) { Sep(); Nl(); sb.Append("exhausted=").Append(ExhaustedTurns.ToString(CultureInfo.InvariantCulture)); }
+            if (Arms != 0) { Sep(); Nl(); sb.Append("arms=").Append(Arms.ToString(CultureInfo.InvariantCulture)); }
             return sb.ToString();
         }
     }

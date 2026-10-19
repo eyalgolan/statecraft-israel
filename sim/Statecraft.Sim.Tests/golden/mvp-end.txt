@@ -163,3 +163,4 @@ obj{
   first_new_yishuv=1950-03-15
 score=100
 food=2738,1390,0
+arms=12

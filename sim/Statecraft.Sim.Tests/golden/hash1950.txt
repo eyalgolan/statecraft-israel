@@ -126,3 +126,4 @@ cproj[
   3:housing@tel_aviv,-3,19/1
 next=4
 food=3003,1001,0
+arms=12

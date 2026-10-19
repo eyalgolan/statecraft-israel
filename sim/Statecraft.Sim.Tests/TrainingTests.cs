@@ -326,4 +326,62 @@ public class TrainingTests
         Assert.Empty(s.Cohorts);
         Assert.DoesNotContain("train[", s.Describe());
     }
+
+    // R-ARMS-003: a recruit cohort takes arms_per_recruit_group Arms per group when its training starts (the fixture: 2 a
+    // group from a stock of 20); pioneer training takes none.
+    [Fact]
+    public void ARecruitCohortUsesArms()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Step(c, s, new Train("town_a", "recruit", 3));
+        Assert.Empty(r.Rejected);
+        Assert.Equal(20 - 3 * 2, r.State.Arms);
+        Assert.Contains(r.Why, x => x.System == "city" && x.Target == "arms" && x.Delta == -6 && x.Message == "Town A: basic training took 6 Arms");
+        Assert.Equal(20, Step(c, s, new Train("town_a", "halutz", 3)).State.Arms);
+    }
+
+    // R-ARMS-003, R-TRAIN-002 (owner, #1047, 18 October 2026: "Refund on cancel"): cancelling a recruit cohort returns the
+    // Arms its training took when it started, even if arms_per_recruit_group has changed since; the Money stays paid.
+    [Fact]
+    public void CancellingARecruitCohortReturnsTheArmsItTook()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var trained = Step(c, s, new Train("town_a", "recruit", 3)).State;
+        Assert.Equal(14, trained.Arms);
+        c.Rules.Mvp!.ArmsPerRecruitGroup = 5;   // the refund is what was taken (3 x 2), not today's 3 x 5
+        var cancelled = Step(c, trained, new CancelTraining(trained.Cohorts.Keys.Single()));
+        Assert.Empty(cancelled.Rejected);
+        Assert.Equal(20, cancelled.State.Arms);
+        Assert.Contains(cancelled.Why, x => x.System == "city" && x.Target == "arms" && x.Delta == 6 && x.Message == "Town A: basic training returned 6 Arms");
+        trained.Arms = int.MaxValue - 1;   // the pool was filled meanwhile: the refund stops at the most the stock holds
+        Assert.Equal(int.MaxValue, Step(c, trained, new CancelTraining(trained.Cohorts.Keys.Single())).State.Arms);
+        var halutz = Step(c, s, new Train("town_a", "halutz", 3)).State;
+        var back = Step(c, halutz, new CancelTraining(halutz.Cohorts.Keys.Single()));
+        Assert.Equal(20, back.State.Arms);
+        Assert.DoesNotContain(back.Why, x => x.Target == "arms");
+    }
+
+    // R-ARMS-003: too few Arms refuses the training with a reason, the state as if the order had not been given (Attention
+    // refunded too); a stock of exactly the need trains.
+    [Fact]
+    public void TooFewArmsRefusesTheTraining()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Arms = 5;
+        var r = Step(c, s, new Train("town_a", "recruit", 3));
+        Assert.Equal("Town A: not enough Arms for basic training (need 6, have 5)", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
+        s.Arms = 6;
+        var exact = Step(c, s, new Train("town_a", "recruit", 3));
+        Assert.Empty(exact.Rejected);
+        Assert.Equal(0, exact.State.Arms);
+        // Orders in one turn draw on the stock in turn: the second finds it short.
+        s.Arms = 7;
+        s.Attention = 10;   // both orders affordable, so only the Arms can refuse the second
+        var two = Step(c, s, new Train("town_a", "recruit", 3), new Train("town_a", "recruit", 1));
+        Assert.Equal("Town A: not enough Arms for basic training (need 2, have 1)", Assert.Single(two.Rejected).Reason);
+    }
 }

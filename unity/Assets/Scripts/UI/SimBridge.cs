@@ -132,6 +132,8 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", p.ProjectKind, Content.ProjectKinds.Select(x => x.Id)) ?? Unknown("city", p.City, Content.Cities.Select(x => x.Id));
                 case CancelProject x:
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                // Buying Arms (#781): no ids; the sim refuses a count below one itself.
+                case BuyArms _: return null;
                 default: return text["order.invalid"];
             }
         }
