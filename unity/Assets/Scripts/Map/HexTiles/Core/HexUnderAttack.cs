@@ -56,18 +56,20 @@ namespace Statecraft.HexTiles
         public static float Pulse(float t) => 0.5f - 0.5f * Mathf.Cos(Frac(t / PulsePeriodS) * 2f * Mathf.PI);
 
         /// <summary>Where the smoke columns rise, relative to the hex centre (y = 0), seeded by (q, r). They keep out of the
-        /// unit spot and out of the hex's south side, so a column (seen from the south, as the board camera sees it)
+        /// unit spot and out of the hex's south half, so a column (seen from the south, as the board camera sees it)
         /// does not stand in front of the unit or the city's centre; and far enough in that the drifting top stays inside.</summary>
         public static Vector3[] SmokeBases(int q, int r, float sizeM)
         {
             var rng = new System.Random(unchecked(q * 73856093 ^ r * 19349663 ^ 0x5EED));
             var bases = new Vector3[Columns];
-            // Spread over the north half and the flanks: 200 degrees from east-south-east round to west-south-west.
-            float a0 = -10f + (float)rng.NextDouble() * 40f;
+            // Spread over the north half only (2 to 170 degrees from east): the camera looks from the south, so a column
+            // north of a figure or a building stands behind it, never in front.
+            float a0 = 12f + (float)rng.NextDouble() * 16f;
             for (int i = 0; i < Columns; i++)
             {
-                float a = (a0 + i * 80f + ((float)rng.NextDouble() - 0.5f) * 30f) * Mathf.Deg2Rad;
-                float d = sizeM * (0.36f + (float)rng.NextDouble() * 0.14f);
+                float a = (a0 + i * 66f + ((float)rng.NextDouble() - 0.5f) * 20f) * Mathf.Deg2Rad;
+                // Beyond the squad's formation (its figures stand up to ~0.38 S out).
+                float d = sizeM * (0.40f + (float)rng.NextDouble() * 0.12f);
                 var p = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * d;
                 // Pull in until the whole column (glow at the foot, the top drifted downwind) fits the hex.
                 while (d > sizeM * 0.32f && !(HexGeometry.InHex(p, Vector3.zero, sizeM, Smoke.GlowM * sizeM * 1.2f + 60f)

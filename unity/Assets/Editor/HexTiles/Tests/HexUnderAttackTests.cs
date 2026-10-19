@@ -70,7 +70,9 @@ public class HexUnderAttackTests
         var go = HexUnderAttack.Show(root, new FlatSurface(), Q, R);
         go.GetComponent<HexUnderAttackLook>().Time(1.5f);
         var (meshes, renderers) = Parts(go);
-        var made = meshes.Select(m => (Object)m.sharedMesh).Concat(renderers.SelectMany(r => r.sharedMaterials)).ToList();
+        var materials = renderers.SelectMany(r => r.sharedMaterials).ToList();
+        var made = meshes.Select(m => (Object)m.sharedMesh).Concat(materials)
+            .Concat(materials.Select(m => m.GetTexture("_BaseMap")).Where(t => t != null)).ToList();
         Assert.That(made.Count, Is.GreaterThanOrEqualTo(6), "three meshes and three materials at least");
         Assert.That(made.All(o => o != null));
         Assert.That(HexUnderAttack.Hide(root, Q, R), Is.True);
@@ -122,8 +124,15 @@ public class HexUnderAttackTests
         CollectionAssert.AreEqual(a, HexUnderAttack.SmokeBases(Q, R, HexScale.HexM));
         CollectionAssert.AreNotEqual(a, HexUnderAttack.SmokeBases(Q + 1, R, HexScale.HexM));
         Assert.That(a.Length, Is.InRange(2, 4));
-        // Outside the unit spot, so the unit on the hex stays readable.
-        foreach (var p in a) Assert.That(new Vector2(p.x, p.z).magnitude, Is.GreaterThan(HexScale.UnitSpotShare * HexScale.HexM), $"smoke base {p}");
+        // On every hex: outside the unit spot, and in the north half, so (seen from the south, as the board camera sees
+        // it) no column stands in front of the unit or the city's centre.
+        for (int q = -6; q <= 6; q++)
+            for (int r = -6; r <= 24; r++)
+                foreach (var p in HexUnderAttack.SmokeBases(q, r, HexScale.HexM))
+                {
+                    Assert.That(new Vector2(p.x, p.z).magnitude, Is.GreaterThan(HexScale.UnitSpotShare * HexScale.HexM), $"hex {q},{r}: smoke base {p}");
+                    Assert.That(p.z, Is.GreaterThanOrEqualTo(0f), $"hex {q},{r}: smoke base {p} is in the south half");
+                }
     }
 
     [Test]
