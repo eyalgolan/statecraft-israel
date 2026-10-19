@@ -181,10 +181,11 @@ public class HexModelMeshTests
             lines.Add($"{id} -> {town}: " + string.Join(" ", s.Select((v, i) => $"{HexMeshCheck.FacingNames[i]}={v:F4}")));
         }
         lines.AddRange(BudgetLines());
-        var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "asset-staging/ui-local/hex-tiles/round2/buildings/mesh-report.txt"));
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllLines(path, lines);
-        Debug.Log("HEX MESH REPORT -> " + path + "\n" + string.Join("\n", lines));
+        // Only on a machine with the local asset-staging folder: a test must not make an untracked folder on any clone.
+        var staging = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "asset-staging"));
+        var path = Path.Combine(staging, "ui-local/hex-tiles/round2/buildings/mesh-report.txt");
+        if (Directory.Exists(staging)) { Directory.CreateDirectory(Path.GetDirectoryName(path)!); File.WriteAllLines(path, lines); }
+        Debug.Log("HEX MESH REPORT" + (Directory.Exists(staging) ? " -> " + path : "") + "\n" + string.Join("\n", lines));
     }
 
     /// <summary>Each building tile's triangles on KeepsToItsTriangleBudget's hex ((2,-1), seed 1948) by which level the
