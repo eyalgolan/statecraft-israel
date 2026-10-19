@@ -22,7 +22,9 @@ namespace Statecraft.HexTiles.Capture
     /// -prototype &lt;id&gt; builds and shoots only that tile (with the board's ground and mountains around it).
     /// Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity
     ///   -executeMethod Statecraft.HexTiles.Capture.HexBoardCapture.Run [-board tel_aviv] [-prototype &lt;id&gt; [-on &lt;tile&gt;]]
-    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly]
+    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly] [-time day|dusk|night]
+    /// -time lays a HexTimeOfDay preset over the look once the board is built (day, the default, changes nothing); night
+    /// also darkens the background.
     /// A board too large for the standard board shot (the whole country) is framed whole instead. Each prototype and unit
     /// is shot once (its last hex in the board file, the one whose shots used to be kept); -boardOnly skips those shots.</summary>
     public static class HexBoardCapture
@@ -63,8 +65,12 @@ namespace Statecraft.HexTiles.Capture
             var on = Arg("-on");
             if (only != null && on != null) foreach (var h in board.Hexes.Values) if (h.prototype == on) h.prototype = only;
             if (only != null && !board.Hexes.Values.Any(h => h.prototype == only)) throw new ArgumentException($"board {boardId} has no tile '{only}' (try -on <tile>)");
+            var time = HexTime.Day;
+            if (Arg("-time") is string timeId && !HexTimeOfDay.TryParse(timeId, out time)) throw new ArgumentException($"-time {timeId}: not one of {string.Join(", ", HexTimeOfDay.Ids)}");
             var cam = Stage();
             var (root, reports) = HexBoardBuilder.Build(board, Ground, only: only);
+            // After the build, so the night's lit windows find the board's city and town tiles.
+            var undoTime = ApplyTime(cam, time, root, board, only);
             long buildMs = clock.ElapsedMilliseconds;
             Directory.CreateDirectory(dir);
             try
@@ -95,6 +101,7 @@ namespace Statecraft.HexTiles.Capture
             }
             finally
             {
+                undoTime();
                 TiltShift.Reset();
                 Object.DestroyImmediate(root);
             }
@@ -115,6 +122,20 @@ namespace Statecraft.HexTiles.Capture
             MapGrade.Apply(volume.profile);
             HexLook.Apply(volume.profile, sun);   // the hex-tile look's warm, saturated light, as in the game under ?hex-tiles
             return cam;
+        }
+
+        /// <summary>Night's sky behind the board: a dark navy instead of the day's teal.</summary>
+        public static readonly Color NightBackground = new Color(0.02f, 0.06f, 0.11f);
+
+        /// <summary>Lays <paramref name="time"/> over the look Stage() set (its volume and sun), as HexTilesLook does in the
+        /// game, and darkens the camera's background for night. Returns the undo.</summary>
+        public static Action ApplyTime(Camera cam, HexTime time, GameObject root, HexBoard board, string? only)
+        {
+            var volume = Object.FindFirstObjectByType<Volume>();
+            var undo = HexTimeOfDay.Apply(time, volume != null ? volume.profile : null, MapLighting.FindSun(), root, board, only);
+            if (time != HexTime.Night) return undo;
+            var background = cam.backgroundColor; cam.backgroundColor = NightBackground;
+            return () => { undo(); if (cam != null) cam.backgroundColor = background; };
         }
 
         /// <summary>The board shot's distance: the standard one, unless the board would not fit at twice it (the whole
