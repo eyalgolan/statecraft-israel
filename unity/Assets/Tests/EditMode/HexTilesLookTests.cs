@@ -65,6 +65,50 @@ public class HexTilesLookTests
         finally { Object.DestroyImmediate(root); }
     }
 
+    [TestCase("palmach_squad", false)]
+    [TestCase("palmach_squad", true)]
+    [TestCase("sandwich_truck", false)]
+    [TestCase("sandwich_truck", true)]
+    public void MissingModelsUseAnOwnedShippedMaterial(string typeId, bool existingBoardOwner)
+    {
+        var template = Resources.Load<Material>(HexMaterials.Folder + "/" + HexMaterials.Lit);
+        Assert.IsNotNull(template, "the portable material must ship with the player");
+        var unit = HexUnitTypes.Create(typeId).Create();
+        foreach (var member in unit.Members)
+        {
+            member.Model = "tiles:__missing_unit_material_test_" + typeId;
+            Assert.IsNull(HexModels.Prefab(member.Model));
+        }
+        var root = new GameObject("HexUnitMaterialLifetimeTest");
+        try
+        {
+            var boardOwner = existingBoardOwner ? root.AddComponent<HexBoardAssets>() : null;
+            var parent = existingBoardOwner ? new GameObject("Units").transform : root.transform;
+            if (existingBoardOwner) parent.SetParent(root.transform, false);
+            var motion = new HexUnitMotion(unit, new[] { (0, 0) }, new FlatSurface(), parent);
+            motion.Pose(0f, false);
+            Assert.AreEqual(unit.Members.Count, motion.Objects.Count);
+            var material = motion.Objects[0].GetComponent<MeshRenderer>().sharedMaterial;
+            Assert.IsNotNull(material);
+            Assert.AreNotSame(template, material, "the shipped template is borrowed, not owned");
+            Assert.AreSame(template.shader, material.shader);
+            Assert.AreEqual(template.GetColor("_BaseColor"), material.GetColor("_BaseColor"));
+            Assert.AreEqual(template.GetFloat("_Smoothness"), material.GetFloat("_Smoothness"));
+            foreach (var go in motion.Objects)
+                Assert.AreSame(material, go.GetComponent<MeshRenderer>().sharedMaterial, "one owned copy per motion");
+            Assert.AreEqual(1, root.GetComponentsInChildren<HexBoardAssets>(true).Length, "reuse the existing ancestor owner");
+            if (existingBoardOwner)
+            {
+                Assert.IsNull(parent.GetComponent<HexBoardAssets>(), "the child must not duplicate the board owner");
+                boardOwner!.Teardown();
+            }
+            else Object.DestroyImmediate(root);
+            Assert.IsTrue(material == null, "the parent/board lifetime releases the owned material");
+            Assert.IsTrue(template != null, "teardown must never destroy the shipped template");
+        }
+        finally { if (root != null) Object.DestroyImmediate(root); }
+    }
+
     [Test]
     public void TheBoardCanBeAppliedAfterReopeningTheEditorScene()
     {

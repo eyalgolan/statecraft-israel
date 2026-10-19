@@ -20,6 +20,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Unit cards show the sourced Hebrew unit name in the Hebrew UI, with an English fallback. INS Haganah gains its
   sourced Hebrew name, still flagged for a native speaker's review (#902).
 ### Fixed
+- Missing unit models on the opt-in hex-tile map use an owned copy of the shipped material in player builds.
 - The opt-in hex-tile map regenerates cached stand-in meshes released by an editor scene change.
 - The opt-in hex-tile map preserves settlement marker visibility when removed or rebuilt, and missing vehicle models
   keep their declared box stand-in and footprint size.
