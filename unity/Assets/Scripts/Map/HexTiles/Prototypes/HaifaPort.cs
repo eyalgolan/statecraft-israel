@@ -13,7 +13,7 @@ namespace Statecraft.HexTiles.Prototypes
     ///   The deep-water harbour was opened on 31 October 1933 (https://en.wikipedia.org/wiki/Haifa_Port, checked 2026-10-19).
     /// - A railway strip runs east from the north quay past a generic station block toward the bay. Haifa East station opened
     ///   in 1904 next to the port (https://en.wikipedia.org/wiki/Haifa_East_railway_station, checked 2026-10-19).
-    /// - The stone-balcony downtown: a ring of kit_haifa / kit_haifa_2 buildings round the square, on the port side.
+    /// - The stone-balcony downtown: a ring of kit_haifa_2 and kit_jerusalem_3 stone buildings round the square, on the port side.
     /// - Hadar HaCarmel on the slope to the south-east: two terraced rows of buildings with a painted street along each,
     ///   rising toward the south edge, with Carmel pines above them
     ///   (https://en.wikipedia.org/wiki/Hadar_HaCarmel, checked 2026-10-19).
@@ -46,8 +46,10 @@ namespace Statecraft.HexTiles.Prototypes
         // level (about 6,000 each, HexModels.TownAliases); the budget is that plus 10%. The doc comment's estimate predates them.
         public int TriangleBudget => 130000;
 
-        // Explicit kit ids: kit_haifa_3 is the moshava farmhouse mesh and kit_moshava_3 is a barn.
-        static readonly string[] Downtown = { "sandbox:kit_haifa", "sandbox:kit_haifa_2" };
+        // Explicit kit ids: kit_haifa_3 is the moshava farmhouse mesh and kit_moshava_3 is a barn. kit_haifa now draws b17,
+        // the courtyard house the Arab village tile uses as its mosque, so the downtown pairs kit_haifa_2 (b04b) with the
+        // plain stone block kit_jerusalem_3 (b03c) until b04a, the stone-balcony building, is re-exported whole.
+        static readonly string[] Downtown = { "sandbox:kit_haifa_2", "sandbox:kit_jerusalem_3" };
         static readonly string[] Templer = { "sandbox:kit_moshava", "sandbox:kit_moshava_2" };
         static readonly string[] People = { "proto:figure-townsman-c02-1948-v2", "proto:figure-woman-blue-dress-c10-1948-v2" };
         const string Shed = "sandbox:kit_port", PortCluster = "proto:haifa-port-city-v1", Palm = "sandbox:date_palm",
