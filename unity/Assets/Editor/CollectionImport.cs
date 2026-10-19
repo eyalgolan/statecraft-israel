@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Statecraft.Game.EditorTools
 {
     /// <summary>The 1948 Collection's import (issue #664): sets the import settings of the 31 slimmed models in
-    /// <see cref="CollectionCatalog.Folder"/> (written by tools/slim_collection.py from MATKOT's #507 files), makes each model's
+    /// <see cref="CollectionCatalog.Folder"/> (written by tools/slim_collection.py from Tal Heuberger's #507 files), makes each model's
     /// &lt;id&gt;-far and &lt;id&gt;-near prefabs (and the near idle controller where there is one), and builds the streamed
     /// AssetBundles for a player build. CollectionImportTests pins what Run leaves behind. Idempotent.
     /// Run headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.Run</summary>

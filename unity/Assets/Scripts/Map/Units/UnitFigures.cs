@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Units
 {
-    /// <summary>The 1948 Collection on the army tokens (issue #665, part of #663; models by MATKOT, #507): the figures and the
+    /// <summary>The 1948 Collection on the army tokens (issue #665, part of #663; models by Tal Heuberger, #507): the figures and the
     /// vehicles each token draws, streamed after the first frame (<see cref="CollectionStream"/>). Which model goes where is
     /// in the tables below (docs/units.md, "The 1948 Collection on the tokens").
     /// An Israeli token is built with its code-built riflemen as before; each figure then asks for its model, and when the
@@ -32,7 +32,7 @@ namespace Statecraft.Game.Map.Units
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2";
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
-        /// default), as MATKOT's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
+        /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
         /// Mk II steel helmet the young recruit (C06), the Palmach's knitted stocking cap the veteran fighter (C07).</summary>
         public static readonly IReadOnlyDictionary<string, string> ByHeadgear = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -53,7 +53,7 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Arab force's figures, by its side: the Arab Legion (C08) for Transjordan's army, the irregular (C09) for
         /// the Arab Liberation Army, "an irregular army" of volunteers (https://en.wikipedia.org/wiki/Arab_Liberation_Army,
-        /// checked 2026-10-18). Unit models by MATKOT count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
+        /// checked 2026-10-18). Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
         /// No other side has a figure, so its rows stay off the map (<see cref="UnitRoster.OnMap"/>).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -61,7 +61,7 @@ namespace Statecraft.Game.Map.Units
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"
-        /// (owner, 17 October 2026, #756: MATKOT's H02 is the gun), the jeep H03, the Willys.</summary>
+        /// (owner, 17 October 2026, #756: Tal Heuberger's H02 is the gun), the jeep H03, the Willys.</summary>
         public static readonly IReadOnlyDictionary<string, string> ByVehicle = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [UnitData.Gun65mm] = Napoleonchik, [UnitData.Jeep] = WillysJeep,

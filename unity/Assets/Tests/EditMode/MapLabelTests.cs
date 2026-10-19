@@ -278,7 +278,7 @@ public class MapLabelTests
         Assert.IsEmpty(failures, string.Join("\n", failures));
     }
 
-    /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and MATKOT's Tegart fort model (SpecialBuildingModels,
+    /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and Tal Heuberger's Tegart fort model (SpecialBuildingModels,
     /// streamed close up from 15 May 1948) do not cover each other. With the real prefab placed and the camera at 30 km over
     /// Latrun (inside the model's close zoom), the pill is shown and its rectangle clears the model's projected bounds.</summary>
     [UnityTest]

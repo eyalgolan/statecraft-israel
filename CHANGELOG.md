@@ -24,12 +24,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   only sourced `arab_town` rows of `settlements_1948.yaml` and ships empty until a person and the sensitivity review
   have checked its rows. The state is written into the state hash only when set, so no golden moves (R-CTRL-001 to
   R-CTRL-003; refs #795).
-- MATKOT's shikun housing model stands at Ramat HaHayal, Tel Aviv (Wikidata Q2776362), from 1 January 1951: most
+- Tal Heuberger's shikun housing model stands at Ramat HaHayal, Tel Aviv (Wikidata Q2776362), from 1 January 1951: most
   families moved in during 1950 (Balslev, Iyunim Bitkumat Israel 23, p. 247), and the owner ruled on 18 October 2026
   that the year-level date starts after that year. Like the other #707 buildings it draws only close up, streams after
   the first frame in `collection-special-buildings`, and keeps clear of the towns, routes, unit tokens, civilians and
   wildlife (refs #707, #1068).
-- MATKOT's 1948 Collection ships and C-54 are on the map, at the steam train's 24x scale: the immigrant steamer off Haifa,
+- Tal Heuberger's 1948 Collection ships and C-54 are on the map, at the steam train's 24x scale: the immigrant steamer off Haifa,
   a fishing boat off Jaffa and one off Acre, the Altalena off Tel Aviv on the Altalena card's turn (15 June 1948), and a
   C-54 at Lod Airport from July 1949 to September 1950, during Operation Magic Carpet. They stream after the first frame,
   keep clear of the surf, the harbour works, the other boats and the labels, and a model that does not stream is left out
@@ -51,13 +51,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   reached 1,000,000 with the cities' overflow at most 10% and their employed at least 40% (design values), with 20 December
   1949, Ingathering of the Exiles Day, as its reference date. Both JTA sources were checked by Beri on 18 October 2026.
   No photograph (refs #1039, #738, #383).
-- Farm and village life from MATKOT's 1948 Collection: three tractors by kibbutz fields, three horse wagons and three
+- Farm and village life from Tal Heuberger's 1948 Collection: three tractors by kibbutz fields, three horse wagons and three
   draught horses by moshav and moshava fields, three flocks of five sheep and three donkeys by villages, and three camels
   by Bedouin camp areas, each anchor chosen by a fixed hash and kept clear of the kits, routes, unit tokens, water,
   civilians (#666) and wildlife (#670), with the kit trees over them left out.
   They stand at the #700 buildings' one world scale (24x real: a tractor about a third of the steam train's locomotive,
   a sheep about a seventh), stream after the first frame, and play their idle clip only at close zoom (40 km) (#667).
-- MATKOT's Tegart fort, military barracks and factory models stand at their sourced places from their sourced days,
+- Tal Heuberger's Tegart fort, military barracks and factory models stand at their sourced places from their sourced days,
   close up only (#700's switch): the Latrun police fort from 15 May 1948, the Tzrifin camp from 19 May 1948, Camp 80
   from 13 July 1948 and Netanya's industrial zone from 28 July 1950, clear of the towns, routes, unit tokens, civilians
   (#666) and wildlife (#670), with the kit trees on them left out. They are sized at the #700 buildings' one world
@@ -110,11 +110,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Release gate: consequence cards and variants need a person's sign-off (`reviewed_by`) before a build is shared;
   `Statecraft.Cli --timeline-report` lists each road not taken and what follows it, and `Timeline.Entries` /
   `Timeline.Origin` give the timeline screen its rows (R-ALT-011; refs #939, #953).
-- Map: MATKOT's Nubian ibex and striped hyena from The 1948 Collection, three of each, at close zoom (from 40 km in):
+- Map: Tal Heuberger's Nubian ibex and striped hyena from The 1948 Collection, three of each, at close zoom (from 40 km in):
   the ibex on level ledges of the Judean Desert west of the Dead Sea, the hyenas in the hills of Mount Carmel and the
   central hill country, the ranges their sources give. Seeded, so the same spots every game; streamed after the first
   frame (refs #670, #663).
-- Map: MATKOT's five civilian figures from The 1948 Collection stand in small seeded groups beside the cities, towns,
+- Map: Tal Heuberger's five civilian figures from The 1948 Collection stand in small seeded groups beside the cities, towns,
   kibbutzim and the moshav (a townsman, a smith and a nurse), and an arriving man and woman beside each transit camp from
   the day it is placed. They are scenery, never units; the static figures stream after the first frame and the animated
   ones only at close zoom (refs #666, #663).
@@ -136,11 +136,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   in its text, not the acronym הצה״ר; it stays flagged `agent-checked` for a native speaker (refs #875, #564).
 - The Burma Road convoy truck and lorry stop on 7 December 1948, the approximate boundary when the Road of Valour
   replaced the Burma Road for regular Jerusalem traffic; the Burma Road itself stays drawn (refs #1040, #1051).
-- Up close, the unit tokens' figures are MATKOT's skinned 1948 Collection figures playing their idle clip: below the town
+- Up close, the unit tokens' figures are Tal Heuberger's skinned 1948 Collection figures playing their idle clip: below the town
   models' 40 km switch, back to the still far mesh beyond 45 km. The near figures are asked for only once the camera first
   comes close, streamed like the far ones, and the far mesh stays when one is missing. C05, the pioneer veteran, has no
   idle clip and keeps his still model (owner, 18 October 2026: "Keep its still model") (refs #665).
-- MATKOT's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom
+- Credits for The 1948 Collection now name its artist, Tal Heuberger, throughout the game, website and repository
+  documentation (refs #1078).
+- Tal Heuberger's whole-town models now stand on their towns far off, and the towns draw no procedural houses at any zoom
   (refs #663, #917, #659; owner, 18 October 2026: "Whole model far, buildings near"). Each mapped town's model stands
   on the town's core (where most of its building models stand, inside its kit footprint, clear of the next town and of
   the sea, so Tel Aviv's no longer covers Jaffa and Haifa's stays out of the bay), as wide as that core, upright,
@@ -161,13 +163,13 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   checked every row against the Village Statistics 1945 scan and #490 applied the corrections. No other field changes.
   Open from #488, not touched here: the six split-or-merge rows, Dayr al-Qassi's landmark, 'Ilut. The localities are
   outside the content hash, so no golden moves (#200).
-- MATKOT's road vehicles from The 1948 Collection stand on the 1948 roads up close: the intercity bus and the citrus
+- Tal Heuberger's road vehicles from The 1948 Collection stand on the 1948 roads up close: the intercity bus and the citrus
   truck on the Tel Aviv–Haifa road, the sandwich-armoured convoy truck and the canvas-tilt lorry on the Burma Road from
   14 June 1948. They stand only on ground Israel held on the game date, half as long as the steam train's locomotive,
   and stream after the first frame (#725).
 
 ### Fixed
-- MATKOT's townspeople (#666) and wildlife (#670) stand at the same 24x train scale as the building models
+- Tal Heuberger's townspeople (#666) and wildlife (#670) stand at the same 24x train scale as the building models
   (`SettlementKits.ModelScale`, #1030): a man is about 43 m tall, an ibex about 31 m and a striped hyena about 26 m
   long, all smaller than a house and about a fifth of the locomotive's car or less. Before, a man was about 2.5 km and
   an animal about 1.9 km, sized like the unit pieces, which keep their symbolic size (#1033).
@@ -179,7 +181,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - A decision card the turn's Attention can't pay for no longer looks frozen (#1034, #1043): each option shows its
   Attention cost and is greyed out, the card says that ending the turn hands the decision to the minister
   (the one `EventSystem.Delegate` names), in English and Hebrew, and End turn is highlighted while such a card waits.
-- MATKOT's building models up close (#700) stand at one world scale, set by the steam train the map runs: a typical
+- Tal Heuberger's building models up close (#700) stand at one world scale, set by the steam train the map runs: a typical
   8.5 m house is as long as the locomotive's car (about 204 m), so every model is 24x its building's real size
   (`SettlementKits.ModelScale`), keeps its own proportions and no longer fills the kit's plot; a plot holds a small
   grid of them instead (up to four a side), so the towns stay dense. In v0.1.1 they filled the

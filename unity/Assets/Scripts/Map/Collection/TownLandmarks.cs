@@ -11,11 +11,11 @@ namespace Statecraft.Game.Map.Collection
     /// <summary>The nine whole-town models of The 1948 Collection (issue #663; owner ruling of 17 October 2026: "The nine
     /// whole-town models ship (this reverses the 15 Oct 'layout references only' ruling). They are slimmed, streamed after
     /// the first frame, and pass the load gate. The ma'abara and the shikun appear only from their sourced 1950s dates.").
-    /// The models are MATKOT's, made with Tripo Studio and offered in #507; which town each stands at is #507's own mapping
+    /// The models are Tal Heuberger's, made with Tripo Studio and offered in #507; which town each stands at is #507's own mapping
     /// (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the port city at Haifa, the
     /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
     /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
-    /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are MATKOT's models, "Whole model
+    /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model
     /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
     /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
     /// that core, tilted to its ground and seated so it never floats (<see cref="SeatOn"/>).

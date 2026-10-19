@@ -14,7 +14,7 @@ using UnityEngine.TestTools;
 
 namespace Statecraft.Game.Tests
 {
-    /// <summary>Issue #707: MATKOT's five remaining single-building models use the streamed collection path.</summary>
+    /// <summary>Issue #707: Tal Heuberger's five remaining single-building models use the streamed collection path.</summary>
     public sealed class SpecialBuildingModelsTests
     {
         [Test]
@@ -178,7 +178,7 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff), "hidden beyond the close zoom's exit");
         }
 
-        /// <summary>The owner on v0.1.1 (18 October 2026): MATKOT's buildings were "way bigger then the train". The #707
+        /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's buildings were "way bigger then the train". The #707
         /// buildings stand at the #700 buildings' one world scale (an 8.5 m house as long as the steam train's locomotive car,
         /// about 204 m: 24x real): the fort, the factory and the shikun are 3 to 4 locomotive cars long, the barracks 2.5 to 3.25, and
         /// none is longer than the whole service train (about 816 m).</summary>

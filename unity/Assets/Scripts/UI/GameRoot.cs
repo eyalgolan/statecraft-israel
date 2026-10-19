@@ -485,17 +485,17 @@ namespace Statecraft.Game.UI
         {
             if (Bridge == null) return;
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date);   // dated routes (the Burma Road from June 1948)
-            // MATKOT's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
+            // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
-            // MATKOT's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
+            // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
-            // MATKOT's civilian figures at towns and transit camps, ambience only and streamed after the first frame (#666).
+            // Tal Heuberger's civilian figures at towns and transit camps, ambience only and streamed after the first frame (#666).
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
-            // MATKOT's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
+            // Tal Heuberger's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
-            // MATKOT's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
+            // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
             Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date);
-            // MATKOT's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
+            // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
             var now = Bridge.State.Placements.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();

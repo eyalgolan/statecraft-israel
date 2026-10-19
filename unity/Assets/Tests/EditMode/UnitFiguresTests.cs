@@ -16,7 +16,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-/// <summary>Issue #665: the 1948 Collection (MATKOT, #507) on the army tokens, streamed after the first frame. Every one of
+/// <summary>Issue #665: the 1948 Collection (Tal Heuberger, #507) on the army tokens, streamed after the first frame. Every one of
 /// the nine unit models is placed (owner, 17 October 2026, #663: every model is used): the five Israeli figures, the Arab
 /// Legion and the irregular on their forces' tokens, and the 65 mm gun and the jeep where a source puts them. Until a model
 /// arrives, and when its bundle is missing or damaged, an Israeli token keeps its code-built figures (fail open); an Arab

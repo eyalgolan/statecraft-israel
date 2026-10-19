@@ -9,7 +9,7 @@ using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-/// <summary>The 1948 Collection's 31 non-building models (issue #664; MATKOT's Tripo models from #507, slimmed by
+/// <summary>The 1948 Collection's 31 non-building models (issue #664; Tal Heuberger's Tripo models from #507, slimmed by
 /// tools/slim_collection.py under the owner's ruling of 15 October 2026, "Plain git, slimmed first") are imported to load
 /// light (the maintainer's gate: "we need to make sure this is built in a way that doesnt make the game extremely hard to
 /// load"): nothing under a Resources folder; each model a far mesh of at most 1,500 triangles (4,500 for a vehicle, ship
@@ -90,7 +90,7 @@ public class CollectionImportTests
     }
 
     /// <summary>Issue #663, owner ruling of 17 October 2026: "The nine whole-town models ship ... slimmed, streamed after the
-    /// first frame, and pass the load gate". MATKOT's nine from #507 are the towns bundle, streamed like
+    /// first frame, and pass the load gate". Tal Heuberger's nine from #507 are the towns bundle, streamed like
     /// the rest, with #336's Jerusalem 3denhance variant after them, an extra beside #507's Jerusalem (#886; owner, 19 October
     /// 2026: "Yes, both").</summary>
     [Test]

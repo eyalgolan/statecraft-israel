@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #670: MATKOT's Nubian ibex and striped hyena, sparse and deterministic in their sourced ranges, streamed
+/// <summary>Issue #670: Tal Heuberger's Nubian ibex and striped hyena, sparse and deterministic in their sourced ranges, streamed
 /// through CollectionStream only for close zoom and failing open when the animals bundle is unavailable.</summary>
 public class WildlifeLayerTests
 {

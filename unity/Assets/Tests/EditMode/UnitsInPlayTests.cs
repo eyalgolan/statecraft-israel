@@ -218,7 +218,7 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." MATKOT's figures have landed for two forces (issue #665; owner, 17 October 2026, #756: MATKOT's
+    /// no placeholder art." Tal Heuberger's figures have landed for two forces (issue #665; owner, 17 October 2026, #756: Tal Heuberger's
     /// unit models count as reviewed and approved): the Arab Legion and the Arab Liberation Army. Every other side's rows
     /// stay data only, on every day of the war, and the placer gives them no spot (so the kits clear no ground for them).
     /// The two forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the

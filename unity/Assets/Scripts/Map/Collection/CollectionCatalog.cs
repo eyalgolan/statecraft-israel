@@ -9,7 +9,7 @@ namespace Statecraft.Game.Map.Collection
     /// or aircraft) or the close zoom's (at most 8,000; skinned and playing its idle clip on the models that have one).</summary>
     public enum CollectionDetail { Far, Near }
 
-    /// <summary>The 31 non-building models of The 1948 Collection, made by MATKOT with Tripo Studio and
+    /// <summary>The 31 non-building models of The 1948 Collection, made by Tal Heuberger with Tripo Studio and
     /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026), and #507's nine whole-town models (issue
     /// #663; owner, 17 October 2026: "The nine whole-town models ship"), standing on their towns far off (<see cref="TownLandmarks"/>);
     /// and ten models offered only in #336, by Tal Heuberger: eight figures (issue #708; owner, 18 October 2026: "the 8 figures
@@ -134,7 +134,7 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
-        /// <summary>Where #675 imported MATKOT's single-building models; the special-buildings bundle's prefabs (#707) sit
+        /// <summary>Where #675 imported Tal Heuberger's single-building models; the special-buildings bundle's prefabs (#707) sit
         /// beside each model there, one prefab for both details (the buildings draw only close up).</summary>
         public const string BuildingsFolder = "Assets/Art/Settlements/Prototype/Models";
 

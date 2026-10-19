@@ -1,4 +1,4 @@
-"""Slims the 31 non-building models of The 1948 Collection (MATKOT's Tripo models from PR #507, issue #664), and #507's
+"""Slims the 31 non-building models of The 1948 Collection (Tal Heuberger's Tripo models from PR #507, issue #664), and #507's
 nine whole-town models (issue #663; owner ruling of 17 October 2026: "The nine whole-town models ship"), and the eight
 figures offered only in #336 (issue #708; owner ruling of 18 October 2026: "the 8 figures in #708 can be merged without his
 license line"), with #886's pioneer farmer and Jerusalem variant from #336 (owner, 19 October 2026: "Yes, both"), into

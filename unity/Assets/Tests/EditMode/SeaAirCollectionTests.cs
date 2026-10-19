@@ -14,7 +14,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #669: MATKOT's immigrant steamer off Haifa, fishing boats off Jaffa and Acre, the Altalena off Tel Aviv on
+/// <summary>Issue #669: Tal Heuberger's immigrant steamer off Haifa, fishing boats off Jaffa and Acre, the Altalena off Tel Aviv on
 /// its card's turn and the C-54 at Lod during Operation Magic Carpet, streamed after the first frame (SeaAirCollection).</summary>
 public class SeaAirCollectionTests
 {
@@ -183,7 +183,7 @@ public class SeaAirCollectionTests
 
     /// <summary>The owner (18 October 2026, #1033): "Train scale for all ambient life". Each craft's long side as drawn
     /// (its renderers' world box, seen from above) is inside its band of the steam train's locomotive car (about 204 m:
-    /// MATKOT's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize / ServiceTrain.Cars), the band about its
+    /// Tal Heuberger's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize / ServiceTrain.Cars), the band about its
     /// real size at the one world scale (SettlementKits.ModelScale, 24x: an 8.5 m house is one car): the Altalena, a 100 m
     /// LST, about 11.8 cars; the 80 m steamer about 9.4; the 10 m fishing boat about 1.2; the C-54's 35.8 m wingspan about
     /// 4.2. No ship dwarfs its town: each is shorter than its port's kit footprint is across and than a whole-town model

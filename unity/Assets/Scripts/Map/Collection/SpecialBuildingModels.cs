@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Issue #707: MATKOT's single-building models at sourced places. They use the collection stream after the
+    /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
     /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
     public sealed class SpecialBuildingModels : MonoBehaviour
@@ -20,9 +20,9 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The house the world scale is set by (m, real): the middle of the kit's default house, 7.5 to 10 m long.</summary>
         public const float ReferenceHouseM = 8.5f;
-        /// <summary>The one world scale of MATKOT's building models (the owner on v0.1.1, 18 October 2026: the buildings were
+        /// <summary>The one world scale of Tal Heuberger's building models (the owner on v0.1.1, 18 October 2026: the buildings were
         /// "way bigger then the train"): the reference house is as long as the locomotive's car of the steam train the map
-        /// runs (ServiceTrain: MATKOT's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize, about 816 m, in
+        /// runs (ServiceTrain: Tal Heuberger's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize, about 816 m, in
         /// ServiceTrain.Cars cars of about 204 m), so 204 / 8.5 = 24x a building's real size. The same rule as the #700
         /// buildings' scale fix (branch map/town-models-world-scale, SettlementKits.ModelScale).</summary>
         public const float WorldScale = RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize / ServiceTrain.Cars / ReferenceHouseM;

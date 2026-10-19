@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Small groups of MATKOT's civilian figures at the Israeli towns, kibbutzim, moshavim and the player's transit
+    /// <summary>Small groups of Tal Heuberger's civilian figures at the Israeli towns, kibbutzim, moshavim and the player's transit
     /// camps (issue #666 and #663's owner ruling that every delivered model is used). They are period-generic ambience,
     /// never units and never simulation state. C02, C03 and C13 stand at the settled places; C01 and C10 stand at a transit
     /// camp from the day it is placed. The Arab towns get none of this set: #666 maps it to the towns, kibbutzim, moshavim and

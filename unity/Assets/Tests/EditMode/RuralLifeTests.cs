@@ -14,7 +14,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #667: all six of MATKOT's rural models are sparsely and deterministically placed by settlement type,
+/// <summary>Issue #667: all six of Tal Heuberger's rural models are sparsely and deterministically placed by settlement type,
 /// clear of the map's occupied ground, streamed after the first frame, upright, and absent without harming the map when
 /// their bundle cannot be read.</summary>
 public class RuralLifeTests
@@ -199,9 +199,9 @@ public class RuralLifeTests
         }
     }
 
-    /// <summary>The owner on v0.1.1 (18 October 2026): MATKOT's buildings were "way bigger then the train". The farm and
+    /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's buildings were "way bigger then the train". The farm and
     /// village models stand at a believable size beside the steam train the map runs (ServiceTrain): each one's long side,
-    /// seen from above, is inside its band of the locomotive's car (about 204 m: MATKOT's locomotive and tender at
+    /// seen from above, is inside its band of the locomotive's car (about 204 m: Tal Heuberger's locomotive and tender at
     /// RouteTrain.Scale x ServiceTrain.ModelSize / ServiceTrain.Cars), so a tractor or a wagon is shorter than the
     /// locomotive, a sheep is a small fraction of it, and every model is far smaller than a unit token's figure
     /// (UnitBadge.FigureHeightM x UnitShowcase.FigureScale, about 2.5 km). The bands follow the buildings' one world scale

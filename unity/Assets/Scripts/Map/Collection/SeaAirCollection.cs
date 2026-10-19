@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>MATKOT's ships and the C-54 from The 1948 Collection (issue #669), presentation only:
+    /// <summary>Tal Heuberger's ships and the C-54 from The 1948 Collection (issue #669), presentation only:
     /// <list type="bullet">
     /// <item>the immigrant steamer off Haifa's port, and a wooden fishing boat off Jaffa and one off Acre, at every date (the
     /// issue's harbours);</item>
@@ -64,7 +64,7 @@ namespace Statecraft.Game.Map.Collection
             _ => throw new ArgumentException($"'{model}' is not one of #669's models", nameof(model)),
         };
 
-        /// <summary>The model's long side on the map (m): its real size at the one world scale of every MATKOT model that is not
+        /// <summary>The model's long side on the map (m): its real size at the one world scale of every Tal Heuberger model that is not
         /// a game piece (SettlementKits.ModelScale, 24x: an 8.5 m house as long as the steam train's 204 m locomotive car; the
         /// owner, 18 October 2026, #1033: "Train scale for all ambient life"). The Altalena is 2.4 km, the C-54 860 m across.</summary>
         public static float SizeOf(string model) => RealLengthM(model) * SettlementKits.ModelScale;
