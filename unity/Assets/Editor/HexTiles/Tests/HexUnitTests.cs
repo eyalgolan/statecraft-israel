@@ -9,7 +9,7 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>The character units and the figures the hex tiles draw (Tal, 19 October 2026): a character unit is one model
-/// times <see cref="HexUnitScale.Characters"/>, never a mix; every figure a unit or a tile places is whole (no view ray
+/// times <see cref="HexUnitScale.Characters"/>, never a mix; every figure a unit or a tile places, people, animals and vehicles, is whole (no view ray
 /// through its clothes, boots or face: HexMeshCheck on the skinned mesh posed as drawn, its idle clip's first frame, as for the buildings); and a squad
 /// stands posed (not in its T-pose) at <see cref="HexUnitScale.FigureHeight"/>. Writes the figure measurements (the
 /// local proto prefab and the Collection's near and far prefabs of each) to
@@ -30,14 +30,14 @@ public class HexUnitTests
         Assert.That(unit.Members.Select(m => m.Model).Distinct().ToList(), Has.Count.EqualTo(1), $"{id}: one model per character unit");
     }
 
-    /// <summary>Every human figure the units and tiles place: each character unit's model, and each tile figure that has
-    /// a Collection figure (HexModels.FigureAliases). Animals (WheatFields' sheep and donkey) are only reported.</summary>
+    /// <summary>Every figure the units and tiles draw: each unit member's model, each "proto:figure-*" a tile places
+    /// (people, animals, the horse wagon), and every id in HexModels.FigureAliases.</summary>
     static IEnumerable<string> Figures()
     {
         var ids = new SortedSet<string>(System.StringComparer.Ordinal);
-        foreach (var id in CharacterUnits()) foreach (var m in HexUnitTypes.Create(id).Create().Members) ids.Add(m.Model);
-        var known = new HashSet<string>(HexModels.FigureAliases.Select(a => a.id));
-        foreach (var p in AllFigurePlacements()) if (known.Contains(p)) ids.Add(p);
+        foreach (var id in HexUnitTypes.All.Keys) foreach (var m in HexUnitTypes.Create(id).Create().Members) ids.Add(m.Model);
+        foreach (var p in AllFigurePlacements()) ids.Add(p);
+        foreach (var a in HexModels.FigureAliases) ids.Add(a.id);
         return ids;
     }
 
@@ -47,7 +47,7 @@ public class HexUnitTests
         {
             var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
             HexPrototypes.Create(proto).Build(ctx);
-            foreach (var p in ctx.Placements) if (p.StandIn == StandIn.Figure && p.Model != "") yield return p.Model;
+            foreach (var p in ctx.Placements) if (p.Model.StartsWith("proto:figure-", System.StringComparison.Ordinal)) yield return p.Model;
         }
     }
 

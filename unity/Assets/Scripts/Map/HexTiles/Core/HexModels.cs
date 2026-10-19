@@ -104,6 +104,11 @@ namespace Statecraft.HexTiles
             ("proto:figure-nurse-c13-1948-v2", "figure-c13-nurse-v2", "far"),
             ("proto:figure-arriving-man-c01-1948-v2", "figure-c01-arriving-man-v2", "near"),
             ("proto:figure-sabra-pioneer-c04-1948-v2", "figure-c04-sabra-pioneer-v3", "far"),
+            // The grazing flock (Tal, 19 October 2026: the lite protos see through on 8.4% and 6.3% of rays): the static far
+            // level, whole and lighter than the protos (about 1,350 triangles each). The horse wagon and the vehicle units'
+            // protos measure whole and keep drawing.
+            ("proto:figure-sheep-lite-1948", "figure-sheep-idle-1948-v1", "far"),
+            ("proto:figure-donkey-lite-1948", "figure-donkey-1948-v1", "far"),
         };
 
         /// <summary>Off draws the proto figures again (a before shot, or a test of the fallback); call <see cref="Clear"/>
