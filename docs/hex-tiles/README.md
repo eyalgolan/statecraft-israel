@@ -504,6 +504,27 @@ Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectP
 - **Do not edit:** `Core/`, `Capture/`, `Tests/` or another contributor's prototype. Propose a contract change in an
   issue instead.
 
+## Props: the Higgsfield set
+
+- **What they are.** 20 AI-made props (Higgsfield: a concept image, then Tripo H3.1 image to 3D), committed under
+  `Assets/Art/HexTiles/Props/<tile>_<name>/` with their prefabs at `Assets/Resources/HexTiles/<tile>/<name>.prefab`, so
+  the tiles' own `tiles:<tile>/<name>` ids find them. Their `ASSETS.yaml` row is `owner-verify`: the release gate blocks
+  them until the owner rules on their rights.
+- **Where they draw.**
+  - They fill the stand-ins of `arab_village` (minaret, prickly pear), `jaffa_old_city` (clock tower, sea minaret,
+    belfry), `coastal_dunes` (scrub), `desert_edge` (tent) and `judean_highlands` (garrigue).
+  - The rest go to three tiles: `railway_halt` (station, packing house, crates, well, eucalyptus), `caesarea_ruins`
+    (arcades, boulders, landing stage) and `village_mill` (mill, threshing floor, terrace wall, sycamore fig).
+- **Importing more.** List each prop in a manifest, one row per prop: the model folder (OBJ plus `albedo.jpg`), its
+  Resources path and an optional `twosided`. Then run:
+  ```bash
+  Unity ... -executeMethod HexSandboxImport.RunHiggsfield -manifest <tsv> -modelsRoot Assets/Art/HexTiles/Props -prefabsRoot Assets/Resources
+  ```
+  Without the two roots it writes into the git-ignored prototype folder.
+- **Weld before you decimate.** A Tripo GLB is split along every UV seam. Decimating it as it comes tears gaps, and the
+  ground shows through as green slivers. Weld first, or keep Tripo's own face count (`--face_limit`). Rebake the colour
+  when a prop must lose more than about half its triangles.
+
 ## What is local-only (read before relying on a model)
 
 - **Tripo models are local-only while their rights are pending:**
@@ -549,5 +570,6 @@ Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectP
 | `Prototypes/MountainPeaks.cs` | `mountain_peaks`, the rocks on a mountain hex |
 | `Prototypes/WheatFields.cs` | `wheat_fields` and `grazing_land` (two classes in one file: do not copy it) |
 | `Prototypes/TelAvivCityMixed.cs` | `tel_aviv_city_mixed`, the A/B variant of the reference |
+| `Prototypes/RailwayHalt.cs`, `CaesareaRuins.cs`, `VillageMill.cs` | The three prop tiles (see "Props: the Higgsfield set") |
 | `Units/` | One file per unit type (`[HexUnitType]`) |
 | `Boards/` | Board layouts (Tal's) |

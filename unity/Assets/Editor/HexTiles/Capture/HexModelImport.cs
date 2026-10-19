@@ -102,7 +102,9 @@ public static class HexSandboxImport
     /// <summary>Higgsfield props (pending rights, local only): imports just the rows of a manifest, each
     /// "&lt;model folder&gt;\t&lt;Resources path&gt;[\ttwosided]" (for example "hf_minaret\tHexTiles/arab_village/minaret"), from the folder that
     /// holds it, so a tile's tiles:&lt;tile&gt;/&lt;name&gt; id fills its stand-in with no source edit. The folders come from
-    /// asset-staging/higgsfield-local/&lt;date&gt;/export.py. -executeMethod HexSandboxImport.RunHiggsfield -manifest &lt;path&gt;</summary>
+    /// asset-staging/higgsfield-local/&lt;date&gt;/export.py. -executeMethod HexSandboxImport.RunHiggsfield -manifest &lt;path&gt;
+    /// [-modelsRoot &lt;Assets path&gt;] [-prefabsRoot &lt;Assets path of a Resources folder&gt;]: by default both go into the
+    /// git-ignored prototype folder; committed props use Assets/Art/HexTiles/Props and Assets/Resources.</summary>
     public static void RunHiggsfield()
     {
         try
@@ -111,12 +113,14 @@ public static class HexSandboxImport
             int i = Array.IndexOf(args, "-manifest");
             if (i < 0 || i + 1 >= args.Length) throw new ArgumentException("-manifest <path> is required");
             var manifest = Path.GetFullPath(args[i + 1]);
+            string Opt(string name, string fallback) { int k = Array.IndexOf(args, name); return k >= 0 && k + 1 < args.Length ? args[k + 1] : fallback; }
+            string modelsRoot = Opt("-modelsRoot", Root), prefabsRoot = Opt("-prefabsRoot", Path.GetDirectoryName(Prefabs)!);
             foreach (var line in File.ReadAllLines(manifest))
             {
                 var cols = line.Split('\t');
                 if (cols.Length < 2 || line.StartsWith("#", StringComparison.Ordinal)) continue;
                 Import(Path.Combine(Path.GetDirectoryName(manifest)!, cols[0]), cols[0], Path.GetFileName(cols[1]), Color.white,
-                    $"{Path.GetDirectoryName(Prefabs)}/{cols[1]}.prefab", cols.Length > 2 && cols[2] == "twosided");
+                    $"{prefabsRoot}/{cols[1]}.prefab", cols.Length > 2 && cols[2] == "twosided", modelsRoot);
             }
             AssetDatabase.SaveAssets();
         }
@@ -128,10 +132,10 @@ public static class HexSandboxImport
         }
     }
 
-    static void Import(string src, string model, string species, Color tint, string? prefabPath = null, bool twoSided = false)
+    static void Import(string src, string model, string species, Color tint, string? prefabPath = null, bool twoSided = false, string modelsRoot = Root)
     {
         if (!File.Exists(Path.Combine(src, model + ".obj"))) throw new FileNotFoundException($"no {model}.obj in {src}");
-        var dir = $"{Root}/{model}";
+        var dir = $"{modelsRoot}/{model}";
         Directory.CreateDirectory(Path.Combine(Paths.RepoRoot, "unity", dir));
         foreach (var f in Directory.GetFiles(src)) File.Copy(f, Path.Combine(Paths.RepoRoot, "unity", dir, Path.GetFileName(f)), true);
         AssetDatabase.Refresh();

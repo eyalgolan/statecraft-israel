@@ -38,6 +38,12 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
     the grazing flock's sheep and donkey do too. Our decimated copies showed the ground through clothes, fleece and faces.
   - **Board capture:** the whole-board shot no longer cuts off the board's south edge.
   (docs/hex-tiles/README.md; refs #18)
+- Props for the opt-in hex-tile map, still presentation only and off by default: 20 AI-made 3D props (Higgsfield,
+  Tripo H3.1; ASSETS.yaml, owner-verify) fill the stand-ins of the Arab village (minaret, prickly pear), Jaffa (clock
+  tower, sea minaret, belfry), the coastal dunes (scrub), the desert edge (Bedouin tent) and the Judean highlands
+  (garrigue), and three new tiles use the rest: a railway halt with a packing house, coastal ruins with a landing
+  stage, and a village mill with threshing floors and terraces. `HexSandboxImport.RunHiggsfield` imports a manifest of
+  such props (refs #18).
 - The Cabinet disc in the side menu shows a small gold badge while a post is vacant that the player can fill this turn,
   and its tip says so in English and Hebrew. The sim's `Cabinet.Vacancies` decides it (a vacant seat, someone may be
   appointed, no appointment to it queued, the game not over, and enough Attention left after this turn's queued orders,
