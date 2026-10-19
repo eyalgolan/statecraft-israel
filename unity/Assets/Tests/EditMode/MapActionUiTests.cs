@@ -57,7 +57,7 @@ public class MapActionUiTests
     {
         using var ui = new UiTestKit();
         var info = Panel(ui, At(new DateTime(1949, 6, 1)));
-        Assert.AreEqual("Click the map to inspect a hex", ui.Q<Label>("info-title").text);
+        Assert.AreEqual(Text["info.hint"], ui.Q<Label>("info-title").text);
         var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         info.Show(tlv.Q, tlv.R);
         Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);

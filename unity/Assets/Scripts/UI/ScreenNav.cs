@@ -46,7 +46,10 @@ namespace Statecraft.Game.UI
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
             r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
             r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome || report));
-            r.Q("info-panel")?.SetEnabled(!(start || full || modal || outcome || report || r.ClassListContains(WideOpenClass)));
+            bool infoCovered = start || full || modal || outcome || report || r.ClassListContains(WideOpenClass);
+            r.Q("info-panel")?.SetEnabled(!infoCovered);
+            // the map's keyboard stop (#41 B1b): out of reach exactly when the info panel is, so a pick is never refused (#210)
+            r.Q("map-focus")?.SetEnabled(!infoCovered);
             var layer = r.Q("event-layer");
             if (layer != null)
             {
