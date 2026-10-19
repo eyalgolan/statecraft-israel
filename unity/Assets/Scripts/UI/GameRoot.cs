@@ -202,6 +202,11 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
+            if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
+            {
+                Statecraft.HexTiles.HexTilesLook.Apply(map, true);
+                owned.Add(new Undo(() => Statecraft.HexTiles.HexTilesLook.Apply(map, false)));
+            }
             var root = document.rootVisualElement;
             bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
             // Hebrew: the Hebrew face, the advanced text generator and the mirrored rows (.lang-he); each text's paragraph
@@ -327,6 +332,9 @@ namespace Statecraft.Game.UI
             pointer.HexClicked += onHex;
             var camRig = rig = cameraController.GetComponent<CameraRig>();
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
+            Own(new SafeAreaFit(root));                                    // the HUD keeps clear of the phone's notch
+            // the map's keyboard stop (#41 B1b): Enter or Space picks the hex under the look-at point, as a click there would
+            Own(new MapFocusPresenter(root, cameraController.GetComponent<Camera>(), camRig, at => pointer.PickAt(at)));
             var mini = minimap = Own(new MinimapPresenter(root, map.Hexes, text));
             var labelCamera = cameraController.GetComponent<Camera>();
             labels = Own(new MapLabelsPresenter(root, map, labelCamera, null,

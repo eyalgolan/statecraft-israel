@@ -667,7 +667,7 @@ namespace Statecraft.Game.UI
         /// <summary>Viewport to the layer's coordinates through the camera's own rect, not
         /// RuntimePanelUtils.CameraTransformWorldToPanel: that flips y with Screen.height, which is wrong whenever the camera
         /// draws to a texture of another size (edit-mode tests, captures).</summary>
-        static Vector2 ToPanel(Vector3 v, Rect cameraRect, Vector2 screen, Vector2 origin) =>
+        internal static Vector2 ToPanel(Vector3 v, Rect cameraRect, Vector2 screen, Vector2 origin) =>
             new Vector2((cameraRect.x + v.x * cameraRect.width) * screen.x, (1f - (cameraRect.y + v.y * cameraRect.height)) * screen.y) - origin;
 
         static float Gap(Rect r, Vector2 p) =>
