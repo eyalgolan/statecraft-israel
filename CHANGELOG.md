@@ -20,6 +20,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Unit cards show the sourced Hebrew unit name in the Hebrew UI, with an English fallback. INS Haganah gains its
   sourced Hebrew name, still flagged for a native speaker's review (#902).
 ### Fixed
+- How to play text explains that worker changes take effect at End turn in English and draft Hebrew. English also
+  defines halutzim and Hakhshara alongside their training roles (refs #42, #1041; native Hebrew review pending).
 - Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.
 - Keep the capsule-collider dependency used while creating hex unit stand-ins in stripped player builds; the temporary collider is still removed.
 - Missing unit models on the opt-in hex-tile map use an owned copy of the shipped material in player builds.
