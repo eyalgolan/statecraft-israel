@@ -202,6 +202,11 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
+            if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
+            {
+                Statecraft.HexTiles.HexTilesLook.Apply(map, true);
+                owned.Add(new Undo(() => Statecraft.HexTiles.HexTilesLook.Apply(map, false)));
+            }
             var root = document.rootVisualElement;
             bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
             // Hebrew: the Hebrew face, the advanced text generator and the mirrored rows (.lang-he); each text's paragraph

@@ -1,5 +1,5 @@
 <linker>
   <assembly fullname="YamlDotNet" preserve="all" />
   <assembly fullname="Statecraft.Sim" preserve="all" />
-  <assembly fullname="Statecraft.Game"><type fullname="Statecraft.Game.Map.*" preserve="all"/><type fullname="Statecraft.Game.UI.*" preserve="all"/><type fullname="Statecraft.Game.Boot.*" preserve="all"/></assembly>
+  <assembly fullname="Statecraft.Game"><type fullname="Statecraft.Game.Map.*" preserve="all"/><type fullname="Statecraft.Game.UI.*" preserve="all"/><type fullname="Statecraft.Game.Boot.*" preserve="all"/><type fullname="Statecraft.HexTiles.*" preserve="all"/></assembly>
 </linker>

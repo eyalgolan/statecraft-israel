@@ -8,6 +8,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- An opt-in Civilization-style hex-tile map (`?hex-tiles`, desktop `-hex-tiles`; `?hex-tiles=tel_aviv_crop` for the
+  Tel Aviv crop): one-file hex prototypes (towns, orchards, fields, forests, hills), units as their own layer, painted
+  ground, a landscape ring round the play hexes and a warmer light while it is on. Presentation only; off by default,
+  the shipped map is unchanged. Its models are local until their assets clear, so other machines draw stand-ins
+  (docs/hex-tiles/README.md; refs #18).
 - The Cabinet disc in the side menu shows a small gold badge while a post is vacant that the player can fill this turn,
   and its tip says so in English and Hebrew. The sim's `Cabinet.Vacancies` decides it (a vacant seat, someone may be
   appointed, no appointment to it queued, the game not over, and enough Attention left after this turn's queued orders,
