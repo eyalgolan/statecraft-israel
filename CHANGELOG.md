@@ -45,6 +45,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `arms` effect, in whole units and never below 0, and the no-gain rule for sensitive events covers it (R-EFX-001,
   R-EFX-002); no event uses it yet. The goldens move only by the new `arms=12` line.
 
+### Changed
+- The war state's first slice (R-WAR-002 and the clock half of R-WAR-003; refs #750): in the GDD loop the sim refuses
+  the call-up and the security order ("That order is not available in this game", state and Attention unchanged),
+  HistoricalAI sends no call-up orders, the 52-week ceasefire countdown retires (an event's `set_rung` still moves the
+  rung), and the Defence screen hides its rung and call-up controls. The legacy loop is unchanged. With the lever
+  retired the 1948 war's 0.8 call-up stays in force through the armistices and its upkeep is borrowed, so the goldens
+  move (`mob`, the debt, `cf`) and the 1950-51 debt rise overshoots the Michaely anchor until #747 restores
+  demobilisation.
+
 ## [0.1.2] - 2026-10-19
 
 ### Added

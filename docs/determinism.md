@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `4f1202cfa20e1f3cc7521c7b3baac386330b77fdbacc25928d781b1659747340` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `283349502eb580123fcea6bf64ca174f913627132a1325f3dbf00743435623e2` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `283349502eb580123fcea6bf64ca174f913627132a1325f3dbf00743435623e2` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `1aad3f02bd88fc5c3d8f261e1f6d12f12da25c07ec7b0f0f0f9529f8f6a417ce` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `b99dc4406eeaa61e754eff0b0d328dae590b9c1e825c658f416e4886e61703a8` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `b99dc4406eeaa61e754eff0b0d328dae590b9c1e825c658f416e4886e61703a8` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -306,3 +306,9 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 2 PR 3b | scenario-reckless | `a0f094a1` | same (was `8041988a`) |
 | GDD Phase 2 PR 3b | scenario-mvp-absorb-first | `dee4f039` | same (was `be13c409`) |
 | GDD Phase 2 PR 3b | scenario-mvp-defeat | `e71076f7` | same; the defeat run is unchanged apart from `arms=12` (was `19143463`) |
+| GDD Phase 5 PR 11 (first slice) | 1950 | `1aad3f02` | the war state's first slice (#750, R-WAR-002): the GDD loop refuses `set_mobilization` and `security_order` ("That order is not available in this game", Attention refunded), `HistoricalAI` stops sending call-up orders, and the 52-week ceasefire countdown retires in the GDD loop (the events' `set_rung` stays). The reference player's demobilisation orders leave the run, so the rung-5 war call-up stays in force (`mob=0.8` at the cut, was 0.05) and its upkeep borrows IL 37.75m more (debt 129.25, was 91.50). Nothing else moves (was `4f1202cf`) |
+| GDD Phase 5 PR 11 (first slice) | 1952 | `b99dc440` | same; `mob=0.8` at the end (was 0.05) and the debt ends at 351.64 (was 223.89). The 1950-51 rise overshoots the Michaely anchor (188.7m vs 98.4m): `EconomyCalibrationTests` pins the new rise and keeps the anchor as the target the full war-state work (#747) must restore, and the `debt-grows-through-the-run` invariant's band widens around the run (was `28334950`) |
+| GDD Phase 5 PR 11 (first slice) | mvp-end | `b99dc440` | same; the same run as hash1952 (was `28334950`) |
+| GDD Phase 5 PR 11 (first slice) | scenario-cautious | `0568b5f5` | the countdown retires: `cf=52` at the end (was 40); nothing else moves (was `a6108c91`) |
+| GDD Phase 5 PR 11 (first slice) | scenario-reckless | `e52f337e` | same (`cf=52`, was 40), and its full-mobilisation order leaves the script (the GDD loop would refuse it): `mob=0.8` at the end (was 1.0), debt 26.96 (was 34.96) (was `a0f094a1`) |
+| GDD Phase 5 PR 11 (first slice) | scenario-mvp-defeat | `4f1d8735` | the same order leaves the script: `mob=0.8` (was 1.0), so the debt passes the ceiling on 1951-08-15 (was April 1951) and the foreign currency runs out the same turn; the run still ends in `defeat_economy` on 15 January 1952 (was `e71076f7`) |

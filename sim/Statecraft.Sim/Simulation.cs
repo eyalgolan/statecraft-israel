@@ -104,6 +104,9 @@ namespace Statecraft.Sim
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
                 // A GDD order has no price in the legacy rules: refuse it before charging (R-CITY-001).
                 if (AttentionSystem.IsGddKind(cmd.Kind) && !c.IsGdd) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
+                // The call-up and the security order are retired in the GDD loop (R-WAR-002): refused the same way,
+                // before charging, so the state and the Attention are unchanged.
+                if (c.IsGdd && (cmd is SetMobilization || cmd is SecurityOrder)) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
                 var before = s.Attention;
                 var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, why);
                 if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }

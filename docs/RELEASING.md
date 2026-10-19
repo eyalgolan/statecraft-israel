@@ -19,8 +19,8 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 4f1202cfa20e1f3cc7521c7b3baac386330b77fdbacc25928d781b1659747340"
-   # and "GOLDEN OK hash1952 283349502eb580123fcea6bf64ca174f913627132a1325f3dbf00743435623e2"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 1aad3f02bd88fc5c3d8f261e1f6d12f12da25c07ec7b0f0f0f9529f8f6a417ce"
+   # and "GOLDEN OK hash1952 b99dc4406eeaa61e754eff0b0d328dae590b9c1e825c658f416e4886e61703a8"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
      --expect "SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90

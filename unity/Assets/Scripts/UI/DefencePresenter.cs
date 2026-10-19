@@ -168,6 +168,10 @@ namespace Statecraft.Game.UI
             else if (target == 5) ceasefire.text = text.Format("defence.ceasefire_starts", SecuritySystem.CeasefireWeeksAfter(c, s.Date, s.Rung, s.CeasefireWeeksLeft, target));
             else ceasefire.text = "";
             ceasefire.style.display = ceasefire.text == "" ? DisplayStyle.None : DisplayStyle.Flex;
+            // The call-up and the security order are retired in the GDD loop (R-WAR-002): hide the four controls
+            // that would queue a refused order. The ceasefire clock's label above stays.
+            var lever = c.IsGdd ? DisplayStyle.None : DisplayStyle.Flex;
+            escalate.style.display = lever; deEscalate.style.display = lever; mobUp.style.display = lever; mobDown.style.display = lever;
             screen.Q<Label>("order-pending").text = delta == 0 ? "" : text.Format("defence.order", s.Rung, target);
             var floor = SecuritySystem.MinMobilization(c, s.Date, target);
             var proposed = EffectiveAt(ProposedMobilization);   // what the call-up will be: the sim raises a lower order to the minimum

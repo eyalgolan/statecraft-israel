@@ -142,6 +142,14 @@ R-UNIT-001: A military unit is a group at formation scale, one token per formati
 
 R-UNIT-002: A unit's side, strength, order and order target are written into the state hash only when they are not at their default ("" or 0), after its service (R-LOOP-002's rule), so a halutz unit's hash text, and every golden, is unchanged.
 
+## The war state
+
+Phase 5 PR 11's first slice (#750; Q-WAR-1 to Q-WAR-5, owner, 15 October 2026, D-C4): the security rung stops being a player lever in the GDD loop. Deriving the rung from the war state (R-WAR-001), the truce-attack refusal and the war-loss integration stay with #747.
+
+R-WAR-002: In the GDD loop the sim refuses `SetMobilization` and `SecurityOrder` with "That order is not available in this game", the state and the Attention unchanged (the convention of R-CITY-001's legacy refusal). The legacy loop accepts them as before. `HistoricalAI` sends no call-up orders in the GDD loop, and the Defence screen hides its escalate, de-escalate and call-up controls there (the ceasefire clock's label stays).
+
+R-WAR-003 (first slice): the 52-week ceasefire countdown retires in the GDD loop (Q-WAR-2's clock half); `ceasefire_weeks` and `rung_min_mobilization` stay in the rules, an event's `set_rung` still moves the rung, and the legacy loop keeps the clock. With the call-up retired, nothing demobilises below a war rung's `rung_min_mobilization` floor, so the 1948 war's 0.8 call-up stays in force through the armistices and its upkeep is borrowed: the 1950-51 debt rise overshoots the Michaely anchor (EconomyCalibrationTests pins the gap) until #747 restores demobilisation.
+
 ## Objectives
 
 R-OBJ-001: An objective (`objectives.yaml`) names its condition, `completes_when: { site_built: <site> }` (R-OBJ-004's `absorbed` has no site, so the site rules here apply only to `site_built`), a designated site of kind yishuv whose `founded` date must equal the objective's `reference_date`. In the last step of each GDD turn (spec §2.3, step 11; D-A6), in id order, an objective whose site is built and that is not yet recorded is recorded once, with the turn's end date (the site's `BuiltOn`). Recording it again, or in the legacy loop, changes nothing; a stopped build completes nothing.

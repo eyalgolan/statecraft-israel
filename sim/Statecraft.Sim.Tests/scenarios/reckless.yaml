@@ -1,11 +1,11 @@
-# A reckless player: full rationing from the first turn, refuses the First Truce, and mobilises everyone.
+# A reckless player: full rationing from the first turn and refuses the First Truce. The war rung holds its 0.8
+# call-up (R-WAR-002, #750: the GDD loop refuses the set_mobilization order this scenario used to send).
 name: reckless
 until: 1949-01-01
 steps:
   - on: 1948-05-15
     commands:
       - { kind: set_policy, policy: rationing, level: 1.0 }
-      - { kind: set_mobilization, level: 1.0 }
   - on: 1948-06-01
     commands:
       - { kind: choose_event_option, event: first_truce, option: refuse }

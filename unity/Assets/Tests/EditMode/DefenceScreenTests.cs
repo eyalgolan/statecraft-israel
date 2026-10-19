@@ -21,6 +21,17 @@ public class DefenceScreenTests
         return (ui, bridge, new DefencePresenter(ui.Root, bridge, Text));
     }
 
+    /// <summary>The same screen on the legacy loop (the real content without the loop switch): the call-up and the
+    /// security order live there now (R-WAR-002), so their tests play a legacy session.</summary>
+    static (UiTestKit ui, SimBridge bridge, DefencePresenter defence) OpenLegacy()
+    {
+        var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        var bridge = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), Text);
+        new ToastPresenter(ui.Root, bridge, Text);
+        return (ui, bridge, new DefencePresenter(ui.Root, bridge, Text));
+    }
+
     /// <summary>In Hebrew the command line and the leaders' cards show the content's Hebrew names and titles (#558).</summary>
     [Test]
     public void InHebrewTheLeadersAreNamedInHebrew()
@@ -61,7 +72,7 @@ public class DefenceScreenTests
     [Test]
     public void OrdersAreQueuedAndTheTurnCarriesThemOut()
     {
-        var (ui, bridge, defence) = Open();
+        var (ui, bridge, defence) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -80,7 +91,7 @@ public class DefenceScreenTests
     [Test]
     public void PressingBackToTodaysLevelWithdrawsTheOrder()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -93,7 +104,7 @@ public class DefenceScreenTests
     [Test]
     public void RaisingTheLevelShowsTheCallUpTheSimWillForce()
     {
-        var (ui, bridge, defence) = Open();
+        var (ui, bridge, defence) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -115,7 +126,7 @@ public class DefenceScreenTests
     [Test]
     public void AnOrderTheAttentionCannotPayForIsRefusedWithTheReason()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             Assert.IsNull(bridge.Queue(new SetPolicy(C.Policies[0].Id, 0.5)));
@@ -123,6 +134,21 @@ public class DefenceScreenTests
             ui.Press("de-escalate");
             Assert.AreEqual("Not done: Not enough attention (need 2.0, have 0.0)", ui.Q<Label>("toast").text);
             Assert.AreEqual("", ui.Q<Label>("order-pending").text);
+        }
+    }
+
+    /// <summary>R-WAR-002 (#750): the GDD loop refuses the call-up and the security order, so the Defence screen
+    /// hides the four lever controls there; the ceasefire clock's label stays
+    /// (TheLadderShowsFullWarWithTheCeasefireClock pins its text).</summary>
+    [Test]
+    public void TheGddLoopHidesTheRetiredLevers()
+    {
+        var (ui, _, _) = Open();
+        using (ui)
+        {
+            foreach (var id in new[] { "escalate", "de-escalate", "mob-up", "mob-down" })
+                Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(id).style.display.value, id);
+            Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("ceasefire").style.display.value);
         }
     }
 

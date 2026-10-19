@@ -76,9 +76,11 @@ namespace Statecraft.Sim
         public static bool AtFullWar(GameState s) => s.Rung == 5;
 
         /// <summary>Counts the ceasefire clock down by <paramref name="weeks"/> (a whole turn's weeks, or the whole weeks of
-        /// an adjusted turn at an era's end) while the country is at full war.</summary>
+        /// an adjusted turn at an era's end) while the country is at full war. The GDD loop retires the 52-week clock
+        /// (R-WAR-003): the call is a no-op there, and only an event's set_rung moves the rung.</summary>
         public static void Apply(Content c, GameState s, int weeks, List<Cause> why)
         {
+            if (c.IsGdd) return;
             if (!AtFullWar(s)) return;
             s.CeasefireWeeksLeft = Math.Max(0, s.CeasefireWeeksLeft - weeks);
             if (s.CeasefireWeeksLeft == 0)
