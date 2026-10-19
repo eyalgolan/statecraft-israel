@@ -139,7 +139,7 @@ namespace Statecraft.HexTiles.Painter
             if (pick && e.type == EventType.Layout) HandleUtility.AddDefaultControl(control);
             if (pick && e.type == EventType.MouseDown && e.button == 0 && !e.alt)
             {
-                var hit = Pick(HandleUtility.GUIPointToWorldRay(e.mousePosition), state);
+                var hit = HexPainter.Pick(root, HandleUtility.GUIPointToWorldRay(e.mousePosition));
                 if (hit != null) { selected = hit; status = ""; Repaint(); e.Use(); }
             }
             if (selected != null && e.type == EventType.Repaint)
@@ -151,20 +151,6 @@ namespace Statecraft.HexTiles.Painter
                 Handles.color = new Color(1f, 0.85f, 0.2f);
                 Handles.DrawAAPolyLine(6f, corners.ToArray());
             }
-        }
-
-        /// <summary>The board hex under a Scene-view ray: where it meets the board's terrain, else sea level.</summary>
-        (int q, int r)? Pick(Ray ray, HexBoardState state)
-        {
-            if (root == null) return null;
-            var board = root.transform;
-            Vector3 point;
-            var hit = Physics.RaycastAll(ray, 1e7f).Where(h => h.collider.transform.IsChildOf(board)).OrderBy(h => h.distance).ToList();
-            if (hit.Count > 0) point = hit[0].point;
-            else if (new Plane(Vector3.up, board.position).Raycast(ray, out var d)) point = ray.GetPoint(d);
-            else return null;
-            var k = HexGeometry.Axial(board.InverseTransformPoint(point), HexScale.HexM);
-            return state.Board.Hexes.ContainsKey(k) ? k : null;
         }
     }
 }

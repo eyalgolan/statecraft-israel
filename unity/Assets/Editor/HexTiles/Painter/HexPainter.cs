@@ -65,9 +65,29 @@ namespace Statecraft.HexTiles.Painter
             return HexBoardBuilder.RebuildHex(root, q, r);
         }
 
+        /// <summary>The board hex under a ray (a Scene-view click): where it meets the board's terrain, else sea level.
+        /// Null off the board.</summary>
+        public static (int q, int r)? Pick(GameObject root, Ray ray)
+        {
+            var state = root.GetComponent<HexBoardState>();
+            if (state == null) return null;
+            var board = root.transform;
+            Vector3 point;
+            var hit = Physics.RaycastAll(ray, 1e7f).Where(h => h.collider.transform.IsChildOf(board)).OrderBy(h => h.distance).ToList();
+            if (hit.Count > 0) point = hit[0].point;
+            else if (new Plane(Vector3.up, board.position).Raycast(ray, out var d)) point = ray.GetPoint(d);
+            else return null;
+            var k = HexGeometry.Axial(board.InverseTransformPoint(point), HexScale.HexM);
+            return state.Board.Hexes.ContainsKey(k) ? k : null;
+        }
+
         /// <summary>Builds board <paramref name="id"/> (with its overrides) in the open scene, one object per hex.</summary>
-        public static GameObject Load(string id) =>
-            HexBoardBuilder.Build(HexBoard.Load(id), Capture.HexBoardCapture.Ground, options: new HexBoardBuilder.Options { PerHex = true }).root;
+        public static GameObject Load(string id)
+        {
+            var root = HexBoardBuilder.Build(HexBoard.Load(id), Capture.HexBoardCapture.Ground, options: new HexBoardBuilder.Options { PerHex = true }).root;
+            Physics.SyncTransforms();   // so Pick's rays meet the new terrain's collider
+            return root;
+        }
 
         /// <summary>Re-imports an overrides file written under Assets, so Resources (and HexBoard.Load) see it.</summary>
         public static void Import(string overridesPath)

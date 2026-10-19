@@ -281,6 +281,9 @@ def map_overrides(path=None):
     follows the game map: {(q, r): biome} and {settlement id: (q, r)}. Control is the map's own and boards ignore it."""
     path = path or os.path.join(ROOT, 'content/map/overrides.yaml')
     if not os.path.exists(path): return {}, {}
+    with open(path, encoding='utf-8') as f: text = f.read()
+    # No terrain or location edits: nothing to read, so the built-in mode still runs without a YAML library.
+    if all(re.search(rf'^{k}:\s*\[\]\s*$', text, re.M) for k in ('terrain', 'locations')): return {}, {}
     data = _yaml(path) or {}
     terrain = {(x['hex']['q'], x['hex']['r']): x['value'] for x in data.get('terrain') or []}
     locations = {x['id']: (x['hex']['q'], x['hex']['r']) for x in data.get('locations') or []}

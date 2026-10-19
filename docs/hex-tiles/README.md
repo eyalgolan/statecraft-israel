@@ -62,8 +62,10 @@ overrides file (see "Painting hexes by hand"). `tel_aviv` stays the small test b
 python3 tools/hex_tiles/make_board.py --regions tools/hex_tiles/regions.yaml --id israel --all --env-ring 1
 ```
 
-That writes `Boards/israel.json`: 920 hexes in seven regions. Show it with `?hex-tiles=israel`, or capture it with
-`HexBoardCapture -board israel -boardOnly`. With `--regions`, the generator works like this:
+That writes `Boards/israel.json`: 920 hexes in seven regions. Capture it with `HexBoardCapture -board israel
+-boardOnly`, or open it in the Hex Painter. In the game it would be `?hex-tiles=israel`, but that has not been tried yet:
+it builds 920 tiles on the real map, so check the load time before relying on it. `--regions` needs PyYAML. With
+`--regions`, the generator works like this:
 
 - **Regions.** Galilee and the north, the coastal plain, the central hills, Jerusalem, the Negev, the Arava and the
   Jordan valley. Each is a `polygon` of `[lon, lat]` points, or a `hexes` list of `q, r` pairs. A hex goes to:

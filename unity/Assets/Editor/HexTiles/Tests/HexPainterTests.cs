@@ -155,6 +155,16 @@ public class HexPainterTests
             }
             Assert.That(Desert(), Is.LessThan(0.01f));
 
+            // Picking: a click meets the terrain, so even a shallow ray onto a hill's top finds that hill, not the hex
+            // where the ray would reach sea level (about 7 km on).
+            Physics.SyncTransforms();
+            var top = HexGeometry.Centre(-1, 0, HexScale.HexM); top.y = state.Surface.Height(top);
+            Assert.That(top.y, Is.GreaterThan(400f));
+            Assert.That(HexPainter.Pick(root, new Ray(top + Vector3.up * 5000f, Vector3.down)), Is.EqualTo(((int, int)?)(-1, 0)));
+            var shallow = Quaternion.Euler(5f, 0f, 0f) * Vector3.forward;
+            Assert.That(HexPainter.Pick(root, new Ray(top - shallow * 20000f, shallow)), Is.EqualTo(((int, int)?)(-1, 0)));
+            Assert.That(HexPainter.Pick(root, new Ray(new Vector3(9e5f, 3000f, 9e5f), Vector3.down)), Is.Null, "off the board");
+
             var path = HexPainter.OverridesPath(dir, "t");
             var report = HexPainter.Change(root, path, 0, 0, "prototype", "pine_forest");
             Assert.That(report!.Prototype, Is.EqualTo("pine_forest"));
