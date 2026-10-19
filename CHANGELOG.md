@@ -22,6 +22,20 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   map editor's terrain and location overrides. The editor-only Hex Painter (Statecraft/Hex Tiles/Hex Painter) picks a
   hex in the Scene view, changes its tile, ground, unit, facing or region, rebuilds just that hex and writes the edit
   there. Still presentation only and off by default (refs #18).
+- Round 2 of the opt-in hex-tile map, still presentation only and off by default.
+  - **Buildings:** they draw the shipped b*-v2 town models at full detail. Our own decimated copies had lost faces, so
+    grass showed through walls and windows. The tile budgets are raised to match, and a test counts see-through view
+    rays.
+  - **Regional variants:** two each for the north, centre and south of the wheat, citrus, olive, mixed-farm and forest
+    tiles (a new `mixed_farm`).
+  - **Time of day:** day, dusk and night presets (`?hex-tiles&hex-time=dusk|night`, desktop `-hex-time`). Night has
+    lit windows. Everything is restored on teardown.
+  - **Under attack:** a look for a hex (smoke, glow and a pulsing border) that the sim can drive later. It is not
+    saved to any board.
+  - **Hex Painter:** a palette of every tile, by kind and region, and every unit, with thumbnails. A brush paints
+    tiles, units are placed with a facing, and day, dusk, night and under attack can be previewed.
+  - **Board capture:** the whole-board shot no longer cuts off the board's south edge.
+  (docs/hex-tiles/README.md; refs #18)
 - The Cabinet disc in the side menu shows a small gold badge while a post is vacant that the player can fill this turn,
   and its tip says so in English and Hebrew. The sim's `Cabinet.Vacancies` decides it (a vacant seat, someone may be
   appointed, no appointment to it queued, the game not over, and enough Attention left after this turn's queued orders,
