@@ -11,7 +11,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// - The grid is turned -15 degrees (a look choice, unsourced), so the north-west diagonal points at a hex corner where
     ///   the station has room. Streets are painted dirt between 0.26 S lots. The lot at the centre is a small paved square,
     ///   kept open for a unit. Two streets run on as roads to the west and north edges.
-    /// - One-storey stone houses (sandbox:kit_negev*, sandbox:kit_stone_village_2) stand on the lots in a diamond of up to
+    /// - One-storey stone houses (sandbox:kit_negev_2, _3 and sandbox:kit_stone_village_2) stand on the lots in a diamond of up to
     ///   18. All are grid-aligned and turned by quarter turns.
     /// - The Great Mosque, built in 1906 with Bedouin donations, stands on the lot north-west of the square, on the road
     ///   west. Sources: https://en.wikipedia.org/wiki/Beersheba (checked 2026-10-19: "In 1906, during the Ottoman era,
@@ -52,8 +52,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Ground => "desert";
         public int TriangleBudget => 36000;
 
-        // Explicit house ids: kit_stone_village* would include the mosque-like b17. kit_negev* is houses only.
-        static readonly string[] Houses = { "sandbox:kit_negev*", "sandbox:kit_stone_village_2" };
+        // Explicit house ids: kit_stone_village, kit_negev (the first variant), kit_jaffa and kit_jerusalem_4 are the
+        // mosque-like b17 mesh, so no wildcard that could pick one.
+        static readonly string[] Houses = { "sandbox:kit_negev_2", "sandbox:kit_stone_village_2", "sandbox:kit_negev_3" };
         const string Mosque = "tiles:beersheba_town/great_mosque", Dome = "tiles:beersheba_town/great_mosque_dome",
             Minaret = "tiles:beersheba_town/minaret", Saraya = "tiles:beersheba_town/saraya",
             Station = "tiles:beersheba_town/railway_station", StationTower = "tiles:beersheba_town/station_water_tower",

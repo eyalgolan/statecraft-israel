@@ -138,8 +138,9 @@ regions:
     polygon: [[35.298, 30.95], [35.80, 30.95], [35.80, 31.80], [35.368, 31.80]]
     ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
     nature:
-      - {terrain: flat, prototype: dead_sea_shore}
-      - {pick: [[judean_desert, 0.70], [dead_sea_shore, 0.30]]}
+      # The shore tile only where the hex touches the water (a lake hex counts as not land, so `coastal`).
+      - {coastal: true, prototype: dead_sea_shore}
+      - {pick: [[judean_desert, 0.80], [desert_edge, 0.20]]}
     flora:
       density: 0.25
       flat:
@@ -346,7 +347,8 @@ regions:
   - id: ramon
     title: The Negev highlands and Makhtesh Ramon
     polygon: [[34.50, 30.35], [35.10, 30.35], [35.10, 30.90], [34.50, 30.90]]
-    ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: mountain}
+    # Desert ground on the mountains too: the rocky mountain layer reads green under the hex look.
+    ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
     nature:
       - {terrain: mountain, pick: [[ramon_highlands, 0.80], [mountain_peaks, 0.20]]}
       - {terrain: hills, pick: [[ramon_highlands, 0.45], [desert_edge, 0.55]]}

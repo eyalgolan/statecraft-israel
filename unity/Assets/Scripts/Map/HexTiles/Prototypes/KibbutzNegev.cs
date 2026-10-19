@@ -11,7 +11,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// - A small fenced compound stands in the north half of the hex, toward a flat side (bearing 30 or 330), 0.33 S out
     ///   at its nearest, so the unit spot stays open. Its perimeter is a ring of thin stand-in posts
     ///   (tiles:kibbutz_negev/fence_post). The gate faces the centre, and a dirt road runs from it through the centre.
-    /// - Inside the fence: a dining hut (sandbox:kit_kibbutz_2) facing the gate, three prefab huts (sandbox:kit_negev*, 0.12 S),
+    /// - Inside the fence: a dining hut (sandbox:kit_kibbutz_2) facing the gate, three prefab huts (sandbox:kit_negev_2 and _3, 0.12 S),
     ///   two small canvas tents (tiles:kibbutz_negev/tent, 0.055 S, as DesertEdge keeps its tents under the building size), and the wooden water tower as the signature
     ///   (tiles:kibbutz_negev/water_tower: a Palm stand-in reads as a frame with the barrel on top). No kibbutz is named.
     /// - The water line: work began in January 1947 on a line from the Nir Am area, and by October 1947 water reached the
@@ -38,7 +38,7 @@ namespace Statecraft.HexTiles.Prototypes
         public int TriangleBudget => 20000;
 
         // Explicit ids: kit_kibbutz* would mix in the concrete water tower (kit_kibbutz_4), which this tile does not use.
-        const string DiningHut = "sandbox:kit_kibbutz_2", Hut = "sandbox:kit_negev*", Tent = "tiles:kibbutz_negev/tent",
+        const string DiningHut = "sandbox:kit_kibbutz_2", Hut = "sandbox:kit_negev_2", Hut2 = "sandbox:kit_negev_3", Tent = "tiles:kibbutz_negev/tent",
             Tower = "tiles:kibbutz_negev/water_tower", Post = "tiles:kibbutz_negev/fence_post",
             Tamarisk = "tiles:kibbutz_negev/tamarisk", Eucalyptus = "sandbox:tabor_oak_lite", Rock = "sandbox:desert_rock*",
             Woman = "proto:figure-kibbutz-woman-v1";
@@ -102,8 +102,10 @@ namespace Statecraft.HexTiles.Prototypes
 
             // 5. Inside: the dining hut facing the gate, three huts, two tents, the wooden water tower in the back corner.
             ctx.PlaceByWidth(DiningHut, L(0f, -0.07f), bearing + 180f, 0.13f * s, StandIn.Box, HutTimber);
+            // Explicit hut ids: kit_negev (the first variant) is the mosque-like b17 mesh, so kit_negev* could draw it.
+            int hut = 0;
             foreach (var (u, v) in new[] { (-0.19f, -0.09f), (-0.19f, 0.09f), (0.20f, -0.09f) })
-                ctx.PlaceByWidth(Hut, L(u, v), bearing + 90f, 0.12f * s, StandIn.Box, HutTimber);
+                ctx.PlaceByWidth(hut++ % 2 == 0 ? Hut : Hut2, L(u, v), bearing + 90f, 0.12f * s, StandIn.Box, HutTimber);
             foreach (float u in new[] { -0.05f, 0.07f })
                 ctx.PlaceByWidth(Tent, L(u, 0.12f), bearing, 0.055f * s, StandIn.Box, Canvas);
             ctx.PlaceByHeight(Tower, L(0.20f, 0.09f), bearing, 0.20f * s, StandIn.Palm, TowerTimber, 0.3f);
