@@ -34,7 +34,7 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Jaffa, the old port town (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 70000;
+        public int TriangleBudget => 125000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 113k on the israel board and the test hex
 
         const string House = "sandbox:kit_jaffa*", Cluster = "proto:stone-village-v1", Boat = "proto:vehicle-fishing-boat-1948-v2",
             Palm = "sandbox:date_palm", ClockTower = "tiles:jaffa_old_city/clock_tower", Church = "tiles:jaffa_old_city/st_peter",

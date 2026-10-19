@@ -22,7 +22,7 @@ namespace Statecraft.HexTiles.Prototypes
         public virtual string Title => "Mixed farm: crop patchwork, orchard and farmstead";
         public virtual HexTerrain Terrain => HexTerrain.Flat;
         public virtual string Ground => "plains";
-        public virtual int TriangleBudget => HexScale.BudgetFields + 10000;
+        public virtual int TriangleBudget => HexScale.BudgetFields + 25000;   // its farmstead at full detail: 38k measured
 
         // Models: the EZ-Tree trees and the Tripo kit are local-only; without them the stand-ins draw.
         protected const string Citrus = "sandbox:citrus_lite", Olive = "sandbox:olive_lite", Carob = "sandbox:carob_lite",

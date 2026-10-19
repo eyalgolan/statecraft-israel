@@ -16,7 +16,7 @@ namespace Statecraft.HexTiles.Prototypes
         public virtual string Title => "Wheat fields and a farmstead";
         public virtual HexTerrain Terrain => HexTerrain.Flat;
         public virtual string Ground => "plains";
-        public virtual int TriangleBudget => HexScale.BudgetFields + 10000;
+        public virtual int TriangleBudget => HexScale.BudgetFields + 20000;   // its farmstead at full detail: 31k measured
 
         static readonly string[] BaseCrops = { "wheat", "wheat", "green_crop", "ploughed", "wheat", "green_crop" };
         static readonly float[] BaseHedges = { -0.5f, 0.5f };

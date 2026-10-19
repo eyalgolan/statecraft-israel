@@ -23,7 +23,7 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Moshava farming colony (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 60000;
+        public int TriangleBudget => 120000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 106k on the israel board and the test hex
 
         // Explicit kit ids, not "kit_moshava*": the wildcard would also pick kit_moshava_3, which is the barn.
         const string Farmhouse = "sandbox:kit_moshava", TwoStorey = "sandbox:kit_moshava_2", Barn = "sandbox:kit_moshava_3",

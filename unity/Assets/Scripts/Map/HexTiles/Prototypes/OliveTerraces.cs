@@ -26,7 +26,7 @@ namespace Statecraft.HexTiles.Prototypes
         public virtual string Title => "Olive terraces on a hillside (1948)";
         public virtual HexTerrain Terrain => HexTerrain.Hills;
         public virtual string Ground => "hills";
-        public virtual int TriangleBudget => 50000;
+        public virtual int TriangleBudget => 60000;   // its farmhouse at full detail: 51k measured
 
         // The hut is explicit, not "kit_stone_village*": the wildcard would also pick b17, the village mosque.
         protected const string Olive = "sandbox:olive_lite", Carob = "sandbox:carob_lite", Stone = "sandbox:limestone*",

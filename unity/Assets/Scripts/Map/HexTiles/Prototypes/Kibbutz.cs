@@ -25,7 +25,7 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Kibbutz compound and its fields (1940s)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 60000;
+        public int TriangleBudget => 85000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 75k on the israel board and the test hex
 
         // Explicit kit ids, not "kit_kibbutz*": the wildcard would mix the dining hall, barn and water tower into the rows.
         const string Core = "proto:kibbutz-compound-v2", Quarters = "sandbox:kit_kibbutz", DiningHall = "sandbox:kit_kibbutz_2",

@@ -33,7 +33,7 @@ namespace Statecraft.HexTiles.Prototypes
         public string Title => "Jerusalem, the walled Old City (1948)";
         public HexTerrain Terrain => HexTerrain.Hills;
         public string Ground => "hills";
-        public int TriangleBudget => 90000;
+        public int TriangleBudget => 240000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 217k on the israel board and the test hex
 
         const string Cluster = "proto:jerusalem-stone-city-v1", House = "sandbox:kit_jerusalem*", Cypress = "sandbox:cypress_lite",
             Olive = "sandbox:olive_lite", Wall = "tiles:jerusalem_old_city/wall", Tower = "tiles:jerusalem_old_city/tower",

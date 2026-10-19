@@ -40,9 +40,10 @@ namespace Statecraft.HexTiles
         /// <summary>The sandbox building ids drawn as the shipped b*-v2 town models when the set is found (Tal, 19 October
         /// 2026: the decimated sandbox kit had lost faces, so the ground showed through walls and windows). Each names its
         /// "town:" id and whether it is the same Tripo model; false is a remap, because its own model (b11, b21) is not in
-        /// the set and is not pulled into a build. All take the full mesh: most baked mid levels have lost faces too
-        /// (HexModelMeshTests' report). OPEN (owner): the full meshes (about 6,000 triangles each) put the seven city and
-        /// village tiles over their triangle budgets; the level per alias or the budgets wait on that decision.</summary>
+        /// the set and is not pulled into a build. All take the full mesh (Tal, 19 October 2026): most baked mid levels have lost faces too,
+        /// and the generator's in-between levels smear their textures (HexModelMeshTests' report), so the city and village
+        /// tiles' budgets were raised to the full meshes (about 6,000 triangles each). A lighter level that keeps its UV
+        /// seams is a follow-up.</summary>
         public static readonly (string id, string town, bool same)[] TownAliases =
         {
             ("sandbox:hq_white_city_hero", B01, true),

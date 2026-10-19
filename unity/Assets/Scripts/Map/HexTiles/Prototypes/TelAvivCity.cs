@@ -9,14 +9,15 @@ namespace Statecraft.HexTiles.Prototypes
     /// facing the square and an outer ring on the city's grid (-20 degrees, turned to the coast), garden trees between,
     /// townspeople on the square, a horse wagon on an avenue, and a palm promenade along the shore. Models are the
     /// 13 October Tripo set (local, pending rights); every piece has a stand-in.
-    /// Budget: this showcase tile is drawn at full quality (about 110k triangles); LODs come before any map rollout.</summary>
+    /// Budget: this showcase tile is drawn at full quality (about 150k triangles with the shipped b*-v2 buildings at full
+    /// detail); a lighter level that keeps its UV seams comes before any map rollout.</summary>
     [HexPrototype("tel_aviv_city", Kind = "city")]
     public class TelAvivCity : IHexPrototype
     {
         public virtual string Title => "Tel Aviv, White City (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 120000;
+        public int TriangleBudget => 165000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 149k on the israel board and the test hex
 
         const string Hero = "sandbox:hq_white_city_hero", Building = "sandbox:hq_white_city*", Palm = "sandbox:date_palm",
             GardenTree = "sandbox:carob_lite", Wagon = "proto:figure-vehicle-horse-wagon-1948-v2";
