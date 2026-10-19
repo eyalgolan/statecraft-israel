@@ -27,6 +27,14 @@ public class HexPrototypeTests
     public void IdIsLowerSnakeCase(string id) => Assert.That(Regex.IsMatch(id, "^[a-z][a-z0-9_]*$"), id);
 
     [TestCaseSource(nameof(Ids))]
+    public void NamesAPaletteKindAndRegion(string id)
+    {
+        var info = HexPrototypes.Info(id);
+        Assert.That(HexPrototypes.Kinds, Does.Contain(info.Kind), $"{id}: kind '{info.Kind}'");
+        Assert.That(info.Region == "" || HexPrototypes.Regions.Contains(info.Region), $"{id}: region '{info.Region}'");
+    }
+
+    [TestCaseSource(nameof(Ids))]
     public void BuildsSomething(string id) => Assert.That(Built(id).Placements.Count, Is.GreaterThan(0), id);
 
     [TestCaseSource(nameof(Ids))]
