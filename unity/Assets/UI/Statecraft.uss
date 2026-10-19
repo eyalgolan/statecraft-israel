@@ -658,6 +658,19 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    on the marker's top. Hidden while the game loads. */
 .map-labels { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .loading .map-labels { display: none; }
+/* The map's keyboard stop (#41 B1b, #1116): the whole map area, invisible; only its ring shows, and only while the stop
+   has the keyboard focus (and is enabled: ScreenNav disables it under a covering screen). The ring is gold-light between
+   two navy-deep outlines, so one of its colours keeps >= 3:1 against any map colour (WCAG 1.4.11; MapFocusTests). The
+   outlines are 3 panel px so they stay two screen px at 1280x720 (the panel draws at about 2/3 there).
+   MapFocusPresenter puts left/top on the camera's look-at point; the translate centres the ring there. */
+.map-focus { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.map-focus-mark {
+    display: none; position: absolute; width: 40px; height: 40px; translate: -50% -50%;
+    border-width: 3px; border-color: var(--navy-deep); border-radius: 20px;
+}
+.map-focus:focus:enabled > .map-focus-mark { display: flex; }
+.map-focus-ring { flex-grow: 1; border-width: 4px; border-color: var(--gold-light); border-radius: 17px; }
+.map-focus-inner { flex-grow: 1; border-width: 3px; border-color: var(--navy-deep); border-radius: 13px; }
 .map-label-slot { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: visible; }
 .map-label {
     position: absolute;

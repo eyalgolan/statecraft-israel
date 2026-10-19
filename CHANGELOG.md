@@ -8,6 +8,25 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- The ministers reach the GDD systems (D-H3's first slice, refs #808): the Labour minister's office scales housing and
+  industry construction, the Agriculture minister's office pioneer and field work, and the Immigration minister's
+  office refugee absorption, each at the cabinet multiplier (competence x budget share) on the turn's date. Prices and
+  stated durations are unchanged, a build's fractional progress is carried on its record, and an office that does not
+  exist on the date reads its named successor's multiplier. In the historical run every build and absorption moves:
+  the reference player builds Mefalsim on 15 February 1951 (was 15 March 1950), the camps are never started, and every
+  golden is re-pinned.
+
+### Fixed
+- Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
+- Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
+- On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
+  the browser's `env(safe-area-inset-*)` values (the camera's top inset and the map labels follow as before), and it
+  follows the insets even when the root bounds do not change, as a same-size landscape flip moves the notch with no
+  geometry event (a per-frame poll); desktops and notch-free phones are unchanged.
+  With a side inset, raised meter captions reflow into the existing two-row bar when their measured widths no longer
+  fit; Security's level wraps with its caption, and the 12 px text floor is preserved.
+
+### Added
 - An opt-in Civilization-style hex-tile map (`?hex-tiles`, desktop `-hex-tiles`; `?hex-tiles=tel_aviv_crop` for the
   Tel Aviv crop): one-file hex prototypes (towns, orchards, fields, forests, hills), units as their own layer, painted
   ground, a landscape ring round the play hexes and a warmer light while it is on. Presentation only; off by default,
@@ -50,7 +69,17 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   priced by the sim's new `AttentionSystem.Price`/`Left`, which `SimBridge` now uses too); the UI only reads it (refs #1109).
 - Unit cards show the sourced Hebrew unit name in the Hebrew UI, with an English fallback. INS Haganah gains its
   sourced Hebrew name, still flagged for a native speaker's review (#902).
+- The map can be used from the keyboard: Tab reaches a map stop right after End Turn, a gold ring with a dark outline
+  marks the centre of the view while it has the focus, the camera keys pan the map under it, and Enter or Space selects
+  the hex under the ring through the same pick as a click, with the focus staying on the map. The next Tabs reach the
+  info panel's actions. Covering screens and the start screen take the stop out of reach, and mouse and touch clicks pass
+  through it as before. The empty info panel's hint says so in English and Hebrew, and keeps the right-drag (Hebrew
+  flagged for a native speaker's review; Fixes #1116, refs #41).
 ### Fixed
+- Hebrew budget vote labels use the legislature as their subject, following the native review, so names beginning with ה no longer follow an uninflected ב־ prefix (refs #564).
+- Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.
+- Keep the capsule-collider dependency used while creating hex unit stand-ins in stripped player builds; the temporary collider is still removed.
+- Missing unit models on the opt-in hex-tile map use an owned copy of the shipped material in player builds.
 - The opt-in hex-tile map regenerates cached stand-in meshes released by an editor scene change.
 - The opt-in hex-tile map preserves settlement marker visibility when removed or rebuilt, and missing vehicle models
   keep their declared box stand-in and footprint size.

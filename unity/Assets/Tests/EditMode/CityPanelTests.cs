@@ -301,8 +301,21 @@ public class CityPanelTests
         Assert.AreEqual(SiteDef.Name, ui.Q<Label>("info-title").text, "the site's name is the title");
         Assert.AreEqual(En["site.available"], ui.Q<Label>("site-state").text);
         var r = C.RulesAt(bridge.State.Date).Mvp!;
+        Assert.AreEqual(0.624, EffectsSystem.GddSystemMultiplier(C, bridge.State, r, EffectsSystem.YishuvWorkSystem), 1e-9, "precondition: real Agriculture multiplier");
+        Assert.AreEqual(6, r.BuildYishuvTurns, "the owner's base work is unchanged");
+        Assert.AreEqual(0, bridge.State.Units[a].Service, "the idle group is not already partway to veteran");
+        var played = bridge.State.Clone();
+        int elapsed = 0;
+        do
+        {
+            var result = Simulation.Step(C, played, elapsed == 0 ? new Command[] { new PioneerWork(a, Projects.BuildYishuv, Site) } : new Command[0]);
+            Assert.IsEmpty(result.Rejected);
+            played = result.State; elapsed++;
+        } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
+        Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
+        Assert.AreEqual(8, elapsed, "six work units at the real multiplier, including veteran promotion");
         var first = ui.Q<Button>($"site-build-{a}");
-        Assert.AreEqual(En.Format("site.build", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildYishuvCost), En.Format("city.turns", r.BuildYishuvTurns)), first.text);
+        Assert.AreEqual(En.Format("site.build", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildYishuvCost), En.Format("city.turns", 8)), first.text);
         StringAssert.Contains(En.Format("site.group", 2), ui.Q<Button>($"site-build-{b}").text, "every idle group has its button, numbered from 1");
         UiTestKit.Press(first);
         var order = bridge.QueuedLike(new PioneerWork(a, Projects.BuildYishuv, Site)) as PioneerWork;
@@ -349,7 +362,7 @@ public class CityPanelTests
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
         var r = C.RulesAt(bridge.State.Date).Mvp!;
-        var turns = Projects.TurnsToBuild(C, bridge.State, vet, r.BuildYishuvTurns);
+        var turns = Projects.TurnsToBuild(C, bridge.State, vet, SiteDef, r.BuildYishuvTurns, 0);
         Assert.Less(turns, r.BuildYishuvTurns, "precondition: a veteran builds faster in the real content");
         var button = ui.Q<Button>($"site-build-{vet}");
         Assert.IsNotNull(button, "a veteran group has a Build button");
@@ -358,16 +371,18 @@ public class CityPanelTests
         Assert.IsNotNull(bridge.QueuedLike(new PioneerWork(vet, Projects.BuildYishuv, Site)));
     }
 
-    [Test]
-    public void AVeteransSiteShowsTheTurnsItReallyHasLeft()
+    [TestCase(0d, 4)]
+    [TestCase(0.75d, 3)]
+    public void AVeteransSiteShowsTheTurnsItReallyHasLeft(double carry, int expected)
     {
         using var ui = new UiTestKit();
         int vet = -1;
-        var bridge = Bridge(En, s => { vet = AddHalutz(s, Projects.VeteranType); s.Sites[Site] = new SiteWork(Site, vet, 4, null); });
+        var bridge = Bridge(En, s => { vet = AddHalutz(s, Projects.VeteranType); s.Sites[Site] = new SiteWork(Site, vet, 4, null, carry); });
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
-        var turns = Projects.TurnsToBuild(C, bridge.State, vet, 4);
-        Assert.AreEqual(2, turns, "precondition: 4 turns of progress at the real content's 2 a turn");
+        var turns = Projects.TurnsToBuild(C, bridge.State, vet, SiteDef, 4, carry);
+        Assert.AreEqual(0.624, EffectsSystem.GddSystemMultiplier(C, bridge.State, C.RulesAt(bridge.State.Date).Mvp!, EffectsSystem.YishuvWorkSystem), 1e-9, "precondition: current real Agriculture rate");
+        Assert.AreEqual(expected, turns, "four work units at 2 x 0.624 per turn, including saved carry");
         Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", turns)), ui.Q<Label>("site-state").text);
     }
 
@@ -428,7 +443,19 @@ public class CityPanelTests
         var bridge = Bridge(En, s => { a = AddHalutz(s); s.Sites[Site] = new SiteWork(Site, a, 4, null); });
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
-        Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", 4)), ui.Q<Label>("site-state").text);
+        Assert.AreEqual(0.624, EffectsSystem.GddSystemMultiplier(C, bridge.State, C.RulesAt(bridge.State.Date).Mvp!, EffectsSystem.YishuvWorkSystem), 1e-9, "precondition: real Agriculture multiplier");
+        Assert.AreEqual((0, 4, 0d), (bridge.State.Units[a].Service, bridge.State.Sites[Site].TurnsLeft, bridge.State.Sites[Site].Progress), "precondition: a fresh halutz with four whole work units and no carry");
+        var played = bridge.State.Clone();
+        int elapsed = 0;
+        do
+        {
+            var result = Simulation.Step(C, played, new Command[0]);
+            Assert.IsEmpty(result.Rejected);
+            played = result.State; elapsed++;
+        } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
+        Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
+        Assert.AreEqual(7, elapsed, "remaining work at the real multiplier, including veteran promotion");
+        Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", 7)), ui.Q<Label>("site-state").text);
         UiTestKit.Press(ui.Q<Button>("site-stop"));
         Assert.IsNotNull(bridge.QueuedLike(new StopWork(a)), "Stop queues StopWork");
     }

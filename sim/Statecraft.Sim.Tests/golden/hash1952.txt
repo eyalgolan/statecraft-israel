@@ -1,9 +1,9 @@
 1952-01-15;1948;Historical;44;
 ind{
-  food_supply=0.8556594723429 [3FEB618FF947363F]
-  housing=0.08504947742483628 [3FB5C5CD7414E141]
+  food_supply=0.8555635490815091 [3FEB60C6CEDE8D7F]
+  housing=0.08527449992708651 [3FB5D48CB45E9D83]
   intl_standing=0.8300000000000003 [3FEA8F5C28F5C292]
-  morale=0.4915607767294802 [3FDF75BB55032A9A]
+  morale=0.49164470757140455 [3FDF771B5D115298]
   security=0.5061322526321603 [3FE0323C441030A6]
 pol{
   border_settlement=0.2 [3FC999999999999A]
@@ -14,14 +14,14 @@ eff{
   border_villages_secure=0.04113225263216018 [3FA50F495FBB5C36]
   building_houses=0.08504947742483629 [3FB5C5CD7414E142]
   food_lifts_cohesion=0.08899999973526929 [3FB6C8B43834FD50]
-  homes_lift_morale=0.01276719658700311 [3F8A25B01E6C188A]
+  homes_lift_morale=0.012822260189952167 [3F8A428EA169C610]
   rationing_feeds=0.3399999999208376 [3FD5C28F5C133334]
   rationing_grates=-0.15 [BFC3333333333333]
   safety_lifts_morale=0.05054370052651369 [3FA9E0DD298F75A0]
-  work_lifts_cohesion=0.019249879880694112 [3F93B63D92287534]
+  work_lifts_cohesion=0.019278747119669364 [3F93BDCED18C1E3E]
 shift{
   food_supply=0.15000000000000002 [3FC3333333333334]
-  housing=-1.3877787807814457E-17 [BC70000000000000]
+  housing=0 [0000000000000000]
   intl_standing=0.3300000000000003 [3FD51EB851EB8524]
   morale=-0.08000000000000007 [BFB47AE147AE1480]
   security=0.16500000000000015 [3FC51EB851EB8524]
@@ -45,11 +45,11 @@ sit[
   fx_crisis
   housing_crisis
 treasury=0 [0000000000000000]
-debt=223.89012071283815 [406BFC7BDE6EE43A]
+debt=211.89012071283815 [406A7C7BDE6EE43A]
 fx=-12.990431328096559 [C029FB19D0A63796]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.44359186096314507 [3FDC63CF1DE6F174]
+stab=0.44381788073928824 [3FDC67831CC9EFF7]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -119,7 +119,7 @@ chosen{
 appt{
 under=;
 map[
-mapturn=1951-08-15:1;
+mapturn=1951-10-15:1;
 over=mvp_ended
 city{
   hadera=12,5,26,5,0,c0 [0000000000000000]
@@ -129,38 +129,31 @@ city{
   petah_tikva=22,10,48,10,0,c0 [0000000000000000]
   rehovot=13,5,28,5,0,c0 [0000000000000000]
   rishon_lezion=10,5,22,5,0,c0 [0000000000000000]
-  rosh_pinna=1,0,2,0,0,c0 [0000000000000000]
+  rosh_pinna=1,0,2,0,0,c0.12499999999999996 [3FBFFFFFFFFFFFFD]
   safed=2,1,5,1,0,c0 [0000000000000000]
-  tel_aviv=273,106,540,106,4,c0 [0000000000000000]
+  tel_aviv=268,106,540,106,4,c0 [0000000000000000]
   tiberias=6,2,13,2,0,c0 [0000000000000000]
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
   1:veteran_halutz@-3,19/6
 site{
-  beit_kama=done,1949-03-15
-  beit_kama_field=done,1950-08-15
-  beit_shemesh=done,1949-06-15
-  beit_shemesh_field=done,1950-10-15
-  camp_80=done,1951-09-15
-  gilat=done,1949-09-15
-  gilat_field=done,1950-12-15
-  kiryat_shmona=done,1949-12-15
-  kiryat_shmona_field=done,1951-02-15
-  mefalsim=done,1950-03-15
-  mefalsim_field=done,1951-04-15
-  reim=done,1950-06-15
-  reim_field=done,1951-06-15
-  tzrifin=done,1951-12-15
+  beit_kama=done,1949-06-15
+  beit_kama_field=done,1951-10-15
+  beit_shemesh=done,1949-11-15
+  beit_shemesh_field=done,1952-01-15
+  gilat=done,1950-04-15
+  kiryat_shmona=done,1950-09-15
+  mefalsim=done,1951-02-15
+  reim=done,1951-07-15
 cproj[
-  2:housing@tel_aviv,-4,20/done,1949-08-15
-  3:housing@tel_aviv,-3,19/done,1950-02-15
-  4:housing@tel_aviv,-3,20/done,1950-08-15
-  5:housing@tel_aviv,-2,18/done,1951-02-15
-  6:housing@tel_aviv,-2,19/done,1951-08-15
-  7:housing@haifa,4,9/1
-next=8
+  2:housing@tel_aviv,-4,20/done,1949-10-15
+  3:housing@tel_aviv,-3,19/done,1950-06-15
+  4:housing@tel_aviv,-3,20/done,1951-02-15
+  5:housing@tel_aviv,-2,18/done,1951-10-15
+  6:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
+next=7
 obj{
-  first_new_yishuv=1950-03-15
+  first_new_yishuv=1951-02-15
 score=100
-food=2738,1390,0
+food=2734,1390,0
 arms=12

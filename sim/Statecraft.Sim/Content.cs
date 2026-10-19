@@ -518,6 +518,10 @@ namespace Statecraft.Sim
         public double? HakhsharaUpkeepPerYear { get; set; }
         /// <summary>The day the cities start taking arrivals: the census day their start values count (R-CITY-003, Q-ARRV-3).</summary>
         public DateTime CityArrivalsFrom { get; set; }
+        /// <summary>The GDD system to office map (R-MIN-001, D-H3, Q-MIN-1): the office whose
+        /// <see cref="EffectsSystem.Multiplier(Content, GameState, string)"/> scales each named system. A system the map does
+        /// not name is neutral. Read on the turn's date.</summary>
+        public Dictionary<string, string> MinisterSystems { get; set; } = new Dictionary<string, string>();
         /// <summary>The day the GDD game ends (R-LOOP-004; D-E5, 15 January 1952 in the real content), or null for the last
         /// era's end. Read from rules.yaml through <see cref="Content.End"/>; the same in every era.</summary>
         public DateTime? End { get; set; }
