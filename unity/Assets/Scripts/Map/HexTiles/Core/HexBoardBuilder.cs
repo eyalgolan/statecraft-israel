@@ -119,7 +119,7 @@ namespace Statecraft.HexTiles
             if (env.Count > 0) HexBoardRenderer.Emit(pieces, env, assets, EnvName(q, r));
             var units = root.transform.Find(UnitsName);
             var oldUnit = units.Find(UnitName(q, r));
-            if (oldUnit != null) Object.DestroyImmediate(oldUnit.gameObject);
+            if (oldUnit != null) Release(oldUnit.gameObject, assets);
             if (h.unit != "") BuildUnit(h, state.Surface, Holder(units, UnitName(q, r)));
             Repaint(state, HexGeometry.Centre(q, r, HexScale.HexM));
             return report;
@@ -232,10 +232,12 @@ namespace Statecraft.HexTiles
                 data.SetHoles(0, 0, solid);
             }
             var go = Terrain.CreateTerrainGameObject(data);
+            var t = go.GetComponent<Terrain>();
+            // An overlay overlaps the real map; it must not join its grid of adjacent terrain tiles.
+            if (holesOutsideLand) t.allowAutoConnect = false;
             go.name = "HexBoardTerrain";
             go.transform.SetParent(root, false);
             go.transform.localPosition = new Vector3(rect.x, MinY, rect.y);
-            var t = go.GetComponent<Terrain>();
             var m = assets.Own(HexMaterials.New(holesOutsideLand ? HexMaterials.TerrainHoles : HexMaterials.Terrain));
             t.materialTemplate = m; t.heightmapPixelError = 2f; t.basemapDistance = 1e7f; t.drawTreesAndFoliage = false;
             return (data, rect);

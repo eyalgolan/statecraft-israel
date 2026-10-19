@@ -110,7 +110,7 @@ namespace Statecraft.HexTiles.Painter
 
         void Load(string id)
         {
-            foreach (var old in FindObjectsByType<HexBoardState>(FindObjectsSortMode.None)) Unload(old.gameObject);
+            foreach (var old in HexPainter.LoadedBoards()) Unload(old.gameObject);
             boardId = id; selected = null;
             try
             {
