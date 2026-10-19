@@ -71,7 +71,7 @@ namespace Statecraft.HexTiles
                 var p = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * d;
                 // Pull in until the whole column (glow at the foot, the top drifted downwind) fits the hex.
                 while (d > sizeM * 0.32f && !(HexGeometry.InHex(p, Vector3.zero, sizeM, Smoke.GlowM * sizeM * 1.2f + 60f)
-                    && HexGeometry.InHex(p + Smoke.Wind * Smoke.DriftM * sizeM, Vector3.zero, sizeM, Smoke.TopRadius * sizeM * 1.1f + 60f)))
+                    && HexGeometry.InHex(p + Smoke.Wind * Smoke.DriftM * sizeM, Vector3.zero, sizeM, (Smoke.TopRadius * 1.2f * Smoke.QuadScale * 1.09f + 0.02f) * sizeM + 60f)))
                 { d -= sizeM * 0.02f; p = p.normalized * d; }
                 bases[i] = p;
             }
@@ -85,9 +85,13 @@ namespace Statecraft.HexTiles
         {
             /// <summary>Prevailing west wind: the smoke leans east, a little north.</summary>
             public static readonly Vector3 Wind = new Vector3(0.94f, 0f, 0.34f);
-            public const int Puffs = 8;
-            public const float LifeS = 11f, HeightShare = 0.44f, DriftM = 0.15f, BaseRadius = 0.04f, TopRadius = 0.095f;
-            public const float Alpha = 0.6f, GlowM = 0.085f;
+            public const int Puffs = 14;
+            public const float LifeS = 13f, HeightShare = 0.62f, DriftM = 0.2f, BaseRadius = 0.04f, TopRadius = 0.11f;
+            /// <summary>A puff's drawn size over its radius: the soft texture fades well inside its rim.</summary>
+            public const float QuadScale = 1.5f;
+            /// <summary>Where the smoke starts: above the flames, so they show at its foot.</summary>
+            public const float FootShare = 0.04f;
+            public const float Alpha = 0.92f, GlowM = 0.11f;
         }
     }
 
@@ -109,17 +113,31 @@ namespace Statecraft.HexTiles
         float sizeM;
         Vector3[] bases = Array.Empty<Vector3>();
         float[] phase = Array.Empty<float>();
-        // Smoke: one low-poly puff template, repeated per puff each frame.
-        Vector3[] puff = Array.Empty<Vector3>(); int[] puffTris = Array.Empty<int>();
+        // Smoke: one soft camera-facing octagon per puff. Time(t) samples each puff's centre, size, spin and colour;
+        // Face(right, up) writes them for a view (the board camera's by default, each rendering camera's in turn).
+        Vector3[] puffAt = Array.Empty<Vector3>(); float[] puffRadius = Array.Empty<float>(), puffSpin = Array.Empty<float>();
         Vector3[] smokeV = Array.Empty<Vector3>(), smokeN = Array.Empty<Vector3>(); Color32[] smokeC = Array.Empty<Color32>();
+        /// <summary>A puff is an octagon round the soft disc (its corners hug the disc, unlike a quad's).</summary>
+        const int PuffSides = 8;
+        /// <summary>The octagon's rim in the puff's (right, up) plane, circumscribing the unit disc.</summary>
+        static readonly Vector2[] PuffRim = Rim();
+        static Vector2[] Rim()
+        {
+            var rim = new Vector2[PuffSides];
+            float r = 1f / Mathf.Cos(Mathf.PI / PuffSides);
+            for (int k = 0; k < PuffSides; k++) { float a = (k + 0.5f) * 2f * Mathf.PI / PuffSides; rim[k] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r; }
+            return rim;
+        }
+        /// <summary>The board camera's view (HexBoardCapture and the game rig: pitch 50 degrees, facing north).</summary>
+        static readonly Quaternion BoardView = Quaternion.Euler(50f, 0f, 0f);
         // Glow: fixed vertices (discs on the ground, small flame cones), per-vertex base colour scaled by the flicker.
         Vector3[] glowRest = Array.Empty<Vector3>(), glowV = Array.Empty<Vector3>(); Color[] glowBase = Array.Empty<Color>(); Color32[] glowC = Array.Empty<Color32>();
         int[] glowColumn = Array.Empty<int>(); bool[] glowFlameTip = Array.Empty<bool>();
 
-        static readonly Color SmokeLow = new Color(0.30f, 0.28f, 0.26f), SmokeHigh = new Color(0.64f, 0.63f, 0.61f);
-        static readonly Color GlowCore = new Color(1f, 0.46f, 0.14f), FlameCore = new Color(1f, 0.66f, 0.26f);
+        static readonly Color SmokeLow = new Color(0.13f, 0.12f, 0.115f), SmokeHigh = new Color(0.40f, 0.395f, 0.385f);
+        static readonly Color GlowCore = new Color(1f, 0.34f, 0.08f), FlameCore = new Color(1f, 0.62f, 0.22f);
         static readonly Color BorderColour = new Color(0.78f, 0.13f, 0.10f);
-        const float BorderLowAlpha = 0.35f, BorderHighAlpha = 0.85f;
+        const float BorderLowAlpha = 0.3f, BorderHighAlpha = 0.88f;
 
         internal void Build(IHexSurface surface, int q, int r, float size)
         {
@@ -133,13 +151,24 @@ namespace Statecraft.HexTiles
             Array.Sort(bases, phase, Comparer<Vector3>.Create((a, b) => b.z.CompareTo(a.z)));   // far (north) first
 
             smoke = Own(new Mesh { name = "under-attack-smoke" }); smoke.MarkDynamic();
-            Icosphere(out puff, out puffTris);
             int n = bases.Length * HexUnderAttack.Smoke.Puffs;
-            smokeV = new Vector3[n * puff.Length]; smokeN = new Vector3[smokeV.Length]; smokeC = new Color32[smokeV.Length];
-            var tris = new int[n * puffTris.Length];
-            for (int p = 0; p < n; p++) for (int k = 0; k < puffTris.Length; k++) tris[p * puffTris.Length + k] = puffTris[k] + p * puff.Length;
-            smoke.vertices = smokeV; smoke.normals = smokeN; smoke.colors32 = smokeC; smoke.triangles = tris;
-            Part("Smoke", smoke, HexMaterials.AttackSmoke);
+            puffAt = new Vector3[n]; puffRadius = new float[n]; puffSpin = new float[n];
+            const int V = PuffSides + 1;
+            smokeV = new Vector3[n * V]; smokeN = new Vector3[n * V]; smokeC = new Color32[n * V];
+            var uv = new Vector2[n * V]; var tris = new int[n * PuffSides * 3];
+            for (int p = 0; p < n; p++)
+            {
+                int o = p * V;
+                uv[o] = new Vector2(0.5f, 0.5f);
+                for (int k = 0; k < PuffSides; k++)
+                {
+                    uv[o + 1 + k] = new Vector2(0.5f + 0.5f * PuffRim[k].x, 0.5f + 0.5f * PuffRim[k].y);
+                    // Clockwise as the viewer sees it (rim counter-clockwise in right/up): centre, next, this.
+                    tris[(p * PuffSides + k) * 3] = o; tris[(p * PuffSides + k) * 3 + 1] = o + 1 + (k + 1) % PuffSides; tris[(p * PuffSides + k) * 3 + 2] = o + 1 + k;
+                }
+            }
+            smoke.vertices = smokeV; smoke.normals = smokeN; smoke.colors32 = smokeC; smoke.uv = uv; smoke.triangles = tris;
+            Part("Smoke", smoke, HexMaterials.AttackSmoke).SetTexture("_BaseMap", Own(PuffTexture()));
 
             glow = Own(BuildGlow(Ground)); glow.MarkDynamic();
             Part("Glow", glow, HexMaterials.AttackGlow);
@@ -167,7 +196,7 @@ namespace Statecraft.HexTiles
         public void Time(float t)
         {
             SampledT = t;
-            int P = HexUnderAttack.Smoke.Puffs, V = puff.Length;
+            int P = HexUnderAttack.Smoke.Puffs;
             float S = sizeM, top = HexUnderAttack.Smoke.HeightShare * S;
             int slot = 0;
             var order = new (float u, int i)[P];
@@ -177,27 +206,24 @@ namespace Statecraft.HexTiles
                 Array.Sort(order, (a, b) => a.u.CompareTo(b.u));   // low first: the camera is above, so higher puffs are nearer
                 foreach (var (u, i) in order)
                 {
-                    float seed = c * 7.31f + i * 1.93f;
-                    float radius = Mathf.Lerp(HexUnderAttack.Smoke.BaseRadius, HexUnderAttack.Smoke.TopRadius, Mathf.Sqrt(u)) * S;
+                    float seed = c * 7.31f + i * 1.93f, own = HexUnderAttack.Frac(Mathf.Sin(seed * 12.9898f) * 43758.547f);
+                    // Each puff its own size and offset, so a column reads as smoke rather than a stack of beads.
+                    float radius = Mathf.Lerp(HexUnderAttack.Smoke.BaseRadius, HexUnderAttack.Smoke.TopRadius, Mathf.Sqrt(u)) * S * (0.8f + 0.4f * own);
                     // Fade in just above the fire, thin out towards the top; the top puffs also shrink as they disperse.
-                    float alpha = HexUnderAttack.Smoke.Alpha * Mathf.SmoothStep(0f, 1f, u / 0.1f) * (1f - Mathf.SmoothStep(0f, 1f, (u - 0.5f) / 0.5f));
+                    float alpha = HexUnderAttack.Smoke.Alpha * Mathf.SmoothStep(0f, 1f, u / 0.06f) * (1f - Mathf.SmoothStep(0f, 1f, (u - 0.55f) / 0.45f));
                     radius *= 1f - 0.25f * Mathf.SmoothStep(0f, 1f, (u - 0.75f) / 0.25f);
-                    var wobble = new Vector3(Mathf.Sin(seed * 3.1f + u * 5f), 0f, Mathf.Cos(seed * 2.3f + u * 4f)) * (0.012f * S * u);
-                    var at = bases[c] + new Vector3(0f, radius * 0.6f + u * top, 0f) + HexUnderAttack.Smoke.Wind * (HexUnderAttack.Smoke.DriftM * S * Mathf.Pow(u, 1.6f)) + wobble;
-                    var rot = Quaternion.Euler(0f, seed * 57f, 0f);
+                    var wobble = new Vector3(Mathf.Sin(seed * 3.1f + u * 5f), 0f, Mathf.Cos(seed * 2.3f + u * 4f)) * (0.02f * S * Mathf.Sqrt(u));
+                    var at = bases[c] + new Vector3(0f, HexUnderAttack.Smoke.FootShare * S + radius * 0.5f + u * top, 0f)
+                        + HexUnderAttack.Smoke.Wind * (HexUnderAttack.Smoke.DriftM * S * Mathf.Pow(u, 1.4f)) + wobble;
                     var colour = Color.Lerp(SmokeLow, SmokeHigh, Mathf.SmoothStep(0f, 1f, u / 0.7f)); colour.a = alpha;
                     Color32 c32 = colour;
-                    for (int v = 0; v < V; v++)
-                    {
-                        var n = rot * puff[v];
-                        smokeN[slot * V + v] = n;
-                        smokeV[slot * V + v] = at + new Vector3(n.x * radius, n.y * radius * 0.82f, n.z * radius);
-                        smokeC[slot * V + v] = c32;
-                    }
+                    puffAt[slot] = at; puffRadius[slot] = radius; puffSpin[slot] = (own - 0.5f) * 0.7f + u * 0.6f;
+                    for (int v = 0; v <= PuffSides; v++) smokeC[slot * (PuffSides + 1) + v] = c32;
                     slot++;
                 }
             }
-            smoke.vertices = smokeV; smoke.normals = smokeN; smoke.colors32 = smokeC; smoke.RecalculateBounds();
+            smoke.colors32 = smokeC;
+            Face(BoardView * Vector3.right, BoardView * Vector3.up);
 
             for (int v = 0; v < glowRest.Length; v++)
             {
@@ -214,6 +240,53 @@ namespace Statecraft.HexTiles
             border.SetColor("_BaseColor", b);
         }
 
+        /// <summary>Writes the smoke puffs to face a view with these world right and up axes (the puffs are round, so
+        /// only the view matters, not the time).</summary>
+        void Face(Vector3 right, Vector3 up)
+        {
+            right = transform.InverseTransformDirection(right); up = transform.InverseTransformDirection(up);
+            var normal = Vector3.Cross(up, right).normalized;   // towards the viewer (Unity's cross is left-handed)
+            for (int p = 0; p < puffAt.Length; p++)
+            {
+                float cs = Mathf.Cos(puffSpin[p]), sn = Mathf.Sin(puffSpin[p]);
+                float h = puffRadius[p] * HexUnderAttack.Smoke.QuadScale;
+                Vector3 x = (right * cs + up * sn) * h, y = (up * cs - right * sn) * h;
+                var c = puffAt[p];
+                int o = p * (PuffSides + 1);
+                smokeV[o] = c; smokeN[o] = normal;
+                for (int k = 0; k < PuffSides; k++) { smokeV[o + 1 + k] = c + x * PuffRim[k].x + y * PuffRim[k].y; smokeN[o + 1 + k] = normal; }
+            }
+            smoke.vertices = smokeV; smoke.normals = smokeN; smoke.RecalculateBounds();
+        }
+
+        /// <summary>A soft, slightly lumpy puff (white, alpha falling to the rim; a little darker below, as smoke
+        /// shades itself). Pure arithmetic, so every look draws the same texture.</summary>
+        static Texture2D PuffTexture()
+        {
+            const int N = 64;
+            var t = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "under-attack-puff", wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[N * N];
+            for (int j = 0; j < N; j++)
+                for (int i = 0; i < N; i++)
+                {
+                    float x = (i + 0.5f) / N * 2f - 1f, y = (j + 0.5f) / N * 2f - 1f, a = Mathf.Atan2(y, x);
+                    float rim = 0.86f + 0.07f * Mathf.Sin(a * 3f + 0.6f) + 0.05f * Mathf.Sin(a * 5f + 2.1f);
+                    float d = Mathf.Sqrt(x * x + y * y) / rim;
+                    float alpha = Mathf.Pow(Mathf.Clamp01(1f - d * d), 0.7f);
+                    float shade = Mathf.Lerp(0.72f, 1f, (y + 1f) * 0.5f);
+                    px[j * N + i] = new Color(shade, shade, shade, alpha);
+                }
+            t.SetPixels32(px); t.Apply(true, false);
+            return t;
+        }
+
+        void OnEnable() => RenderPipelineManager.beginCameraRendering += FaceCamera;
+        void OnDisable() => RenderPipelineManager.beginCameraRendering -= FaceCamera;
+        void FaceCamera(ScriptableRenderContext context, Camera cam)
+        {
+            if (smoke != null && puffAt.Length > 0) Face(cam.transform.right, cam.transform.up);
+        }
+
         /// <summary>A slow, irregular flicker between about 0.65 and 1 (two sines), offset per column.</summary>
         static float Flicker(float t, float phase) =>
             0.82f + 0.11f * Mathf.Sin(2f * Mathf.PI * (t * 0.7f + phase)) + 0.07f * Mathf.Sin(2f * Mathf.PI * (t * 1.9f + phase * 2.3f));
@@ -228,7 +301,7 @@ namespace Statecraft.HexTiles
             {
                 var b = bases[c]; float rad = HexUnderAttack.Smoke.GlowM * sizeM;
                 int o = v.Count;
-                v.Add(new Vector3(b.x, b.y + LiftM, b.z)); col.Add(new Color(GlowCore.r, GlowCore.g, GlowCore.b, 0.55f));
+                v.Add(new Vector3(b.x, b.y + LiftM, b.z)); col.Add(new Color(GlowCore.r, GlowCore.g, GlowCore.b, 0.85f));
                 for (int k = 0; k < Rim; k++)
                 {
                     float a = k * 2f * Mathf.PI / Rim;
@@ -243,7 +316,7 @@ namespace Statecraft.HexTiles
                 {
                     float a = (float)rng.NextDouble() * 2f * Mathf.PI, d = (float)rng.NextDouble() * rad * 0.4f;
                     var foot = b + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * d; foot.y = ground(foot) + LiftM * 0.5f;
-                    float h = sizeM * (0.03f + 0.025f * (float)rng.NextDouble()), w = sizeM * (0.012f + 0.006f * (float)rng.NextDouble());
+                    float h = sizeM * (0.045f + 0.03f * (float)rng.NextDouble()), w = sizeM * (0.016f + 0.008f * (float)rng.NextDouble());
                     int o2 = v.Count;
                     for (int s = 0; s < Sides; s++)
                     {
@@ -268,7 +341,7 @@ namespace Statecraft.HexTiles
         {
             const int Segments = 12; const float LiftM = 24f;
             float outer = 0.975f, solid = 0.035f, fade = 0.07f;   // corner-radius shares of S
-            var rings = new[] { (outer, 1f), (outer - solid, 0.85f), (outer - solid - fade, 0f) };
+            var rings = new[] { (outer, 1f), (outer - solid, 0.8f), (outer - solid - fade, 0f) };
             var corners = HexGeometry.Corners(Vector3.zero, sizeM);
             var v = new List<Vector3>(); var col = new List<Color>(); var tris = new List<int>();
             int perRing = 6 * Segments;
@@ -289,38 +362,6 @@ namespace Statecraft.HexTiles
             var mesh = new Mesh { name = "under-attack-border" };
             mesh.SetVertices(v); mesh.SetColors(col); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
             return mesh;
-        }
-
-        /// <summary>An icosahedron subdivided once: 42 vertices, 80 triangles, on the unit sphere.</summary>
-        static void Icosphere(out Vector3[] verts, out int[] tris)
-        {
-            float t = (1f + Mathf.Sqrt(5f)) / 2f;
-            var v = new List<Vector3>
-            {
-                new(-1, t, 0), new(1, t, 0), new(-1, -t, 0), new(1, -t, 0), new(0, -1, t), new(0, 1, t),
-                new(0, -1, -t), new(0, 1, -t), new(t, 0, -1), new(t, 0, 1), new(-t, 0, -1), new(-t, 0, 1),
-            };
-            for (int i = 0; i < v.Count; i++) v[i] = v[i].normalized;
-            int[] f =
-            {
-                0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11, 1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
-                3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9, 4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1,
-            };
-            var mid = new Dictionary<long, int>();
-            int Mid(int a, int b)
-            {
-                long key = a < b ? ((long)a << 32) | (uint)b : ((long)b << 32) | (uint)a;
-                if (mid.TryGetValue(key, out int m)) return m;
-                v.Add(((v[a] + v[b]) * 0.5f).normalized);
-                return mid[key] = v.Count - 1;
-            }
-            var o = new List<int>();
-            for (int i = 0; i < f.Length; i += 3)
-            {
-                int a = f[i], b = f[i + 1], c = f[i + 2], ab = Mid(a, b), bc = Mid(b, c), ca = Mid(c, a);
-                o.AddRange(new[] { a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca });
-            }
-            verts = v.ToArray(); tris = o.ToArray();
         }
 
         void Update()
