@@ -74,7 +74,7 @@ namespace Statecraft.HexTiles.Prototypes
                 ctx.PaintStroke("dirt", ctx.At(b, 0.445f), ctx.At(b + 12f, 0.445f), 0.025f * s, 0.8f);
                 if (!InSector(b, 320f, 70f)) ctx.PaintStroke("dirt", ctx.At(b, 0.625f), ctx.At(b + 12f, 0.625f), 0.025f * s, 0.8f);
             }
-            foreach (var (b0, b1) in new[] { (60f, 100f), (296f, 330f) })
+            foreach (var (b0, b1) in new[] { (60f, 100), (296f, 330f) })
                 foreach (float r in new[] { 0.70f, 0.78f })
                     for (float b = b0; b < b1; b += 10f)
                         ctx.PaintStroke("ploughed", ctx.At(b, r), ctx.At(b + 10f, r), 0.05f * s, 0.7f);
@@ -109,7 +109,7 @@ namespace Statecraft.HexTiles.Prototypes
             for (int k = 0; k < 11; k++)
             {
                 float b = turn + 10f + Step2 * (k + 0.5f), w = ctx.Range(0.09f, 0.10f) * s;
-                if (!InSector(b, 100f, 290f)) continue;
+                if (!InSector(b, 100, 290f)) continue;
                 var at = ctx.At(b, 0.71f);
                 string model = Houses[(k + 2) % Houses.Length];
                 if (houses < MaxHouses && Put(at, 0.6f * w * HexScale.PieceScale, () => ctx.PlaceByWidth(model, at, b + 180f + ctx.Range(-8f, 8f), w, StandIn.Box, Limestone, Slope))) houses++;

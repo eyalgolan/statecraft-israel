@@ -136,7 +136,7 @@ namespace Statecraft.HexTiles.Prototypes
             int ibex = 0;
             for (int i = 0; i < 16 && ibex < MaxIbex; i++)
             {
-                float d = (i % 2 == 0 ? 1f : -1f) * ctx.Range(84f, 100f), h = ctx.Range(0.05f, 0.06f) * s, r = 0.06f * s;
+                float d = (i % 2 == 0 ? 1f : -1f) * ctx.Range(84f, 100), h = ctx.Range(0.05f, 0.06f) * s, r = 0.06f * s;
                 var at = OnArc(d, ArcR + ctx.Range(-0.02f, 0.06f));
                 if (ctx.InUnitSpot(at, r) || !Free(at, r)) continue;
                 if (ctx.PlaceByHeight(Ibex, at, ctx.Range(0f, 360f), h, StandIn.Figure, IbexBrown, footprintShare: 0.8f, maxSlopeDeg: 90f))

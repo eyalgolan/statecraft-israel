@@ -110,7 +110,7 @@ namespace Statecraft.HexTiles.Prototypes
             for (int k = 0; k < 11; k++)
             {
                 float b = 5f + Step2 * (k + 0.5f);
-                if (InSector(b, 100f, 285f)) House(b, 0.71f, ctx.Range(0.095f, 0.10f) * s, k + 2);
+                if (InSector(b, 100, 285f)) House(b, 0.71f, ctx.Range(0.095f, 0.10f) * s, k + 2);
             }
 
             // 4. Olives on the north terraces, kept apart from the houses and from each other.

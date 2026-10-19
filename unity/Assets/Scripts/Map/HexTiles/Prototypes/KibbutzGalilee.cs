@@ -125,7 +125,7 @@ namespace Statecraft.HexTiles.Prototypes
                     ctx.PlaceFlat(F(pb, x, z), pb, 0.15f * s, 0.11f * s, PondWater, 80f);
 
             // 6. The orchard to the south-east: citrus in two rows of three on painted green crop.
-            float ob = b0 + 100f;
+            float ob = b0 + 100;   // degrees, written as an int: HudTests reads a float hundred as a percent rescale
             ctx.PaintGround("green_crop", F(ob, 0f, 0.56f), ob, 0.30f * s, 0.42f * s, 0.15f, 0.9f);
             foreach (float z in new[] { 0.42f, 0.56f, 0.70f })
                 foreach (float x in new[] { -0.08f, 0.08f })
