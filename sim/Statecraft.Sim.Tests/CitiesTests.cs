@@ -192,8 +192,16 @@ public class CitiesTests
         var arrived = one.Cities["tel_aviv"].Refugees;
         Assert.True(arrived > 0);
         Assert.Equal(228, one.Cities["tel_aviv"].Civilians);   // the housing step ran before they came
-        var two = Step(Mvp, one).State.Cities["tel_aviv"];
-        Assert.Equal(228 + arrived, two.Civilians);           // no hard cap (Q-HOUSE-1): all of them, on the next turn
+        var twoState = Step(Mvp, one).State;
+        var two = twoState.Cities["tel_aviv"];
+        // R-MIN-002 (Q-MIN-2) amends R-CITY-004's "all of them": the Immigration minister's multiplier scales how many
+        // are housed - on 15 December 1948 Shapira's is (0.5 + 7/20) x (0.5 + 0.15 x 8/2) = 0.85 x 1.1 = 0.935, floored
+        // to whole groups (no hard cap stays: Q-HOUSE-1). The rest wait as refugees with the next turn's own arrivals,
+        // and the multiplier takes the same share of that pool the turn after.
+        var housed = (int)Math.Floor(arrived * 0.935);
+        Assert.Equal(228 + housed, two.Civilians);
+        var three = Step(Mvp, twoState).State.Cities["tel_aviv"];
+        Assert.Equal(228 + housed + (int)Math.Floor(two.Refugees * 0.935), three.Civilians);
     }
 
     /// <summary>D-A6: housing comes before Social cohesion in the turn. The effects web reads the cities' employed share after

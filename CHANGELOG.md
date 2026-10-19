@@ -7,10 +7,21 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Added
+- The ministers reach the GDD systems (D-H3's first slice, refs #808): the Labour minister's office scales housing and
+  industry construction, the Agriculture minister's office pioneer and field work, and the Immigration minister's
+  office refugee absorption, each at the cabinet multiplier (competence x budget share) on the turn's date. Prices and
+  stated durations are unchanged, a build's fractional progress is carried on its record, and an office that does not
+  exist on the date reads its named successor's multiplier. In the historical run every build and absorption moves:
+  the reference player builds Mefalsim on 15 February 1951 (was 15 March 1950), the camps are never started, and every
+  golden is re-pinned.
+
 ### Fixed
 - Generated Hex Painter meshes, materials and terrain data are released when a preview is destroyed after an editor script reload (refs #18).
 - Editor Hex Painter previews stay out of scene saves while remaining discoverable for the next load; ordinary scene objects and terrain picking are preserved (refs #18).
 - Rebuilding a hex in the opt-in Hex Painter releases the removed unit's generated material while preserving shared assets and untouched units (refs #18).
+- Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
+- Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
 - On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
   the browser's `env(safe-area-inset-*)` values (the camera's top inset and the map labels follow as before), and it
   follows the insets even when the root bounds do not change, as a same-size landscape flip moves the notch with no

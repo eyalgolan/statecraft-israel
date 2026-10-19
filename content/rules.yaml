@@ -41,6 +41,19 @@ mvp:
   transit_camp_upkeep_per_year: 0.0      # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per transit camp a year)
   military_camp_upkeep_per_year: 0.0     # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per military camp a year)
   hakhshara_upkeep_per_year: 0.0         # DESIGN VALUE: owner-set balance, not a historical figure (D-C6: IL millions per Hakhshara a year)
+
+  # R-MIN-001 (D-H3; Q-MIN-1, owner, 17 October 2026, #784): the office whose multiplier (competence times budget
+  # factor, EffectsSystem.Multiplier) scales each GDD system. Q-MIN-1's mapping, "each with its office's sourced remit
+  # in a comment": the Ministry of Labour ran housing and public construction; the Ministry of Agriculture, the fields
+  # and the new settlements; the Ministry of Immigration, the immigrants' housing (the offices and their terms are the
+  # sourced rows of offices.yaml; the remits are as the decision names them). Corridors (Transportation) and military
+  # training (Defense) join the map when their integrations land (#870, #742).
+  minister_systems:
+    housing_construction: labour_minister
+    industry_construction: labour_minister
+    field_work: agriculture_minister
+    yishuv_work: agriculture_minister
+    absorption: immigration_minister
   # The day the cities start taking arrivals (R-CITY-003; Q-ARRV-3, owner, 15 October 2026, #375): the census day of their
   # start values, 8 November 1948 (CBS Statistical Abstract of Israel No. 14, Table 11, pp. 30-31). The census already
   # counts the people who arrived from 15 May, so the cities take none before it; the national head count takes them all.
