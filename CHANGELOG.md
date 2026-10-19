@@ -15,6 +15,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - Unit cards show the sourced Hebrew unit name in the Hebrew UI, with an English fallback. INS Haganah gains its
   sourced Hebrew name, still flagged for a native speaker's review (#902).
 ### Fixed
+- English save warnings describe changed content without assuming an older version and suggest checking a changed
+  restored game. The map-action limit explains that the player can try again next turn
+  (refs #622; paired Hebrew review pending).
 - The Cabinet, Budget, Defence, Why, How to play and Settings screens each gain an X in the header that closes
   them (the same close as Escape): a phone has no Escape key, and re-tapping the lit rail button was the only way
   out (v0.1.1 playtest feedback).
