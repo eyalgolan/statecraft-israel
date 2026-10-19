@@ -30,6 +30,14 @@
 #               line bounds the play area is a design call for Tal and the owner (the 1949 armistice lines are the other
 #               option); the mandate outline is the stand-in until then.
 #
+# Regional farm and forest variants. Each farm and forest tile has two variants, a and b, per landscape, named
+# <type>_<landscape>_<a|b> (types: wheat_fields, citrus_orchard, olive_terraces, mixed_farm, forest). The regions'
+# nature rules pick them by this mapping of the regions onto three landscapes:
+#   north  = hula, upper_galilee, lower_galilee, carmel, jezreel
+#   centre = sharon, coastal_plain, shephelah, jerusalem, judean_hills, central_hills
+#   south  = judean_desert, dead_sea, jordan_valley, negev_loess, ramon, arava, negev
+# The south's forest is an acacia grove (a) or a date-palm grove (b). defaults.nature keeps the base tiles.
+#
 # Every prototype must be a registered [HexPrototype] id and every ground a HexGround layer
 # (tools/tests/test_hex_regions.py checks both).
 
@@ -46,7 +54,10 @@ defaults:
   lowland: [wheat_fields, citrus_orchard, grazing_land, moshava_village, kibbutz, tel_aviv_city, tel_aviv_city_mixed, jaffa_old_city, coastal_dunes,
             haifa_port, haifa_bay, acre_old_city, tiberias_town, netanya_town, hadera_moshava, rehovot_moshava, ramla_town, lydda_town,
             beersheba_town, kibbutz_galilee, kibbutz_negev, maabara_camp, hula_swamp, jezreel_valley, sharon_kurkar, dead_sea_shore,
-            negev_loess, arava_acacia, arava_oasis]
+            negev_loess, arava_acacia, arava_oasis, mixed_farm,
+            wheat_fields_north_a, wheat_fields_north_b, wheat_fields_centre_a, wheat_fields_centre_b, wheat_fields_south_a, wheat_fields_south_b,
+            citrus_orchard_north_a, citrus_orchard_north_b, citrus_orchard_centre_a, citrus_orchard_centre_b, citrus_orchard_south_a, citrus_orchard_south_b,
+            mixed_farm_north_a, mixed_farm_north_b, mixed_farm_centre_a, mixed_farm_centre_b, mixed_farm_south_a, mixed_farm_south_b]
   # Roads follow the traced 1948 routes (content/map/route_paths_1948.tsv) of these kinds that the map draws before
   # this date.
   roads: {kinds: [road], before: '1948-05-15'}
@@ -101,7 +112,7 @@ regions:
       # The valley floor (lowland) is about 70 m at the lake, but its hexes average higher with the slopes, so the swamp
       # flattens them.
       - {biome: [lowland, valley], pick: [[hula_swamp, 0.75], [grazing_land, 0.25]], set_terrain: flat}
-      - {terrain: [hills, mountain], pick: [[upper_galilee_hills, 0.70], [grazing_land, 0.30]]}
+      - {terrain: [hills, mountain], pick: [[upper_galilee_hills, 0.7], [grazing_land, 0.3]]}
       - {pick: [[hula_swamp, 0.75], [grazing_land, 0.25]]}
     flora:
       density: 1.1
@@ -119,9 +130,9 @@ regions:
     settlements:
       - {type: kibbutz, prototype: kibbutz_galilee}
     nature:
-      - {terrain: mountain, pick: [[upper_galilee_hills, 0.70], [pine_forest, 0.20], [olive_terraces, 0.10]]}
-      - {terrain: hills, pick: [[upper_galilee_hills, 0.55], [olive_terraces, 0.25], [pine_forest, 0.20]]}
-      - {terrain: flat, pick: [[wheat_fields, 0.50], [grazing_land, 0.30], [olive_terraces, 0.20]]}
+      - {terrain: mountain, pick: [[upper_galilee_hills, 0.7], [forest_north_a, 0.1], [forest_north_b, 0.1], [olive_terraces_north_a, 0.05], [olive_terraces_north_b, 0.05]]}
+      - {terrain: hills, pick: [[upper_galilee_hills, 0.55], [olive_terraces_north_a, 0.125], [olive_terraces_north_b, 0.125], [forest_north_a, 0.1], [forest_north_b, 0.1]]}
+      - {terrain: flat, pick: [[wheat_fields_north_a, 0.175], [wheat_fields_north_b, 0.175], [mixed_farm_north_a, 0.075], [mixed_farm_north_b, 0.075], [grazing_land, 0.3], [olive_terraces_north_a, 0.1], [olive_terraces_north_b, 0.1]]}
     flora:
       density: 1.3
       flat:
@@ -140,7 +151,7 @@ regions:
     nature:
       # The shore tile only where the hex touches the water (a lake hex counts as not land, so `coastal`).
       - {coastal: true, prototype: dead_sea_shore}
-      - {pick: [[judean_desert, 0.80], [desert_edge, 0.20]]}
+      - {pick: [[judean_desert, 0.8], [desert_edge, 0.2]]}
     flora:
       density: 0.25
       flat:
@@ -157,10 +168,11 @@ regions:
     settlements:
       - {type: kibbutz, prototype: kibbutz_galilee}
     nature:
-      - {terrain: mountain, pick: [[desert_edge, 0.70], [grazing_land, 0.30]]}
-      - {terrain: hills, pick: [[grazing_land, 0.50], [desert_edge, 0.50]]}
-      - {biome: desert, pick: [[desert_edge, 0.80], [arava_oasis, 0.20]]}
-      - {pick: [[wheat_fields, 0.40], [grazing_land, 0.30], [citrus_orchard, 0.15], [desert_edge, 0.15]]}
+      - {terrain: mountain, pick: [[desert_edge, 0.7], [grazing_land, 0.3]]}
+      - {terrain: hills, pick: [[grazing_land, 0.3], [olive_terraces_south_a, 0.1], [desert_edge, 0.4], [olive_terraces_south_b, 0.2]]}
+      - {biome: desert, pick: [[desert_edge, 0.8], [arava_oasis, 0.2]]}
+      # The south's forest is an acacia grove (a) or a date-palm grove (b), on the valley floor.
+      - {pick: [[wheat_fields_south_a, 0.12], [wheat_fields_south_b, 0.10], [mixed_farm_south_a, 0.06], [mixed_farm_south_b, 0.06], [grazing_land, 0.16], [citrus_orchard_south_a, 0.07], [citrus_orchard_south_b, 0.07], [forest_south_a, 0.14], [forest_south_b, 0.12], [desert_edge, 0.10]]}
     flora:
       density: 0.6
       flat:
@@ -174,9 +186,9 @@ regions:
     title: The Carmel ridge
     polygon: [[34.92, 32.58], [35.05, 32.55], [35.15, 32.70], [35.10, 32.80], [34.98, 32.82], [34.95, 32.70]]
     nature:
-      - {terrain: [hills, mountain], pick: [[carmel_ridge, 0.80], [pine_forest, 0.20]]}
-      - {coastal: true, pick: [[sharon_kurkar, 0.50], [coastal_dunes, 0.30], [wheat_fields, 0.20]]}
-      - {pick: [[wheat_fields, 0.50], [carmel_ridge, 0.30], [grazing_land, 0.20]]}
+      - {terrain: [hills, mountain], pick: [[carmel_ridge, 0.8], [forest_north_a, 0.1], [forest_north_b, 0.1]]}
+      - {coastal: true, pick: [[sharon_kurkar, 0.5], [coastal_dunes, 0.3], [wheat_fields_north_a, 0.07], [wheat_fields_north_b, 0.07], [mixed_farm_north_a, 0.03], [mixed_farm_north_b, 0.03]]}
+      - {pick: [[wheat_fields_north_a, 0.175], [wheat_fields_north_b, 0.175], [mixed_farm_north_a, 0.075], [mixed_farm_north_b, 0.075], [carmel_ridge, 0.3], [grazing_land, 0.2]]}
     flora:
       density: 1.3
       flat:
@@ -194,8 +206,8 @@ regions:
     settlements:
       - {type: kibbutz, prototype: kibbutz_galilee}
     nature:
-      - {terrain: flat, pick: [[jezreel_valley, 0.70], [wheat_fields, 0.20], [grazing_land, 0.10]]}
-      - {terrain: hills, pick: [[olive_terraces, 0.45], [grazing_land, 0.35], [jezreel_valley, 0.20]]}
+      - {terrain: flat, pick: [[jezreel_valley, 0.7], [wheat_fields_north_a, 0.07], [wheat_fields_north_b, 0.07], [mixed_farm_north_a, 0.03], [mixed_farm_north_b, 0.03], [grazing_land, 0.1]]}
+      - {terrain: hills, pick: [[olive_terraces_north_a, 0.225], [olive_terraces_north_b, 0.225], [grazing_land, 0.35], [jezreel_valley, 0.2]]}
     flora:
       density: 0.8
       flat:
@@ -212,8 +224,8 @@ regions:
     settlements:
       - {type: kibbutz, prototype: kibbutz_galilee}
     nature:
-      - {terrain: [hills, mountain], pick: [[olive_terraces, 0.50], [upper_galilee_hills, 0.30], [grazing_land, 0.20]]}
-      - {pick: [[wheat_fields, 0.55], [grazing_land, 0.25], [olive_terraces, 0.20]]}
+      - {terrain: [hills, mountain], pick: [[olive_terraces_north_a, 0.25], [olive_terraces_north_b, 0.25], [upper_galilee_hills, 0.3], [grazing_land, 0.2]]}
+      - {pick: [[wheat_fields_north_a, 0.193], [wheat_fields_north_b, 0.193], [mixed_farm_north_a, 0.083], [mixed_farm_north_b, 0.083], [grazing_land, 0.25], [olive_terraces_north_a, 0.1], [olive_terraces_north_b, 0.1]]}
     flora:
       density: 1.1
       flat:
@@ -228,9 +240,9 @@ regions:
     title: The Sharon plain
     polygon: [[34.70, 32.05], [35.05, 32.05], [35.08, 32.60], [34.70, 32.60]]
     nature:
-      - {coastal: true, terrain: flat, pick: [[sharon_kurkar, 0.45], [coastal_dunes, 0.35], [citrus_orchard, 0.20]]}
-      - {terrain: flat, pick: [[citrus_orchard, 0.45], [sharon_kurkar, 0.35], [wheat_fields, 0.20]]}
-      - {terrain: hills, pick: [[olive_terraces, 0.50], [grazing_land, 0.30], [pine_forest, 0.20]]}
+      - {coastal: true, terrain: flat, pick: [[sharon_kurkar, 0.45], [coastal_dunes, 0.35], [citrus_orchard_centre_a, 0.1], [citrus_orchard_centre_b, 0.1]]}
+      - {terrain: flat, pick: [[citrus_orchard_centre_a, 0.225], [citrus_orchard_centre_b, 0.225], [sharon_kurkar, 0.35], [wheat_fields_centre_a, 0.07], [wheat_fields_centre_b, 0.07], [mixed_farm_centre_a, 0.03], [mixed_farm_centre_b, 0.03]]}
+      - {terrain: hills, pick: [[olive_terraces_centre_a, 0.25], [olive_terraces_centre_b, 0.25], [grazing_land, 0.3], [forest_centre_a, 0.1], [forest_centre_b, 0.1]]}
     flora:
       density: 0.9
       flat:
@@ -245,9 +257,9 @@ regions:
     title: Coastal plain (the Acre plain, the Judean coast and Gaza)
     polygon: [[34.20, 31.20], [34.50, 31.20], [34.72, 31.60], [34.92, 32.00], [35.00, 32.40], [35.03, 32.70], [35.12, 32.85], [35.15, 33.10], [35.05, 33.40], [34.20, 33.40]]
     nature:
-      - {coastal: true, terrain: flat, pick: [[coastal_dunes, 0.45], [citrus_orchard, 0.35], [wheat_fields, 0.20]], ground: beach}
-      - {terrain: flat, pick: [[citrus_orchard, 0.45], [wheat_fields, 0.35], [grazing_land, 0.20]]}
-      - {terrain: hills, pick: [[olive_terraces, 0.50], [grazing_land, 0.30], [pine_forest, 0.20]]}
+      - {coastal: true, terrain: flat, pick: [[coastal_dunes, 0.45], [citrus_orchard_centre_a, 0.175], [citrus_orchard_centre_b, 0.175], [wheat_fields_centre_a, 0.07], [wheat_fields_centre_b, 0.07], [mixed_farm_centre_a, 0.03], [mixed_farm_centre_b, 0.03]], ground: beach}
+      - {terrain: flat, pick: [[citrus_orchard_centre_a, 0.225], [citrus_orchard_centre_b, 0.225], [wheat_fields_centre_a, 0.122], [wheat_fields_centre_b, 0.122], [mixed_farm_centre_a, 0.052], [mixed_farm_centre_b, 0.052], [grazing_land, 0.2]]}
+      - {terrain: hills, pick: [[olive_terraces_centre_a, 0.25], [olive_terraces_centre_b, 0.25], [grazing_land, 0.3], [forest_centre_a, 0.1], [forest_centre_b, 0.1]]}
     flora:
       density: 0.9
       flat:
@@ -262,8 +274,8 @@ regions:
     title: Jerusalem and its hills
     polygon: [[35.07, 31.70], [35.27, 31.70], [35.27, 31.88], [35.07, 31.88]]
     nature:
-      - {terrain: mountain, pick: [[judean_highlands, 0.50], [olive_terraces, 0.35], [pine_forest, 0.15]]}
-      - {terrain: hills, pick: [[olive_terraces, 0.60], [pine_forest, 0.25], [grazing_land, 0.15]]}
+      - {terrain: mountain, pick: [[judean_highlands, 0.5], [olive_terraces_centre_a, 0.175], [olive_terraces_centre_b, 0.175], [forest_centre_a, 0.075], [forest_centre_b, 0.075]]}
+      - {terrain: hills, pick: [[olive_terraces_centre_a, 0.3], [olive_terraces_centre_b, 0.3], [forest_centre_a, 0.125], [forest_centre_b, 0.125], [grazing_land, 0.15]]}
     flora:
       density: 1.0
       flat:
@@ -280,7 +292,7 @@ regions:
     polygon: [[35.22, 31.30], [35.36, 31.30], [35.40, 31.86], [35.30, 31.90], [35.27, 31.70]]
     ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
     nature:
-      - {terrain: mountain, pick: [[judean_desert, 0.80], [mountain_peaks, 0.20]]}
+      - {terrain: mountain, pick: [[judean_desert, 0.8], [mountain_peaks, 0.2]]}
       - {prototype: judean_desert}
     flora:
       density: 0.15
@@ -295,8 +307,8 @@ regions:
     polygon: [[34.98, 31.28], [35.30, 31.28], [35.30, 32.05], [35.02, 32.05]]
     nature:
       - {biome: desert, prototype: judean_desert}
-      - {terrain: mountain, pick: [[judean_highlands, 0.55], [olive_terraces, 0.30], [pine_forest, 0.15]]}
-      - {terrain: hills, pick: [[olive_terraces, 0.55], [judean_highlands, 0.25], [grazing_land, 0.20]]}
+      - {terrain: mountain, pick: [[judean_highlands, 0.55], [olive_terraces_centre_a, 0.15], [olive_terraces_centre_b, 0.15], [forest_centre_a, 0.075], [forest_centre_b, 0.075]]}
+      - {terrain: hills, pick: [[olive_terraces_centre_a, 0.275], [olive_terraces_centre_b, 0.275], [judean_highlands, 0.25], [grazing_land, 0.2]]}
     flora:
       density: 1.0
       flat:
@@ -312,9 +324,9 @@ regions:
     title: The Shephelah
     polygon: [[34.75, 31.35], [34.98, 31.28], [35.02, 32.00], [34.90, 31.95], [34.80, 31.70]]
     nature:
-      - {terrain: mountain, pick: [[shephelah_terraces, 0.50], [judean_highlands, 0.30], [pine_forest, 0.20]]}
-      - {terrain: hills, pick: [[shephelah_terraces, 0.65], [olive_terraces, 0.20], [pine_forest, 0.15]]}
-      - {pick: [[wheat_fields, 0.50], [shephelah_terraces, 0.30], [grazing_land, 0.20]]}
+      - {terrain: mountain, pick: [[shephelah_terraces, 0.5], [judean_highlands, 0.3], [forest_centre_a, 0.1], [forest_centre_b, 0.1]]}
+      - {terrain: hills, pick: [[shephelah_terraces, 0.65], [olive_terraces_centre_a, 0.1], [olive_terraces_centre_b, 0.1], [forest_centre_a, 0.075], [forest_centre_b, 0.075]]}
+      - {pick: [[wheat_fields_centre_a, 0.175], [wheat_fields_centre_b, 0.175], [mixed_farm_centre_a, 0.075], [mixed_farm_centre_b, 0.075], [shephelah_terraces, 0.3], [grazing_land, 0.2]]}
     flora:
       density: 1.0
       flat:
@@ -333,9 +345,9 @@ regions:
     settlements:
       - {type: kibbutz, prototype: kibbutz_negev}
     nature:
-      - {terrain: mountain, pick: [[desert_edge, 0.60], [mountain_peaks, 0.40]]}
-      - {terrain: hills, pick: [[negev_loess, 0.60], [desert_edge, 0.40]]}
-      - {pick: [[negev_loess, 0.80], [desert_edge, 0.20]]}
+      - {terrain: mountain, pick: [[desert_edge, 0.6], [mountain_peaks, 0.4]]}
+      - {terrain: hills, pick: [[negev_loess, 0.6], [desert_edge, 0.4]]}
+      - {pick: [[negev_loess, 0.72], [desert_edge, 0.16], [forest_south_a, 0.06], [wheat_fields_south_a, 0.03], [wheat_fields_south_b, 0.03]]}
     flora:
       density: 0.35
       flat:
@@ -350,7 +362,7 @@ regions:
     # Desert ground on the mountains too: the rocky mountain layer reads green under the hex look.
     ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
     nature:
-      - {terrain: mountain, pick: [[ramon_highlands, 0.80], [mountain_peaks, 0.20]]}
+      - {terrain: mountain, pick: [[ramon_highlands, 0.8], [mountain_peaks, 0.2]]}
       - {terrain: hills, pick: [[ramon_highlands, 0.45], [desert_edge, 0.55]]}
       - {prototype: desert_edge}
     flora:
@@ -366,9 +378,9 @@ regions:
     polygon: [[34.88, 29.40], [35.10, 29.40], [35.52, 31.05], [35.25, 31.05]]
     ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
     nature:
-      - {terrain: mountain, pick: [[mountain_peaks, 0.60], [desert_edge, 0.40]]}
-      - {terrain: hills, pick: [[arava_acacia, 0.60], [desert_edge, 0.40]]}
-      - {pick: [[arava_acacia, 0.80], [arava_oasis, 0.12], [desert_edge, 0.08]]}
+      - {terrain: mountain, pick: [[mountain_peaks, 0.6], [desert_edge, 0.4]]}
+      - {terrain: hills, pick: [[arava_acacia, 0.6], [desert_edge, 0.4]]}
+      - {pick: [[arava_acacia, 0.8], [arava_oasis, 0.12], [desert_edge, 0.08]]}
     flora:
       density: 0.3
       flat:
@@ -386,7 +398,7 @@ regions:
     settlements:
       - {type: kibbutz, prototype: kibbutz_negev}
     nature:
-      - {terrain: mountain, pick: [[desert_edge, 0.50], [mountain_peaks, 0.30], [ramon_highlands, 0.20]]}
+      - {terrain: mountain, pick: [[desert_edge, 0.5], [mountain_peaks, 0.3], [ramon_highlands, 0.2]]}
       - {prototype: desert_edge}
     flora:
       density: 0.35
@@ -399,6 +411,11 @@ regions:
   - id: central_hills
     title: The central hills (Samaria)
     polygon: [[34.85, 31.35], [35.45, 31.35], [35.55, 32.45], [34.95, 32.45]]
+    nature:
+      - {biome: desert, prototype: desert_edge}
+      - {terrain: mountain, pick: [[judean_highlands, 0.75], [forest_centre_a, 0.075], [forest_centre_b, 0.075], [olive_terraces_centre_a, 0.05], [olive_terraces_centre_b, 0.05]]}
+      - {terrain: hills, pick: [[olive_terraces_centre_a, 0.225], [olive_terraces_centre_b, 0.225], [forest_centre_a, 0.125], [forest_centre_b, 0.125], [grazing_land, 0.30]]}
+      - {pick: [[wheat_fields_centre_a, 0.15], [wheat_fields_centre_b, 0.15], [mixed_farm_centre_a, 0.06], [mixed_farm_centre_b, 0.06], [citrus_orchard_centre_a, 0.165], [citrus_orchard_centre_b, 0.165], [grazing_land, 0.25]]}
     # The built-in mix, written out: olive and carob on the flat, Tabor oak and Aleppo pine on hills.
     flora:
       density: 1.0
