@@ -565,5 +565,6 @@ Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectP
 | `Prototypes/MountainPeaks.cs` | `mountain_peaks`, the rocks on a mountain hex |
 | `Prototypes/WheatFields.cs` | `wheat_fields` and `grazing_land` (two classes in one file: do not copy it) |
 | `Prototypes/TelAvivCityMixed.cs` | `tel_aviv_city_mixed`, the A/B variant of the reference |
+| `Prototypes/HaifaPort.cs` ... `Prototypes/AravaOasis.cs` | The city, town and regional landscape tiles (19 October). Each doc comment gives the sources for its named landmarks, as they stood in 1948. `jerusalem_new_city`, `jerusalem_garden_quarter` and `maabara_camp` are placed by no recipe; paint them where wanted |
 | `Units/` | One file per unit type (`[HexUnitType]`) |
 | `Boards/` | Board layouts (Tal's) |

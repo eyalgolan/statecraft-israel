@@ -47,8 +47,8 @@ namespace Statecraft.HexTiles.Prototypes
             Bathhouse = "tiles:tiberias_town/bathhouse", BathDome = "tiles:tiberias_town/bathhouse_dome",
             Boat = "proto:vehicle-fishing-boat-1948-v2", Palm = "sandbox:date_palm", Olive = "sandbox:olive_lite";
 
-        static readonly Color Basalt = new Color(0.25f, 0.25f, 0.26f), WallBasalt = new Color(0.29f, 0.28f, 0.28f),
-            TowerBasalt = new Color(0.32f, 0.31f, 0.30f), Limestone = new Color(0.84f, 0.79f, 0.68f), DomeWhite = new Color(0.86f, 0.85f, 0.80f),
+        static readonly Color Basalt = new Color(0.36f, 0.35f, 0.35f), WallBasalt = new Color(0.40f, 0.38f, 0.37f),
+            TowerBasalt = new Color(0.43f, 0.41f, 0.39f), Limestone = new Color(0.84f, 0.79f, 0.68f), DomeWhite = new Color(0.86f, 0.85f, 0.80f),
             Hull = new Color(0.45f, 0.33f, 0.22f), OliveLeaf = new Color(0.42f, 0.50f, 0.34f);
 
         /// <summary>The landward wall's a, and the north and south walls' b, as shares of S.</summary>

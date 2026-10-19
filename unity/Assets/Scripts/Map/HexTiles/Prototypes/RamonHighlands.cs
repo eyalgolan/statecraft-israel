@@ -46,8 +46,8 @@ namespace Statecraft.HexTiles.Prototypes
         const int MaxModelRocks = 6, MaxCliffStandIns = 6, MaxTalus = 10, MaxKnolls = 3, MaxIbex = 2;
         const float ArcR = 0.55f, ArcShift = 0.05f, CapOut = 0.06f, TalusIn = 0.08f;
 
-        static readonly Color Grey = new Color(0.56f, 0.55f, 0.52f), Ochre = new Color(0.76f, 0.58f, 0.32f),
-            Red = new Color(0.62f, 0.36f, 0.26f), Dark = new Color(0.30f, 0.27f, 0.26f), IbexBrown = new Color(0.62f, 0.52f, 0.40f);
+        static readonly Color Grey = new Color(0.56f, 0.55f, 0.52f), Ochre = new Color(0.66f, 0.55f, 0.40f),
+            Red = new Color(0.55f, 0.41f, 0.34f), Dark = new Color(0.30f, 0.27f, 0.26f), IbexBrown = new Color(0.62f, 0.52f, 0.40f);
 
         public void Build(HexTileContext ctx)
         {
