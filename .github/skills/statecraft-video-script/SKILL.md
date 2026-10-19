@@ -62,3 +62,7 @@ This skill extends `statecraft-writing-voice` to spoken and edited video. It kee
 - `examples/case-study-before-after.md`: a vague script, why it fails, and a self-contained rewrite
 
 Source-check results and remaining production limits: [source audit](references/09-source-audit.md).
+
+## Checker limits
+
+The checker is an aid; the review checklist and source review remain the gate. Quotation detection covers ASCII and curly double quotes, not single curly quotes. An ASCII double quote in a Hebrew acronym is therefore treated as a quotation; use the adopted gershayim U+05F4. The fact heuristic is incomplete, particularly for Hebrew sentences without digits, which can pass with no source. A successful checker run does not establish that every claim has a source or that the source supports it.

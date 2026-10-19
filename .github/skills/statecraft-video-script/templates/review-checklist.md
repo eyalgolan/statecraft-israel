@@ -7,7 +7,8 @@ Tick each item or write why it does not apply.
 - [ ] No [S], [C] or [GAP] claim is stated as a plain fact.
 - [ ] Every game claim matches the recorded build or is labelled "in development".
 - [ ] Every quote has a row on the quote sheet, with the full sentence for an excerpt.
-- [ ] Translated quotes name the translator or institution and year in captions and source notes; cards carry no translator line. Missing details remain gaps.
+- [ ] If the translation-year proposal [H] is adopted for this video, the year appears in captions and source notes or is recorded as unknown.
+- [ ] Translated quotes name the translator or institution in captions and source notes; cards carry no translator line (#648). Missing details remain gaps.
 - [ ] Official translation excerpts are labelled as such; retained wording differences have a linked owner decision.
 - [ ] No quote is invented, merged or shortened to change its meaning.
 - [ ] No private thought or feeling is attributed to a real person.

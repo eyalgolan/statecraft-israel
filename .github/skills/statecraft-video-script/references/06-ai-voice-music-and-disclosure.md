@@ -29,7 +29,7 @@ Status: DRAFT, version 0.3. Tags: [V] already in the repo, [H] proposal, [Q] que
 
 - An AI narrator is allowed. It narrates in its own voice, it is disclosed, and it never narrates as a real person. This matches rules 1 and 3 above.
 - Narration and captions are in English and Hebrew. A native reviewer finalises the Hebrew, tracked in #564. This matches rule 5 above.
-- The promo 3 video, "The Long Way South", uses an ElevenLabs premade voice. That voice and its terms need an `ASSETS.yaml` row and a line in `docs/ai-disclosure.md` as rule 4 describes. [Q] whether those rows exist yet.
+- The promo 3 video, "The Long Way South", uses an ElevenLabs premade voice. That voice and its terms need an `ASSETS.yaml` row and a line in `docs/ai-disclosure.md` as rule 4 describes. The reviewer found no promo 3 voice row on main c953ab41 (18 October 2026, #971). Adding that row with the cut is the maintainer's task; this skill does not supply it.
 
 ## Still open [Q]
 

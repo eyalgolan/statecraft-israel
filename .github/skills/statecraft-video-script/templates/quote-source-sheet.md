@@ -11,7 +11,8 @@ One row per quotation shown or spoken in a video. The existing trailer has seven
 - An excerpt's ellipsis must not change the meaning. Record the full sentence.
 - Do not merge two statements into one quote.
 - Do not use a secondary source for a quote without finding the primary text, or mark it [S].
-- A translated quote names its translator or translating institution and translation year in the source notes and caption. The card carries no translator line (#648). Missing attribution or year stays a gap.
+- A translated quote names its translator or translating institution in the source notes and caption. The card carries no translator line ([maintainer decision on #648](https://github.com/eyalgolan/statecraft-israel/pull/648#issuecomment-6195693081)). Missing attribution stays a gap.
+- Proposal [H]: also record the translation year in the notes and caption. An unknown year stays a gap.
 - For official translations use "verbatim excerpt of [named] translation (original Hebrew)" where applicable. Do not imply these were the speaker's original English words.
 - Record any owner decision to retain wording that differs from the source, with its discussion link. Retention does not change the verification status.
 - Why this quote is in this video, in one line, for a set that spans several speakers.

@@ -42,9 +42,9 @@ The project cannot assume the viewer knows the situation. A line that works only
 
 | Vague | Self-contained (each still needs a source row) |
 |---|---|
-| "The lake was in the north. The thirst was everywhere else." | "The Sea of Galilee, a freshwater lake, is in northern Israel. Central Israel is the most populated part of the country, and southern Israel is arid." |
+| "The lake was in the north. The thirst was everywhere else." | "The National Water Carrier moved water from the Sea of Galilee in northern Israel towards towns and settlements in the arid south." |
 | "In the camps, families waited their turn." | "In the ma'abarot, the transit camps built for new immigrants, families queued for water." (needs a source) |
-| "Water became a basis for peace." | "Under the 1994 peace treaty with Jordan, Israel agreed to send Jordan 50 million cubic metres of water a year." |
+| "Water became a basis for peace." | "Under the 1994 peace treaty, Israel and Jordan agreed to seek sources for an additional 50 million cubic metres of water a year for Jordan." |
 | "When the rain ran short, we turned to the sea." | "After a long drought, Israel tendered its first large seawater desalination plant." (needs date and place) |
 
 ## Emotion

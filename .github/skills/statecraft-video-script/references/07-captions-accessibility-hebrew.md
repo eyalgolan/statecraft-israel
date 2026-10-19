@@ -22,7 +22,7 @@ The trailer's caption files already note "[Music]" and repeat the on-screen text
 - One file per language and per video: `<name>.en.vtt` and `<name>.he.vtt`.
 - Cue text: spoken words first, then `[Music]` or `[No sound]` where it matters, then `On screen:` for text shown.
 - Two lines at most per cue. Choose a line length after testing readability in the target player. No numerical line-length standard is adopted here.
-- For a translated quote, the caption names the translator or translating institution and the translation year, matching the source notes. Record a missing year as a gap. The card carries no translator line (#648).
+- For a translated quote, the caption and source notes name the translator or translating institution; the card carries no translator line ([maintainer decision on #648](https://github.com/eyalgolan/statecraft-israel/pull/648#issuecomment-6195693081)). Proposal [H]: also give the translation year in the caption and notes; record an unknown year as a gap.
 
 ## Hebrew
 
