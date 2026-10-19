@@ -28,7 +28,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// - Total about 66,000 of 70,000 with the harbour, about 39,100 without it.
     ///
     /// The clock tower, church, belfry and minaret have no models (tiles:jaffa_old_city/...), so they always draw stand-ins.</summary>
-    [HexPrototype("jaffa_old_city")]
+    [HexPrototype("jaffa_old_city", Kind = "city")]
     public sealed class JaffaOldCity : IHexPrototype
     {
         public string Title => "Jaffa, the old port town (1948)";

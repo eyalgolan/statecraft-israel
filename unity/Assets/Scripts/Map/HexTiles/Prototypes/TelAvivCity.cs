@@ -10,7 +10,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// townspeople on the square, a horse wagon on an avenue, and a palm promenade along the shore. Models are the
     /// 13 October Tripo set (local, pending rights); every piece has a stand-in.
     /// Budget: this showcase tile is drawn at full quality (about 110k triangles); LODs come before any map rollout.</summary>
-    [HexPrototype("tel_aviv_city")]
+    [HexPrototype("tel_aviv_city", Kind = "city")]
     public class TelAvivCity : IHexPrototype
     {
         public virtual string Title => "Tel Aviv, White City (1948)";

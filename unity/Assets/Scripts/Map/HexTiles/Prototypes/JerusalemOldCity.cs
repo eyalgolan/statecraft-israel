@@ -27,7 +27,7 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// The wall, towers, drum, dome and al-Aqsa have no models (tiles:jerusalem_old_city/...), so they always draw stand-ins.
     /// The gold dome is a Tree stand-in whose crown rises out of the drum.</summary>
-    [HexPrototype("jerusalem_old_city")]
+    [HexPrototype("jerusalem_old_city", Kind = "city")]
     public sealed class JerusalemOldCity : IHexPrototype
     {
         public string Title => "Jerusalem, the walled Old City (1948)";

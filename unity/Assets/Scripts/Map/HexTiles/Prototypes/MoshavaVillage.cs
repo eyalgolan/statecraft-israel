@@ -17,7 +17,7 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// The water tower is the kibbutz tile's b28 tower (sandbox:kit_kibbutz_4); where it is missing, the Palm stand-in
     /// draws instead, its silhouette (a thin shaft under a wide crown) the nearest to a tank on a column.</summary>
-    [HexPrototype("moshava_village")]
+    [HexPrototype("moshava_village", Kind = "town")]
     public sealed class MoshavaVillage : IHexPrototype
     {
         public string Title => "Moshava farming colony (1948)";

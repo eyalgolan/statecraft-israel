@@ -12,7 +12,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// pieces keep out of the unit spot (ctx.InUnitSpot).
     /// Triangle budget by arithmetic (caps below): 27 pines x ~1600 + 9 broadleaf x ~650 + 3 rocks x ~700 = 51,150, and
     /// no flats; about 51k of 60k.</summary>
-    [HexPrototype("pine_forest")]
+    [HexPrototype("pine_forest", Kind = "forest")]
     public sealed class PineForest : IHexPrototype
     {
         public string Title => "JNF pine forest, foothills east of Tel Aviv (1948)";

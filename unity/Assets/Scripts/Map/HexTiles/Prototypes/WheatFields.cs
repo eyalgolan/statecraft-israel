@@ -6,7 +6,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// <summary>Context tile: a farmed plain, Civ's farm improvement. A patchwork of large fields on one grid (wheat,
     /// green fodder, fresh ploughing) with tracks between, olive hedgerows along a few edges, and one farmhouse with its
     /// barn (13 October Tripo modules) by the main track. Light, so many hexes can wear it.</summary>
-    [HexPrototype("wheat_fields")]
+    [HexPrototype("wheat_fields", Kind = "farm")]
     public sealed class WheatFields : IHexPrototype
     {
         public string Title => "Wheat fields and a farmstead";
@@ -48,7 +48,7 @@ namespace Statecraft.HexTiles.Prototypes
 
     /// <summary>Context tile: open grazing land in the coastal plain and foothills. Scattered olive and carob trees, a few
     /// rock outcrops, and a flock of sheep with a donkey and their shepherd's track (13 October Tripo animals).</summary>
-    [HexPrototype("grazing_land")]
+    [HexPrototype("grazing_land", Kind = "farm")]
     public sealed class GrazingLand : IHexPrototype
     {
         public string Title => "Grazing land with a flock";

@@ -19,7 +19,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// quarters kit_kibbutz (b09a) x 700 = 4,200. Three barns kit_kibbutz_3 (b24) x 1,400 = 4,200. Water tower
     /// kit_kibbutz_4 (b28) 1,400. Buildings 15,344. 13 cypress x 1,596 = 20,748. 4 tabor oaks x 648 = 2,592. 3 pond flats
     /// x 12 = 36. Total about 38,700 (40,800 with quads) of 60,000.</summary>
-    [HexPrototype("kibbutz")]
+    [HexPrototype("kibbutz", Kind = "village")]
     public sealed class Kibbutz : IHexPrototype
     {
         public string Title => "Kibbutz compound and its fields (1940s)";

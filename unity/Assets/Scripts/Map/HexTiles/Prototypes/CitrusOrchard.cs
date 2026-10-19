@@ -14,7 +14,7 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// Triangle estimate (per-instance counts of the local models): at most 21 citrus x 1600 + 6 cypress x 1600 + truck
     /// 7000 + packing house up to 1400 = 51,600, plus one flat, against 60,000. Stand-ins draw fewer.</summary>
-    [HexPrototype("citrus_orchard")]
+    [HexPrototype("citrus_orchard", Kind = "farm")]
     public sealed class CitrusOrchard : IHexPrototype
     {
         public string Title => "Jaffa orange groves (1948)";

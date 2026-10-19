@@ -16,7 +16,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// Triangle estimate at the maximum counts (capped by counters; FlatSurface refuses nothing), with measured per-model
     /// counts: at most 22 olives x 1,602 = 35,244, at most 4 carobs x 648 = 2,592, at most 12 limestone x 700 = 8,400, and
     /// the hut kit_stone_village_2 x 700. Total at most 46,936 of 50,000.</summary>
-    [HexPrototype("olive_terraces")]
+    [HexPrototype("olive_terraces", Kind = "farm")]
     public sealed class OliveTerraces : IHexPrototype
     {
         public string Title => "Olive terraces on a hillside (1948)";

@@ -19,7 +19,7 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// The minaret and the prickly pear have no models (tiles:arab_village/...), so they draw stand-ins: Pine, a slim spire,
     /// for the minaret and a low Tree for the prickly pear.</summary>
-    [HexPrototype("arab_village")]
+    [HexPrototype("arab_village", Kind = "village")]
     public sealed class ArabVillage : IHexPrototype
     {
         public string Title => "Arab stone village on a hill (1948)";
