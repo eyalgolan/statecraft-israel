@@ -57,16 +57,17 @@ namespace Statecraft.HexTiles
         public static IHexUnitType Create(string id) =>
             All.TryGetValue(id, out var t) ? (IHexUnitType)Activator.CreateInstance(t)! : throw new KeyNotFoundException($"no hex unit type '{id}' (known: {string.Join(", ", All.Keys)})");
 
-        /// <summary>A formation of <paramref name="models"/> cycled over HexUnitScale.Characters figures: rows of 3, 2, 3
-        /// (a wedge), spaced HexUnitScale.FigureSpacing, all facing forward.</summary>
-        public static HexUnit Squad(string title, params string[] models)
+        /// <summary>HexUnitScale.Characters figures of one <paramref name="model"/> (Tal, 19 October 2026: a character unit is
+        /// one character type, never a mix): rows of 3, 2, 3 (a wedge), spaced HexUnitScale.FigureSpacing, all facing
+        /// forward.</summary>
+        public static HexUnit Squad(string title, string model)
         {
             var unit = new HexUnit { Title = title };
             var slots = new[] { (-1f, 1f), (0f, 1.15f), (1f, 1f), (-0.5f, 0f), (0.5f, 0f), (-1f, -1f), (0f, -0.85f), (1f, -1f) };
             for (int i = 0; i < HexUnitScale.Characters; i++)
                 unit.Members.Add(new HexUnitMember
                 {
-                    Model = models[i % models.Length], StandIn = StandIn.Figure,
+                    Model = model, StandIn = StandIn.Figure,
                     Offset = new Vector2(slots[i].Item1, slots[i].Item2) * HexUnitScale.FigureSpacing,
                     HeightShare = HexUnitScale.FigureHeight, CycleShare = HexUnitScale.FigureHeight * HexUnitScale.StridePerHeight,
                 });

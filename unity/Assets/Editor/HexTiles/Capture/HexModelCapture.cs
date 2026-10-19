@@ -178,7 +178,97 @@ namespace Statecraft.HexTiles.Capture
                 int step = Mathf.Max(1, all.Count / most);
                 return all.Where((_, i) => i % step == 0).ToList();
             }
-            var a = Points(from, 600); var b = Points(to, 6000);
+            return Facing(Points(from, 600), Points(to, 6000));
+        }
+
+        /// <summary>A skinned mesh's vertices in world space as its bones stand now (CPU linear-blend skinning: each bone's
+        /// localToWorld times its bind pose, weighted). BakeMesh is not used: it drops a scale inherited from a parent.</summary>
+        public static Vector3[] Skinned(SkinnedMeshRenderer s, bool forceBake = false)
+        {
+            var mesh = s.sharedMesh; var v = mesh.vertices; var bones = s.bones; var bind = mesh.bindposes; var w = mesh.boneWeights;
+            if (forceBake || bones.Length == 0 || w.Length != v.Length)
+            {
+                // No exposed bones (the Collection's near figures): Unity's own skinning. BakeMesh(false) already applies the
+                // scale (measured: through the renderer's full transform it came out scale-squared), so only the
+                // renderer's position and rotation place the vertices.
+                var baked = new Mesh();
+                var at = Matrix4x4.TRS(s.transform.position, s.transform.rotation, Vector3.one);
+                try { s.BakeMesh(baked, false); return baked.vertices.Select(p => at.MultiplyPoint3x4(p)).ToArray(); }
+                finally { Object.DestroyImmediate(baked); }
+            }
+            var m = new Matrix4x4[bones.Length];
+            for (int i = 0; i < bones.Length; i++) m[i] = bones[i] != null ? bones[i].localToWorldMatrix * bind[i] : s.transform.localToWorldMatrix;
+            var outp = new Vector3[v.Length];
+            for (int i = 0; i < v.Length; i++)
+            {
+                var b = w[i];
+                outp[i] = m[b.boneIndex0].MultiplyPoint3x4(v[i]) * b.weight0 + m[b.boneIndex1].MultiplyPoint3x4(v[i]) * b.weight1
+                    + m[b.boneIndex2].MultiplyPoint3x4(v[i]) * b.weight2 + m[b.boneIndex3].MultiplyPoint3x4(v[i]) * b.weight3;
+            }
+            return outp;
+        }
+
+        /// <summary>A figure object's meshes as they stand now, as new meshes in world space (skinned ones by
+        /// <see cref="Skinned"/>, static ones through their transform); the caller destroys them.</summary>
+        public static List<Mesh> WorldMeshes(GameObject go)
+        {
+            var list = new List<Mesh>();
+            Mesh Copy(Mesh src, Vector3[] pts)
+            {
+                var m = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                m.SetVertices(pts);
+                m.SetTriangles(Enumerable.Range(0, src.subMeshCount).Where(i => src.GetTopology(i) == MeshTopology.Triangles).SelectMany(i => src.GetTriangles(i)).ToArray(), 0);
+                return m;
+            }
+            foreach (var s in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) if (s.sharedMesh != null) list.Add(Copy(s.sharedMesh, Skinned(s)));
+            foreach (var f in go.GetComponentsInChildren<MeshFilter>(true))
+                if (f.sharedMesh != null && f.GetComponent<MeshRenderer>() != null) list.Add(Copy(f.sharedMesh, f.sharedMesh.vertices.Select(p => f.transform.localToWorldMatrix.MultiplyPoint3x4(p)).ToArray()));
+            return list;
+        }
+
+        /// <summary>Runs <paramref name="use"/> on a figure prefab's meshes, in world space: an instance at the origin, posed
+        /// as the hex tiles draw it (<paramref name="posed"/>: its idle clip's first frame, HexStandIns.SampleIdle) or at
+        /// rest (the bones as the prefab has them: the bind pose for a Tripo rig; a Collection near prefab lies flat there,
+        /// as its clip stands it up).</summary>
+        static T AtRest<T>(GameObject prefab, Func<List<Mesh>, T> use, bool posed = true)
+        {
+            var go = Object.Instantiate(prefab);
+            if (posed) foreach (var a in go.GetComponentsInChildren<Animator>(true)) HexStandIns.SampleIdle(a);
+            var meshes = WorldMeshes(go);
+            try { return use(meshes); }
+            finally { foreach (var m in meshes) Object.DestroyImmediate(m); Object.DestroyImmediate(go); }
+        }
+
+        /// <summary>A figure's see-through and edges, posed (or in bind pose).</summary>
+        public static Result OfFigure(GameObject prefab, bool posed = true) => AtRest(prefab, ms => Of(ms.Select(m => (m, Matrix4x4.identity))), posed);
+
+        /// <summary>A figure's size, posed (or in bind pose), in the prefab's units.</summary>
+        public static Vector3 FigureSize(GameObject prefab, bool posed = true) => AtRest(prefab, ms => SizeOf(ms.SelectMany(m => m.vertices)), posed);
+
+        public static Vector3 SizeOf(IEnumerable<Vector3> pts)
+        {
+            var list = pts.ToList();
+            var b = new Bounds(list[0], Vector3.zero); foreach (var p in list) b.Encapsulate(p);
+            return b.size;
+        }
+
+        /// <summary><see cref="Facing(GameObject, GameObject)"/> for figures: both scaled to unit height, footprint centred,
+        /// feet at 0.</summary>
+        public static float[] FigureFacing(GameObject from, GameObject to)
+        {
+            static List<Vector3> Points(GameObject go, int most)
+            {
+                var all = AtRest(go, ms => ms.SelectMany(m => m.vertices).ToList());
+                var b = new Bounds(all[0], Vector3.zero); foreach (var p in all) b.Encapsulate(p);
+                float k = 1f / Mathf.Max(b.size.y, 1e-6f);
+                int step = Mathf.Max(1, all.Count / most);
+                return all.Where((_, i) => i % step == 0).Select(p => new Vector3(p.x - b.center.x, p.y - b.min.y, p.z - b.center.z) * k).ToList();
+            }
+            return Facing(Points(from, 600), Points(to, 6000));
+        }
+
+        static float[] Facing(List<Vector3> a, List<Vector3> b)
+        {
             var scores = new float[8];
             for (int k = 0; k < 8; k++)
             {

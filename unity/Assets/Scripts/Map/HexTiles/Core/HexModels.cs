@@ -83,6 +83,50 @@ namespace Statecraft.HexTiles
         /// <see cref="Clear"/> after switching.</summary>
         public static bool DrawTownModels = true;
 
+        /// <summary>The cleared, tracked figure library (the game's Collection), one folder per figure with its -near (rigged,
+        /// idle clip) and -far (static) prefabs.</summary>
+        public const string CollectionFolder = "Assets/Art/Collection";
+
+        /// <summary>The local proto figures the hex tiles and units place, drawn in the editor as their figure in the
+        /// Collection (<see cref="CollectionFolder"/>) at the level given (Tal, 19 October 2026: the proto figures are our
+        /// own decimations and show the ground through clothes, boots and faces, 2.7-6.5% of view rays; the Collection's
+        /// are whole, HexUnitTests' report). The soldiers take the rigged near prefab (about 7,200 triangles, idle clip);
+        /// the Tel Aviv townspeople the static far one (about 1,350, so the tile keeps its budget), but c01, whose far mesh
+        /// is holed (1.8%), the near one. A player keeps the proto prefab, then the stand-in: the Collection streams from
+        /// AssetBundles there, not Resources.</summary>
+        public static readonly (string id, string figure, string level)[] FigureAliases =
+        {
+            ("proto:figure-palmach-scout-c12f-1948-v2", "figure-c12f-palmach-scout-v2", "near"),
+            ("proto:figure-veteran-fighter-c07-1948-v2", "figure-c07-veteran-fighter-v2", "near"),
+            ("proto:figure-young-recruit-c06-1948-v2", "figure-c06-young-recruit-v2", "near"),
+            ("proto:figure-townsman-c02-1948-v2", "figure-c02-townsman-v2", "far"),
+            ("proto:figure-woman-blue-dress-c10-1948-v2", "figure-c10-woman-blue-dress-v2", "far"),
+            ("proto:figure-nurse-c13-1948-v2", "figure-c13-nurse-v2", "far"),
+            ("proto:figure-arriving-man-c01-1948-v2", "figure-c01-arriving-man-v2", "near"),
+            ("proto:figure-sabra-pioneer-c04-1948-v2", "figure-c04-sabra-pioneer-v3", "far"),
+        };
+
+        /// <summary>Off draws the proto figures again (a before shot, or a test of the fallback); call <see cref="Clear"/>
+        /// after switching.</summary>
+        public static bool DrawCollectionFigures = true;
+
+        static readonly Dictionary<string, (string figure, string level)> figureOf =
+            FigureAliases.ToDictionary(a => a.id, a => (a.figure, a.level), StringComparer.Ordinal);
+
+        /// <summary>The Collection prefab a figure id draws in the editor (AssetDatabase), or null: in a player, without
+        /// the Collection folder, or switched off.</summary>
+        static GameObject? CollectionFigure(string id)
+        {
+#if UNITY_EDITOR
+            if (DrawCollectionFigures && figureOf.TryGetValue(id, out var f))
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(FigurePath(f.figure, f.level));
+#endif
+            return null;
+        }
+
+        /// <summary>A Collection figure's prefab path at a level ("near" or "far").</summary>
+        public static string FigurePath(string figure, string level) => $"{CollectionFolder}/{figure}/{figure}-{level}.prefab";
+
         static readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         static readonly Dictionary<string, string[]> variants = new Dictionary<string, string[]>(StringComparer.Ordinal);
         static readonly Dictionary<string, string> townOf = TownAliases.ToDictionary(a => a.id, a => a.town, StringComparer.Ordinal);
@@ -106,6 +150,8 @@ namespace Statecraft.HexTiles
             bool town = id.StartsWith(TownPrefix, StringComparison.Ordinal), alias = townOf.ContainsKey(id);
             var made = town || alias ? Town(town ? id : townOf[id]) : null;
             if (made != null) return prefabs[id] = made;
+            var figure = CollectionFigure(id);
+            if (figure != null) return prefabs[id] = figure;
             var prefab = town ? null : Resources.Load<GameObject>(PathOf(id));
             // Without the set (a player before the map scene has loaded it), not remembered, so the set is looked for again.
             if (!(DrawTownModels && (town || alias))) prefabs[id] = prefab;
@@ -208,8 +254,36 @@ namespace Statecraft.HexTiles
         {
             var rs = go.GetComponentsInChildren<Renderer>();
             if (rs.Length == 0) return new Bounds(Vector3.zero, Vector3.one);
-            var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+            var b = RendererBounds(rs[0]); foreach (var r in rs) b.Encapsulate(RendererBounds(r));
             return b;
+        }
+
+        /// <summary>A renderer's world bounds. In the editor a skinned renderer without exposed bones (the Collection's near
+        /// figures: their rig hides its transforms) reports nearly empty bounds until it has drawn, which scaled a squad to
+        /// hundreds of kilometres: measure its baked vertices instead (BakeMesh already applies the scale, so only the
+        /// renderer's position and rotation place them).</summary>
+        static Bounds RendererBounds(Renderer r)
+        {
+#if UNITY_EDITOR
+            if (r is SkinnedMeshRenderer s && s.sharedMesh != null && s.bones.Length == 0)
+            {
+                var baked = new Mesh();
+                try
+                {
+                    s.BakeMesh(baked, false);
+                    var v = baked.vertices;
+                    if (v.Length > 0)
+                    {
+                        var m = Matrix4x4.TRS(s.transform.position, s.transform.rotation, Vector3.one);
+                        var b = new Bounds(m.MultiplyPoint3x4(v[0]), Vector3.zero);
+                        foreach (var p in v) b.Encapsulate(m.MultiplyPoint3x4(p));
+                        return b;
+                    }
+                }
+                finally { Object.DestroyImmediate(baked); }
+            }
+#endif
+            return r.bounds;
         }
 
         /// <summary>Triangles one placement of <paramref name="id"/> draws (its stand-in's when the model is missing).</summary>
