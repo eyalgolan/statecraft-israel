@@ -34,7 +34,7 @@ namespace Statecraft.HexTiles.Capture
         /// them the board paints flat colours.</summary>
         const string GroundFolder = "Assets/Art/Settlements/Prototype/HexSandboxGround";
         /// <summary>A livelier grade than the shipped map's, for the hex-tile captures (the opt-in look's start values).</summary>
-        const float Pitch = 50f, Fov = 35f, BoardDistanceM = 80000f, MidDistanceM = 26000f, CloseDistanceM = 12500f;
+        public const float Pitch = 50f, Fov = 35f, BoardDistanceM = 80000f, MidDistanceM = 26000f, CloseDistanceM = 12500f;
 
         [MenuItem("Statecraft/Hex Tiles/Capture Tel Aviv Board")]
         public static void Run()
@@ -79,7 +79,7 @@ namespace Statecraft.HexTiles.Capture
                 Vector3 OnGround(Vector3 p) => new Vector3(p.x, Mathf.Max(surface.Height(p), 0f), p.z);
                 var centres = board.Hexes.Values.Select(h => HexGeometry.Centre(h.q, h.r, HexScale.HexM)).ToList();
                 var middle = new Vector3(centres.Average(c => c.x), 0f, centres.Average(c => c.z));
-                float boardDistance = BoardDistance(board, cam, width / (float)height);
+                float boardDistance = BoardDistance(board, OnGround(middle), width / (float)height);
                 if (only == null) Shoot(cam, OnGround(middle), boardDistance, Path.Combine(dir, "board.png"), width, height);
                 // A board with an environment ring: one wider shot that takes in the landscape round the play hexes.
                 if (only == null && board.Hexes.Values.Any(h => h.env)) Shoot(cam, OnGround(middle), boardDistance * 1.6f, Path.Combine(dir, "board-wide.png"), width, height);
@@ -139,13 +139,37 @@ namespace Statecraft.HexTiles.Capture
         }
 
         /// <summary>The board shot's distance: the standard one, unless the board would not fit at twice it (the whole
-        /// country), when it is framed whole: its width across the view, its depth foreshortened by the pitch.</summary>
-        static float BoardDistance(HexBoard board, Camera cam, float aspect)
+        /// country, by the rough fit below), when it is framed whole: the shortest distance at which all four corners of
+        /// the board's rect (HexBoardBuilder.Bounds, at sea level) project inside the view with a small margin, the camera
+        /// still aimed at <paramref name="lookAt"/>. The rough fit alone (the depth foreshortened by sin(pitch)) left the
+        /// near, southern edge out of frame: at a 50 degree pitch the perspective spreads the near side.</summary>
+        public static float BoardDistance(HexBoard board, Vector3 lookAt, float aspect)
         {
             var b = HexBoardBuilder.Bounds(board);
-            float tanV = Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad), tanH = tanV * aspect;
-            float fit = 1.05f * Mathf.Max(b.width * 0.5f / tanH, b.height * 0.5f * Mathf.Sin(Pitch * Mathf.Deg2Rad) / tanV);
-            return fit > 2f * BoardDistanceM ? fit : BoardDistanceM;
+            float tanV = Mathf.Tan(Fov * 0.5f * Mathf.Deg2Rad), tanH = tanV * aspect;
+            float rough = 1.05f * Mathf.Max(b.width * 0.5f / tanH, b.height * 0.5f * Mathf.Sin(Pitch * Mathf.Deg2Rad) / tanV);
+            if (rough <= 2f * BoardDistanceM) return BoardDistanceM;
+            var corners = new[] { new Vector3(b.xMin, 0f, b.yMin), new Vector3(b.xMax, 0f, b.yMin), new Vector3(b.xMin, 0f, b.yMax), new Vector3(b.xMax, 0f, b.yMax) };
+            bool Fits(float d) => corners.All(c =>
+            {
+                var v = View(c, lookAt, d);
+                return v.z > 0f && Mathf.Abs(v.x / v.z) <= tanH * (1f - FrameMargin) && Mathf.Abs(v.y / v.z) <= tanV * (1f - FrameMargin);
+            });
+            float lo = rough * 0.5f, hi = rough;
+            while (!Fits(hi)) hi *= 1.5f;
+            for (int i = 0; i < 40; i++) { float mid = 0.5f * (lo + hi); if (Fits(mid)) hi = mid; else lo = mid; }
+            return hi;
+        }
+
+        /// <summary>The share of the half-view kept free round a board framed whole.</summary>
+        public const float FrameMargin = 0.03f;
+
+        /// <summary>A world point in view space (x right, y up, z forward) for a shot of <paramref name="lookAt"/> from
+        /// <paramref name="distance"/>, the camera placed as Shoot places it.</summary>
+        static Vector3 View(Vector3 p, Vector3 lookAt, float distance)
+        {
+            var rot = Quaternion.Euler(Pitch, 0f, 0f);
+            return Quaternion.Inverse(rot) * (p - (lookAt - rot * Vector3.forward * distance));
         }
 
         public static void Shoot(Camera cam, Vector3 lookAt, float distance, string path, int width, int height)
