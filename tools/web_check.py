@@ -341,6 +341,12 @@ class Server(http.server.ThreadingHTTPServer):
     (BOOT FAIL <file>: Unknown Error). 128 is macOS's kern.ipc.somaxconn."""
     request_queue_size = 128
 
+    def handle_error(self, request, client_address):
+        # Closing the browser cancels outstanding responses. Keep other server failures visible.
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
+
 
 def serve(root: Path, port: int = 0) -> Server:
     server = Server(("127.0.0.1", port), functools.partial(Handler, directory=str(root)))
