@@ -24,6 +24,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   base prices and durations stay unchanged. Veteran progress and a halutz's service follow R-VET-001 and R-VET-002.
 - Hebrew titles, body text and option text for the first batch of 16 event cards, each marked for native-speaker
   review (refs #1065, #564).
+- Hebrew titles, card text and option text for the 16 events in the second translation batch, pending native-speaker
+  review (refs #1066, #564).
 - An event option can unlock a city project (GDD Phase 7 PR 2, D-H2): a `projects.yaml` kind marked `locked: true` is
   refused by StartProject until an option with `unlock_projects` naming it has applied. The loader refuses an unknown
   kind or one that is not locked, and a sensitive option may not unlock (R-EFX-008, R-EFX-005; refs #806). No real

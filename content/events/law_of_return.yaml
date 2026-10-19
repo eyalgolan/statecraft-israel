@@ -2,6 +2,11 @@
 id: law_of_return
 title: The Law of Return
 text: 'The Knesset is ready to vote on the Law of Return, which gives every Jew the right to come to Israel as an oleh. {prime_minister} must decide whether the government backs it.'
+# For the native reviewer (#564): חוק השבות, הכנסת and עולה follow he.wiki "חוק השבות"
+# (https://he.wikipedia.org/wiki/חוק_השבות).
+title_he: חוק השבות
+text_he: 'הכנסת עומדת להצביע על חוק השבות, המעניק לכל יהודי את הזכות לעלות לישראל. ההחלטה אם הממשלה תתמוך בו בידי {prime_minister}.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Passed unanimously on 5 July 1950.
@@ -10,6 +15,7 @@ to: 1950-07-06
 options:
   - id: enact
     text: Enact the right of every Jew to immigrate
+    text_he: לעגן בחוק את זכותו של כל יהודי לעלות לישראל
     historical: true
     recommended: true
     effects:
@@ -17,6 +23,7 @@ options:
       - { target: intl_standing, delta: 0.01 }
   - id: quota
     text: Regulate immigration by yearly quota
+    text_he: להסדיר את העלייה באמצעות מכסה שנתית
     alternative: { basis: design }
     effects:
       - { target: morale, delta: -0.06 }
