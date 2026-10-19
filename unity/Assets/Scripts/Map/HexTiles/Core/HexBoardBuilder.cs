@@ -349,7 +349,7 @@ namespace Statecraft.HexTiles
     [ExecuteAlways]
     public sealed class HexBoardAssets : MonoBehaviour
     {
-        readonly List<Object> owned = new List<Object>();
+        [SerializeField, HideInInspector] List<Object> owned = new List<Object>();
         readonly List<Action> teardown = new List<Action>();
         public T Own<T>(T o) where T : Object { owned.Add(o); return o; }
         /// <summary>Destroys <paramref name="o"/> now if the board made it (a rebuilt hex's meshes and materials).</summary>

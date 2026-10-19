@@ -8,6 +8,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Fixed
+- Generated Hex Painter meshes, materials and terrain data are released when a preview is destroyed after an editor script reload (refs #18).
 - Editor Hex Painter previews stay out of scene saves while remaining discoverable for the next load; ordinary scene objects and terrain picking are preserved (refs #18).
 - Rebuilding a hex in the opt-in Hex Painter releases the removed unit's generated material while preserving shared assets and untouched units (refs #18).
 - On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
