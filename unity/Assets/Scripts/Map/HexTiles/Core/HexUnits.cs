@@ -109,19 +109,18 @@ namespace Statecraft.HexTiles
             {
                 var prefab = HexModels.Prefab(m.Model);
                 GameObject go;
-                float scale;
                 if (prefab != null)
                 {
                     go = Object.Instantiate(prefab, parent);
-                    var b = HexModels.Bounds(go);
-                    scale = (m.ByWidth ? m.HeightShare * sizeM / Mathf.Max(b.size.x, b.size.z) : m.HeightShare * sizeM / Mathf.Max(b.size.y, 1e-4f));
                 }
                 else
                 {
-                    go = GameObject.CreatePrimitive(PrimitiveType.Capsule); go.transform.SetParent(parent, false);
+                    go = GameObject.CreatePrimitive(m.StandIn == StandIn.Box ? PrimitiveType.Cube : PrimitiveType.Capsule);
+                    go.transform.SetParent(parent, false);
                     Object.DestroyImmediate(go.GetComponent<Collider>());
-                    scale = m.HeightShare * sizeM / 2f;
                 }
+                var b = HexModels.Bounds(go);
+                float scale = m.ByWidth ? m.HeightShare * sizeM / Mathf.Max(b.size.x, b.size.z) : m.HeightShare * sizeM / Mathf.Max(b.size.y, 1e-4f);
                 go.transform.localScale = Vector3.one * scale;
                 var animator = go.GetComponentInChildren<Animator>();
                 var clips = animator != null && animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.animationClips : Array.Empty<AnimationClip>();

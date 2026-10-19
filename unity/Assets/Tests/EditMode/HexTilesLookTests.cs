@@ -1,5 +1,10 @@
 #nullable enable
 using System;
+using System.Linq;
+using Statecraft.Game.Map;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using Object = UnityEngine.Object;
 using NUnit.Framework;
 using Statecraft.HexTiles;
 
@@ -27,4 +32,66 @@ public class HexTilesLookTests
 
     [Test]
     public void TheBoardShipsInResources() => Assert.That(HexBoard.Load(HexTilesLook.Board).Hexes.Count, Is.GreaterThan(0));
+
+    [TestCase("sandwich_truck", true)]
+    [TestCase("willys_jeep", true)]
+    [TestCase("palmach_squad", false)]
+    public void MissingModelsKeepTheDeclaredUnitSize(string typeId, bool byWidth)
+    {
+        const float size = 1000f;
+        var unit = HexUnitTypes.Create(typeId).Create();
+        // Exercise fallback even on an artist's machine with the local pending-rights models.
+        foreach (var m in unit.Members)
+        {
+            Assert.AreEqual(byWidth, m.ByWidth);
+            m.Model = "tiles:__missing_unit_test_" + typeId;
+            Assert.IsNull(HexModels.Prefab(m.Model));
+        }
+        var root = new GameObject("HexUnitFallbackTest");
+        try
+        {
+            var motion = new HexUnitMotion(unit, new[] { (0, 0) }, new FlatSurface(), root.transform, size);
+            motion.Pose(0f, false);
+            Assert.AreEqual(unit.Members.Count, motion.Objects.Count);
+            for (int i = 0; i < unit.Members.Count; i++)
+            {
+                var bounds = motion.Objects[i].GetComponentInChildren<Renderer>().bounds.size;
+                float dimension = byWidth ? Mathf.Max(bounds.x, bounds.z) : bounds.y;
+                Assert.That(dimension, Is.EqualTo(unit.Members[i].HeightShare * size).Within(0.01f), typeId);
+                var mesh = motion.Objects[i].GetComponentInChildren<MeshFilter>().sharedMesh;
+                StringAssert.Contains(byWidth ? "Cube" : "Capsule", mesh.name, "the declared Box/Figure stand-in");
+            }
+        }
+        finally { Object.DestroyImmediate(root); }
+    }
+
+    [Test]
+    public void RemovingAReplacementBoardRestoresTheDefaultMarkerStates()
+    {
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            Assert.IsNotNull(map);
+            map.Build();
+            var markers = map.transform.Find("Settlements").GetComponentsInChildren<MeshRenderer>(true);
+            Assert.Greater(markers.Length, 0);
+            var before = markers.Select(r => r.enabled).ToArray();
+            Assert.IsTrue(before.All(on => !on), "the default kits hide their placeholder boxes");
+            HexTilesLook.Apply(map, false);
+            CollectionAssert.AreEqual(before, markers.Select(r => r.enabled).ToArray(), "no board is a no-op");
+            HexTilesLook.Apply(map, true);
+            HexTilesLook.Apply(map, true); // replacing the board must also unwind its previous state first
+            Assert.IsNotNull(map.transform.Find(HexTilesLook.RootName));
+            HexTilesLook.Apply(map, false);
+            Assert.IsNull(map.transform.Find(HexTilesLook.RootName));
+            CollectionAssert.AreEqual(before, markers.Select(r => r.enabled).ToArray(),
+                "removing the replacement board must not enable placeholder boxes over the restored kits");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            ShadowFit.Restore(); VisualToggles.Clear(); Statecraft.Game.Map.Kits.KitScale.Reset();
+        }
+    }
 }

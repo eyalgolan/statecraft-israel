@@ -1,9 +1,9 @@
 # Civ layers and the team plan for hex tiles
 
-Status: a design note for Tal (lead designer). It decides nothing. Everything marked **Proposal** needs Tal's yes. The
-hex tiles are presentation only: an Editor-only assembly (`unity/Assets/Editor/HexTiles`) that draws what the
-deterministic simulation (`sim/`, data in `content/`) decides. Nothing here changes the shipped game, its look or the
-simulation goldens.
+Status: a design proposal from Tal (lead designer). It decides nothing: Tal proposes visual changes, and the project
+owner approves design changes. The hex tiles are presentation only. Runtime code lives under
+`unity/Assets/Scripts/Map/HexTiles/`; editor helpers and tests live under `unity/Assets/Editor/HexTiles/`.
+The runtime map is opt-in and off by default, so the shipped default look and simulation goldens stay unchanged.
 
 Read with `docs/hex-tiles/README.md` (the contributor contract). Scale reminder: `HexScale.HexM` = 5,000 m is the hex
 circumradius (`content/map/hexes.json` `hex_size_km: 5.0`), so a hex is about 8.7 km flat to flat. One hex is a whole

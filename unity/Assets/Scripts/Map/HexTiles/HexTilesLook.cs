@@ -63,8 +63,8 @@ namespace Statecraft.HexTiles
             // over them; both come back when the board is removed. Off before the board is placed, so what the kits
             // switch shows is already settled when the board hides the map's markers on its land.
             SetDressing(false);
-            var (root, _) = HexRealMap.Place(map, HexBoard.Load(id), HexBoard.GroundFromResources, holder);
-            root.GetComponent<HexBoardAssets>().OnTeardown(() => SetDressing(true));
+            var (root, _) = HexRealMap.Place(map, HexBoard.Load(id), HexBoard.GroundFromResources, holder,
+                restoreDressing: () => SetDressing(true));
             // Civ's warm, saturated diorama light while the board is up.
             var rig = Camera.main != null ? Camera.main.GetComponent<CameraRig>() : null;
             root.GetComponent<HexBoardAssets>().OnTeardown(HexLook.Apply(rig != null && rig.Volume != null ? rig.Volume.profile : null, MapLighting.FindSun()));

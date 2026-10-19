@@ -16,7 +16,7 @@ namespace Statecraft.HexTiles
     {
         const float SinkM = 30f, BlendFromShare = 0.9f, BlendToShare = 1.7f;
 
-        public static (GameObject root, List<HexTileReport> reports) Place(MapScene map, HexBoard board, Func<string, (Texture2D?, Texture2D?)>? textures, Transform? parent = null)
+        public static (GameObject root, List<HexTileReport> reports) Place(MapScene map, HexBoard board, Func<string, (Texture2D?, Texture2D?)>? textures, Transform? parent = null, Action? restoreDressing = null)
         {
             float sea = Shader.GetGlobalVector(MapShaderGlobals.Map).z;   // the map's sea level, set when it is built
             var origin = new Vector3(0f, sea, map.Frame.LengthM);
@@ -61,6 +61,9 @@ namespace Statecraft.HexTiles
             // 2. The board on top.
             var (root, reports) = HexBoardBuilder.Build(board, textures, options: new HexBoardBuilder.Options { OwnSea = false, HolesOutsideLand = true, Origin = origin, Parent = parent });
             var assets = root.GetComponent<HexBoardAssets>();
+            // Dressing was disabled before placement. Restore it after the renderer states below, so the kits can
+            // hide their placeholder markers again (teardown runs last registered first).
+            if (restoreDressing != null) assets.OnTeardown(restoreDressing);
             assets.OnTeardown(() => { if (data != null) data.SetHeights(x0, z0, before); });
 
             // 3. Hide the real markers and building prototypes standing on the board's land (its tiles replace them).
