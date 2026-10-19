@@ -55,7 +55,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Whether the map draws <paramref name="u"/> at all: not hidden, and Israel's or a side with a Collection
         /// figure (<see cref="UnitFigures.SideFigure"/>: the Arab Legion and the Arab Liberation Army, issue #665). The Arab
         /// forces' rows were data only until their figures landed, after the sensitivity review (owner, 17 October 2026,
-        /// #740: "Nothing is drawn with IDF figures, and there is no placeholder art"); MATKOT's unit models count as reviewed
+        /// #740: "Nothing is drawn with IDF figures, and there is no placeholder art"); Tal Heuberger's unit models count as reviewed
         /// and approved (owner, 17 October 2026, #756). Every other side's rows stay data only. The roster and the placer both
         /// skip a row that is not on the map, so it draws no token, takes no spot and clears no ground for the kits.</summary>
         public static bool OnMap(UnitEntry u) => u.Hidden == null && (u.Side == UnitData.Israel || UnitFigures.SideFigure(u.Side) != null);

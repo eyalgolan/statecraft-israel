@@ -265,6 +265,18 @@ public class CabinetTests
     }
 
     [Fact]
+    public void DelegatedToNamesWhoEndTurnHandsTheEventToAfterTheQueuedOrders()
+    {
+        // #1034 review: Step runs the orders (Appoint included) before EventSystem.Delegate, so the card must ask after them.
+        var c = Load(new Dictionary<string, string> { ["drought.yaml"] = ValidationTests.Event });
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        Assert.Equal("def_two", Simulation.DelegatedTo(c, s, None, "drought")!.Id);
+        Assert.Equal("loyalist", Simulation.DelegatedTo(c, s, new Command[] { new Appoint("finance_minister", "loyalist") }, "drought")!.Id);
+        Assert.Equal("def_two", Simulation.DelegatedTo(c, s, new Command[] { new Appoint("finance_minister", "outsider") }, "drought")!.Id);   // refused: nobody changes
+        Assert.Equal("def_two", Cabinet.Holder(c, s, "finance_minister")!.Id);   // a dry run on a clone: the state is untouched
+    }
+
+    [Fact]
     public void HistoricalOnlyOfficesKeepTheirTermsButAreNotCabinetSeatsOrAppointable()
     {
         var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>

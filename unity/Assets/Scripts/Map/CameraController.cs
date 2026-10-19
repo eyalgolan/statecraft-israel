@@ -16,7 +16,8 @@ namespace Statecraft.Game.Map
         public bool DragFromUi;
     }
 
-    /// <summary>Pans, zooms and orbits the diorama camera from the project-wide "Camera" action map (Input System only).
+    /// <summary>Pans, zooms and orbits the diorama camera from the project-wide "Camera" action map (Input System only),
+    /// and from the touchscreen: one finger drags like the right button, a pinch zooms like the wheel.
     /// While the pointer is over the UI (IsOverUi, wired by the scene) the wheel and the drag belong to the UI; keyboard pan
     /// and orbit still move the camera (plan amendment A4). Pan speed scales with
     /// distance, zoom is clamped to [MinDistance, MaxDistance], and the view stays on the map (issue #174): the look-at
@@ -96,8 +97,54 @@ namespace Statecraft.Game.Map
             if (pan == null || dragPan == null || zoom == null || orbit == null) return;
             Vector2? pointer = Pointer.current != null ? Pointer.current.position.ReadValue() : (Vector2?)null;
             var down = Mouse.current != null && Mouse.current.rightButton.isPressed;
-            Step(rig, Gather(pan.ReadValue<Vector2>(), dragPan.ReadValue<Vector2>(), WheelOr(zoom.ReadValue<float>()),
-                orbit.ReadValue<float>(), down, pointer), ClampDt(Time.unscaledDeltaTime), Bounds, Ground, GroundTop);
+            var drag = dragPan.ReadValue<Vector2>();
+            var zoomRaw = WheelOr(zoom.ReadValue<float>());
+            var ts = Touchscreen.current;
+            if (ts != null)
+            {
+                switch (FingersDown(ts, out var a, out var b))
+                {
+                    // one finger drags the map, like the right button: Gather's latch answers whether it started over the UI
+                    case 1:
+                        drag += a.delta.ReadValue();
+                        down = true;
+                        pointer = a.position.ReadValue();
+                        break;
+                    // a pinch zooms by how far the fingers move; the UI check follows the first finger
+                    case 2:
+                        zoomRaw += PinchNotches(a.position.ReadValue(), a.delta.ReadValue(), b.position.ReadValue(), b.delta.ReadValue());
+                        pointer = a.position.ReadValue();
+                        break;
+                }
+            }
+            Step(rig, Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer),
+                ClampDt(Time.unscaledDeltaTime), Bounds, Ground, GroundTop);
+        }
+
+        /// <summary>The first two touches down (2 stands for two or more), or fewer.</summary>
+        static int FingersDown(Touchscreen ts, out UnityEngine.InputSystem.Controls.TouchControl a,
+            out UnityEngine.InputSystem.Controls.TouchControl b)
+        {
+            a = null!; b = null!;
+            int n = 0;
+            foreach (var t in ts.touches)
+            {
+                if (!t.press.isPressed) continue;
+                if (n == 0) a = t; else b = t;
+                n++;
+                if (n == 2) break;
+            }
+            return n;
+        }
+
+        /// <summary>A two-finger pinch in wheel notches, positive = in (the fingers spread): the change in the distance
+        /// between them this frame, 100 px to the notch (PixelsPerNotch, the touchpad's rate). A finger's position one
+        /// event ago is its position minus its delta.</summary>
+        public static float PinchNotches(Vector2 now0, Vector2 delta0, Vector2 now1, Vector2 delta1)
+        {
+            var now = Vector2.Distance(now0, now1);
+            var was = Vector2.Distance(now0 - delta0, now1 - delta1);
+            return (now - was) / PixelsPerNotch;
         }
 
         /// <summary>Fits the rig's current pose with no input (review B-m3: a minimap jump goes through the same view fit and

@@ -15,8 +15,8 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #725: MATKOT's four road vehicles on their 1948 roads, streamed, close zoom only, on ground Israel held,
-/// and sized against the steam locomotive (the owner on v0.1.1, 18 October 2026: MATKOT's models were "way bigger then the
+/// <summary>Issue #725: Tal Heuberger's four road vehicles on their 1948 roads, streamed, close zoom only, on ground Israel held,
+/// and sized against the steam locomotive (the owner on v0.1.1, 18 October 2026: Tal Heuberger's models were "way bigger then the
 /// train").</summary>
 public class RoadVehiclesTests
 {
@@ -59,11 +59,12 @@ public class RoadVehiclesTests
 
     static GameObject Prefab(string id) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
 
-    /// <summary>A built map with the control layer (as GameRoot gives it), its routes rebuilt at <paramref name="date"/>.</summary>
+    /// <summary>A built map with the control layer (as the map reads it; without <paramref name="control"/>, none), its routes
+    /// rebuilt at <paramref name="date"/>.</summary>
     (MapScene map, RoadVehicles layer) Build(DateTime date, RouteLayer.TrainMode train = RouteLayer.TrainMode.None, bool control = true)
     {
         var map = RouteTests.BuildMap();
-        if (control) map.Control = Control();
+        map.Control = control ? Control() : null;
         Object.DestroyImmediate(RouteTests.RoutesRoot(map).gameObject);
         asked.Clear(); trainAsked.Clear();   // the map's own build asked too; that layer is gone
         RouteLayer.Build(map.Terrain, map.Frame, Routes(), train, date, map: map);
@@ -100,7 +101,7 @@ public class RoadVehiclesTests
     public void EveryModelHasItsRouteAndDate()
     {
         CollectionAssert.AreEquivalent(new[] { RoadVehicles.IntercityBus, RoadVehicles.CitrusTruck, RoadVehicles.CanvasLorry, RoadVehicles.SandwichConvoy },
-            RoadVehicles.Plans.Select(p => p.Model).Distinct(), "all four of MATKOT's road vehicles are placed");
+            RoadVehicles.Plans.Select(p => p.Model).Distinct(), "all four of Tal Heuberger's road vehicles are placed");
         CollectionAssert.AreEqual(new[]
         {
             (RoadVehicles.SandwichConvoy, "burma_road", "1948-06-14", "1948-12-07", 1),
@@ -248,7 +249,7 @@ public class RoadVehiclesTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>The owner on v0.1.1 (18 October 2026): MATKOT's models were "way bigger then the train". A bus or a lorry
+    /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's models were "way bigger then the train". A bus or a lorry
     /// reads smaller than the steam locomotive the map runs: each vehicle's length is 0.3 to 0.8 of the locomotive's car as
     /// drawn (ServiceTrain, measured on the map, not from the constant), and it stands lower than the locomotive. The unit
     /// figures (#992) are Civ-sized pieces far larger still; the vehicles are scenery and stay under a figure's height.</summary>

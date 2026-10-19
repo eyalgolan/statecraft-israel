@@ -12,7 +12,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using M = Statecraft.Game.Map.Kits.TownModel;
 
-/// <summary>Issue #659 step 2: the towns are built from MATKOT's building models, by town type (the
+/// <summary>Issue #659 step 2: the towns are built from Tal Heuberger's building models, by town type (the
 /// issue's table), one model per placed building, fitted to the kit's footprints (the layout and census unchanged), loaded
 /// with the map through the scene (never through a Resources folder), drawn instanced with baked levels of detail.</summary>
 public class TownModelTests

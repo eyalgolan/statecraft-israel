@@ -87,6 +87,11 @@ event.reopen: "Decision waiting"
 event.illustration: "Illustration"
 event.photo: "Photograph"
 event.ai_label: "AI-generated illustration"
+# Too little Attention left to answer the card (#1034, #1043): the options show their price and the card says End Turn
+# hands it to the minister EventSystem.Delegate names. {0} the minister's name, or event.cabinet when the card has none.
+event.no_attention: "You don't have enough Attention left to answer this turn. End the turn and the decision goes to {0}."
+event.cabinet: "the cabinet"
+event.option_cost: "{0} (costs {1:0.0} Attention)"
 # An objective card's line under its text (#380), from Objectives.MonthsFromHistory: early, in the same month as history,
 # or later. The owner's wording (#379, 14 October 2026). {0} the completion date, {1} the historical date, {2} months.
 event.objective_early: "Completed on {0}; historically {1}; {2} months early."

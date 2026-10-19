@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>Issue #663, owner ruling of 17 October 2026: "The nine whole-town models ship (this reverses the 15 Oct 'layout
 /// references only' ruling). They are slimmed, streamed after the first frame, and pass the load gate. The ma'abara and the
-/// shikun appear only from their sourced 1950s dates." MATKOT's nine whole-town models stand as overview
+/// shikun appear only from their sourced 1950s dates." Tal Heuberger's nine whole-town models stand as overview
 /// landmarks beside their towns (#507's mapping), streamed through CollectionStream, clear of every kit, and they fail open.</summary>
 public class TownLandmarksTests
 {
@@ -107,7 +107,7 @@ public class TownLandmarksTests
         RenderSample.Render(cam, 320, 180);
     }
 
-    /// <summary>Owner ruling, 18 October 2026 (on #917, #663, #659 and #700): the towns are MATKOT's models, "Whole model far,
+    /// <summary>Owner ruling, 18 October 2026 (on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model far,
     /// buildings near". Far off, each mapped town's whole-town model stands ON its town, inside its kit footprint
     /// (MapScene.KitFootprints), as wide as its core (TownLandmarks.CoreOf: where most of its building models stand), not
     /// beside the town at a fixed 6 km.</summary>

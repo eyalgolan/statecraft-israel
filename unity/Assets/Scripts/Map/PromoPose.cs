@@ -33,7 +33,7 @@ namespace Statecraft.Game.Map
             new PromoPose("hero06judea", 35.15, 31.78, 6000f, 0f), new PromoPose("hero06negev", 34.90, 30.60, 6000f, 0f),
         };
 
-        /// <summary>Issue #659 (owner ruling on #700: "Models up close only"): the close views where MATKOT's building models
+        /// <summary>Issue #659 (owner ruling on #700: "Models up close only"): the close views where Tal Heuberger's building models
         /// draw instead of the kits (TownModelLayer.CloseEnterM): Tel Aviv at 30 km and Jaffa's old town at 12 km. Not promo
         /// matches: VisualShots shoots them after All (everything on), and FrameProfile prices them under "vclose".</summary>
         public static IReadOnlyList<PromoPose> CloseUps { get; } = new[]

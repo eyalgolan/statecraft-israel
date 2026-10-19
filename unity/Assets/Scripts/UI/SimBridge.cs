@@ -64,7 +64,18 @@ namespace Statecraft.Game.UI
             _ => c.Kind,
         };
 
-        double Price(Command c) => AttentionSystem.IsCommandKind(c.Kind) ? AttentionSystem.Cost(Content, State, c.Kind) : 0;
+        /// <summary>The order's Attention price at this turn's prices: what <see cref="Queue"/> charges and the card shows.</summary>
+        public double Price(Command c) => AttentionSystem.IsCommandKind(c.Kind) ? AttentionSystem.Cost(Content, State, c.Kind) : 0;
+
+        /// <summary>Whether the Attention left pays for the order (a queued order with its key is refunded first): the one
+        /// check <see cref="Queue"/> refuses on, so the event card (#1034) and a refusal can never disagree.</summary>
+        public bool CanPay(Command c) => Price(c) <= LeftFor(c) + 1e-9;
+
+        double LeftFor(Command c) { var old = QueuedLike(c); return AttentionLeft + (old != null ? Price(old) : 0); }
+
+        /// <summary>Who End Turn hands the event to with the orders queued now (Simulation.DelegatedTo), or null for the
+        /// cabinet: an appointment queued this turn is in office by then (#1034).</summary>
+        public Person? DelegatedTo(GameEvent e) => Simulation.DelegatedTo(Content, State, queue, e.Id);
 
         /// <summary>Attention left after paying for the queued orders at this turn's prices.</summary>
         public double AttentionLeft => State.Attention - queue.Sum(Price);
@@ -149,10 +160,9 @@ namespace Statecraft.Game.UI
             if (bad != null) return Refuse(bad);
             if (State.GameOver != null) return Refuse(text["order.game_over"]);
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
+            if (!CanPay(c))
+                return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
             var old = QueuedLike(c);
-            var left = AttentionLeft + (old != null ? Price(old) : 0);
-            if (Price(c) > left + 1e-9)
-                return Refuse(text.Format("order.no_attention", Price(c), left));
             if (old != null) queue[queue.IndexOf(old)] = c; else queue.Add(c);
             Changed?.Invoke();
             return null;

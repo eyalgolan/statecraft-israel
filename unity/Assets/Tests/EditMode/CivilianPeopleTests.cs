@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>Issue #666: MATKOT's civilian figures stand in small deterministic groups at the Israeli towns,
+/// <summary>Issue #666: Tal Heuberger's civilian figures stand in small deterministic groups at the Israeli towns,
 /// kibbutzim, moshavim and placed transit camps. They are ambience, never combat units, and stream after the first frame.</summary>
 public sealed class CivilianPeopleTests
 {

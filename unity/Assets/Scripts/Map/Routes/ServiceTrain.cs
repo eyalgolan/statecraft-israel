@@ -11,7 +11,7 @@ namespace Statecraft.Game.Map.Routes
     /// come from the content: the route's service (routes_1948.yaml, through the runtime file; RouteService), from 2 March
     /// 1950 on the stretches that run: Lod to Jerusalem (Israel Railways, 1998), and Tel Aviv South to Lod only once a
     /// person signs that stretch off (it rests on Wikipedia alone). Before that date there is no train and nothing is
-    /// fetched. The model is MATKOT's steam locomotive and tender, H09 of The 1948 Collection (#507,
+    /// fetched. The model is Tal Heuberger's steam locomotive and tender, H09 of The 1948 Collection (#507,
     /// #680), streamed through
     /// <see cref="CollectionStream"/>: asked for only when the game date first reaches the service, so never for the first
     /// frame (the game starts in May 1948, and the stream serves nothing before the frame after a request). The strategic
@@ -32,7 +32,7 @@ namespace Statecraft.Game.Map.Routes
         /// on the map (coordinator, 16 October 2026). At the showcase's own size (about 2 km by 745 m) one rigid body cannot
         /// follow the Sorek valley's bends (issue #668, measured along Lod–Jerusalem).</summary>
         public const float ModelSize = 0.4f;
-        /// <summary>The train's articulated cars, MATKOT's locomotive and three coaches, each a quarter of its length (about
+        /// <summary>The train's articulated cars, Tal Heuberger's locomotive and three coaches, each a quarter of its length (about
         /// 204 m): the owner's ruling for #668 (16 October 2026, "ride the track, cut walls"), measured against one rigid car.</summary>
         public const int Cars = 4;
         /// <summary>Each car's width: 0.9 of the rail ribbon's narrowest drawn width (RouteLayer.MinWidthShare of

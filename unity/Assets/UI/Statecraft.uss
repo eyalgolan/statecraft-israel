@@ -203,6 +203,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     border-color: var(--gold); border-width: 1.5px; color: var(--gold-light); padding: 2px 12px 2px 38px;
 }
 .end-turn:hover { border-color: var(--gold-light); }
+/* A card waits that the Attention left cannot answer (#1034): End Turn is the way on, so it stands out. */
+.end-turn-waiting { border-color: var(--gold-light); border-width: 3px; background-color: rgba(196, 160, 92, 0.35); }
 
 /* The decision card in the middle (decision cards, 2026-10-13), the info panel at the bottom-left, the minimap at the
    bottom-right. The right-hand column keeps its 480 px width, so the screens and the border layer's caption stay where
@@ -318,6 +320,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-text { white-space: normal; margin-bottom: 8px; }
 /* An objective card's line under its text (#380): when it was completed against history. */
 .event-objective { white-space: normal; margin-bottom: 8px; }
+/* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
+.event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
 /* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. */
 .info-panel { position: absolute; left: 16px; bottom: 16px; width: 520px; min-height: 160px; flex-direction: row; align-items: flex-start; }

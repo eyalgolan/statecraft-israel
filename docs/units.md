@@ -142,8 +142,8 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   that: a drawn row has one token, at one place at a time. How PR 17 draws such a row is its decision.
 - **Drawn only with their own figures** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to
   `units_1948.yaml` and filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its
-  sensitivity review. Nothing is drawn with IDF figures, and there is no placeholder art." MATKOT's 1948 Collection has
-  figures for two forces, and MATKOT's unit models count as reviewed and approved (owner, 17 October 2026, #756), so
+  sensitivity review. Nothing is drawn with IDF figures, and there is no placeholder art." Tal Heuberger's 1948 Collection has
+  figures for two forces, and Tal Heuberger's unit models count as reviewed and approved (owner, 17 October 2026, #756), so
   those two are drawn (issue #665; see "The 1948 Collection on the tokens"): the Arab Legion and the Arab Liberation
   Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
   those rows; the Egyptian, Syrian, Iraqi and Lebanese rows give no token, take no spot and clear no ground for the kits.
@@ -163,7 +163,7 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
 
 ### The 1948 Collection on the tokens (#665)
 
-The tokens wear MATKOT's figures from The 1948 Collection (#507, #680), streamed after the first frame
+The tokens wear Tal Heuberger's figures from The 1948 Collection (#507, #680), streamed after the first frame
 (`CollectionStream`, the people and vehicles bundles); nothing is fetched before it, and nothing sits in `Resources/`.
 `UnitFigures` holds the table. Each model is the far (strategic-zoom) static mesh, put under the figure with the prefab's
 own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's yaw composes on top of it.
@@ -175,7 +175,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first and third, the showcase's third | the Negev headgear photographs (Sources) | always |
 | C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel | a presentation choice: the default's third figure is not sourced | always |
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
-| C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (MATKOT's models approved) | the row's windows |
+| C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
 | H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
@@ -186,10 +186,16 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   the figures as the aircraft and the ship are, not to scale, so it fits on the base.
 - **C05's pose:** he had no idle clip and shipped in his rest pose, a T-pose. His static meshes are now posed at the first
   frame of his own walk (`tools/slim_collection.py`, `POSE_CLIP`).
+- **Close zoom:** below the town models' switch (`TownModelLayer.CloseEnterM`, 40 km; far again beyond `CloseExitM`,
+  45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
+  clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
+  camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"). The vehicles
+  stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
-  fail open).
+  fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 
 ### What the player sees
 

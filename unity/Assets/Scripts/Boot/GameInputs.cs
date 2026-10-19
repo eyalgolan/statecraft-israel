@@ -13,6 +13,8 @@ namespace Statecraft.Game.Boot
     public sealed class MapInputs
     {
         public string HeightmapJson = "", HexesJson = "", SettlementsYaml = "";
+        /// <summary>content/map/overrides.yaml, the map editor's overrides (#1009); "" when the file is missing (no overrides).</summary>
+        public string OverridesYaml = "";
         /// <summary>content/map/subdistrict_hexes_1948.yaml: the 1948 sub-districts the map outlines (display only).</summary>
         public string RegionsYaml = "";
         /// <summary>The baked runtime forms of the region files the map reads at boot (tools/regions_bake.py; issue #321;
@@ -57,6 +59,7 @@ namespace Statecraft.Game.Boot
             HeightmapR16z = File.ReadAllBytes(Path.Combine(mapDir, HeightmapCodec.FileName)),
             HexesJson = File.ReadAllText(Path.Combine(contentDir, "map", "hexes.json")),
             SettlementsYaml = File.ReadAllText(Path.Combine(contentDir, "map", SettlementPlacer.DefaultFileName)),
+            OverridesYaml = ReadIfExists(Path.Combine(contentDir, MapOverrides.FileName)),
             RegionsYaml = File.ReadAllText(Path.Combine(contentDir, "map", Subdistricts1948.FileName)),
             RoutesYaml = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName)),
             RoutesTsv = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Routes.RoutePaths.RuntimeFileName)),
@@ -98,6 +101,7 @@ namespace Statecraft.Game.Boot
                 {
                     HeightmapJson = heightmapJson, HeightmapR16z = r16z,
                     HexesJson = texts["map/hexes.json"], SettlementsYaml = texts["map/" + SettlementPlacer.DefaultFileName],
+                    OverridesYaml = texts.TryGetValue(MapOverrides.FileName, out var overrides) ? overrides : "",
                     RegionsYaml = texts["map/" + Subdistricts1948.FileName],
                     RoutesYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName, out var routes) ? routes : "",
                     RoutesTsv = texts.TryGetValue("map/" + Statecraft.Game.Map.Routes.RoutePaths.RuntimeFileName, out var routesTsv) ? routesTsv : "",

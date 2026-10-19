@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>MATKOT's two wild-animal models from The 1948 Collection (issue #670), placed sparsely and deterministically
+    /// <summary>Tal Heuberger's two wild-animal models from The 1948 Collection (issue #670), placed sparsely and deterministically
     /// by terrain zone, each zone from its source:
     /// - Nubian ibex on steep desert or mountain hexes of the Judean Desert, west of the Dead Sea: the Israel Nature and Parks
     ///   Authority's En Avdat brochure, "Ibexes are common in the Negev, the Eilat Mountains and the Judean Desert near the

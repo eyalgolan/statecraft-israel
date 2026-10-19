@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# The "absorb immigrants" completion card (objectives.yaml absorb_immigrants; docs/gdd/objective-card.md; R-OBJ-003,
+# R-OBJ-004). Q-ABS-1 (A): the Jewish population passes 1,000,000. Claims and their sources:
+# - 20 December 1949, Ingathering of the Exiles Day (Yom Kibbutz Galuyot), marked across Israel for the Jewish population
+#   passing 1,000,000: JTA, 20 December 1949.
+# - The count of 1,000,000 announced with the arrival of 663 immigrants from Tripoli, 321,991 newcomers since 15 May 1948,
+#   by the acting director of the Ministry of Immigration: JTA daily bulletin, 22 November 1949.
+# No photograph (Q-ABS-3: none usable found for option (A); a generic arrival photograph needs the owner's approval).
+id: absorb_immigrants
+title: One million
+text: 'On 20 December 1949 Israel marked Ingathering of the Exiles Day: its Jewish population had passed one million. A month earlier, with the arrival of 663 immigrants from Tripoli, the Ministry of Immigration had put the Jewish population at 1,000,000, with 321,991 newcomers since 15 May 1948.'
+anchor: soft
+objective: absorb_immigrants
+# The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.
+from: 1948-05-15
+to: 1957-01-01
+options:
+  - id: continue
+    text: Continue
+    historical: true
+tags: []
+sources:
+  - { url: "https://www.jta.org/archive/israel-marks-ingathering-of-exiles-day-arrival-of-second-million-jews-anticipated", checked: 2026-10-18 }
+  - { url: "https://www.jta.org/archive/jewish-population-of-israel-peaches-1000000-with-arrival-of-new-tripoli-immigrants", checked: 2026-10-18 }
+status: fact-checked

@@ -48,7 +48,7 @@ public class EventCardTests
         StringAssert.Contains("David Ben-Gurion must decide whether Israel signs.", ui.Q<Label>("event-text").text);
         Assert.AreEqual(catalog.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-draft").style.display.value);
-        Assert.AreEqual("Sign the armistice", ui.Q<Button>("option-sign").text);
+        Assert.AreEqual("Sign the armistice (costs 2.0 Attention)", ui.Q<Button>("option-sign").text);   // its price shows (#1034)
     }
 
     [Test]
@@ -381,5 +381,87 @@ public class EventCardTests
         var credit = ui.Q<Label>("event-photo-credit").text;
         StringAssert.StartsWith("Boris Carmi / Meitar Collection", credit);
         StringAssert.EndsWith("CC BY 4.0 · graded and cropped", credit);
+    }
+
+    // ---- Too little Attention to answer (#1034, #1043): the card says End Turn hands it to the minister ----
+
+    /// <summary>The players' report (#1034, #1043): The Second Truce on 15 July 1948 with the turn's Attention spent. Each
+    /// option shows its price and is greyed out, the card names the minister End Turn hands it to (the one
+    /// EventSystem.Delegate names), and End Turn is highlighted; with Attention back, all of that goes away.</summary>
+    [TestCase("en", "You don't have enough Attention left to answer this turn. End the turn and the decision goes to David Ben-Gurion.", "Comply with the cease-fire (costs 2.0 Attention)")]
+    [TestCase("he", "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי דוד בן-גוריון.", "\u200eComply with the cease-fire\u200e (עולה \u200e2.0\u200e תשומת לב)")]
+    public void WithTooLittleAttentionTheCardSaysEndTurnHandsItToTheMinister(string lang, string line, string option)
+    {
+        var text = lang == "he" ? He : Text;
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = C.Events.First(e => e.Id == "second_truce").From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add("second_truce");
+        var bridge = new SimBridge(g, text);
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, text, null);
+        var delegated = ui.Q<Label>("event-delegate");
+        var endTurn = ui.Q<Button>("end-turn");
+        var options = ui.Q<VisualElement>("event-options").Query<Button>().ToList();
+        Assert.AreEqual(DisplayStyle.None, delegated.style.display.value, "with Attention to pay, no line");
+        Assert.IsTrue(options.All(b => b.enabledSelf), "with Attention to pay, every option can be pressed");
+        Assert.IsFalse(endTurn.ClassListContains(EventCardPresenter.EndTurnWaitingClass));
+
+        g.State.Attention = 0;
+        card.Render();
+        options = ui.Q<VisualElement>("event-options").Query<Button>().ToList();
+        Assert.AreEqual(DisplayStyle.Flex, delegated.style.display.value);
+        Assert.AreEqual(line, delegated.text);
+        Assert.AreEqual(option, ui.Q<Button>("option-comply").text, "the option shows its price");
+        Assert.IsTrue(options.All(b => !b.enabledSelf), "no option can be pressed");
+        Assert.IsTrue(endTurn.ClassListContains(EventCardPresenter.EndTurnWaitingClass), "End Turn is highlighted");
+
+        g.State.Attention = 4;
+        card.Render();
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-delegate").style.display.value);
+        Assert.IsTrue(ui.Q<VisualElement>("event-options").Query<Button>().ToList().All(b => b.enabledSelf));
+        Assert.IsFalse(endTurn.ClassListContains(EventCardPresenter.EndTurnWaitingClass));
+
+        // The line names the minister End Turn really hands the card to.
+        g.State.Attention = 0;
+        var turn = bridge.EndTurn();
+        Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith("Delegated to David Ben-Gurion:")), "EventSystem.Delegate names the same minister");
+        Assert.IsFalse(endTurn.ClassListContains(EventCardPresenter.EndTurnWaitingClass), "no card waits after End Turn");
+    }
+
+    /// <summary>#1034 review: Step runs the queued orders, Appoint included, before EventSystem.Delegate. With an
+    /// appointment queued this turn (One Army, turn 0), the card names the appointee and End Turn hands it to them.</summary>
+    [Test]
+    public void WithTooLittleAttentionTheCardNamesTheMinisterAppointedThisTurn()
+    {
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add("idf_founding");
+        var bridge = new SimBridge(g, Text);
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, Text, null);
+        var appoint = new Appoint("defense_minister", "zisling");
+        Assert.IsNull(bridge.Queue(appoint));
+        g.State.Attention = bridge.Price(appoint);   // the rest of the turn's Attention is spent
+        card.Render();
+        Assert.AreEqual("You don't have enough Attention left to answer this turn. End the turn and the decision goes to Aharon Zisling.", ui.Q<Label>("event-delegate").text);
+        var turn = bridge.EndTurn();
+        Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith("Delegated to Aharon Zisling:")), "End Turn hands it to the appointee");
+    }
+
+    /// <summary>A card with no office goes to the cabinet at End Turn (EventSystem.Delegate's "the cabinet"): the line says so.</summary>
+    [TestCase("en", "You don't have enough Attention left to answer this turn. End the turn and the decision goes to the cabinet.")]
+    [TestCase("he", "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי הממשלה.")]
+    public void WithTooLittleAttentionACardWithNoOfficeGoesToTheCabinet(string lang, string line)
+    {
+        var text = lang == "he" ? He : Text;
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.First(x => x.Id == "second_truce");
+        e.Office = ""; e.Text = "No office.";
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = e.From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        g.State.Attention = 0;
+        using var ui = new UiTestKit();
+        new EventCardPresenter(ui.Root, new SimBridge(g, text), text, null);
+        Assert.AreEqual(line, ui.Q<Label>("event-delegate").text);
     }
 }

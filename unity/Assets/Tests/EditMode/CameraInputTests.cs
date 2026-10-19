@@ -49,6 +49,18 @@ public class CameraInputTests
     }
 
     [Test]
+    public void APinchZoomsByTheFingersDistanceAtTheTouchpadRate()
+    {
+        // the fingers spread 100 px in one frame: one notch in (PixelsPerNotch, the touchpad's rate)
+        Assert.AreEqual(1f, CameraController.PinchNotches(new Vector2(0, 0), Vector2.zero, new Vector2(200, 0), new Vector2(100, 0)), 1e-4);
+        // they close 100 px: one notch out
+        Assert.AreEqual(-1f, CameraController.PinchNotches(new Vector2(0, 0), Vector2.zero, new Vector2(100, 0), new Vector2(-100, 0)), 1e-4);
+        // both fingers still (or moving together, the distance unchanged): no zoom
+        Assert.AreEqual(0f, CameraController.PinchNotches(new Vector2(0, 0), Vector2.zero, new Vector2(100, 0), Vector2.zero), 1e-4);
+        Assert.AreEqual(0f, CameraController.PinchNotches(new Vector2(50, 0), new Vector2(10, 0), new Vector2(160, 0), new Vector2(10, 0)), 1e-4);
+    }
+
+    [Test]
     public void PanMovesTheLookAtNorthAtYawZero()
     {
         var rig = NewRig();

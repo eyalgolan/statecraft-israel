@@ -170,6 +170,8 @@
                 </ui:VisualElement>
                 <ui:VisualElement class="gold-rule" />
                 <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
+                <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
+                <ui:Label name="event-delegate" class="event-delegate" />
                 <ui:VisualElement name="event-options" />
                 <!-- The count of other open decisions, and Hide: the card collapses to "Decision waiting" so the map can be
                      inspected (EventCardPresenter.Collapse); focus order: the options, then Hide. -->

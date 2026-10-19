@@ -44,16 +44,7 @@ namespace Statecraft.Sim
                 return new StepResult(s, why, rejected);
             }
 
-            var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
-            foreach (var cmd in commands)
-            {
-                if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
-                // A GDD order has no price in the legacy rules: refuse it before charging (R-CITY-001).
-                if (AttentionSystem.IsGddKind(cmd.Kind) && !c.IsGdd) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
-                var before = s.Attention;
-                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, why);
-                if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
-            }
+            RunOrders(c, s, commands, why, rejected);
             EventSystem.Delegate(c, s, why);
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
@@ -87,6 +78,36 @@ namespace Statecraft.Sim
             AttentionSystem.Refill(c, s);
             if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events
             return new StepResult(s, why, rejected);
+        }
+
+        /// <summary>Who End Turn would hand the event to (EventSystem.Delegate) if the turn ended with these orders: runs
+        /// them on a clone, as <see cref="Step"/> does, then asks EventSystem.DelegatedTo. Never mutates <paramref name="state"/>.</summary>
+        public static Person? DelegatedTo(Content c, GameState state, IReadOnlyList<Command> commands, string eventId)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
+            if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
+            CommandText.Validate(commands);
+            var s = state.Clone();
+            if (s.GameOver == null) RunOrders(c, s, commands, new List<Cause>(), new List<Rejection>());
+            return EventSystem.DelegatedTo(c, s, c.Events.First(e => e.Id == eventId));
+        }
+
+        /// <summary>The turn's orders in order: each pays Attention first; one that fails validation is refunded and
+        /// rejected with its reason. Step and DelegatedTo share it, so the dry run sees what End Turn will.</summary>
+        static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, List<Cause> why, List<Rejection> rejected)
+        {
+            var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
+            foreach (var cmd in commands)
+            {
+                if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
+                // A GDD order has no price in the legacy rules: refuse it before charging (R-CITY-001).
+                if (AttentionSystem.IsGddKind(cmd.Kind) && !c.IsGdd) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
+                var before = s.Attention;
+                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, why);
+                if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
+            }
         }
 
         /// <summary>Returns null when the command was carried out (a lost vote counts: it consumes the RNG draw and is

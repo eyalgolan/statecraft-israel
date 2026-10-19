@@ -8,10 +8,9 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Issue #707: MATKOT's single-building models at sourced places. They use the collection stream after the
+    /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
-    /// fail open. b11 and b21 remain catalogued but unplaced until a named, dated shikun estate before 15 January 1952 and
-    /// an artisan-workshop location are sourced.</summary>
+    /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
     public sealed class SpecialBuildingModels : MonoBehaviour
     {
         public const string Name = "SpecialBuildingModels";
@@ -21,9 +20,9 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The house the world scale is set by (m, real): the middle of the kit's default house, 7.5 to 10 m long.</summary>
         public const float ReferenceHouseM = 8.5f;
-        /// <summary>The one world scale of MATKOT's building models (the owner on v0.1.1, 18 October 2026: the buildings were
+        /// <summary>The one world scale of Tal Heuberger's building models (the owner on v0.1.1, 18 October 2026: the buildings were
         /// "way bigger then the train"): the reference house is as long as the locomotive's car of the steam train the map
-        /// runs (ServiceTrain: MATKOT's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize, about 816 m, in
+        /// runs (ServiceTrain: Tal Heuberger's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize, about 816 m, in
         /// ServiceTrain.Cars cars of about 204 m), so 204 / 8.5 = 24x a building's real size. The same rule as the #700
         /// buildings' scale fix (branch map/town-models-world-scale, SettlementKits.ModelScale).</summary>
         public const float WorldScale = RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize / ServiceTrain.Cars / ReferenceHouseM;
@@ -60,7 +59,9 @@ namespace Statecraft.Game.Map.Collection
         /// use sites.yaml's sourced dates and coordinates. Netanya's industry: the Jerusalem Post report of 28 July 1950 in
         /// the Phase 4 sourcing note (waypoint N5) puts "the area set aside for the new industrial zone" at the town's
         /// entrance, and Netanya's Kiryat Eliezer Kaplan industrial zone was inaugurated in 1949 (en.wiki Netanya, checked
-        /// 18 October 2026).</summary>
+        /// 18 October 2026). Ramat HaHayal's shikun: most of its families moved in during 1950 (Balslev, Iyunim Bitkumat
+        /// Israel 23, p. 247, in the shikun research note), and the owner ruled on 18 October 2026 ("Ramat HaHayal, 1950",
+        /// #1068) that the year-level date starts on 1 January 1951; its point is Wikidata Q2776362's (checked 2026-10-18).</summary>
         static readonly Want[] All =
         {
             new Want("latrun_tegart", Tegart, new DateTime(1948, 5, 15), 34.98139, 31.83194,
@@ -69,6 +70,9 @@ namespace Statecraft.Game.Map.Collection
             new Want("camp_80_barracks", Barracks, new DateTime(1948, 7, 13), 34.9866, 32.4628, "content/sites.yaml: camp_80"),
             new Want("netanya_factory", Factory, new DateTime(1950, 7, 28), 34.8567, 32.3286,
                 "research_notes/gdd-phase-4-sourcing.md: N5; https://en.wikipedia.org/wiki/Netanya (checked 2026-10-18)"),
+            new Want("ramat_hahayal_shikun", Shikun, new DateTime(1951, 1, 1), 34.8365083, 32.1152583,
+                "research_notes/Map/shikun-before-1952.md: 1 (Balslev, Iyunim Bitkumat Israel 23, p. 247, " +
+                "https://in.bgu.ac.il/bgi/iyunim/23/yaron-balslev.pdf); https://www.wikidata.org/wiki/Q2776362 (checked 2026-10-18)"),
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => date >= x.From).ToList();

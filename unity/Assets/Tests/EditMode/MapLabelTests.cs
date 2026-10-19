@@ -278,7 +278,7 @@ public class MapLabelTests
         Assert.IsEmpty(failures, string.Join("\n", failures));
     }
 
-    /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and MATKOT's Tegart fort model (SpecialBuildingModels,
+    /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and Tal Heuberger's Tegart fort model (SpecialBuildingModels,
     /// streamed close up from 15 May 1948) do not cover each other. With the real prefab placed and the camera at 30 km over
     /// Latrun (inside the model's close zoom), the pill is shown and its rectangle clears the model's projected bounds.</summary>
     [UnityTest]
@@ -1273,5 +1273,56 @@ public class MapLabelTests
             Assert.LessOrEqual(mOn, MaxRatio * mOff, $"keeping clear of the units: {mOn:0} us against {mOff:0} us without them");
         }
         finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>Issue #669: the 1948 Collection's craft stay off the labels. At the 60 km gameplay view over Tel Aviv and Jaffa,
+    /// Haifa and Acre, and Lod, on the Altalena's turn (15 June 1948) and in Magic Carpet's main wave (15 August 1949), no
+    /// shown pill meets a drawn craft (its renderers' world box, every corner through the camera's pixels): the pills keep
+    /// clear of the craft's boxes as GameRoot passes them (SeaAirCollection.KeepClear).</summary>
+    [UnityTest]
+    public IEnumerator TheCollectionCraftStayOffEveryShownPill()
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var saved = Statecraft.Game.Map.Collection.SeaAirCollection.Request;
+        Statecraft.Game.Map.Collection.SeaAirCollection.Request = (id, d, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(
+            Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, d)));
+        var hd = new HdPanel(cam);
+        Statecraft.Game.Map.Collection.SeaAirCollection? craftLayer = null;
+        // As GameRoot wires it: the names keep clear of the craft's boxes (SeaAirCollection.KeepClear), as of the unit tokens.
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => craftLayer != null ? craftLayer.KeepClear : null);
+        int checkedCraft = 0;
+        try
+        {
+            foreach (var date in new[] { new System.DateTime(1948, 6, 15), new System.DateTime(1949, 8, 15) })
+            {
+                var layer = craftLayer = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, date, System.Array.Empty<Statecraft.Sim.Placement>(), c)!;
+                Assert.AreEqual(4, layer.Placed.Count, "every craft drawn on " + date.ToString("d MMM yyyy"));
+                foreach (var (lon, lat) in new[] { (34.76, 32.07), (35.03, 32.86), (34.88, 32.0) })
+                {
+                    Pose(lon, lat, 60000f);
+                    yield return Settle(labels);
+                    var pills = labels.Labels.Where(l => Shown(l.parent)).Concat(labels.LocalityLabels.Where(l => Shown(l.parent))).Select(l => l.worldBound).ToList();
+                    Assert.Greater(pills.Count, 0, $"pills shown over {lon}, {lat}");
+                    foreach (Transform craft in layer.transform)
+                    {
+                        var b = craft.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((a, x) => { a.Encapsulate(x); return a; });
+                        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue; bool front = true;
+                        for (int k = 0; k < 8; k++)
+                        {
+                            var corner = new Vector3((k & 1) == 0 ? b.min.x : b.max.x, (k & 2) == 0 ? b.min.y : b.max.y, (k & 4) == 0 ? b.min.z : b.max.z);
+                            var q = hd.ToPanel(corner, out var inFront); front &= inFront;
+                            x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                        }
+                        var rect = Rect.MinMaxRect(x0, y0, x1, y1);
+                        if (!front || !rect.Overlaps(hd.Root.worldBound)) continue;   // off this view
+                        checkedCraft++;
+                        foreach (var pill in pills)
+                            Assert.IsFalse(pill.Overlaps(rect), $"{craft.name} {rect} under a pill {pill} at {lon}, {lat} on {date:d MMM yyyy}");
+                    }
+                }
+            }
+            Assert.GreaterOrEqual(checkedCraft, 5, "the craft were in view");
+        }
+        finally { labels.Dispose(); hd.Dispose(); Statecraft.Game.Map.Collection.SeaAirCollection.Request = saved; }
     }
 }

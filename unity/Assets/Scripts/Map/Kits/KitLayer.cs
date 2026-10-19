@@ -23,6 +23,10 @@ namespace Statecraft.Game.Map.Kits
             public int Buildings, Vertices, Triangles, Trees, CorridorSegments, Localities, LocalityBuildings, Camps, Tents, Draws, Boats, Models, CloseVertices; public float BuildMs, PlantMs;
             /// <summary>Every footprint the build claimed (towns, localities, camps), in claim order (MapScene.KitFootprints).</summary>
             public IReadOnlyList<(Vector2 centre, float radius, string id)> Footprints = System.Array.Empty<(Vector2, float, string)>();
+            /// <summary>The boats SeaCraft placed and the harbour works the kits recorded ("breakwater" pieces), so the 1948
+            /// Collection's craft (SeaAirCollection, #669) keep clear of both.</summary>
+            public IReadOnlyList<SeaCraft.Craft> Crafts = System.Array.Empty<SeaCraft.Craft>();
+            public IReadOnlyList<SettlementKits.Placed> HarbourWorks = System.Array.Empty<SettlementKits.Placed>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
                 $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} boats={Boats} draws={Draws} models={Models} close_vertices={CloseVertices}";
@@ -86,7 +90,10 @@ namespace Statecraft.Game.Map.Kits
                 SeaCraft.Draw(crafts, ground, km);
                 Add(SeaCraftName, km.ToMesh(SeaCraftName));
             }
-            stats.Boats = crafts.Count;
+            stats.Boats = crafts.Count; stats.Crafts = crafts;
+            var works = new List<SettlementKits.Placed>();
+            foreach (var p in placed) if (p.Kind == "breakwater") works.Add(p);
+            stats.HarbourWorks = works;
             // Issue #659: the buildings' models, instanced up close (without a complete model list, the kits at every zoom).
             var townGo = new GameObject(TownModelsName);
             townGo.transform.SetParent(root.transform, false);
