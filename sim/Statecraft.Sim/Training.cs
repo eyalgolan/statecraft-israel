@@ -74,6 +74,10 @@ namespace Statecraft.Sim
             if (!HasFacility(c, s, city, type.Facility)) return $"{name} has no {Place(type.Facility)}";
             var idle = Idle(x);
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
+            // R-ARMS-003 (D-G6, Q-UNIT-3): a recruit group takes arms_per_recruit_group Arms when its training starts; a short
+            // stock refuses the order. Pioneer training takes none. The cohort keeps the count, and cancelling (R-TRAIN-002) returns it.
+            var arms = type.Id == "recruit" ? (long)count * c.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value : 0;
+            if (arms > s.Arms) return FormattableString.Invariant($"{name}: not enough Arms for {Course(type.Facility)} (need {arms}, have {s.Arms})");
             var cost = count * type.TrainingCost;
             // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.
             EconomySystem.PayOrBorrow(c, s, cost, "for training", why);
@@ -85,14 +89,20 @@ namespace Statecraft.Sim
             // The plan's reading of D-A6, not part of the owner's ruling: the turn of the order is the first training turn, so
             // with training_turns 3 an order on turn T is done at the end of T+2 (TrainingTests.ACohortOrderedOnTurnTWithThreeTurnsFinishesAtTheEndOfTurnTPlusTwo). For "done at the end of
             // T+3", open the cohort with type.TrainingTurns + 1 here; nothing else changes.
-            s.Cohorts.Add(id, new Cohort(id, type.Id, city, count, type.TrainingTurns));
+            s.Cohorts.Add(id, new Cohort(id, type.Id, city, count, type.TrainingTurns, (int)arms));
             why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} began {Course(type.Facility)}, cost {PlayerText.Money(c, "treasury", cost)}"));
+            if (arms > 0)
+            {
+                s.Arms -= (int)arms;
+                why.Add(new Cause("city", "arms", -arms, FormattableString.Invariant($"{name}: {Course(type.Facility)} took {arms} Arms")));
+            }
             return null;
         }
 
         /// <summary>R-TRAIN-002 (D-A3): the cohort's people return to its city as civilians without work, and the Money spent is
-        /// not returned. Refused, state untouched, for a cohort that does not exist, including one that has finished. Step has
-        /// already refused it in the legacy loop.</summary>
+        /// not returned. The Arms its training took go back to the pool (R-ARMS-003; owner, #1047: "Refund on cancel"). Refused,
+        /// state untouched, for a cohort that does not exist, including one that has finished. Step has already refused it in
+        /// the legacy loop.</summary>
         public static string? Cancel(Content c, GameState s, int cohort, List<Cause> why)
         {
             if (!s.Cohorts.TryGetValue(cohort, out var k)) return "There is no such training group";
@@ -102,6 +112,12 @@ namespace Statecraft.Sim
             var type = c.UnitTypes.First(t => t.Id == k.Type);
             why.Add(new Cause("city", k.City, k.Count,
                 $"{PlayerText.Settlement(c, k.City)}: {Groups(k.Count)} left {Course(type.Facility)}; the Money spent is not returned"));
+            if (k.Arms > 0)
+            {
+                var back = (int)Math.Min(k.Arms, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as an event or a purchase leaves it
+                s.Arms += back;
+                why.Add(new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, k.City)}: {Course(type.Facility)} returned {back} Arms")));
+            }
             return null;
         }
 

@@ -135,3 +135,4 @@ city{
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 food=0,1390,1390
 exhausted=3
+arms=12

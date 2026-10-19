@@ -93,6 +93,14 @@ namespace Statecraft.Sim
                     s.Food = (int)(s.Food + applied);
                     change = applied;
                 }
+                else if (fx.Target == Pools.ArmsTarget)
+                {
+                    // R-EFX-001 (#781): the Arms stock moves exactly as the Food stock does above.
+                    var want = (long)Math.Round(delta, MidpointRounding.AwayFromZero);
+                    var applied = Math.Max(-(long)s.Arms, Math.Min(want, (long)int.MaxValue - s.Arms));
+                    s.Arms = (int)(s.Arms + applied);
+                    change = applied;
+                }
                 else if (fx.Target == "fx_reserves") s.FxReserves += delta;
                 else change = EffectsSystem.Shift(c, s, fx.Target, delta);
                 why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})"));
@@ -158,7 +166,7 @@ namespace Statecraft.Sim
 
         /// <summary>R-EVT-005: every effect of an option, in the order choosing it applies them (Resolve): the numeric
         /// effects, the unit grants and city effects (R-EFX-006), the policies it sets (by id), the security level, then rejoin.
-        /// Each amount is the option's own; Resolve may apply less where an indicator meets its bound or the Food stock its floor, and rounds Food to whole units. The
+        /// Each amount is the option's own; Resolve may apply less where an indicator meets its bound or the Food or Arms stock its floor, and rounds both to whole units. The
         /// event card will read this list (Q-EVT-4, owner 17 October 2026; Phase 7 PR 8), so no number is computed in Unity.</summary>
         public static List<Cause> OptionEffects(Content c, GameState s, EventOption o)
         {

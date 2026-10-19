@@ -139,8 +139,9 @@ namespace Statecraft.Sim
     }
 
     /// <summary>A group of a city's people in training (GDD "Progression"; R-TRAIN-001): <see cref="Count"/> population units
-    /// becoming <see cref="Type"/> (a unit_types.yaml id with a facility) in <see cref="TurnsLeft"/> more turns. Immutable; a
-    /// change replaces the record.</summary>
+    /// becoming <see cref="Type"/> (a unit_types.yaml id with a facility) in <see cref="TurnsLeft"/> more turns, holding the
+    /// <see cref="Arms"/> its training took when it started (R-ARMS-003), which a cancel returns. Immutable; a change replaces the
+    /// record.</summary>
     public sealed class Cohort
     {
         public int Id { get; }
@@ -148,14 +149,17 @@ namespace Statecraft.Sim
         public string City { get; }
         public int Count { get; }
         public int TurnsLeft { get; }
+        public int Arms { get; }
 
-        public Cohort(int id, string type, string city, int count, int turnsLeft) { Id = id; Type = type; City = city; Count = count; TurnsLeft = turnsLeft; }
+        public Cohort(int id, string type, string city, int count, int turnsLeft, int arms = 0) { Id = id; Type = type; City = city; Count = count; TurnsLeft = turnsLeft; Arms = arms; }
 
         /// <summary>The same cohort with <paramref name="turnsLeft"/> turns to go.</summary>
-        public Cohort WithTurnsLeft(int turnsLeft) => new Cohort(Id, Type, City, Count, turnsLeft);
+        public Cohort WithTurnsLeft(int turnsLeft) => new Cohort(Id, Type, City, Count, turnsLeft, Arms);
 
-        /// <summary>The record as the state hash writes it.</summary>
-        public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2}x{3}/{4}", Id, Type, City, Count, TurnsLeft);
+        /// <summary>The record as the state hash writes it. Arms only when the cohort holds some, so cohorts without Arms hash as
+        /// before.</summary>
+        public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2}x{3}/{4}", Id, Type, City, Count, TurnsLeft)
+            + (Arms == 0 ? "" : "|arms=" + Arms.ToString(CultureInfo.InvariantCulture));
     }
 
     /// <summary>Pioneer work at a designated site (sites.yaml; R-SITE-001 to R-SITE-003): <see cref="Unit"/> building it with

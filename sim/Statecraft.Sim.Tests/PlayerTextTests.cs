@@ -470,5 +470,12 @@ public class PlayerTextTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         Assert.Equal("Food +7 units", PlayerText.Change(c, Pools.FoodTarget, 7));
     }
+
+    [Fact]
+    public void ChangeRendersTheArmsStockInUnits()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        Assert.Equal("Arms -2 units", PlayerText.Change(c, Pools.ArmsTarget, -2));
+    }
 }
 

@@ -13,7 +13,7 @@
              the column in the tree, so the column's buttons stay above it and usable. -->
         <ui:VisualElement name="event-gutter" class="event-gutter" />
         <ui:VisualElement name="left-column" class="left-column" picking-mode="Ignore">
-            <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /><ui:VisualElement class="nav-badge" picking-mode="Ignore" /></ui:Button>
             <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>

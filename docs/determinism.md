@@ -28,9 +28,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `9922495a92307f87d7b5338cd8501fb60ad0424ea6b19ef2d1ec55c44a8bdfb8` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `722d90a214d8f328fa9e534ab19a8e973de21cdee645aaa6983fe88b3cc55c08` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `722d90a214d8f328fa9e534ab19a8e973de21cdee645aaa6983fe88b3cc55c08` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `4f1202cfa20e1f3cc7521c7b3baac386330b77fdbacc25928d781b1659747340` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `283349502eb580123fcea6bf64ca174f913627132a1325f3dbf00743435623e2` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `283349502eb580123fcea6bf64ca174f913627132a1325f3dbf00743435623e2` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -39,7 +39,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
+ministers): `SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -50,7 +50,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
+  --expect "SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -298,3 +298,11 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #457 item 9 (official records) | 1952 | `722d90a2` | owner ruling "Follow the official records" (18 October 2026, #457): `education_registration_1951` opens on 12 February 1951, its first cited plenum record (was 29 November 1950), so the card fires on 15 February 1951 instead of 15 December 1950 and its morale cost lands two turns later. At the end only coalition stability moves (0.443222 to 0.443592). The same PR's Education vacancy from 19 May to 8 October 1951 (item 8) and the 14 May 1948 start (item 2, unchanged) move no golden: measured with the event date as before (was `548a6acc`) |
 | #457 item 9 (official records) | mvp-end | `722d90a2` | same; the same run as hash1952 (was `548a6acc`) |
 | #457 item 9 (official records) | scenario-mvp-defeat | `19143463` | same card date; at the end only coalition stability moves (0.457037 to 0.457407), and the scenario still ends in `defeat_economy` on 15 January 1952 (was `d1e0dcf6`) |
+| GDD Phase 2 PR 3b | 1950 | `4f1202cf` | the national Arms pool (R-ARMS-001 to R-ARMS-003, #781; owner, 18 October 2026: "Approve as drafted"): the new `arms=` line, 12 at the start. The reference player trains no recruits and buys no Arms, so it stays 12 and nothing else moves (was `9922495a`) |
+| GDD Phase 2 PR 3b | 1952 | `28334950` | same; `arms=12` at the end (was `722d90a2`) |
+| GDD Phase 2 PR 3b | mvp-end | `28334950` | same; the same run as hash1952 (was `722d90a2`) |
+| GDD Phase 2 PR 3b | smoke5 | `8d000459` | same; `arms=12` (was `3005405d`) |
+| GDD Phase 2 PR 3b | scenario-cautious | `a6108c91` | same; no scenario trains recruits or buys Arms, so `arms=12` (was `6507ddc3`) |
+| GDD Phase 2 PR 3b | scenario-reckless | `a0f094a1` | same (was `8041988a`) |
+| GDD Phase 2 PR 3b | scenario-mvp-absorb-first | `dee4f039` | same (was `be13c409`) |
+| GDD Phase 2 PR 3b | scenario-mvp-defeat | `e71076f7` | same; the defeat run is unchanged apart from `arms=12` (was `19143463`) |

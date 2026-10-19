@@ -104,6 +104,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>The left icon column (promo 03): the screens' buttons (ScreenNav.Screens).</summary>
         public const string RailName = "left-column";
+        /// <summary>#1109: the class on a side-menu button whose screen has something the player can do this turn
+        /// (Statecraft.uss shows the button's BadgeClass dot). Only Cabinet has one: a vacant seat to fill (SimBridge.Vacancies).</summary>
+        public const string ActionClass = "nav-action", BadgeClass = "nav-badge";
         readonly HoverTip? railTips, barTips;
         /// <summary>The meters' explanations under the bar (#1037): their words and the turn's causes.</summary>
         readonly MeterTip? meterTip;
@@ -421,6 +424,10 @@ namespace Statecraft.Game.UI
             Set("cohesion", m.Cohesion);
             said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);
+            // #1109: a vacant seat the player can fill lights the Cabinet disc's badge, and its tip says why.
+            var cabinet = root.Q<Button>("nav-cabinet"); bool vacant = bridge.Vacancies.Count > 0;
+            cabinet.EnableInClassList(ActionClass, vacant);
+            cabinet.tooltip = vacant ? text["hud.nav.cabinet_vacant"] : cabinet.text;
             meterTip?.Refresh();   // an open tip follows the new words
         }
     }

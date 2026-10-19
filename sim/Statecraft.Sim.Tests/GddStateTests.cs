@@ -67,7 +67,8 @@ public class GddStateTests
         Assert.Equal(units.Length, new HashSet<string>(Array.ConvertAll(units, U)).Count);
         string K(Cohort k) { var s = new GameState(); s.Cohorts.Add(k.Id, k); return s.Hash(); }
         var cohorts = new[] { new Cohort(1, "recruit", "a", 1, 1), new Cohort(2, "recruit", "a", 1, 1), new Cohort(1, "halutz", "a", 1, 1),
-                              new Cohort(1, "recruit", "b", 1, 1), new Cohort(1, "recruit", "a", 2, 1), new Cohort(1, "recruit", "a", 1, 2) };
+                              new Cohort(1, "recruit", "b", 1, 1), new Cohort(1, "recruit", "a", 2, 1), new Cohort(1, "recruit", "a", 1, 2),
+                              new Cohort(1, "recruit", "a", 1, 1, arms: 1) };
         Assert.Equal(cohorts.Length, new HashSet<string>(Array.ConvertAll(cohorts, K)).Count);
         string W(SiteWork w) { var s = new GameState(); s.Sites[w.Site] = w; return s.Hash(); }
         var works = new[] { new SiteWork("a", 1, 1, null), new SiteWork("b", 1, 1, null), new SiteWork("a", 2, 1, null), new SiteWork("a", 1, 2, null),
