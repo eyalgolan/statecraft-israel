@@ -130,13 +130,14 @@ namespace Statecraft.HexTiles.Painter
             {
                 if (g.Name != lastGroup) { lines.Add(""); lines.Add($"[{g.Name}]"); lastGroup = g.Name; }
                 var thumb = HexPalette.LoadThumb(thumbsDir, e);
+                bool has = thumb != null;   // read before the texture is destroyed: a destroyed texture equals null
                 if (thumb != null)
                 {
                     var px = Scaled(thumb, cell);
                     sheet.SetPixels(c * cell, sheet.height - (r + 1) * cell, cell, cell, px);
                     Object.DestroyImmediate(thumb);
                 }
-                lines.Add($"  row {r + 1}, col {c + 1}: {e.Id}  {e.Title}{(thumb == null ? "  (no thumbnail)" : "")}");
+                lines.Add($"  row {r + 1}, col {c + 1}: {e.Id}  {e.Title}{(has ? "" : "  (no thumbnail)")}");
             }
             sheet.Apply();
             Directory.CreateDirectory(Path.GetDirectoryName(pngPath)!);
