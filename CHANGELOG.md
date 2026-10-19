@@ -7,6 +7,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+### Fixed
+- The event photograph keeps its 16:9 header when card padding changes without an outer resize (#649).
+
+## [0.1.2] - 2026-10-19
+
 ### Added
 - Ten more models by Tal Heuberger, offered only in #336, are imported into the 1948 Collection and stream after the
   first frame: the eight figures of #708 (an Arab villager, a builder, an elder immigrant, an immigrant child, an
@@ -207,7 +212,6 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   through one retry helper (`StreamingFetch`): 408, 429, 5xx and no response are retried after 0.5, 1 and 2 s, or a
   longer `Retry-After` up to 10 s, four attempts in all, and then fail as before. Desktop and the editor still read
   the files.
-- The event photograph keeps its 16:9 header when card padding changes without an outer resize (#649).
 
 ## [0.1.1] - 2026-10-18
 
