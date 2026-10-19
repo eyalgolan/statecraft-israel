@@ -57,7 +57,7 @@ public class TopBarTests
     /// score in the plate. <paramref name="widest"/> false keeps the turn-1 values. <paramref name="collapsed"/> (with
     /// <paramref name="withEvent"/>) hides the open card to its "Decision waiting" button, as Hide does.</summary>
     static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, UiText> check, bool widest = true, bool withEvent = false,
-                                bool collapsed = false)
+                                bool collapsed = false, System.Func<VisualElement, IEnumerator>? afterRender = null)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -110,12 +110,129 @@ public class TopBarTests
             for (int i = 0; i < 8; i++) yield return null;
             Assert.AreEqual(DisplayStyle.Flex, score.resolvedStyle.display, "precondition: the score shows, so its room is checked");
             check(root, text);
+            if (afterRender != null) yield return afterRender(root);
         }
         finally
         {
-            card?.Dispose(); dir?.Dispose(); hud?.Dispose();
-            Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            card?.Dispose(); dir?.Dispose();
+            try
+            {
+                var captionRow = root.Q(className: "meter-caption-row");
+                var beforeDispose = captionRow == null ? new StyleEnum<Wrap>(StyleKeyword.Null) : captionRow.style.flexWrap;
+                hud?.Dispose();
+                if (afterRender != null)
+                {
+                    Assert.IsNotNull(captionRow, "the real Game.uxml has its Security caption row");
+                    if (!hebrew) Assert.AreEqual(Wrap.Wrap, beforeDispose.value,
+                        "precondition: inline wrapping is still active immediately before HUD Dispose");
+                    Assert.AreEqual(StyleKeyword.Null, captionRow!.style.flexWrap.keyword,
+                        "HUD Dispose clears its inline Security caption-row wrapping");
+                }
+            }
+            finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
         }
+    }
+
+
+    [UnityTest]
+    public IEnumerator LandscapeSafeInsetsKeepCaptionInkDisjoint()
+    {
+        var problems = new List<string>();
+        foreach (bool he in new[] { false, true })
+            foreach (bool widest in new[] { false, true })
+                yield return Rendered(844, 390, he, (root, text) => { }, widest: widest,
+                    afterRender: root => CaptionInsetPhases(root, he, widest, problems));
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    static IEnumerator CaptionInsetPhases(VisualElement root, bool he, bool widest, List<string> problems)
+    {
+        var css = (l: 0f, r: 0f);
+        int reads = 0;
+        using var fit = new SafeAreaFit(root, () =>
+        {
+            reads++;
+            float scale = root.panel.scaledPixelsPerPoint;
+            return (SafeAreaFit.Panel(css.l, 1f, scale), SafeAreaFit.Panel(css.r, 1f, scale), 0f, 0f);
+        });
+        Rect viewport = default, startingBar = default;
+        string startingClasses = "";
+        var bar = root.Q("top-bar");
+        var inner = root.Q("root");
+        string Classes() => string.Join(",", inner.GetClasses().OrderBy(c => c)) + "/" + string.Join(",", bar.GetClasses().OrderBy(c => c));
+        foreach (var phase in new (string name, float l, float r)[]
+                 { ("zero", 0f, 0f), ("left47", 47f, 0f), ("right47", 0f, 47f), ("restored", 0f, 0f) })
+        {
+            css = (phase.l, phase.r);
+            int previousReads = reads;
+            string settledClasses = "";
+            float settledHeight = 0f;
+            for (int i = 0; i < 40; i++)
+            {
+                EditorApplication.QueuePlayerLoopUpdate(); yield return null;
+                if (i == 29) { settledClasses = Classes(); settledHeight = bar.layout.height; }
+                if (i >= 30)
+                {
+                    Assert.AreEqual(settledClasses, Classes(), phase.name + ": final ten frames keep the settled tiers");
+                    Assert.AreEqual(settledHeight, bar.layout.height, 1e-3f, phase.name + ": final ten frames keep the settled bar height");
+                }
+            }
+            Assert.Greater(reads, previousReads, "the actual scheduled reader must run");
+            float scale = root.panel.scaledPixelsPerPoint;
+            Assert.AreEqual(844f, root.worldBound.width * scale, 2f);
+            Assert.AreEqual(390f, root.worldBound.height * scale, 2f);
+            Assert.AreEqual(SafeAreaFit.Panel(css.l, 1f, scale), root.resolvedStyle.paddingLeft, 2f);
+            Assert.AreEqual(SafeAreaFit.Panel(css.r, 1f, scale), root.resolvedStyle.paddingRight, 2f);
+            if (phase.name == "zero") { viewport = root.worldBound; startingBar = bar.worldBound; startingClasses = Classes(); }
+            else Assert.AreEqual(viewport, root.worldBound, "stable viewport throughout side-inset changes");
+            if (phase.name == "restored")
+            {
+                Assert.AreEqual(startingClasses, Classes(), "removing the inset restores the original tiers");
+                Assert.AreEqual(startingBar, bar.worldBound, "removing the inset restores original bar bounds");
+            }
+            string at = $"{(he ? "he" : "en")} widest={widest} {phase.name}";
+            var labels = root.Q("top-bar").Query<Label>(className: "meter-name").ToList()
+                .Where(l => Shown(l) && !string.IsNullOrEmpty(l.text)).ToList();
+            Assert.AreEqual(8, labels.Count, "seven captions and Security level must be exercised");
+            var ink = new List<(Label label, Rect bounds)>();
+            foreach (var l in labels)
+            {
+                float fontCss = l.resolvedStyle.fontSize * scale;
+                if (fontCss < 11.95f) problems.Add($"{at}: '{l.text}' below12px floor: {fontCss}");
+                var box = l.contentRect;
+                var natural = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                bool wrap = l.resolvedStyle.whiteSpace == WhiteSpace.Normal;
+                var measured = wrap ? l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined) : natural;
+                float width = wrap ? Mathf.Min(natural.x, box.width) : natural.x;
+                float x = box.x;
+                var align = l.resolvedStyle.unityTextAlign;
+                if (align == TextAnchor.UpperRight || align == TextAnchor.MiddleRight || align == TextAnchor.LowerRight) x += box.width - width;
+                else if (align == TextAnchor.UpperCenter || align == TextAnchor.MiddleCenter || align == TextAnchor.LowerCenter) x += (box.width - width) / 2f;
+                var origin = l.LocalToWorld(new Vector2(x, box.y));
+                var r = new Rect(origin.x, origin.y, width, measured.y);
+                ink.Add((l, r));
+                foreach (var word in l.text.Split(' '))
+                    if (wrap && l.MeasureTextSize(word, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x > box.width + 1f / scale)
+                        problems.Add($"{at}: '{word}' would break inside a word");
+                if (!Inside(r, root.Q("top-bar").worldBound, 1f / scale)) problems.Add($"{at}: '{l.text}' leaves usable bar");
+                TestContext.WriteLine($"CAPTIONINK {at} '{l.text}' bounds={r} box={l.worldBound} fontCSS={fontCss}");
+            }
+            for (int i = 0; i < ink.Count; i++)
+                for (int j = i + 1; j < ink.Count; j++)
+                {
+                    var a = ink[i].bounds; var b = ink[j].bounds;
+                    float x = Mathf.Min(a.xMax, b.xMax) - Mathf.Max(a.xMin, b.xMin);
+                    float y = Mathf.Min(a.yMax, b.yMax) - Mathf.Max(a.yMin, b.yMin);
+                    if (x * scale > 0.5f && y * scale > 0.5f)
+                        problems.Add($"{at}: '{ink[i].label.text}' overlaps '{ink[j].label.text}' by{x * scale}CSSpx");
+                }
+        }
+        // Leave the real EN fit-triggered wrapping active so the fixture's Dispose assertion is not vacuous.
+        css = (47f, 0f);
+        for (int i = 0; i < 40; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        if (!he)
+            Assert.AreEqual(Wrap.Wrap, root.Q(className: "meter-caption-row").style.flexWrap.value,
+                "precondition: real scheduled left inset activated inline caption-row wrapping before Dispose");
     }
 
     /// <summary>A label's text fits its box: on one line, or wrapped within its height (InfoPanelLayoutTests).</summary>

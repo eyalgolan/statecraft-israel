@@ -98,6 +98,15 @@ namespace Statecraft.Game.Map
             var overUi = IsOverUi != null && IsOverUi(pos);
             Boot.DiagLog.NavLine(FormattableString.Invariant($"map click at ({pos.x:0}, {pos.y:0}) overUi={overUi}"));
             if (overUi) return false;                                    // the UI is asked first, whatever else is missing
+            return PickAt(pos);
+        }
+
+        /// <summary>The pick without the UI check: the hex under <paramref name="pos"/> (screen pixels) is outlined and raised
+        /// as HexClicked, as for a click. The keyboard's map stop (MapFocusPresenter, #41 B1b) picks here at the projected
+        /// look-at point: that is not a pointer, and on a narrow window the info panel may sit over the centre. Returns
+        /// whether a hex was picked.</summary>
+        public bool PickAt(Vector2 pos)
+        {
             if (Map == null || Map.Terrain == null) return false;
             var cam = Camera.main;
             var collider = Map.Terrain.GetComponent<TerrainCollider>();

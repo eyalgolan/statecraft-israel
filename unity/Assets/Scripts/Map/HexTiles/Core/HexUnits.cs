@@ -106,6 +106,7 @@ namespace Statecraft.HexTiles
             this.surface = surface; size = sizeM; facing = facingDeg;
             path = hexes.Select(h => HexGeometry.Centre(h.q, h.r, sizeM)).ToList();
             for (int i = 1; i < path.Count; i++) length += Vector3.Distance(path[i - 1], path[i]);
+            Material? fallbackMaterial = null;
             foreach (var m in unit.Members)
             {
                 var prefab = HexModels.Prefab(m.Model);
@@ -119,6 +120,12 @@ namespace Statecraft.HexTiles
                     go = GameObject.CreatePrimitive(m.StandIn == StandIn.Box ? PrimitiveType.Cube : PrimitiveType.Capsule);
                     go.transform.SetParent(parent, false);
                     Object.DestroyImmediate(go.GetComponent<Collider>());
+                    if (fallbackMaterial == null)
+                    {
+                        var assets = parent.GetComponentInParent<HexBoardAssets>() ?? parent.gameObject.AddComponent<HexBoardAssets>();
+                        fallbackMaterial = assets.Own(HexMaterials.New(HexMaterials.Lit));
+                    }
+                    go.GetComponent<MeshRenderer>().sharedMaterial = fallbackMaterial;
                 }
                 var b = HexModels.Bounds(go);
                 float scale = m.ByWidth ? m.HeightShare * sizeM / Mathf.Max(b.size.x, b.size.z) : m.HeightShare * sizeM / Mathf.Max(b.size.y, 1e-4f);
