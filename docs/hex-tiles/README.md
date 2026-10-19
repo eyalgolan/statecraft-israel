@@ -445,6 +445,7 @@ the shipped b*-v2 town models at full detail.
   Collection figures (`HexModels.FigureAliases`, `Assets/Art/Collection/<figure>/<figure>-near|far.prefab`).
   - Our own decimated copies (`characters_to_fbx.py`) had lost faces, 2.7 to 6.5% see-through.
   - Soldiers take `near`. Townspeople take `far`, except c01, whose far level is holed.
+  - The grazing flock's sheep and donkey take `far`; their decimated copies were 6 to 8% see-through.
 - **In a player** the Collection streams from bundles, so the hex tiles still draw the local proto figures, then
   stand-ins. Wiring the bundles in is a follow-up.
 - **No walk cycle.** The Collection's near figures have an idle clip only, so a moving squad glides.
