@@ -260,9 +260,8 @@ namespace Statecraft.Game.UI
             // From their runtime forms when they match the YAML (issue #321: boot time), the sub-districts as the map read them.
             var regions = new MapRegions(map.SubdistrictsFor(inputs.Map.RegionsTsv, inputs.Map.RegionsYaml, Debug.LogWarning),
                 string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
-                string.IsNullOrWhiteSpace(inputs.Map.ControlYaml) ? null : Control1948.ReadRuntimeOrYaml(inputs.Map.ControlTsv, inputs.Map.ControlYaml, Debug.LogWarning));
+                map.Control);   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
             Regions = regions;
-            map.Control = regions.Control;   // the road vehicles stand only where Israel held the ground (#725)
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {

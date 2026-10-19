@@ -59,11 +59,12 @@ public class RoadVehiclesTests
 
     static GameObject Prefab(string id) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
 
-    /// <summary>A built map with the control layer (as GameRoot gives it), its routes rebuilt at <paramref name="date"/>.</summary>
+    /// <summary>A built map with the control layer (as the map reads it; without <paramref name="control"/>, none), its routes
+    /// rebuilt at <paramref name="date"/>.</summary>
     (MapScene map, RoadVehicles layer) Build(DateTime date, RouteLayer.TrainMode train = RouteLayer.TrainMode.None, bool control = true)
     {
         var map = RouteTests.BuildMap();
-        if (control) map.Control = Control();
+        map.Control = control ? Control() : null;
         Object.DestroyImmediate(RouteTests.RoutesRoot(map).gameObject);
         asked.Clear(); trainAsked.Clear();   // the map's own build asked too; that layer is gone
         RouteLayer.Build(map.Terrain, map.Frame, Routes(), train, date, map: map);

@@ -361,6 +361,7 @@ namespace Statecraft.Sim
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives
                 .OrderBy(o => o.Id, StringComparer.Ordinal).ToList() ?? new List<Objective>();
             Validate(c, settlementIds);
+            ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
             if (c.IsGdd)
             {
                 // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so
@@ -375,6 +376,20 @@ namespace Statecraft.Sim
             c.BuildWindows();
             c.Hash = HashOf(read);
             return c;
+        }
+
+        /// <summary>The map editor's overrides (#1009), applied last, once the generated map inputs have been read and
+        /// checked: terrain and location moves here, so every caller of the sim sees them; control in the map, the only
+        /// reader of the control file. The file is optional (no file, no overrides) and is in the content hash.</summary>
+        static void ApplyMapOverrides(Func<string, string?> readFile, Content c, List<string> settlementIds)
+        {
+            string? text;
+            try { text = readFile(MapOverrides.FileName); }
+            catch (IOException e) { throw new ContentException(MapOverrides.FileName, "(file)", e.Message); }
+            catch (UnauthorizedAccessException e) { throw new ContentException(MapOverrides.FileName, "(file)", e.Message); }
+            var overrides = MapOverrides.Parse(text);
+            overrides.ValidateMap(c.Hexes, settlementIds.Concat(c.MapLocations.Select(l => l.Id)));
+            overrides.ApplyTo(c);
         }
 
         /// <summary>SHA-256 over "path\nlength\ntext" for each file, CRLF normalised to LF (a Windows checkout hashes alike).</summary>

@@ -34,6 +34,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   C-54 at Lod Airport from July 1949 to September 1950, during Operation Magic Carpet. They stream after the first frame,
   keep clear of the surf, the harbour works, the other boats and the labels, and a model that does not stream is left out
   (#669).
+- The map editor's override file (#1009 step 1): `content/map/overrides.yaml`, shipped empty, with its schema, loader and
+  checks. Applied after the generated map data, so regenerating keeps it: a land hex's terrain, one period of a hex's
+  control (owner, "One period at a time") and a settlement's or map location's hex (its id, names and sources stay). The
+  sim applies terrain and location moves, the map draws them and applies control. Bad input fails the load naming the file
+  and field. Nothing moves and no golden changes; the content hash does (the file is new content).
 - The military unit record (GDD Phase 5 PR 2): a unit can hold a side, a strength and a standing order with its target,
   each written into the state hash only when set, so a halutz hashes as before and no golden moves. `unit_types.yaml`
   gains Israel's `veteran_soldier` (infantry), `artillery` and `armoured_car` (armour) with a `side` and a `class`; the

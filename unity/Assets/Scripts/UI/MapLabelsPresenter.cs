@@ -253,7 +253,8 @@ namespace Statecraft.Game.UI
                 foreach (var loc in locations)
                 {
                     if (settlementIds.Contains(loc.Id)) continue;
-                    var s = new Settlement { Id = loc.Id, Name = loc.Name, NameHe = loc.NameHe, Type = LabelType(loc.Kind), Lon = loc.Lon, Lat = loc.Lat };
+                    var (lon, lat) = map.LocationPoint(loc.Id, loc.Lon, loc.Lat);   // a map-editor move (#1009) labels the new hex
+                    var s = new Settlement { Id = loc.Id, Name = loc.Name, NameHe = loc.NameHe, Type = LabelType(loc.Kind), Lon = lon, Lat = lat };
                     var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
                     slot.AddToClassList(SlotClass);
                     var label = new Label(LocationName(loc, hebrew)) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
