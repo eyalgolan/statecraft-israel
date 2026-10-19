@@ -1,9 +1,11 @@
-# Hebrew localisation guide for Statecraft: Israel (draft v0.4)
+# Hebrew localisation guide for Statecraft: Israel (draft v0.5)
 
 Status: DRAFT for discussion. Not approved by the maintainer. **New Hebrew recommendations need native review. Existing maintainer decisions, including gershayim in #630, remain adopted unless explicitly overruled.** Hebrew in this draft has been reviewed by a non-native reader and not finalised.
 Date: 17 October 2026. Evidence: upstream/main 46abd99c, 271 keys in each language. Cited strings were reconciled with the snapshot; new city, training, pioneer and other added strings have not received a full native-language review.
 
-Publication update, 18 October 2026: the examples above were audited at 46abd99c. Since that snapshot, #928 adopted a verb-free info.built date label after native review, and #930 recorded native reads of government, legislature and office names. Those accepted changes stand; the guide does not reopen their approval. This draft is based on db4350f8 and is not a full review of subsequent Hebrew changes.
+Publication update, 18 October 2026: the examples below were audited at 46abd99c. Since that snapshot, #928 adopted a verb-free info.built date label after native review, and #930 recorded native reads of government, legislature and office names. Those accepted changes stand; the guide does not reopen their approval. This draft is based on db4350f8 and is not a full review of subsequent Hebrew changes.
+
+Revision 19 October 2026: targeted implementation and terminology checks at upstream/main 9e571342 address the #970 review. The original snapshot count is dated, not a claim about every subsequent string or its native review.
 
 This guide covers how Hebrew is written and displayed in the game and its surfaces. It builds on the English UI microcopy guide and the glossary. It does not cover event card prose, which exists in English only today (HE-12).
 
@@ -16,13 +18,13 @@ This guide covers how Hebrew is written and displayed in the game and its surfac
 
 Rule status legend: **observed** (already the practice), **proposed** (new), **maintainer** (needs Eyal's decision), **native** (needs a native Hebrew reviewer), **code** (needs a code change).
 
-## Where the Hebrew stands today (checked facts)
+## Checked Hebrew behavior (original snapshot plus dated updates)
 
-- `strings.he.yaml` has 271 keys, the same keys and placeholders as `strings.en.yaml`, and repo tests enforce this (HE-01). The game loads the Hebrew strings only when Hebrew is asked for by hand: `?lang=he` on the web and `-lang he` on the desktop, with no visible switch yet (the file header; #193, #506). Eyal's 13 October status on #193 said the Hebrew font and right-to-left layout exist.
+- At 46abd99c, `strings.he.yaml` had 271 keys, the same keys and placeholders as `strings.en.yaml`, and repo tests enforce this (HE-01). Originally Hebrew was selected by hand with `?lang=he` on the web or `-lang he` on desktop (#193, #506). Since #1058 the Settings screen also offers English / עברית and applies the choice immediately. Eyal's 13 October status on #193 said the Hebrew font and right-to-left layout exist.
 - Each text takes its direction from its own first letter, and a repo test checks it. Older test comments about English dates predate the localized date paths in #687 and #701.
 - The map, top bar, Budget, Why and info panel dates now use localized date.* keys (#687, #701). PlayerText.Date remains English for other callers. Money and untranslated content still need separate review.
 - Since #543 `UiText.Format` puts an invisible left-to-right mark (U+200E) on both sides of each value it inserts into a Hebrew pattern, unless the value already contains Hebrew. An English date, an amount or a minus sign then reads as one run.
-- Event text and unit text are English only. Whether to localise content is open (#55). Since #558 the content files carry sourced Hebrew names for offices (with feminine forms where a woman held the office), parties, governments, legislatures and places. By `git grep`, Unity scripts read only the places' Hebrew names so far.
+- Event text and unit text are English only. Whether to localise content is open (#55). Since #558 the content files carry sourced Hebrew names for offices (with feminine forms where a woman held the office), parties, governments, legislatures and places. At 9e571342, Unity reads Hebrew names of places; #985 added people, office and party names in Cabinet refusal reasons, and #861 added ContentNames.Of for people, offices, parties, governments and legislature body_he in the Cabinet/Defence paths.
 
 ## Agent brief
 
@@ -44,7 +46,7 @@ Use when writing or reviewing Hebrew for Statecraft: Israel. Never present a pro
 ## Rules
 
 ### HE-01 Parity with English
-Status: observed. Reason: a missing key throws an error and a mismatched placeholder shows the wrong value. Today the two files have 271 keys each and no mismatch in key names or placeholder indexes (checked by script). The repo tests this: `test_hebrew_keys_match_english_and_every_value_is_nonempty` and `test_hebrew_keeps_complete_format_tokens_and_logical_text_order`, and the Unity test `InHebrewEveryStaticTextIsTheHebrewString`.
+Status: observed. Reason: a missing key throws an error and a mismatched placeholder shows the wrong value. At 46abd99c the two files had 271 keys each and no mismatch in key names or placeholder indexes (checked by script). The repo tests this: `test_hebrew_keys_match_english_and_every_value_is_nonempty` and `test_hebrew_keeps_complete_format_tokens_and_logical_text_order`, and the Unity test `InHebrewEveryStaticTextIsTheHebrewString`.
 Check: the repo's tests; a pattern search over the strings files as a local convenience.
 
 ### HE-02 One Hebrew word per concept
@@ -55,7 +57,7 @@ Settled by the owner in #550 (shown so nobody reopens them by mistake):
 - Minister rating: "כישורים" (`card.competence`), beside "נאמנות" (`card.loyalty`). It was "כשירות" on 14 October.
 - Ladder caption: "המצב הביטחוני" (`defence.section_ladder`). It was "דרגת ביטחון" on 14 October.
 - Words for the resource layer, decided by the owner on 15 October: כסף, מזון, נשק and תמיכה בינלאומית, with לכידות חברתית for Social cohesion (`docs/gdd/cutover-resource-layer.md`). The current top-bar captions are כסף (נטו) and תמיכה בינלאומית; these are adopted names, not pending choices.
-- Office, government and body names: sourced Hebrew forms are in the content since #558, from the Knesset's records where they give one (the `title_he`, `name_he` and `body_he` fields), and the English titles stay the player's default.
+- Office, government and body names: sourced Hebrew forms are in the content since #558, from the Knesset's records where they give one (the `title_he`, `name_he` and `body_he` fields), and the UI now reads the Hebrew forms through ContentNames.Of where supplied (#861); English remains the fallback for a missing form.
 
 Still open:
 - The ladder's own words. "דרגה {0} מתוך 5" (`hud.level`) and "הורדת הדרגה" (`defence.lower`) use one word, and "רמת ביטחון {1} מתוך 5" (`unit.national`) uses another. The five rung lines (`defence.rung1` to `defence.rung5`) number the steps, and the Hebrew README says "סולם הסלמה". English says "Level" and "security level".
@@ -67,13 +69,13 @@ For the native reviewer: choose the word for each open concept above and record 
 ### HE-03 Form of address
 Status: proposed, native; source read directly. Source: the Israeli National Digital Agency's guide to government language, section 1.3.3 (paraphrased; reuse terms not found). It says: do not address users only in the masculine singular; do not use slash or dot forms; first priority is a setting that adapts the form to the user; second, a second person without a gender marker (words ending in ך, ת or ה); then a neutral first person; then an action noun, an infinitive, or rephrasing such as "יש לשלוח".
 - The strings already follow this apart from one masculine imperative: "הסתר" (`event.hide`). Candidate: "הסתרה" or "להסתיר".
-- Five strings use "יש ל...": for example "יש ללחוץ על המפה כדי לבדוק משושה" (`info.hint`). Since #550 there are ten action-noun labels, among them "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
+- Examples using "יש ל..." include "יש ללחוץ על המפה כדי לבדוק משושה" (`info.hint`). Action-noun labels include "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
 - Two forms the reviewer should look at: "טוען את ההקלטה…" (`start.loading`), a masculine present-tense form with the program as its implied subject; and "המשך" (`start.continue`), which reads as a noun and also matches a masculine imperative. The Hebrew README addresses the reader as "אתם" (plural), a different choice again.
 - A player setting for the form of address is the guide's first priority. It is a design decision for the owner and is not proposed here.
 For the native reviewer: confirm that "יש ל..." and action nouns are right for a game, rule on the two forms above, and choose between "הסתרה" and "להסתיר".
 
 ### HE-04 Counts and plurals
-Status: observed in the Hebrew strings, maintainer for a mechanism. Reason: Hebrew has three plural categories for cardinal numbers (one, two, other; Unicode CLDR 48), and the game has no general way to choose a form by count. The Hebrew file already writes counts as "Label: N": "החלטות ממתינות נוספות: {0}" (`event.more`), which needs no plural form, and a repo test pins it as count-neutral. The top bar picks between two keys by count: "{0:0} נקודה" (`hud.say_point`) and "{0:0} נקודות" (`hud.say_points`). The objective early/late month messages also have singular variants selected in EventCardPresenter.ObjectiveLine. These explicit selectors do not provide a general language-category mechanism; native review must assess their wording.
+Status: observed in the Hebrew strings, maintainer for a mechanism. Reason: Hebrew has three plural categories for cardinal numbers (one, two, other; Unicode CLDR 48), and the game has no general way to choose a form by count. The Hebrew file already writes counts as "Label: N": "החלטות ממתינות נוספות: {0}" (`event.more`), which needs no plural form, and a repo test pins it as count-neutral. The top bar picks between two keys by count: "{0:0} נקודה" (`hud.say_point`) and "{0:0} נקודות" (`hud.say_points`). The objective early/late month messages also have singular variants selected in EventCardPresenter.ObjectiveLine. The city panel adds city.groups_one/city.groups and city.turns_one/city.turns (#869). These explicit selectors do not provide a general language-category mechanism; native review must assess their wording.
 - Gendered numerals (the form of a number depends on the gender of the counted noun) are a separate question. No source was found, and the rule is not written here.
 For the native reviewer: list any strings where a number appears next to a noun and say which form is needed, and say whether the two-key form of `hud.say_point` is enough for a digit numeral.
 
@@ -84,8 +86,8 @@ For the native reviewer: confirm full spelling for all UI text, and decide the s
 ### HE-06 Punctuation
 Status: gershayim adopted (maintainer, #630), subject to a native-reviewer overrule in #564. Other punctuation recommendations remain proposed for native review.
 - Hebrew uses ASCII punctuation: full stop, comma, question mark, exclamation mark and colon work as in English, and the question mark is not mirrored (r12a).
-- Acronyms take gershayim before the last letter, for example "הרמטכ״ל" and "האו״ם". The correct character is the typographic gershayim ״ (U+05F4); a straight quote is a common substitute because of keyboards, and r12a notes it sits too high (r12a). The Academy's own examples use the straight quote and do not discuss the typographic character. All four strings that have gershayim already use ״ (`defence.command`, `defence.ceasefire`, `defence.ceasefire_stops`, `defence.ceasefire_starts`), so the file is consistent. The abbreviation mark geresh is the typographic ׳ (U+05F3), in "מס׳ 1" (`start.source`) and in `info.hex`. The gershayim choice ״ was adopted in #630 for strings and content. A native reviewer may overrule it in #564. Geresh and quotation-style recommendations still need native review.
-- Quotation marks are not paired. In principle ” opens and closes and ’ nests, but straight quotes are common in practice (r12a). The strings contain no double quotation marks. The one string that put straight single quotes around a placeholder, `order.unknown`, no longer does: since #630 it reads "{0} לא מוכר" and shows no id (UI-07). No string quotes a value now. Choose one style before content needs it.
+- Acronyms take gershayim before the last letter, for example "הרמטכ״ל" and "האו״ם". The correct character is the typographic gershayim ״ (U+05F4); a straight quote is a common substitute because of keyboards, and r12a notes it sits too high (r12a). The Academy's own examples use the straight quote and do not discuss the typographic character. The strings checked use ״, including defence.command, defence.ceasefire, defence.ceasefire_stops, defence.ceasefire_starts and the newer cabinet.reason.is_chief_of_staff / cabinet.reason.not_career_officer (#985). The abbreviation mark geresh is the typographic ׳ (U+05F3), in "מס׳ 1" (`start.source`) and in `info.hex`. The gershayim choice ״ was adopted in #630 for strings and content. A native reviewer may overrule it in #564. Geresh and quotation-style recommendations still need native review.
+- Quotation marks are not paired. In principle ” opens and closes and ’ nests, but straight quotes are common in practice (r12a). The strings contain no double quotation marks. The one string that put straight single quotes around a placeholder, `order.unknown`, no longer does: since #651 it reads "לא ניתן לזהות {0}" and shows no id (UI-07). No string quotes a value now. Choose one style before content needs it.
 - #630 made the content match the strings. `content/offices.yaml` gives the Haganah post as רמטכ״ל ההגנה, and a scan of `content/parties.yaml` and `content/offices.yaml` found no straight quote inside a Hebrew word. The strings and the content now use ״ alike. The #630 description also lists a title and one person's name; those were not re-checked here.
 For the native reviewer: record any overrule of the adopted ״ convention, and choose a quotation style.
 
@@ -124,7 +126,7 @@ Status: observed in English, proposed for Hebrew. The settings.tiltshift string 
 Check: a pattern search over the strings files.
 
 ### HE-12 Content text (events, units, names)
-Status: maintainer (#55). Event text and unit labels arrive in English today. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, but only the places' names are read by the UI so far. Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. The native reviewer removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564). If content is localised, the same rules apply: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events need review by a native reader and the existing sensitivity review, in addition to the historian review.
+Status: maintainer (#55). Event text and unit labels arrive in English today. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. The native reviewer removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564). If content is localised, the same rules apply: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events need review by a native reader and the existing sensitivity review, in addition to the historian review.
 For the maintainer: whether and when content gets Hebrew, and who reviews it.
 
 ### HE-13 Tone
@@ -135,7 +137,7 @@ For the native reviewer: say what register suits a sober political strategy game
 Status: proposed review process. New Hebrew recommendations need native review; adopted maintainer rules remain in effect unless explicitly overruled. Keep a review log with the date, the reviewer's name, the keys or rules reviewed, and the changes made. A reviewer's change is recorded as a decision with its reason, so later edits do not undo it.
 
 ### HE-15 Agreement with a placeholder
-Status: proposed, native, code. Reason: a Hebrew verb, adjective or pronoun agrees in gender and number with its subject, and a placeholder can be filled with a name of either gender. Several sentences fix the form after `{0}` as masculine: "{0} מצביע עליו, אך הצבעתו אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}" (`budget.vote_advisory`), "{0} אינו מצביע על התקציב" (`budget.no_vote`) and "מתייעצת עם {0} · {1} חברים · הצבעותיו אינן מחייבות" (`cabinet.legislature_advisory`). The two bodies those sentences name appear to be feminine nouns in Hebrew ("הכנסת", "המועצה"). The problem is hidden today because the body's name arrives in English. Since #558 the content holds the Hebrew body names, and the owner already handles gender in data for office titles, with a separate feminine title field where a woman held the office. The UI does not read the body names yet, so the problem will show when it does. A body may need a gender field of its own, or the sentences a structure that does not need one.
+Status: the earlier legislature-string finding is addressed in #1081; new agreement proposals remain native/owner-gated. A changing placeholder must not receive a fixed verb or pronoun that fits only one possible name. The earlier masculine forms were replaced with neutral wording: "התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}" (`budget.vote_advisory`), "אין הצבעה ב־{0} על התקציב" (`budget.no_vote`) and "מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות" (`cabinet.legislature_advisory`). ContentNames.Of now reads legislature body_he (#861), so this is no longer a hypothetical issue hidden behind English names. Keep the shipped neutral wording. A new grammatical-gender field would be a separate design decision, not a requirement of this guide.
 For the native reviewer: say whether these sentences need a structure that does not depend on the gender of `{0}`, and mark any other string with a verb or pronoun after a placeholder.
 
 ## Candidate fixes for the Hebrew file (all unapproved)
@@ -148,10 +150,9 @@ For the native reviewer: say whether these sentences need a structure that does 
 | `unit.national` | רמת ביטחון {1} מתוך 5 | the same word as `hud.level` (דרגה) | HE-02 |
 | `info.biome.valley`, `info.biome.lowland` | בקע, עמק | reviewer to say whether the two are swapped | HE-02 |
 | `start.loading` | טוען את ההקלטה… | reviewer to rule on the masculine present form | HE-03 |
-| `budget.vote_advisory`, `budget.no_vote`, `cabinet.legislature_advisory` | masculine forms after `{0}` | a structure that does not depend on the gender of `{0}` | HE-15 |
 | `boot.failed` | ...את Statecraft: {0}. ... | check the display; isolate the Latin name | HE-09 |
 
-Settled by the owner since 14 October and removed from this table: `card.competence` (now כישורים), `defence.section_ladder` (now המצב הביטחוני) and the separate unit for the Provisional State Council (`cabinet.seats_appointed`).
+Addressed by #1081 and removed from this table: the three legislature vote strings (HE-15). Settled by the owner since 14 October and also removed: `card.competence` (now כישורים), `defence.section_ladder` (now המצב הביטחוני) and the separate unit for the Provisional State Council (`cabinet.seats_appointed`).
 
 ## Review checklist
 

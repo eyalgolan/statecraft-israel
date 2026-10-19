@@ -1,10 +1,12 @@
-# Glossary (draft v0.4)
+# Glossary (draft v0.5)
 
-Readable view of `UX_GLOSSARY.yaml`. Keep both glossary files in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
+Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
 
-Entries: 6 contested, 5 decision-needed, 5 pending-gdd, 27 preferred, 6 use-with-caution (49 concepts, 6 conventions).
+Entries: 6 contested, 7 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (49 concepts, 6 conventions).
 
-Evidence limits: the snapshot checker matched 289 cited forms. Nine references were outside its supported inputs or used summary notation, so that result does not verify those references. Five concepts still have no Hebrew candidate: provisional-state-council, truce, yishuv, unit and pioneer. These remain review gaps.
+Revision 19 October 2026: targeted terminology and implementation checks against upstream/main 9e571342 address the #970 review. The original snapshot date remains above; this is not a full review of every new string.
+
+Evidence limits: the original 46abd99c snapshot checker matched 289 cited forms; nine references were outside its supported inputs or used summary notation. Those totals do not include the new rows checked directly against 9e571342 in this revision. Provisional-state-council, truce, yishuv and unit still have no Hebrew candidate here. The new in-use pioneer terms are recorded without native approval.
 
 ## At a glance
 
@@ -36,8 +38,8 @@ Evidence limits: the snapshot checker matched 289 cited forms. Nine references w
 | defence-screen-and-office | preferred | 'Defence' for the game's own screen, button and prose; the official office and ministry titles as Israel writes them ('Minister of Defense'), as content/offices.yaml records | שר הביטחון (minister), ביטחון (the screen and button); the ministry's name for the reviewer to confirm | Eyal for where the spelling rule is documented; gershayim adopted in #630, subject to native-reviewer overrule in #564 |
 | social-cohesion | preferred | Social cohesion | לכידות חברתית | Eyal |
 | international-support | preferred | International support | תמיכה בינלאומית | Eyal and the native reviewer |
-| pioneer | pending-gdd | pioneer (with 'halutz' introduced at first use) | open | Eyal |
-| hakhshara | pending-gdd | pioneer training (hakhshara) | הכשרה | Eyal |
+| pioneer | decision-needed | halutz (plural halutzim), the current UI wording | open | Eyal |
+| hakhshara | decision-needed | Hakhshara, the current UI wording | הכשרה | Eyal |
 | resources-and-meters | pending-gdd | open | open | Eyal |
 | treasury-and-money | preferred | Money; Money (net) for the top-bar net position | כסף, for the GDD resource (the owner's word) | Eyal; native reviewer for the Hebrew |
 | foreign-currency | preferred | foreign currency | מטבע חוץ | Eyal |
@@ -206,10 +208,11 @@ Category: game-system. Scope: ui, docs, marketing, code.
 |---|---|
 | תור {0} | strings.he.yaml hud.turn |
 | תורים של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
+| {0} תורות | strings.he.yaml city.turns (#869) |
 
 **Recommendation (see status).**
 - English: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy strings.
-- Hebrew: No change proposed.
+- Hebrew: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether the variants need alignment.
 - Reasons: (1) The current rules set all five turn lengths to month.
 
 **Decision owner.** Eyal.
@@ -283,7 +286,7 @@ Category: game-system. Scope: docs, events, code.
 | In use | Where |
 |---|---|
 | Events | strings.en.yaml why.events |
-| event card | docs/WRITING_EVENTS.md headings, docs/WRITING_GUIDE.md |
+| event card | docs/WRITING_GUIDE.md (event card usage) |
 
 **Hebrew.** Preferred: open.
 
@@ -639,17 +642,17 @@ Category: gdd-term. Scope: docs, ui, marketing.
 | Build yishuv | docs/GDD.md |
 | establish new yishuvim | docs/GDD.md |
 | Yishuv 1 ... Yishuv 19 (era work) | issue titles #81 to #98 |
+| A designated site for a new yishuv | strings.en.yaml site.available (#869) |
+| Build a yishuv with {0}: {1}, {2} | strings.en.yaml site.build (#869) |
 
 **Hebrew.** Preferred: open.
 
 **Recommendation (see status).**
-- English: Keep 'settlement' for a place the player founds, and reserve 'the Yishuv' (capital Y) for the pre-state community. Do not use the lowercase word for both.
+- English: The GDD (v0.2) and the UI (#869: site.available, site.build) call a place the player founds a 'yishuv' (plural 'yishuvim'). 'The Yishuv', with a capital Y, is the pre-state community (docs/CONTENT_POLICY.md, section 1). Keep the capital to tell the two apart. Whether the UI should say 'settlement' instead is the owner's call.
 - Hebrew: The reviewer decides how 'יישוב' is used for each sense.
-- Reasons: (1) One transliterated word with two meanings will confuse readers and search.
+- Reasons: (1) The design of record and the implemented UI agree on the lowercase term. (2) Capitalization distinguishes the place from the pre-state community.
 
 **Decision owner.** Eyal.
-
-**Pending GDD.** GDD pioneer and city systems.
 
 ### hex (use-with-caution)
 
@@ -851,57 +854,66 @@ Category: game-system. Scope: docs, ui, events, code.
 
 **Decision owner.** Eyal and the native reviewer.
 
-### pioneer (pending-gdd)
+### pioneer (decision-needed)
 
 Category: gdd-term. Scope: docs, ui, marketing.
 
-**Definition.** A civilian who has done pioneer training and builds roads, railways, fields and new settlements at designated sites. Not in the current build.
+**Definition.** A civilian who has done pioneer training and builds roads, railways, fields and new settlements at designated sites.
 
-**English.** Preferred: pioneer (with 'halutz' introduced at first use).
+**English.** Preferred: halutz (plural halutzim), the current UI wording.
 
 | In use | Where |
 |---|---|
 | Halutz or pioneer | docs/GDD.md population table |
 | Veteran pioneer | docs/GDD.md population table |
 | train in a Hakhshara (הכשרה) and become a Halutz | docs/GDD.md |
+| Train halutzim: 1 group, {0}, {1} | strings.en.yaml city.train_halutz (#869) |
+| Halutzim | strings.en.yaml city.track_halutz (#869) |
+| halutz group {0} | strings.en.yaml site.group (#869) |
+| No halutz group is free. Train one in a city with a Hakhshara. | strings.en.yaml site.no_halutz (#869) |
 
 **Hebrew.** Preferred: open.
 
+| In use | Where |
+|---|---|
+| הכשרת חלוצים: קבוצה אחת, {0}, {1} | strings.he.yaml city.train_halutz (#869) |
+| חלוצים | strings.he.yaml city.track_halutz (#869) |
+| קבוצת חלוצים {0} | strings.he.yaml site.group (#869) |
+| אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה. | strings.he.yaml site.no_halutz (#869) |
+
 **Recommendation (see status).**
-- English: Use 'pioneer' in the UI and define 'halutz' and 'hakhshara' once. Settle the transliteration (conventions: transliteration).
-- Hebrew: The reviewer supplies the Hebrew for the unit names.
+- English: The UI says 'halutz' / 'halutzim' and 'Hakhshara' (#869), as the GDD does. Proposal for the owner: define each once at first use (for example in a tooltip), or switch the UI to 'pioneer' / 'pioneer training'. Either way it is a string change the owner approves.
+- Hebrew: The UI already uses חלוצים and קבוצת חלוצים. A native reader reviews the terminology; this draft does not approve or replace it.
 - Reasons: (1) The GDD uses both words for the same unit.
 
 **Decision owner.** Eyal.
 
-**Pending GDD.** Rules for pioneers are open.
-
-### hakhshara (pending-gdd)
+### hakhshara (decision-needed)
 
 Category: gdd-term. Scope: docs, ui.
 
-**Definition.** The pioneer training a civilian does to become a halutz. Not in the current build.
+**Definition.** The pioneer training a civilian does to become a halutz.
 
-**English.** Preferred: pioneer training (hakhshara).
+**English.** Preferred: Hakhshara, the current UI wording.
 
 | In use | Where |
 |---|---|
 | train in a Hakhshara | docs/GDD.md |
+| No halutz group is free. Train one in a city with a Hakhshara. | strings.en.yaml site.no_halutz (#869) |
 
 **Hebrew.** Preferred: הכשרה.
 
 | In use | Where |
 |---|---|
 | Hakhshara (הכשרה) | docs/GDD.md |
+| אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה. | strings.he.yaml site.no_halutz (#869) |
 
 **Recommendation (see status).**
-- English: Use 'pioneer training' in the UI and give 'hakhshara' once at first use.
+- English: The UI says 'halutz' / 'halutzim' and 'Hakhshara' (#869), as the GDD does. Proposal for the owner: define each once at first use (for example in a tooltip), or switch the UI to 'pioneer' / 'pioneer training'. Either way it is a string change the owner approves.
 - Hebrew: The word is given in the GDD; the reviewer confirms it for the UI.
 - Reasons: (1) The GDD introduces the Hebrew word in brackets after the transliteration.
 
 **Decision owner.** Eyal.
-
-**Pending GDD.** Rules for pioneer training are open.
 
 ### resources-and-meters (pending-gdd)
 
@@ -1098,17 +1110,17 @@ Category: politics. Scope: ui, docs, events.
 | In use | Where |
 |---|---|
 | נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_needed |
-| {0} מצביע עליו, אך הצבעתו אינה מחייבת: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_advisory |
-| {0} אינו מצביע על התקציב | strings.he.yaml budget.no_vote |
+| התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_advisory |
+| אין הצבעה ב־{0} על התקציב | strings.he.yaml budget.no_vote |
 | אחראית בפני {0} · {1} חברים | strings.he.yaml cabinet.legislature |
-| מתייעצת עם {0} · {1} חברים · הצבעותיו אינן מחייבות | strings.he.yaml cabinet.legislature_advisory |
+| מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות | strings.he.yaml cabinet.legislature_advisory |
 | body_he: "מועצת המדינה הזמנית" | content/legislatures.yaml |
 | body_he: "הכנסת השנייה" | content/legislatures.yaml |
 
 **Recommendation (see status).**
 - English: No change. The wording states the rule and the coalition's seats without comment.
-- Hebrew: Gender agreement needs a check. The verbs and pronouns after {0} ('מצביע', 'הצבעתו', 'הצבעותיו', 'אינו') are masculine, but both bodies' Hebrew names ('הכנסת', 'המועצה') appear to take feminine forms, which the reviewer should confirm. Today {0} is filled with the English name, so the problem is hidden. Since #558 the content holds the Hebrew body names ("מועצת המדינה הזמנית", "הכנסת השנייה"), and the owner already handles gender in data for office titles (a separate feminine title field, `title_he_f`, where a woman held the office). Unity scripts read only the localities' Hebrew names so far (by git grep), so the problem will show when the body names are wired in. The reviewer should say whether the sentence needs a different structure, or whether a body needs a gender field like the titles.
-- Reasons: (1) A fixed verb form cannot agree with a name that changes by era. (2) The English sentences have no such problem.
+- Hebrew: The earlier masculine verbs and pronouns after {0} were replaced with neutral wording in #1081. Keep the shipped neutral strings; this draft does not reopen them. ContentNames.Of now reads BodyHe for legislature names (#861). Any new agreement or gender-field proposal still needs native review and an owner decision.
+- Reasons: (1) Neutral structures avoid a fixed gendered verb after a changing body name. (2) The earlier finding has been addressed in #1081; record the current implementation rather than presenting it as unfixed.
 
 **Decision owner.** Native reviewer; Eyal for any key change.
 
@@ -1223,11 +1235,12 @@ Category: politics. Scope: ui, events, docs, code.
 | {0} (מינוי שלך) | strings.he.yaml card.appointed_name |
 | title_he: "שר הפנים" | content/offices.yaml |
 | title_he_f: "שרת החוץ" | content/offices.yaml |
+| המשרה {0} בוטלה ב־{1} | strings.he.yaml cabinet.reason.abolished |
 
 **Recommendation (see status).**
-- English: No change. The English and the Hebrew use the same split: office (תפקיד) for the post and ministry (משרד) for the department.
-- Hebrew: No change proposed. The reviewer confirms the two words.
-- Reasons: (1) The mapping is consistent in both languages.
+- English: Use 'office' for the post and 'ministry' for the department. Hebrew uses תפקיד and משרד in the earlier strings, and the Cabinet refusal reasons also use משרה (#985); a native reader should assess the variants.
+- Hebrew: The native reviewer assesses תפקיד and משרה for office, alongside משרד for ministry.
+- Reasons: (1) New Cabinet refusal strings introduce another Hebrew word for office; consistency is a review question, not an established fact.
 
 **Decision owner.** Eyal.
 
@@ -1315,10 +1328,12 @@ Category: game-system. Scope: ui, docs, code.
 | הפקודה שלך: {0} | strings.he.yaml outcome.order |
 | הפקודה אינה תקפה | strings.he.yaml order.invalid |
 | הוגש: ייכנס לתוקף בסיום התור | strings.he.yaml budget.queued |
+| הוזמנו {0} | strings.he.yaml city.train_ordered (#869) |
+| הוזמן | strings.he.yaml site.ordered (#869) |
 
 **Recommendation (see status).**
 - English: Use 'order' for the player's actions and say what was ordered. The budget says 'Submitted' for the same kind of step; that can stay if the vote is the reason (see 'budget').
-- Hebrew: 'פקודה' is a command word. The reviewer decides whether it suits civil actions such as appointing a minister, or whether another word is better there.
+- Hebrew: 'פקודה' is a command word. The reviewer decides whether it suits civil actions such as appointing a minister, or whether another word is better there. The city and site panels also use הוזמנו / הוזמן; the native reviewer should consider these alongside פקודה.
 - Reasons: (1) The same End turn mechanic reads as 'Ordered' in some strings and 'Submitted' in one. (2) Order costs vary, including zero-cost unit orders; wording must not imply every order spends attention.
 
 **Decision owner.** Eyal; native reviewer.
@@ -1521,7 +1536,7 @@ Category: history-term. Scope: ui, docs.
 | אזור מפורז | strings.he.yaml info.control_dmz |
 
 **Recommendation (see status).**
-- English: No change. The captions are neutral and cite their source. Keep it that way, and send any new label for a side or a holder through the content review, as the policy requires for sensitive wording. The unit names in the GDD ('Arab Legionnaire', 'Palestinian militia') are more specific than the UI's 'Arab forces'; the two should not contradict each other.
+- English: No change. The captions follow the project's framing (docs/CONTENT_POLICY.md, section 1) and cite their source. Keep it that way, and send any new label for a side or a holder through the content review, as the policy requires for sensitive wording. The unit names in the GDD ('Arab Legionnaire', 'Palestinian militia') are more specific than the UI's 'Arab forces'; the two should not contradict each other.
 - Hebrew: The English names 'the Arab Liberation Army' and the Hebrew gives 'צבא ההצלה'. The reviewer confirms that this is the standard Hebrew name.
 - Reasons: (1) The labels name the holder and the date, not a judgement. (2) The map caption states that the lines are approximate.
 
@@ -1531,7 +1546,7 @@ Category: history-term. Scope: ui, docs.
 
 Category: gdd-term. Scope: ui, docs.
 
-**Definition.** A large settlement the game models in detail: housing, jobs and population. The README's first slice has one, Tel Aviv.
+**Definition.** A large settlement the game models in detail: housing, jobs and population. content/cities.yaml contains twelve cities at 9e571342 (#821); Tel Aviv was the earlier Phase 1 slice, not the full current list.
 
 **English.** Preferred: city.
 
@@ -1547,10 +1562,10 @@ Category: gdd-term. Scope: ui, docs.
 | ערים | strings.he.yaml why.city |
 
 **Recommendation (see status).**
-- English: Keep 'city' for the places the GDD models in detail and 'settlement' for the places the player founds (see 'settlement').
+- English: Keep 'city' for the places modeled in detail. The GDD and site UI call a new place the player founds a 'yishuv'; see that entry before proposing a different term.
 - Hebrew: The reviewer confirms 'עיר' against 'יישוב'.
 - Reasons: (1) The README separates a city from a new settlement.
 
 **Decision owner.** Eyal.
 
-**Pending GDD.** City rules are open.
+**Pending GDD.** Further city design and terminology proposals remain owner-gated; the twelve-city content and city panel already exist.

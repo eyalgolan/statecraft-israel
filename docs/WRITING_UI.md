@@ -1,7 +1,9 @@
-# UI microcopy guide for Statecraft: Israel (draft v0.4)
+# UI microcopy guide for Statecraft: Israel (draft v0.5)
 
 Status: DRAFT for discussion. Not approved by the maintainer or by a native Hebrew reviewer.
 Date: 17 October 2026. Evidence: upstream/main 46abd99c, 271 keys in each language. This revision reconciles the cited examples and decisions with that snapshot. It is not a full review of every added string. Score, minimap tooltips, icon-only navigation and the new city, training and pioneer strings remain outside the detailed copy review.
+
+Revision 19 October 2026: targeted corrections against upstream/main 9e571342 address the #970 review. The original 46abd99c snapshot and counts are historical evidence; this revision does not claim a full audit of all newer strings.
 
 This guide covers short player-facing text: labels, buttons, status lines, toasts, refusals, errors, hints and empty states. It does not cover event card prose (`docs/WRITING_EVENTS.md`, `docs/WRITING_GUIDE.md`) or historical sourcing (`docs/CONTENT_POLICY.md`). Those stay as they are.
 
@@ -23,11 +25,11 @@ Use when writing or reviewing short player-facing text for Statecraft: Israel. N
 1. Plain, direct, sober. Name the thing and the number. No filler, no drama (UI-01).
 2. Sentence case for phrases and sentences. Labels, button names included, are sentence case too: "End turn", "New game", "Public support" (UI-02, settled in #630).
 3. "Label: value" for facts, a middle dot between facts on one line (UI-03).
-4. Counts as "Label: N". No "(s)" (UI-04).
-5. A refusal says what could not be done, the rule that blocked it, and what the player can do next (UI-05).
+4. Counts as "Label: N". No "(s)" (UI-04, proposed).
+5. A refusal says what could not be done, the rule that blocked it, and what the player can do next (UI-05, proposed).
 6. Never show a raw exception message, a file path or a content id. Convert the cause to player wording first (UI-07).
-7. Avoid "valid", "invalid", "please", "sorry", "oops", "unable". No "we" (UI-06, UI-11).
-8. A standalone message ends with a period. Labels, status lines and strings inserted into another string do not (UI-08).
+7. Avoid "valid", "invalid", "please", "sorry", "oops", "unable". No "we" (UI-06, UI-11; proposed).
+8. A standalone message ends with a period. Labels, status lines and strings inserted into another string do not (UI-08, proposed).
 9. Buttons and actions start with a verb and name the destination. No "click here" (UI-09).
 10. An empty state tells the player what to do next (UI-10).
 11. No left, right, above or below. The Hebrew layout mirrors (UI-12).
@@ -63,7 +65,7 @@ Status: observed. Reason: the file already does this, and it keeps lines scannab
 Check: manual.
 
 ### UI-04 Counts: write "Label: N"; no "(s)"
-Status: observed in Hebrew, proposed for English. Reason: Google advises against optional plurals such as "key(s)" because they are ambiguous and translate badly, and Hebrew needs a separate form for exactly 2 (Unicode CLDR 48). A "Label: N" line needs no plural form in either language. The game has no general plural mechanism (`UiText` is a key to `string.Format` lookup), so this pattern is the way to avoid the problem. The repo's own Hebrew test pins `event.more` as "Label: N" and names the test "count neutral" (`test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms`), so the maintainer already treats this as the rule for Hebrew. Some messages already choose singular and plural keys explicitly (UI-17).
+Status: observed in Hebrew, proposed for English. Reason: Google advises against optional plurals such as "key(s)" because they are ambiguous and translate badly, and Hebrew needs a separate form for exactly 2 (Unicode CLDR 48). A "Label: N" line needs no plural form in either language. The game has no general plural mechanism (`UiText` is a key to `string.Format` lookup), so this pattern is the way to avoid the problem. The repo's own Hebrew test pins `event.more` as "Label: N" and names the test "count neutral" (`test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms`), so the maintainer already treats this as the rule for Hebrew. Some messages already choose singular and plural keys explicitly (UI-17), including the city-panel group and turn counts added in #869.
 - Weak: "{0} more decision(s) waiting" (`event.more`, English).
 - Good: the Hebrew counterpart "החלטות ממתינות נוספות: {0}" (`event.more`, Hebrew), which is already "Label: N".
 - Candidate English rewrite: "More decisions waiting: {0}".
@@ -89,7 +91,7 @@ Check: a pattern search over the strings files: one hit today.
 Status: adopted for the cited order failures (maintainer, #630 and #676). Reason: raw exception messages and internal ids are developer text. CONTRIBUTING rule 4 requires player wording.
 - `order.failed` reads "The turn could not run. Your orders were cleared. Give them again." The recovery step was adopted in #622 and implemented in #676. SimBridge clears the queue and logs the exception.
 - `order.unknown` reads "Unknown {0}": the kind of thing only; the id is logged. Its Hebrew kind words need their own localization review.
-- `save.reason_other` supplies the fixed reason "the file could not be read or replayed". Startup failures use GameBoot.ForPlayer.
+- `save.reason_other` supplies the fixed reason "the file could not be read or replayed". Startup failures pass the fixed reason boot.reason_other ("its files failed to load"); the exception text stays in GameBoot.Error and the log (#705).
 Check: inspect both the localized pattern and the value passed into it; a safe pattern can still receive raw developer text.
 
 ### UI-08 End punctuation
@@ -135,22 +137,22 @@ Status: proposed. Reason: terminology drifts between files and between English a
 Check: a pattern search over the strings files; the glossary lists the terms.
 
 ### UI-15 English and Hebrew keys and placeholders match
-Status: observed. Reason: a mismatch breaks the game or shows the wrong value. Today there are 271 keys in each file and no mismatch in key names or placeholder indexes. The repo already tests this: `test_hebrew_keys_match_english_and_every_value_is_nonempty` and `test_hebrew_keeps_complete_format_tokens_and_logical_text_order` in `tools/tests/test_hebrew_ui.py`, and `EachEnglishStaticTextIsTheUxmlsOwnText` and `InHebrewEveryStaticTextIsTheHebrewString` in `HebrewUiTests.cs`. The local check adds nothing the tests do not cover, and is kept only as a convenience.
+Status: observed. Reason: a mismatch breaks the game or shows the wrong value. At 46abd99c there were 271 keys in each file and no mismatch in key names or placeholder indexes. The repo already tests this: `test_hebrew_keys_match_english_and_every_value_is_nonempty` and `test_hebrew_keeps_complete_format_tokens_and_logical_text_order` in `tools/tests/test_hebrew_ui.py`, and `EachEnglishStaticTextIsTheUxmlsOwnText` and `InHebrewEveryStaticTextIsTheHebrewString` in `HebrewUiTests.cs`. The local check adds nothing the tests do not cover, and is kept only as a convenience.
 Check: a pattern search over the strings files and the repo's tests.
 
 ### UI-16 Hebrew details
 Status: gershayim adopted (maintainer, #630); other language recommendations need native review. A native reviewer may overrule the gershayim choice through #564. Mixed-direction changes need a test in the game.
 - Prefix before a numeral or Latin letters: the Academy of the Hebrew Language punctuation rules use the maqaf, as in "ה־12" or "ב־DNA". For example, the strings use a hyphen ("יישובים ב-1948: {0}", `info.localities`) and a maqaf in another ("מ־{0} עד {1}", `why.turn`).
-- Gershayim in acronyms: all four strings that have them use the typographic ״ ("הרמטכ״ל", "האו״ם"), so the file is consistent. The Academy's published examples use a straight quote and say nothing about the typographic character. The owner chose ״ in #630. Apply that choice unless the native reviewer records an overrule in #564.
+- Gershayim in acronyms: the strings checked use the typographic ״ ("הרמטכ״ל", "האו״ם"), so the file is consistent. The Academy's published examples use a straight quote and say nothing about the typographic character. The owner chose ״ in #630. Apply that choice unless the native reviewer records an overrule in #564.
 - Mixed direction: W3C and Unicode advise isolating each opposite-direction phrase, and any value of unknown direction, so punctuation and numbers do not jump to the wrong side. Since #543 the repo does this for inserted values: `UiText.Format` wraps each value that has no Hebrew in it in left-to-right marks (U+200E), and a rendered-pixel test in `HebrewValuesTests` checks that a minus sign and an English date draw correctly. The repo also sets each text's direction from its own first letter (`InHebrewEachTextTakesItsDirectionFromItsOwnWords`), and its Hebrew test rejects the explicit embedding and override characters U+202A to U+202E. Unity's manual does not mention isolates, so any other approach needs a test in the game. What the tests reviewed do not cover is a Latin word typed inside a Hebrew sentence, as opposed to an inserted value.
   - Three strings to test: "ספיטפייר LF Mk IXe" (`unit.aircraft.spitfire`), "לא ניתן היה להפעיל את Statecraft: {0}. יש לטעון את הדף מחדש." (`boot.failed`), where a colon follows a Latin word, and "לחיצה, Enter או רווח לדילוג · Esc מדלג על הכול" (`outcome.skip`).
   - Settled since 14 October: the recording credit no longer keeps a name in Latin letters. It is "הקלטה: ראלף הלינגר, ארכיון המדינה" (`start.recording_credit`), spelt as the Israel State Archives' own description spells it, and the Hebrew UI test now rejects Latin letters in any static Hebrew text, names included.
-  - How to test: the Hebrew UI is shown only when asked for (`HebrewIsOnlyAskedForByHand`), and `?lang=he` is the preview (#506).
+  - How to test: the original explicit-language path was pinned by `HebrewIsOnlyAskedForByHand`; since #1058 Settings also offers English / עברית. Test the current switch and the `?lang=he` path (#506).
 - Address and register on buttons and instructions: the Israeli National Digital Agency's guide to government language (section 1.3.3, read by the author as rendered slides; reuse terms not found, paraphrased) says not to address users only in the masculine singular and not to use slash or dot forms. It prefers, in order: a setting that adapts the form to the user; a second person without a gender marker (words ending in ך, ת or ה, such as "שלך"); a neutral first person; then an action noun, an infinitive, or rephrasing such as "יש לשלוח". The strings already follow this apart from one masculine imperative: "הסתר" (`event.hide`). Examples using "יש ל..." include (`info.hint`, `newgame.confirm`, `why.empty`, `budget.unsaved`, `boot.failed`) and action labels use action nouns ("הקמת מעברה", "בניית דיור", "מינוי לתפקיד", "פתיחת מסך הביטחון"). Candidate: replace "הסתר" with "הסתרה" or "להסתיר". A setting that lets the player choose a form of address is the guide's first priority, but it is a design decision for the owner. The native reviewer confirms all of this.
 Check: a pattern search over the strings files.
 
 ### UI-17 Plurals
-Status: proposed, maintainer. Reason: English has two plural categories and Hebrew has three (one, two, other; Unicode CLDR 48). The game has no general plural mechanism, so UI-04 is the rule and new sentences whose wording changes with a number should be avoided. Existing precedents include objective early/late month messages in EventCardPresenter.ObjectiveLine and the top bar's spoken form, which picks between two keys by count, `hud.say_point` and `hud.say_points` (`HudModel.cs`, by `git grep`), in Hebrew "{0:0} נקודה" and "{0:0} נקודות". Two keys cover one and other. They have no key for exactly 2, which the Hebrew categories name; the native reviewer should say whether that matters for a digit numeral. A general mechanism is a code change in `unity/` and a proposal to the maintainer; these explicit selectors are precedents to assess before introducing a general mechanism.
+Status: proposed, maintainer. Reason: English has two plural categories and Hebrew has three (one, two, other; Unicode CLDR 48). The game has no general plural mechanism, so UI-04 is the rule and new sentences whose wording changes with a number should be avoided. Existing precedents include city.groups_one/city.groups and city.turns_one/city.turns (#869), objective early/late month messages in EventCardPresenter.ObjectiveLine, and the top bar's spoken form, which picks between two keys by count, `hud.say_point` and `hud.say_points` (`HudModel.cs`, by `git grep`), in Hebrew "{0:0} נקודה" and "{0:0} נקודות". Two keys cover one and other. They have no key for exactly 2, which the Hebrew categories name; the native reviewer should say whether that matters for a digit numeral. A general mechanism is a code change in `unity/` and a proposal to the maintainer; these explicit selectors are precedents to assess before introducing a general mechanism.
 Check: a pattern search over the strings files: one string today, `event.more` in English.
 
 ### UI-18 Text and accessibility
@@ -163,7 +165,7 @@ Check: manual.
 | Key | String | Verdict | Rule |
 |---|---|---|---|
 | `newgame.delete_failed` | The old saved game could not be removed; it will be replaced after your next turn. | Good | UI-05 |
-| `boot.failed` | Statecraft could not start: {0}. Reload the page. | Good (the `{0}` comes from `GameBoot.ForPlayer`) | UI-05, UI-07 |
+| `boot.failed` | Statecraft could not start: {0}. Reload the page. | Good (the `{0}` is the fixed `boot.reason_other`, #705) | UI-05, UI-07 |
 | `save.reason_other` | the file could not be read or replayed | Good, a fixed player reason | UI-07 |
 | `why.empty` | Nothing has happened yet: end the turn to see its causes. | Good, empty state with a next step | UI-10 |
 | `budget.queued` | Submitted: takes effect at End turn | Good, state and consequence | UI-03 |
