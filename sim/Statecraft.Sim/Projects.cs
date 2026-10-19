@@ -46,19 +46,40 @@ namespace Statecraft.Sim
         /// else 1 (R-SITE-003, R-VET-002).</summary>
         public static int Progress(MvpRules r, Unit unit) => unit.Type == VeteranType ? r.VeteranProgress!.Value : 1;
 
-        /// <summary>The turns, this one included, in which <paramref name="unit"/> builds a site with <paramref name="left"/>
-        /// turns of progress to go: Advance's count, a halutz promoted on the way (R-VET-001) building faster from the next turn
-        /// (R-SITE-003, R-VET-002). With build_yishuv_turns it is how long a Build ordered now takes. Read with the rules of
-        /// the current date, as Advance reads them; it changes no state.</summary>
-        public static int TurnsToBuild(Content c, GameState s, int unit, int left)
+        /// <summary>The GDD minister system a site's pioneer work belongs to (R-MIN-001; Q-MIN-1): plowing a field and
+        /// building a new yishuv are Agriculture's; camps and swamp draining are no mapped system's ("" = neutral;
+        /// military training joins with #742).</summary>
+        public static string SystemOf(Site place) =>
+            place.Kinds.Contains(FieldKind) ? EffectsSystem.FieldWorkSystem
+            : place.Kinds.Contains(YishuvKind) ? EffectsSystem.YishuvWorkSystem
+            : "";
+
+        /// <summary>The GDD minister system a city project's kind belongs to (R-MIN-001; Q-MIN-1): housing, a transit
+        /// camp included (Q-HOUSE-3's low-condition housing type), and industry construction are Labour's; a kind the map
+        /// does not name is "" (neutral).</summary>
+        public static string SystemOfKind(string kind) =>
+            kind == "industry" ? EffectsSystem.IndustryConstructionSystem
+            : kind == "housing" || kind == "transit_camp" ? EffectsSystem.HousingConstructionSystem
+            : "";
+
+        /// <summary>The turns, this one included, in which the unit completes the site's remaining whole work and
+        /// fractional carry at its current minister multiplier. Reads the current date's rules, accounts for a halutz
+        /// promoted during the work, and changes no state. Initial work passes its base duration and zero carry.</summary>
+        public static int TurnsToBuild(Content c, GameState s, int unit, Site site, int left, double carry)
         {
-            var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
+            if (site == null) throw new ArgumentNullException(nameof(site));
+            if (left < 1) throw new ArgumentOutOfRangeException(nameof(left));
+            if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry));
+            var r = c.RulesAt(s.Date).Mvp!;
+            var m = EffectsSystem.GddSystemMultiplier(c, s, r, SystemOf(site));
+            if (!(m > 0) || double.IsInfinity(m)) throw new InvalidOperationException("Site progress multiplier must be finite and positive");
             var u = s.Units[unit];
-            for (int turns = 1; ; turns++)
+            for (int turns = 1; ; turns = checked(turns + 1))
             {
-                var progress = Progress(r, u);
-                if (left <= progress) return turns;
-                left -= progress;
+                carry += Progress(r, u) * m;
+                if (carry >= left) return turns;   // before the int cast: completion can exceed the remaining work
+                var whole = (int)Math.Floor(carry);
+                left -= whole; carry -= whole;
                 if (u.Type == "halutz")
                 {
                     var service = u.Service + 1;
@@ -149,12 +170,17 @@ namespace Statecraft.Sim
             foreach (var w in s.Sites.Values.Where(x => x.BuiltOn == null).ToList())
             {
                 var u = s.Units[w.Unit!.Value];   // a site being built always names its unit (SiteWork)
-                var progress = Progress(r, u);
-                if (w.TurnsLeft > progress) s.Sites[w.Site] = w.WithTurnsLeft(w.TurnsLeft - progress);
+                var place = c.Sites.First(x => x.Id == w.Site);   // a site being built is always in sites.yaml (Start)
+                // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the office of the site's system scales the turns of
+                // progress the work gains this turn. The gain accumulates in Progress and only whole turns leave it
+                // (floor with carry): no fraction of a turn is ever a turn to go.
+                var acc = w.Progress + Progress(r, u) * EffectsSystem.GddSystemMultiplier(c, s, r, SystemOf(place));
+                var whole = (int)Math.Floor(acc);
+                acc -= whole;
+                if (w.TurnsLeft > whole) s.Sites[w.Site] = w.WithProgress(w.TurnsLeft - whole, acc);
                 else
                 {
                     s.Sites[w.Site] = SiteWork.Built(w.Site, next);
-                    var place = c.Sites.First(x => x.Id == w.Site);   // a site being built is always in sites.yaml (Start)
                     why.Add(new Cause("map", w.Site, 1, $"{place.Name} {(IsCamp(place) ? "built" : place.Kinds.Contains(FieldKind) ? "plowed" : place.Kinds.Contains(SwampKind) ? "drained" : "founded")}"));
                 }
                 // R-VET-001: the project progressed this turn, so a halutz serves a turn; a veteran counts no further.
@@ -240,9 +266,15 @@ namespace Statecraft.Sim
         /// advanced again.</summary>
         public static void AdvanceCity(Content c, GameState s, DateTime next, List<Cause> why)
         {
+            var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop, the only loop TurnResolver runs this in
             foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null).ToList())
             {
-                if (p.TurnsLeft > 1) { s.CityProjects[p.Id] = p.WithTurnsLeft(p.TurnsLeft - 1); continue; }
+                // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the office of the kind's system scales the turn of
+                // progress the project gains this turn, with R-MIN-002's floor and carry as at the sites (Advance).
+                var acc = p.Progress + EffectsSystem.GddSystemMultiplier(c, s, r, SystemOfKind(p.Kind));
+                var whole = (int)Math.Floor(acc);
+                acc -= whole;
+                if (p.TurnsLeft > whole) { s.CityProjects[p.Id] = p.WithProgress(p.TurnsLeft - whole, acc); continue; }
                 s.CityProjects[p.Id] = p.Built(next);
                 var k = c.ProjectKinds.First(x => x.Id == p.Kind);
                 var x = s.Cities[p.City];

@@ -154,8 +154,8 @@ budget.vacant: "פנוי"
 budget.not_established: "אין משרד עד {0}"
 budget.factor: "השפעת ההוצאה {0}"
 budget.vote_needed: "נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3}"
-budget.no_vote: "אין הצבעה ב־{0} על התקציב"
-budget.vote_advisory: "התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}"
+budget.no_vote: "{0} אינה מצביעה על התקציב"
+budget.vote_advisory: "{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}"
 budget.money: "כסף {0} · חוב {1} · מטבע חוץ {2}"
 budget.flow: "מסים {0}, הוצאות {1} וגיוס מילואים {2} בשנה"
 budget.queued: "הוגש: ייכנס לתוקף בסיום התור"
@@ -212,7 +212,9 @@ card.offices_separator: " · "
 # The tag on the selected Cabinet seat's card (PersonCard; #41 M6). Not "נבחר": on a minister's card in a game about the
 # Knesset it reads as "elected". "מסומן" agrees with the card (כרטיס), masculine. For the native reviewer (#564).
 card.selected: "מסומן"
-info.hint: "יש ללחוץ על המפה כדי לבדוק משושה"
+# The empty info panel's hint: a click, or Tab to the map's stop and Enter (#41 B1b, #1116), and the right-drag pan (#998).
+# "Tab" and "Enter" are the keys' printed names. For the native reviewer (#564).
+info.hint: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה"
 info.off_map: "מחוץ למפה"
 info.hex: "{0} · גובה {1:N0} מ׳"
 info.region: "{0}, {1} (נפות המנדט, 1947)"

@@ -117,14 +117,14 @@ namespace Statecraft.Game.UI
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id)) is PioneerWork p && p.Site == site.Id;
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost),
-                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, rules.BuildYishuvTurns))),
+                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, rules.BuildYishuvTurns, 0))),
                         () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered && !taken);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
-                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, work.TurnsLeft))));
+                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }

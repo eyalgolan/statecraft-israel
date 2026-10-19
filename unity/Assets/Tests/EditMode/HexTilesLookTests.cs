@@ -1,9 +1,12 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Linq;
 using Statecraft.Game.Map;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TerrainUtils;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using NUnit.Framework;
 using Statecraft.HexTiles;
@@ -65,6 +68,50 @@ public class HexTilesLookTests
         finally { Object.DestroyImmediate(root); }
     }
 
+    [TestCase("palmach_squad", false)]
+    [TestCase("palmach_squad", true)]
+    [TestCase("sandwich_truck", false)]
+    [TestCase("sandwich_truck", true)]
+    public void MissingModelsUseAnOwnedShippedMaterial(string typeId, bool existingBoardOwner)
+    {
+        var template = Resources.Load<Material>(HexMaterials.Folder + "/" + HexMaterials.Lit);
+        Assert.IsNotNull(template, "the portable material must ship with the player");
+        var unit = HexUnitTypes.Create(typeId).Create();
+        foreach (var member in unit.Members)
+        {
+            member.Model = "tiles:__missing_unit_material_test_" + typeId;
+            Assert.IsNull(HexModels.Prefab(member.Model));
+        }
+        var root = new GameObject("HexUnitMaterialLifetimeTest");
+        try
+        {
+            var boardOwner = existingBoardOwner ? root.AddComponent<HexBoardAssets>() : null;
+            var parent = existingBoardOwner ? new GameObject("Units").transform : root.transform;
+            if (existingBoardOwner) parent.SetParent(root.transform, false);
+            var motion = new HexUnitMotion(unit, new[] { (0, 0) }, new FlatSurface(), parent);
+            motion.Pose(0f, false);
+            Assert.AreEqual(unit.Members.Count, motion.Objects.Count);
+            var material = motion.Objects[0].GetComponent<MeshRenderer>().sharedMaterial;
+            Assert.IsNotNull(material);
+            Assert.AreNotSame(template, material, "the shipped template is borrowed, not owned");
+            Assert.AreSame(template.shader, material.shader);
+            Assert.AreEqual(template.GetColor("_BaseColor"), material.GetColor("_BaseColor"));
+            Assert.AreEqual(template.GetFloat("_Smoothness"), material.GetFloat("_Smoothness"));
+            foreach (var go in motion.Objects)
+                Assert.AreSame(material, go.GetComponent<MeshRenderer>().sharedMaterial, "one owned copy per motion");
+            Assert.AreEqual(1, root.GetComponentsInChildren<HexBoardAssets>(true).Length, "reuse the existing ancestor owner");
+            if (existingBoardOwner)
+            {
+                Assert.IsNull(parent.GetComponent<HexBoardAssets>(), "the child must not duplicate the board owner");
+                boardOwner!.Teardown();
+            }
+            else Object.DestroyImmediate(root);
+            Assert.IsTrue(material == null, "the parent/board lifetime releases the owned material");
+            Assert.IsTrue(template != null, "teardown must never destroy the shipped template");
+        }
+        finally { if (root != null) Object.DestroyImmediate(root); }
+    }
+
     [Test]
     public void TheBoardCanBeAppliedAfterReopeningTheEditorScene()
     {
@@ -120,6 +167,93 @@ public class HexTilesLookTests
             Assert.IsNull(map.transform.Find(HexTilesLook.RootName));
             CollectionAssert.AreEqual(before, markers.Select(r => r.enabled).ToArray(),
                 "removing the replacement board must not enable placeholder boxes over the restored kits");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            ShadowFit.Restore(); VisualToggles.Clear(); Statecraft.Game.Map.Kits.KitScale.Reset();
+        }
+    }
+
+    // The replacement ground overlaps the real map; it is not a same-size neighboring Terrain tile.
+    static Terrain[] Neighbors(Terrain t) => new[] { t.leftNeighbor, t.topNeighbor, t.rightNeighbor, t.bottomNeighbor };
+    static string Facts(Terrain t) => $"{t.name} pos={t.transform.position:R} size={t.terrainData.size:R} res={t.terrainData.heightmapResolution} auto={t.allowAutoConnect} group={t.groupingID} neighbors=[{string.Join(",", Neighbors(t).Select(n => n == null ? "null" : n.name))}]";
+
+    [Test]
+    public void MatchingAdjacentTerrainsActuallyAutoConnect()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        TerrainData? da = null, db = null; GameObject? ga = null, gb = null;
+        try
+        {
+            Assert.AreEqual(0, Terrain.activeTerrains.Length, "isolated positive-control fixture");
+            da = new TerrainData { heightmapResolution = 33, size = new Vector3(100, 20, 100) };
+            db = new TerrainData { heightmapResolution = 33, size = new Vector3(100, 20, 100) };
+            ga = Terrain.CreateTerrainGameObject(da); ga.name = "PositiveSouth";
+            gb = Terrain.CreateTerrainGameObject(db); gb.name = "PositiveNorth"; gb.transform.position = new Vector3(0, 0, 100);
+            var a = ga.GetComponent<Terrain>(); var b = gb.GetComponent<Terrain>();
+            a.allowAutoConnect = b.allowAutoConnect = true;
+            a.groupingID = b.groupingID = 30113;
+            TerrainUtility.AutoConnect();
+            Debug.Log("NEIGHBOR_POSITIVE " + Facts(a) + " | " + Facts(b));
+            Assert.AreSame(b, a.topNeighbor, "positive control: real adjacent north edge connects");
+            Assert.AreSame(a, b.bottomNeighbor, "positive control: reciprocal south edge connects");
+        }
+        finally
+        {
+            if (ga != null) Object.DestroyImmediate(ga);
+            if (gb != null) Object.DestroyImmediate(gb);
+            if (da != null) Object.DestroyImmediate(da);
+            if (db != null) Object.DestroyImmediate(db);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator SupportedOverlayIsNotAnAdjacentNeighborAndUndoRestoresBase()
+    {
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = Object.FindFirstObjectByType<MapScene>(); Assert.IsNotNull(map);
+            map.Build();
+            var real = map.Terrain; Assert.IsNotNull(real);
+            Assert.AreEqual(1, Terrain.activeTerrains.Length, "actual map starts with one real terrain");
+            var data = real.terrainData; int n = data.heightmapResolution;
+            var before = data.GetHeights(0, 0, n, n);
+            var beforeSize = data.size; var beforePosition = real.transform.position;
+            bool beforeAuto = real.allowAutoConnect; int beforeGroup = real.groupingID;
+            TerrainUtility.AutoConnect();
+            Assert.IsTrue(Neighbors(real).All(t => t == null), "single base terrain has no neighbors");
+            Debug.Log("NEIGHBOR_BASE_BEFORE " + Facts(real));
+            HexTilesLook.Apply(map, true);
+            var holder = map.transform.Find(HexTilesLook.RootName); Assert.IsNotNull(holder);
+            var terrainList = holder.GetComponentsInChildren<Terrain>(true);
+            Assert.AreEqual(1, terrainList.Length, "one actual supported board Terrain");
+            var board = terrainList[0];
+            Assert.AreNotSame(real, board);
+            Assert.AreNotEqual(data.heightmapResolution, board.terrainData.heightmapResolution, "actual different-resolution overlay");
+            Assert.IsFalse(before.Cast<float>().SequenceEqual(data.GetHeights(0, 0, n, n).Cast<float>()),
+                "precondition: supported board changes real heights, so undo is not a no-op");
+            TerrainUtility.AutoConnect();
+            yield return null;
+            Debug.Log("NEIGHBOR_ACTUAL " + Facts(real) + " | " + Facts(board));
+            Assert.IsFalse(Neighbors(real).Contains(board), "overlapping board must not become adjacent base neighbor");
+            Assert.IsFalse(Neighbors(board).Contains(real), "base must not become adjacent overlay neighbor");
+            Assert.AreEqual(beforeAuto, real.allowAutoConnect, "placing board preserves base policy");
+            Assert.AreEqual(beforeGroup, real.groupingID, "placing board preserves base group");
+            HexTilesLook.Apply(map, false);
+            TerrainUtility.AutoConnect();
+            yield return null;
+            Assert.IsNull(map.transform.Find(HexTilesLook.RootName), "board removed");
+            Assert.AreEqual(1, Terrain.activeTerrains.Length, "only actual base remains");
+            Assert.AreSame(data, real.terrainData);
+            Assert.AreEqual(n, data.heightmapResolution); Assert.AreEqual(beforeSize, data.size);
+            Assert.AreEqual(beforePosition, real.transform.position);
+            Assert.AreEqual(beforeAuto, real.allowAutoConnect); Assert.AreEqual(beforeGroup, real.groupingID);
+            CollectionAssert.AreEqual(before, data.GetHeights(0, 0, n, n), "teardown restores all original base height samples exactly");
+            Assert.IsTrue(Neighbors(real).All(t => t == null), "no stale removed-board neighbor");
+            Debug.Log("NEIGHBOR_UNDO " + Facts(real));
         }
         finally
         {

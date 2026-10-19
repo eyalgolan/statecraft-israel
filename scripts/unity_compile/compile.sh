@@ -21,7 +21,7 @@ lib=unity/Library
 for f in "$contents/Resources/Scripting/Managed/UnityEngine/UnityEngine.CoreModule.dll" \
          "$contents/Resources/Scripting/NetStandard/ref/2.1.0/netstandard.dll" \
          "$lib"/ScriptAssemblies/{Unity.RenderPipelines.Core.Runtime,Unity.RenderPipelines.Universal.Runtime}.dll \
-         "$lib"/ScriptAssemblies/{Unity.InputSystem,UnityEngine.TestRunner,UnityEditor.TestRunner}.dll; do
+         "$lib"/ScriptAssemblies/{Unity.InputSystem,Unity.InputSystem.TestFramework,UnityEngine.TestRunner,UnityEditor.TestRunner}.dll; do
   [ -f "$f" ] || { echo "missing: $f (open the project in Unity once so it builds its Library)"; exit 1; }
 done
 nunit=("$lib"/PackageCache/com.unity.ext.nunit@*/net40/unity-custom/nunit.framework.dll)
