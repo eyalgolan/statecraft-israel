@@ -2,6 +2,11 @@
 id: clothing_rationing_1950
 title: Rationing Clothes and Shoes
 text: 'Prices on the black market are climbing. {rationing_minister} proposes extending rationing to clothing and footwear and fighting the black market.'
+# For the native reviewer (#564): Hebrew terminology follows he.wiki "תקופת הצנע" (קיצוב, לבוש והנעלה, השוק השחור):
+# https://he.wikipedia.org/wiki/תקופת_הצנע
+title_he: קיצוב הלבוש וההנעלה
+text_he: 'המחירים בשוק השחור עולים. הצעת {rationing_minister} היא להרחיב את הקיצוב ללבוש ולהנעלה ולהיאבק בשוק השחור.'
+text_he_review: agent-checked
 anchor: hard
 office: rationing_minister
 # Extended on 31 July 1950; retailers' strike 1-14 August. On 8 August the Knesset passed the coalition parties' motion,
@@ -11,12 +16,14 @@ to: 1950-09-01
 options:
   - id: extend
     text: Ration clothing and footwear
+    text_he: לקצב לבוש והנעלה
     historical: true
     recommended: true
     effects:
       - { target: morale, delta: -0.05 }
   - id: relax
     text: Ease rationing and let imports fill the shops
+    text_he: להקל את הקיצוב ולאפשר ליבוא למלא את החנויות
     # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
     alternative:
       basis: debated
