@@ -31,7 +31,7 @@ namespace Statecraft.HexTiles
         const string B01 = TownPrefix + "b01-white-city-v2", B02a = TownPrefix + "b02a-tel-aviv-corner-block-v2",
             B02b = TownPrefix + "b02b-tel-aviv-narrow-block-v2", B03a = TownPrefix + "b03a-jerusalem-arches-v2",
             B03b = TownPrefix + "b03b-jerusalem-external-stair-v2", B03c = TownPrefix + "b03c-jerusalem-plain-v2",
-            B04a = TownPrefix + "b04a-haifa-stone-balconies-v2", B04b = TownPrefix + "b04b-haifa-loading-doors-v2",
+            B04b = TownPrefix + "b04b-haifa-loading-doors-v2",
             B05a = TownPrefix + "b05a-moshava-house-v2", B07 = TownPrefix + "b07-kibbutz-dining-hall-v2",
             B09a = TownPrefix + "b09a-kibbutz-communal-building-v2", B13a = TownPrefix + "b13a-netanya-two-storey-v2",
             B16 = TownPrefix + "b16-farmhouse-v2", B17 = TownPrefix + "b17-stone-courtyard-house-v2",
@@ -57,7 +57,7 @@ namespace Statecraft.HexTiles
             ("sandbox:kit_jaffa", B17, true),
             ("sandbox:kit_jaffa_2", B03a, false),   // b21 artisan workshop
             ("sandbox:kit_jaffa_3", B03c, true),
-            ("sandbox:kit_haifa", B04a, true),
+            ("sandbox:kit_haifa", B17, false),   // b04a: its full mesh has open wall triangles (1.33% see-through)
             ("sandbox:kit_haifa_2", B04b, true),
             ("sandbox:kit_haifa_3", B05a, true),
             ("sandbox:kit_jerusalem", B03a, true),
