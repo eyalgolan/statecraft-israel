@@ -67,32 +67,28 @@ On rivers, the current code follows Civ VI (on edges). Civ VII's in-tile rivers 
 river hex is its own feature. Edge rivers fit "crossing a river costs movement" better. Tal should pick one. The data
 format is the only part that is costly to change later.
 
-## 3. Gameplay mechanics worth adopting (proposals for Tal, not decisions)
+## 3. Gameplay mechanics: the owner's rulings, and what the hex tiles must show
 
-The simulation has no units or movement today (`sim/Statecraft.Sim/MapActions.cs` places building actions only). Each
-item below would be new rules in `content/rules.yaml` and new sim code. It would change the golden hashes on purpose,
-in its own reviewed PR. The hex tiles would only animate the result, which `HexUnitMotion` already does. Movement costs
-should be keyed on the content `biome` and sim data, never on the presentation `HexTerrain`.
+Movement and stacking are decided on `main`, in `docs/gdd/military-combat.md` (`Q-MOVE-1` to `Q-MOVE-5`, 15 October
+2026). The values are labelled design values in `content/rules.yaml`, set in the implementing PRs (#1071, #1073). The
+hex tiles only show the sim's result and never decide a rule. Movement costs are keyed on the content `biome`, never
+on the presentation `HexTerrain`.
 
-- **P1. Stacking.** Proposal: one military unit per hex, plus at most one civilian or support unit (convoy, engineers),
-  as in Civ VI. Civ VII's alternative is a commander unit that packs several units into one hex and deploys them to
-  adjacent hexes on arrival. Visual cost: the 8-figure wedge (0.22 S spacing) already fills the hex. A second slot
-  needs a smaller formation or an offset spot. That is a contract change: `unit2` or a `units[]` field.
-- **P2. Movement costs, in movement points (MP) per hex entered.** Proposal: coastal plain and valley 1; hills 2;
-  mountains 3. Mountains stay passable: unlike Civ they cover 251 hexes, including the Jerusalem corridor. Desert costs
-  1 on foot and 2 for wheeled vehicles off road. Dunes and marsh (Hula) cost 2 to 3. Civ VI charges +1 for hills, woods
-  and marsh, and you can't enter a hex you can't pay for in full.
-- **P3. Rivers.** Proposal: crossing a river edge without a road ends the move, close to Civ V and VI. Verify the exact
-  Civ VI cost; our only source on it is a pre-release build. A road on the crossing makes it a bridge.
-- **P4. Roads.** Proposal: 0.5 MP per hex along a road, ignoring terrain. Roads also bridge rivers. Wheeled units
-  outside roads pay double in hills. This makes the Tel Aviv to Jerusalem road (7 hexes) the lifeline it was.
-- **P5. ZOC-lite (zone of control).** Proposal: entering a hex next to an enemy military unit ends the move. Leaving is
-  free, and roads don't cancel it. This models ambushes at Bab al-Wad without a combat system. Civ VII defines ZOC as
-  restricting military movement near another power's units.
-- **P6. Convoys.** Proposal: a supply convoy is a support unit that must stay on roads. It delivers supply to a
-  besieged settlement, with ambush risk under ZOC. It would tie into existing events (`content/events/`).
-- **P7. Territory.** Proposal: an owner per hex, derived in the sim from settlements and control, and shown as
-  borders. 15 May 1948 (end of the Mandate) is a visible border change.
+What the tiles must show:
+- **Costs (`Q-MOVE-1`):** integer movement points per unit type against an integer cost per biome. Lakes and the sea
+  are impassable. A cost overlay, if wanted, reads the sim's values.
+- **Roads (`Q-MOVE-2`):** only a *built corridor road* lowers its hex's cost. Board roads are drawn for every period,
+  so the look must tell a built corridor road from an ordinary track.
+- **Stacking (`Q-MOVE-3`):** a stacking limit per side per hex; #1073 proposes 3. The units layer must therefore draw
+  **up to three units in one hex**. Today one 8-figure wedge fills it, so three smaller formations or offset spots are
+  a contract change (`units[]` on the board hex). Entering a hex an enemy unit holds is an attack.
+- **No zone of control (`Q-MOVE-4`) and no transport or embarkation (`Q-MOVE-5`).** Nothing in the look should suggest
+  either.
+- **Territory:** control already comes per period from `content/map/control_hexes_1948_49.yaml`, and the map editor
+  (#1009) edits it. Borders on the tiles read that data.
+
+Still open, to bring to the owner as proposals with options and costs (AGENTS.md): river edges (no rule yet), and new
+tile or hex types beyond the eight biomes, which the GDD marks TBD.
 
 ## 4. Team work split
 
@@ -112,7 +108,7 @@ Asset rules for everyone:
 
 **Independent** packages need only new files. **Blocked** packages need WP0 first.
 
-**WP0. Contract v2.** Gating; owner Tal or one maintainer he names; via an issue. Size L.
+**WP0. Contract v2.** Gating; proposed by Tal in an issue and approved by the owner (eyalgolan, the sole code owner). Size L.
 - Goal: one reviewed change to `Core/` and the board format for what the other packages need: per-hex `feature`,
   `resource` and `owner`; a second unit slot; an overlay registry (`[HexOverlay]`, `Overlays/`, one file per overlay,
   like prototypes); a read-only neighbour query.
@@ -155,9 +151,10 @@ Asset rules for everyone:
 - Done: the unit-move video renders; walk and idle clips named "walk" and "idle"; `CycleShare` ≈ 0.86 × `HeightShare`.
 
 **WP6. Vehicles and guns.** Partly blocked. Size M.
-- Goal: `armoured_car` (one vehicle) is independent.
-- Needs a Tal decision: `artillery` (a gun plus crew fits neither "8 characters" nor "one vehicle") and
-  `supply_convoy` (several vehicles).
+- Goal: the sim's unit types (`content/unit_types.yaml`: `veteran_soldier`, `artillery`, `armoured_car`). `armoured_car`
+  (one vehicle) is independent.
+- Needs a look decision (Tal proposes, owner approves): `artillery`, a gun plus crew that fits neither "8 characters"
+  nor "one vehicle". No convoy unit: the sim has no transport (`Q-MOVE-5`).
 - Owns: `Units/<Id>.cs` per unit.
 - Done: `YawOffset` checked in the close capture; ≤ `BudgetUnits`.
 
@@ -190,7 +187,7 @@ Asset rules for everyone:
 - Done: board frame time and triangle totals before and after on Tal's machine.
 
 **WP11. Unit banners and icons.** Art independent; integration blocked. Size S/M.
-- Goal: Civ-style unit flags: a faction colour plate, a type icon (infantry, armour, convoy, artillery), a strength
+- Goal: Civ-style unit flags: a faction colour plate, a type icon (infantry, armour, artillery), a strength
   pip; plus resource pins.
 - Owns: SVG and PNG icons in `asset-staging/ui-local/hex-tiles/icons/`, and an HTML mockup (not a Unity render).
 - Done: legible at board zoom in mockups; original art only; the flag drawn as a billboard over the unit spot (after
