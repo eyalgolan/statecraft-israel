@@ -332,6 +332,7 @@ namespace Statecraft.Game.UI
             pointer.HexClicked += onHex;
             var camRig = rig = cameraController.GetComponent<CameraRig>();
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
+            Own(new SafeAreaFit(root));                                    // the HUD keeps clear of the phone's notch
             var mini = minimap = Own(new MinimapPresenter(root, map.Hexes, text));
             var labelCamera = cameraController.GetComponent<Camera>();
             labels = Own(new MapLabelsPresenter(root, map, labelCamera, null,
