@@ -232,3 +232,41 @@ Researched and drafted by an AI agent (Claude Code, for personal2). It read the 
 PDFs, page by page, on 2026-10-15, and the Wikipedia pages tagged [S] on 2026-10-14. A human must check each figure
 against the scans before any value becomes content. That check is the owner gate for Phase 3 PR 1, which copies the
 values into `content/`; it does not block merging this note.
+
+## Human scan verification reported for #1005
+
+[@alexago reported on 18 October 2026](https://github.com/eyalgolan/statecraft-israel/issues/1005#issuecomment-6255739037)
+that they checked the cited CBS scans and that all 11 sourced population figures, all five city employment shares,
+and the national working-population ratio match. The table below records the covered start values from this note
+and `content/cities.yaml`; the table and page references are those already documented above. @alexago's report gives
+no separate scan-opening dates, so 18 October is the report's publication date, not an inferred date of access.
+
+| City | Figure reported to match | CBS table and printed page |
+|---|---|---|
+| Jerusalem | Population: 83,984 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Tel Aviv-Yafo | Population: 248,459 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Haifa | Population: 98,618 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Tiberias | Population: 5,555 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Safed | Population: 2,317 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Petah Tikva | Population: 21,879 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Rishon LeZion | Population: 10,433 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Zikhron Ya'akov | Population: 1,935 (8 November 1948) | SA No. 3, Settlements in Israel, p. 133 |
+| Rehovot | Population: 12,522 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Hadera | Population: 11,811 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Netanya | Population: 11,589 (8 November 1948) | SA No. 14, Table 11, pp. 30-31 |
+| Jerusalem | Working-population share: 34.2% | SA No. 1, Table 9, p. 26 (PDF p. 49) |
+| Tel Aviv-Yafo | Working-population share: 42.6% | SA No. 1, Table 9, p. 26 (PDF p. 49) |
+| Haifa | Working-population share: 42.9% | SA No. 1, Table 9, p. 26 (PDF p. 49) |
+| Tiberias | Working-population share: 33.4% | SA No. 1, Table 9, p. 26 (PDF p. 49) |
+| Safed | Working-population share: 34.5% | SA No. 1, Table 9, p. 26 (PDF p. 49) |
+
+The separate national check is 314,781 working people out of 716,678 Jews, rounded to 43.9%
+(SA No. 2, Table 9, printed p. 24; PDF p. 54). @alexago explicitly reports that ratio matches too.
+Its use for seven towns remains a design default, not a sourced city-specific employment share.
+
+@alexago also explicitly confirms Zikhron Ya'akov's 1,935 figure in SA No. 3 and reports no 8 November 1948
+population value for Rosh Pinna there. Rosh Pinna therefore remains Wikipedia-only as documented.
+
+This section records @alexago's own check of these figures; it was compiled by Codex from their linked report.
+It does not extend that check to the note's other figures, resolve the documented source conflicts, or provide
+historian, language, or sensitivity approval. The original AI research provenance and design caveats above remain.

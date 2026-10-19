@@ -176,6 +176,8 @@ namespace Statecraft.Sim
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);
                 case CancelProject p:
                     return Projects.CancelCity(c, s, p.Project, why);
+                case BuyArms a:
+                    return Pools.BuyArms(c, s, a.Count, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

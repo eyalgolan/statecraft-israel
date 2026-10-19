@@ -35,6 +35,8 @@ hud.caption.cohesion: "Social cohesion"
 # the UXML's own text (HebrewUiTests.EachEnglishStaticTextIsTheUxmlsOwnText), so English shows what it always showed.
 # The top bar (HudPresenter):
 hud.nav.cabinet: "Cabinet"
+# The Cabinet disc's tip while a seat is vacant that the player can fill (#1109).
+hud.nav.cabinet_vacant: "Cabinet: a post is vacant. You can appoint someone to it."
 hud.nav.budget: "Budget"
 hud.nav.defence: "Defence"
 hud.nav.why: "Why?"

@@ -226,6 +226,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    above the info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests); the column keeps its 56 px width,
    so the backdrop, the screens and the toast keep their places. */
 .left-column .rail-button .nav-disc { top: 0; left: 0; width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
+/* A screen with something to do this turn (#1109, HudPresenter.ActionClass): a small gold dot on the disc's upper right,
+   ringed in the column's navy so it reads against the rim; the gold-light of End Turn's waiting highlight (#1034). */
+.nav-badge {
+    display: none; position: absolute; top: 1px; right: 1px; width: 14px; height: 14px;
+    border-radius: 7px; border-width: 2px; border-color: var(--navy-deep); background-color: var(--gold-light);
+}
+.nav-action .nav-badge { display: flex; }
 /* On a phone held upright the panel's scale falls to about 0.41 (375x667), where a 56 px disc is 22.8 px on screen: the
    column's discs are 60 px there, at least 24 on screen (LeftColumnTests), and the backdrop's strip and the backdrop
    follow the wider column. */

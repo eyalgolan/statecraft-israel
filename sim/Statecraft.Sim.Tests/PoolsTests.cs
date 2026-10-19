@@ -207,4 +207,116 @@ public class PoolsTests
         Assert.Equal("mvp.k_food", ex.Field);
         Assert.Contains("food_supply", ex.Message);
     }
+
+    // R-ARMS-001: the Arms stock starts at arms_start in the GDD loop; the legacy loop has no pool.
+    [Fact]
+    public void TheArmsStockStartsAtTheRulesValue()
+    {
+        Assert.Equal(20, Simulation.NewGame(Gdd(), 1, Mode.Historical).Arms);
+        Assert.Equal(Real.Rules.Mvp!.ArmsStart!.Value, Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical).Arms);
+        Assert.Equal(0, Simulation.NewGame(ContentLoader.Load(Fixture.Write()), 1, Mode.Historical).Arms);
+    }
+
+    // R-ARMS-001: the stock reaches the hash only when set (R-LOOP-002), and a clone does not share it.
+    [Fact]
+    public void TheArmsStockIsHashedOnlyWhenSet()
+    {
+        var legacy = Simulation.NewGame(ContentLoader.Load(Fixture.Write()), 1, Mode.Historical);
+        Assert.DoesNotContain("\narms=", legacy.Describe());
+        var s = Simulation.NewGame(Gdd(), 1, Mode.Historical);
+        Assert.Contains("\narms=20", s.Describe());
+        var other = s.Clone(); other.Arms = 19;
+        Assert.NotEqual(s.Hash(), other.Hash());
+        Assert.Equal(20, s.Arms);
+    }
+
+    // R-ARMS-002: BuyArms adds whole units at once and the Treasury pays arms_price for each.
+    [Fact]
+    public void BuyingArmsCostsMoney()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Simulation.Step(c, s, new Command[] { new BuyArms(4) });
+        Assert.Empty(r.Rejected);
+        Assert.Equal(24, r.State.Arms);
+        Assert.Equal(Step(c, s).Treasury - 4 * 0.25, r.State.Treasury, 9);
+        Assert.Contains(r.Why, x => x.System == "economy" && x.Target == "arms" && x.Delta == 4 && x.Message == "Bought 4 Arms, cost IL 1.0m");
+        Assert.Equal(1.0, c.Rules.AttentionCost["buy_arms"]);   // before the rung step (R-GOV-002)
+    }
+
+    // R-ARMS-002 with R-MONEY-003: a short Treasury borrows the shortfall, as every GDD cost does.
+    [Fact]
+    public void AShortTreasuryBorrowsForArms()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = 0.5;
+        s.Debt = 3;
+        var why = new List<Cause>();
+        Assert.Null(Pools.BuyArms(c, s, 4, why));
+        Assert.Equal((0.0, 24), (s.Treasury, s.Arms));
+        Assert.Equal(3.5, s.Debt, 9);
+        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.5m for Arms");
+    }
+
+    // R-ARMS-002: fewer than one unit is refused, the state as if the order had not been given (Attention refunded too),
+    // and so is the order in the legacy loop.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-3)]
+    public void BuyingLessThanOneUnitIsRefused(int count)
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Simulation.Step(c, s, new Command[] { new BuyArms(count) });
+        Assert.Equal("Buy at least 1 Arms", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(Step(c, s).Hash(), r.State.Hash());
+        var legacy = ContentLoader.Load(Fixture.Write());
+        var l = Simulation.NewGame(legacy, 1, Mode.Historical);
+        Assert.Equal("That order is not available in this game", Assert.Single(Simulation.Step(legacy, l, new Command[] { new BuyArms(1) }).Rejected).Reason);
+    }
+
+    // R-ARMS-002: a purchase that would take the stock past a whole number's range is refused, never wrapped.
+    [Fact]
+    public void APurchaseBeyondTheStocksRangeIsRefused()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var after = s.Clone();
+        Assert.Equal("That is more Arms than the stock can hold", Pools.BuyArms(c, after, int.MaxValue, new List<Cause>()));
+        Assert.Equal(s.Hash(), after.Hash());
+    }
+
+    // R-ARMS-001 to R-ARMS-003: missing or negative values are load errors, never a default.
+    [Theory]
+    [InlineData("  arms_start: 20\n", "  arms_start: -1\n", "mvp.arms_start", ">= 0")]
+    [InlineData("  arms_start: 20\n", "", "mvp.arms_start", "required")]
+    [InlineData("  arms_price: 0.25\n", "", "mvp.arms_price", "required")]
+    [InlineData("  arms_price: 0.25\n", "  arms_price: -0.1\n", "mvp.arms_price", "finite number >= 0")]
+    [InlineData("  arms_price: 0.25\n", "  arms_price: .inf\n", "mvp.arms_price", "finite number >= 0")]
+    [InlineData("  arms_per_recruit_group: 2\n", "", "mvp.arms_per_recruit_group", "required")]
+    [InlineData("  arms_per_recruit_group: 2\n", "  arms_per_recruit_group: -2\n", "mvp.arms_per_recruit_group", ">= 0")]
+    public void TheArmsValuesAreRequired(string line, string replacement, string field, string message)
+    {
+        var files = Fixture.Gdd();
+        Assert.Contains(line, files["rules.yaml"]);
+        files["rules.yaml"] = files["rules.yaml"].Replace(line, replacement);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files)));
+        Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    // R-ARMS-002: the order survives a save (the `arms N` line) and replays to the same state.
+    [Fact]
+    public void TheArmsOrderSurvivesASave()
+    {
+        var g = GameSession.New(Real, GoldenRun.Seed, Mode.Historical);
+        g.Step(new Command[] { new BuyArms(25) });
+        g.Step(new Command[0]);
+        var text = g.Save.Write();
+        Assert.Contains("\narms 25\n", text);
+        var loaded = GameSession.Load(Real, text, out _).State;
+        Assert.Equal(g.State.Hash(), loaded.Hash());
+        Assert.Equal(Real.Rules.Mvp!.ArmsStart!.Value + 25, loaded.Arms);
+    }
 }

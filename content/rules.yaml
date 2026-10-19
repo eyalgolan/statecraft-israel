@@ -19,6 +19,7 @@ attention_cost:
   stop_work: 0                           # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   start_project: 1                       # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: the map action's cost)
   cancel_project: 0.5                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: cancel_training's cost)
+  buy_arms: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-G6, #781: one order, whatever the quantity)
 # Turn length on each security rung, rungs 1 to 5 (R-TURN-001). The GDD MVP plays monthly turns on every rung (D-B1), so
 # turns from 15 May 1948 end on the 15th of each month.
 turn_lengths: [month, month, month, month, month]
@@ -74,6 +75,13 @@ mvp:
   # about what the legacy direct cut (fx_crisis_food_per_year) took over the same weeks. Neither is a historical figure.
   k_food: 0.1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-C2: food_supply lost with an empty Food stock)
   cover_months: 3                        # DESIGN VALUE: owner-set balance, not a historical figure (D-C2: months of need a full Food stock holds)
+  # The national Arms pool (R-ARMS-001 to R-ARMS-003; D-G6). The owner approved these values on 18 October 2026 (#781:
+  # "Approve as drafted"; the balance pass, #813, may tune them). One Arms is the equipment package for one recruit group of
+  # people_per_unit (1,000) people, so training takes 1 a group. The reasoning, and the AI-drafted historical cross-check a
+  # person still has to check, are in research_notes/GDD phase 2/arms-values-draft.md.
+  arms_start: 12                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, #781: Arms on 15 May 1948)
+  arms_price: 1                          # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, #781: IL millions per Arms)
+  arms_per_recruit_group: 1              # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-UNIT-3: Arms per recruit group trained)
   # The veteran pioneer (R-VET-001, R-VET-002; D-D9). Agent-proposed design values the owner took on 17 October 2026 (#782:
   # "take all of the plan's recommendations"; Phase 4 plan Q-VET-1, Q-VET-2). Service is build_yishuv_turns, so one
   # completed yishuv makes a veteran pioneer.

@@ -556,6 +556,13 @@ namespace Statecraft.Sim
         /// <summary>The months of the nation's need the Food stock holds when full: the start stock and the level the monthly
         /// imports keep (R-FOOD-001, R-FOOD-002). Required in the GDD loop, at least 1.</summary>
         public int? CoverMonths { get; set; }
+        /// <summary>The national Arms stock on 15 May 1948, in Arms units (R-ARMS-001; D-G6, #781). Required in the GDD loop, &gt;= 0.</summary>
+        public int? ArmsStart { get; set; }
+        /// <summary>The Money one Arms unit costs, in IL millions (R-ARMS-002; D-G6, #781). Required in the GDD loop, finite and &gt;= 0.</summary>
+        public double? ArmsPrice { get; set; }
+        /// <summary>The Arms one recruit group takes when its training starts (R-ARMS-003; D-G6, Q-UNIT-3, #781). Required in the
+        /// GDD loop, &gt;= 0.</summary>
+        public int? ArmsPerRecruitGroup { get; set; }
         /// <summary>Turns of work after which a halutz unit becomes a veteran_halutz (R-VET-001; D-D9, Q-VET-1). Required in
         /// the GDD loop, at least 1.</summary>
         public int? VeteranHalutzService { get; set; }

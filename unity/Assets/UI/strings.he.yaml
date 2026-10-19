@@ -28,6 +28,8 @@ hud.caption.fx: "מטבע חוץ"
 # hud.caption.cohesion: Social cohesion; the GDD's Hebrew, kept by the owner (Q-HUD-3, 15 October 2026, #375; #380).
 hud.caption.cohesion: "לכידות חברתית"
 hud.nav.cabinet: "ממשלה"
+# The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). For the native reviewer (#564).
+hud.nav.cabinet_vacant: "ממשלה: יש תפקיד פנוי. אפשר למנות אליו מישהו."
 hud.nav.budget: "תקציב"
 hud.nav.defence: "ביטחון"
 hud.nav.why: "למה?"

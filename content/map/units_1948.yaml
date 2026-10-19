@@ -593,6 +593,10 @@ units:
 # --- Navy: the first ships (four ex-Aliyah Bet ships impounded in Haifa harbour; two are named and sourced here) ----
 - id: ins_haganah
   name: INS Haganah (K-20)
+  name_he: "אח״י הגנה"
+  name_he_review: agent-checked
+  # The Palmach service record names the ship; Palyam identifies it as K-20. These sources check the name only.
+  name_he_sources: [{url: 'https://palmach.org.il/veterans/veteranpage/?itemId=76294', checked: '2026-10-19'}, {url: 'https://www.palyam.org/Hahapala/Teur_haflagot/hf_Hagana.php', checked: '2026-10-19'}]
   number: Corvette, commissioned 1948
   service: navy
   side: israel

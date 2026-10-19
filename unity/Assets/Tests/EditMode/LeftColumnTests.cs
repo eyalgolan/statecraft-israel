@@ -308,4 +308,50 @@ public class LeftColumnTests
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    /// <summary>#1109: the Cabinet disc wears a small gold badge, and its tip says why, while the sim has a vacant seat the
+    /// player can fill this turn (SimBridge.Vacancies, Cabinet.Vacancies); queuing an appointment to every such seat takes
+    /// it off. No other disc has a badge. Education is vacant from 19 May 1951 (as Minority Affairs, which has no holder
+    /// after 10 March 1949).</summary>
+    [UnityTest]
+    public IEnumerator TheCabinetDiscShowsABadgeWhileASeatIsVacant()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var ui = new UiTestKit();
+            ui.Root.Q("root").RemoveFromClassList("loading");
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var bridge = new SimBridge(g, text);
+            using var hud = new HudPresenter(ui.Root, bridge, text);
+            var cabinet = ui.Q<Button>("nav-cabinet");
+            var badge = cabinet.Q(className: HudPresenter.BadgeClass);
+            Assert.IsNotNull(badge, "the Cabinet disc carries a badge element");
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(cabinet.ClassListContains(HudPresenter.ActionClass), "1948: no seat is vacant");
+            Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "1948: the badge is hidden");
+            Assert.AreEqual(text["hud.nav.cabinet"], cabinet.tooltip, "1948: the tip is the disc's name");
+
+            g.State.Date = new System.DateTime(1951, 5, 19);
+            g.State.Attention = 10;
+            hud.Render();   // a turn would (bridge.Changed)
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsTrue(cabinet.ClassListContains(HudPresenter.ActionClass), "May 1951: a seat to fill");
+            Assert.AreEqual(DisplayStyle.Flex, badge.resolvedStyle.display, "May 1951: the badge shows");
+            Assert.AreEqual(text["hud.nav.cabinet_vacant"], cabinet.tooltip, "May 1951: the tip says why");
+            Assert.AreEqual(text["hud.nav.cabinet"], cabinet.text, "the name stays the text (the event log records it)");
+            var disc = cabinet.Q(className: "nav-disc").worldBound; var dot = badge.worldBound;
+            Assert.IsTrue(dot.width > 0 && dot.center.x > disc.center.x && dot.center.y < disc.center.y && disc.Overlaps(dot),
+                $"the badge sits on the disc's upper right ({dot} on {disc})");
+            foreach (var other in ScreenNav.Screens.Where(x => x != "cabinet"))
+                Assert.IsNull(ui.Q<Button>("nav-" + other).Q(className: HudPresenter.BadgeClass), other + ": no badge");
+
+            foreach (var office in Cabinet.Vacancies(C, g.State, new Command[0]))
+                Assert.IsNull(bridge.Queue(new Appoint(office.Id, Cabinet.Candidates(C, g.State, office.Id).First(x => x.reason == null).person.Id)), office.Id);
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(cabinet.ClassListContains(HudPresenter.ActionClass), "every vacant seat has a queued appointment");
+            Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "the badge goes");
+            Assert.AreEqual(text["hud.nav.cabinet"], cabinet.tooltip, "the tip is the name again");
+        }
+    }
 }

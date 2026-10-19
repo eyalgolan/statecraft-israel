@@ -1152,6 +1152,13 @@ namespace Statecraft.Sim
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
                 if (m.CoverMonths == null) throw new ContentException(file, "mvp.cover_months", "required when eras.yaml systems.loop is gdd");
                 if (m.CoverMonths < 1) throw new ContentException(file, "mvp.cover_months", "must be >= 1");
+                // R-ARMS-001 to R-ARMS-003: required, so a missing key is never read as 0 (no stock, free Arms, or training without them).
+                if (m.ArmsStart == null) throw new ContentException(file, "mvp.arms_start", "required when eras.yaml systems.loop is gdd");
+                if (m.ArmsStart < 0) throw new ContentException(file, "mvp.arms_start", "must be >= 0");
+                if (m.ArmsPrice == null) throw new ContentException(file, "mvp.arms_price", "required when eras.yaml systems.loop is gdd");
+                if (!(m.ArmsPrice >= 0 && IsFinite(m.ArmsPrice.Value))) throw new ContentException(file, "mvp.arms_price", "must be a finite number >= 0");
+                if (m.ArmsPerRecruitGroup == null) throw new ContentException(file, "mvp.arms_per_recruit_group", "required when eras.yaml systems.loop is gdd");
+                if (m.ArmsPerRecruitGroup < 0) throw new ContentException(file, "mvp.arms_per_recruit_group", "must be >= 0");
                 // R-VET-001, R-VET-002: required, so a missing key is not read as 0 (a veteran after no work, or one that builds nothing).
                 foreach (var (key, v) in new[] { ("veteran_halutz_service", m.VeteranHalutzService), ("veteran_progress", m.VeteranProgress) })
                 {

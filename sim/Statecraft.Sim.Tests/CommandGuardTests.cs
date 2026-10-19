@@ -25,6 +25,7 @@ public class CommandGuardTests
         [typeof(StopWork)] = new StopWork(1),
         [typeof(StartProject)] = new StartProject("housing", "tel_aviv", 1, 0),
         [typeof(CancelProject)] = new CancelProject(1),
+        [typeof(BuyArms)] = new BuyArms(0),   // refused (fewer than one unit), as GovernmentTests.ARefusedGddOrderRefundsItsAttention needs
     };
 
     static IEnumerable<Type> CommandTypes() =>

@@ -19,10 +19,10 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 9922495a92307f87d7b5338cd8501fb60ad0424ea6b19ef2d1ec55c44a8bdfb8"
-   # and "GOLDEN OK hash1952 722d90a214d8f328fa9e534ab19a8e973de21cdee645aaa6983fe88b3cc55c08"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 4f1202cfa20e1f3cc7521c7b3baac386330b77fdbacc25928d781b1659747340"
+   # and "GOLDEN OK hash1952 283349502eb580123fcea6bf64ca174f913627132a1325f3dbf00743435623e2"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
+     --expect "SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -48,7 +48,7 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f"
+     --expect "SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
