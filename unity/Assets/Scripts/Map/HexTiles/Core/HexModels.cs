@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Statecraft.Game.Map.Kits;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -11,6 +12,8 @@ namespace Statecraft.HexTiles
     ///   "tiles:&lt;path&gt;"   Resources/HexTiles/&lt;path&gt; (a contributor's own models, one folder per prototype)
     ///   "sandbox:&lt;name&gt;" Resources/HexSandbox/&lt;name&gt; (EZ-Tree trees, Poly Haven rocks, decimated Tripo building kit)
     ///   "proto:&lt;name&gt;"   Resources/SettlementPrototypes/&lt;name&gt; (Tripo heroes, figures, animals, vehicles)
+    ///   "town:&lt;folder&gt;[@mid]" a shipped b*-v2 building (TownModels.Ids; TownModelSet's full mesh, or its baked mid
+    ///                     level), which the sandbox building ids draw instead while the set is found (TownAliases)
     /// A trailing "*" picks among &lt;name&gt;, &lt;name&gt;_2, &lt;name&gt;_3 ... per placement. A missing model draws its stand-in, so a
     /// tile works on a machine without the local (git-ignored, pending-rights) models.</summary>
     public static class HexModels
@@ -24,10 +27,67 @@ namespace Statecraft.HexTiles
         public const string TownPrefix = "town:", MidSuffix = "@mid";
         /// <summary>Stands a Z-up town mesh up (mesh z to y, mesh y to -z), as SettlementKits.Fit does.</summary>
         public static readonly Matrix4x4 TownTurn = Matrix4x4.Rotate(Quaternion.Euler(-90f, 0f, 0f));
-        public static readonly (string id, string town, bool same)[] TownAliases = Array.Empty<(string, string, bool)>();
+
+        const string B01 = TownPrefix + "b01-white-city-v2", B02a = TownPrefix + "b02a-tel-aviv-corner-block-v2",
+            B02b = TownPrefix + "b02b-tel-aviv-narrow-block-v2", B03a = TownPrefix + "b03a-jerusalem-arches-v2",
+            B03b = TownPrefix + "b03b-jerusalem-external-stair-v2", B03c = TownPrefix + "b03c-jerusalem-plain-v2",
+            B04a = TownPrefix + "b04a-haifa-stone-balconies-v2", B04b = TownPrefix + "b04b-haifa-loading-doors-v2",
+            B05a = TownPrefix + "b05a-moshava-house-v2", B07 = TownPrefix + "b07-kibbutz-dining-hall-v2",
+            B09a = TownPrefix + "b09a-kibbutz-communal-building-v2", B13a = TownPrefix + "b13a-netanya-two-storey-v2",
+            B16 = TownPrefix + "b16-farmhouse-v2", B17 = TownPrefix + "b17-stone-courtyard-house-v2",
+            B24 = TownPrefix + "b24-agricultural-barn-v2", B28 = TownPrefix + "b28-water-tower-v2", B32 = TownPrefix + "b32-port-cargo-shed-v2";
+
+        /// <summary>The sandbox building ids drawn as the shipped b*-v2 town models when the set is found (Tal, 19 October
+        /// 2026: the decimated sandbox kit had lost faces, so the ground showed through walls and windows). Each names its
+        /// "town:" id and whether it is the same Tripo model; false is a remap, because its own model (b11, b21) is not in
+        /// the set and is not pulled into a build. All take the full mesh: most baked mid levels have lost faces too
+        /// (HexModelMeshTests' report). OPEN (owner): the full meshes (about 6,000 triangles each) put the seven city and
+        /// village tiles over their triangle budgets; the level per alias or the budgets wait on that decision.</summary>
+        public static readonly (string id, string town, bool same)[] TownAliases =
+        {
+            ("sandbox:hq_white_city_hero", B01, true),
+            ("sandbox:hq_white_city", B02a, true),
+            ("sandbox:hq_white_city_2", B02b, true),
+            ("sandbox:hq_white_city_3", B13a, true),
+            ("sandbox:kit_white_city", B02a, true),
+            ("sandbox:kit_white_city_2", B02b, true),
+            ("sandbox:kit_white_city_3", B13a, true),
+            ("sandbox:kit_white_city_4", B13a, false),   // b11 shikun block
+            ("sandbox:kit_jaffa", B17, true),
+            ("sandbox:kit_jaffa_2", B03a, false),   // b21 artisan workshop
+            ("sandbox:kit_jaffa_3", B03c, true),
+            ("sandbox:kit_haifa", B04a, true),
+            ("sandbox:kit_haifa_2", B04b, true),
+            ("sandbox:kit_haifa_3", B05a, true),
+            ("sandbox:kit_jerusalem", B03a, true),
+            ("sandbox:kit_jerusalem_2", B03b, true),
+            ("sandbox:kit_jerusalem_3", B03c, true),
+            ("sandbox:kit_jerusalem_4", B17, true),
+            ("sandbox:kit_negev", B17, true),
+            ("sandbox:kit_negev_2", B03c, true),
+            ("sandbox:kit_negev_3", B03a, false),   // b21 artisan workshop
+            ("sandbox:kit_moshava", B05a, true),
+            ("sandbox:kit_moshava_2", B16, true),
+            ("sandbox:kit_moshava_3", B24, true),
+            ("sandbox:kit_kibbutz", B09a, true),
+            ("sandbox:kit_kibbutz_2", B07, true),
+            ("sandbox:kit_kibbutz_3", B24, true),
+            ("sandbox:kit_kibbutz_4", B28, true),
+            ("sandbox:kit_stone_village", B17, true),
+            ("sandbox:kit_stone_village_2", B03c, true),
+            ("sandbox:kit_port", B32, true),
+        };
+
+        /// <summary>Off draws the sandbox prefabs again (a before shot, or a test of the fallback); call
+        /// <see cref="Clear"/> after switching.</summary>
+        public static bool DrawTownModels = true;
 
         static readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         static readonly Dictionary<string, string[]> variants = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        static readonly Dictionary<string, string> townOf = TownAliases.ToDictionary(a => a.id, a => a.town, StringComparer.Ordinal);
+        static readonly Dictionary<string, GameObject> templates = new Dictionary<string, GameObject>(StringComparer.Ordinal);
+        static TownModelSet? townSet;
+        static Transform? templateRoot;
 
         public static string PathOf(string id) =>
             id.StartsWith("tiles:", StringComparison.Ordinal) ? "HexTiles/" + id.Substring(6)
@@ -35,11 +95,66 @@ namespace Statecraft.HexTiles
             : id.StartsWith("proto:", StringComparison.Ordinal) ? "SettlementPrototypes/" + id.Substring(6)
             : "HexTiles/" + id;
 
+        /// <summary>What <paramref name="id"/> draws: a town model's template (a "town:" id, or a sandbox id in
+        /// <see cref="TownAliases"/>, while the set is found), else its Resources prefab, else null (its stand-in).</summary>
         public static GameObject? Prefab(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-            if (prefabs.TryGetValue(id, out var p)) return p;
-            return prefabs[id] = Resources.Load<GameObject>(PathOf(id));
+            // A cached template is made again if it was destroyed (Unity's fake null); a cached miss stays a miss.
+            if (prefabs.TryGetValue(id, out var p) && (ReferenceEquals(p, null) || p != null)) return p;
+            bool town = id.StartsWith(TownPrefix, StringComparison.Ordinal), alias = townOf.ContainsKey(id);
+            var made = town || alias ? Town(town ? id : townOf[id]) : null;
+            if (made != null) return prefabs[id] = made;
+            var prefab = town ? null : Resources.Load<GameObject>(PathOf(id));
+            // Without the set (a player before the map scene has loaded it), not remembered, so the set is looked for again.
+            if (!(DrawTownModels && (town || alias))) prefabs[id] = prefab;
+            return prefab;
+        }
+
+        /// <summary>Forgets every model looked up, the town set and the "*" variants.</summary>
+        public static void Clear() { prefabs.Clear(); variants.Clear(); townSet = null; }
+
+        /// <summary>The town models' list (TownModelSet, complete): in the editor the asset itself, in a player the one
+        /// the map scene loaded (MapScene references it; no Resources folder, so it adds nothing to a build). Null until
+        /// found; a miss is not remembered.</summary>
+        public static TownModelSet? TownSet()
+        {
+            if (townSet != null) return townSet;
+#if UNITY_EDITOR
+            townSet = UnityEditor.AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
+#endif
+            if (townSet == null) townSet = Resources.FindObjectsOfTypeAll<TownModelSet>().FirstOrDefault();
+            if (townSet != null && townSet.Missing() != null) townSet = null;
+            return townSet;
+        }
+
+        /// <summary>The template a "town:" id draws: an object under a hidden, inactive root holding the set's mesh (full,
+        /// or the baked mid level for "@mid") and material, stood up from Z-up. The template's own object is active, so a
+        /// copy of it (Parts) has renderer bounds; the inactive root keeps the template itself from drawing. Parts puts it
+        /// in the unit frame (footprint centred, base at y = 0).</summary>
+        static GameObject? Town(string town)
+        {
+            if (!DrawTownModels) return null;
+            if (templates.TryGetValue(town, out var made) && made != null) return made;
+            var set = TownSet();
+            if (set == null) return null;
+            bool mid = town.EndsWith(MidSuffix, StringComparison.Ordinal);
+            int i = Array.IndexOf(TownModels.Ids, town.Substring(TownPrefix.Length, town.Length - TownPrefix.Length - (mid ? MidSuffix.Length : 0)));
+            if (i < 0) return null;
+            if (templateRoot == null)
+            {
+                var root = new GameObject("HexModels town templates") { hideFlags = HideFlags.HideAndDontSave };
+                root.SetActive(false);
+                templateRoot = root.transform;
+            }
+            var go = new GameObject(town.Substring(TownPrefix.Length)) { hideFlags = HideFlags.HideAndDontSave };
+            go.transform.SetParent(templateRoot, false);
+            var child = new GameObject("mesh", typeof(MeshFilter), typeof(MeshRenderer)) { hideFlags = HideFlags.HideAndDontSave };
+            child.transform.SetParent(go.transform, false);
+            child.transform.localRotation = TownTurn.rotation;
+            child.GetComponent<MeshFilter>().sharedMesh = mid ? set.mid[i] : set.meshes[i];
+            child.GetComponent<MeshRenderer>().sharedMaterial = set.materials[i];
+            return templates[town] = go;
         }
 
         /// <summary>The concrete id for a placement: a "*" id picks a present variant by the placement's position.</summary>

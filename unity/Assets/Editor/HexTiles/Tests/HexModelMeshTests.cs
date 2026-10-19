@@ -99,6 +99,26 @@ public class HexModelMeshTests
         Assert.That(holes, Is.Empty, string.Join("\n", holes));
     }
 
+    /// <summary>With the town models off (or their set missing) a sandbox id draws its sandbox prefab again, or nothing
+    /// (its stand-in) on a machine without it; a "town:" id draws nothing. With them on, it draws its town model.</summary>
+    [Test]
+    public void WithoutTownModelsTheSandboxPrefabDraws()
+    {
+        var (first, town, _) = HexModels.TownAliases[0];
+        try
+        {
+            HexModels.DrawTownModels = false; HexModels.Clear();
+            foreach (var (id, _, _) in HexModels.TownAliases)
+                Assert.That(HexModels.Prefab(id), Is.EqualTo(Resources.Load<GameObject>(HexModels.PathOf(id))), id);
+            Assert.That(HexModels.Prefab(town), Is.Null, town);
+        }
+        finally { HexModels.DrawTownModels = true; HexModels.Clear(); }
+        var drawn = HexModels.Prefab(first);
+        Assert.That(drawn, Is.Not.Null, first);
+        Assert.That(drawn!.name, Is.EqualTo(town.Substring(HexModels.TownPrefix.Length)), first);
+        Assert.That(drawn.activeInHierarchy, Is.False, "a template must not draw itself");
+    }
+
     /// <summary>Every sandbox id drawn as the same Tripo model keeps its facing: of the four quarter turns, the sandbox
     /// prefab's vertices lie nearest the town model's as drawn (both in the unit frame), unless another turn is within
     /// <see cref="FacingMargin"/> of it (a near-symmetric block, where the close shots decide). Mirrors are reported, not
@@ -163,9 +183,48 @@ public class HexModelMeshTests
             var s = HexMeshCheck.Facing(sandbox, drawn);
             lines.Add($"{id} -> {town}: " + string.Join(" ", s.Select((v, i) => $"{HexMeshCheck.FacingNames[i]}={v:F4}")));
         }
+        lines.AddRange(BudgetLines());
         var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "asset-staging/ui-local/hex-tiles/round2/buildings/mesh-report.txt"));
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllLines(path, lines);
         Debug.Log("HEX MESH REPORT -> " + path + "\n" + string.Join("\n", lines));
+    }
+
+    /// <summary>Each building tile's triangles on KeepsToItsTriangleBudget's hex ((2,-1), seed 1948) by which level the
+    /// town aliases draw: the sandbox kit (town models off), every alias full, every alias mid, and mid only where the
+    /// mid level is whole (within <see cref="Tolerance"/>), else full.</summary>
+    static List<string> BudgetLines()
+    {
+        var lines = new List<string> { "-- triangles per building tile at hex (2,-1), seed 1948, by the level the aliases draw --",
+            $"{"tile",-22} {"budget",7} {"sandbox",8} {"all full",9} {"all mid",8} {"mid where whole",16}" };
+        var set = HexModels.TownSet();
+        if (set == null) return lines;
+        var alias = HexModels.TownAliases.ToDictionary(a => a.id, a => a.town);
+        var whole = new Dictionary<int, bool>();
+        int Index(string town) => System.Array.IndexOf(TownModels.Ids, town.Substring(HexModels.TownPrefix.Length).Replace(HexModels.MidSuffix, ""));
+        bool MidWhole(int i) => whole.TryGetValue(i, out var w) ? w : whole[i] = HexMeshCheck.Of(new[] { (set.mid[i], HexModels.TownTurn) }).SeeThroughShare <= Tolerance;
+        foreach (var id in HexPrototypes.All.Keys.OrderBy(k => k, System.StringComparer.Ordinal))
+        {
+            var proto = HexPrototypes.Create(id);
+            var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
+            proto.Build(ctx);
+            if (!ctx.Placements.Any(p => alias.ContainsKey(HexModels.Resolve(p.Model, p.Position)))) continue;
+            int Sum(System.Func<int, bool> mid) => ctx.Placements.Sum(p =>
+            {
+                if (p.StandIn == StandIn.Flat) return 12;
+                if (!alias.TryGetValue(HexModels.Resolve(p.Model, p.Position), out var t)) return HexModels.Triangles(p.Model, p.StandIn, p.Position);
+                int i = Index(t);
+                return HexModels.IndexTriangles(mid(i) ? set.mid[i] : set.meshes[i]);
+            });
+            int sandbox;
+            try
+            {
+                HexModels.DrawTownModels = false; HexModels.Clear();
+                sandbox = ctx.Placements.Sum(p => p.StandIn == StandIn.Flat ? 12 : HexModels.Triangles(p.Model, p.StandIn, p.Position));
+            }
+            finally { HexModels.DrawTownModels = true; HexModels.Clear(); }
+            lines.Add($"{id,-22} {proto.TriangleBudget,7} {sandbox,8} {Sum(_ => false),9} {Sum(_ => true),8} {Sum(MidWhole),16}");
+        }
+        return lines;
     }
 }
