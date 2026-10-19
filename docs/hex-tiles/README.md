@@ -51,8 +51,111 @@ The generator does the following:
 - **Every other hex:** a tile chosen by terrain, biome and coast.
 - **Connections:** roads between the main towns along hex lines, and the Yarkon.
 
-The output is a plain file: edit it by hand afterwards, and re-running overwrites it. `tel_aviv` stays the small test
-board.
+The output is a plain file, and re-running overwrites it. Hand edits that should survive a re-run go in the board's
+overrides file (see "Painting hexes by hand"). `tel_aviv` stays the small test board.
+
+## Laying out the whole map: region recipes
+
+`tools/hex_tiles/regions.yaml` holds the recipes, as data. One command lays out every hex of the game map from it:
+
+```bash
+python3 tools/hex_tiles/make_board.py --regions tools/hex_tiles/regions.yaml --id israel --all --env-ring 1
+```
+
+That writes `Boards/israel.json`: 920 hexes in seven regions. Show it with `?hex-tiles=israel`, or capture it with
+`HexBoardCapture -board israel -boardOnly`. With `--regions`, the generator works like this:
+
+- **Regions.** Galilee and the north, the coastal plain, the central hills, Jerusalem, the Negev, the Arava and the
+  Jordan valley. Each is a `polygon` of `[lon, lat]` points, or a `hexes` list of `q, r` pairs. A hex goes to:
+  - the first region that lists it;
+  - else the first region whose polygon holds its centre;
+  - else `defaults.region`.
+
+  The polygons are landscape zones drawn roughly by eye. They are not borders.
+- **Ground.** The region's `ground` table maps each biome of `content/map/hexes.json` to a ground layer, over the
+  defaults.
+- **Settlements.** First the game's 25 settlements. Then the 1948 localities (`content/map/localities_1948.tsv`) of at
+  least `min_population` people, largest first. Each settlement takes one hex, and a hex that is already taken keeps its
+  first owner. The tile is chosen by the region's `settlements` rules, then the defaults'. A rule can match on:
+  - `id`;
+  - `type` (city, town, arab_town, village, kibbutz, moshav);
+  - `tier` (from `tiers`, by the 1945 population);
+  - `terrain`;
+  - `biome`.
+- **Other land.** The region's `nature` rules, then the defaults'. A rule can match on `terrain`, `biome` and `coastal`.
+  It sets a `prototype`, or a weighted `pick` drawn by a stable per-hex value, and it may set a `ground`.
+- **Roads.** They follow the traced 1948 main roads (`content/map/route_paths_1948.tsv`), hex centre to hex centre.
+- **Environment.** `--env-ring N` makes the land within N hexes of the board's edge environment: landscape with no tiles
+  and no hex lines. Each region's `flora` sets the trees and rocks on its environment hexes (see below).
+- **Settings.** Without `--regions` the generator keeps its built-in choices. `central_israel` and `tel_aviv_crop`
+  regenerate exactly as before.
+
+### Environment trees by region
+
+The board file carries a `regions` list, and each hex names its `region`. `HexEnvironment` reads the region's
+dress:
+
+- `flat` and `hills` species, each with a `model`, a stand-in `shape` (tree, pine, palm, rock or box) and a `weight`.
+  The species are picked by a noise field, so woods of one kind clump.
+- `density`, a multiplier on the woods.
+- a `rock` model, its `rockChance` (two tries a hex), and `rocksOnFlat`.
+
+The recipes plant, by region:
+
+| Region | Trees | Rocks |
+|---|---|---|
+| North | Tabor oak and Aleppo pine | |
+| Coast | Citrus and date palm | |
+| Negev and Arava | Acacia | Desert rock |
+| Jordan valley | Date palm and acacia | |
+| Jerusalem | Olive, cypress and pine | |
+
+A hex with no region, as on every board made before regions, gets the built-in mix: olive and carob on the flat, oak
+and pine on hills, limestone outcrops on hills.
+
+## Painting hexes by hand: overrides and the Hex Painter
+
+**Overrides.** Hand edits that must survive regeneration go in `Boards/<id>.overrides.json`, beside the board. The file
+has the same shape as the map editor's `content/map/overrides.yaml` (#1099): one list per field of `{hex: {q, r}, value}`,
+and no hex appears twice in a list.
+
+```json
+{ "board": "israel", "prototype": [ { "hex": { "q": -1, "r": 18 }, "value": "kibbutz" } ], "region": [] }
+```
+
+- **The fields are hex-tile presentation only:**
+  - `prototype`, the tile;
+  - `ground`, its ground layer;
+  - `unit` and `facing` (degrees, as a string), the unit standing on it;
+  - `region`, whose trees dress an environment hex.
+- **The split with the map editor (#1009).** Terrain, control and settlement locations belong to the map editor, in
+  `content/map/overrides.yaml`. That file is in the content hash and the sim reads it. The hex overrides stay out of
+  `content/`, so painting a hex never moves the content hash.
+- **The generator reads both files:**
+  - It applies the map editor's terrain (a hex's biome) and location moves (a settlement's hex) first, so boards follow
+    the game map.
+  - It applies the hex edits last, on every run, and reports any edit whose hex is not on the board.
+- **`HexBoard.Load` applies the hex edits again at load,** so an edit shows in the game before the board is
+  regenerated.
+
+**The Hex Painter** (**Statecraft/Hex Tiles/Hex Painter**, editor only):
+
+1. Pick a board and press **Load into scene**. It builds the board in the open scene, one object per hex. **Add the
+   captures' light and grade** lights an empty scene.
+2. Click a hex in the Scene view. It is outlined, and the window shows its terrain, region and note.
+3. Change its prototype, ground, unit, facing or region. The painter rebuilds only that hex (its pieces, its trees, its
+   unit, and the ground round it) and writes the edit to the board's overrides file. It does not edit terrain, control or
+   locations: those are the map editor's (#1009).
+
+The board in the scene is never saved: load it again after a script reload.
+
+To check the painter's path from the command line, use `HexPainterCapture`. It loads the board, shoots the hex, makes
+one edit, and shoots it again. The edit goes to a scratch overrides file in the capture folder unless `-overrides` names
+another:
+
+```bash
+Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.HexTiles.Painter.HexPainterCapture.Run -board israel -hex -3,19 -field prototype -value tel_aviv_city_mixed
+```
 
 ## Adding a prototype hex (the contributor workflow)
 
@@ -159,7 +262,9 @@ Render a single prototype on the board with its ground and neighbours. The outpu
 Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.HexTiles.Capture.HexBoardCapture.Run -prototype your_id
 ```
 
-Leave out `-prototype` to render the whole board, which adds `board.png`. Add `-on <tile>` to try your prototype on
+Leave out `-prototype` to render the whole board, which adds `board.png`. Each prototype and unit is shot once, at its
+last hex in the board file. `-boardOnly` skips those shots. A board too large for the standard shot (the whole country)
+is framed whole. Add `-on <tile>` to try your prototype on
 another tile's hex without editing the board file, for example `-prototype tel_aviv_city_mixed -on tel_aviv_city`
 (an A/B variant on the city's hex). The stats line lists:
 
@@ -279,7 +384,12 @@ when ffmpeg is on PATH. `-captureDir` and `-captureSize 1920x1080` are optional.
 | `Core/HexBoard.cs` | Board files, the Civ-style ground (`HexBoardSurface`), ground layers |
 | `Core/HexBoardBuilder.cs` | Terrain, sea, rendering, tile edges, per-tile reports |
 | `Core/HexUnits.cs` | `HexUnit`, `HexUnitMember`, and `HexUnitMotion` (moving a unit along hex centres) |
+| `Core/HexBoardOverrides.cs` | A board's hand edits (`<id>.overrides.json`) |
 | `Capture/HexBoardCapture.cs` | The capture command (`-prototype <id>`, plus `-on <tile>` to try it on another tile's hex) |
+| `Painter/HexPainterWindow.cs` | The Hex Painter window |
+| `Painter/HexPainter.cs` | The painter's write-back and one-hex rebuild |
+| `Painter/HexPainterCapture.cs` | The painter's path from the command line |
+| `tools/hex_tiles/regions.yaml` | The region recipes |
 | `Capture/HexUnitMoveCapture.cs` | The unit-move video |
 | `Tests/HexPrototypeTests.cs` | The contract tests |
 | `Prototypes/` | One file per prototype hex (`TelAvivCity.cs` is the reference) |

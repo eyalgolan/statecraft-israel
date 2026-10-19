@@ -27,8 +27,19 @@ namespace Statecraft.HexTiles
         public const string RootName = "HexBoard", MountainPrototype = "mountain_peaks";
 
         /// <summary>How the board sits in its scene: alone (its own sea, ground everywhere), or on the real map (no sea of
-        /// its own, terrain holes outside its land hexes so the real map shows around and under the sea).</summary>
-        public sealed class Options { public bool OwnSea = true; public bool HolesOutsideLand; public Transform? Parent; public Vector3 Origin; }
+        /// its own, terrain holes outside its land hexes so the real map shows around and under the sea). PerHex (the Hex
+        /// Painter's mode) keeps each tile's pieces under their own "hex q,r" object and remembers the board, its paints
+        /// and its terrain (HexBoardState), so RebuildHex can redo one hex; the game and the captures leave it off and
+        /// get one combined renderer per material.</summary>
+        public sealed class Options { public bool OwnSea = true; public bool HolesOutsideLand; public Transform? Parent; public Vector3 Origin; public bool PerHex; }
+
+        public const string PiecesName = "HexBoardPieces", UnitsName = "HexBoardUnits";
+        public static string HexName(int q, int r) => $"hex {q},{r}";
+        public static string EnvName(int q, int r) => $"env {q},{r}";
+        public static string UnitName(int q, int r) => $"unit {q},{r}";
+
+        /// <summary>One tile as built: its pieces, its ground paints, and its report.</summary>
+        sealed class Tile { public List<HexPlacement> Placements = null!; public List<HexPaint> Paints = null!; public HexTileReport Report = null!; }
 
         public static (GameObject root, List<HexTileReport> reports) Build(HexBoard board, Func<string, (Texture2D? albedo, Texture2D? normal)>? textures, int seed = 1948, string? only = null, Options? options = null)
         {
@@ -43,16 +54,100 @@ namespace Statecraft.HexTiles
             var reports = new List<HexTileReport>();
             var placements = new List<HexPlacement>();
             var paints = new List<(HexPaint paint, int q, int r)>();
+            var tiles = new List<(BoardHex hex, Tile tile)>();
             foreach (var h in board.Hexes.Values.OrderBy(h => h.q).ThenBy(h => h.r))
             {
-                string id = h.prototype != "" ? h.prototype : HexBoard.TerrainOf(h) == HexTerrain.Mountain ? MountainPrototype : "";
-                if (id == "" || (only != null && id != only && id != MountainPrototype)) continue;
-                var proto = HexPrototypes.Create(id);
-                var ctx = new HexTileContext(h.q, h.r, surface, seed);
-                proto.Build(ctx);
-                placements.AddRange(ctx.Placements);
-                paints.AddRange(ctx.Paints.Select(p => (p, h.q, h.r)));
-                reports.Add(new HexTileReport
+                var tile = BuildTile(h, surface, seed, only);
+                if (tile == null) continue;
+                placements.AddRange(tile.Placements);
+                paints.AddRange(tile.Paints.Select(p => (p, h.q, h.r)));
+                reports.Add(tile.Report);
+                tiles.Add((h, tile));
+            }
+            // The environment ring: continuous landscape round the playable hexes (no tiles, no hex lines).
+            var environment = HexEnvironment.Dress(board, surface, seed).ToList();
+            placements.AddRange(environment);
+            // Ground second: the tiles' paints (fields, sand, tracks) and the board's roads go into the terrain's splat.
+            var (terrain, rect) = BuildTerrain(root.transform, board, surface, textures, assets, paints, options.HolesOutsideLand);
+            if (options.OwnSea) BuildSea(root.transform, board, assets);
+            if (!options.PerHex) HexBoardRenderer.Emit(root.transform, placements, assets);
+            else
+            {
+                var pieces = new GameObject(PiecesName).transform; pieces.SetParent(root.transform, false);
+                foreach (var (h, tile) in tiles) HexBoardRenderer.Emit(pieces, tile.Placements, assets, HexName(h.q, h.r));
+                foreach (var g in environment.GroupBy(p => (p.Q, p.R)).OrderBy(g => g.Key.Q).ThenBy(g => g.Key.R))
+                    HexBoardRenderer.Emit(pieces, g, assets, EnvName(g.Key.Q, g.Key.R));
+                var state = root.AddComponent<HexBoardState>();
+                state.Board = board; state.Surface = surface; state.Seed = seed; state.Terrain = terrain; state.Rect = rect;
+                foreach (var (h, tile) in tiles) { state.Paints[(h.q, h.r)] = tile.Paints; state.Reports[(h.q, h.r)] = tile.Report; }
+            }
+            // Units: their own layer above the tiles, standing at idle on their hex's centre.
+            var units = new GameObject(UnitsName).transform; units.SetParent(root.transform, false);
+            foreach (var h in board.Hexes.Values.Where(h => h.unit != "").OrderBy(h => h.q).ThenBy(h => h.r))
+            {
+                if (only != null && h.prototype != only) continue;
+                reports.Add(BuildUnit(h, surface, options.PerHex ? Holder(units, UnitName(h.q, h.r)) : units));
+            }
+            HexBoardEdges.Build(root.transform, board, surface, assets);
+            return (root, reports);
+        }
+
+        /// <summary>Rebuilds one hex of a board built with Options.PerHex after its prototype, ground, unit, facing or
+        /// region changed in <c>HexBoardState.Board</c>: its pieces, its environment trees, its unit, and the ground splat
+        /// over it and the blend round it.
+        /// Returns the tile's report (null when the hex now has no tile).</summary>
+        public static HexTileReport? RebuildHex(GameObject root, int q, int r)
+        {
+            var state = root.GetComponent<HexBoardState>() ?? throw new InvalidOperationException("the board was not built with Options.PerHex");
+            var assets = root.GetComponent<HexBoardAssets>();
+            var h = state.Board.Hexes[(q, r)];
+            var pieces = root.transform.Find(PiecesName);
+            var old = pieces.Find(HexName(q, r));
+            if (old != null) Release(old.gameObject, assets);
+            state.Paints.Remove((q, r)); state.Reports.Remove((q, r));
+            HexTileReport? report = null;
+            var tile = BuildTile(h, state.Surface, state.Seed, null);
+            if (tile != null)
+            {
+                HexBoardRenderer.Emit(pieces, tile.Placements, assets, HexName(q, r));
+                state.Paints[(q, r)] = tile.Paints;
+                report = state.Reports[(q, r)] = tile.Report;
+            }
+            var oldEnv = pieces.Find(EnvName(q, r));
+            if (oldEnv != null) Release(oldEnv.gameObject, assets);
+            var env = HexEnvironment.DressHex(state.Board, h, state.Surface, state.Seed).ToList();
+            if (env.Count > 0) HexBoardRenderer.Emit(pieces, env, assets, EnvName(q, r));
+            var units = root.transform.Find(UnitsName);
+            var oldUnit = units.Find(UnitName(q, r));
+            if (oldUnit != null) Object.DestroyImmediate(oldUnit.gameObject);
+            if (h.unit != "") BuildUnit(h, state.Surface, Holder(units, UnitName(q, r)));
+            Repaint(state, HexGeometry.Centre(q, r, HexScale.HexM));
+            return report;
+        }
+
+        static Transform Holder(Transform parent, string name) { var t = new GameObject(name).transform; t.SetParent(parent, false); return t; }
+
+        /// <summary>Destroys a hex's pieces and the meshes and materials the board made for them.</summary>
+        static void Release(GameObject go, HexBoardAssets assets)
+        {
+            foreach (var f in go.GetComponentsInChildren<MeshFilter>(true)) assets.Release(f.sharedMesh);
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) foreach (var m in r.sharedMaterials) assets.Release(m);
+            Object.DestroyImmediate(go);
+        }
+
+        /// <summary>A hex's tile: its prototype (a mountain with none gets mountain_peaks) built on the board's ground, or
+        /// null for a hex with no tile (or another tile when only one is asked for).</summary>
+        static Tile? BuildTile(BoardHex h, HexBoardSurface surface, int seed, string? only)
+        {
+            string id = h.prototype != "" ? h.prototype : HexBoard.TerrainOf(h) == HexTerrain.Mountain ? MountainPrototype : "";
+            if (id == "" || (only != null && id != only && id != MountainPrototype)) return null;
+            var proto = HexPrototypes.Create(id);
+            var ctx = new HexTileContext(h.q, h.r, surface, seed);
+            proto.Build(ctx);
+            return new Tile
+            {
+                Placements = ctx.Placements.ToList(), Paints = ctx.Paints.ToList(),
+                Report = new HexTileReport
                 {
                     Prototype = id, Title = proto.Title, Q = h.q, R = h.r, Pieces = ctx.Placements.Count, Budget = proto.TriangleBudget,
                     StandIns = ctx.Placements.Count(p => p.StandIn == StandIn.Flat || HexModels.Prefab(HexModels.Resolve(p.Model, p.Position)) == null),
@@ -60,33 +155,24 @@ namespace Statecraft.HexTiles
                     // Which models drew and which fell back to stand-ins ("~" marks a missing model).
                     Models = string.Join(", ", ctx.Placements.GroupBy(p => p.StandIn == StandIn.Flat ? "flat" : (HexModels.Prefab(HexModels.Resolve(p.Model, p.Position)) == null ? "~" : "") + p.Model)
                         .OrderBy(g => g.Key).Select(g => $"{g.Key} x{g.Count()}")),
-                });
-            }
-            // The environment ring: continuous landscape round the playable hexes (no tiles, no hex lines).
-            placements.AddRange(HexEnvironment.Dress(board, surface, seed));
-            // Ground second: the tiles' paints (fields, sand, tracks) and the board's roads go into the terrain's splat.
-            BuildTerrain(root.transform, board, surface, textures, assets, paints, options.HolesOutsideLand);
-            if (options.OwnSea) BuildSea(root.transform, board, assets);
-            HexBoardRenderer.Emit(root.transform, placements, assets);
-            // Units: their own layer above the tiles, standing at idle on their hex's centre.
-            var units = new GameObject("HexBoardUnits").transform; units.SetParent(root.transform, false);
-            foreach (var h in board.Hexes.Values.Where(h => h.unit != "").OrderBy(h => h.q).ThenBy(h => h.r))
+                },
+            };
+        }
+
+        /// <summary>A hex's unit, standing at idle on its centre under <paramref name="parent"/>, and its report.</summary>
+        static HexTileReport BuildUnit(BoardHex h, HexBoardSurface surface, Transform parent)
+        {
+            var type = HexUnitTypes.Create(h.unit);
+            var unit = type.Create();
+            var motion = new HexUnitMotion(unit, new[] { (h.q, h.r) }, surface, parent, HexScale.HexM, h.facing);
+            motion.Pose(0f, false);
+            return new HexTileReport
             {
-                if (only != null && h.prototype != only) continue;
-                var type = HexUnitTypes.Create(h.unit);
-                var unit = type.Create();
-                var motion = new HexUnitMotion(unit, new[] { (h.q, h.r) }, surface, units, HexScale.HexM, h.facing);
-                motion.Pose(0f, false);
-                reports.Add(new HexTileReport
-                {
-                    Prototype = "unit:" + h.unit, Title = type.Title, Q = h.q, R = h.r, Pieces = unit.Members.Count, Budget = int.MaxValue,
-                    StandIns = unit.Members.Count(m => HexModels.Prefab(m.Model) == null),
-                    Triangles = unit.Members.Sum(m => HexModels.Triangles(m.Model, m.StandIn, Vector3.zero)),
-                    Models = string.Join(", ", unit.Members.GroupBy(m => (HexModels.Prefab(m.Model) == null ? "~" : "") + m.Model).Select(g => $"{g.Key} x{g.Count()}")),
-                });
-            }
-            HexBoardEdges.Build(root.transform, board, surface, assets);
-            return (root, reports);
+                Prototype = "unit:" + h.unit, Title = type.Title, Q = h.q, R = h.r, Pieces = unit.Members.Count, Budget = int.MaxValue,
+                StandIns = unit.Members.Count(m => HexModels.Prefab(m.Model) == null),
+                Triangles = unit.Members.Sum(m => HexModels.Triangles(m.Model, m.StandIn, Vector3.zero)),
+                Models = string.Join(", ", unit.Members.GroupBy(m => (HexModels.Prefab(m.Model) == null ? "~" : "") + m.Model).Select(g => $"{g.Key} x{g.Count()}")),
+            };
         }
 
         /// <summary>The board's world bounds: every hex plus one hex of sea around it.</summary>
@@ -104,7 +190,7 @@ namespace Statecraft.HexTiles
         /// <summary>Road width on the ground, metres (a Civ road reads as a thin track from far away).</summary>
         public const float RoadM = 170f;
 
-        static void BuildTerrain(Transform root, HexBoard board, HexBoardSurface surface, Func<string, (Texture2D?, Texture2D?)>? textures, HexBoardAssets assets,
+        static (TerrainData data, Rect rect) BuildTerrain(Transform root, HexBoard board, HexBoardSurface surface, Func<string, (Texture2D?, Texture2D?)>? textures, HexBoardAssets assets,
             List<(HexPaint paint, int q, int r)> paints, bool holesOutsideLand)
         {
             var rect = Bounds(board);
@@ -118,7 +204,6 @@ namespace Statecraft.HexTiles
                     heights[z, x] = Mathf.InverseLerp(MinY, MaxY, surface.Height(p));
                 }
             data.SetHeights(0, 0, heights);
-            var ids = HexGround.Ids;
             data.terrainLayers = HexGround.Layers.Select(l =>
             {
                 var (albedo, normal) = textures?.Invoke(l.texture) ?? (null, null);
@@ -131,20 +216,7 @@ namespace Statecraft.HexTiles
                 return layer;
             }).ToArray();
             data.alphamapResolution = AlphaRes;
-            var alpha = new float[AlphaRes, AlphaRes, ids.Count];
-            var w = new float[ids.Count];
-            for (int z = 0; z < AlphaRes; z++)
-                for (int x = 0; x < AlphaRes; x++)
-                {
-                    surface.GroundWeights(new Vector3(rect.x + rect.width * x / (AlphaRes - 1f), 0f, rect.y + rect.height * z / (AlphaRes - 1f)), ids, w);
-                    for (int l = 0; l < ids.Count; l++) alpha[z, x, l] = w[l];
-                }
-            // Paints, clipped to their own hex (a tile owns its ground), then roads, which run across hexes.
-            foreach (var (paint, q, r) in paints) Paint(alpha, rect, ids, paint, HexGeometry.Centre(q, r, HexScale.HexM), surface);
-            foreach (var line in board.RoadLines())
-                for (int i = 0; i + 1 < line.Length; i++)
-                    Paint(alpha, rect, ids, new HexPaint("dirt", line[i], line[i + 1], RoadM, 0f, 0f, 0.5f, 1f, true), null, surface);
-            data.SetAlphamaps(0, 0, alpha);
+            data.SetAlphamaps(0, 0, Splat(board, surface, rect, paints, 0, 0, AlphaRes, AlphaRes));
             if (holesOutsideLand)
             {
                 // Holes everywhere but the board's land (and a sliver of shore), so the real map shows around it.
@@ -166,19 +238,55 @@ namespace Statecraft.HexTiles
             var t = go.GetComponent<Terrain>();
             var m = assets.Own(HexMaterials.New(holesOutsideLand ? HexMaterials.TerrainHoles : HexMaterials.Terrain));
             t.materialTemplate = m; t.heightmapPixelError = 2f; t.basemapDistance = 1e7f; t.drawTreesAndFoliage = false;
+            return (data, rect);
+        }
+
+        /// <summary>The ground splat over alphamap pixels [x0, x0 + w) x [z0, z0 + h): each hex's layer blended across
+        /// edges (HexBoardSurface.GroundWeights), then the tiles' paints, each clipped to its own hex, then the roads.</summary>
+        static float[,,] Splat(HexBoard board, HexBoardSurface surface, Rect rect, IEnumerable<(HexPaint paint, int q, int r)> paints, int x0, int z0, int w, int h)
+        {
+            var ids = HexGround.Ids;
+            var alpha = new float[h, w, ids.Count];
+            var wt = new float[ids.Count];
+            for (int z = 0; z < h; z++)
+                for (int x = 0; x < w; x++)
+                {
+                    surface.GroundWeights(new Vector3(rect.x + rect.width * (x0 + x) / (AlphaRes - 1f), 0f, rect.y + rect.height * (z0 + z) / (AlphaRes - 1f)), ids, wt);
+                    for (int l = 0; l < ids.Count; l++) alpha[z, x, l] = wt[l];
+                }
+            // Paints, clipped to their own hex (a tile owns its ground), then roads, which run across hexes.
+            foreach (var (paint, q, r) in paints) Paint(alpha, rect, ids, paint, HexGeometry.Centre(q, r, HexScale.HexM), surface, x0, z0);
+            foreach (var line in board.RoadLines())
+                for (int i = 0; i + 1 < line.Length; i++)
+                    Paint(alpha, rect, ids, new HexPaint("dirt", line[i], line[i + 1], RoadM, 0f, 0f, 0.5f, 1f, true), null, surface, x0, z0);
+            return alpha;
+        }
+
+        /// <summary>Recomputes the splat round <paramref name="centre"/>: the hex and as far as its ground blends into its
+        /// neighbours (the environment's wide blend reaches about 1.45 hexes).</summary>
+        static void Repaint(HexBoardState state, Vector3 centre)
+        {
+            float reach = 1.6f * HexScale.HexM;
+            var rect = state.Rect;
+            int Px(float x) => Mathf.Clamp(Mathf.RoundToInt((x - rect.x) / rect.width * (AlphaRes - 1)), 0, AlphaRes - 1);
+            int Pz(float z) => Mathf.Clamp(Mathf.RoundToInt((z - rect.y) / rect.height * (AlphaRes - 1)), 0, AlphaRes - 1);
+            int x0 = Px(centre.x - reach), x1 = Px(centre.x + reach), z0 = Pz(centre.z - reach), z1 = Pz(centre.z + reach);
+            var paints = state.Paints.OrderBy(kv => kv.Key.q).ThenBy(kv => kv.Key.r).SelectMany(kv => kv.Value.Select(p => (p, kv.Key.q, kv.Key.r)));
+            state.Terrain.SetAlphamaps(x0, z0, Splat(state.Board, state.Surface, rect, paints, x0, z0, x1 - x0 + 1, z1 - z0 + 1));
         }
 
         /// <summary>Blends one paint into the splat: weight 1 inside, easing to 0 over its soft edge; never on water; when
-        /// <paramref name="clipCentre"/> is given, only inside that hex.</summary>
-        static void Paint(float[,,] alpha, Rect rect, IReadOnlyList<string> ids, HexPaint p, Vector3? clipCentre, HexBoardSurface surface)
+        /// <paramref name="clipCentre"/> is given, only inside that hex. <paramref name="alpha"/> holds the alphamap from
+        /// pixel (<paramref name="ox"/>, <paramref name="oz"/>).</summary>
+        static void Paint(float[,,] alpha, Rect rect, IReadOnlyList<string> ids, HexPaint p, Vector3? clipCentre, HexBoardSurface surface, int ox = 0, int oz = 0)
         {
             int layer = -1; for (int i = 0; i < ids.Count; i++) if (ids[i] == p.Layer) layer = i;
             if (layer < 0) return;
-            int n = alpha.GetLength(0), layers = alpha.GetLength(2);
+            int n = AlphaRes, layers = alpha.GetLength(2);
             float reach = p.Line ? p.Width : 0.75f * Mathf.Max(p.Width, p.Depth);
             float x0 = Mathf.Min(p.A.x, p.B.x) - reach, x1 = Mathf.Max(p.A.x, p.B.x) + reach, z0 = Mathf.Min(p.A.z, p.B.z) - reach, z1 = Mathf.Max(p.A.z, p.B.z) + reach;
-            int i0 = Mathf.Max(0, Mathf.FloorToInt((x0 - rect.x) / rect.width * (n - 1))), i1 = Mathf.Min(n - 1, Mathf.CeilToInt((x1 - rect.x) / rect.width * (n - 1)));
-            int j0 = Mathf.Max(0, Mathf.FloorToInt((z0 - rect.y) / rect.height * (n - 1))), j1 = Mathf.Min(n - 1, Mathf.CeilToInt((z1 - rect.y) / rect.height * (n - 1)));
+            int i0 = Mathf.Max(ox, Mathf.FloorToInt((x0 - rect.x) / rect.width * (n - 1))), i1 = Mathf.Min(ox + alpha.GetLength(1) - 1, Mathf.CeilToInt((x1 - rect.x) / rect.width * (n - 1)));
+            int j0 = Mathf.Max(oz, Mathf.FloorToInt((z0 - rect.y) / rect.height * (n - 1))), j1 = Mathf.Min(oz + alpha.GetLength(0) - 1, Mathf.CeilToInt((z1 - rect.y) / rect.height * (n - 1)));
             var inv = Quaternion.Euler(0f, -p.Yaw, 0f);
             for (int j = j0; j <= j1; j++)
                 for (int i = i0; i <= i1; i++)
@@ -202,7 +310,7 @@ namespace Statecraft.HexTiles
                     }
                     k *= p.Strength;
                     if (k <= 0f) continue;
-                    for (int l2 = 0; l2 < layers; l2++) alpha[j, i, l2] = alpha[j, i, l2] * (1f - k) + (l2 == layer ? k : 0f);
+                    for (int l2 = 0; l2 < layers; l2++) alpha[j - oz, i - ox, l2] = alpha[j - oz, i - ox, l2] * (1f - k) + (l2 == layer ? k : 0f);
                 }
         }
 
@@ -242,6 +350,8 @@ namespace Statecraft.HexTiles
         readonly List<Object> owned = new List<Object>();
         readonly List<Action> teardown = new List<Action>();
         public T Own<T>(T o) where T : Object { owned.Add(o); return o; }
+        /// <summary>Destroys <paramref name="o"/> now if the board made it (a rebuilt hex's meshes and materials).</summary>
+        public void Release(Object? o) { if (o != null && owned.Remove(o)) { if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); } }
         /// <summary>Runs when the board is destroyed, last registered first (e.g. restoring the real map's heights).</summary>
         public void OnTeardown(Action undo) => teardown.Add(undo);
         void OnDestroy() => Teardown();
@@ -257,13 +367,24 @@ namespace Statecraft.HexTiles
         }
     }
 
+    /// <summary>What a board built with Options.PerHex keeps for HexBoardBuilder.RebuildHex: the board (whose hexes the
+    /// Hex Painter edits), its ground, the build seed, the terrain and its board-space rect, and each tile's paints and
+    /// report. Not saved with the scene: after a domain reload the painter loads the board again.</summary>
+    public sealed class HexBoardState : MonoBehaviour
+    {
+        public HexBoard Board = null!; public HexBoardSurface Surface = null!; public int Seed; public TerrainData Terrain = null!; public Rect Rect;
+        public readonly Dictionary<(int q, int r), List<HexPaint>> Paints = new Dictionary<(int q, int r), List<HexPaint>>();
+        public readonly Dictionary<(int q, int r), HexTileReport> Reports = new Dictionary<(int q, int r), HexTileReport>();
+    }
+
     /// <summary>Draws placements: static models and stand-ins combined into one renderer per material, skinned models
-    /// (figures, animals) instantiated and posed at their idle's first frame.</summary>
+    /// (figures, animals) instantiated and posed at their idle's first frame. All under one new child of
+    /// <paramref name="root"/> named <paramref name="name"/>.</summary>
     public static class HexBoardRenderer
     {
-        public static void Emit(Transform root, IEnumerable<HexPlacement> placements, HexBoardAssets assets)
+        public static Transform Emit(Transform root, IEnumerable<HexPlacement> placements, HexBoardAssets assets, string name = HexBoardBuilder.PiecesName)
         {
-            var parent = new GameObject("HexBoardPieces").transform; parent.SetParent(root, false);
+            var parent = new GameObject(name).transform; parent.SetParent(root, false);
             var groups = new Dictionary<Material, List<CombineInstance>>();
             var parts = new Dictionary<(string, Fit), HexModels.Part[]>();
             var tints = new Dictionary<Color, Material>();
@@ -336,6 +457,7 @@ namespace Statecraft.HexTiles
                 go.GetComponent<MeshFilter>().sharedMesh = mesh;
                 go.GetComponent<MeshRenderer>().sharedMaterial = m;
             }
+            return parent;
         }
     }
 

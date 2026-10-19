@@ -13,6 +13,15 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   ground, a landscape ring round the play hexes and a warmer light while it is on. Presentation only; off by default,
   the shipped map is unchanged. Its models are local until their assets clear, so other machines draw stand-ins
   (docs/hex-tiles/README.md; refs #18).
+- A map builder for the opt-in hex-tile map: region recipes (`tools/hex_tiles/regions.yaml`) lay out the whole map in
+  one command (the `israel` board: 920 hexes, the game's settlements and the 1948 localities as towns and villages by
+  type and population, the traced 1948 main roads), give each region its own tiles and ground and its own trees round
+  the edge (oak and pine in the north, citrus and date palm on the coast, acacia and desert rock in the south). Hand
+  edits live in `<board>.overrides.json`, in the shape of the map editor's `content/map/overrides.yaml` but outside
+  `content/` (presentation only: tile, ground, unit, facing, region), and survive regeneration; boards also follow the
+  map editor's terrain and location overrides. The editor-only Hex Painter (Statecraft/Hex Tiles/Hex Painter) picks a
+  hex in the Scene view, changes its tile, ground, unit, facing or region, rebuilds just that hex and writes the edit
+  there. Still presentation only and off by default (refs #18).
 - The Cabinet disc in the side menu shows a small gold badge while a post is vacant that the player can fill this turn,
   and its tip says so in English and Hebrew. The sim's `Cabinet.Vacancies` decides it (a vacant seat, someone may be
   appointed, no appointment to it queued, the game not over, and enough Attention left after this turn's queued orders,
