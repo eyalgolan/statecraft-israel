@@ -34,6 +34,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   through it as before. The empty info panel's hint says so in English and Hebrew, and keeps the right-drag (Hebrew
   flagged for a native speaker's review; Fixes #1116, refs #41).
 ### Fixed
+- Hebrew budget vote labels use the legislature as their subject, following the native review, so names beginning with ה no longer follow an uninflected ב־ prefix (refs #564).
 - Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.
 - Keep the capsule-collider dependency used while creating hex unit stand-ins in stripped player builds; the temporary collider is still removed.
 - Missing unit models on the opt-in hex-tile map use an owned copy of the shipped material in player builds.
