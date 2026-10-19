@@ -22,7 +22,7 @@ namespace Statecraft.HexTiles.Capture
     /// -prototype &lt;id&gt; builds and shoots only that tile (with the board's ground and mountains around it).
     /// Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity
     ///   -executeMethod Statecraft.HexTiles.Capture.HexBoardCapture.Run [-board tel_aviv] [-prototype &lt;id&gt; [-on &lt;tile&gt;]]
-    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly] [-time day|dusk|night]
+    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly] [-time day|dusk|night] [-closeM 12500]
     /// -time lays a HexTimeOfDay preset over the look once the board is built (day, the default, changes nothing); night
     /// also darkens the background.
     /// A board too large for the standard board shot (the whole country) is framed whole instead. Each prototype and unit
@@ -89,11 +89,11 @@ namespace Statecraft.HexTiles.Capture
                 {
                     var c = OnGround(HexGeometry.Centre(t.q, t.r, HexScale.HexM));
                     Shoot(cam, c, MidDistanceM, Path.Combine(dir, $"{t.prototype}-mid.png"), width, height);
-                    Shoot(cam, c, CloseDistanceM, Path.Combine(dir, $"{t.prototype}-close.png"), width, height);
+                    Shoot(cam, c, CloseM(), Path.Combine(dir, $"{t.prototype}-close.png"), width, height);
                 }
                 // Units: one close shot each, at the unit's own zoom.
                 foreach (var u in board.Hexes.Values.Where(h => tiles && h.unit != "" && (only == null || h.prototype == only)).GroupBy(h => h.unit).Select(g => g.Last()))
-                    Shoot(cam, OnGround(HexGeometry.Centre(u.q, u.r, HexScale.HexM)), CloseDistanceM, Path.Combine(dir, $"unit-{u.unit}-close.png"), width, height);
+                    Shoot(cam, OnGround(HexGeometry.Centre(u.q, u.r, HexScale.HexM)), CloseM(), Path.Combine(dir, $"unit-{u.unit}-close.png"), width, height);
                 var lines = new List<string> { $"board {boardId}: {board.Hexes.Count} hexes, built in {buildMs} ms, {width}x{height}" };
                 lines.AddRange(reports.Select(r => "  " + r));
                 File.WriteAllLines(Path.Combine(dir, only == null ? "stats.txt" : $"{only}-stats.txt"), lines);
@@ -198,6 +198,11 @@ namespace Statecraft.HexTiles.Capture
             }
             return (Load($"{texture}_diff_2k.jpg", false), Load($"{texture}_nor_gl_2k.jpg", true));
         }
+
+        /// <summary>The close shots' camera distance: -closeM &lt;metres&gt; (for example 3000, a squad's figures up close), else
+        /// <see cref="CloseDistanceM"/>.</summary>
+        static float CloseM() =>
+            float.TryParse(Arg("-closeM"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var m) && m > 0f ? m : CloseDistanceM;
 
         public static string? Arg(string name)
         {
