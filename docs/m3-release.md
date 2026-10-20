@@ -144,7 +144,7 @@ builds. StreamingAssets' `b` value changed from `bcbd32b8194e467bb1906085e78bb3f
 file names, while `useCurrentPage` selected B's data URL; B's data request returned 200, and no A-only build
 resource was requested from the B server. This exercises stale HTML, not just a fresh page load.
 
-All three visits matched every value in [the golden manifest](../sim/Statecraft.Sim.Tests/golden/manifest.txt)
+All three visits matched every value in [the golden manifest](https://github.com/eyalgolan/statecraft-israel/blob/9e57134201f74412bf3d7513e26b600a9c760f5c/sim/Statecraft.Sim.Tests/golden/manifest.txt)
 and logged `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
 The harness exited 0; across 33 server requests there were no HTTP errors, no BiDi console error entries and no
 `GOLDEN FAIL`, `SMOKE FAIL`, `BOOT FAIL`, exception or recursion failure. Network traces, build-file SHA256
