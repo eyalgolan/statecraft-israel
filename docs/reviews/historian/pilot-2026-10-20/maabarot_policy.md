@@ -1,16 +1,16 @@
 # Transit Camps - historian pilot draft
 
-**AI-PREPARED DRAFT. No historian verdict, consent or sign-off. Refresh after pending #1114/#1103/#1104 settles; do not present this snapshot as their future merged text.**
+**AI-PREPARED DRAFT. No historian verdict, consent or sign-off. Re-pinned after merged #1091/#1114/#1103/#1104. Owner licensing review, qualified historian review and native Hebrew review remain pending.**
 
-Snapshot: `2d3e13c098e147493ab034ab2ff20f0b04765fab`; prepared 20 October 2026. Event: `maabarot_policy`. [Exact YAML](https://github.com/eyalgolan/statecraft-israel/blob/2d3e13c098e147493ab034ab2ff20f0b04765fab/content/events/maabarot_policy.yaml). SHA-256: `6ef7e84f434f2cc6fbe00e1f90081133625575bd813af1e7f3db6ba5b8f12b93`.
+Snapshot: `c8f4bc027e32db3147fc64a919e538f3aea5e3f6`; prepared 20 October 2026. Event: `maabarot_policy`. [Exact YAML](https://github.com/eyalgolan/statecraft-israel/blob/c8f4bc027e32db3147fc64a919e538f3aea5e3f6/content/events/maabarot_policy.yaml). SHA-256: `de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b`.
 
 Existing status: `fact-checked` (copied metadata, not a new check). Tags: none recorded in this YAML. No reviewed_by/reviewed_on keys are added or changed. Existing sensitivity/release rules remain independent.
 
 ## Dates and historical-reference rendering
 
-Shown from **1 April 1950**; unavailable from **1 June 1950** (exclusive end). This is the game window, not proof every narrated act occurred on its first day. The responsible office is `prime_minister`; pinned historical-reference holder: **David Ben-Gurion** at the start and through the window, using people.yaml terms and the [existing Offices.Holder](https://github.com/eyalgolan/statecraft-israel/blob/2d3e13c098e147493ab034ab2ff20f0b04765fab/sim/Statecraft.Sim/Offices.cs). This is not a fresh primary-source check of that person's terms. Actual `Cabinet.Fill` prefers player appointments; this static packet shows the historical fallback, not every possible save.
+Shown from **1 April 1950**; unavailable from **1 June 1950** (exclusive end). This is the game window, not proof every narrated act occurred on its first day. The responsible office is `prime_minister`; pinned historical-reference holder: **David Ben-Gurion** at the start and through the window, using people.yaml terms and the [existing Offices.Holder](https://github.com/eyalgolan/statecraft-israel/blob/c8f4bc027e32db3147fc64a919e538f3aea5e3f6/sim/Statecraft.Sim/Offices.cs). This is not a fresh primary-source check of that person's terms. Actual `Cabinet.Fill` prefers player appointments; this static packet shows the historical fallback, not every possible save.
 
-Original placeholders: `{prime_minister}`. No new Hebrew translation is supplied. English factual review and native-Hebrew review remain separate; pending translation PRs are not imported.
+Original placeholders: `{prime_minister}`. The merged Hebrew translation is copied below with `text_he_review: agent-checked`; its placeholder names also retain their separate agent-checked flags in people.yaml. English factual review and native-Hebrew review remain separate. No translation is newly certified here.
 
 ## Player-facing text at this snapshot
 
@@ -22,6 +22,25 @@ The immigrant camps, which house and feed new arrivals free of charge, are overf
 
 - **Build transit camps where residents work for their living** (`maabarot`): historical flag=true, recommended flag=true. These are current metadata, not the reviewer's verdict.
 - **Keep the free-board immigrant camps** (`keep_camps`): historical flag=false, recommended flag=false. These are current metadata, not the reviewer's verdict.
+
+### Hebrew draft at this snapshot
+
+**מעברות**
+
+מחנות העולים, המספקים לעולים החדשים מגורים ומזון ללא תשלום, עולים על גדותיהם. לוי אשכול מהמחלקה להתיישבות של הסוכנות היהודית מציע מעברות סמוך ליישובים ולמקומות עבודה, שבהן התושבים יתפרנסו מעבודתם. ההחלטה בידי דוד בן-גוריון.
+
+- **להקים מעברות שבהן התושבים יעבדו לפרנסתם** (`maabarot`).
+- **להשאיר את מחנות העולים המספקים מגורים ומזון ללא תשלום** (`keep_camps`).
+
+Copied state: `text_he_review: agent-checked`. The English and Hebrew text/options above are source inventories, not a historian or native-speaker verdict.
+
+### Alternative metadata at this snapshot
+
+`keep_camps` (copied metadata, not a new source-support verdict):
+
+```yaml
+basis: design
+```
 
 ## Design ledger - excluded from historical certification
 
@@ -38,7 +57,7 @@ All amounts below are authored game values from this event and model.yaml, not m
 
 ## Source inventory and agent-access notes
 
-Existing checked dates are copied verbatim and **not restamped**. Age is calculated as of 20 October 2026. The new access/read notes below are by the agent on 20 October 2026, not a person's historical verification. Successful retrieval or extracted OCR alone is not a support verdict. PDF page numbers are 1-based; printed-page locators are stated separately. Original PDFs/HTML are not redistributed with this packet.
+Existing checked dates are copied verbatim and **not restamped**. Age is calculated as of 20 October 2026. The access/read notes below were recorded during the earlier agent preparation on 20 October 2026; they are preserved evidence from that preparation, not new reads or a person's historical verification. Successful retrieval or extracted OCR alone is not a support verdict. PDF page numbers are 1-based; printed-page locators are stated separately. Original PDFs/HTML are not redistributed with this packet.
 
 | ID | Existing source | Existing checked; age | Agent access/read scope; remaining locator work |
 | --- | --- | --- | --- |
@@ -62,7 +81,7 @@ This is a draft claim inventory, including assertions in YAML comments. Rows may
 | M06 | comments | First campKesalon in May 1950; Davar report 23 May 1950. | S20 camp-establishment section reportingDavar; S19 only year/region. | Original newspaper item not opened; secondary quotation is not fresh primary verification. |  |
 | M07 | window | Window opens 1 April 1950 and ends 1 June 1950 (exclusive). | Pinned YAML. | Monthly game boundary is not an exact proposal date. |  |
 | M08 | text; office | PrimeMinister is the decision office; historical-reference holder resolves within window. | Pinned people.yaml and Offices.Holder. | Player appointments can change actual runtime text. |  |
-| M09 | keep_camps option | Keeping free-board camps is a playable alternative. | Current YAML option; pending PR 1114 metadata. | Not marked historical; do not invent a named real advocate/date. |  |
+| M09 | keep_camps option | Keeping free-board camps is a playable alternative. | Pinned YAML `alternative: { basis: design }`; accepted road 21. | Design assumption; no historical advocate, date or nested source is asserted. Do not invent one. |  |
 | M10 | sources comment | CET bibliography publication year versus YAML source note. | S20 Bibliography field 1986; YAML comment 1987. | Unresolved bibliographic mismatch; no source/comment correction included. |  |
 | M11 | effects/set_policy | Housing/cohesion/money changes and maabarot policy 1.0. | Pinned YAML/model. | Design values, not historical quantities. |  |
 
@@ -80,6 +99,9 @@ These are copied from the pinned file for checking, not newly endorsed claims or
 
 ```yaml
 # yaml-language-server: $schema=../schema/event.schema.json
+# For the native reviewer (#564): מעברות, לוי אשכול, המחלקה להתיישבות and הסוכנות היהודית follow he.wiki
+# (https://he.wikipedia.org/wiki/מעברה, "ראש המחלקה להתיישבות של הסוכנות"; https://he.wikipedia.org/wiki/לוי_אשכול;
+# https://he.wikipedia.org/wiki/הסוכנות_היהודית).
 # Eshkol raised the camps' crisis at the Jewish Agency executive on 27 March 1950 and proposed transit housing two weeks
 # later, in April (Kachansky, below), so the card opens on 1 April 1950. [C] en.wiki has him propose it in March 1950.
 # The word ma'abarot first appears in his letter of 21 April 1950 (he.wiki, citing CZA S15/4175). The first transit camp, Kesalon, opened in May 1950 (Kachansky,
@@ -97,7 +119,7 @@ These are copied from the pinned file for checking, not newly endorsed claims or
 - [ ] Owner confirms the actual volunteer's qualifications, independence and scope; no candidate is assumed.
 - [ ] Reviewer supplies their own claim-by-claim verdicts and precise passages; keep unresolved dissent.
 - [ ] Reviewer expressly consents to any public name/handle and to CC BY 4.0 for their future review text before it is committed. No consent is inferred from this draft.
-- [ ] Recheck at a new fixed commit after the pending edits settle; compare all YAML fields/comments, sources, placeholders and supporting terms. Earlier acceptance never silently covers changed text.
+- [ ] Before human handoff, confirm this fixed source commit remains the agreed scope. Merged #1091/#1114/#1103/#1104 are now reconciled; any later YAML/text/term change requires a fresh comparison. Earlier acceptance never silently covers changed text.
 - [ ] Native Hebrew review is separately recorded when applicable; no flag is removed by an agent.
 - [ ] Follow [HISTORIAN_REVIEW.md](../../../HISTORIAN_REVIEW.md): actual review in a PR comment; only the reviewer writes any future YAML sign-off, in their own commit. No status or release-gate transition is implemented by these docs.
 

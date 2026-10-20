@@ -1,43 +1,55 @@
 {
-  "snapshot_commit": "2d3e13c098e147493ab034ab2ff20f0b04765fab",
+  "snapshot_commit": "c8f4bc027e32db3147fc64a919e538f3aea5e3f6",
   "prepared_utc_date": "2026-10-20",
   "agent_prepared": true,
   "human_review": false,
-  "status": "DRAFT_REQUIRES_REFRESH_AFTER_PENDING_EDITS",
+  "status": "DRAFT_REQUIRES_OWNER_LICENSING_AND_HUMAN_REVIEW",
   "source_files": {
     "content/people.yaml": "4f82989ea6248a9e017f4c98ab0dff1ce3e5e13d62555dcc343d9dfd2acdfd2a",
     "content/offices.yaml": "6c2beda09dcbf268fac6136bb49f1f83b29de9b1ae222240a4191f08c8f65868",
     "content/model.yaml": "410bc5f8a2b5370d491be652ed098a617ac630f91a0df67840c507de0ff19955",
     "sim/Statecraft.Sim/Offices.cs": "846ef77cf8cd2b26ac999136b467cd1693b3aa165272f7136ca1c50190d6df3c",
-    "sim/Statecraft.Sim/Cabinet.cs": "52e01ce1d8b39da6a5038e7dafb9d15473c6d2e69d040d8436b9e622a4dc1258",
-    "content/events/elections_1949.yaml": "75d5f16ed26d7562d5c13fb0795bf3b236d06c48607ed10554b7c459860a662e",
-    "content/events/clothing_rationing_1950.yaml": "a22da2b4b28e3c27275f67bb1c2905d533ee26f1e8fe9dda126d09591d4c6fe0",
-    "content/events/maabarot_policy.yaml": "6ef7e84f434f2cc6fbe00e1f90081133625575bd813af1e7f3db6ba5b8f12b93"
+    "sim/Statecraft.Sim/Cabinet.cs": "4b41e5965a000383cb2770015aeabc4753af4581ed4ddce62b0ea5b6d7aa544d",
+    "content/events/elections_1949.yaml": "959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110",
+    "content/events/clothing_rationing_1950.yaml": "2e33baac62ea7d12e36b9a5fd5237a128139671b8729c4841c967afdfa6dba60",
+    "content/events/maabarot_policy.yaml": "de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
+    "research_notes/Alternate timelines/roads-checked.md": "e00dfd94bd66e10a70509c1e1909d3611d2f498ac93812c18c3b2e755b60c228"
   },
   "packets": [
     {
       "event": "elections_1949",
       "file": "elections_1949.md",
-      "source_sha256": "75d5f16ed26d7562d5c13fb0795bf3b236d06c48607ed10554b7c459860a662e",
-      "packet_sha256": "aba77c0b96281f997f87a32252ee4b09e5f8ab11d4df795510a92a51d7732922",
+      "source_sha256": "959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110",
+      "packet_sha256": "e4938b6f043d76cbc7c6926e0b458ec0f4e60a8ecfaa69de75ffaca8ab574648",
       "claim_count": 11,
-      "source_count": 9
+      "source_count": 9,
+      "alternative_source_count": 0
     },
     {
       "event": "clothing_rationing_1950",
       "file": "clothing_rationing_1950.md",
-      "source_sha256": "a22da2b4b28e3c27275f67bb1c2905d533ee26f1e8fe9dda126d09591d4c6fe0",
-      "packet_sha256": "9051bb19c3bdc8100b80b73bbcd3d0cd36a2bbae85795952d6c856ddd0de15d6",
+      "source_sha256": "2e33baac62ea7d12e36b9a5fd5237a128139671b8729c4841c967afdfa6dba60",
+      "packet_sha256": "30c8e7829c72505de73fd6cc618ca1d683836f35514f20959ef0957c348231cf",
       "claim_count": 8,
-      "source_count": 6
+      "source_count": 6,
+      "alternative_source_count": 1
     },
     {
       "event": "maabarot_policy",
       "file": "maabarot_policy.md",
-      "source_sha256": "6ef7e84f434f2cc6fbe00e1f90081133625575bd813af1e7f3db6ba5b8f12b93",
-      "packet_sha256": "47ab9be1d9b7f6efb72ecde9667a3e9cfce0bed47c8c8667f0674f5bb832ff5e",
+      "source_sha256": "de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
+      "packet_sha256": "8d10e2122052db53d0889c89e162411206bbf3553aeebcf4d2a2e9a4bafa57b8",
       "claim_count": 11,
-      "source_count": 5
+      "source_count": 5,
+      "alternative_source_count": 0
     }
-  ]
+  ],
+  "refreshed_after_merged_prs": [
+    1091,
+    1114,
+    1103,
+    1104
+  ],
+  "owner_licensing_review": "pending",
+  "alternative_source_entries": 1
 }

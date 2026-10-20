@@ -4,17 +4,19 @@
 
 These packets follow the [owner's 19 October 2026 ruling](https://github.com/eyalgolan/statecraft-israel/issues/29#issuecomment-6266095198) and the existing [review guide](../../../HISTORIAN_REVIEW.md). The ruling releases a draft-preparation slice now; it requires a refreshed final packet after pending edits settle. The old proposal's unapproved tooling/schema is not implemented here.
 
-## Snapshot and pending edits
+## Snapshot and reconciled merges
 
-Source commit: `2d3e13c098e147493ab034ab2ff20f0b04765fab`. Prepared 20 October 2026. [Manifest](snapshot-manifest.json) pins event, people, office, model and resolver byte hashes. The packet commit is a later docs-only commit; it is not the content snapshot. A reviewer should receive a stable final snapshot, not these drafts as if future edits had already landed.
+Source commit: `c8f4bc027e32db3147fc64a919e538f3aea5e3f6`. Prepared and refreshed 20 October 2026. [Manifest](snapshot-manifest.json) pins event, people, office, model, resolver and accepted alternative-research byte hashes. The packet commit is a later docs-only commit; it is not the content snapshot or a runtime test of that source.
 
-| Packet | Pending work to reconcile before final handoff |
+| Packet | Merged changes reconciled at this fixed source commit |
 | --- | --- |
-| [Elections 1949](elections_1949.md) | [#1103](https://github.com/eyalgolan/statecraft-israel/pull/1103) adds draft Hebrew via #1091; recheck the actual final diff |
-| [Clothing rationing 1950](clothing_rationing_1950.md) | [#1114](https://github.com/eyalgolan/statecraft-israel/pull/1114) adds alternative metadata; #1103 adds draft Hebrew via #1091 |
-| [Transit camps](maabarot_policy.md) | #1114 alternative metadata; [#1104](https://github.com/eyalgolan/statecraft-israel/pull/1104) draft Hebrew via #1091 |
+| [Elections 1949](elections_1949.md) | [#1103](https://github.com/eyalgolan/statecraft-israel/pull/1103) Hebrew title/body/option, still agent-checked |
+| [Clothing rationing 1950](clothing_rationing_1950.md) | [#1114](https://github.com/eyalgolan/statecraft-israel/pull/1114) debated alternative and nested source/date; #1103 Hebrew text, still agent-checked |
+| [Transit camps](maabarot_policy.md) | #1114 design alternative; [#1104](https://github.com/eyalgolan/statecraft-israel/pull/1104) Hebrew text, still agent-checked |
 
-Pending PR descriptions are coordination leads, not committed input to these packets. All currently cited event URLs were retrieved: 19 with urllib, one official Gazette PDF with curl after a Python issuer-chain error; full TLS verification stayed on. Actual reader pages and unreviewed passages are distinguished in each inventory. Two additional original JTA bulletin links timed out via HTTPS; their datelines remain an exact-day gap. Source PDFs/HTML, notices and extracted texts are kept locally as evidence, not published or relicensed here.
+Their predecessor [#1091](https://github.com/eyalgolan/statecraft-israel/pull/1091) is also merged and included. The packets show all current English/Hebrew text and options, all original comments, 20 event-level source entries and the additional nested alternative entry (same URL as S15, distinct checked date). Native Hebrew review remains pending. Snapshot metadata does not confer historian acceptance.
+
+The earlier preparation retrieved the 20 event-level cited URLs: 19 with urllib, one official Gazette PDF with curl after a Python issuer-chain error; full TLS verification stayed on. Its notes distinguish read pages from unreviewed passages and are preserved, not represented as new source reads at this re-pin. The alternative's JTA HTML was reopened/read by the agent on 20 October 2026; it supports a modified ration, not the exact imports wording. Two earlier original JTA bulletin attempts timed out via HTTPS; their datelines remain an exact-day gap. Source PDFs/HTML, notices and extracted texts are kept locally as evidence, not published or relicensed here.
 
 ## What the packet does and does not establish
 
@@ -28,7 +30,7 @@ Useful review flags include a Harpaz page-locator discrepancy, an existing elect
 
 The owner recruits one independent qualified volunteer **through #29**, with no honorarium promised or direct outreach by this agent. The owner confirms fit/independence. The actual reviewer chooses scope and supplies per-claim verdicts; unresolved dissent blocks positive historian acceptance. Public identity and CC BY 4.0 review-text consent require that person's express agreement. Their credit is limited to reviewed events, not endorsement. No private contact details belong here.
 
-Refresh these drafts at one actual fixed commit after #1114/#1103/#1104 (and their predecessor) settle. Follow the existing PR-comment process; only the reviewer writes their own future sign-off in their own commit. Keep sensitivity review separate. The pilot adds no new release blocker; a later sensitive batch needs two independent qualified reviewers under the owner ruling. This packet contains no reviewer's text to which consent could be inferred.
+The requested merged edits are reconciled at the fixed source above. Before actual handoff, the owner should confirm the snapshot scope and review the path-specific LICENSING.md row, which remains pending owner approval. Any later source change requires a new refresh. Follow the existing PR-comment process; only the reviewer writes their own future sign-off in their own commit. Keep sensitivity review separate. The pilot adds no new release blocker; a later sensitive batch needs two independent qualified reviewers under the owner ruling. This packet contains no reviewer's text to which consent could be inferred.
 
 ## Attribution
 

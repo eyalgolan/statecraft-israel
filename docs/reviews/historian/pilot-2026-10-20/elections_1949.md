@@ -1,16 +1,16 @@
 # Electing the Constituent Assembly - historian pilot draft
 
-**AI-PREPARED DRAFT. No historian verdict, consent or sign-off. Refresh after pending #1114/#1103/#1104 settles; do not present this snapshot as their future merged text.**
+**AI-PREPARED DRAFT. No historian verdict, consent or sign-off. Re-pinned after merged #1091/#1114/#1103/#1104. Owner licensing review, qualified historian review and native Hebrew review remain pending.**
 
-Snapshot: `2d3e13c098e147493ab034ab2ff20f0b04765fab`; prepared 20 October 2026. Event: `elections_1949`. [Exact YAML](https://github.com/eyalgolan/statecraft-israel/blob/2d3e13c098e147493ab034ab2ff20f0b04765fab/content/events/elections_1949.yaml). SHA-256: `75d5f16ed26d7562d5c13fb0795bf3b236d06c48607ed10554b7c459860a662e`.
+Snapshot: `c8f4bc027e32db3147fc64a919e538f3aea5e3f6`; prepared 20 October 2026. Event: `elections_1949`. [Exact YAML](https://github.com/eyalgolan/statecraft-israel/blob/c8f4bc027e32db3147fc64a919e538f3aea5e3f6/content/events/elections_1949.yaml). SHA-256: `959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110`.
 
 Existing status: `fact-checked` (copied metadata, not a new check). Tags: none recorded in this YAML. No reviewed_by/reviewed_on keys are added or changed. Existing sensitivity/release rules remain independent.
 
 ## Dates and historical-reference rendering
 
-Shown from **15 January 1949**; unavailable from **26 January 1949** (exclusive end). This is the game window, not proof every narrated act occurred on its first day. The responsible office is `prime_minister`; pinned historical-reference holder: **David Ben-Gurion** at the start and through the window, using people.yaml terms and the [existing Offices.Holder](https://github.com/eyalgolan/statecraft-israel/blob/2d3e13c098e147493ab034ab2ff20f0b04765fab/sim/Statecraft.Sim/Offices.cs). This is not a fresh primary-source check of that person's terms. Actual `Cabinet.Fill` prefers player appointments; this static packet shows the historical fallback, not every possible save.
+Shown from **15 January 1949**; unavailable from **26 January 1949** (exclusive end). This is the game window, not proof every narrated act occurred on its first day. The responsible office is `prime_minister`; pinned historical-reference holder: **David Ben-Gurion** at the start and through the window, using people.yaml terms and the [existing Offices.Holder](https://github.com/eyalgolan/statecraft-israel/blob/c8f4bc027e32db3147fc64a919e538f3aea5e3f6/sim/Statecraft.Sim/Offices.cs). This is not a fresh primary-source check of that person's terms. Actual `Cabinet.Fill` prefers player appointments; this static packet shows the historical fallback, not every possible save.
 
-Original placeholders: none in body. No new Hebrew translation is supplied. English factual review and native-Hebrew review remain separate; pending translation PRs are not imported.
+Original placeholders: none in body. The merged Hebrew translation is copied below with `text_he_review: agent-checked`. This body has no office placeholder. English factual review and native-Hebrew review remain separate. No translation is newly certified here.
 
 ## Player-facing text at this snapshot
 
@@ -21,6 +21,20 @@ The Provisional State Council has set the Constituent Assembly at 120 seats, ele
 ### Options
 
 - **Hold the election on 25 January** (`hold`): historical flag=true, recommended flag=true. These are current metadata, not the reviewer's verdict.
+
+### Hebrew draft at this snapshot
+
+**הבחירות לאספה המכוננת**
+
+מועצת המדינה הזמנית קבעה כי באספה המכוננת יהיו 120 מושבים, שייבחרו בבחירות ארציות יחסיות, ומפקד ארצי שנערך תחת עוצר ב־8 בנובמבר שימש לבניית פנקס הבוחרים. ההצבעה, שנדחתה בשל המלחמה, נקבעה ל־25 בינואר.
+
+- **לקיים את הבחירות ב־25 בינואר** (`hold`).
+
+Copied state: `text_he_review: agent-checked`. The English and Hebrew text/options above are source inventories, not a historian or native-speaker verdict.
+
+### Alternative metadata at this snapshot
+
+No `alternative` record is present; the one existing historical choice is unchanged.
 
 ## Design ledger - excluded from historical certification
 
@@ -36,7 +50,7 @@ All amounts below are authored game values from this event and model.yaml, not m
 
 ## Source inventory and agent-access notes
 
-Existing checked dates are copied verbatim and **not restamped**. Age is calculated as of 20 October 2026. The new access/read notes below are by the agent on 20 October 2026, not a person's historical verification. Successful retrieval or extracted OCR alone is not a support verdict. PDF page numbers are 1-based; printed-page locators are stated separately. Original PDFs/HTML are not redistributed with this packet.
+Existing checked dates are copied verbatim and **not restamped**. Age is calculated as of 20 October 2026. The access/read notes below were recorded during the earlier agent preparation on 20 October 2026; they are preserved evidence from that preparation, not new reads or a person's historical verification. Successful retrieval or extracted OCR alone is not a support verdict. PDF page numbers are 1-based; printed-page locators are stated separately. Original PDFs/HTML are not redistributed with this packet.
 
 | ID | Existing source | Existing checked; age | Agent access/read scope; remaining locator work |
 | --- | --- | --- | --- |
@@ -82,6 +96,8 @@ These are copied from the pinned file for checking, not newly endorsed claims or
 
 ```yaml
 # yaml-language-server: $schema=../schema/event.schema.json
+# For the native reviewer (#564): Hebrew terminology and date follow he.wiki "הבחירות לאספה המכוננת":
+# https://he.wikipedia.org/wiki/הבחירות_לאספה_המכוננת
 # The Declaration of Independence required elected institutions by 1 October 1948 (quoted by Harpaz, p. 187); the vote
 # was postponed twice because of the war (the dates of those decisions are a gap). The Provisional State Council voted
 # 16 to 14 to set the assembly at 120 seats at its 25th sitting on 4 November 1948 (the minutes' heading: 4.11.1948 and
@@ -122,7 +138,7 @@ These are copied from the pinned file for checking, not newly endorsed claims or
 - [ ] Owner confirms the actual volunteer's qualifications, independence and scope; no candidate is assumed.
 - [ ] Reviewer supplies their own claim-by-claim verdicts and precise passages; keep unresolved dissent.
 - [ ] Reviewer expressly consents to any public name/handle and to CC BY 4.0 for their future review text before it is committed. No consent is inferred from this draft.
-- [ ] Recheck at a new fixed commit after the pending edits settle; compare all YAML fields/comments, sources, placeholders and supporting terms. Earlier acceptance never silently covers changed text.
+- [ ] Before human handoff, confirm this fixed source commit remains the agreed scope. Merged #1091/#1114/#1103/#1104 are now reconciled; any later YAML/text/term change requires a fresh comparison. Earlier acceptance never silently covers changed text.
 - [ ] Native Hebrew review is separately recorded when applicable; no flag is removed by an agent.
 - [ ] Follow [HISTORIAN_REVIEW.md](../../../HISTORIAN_REVIEW.md): actual review in a PR comment; only the reviewer writes any future YAML sign-off, in their own commit. No status or release-gate transition is implemented by these docs.
 
