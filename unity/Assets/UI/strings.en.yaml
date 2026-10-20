@@ -41,6 +41,7 @@ hud.nav.budget: "Budget"
 hud.nav.defence: "Defence"
 hud.nav.why: "Why?"
 hud.nav.how_to_play: "How to play"
+hud.nav.objectives: "Objectives"
 hud.nav.settings: "Settings"
 hud.new_game: "New game"
 hud.end_turn: "End turn"
@@ -62,6 +63,14 @@ how_to_play.events: "An event card asks for a decision. Answering it costs Atten
 how_to_play.top_bar: "The top bar shows the date, your Attention, Money and the country's main indicators."
 how_to_play.end_turn: "End turn carries out your orders and moves to the next month. A card you leave unanswered, or have no Attention left to answer, goes to the responsible minister, who decides it for you."
 how_to_play.why: "After a turn, open Why? to see each change and its cause."
+# The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
+# one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
+# {1} the historical date (objectives.open: {0}). A name falls back to objectives.yaml's when it has no key here.
+objectives.title: "Objectives"
+objectives.done: "Completed on {0}; historically {1}"
+objectives.open: "Not completed yet; historically {0}"
+objectives.name.first_new_yishuv: "First new yishuv"
+objectives.name.absorb_immigrants: "Absorb the immigrants"
 # The Settings screen (#40): its title, the tilt-shift option and the button that says what is set.
 settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
@@ -71,6 +80,11 @@ settings.quality: "Quality"
 settings.quality.auto: "Automatic"
 settings.quality.high: "High"
 settings.quality.low: "Low"
+# The sound effects' volume (#39, GameAudio), in three steps.
+settings.sound: "Sound effects"
+settings.sound.off: "Off"
+settings.sound.low: "Low"
+settings.sound.high: "High"
 # The language choice (#1036). The two languages are named on their buttons in themselves ("English", "עברית"), set in
 # SettingsPresenter, not here. The note says what is not translated yet (#55).
 settings.language: "Language"

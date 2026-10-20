@@ -46,6 +46,14 @@ This is not a licence clearance or a completed store content survey. owner-verif
 | unity/Assets/StreamingAssets/video/operation_yoav.mp4 | ASSETS.yaml | Veo 3.1 Fast (ElevenLabs), generated 2026-10-12 (promo shot W04a, promo/demo3/clips/W04a.mp4, not in the repository; sha256 26bf28dae5b96170057a5b4b894eff2d80c5f81503d53f4affad228055393d91); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed | verified |
 | unity/Assets/StreamingAssets/video/ten_days.mp4 | ASSETS.yaml | Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still, generated 2026-10-13 (promo shot J09, promo/demo2/clips-v2/J09.mp4, not in the repository; sha256 7a1242da163d3fae432889643a64abf7fd9eff73d700cad978d30c0c32b6c571); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed | verified |
 
+## Audio
+
+| Asset pattern | Manifest | Recorded source | Review status |
+| --- | --- | --- | --- |
+| unity/Assets/Resources/Audio/event-card.ogg | ASSETS.yaml | ElevenLabs Sound Effects, generated through the project's paid owner subscription; variant event-card-04.ogg renamed byte-for-byte to event-card.ogg (9943 B, SHA-256 14f6c85b1d095e0b2926b4fab5fe9b87cc6f2bbd5ebdd7b0c79a476e197831b4); original master SHA-256 db8ac1e41837b1badde7f8e4e098a61ac144c9be70bfae5504539427139fcf9e. Generation UI: https://elevenlabs.io/app/sound-effects; terms: https://elevenlabs.io/creative-terms (Exhibit 4, section 2). | verified |
+| unity/Assets/Resources/Audio/refused.ogg | ASSETS.yaml | ElevenLabs Sound Effects, generated through the project's paid owner subscription; variant refused-04.ogg renamed byte-for-byte to refused.ogg (7153 B, SHA-256 57df465af2d152319bd4de05e24ca972d5f1f181c519dd223dd570d6e1cace2a); original master SHA-256 b8962a23cea4d96b2a24fad0ba4216b53c88007fcfdb2120f3543ff799911d23. Generation UI: https://elevenlabs.io/app/sound-effects; terms: https://elevenlabs.io/creative-terms (Exhibit 4, section 2). | verified |
+| unity/Assets/Resources/Audio/turn-ended.ogg | ASSETS.yaml | ElevenLabs Sound Effects, generated through the project's paid owner subscription; variant turn-ended-02.ogg renamed byte-for-byte to turn-ended.ogg (8909 B, SHA-256 1397e16a0715c66d8a85cbaef7cd10963bdc2c3652c41ec7f2b6abc52cfef334); original master SHA-256 3083c33e4d011b9d7e873f7785c740718a3fd5167132a68958b705e2128fdef5. Generation UI: https://elevenlabs.io/app/sound-effects; terms: https://elevenlabs.io/creative-terms (Exhibit 4, section 2). | verified |
+
 ## Other
 
 | Asset pattern | Manifest | Recorded source | Review status |

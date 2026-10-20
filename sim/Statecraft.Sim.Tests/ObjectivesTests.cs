@@ -459,6 +459,31 @@ eras:
         Assert.Equal(field, ex.Field);
         Assert.Contains(message, ex.Message);
     }
+
+    /// <summary>#1189: the Objectives screen's reading, one row per objective in content order, with its name, whether it is done,
+    /// the player's date (none until it is done) and the historical date. Pure: the state's hash is the same afterwards.</summary>
+    [Fact]
+    public void StatusListsEveryObjectiveDoneOrNotWithBothDates()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var hash = s.Hash();
+        var open = Objectives.Status(Real, s);
+        Assert.Equal(hash, s.Hash());
+        Assert.Equal(Real.Objectives.Select(o => (o.Id, o.Name, o.ReferenceDate)), open.Select(o => (o.Id, o.Name, o.Historical)));
+        Assert.All(open, o => { Assert.False(o.Done); Assert.Null(o.Completed); });
+
+        var first = Real.Objectives[0];
+        var date = first.ReferenceDate.AddMonths(-2);
+        Assert.True(Objectives.Record(Real, s, Real.RulesAt(s.Date).Mvp!, first.Id, date, new List<Cause>()));
+        hash = s.Hash();
+        var after = Objectives.Status(Real, s);
+        Assert.Equal(hash, s.Hash());
+        Assert.True(after[0].Done);
+        Assert.Equal(date, after[0].Completed);
+        Assert.Equal(first.ReferenceDate, after[0].Historical);
+        Assert.All(after.Skip(1), o => { Assert.False(o.Done); Assert.Null(o.Completed); });
+    }
+
     /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native read (#564).</summary>
     [Fact]
     public void TheHebrewNameLoadsBesideTheEnglish()

@@ -222,12 +222,17 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
 .event-gutter { display: none; position: absolute; left: 0; top: 112px; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
 .event-modal .event-gutter { display: flex; }
-.left-column .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.left-column .rail-button { width: 45px; height: 45px; margin: 0 0 3px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
-/* Six discs since How to play (#1041): 50 px, 6 px apart, so the column ends at 112 + 336 px (the five 56 px discs: 340),
-   above the info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests); the column keeps its 56 px width,
-   so the backdrop, the screens and the toast keep their places. */
-.left-column .rail-button .nav-disc { top: 0; left: 0; width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
+/* Seven discs since Objectives (#1189). On the one-row bar: 45 px, 3 px apart, so the column still ends at 112 + 336 px
+   (six 50 px discs 6 px apart, #1041: the same), above the info panel's top (456 px) in a short, wide window
+   (InfoPanelLayoutTests), and at least 29 screen px in the smallest one-row window (1366x657). The narrow, two-row and
+   three-row tiers keep their discs (50 px; 60 px on a phone): the column starts lower there, the info panel is far
+   below it, and 960x600 needs 50 px for the 24 screen px floor (LeftColumnTests). The column keeps its 56 px width, so
+   the backdrop, the screens and the toast keep their places. */
+.left-column .rail-button .nav-disc { top: 0; left: 0; width: 45px; height: 45px; padding: 10.5px; border-radius: 22.5px; }
+.hud-narrow .left-column > .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; }
+.hud-narrow .left-column > .rail-button .nav-disc { width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
 /* A screen with something to do this turn (#1109, HudPresenter.ActionClass): a small gold dot on the disc's upper right,
    ringed in the column's navy so it reads against the rim; the gold-light of End Turn's waiting highlight (#1034). */
 .nav-badge {
@@ -440,6 +445,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .settings-row { margin-top: 8px; }
 .how-to-play-body { min-height: 0; }
 .how-to-play-line { white-space: normal; margin-bottom: 12px; font-size: 18px; }
+/* The Objectives screen (#1189): a row per objective, its name over its status and dates; both wrap at 390x844. */
+.objectives-rows { min-height: 0; }
+.objectives-row { margin-bottom: 14px; }
+.objectives-name { white-space: normal; font-size: 18px; -unity-font-style: bold; }
+.objectives-status { white-space: normal; font-size: 18px; color: var(--ink-dim); }
 .settings-name { flex-grow: 1; flex-shrink: 1; min-width: 0; white-space: normal; }
 .settings-switch { flex-shrink: 0; min-width: 96px; -unity-text-align: middle-center; }
 /* The quality choice's buttons sit side by side; the one that is set is marked by a gold fill and dark text, not only a

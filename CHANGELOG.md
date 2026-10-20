@@ -9,6 +9,12 @@ checks this (see `CONTRIBUTING.md`).
 ## [Unreleased]
 
 ### Added
+- Sound effects: one audio service plays a short clip when a turn ends, when an order is refused and when an event card
+  comes into view, and the Settings screen has a sound effects volume (off, low, high) that is kept per browser. The
+  three clips are AI-generated with the project's ElevenLabs subscription (26,005 bytes in all), each listed in
+  `ASSETS.yaml`; the owner listened to them and chose this set. Presentation
+  only, so the golden hashes do not move (refs #39).
+
 - The city panel in the GDD loop shows the city's overflow, the people beyond its housing (`Cities.Overflow`,
   R-HOUSE-002), beside the refugees waiting, and its trained craftsmen (`City.Craftsmen`, R-CRAFT-001) beside the jobs,
   in English and Hebrew; both numbers are the sim's, and each pair shares a row so the panel stays clear of the left

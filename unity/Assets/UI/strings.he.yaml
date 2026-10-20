@@ -34,6 +34,8 @@ hud.nav.budget: "תקציב"
 hud.nav.defence: "ביטחון"
 hud.nav.why: "למה?"
 hud.nav.how_to_play: "איך משחקים"
+# For the native reviewer (#564)
+hud.nav.objectives: "יעדים"
 hud.nav.settings: "הגדרות"
 hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
@@ -54,6 +56,12 @@ how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה 
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
 how_to_play.end_turn: "סיום התור מבצע את ההוראות שלכם ומעביר לחודש הבא. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
 how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לראות כל שינוי ואת הסיבה לו."
+# The Objectives screen (#1189). For the native reviewer (#564).
+objectives.title: "יעדים"
+objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
+objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
+objectives.name.first_new_yishuv: "יישוב חדש ראשון"
+objectives.name.absorb_immigrants: "קליטת העולים"
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
 settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
@@ -65,6 +73,12 @@ settings.quality: "איכות גרפית"
 settings.quality.auto: "אוטומטית"
 settings.quality.high: "גבוהה"
 settings.quality.low: "נמוכה"
+# The sound effects' volume (#39, GameAudio), in three steps. Singular, as the native reviewer (Beri) chose on
+# 19 Oct 2026. For the native reviewer (#564).
+settings.sound: "צליל"
+settings.sound.off: "כבוי"
+settings.sound.low: "חלש"
+settings.sound.high: "חזק"
 # The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). The note
 # says that the event cards are not translated yet (#55). For the native reviewer (#564).
 settings.language: "שפה"

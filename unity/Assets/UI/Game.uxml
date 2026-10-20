@@ -18,6 +18,7 @@
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-how-to-play" text="How to play" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-objectives" text="Objectives" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="flag" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-settings" text="Settings" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="gear" class="nav-disc" /></ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="top-bar" class="panel top-bar">
@@ -323,6 +324,12 @@
             </ui:ScrollView>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
+        <!-- The objectives (#1189, ObjectivesPresenter): one row per objective, its status and both dates, no score. -->
+        <ui:VisualElement name="screen-objectives" class="panel screen">
+            <ui:VisualElement class="screen-header"><ui:Label name="objectives-title" text="Objectives" class="title" /></ui:VisualElement>
+            <ui:ScrollView name="objectives-rows" class="grow objectives-rows" />
+            <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
         <!-- Settings (#40, SettingsPresenter): the player's presentation options, kept per browser (SettingsStore), never in
              the sim or the save. Each option is a row: its name, and a button that says what is set. -->
         <ui:VisualElement name="screen-settings" class="panel screen">
@@ -338,6 +345,15 @@
                     <ui:Button name="settings-quality-auto" text="Automatic" class="settings-switch" />
                     <ui:Button name="settings-quality-high" text="High" class="settings-switch" />
                     <ui:Button name="settings-quality-low" text="Low" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <!-- Sound effects (#39, GameAudio): three volume steps, the one that is set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-sound-label" text="Sound effects" class="settings-name" />
+                <ui:VisualElement class="row settings-choices">
+                    <ui:Button name="settings-sound-off" text="Off" class="settings-switch" />
+                    <ui:Button name="settings-sound-low" text="Low" class="settings-switch" />
+                    <ui:Button name="settings-sound-high" text="High" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <!-- The UI's language (#1036): SettingsPresenter names each language in itself; the one in use carries .settings-choice-selected. -->
