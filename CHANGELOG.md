@@ -3,7 +3,8 @@
 All notable changes to Statecraft: Israel. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/). Every pull request that changes the game (`sim/`, `content/`, `unity/`)
-adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIBUTING.md`).
+adds a line under **Unreleased**, or a fragment in `changelog.d/` that a release folds in here; CI's `Changelog` job
+checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 

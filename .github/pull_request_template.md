@@ -22,7 +22,7 @@
 - [ ] Tests cover the change, and they fail without it.
 - [ ] Test count did not go down, or this description explains why.
 - [ ] The goldens (`Hash1950`, `Hash1952`, smoke) did not move, or this description says why they moved and they were re-pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` with `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln` (`docs/determinism.md`).
-- [ ] `CHANGELOG.md` has a line under `## [Unreleased]` if this changes `sim/`, `content/` or `unity/`.
+- [ ] A new `changelog.d/<branch-or-issue>.md` fragment (or a line under `## [Unreleased]` in `CHANGELOG.md`) if this changes `sim/`, `content/` or `unity/`.
 - [ ] Every fact added or changed in `content/` has `sources:` with a checked date (`docs/CONTENT_POLICY.md`).
 - [ ] No quote is attributed to a real person unless it is sourced verbatim.
 - [ ] Every new image, video, font, audio or map-data file has an `ASSETS.yaml` row.
