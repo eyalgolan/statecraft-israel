@@ -51,6 +51,73 @@ public class ConstructionRevealTests
     }
 
     [Test]
+    public void OriginalAndStoneLooksStayBoundedAcrossTheWholeTimeline()
+    {
+        var look = RevealType.GetField("Look");
+        Assert.That(look, Is.Not.Null, "the original and refined looks must remain comparable");
+        var root = new GameObject("bounds root"); var visual = new GameObject("visual");
+        visual.transform.SetParent(root.transform, false);
+        try
+        {
+            var fx = root.AddComponent(RevealType);
+            void Call(string name, params object[] args) => RevealType.GetMethod(name)!.Invoke(fx, args);
+            Call("Bind", visual.transform, 2f);
+            var buffer = new ParticleSystem.Particle[44];
+            foreach (var mode in new[] { "Original", "Stones" })
+            {
+                look!.SetValue(fx, Enum.Parse(look.FieldType, mode));
+                foreach (var style in Enum.GetValues(RevealType.GetField("Style")!.FieldType))
+                {
+                    RevealType.GetField("Style")!.SetValue(fx, style); Call("Play");
+                    var systems = root.GetComponentsInChildren<ParticleSystem>();
+                    for (int step = 0; step <= 30; step++)
+                    {
+                        Call("Sample", step * 0.06f);
+                        foreach (var ps in systems)
+                        {
+                            int n = ps.GetParticles(buffer); Assert.That(n, Is.LessThanOrEqualTo(ps.main.maxParticles));
+                            for (int i = 0; i < n; i++)
+                            {
+                                var p = buffer[i].position;
+                                var size = buffer[i].startSize3D;
+                                Assert.That(new Vector2(p.x, p.z).magnitude + Mathf.Max(size.x, size.y) * 0.5f, Is.LessThan(4.5f));
+                                Assert.That(p.y, Is.InRange(0f, 1f));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        finally { Object.DestroyImmediate(root); }
+    }
+
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(2)]
+    public void DestroyedParticleChildrenCanBeRecreatedWithoutLeakingOrLosingMeshMode(int child)
+    {
+        var root = new GameObject("reuse root"); var visual = new GameObject("visual");
+        visual.transform.SetParent(root.transform, false);
+        try
+        {
+            var fx = root.AddComponent(RevealType);
+            void Call(string name, params object[] args) => RevealType.GetMethod(name)!.Invoke(fx, args);
+            Call("Bind", visual.transform, 2f); Call("Play"); Call("Sample", 0.5f);
+            var systems = root.GetComponentsInChildren<ParticleSystem>();
+            var oldDust = systems[0].GetComponent<ParticleSystemRenderer>().sharedMaterial;
+            Object.DestroyImmediate(child == 0 ? systems[0].transform.parent.gameObject : systems[child - 1].gameObject);
+            if (child == 0) Call("Play");
+            Call("Sample", 0.5f);
+            Assert.That(oldDust == null, Is.True, "recreation must release the old owned dust material");
+            var rebuilt = root.GetComponentsInChildren<ParticleSystemRenderer>();
+            Assert.That(rebuilt.Length, Is.EqualTo(2));
+            Assert.That(rebuilt[1].renderMode, Is.EqualTo(ParticleSystemRenderMode.Mesh));
+            Assert.That(rebuilt[1].mesh, Is.Not.Null);
+        }
+        finally { Object.DestroyImmediate(root); }
+    }
+
+    [Test]
     public void DestroyAndRebindRestoreTheOldTargetAndReleaseOwnedMaterial()
     {
         Assert.That(RevealType, Is.Not.Null, "a standalone construction reveal must exist");
@@ -61,13 +128,16 @@ public class ConstructionRevealTests
             var fx = root.AddComponent(RevealType);
             void Call(string name, params object[] args) => RevealType.GetMethod(name)!.Invoke(fx, args);
             Call("Bind", a.transform, 2f); Call("Play"); Call("Sample", 0.2f);
-            var material = root.GetComponentInChildren<ParticleSystemRenderer>()!.sharedMaterial;
+            var renderers = root.GetComponentsInChildren<ParticleSystemRenderer>();
+            var material = renderers[0].sharedMaterial; var stones = renderers[1].sharedMaterial; var mesh = renderers[1].mesh;
             Call("Bind", b.transform, 1f); Assert.That(a.transform.localScale, Is.EqualTo(Vector3.one));
             Assert.That(a.transform.localPosition, Is.EqualTo(Vector3.zero));
             Call("Play"); Call("Sample", 0.2f); Object.DestroyImmediate(fx);
             Assert.That(b.transform.localScale, Is.EqualTo(Vector3.one));
             Assert.That(b.transform.localPosition, Is.EqualTo(Vector3.zero));
             Assert.That(material == null, Is.True, "owned material is released");
+            Assert.That(stones == null, Is.True, "owned stone material is released");
+            Assert.That(mesh == null, Is.True, "owned stone mesh is released");
             Assert.That(root.GetComponentsInChildren<ParticleSystem>().Length, Is.Zero);
         }
         finally { Object.DestroyImmediate(root); }

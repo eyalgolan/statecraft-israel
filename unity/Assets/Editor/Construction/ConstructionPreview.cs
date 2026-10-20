@@ -1,111 +1,104 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Construction;
+using Statecraft.HexTiles;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace Statecraft.Editor.Construction
 {
-    /// <summary>One self-owned preview scene: no Map.unity, sim, network, singleton or saved scene changes.</summary>
+    /// <summary>One existing game hex, built by the game renderer in a private preview scene. No game/sim startup.</summary>
     public sealed class ConstructionStage : IDisposable
     {
-        public const string ModelPath = "Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2.fbx";
+        public const string BoardId = "central_israel", PrototypeId = "moshava_village";
+        public const int BoardQ = 1, BoardR = 13;
         readonly PreviewRenderUtility preview = new PreviewRenderUtility();
-        readonly List<Object> owned = new List<Object>();
         readonly GameObject root;
         public ConstructionReveal Reveal { get; }
         public Transform Visual { get; }
+        public int PlacementCount { get; }
+        public int MissingModels { get; }
+        public Vector3 TargetPosition { get; }
+        public Vector3 TileCentre { get; }
+        public float Zoom = 0.56f;
+        public const float TileRadius = HexScale.HexM;
         bool disposed;
-        public float Zoom = 1f;
-        public const float TileRadius = 5f;
 
         public ConstructionStage()
         {
+            root = new GameObject("Construction real-hex preview"); preview.AddSingleGO(root);
             try
             {
-            preview.camera.fieldOfView = 36f; preview.camera.nearClipPlane = 0.05f; preview.camera.farClipPlane = 100f;
-            preview.camera.clearFlags = CameraClearFlags.SolidColor; preview.camera.backgroundColor = new Color(0.17f, 0.22f, 0.19f);
-            preview.ambientColor = MapLighting.AmbientEquator;
-            preview.lights[0].transform.rotation = Quaternion.Euler(38f, -40f, 0f);
-            preview.lights[0].color = MapLighting.SunColour; preview.lights[0].intensity = 1.45f;
-            preview.lights[0].shadows = LightShadows.Soft;
-            preview.lights[1].transform.rotation = Quaternion.Euler(65f, 145f, 0f);
-            preview.lights[1].color = MapLighting.AmbientSky; preview.lights[1].intensity = 0.6f;
-            root = new GameObject("Construction one-hex preview"); preview.AddSingleGO(root);
-            Hex("Earth edge", 5f, -0.55f, -0.02f, new Color(0.42f, 0.33f, 0.22f));
-            Hex("Dry grass", 4.98f, -0.02f, 0f, new Color(0.52f, 0.58f, 0.34f));
-            Disc("Building plot", 1.6f, new Vector3(0f, 0.009f, 0f), new Color(0.62f, 0.56f, 0.39f));
-            // One quiet approach path, all on this tile. No added scenery obscures the reveal.
-            Cube("Dirt approach", new Vector3(0f, 0.006f, -2.65f), new Vector3(0.6f, 0.012f, 2.7f), new Color(0.65f, 0.59f, 0.42f));
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath) ?? throw new InvalidOperationException("Existing moshava house FBX is missing.");
-            var host = new GameObject("Building pick root"); host.transform.SetParent(root.transform, false);
-            Visual = new GameObject("Mesh-only visual pivot").transform; Visual.SetParent(host.transform, false);
-            var model = Object.Instantiate(prefab, Visual);
-            var rs = model.GetComponentsInChildren<Renderer>();
-            if (rs.Length == 0) throw new InvalidOperationException("Representative building has no renderer.");
-            var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
-            float scale = 2.9f / Mathf.Max(b.size.x, b.size.z);
-            model.transform.localScale *= scale;
-            model.transform.localPosition -= new Vector3(b.center.x, b.min.y, b.center.z) * scale;
-            var matPath = Path.ChangeExtension(ModelPath, ".mat");
-            var buildingMat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
-            foreach (var r in rs) if (buildingMat != null) r.sharedMaterial = buildingMat;
-            host.AddComponent<BoxCollider>().size = new Vector3(2.9f, 2f, 2.9f);
-            Reveal = host.AddComponent<ConstructionReveal>(); Reveal.Bind(Visual, 1.5f);
+                preview.camera.fieldOfView = 35f; preview.camera.nearClipPlane = 25f; preview.camera.farClipPlane = 100000f;
+                preview.camera.clearFlags = CameraClearFlags.SolidColor;
+                preview.camera.backgroundColor = new Color(0.13f, 0.20f, 0.18f);
+                preview.ambientColor = MapLighting.AmbientEquator * 1.15f;
+                preview.lights[0].transform.rotation = Quaternion.Euler(MapLighting.SunElevation, MapLighting.SunAzimuth - 180f, 0f);
+                preview.lights[0].color = Color.Lerp(MapLighting.SunColour, new Color(1f, 0.88f, 0.70f), 0.35f);
+                preview.lights[0].intensity = MapLighting.SunIntensity * HexLook.SunBoost;
+                preview.lights[0].shadows = LightShadows.Soft;
+                preview.lights[1].transform.rotation = Quaternion.Euler(65f, 145f, 0f);
+                preview.lights[1].color = MapLighting.AmbientSky; preview.lights[1].intensity = 0.6f;
+
+                // Preserve the actual board coordinates, so the prototype's seeded arrangement is unchanged.
+                var original = HexBoard.Load(BoardId);
+                var h = original.Hexes[(BoardQ, BoardR)];
+                if (h.prototype != PrototypeId) throw new InvalidOperationException("The construction preview hex no longer has its expected prototype.");
+                // Keep the real immediate ground neighbours; missing context would turn this into an island.
+                var context = original.Hexes.Values.Where(x => HexGeometry.Distance(h.q, h.r, x.q, x.r) <= 1)
+                    .Select(x => x == h ? h : new BoardHex { q = x.q, r = x.r, terrain = x.terrain, ground = x.ground }).ToArray();
+                var board = new HexBoard(new HexBoardFile { id = "construction-one-hex", hexes = context });
+                var surface = new HexBoardSurface(board);
+                var centre = HexGeometry.Centre(h.q, h.r, HexScale.HexM);
+                var (boardRoot, _) = HexBoardBuilder.Build(board, Ground, seed: 1948,
+                    options: new HexBoardBuilder.Options { Parent = root.transform, Origin = -centre, OwnSea = false, HolesOutsideLand = true });
+                var assets = boardRoot.GetComponent<HexBoardAssets>();
+                TileCentre = new Vector3(0f, surface.Height(centre), 0f);
+                var ctx = new HexTileContext(h.q, h.r, surface, seed: 1948);
+                HexPrototypes.Create(h.prototype).Build(ctx);
+                PlacementCount = ctx.Placements.Count;
+                MissingModels = ctx.Placements.Count(p => p.Model != "" && HexModels.Prefab(HexModels.Resolve(p.Model, p.Position)) == null);
+                // Use an existing inner house: edge houses leave too little room for the dust footprint.
+                var chosen = ctx.Placements.Where(p => p.Model == "sandbox:kit_moshava")
+                    .OrderBy(p => (p.Position - centre).sqrMagnitude).ThenBy(p => p.Position.x).First();
+
+                // Only split this preview's combined render objects; their meshes remain owned by HexBoardAssets.
+                Object.DestroyImmediate(boardRoot.transform.Find("HexBoardPieces").gameObject);
+                HexBoardRenderer.Emit(boardRoot.transform, ctx.Placements.Where(p => !p.Equals(chosen)), assets);
+                var host = new GameObject("Building pick root"); host.transform.SetParent(boardRoot.transform, false);
+                host.transform.localPosition = chosen.Position;
+                Visual = new GameObject("Mesh-only visual pivot").transform; Visual.SetParent(host.transform, false);
+                var rebased = new HexPlacement(chosen.Model, chosen.StandIn, chosen.Fit, chosen.Tint,
+                    Matrix4x4.Translate(-chosen.Position) * chosen.Matrix, chosen.Q, chosen.R);
+                HexBoardRenderer.Emit(Visual, new[] { rebased }, assets);
+                var bounds = HexModels.Bounds(Visual.gameObject);
+                float radius = new Vector2(bounds.size.x, bounds.size.z).magnitude * 0.5f;
+                if (!HexGeometry.InHex(chosen.Position, centre, HexScale.HexM, HexScale.HexM * HexScale.InsetShare + radius * 2.25f))
+                    throw new InvalidOperationException($"The chosen building has insufficient inset ground: offset={chosen.Position - centre}, radius={radius}, bounds={bounds.size}.");
+                var pick = host.AddComponent<BoxCollider>(); pick.center = host.transform.InverseTransformPoint(bounds.center); pick.size = bounds.size;
+                Reveal = host.AddComponent<ConstructionReveal>(); Reveal.Bind(Visual, radius);
+                Reveal.GroundOffset = Mathf.Max(0f, surface.Height(chosen.Position) - chosen.Position.y);
+                TargetPosition = host.transform.position;
             }
-            catch
-            {
-                preview.Cleanup();
-                foreach (var o in owned) if (o != null) Object.DestroyImmediate(o);
-                owned.Clear(); throw;
-            }
+            catch { preview.Cleanup(); throw; }
         }
 
-        Material Material(Color colour)
+        static (Texture2D?, Texture2D?) Ground(string name)
         {
-            var m = new Material(Shader.Find("Universal Render Pipeline/Lit")) { color = colour, hideFlags = HideFlags.HideAndDontSave };
-            m.SetFloat("_Smoothness", 0f); owned.Add(m); return m;
-        }
-        void MeshObject(string name, Mesh mesh, Color colour)
-        {
-            owned.Add(mesh); var go = new GameObject(name); go.transform.SetParent(root.transform, false);
-            go.AddComponent<MeshFilter>().sharedMesh = mesh; go.AddComponent<MeshRenderer>().sharedMaterial = Material(colour);
-        }
-        void Hex(string name, float radius, float bottom, float top, Color colour)
-        {
-            var v = new List<Vector3>(); var tri = new List<int>();
-            v.Add(new Vector3(0f, top, 0f));
-            for (int i = 0; i < 6; i++) { float a = Mathf.Deg2Rad * (90f - i * 60f); v.Add(new Vector3(Mathf.Cos(a) * radius, top, Mathf.Sin(a) * radius)); }
-            for (int i = 0; i < 6; i++) { tri.Add(0); tri.Add(i + 1); tri.Add((i + 1) % 6 + 1); }
-            for (int i = 0; i < 6; i++)
-            {
-                int n = v.Count; Vector3 a = v[i + 1], b = v[(i + 1) % 6 + 1];
-                v.Add(a); v.Add(new Vector3(a.x, bottom, a.z)); v.Add(new Vector3(b.x, bottom, b.z)); v.Add(b);
-                tri.AddRange(new[] { n, n + 1, n + 2, n, n + 2, n + 3 });
-            }
-            var m = new Mesh { name = name }; m.SetVertices(v); m.SetTriangles(tri, 0); m.RecalculateNormals(); MeshObject(name, m, colour);
-        }
-        void Disc(string name, float radius, Vector3 at, Color colour)
-        {
-            const int sides = 48; var vertices = new Vector3[sides + 1]; var triangles = new int[sides * 3]; vertices[0] = at;
-            for (int i = 0; i < sides; i++) { float a = -i * Mathf.PI * 2f / sides; vertices[i + 1] = at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius; triangles[i * 3] = 0; triangles[i * 3 + 1] = i + 1; triangles[i * 3 + 2] = (i + 1) % sides + 1; }
-            var mesh = new Mesh { name = name, vertices = vertices, triangles = triangles }; mesh.RecalculateNormals(); MeshObject(name, mesh, colour);
-        }
-        void Cube(string name, Vector3 at, Vector3 scale, Color colour)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; Object.DestroyImmediate(go.GetComponent<Collider>());
-            go.transform.SetParent(root.transform, false); go.transform.localPosition = at; go.transform.localScale = scale; go.GetComponent<Renderer>().sharedMaterial = Material(colour);
+            const string folder = "Assets/Art/Settlements/Prototype/HexSandboxGround/";
+            return (AssetDatabase.LoadAssetAtPath<Texture2D>(folder + name + "_diff_2k.jpg"),
+                AssetDatabase.LoadAssetAtPath<Texture2D>(folder + name + "_nor_gl_2k.jpg"));
         }
         void PositionCamera()
         {
-            var cam = preview.camera; cam.transform.rotation = Quaternion.Euler(48f, 22f, 0f);
-            cam.transform.position = new Vector3(0f, 0.3f, 0f) - cam.transform.forward * (17.8f * Zoom);
-            }
+            var cam = preview.camera; cam.transform.rotation = Quaternion.Euler(50f, 22f, 0f);
+            var at = Zoom < 0.4f ? TargetPosition + Vector3.up * Reveal.FootprintRadius * 0.35f : TileCentre;
+            cam.transform.position = at - cam.transform.forward * (26000f * Zoom);
+        }
         public void Draw(Rect rect)
         {
             PositionCamera(); preview.BeginPreview(rect, GUIStyle.none); preview.Render(true);
@@ -119,10 +112,9 @@ namespace Statecraft.Editor.Construction
         public void Dispose()
         {
             if (disposed) return; disposed = true;
-            if (Reveal != null) Reveal.Cancel(); preview.Cleanup(); foreach (var o in owned) if (o != null) Object.DestroyImmediate(o); owned.Clear();
+            if (Reveal != null) Reveal.Cancel(); preview.Cleanup();
         }
     }
-
     public sealed class ConstructionPreview : EditorWindow
     {
         ConstructionStage? stage; bool playing; float time; double last;
@@ -145,16 +137,17 @@ namespace Statecraft.Editor.Construction
             if (stage == null) return;
             var fx = stage.Reveal;
             EditorGUILayout.LabelField("ONE HEX / CONSTRUCTION", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Existing moshava house · isolated preview · no game startup", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("Actual moshava_village hex · game terrain and placements · no simulation", EditorStyles.miniLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Play / Replay")) { fx.Play(); time = 0f; playing = true; }
                 if (GUILayout.Button("Stop / Final")) { fx.Cancel(); time = fx.Duration; playing = false; }
-                if (GUILayout.Button("Close zoom")) stage.Zoom = 0.78f;
-                if (GUILayout.Button("Tile zoom")) stage.Zoom = 1f;
-                if (GUILayout.Button("Gameplay zoom")) stage.Zoom = 1.8f;
+                if (GUILayout.Button("Close zoom")) stage.Zoom = 0.23f;
+                if (GUILayout.Button("Tile zoom")) stage.Zoom = 0.56f;
+                if (GUILayout.Button("Gameplay zoom")) stage.Zoom = 1f;
             }
             EditorGUI.BeginChangeCheck();
+            fx.Look = (ConstructionLook)EditorGUILayout.EnumPopup("Comparison", fx.Look);
             fx.Style = (RevealStyle)EditorGUILayout.EnumPopup("Direction", fx.Style);
             fx.Duration = EditorGUILayout.Slider("Duration (seconds)", fx.Duration, 0.6f, 4f);
             fx.Intensity = EditorGUILayout.Slider("Dust intensity", fx.Intensity, 0f, 1.5f);
@@ -162,6 +155,7 @@ namespace Statecraft.Editor.Construction
             fx.Seed = EditorGUILayout.IntField("Visual seed", fx.Seed);
             time = EditorGUILayout.Slider("Scrub", time, 0f, fx.Duration);
             if (EditorGUI.EndChangeCheck()) fx.Sample(time);
+            if (stage.MissingModels > 0) EditorGUILayout.HelpBox($"{stage.MissingModels} local game models are unavailable; existing game stand-ins are shown.", MessageType.Info);
             var rect = GUILayoutUtility.GetRect(100, 10000, 100, 10000, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             if (Event.current.type == EventType.Repaint && rect.width > 0 && rect.height > 0)
             {
@@ -208,18 +202,28 @@ namespace Statecraft.Editor.Construction
                 Directory.CreateDirectory(output);
                 using var stage = new ConstructionStage();
                 void Save(string file) { var image = stage.Frame(960, 720); File.WriteAllBytes(Path.Combine(output, file), image.EncodeToPNG()); Object.DestroyImmediate(image); }
-                stage.Reveal.Cancel(); Save("original-still.png");
-                stage.Reveal.Play();
                 int peak = 0;
-                for (int i = 0; i <= 90; i++) { stage.Reveal.Sample(i / 30f); Save($"frame-{i:0000}.png"); int live = 0; foreach (var ps in stage.Reveal.GetComponentsInChildren<ParticleSystem>()) live += ps.particleCount; peak = Math.Max(peak, live); }
-                Save("final-still.png");
-                stage.Zoom = 1.8f; stage.Reveal.Play();
-                for (int i = 0; i <= 60; i++) { stage.Reveal.Sample(i / 30f); Save($"gameplay-{i:0000}.png"); }
-                foreach (RevealStyle style in Enum.GetValues(typeof(RevealStyle)))
+                foreach (var view in new[] { "normal", "close" })
                 {
-                    stage.Zoom = 1f; stage.Reveal.Style = style; stage.Reveal.Play(); stage.Reveal.Sample(0.65f); Save($"preset-{style}.png");
+                    stage.Zoom = view == "normal" ? 1f : 0.23f;
+                    foreach (ConstructionLook look in Enum.GetValues(typeof(ConstructionLook)))
+                    {
+                        stage.Reveal.Look = look; stage.Reveal.Play();
+                        for (int i = 0; i <= 66; i++)
+                        {
+                            stage.Reveal.Sample(i / 30f); Save($"{view}-{look.ToString().ToLowerInvariant()}-{i:0000}.png");
+                            int live = 0; foreach (var ps in stage.Reveal.GetComponentsInChildren<ParticleSystem>()) live += ps.particleCount;
+                            peak = Math.Max(peak, live);
+                        }
+                    }
                 }
-                File.WriteAllText(Path.Combine(output, "capture-info.txt"), $"Actual Unity 6000.3.25f1 URP editor rendering. 960x720, 30fps.\nModel: {ConstructionStage.ModelPath}\nDuration=1.8s Intensity=1 Seed=1948\nTwo native ParticleSystems; limits 36 dust + 8 flecks; peak total live particles observed {peak}.\nNo simulation loaded. No WebGL build run.\n");
+                stage.Zoom = 0.56f; stage.Reveal.Cancel(); Save("real-tile-final.png");
+                File.WriteAllText(Path.Combine(output, "capture-info.txt"),
+                    $"Actual Unity 6000.3.25f1 URP editor rendering. 960x720, 30fps.\n" +
+                    $"Existing board={ConstructionStage.BoardId}, prototype={ConstructionStage.PrototypeId}, q={ConstructionStage.BoardQ}, r={ConstructionStage.BoardR}, seed=1948, placements={stage.PlacementCount}, missing models={stage.MissingModels}.\n" +
+                    $"Original v1 vs Stones on same tile/camera. Normal distance=26000m; close=5980m.\n" +
+                    $"Two systems, 36 soft puffs + 8 faceted mesh stones maximum; peak={peak}. Duration=1.8 seconds.\n" +
+                    "No simulation loaded. No WebGL build run. Preview uses game sun constants and camera pitch/FOV, without the global post-processing profile.\n");
                 stage.Dispose();
                 File.Delete(PendingCapture);
                 Debug.Log("CONSTRUCTION CAPTURE OK " + output); if (Application.isBatchMode) EditorApplication.Exit(0);

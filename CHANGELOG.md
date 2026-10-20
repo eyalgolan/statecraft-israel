@@ -8,7 +8,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
-- An opt-in construction reveal prototype and isolated one-hex editor preview: warm base dust, sparse earth flecks, replay and cancellation, without changing simulation timing.
+- An opt-in construction reveal prototype and isolated one-hex editor preview: soft base dust, small bouncing stone chunks, original/refined comparison on an existing designed game hex, replay and cancellation, without changing simulation timing.
 - An event option can unlock a city project (GDD Phase 7 PR 2, D-H2): a `projects.yaml` kind marked `locked: true` is
   refused by StartProject until an option with `unlock_projects` naming it has applied. The loader refuses an unknown
   kind or one that is not locked, and a sensitive option may not unlock (R-EFX-008, R-EFX-005; refs #806). No real

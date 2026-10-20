@@ -1,73 +1,100 @@
 # One-hex construction reveal prototype
 
-Local prototype, opt-in only. No gameplay flow currently invokes it. No simulation rules or content change.
+Opt-in presentation prototype. No gameplay flow invokes it; simulation timing, picking and completion identity remain unchanged.
 
-- [x] **TASK-000** library check: no dashboard answered; reuse existing Unity building art and native particles, no new dependencies.
-- [x] Inspect current main and active PRs; isolate this worktree.
-- [x] Draft three directions; implement the perimeter direction with cheap timing presets.
-- [x] Run focused Unity lifecycle tests and inspect actual animation captures.
-- [x] Save animation, keyframes and comparison as native Library deliverables.
+## Direction
+
+Three lightweight directions were considered:
+
+1. **Perimeter**: low soft dust ring, a few earth chunks, intact building rises and settles. Selected for a readable silhouette and short reveal.
+2. **Staggered**: dust groups and rise start later, suggesting assembly without splitting existing art. Available as a timing preset.
+3. **Cloud**: wider expanding dust, crisp reveal. Available as a restrained intensity/width preset, at the cost of more cover at the base.
+
+The refined default retains the original dust material and radial softness. Eight small faceted stones pop out in short arcs,
+make two diminishing bounces, then shrink away. A smaller completion dust pulse and gentle building settle connect the action.
+The comparison selector preserves the original v1 sampling on the **same real game hex**; it does not substitute the old diagnostic polygon.
 
 ## Preview
 
-Use Unity **6000.3.25f1**, open this worktree's `unity/`, then **Statecraft > Construction > One Hex Preview**.
-The tool creates a private preview scene with the existing `b05a-moshava-house-v2` FBX and material, one hex of dry ground,
-and warm directional light using the map's palette. It does not open Map.unity, build terrain, start the sim or request models.
-Close the window to release its scene, objects, meshes, materials and render textures. The current scene is not modified.
+Open this worktree's `unity/` with **Unity 6000.3.25f1**, then **Statecraft > Construction > One Hex Preview**.
+No Map scene, simulation, network or full board is started. The tool builds the existing `central_israel` hex at q=1, r=13
+(`moshava_village`) using `HexBoardBuilder`, `HexBoardSurface`, `HexPrototypes` and `HexBoardRenderer`.
+Its existing terrain paint, main street and prop placements are retained. Immediate neighbouring ground descriptors preserve
+terrain continuity; only the selected hex's props are drawn. One existing `sandbox:kit_moshava` building receives the reveal.
+The game renderer owns the generated terrain/meshes/materials. Closing the private preview disposes them without changing the active scene.
 
-Play / Replay restarts the reveal; Stop / Final restores the completed model. Scrub, duration, intensity, seed, speed and
-three zoom buttons support iteration. The default **Perimeter** direction keeps dust below the model's main silhouette.
-**Staggered** delays several puffs and the rise, suggesting short assembly. **Cloud** widens the puffs for a stronger reveal.
-These are cheap parameter presets on the same system; Staggered does not disassemble the original model into pieces.
+Local game hex art remains in its existing ignored folders. It is not copied into Git or relicensed by this prototype.
+When a local model is unavailable, the game's existing stand-in is shown and the preview reports the missing model count.
+Ground textures are read without changing importers. The preview uses the game sun, camera pitch and FOV, without the global post-processing profile.
 
-Default visual duration is 1.8 seconds: anticipation to 0.22s, rise through about 0.92s, restrained settle to 1.40s, then clear.
-These are local presentation values, not construction rules or turn durations. No completion callback gates game state.
+**Play / Replay** restarts; **Stop / Final** restores the completed model. Comparison (**Original / Stones**), direction,
+duration, dust intensity, visual seed, speed and scrub support iteration. **Gameplay zoom** uses the existing hex capture's
+26,000 m mid distance; **Tile zoom** frames the composition; **Close zoom** inspects the selected building at 5,980 m.
 
-## Integration boundary (deliberately deferred)
+Default duration is 1.8 seconds: anticipation through 0.22s, rise through about 0.92s, completion pulse and short settle,
+then clear. These are local visual values, not construction rules or turn durations. Completion never gates game state.
+
+## Integration boundary
 
 PR [#1146](https://github.com/eyalgolan/statecraft-israel/pull/1146) owns completed-city-project presentation in
 `GameRoot.RenderPlacementsIfChanged` and `PlacementLayer.Render`; hex-map PRs #1153–#1155 own their board builders.
-This prototype changes none of those files.
+This prototype changes none of those files. Other runtime-figure and building-LOD experiments remain separate.
 
-When that work is settled, diff stable completed placement/project IDs after authoritative state updates. On a *newly completed*
-visual only, add `ConstructionReveal` to its stationary pick root, create a direct mesh-only child pivot, then call
-`Bind(pivot, conservativeWorldFootprintRadius)` and `Play()`. Keep the existing mesh/material and base-at-zero pivot.
-Do not wrap colliders, picking metadata, or the whole placement layer. Supply a radius whose **2.25x** circle fits inside
-the tile's inset boundary. Initial load, save restore, camera changes, streaming LOD replacement and layer redraws must not
-replay completion effects. Preserve that completion identity independently of ephemeral render objects.
+After the completed-visual flow settles, diff stable placement/project IDs following authoritative state updates. On a newly
+completed visual, put `ConstructionReveal` on its stationary pick root and create a direct mesh-only child pivot, then call
+`Bind(pivot, conservativeWorldFootprintRadius)` and `Play()`. Preserve the existing mesh, material and final transform.
+Set `GroundOffset` to surface height minus the placed building base when the game intentionally sinks that base.
+Keep at least **2.25 × radius** inside the tile's inset boundary. Do not wrap colliders, picking metadata or the whole placement layer.
+Initial load, save restore, camera changes, streaming/LOD replacement and layer redraws must not replay completion effects;
+keep completion identity independently of ephemeral render objects.
 
-`Bind` restores the previous target before reuse. `Cancel`, disabling or destroying the component restore the final transform
-and clear particles. Replays reuse two particle systems and one material. Destroying the host releases owned resources.
-There are no coroutines, delayed callbacks, persistent objects, global RNG consumption or global settings changes.
-No project reduced-motion preference was found; callers can skip `Play()` or call `Cancel()` to show the final model immediately.
-No global accessibility setting was added.
+`Bind` restores the old target before reuse. `Cancel`, disabling, completion and destruction restore the final transform and clear particles.
+Replay reuses its systems and owned resources. No coroutines, delayed callbacks, persistent objects, global RNG or global settings.
+No project reduced-motion setting was found. Callers can skip `Play()` or call `Cancel()` to show the completed model immediately;
+no global setting was invented.
 
-## Rendering and budget
+## Rendering budget
 
-Two native CPU ParticleSystems: at most 36 base puffs + 8 debris flecks (88 billboard triangles), two transparent draws.
-No collision, trails, lights, sub-emitters, sorting layers, compute shaders, VFX Graph, packages or added texture downloads.
-A tiny URP transparent shader computes a soft radial falloff; its Resources material retains the shader in player builds.
-It uses alpha blending and depth testing with no depth writes. Particles are on Ignore Raycast and have no colliders.
-Only the mesh-only visual pivot rises through the terrain; its original scale stays intact. The pick root stays fixed. Visual hash sampling is independent of Unity's global RNG.
-The reveal reuses its arrays and creates no managed objects per sampled frame after initialization; GC/frame timing was not profiled. Simultaneous completions still need an integration-level
-visibility/concurrency cap; this prototype validates one effect, not a whole-map completion storm.
+Two native CPU ParticleSystems, at most **36 soft puffs + 8 mesh stones**. The stones share one eight-triangle mesh and one opaque material;
+maximum added geometry is 136 triangles (72 dust + 64 stones), with two particle renderers. The original look uses 88 billboard triangles.
+No rigidbodies, collision, persistent debris, trails, lights, sub-emitters, compute shaders, VFX Graph, new packages or textures.
+The tiny Resources materials retain their URP shaders. Dust alpha blends with depth testing and no depth writes; stones depth-write.
+Particles use Ignore Raycast and no colliders. Only the visual pivot rises; scale, pick root and collider remain fixed.
+Sampling uses preallocated arrays and a local visual hash; it never consumes Unity's global RNG.
 
-## Validation and evidence
+No managed allocations are introduced in sampled frames after initialization, by code inspection. GC/frame timing was not profiled.
+Simultaneous completions still need an integration-level visibility/concurrency cap; this is a single-effect prototype.
+
+## Validation and current evidence
 
 Unity 6000.3.25f1 / URP, 20 October 2026:
 
-- `ConstructionRevealTests;ConstructionPreviewTests`: **5 passed, 0 failed**, 0 `warning CS`, 0 `error CS`.
-  Tests cover repeatability, particle bounds, stable pick-root transforms/collider, replay reuse, cancellation, disable,
-  completion, rebind, material release, component destruction, repeated preview disposal, active-scene/ambient preservation
-  and render-target restoration. The initial lifecycle run caught edit-time disable/destroy cleanup; the fix uses
-  `ExecuteAlways` for cleanup, while automatic time advancement remains Play Mode only.
-- Baseline presence test against the existing game assembly failed with “a standalone construction reveal must exist”.
-- Actual Unity capture: 960×720 at 30 fps; packaged video has 152 frames, 5.07 seconds, tile and wider gameplay views.
-  Peak observed: **44 live particles**, matching the 36 + 8 hard budget. Dust remains below the main silhouette.
-- Original still / final cleared still: **pixel-identical**. The model's proportions/material/identity are preserved.
-- Exact simulation dependency built successfully; `uv run scripts/oss/check_repo.py` and `git diff --check` passed.
-- Existing Unity-MCP plugin logs a path-with-spaces message and shutdown warnings; these are unrelated to the prototype.
-  Capture uses a worktree-local pending marker and resumes after assembly reload, then disposes its preview before exiting.
+- Focused native EditMode suite: **10 passed, 0 failed, 0 skipped**, 47.54 seconds; 0 C# compile warnings/errors.
+  Includes all three deleted-particle-root/child recovery cases, whole-timeline bounds for every style/look,
+  repeatability without global RNG consumption, stationary picking, replay/cancel/disable/completion/rebind/destruction,
+  real game terrain and repeated private-preview disposal with scene/ambient/render-target/resource preservation.
+- Native red first: 10 cases, 5 passed / 5 failed. Three failures reproduced the material leak and destroyed child accesses.
+  Two failures caught an outer-row house whose conservative effect footprint did not fit the inset boundary.
+  Recovery now rebuilds missing systems and renderer configuration while releasing the old dust material; the preview
+  selects an existing inner farmhouse without moving/resizing placements or weakening the containment guard.
+- An independent Sol 6.1 reviewer verified the red/green XML and final code. No remaining code findings.
+  The logs contain existing licensing/MCP shutdown noise; this is not an assertion that the entire log is error-free.
+- .NET SDK 10.0.401: sim/content **2,023 passed**; Release warnings-as-errors build **0 warnings, 0 errors**.
+  Policy tests **305 passed**; repository policy, GDD lint, rule-ID checks and whitespace checks passed.
+- The CI-pinned Rasterio 1.5.2 could not install here without GDAL build tools. A compatible Rasterio 1.4.3 tools run had
+  1,430 passed / 4 SDK-8-related failures / 4 skipped; all 10 packaging tests passed when rerun directly with SDK 10.
+  This is not a clean validation of the exact CI dependency environment.
+
+Current real-hex video/keyframes and independent visual review are queued under the shared Unity locks.
+The preserved v1 media below shows the earlier diagnostic hex and is not evidence for this refined real-hex stage.
+
+A one-hex desktop URP editor capture is not WebGL/browser validation. No construction WebGL build or performance profile
+was run. Public screenshot sharing remains subject to the existing local sandbox art's provenance status; no new asset
+rights declaration or legal attestation is made here.
+
+## Preserved v1 evidence
+
+These files are the earlier diagnostic-hex exploration, retained unchanged. Use the refined real-hex evidence above for the current result.
 
 Library deliverables (actual rendered footage; no generated imagery):
 
@@ -79,11 +106,9 @@ Library deliverables (actual rendered footage; no generated imagery):
 | construction-original-final.png | libfile_e1f7fbc7943881919166e7c92b1daef4 | file_00000000076c81fda047dee9eb7a5c78 |
 | construction-directions.png | libfile_45515109bbd8819199f57bf8479f46e1 | file_000000005e8c823081d699fdd375cebc |
 
-A one-hex editor render is desktop URP evidence; WebGL/browser compatibility is a design target, **not a validated platform result**.
-Before a PR, run the repository's full required checks and an actual WebGL capture. This task intentionally uses bounded checks.
 
 Capture entry point: `Statecraft.Editor.Construction.ConstructionPreview.Capture`, argument `-constructionCapture ABSOLUTE_DIRECTORY`.
-Always inspect existing processes, acquire `/tmp/statecraft-unity-validation.lock` atomically and wrap Unity in
-`uv run tools/machine_lock.py --shared --wait-unity -- ...`. Never run competing heavy Unity jobs.
+Before Unity, inspect processes, atomically acquire `/tmp/statecraft-unity-validation.lock`, and wrap it in
+`uv run tools/machine_lock.py --shared --wait-unity -- ...`. Do not launch competing Unity jobs.
 
-AI assistance: Codex Sol 6.1 wrote the prototype, tests and notes. The existing building art and its provenance remain unchanged.
+AI assistance: Codex Sol 6.1 implemented the prototype, tests and notes; an independent Sol 6.1 agent verified the code and native red/green XML. Visual review is pending current captures.

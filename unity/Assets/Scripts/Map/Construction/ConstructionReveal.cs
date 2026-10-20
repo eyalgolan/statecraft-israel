@@ -7,6 +7,7 @@ using Object = UnityEngine.Object;
 namespace Statecraft.Game.Map.Construction
 {
     public enum RevealStyle { Perimeter, Staggered, Cloud }
+    public enum ConstructionLook { Original, Stones }
 
     /// <summary>Opt-in presentation only. Bind a mesh-only visual child, never the authoritative pick root.
     /// No callbacks into simulation, global random state, coroutines or per-frame allocations.</summary>
@@ -18,6 +19,8 @@ namespace Statecraft.Game.Map.Construction
         [Range(0.1f, 3f)] public float Speed = 1f;
         public int Seed = 1948;
         public RevealStyle Style;
+        public ConstructionLook Look = ConstructionLook.Stones;
+        [Min(0f)] public float GroundOffset;
         public const int DustBudget = 36, DebrisBudget = 8;
         public bool IsPlaying { get; private set; }
         public float Elapsed { get; private set; }
@@ -26,7 +29,11 @@ namespace Statecraft.Game.Map.Construction
         Vector3 originalPosition, originalScale, localRise;
         GameObject? particles;
         ParticleSystem? dust, debris;
-        Material? material;
+        Material? material, stoneMaterial;
+        Mesh? stoneMesh;
+        ParticleSystemRenderer? debrisRenderer;
+        ConstructionLook configuredLook;
+        bool lookConfigured;
         readonly ParticleSystem.Particle[] puffs = new ParticleSystem.Particle[DustBudget];
         readonly ParticleSystem.Particle[] flecks = new ParticleSystem.Particle[DebrisBudget];
         bool bound;
@@ -74,10 +81,17 @@ namespace Statecraft.Game.Map.Construction
             // Anticipation: the intact building starts below the ground. Dust precedes its rise.
             float rise = Smooth(0.12f, Style == RevealStyle.Staggered ? 0.67f : 0.51f, t);
             float settle = Mathf.Sin(Mathf.InverseLerp(0.51f, 0.78f, t) * Mathf.PI) * (t < 0.78f ? 0.012f : 0f);
+            if (Look == ConstructionLook.Stones)
+            {
+                // One restrained overshoot and a smaller return, never a squash of the original model.
+                float u = Mathf.InverseLerp(0.51f, 0.82f, t);
+                settle = t < 0.82f ? Mathf.Sin(u * Mathf.PI * 2f) * (1f - u) * 0.02f : 0f;
+            }
             visual.localScale = originalScale;
             visual.localPosition = originalPosition + localRise * (rise - 1f + settle);
-            particles!.transform.position = transform.TransformPoint(originalPosition);
-            DrawDust(t); DrawDebris(t);
+            particles!.transform.position = transform.TransformPoint(originalPosition) + Vector3.up * (Look == ConstructionLook.Stones && float.IsFinite(GroundOffset) ? Mathf.Max(0f, GroundOffset) : 0f);
+            ConfigureLook(); DrawDust(t);
+            if (Look == ConstructionLook.Original) DrawDebris(t); else DrawStones(t);
         }
 
         public void Cancel()
@@ -90,12 +104,19 @@ namespace Statecraft.Game.Map.Construction
         void OnDisable() => Cancel();
         void OnDestroy()
         {
-            Cancel(); Dispose(particles); Dispose(material); particles = null; material = null;
+            Cancel(); Dispose(particles); Dispose(material); Dispose(stoneMaterial); Dispose(stoneMesh);
+            particles = null; material = null; stoneMaterial = null; stoneMesh = null; lookConfigured = false;
         }
 
         void EnsureParticles()
         {
-            if (particles != null) return;
+            if (particles != null && dust != null && debris != null) return;
+            // A caller may remove a visual-only child while retaining the host for reuse.
+            // Release the surviving partial system/material and configure the replacement renderer again.
+            if (dust != null) dust.Clear(); if (debris != null) debris.Clear();
+            Dispose(particles); Dispose(material);
+            particles = null; dust = null; debris = null; material = null;
+            debrisRenderer = null; lookConfigured = false;
             var template = Resources.Load<Material>("Construction/Dust");
             if (template == null) throw new InvalidOperationException("Construction/Dust material is missing.");
             material = new Material(template) { name = "Construction dust (owned)", hideFlags = HideFlags.DontSave };
@@ -130,8 +151,9 @@ namespace Statecraft.Game.Map.Construction
             for (int i = 0; i < wanted; i++)
             {
                 float h = Hash(i, 1), h2 = Hash(i, 2), h3 = Hash(i, 3);
-                float start = 0.06f + h * 0.09f + (Style == RevealStyle.Staggered ? (i % 3) * 0.055f : 0f);
-                float age = (t - start) / (0.48f + h2 * 0.29f);
+                bool completion = Look == ConstructionLook.Stones && i % 3 == 2;
+                float start = completion ? 0.49f + h * 0.045f : 0.06f + h * 0.09f + (Style == RevealStyle.Staggered ? (i % 3) * 0.055f : 0f);
+                float age = (t - start) / (completion ? 0.32f : 0.48f + h2 * 0.29f);
                 if (age <= 0f || age >= 1f) continue;
                 float angle = i * 2.399963f + h2 * 0.3f;
                 float cloud = Style == RevealStyle.Cloud ? 1.16f : 1f;
@@ -139,7 +161,8 @@ namespace Statecraft.Game.Map.Construction
                 float size = radius * (0.35f + h3 * 0.22f) * (0.6f + age * 1.1f) * cloud;
                 float opacity = Mathf.Sin(Mathf.PI * age) * (1f - Smooth(0.60f, 1f, age)) * 0.76f * Mathf.Min(intensity, 1.3f);
                 var colour = Color.Lerp(new Color(0.57f, 0.41f, 0.26f), new Color(0.88f, 0.76f, 0.51f), h3);
-                colour.a = opacity;
+                colour.a = opacity * (completion ? 0.62f : 1f);
+                if (completion) size *= 0.68f;
                 puffs[count++] = Particle(centre + new Vector3(Mathf.Cos(angle) * ring, radius * (0.07f + age * 0.19f + h3 * 0.06f), Mathf.Sin(angle) * ring), size, colour, h * 360f);
             }
             dust!.SetParticles(puffs, count);
@@ -158,6 +181,65 @@ namespace Statecraft.Game.Map.Construction
                     flecks[count++] = Particle(at, FootprintRadius * (0.025f + Hash(i, 6) * 0.018f), new Color(0.48f, 0.34f, 0.19f, 1f - Smooth(0.6f, 1f, age)), age * 180f);
                 }
             debris!.SetParticles(flecks, count);
+        }
+
+        void ConfigureLook()
+        {
+            if (lookConfigured && configuredLook == Look) return;
+            debrisRenderer ??= debris!.GetComponent<ParticleSystemRenderer>();
+            var main = debris!.main; main.startRotation3D = Look == ConstructionLook.Stones;
+            if (Look == ConstructionLook.Stones)
+            {
+                if (stoneMaterial == null)
+                {
+                    var template = Resources.Load<Material>("Construction/Stone");
+                    if (template == null) throw new InvalidOperationException("Construction/Stone material is missing.");
+                    stoneMaterial = new Material(template) { name = "Construction stones (owned)", hideFlags = HideFlags.DontSave };
+                    stoneMesh = MakeStone();
+                }
+                debrisRenderer.renderMode = ParticleSystemRenderMode.Mesh; debrisRenderer.mesh = stoneMesh;
+                debrisRenderer.sharedMaterial = stoneMaterial;
+            }
+            else { debrisRenderer.renderMode = ParticleSystemRenderMode.Billboard; debrisRenderer.sharedMaterial = material; }
+            configuredLook = Look; lookConfigured = true;
+        }
+
+        void DrawStones(float t)
+        {
+            int count = 0;
+            if (Intensity > 0f)
+                for (int i = 0; i < DebrisBudget; i++)
+                {
+                    float age = (t - 0.10f - (i % 3) * 0.022f - Hash(i, 4) * 0.025f) / (0.55f + Hash(i, 8) * 0.08f);
+                    if (age <= 0f || age >= 1f) continue;
+                    float angle = i * 2.399963f + Hash(i, 9) * 0.5f;
+                    float travel = 1f - (1f - age) * (1f - age);
+                    float radius = FootprintRadius * (0.76f + travel * 0.77f);
+                    float height;
+                    if (age < 0.55f) { float u = age / 0.55f; height = 4f * u * (1f - u) * (0.32f + Hash(i, 10) * 0.1f); }
+                    else if (age < 0.80f) { float u = (age - 0.55f) / 0.25f; height = 4f * u * (1f - u) * 0.10f; }
+                    else if (age < 0.94f) { float u = (age - 0.80f) / 0.14f; height = 4f * u * (1f - u) * 0.025f; }
+                    else height = 0f;
+                    float size = FootprintRadius * (0.085f + Hash(i, 6) * 0.035f) * (1f - Smooth(0.82f, 1f, age));
+                    var at = particles!.transform.position + new Vector3(Mathf.Cos(angle) * radius, FootprintRadius * (height + 0.065f), Mathf.Sin(angle) * radius);
+                    var colour = Color.Lerp(new Color(0.43f, 0.32f, 0.20f), new Color(0.69f, 0.56f, 0.36f), Hash(i, 7));
+                    var stone = Particle(at, size, colour, 0f);
+                    stone.rotation3D = new Vector3(Hash(i, 11) * 180f + travel * 210f, Hash(i, 12) * 360f, travel * 140f);
+                    flecks[count++] = stone;
+                }
+            debris!.SetParticles(flecks, count);
+        }
+
+        static Mesh MakeStone()
+        {
+            var points = new[] { new Vector3(0.1f, 0.55f, -0.07f), new Vector3(-0.12f, -0.4f, 0.06f),
+                new Vector3(-0.52f, 0.05f, 0.04f), new Vector3(0.46f, -0.03f, 0.08f),
+                new Vector3(0.02f, 0.03f, -0.43f), new Vector3(0.03f, 0.02f, 0.39f) };
+            int[] faces = { 0, 4, 2, 0, 3, 4, 0, 5, 3, 0, 2, 5, 1, 2, 4, 1, 4, 3, 1, 3, 5, 1, 5, 2 };
+            var vertices = new Vector3[faces.Length]; var indices = new int[faces.Length];
+            for (int i = 0; i < faces.Length; i++) { vertices[i] = points[faces[i]]; indices[i] = i; }
+            var mesh = new Mesh { name = "Construction stone (owned)", hideFlags = HideFlags.DontSave, vertices = vertices, triangles = indices };
+            mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }
 
         static ParticleSystem.Particle Particle(Vector3 position, float size, Color colour, float rotation) =>
