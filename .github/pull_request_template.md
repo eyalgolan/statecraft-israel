@@ -13,6 +13,10 @@
 ```
 ```
 
+### Visual evidence (if applicable)
+
+<!-- For game visual changes, matched before/after gameplay screenshots are recommended; see CONTRIBUTING.md, "Pull requests". Attach images to this PR, label the changed area and important side effects, and keep state/camera/zoom matched (resolution/lighting when relevant). Explain if screenshots are not applicable; add a short video when motion helps review. Prefer reviewer-accessible GitHub attachments over private Library links or review-only files in the repo. -->
+
 ## Checklist
 
 - [ ] Tests cover the change, and they fail without it.
