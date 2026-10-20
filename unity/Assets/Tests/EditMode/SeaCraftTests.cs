@@ -39,7 +39,7 @@ public class SeaCraftTests
 
     /// <summary>About ten boats under way (feluccas and cutters, never a steamer) off the coast, two or more moored in or off
     /// each of the three harbours with Haifa's coastal steamer at anchor among them, every hull and its margin in open sea (not a rift lake),
-    /// no two boats overlapping, and promo 03's size: a sailing boat about a quarter of a hex across (0.15-0.5 allowed).</summary>
+    /// no two boats overlapping.</summary>
     [Test]
     public void TheBoatsSailOffTheCoastAndMoorInTheHarbours()
     {
@@ -52,8 +52,6 @@ public class SeaCraftTests
         foreach (var port in new[] { "jaffa", "tel_aviv", "haifa" })
             Assert.GreaterOrEqual(crafts.Count(c => c.Place == port && (c.Kind == SeaCraft.Kind.Moored || c.Kind == SeaCraft.Kind.Steamer)), 2, port + ": moored craft");
         Assert.AreEqual(1, crafts.Count(c => c.Kind == SeaCraft.Kind.Steamer && c.Place == "haifa"), "one coastal steamer, at anchor off Haifa");
-        float hexAcross = Mathf.Sqrt(3f) * g.HexSizeM;
-        foreach (var c in under) Assert.That(c.Length / hexAcross, Is.InRange(0.15f, 0.5f), "a sailing boat at promo 03's size");
         foreach (var c in crafts)
         {
             var f = c.Forward; var side = new Vector2(-f.y, f.x);
@@ -65,6 +63,35 @@ public class SeaCraftTests
             foreach (var o in crafts)
                 if (!o.Equals(c)) Assert.Greater((o.At - c.At).magnitude, 0.5f * (o.Length + c.Length), $"{c.Kind} at {c.Place} overlaps a {o.Kind}");
         }
+    }
+
+    /// <summary>Issue #1094 (the owner, 19 October 2026: "Yes, 24x like everything else"): every boat is its real length at
+    /// the one world scale (SettlementKits.ModelScale, 24x: an 8.5 m house as long as the steam train's 204 m locomotive
+    /// car), like #1086's 10 m fishing boat of about 1.2 cars: a 12 m felucca about 1.4 cars, a 10 m cutter about 1.2, an
+    /// 8 m moored fishing boat about 0.9 and the 50 m coastal steamer about 5.9, where before a felucca was 2,040 m (10 cars),
+    /// whatever the kits' landmark scale.</summary>
+    [Test]
+    public void EveryBoatIsItsRealLengthAtTheTrainScale()
+    {
+        var map = OpenMap();
+        var crafts = Place(map, Ground(map));
+        float car = Statecraft.Game.Map.Routes.RoadVehicles.LocomotiveCarM;
+        Assert.AreEqual(204f, car, 1f, "the locomotive's car");
+        var bands = new System.Collections.Generic.Dictionary<SeaCraft.Kind, (float lo, float hi)>
+        {
+            [SeaCraft.Kind.Felucca] = (1.2f, 1.6f), [SeaCraft.Kind.Cutter] = (1.0f, 1.35f),
+            [SeaCraft.Kind.Moored] = (0.8f, 1.05f), [SeaCraft.Kind.Steamer] = (5f, 7f),
+        };
+        foreach (var kind in bands.Keys) Assert.IsTrue(crafts.Any(c => c.Kind == kind), $"the map has a {kind}");
+        foreach (var c in crafts)
+        {
+            var (lo, hi) = bands[c.Kind];
+            Assert.That(c.Length / car, Is.InRange(lo, hi), $"{c.Kind} at {c.Place}: {c.Length:0} m against the {car:0} m locomotive car");
+        }
+        // The one world scale, not the kits' landmark scale: at 120 the same kinds keep the same lengths.
+        KitScale.CityBlocks = 120f;
+        foreach (var c in Place(map, Ground(map)))
+            Assert.AreEqual(crafts.First(o => o.Kind == c.Kind).Length, c.Length, 0.01f, $"{c.Kind} at landmark scale 120");
     }
 
     /// <summary>Review of #536: no hull ever meets a harbour work. At five landmark scales (30-120, the default 60 among

@@ -39,7 +39,7 @@ public class TownCensusTests
     {
         g = new KitGround(map.Terrain, map.Frame, map.Hexes, HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta.elev_min_m);
         // The corridors MapScene.Build gives the kits: the routes and the units' clearings.
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
         // With the 1948 localities, as the map builds them (their landmarks claim their hearts before any town's houses).
         var localities = map.Localities.Select(p => p.Settlement).ToList();

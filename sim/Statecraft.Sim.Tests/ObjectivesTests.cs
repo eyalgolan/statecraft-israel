@@ -420,7 +420,7 @@ eras:
 
     static string GddRules(string from, string to) => Fixture.Gdd()["rules.yaml"].Replace(from, to);
 
-    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n";
+    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\n";
 
     static string Objective(string from, string to) => ObjectivesYaml.Replace(from, to);
 

@@ -69,6 +69,9 @@ settings.quality.low: "נמוכה"
 # says that the event cards are not translated yet (#55). For the native reviewer (#564).
 settings.language: "שפה"
 settings.language.note: "כרטיסי האירועים באנגלית בלבד בינתיים."
+# The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
+# reviewer (#564).
+settings.uiscale: "גודל הממשק"
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item
@@ -123,6 +126,8 @@ order.kind.pioneer_work: "עבודה חלוצית"
 order.kind.site: "אתר"
 # A city project (#735; Q-UI-2's approved "מיזם דיור" for housing, with עירוני for any kind). For the native reviewer (#564).
 order.kind.city_project: "מיזם עירוני"
+# For the native reviewer (#564): "a segment of a road or a railway" (#786).
+order.kind.corridor_segment: "קטע של כביש או מסילה"
 order.invalid: "הפקודה אינה תקפה"
 # order.failed: the turn failed and SimBridge.EndTurn cleared the queue, so the player gives the orders again (#622;
 # maintainer, 15 October 2026). For the native reviewer (#564).

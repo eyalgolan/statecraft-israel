@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Statecraft.Game.Map.Routes;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -18,14 +17,9 @@ namespace Statecraft.Game.Map.Collection
             Barracks = "b18-military-barracks-v2", Workshop = "b21-artisan-workshop-v2",
             Factory = "b22-industrial-factory-v2";
 
-        /// <summary>The house the world scale is set by (m, real): the middle of the kit's default house, 7.5 to 10 m long.</summary>
-        public const float ReferenceHouseM = 8.5f;
-        /// <summary>The one world scale of Tal Heuberger's building models (the owner on v0.1.1, 18 October 2026: the buildings were
-        /// "way bigger then the train"): the reference house is as long as the locomotive's car of the steam train the map
-        /// runs (ServiceTrain: Tal Heuberger's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize, about 816 m, in
-        /// ServiceTrain.Cars cars of about 204 m), so 204 / 8.5 = 24x a building's real size. The same rule as the #700
-        /// buildings' scale fix (branch map/town-models-world-scale, SettlementKits.ModelScale).</summary>
-        public const float WorldScale = RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize / ServiceTrain.Cars / ReferenceHouseM;
+        /// <summary>The one world scale of Tal Heuberger's building models: <see cref="Kits.SettlementKits.ModelScale"/> (issue
+        /// #1032).</summary>
+        public const float WorldScale = Kits.SettlementKits.ModelScale;   // #1032: one shared constant
 
         /// <summary>Design values, not sourced measurements: the real long side (m) each model stands for, so that at
         /// <see cref="WorldScale"/> the fort, the barracks, the factory and the shikun block are each a few locomotive cars

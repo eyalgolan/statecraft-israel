@@ -252,7 +252,7 @@ namespace Statecraft.Game.UI
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
-            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language)));
+            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), document.panelSettings));
             Own(new CabinetPresenter(root, bridge, text, portraits));
             // After End Turn, what changed in the top bar and the sim's causes (#1037); under an outcome clip, which plays first.
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));

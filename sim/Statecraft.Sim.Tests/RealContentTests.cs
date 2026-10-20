@@ -18,6 +18,16 @@ public class RealContentTests
     static readonly Content C = ContentLoader.Load(ContentRoot());
     static readonly DateTime Checked = new DateTime(2026, 10, 9);
 
+    /// <summary>R-ALT-004 on the real content: every one of the 30 alternatives carries its record.</summary>
+    [Fact]
+    public void EveryAlternativeInContentSaysWhoProposedIt()
+    {
+        var c = ContentLoader.Load(ContentRoot());
+        var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
+        Assert.Equal(30, alternatives.Count);
+        Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
+    }
+
     // R-CTRL-001: rows ship only after research, a person's check and sensitivity review.
     [Fact]
     public void SettlementTargetsAreSensitivityReviewed()

@@ -59,7 +59,7 @@ public class MilitaryUnitTests
     [Fact]
     public void AMilitaryTypeLoadsAndAPopulationTypeNeedsNeither()
     {
-        var c = Load(Fixture.GddUnitTypes + "  - { id: soldier, kind: unit, side: egypt, class: armour }\n");
+        var c = Load(Fixture.GddUnitTypes + "  - { id: soldier, kind: unit, side: egypt, class: armour, movement_points: 4 }\n");
         var t = c.UnitTypes.Single(x => x.Id == "soldier");
         Assert.Equal(("egypt", "armour"), (t.Side, t.Class));
         Assert.Equal(("", ""), (c.UnitTypes.Single(x => x.Id == "civilian").Side, c.UnitTypes.Single(x => x.Id == "civilian").Class));

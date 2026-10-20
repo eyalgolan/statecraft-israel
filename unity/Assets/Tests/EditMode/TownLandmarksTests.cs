@@ -187,7 +187,7 @@ public class TownLandmarksTests
 
     /// <summary>The swap with #700's building models: the landmarks draw where TownModelLayer draws the kits' far view and
     /// hide where it draws the building models (TownModelLayer.CloseAt: in below CloseEnterM, out above CloseExitM), with
-    /// the same hysteresis, at the start view (120 km), the gameplay view (60 km), both sides of the band and the closest
+    /// the same hysteresis, at the start view (90 km), the gameplay view (60 km), both sides of the band and the closest
     /// zoom.</summary>
     [Test]
     public void TheLandmarksSwapWithTheBuildingModelsAtTheThreshold()
@@ -201,7 +201,7 @@ public class TownLandmarksTests
         var tel = map.KitFootprints.First(f => f.id == "tel_aviv").centre;
         foreach (var (d, close, why) in new[]
         {
-            (120000f, false, "the start view"), (60000f, false, "the gameplay view"),
+            (90000f, false, "the start view"), (60000f, false, "the gameplay view"),
             (TownModelLayer.CloseEnterM + 1000f, false, "inside the band, coming in"), (TownModelLayer.CloseEnterM - 1000f, true, "past the threshold"),
             (TownModelLayer.CloseExitM - 2000f, true, "inside the band, going out"), (TownModelLayer.CloseExitM + 1000f, false, "out of the band"),
             (CameraController.MinDistance, true, "the closest zoom"),

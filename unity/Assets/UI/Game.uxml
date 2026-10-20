@@ -349,6 +349,15 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
+            <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-uiscale-label" text="UI scale" class="settings-name" />
+                <ui:VisualElement class="row settings-choices">
+                    <ui:Button name="settings-uiscale-100" text="100%" class="settings-switch" />
+                    <ui:Button name="settings-uiscale-125" text="125%" class="settings-switch" />
+                    <ui:Button name="settings-uiscale-150" text="150%" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <!-- The turn report (#1037, TurnReportPresenter): after End Turn, each top-bar number that changed and the sim's causes.

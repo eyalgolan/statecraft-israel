@@ -91,7 +91,8 @@ public class UnitsInPlayTests
             .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
-            Assert.AreEqual("draft", u.Status, u.Id);
+            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`".
+            Assert.AreEqual(u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
             Assert.AreEqual(UnitData.IsWikipediaOnly(u), u.WikipediaOnly, $"{u.Id}: wikipedia_only must say whether every source is Wikipedia or Wikidata");
             foreach (var s in u.AllSources())
                 Assert.LessOrEqual(UnitData.Day(s.Checked), DateTime.Today, $"{u.Id}: {s.Url} checked in the future");

@@ -5,8 +5,10 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
 
 1. **Choose the version** (Semantic Versioning, pre-1.0 while the game is pre-release).
 2. **Bump every version site in one pull request:** `sim/Statecraft.Sim/SimInfo.cs` (`Version`) and
-   `unity/ProjectSettings/ProjectSettings.asset` (`bundleVersion`). Then move the `## [Unreleased]` entries in
-   `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD` and leave an empty `## [Unreleased]` above it.
+   `unity/ProjectSettings/ProjectSettings.asset` (`bundleVersion`). Fold the changelog fragments with
+   `uv run scripts/oss/changelog_fold.py`: it moves each `changelog.d/*.md` entry into `## [Unreleased]`, in filename
+   order, and deletes the fragments (it refuses, changing nothing, if one has no entry). Then move the
+   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD` and leave an empty `## [Unreleased]` above it.
    `scripts/oss/tests/test_release.py::test_versions_agree` fails if the three disagree.
 3. **Merge** the pull request (squash).
 4. **Run the release gate** on the merged `main` (it refuses to run elsewhere): `bash scripts/oss/release_gate.sh`. It must print

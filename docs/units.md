@@ -161,6 +161,30 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   `test_strength_has_one_value_and_a_source`, `test_no_anchor_rests_on_one_source_where_the_note_says_contested`,
   `test_the_arab_rows_name_no_sensitive_place`).
 
+### The IDF brigades' 15 May strengths (#743)
+
+No primary order of battle gives the IDF brigades' strengths on 15 May 1948, so a secondary source may give them (owner,
+20 October 2026, #743): "Every row cites its source, carries `status: to_verify`, and is replaced when a primary source
+turns up." The figures are the brigade table of `research_notes/M4 war mode/war-1948.md`, section 1 (#906): en.wiki's
+1948 war article, whose size column cites Ben-Gurion's War Diaries (Arabic edition, 1994, p. 303). The table gives no
+date; `as_of` is 15 May 1948, the day the ruling gives the strengths for.
+
+| Row | Strength (15 May) |
+|---|---|
+| Golani | 4,500 |
+| Carmeli | 2,000 |
+| Alexandroni | 5,200 |
+| Kiryati | 1,400 |
+| Givati | 5,000 |
+| Harel | 1,400 |
+| Yiftach | 4,500 (the table counts some Golani men in it) |
+| Negev | 2,400 |
+
+- **No figure, no strength:** Etzioni, the 7th, the 8th and Oded have no size in the note, so their rows give none and
+  stay `status: draft`.
+- **Still map-only:** the sim does not read the file yet, so the goldens do not move. Phase 5 PR 4's sim reading follows.
+- Tests: `test_idf_brigade_strengths_are_secondary_and_to_verify` (Python) and `UnitsInPlayTests` (EditMode).
+
 ### The 1948 Collection on the tokens (#665)
 
 The tokens wear Tal Heuberger's figures from The 1948 Collection (#507, #680), streamed after the first frame
@@ -245,7 +269,9 @@ The candidates are tried in three rounds:
 A spot is clear when:
 - the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
 - an army token's three figure spots (always three, so the spot does not change with the call-up), or a parked
-  aircraft's centre, are on land and at least 700 m beyond every railway and road corridor;
+  aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
+  stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no
+  spot; #786);
 - a ship has a sea hex;
 - no other anchor whose window overlaps holds the hex.
 

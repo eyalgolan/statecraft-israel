@@ -42,7 +42,7 @@ namespace Statecraft.Game.UI
         {
             ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote, ["rings"] = Rings,
             ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["book"] = Book, ["restart"] = Restart, ["gear"] = Gear,
-            ["chevron"] = Chevron, ["chevron-back"] = ChevronBack, ["hourglass"] = Hourglass,
+            ["hourglass"] = Hourglass,
             ["region"] = Region, ["house"] = House, ["village"] = Village, ["flag"] = Flag,
             ["peaks"] = Peaks, ["skyline"] = Skyline, ["ledger"] = Ledger,
             ["biome-sea"] = Waves, ["biome-lake"] = Waves, ["biome-coastal_plain"] = Plain, ["biome-hills"] = Hills,
@@ -77,17 +77,6 @@ namespace Statecraft.Game.UI
             var p = mgc.painter2D;
             p.lineJoin = LineJoin.Round; p.lineCap = LineCap.Round;
             paint(p, (x, y) => origin + new Vector2(x, y) * s, s, LineColour(lit));
-        }
-
-        /// <summary>A round navy disc with a gold rim and <paramref name="glyph"/> inside it, centred on <paramref name="centre"/>
-        /// (the promo's round option and button sign).</summary>
-        public static void PaintDisc(MeshGenerationContext mgc, string glyph, Vector2 centre, float radius)
-        {
-            var p = mgc.painter2D;
-            p.fillColor = new Color32(14, 22, 38, 255); p.strokeColor = new Color32(196, 160, 92, 150); p.lineWidth = 1f;
-            Circle(p, centre, radius); p.Fill(); p.Stroke();
-            var inner = radius * 0.62f;
-            Paint(mgc, glyph, new Rect(centre.x - inner, centre.y - inner, 2 * inner, 2 * inner));
         }
 
         // --- helpers (design-box coordinates) ---
@@ -291,19 +280,6 @@ namespace Statecraft.Game.UI
                 }
             p.ClosePath(); p.Stroke();
             Circle(p, at(12, 12), 3.2f * s); p.Stroke();
-        }
-
-        static void Chevron(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
-        {
-            p.strokeColor = gold; p.lineWidth = 2.2f * s;
-            p.BeginPath(); p.MoveTo(at(9.6f, 6.4f)); p.LineTo(at(15.2f, 12)); p.LineTo(at(9.6f, 17.6f)); p.Stroke();
-        }
-
-        /// <summary>The chevron mirrored, pointing left: the option sign in the Hebrew UI.</summary>
-        static void ChevronBack(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
-        {
-            p.strokeColor = gold; p.lineWidth = 2.2f * s;
-            p.BeginPath(); p.MoveTo(at(14.4f, 6.4f)); p.LineTo(at(8.8f, 12)); p.LineTo(at(14.4f, 17.6f)); p.Stroke();
         }
 
         static void Hourglass(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
