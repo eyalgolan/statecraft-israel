@@ -250,12 +250,13 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
   (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
   sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the seven ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the eight ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 
 | Event | Tags | What to review |
 |---|---|---|
+| `burma_road_complete` | `war-casualties` | **Pending.** Objective 3 completion card and selected Road of Valour photograph (#791); draft, not sensitivity-reviewed. Blocks shareable builds until owner review. |
 | `altalena` | security, war-casualties | Jews killed by Jews: 16 Irgun and 3 IDF dead (in the YAML comment, not the card) |
 | `ten_days` | security, war-casualties | Lydda and Ramle are shown as a military operation only (Lydda airport, the Jerusalem road); leaving out the population's flight and expulsion is an editorial choice the notes flag for explicit approval |
 | `operation_yoav` | security, war-casualties | the Hebron-hills decision; military text only |

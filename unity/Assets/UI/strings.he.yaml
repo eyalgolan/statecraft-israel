@@ -60,7 +60,9 @@ how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לרא�
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
-objectives.name.first_new_yishuv: "יישוב חדש ראשון"
+objectives.name.railway: "הנחת מסילה"
+objectives.name.burma_road: "סלילת כביש"
+objectives.name.yishuvim: "הקמת יישוב"
 objectives.name.absorb_immigrants: "קליטת העולים"
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
 settings.title: "הגדרות"

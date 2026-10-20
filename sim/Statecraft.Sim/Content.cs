@@ -1012,6 +1012,10 @@ namespace Statecraft.Sim
     public sealed class Objective
     {
         public string Id { get; set; } = "";
+        /// <summary>The objective this record is one part of. Empty for a standalone objective. Parts record and earn their
+        /// timing bonuses separately, while the parent objective's base points are paid only when its last part completes
+        /// (R-OBJ-005, R-OBJ-006).</summary>
+        public string PartOf { get; set; } = "";
         /// <summary>The name the player reads (in the Why list).</summary>
         public string Name { get; set; } = "";
         /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> while it waits for a native
@@ -1028,6 +1032,8 @@ namespace Statecraft.Sim
         public DateTime ReferenceDate { get; set; }
         /// <summary>The id of the card event (content/events/), which names this objective back in its `objective` key.</summary>
         public string Card { get; set; } = "";
+        /// <summary>Sources for a part's historical reference date. Required for objective parts (R-OBJ-005).</summary>
+        public List<Source> Sources { get; set; } = new List<Source>();
     }
 
     /// <summary>What completes an objective (objectives.yaml completes_when): exactly one kind.</summary>
@@ -1037,6 +1043,10 @@ namespace Statecraft.Sim
         public string SiteBuilt { get; set; } = "";
         /// <summary>The cities have absorbed the immigrants (R-OBJ-004, D-B4).</summary>
         public AbsorbCondition? Absorbed { get; set; }
+        /// <summary>A corridor (corridors.yaml): complete once every segment is built (R-OBJ-005, R-COR-003).</summary>
+        public string CorridorComplete { get; set; } = "";
+        /// <summary>Designated yishuv sites (sites.yaml): complete once every listed site is built (R-OBJ-005).</summary>
+        public List<string> SitesBuilt { get; set; } = new List<string>();
     }
 
     /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached

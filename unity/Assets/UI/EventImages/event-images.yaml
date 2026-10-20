@@ -356,3 +356,17 @@ images:
     sensitive: false
     sensitivity_reviewed: false
     note: "The GDD objective card (content/events/first_new_yishuv.yaml; #380). NLI title 'ימיו הראשונים של קיבוץ מפלסים' (the first days of kibbutz Mefalsim), dated June 1949, the founding month (research_notes/GDD objectives/designated-site-1.md). Two unnamed men at work; nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-16."
+  - event: burma_road_complete
+    file: burma_road_complete.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Meitar_Collection_(997008137268105171.jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/b/bb/Meitar_Collection_%28997008137268105171.jpg"
+    sha1: 55b3ea19042035fbd45812ffc6576029b3d171dc
+    original_size: [1370, 924]
+    licence: CC-BY-4.0
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "The opening of the Road of Valour, December 1948."
+    crop: [0.5, 0.5, 1.0]
+    sensitive: true
+    sensitivity_reviewed: false
+    note: "Owner-selected original (#791, 18 October 2026); the ceremony also commemorated the fallen. Sensitivity review remains pending. Original SHA-1 and Commons credit/licence verified 21 October 2026; VRTS ticket 2021092910005788."

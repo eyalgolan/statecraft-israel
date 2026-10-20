@@ -33,8 +33,8 @@ final `GameState.Hash()` is pinned:
 | Run | Ends | Hash |
 |---|---|---|
 | to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `e3c76f5f6fc45e4941a4499afd2e5c226a4677a651f39c6cef789447d123267a` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `37866907babc55e9477320db32467d1314aa59c8fe86d4d4ad82d8db61731fde` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `37866907babc55e9477320db32467d1314aa59c8fe86d4d4ad82d8db61731fde` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `c17ac550dfa3cab3c3eb9b2baf9631d22f49857723976a0314e0bc588db3d8df` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `c17ac550dfa3cab3c3eb9b2baf9631d22f49857723976a0314e0bc588db3d8df` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -321,3 +321,6 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | Phase 7 PR 4 carry canonical fix | 1952 | `37866907` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `ef8c5fea`). |
 | Phase 7 PR 4 carry canonical fix | mvp-end | `37866907` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `ef8c5fea`). |
 | #738 remaining scenario step | scenario-mvp-absorb-first | `c045ea90` | extends the run to 15 January 1950 so it completes `absorb_immigrants` (R-OBJ-004): two halutz cohorts free city housing, fourteen housing projects take the overflow and two industry projects raise employment, using only existing commands (was `234e32ee`) |
+
+| GDD Phase 4 PR 7 (#791) | 1952 | `c17ac550` | The first-new-yishuv objective becomes the all-six `yishuvim` infrastructure part, recorded 15 July 1951 instead of 15 February 1951. Neither corridor completes in the reference run, so the shared 100-point base is not paid: score 0 instead of 100. Only the objective record/date and score change; hash1950, smoke5 and all scenario goldens stay unchanged (was `37866907`). |
+| GDD Phase 4 PR 7 (#791) | mvp-end | `c17ac550` | Same full run and changes as hash1952 (was `37866907`). |

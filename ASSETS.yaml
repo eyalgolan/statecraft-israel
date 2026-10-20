@@ -678,4 +678,12 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 19 October 2026, on #708 (issuecomment-6255540504): 'Yes, both': the pioneer farmer and the Jerusalem 3denhance variant come in on the same terms as #708's eight figures. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
+  - glob: "unity/Assets/UI/EventImages/burma_road_complete.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Meitar_Collection_(997008137268105171.jpg"
+    status: owner-verify
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    note: "Owner-selected Road of Valour opening frame (#791). Owner sensitivity review pending. Original 1370x924, SHA-1 55b3ea19042035fbd45812ffc6576029b3d171dc; VRTS ticket 2021092910005788. Commons credit/licence and downloaded original verified 21 October 2026. Made by tools/event_images.py, centred crop [0.5, 0.5, 1.0]."
 removed: []

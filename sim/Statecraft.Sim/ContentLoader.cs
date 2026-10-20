@@ -1248,7 +1248,7 @@ namespace Statecraft.Sim
             if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end >= c.Eras[c.Eras.Count - 1].To))
                 throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and before the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
             ValidateSites(c);
-            ValidateObjectiveSites(c);
+            ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1330,15 +1330,40 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>An objective's site (R-OBJ-001): a designated site of kind yishuv, whose sourced founding date is the
-        /// objective's reference date, so the card and the site cannot disagree. Only the GDD loop reads sites.yaml, so only
-        /// it can check this; EventRules checks the rest of objectives.yaml in both loops.</summary>
-        static void ValidateObjectiveSites(Content c)
+        /// <summary>An objective's GDD condition: a standalone site objective keeps the site's founding date (R-OBJ-001),
+        /// while an infrastructure part names an existing corridor or one or more buildable yishuv sites (R-OBJ-005).
+        /// EventRules checks the loop-independent shape and sources.</summary>
+        static void ValidateObjectiveConditions(Content c)
         {
             foreach (var o in c.Objectives)
             {
                 var at = $"objectives[{o.Id}]";
+                if (o.PartOf != "" && (o.ReferenceDate < c.Rules.Start || o.ReferenceDate >= c.End))
+                    throw new ContentException(ObjectivesFileName, at + ".reference_date",
+                        FormattableString.Invariant($"must be inside the MVP ({c.Rules.Start:yyyy-MM-dd} to {c.End:yyyy-MM-dd})"));
                 if (o.CompletesWhen!.Absorbed != null) continue;   // R-OBJ-004 has no site; the GDD loop always has cities
+                if (o.CompletesWhen.CorridorComplete != "")
+                {
+                    var corridor = o.CompletesWhen.CorridorComplete;
+                    if (c.Corridors.All(x => x.Id != corridor))
+                        throw new ContentException(ObjectivesFileName, at + ".completes_when.corridor_complete", $"unknown corridor '{corridor}' (corridors.yaml)");
+                    continue;
+                }
+                if (o.CompletesWhen.SitesBuilt.Count > 0)
+                {
+                    var ids = new HashSet<string>(StringComparer.Ordinal);
+                    for (int i = 0; i < o.CompletesWhen.SitesBuilt.Count; i++)
+                    {
+                        var siteId = o.CompletesWhen.SitesBuilt[i];
+                        var field = FormattableString.Invariant($"{at}.completes_when.sites_built[{i}]");
+                        if (!ids.Add(siteId)) throw new ContentException(ObjectivesFileName, field, $"duplicate site '{siteId}'");
+                        var listed = c.Sites.FirstOrDefault(x => x.Id == siteId)
+                            ?? throw new ContentException(ObjectivesFileName, field, $"unknown site '{siteId}' (sites.yaml)");
+                        if (!listed.Kinds.Contains(Projects.YishuvKind))
+                            throw new ContentException(ObjectivesFileName, field, $"site '{siteId}' cannot be built as a yishuv");
+                    }
+                    continue;
+                }
                 var id = o.CompletesWhen.SiteBuilt;   // EventRules requires one kind
                 var site = c.Sites.FirstOrDefault(x => x.Id == id)
                     ?? throw new ContentException(ObjectivesFileName, at + ".completes_when.site_built", $"unknown site '{id}' (sites.yaml)");

@@ -190,9 +190,16 @@ namespace Statecraft.Sim
                 }
                 else if (!o.NameHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA'))
                     throw new ContentException(file, F("name_he"), "must be Hebrew, in Hebrew letters");
-                if (o.CompletesWhen == null || (o.CompletesWhen.SiteBuilt == "") == (o.CompletesWhen.Absorbed == null))
-                    throw new ContentException(file, F("completes_when"), "required, exactly one of: { site_built: <site id> }, { absorbed: { ... } }");
-                if (o.CompletesWhen.Absorbed is AbsorbCondition a)
+                if (o.PartOf != "" && !Offices.OfficeId.IsMatch(o.PartOf))
+                    throw new ContentException(file, F("part_of"), ContentLoader.IdRule);
+                var conditionKinds = o.CompletesWhen == null ? 0
+                    : (o.CompletesWhen.SiteBuilt == "" ? 0 : 1)
+                    + (o.CompletesWhen.Absorbed == null ? 0 : 1)
+                    + (o.CompletesWhen.CorridorComplete == "" ? 0 : 1)
+                    + (o.CompletesWhen.SitesBuilt.Count == 0 ? 0 : 1);
+                if (conditionKinds != 1)
+                    throw new ContentException(file, F("completes_when"), "required, exactly one of: { site_built: <site id> }, { absorbed: { ... } }, { corridor_complete: <corridor id> }, { sites_built: [<site id>, ...] }");
+                if (o.CompletesWhen!.Absorbed is AbsorbCondition a)
                 {
                     if (a.PopulationAtLeast <= 0) throw new ContentException(file, F("completes_when.absorbed.population_at_least"), "must be above 0");
                     if (a.OverflowAtMost == null) throw new ContentException(file, F("completes_when.absorbed.overflow_at_most"), "required");
@@ -200,6 +207,13 @@ namespace Statecraft.Sim
                     if (!(a.EmployedAtLeast > 0 && a.EmployedAtLeast <= 1)) throw new ContentException(file, F("completes_when.absorbed.employed_at_least"), "must be a share above 0, at most 1");
                 }
                 if (o.ReferenceDate == default) throw new ContentException(file, F("reference_date"), "required (the sourced date of the real event)");
+                if (o.PartOf != "")
+                {
+                    if (o.Sources.Count == 0) throw new ContentException(file, F("sources"), "required: an objective part's historical date needs a source");
+                    for (int i = 0; i < o.Sources.Count; i++)
+                        if (o.Sources[i] == null || !o.Sources[i].Url.StartsWith("https://", StringComparison.Ordinal) || o.Sources[i].Checked == default)
+                            throw new ContentException(file, F($"sources[{i}]"), "needs an https url and checked date");
+                }
                 var card = c.Events.FirstOrDefault(e => e.Id == o.Card)
                     ?? throw new ContentException(file, F("card"), $"unknown event '{o.Card}'");
                 if (card.Objective != o.Id)
@@ -214,6 +228,9 @@ namespace Statecraft.Sim
                 if (o.Card != e.Id)
                     throw new ContentException(e.File, $"events[{e.Id}].objective", $"objective '{o.Id}' has another card, '{o.Card}'");
             }
+            foreach (var group in c.Objectives.Where(o => o.PartOf != "").GroupBy(o => o.PartOf, StringComparer.Ordinal))
+                if (group.Count() < 2)
+                    throw new ContentException(file, $"objectives[{group.First().Id}].part_of", $"'{group.Key}' needs at least two parts");
         }
 
         /// <summary>R-ALT-005: how far a road runs before it folds back. DESIGN VALUE: owner-set, not a historical figure
