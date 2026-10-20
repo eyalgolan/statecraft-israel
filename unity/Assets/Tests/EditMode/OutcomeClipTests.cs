@@ -262,9 +262,15 @@ public class OutcomeClipTests
         var gated = (IReadOnlyList<EventVideoMapping.Row>)build.GetMethod("GatedClips", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { Yaml })!;
         var gate = build.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         Assert.IsTrue(gated.Single(r => r.File == "operation_horev-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-14");
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }), "reviewed: the clips may ship");
+        // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
+        StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
+            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }));
+        var reviewedContent = ContentLoader.Load(Paths.Content);
+        foreach (var e in reviewedContent.Events)
+            if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, gated }), "reviewed: the clips may ship");
         var unreviewed = gated.Select(r => { r.SensitivityReviewed = false; return r; }).ToList();
-        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, unreviewed });
+        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, unreviewed });
         StringAssert.Contains("illustration clips: operation_horev, operation_yoav, ten_days", refusal ?? "");
     }
 }
