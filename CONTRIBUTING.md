@@ -86,7 +86,7 @@ AI-assisted work is welcome. Say so in the pull request: which parts, and how yo
 
 - Base your branch on `main`. History on `main` is protected, so no force-pushes.
 - In the description, say what changed and why. Paste the test commands you ran and their output; a description of the output doesn't count.
-- **Visual changes:** we recommend matched before/after gameplay screenshots in the PR description. Keep the game state, camera and zoom the same; match resolution and lighting when relevant. Label the changed area and show important visual side effects. Explain if screenshots are not applicable, and add a short video when motion helps review. Prefer GitHub PR attachments that reviewers can open over private Library links or committing review-only captures to the repository.
+- **Visual changes:** matched before/after screenshots are required in the PR description for any change a player can see (models, the map, characters, the UI or the website). Keep the game state, camera and zoom the same; match resolution and lighting when relevant. Label the changed area and show important visual side effects. For changes with no visible effect, explain why screenshots are not applicable, and add a short video when motion helps review. Prefer GitHub PR attachments that reviewers can open over private Library links or committing review-only captures to the repository.
 - The maintainer reviews every PR (`.github/CODEOWNERS`). Once the maintainer approves your latest commit and every check on it has passed, `.github/workflows/merge-approved.yml` squash-merges it within about ten minutes. A new push needs a new approval.
 
 ## What CI runs
