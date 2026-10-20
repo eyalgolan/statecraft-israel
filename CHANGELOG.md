@@ -7,6 +7,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 
 ## [Unreleased]
 
+- Opt-in hex player: stream existing Collection figure aliases after the first frame, replace loading stand-ins without rebuilding terrain, and cancel refreshes on board teardown.
+
 ### Added
 - The ministers reach the GDD systems (D-H3's first slice, refs #808): the Labour minister's office scales housing and
   industry construction, the Agriculture minister's office pioneer and field work, and the Immigration minister's
