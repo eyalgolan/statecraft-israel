@@ -70,7 +70,7 @@ rules:
     status: verified
   - glob: "docs/images/build-*.jpg"
     licence: CC-BY-SA-4.0
-    source: "In-engine capture: real screenshots of the game's own WebGL build (main at 6c54c95, Unity 6000.3.25f1, Build.Web with -compression disabled), taken 2026-10-18 in headed Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with tools/headed.py's Browser (?nostart; build-he-map.jpg with ?nostart&lang=he; build-m3-start.jpg with no flag), scaled to 1568x882 and saved as JPEG (quality 74). Map derived from Copernicus DEM (NOTICE); the portraits on the Cabinet screen are the rows in ASSETS.portraits.yaml; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE); the start screen's painting AI-generated (CC0, its row above)"
+    source: "In-engine capture: real screenshots of the game's own WebGL build (Unity 6000.3.25f1, Build.Web with -compression disabled). build-m3-start.jpg: main at 6c54c95, taken 2026-10-18 in headed Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with tools/headed.py's Browser, no flag (the start screen's code and layout are unchanged on main at 8dae186). The others: taken 2026-10-20 from a build of main at 8dae186, in headless Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with Playwright through the real start screen's New game (build-he-map.jpg with ?lang=he); scaled to 1568x882 and saved as JPEG (quality 80). Map derived from Copernicus DEM (NOTICE); the portraits on the Cabinet screen are the rows in ASSETS.portraits.yaml; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE); the start screen's painting AI-generated (CC0, its row above)"
     status: verified
     note: "Screenshots of the game, not AI images; the AI-made parts they show are the start screen's painting and Tal Heuberger's 3D models (Tripo Studio, their rows above). CC BY-SA 4.0 as for the Steam kit's screenshots (coordinator ruling, 2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13 (landuse.png, BiomeColours.bytes, RouteRibbons.bytes)."
   - glob: "docs/images/hero-engine-*.jpg"
@@ -80,7 +80,7 @@ rules:
     note: "CC BY-SA 4.0 as for the Steam kit's renders (coordinator ruling, 2026-10-15): the render shows the CC BY-SA 4.0 bakes of D13."
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
-    source: "In-engine capture: about 11 seconds of real play recorded from the game's own WebGL build (commit f93fd5e, 2026-10-13) in headed Chrome at 1920x1080; the animated WebP for the README, the MP4 (H.264) and WebM (VP9) for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"
+    source: "In-engine capture: about 15 seconds of real play recorded from the game's own WebGL build (main at 8dae186, 2026-10-20) in headless Chrome for Testing at 1920x1080 with the DevTools screencast; the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264) and WebM (VP9) at 24 fps for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"
     status: verified
   - glob: "docs/steam/kit/*_capsule_*.png"
     licence: CC-BY-SA-4.0
@@ -103,7 +103,7 @@ rules:
     status: verified
   - glob: "docs/images/social-preview.jpg"
     licence: CC-BY-SA-4.0
-    source: "Padded copy of docs/images/build-m3-map.jpg (main at 6c54c95, 2026-10-18), 1280x640, for the GitHub social preview (a real build image, not concept art)"
+    source: "Padded copy of docs/images/build-m3-map.jpg (main at 8dae186, 2026-10-20), 1280x640, for the GitHub social preview (a real build image, not concept art)"
     status: verified
   - glob: "spikes/m0/evidence/*.jpg"
     licence: CC-BY-4.0
