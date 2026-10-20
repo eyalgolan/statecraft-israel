@@ -454,7 +454,7 @@ public class EventCardTests
     /// option shows its price and is greyed out, the card names the minister End Turn hands it to (the one
     /// EventSystem.Delegate names), and End Turn is highlighted; with Attention back, all of that goes away.</summary>
     [TestCase("en", "You don't have enough Attention left to answer this turn. End the turn and the decision goes to David Ben-Gurion.", "Comply with the cease-fire (costs 2.0 Attention)")]
-    [TestCase("he", "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי דוד בן-גוריון.", "\u200eComply with the cease-fire\u200e (עולה \u200e2.0\u200e תשומת לב)")]
+    [TestCase("he", "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי דוד בן-גוריון.", "לציית לצו הפסקת האש (עולה \u200e2.0\u200e תשומת לב)")]
     public void WithTooLittleAttentionTheCardSaysEndTurnHandsItToTheMinister(string lang, string line, string option)
     {
         var text = lang == "he" ? He : Text;
