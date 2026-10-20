@@ -89,7 +89,7 @@ namespace Statecraft.Game.UI
             string Millions(string id, double millions)
             {
                 var (sign, prefix, amount) = PlayerText.MoneyParts(c, id, millions);
-                return t.Format("hud.say_million", sign + prefix, amount);
+                return t.Format("hud.say_million", prefix + sign, amount);
             }
             Meter Money(string id, double now, double? before)
             {

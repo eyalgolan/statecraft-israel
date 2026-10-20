@@ -87,7 +87,7 @@ public class HudTests
         Assert.Greater(bridge.State.Debt, 0.0);
         var m = HudModel.From(bridge, Text);
         Assert.AreEqual(PlayerText.Money(C, "treasury", -bridge.State.Debt), m.Treasury.Value);
-        StringAssert.Contains("-IL", m.Treasury.Value);
+        StringAssert.Contains("IL -", m.Treasury.Value);
     }
 
     /// <summary>#681 (owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"): the Money
@@ -107,7 +107,7 @@ public class HudTests
         Assert.AreEqual(caption, meter.Q<Label>(className: "meter-name").text);
         StringAssert.StartsWith(caption + ":", meter.tooltip);
         Assert.AreEqual(PlayerText.Money(C, "treasury", bridge.State.Treasury - bridge.State.Debt), ui.Q<Label>("treasury-value").text);
-        StringAssert.Contains("-IL", ui.Q<Label>("treasury-value").text);
+        StringAssert.Contains("IL -", ui.Q<Label>("treasury-value").text);
     }
 
     // ---- The score (#380): only in the GDD loop, from GameState.Score ----
@@ -367,7 +367,7 @@ public class HudTests
         var now = bridge.State;
         prev.Treasury = now.Treasury - now.Debt + prev.Debt - 5;          // up by 5
         hud.Render();
-        Assert.AreEqual("+IL 5.0m", ui.Q<Label>("treasury-delta").text);
+        Assert.AreEqual("IL +5.0m", ui.Q<Label>("treasury-delta").text);
         Assert.IsTrue(ui.Q<Label>("treasury-delta").ClassListContains("delta-up"));
         Assert.IsFalse(ui.Q<Label>("treasury-delta").ClassListContains("delta-down"));
         prev.Treasury = now.Treasury - now.Debt + prev.Debt + 0.04;       // down by 0.04: rounds to zero, never "-0.0"
@@ -569,9 +569,9 @@ public class HudTests
         prev.Indicators["security"] = now.Indicators["security"] - 0.05;    // up 5 points
         prev.Treasury = now.Treasury - now.Debt + prev.Debt + 3;            // down by 3
         var m = HudModel.From(bridge, Text);
-        Assert.AreEqual("-$2.0m", m.Fx.Delta);
+        Assert.AreEqual("$-2.0m", m.Fx.Delta);
         Assert.AreEqual("+5%", m.Security.Delta);
-        Assert.AreEqual("-IL 3.0m", m.Treasury.Delta);
+        Assert.AreEqual("IL -3.0m", m.Treasury.Delta);
     }
 
     /// <summary>Fix round 2 (N4, N5): no script rescales a sim number for display itself: 0..1 values go through
@@ -756,14 +756,14 @@ public class HudTests
         now.Debt = now.Treasury + 3;                                         // net -3.0
         prev.Debt = prev.Treasury - 1;                                       // net +1.0 before: down by 4
         m = HudModel.From(bridge, Text);
-        Assert.AreEqual("Money: -IL 3.0 million, down IL 4.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
+        Assert.AreEqual("Money: IL -3.0 million, down IL 4.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
         using var ui = new UiTestKit();
         var he = He;
         new HudPresenter(ui.Root, bridge, he);
         var said = ui.Q<VisualElement>("meter-treasury").tooltip;
-        // The values carry left-to-right marks (U+200E, #543), so the minus stays on the left of "IL" in a right-to-left line.
-        Assert.AreEqual("כסף (נטו): \u200E-IL \u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
-        Assert.AreEqual("כסף (נטו): -IL 3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
+        // The values carry left-to-right marks (U+200E, #543), so the value stays one left-to-right run - "IL -3.0" with the minus next to the number - in a right-to-left line.
+        Assert.AreEqual("כסף (נטו): \u200EIL -\u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
+        Assert.AreEqual("כסף (נטו): IL -3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
         foreach (var id in MeterIds)
         {
             var tip = ui.Q<VisualElement>("meter-" + id).tooltip;

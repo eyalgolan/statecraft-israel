@@ -45,6 +45,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   zoom. A new `ZoomKeys` action in the Camera map; the wheel's `Zoom` keeps its one binding.
 
 ### Fixed
+- Money negatives and changes put the sign next to the number, not the currency ("IL -3.0m", "IL +1.2m"), everywhere the player sees money - top bar, Budget, Why?, the turn report and tooltips - in English and Hebrew (player feedback, 19 October 2026, refs #1107).
 - Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
 - Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
 - On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
