@@ -100,6 +100,7 @@ For changes under `sim/`, `tools/`, `scripts/` or `unity/`, not only content.
 - Branch from `main`, one focused change per PR, no force-push to `main`. Fill in `.github/pull_request_template.md`, including "AI assistance". Use "Fixes #N" only if the PR completes the issue, otherwise "Refs #N".
 - Add a line under `## [Unreleased]` in `CHANGELOG.md` for any change to `sim/`, `content/` or `unity/` (tests excepted).
 - Write the test first and check it fails without the change.
+- A change a player can see (models, the map, characters, the UI, the website) needs before/after screenshots in the PR description: the same game state, camera and zoom, with the changed area labelled. Reviewers can't judge a visual change from the diff alone.
 
 **Leave to the maintainer**
 - The framing in `docs/CONTENT_POLICY.md` section 1, sensitivity tags and the release gates.
