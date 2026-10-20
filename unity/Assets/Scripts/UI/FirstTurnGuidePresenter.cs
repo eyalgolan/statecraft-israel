@@ -16,9 +16,10 @@ namespace Statecraft.Game.UI
     /// step (Skip, Escape) and opened again from the How to play screen.</para>
     /// <para>Presentation only: it reads the state and changes the UI alone (the card's Hide, the hex the info panel shows,
     /// the "seen" line in the settings file, SettingsStore), never the sim, the queued orders or the save. Steps 2 and 3
-    /// show a city with a training facility (<see cref="CityHex"/>) in the info panel; the decision card is hidden
-    /// ("Decision waiting") except on step 4 and put back as it was when the guide closes. The guide takes no pointer
-    /// outside its panel, so the HUD stays usable under it (the browser checks press End Turn with it open).</para></summary>
+    /// show a city with a training facility (<see cref="CityHex"/>) in the info panel, and the selection the guide found
+    /// is put back when it closes; the decision card is hidden ("Decision waiting") except on step 4 and put back as it was
+    /// when the guide closes. The guide takes no pointer outside its panel, so the HUD stays usable under it (the browser
+    /// checks press End Turn with it open); End Turn closes it as the turn advances.</para></summary>
     public sealed class FirstTurnGuidePresenter : IDisposable
     {
         /// <summary>On the "root" element while the guide shows (Statecraft.uss shows its layer).</summary>
@@ -31,7 +32,8 @@ namespace Statecraft.Game.UI
         public static readonly string[] Steps = { "attention", "city", "training", "event", "objectives" };
         /// <summary>The event card's step (the card shows on it and is hidden on the others).</summary>
         public const int EventStep = 3;
-        /// <summary>The ring's gap round its target, in panel px.</summary>
+        /// <summary>The ring's gap round its target, in panel px. Under Attention (step 1) End Turn's border is kept clear of
+        /// it by Statecraft.uss (.guide-open #attention), not by this gap: the two sit 3 px apart in the bar.</summary>
         const float RingGap = 4f;
 
         readonly VisualElement hudRoot, layer, ring, dock;
@@ -41,20 +43,32 @@ namespace Statecraft.Game.UI
         readonly SettingsStore? store;
         readonly EventCardPresenter? card;
         readonly Action? showCity, closeScreens;
+        readonly Func<Action>? keepSelection;
+        readonly SimBridge? bridge;
         readonly Action onNext, onSkip, onReopen;
+        readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly IVisualElementScheduledItem follow;
         bool disposed;
         /// <summary>The card was open (not hidden) when the guide opened: it is put back so when the guide closes.</summary>
         bool cardWasOpen;
+        /// <summary>The event the card showed when the guide opened (null: none), and the turn it opened on.</summary>
+        string? cardEvent;
+        int openTurn;
+        /// <summary>Puts back the selection the guide found, once it has shown its city (null: it has not).</summary>
+        Action? putBack;
 
         /// <param name="store">The settings file, where the guide notes that it has shown (null: it never shows by itself).</param>
         /// <param name="card">The decision card, hidden except on the event step (null: none).</param>
         /// <param name="showCity">Shows <see cref="CityHex"/>'s city in the info panel, as a click on it would (null: nothing).</param>
         /// <param name="closeScreens">Closes an open side-menu screen when the guide opens (null: nothing).</param>
+        /// <param name="bridge">The game: the guide closes when its turn advances (End Turn under the open guide; null: never).</param>
+        /// <param name="keepSelection">Notes the selection (hex or unit) just before the guide first shows its city, and
+        /// returns what puts it back when the guide closes (null: the guide's city stays shown).</param>
         public FirstTurnGuidePresenter(VisualElement root, UiText text, SettingsStore? store, EventCardPresenter? card = null,
-            Action? showCity = null, Action? closeScreens = null)
+            Action? showCity = null, Action? closeScreens = null, SimBridge? bridge = null, Func<Action>? keepSelection = null)
         {
             this.text = text; this.store = store; this.card = card; this.showCity = showCity; this.closeScreens = closeScreens;
+            this.bridge = bridge; this.keepSelection = keepSelection;
             hudRoot = root.Q("root") ?? root;
             layer = root.Q<VisualElement>("first-turn-guide");
             ring = layer.Q<VisualElement>("guide-ring");
@@ -66,6 +80,8 @@ namespace Statecraft.Game.UI
             reopenButton.text = text["how_to_play.guide"];
             onNext = Next; onSkip = Close; onReopen = Open;
             next.clicked += onNext; skip.clicked += onSkip; reopenButton.clicked += onReopen;
+            onTurn = _ => TurnEnded();
+            if (bridge != null) bridge.TurnEnded += onTurn;
             // The targets move with the layout (a window resized, the info panel re-rendered after an order), so the ring
             // follows them while the guide shows.
             follow = layer.schedule.Execute(Place).Every(100);
@@ -97,7 +113,12 @@ namespace Statecraft.Game.UI
         {
             if (disposed) return;
             closeScreens?.Invoke();
-            if (!IsOpen) cardWasOpen = card?.Shown != null && !card.Collapsed;
+            if (!IsOpen)
+            {
+                cardWasOpen = card?.Shown != null && !card.Collapsed;
+                cardEvent = card?.Shown?.Id;
+                openTurn = bridge?.State.Turn ?? 0;
+            }
             hudRoot.AddToClassList(OpenClass);
             follow.Resume();
             Show(0);
@@ -118,8 +139,21 @@ namespace Statecraft.Game.UI
             return true;
         }
 
-        /// <summary>Closes the guide (Skip, Done, Escape) and puts the decision card back as it was when the guide opened.</summary>
-        public void Close()
+        /// <summary>Closes the guide (Skip, Done, Escape) and puts the decision card and the selection back as they were when
+        /// the guide opened.</summary>
+        public void Close() => Close(restoreCard: true);
+
+        /// <summary>The turn has ended (End Turn, which the guide leaves in reach): when it advanced, the guide closes, as Skip
+        /// does. Only the card the guide found is put back as it was; a new turn's card is left to its own rule (a new event
+        /// opens), so it neither stays hidden nor shows its backdrop under the guide (review of #1209). A refused turn (the
+        /// state unchanged) leaves the guide open.</summary>
+        void TurnEnded()
+        {
+            if (!IsOpen || bridge!.State.Turn == openTurn) return;
+            Close(restoreCard: card?.Shown?.Id == cardEvent);
+        }
+
+        void Close(bool restoreCard)
         {
             if (!IsOpen) return;
             Step = -1;
@@ -128,13 +162,15 @@ namespace Statecraft.Game.UI
             var focused = layer.focusController?.focusedElement as VisualElement;
             bool hadFocus = focused != null && layer.Contains(focused);
             if (hadFocus) focused!.Blur();
-            if (card?.Shown != null)
+            if (restoreCard && card?.Shown != null)
             {
                 if (cardWasOpen && card.Collapsed) card.Reopen();   // the card takes the focus itself
                 else if (!cardWasOpen && !card.Collapsed) card.Collapse(takeFocus: false);
             }
             // From the keyboard, the next Tab carries on from End Turn (#41 M1), unless the card is open and took the focus.
             if (hadFocus && (card?.Shown == null || card.Collapsed)) FocusReturn.To(hudRoot.Q<Button>("end-turn"));
+            var back = putBack; putBack = null;
+            back?.Invoke();
         }
 
         void Show(int step)
@@ -151,7 +187,11 @@ namespace Statecraft.Game.UI
                 if (step == EventStep && card.Collapsed) card.Reopen();
                 else if (step != EventStep && !card.Collapsed) card.Collapse(takeFocus: false);
             }
-            if (key == "city" || key == "training") showCity?.Invoke();
+            if (key == "city" || key == "training")
+            {
+                putBack ??= keepSelection?.Invoke();   // what the guide found, before it first shows its city
+                showCity?.Invoke();
+            }
             Place();
             FocusReturn.To(next);   // Enter goes on to the next step; again once styles resolve, as the layer may only now show
         }
@@ -203,9 +243,17 @@ namespace Statecraft.Game.UI
             var area = TargetArea();
             ring.style.display = area == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (area is not Rect a) { dock.RemoveFromClassList(TopClass); return; }
-            var topLeft = layer.WorldToLocal(new Vector2(a.xMin, a.yMin));
-            ring.style.left = topLeft.x - RingGap; ring.style.top = topLeft.y - RingGap;
-            ring.style.width = a.width + 2 * RingGap; ring.style.height = a.height + 2 * RingGap;
+            var topLeft = layer.WorldToLocal(new Vector2(a.xMin, a.yMin)) - new Vector2(RingGap, RingGap);
+            var bottomRight = layer.WorldToLocal(new Vector2(a.xMax, a.yMax)) + new Vector2(RingGap, RingGap);
+            // Inside the window: a target at its edge (Attention under the top of the window) gets a narrower gap there.
+            var size = layer.layout.size;
+            if (size.x > 0 && size.y > 0)
+            {
+                topLeft = Vector2.Max(topLeft, Vector2.zero);
+                bottomRight = Vector2.Min(bottomRight, size);
+            }
+            ring.style.left = topLeft.x; ring.style.top = topLeft.y;
+            ring.style.width = bottomRight.x - topLeft.x; ring.style.height = bottomRight.y - topLeft.y;
             dock.EnableInClassList(TopClass, a.center.y > layer.worldBound.center.y);
         }
 
@@ -236,7 +284,9 @@ namespace Statecraft.Game.UI
             disposed = true;
             follow.Pause();
             Step = -1;
+            putBack = null;   // a game going away: nothing to put back
             hudRoot.RemoveFromClassList(OpenClass);
+            if (bridge != null) bridge.TurnEnded -= onTurn;
             next.clicked -= onNext; skip.clicked -= onSkip; reopenButton.clicked -= onReopen;
         }
     }

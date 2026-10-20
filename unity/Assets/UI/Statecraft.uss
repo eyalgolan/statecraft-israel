@@ -512,6 +512,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .guide-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .guide-open .guide-layer { display: flex; }
 .guide-ring { position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+/* Attention sits about 3 px over End Turn in the bar: while the guide shows, more room under it keeps step 1's ring (4 px
+   round Attention) at least 4 px clear of End Turn's gold border, so the two read as two boxes (review of #1209;
+   FirstTurnGuideTests). 5 px is what the one-row bar's 70 px holds with End Turn in it; the taller narrow bar takes 8. */
+.guide-open #attention { margin-bottom: 5px; }
+.guide-open.hud-narrow #attention { margin-bottom: 8px; }
 .guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
 .guide-dock.guide-dock-top { bottom: auto; top: 16px; }
 .guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }

@@ -67,6 +67,9 @@ namespace Statecraft.Game.UI
         FirstTurnGuidePresenter? guide;
         /// <summary>Tests: the first-turn guide of the last Begin.</summary>
         internal FirstTurnGuidePresenter? Guide => guide;
+        InfoPanelPresenter? info;
+        /// <summary>Tests: the info panel of the last Begin.</summary>
+        internal InfoPanelPresenter? Info => info;
         CameraRig? rig;
         List<(string, int, int, DateTime)>? drawn;
         /// <summary>The designated sites on the map (#381), made on first use beside the placements; and their states as drawn.</summary>
@@ -314,7 +317,7 @@ namespace Statecraft.Game.UI
             showUnits();
             DiagLog.BootPhase("units layer built");
             var localitiesAt = LocalitiesAt(map);
-            var info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
+            var info = this.info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,
                 regions: regions, localitiesAt: localitiesAt,
                 townHex: InfoPanelPresenter.TownHex(map.SettlementsFor(inputs.Map.SettlementsYaml), map.Hexes),
@@ -439,8 +442,24 @@ namespace Statecraft.Game.UI
                 if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
                 unitLayer.Select(null); map.Select(q, r); info.Show(q, r);
             };
+            // When it closes, the guide puts back the selection it found (a hex, a unit, or none), unless the player has
+            // picked something else meanwhile (the HUD stays usable under it).
+            Func<Action> keepSelection = () =>
+            {
+                var hex = info.ShowsUnit ? null : info.Selected;
+                var unit = info.ShowsUnit ? unitLayer.Selected : null;
+                var city = FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State);
+                return () =>
+                {
+                    if (info.Covered || info.ShowsUnit || info.Selected != city) return;   // under a screen, or the player picked another
+                    unitLayer.Select(unit);
+                    if (unitLayer.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
+                    else { map.ClearSelection(); info.Clear(); }
+                };
+            };
             guide = firstTurn = Own(new FirstTurnGuidePresenter(root, text, showsStart && !FirstCardCheckRequested() ? SettingsFile() : null,
-                card, showCity, () => nav?.Close()));
+                card, showCity, () => nav?.Close(), bridge, keepSelection));
             if (newGame != null) newGame.Started += firstTurn.NewGame;      // New Game in the top bar too; both die with this Begin
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
@@ -552,7 +571,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
