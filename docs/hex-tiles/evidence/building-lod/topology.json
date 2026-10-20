@@ -1,0 +1,21 @@
+{
+  "asset": "b05a-moshava-house-v2",
+  "source_sha256": "48529542a9036dbf8fb1ea740fe462155501e21cb7430f566418c6df389ccec0",
+  "blender": "4.4.0",
+  "vertices": 4975,
+  "triangles": 6000,
+  "uv_layers": 1,
+  "material_slots": 1,
+  "custom_normals": true,
+  "welded_vertices": 4970,
+  "boundary_edges": 3356,
+  "uv_seam_edges": 3985,
+  "locked_boundary_or_seam_vertices": 4967,
+  "planar_5_degrees": {
+    "triangles": 5988,
+    "accepted": false,
+    "reduction_fraction": 0.002,
+    "visual_quality": "unverified",
+    "frame_time_benefit": "unmeasured"
+  }
+}

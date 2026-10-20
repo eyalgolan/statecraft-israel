@@ -8,6 +8,9 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 ## [Unreleased]
 
 ### Added
+- An isolated, opt-in one-building LOD experiment compares a distant colour impostor with the shipped moshava house,
+  retaining the original close mesh and shadow geometry. Matched captures reject the card because it clips the
+  lower wall/windows at the ground. No production replacement or demonstrated frame-time improvement.
 - An event option can unlock a city project (GDD Phase 7 PR 2, D-H2): a `projects.yaml` kind marked `locked: true` is
   refused by StartProject until an option with `unlock_projects` naming it has applied. The loader refuses an unknown
   kind or one that is not locked, and a sensitive option may not unlock (R-EFX-008, R-EFX-005; refs #806). No real

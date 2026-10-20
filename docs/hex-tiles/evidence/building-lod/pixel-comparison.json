@@ -1,0 +1,40 @@
+{
+  "comparison": [
+    {
+      "camera": "gameplay",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "identical_pixels": false,
+      "full_frame_mean_absolute_rgb": 0.16915637860082303,
+      "changed_pixel_bbox": [
+        898,
+        452,
+        1020,
+        586
+      ],
+      "changed_pixels": 11449,
+      "changed_region_mean_absolute_rgb": 21.455998695049345
+    },
+    {
+      "camera": "close",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "identical_pixels": true,
+      "full_frame_mean_absolute_rgb": 0.0,
+      "changed_pixel_bbox": null,
+      "changed_pixels": 0
+    }
+  ],
+  "note": "Pixel deltas quantify these two fixed Editor cameras only; no human acceptance or performance verdict.",
+  "sha256": {
+    "Statecraft-building-LOD-matched-comparison.png": "a50d1defaa6855ec5cfcb16766a7669f5cb5d4b54d312c4d7991471128d6edea",
+    "close-after.png": "9633b25bc73b26ffea1b9c5099fa820f475a39f5cefb73c52f84643213553cd7",
+    "close-before.png": "9633b25bc73b26ffea1b9c5099fa820f475a39f5cefb73c52f84643213553cd7",
+    "gameplay-after.png": "728e6ff93134f7cbd4f60eb833247dab5c963a9109607abdc60071f35764913d",
+    "gameplay-before.png": "21bc4f41f3965d8d5b8294aa734dd555da776280e8507172d8425bdb1cc28238"
+  }
+}

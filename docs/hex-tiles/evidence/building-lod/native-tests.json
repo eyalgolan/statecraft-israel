@@ -1,0 +1,99 @@
+{
+  "unity": "6000.3.25f1",
+  "target": "OSXUniversal",
+  "mode": "EditMode",
+  "filter": "BuildingLodProbeTests",
+  "result": "Passed",
+  "total": 21,
+  "passed": 21,
+  "failed": 0,
+  "skipped": 0,
+  "warning_CS": 0,
+  "error_CS": 0,
+  "cases": [
+    {
+      "name": "ALongerDistanceIsOutsideThisSingleViewPrototype",
+      "result": "Passed"
+    },
+    {
+      "name": "ChangedBuildingTransformReturnsToOriginal",
+      "result": "Passed"
+    },
+    {
+      "name": "ChangedOrDestroyedBakeLightKeepsOriginal",
+      "result": "Passed"
+    },
+    {
+      "name": "ChangedViewOrProjectionReturnsToOriginal",
+      "result": "Passed"
+    },
+    {
+      "name": "CloseViewAutomaticallyReturnsToOriginal",
+      "result": "Passed"
+    },
+    {
+      "name": "DefaultIsOriginal",
+      "result": "Passed"
+    },
+    {
+      "name": "DisablingOrDestroyingProbeRestoresBorrowedRenderer",
+      "result": "Passed"
+    },
+    {
+      "name": "DistantCapturedViewUsesCardAndRetainsOriginalShadow",
+      "result": "Passed"
+    },
+    {
+      "name": "FixtureRefusesContaminationFromExistingSceneObjects",
+      "result": "Passed"
+    },
+    {
+      "name": "FixtureTeardownRestoresLightingAndDestroysGeneratedVolumeComponents",
+      "result": "Passed"
+    },
+    {
+      "name": "FixtureUsesAnExistingRealHexAndARealPrototypePlacement",
+      "result": "Passed"
+    },
+    {
+      "name": "InvalidDistanceIsRefused(0.0f)",
+      "result": "Passed"
+    },
+    {
+      "name": "InvalidDistanceIsRefused(-1.0f)",
+      "result": "Passed"
+    },
+    {
+      "name": "InvalidDistanceIsRefused(float.NaN)",
+      "result": "Passed"
+    },
+    {
+      "name": "InvalidDistanceIsRefused(float.PositiveInfinity)",
+      "result": "Passed"
+    },
+    {
+      "name": "MissingCameraOrCardRestoresOriginal",
+      "result": "Passed"
+    },
+    {
+      "name": "OriginallyDisabledSourceIsNeverEnabled",
+      "result": "Passed"
+    },
+    {
+      "name": "ShadowOffRemainsOffAndDoesNotPayForAnInvisibleSource",
+      "result": "Passed"
+    },
+    {
+      "name": "ShippedSourceImportsWithItsOriginalUvAndMaterial",
+      "result": "Passed"
+    },
+    {
+      "name": "UnsupportedShadowModesKeepOriginal(TwoSided)",
+      "result": "Passed"
+    },
+    {
+      "name": "UnsupportedShadowModesKeepOriginal(ShadowsOnly)",
+      "result": "Passed"
+    }
+  ]
+}
