@@ -1,0 +1,43 @@
+{
+  "snapshot_commit": "2d3e13c098e147493ab034ab2ff20f0b04765fab",
+  "prepared_utc_date": "2026-10-20",
+  "agent_prepared": true,
+  "human_review": false,
+  "status": "DRAFT_REQUIRES_REFRESH_AFTER_PENDING_EDITS",
+  "source_files": {
+    "content/people.yaml": "4f82989ea6248a9e017f4c98ab0dff1ce3e5e13d62555dcc343d9dfd2acdfd2a",
+    "content/offices.yaml": "6c2beda09dcbf268fac6136bb49f1f83b29de9b1ae222240a4191f08c8f65868",
+    "content/model.yaml": "410bc5f8a2b5370d491be652ed098a617ac630f91a0df67840c507de0ff19955",
+    "sim/Statecraft.Sim/Offices.cs": "846ef77cf8cd2b26ac999136b467cd1693b3aa165272f7136ca1c50190d6df3c",
+    "sim/Statecraft.Sim/Cabinet.cs": "52e01ce1d8b39da6a5038e7dafb9d15473c6d2e69d040d8436b9e622a4dc1258",
+    "content/events/elections_1949.yaml": "75d5f16ed26d7562d5c13fb0795bf3b236d06c48607ed10554b7c459860a662e",
+    "content/events/clothing_rationing_1950.yaml": "a22da2b4b28e3c27275f67bb1c2905d533ee26f1e8fe9dda126d09591d4c6fe0",
+    "content/events/maabarot_policy.yaml": "6ef7e84f434f2cc6fbe00e1f90081133625575bd813af1e7f3db6ba5b8f12b93"
+  },
+  "packets": [
+    {
+      "event": "elections_1949",
+      "file": "elections_1949.md",
+      "source_sha256": "75d5f16ed26d7562d5c13fb0795bf3b236d06c48607ed10554b7c459860a662e",
+      "packet_sha256": "aba77c0b96281f997f87a32252ee4b09e5f8ab11d4df795510a92a51d7732922",
+      "claim_count": 11,
+      "source_count": 9
+    },
+    {
+      "event": "clothing_rationing_1950",
+      "file": "clothing_rationing_1950.md",
+      "source_sha256": "a22da2b4b28e3c27275f67bb1c2905d533ee26f1e8fe9dda126d09591d4c6fe0",
+      "packet_sha256": "9051bb19c3bdc8100b80b73bbcd3d0cd36a2bbae85795952d6c856ddd0de15d6",
+      "claim_count": 8,
+      "source_count": 6
+    },
+    {
+      "event": "maabarot_policy",
+      "file": "maabarot_policy.md",
+      "source_sha256": "6ef7e84f434f2cc6fbe00e1f90081133625575bd813af1e7f3db6ba5b8f12b93",
+      "packet_sha256": "47ab9be1d9b7f6efb72ecde9667a3e9cfce0bed47c8c8667f0674f5bb832ff5e",
+      "claim_count": 11,
+      "source_count": 5
+    }
+  ]
+}
