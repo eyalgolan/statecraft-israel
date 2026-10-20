@@ -254,10 +254,13 @@ An option that did not happen can say who put it forward, and on what record (R-
   live between 0 and 1, so a delta of `0.03` is three points of the scale. Keep deltas small, as the example does;
 - `treasury` or `fx_reserves`, in game money;
 - `food`, the national Food stock, in whole units (one unit is one population unit's food for a month). The delta
-  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. The
-  Arms stock becomes a target with its pool (#781): `arms` moves it the same way. Note that the monthly import
-  (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency crisis is on, so outside a
-  crisis a cut only matters if it leaves less than one month's need; a gain stays.
+  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. Note
+  that the monthly import (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency
+  crisis is on, so outside a crisis a cut only matters if it leaves less than one month's need; a gain stays;
+- `arms`, the national Arms stock, in whole units (one unit is one 1,000-person recruit group's equipment, R-ARMS-001).
+  The delta rounds and the stock clamps at 0 exactly as `food` does. Arms has no monthly import refill: purchases
+  (R-ARMS-002), event gains and equipment returned when recruit training is cancelled (R-ARMS-003) can raise the
+  stock.
 
 `delta` must be a finite number. Any other target is an error. Policy ids (`rationing`, ...) are not effect targets;
 use `set_policy` for those.
