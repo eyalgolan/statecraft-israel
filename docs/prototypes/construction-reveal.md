@@ -20,7 +20,7 @@ Open this worktree's `unity/` with **Unity 6000.3.25f1**, then **Statecraft > Co
 No Map scene, simulation, network or full board is started. The tool builds the existing `central_israel` hex at q=1, r=13
 (`moshava_village`) using `HexBoardBuilder`, `HexBoardSurface`, `HexPrototypes` and `HexBoardRenderer`.
 Its existing terrain paint, main street and prop placements are retained. Immediate neighbouring ground descriptors preserve
-terrain continuity; only the selected hex's props are drawn. One existing `sandbox:kit_moshava` building receives the reveal.
+terrain continuity; only the selected hex's props are drawn. One existing roofed `sandbox:kit_moshava_2` house receives the reveal.
 The game renderer owns the generated terrain/meshes/materials. Closing the private preview disposes them without changing the active scene.
 
 Local game hex art remains in its existing ignored folders. It is not copied into Git or relicensed by this prototype.
@@ -73,10 +73,12 @@ Unity 6000.3.25f1 / URP, 20 October 2026:
   Includes all three deleted-particle-root/child recovery cases, whole-timeline bounds for every style/look,
   repeatability without global RNG consumption, stationary picking, replay/cancel/disable/completion/rebind/destruction,
   real game terrain and repeated private-preview disposal with scene/ambient/render-target/resource preservation.
+- After the final roofed-house selector change, the native preview tests ran again: **2 passed, 0 failed, 0 skipped**,
+  29.33 seconds; 0 C# compile warnings/errors. Runtime code is unchanged from the full 10-case run.
 - Native red first: 10 cases, 5 passed / 5 failed. Three failures reproduced the material leak and destroyed child accesses.
   Two failures caught an outer-row house whose conservative effect footprint did not fit the inset boundary.
   Recovery now rebuilds missing systems and renderer configuration while releasing the old dust material; the preview
-  selects an existing inner farmhouse without moving/resizing placements or weakening the containment guard.
+  selects an existing roofed inner house without moving/resizing placements or weakening the containment guard.
 - An independent Sol 6.1 reviewer verified the red/green XML and final code. No remaining code findings.
   The logs contain existing licensing/MCP shutdown noise; this is not an assertion that the entire log is error-free.
 - .NET SDK 10.0.401: sim/content **2,023 passed**; Release warnings-as-errors build **0 warnings, 0 errors**.
@@ -85,8 +87,34 @@ Unity 6000.3.25f1 / URP, 20 October 2026:
   1,430 passed / 4 SDK-8-related failures / 4 skipped; all 10 packaging tests passed when rerun directly with SDK 10.
   This is not a clean validation of the exact CI dependency environment.
 
-Current real-hex video/keyframes and independent visual review are queued under the shared Unity locks.
-The preserved v1 media below shows the earlier diagnostic hex and is not evidence for this refined real-hex stage.
+The final actual real-hex capture completed on the existing roofed `kit_moshava_2`: 269 PNGs at 960×720/30 fps;
+36 placements, zero missing models, 44 live particles observed at peak. The matched 6.4-second video includes normal
+and close views. Cleared final frames are pixel-identical between looks. An independent Sol 6.1 reviewer inspected
+the rise, dust, stone arcs and final frames: no remaining blockers, with the gameplay-scale subtlety noted.
+The close view is retained so the restrained stones remain assessable. This is sampled visual review, not frame-time profiling.
+
+| Final v2 (roofed source house) | Library ID | File ID |
+| --- | --- | --- |
+| construction-real-hex-v2.mp4 | libfile_562d7963c2b88191a408aa6b3873e271 | file_00000000aa2881f58e0e365c99236225 |
+| construction-real-hex-v2.gif | libfile_8131a21a52788191bb9e7ca8283df687 | file_00000000687c81f58b0d0828ad4de6ae |
+| construction-real-hex-keyframes.png | libfile_e82df7eb21848191b7d98fd95a6864bb | file_00000000a05881f5a0f7bb666b738b49 |
+| construction-normal-comparison.png | libfile_85dd719f1d448191b756fe8c62839701 | file_00000000410881f5bbf86a34afca60f4 |
+| construction-close-comparison.png | libfile_bcebb3fe246c8191b7620b7e88a13b7d | file_00000000af5481f5989afcd17dcd3749 |
+| construction-real-hex-final.png | libfile_1486918ee84c8191b5a1bdda868fddd8 | file_00000000281881f5a158da05b02ecb07 |
+| construction-final-identity.png | libfile_a5a0a99221dc81918aafc8f1d73763f5 | file_000000004c0881f59e2b4292170685f5 |
+| evidence.json | libfile_8da70ef2d5f481919dfe9ba6a6f2b4ee | file_0000000075f881f5b24d6904014ff9b6 |
+
+The initial v2 capture below used an unroofed source shell. Review prompted the final roofed selection without moving
+or resizing placements, changing runtime motion, or weakening containment. The two candidate files remain available
+for traceability; use the final v2 table above for the current result.
+
+| Initial v2 candidate (unroofed source house) | Library ID | File ID |
+| --- | --- | --- |
+| construction-v2-framehouse-candidate.mp4 | libfile_8b8280b9c64481918df9c6752944119b | file_00000000ce1081f5b3447c8d3f58be85 |
+| construction-v2-framehouse-candidate-keyframes.png | libfile_0661e7824bc48191869e537170ae75ba | file_00000000c1dc81f5ac71f0d75dc8a8f2 |
+
+These actual candidate captures establish the earlier motion on the real hex; they are not final evidence for the roofed-house selection.
+The preserved v1 media below shows the earlier diagnostic hex.
 
 A one-hex desktop URP editor capture is not WebGL/browser validation. No construction WebGL build or performance profile
 was run. Public screenshot sharing remains subject to the existing local sandbox art's provenance status; no new asset
@@ -111,4 +139,5 @@ Capture entry point: `Statecraft.Editor.Construction.ConstructionPreview.Capture
 Before Unity, inspect processes, atomically acquire `/tmp/statecraft-unity-validation.lock`, and wrap it in
 `uv run tools/machine_lock.py --shared --wait-unity -- ...`. Do not launch competing Unity jobs.
 
-AI assistance: Codex Sol 6.1 implemented the prototype, tests and notes; an independent Sol 6.1 agent verified the code and native red/green XML. Visual review is pending current captures.
+AI assistance: Codex Sol 6.1 implemented the prototype, tests and notes; an independent Sol 6.1 agent verified the code,
+native red/green XML and sampled final roofed-house capture sequence.

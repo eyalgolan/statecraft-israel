@@ -16,6 +16,7 @@ namespace Statecraft.Editor.Construction
     {
         public const string BoardId = "central_israel", PrototypeId = "moshava_village";
         public const int BoardQ = 1, BoardR = 13;
+        public const string BuildingModelId = "sandbox:kit_moshava_2";
         readonly PreviewRenderUtility preview = new PreviewRenderUtility();
         readonly GameObject root;
         public ConstructionReveal Reveal { get; }
@@ -62,8 +63,8 @@ namespace Statecraft.Editor.Construction
                 HexPrototypes.Create(h.prototype).Build(ctx);
                 PlacementCount = ctx.Placements.Count;
                 MissingModels = ctx.Placements.Count(p => p.Model != "" && HexModels.Prefab(HexModels.Resolve(p.Model, p.Position)) == null);
-                // Use an existing inner house: edge houses leave too little room for the dust footprint.
-                var chosen = ctx.Placements.Where(p => p.Model == "sandbox:kit_moshava")
+                // Use an existing roofed inner house: edge houses leave too little room for the dust footprint.
+                var chosen = ctx.Placements.Where(p => p.Model == BuildingModelId)
                     .OrderBy(p => (p.Position - centre).sqrMagnitude).ThenBy(p => p.Position.x).First();
 
                 // Only split this preview's combined render objects; their meshes remain owned by HexBoardAssets.
@@ -220,7 +221,7 @@ namespace Statecraft.Editor.Construction
                 stage.Zoom = 0.56f; stage.Reveal.Cancel(); Save("real-tile-final.png");
                 File.WriteAllText(Path.Combine(output, "capture-info.txt"),
                     $"Actual Unity 6000.3.25f1 URP editor rendering. 960x720, 30fps.\n" +
-                    $"Existing board={ConstructionStage.BoardId}, prototype={ConstructionStage.PrototypeId}, q={ConstructionStage.BoardQ}, r={ConstructionStage.BoardR}, seed=1948, placements={stage.PlacementCount}, missing models={stage.MissingModels}.\n" +
+                    $"Existing board={ConstructionStage.BoardId}, prototype={ConstructionStage.PrototypeId}, q={ConstructionStage.BoardQ}, r={ConstructionStage.BoardR}, model={ConstructionStage.BuildingModelId}, seed=1948, placements={stage.PlacementCount}, missing models={stage.MissingModels}.\n" +
                     $"Original v1 vs Stones on same tile/camera. Normal distance=26000m; close=5980m.\n" +
                     $"Two systems, 36 soft puffs + 8 faceted mesh stones maximum; peak={peak}. Duration=1.8 seconds.\n" +
                     "No simulation loaded. No WebGL build run. Preview uses game sun constants and camera pitch/FOV, without the global post-processing profile.\n");
