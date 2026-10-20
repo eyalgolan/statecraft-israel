@@ -124,6 +124,24 @@ namespace Statecraft.HexTiles
             };
         }
 
+        /// <summary>The centred square enclosing the stand-in's parts in its unit frame, before placement scale/yaw.</summary>
+        internal static float StandInFootprint(StandIn kind)
+        {
+            float width = 0f;
+            foreach (var part in StandInParts(kind))
+            {
+                var b = part.mesh.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    var corner = b.center + Vector3.Scale(b.extents,
+                        new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+                    var p = part.local.MultiplyPoint3x4(corner);
+                    width = Mathf.Max(width, 2f * Mathf.Max(Mathf.Abs(p.x), Mathf.Abs(p.z)));
+                }
+            }
+            return width;
+        }
+
         public static int StandInTriangles(StandIn kind) => StandInParts(kind).Sum(p => IndexTriangles(p.mesh));
 
         /// <summary>Triangles from index counts, which a player can read on any mesh (mesh.triangles needs Read/Write).</summary>

@@ -17,6 +17,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   golden is re-pinned.
 
 ### Fixed
+- Height-sized fallback trees on the opt-in hex map use their generated canopy bounds for footprint checks, including
+  callers with narrower estimates, so accepted stand-in canopies stay inside the tile inset (refs #18, #1120).
 - Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
 - Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
 - On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
