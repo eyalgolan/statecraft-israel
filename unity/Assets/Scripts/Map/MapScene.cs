@@ -171,9 +171,13 @@ namespace Statecraft.Game.Map
         /// keeps every kit (review of #559).</summary>
         public bool? ShowcaseClearing { get; set; }
 
-        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors), every route whatever its date, so the units keep
-        /// their figures off them. Empty before Build.</summary>
+        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors) of every route drawn while a unit token stands
+        /// (RouteLayer.UnitRoutes, #786), so the units keep their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
+
+        /// <summary>The corridors the kits keep off: those of the routes drawn at the game's start (RouteLayer.KitRoutes, #786).
+        /// Empty before Build.</summary>
+        public IReadOnlyList<(List<Vector2> line, float halfWidth)> KitRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
         /// <summary>The units of content/map/units_1948.yaml as the last Build read them (empty before a build, or when the
         /// file is missing or malformed). Read only: the units layer draws from this same list (UnitEntriesFor).</summary>
@@ -363,7 +367,8 @@ namespace Statecraft.Game.Map
             // From the baked runtime form when it matches the YAML (issue #321: boot time), else from the YAML with a warning.
             var routes = Routes.RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
             DiagLog.BootPhase("route paths read");   // issue #321: the splits of the units' phase
-            RouteCorridors = Routes.RouteLayer.Corridors(Frame, routes);
+            // Only the routes drawn at the start keep the kits off (#786); the units keep off those drawn while they stand.
+            KitRouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.KitRoutes(routes));
             DiagLog.BootPhase("route corridors");
             // The game settlements' and the 1948 localities' discs, as the kits will claim them (review I5: a token placed "off
             // the towns" keeps off the villages too). The camps are placed after the units and keep off them instead.
@@ -374,6 +379,9 @@ namespace Statecraft.Game.Map
             var unitData = Units.UnitData.ReadOrNone(inputs.UnitsYaml, Debug.LogWarning);
             UnitEntries = unitData; unitsYamlRead = inputs.UnitsYaml ?? "";
             DiagLog.BootPhase("unit data read");
+            // The end of the last token's window (anchors always have one): a route opened later takes no token's spot (#786).
+            var unitsUntil = unitData.SelectMany(u => u.Anchors).Select(a => Units.UnitData.Day(a.To)).DefaultIfEmpty(DateTime.MaxValue).Max();
+            RouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.UnitRoutes(routes, unitsUntil));
             var unitHexes = Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Lon = h.lon, Lat = h.lat, ElevM = h.elev_m, Land = h.land, Biome = h.biome }).ToList();
             UnitHexes = unitHexes;
             var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
@@ -421,7 +429,7 @@ namespace Statecraft.Game.Map
                 var kits = Kits.KitLayer.Build(list, localitySettlements, localities.Encampments, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
                     townModels != null ? townModels : null,   // a missing asset reference is Unity's fake null: pass a real null
                     terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
-                    RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
+                    KitRouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
                     unitRings);
                 kits.transform.SetParent(transform, true);
                 kitProbe = kits.GetComponentInChildren<MeshRenderer>(true);

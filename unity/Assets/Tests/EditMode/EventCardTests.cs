@@ -66,6 +66,71 @@ public class EventCardTests
         Assert.AreEqual("שרת העבודה: גולדה מאיר", ui.Q<Label>("event-office").text);
     }
 
+    /// <summary>The Altalena card pending on 15 June 1948 (its window opens), shown in <paramref name="text"/>'s language.</summary>
+    static (UiTestKit ui, GameEvent e) Altalena(UiText text, System.Action<GameEvent> edit = null, System.Action<GameState> state = null)
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.First(x => x.Id == "altalena");
+        edit?.Invoke(e);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = new System.DateTime(1948, 6, 15);
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        state?.Invoke(g.State);
+        var ui = new UiTestKit();
+        new EventCardPresenter(ui.Root, new SimBridge(g, text), text, null);
+        return (ui, e);
+    }
+
+    /// <summary>#1064: in Hebrew the card shows the event's title_he, text_he and options' text_he, with the minister's
+    /// Hebrew name in the placeholder.</summary>
+    [Test]
+    public void InHebrewTheCardShowsTheEventsHebrewText()
+    {
+        var (ui, e) = Altalena(He);
+        using (ui)
+        {
+            Assert.AreEqual("אלטלנה", ui.Q<Label>("event-title").text);
+            Assert.AreEqual(e.TextHe.Replace("{defense_minister}", "דוד בן-גוריון"), ui.Q<Label>("event-text").text);
+            foreach (var o in e.Options) StringAssert.Contains(o.TextHe, ui.Q<Button>("option-" + o.Id).text);
+        }
+    }
+
+    /// <summary>#1064: a Hebrew field that is empty falls back to the English, field by field (fail open); the English UI
+    /// never shows the Hebrew.</summary>
+    [Test]
+    public void AMissingHebrewFieldFallsBackToEnglishAndTheEnglishUiKeepsEnglish()
+    {
+        var (ui, e) = Altalena(He, x => { x.TitleHe = ""; x.Options.First(o => o.Id == "compromise").TextHe = ""; });
+        using (ui)
+        {
+            Assert.AreEqual("The Altalena", ui.Q<Label>("event-title").text);
+            StringAssert.StartsWith("אלטלנה, ", ui.Q<Label>("event-text").text);
+            StringAssert.Contains("Grant both requests, arming Irgun battalions inside the IDF", ui.Q<Button>("option-compromise").text);
+            StringAssert.Contains(e.Options.First(o => o.Id == "enforce").TextHe, ui.Q<Button>("option-enforce").text);
+        }
+        var (en, _) = Altalena(Text);
+        using (en)
+        {
+            Assert.AreEqual("The Altalena", en.Q<Label>("event-title").text);
+            StringAssert.EndsWith("David Ben-Gurion must decide.", en.Q<Label>("event-text").text);
+        }
+    }
+
+    /// <summary>#1064: a variant (R-ALT-010) has no Hebrew, so on a road not taken the card keeps the variant's English
+    /// text; a variant with no title of its own keeps the event's title, so that stays Hebrew.</summary>
+    [Test]
+    public void InHebrewAVariantKeepsItsEnglishText()
+    {
+        var when = new EventRequirement { Event = "probe", Option = "other" };
+        var (ui, _) = Altalena(He, x => x.Variants.Add(new EventVariant { When = { when }, Text = "The course differs." }),
+            s => s.ChosenOptions["probe"] = "other");
+        using (ui)
+        {
+            Assert.AreEqual("אלטלנה", ui.Q<Label>("event-title").text);
+            Assert.AreEqual("The course differs.", ui.Q<Label>("event-text").text);
+        }
+    }
+
     [Test]
     public void AMinisterWithoutAPortraitShowsNoImage()
     {
@@ -389,7 +454,7 @@ public class EventCardTests
     /// option shows its price and is greyed out, the card names the minister End Turn hands it to (the one
     /// EventSystem.Delegate names), and End Turn is highlighted; with Attention back, all of that goes away.</summary>
     [TestCase("en", "You don't have enough Attention left to answer this turn. End the turn and the decision goes to David Ben-Gurion.", "Comply with the cease-fire (costs 2.0 Attention)")]
-    [TestCase("he", "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי דוד בן-גוריון.", "\u200eComply with the cease-fire\u200e (עולה \u200e2.0\u200e תשומת לב)")]
+    [TestCase("he", "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי דוד בן-גוריון.", "לציית לצו הפסקת האש (עולה \u200e2.0\u200e תשומת לב)")]
     public void WithTooLittleAttentionTheCardSaysEndTurnHandsItToTheMinister(string lang, string line, string option)
     {
         var text = lang == "he" ? He : Text;

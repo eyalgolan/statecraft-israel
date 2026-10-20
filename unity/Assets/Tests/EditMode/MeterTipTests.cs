@@ -22,6 +22,9 @@ public class MeterTipTests
     static void Enter(VisualElement e) { using var ev = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = e.worldBound.center }); ev.target = e; e.SendEvent(ev); }
     static void Leave(VisualElement e) { using var ev = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }); ev.target = e; e.SendEvent(ev); }
     static void Tap(VisualElement e) { using var ev = ClickEvent.GetPooled(); ev.target = e; e.SendEvent(ev); }
+    static void MouseClick(VisualElement e) { using var ev = ClickEvent.GetPooled(new Event { type = EventType.MouseUp, mousePosition = e.worldBound.center }); ev.target = e; e.SendEvent(ev); }
+    /// <summary>A finger going down on <paramref name="e"/>; on the map, with nothing under it, the panel sends it to its root.</summary>
+    static void Press(VisualElement e) { using var ev = PointerDownEvent.GetPooled(new Touch { fingerId = 0, phase = TouchPhase.Began }); ev.target = e; e.SendEvent(ev); }
 
     /// <summary>Shown only when MeterTip set it so (an unset inline display reads as Flex, the default).</summary>
     static bool Shown(VisualElement tip) => tip.style.display.keyword == StyleKeyword.Undefined && tip.style.display.value == DisplayStyle.Flex;
@@ -91,6 +94,39 @@ public class MeterTipTests
             if (!Shown(tip)) problems.Add("a tap after closing does not open it again");
             bridge.EndTurn();
             if (Shown(tip)) problems.Add("End Turn does not close the tip");
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#1108: a mouse has hover, so a click on a number does not pin its tip and leaving hides it; a tapped tip closes
+    /// on the next tap anywhere (the map, another control), while a tap on a number still moves or closes it.</summary>
+    [UnityTest]
+    public IEnumerator AClickedTipHidesOnLeaveAndATappedTipOnTheNextTapAnywhere()
+    {
+        var problems = new List<string>();
+        yield return Rendered(1280, 720, false, Check);
+
+        IEnumerator Check(VisualElement root, SimBridge bridge, UiText text)
+        {
+            var tip = root.Q(MeterTip.TipName);
+            VisualElement money = root.Q("meter-treasury"), security = root.Q("meter-security");
+            Enter(money); MouseClick(money); Leave(money);
+            if (Shown(tip)) problems.Add("a mouse click keeps the tip after the pointer leaves");
+            foreach (var (where, e) in new[] { ("the map", root.panel.visualTree), ("another control", root.Q("end-turn")) })
+            {
+                Tap(money);
+                if (!Shown(tip)) { problems.Add($"precondition: a tap shows the tip (before {where})"); continue; }
+                Press(e);
+                if (Shown(tip)) problems.Add($"a tap on {where} does not close a tapped tip");
+            }
+            Tap(money);
+            Press(security); Tap(security);
+            if (!Shown(tip) || !Words(root).StartsWith(security.tooltip)) problems.Add($"a tap on another number does not move the tip: '{Words(root)}'");
+            Press(security); Tap(security);
+            if (Shown(tip)) problems.Add("a second tap on the number does not close the tip");
+            Tap(money); Press(security); MouseClick(security);
+            if (Shown(tip)) problems.Add("a mouse click on a number does not drop a tap's pin (a touchscreen laptop)");
+            yield break;
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }

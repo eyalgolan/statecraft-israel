@@ -36,6 +36,7 @@ public class HebrewUiTests
     {
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+        SettingsPresenter.VerifiedShapes.Remove(150);                  // the language switch's stand-in (the game ships none)
     }
 
     // --- The flag ---------------------------------------------------------------------------------------------------
@@ -114,6 +115,7 @@ public class HebrewUiTests
         game.Store = new SaveStore(saveDir);
         var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
         game.Settings = settings;
+        SettingsScreenTests.VerifyOnEveryShape(150);                   // the game verifies no scale above 100% yet (#1011)
         game.Begin(Inputs, 0);                                         // no file and no flag: English
         Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
         Assert.IsTrue(Ui.Q<Button>("settings-language-en").ClassListContains(SettingsPresenter.SelectedClass), "English is marked");
@@ -121,6 +123,7 @@ public class HebrewUiTests
         Assert.AreEqual("עברית", Ui.Q<Button>("settings-language-he").text, "each language is named in itself");
         var session = game.Bridge!.Session;
         Assert.IsNull(game.Bridge.Queue(new Statecraft.Sim.SetMobilization(1.0)));
+        UiTestKit.Press(Ui.Q<Button>("settings-uiscale-150"));        // the UI scale (#40) must survive the rebuild below
 
         UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
         Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "Hebrew at once, no reload");
@@ -131,6 +134,8 @@ public class HebrewUiTests
         Assert.IsTrue(Ui.Q<Button>("settings-language-he").ClassListContains(SettingsPresenter.SelectedClass), "Hebrew is marked");
         Assert.IsFalse(Ui.Q<Button>("settings-language-en").ClassListContains(SettingsPresenter.SelectedClass));
         Assert.AreEqual(UiLanguage.Hebrew, settings.Read(SettingsPresenter.LanguageKey), "kept in settings.txt");
+        Assert.AreEqual(new Vector2Int(1280, 720), Object.FindFirstObjectByType<UIDocument>().panelSettings.referenceResolution, "150% survives the switch");
+        Assert.IsTrue(Ui.Q<Button>("settings-uiscale-150").ClassListContains(SettingsPresenter.SelectedClass), "and 150% is marked");
 
         game.Language = null;                                          // a reload: only the file remains
         game.Begin(Inputs, 0);
@@ -286,6 +291,7 @@ public class HebrewUiTests
         ("settings-quality-label", "settings.quality"), ("settings-quality-auto", "settings.quality.auto"),
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
         ("settings-language-label", "settings.language"), ("settings-language-note", "settings.language.note"),
+        ("settings-uiscale-label", "settings.uiscale"),
         ("start-source", "start.source"), ("start-recording-credit", "start.recording_credit"),
         ("start-continue", "start.continue"), ("start-new-game", "start.new_game"),
     };

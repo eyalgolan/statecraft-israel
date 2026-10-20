@@ -132,10 +132,17 @@ public class ReferencePlayerTests
         none.Sites["mefalsim_field"] = SiteWork.Built("mefalsim_field", new DateTime(1949, 6, 15));
         var camp = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
         Assert.Equal((8, "build_camp", "camp_80"), (camp.Unit, camp.Action, camp.Site));
-        // Every camp site taken as well: the idle group waits.
+        // Every camp site taken as well: the idle group takes the lowest free corridor segment (R-COR-001).
         none.Sites["camp_80"] = SiteWork.Built("camp_80", new DateTime(1949, 6, 15));
         none.Sites["tzrifin"] = SiteWork.Built("tzrifin", new DateTime(1949, 6, 15));
-        Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, none), x => x is PioneerWork);
+        var road = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
+        Assert.Equal((8, "build_road", "burma_road:1"), (road.Unit, road.Action, road.Site));
+        Assert.Empty(Simulation.Step(Mvp, none, ReferencePlayer.Commands(Mvp, none)).Rejected);
+        // Two idle groups: each takes the next free segment.
+        none.Sites["reim"] = SiteWork.Built("reim", new DateTime(1949, 12, 15));
+        none.Sites["reim_field"] = SiteWork.Built("reim_field", new DateTime(1949, 12, 15));
+        Assert.Equal(new[] { (7, "burma_road:1"), (8, "burma_road:2") },
+                     ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>().Select(p => (p.Unit, p.Site)));
         var poor = s.Clone();
         poor.Treasury = 0;
         Assert.Contains(ReferencePlayer.Commands(Mvp, poor), x => x is PioneerWork);

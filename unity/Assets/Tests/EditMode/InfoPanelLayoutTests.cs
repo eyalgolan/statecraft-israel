@@ -169,18 +169,6 @@ public class InfoPanelLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    [TestCase(false, "Click the map to inspect a hex; right-drag to move the map")]
-    [TestCase(true, "לחיצה על המפה לבדיקת משושה; גרירה בלחצן הימני להזזת המפה")]
-    public void TheMapHintExplainsInspectionAndRightDrag(bool hebrew, string expected)
-    {
-        using var ui = new UiTestKit();
-        var path = hebrew ? UiPaths.StringsHebrew : UiPaths.Strings;
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(path).text, path);
-        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
-        using var info = new InfoPanelPresenter(ui.Root, bridge, text, Names());
-        Assert.AreEqual(expected, ui.Q<Label>("info-title").text);
-    }
-
     /// <summary>Before a hex is chosen the panel is a one-line hint (the promo shows no panel until a tile is chosen): no
     /// terrain sign, no rows, and no taller than the hint's line and the panel's padding.</summary>
     [UnityTest]

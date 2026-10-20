@@ -2,6 +2,11 @@
 id: frumkin_commission
 title: Education in the Immigrant Camps
 text: 'Religious Yemenite parents report coercion in the immigrant-camp schools, which the uniform system put under the Culture Department, including the cutting of sidelocks. The religious parties demand action. {prime_minister} must decide whether to appoint an inquiry.'
+# For the native reviewer (#564): Hebrew terminology follows he.wiki "ועדת פרומקין" (המחנות, החינוך האחיד,
+# מחלקת התרבות, יוצאי תימן, גזיזת פאות): https://he.wikipedia.org/wiki/ועדת_פרומקין
+title_he: החינוך במחנות העולים
+text_he: 'הורים דתיים יוצאי תימן מדווחים על כפייה בבתי הספר במחנות העולים, שהחינוך האחיד הכפיף למחלקת התרבות, לרבות גזיזת פאות. המפלגות הדתיות דורשות פעולה. על {prime_minister} להחליט אם למנות ועדת חקירה.'
+text_he_review: agent-checked
 anchor: soft
 office: prime_minister
 # Commission appointed January 1950 (first session 25 January, he.wiki; JTA reported on 2 February that a cabinet
@@ -14,12 +19,21 @@ to: 1950-05-09
 options:
   - id: inquiry
     text: Appoint a commission of inquiry and move camp education from the Culture Department to the Education Department
+    text_he: למנות ועדת חקירה ולהעביר את החינוך במחנות ממחלקת התרבות למחלקת החינוך
     historical: true
     recommended: true
     effects:
       - { target: morale, delta: 0.02 }
   - id: dismiss
     text: Dismiss the charges and keep the uniform system
+    text_he: לדחות את הטענות ולהותיר את החינוך האחיד על כנו
+    # Basis and sources: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
+    alternative:
+      basis: design
+      # Owner ruling, 19 October 2026 (#949): design, no proposer and no date; the sources conflict on the
+      # committee's date (17 or 19 January 1950), and the note keeps that as a research gap.
+      sources:
+        - { url: "https://www.daat.ac.il/daat/kitveyet/niv/levitan-1.htm", checked: 2026-10-17 }
     effects:
       - { target: morale, delta: -0.04 }
 sources:

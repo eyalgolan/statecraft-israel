@@ -24,11 +24,13 @@ options:
         delta: 0.2
   - id: import
     text: Buy abroad
+    alternative: { basis: design }
     effects:
       - target: fx_reserves
         delta: -10
   - id: escalate
     text: Blame the border
+    alternative: { basis: design }
     set_rung: 3
 ";
 

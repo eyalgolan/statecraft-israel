@@ -2,6 +2,11 @@
 id: operation_hiram
 title: Operation Hiram
 text: 'In breach of the truce, the Arab Liberation Army attacked the Sheikh Abd position above Kibbutz Manara on 22 October. Between 29 and 31 October Moshe Carmel''s forces drove it out of the Upper Galilee in Operation Hiram, and a cease-fire took effect on 31 October. {defense_minister} must decide whether the forces stop at the cease-fire or advance further into Lebanon.'
+# For the native reviewer (#564): מבצע חירם, צבא ההצלה, משלט שייח' עבד, מנרה, משה כרמל and הגליל העליון
+# follow he.wiki "מבצע חירם" ("משלטי שייח' עבד"): https://he.wikipedia.org/wiki/מבצע_חירם
+title_he: מבצע חירם
+text_he: 'בהפרת ההפוגה תקף צבא ההצלה את משלט שייח׳ עבד שמעל קיבוץ מנרה ב־22 באוקטובר. בין 29 ל־31 באוקטובר הדפו כוחותיו של משה כרמל את צבא ההצלה מן הגליל העליון במבצע חירם, והפסקת אש נכנסה לתוקף ב־31 באוקטובר. ההחלטה אם הכוחות יעצרו עם הפסקת האש או יתקדמו הלאה לתוך לבנון בידי {defense_minister}.'
+text_he_review: agent-checked
 anchor: soft
 tags: [security, war-casualties]
 office: defense_minister
@@ -24,6 +29,7 @@ to: 1948-11-16
 options:
   - id: stop_at_ceasefire
     text: Stop at the cease-fire and hold the Upper Galilee
+    text_he: לעצור עם הפסקת האש ולהחזיק בגליל העליון
     historical: true
     recommended: true
     set_rung: 5
@@ -31,6 +37,8 @@ options:
       - { target: security, delta: 0.02 }
   - id: advance_into_lebanon
     text: Advance further into Lebanon
+    text_he: להתקדם הלאה לתוך לבנון
+    alternative: { basis: design }
     set_rung: 5
     effects:
       - { target: security, delta: 0.025 }

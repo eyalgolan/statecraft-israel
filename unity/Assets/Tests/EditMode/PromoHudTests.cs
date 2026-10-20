@@ -13,8 +13,8 @@ using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
 /// <summary>The promo HUD pass (promo/final/03): the top bar's indicator icons, the round screen buttons and their lit
-/// state, the event card's option signs, the info panel's terrain sign (real hex facts, no tile yields) and the panel
-/// trim. Behaviour is unchanged; these check the new pieces are wired to the real elements and data.</summary>
+/// state, the event card's options (no sign since #1105), the info panel's terrain sign (real hex facts, no tile yields)
+/// and the panel trim. Behaviour is unchanged; these check the new pieces are wired to the real elements and data.</summary>
 public class PromoHudTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
@@ -68,24 +68,40 @@ public class PromoHudTests
         finally { nav.Dispose(); }
     }
 
-    [Test]
-    public void EachEventOptionCarriesItsSignAndStaysPressable()
+    /// <summary>#1105 (play-test of v0.1.2): an option shows no chevron, which read as "expand" but chose. No sign is
+    /// painted and no padding is kept for one, in English and in Hebrew; the option stays a leaf button that answers.</summary>
+    [UnityTest]
+    public IEnumerator EventOptionsShowNoChevronAndStayPressable()
     {
+        CollectionAssert.DoesNotContain(UiIcon.Glyphs, "chevron", "no chevron glyph is left to paint");
+        CollectionAssert.DoesNotContain(UiIcon.Glyphs, "chevron-back", "nor its Hebrew mirror");
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         while (!g.State.PendingEvents.Contains("armistice_egypt")) g.Step(new Command[0]);
         var bridge = new SimBridge(g, Text);
         var card = new EventCardPresenter(ui.Root, bridge, Text, null);
-        var options = ui.Q<VisualElement>("event-options").Query<Button>().ToList();
-        Assert.Greater(options.Count, 1);
-        foreach (var b in options)
+        var root = ui.Q<VisualElement>("root");
+        try
         {
-            Assert.IsTrue(b.ClassListContains(EventCardPresenter.OptionClass), b.name);
-            Assert.AreEqual(0, b.childCount, b.name + ": the sign is painted, so the button stays a leaf whose wrapped text is measured");
+            var options = ui.Q<VisualElement>("event-options").Query<Button>().ToList();
+            Assert.Greater(options.Count, 1);
+            foreach (var hebrew in new[] { false, true })
+            {
+                root.EnableInClassList(UiLanguage.HebrewClass, hebrew);
+                yield return null; yield return null;
+                foreach (var b in options)
+                {
+                    var what = b.name + (hebrew ? " (he)" : " (en)");
+                    Assert.IsTrue(b.ClassListContains(EventCardPresenter.OptionClass), what);
+                    Assert.AreEqual(0, b.childCount, what + ": a leaf whose wrapped text is measured");
+                    Assert.AreEqual(b.resolvedStyle.paddingLeft, b.resolvedStyle.paddingRight, 0.5f, what + ": no side is kept for a sign");
+                    Assert.That(b.resolvedStyle.paddingLeft, Is.GreaterThan(0f).And.LessThan(30f), what + ": the stylesheet's edge padding, no room for the 30 px sign");
+                }
+            }
+            UiTestKit.Press(ui.Q<Button>("option-sign"));
+            Assert.AreNotEqual("armistice_egypt", card.Shown?.Id, "the option still answers the event");
         }
-        UiTestKit.Press(ui.Q<Button>("option-sign"));
-        Assert.AreNotEqual("armistice_egypt", card.Shown?.Id, "the option still answers the event");
-        card.Dispose();
+        finally { card.Dispose(); }
     }
 
     [Test]
@@ -489,7 +505,8 @@ public class PromoHudTests
                     Assert.AreSame(start, start.focusController.focusedElement, $"{name}: a {d} move left focus where it was");
                 }
                 foreach (var key in new[] { KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D, KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.Q, KeyCode.E,
-                                          KeyCode.PageUp, KeyCode.PageDown, KeyCode.Home, KeyCode.End })
+                                          KeyCode.PageUp, KeyCode.PageDown, KeyCode.Home, KeyCode.End,
+                                          KeyCode.Equals, KeyCode.Minus, KeyCode.KeypadPlus, KeyCode.KeypadMinus })
                 {
                     using (var e = KeyDownEvent.GetPooled((char)0, key, EventModifiers.None)) { e.target = start; start.SendEvent(e); }
                     yield return null;

@@ -2,6 +2,12 @@
 id: jerusalem_ceasefire
 title: Cease-fire in Jerusalem
 text: 'After talks that began on 28 November, Dayan and Abdullah el-Tell signed a full cease-fire for the Jerusalem area at Government House on 30 November, with UN observers present. {prime_minister} must decide whether Israel keeps to it.'
+# For the native reviewer (#564): משה דיין, עבדאללה א-תל, ארמון הנציב and האו״ם follow he.wiki
+# (https://he.wikipedia.org/wiki/משה_דיין; https://he.wikipedia.org/wiki/עבדאללה_א-תל;
+# https://he.wikipedia.org/wiki/ארמון_הנציב; https://he.wikipedia.org/wiki/האומות_המאוחדות).
+title_he: הפסקת אש בירושלים
+text_he: 'לאחר שיחות שהחלו ב־28 בנובמבר, חתמו דיין ועבדאללה א־תל על הפסקת אש מלאה באזור ירושלים בארמון הנציב ב־30 בנובמבר, בנוכחות משקיפי האו״ם. ההחלטה אם ישראל תקיים אותה בידי {prime_minister}.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister
@@ -20,6 +26,7 @@ requires: [{ event: jerusalem_military_government, option: military_government }
 options:
   - id: keep
     text: Keep to the Jerusalem cease-fire
+    text_he: לקיים את הפסקת האש בירושלים
     historical: true
     recommended: true
     effects:
@@ -28,6 +35,8 @@ options:
     # The alternative named in the notes (section 13b). Game assumption: no one is recorded arguing for it; its effects are
     # design values.
     text: Press on for the Old City and the Latrun road
+    text_he: להמשיך ולהילחם על העיר העתיקה ועל דרך לטרון
+    alternative: { basis: design }
     effects:
       - { target: security, delta: -0.015 }
       - { target: intl_standing, delta: -0.03 }

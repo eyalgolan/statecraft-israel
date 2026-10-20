@@ -1,0 +1,456 @@
+{
+ "id": "tel_aviv",
+ "title": "Tel Aviv prototype board (radius 3, game q/r)",
+ "hexes": [
+  {
+   "q": -3,
+   "r": 16,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -2,
+   "r": 16,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -1,
+   "r": 16,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": 0,
+   "r": 16,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "grazing_land",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -4,
+   "r": 17,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -3,
+   "r": 17,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -2,
+   "r": 17,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -1,
+   "r": 17,
+   "terrain": "flat",
+   "ground": "beach",
+   "prototype": "coastal_dunes",
+   "note": "Sand dunes north of the city",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": 0,
+   "r": 17,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "grazing_land",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -5,
+   "r": 18,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -4,
+   "r": 18,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -3,
+   "r": 18,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -2,
+   "r": 18,
+   "terrain": "flat",
+   "ground": "plains",
+   "prototype": "wheat_fields",
+   "note": "A Palmach squad on the farmland north-east of the city",
+   "unit": "palmach_squad",
+   "facing": 40.0
+  },
+  {
+   "q": -1,
+   "r": 18,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": 0,
+   "r": 18,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "grazing_land",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -6,
+   "r": 19,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -5,
+   "r": 19,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -4,
+   "r": 19,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -3,
+   "r": 19,
+   "terrain": "flat",
+   "ground": "plains",
+   "prototype": "tel_aviv_city",
+   "note": "Tel Aviv core",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -2,
+   "r": 19,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -1,
+   "r": 19,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": 0,
+   "r": 19,
+   "terrain": "hills",
+   "ground": "grass",
+   "prototype": "grazing_land",
+   "note": "An armoured truck heading for the Jerusalem road",
+   "unit": "sandwich_truck",
+   "facing": 300.0
+  },
+  {
+   "q": -6,
+   "r": 20,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -5,
+   "r": 20,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -4,
+   "r": 20,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -3,
+   "r": 20,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "citrus_orchard",
+   "note": "Jaffa orange groves toward Rishon",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -2,
+   "r": 20,
+   "terrain": "hills",
+   "ground": "hills",
+   "prototype": "arab_village",
+   "note": "A stone hill village toward Lydda",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -1,
+   "r": 20,
+   "terrain": "hills",
+   "ground": "grass",
+   "prototype": "pine_forest",
+   "note": "JNF pine on the first foothills",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -6,
+   "r": 21,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -5,
+   "r": 21,
+   "terrain": "flat",
+   "ground": "beach",
+   "prototype": "coastal_dunes",
+   "note": "Dunes south of Jaffa",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -4,
+   "r": 21,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -3,
+   "r": 21,
+   "terrain": "flat",
+   "ground": "plains",
+   "prototype": "moshava_village",
+   "note": "A moshava toward Rishon LeZion",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -2,
+   "r": 21,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -6,
+   "r": 22,
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -5,
+   "r": 22,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -4,
+   "r": 22,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "wheat_fields",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  },
+  {
+   "q": -3,
+   "r": 22,
+   "terrain": "flat",
+   "ground": "grass",
+   "prototype": "grazing_land",
+   "note": "context",
+   "unit": "",
+   "facing": 0.0
+  }
+ ],
+ "rivers": [
+  {
+   "note": "The Yarkon, along the north edges of the Tel Aviv row, out to the sea",
+   "corners": [
+    -4,
+    19,
+    0,
+    -3,
+    19,
+    5,
+    -3,
+    19,
+    0,
+    -3,
+    19,
+    1,
+    -2,
+    19,
+    0,
+    -2,
+    19,
+    1,
+    -1,
+    19,
+    0,
+    -1,
+    19,
+    1,
+    0,
+    19,
+    0
+   ]
+  }
+ ],
+ "roads": [
+  {
+   "note": "Tel Aviv to the Jerusalem road",
+   "hexes": [
+    -3,
+    19,
+    -2,
+    19,
+    -1,
+    19,
+    0,
+    19
+   ]
+  },
+  {
+   "note": "Tel Aviv south to the moshava",
+   "hexes": [
+    -3,
+    19,
+    -3,
+    20,
+    -3,
+    21
+   ]
+  },
+  {
+   "note": "To the hill village",
+   "hexes": [
+    -3,
+    20,
+    -2,
+    20
+   ]
+  },
+  {
+   "note": "North across the Yarkon",
+   "hexes": [
+    -3,
+    19,
+    -2,
+    18,
+    -1,
+    17
+   ]
+  }
+ ]
+}

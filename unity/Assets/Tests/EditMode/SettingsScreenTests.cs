@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using Statecraft.Game;
@@ -25,6 +26,8 @@ public class SettingsScreenTests
     string dir = "";
     int level;
     float[] scales = new float[0];
+    Vector2Int reference;
+    Dictionary<int, (float, float)> verified = new Dictionary<int, (float, float)>();
 
     static UniversalRenderPipelineAsset Tier(int i) => (UniversalRenderPipelineAsset)QualitySettings.GetRenderPipelineAssetAt(i);
 
@@ -36,6 +39,8 @@ public class SettingsScreenTests
         level = QualitySettings.GetQualityLevel();
         scales = new float[QualitySettings.names.Length];
         for (int i = 0; i < scales.Length; i++) scales[i] = Tier(i).renderScale;
+        reference = AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel).referenceResolution;
+        verified = new Dictionary<int, (float, float)>(SettingsPresenter.VerifiedShapes);
     }
 
     [TearDown]
@@ -46,6 +51,9 @@ public class SettingsScreenTests
         GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
         QualitySettings.SetQualityLevel(level, true);
         for (int i = 0; i < scales.Length; i++) Tier(i).renderScale = scales[i];
+        AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel).referenceResolution = reference;   // the project's panel
+        SettingsPresenter.VerifiedShapes.Clear();                                                       // and the game's table
+        foreach (var kv in verified) SettingsPresenter.VerifiedShapes.Add(kv.Key, kv.Value);
         if (Directory.Exists(dir)) Directory.Delete(dir, true);
     }
 
@@ -258,6 +266,187 @@ public class SettingsScreenTests
         }
     }
 
+    static readonly (string button, int percent)[] UiScaleButtons =
+        { ("settings-uiscale-100", 100), ("settings-uiscale-125", 125), ("settings-uiscale-150", 150) };
+
+    /// <summary>The owner's UI scale (#40, 18 Oct 2026): 100%, 125% and 150%, default 100%. A choice scales the whole panel
+    /// at once (its reference resolution divided by the scale, so the panel's own ScaleWithScreenSize scale is multiplied by
+    /// it), the set button is marked, the choice is kept in the SettingsStore and comes back after a reload. Closing the
+    /// presenter puts the project's panel back, so a choice made in the editor never stays in the asset.</summary>
+    [Test]
+    public void EachUiScaleTakesEffectAtOnceAndSurvivesAReload([Values(false, true)] bool hebrew)
+    {
+        VerifyOnEveryShape(125, 150);   // the mechanism a scale gets once it is verified; the game verifies none yet
+        var text = hebrew ? He : En;
+        using (var ui = new UiTestKit())
+        {
+            var ps = ui.Doc.panelSettings;
+            using (new SettingsPresenter(ui.Root, text, new SettingsStore(dir), panel: ps))
+            {
+                Assert.AreEqual(new Vector2Int(1920, 1080), ps.referenceResolution, "100% by default, with no file");
+                AssertUiScale(ui, 100);
+                foreach (var (name, percent) in UiScaleButtons)
+                    Assert.AreEqual(percent + "%", ui.Q<Button>(name).text, "the button says its scale");
+                ui.Press("settings-uiscale-150");
+                Assert.AreEqual(new Vector2Int(1280, 720), ps.referenceResolution, "150% at once");
+                AssertUiScale(ui, 150);
+                Assert.AreEqual("150", new SettingsStore(dir).Read(SettingsPresenter.UiScaleKey));
+                ui.Press("settings-uiscale-125");
+                Assert.AreEqual(new Vector2Int(1536, 864), ps.referenceResolution, "125% at once");
+                AssertUiScale(ui, 125);
+                Assert.AreEqual("125", new SettingsStore(dir).Read(SettingsPresenter.UiScaleKey));
+            }
+            Assert.AreEqual(new Vector2Int(1920, 1080), ps.referenceResolution, "the project's panel is put back");
+        }
+        using (var ui = new UiTestKit())   // the reload: only the file remains
+        using (new SettingsPresenter(ui.Root, text, new SettingsStore(dir), panel: ui.Doc.panelSettings))
+        {
+            Assert.AreEqual(new Vector2Int(1536, 864), ui.Doc.panelSettings.referenceResolution, "125% after the reload");
+            AssertUiScale(ui, 125);
+            ui.Press("settings-uiscale-100");
+            Assert.AreEqual(new Vector2Int(1920, 1080), ui.Doc.panelSettings.referenceResolution, "and back to 100%");
+            Assert.AreEqual("100", new SettingsStore(dir).Read(SettingsPresenter.UiScaleKey));
+        }
+    }
+
+    /// <summary>A stored value the game does not offer is 100%.</summary>
+    [Test]
+    public void AnUnknownUiScaleIs100()
+    {
+        new SettingsStore(dir).Write(SettingsPresenter.UiScaleKey, "300");
+        using var ui = new UiTestKit();
+        using var settings = new SettingsPresenter(ui.Root, En, new SettingsStore(dir), panel: ui.Doc.panelSettings);
+        Assert.AreEqual(new Vector2Int(1920, 1080), ui.Doc.panelSettings.referenceResolution);
+        AssertUiScale(ui, 100);
+    }
+
+    /// <summary>As if the layout suites passed at these scales on every window shape: what a test of the scale's mechanism
+    /// needs now that the game offers only verified scales (SettingsPresenter.VerifiedShapes, empty for now). TearDown puts
+    /// the table back.</summary>
+    public static void VerifyOnEveryShape(params int[] percents)
+    {
+        foreach (var p in percents) SettingsPresenter.VerifiedShapes[p] = (0f, float.PositiveInfinity);
+    }
+
+    /// <summary>The owner's ruling on #1011 (19 Oct 2026), case 1: only the scales verified to fit are offered, 100% always.
+    /// No scale above 100% is verified yet (at 125% and 150% the layout suites fail on every window shape), so on each
+    /// shape the suites cover Settings offers 100% alone, marked. When a scale is verified, this test changes with it.</summary>
+    [UnityTest]
+    public IEnumerator OnlyTheVerifiedUiScalesAreOffered()
+    {
+        Assert.IsEmpty(SettingsPresenter.VerifiedShapes, "no scale above 100% is verified yet");
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1024, 768), (960, 1080), (360, 800), (2560, 1080) })
+        {
+            var window = new Window(w, h, dir);
+            try
+            {
+                yield return window.Settle();
+                foreach (var (name, percent) in UiScaleButtons)
+                    Assert.AreEqual(percent == 100, window.Root.Q<Button>(name).resolvedStyle.display == DisplayStyle.Flex, $"{w}x{h}: {percent}% offered");
+                Assert.IsTrue(window.Root.Q<Button>("settings-uiscale-100").ClassListContains(SettingsPresenter.SelectedClass), $"{w}x{h}: 100% marked");
+            }
+            finally { window.Dispose(); }
+        }
+    }
+
+    /// <summary>Case 2: a saved 125% or 150% that is not verified to fit comes up as 100% at the next start, marked. The
+    /// file keeps the choice, so it comes back once that scale is verified for the window.</summary>
+    [Test]
+    public void ASavedScaleThatIsNotVerifiedFallsBackTo100OnLoad([Values(125, 150)] int saved)
+    {
+        new SettingsStore(dir).Write(SettingsPresenter.UiScaleKey, saved.ToString());
+        using var ui = new UiTestKit();
+        using var settings = new SettingsPresenter(ui.Root, En, new SettingsStore(dir), panel: ui.Doc.panelSettings);
+        Assert.AreEqual(new Vector2Int(1920, 1080), ui.Doc.panelSettings.referenceResolution, $"a saved {saved}% starts at 100%");
+        AssertUiScale(ui, 100);
+        Assert.AreEqual(saved.ToString(), new SettingsStore(dir).Read(SettingsPresenter.UiScaleKey), "the choice is kept");
+    }
+
+    /// <summary>Case 3: the fit follows the window. With 150% verified only on shapes from 1:2 to 1:1 (a stand-in: the
+    /// game verifies none yet), a saved 150% holds on 960x1080; a resize to 16:9 drops the panel to 100% and stops
+    /// offering 150%; back on 960x1080 the kept choice returns.</summary>
+    [UnityTest]
+    public IEnumerator ResizingOutOfAVerifiedShapeFallsBackTo100()
+    {
+        SettingsPresenter.VerifiedShapes[150] = (0.5f, 1f);
+        new SettingsStore(dir).Write(SettingsPresenter.UiScaleKey, "150");
+        var window = new Window(960, 1080, dir);
+        try
+        {
+            yield return window.Settle();
+            Assert.AreEqual(new Vector2Int(1280, 720), window.Panel.referenceResolution, "150% where it is verified");
+            Assert.IsTrue(window.Root.Q<Button>("settings-uiscale-150").ClassListContains(SettingsPresenter.SelectedClass), "150% is marked");
+            Assert.AreEqual(DisplayStyle.None, window.Root.Q<Button>("settings-uiscale-125").resolvedStyle.display, "125% is not verified");
+            yield return window.Resize(1920, 1080);
+            Assert.AreEqual(new Vector2Int(1920, 1080), window.Panel.referenceResolution, "16:9 is outside 150%'s shapes: 100%");
+            Assert.IsTrue(window.Root.Q<Button>("settings-uiscale-100").ClassListContains(SettingsPresenter.SelectedClass), "100% is marked");
+            Assert.AreEqual(DisplayStyle.None, window.Root.Q<Button>("settings-uiscale-150").resolvedStyle.display, "150% is not offered on 16:9");
+            Assert.AreEqual("150", new SettingsStore(dir).Read(SettingsPresenter.UiScaleKey), "the choice is kept");
+            yield return window.Resize(960, 1080);
+            Assert.AreEqual(new Vector2Int(1280, 720), window.Panel.referenceResolution, "150% again where it is verified");
+        }
+        finally { window.Dispose(); }
+    }
+
+    /// <summary>The real Game.uxml on its own copy of the project's panel at w x h, with the Settings screen's presenter on
+    /// a SettingsStore in dir.</summary>
+    sealed class Window : System.IDisposable
+    {
+        public readonly PanelSettings Panel; readonly GameObject go; readonly SettingsPresenter settings; RenderTexture rt;
+        public VisualElement Root => go.GetComponent<UIDocument>().rootVisualElement;
+
+        public Window(int w, int h, string dir)
+        {
+            rt = new RenderTexture(w, h, 0);
+            Panel = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            Panel.targetTexture = rt;
+            go = new GameObject("SettingsScaleTest");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = Panel;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            Root.Q("root").RemoveFromClassList("loading");
+            settings = new SettingsPresenter(Root, En, new SettingsStore(dir), panel: Panel);
+        }
+
+        public IEnumerator Settle()
+        {
+            for (int i = 0; i < 30 && !(Root.layout.width > 0); i++) yield return null;
+            for (int i = 0; i < 3; i++) yield return null;
+        }
+
+        /// <summary>A new target texture of w x h, the way a window resize reaches the panel.</summary>
+        public IEnumerator Resize(int w, int h)
+        {
+            var old = rt;
+            rt = new RenderTexture(w, h, 0);
+            Panel.targetTexture = rt;
+            old.Release(); Object.DestroyImmediate(old);
+            for (int i = 0; i < 5; i++) yield return null;
+        }
+
+        public void Dispose()
+        {
+            settings.Dispose();
+            Object.DestroyImmediate(go); Object.DestroyImmediate(Panel); rt.Release(); Object.DestroyImmediate(rt);
+        }
+    }
+
+    /// <summary>The new label; its Hebrew waits for the native reviewer (#564).</summary>
+    [Test]
+    public void TheUiScaleLabelIsInBothLanguages()
+    {
+        Assert.AreEqual("UI scale", En["settings.uiscale"]);
+        Assert.AreEqual("גודל הממשק", He["settings.uiscale"]);
+    }
+
+    static void AssertUiScale(UiTestKit ui, int set)
+    {
+        foreach (var (name, percent) in UiScaleButtons)
+            Assert.AreEqual(percent == set, ui.Q<Button>(name).ClassListContains(SettingsPresenter.SelectedClass), $"{name} marked while {set}% is set");
+    }
+
     /// <summary>A file the game cannot use (another key, a value it does not know, a line without "=") is no reason to fail
     /// a start: the option keeps its default.</summary>
     [Test]
@@ -284,16 +473,19 @@ public class SettingsScreenTests
         Assert.AreEqual(Path.Combine("/home/p", "settings"), SettingsStore.DirectoryFor(RuntimePlatform.LinuxPlayer, "/home/p"));
     }
 
-    /// <summary>The open screen at 1280x720 (the issue's size), in English and Hebrew: the title, the option's name and its
-    /// button inside the screen, below the top bar and inside the window, each text whole (on one line or wrapped).</summary>
+    /// <summary>The open screen at 1280x720 (the issue's size), in English and Hebrew, at each UI scale: the title, the option's name and its
+    /// button inside the screen, below the top bar and inside the window, each text whole (on one line or wrapped). 125% and
+    /// 150% run as if verified (VerifyOnEveryShape): the screen itself must hold them once the rest of the UI does.</summary>
     [UnityTest]
-    public IEnumerator TheOpenScreenFitsAt1280x720InBothLanguages()
+    public IEnumerator TheOpenScreenFitsAt1280x720InBothLanguages([Values(100, 125, 150)] int uiScale)
     {
         var c = ContentLoader.Load(Paths.Content);
+        VerifyOnEveryShape(125, 150);
+        if (uiScale != 100) new SettingsStore(dir).Write(SettingsPresenter.UiScaleKey, uiScale.ToString());
         foreach (var hebrew in new[] { false, true })
         {
             var text = hebrew ? He : En;
-            string at = hebrew ? "he" : "en";
+            string at = (hebrew ? "he" : "en") + " at " + uiScale + "%";
             var rt = new RenderTexture(1280, 720, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
@@ -308,18 +500,21 @@ public class SettingsScreenTests
             if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
             var hud = new HudPresenter(root, new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), text), text);
             var nav = new ScreenNav(root);
-            var settings = new SettingsPresenter(root, text, new SettingsStore(dir));
+            var settings = new SettingsPresenter(root, text, new SettingsStore(dir), panel: ps);
             try
             {
                 nav.Open("settings");
                 for (int i = 0; i < 30 && !(root.Q("screen-settings").layout.width > 0); i++) yield return null;
                 for (int i = 0; i < 3; i++) yield return null;
+                // 1280x720 is 2/3 of the 1920x1080 reference: the panel's scale is 2/3 times the UI scale.
+                Assert.AreEqual(1920f * 100f / uiScale, root.worldBound.width, 1f, at + ": the panel's logical width");
                 var screen = root.Q("screen-settings").worldBound;
                 Assert.IsTrue(Inside(screen, root.worldBound), $"{at}: the screen {screen} leaves the window {root.worldBound}");
                 Assert.GreaterOrEqual(screen.yMin, root.Q("top-bar").worldBound.yMax - 0.5f, at + ": the screen starts below the top bar");
                 foreach (var name in new[] { "settings-screen-title", "settings-tiltshift-label", "settings-tiltshift",
                     "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low",
-                    "settings-language-label", "settings-language-en", "settings-language-he", "settings-language-note" })
+                    "settings-language-label", "settings-language-en", "settings-language-he", "settings-language-note",
+                    "settings-uiscale-label", "settings-uiscale-100", "settings-uiscale-125", "settings-uiscale-150" })
                 {
                     var e = root.Q<TextElement>(name);
                     Assert.IsFalse(string.IsNullOrWhiteSpace(e.text), $"{at}: {name} has its text");

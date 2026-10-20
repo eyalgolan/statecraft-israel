@@ -184,6 +184,33 @@ def test_strength_has_one_value_and_a_source():
     assert all(u['strength']['as_of'] == '1948-05-15' for u in rows)
 
 
+# Owner, 20 October 2026, on #743: "the 15 May 1948 IDF brigade strengths may come from secondary sources, since no
+# primary order of battle gives them. Every row cites its source, carries `status: to_verify`, and is replaced when a
+# primary source turns up." The figures are the brigade table of research_notes/M4 war mode/war-1948.md, section 1
+# (#906); the brigades it gives no size for get none.
+IDF_STRENGTH = {'golani': 4500, 'carmeli': 2000, 'alexandroni': 5200, 'kiryati': 1400, 'givati': 5000, 'harel': 1400,
+                'yiftach': 4500, 'negev': 2400}
+
+
+def test_idf_brigade_strengths_are_secondary_and_to_verify():
+    israel = {u['id']: u for u in UNITS if u['side'] == 'israel'}
+    for uid, value in IDF_STRENGTH.items():
+        u = israel[uid]
+        st = u.get('strength')
+        assert isinstance(st, dict), f"{uid}: no strength"
+        assert set(st) <= {'value', 'as_of', 'note', 'sources'}, (uid, sorted(st))
+        assert st.get('value') == value, f"{uid}: strength {st.get('value')!r} is not the note's {value}"
+        assert st.get('as_of') == '1948-05-15', f"{uid}: the 15 May strength only"
+        assert st.get('sources'), f"{uid}: the strength cites no source"
+        assert not RANGE.search(str(st.get('note', ''))), f"{uid}: the strength note copies a range"
+        assert u.get('status') == 'to_verify', f"{uid}: a secondary-source strength carries status: to_verify"
+        assert u.get('to_verify'), f"{uid}: to_verify says what a primary source must replace"
+    for uid, u in israel.items():
+        if uid not in IDF_STRENGTH:
+            assert 'strength' not in u, f"{uid}: no figure in the note, so none in the file"
+            assert u.get('status') == 'draft', uid
+
+
 def near(a, lon, lat, km=3.0):
     # Close enough to name the same place (degrees at this latitude: about 111 km north-south, 95 km east-west).
     return ((a['lon'] - lon) * 95) ** 2 + ((a['lat'] - lat) * 111) ** 2 <= km ** 2

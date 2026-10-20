@@ -98,16 +98,22 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-CITY-004 (D-A5; D-D1, Q-HOUSE-1): no hard cap. Every refugee becomes a civilian, without a job, on the
-        /// housing step; the people beyond the city's housing are its overflow (<see cref="Overflow"/>), still counted in it.
+        /// housing step - as many as R-MIN-002's absorption scaling houses this turn (all of them at a neutral
+        /// multiplier); the people beyond the city's housing are its overflow (<see cref="Overflow"/>), still counted in it.
         /// Residents are housed automatically (Q-HOUSE-4). Then R-CITY-009 (Q-JOBS-1): in ascending city id, a city whose job
         /// default is on fills its free job slots from its people without a job, at no Attention cost.</summary>
-        public static void House(Content c, GameState s, List<Cause> why)
+        public static void House(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the Immigration minister's multiplier scales how many of the
+            // city's refugees are housed this turn; the count is floored (whole groups only) and the rest wait as
+            // refugees. At a neutral multiplier every refugee is housed, as R-CITY-004 says.
+            var m = EffectsSystem.GddSystemMultiplier(c, s, r, EffectsSystem.AbsorptionSystem);
             foreach (var x in s.Cities.Values.ToList())
             {
-                var housed = x.Refugees == 0 ? x : x.WithCounts(x.Civilians + x.Refugees, x.Employed, 0);
-                if (x.Refugees != 0)
-                    why.Add(new Cause("city", x.Id, x.Refugees, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {x.Refugees} groups of immigrants housed")));
+                var absorbed = x.Refugees == 0 ? 0 : Math.Min(x.Refugees, (int)Math.Floor(x.Refugees * m));
+                var housed = absorbed == 0 ? x : x.WithCounts(x.Civilians + absorbed, x.Employed, x.Refugees - absorbed);
+                if (absorbed != 0)
+                    why.Add(new Cause("city", x.Id, absorbed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed")));
                 var work = MaxWorkers(housed);
                 if (housed.JobsDefault && work != housed.Employed)
                 {

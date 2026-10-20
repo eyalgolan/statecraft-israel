@@ -92,11 +92,25 @@ namespace Statecraft.Game.Map.Routes
         /// lot or crown still keeps about 130 m from the visible dirt.</summary>
         public const float RoadCorridorMarginM = 40f;
 
-        /// <summary>Every route's traced line (world x, z; <see cref="World"/>, not cut as <see cref="Drawn"/> is) with the half-width kits must keep clear of: half the drawn width plus
-        /// <see cref="CorridorMarginM"/> (<see cref="RoadCorridorMarginM"/> for roads). All routes, whatever their window: the
-        /// kits are built once, not per date, so a route that appears later (the Burma Road) has its corridor from the start.</summary>
+        /// <summary>Each route's traced line (world x, z; <see cref="World"/>, not cut as <see cref="Drawn"/> is) with the half-width kits must keep clear of: half the drawn width plus
+        /// <see cref="CorridorMarginM"/> (<see cref="RoadCorridorMarginM"/> for roads). The units keep off every route's; the
+        /// kits only off those of <see cref="KitRoutes"/>.</summary>
         public static List<(List<Vector2> line, float halfWidth)> Corridors(GeoFrame frame, IEnumerable<RoutePath> routes) =>
             routes.Select(r => (World(frame, r), WidthOf(r.Kind) / 2f + (r.Kind == RoutePaths.Road ? RoadCorridorMarginM : CorridorMarginM))).ToList();
+
+        /// <summary>The routes whose corridors the kits keep clear: those drawn on the game's first day, <see cref="DefaultDate"/>.
+        /// The kits are built once, not per date, so a later route (the Burma Road, the 1949 rail link, the 1950 Tel Aviv–Netanya
+        /// road) clears no town's houses or trees from the start and draws over them when it appears (owner, 18 October 2026,
+        /// #786: the kit floors are kept, not lowered).</summary>
+        public static IEnumerable<RoutePath> KitRoutes(IEnumerable<RoutePath> routes) =>
+            routes.Where(r => RoutePaths.WindowOf(r).Covers(DefaultDate));
+
+        /// <summary>The routes whose corridors the unit tokens keep clear: those drawn on some day before <paramref name="until"/>,
+        /// the end of the last token's window. A route opened after every token has left the map (the 1949 rail link, the 1950
+        /// Tel Aviv–Netanya road) never stands beside one, so it takes no token's spot (#786: the straight 1950 road crossed
+        /// Tel Aviv and left Kiryati no spot there).</summary>
+        public static IEnumerable<RoutePath> UnitRoutes(IEnumerable<RoutePath> routes, DateTime until) =>
+            routes.Where(r => RoutePaths.WindowOf(r).From < until);
 
         public static float WidthOf(string kind) => kind switch
         {
