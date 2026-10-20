@@ -105,6 +105,16 @@ it. `--regions` needs PyYAML. With `--regions`, the generator works like this:
 - **Settings.** Without `--regions` the generator keeps its built-in choices. `central_israel` and `tel_aviv_crop`
   regenerate exactly as before.
 
+### Settlement density
+
+The default `min_population` is 2,000, selected with Tal's approval after the matched gameplay comparison in
+[PR #1154](https://github.com/eyalgolan/statecraft-israel/pull/1154). The generated `israel` board has 61
+`arab_village` tiles and 90 settlement tiles in total, including all 25 core settlements. It uses 16 of the 30
+regional farm/forest variants, leaving room for the Upper Galilee hills and Carmel ridge while retaining village
+clusters. At 1,000 the board had 118 village tiles and 14 variants; 3,000 would leave 35 village tiles and 17 variants.
+These are rendered-board counts, not a claim of historical completeness. The 537 hexes, play-area boundary, roads,
+rivers and starting units are unchanged by this density choice.
+
 ### Environment trees by region
 
 The board file carries a `regions` list, and each hex names its `region`. `HexEnvironment` reads the region's

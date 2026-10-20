@@ -16,6 +16,11 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   the reference player builds Mefalsim on 15 February 1951 (was 15 March 1950), the camps are never started, and every
   golden is re-pinned.
 
+### Changed
+- The opt-in `israel` hex board uses a 2,000-person locality threshold: 61 village tiles and 16 regional farm/forest
+  variants, with room for the Upper Galilee hills and Carmel ridge. All 25 core settlements and the play-area boundary
+  are preserved; the simulation and shipped map are unchanged (refs #1154).
+
 ### Fixed
 - Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
 - Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.

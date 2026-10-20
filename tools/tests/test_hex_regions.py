@@ -44,6 +44,26 @@ def test_the_whole_country_is_deterministic(country):
     assert json.dumps(again) == json.dumps(country)
 
 
+def test_default_country_balances_villages_and_regional_landscape(country):
+    hexes = {(h["q"], h["r"]): h for h in country["hexes"]}
+    assert sum(h["prototype"] == "arab_village" for h in hexes.values()) == 61
+    assert sum(bool(h["note"]) for h in hexes.values()) == 90
+    variants = {h["prototype"] for h in hexes.values() if re.fullmatch(
+        r"(wheat_fields|citrus_orchard|olive_terraces|mixed_farm|forest)_(north|centre|south)_[ab]", h["prototype"])}
+    assert len(variants) == 16
+    # At 2,000, hills and the Carmel ridge return while these village hexes remain.
+    assert hexes[(11, 5)]["prototype"] == "upper_galilee_hills"
+    assert hexes[(4, 11)]["prototype"] == "carmel_ridge"
+    assert hexes[(9, 7)]["prototype"] == hexes[(4, 10)]["prototype"] == "arab_village"
+    core = {s["id"] for s in mb.settlements(str(ROOT / "content/map/settlements_1948.yaml"))}
+    assert core <= {h["note"] for h in hexes.values()}
+
+
+def test_published_country_matches_its_region_recipes(country):
+    published = json.loads((ROOT / "unity/Assets/Resources/HexTiles/Boards/israel.json").read_text())
+    assert published == country
+
+
 def test_every_region_dresses_some_land(country):
     regions = [r["id"] for r in mb.Recipes.load(str(REGIONS)).regions]
     used = {h["region"] for h in country["hexes"] if h["terrain"] != "water"}
@@ -126,7 +146,10 @@ def test_settlements_take_their_tier_and_type_tiles(country):
     assert by_note["jerusalem"] == "jerusalem_old_city"
     assert by_note["jaffa"] == "jaffa_old_city"
     assert by_note["haifa"] == "haifa_port"   # its own tile, by id, ahead of the city-tier rule
-    assert by_note["kiryat_ata"] == "haifa_bay"   # Haifa's edge: the bay's suburbs and industry
+    assert "kiryat_ata" not in by_note   # below the default locality cutoff
+    # A lower-threshold board still uses Haifa's bay tile for this locality.
+    rules = mb.Recipes.load(str(REGIONS)).defaults["settlements"]
+    assert mb.apply_rule(rules, 0, 0, id="kiryat_ata")[0] == "haifa_bay"
     assert by_note["rosh_pinna"] == "moshava_village"
     assert by_note["lod"] == "lydda_town" and by_note["ramla"] == "ramla_town"
     # A kibbutz takes its region's kibbutz: Galilee green in the north, a Negev outpost in the south.

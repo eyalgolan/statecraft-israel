@@ -46,7 +46,7 @@ defaults:
   # The play area: Mandatory Palestine on 15 May 1948, clipped to land, with one hex of environment round it.
   clip: {mode: mandate, fringe: 1}
   # Localities below this many people (Village Statistics 1945) are left off the board.
-  min_population: 1000
+  min_population: 2000
   # Population tiers, by the 1945 figure: the largest tier the place reaches.
   tiers: {city: 25000, town: 5000, village: 0}
   ground: {coastal_plain: grass, lowland: grass, valley: plains, hills: hills, mountains: mountain, desert: desert, default: grass}
