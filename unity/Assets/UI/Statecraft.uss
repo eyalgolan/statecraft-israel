@@ -496,6 +496,24 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .turn-report-causes { white-space: normal; padding-left: 12px; }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
+/* The first-turn guide (#42, FirstTurnGuidePresenter): shown while the root has guide-open. The layer and the ring take no
+   pointer; the ring goes round the step's targets (placed in code), the dock holds the panel at the bottom of the window,
+   or at the top (guide-dock-top) when the targets are in the lower half. */
+.guide-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.guide-open .guide-layer { display: flex; }
+.guide-ring { position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+.guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
+.guide-dock.guide-dock-top { bottom: auto; top: 16px; }
+.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
+.guide-count { font-size: 16px; }
+.guide-title { color: var(--gold-light); font-size: 26px; white-space: normal; }
+.guide-text { white-space: normal; font-size: 19px; margin: 4px 0 8px 0; }
+.guide-actions { justify-content: space-between; }
+.guide-actions > Button { min-height: 44px; }
+.guide-next, .lang-he .guide-next { min-width: 120px; -unity-text-align: middle-center; }
+/* How to play's button that opens the guide again: under the lines, never squeezed by them. */
+.how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
+.lang-he .how-to-play-guide { align-self: flex-end; }
 /* A top-bar number's explanation (MeterTip, #1037): under the bar, wrapped, kept inside the window by MeterTip. */
 .meter-tip {
     display: none; position: absolute; max-width: 420px; padding: 6px 10px;

@@ -162,11 +162,16 @@ namespace Statecraft.Game.UI
         public bool Collapsed => Shown != null && collapsedFor == Shown.Id;
 
         /// <summary>Hide: the card gives the map back and waits behind the "Decision waiting" button, which takes the focus.</summary>
-        public void Collapse()
+        public void Collapse() => Collapse(takeFocus: true);
+
+        /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
+        /// first-turn guide hides the card while its own panel has the focus, FirstTurnGuidePresenter).</summary>
+        public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
             collapsedFor = Shown.Id;
             Render();
+            if (!takeFocus) return;
             if (hideByPointer) { hideByPointer = false; return; }
             reopen.Focus();
             // Tried again once styles resolve: the button was hidden a moment ago and may not take it yet.
