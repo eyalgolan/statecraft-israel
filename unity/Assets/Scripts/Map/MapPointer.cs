@@ -109,13 +109,29 @@ namespace Statecraft.Game.Map
         {
             if (Map == null || Map.Terrain == null) return false;
             var cam = Camera.main;
-            var collider = Map.Terrain.GetComponent<TerrainCollider>();
-            // only the terrain's own collider: other colliders (markers, future props) never decide which hex is clicked
-            if (cam == null || collider == null || !collider.Raycast(cam.ScreenPointToRay(pos), out var hit, 1_000_000f)) return false;
+            if (cam == null || !TryGroundHit(Map, cam.ScreenPointToRay(pos), out var hit)) return false;
             var hex = Pick(Map, hit.point);
             Map.Select(hex.q, hex.r);                                   // the map marks the hex the info panel describes
             HexClicked?.Invoke(hex.q, hex.r);
             return true;
+        }
+
+        // The opt-in board draws its own terrain above the lowered real map. Use the nearest displayed ground,
+        // falling through its sea/outside holes to the real map. Props and markers never decide the clicked hex.
+        static bool TryGroundHit(MapScene map, Ray ray, out RaycastHit hit)
+        {
+            hit = default;
+            bool found = false;
+            foreach (var terrain in map.GetComponentsInChildren<Terrain>())
+            {
+                if (!terrain.enabled || !terrain.drawHeightmap) continue;
+                var collider = terrain.GetComponent<TerrainCollider>();
+                if (collider == null || !collider.enabled ||
+                    !collider.Raycast(ray, out var candidate, found ? hit.distance : 1_000_000f)) continue;
+                hit = candidate;
+                found = true;
+            }
+            return found;
         }
 
         public static (int q, int r) Pick(MapScene map, Vector3 world)

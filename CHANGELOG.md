@@ -17,6 +17,8 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   golden is re-pinned.
 
 ### Fixed
+- Clicks on the opt-in hex board use its displayed ground instead of the lowered terrain beneath it, so oblique
+  near-edge clicks select the visible hex. Sea holes and ground outside the board still use the real map (refs #18).
 - Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
 - Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
 - On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
