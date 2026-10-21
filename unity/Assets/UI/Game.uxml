@@ -508,14 +508,17 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- "Share" (#1170, SharePresenter): over everything, the turn report too, after the frame was captured without it.
-             A preview of that picture, then the site buttons in the owner's order (#1237); the notes show once the picture
-             downloaded, where the browser cannot share it itself. Before the toast. -->
+             A preview of that picture, the Share/Download button, then Copy (#1238), which puts the picture, or the post
+             text, on the clipboard, with a line under it that says which. Then the site buttons in the owner's order (#1237);
+             the notes show once the picture downloaded, where the browser cannot share it itself. Before the toast. -->
         <ui:VisualElement name="share-layer" class="share-layer">
             <ui:VisualElement name="share-panel" class="panel share-panel">
                 <ui:VisualElement class="screen-header"><ui:Label name="share-title" text="Share a picture of the game" class="title" /></ui:VisualElement>
                 <ui:VisualElement name="share-preview" class="share-preview" />
                 <ui:Label name="share-post" class="share-post" />
                 <ui:Button name="share-go" class="share-go" />
+                <ui:Button name="share-copy" class="share-go" />
+                <ui:Label name="share-copied" class="muted share-copied" />
                 <ui:VisualElement class="row share-sites">
                     <ui:Button name="share-x" />
                     <ui:Button name="share-facebook" />

@@ -77,7 +77,7 @@ guide.training.text: "במחנה צבאי אפשר לאמן אזרחים ללא 
 guide.event.title: "כרטיס אירוע"
 guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
 guide.objectives.title: "יעדים"
-guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק, כמו היישוב החדש הראשון, ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
+guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
 settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
@@ -130,6 +130,14 @@ share.native: "שיתוף"
 share.download: "הורדת התמונה"
 share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
 share.instagram: "לאינסטגרם אין קישור לשיתוף: התמונה הורדה, ויש לפרסם אותה מאפליקציית אינסטגרם."
+# Copy (#1238): the button ("copying"), "the picture was copied", "the text was copied", and the failure ("copying is
+# not possible here; the picture can still be shared or downloaded with the button above"). Agent-drafted.
+# Approved by Beri, a native speaker, on #1253 (21 Oct 2026).
+# For the native reviewer (#564).
+share.copy: "העתקה"
+share.copied_picture: "התמונה הועתקה"
+share.copied_text: "הטקסט הועתק"
+share.copy_failed: "לא ניתן להעתיק כאן. אפשר לשתף או להוריד את התמונה בכפתור שלמעלה."
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item

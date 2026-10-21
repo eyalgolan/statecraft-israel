@@ -28,13 +28,15 @@ namespace Statecraft.Sim
 
         /// <summary>R-ORDER-001: gives the unit its standing order, replacing any other. Fortify names the unit's hex and starts
         /// as Fortifying; hold names nothing, as it acts where the unit is. Refused, state untouched, for an unknown order or
-        /// unit, a unit with no side (a halutz), an enemy unit, or the order it already has.</summary>
-        internal static string? Give(GameState s, int unitId, string order, List<Cause> why)
+        /// unit, a unit with no side (a halutz), an enemy unit, hold for artillery (R-COMBAT-007: it never holds ground,
+        /// Q-ARTY-1), or the order it already has.</summary>
+        internal static string? Give(Content c, GameState s, int unitId, string order, List<Cause> why)
         {
             if (order != Fortify && order != Hold) return "That order is not known";
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (u.Side == "") return "Only a military unit takes that order";
             if (u.Side != PlayerSide) return "That unit is not yours";
+            if (order == Hold && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass) return "Artillery does not hold ground";
             var here = Hex(u);
             var already = order == Hold ? u.Order == Hold : (u.Order == Fortify || u.Order == Fortifying) && u.OrderTarget == here;
             if (already) return "That unit already has that order";

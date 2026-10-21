@@ -723,6 +723,9 @@ namespace Statecraft.Sim
                 // The player can order a woman into any office, so a Hebrew title without its feminine form would show her the
                 // masculine one (owner on #861, 17 October 2026).
                 if (o.TitleHe != "" && o.TitleHeF == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_f", $"required: office {o.Id} has a title_he, so it needs its feminine title_he_f beside it");
+                if ((o.TitleHeFrom.HasValue || o.TitleHeUntil.HasValue) && o.TitleHe == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he", "required: title_he_from/title_he_until bound a title_he");
+                if (o.TitleHeFrom.HasValue && o.TitleHeUntil.HasValue && o.TitleHeUntil.Value <= o.TitleHeFrom.Value)
+                    throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_until", FormattableString.Invariant($"must be after title_he_from ({o.TitleHeFrom:yyyy-MM-dd})"));
             }
             foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources, p.NameHeReview, p.NameHeReviewGiven);
             foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources, l.BodyHeReview, l.BodyHeReviewGiven);
@@ -1096,6 +1099,20 @@ namespace Statecraft.Sim
                 if (x.Kind == "population" && x.MovementPoints != 0) throw new ContentException(uf, at + ".movement_points", "only a unit moves");
                 if (x.Side != "" && x.MovementPoints < 1) throw new ContentException(uf, at + ".movement_points", "required for a military type, at least 1");
                 if (x.MovementPoints < 0) throw new ContentException(uf, at + ".movement_points", "must be >= 0");
+                // R-COMBAT-007, R-COMBAT-008 (Q-ARTY-1, Q-ARTY-2): only a military type fights, so only it has a combat
+                // factor; range and Arms per firing are artillery's support role and are read for nothing else.
+                if (x.CombatPercent != null && x.Side == "") throw new ContentException(uf, at + ".combat_percent", "only a military type has a combat factor");
+                if (x.CombatPercent < 1) throw new ContentException(uf, at + ".combat_percent", "must be at least 1");
+                if (x.Class == Combat.ArtilleryClass)
+                {
+                    if (!(x.Range >= 1)) throw new ContentException(uf, at + ".range", "required for an artillery type, at least 1");
+                    if (!(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
+                }
+                else
+                {
+                    if (x.Range != null) throw new ContentException(uf, at + ".range", "only an artillery type has a range");
+                    if (x.ArmsPerFire != null) throw new ContentException(uf, at + ".arms_per_fire", "only an artillery type fires");
+                }
                 if (x.Facility == "")
                 {
                     // Training (R-TRAIN-001) needs a place to train; values without one would be read by nothing.
@@ -1271,7 +1288,7 @@ namespace Statecraft.Sim
             if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end >= c.Eras[c.Eras.Count - 1].To))
                 throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and before the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
             ValidateSites(c);
-            ValidateObjectiveSites(c);
+            ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1357,15 +1374,40 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>An objective's site (R-OBJ-001): a designated site of kind yishuv, whose sourced founding date is the
-        /// objective's reference date, so the card and the site cannot disagree. Only the GDD loop reads sites.yaml, so only
-        /// it can check this; EventRules checks the rest of objectives.yaml in both loops.</summary>
-        static void ValidateObjectiveSites(Content c)
+        /// <summary>An objective's GDD condition: a standalone site objective keeps the site's founding date (R-OBJ-001),
+        /// while an infrastructure part names an existing corridor or one or more buildable yishuv sites (R-OBJ-005).
+        /// EventRules checks the loop-independent shape and sources.</summary>
+        static void ValidateObjectiveConditions(Content c)
         {
             foreach (var o in c.Objectives)
             {
                 var at = $"objectives[{o.Id}]";
+                if (o.PartOf != "" && (o.ReferenceDate < c.Rules.Start || o.ReferenceDate >= c.End))
+                    throw new ContentException(ObjectivesFileName, at + ".reference_date",
+                        FormattableString.Invariant($"must be inside the MVP ({c.Rules.Start:yyyy-MM-dd} to {c.End:yyyy-MM-dd})"));
                 if (o.CompletesWhen!.Absorbed != null) continue;   // R-OBJ-004 has no site; the GDD loop always has cities
+                if (o.CompletesWhen.CorridorComplete != "")
+                {
+                    var corridor = o.CompletesWhen.CorridorComplete;
+                    if (c.Corridors.All(x => x.Id != corridor))
+                        throw new ContentException(ObjectivesFileName, at + ".completes_when.corridor_complete", $"unknown corridor '{corridor}' (corridors.yaml)");
+                    continue;
+                }
+                if (o.CompletesWhen.SitesBuilt.Count > 0)
+                {
+                    var ids = new HashSet<string>(StringComparer.Ordinal);
+                    for (int i = 0; i < o.CompletesWhen.SitesBuilt.Count; i++)
+                    {
+                        var siteId = o.CompletesWhen.SitesBuilt[i];
+                        var field = FormattableString.Invariant($"{at}.completes_when.sites_built[{i}]");
+                        if (!ids.Add(siteId)) throw new ContentException(ObjectivesFileName, field, $"duplicate site '{siteId}'");
+                        var listed = c.Sites.FirstOrDefault(x => x.Id == siteId)
+                            ?? throw new ContentException(ObjectivesFileName, field, $"unknown site '{siteId}' (sites.yaml)");
+                        if (!listed.Kinds.Contains(Projects.YishuvKind))
+                            throw new ContentException(ObjectivesFileName, field, $"site '{siteId}' cannot be built as a yishuv");
+                    }
+                    continue;
+                }
                 var id = o.CompletesWhen.SiteBuilt;   // EventRules requires one kind
                 var site = c.Sites.FirstOrDefault(x => x.Id == id)
                     ?? throw new ContentException(ObjectivesFileName, at + ".completes_when.site_built", $"unknown site '{id}' (sites.yaml)");

@@ -8,9 +8,10 @@ namespace Statecraft.Game.UI
 {
     /// <summary>"Share" (#1170): the button in the Settings screen's Community row and the one on the turn report capture the
     /// frame, then open a small panel over everything with a preview of the picture, the post (ShareShot.Text), one Share
-    /// button and the site buttons (#1237). The capture runs before the panel shows, so the panel is never in the picture.
+    /// button, Copy and the site buttons (#1237). The capture runs before the panel shows, so the panel is never in the picture.
     /// Where the browser can share files, Share opens its share sheet with the picture, the post and the itch URL; elsewhere
     /// the same button downloads the picture, and the panel then says to attach it to a post, which a link cannot carry.
+    /// Copy (#1238) puts the picture on the clipboard, or the post text where the browser refuses the picture, and says which.
     /// X, Facebook, WhatsApp, Telegram and LinkedIn open their share links; Instagram has none, so its button does what Share does
     /// and, where the picture downloaded, says to post it from the Instagram app.
     /// <para>While it shows, the root has <see cref="OpenClass"/> and every other part of the UI is disabled, so Tab stays in
@@ -27,19 +28,22 @@ namespace Statecraft.Game.UI
         const string Instagram = "instagram";
 
         readonly VisualElement hudRoot, layer, fallback, preview;
-        readonly Button go, close, settingsOpen, reportOpen, instagram;
-        readonly Label post, instagramNote;
+        readonly Button go, copy, close, settingsOpen, reportOpen, instagram;
+        readonly Label post, copied, instagramNote;
         readonly SimBridge bridge; readonly UiText text;
         readonly Action<Action<byte[]?>> capture;
         readonly EventCallback<PointerDownEvent> onGoPointer;
         readonly EventCallback<NavigationSubmitEvent> onGoSubmit;
         readonly EventCallback<PointerDownEvent> onInstagramPointer;
         readonly EventCallback<NavigationSubmitEvent> onInstagramSubmit;
+        readonly EventCallback<PointerDownEvent> onCopyPointer;
+        readonly EventCallback<NavigationSubmitEvent> onCopySubmit;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly List<Action> unbindSites = new List<Action>();
         readonly List<(VisualElement part, bool enabled)> covered = new List<(VisualElement, bool)>();
         Button? opener;
         UnityEngine.Texture2D? picture;   // the preview's, released on Close
+        IVisualElementScheduledItem? copyPoll;
         bool capturing, canShareFiles, disposed;
         int closedAt = -1;
 
@@ -54,6 +58,8 @@ namespace Statecraft.Game.UI
             preview = layer.Q("share-preview");
             go = layer.Q<Button>("share-go"); close = layer.Q<Button>("share-close");
             post = layer.Q<Label>("share-post");
+            copy = layer.Q<Button>("share-copy"); copied = layer.Q<Label>("share-copied");
+            copy.text = text["share.copy"];
             settingsOpen = root.Q<Button>("settings-share"); reportOpen = root.Q<Button>("turn-report-share");
             settingsOpen.text = reportOpen.text = text["share.open"];
             layer.Q<Label>("share-title").text = text["share.title"];
@@ -73,6 +79,10 @@ namespace Statecraft.Game.UI
             onInstagramSubmit = _ => Send(instagramNote);
             instagram.RegisterCallback(onInstagramPointer, TrickleDown.TrickleDown);
             instagram.RegisterCallback(onInstagramSubmit, TrickleDown.TrickleDown);
+            onCopyPointer = e => { if (e.button == 0) Copy(); };
+            onCopySubmit = _ => Copy();
+            copy.RegisterCallback(onCopyPointer, TrickleDown.TrickleDown);
+            copy.RegisterCallback(onCopySubmit, TrickleDown.TrickleDown);
             settingsOpen.clicked += OpenFromSettings;
             reportOpen.clicked += OpenFromReport;
             close.clicked += Close;
@@ -101,6 +111,8 @@ namespace Statecraft.Game.UI
                 post.text = ShareShot.Text(text, shown.Date, bridge.State.Turn);
                 go.text = text[canShareFiles ? "share.native" : "share.download"];
                 fallback.style.display = instagramNote.style.display = DisplayStyle.None;
+                copyPoll?.Pause();
+                copied.style.display = DisplayStyle.None;
                 ShowPreview(png);
                 foreach (var unbind in unbindSites) unbind();
                 unbindSites.Clear();
@@ -156,6 +168,33 @@ namespace Statecraft.Game.UI
             if (UnityEngine.Application.isPlaying) UnityEngine.Object.Destroy(t); else UnityEngine.Object.DestroyImmediate(t);   // edit-mode tests
         }
 
+        /// <summary>Copy: the browser copies on the release and answers after a promise (ShareShot.jslib), so the panel looks
+        /// for the answer as it looks for a refused share sheet, and then says what was copied, or that nothing was.</summary>
+        void Copy()
+        {
+            if (!IsOpen) return;
+            copyPoll?.Pause();
+            copied.style.display = DisplayStyle.None;
+            ShareShot.Copy(post.text);
+            // A press whose release never reached the browser (shorter than a frame, or another press first) copies
+            // nothing and stays Pending: after a few seconds the panel says so rather than staying silent.
+            var giveUpAt = UnityEngine.Time.realtimeSinceStartup + 4.5f;
+            copyPoll = copy.schedule.Execute(() =>
+            {
+                var result = ShareShot.Copied();
+                if (result == ShareShot.CopyResult.Pending && UnityEngine.Time.realtimeSinceStartup >= giveUpAt) result = ShareShot.CopyResult.Failed;
+                if (!IsOpen || result == ShareShot.CopyResult.Pending) return;
+                copied.text = text[result switch
+                {
+                    ShareShot.CopyResult.Picture => "share.copied_picture",
+                    ShareShot.CopyResult.Text => "share.copied_text",
+                    _ => "share.copy_failed",
+                }];
+                copied.style.display = DisplayStyle.Flex;
+                copyPoll?.Pause();
+            }).Every(250).ForDuration(5000);
+        }
+
         public void Close()
         {
             if (!IsOpen) return;
@@ -186,6 +225,9 @@ namespace Statecraft.Game.UI
             go.UnregisterCallback(onGoSubmit, TrickleDown.TrickleDown);
             instagram.UnregisterCallback(onInstagramPointer, TrickleDown.TrickleDown);
             instagram.UnregisterCallback(onInstagramSubmit, TrickleDown.TrickleDown);
+            copyPoll?.Pause();
+            copy.UnregisterCallback(onCopyPointer, TrickleDown.TrickleDown);
+            copy.UnregisterCallback(onCopySubmit, TrickleDown.TrickleDown);
             settingsOpen.clicked -= OpenFromSettings;
             reportOpen.clicked -= OpenFromReport;
             close.clicked -= Close;

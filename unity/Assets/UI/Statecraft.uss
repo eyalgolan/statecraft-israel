@@ -563,6 +563,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .share-preview { height: 160px; min-height: 48px; flex-shrink: 1; margin-bottom: 12px; background-size: contain; background-repeat: no-repeat; background-position-x: center; background-position-y: center; }
 .share-post, .share-attach, .share-instagram-note { white-space: normal; }
 .share-go { margin-top: 12px; }
+.share-copied { white-space: normal; margin-top: 6px; }
 .share-attach, .share-instagram-note { margin-top: 12px; }
 .share-sites { flex-wrap: wrap; margin-top: 6px; }
 .share-sites > Button { margin: 4px 8px 0 0; }

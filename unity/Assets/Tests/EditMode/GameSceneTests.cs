@@ -586,7 +586,7 @@ public class GameSceneTests
     public void PlacementsAreRedrawnOnlyWhenTheyChange()
     {
         var root = Boot();
-        var c = Inputs.Content;
+        var c = SimBridgeGddTests.Legacy;   // the map actions build only in the legacy loop (R-PROJ-004)
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
         var bridge = root.Bridge!;
