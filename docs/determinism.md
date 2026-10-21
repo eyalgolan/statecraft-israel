@@ -36,9 +36,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `73eb50db39dbc9ee569c18a5e0a68e55a2b88980d06da76e5f5bfffe22997675` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `b389b2786ac6b7c4c5bd3662cb7e96868d351a585e866a8660191c3db8ffff4a` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `b389b2786ac6b7c4c5bd3662cb7e96868d351a585e866a8660191c3db8ffff4a` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `a1ad42117a8523a79cf36cc03f33c63fbe887820d7f6fb89a834f2f952510548` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `9cbd73eda1440e1ee3e1ee565cf81960f2e7ee5595e55bdb4ed661f1d5e0ab40` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `9cbd73eda1440e1ee3e1ee565cf81960f2e7ee5595e55bdb4ed661f1d5e0ab40` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -47,7 +47,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 e5a66f9c2c0c0718d7969289fcc8dd005dedddd37a7c25adfffdc45e2e8b29cd`.
+ministers): `SMOKE OK 5 turns 1948-10-15 ed761c3b9c4e9b76520af20080b2a7c8b984a1f44f1d52e5127aae1baa992a8d`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -58,7 +58,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 e5a66f9c2c0c0718d7969289fcc8dd005dedddd37a7c25adfffdc45e2e8b29cd"
+  --expect "SMOKE OK 5 turns 1948-10-15 ed761c3b9c4e9b76520af20080b2a7c8b984a1f44f1d52e5127aae1baa992a8d"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -342,3 +342,11 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | Combined #1186 + #791 (C20) | mvp-end | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` | The same full run and combined #1186 + #791 state as hash1952 (was `452c65ece470e844f6898151c4d9328aa0b2e59df82db4763214d43a8e8ea7f1`). |
 | GDD Phase 4 PR 7 (#791) on combat (#747) | 1952 | `b389b278` | #1226 merged with main after combat (#747). As in the rows above, the first-new-yishuv objective becomes the all-six `yishuvim` infrastructure part, recorded 15 July 1951 instead of 15 February 1951, and neither corridor completes, so the shared 100-point base is unpaid and the snapshot's `score=100` line goes (a zero score is not written). Only those two `obj{`/score lines move; hash1950, smoke5 and the four scenario goldens equal main (was `d9922fc9`) |
 | GDD Phase 4 PR 7 (#791) on combat (#747) | mvp-end | `b389b278` | same as 1952 (was `d9922fc9`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | 1950 | `a1ad4211` | The seven IDF starting rows take the diary's 15 May strengths, so the starting units move: Golani 5 -> 4, Alexandroni 5 -> 4, Kiryati 1 -> 3, Givati 5 -> 3, Negev 2 -> 1 (Carmeli 2 and Harel 1 unchanged). Unit 0 (Golani, 4 on 10,9) against the Syrian 3 on 10,10 is now 133 percent, under the reference player's 150, so the run has no engagement: unit 0 ends at 4, not 3, the Syrian unit 9 stays in `units[`, the Arms stay at 12 (was 8), and the RNG is never drawn, so the snapshot's header shows the seed, 1948. Nothing else in the snapshot moves (was `73eb50db`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | 1952 | `9cbd73ed` | same (was `b389b278`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | mvp-end | `9cbd73ed` | same as 1952 (was `b389b278`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | smoke5 | `ed761c3b` | same starting strengths; the smoke run gives no attack (was `e5a66f9c`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-reckless | `574c8a19` | same starting strengths; only those five `units[` lines move (was `8d644f6e`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-cautious | `00ec7ec2` | same as reckless (was `b4e5caa1`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-mvp-absorb-first | `ac5f51bb` | same as reckless (was `7d37c0d0`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-mvp-defeat | `f2ad1114` | same as reckless; the defeat is unchanged (was `7bd5158f`) |

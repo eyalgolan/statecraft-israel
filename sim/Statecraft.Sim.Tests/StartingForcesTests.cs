@@ -42,13 +42,13 @@ public class StartingForcesTests
     {
         Assert.Equal(new[]
         {
-            ("golani", "Yavne'el", "veteran_soldier", "israel", 5, 10, 9),
+            ("golani", "Yavne'el", "veteran_soldier", "israel", 4, 10, 9),
             ("carmeli", "Haifa", "veteran_soldier", "israel", 2, 5, 8),
-            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 5, 0, 15),
-            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 1, -3, 19),
-            ("givati", "Gedera", "veteran_soldier", "israel", 5, -5, 23),
+            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 4, 0, 15),
+            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 3, -3, 19),
+            ("givati", "Gedera", "veteran_soldier", "israel", 3, -5, 23),
             ("harel", "Sha'ar HaGai", "veteran_soldier", "israel", 1, -2, 23),
-            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 2, -9, 27),
+            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 1, -9, 27),
             ("egyptian_expeditionary_force", "Gaza", "egyptian_army", "egypt", 10, -11, 27),
             ("arab_legion", "Ramallah", "arab_legion", "jordan", 5, 0, 22),
             ("syrian_army", "South of Lake Tiberias, before Samakh", "syrian_army", "syria", 3, 10, 10),

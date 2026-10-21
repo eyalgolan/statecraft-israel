@@ -1,4 +1,4 @@
-1952-01-15;8709371129873692656;Historical;44;
+1952-01-15;1948;Historical;44;
 ind{
   food_supply=0.8555635490815091 [3FEB60C6CEDE8D7F]
   housing=0.08527449992708651 [3FB5D48CB45E9D83]
@@ -135,15 +135,16 @@ city{
   tiberias=6,2,13,2,0,c0 [0000000000000000]
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
-  0:veteran_soldier@10,9|side=israel|strength=3
+  0:veteran_soldier@10,9|side=israel|strength=4
   1:veteran_soldier@5,8|side=israel|strength=2
-  2:veteran_soldier@0,15|side=israel|strength=5
-  3:veteran_soldier@-3,19|side=israel|strength=1
-  4:veteran_soldier@-5,23|side=israel|strength=5
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
   5:veteran_soldier@-2,23|side=israel|strength=1
-  6:veteran_soldier@-9,27|side=israel|strength=2
+  6:veteran_soldier@-9,27|side=israel|strength=1
   7:egyptian_army@-11,27|side=egypt|strength=10
   8:arab_legion@0,22|side=jordan|strength=5
+  9:syrian_army@10,10|side=syria|strength=3
   10:iraqi_army@9,11|side=iraq|strength=3
   11:arab_liberation_army@12,4|side=ala|strength=4
   13:veteran_halutz@-3,19/6
@@ -166,4 +167,4 @@ next=19
 obj{
   yishuvim=1951-07-15
 food=2734,1390,0
-arms=8
+arms=12
