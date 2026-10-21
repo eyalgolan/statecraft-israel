@@ -91,7 +91,7 @@ guide.training.text: "In a city with a military camp or a Hakhshara, you can tra
 guide.event.title: "An event card"
 guide.event.text: "An event card asks for a decision. Answering it costs Attention, and your choice takes effect when you end the turn. A card you leave unanswered goes to the responsible minister."
 guide.objectives.title: "Objectives"
-guide.objectives.text: "Objectives lists the game's goals, such as the first new yishuv, with the date you completed each beside the historical one. Completing one also brings its card."
+guide.objectives.text: "Objectives lists the game's goals, with the date you completed each beside the historical one. Completing one also brings its card."
 # The Settings screen (#40): its title, the tilt-shift option and the button that says what is set.
 settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"

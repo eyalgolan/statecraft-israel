@@ -157,6 +157,7 @@ public class FirstTurnGuideTests
     {
         var text = hebrew ? He : En;
         using var rig = new Rig(text, new SettingsStore(TempDir()));
+        using var objectives = new ObjectivesPresenter(rig.Ui.Root, rig.Bridge, text);
         rig.Guide.NewGame();
         Assert.IsTrue(rig.Guide.IsOpen);
         for (int step = 0; step < FirstTurnGuidePresenter.Steps.Length; step++)
@@ -168,6 +169,25 @@ public class FirstTurnGuideTests
             Assert.AreEqual(text["guide." + key + ".text"], rig.Ui.Q<Label>("guide-text").text);
             Assert.AreEqual(text[step == 4 ? "guide.done" : "guide.next"], rig.Ui.Q<Button>("guide-next").text);
             Assert.AreEqual(step != FirstTurnGuidePresenter.EventStep, rig.Card.Collapsed, $"step {step + 1}: the card shows on its own step only");
+            if (key == "objectives")
+            {
+                // #791: from the guide's last step the real Objectives button opens the new parts and the standalone goal.
+                CollectionAssert.AreEquivalent(new[] { "railway", "burma_road", "yishuvim", "absorb_immigrants" },
+                    C.Objectives.Select(o => o.Id).ToArray(), "the current objectives, not the retired standalone first yishuv");
+                rig.Ui.Press("nav-objectives");
+                Assert.AreEqual("objectives", rig.Nav.Current, "the guide's Objectives destination opens");
+                var rows = rig.Ui.Q<ScrollView>("objectives-rows").Query(className: "objectives-row").ToList();
+                CollectionAssert.AreEqual(C.Objectives.Select(o => "objectives-row-" + o.Id).ToArray(),
+                    rows.Select(row => row.name).ToArray(), "every current objective in the helper's order");
+                for (int i = 0; i < C.Objectives.Count; i++)
+                {
+                    var expectedName = hebrew ? C.Objectives[i].NameHe : C.Objectives[i].Name;
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(expectedName), "the objective has a name in this language");
+                    Assert.AreEqual(expectedName, rows[i].Q<Label>(className: "objectives-name").text,
+                        C.Objectives[i].Id + ": the displayed name matches content in this language");
+                }
+                rig.Nav.Close();
+            }
             rig.Ui.Press("guide-next");
         }
         Assert.IsFalse(rig.Guide.IsOpen, "Done closes it");
@@ -252,6 +272,9 @@ public class FirstTurnGuideTests
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h} step {step + 1} ({FirstTurnGuidePresenter.Steps[step]})";
                     var window = root.worldBound;
                     var targets = guide.Targets(step);
+                    if (FirstTurnGuidePresenter.Steps[step] == "objectives" &&
+                        (targets.Count != 1 || targets[0].name != "nav-objectives"))
+                        problems.Add($"{at}: the last step must point at the Objectives button");
                     if (targets.Count == 0) { problems.Add($"{at}: no target shows"); return; }
                     var area = guide.TargetArea()!.Value;
                     if (!Inside(area, window)) problems.Add($"{at}: the target {area} leaves the window {window}");
