@@ -362,7 +362,19 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-gdd { flex-direction: column; width: 380px; flex-shrink: 0; margin-left: 14px; padding-left: 14px; border-left-width: 1px; border-color: var(--gold-dim); }
 .info-gdd-line { font-size: 17px; flex-shrink: 1; }
 .info-gdd-row { flex-wrap: wrap; align-items: center; }
-.info-gdd Button { margin: 2px 6px 2px 0; font-size: 17px; white-space: normal; flex-shrink: 1; }
+.info-projects { flex-direction: column; }
+.info-gdd Button, .info-projects Button { margin: 2px 6px 2px 0; font-size: 17px; white-space: normal; flex-shrink: 1; }
+/* Shorter buttons and lines than the GDD column's: the project part sits under a city's facts and must keep the panel clear of the
+   left column on a phone (InfoPanelLayoutTests, #1122). */
+.info-projects Button { padding-top: 2px; padding-bottom: 2px; margin-top: 0; margin-bottom: 1px; }
+.info-projects Label { margin-top: 0; margin-bottom: 0; padding-top: 1px; padding-bottom: 1px; }
+/* Owner ruling on #1150 (21 Oct 2026): on the city's own hex the project list folds behind "City projects (N)" on a stacked bar
+   or a short window (InfoPanelPresenter.ShortClass), where the full list ran into the left column; elsewhere the toggle
+   hides and the list shows. The toggle opens the list with .info-projects-open (GddHexPanel). */
+#city-projects-toggle { display: none; }
+.hud-two-row #city-projects-toggle, .info-short #city-projects-toggle { display: flex; }
+.hud-two-row .city-projects-list, .info-short .city-projects-list { display: none; }
+.hud-two-row .info-projects-open > .city-projects-list, .info-short .info-projects-open > .city-projects-list { display: flex; }
 /* Two counts on one row (Jobs | Craftsmen, Refugees waiting | Overflow; #1121): each keeps its width, so the row wraps
    whole rather than squeezing a line into two, and a gap follows each (mirrored in Hebrew). */
 .info-gdd-pairs > .info-gdd-line { flex-shrink: 0; margin-right: 14px; }
@@ -473,12 +485,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the Hebrew face in Hebrew. */
 Button.settings-choice-selected { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 /* The language choice (#1036): "עברית" is in the Hebrew face in the English UI too (EB Garamond has no Hebrew), by id so
-   that it beats the selected button's face above. The note under the row wraps. */
+   that it beats the selected button's face above. */
 #settings-language-he {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
 }
-.settings-note { white-space: normal; margin-top: 4px; }
 
 /* The toast sits in the map's free top-left corner, above the info panel: opaque, and never over an open screen's title or
    the minimap column (B7). */
@@ -950,7 +961,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    panel keeps its 520 px and the GDD part stacks under the hex's facts, clear of the minimap. Last, so they win over the
    rules above at equal specificity. */
 .lang-he .info-gdd { margin-left: 0; padding-left: 0; border-left-width: 0; margin-right: 14px; padding-right: 14px; border-right-width: 1px; }
-.lang-he .info-gdd Button { margin: 2px 0 2px 6px; }
+.lang-he .info-gdd Button, .lang-he .info-projects Button { margin: 2px 0 2px 6px; }
 .lang-he .info-gdd-pairs > .info-gdd-line { margin-right: 0; margin-left: 14px; }
 .hud-two-row .info-panel.info-gdd-shown { width: 520px; flex-wrap: wrap; }
 .hud-two-row .info-gdd { width: 100%; margin: 8px 0 0 0; padding: 8px 0 0 0; border-left-width: 0; border-right-width: 0; border-top-width: 1px; }

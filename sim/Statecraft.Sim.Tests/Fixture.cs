@@ -293,6 +293,11 @@ mvp:
   road_move_cost: 1
   rail_move_cost: 2
   enemy_held_localities: []
+  arms_per_attack: 2
+  combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }
+  combat_table:
+    - { min_ratio_percent: 0, attacker_loss: [1, 1], defender_loss: [1, 1], defender_retreats: [0, 0] }
+    - { min_ratio_percent: 200, attacker_loss: [0, 0], defender_loss: [1, 1], defender_retreats: [1, 1] }
 ";
 
     public static readonly string GddCities = "\ncities:\n" + City("town_a", 12, 8, 10, 6, "[military_camp, hakhshara]");

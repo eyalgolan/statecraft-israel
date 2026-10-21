@@ -150,6 +150,8 @@
                     <ui:Button name="info-defence" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
+                <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
+                <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
                  second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
@@ -368,7 +370,6 @@
                     <ui:Button name="settings-language-he" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
             <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-uiscale-label" text="UI scale" class="settings-name" />

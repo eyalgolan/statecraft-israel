@@ -14,7 +14,7 @@ namespace Statecraft.Sim
         public Placement(string action, int q, int r, DateTime date) { Action = action; Q = q; R = r; Date = date; }
     }
 
-    /// <summary>A map-action refusal's stable UI kind and invariant values, beside the English text used by the CLI.</summary>
+    /// <summary>A map-action or city-project refusal's stable UI kind and invariant values, beside the English text used by the CLI.</summary>
     public sealed class MapActionReason
     {
         public string Kind { get; }

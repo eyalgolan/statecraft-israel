@@ -108,7 +108,7 @@ public class OrdersTests
     // R-ORDER-001: refusals leave the state as it was.
     [Theory]
     [InlineData(9, "fortify", "There is no such unit")]
-    [InlineData(1, "attack", "That order is not known")]
+    [InlineData(1, "advance", "That order is not known")]   // attack is known since #747 (CombatTests)
     [InlineData(5, "hold", "Only a military unit takes that order")]
     [InlineData(3, "hold", "That unit is not yours")]
     [InlineData(2, "hold", "That unit already has that order")]

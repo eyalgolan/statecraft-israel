@@ -66,8 +66,8 @@ Not in the slice:
 
 Normal play draws one token per unit from two inputs: the sim's state and `content/map/units_1948.yaml`.
 - **The state** gives the date, the security level and the reserve call-up (`GameState.Date`, `Rung`, `Mobilization`).
-  Since Phase 5 PR 4 it also holds the starting forces (below); the tokens do not read them yet, they keep reading the
-  file's rows until Phase 5 PR 14 (design: `docs/superpowers/specs/2026-10-11-units-in-play-design.md`).
+  Since Phase 5 PR 4 it also holds the starting forces (below), and since Phase 5 PR 14 the GDD loop's army tokens come
+  from them (below, "Tokens from the state"; design: `docs/superpowers/specs/2026-10-11-units-in-play-design.md`).
 - **The data file** is read by both. The sim reads the rows a new game starts a unit from (`StartingForces`; Q-START-1,
   owner, 15 October 2026), so the file is in the content hash and moves the goldens
   (`StartingForcesTests.TheUnitFileEntersTheContentHash`). The WebGL manifest ships it.
@@ -149,8 +149,8 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
   those rows; the Egyptian, Syrian, Iraqi and Lebanese rows give no token, take no spot and clear no ground for the kits.
   A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
-  bundle draws nothing. Three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May strength; owner,
-  17 October 2026, #226), under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
+  bundle draws nothing. In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
+  strength; owner, 17 October 2026, #226); in the GDD loop, Q-UI-3 by the sim unit's strength ("Tokens from the state"); under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
   window's first day (#226, ruling 9; `control_hexes_1948_49.yaml`). The card leaves out Israel's call-up line. The
   goldens do not move. Tests: `UnitsInPlayTests.OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived`,
   `UnitFiguresTests.TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive`.
@@ -205,6 +205,29 @@ defaults"). The unit stands on the hex holding the anchor's coordinates, by the 
   (Q-START-3). `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` refuse until then, and
   name the rows; today that is all twelve.
 - Tests: `StartingForcesTests` (dotnet) and `UnitsInPlayTests.TheStartMatchesTheMap` (EditMode).
+
+### Tokens from the state (Phase 5 PR 14, #753)
+
+In the GDD loop (`systems.loop: gdd`, the real content) the army tokens come from `GameState.Units`, not from the rows'
+dated windows (`UnitRoster.FromState`; impact plan §2.6). The legacy loop keeps the rows and the call-up until D-E1
+deletes it.
+- **One token per military unit** whose row is on the map, grouped per hex ((q, r) order). Unit i of a new game is the
+  starting force `Content.StartingForces[i]` (R-UNIT-006), and that row gives the card, the flag, the headgear and the
+  vehicles. A halutz, or a unit with no row, draws no token. An Arab force's token still waits for its Collection figure.
+- **The sim hex is authoritative.** A unit on its starting hex stands on its starting anchor's spot (UnitPlacer's one-hex
+  offset still clears the town kits and the roads). A unit that moved stands within one hex of its new hex, off the
+  hexes the other tokens hold; that spot is placed once and cached, so a rebuild places only the units that moved. Its
+  card names no place (no source does) and gives the row's sources.
+- **Figures follow Q-UI-3** (owner, 15 October 2026; #226): 3 at two thirds or more of full strength, 2 at a third or
+  more, 1 below that. Full strength is the sourced strength the unit started with (Q-UNIT-4), so a new game draws three
+  figures on every token whatever the call-up, and losses take figures away. So the card leaves out the call-up: an army
+  token's card has no national line, and the squadron's gives the security level alone ("Security level 5 of 5"), which
+  still sets whether it flies.
+- **The squadron and the ships** are tokens only (Q-UNIT-5): they still come from their rows' windows.
+- So from 15 May 1948 the map draws the twelve starting forces where the sim holds them. A row with no sim unit (Etzioni,
+  which has no sourced strength, and the brigades whose windows open later, such as Yiftach and the 7th) draws no token
+  in the GDD loop until a later Phase 5 PR raises it.
+- Tests: `UnitsFromStateTests` (EditMode).
 
 ### The 1948 Collection on the tokens (#665)
 
@@ -366,7 +389,8 @@ checks every anchor and logs each spot and its distance.
   never clear `wikipedia_only` (#902). The shipped rows carry none yet; the translations in `research_notes/Map/unit-card-hebrew-harel-givati-negev.md` wait for its
   person's source checks. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
   `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `BadHebrewProseNamesTheProblem`), on test-only fixtures.
-- It also gives the national values the token reflects ("Reserve call-up 80% · security level 5 of 5") and the source
+- It also gives the national values the token reflects on Israel's cards (legacy loop: "Reserve call-up 80% · security level
+  5 of 5"; in the GDD loop only the squadron's card has one, "Security level 5 of 5", see above) and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.
 - It has no orders; a button opens the Defence screen.
 

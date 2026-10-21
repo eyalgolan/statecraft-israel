@@ -31,10 +31,14 @@ public class InfoPanelLayoutTests
         (1024, 1024), (960, 1080), (800, 1000), (1531, 784), (2560, 1080), (1920, 900), (1600, 757), (1366, 657), (960, 600), (390, 844),
     };
 
+    /// <summary>Windows where the city's own hex must show its projects behind the toggle (owner ruling on #1150, 21 Oct 2026):
+    /// the stacked bars and the short window whose full list ran into the left column. 1920x1080 keeps the full list.</summary>
+    static readonly (int w, int h)[] CollapsedWindows = { (1024, 1024), (960, 1080), (390, 844), (1366, 657) };
+
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, out of its loading state, with the top bar, an open event
     /// card and the info panel (with the region lines) on the session given.</summary>
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
-                                UiText? text = null, bool hebrew = false)
+                                UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -58,6 +62,8 @@ public class InfoPanelLayoutTests
             act(root, info);
             for (int i = 0; i < 20 && float.IsNaN(root.Q("info-panel").worldBound.width); i++) yield return null;
             for (int i = 0; i < 3; i++) yield return null;   // text measured after the first layout settles
+            // A press on a button the stylesheet shows only once the HUD has its tier (the bar's classes come with the layout).
+            if (settled != null) { settled(root); for (int i = 0; i < 3; i++) yield return null; }
             check(root);
         }
         finally
@@ -133,7 +139,8 @@ public class InfoPanelLayoutTests
     }
 
     /// <summary>GDD Phase 1 PR 8 (#381): the city panel with two training cohorts (a Cancel each) and the
-    /// designated site's panel (two idle halutz groups, so two Build buttons), at every window size in English and Hebrew:
+    /// designated site's panel (two idle halutz groups, so two Build buttons), and a hex one city can build a city project on
+    /// (#1122; the city also with the ma'abarot policy, so every project kind is a button), at every window size in English and Hebrew:
     /// the panel lies in the window, clear of the minimap, the left column and the top bar, and every shown label and
     /// button lies inside the panel with its text fitting its box.</summary>
     [UnityTest]
@@ -142,22 +149,39 @@ public class InfoPanelLayoutTests
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
         var city = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         var site = C.Sites.Single(s => s.Id == "mefalsim");
+        var start = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var lone = C.Hexes.Where(x => x.Land && Projects.CitiesFor(C, start, x.Q, x.R).Count == 1).OrderBy(x => x.Q).ThenBy(x => x.R).First();
         var hula = C.Sites.Single(s => s.Id == "hula");   // #1124: the swamp and its waiting field, the tallest site hex
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
             foreach (var (w, h) in Windows)
-                foreach (var (what, q, r) in new[] { ("city", city.Q, city.R), ("site", site.Q, site.R), ("field", site.Q, site.R), ("hula", hula.Q, hula.R) })
+                foreach (var (what, q, r) in new[] { ("city", city.Q, city.R), ("site", site.Q, site.R), ("projects", lone.Q, lone.R), ("city with the policy", city.Q, city.R),
+                    ("field", site.Q, site.R), ("hula", hula.Q, hula.R) })
                 {
                     var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
                     var s = g.State;
                     for (int k = 0; k < 2; k++) { var id = s.NextId++; s.Cohorts.Add(id, new Cohort(id, k == 0 ? "recruit" : "halutz", "tel_aviv", 12, 4)); }
                     for (int k = 0; k < 2; k++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "halutz", city.Q, city.R)); }
+                    // With the ma'abarot policy every project kind is a Build button: the city's tallest project part (#1122).
+                    if (what == "city with the policy") s.Policies[MapActions.MaabarotPolicy] = 1;
                     if (what == "field") s.Sites[site.Id] = SiteWork.Built(site.Id, s.Date);   // #1124: the yishuv built, its field's Plow
                     var at = $"{(hebrew ? "he" : "en")} {w}x{h} {what}";
                     yield return Rendered(w, h, g, (root, info) => info.Show(q, r), root =>
                     {
                         var panel = root.Q("info-panel"); var window = root.worldBound;
-                        if (root.Q(GddHexPanel.HostName).resolvedStyle.display != DisplayStyle.Flex) { problems.Add($"{at}: precondition: the GDD part shows"); return; }
+                        var host = what == "projects" ? GddHexPanel.ProjectsHostName : GddHexPanel.HostName;
+                        if (root.Q(host).resolvedStyle.display != DisplayStyle.Flex) { problems.Add($"{at}: precondition: {host} shows"); return; }
+                        // Owner ruling on #1150 (21 Oct 2026): on a stacked bar or a short window the city's own hex shows its
+                        // projects collapsed behind one toggle, so the city cases there are the collapsed state; elsewhere the full list.
+                        // The opened list may run past the panel there: the ruling accepts it (TheCityProjectsToggleOpensAndCloses...).
+                        if (what.StartsWith("city"))
+                        {
+                            var collapsed = root.Q("root").ClassListContains(HudPresenter.TwoRowClass) || panel.ClassListContains(InfoPanelPresenter.ShortClass);
+                            if (collapsed ? (w, h) == (1920, 1080) : CollapsedWindows.Contains((w, h))) problems.Add($"{at}: the city projects collapse: {collapsed}, expected {!collapsed}");
+                            var toggle = root.Q(GddHexPanel.ToggleName); var list = root.Q(GddHexPanel.ListName);
+                            if (toggle == null || list == null) problems.Add($"{at}: precondition: the city's projects have a toggle and a list");
+                            else if (Shown(toggle) != collapsed || Shown(list) == collapsed) problems.Add($"{at}: toggle shown {Shown(toggle)}, list shown {Shown(list)}, collapsed {collapsed}");
+                        }
                         if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
                         foreach (var other in new[] { "minimap", "left-column", "top-bar" })
                             if (panel.worldBound.Overlaps(root.Q(other).worldBound)) problems.Add($"{at}: the panel {panel.worldBound} overlaps the {other} {root.Q(other).worldBound}");
@@ -169,6 +193,46 @@ public class InfoPanelLayoutTests
                     }, hebrew ? he : Text, hebrew);
                 }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Owner ruling on #1150 (21 Oct 2026): on a stacked bar (1024x1024) the city's own hex shows "City projects (N)", N
+    /// the kinds listed, and the list behind it; a tap opens it and another closes it. A hex only one city reaches keeps the full
+    /// list there, and the city's own hex keeps it on a tall one-row window (1920x1080). English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator TheCityProjectsToggleOpensAndClosesTheListOnAStackedBar()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var city = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var lone = C.Hexes.Where(x => x.Land && Projects.CitiesFor(C, g.State, x.Q, x.R).Count == 1).OrderBy(x => x.Q).ThenBy(x => x.R).First();
+        foreach (var hebrew in new[] { false, true })
+        {
+            var t = hebrew ? he : Text;
+            for (int presses = 0; presses < 3; presses++)
+            {
+                var n = presses;
+                yield return Rendered(1024, 1024, g, (root, info) => info.Show(city.Q, city.R), root =>
+                {
+                    var toggle = root.Q<Button>(GddHexPanel.ToggleName);
+                    Assert.IsTrue(Shown(toggle), $"{hebrew} {n}: the toggle shows");
+                    Assert.AreEqual(t.Format("city.projects_toggle", C.ProjectKinds.Count), toggle.text);
+                    Assert.AreEqual(n == 1, Shown(root.Q(GddHexPanel.ListName)), $"{hebrew}: the list after {n} presses");
+                }, t, hebrew, root =>
+                {
+                    // The turn's decision card opens over the map and disables the panel under it: hidden first, as a player would.
+                    UiTestKit.Press(root.Q<Button>("event-hide"));
+                    Assert.IsTrue(root.Q("info-panel").enabledInHierarchy, "precondition: the panel takes the press");
+                    for (int i = 0; i < n; i++) UiTestKit.Press(root.Q<Button>(GddHexPanel.ToggleName));
+                });
+            }
+            foreach (var (w, h, q, r) in new[] { (1024, 1024, lone.Q, lone.R), (1920, 1080, city.Q, city.R) })
+                yield return Rendered(w, h, g, (root, info) => info.Show(q, r), root =>
+                {
+                    var toggle = root.Q(GddHexPanel.ToggleName);
+                    Assert.IsTrue(toggle == null || !Shown(toggle), $"{hebrew} {w}x{h} ({q}, {r}): no toggle");
+                    Assert.IsTrue(root.Q(GddHexPanel.ProjectsHostName).Query<Button>().ToList().Any(b => b.name != GddHexPanel.ToggleName && Shown(b)), $"{hebrew} {w}x{h} ({q}, {r}): the Build buttons show");
+                }, t, hebrew);
+        }
     }
 
     /// <summary>The empty hint stays inside the window and clear of the minimap in both languages: one line on desktop,

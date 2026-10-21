@@ -79,12 +79,15 @@ public class HexPrototypeTests
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             var name = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (name.EndsWith(HexBoardOverrides.Suffix)) continue;   // a board's hand edits, applied (and so checked) by LoadBoard
             var board = HexBoardCapture.LoadBoard(name);
             foreach (var h in board.Hexes.Values)
             {
                 Assert.That(new[] { "flat", "hills", "mountain", "water" }, Does.Contain(h.terrain), $"{name} ({h.q},{h.r})");
                 Assert.That(HexGround.Ids, Does.Contain(h.ground), $"{name} ({h.q},{h.r})");
                 if (h.prototype != "") Assert.That(HexPrototypes.All.ContainsKey(h.prototype), $"{name} ({h.q},{h.r}): no prototype '{h.prototype}'");
+                if (h.unit != "") Assert.That(HexUnitTypes.All.ContainsKey(h.unit), $"{name} ({h.q},{h.r}): no unit '{h.unit}'");
+                if (h.region != "") Assert.That(board.Regions.ContainsKey(h.region), $"{name} ({h.q},{h.r}): no region '{h.region}'");
             }
         }
     }

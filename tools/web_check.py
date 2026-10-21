@@ -8,7 +8,7 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 --enable-logging=stderr --v=1 as INFO:CONSOLE... "text", source: ...
 
 Usage (from the repo root):
-  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 259133fc83a95471547be0cb1a317bae55c8324778864733b88957d7529c8585" --expect "GOLDEN OK hash1952 72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 73eb50db39dbc9ee569c18a5e0a68e55a2b88980d06da76e5f5bfffe22997675" --expect "GOLDEN OK hash1952 b389b2786ac6b7c4c5bd3662cb7e96868d351a585e866a8660191c3db8ffff4a"
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
@@ -17,7 +17,8 @@ Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --
 immediately; both reloads must report the saved date, turn and hash), --startscreen new|recording (#908: on a fresh
 profile, the real start screen every player sees first: "new" presses New game, "recording" first presses Play the
 recording and waits for RECORDING playing; then End turn must log TURN 1; any console Exception, RECORDING failed or
-BOOT FAIL fails the run; add --query lang=he for the Hebrew layout).
+BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
+buttons where its "start buttons" line says they are (StartButtons).
 The page is opened over the DevTools protocol with its viewport fixed to 1920x1080 at the DPR before it loads
 (Emulation.setDeviceMetricsOverride: --window-size alone gives a 1920x937 viewport in --headless=new), and the run
 fails on any "res=" line, or any screenshot, of another size. --viewport WxH checks another window - 390x844 is the
@@ -373,24 +374,75 @@ def drain(inbox: queue.Queue) -> list:
             return batch
 
 
-# Button centres in CSS pixels of the fixed 1920x1080 viewport, measured on headless captures of this branch's WebGL
-# build: the start screen's New game (alone, a fresh profile) and Continue (beside New game, a saved game), and the top
-# bar's End turn (clickable while the first event card is open). Keys do not work here: Enter sent over CDP before any
-# click reaches no Unity button, and after New game the first event card, not End turn, takes the focus.
-NEW_GAME, CONTINUE, END_TURN = (960, 1002), (840, 1002), (1840, 45)
-# The same buttons in the Hebrew layout (?lang=he), measured the same way: the top bar is mirrored, so End turn is at the
-# left, and Play the recording sits left of its credit line. Play the recording in the English layout too.
-PLAY_RECORDING, PLAY_RECORDING_HE, END_TURN_HE = (812, 940), (851, 940), (80, 45)
+# The top bar's End turn (clickable while the first event card is open) in CSS pixels of the fixed 1920x1080 viewport,
+# measured on headless captures, and in the Hebrew layout (?lang=he: the top bar is mirrored, so End turn is at the left).
+# Keys do not work here: Enter sent over CDP before any click reaches no Unity button, and after New game the first event
+# card, not End turn, takes the focus.
+END_TURN, END_TURN_HE = (1840, 45), (80, 45)
+# The start screen's buttons are not measured: their row changes as buttons are added (#1178's Star on GitHub moved New
+# game off the viewport's centre), so the game says where they are. Under ?navlog, StartScreenPresenter.ButtonCentres logs
+# each shown button's centre as a fraction of the window, again whenever the layout moves it:
+#   NAV f=4 t=4094 start buttons start-new-game=0.4167,0.9278 start-star=0.5833,0.9278 start-listen=0.4229,0.8704
+NEW_GAME, CONTINUE, PLAY_RECORDING = "start-new-game", "start-continue", "start-listen"
+START_BUTTONS = re.compile(r"^NAV f=\d+ t=\d+ start buttons (.+)$")
+START_BUTTON = re.compile(r"(\S+)=(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)")
+NAVLOG = "navlog"
 GAME_STATE = re.compile(r"^GAME OK (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
 TURN_STATE = re.compile(r"^TURN (\d+) (\d{4}-\d{2}-\d{2}) hash ([0-9a-f]+)$")
 
 
+class StartButtons:
+    """Where the start screen's buttons are: the latest "start buttons" line (START_BUTTONS), fed from the stderr reader
+    thread, so a click uses the layout logged while its driver was waiting. `point` maps a button's centre onto the
+    viewport in CSS pixels, waiting up to `wait` seconds for it, and fails at once (not a stall) when it never comes."""
+
+    def __init__(self, viewport: tuple[int, int], wait: float = 10.0, clock=time.monotonic, sleep=time.sleep):
+        self.viewport, self.wait, self.clock, self.sleep = viewport, wait, clock, sleep
+        self.lock, self.centres = threading.Lock(), {}
+
+    def feed(self, text: str) -> None:
+        m = START_BUTTONS.match(text)
+        if m:
+            centres = {name: (float(x), float(y)) for name, x, y in START_BUTTON.findall(m.group(1))}
+            with self.lock:
+                self.centres = centres
+
+    def clear(self) -> None:
+        """Forgets the layout: before a reload, so the new page's line is waited for."""
+        with self.lock:
+            self.centres = {}
+
+    def point(self, name: str) -> tuple[int, int]:
+        deadline = self.clock() + self.wait
+        while True:
+            with self.lock:
+                centre, known = self.centres.get(name), sorted(self.centres)
+            if centre is not None:
+                break
+            if self.clock() >= deadline:
+                raise ValueError(f"START SCREEN FAIL no centre for {name} within {self.wait:.0f} s (logged: "
+                                 f"{', '.join(known) or 'no start buttons line'}; the page needs ?{NAVLOG})")
+            self.sleep(0.1)
+        fx, fy = centre
+        if not (0 < fx < 1 and 0 < fy < 1):
+            raise ValueError(f"START SCREEN FAIL {name} is outside the window: centre at {fx:g}, {fy:g} of it")
+        return round(fx * self.viewport[0]), round(fy * self.viewport[1])
+
+
+def click_button(action, buttons: StartButtons, name: str) -> None:
+    """A left click on a start-screen button where the game says it is; printed, so a stalled run shows where it clicked."""
+    x, y = buttons.point(name)
+    print(f"click {name} at ({x}, {y})")
+    action(f"click:{x},{y}")
+
+
 class PersistenceCheck:
     """Drives and checks the two reloads of issue #910. `action` is Page.command (injected, so the unit tests need no
-    browser); a reload keeps the page's profile and origin, so its IndexedDB autosave."""
+    browser); a reload keeps the page's profile and origin, so its IndexedDB autosave. `buttons` says where the start
+    screen's buttons are."""
 
-    def __init__(self, action, settle=time.sleep):
-        self.action, self.settle = action, settle
+    def __init__(self, action, buttons: StartButtons, settle=time.sleep):
+        self.action, self.buttons, self.settle = action, buttons, settle
         self.stage, self.saved, self.done = "first_boot", None, False
 
     def feed(self, text: str) -> None:
@@ -412,6 +464,7 @@ class PersistenceCheck:
             self._turn(state, 1, "first End turn after New game")
             self.saved = state
             self.settle(2)                       # ordinary reload: give IDBFS autosync time to settle
+            self.buttons.clear()
             self.action("reload")
             self.stage = "settled_reload"
         elif self.stage == "settled_reload" and kind == "GAME":
@@ -427,6 +480,7 @@ class PersistenceCheck:
             # button would otherwise pass).
             self._turn(state, self.saved[1] + 1, "End turn after Continue")
             self.saved = state
+            self.buttons.clear()
             self.action("reload")                # deliberately no settling delay after the TURN acknowledgement
             self.stage = "immediate_reload"
         elif self.stage == "immediate_reload" and kind == "GAME":
@@ -434,8 +488,11 @@ class PersistenceCheck:
             print(f"PERSISTENCE immediate reload OK {state[0]} turn {state[1]} hash {state[2]}")
             self.done = True
 
-    def click(self, point: tuple[int, int]) -> None:
-        self.action(f"click:{point[0]},{point[1]}")
+    def click(self, target: str | tuple[int, int]) -> None:
+        if isinstance(target, str):
+            click_button(self.action, self.buttons, target)
+        else:
+            self.action(f"click:{target[0]},{target[1]}")
 
     @staticmethod
     def _turn(state, expected: int, what: str) -> None:
@@ -457,11 +514,12 @@ def query_value(query: str, key: str) -> str | None:
 
 class StartScreenCheck:
     """Issue #908: the start screen of a fresh profile, as a player meets it (no automation flag skips it). New game
-    (after Play the recording when `recording`) and End turn must reach the map's first turn. `action` is Page.command."""
+    (after Play the recording when `recording`) and End turn must reach the map's first turn. `action` is Page.command;
+    `buttons` says where the start screen's buttons are."""
 
-    def __init__(self, action, recording: bool, hebrew: bool, settle=time.sleep):
-        self.action, self.recording, self.settle = action, recording, settle
-        self.play, self.end_turn = (PLAY_RECORDING_HE, END_TURN_HE) if hebrew else (PLAY_RECORDING, END_TURN)
+    def __init__(self, action, recording: bool, hebrew: bool, buttons: StartButtons, settle=time.sleep):
+        self.action, self.recording, self.buttons, self.settle = action, recording, buttons, settle
+        self.end_turn = END_TURN_HE if hebrew else END_TURN
         self.stage, self.done = "boot", False
 
     def feed(self, text: str) -> None:
@@ -471,7 +529,7 @@ class StartScreenCheck:
                 raise ValueError(f"START SCREEN FAIL the first boot is turn {game.group(2)}, not a fresh game")
             self.settle(3)                       # the start screen lays out and takes input
             if self.recording:
-                self.click(self.play)
+                self.click(PLAY_RECORDING)
                 self.stage = "recording"
             else:
                 self.new_game()
@@ -491,8 +549,11 @@ class StartScreenCheck:
         self.click(self.end_turn)
         self.stage = "turn"
 
-    def click(self, point: tuple[int, int]) -> None:
-        self.action(f"click:{point[0]},{point[1]}")
+    def click(self, target: str | tuple[int, int]) -> None:
+        if isinstance(target, str):
+            click_button(self.action, self.buttons, target)
+        else:
+            self.action(f"click:{target[0]},{target[1]}")
 
 
 def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=time.sleep, on_text=None, stall=0,
@@ -557,16 +618,24 @@ START_SCREEN_FAILS = r"BOOT FAIL|Exception|RECORDING failed"
 DRIVER_GRACE = 3.0
 
 
-def run_plan(a, command):
+def page_query(a) -> str:
+    """The page's query: --query, plus ?navlog for the runs that click the start screen (StartButtons). navlog only logs:
+    it skips nothing, so the start screen is still the one a player meets."""
+    if not (a.startscreen or a.persistence) or query_value(a.query, NAVLOG) is not None:
+        return a.query
+    return f"{a.query}&{NAVLOG}" if a.query else NAVLOG
+
+
+def run_plan(a, command, buttons: StartButtons):
     """What a run drives and fails on: (driver or None, the failure regex, watch's keyword arguments). `command` is
-    Page.command."""
+    Page.command; `buttons` is fed the console by the caller."""
     if a.persistence and a.startscreen:
         raise ValueError("--persistence and --startscreen are separate runs")
     if a.startscreen:
-        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he")
+        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons)
         fail, what = f"(?:{a.fail})|{START_SCREEN_FAILS}", f"the end of the --startscreen {a.startscreen} run"
     elif a.persistence:
-        driver, fail, what = PersistenceCheck(command), a.fail, "the end of the --persistence run"
+        driver, fail, what = PersistenceCheck(command, buttons), a.fail, "the end of the --persistence run"
     else:
         return None, re.compile(a.fail), {}
     return driver, re.compile(fail), {"complete": lambda: driver.done, "complete_what": what, "grace": DRIVER_GRACE}
@@ -602,6 +671,7 @@ def main() -> int:
         sys.exit(str(e))
     res = expected_res(w, h, a.dpr)
     shots = ShotCollector(a.shots, size=(round(w * a.dpr), round(h * a.dpr)))
+    buttons = StartButtons((w, h))
 
     def on_text(text: str) -> bool:
         err = res_error(text, res)
@@ -611,7 +681,8 @@ def main() -> int:
     try:
         chrome = find_chrome()
         server = serve(a.build)
-        url = f"http://localhost:{server.server_address[1]}/index.html" + (f"?{a.query}" if a.query else "")
+        query = page_query(a)
+        url = f"http://localhost:{server.server_address[1]}/index.html" + (f"?{query}" if query else "")
         proc = subprocess.Popen([str(chrome), *chrome_flags(profile, a.swiftshader, a.dpr), "about:blank"],
                                 stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True, errors="replace")
         inbox: queue.Queue = queue.Queue()
@@ -620,6 +691,9 @@ def main() -> int:
         def read():
             for raw in iter(proc.stderr.readline, ""):
                 for line in rejoin.feed(raw):
+                    console = CONSOLE.search(line)
+                    if console:
+                        buttons.feed(console.group(1))     # here, not in watch: a driver waiting in settle() sees it
                     inbox.put(line)
             for line in rejoin.flush():
                 inbox.put(line)
@@ -629,7 +703,7 @@ def main() -> int:
             page = Page(profile, url, w, h, a.dpr, a.mobile)
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g}{' mobile' if a.mobile else ''} (expect res={res})")
-            driver, fail, plan = run_plan(a, page.command)
+            driver, fail, plan = run_plan(a, page.command, buttons)
 
             def handle_text(text: str) -> bool:
                 consumed = on_text(text)

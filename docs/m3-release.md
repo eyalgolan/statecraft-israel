@@ -62,7 +62,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   ```
   uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-gzip')).serve_forever()"
   ```
-  The uncompressed build also works with `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`.
+  The uncompressed build also works with `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`.
 - **Console lines a browser check can rely on:**
   - `GAME OK <date> turn <n> hash <state hash>` at start (a new game, or the autosave continued).
   - `TURN <n> <date> hash <state hash>` after every End Turn.

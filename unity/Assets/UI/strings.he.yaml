@@ -60,10 +60,6 @@ how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לרא�
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
-objectives.name.railway: "הנחת מסילה"
-objectives.name.burma_road: "סלילת כביש"
-objectives.name.yishuvim: "הקמת יישוב"
-objectives.name.absorb_immigrants: "קליטת העולים"
 # How to play's button that opens the first-turn guide again (#42). For the native reviewer (#564).
 how_to_play.guide: "הצגת המדריך לתור הראשון"
 # The first-turn guide (#42): agent-drafted Hebrew, the How to play screen's terms (#1041) and the city panel's (city.*).
@@ -99,10 +95,9 @@ settings.sound: "צליל"
 settings.sound.off: "כבוי"
 settings.sound.low: "חלש"
 settings.sound.high: "חזק"
-# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). The note
-# says that the event cards are not translated yet (#55). For the native reviewer (#564).
+# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
+# native reviewer (#564).
 settings.language: "שפה"
-settings.language.note: "כרטיסי האירועים באנגלית בלבד בינתיים."
 # The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
 # reviewer (#564).
 settings.uiscale: "גודל הממשק"
@@ -422,6 +417,8 @@ unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
 unit.flying: "{0}, בטיסה מעל הבסיס"
 unit.parked: "{0}, על הקרקע בבסיס"
 unit.national: "גיוס מילואים {0} · רמת ביטחון {1} מתוך 5"
+# The squadron card's footer in the GDD loop: the security level alone (#753). For the native reviewer (#564).
+unit.security: "רמת ביטחון {0} מתוך 5"
 unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
@@ -466,6 +463,19 @@ city.groups: "{0} קבוצות"
 city.turns_one: "תור אחד"
 city.turns: "{0} תורות"
 city.cancel_ordered: "הביטול הוזמן"
+# City projects on the chosen hex (#1122). The kind names come from content/projects.yaml name_he, nouns ("מעברה"), so
+# every sentence takes them as nouns; "הקמת" keeps the order line's gender neutral. The resource id in no_resource has no
+# Hebrew name yet (no content kind requires one). For the native reviewer (#564).
+city.project_for: "מיזם עבור {0}"
+city.project_start: "הקמת {0}: {1}, {2}"
+city.project_ordered: "הוזמנה הקמת {0}"
+city.project_building: "{0} עבור {1}: עוד {2}"
+city.project_built: "{0} עבור {1}: הבנייה הושלמה ב־{2}"
+city.project_reason.no_resource: "ב־{0} אין {1} עבור {2}"
+city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} פעולות מפה ומיזמים עירוניים בתור אחד"
+# The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
+# number of kinds. For the native reviewer (#564).
+city.projects_toggle: "מיזמי העיר ({0})"
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
 site.build: "הקמת יישוב עם {0}: {1}, {2}"

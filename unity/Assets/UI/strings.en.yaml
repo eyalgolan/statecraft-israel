@@ -65,14 +65,10 @@ how_to_play.end_turn: "End turn carries out your orders and moves to the next mo
 how_to_play.why: "After a turn, open Why? to see each change and its cause."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
-# {1} the historical date (objectives.open: {0}). A name falls back to objectives.yaml's when it has no key here.
+# {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
 objectives.title: "Objectives"
 objectives.done: "Completed on {0}; historically {1}"
 objectives.open: "Not completed yet; historically {0}"
-objectives.name.railway: "Lay the Haifa–Tel Aviv rail link"
-objectives.name.burma_road: "Build the Burma Road corridor"
-objectives.name.yishuvim: "Establish the designated yishuvim"
-objectives.name.absorb_immigrants: "Absorb the immigrants"
 # How to play's button that opens the first-turn guide again (#42).
 how_to_play.guide: "Show the first-turn guide"
 # The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): five steps, each pointing at its part of the HUD
@@ -107,9 +103,8 @@ settings.sound.off: "Off"
 settings.sound.low: "Low"
 settings.sound.high: "High"
 # The language choice (#1036). The two languages are named on their buttons in themselves ("English", "עברית"), set in
-# SettingsPresenter, not here. The note says what is not translated yet (#55).
+# SettingsPresenter, not here.
 settings.language: "Language"
-settings.language.note: "Event cards are English only for now."
 settings.uiscale: "UI scale"
 # The Community row and the start screen's button (#1168): it opens the repository in a new tab (ExternalLink).
 settings.community: "Community"
@@ -405,6 +400,7 @@ unit.aircraft.spitfire: "Supermarine Spitfire LF Mk IXe"
 unit.flying: "{0}, flying over the base"
 unit.parked: "{0}, on the ground at the base"
 unit.national: "Reserve call-up {0} · security level {1} of 5"
+unit.security: "Security level {0} of 5"
 unit.sources: "Sources: {0}"
 unit.draft_wikipedia: "Draft: from Wikipedia only, not yet checked against a published history"
 unit.draft: "Draft: not yet checked by a historian"
@@ -442,6 +438,18 @@ city.groups: "{0} groups"
 city.turns_one: "1 turn"
 city.turns: "{0} turns"
 city.cancel_ordered: "Cancel ordered"
+# City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
+# turns from content), the order, and a project under way or finished. Refusals the map actions share use their
+# info.map_action_reason.* strings; these are the city projects' own.
+city.project_for: "Project for {0}"
+city.project_start: "Build {0}: {1}, {2}"
+city.project_ordered: "Ordered: {0}"
+city.project_building: "{0} for {1}: {2} left"
+city.project_built: "{0} for {1}, finished on {2}"
+city.project_reason.no_resource: "{0} has no {1} for {2}"
+city.project_reason.turn_cap: "No more than {0} map actions and city projects in one turn"
+# The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
+city.projects_toggle: "City projects ({0})"
 site.available: "A designated site for a new yishuv"
 site.group: "halutz group {0}"
 site.build: "Build a yishuv with {0}: {1}, {2}"

@@ -10,14 +10,15 @@ namespace Statecraft.Game.UI
     /// <summary>The info panel's text for a selected unit (read only; no orders: the panel links to the Defence screen):
     /// its name, number and service; where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
-    /// source's words; on Israel's units, the national values its token reflects (the reserve call-up sets its figures, the
-    /// security level whether its aircraft fly); and its sources, with a draft note that says "Wikipedia only" when the
-    /// position's own sources are (review M8).</summary>
+    /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an
+    /// army token's figures, the security level whether the aircraft fly; GDD loop: the unit's strength sets the figures,
+    /// Q-UI-3, so only the squadron's card keeps a line, the security level); and its sources, with a draft note that says
+    /// "Wikipedia only" when the position's own sources are (review M8).</summary>
     public sealed class UnitCard
     {
         public string Title = "", Subtitle = "", Body = "", Footer = "", Note = "";
 
-        public static UnitCard For(PlacedToken placed, GameState state, UiText text)
+        public static UnitCard For(PlacedToken placed, GameState state, UiText text, bool gddLoop = false)
         {
             var t = placed.Token; var u = t.Unit; var a = t.Anchor;
             bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
@@ -29,22 +30,30 @@ namespace Statecraft.Game.UI
                 var aircraft = text[t.ArtType == UnitShowcase.SpitfireType ? "unit.aircraft.spitfire" : "unit.aircraft.s199"];
                 lines.Add(text.Format(t.Flying ? "unit.flying" : "unit.parked", aircraft));
             }
-            var place = Local(a.Place, a.PlaceHe);
-            lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, a.Since!));
+            // A unit that moved in play (GDD loop) stands on a hex no source names: no position line, and the row's sources.
+            bool sourced = a.Place != "";
+            if (sourced)
+            {
+                var place = Local(a.Place, a.PlaceHe);
+                lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, a.Since!));
+            }
             if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", u.Formed!));
             // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
             if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
             lines.Add(Local(u.Sector, u.SectorHe));
+            // Israel's call-up and security level set only Israel's tokens; an Arab force's token reflects neither (#665).
+            var national = u.Side != UnitData.Israel ? ""
+                : !gddLoop ? text.Format("unit.national", PlayerText.Percent(state.Mobilization), state.Rung)
+                : u.Service == UnitData.Air ? text.Format("unit.security", state.Rung) : "";
             var hosts = u.AllSources().Select(s => new Uri(s.Url).Host).Distinct(StringComparer.Ordinal).OrderBy(h => h, StringComparer.Ordinal);
             return new UnitCard
             {
                 Title = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(u.NameHe) ? u.NameHe : u.Name,
                 Subtitle = text.Format("unit.subtitle", u.Number, text["unit.service." + u.Service]),
                 Body = string.Join("\n", lines),
-                // Israel's call-up and security level set only Israel's tokens; an Arab force's token reflects neither (#665).
-                Footer = (u.Side == UnitData.Israel ? text.Format("unit.national", PlayerText.Percent(state.Mobilization), state.Rung) + "\n" : "")
+                Footer = (national == "" ? "" : national + "\n")
                     + text.Format("unit.sources", string.Join(", ", hosts)),
-                Note = UnitData.IsWikipediaOnly(a.Sources) ? text["unit.draft_wikipedia"] : text["unit.draft"],
+                Note = (sourced ? UnitData.IsWikipediaOnly(a.Sources) : UnitData.IsWikipediaOnly(u)) ? text["unit.draft_wikipedia"] : text["unit.draft"],
             };
         }
     }

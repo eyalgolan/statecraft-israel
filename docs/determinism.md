@@ -33,9 +33,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `259133fc83a95471547be0cb1a317bae55c8324778864733b88957d7529c8585` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `73eb50db39dbc9ee569c18a5e0a68e55a2b88980d06da76e5f5bfffe22997675` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `b389b2786ac6b7c4c5bd3662cb7e96868d351a585e866a8660191c3db8ffff4a` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `b389b2786ac6b7c4c5bd3662cb7e96868d351a585e866a8660191c3db8ffff4a` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -332,5 +332,10 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-reckless | `8d644f6e` | same as cautious (was `d7dbcf75`) |
 | GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-mvp-absorb-first | `7d37c0d0` | same as cautious; the longer #738 run now also carries the 12 forces (was `c045ea90`) |
 | GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-mvp-defeat | `7bd5158f` | same as cautious; the defeat is unchanged (was `f3daaa70`) |
+| GDD Phase 5 PR 8: combat (#747) | 1950 | `73eb50db` | The reference player's attack policy (attack a neighbouring enemy hex at 3:2 or better) sends unit 0 (strength 5, 10,9) against the Syrian unit 9 (3, the valley's 10,10) from 15 May 1948. Four engagements, one RNG draw each, 15 May to 15 August 1948: unit 0 ends at strength 3, unit 9 is destroyed and leaves `units[`, and the Arms stock falls from 12 to 8 (1 an attack). The RNG state moves from the seed for the first time in the run, since nothing else in it draws. Nothing else in the snapshot moves; the scenarios and smoke5 give no attack and are unchanged (was `259133fc`) |
+| GDD Phase 5 PR 8: combat (#747) | 1952 | `d9922fc9` | same (was `452c65ec`) |
+| GDD Phase 5 PR 8: combat (#747) | mvp-end | `d9922fc9` | same as 1952 (was `452c65ec`) |
 | Combined #1186 + #791 (C20) | 1952 | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` | Keeps all 12 starting forces and their shifted ids from #1186, plus the three-part infrastructure objective from #791. Relative to main, only the objective record moves from `first_new_yishuv=1951-02-15` to `yishuvim=1951-07-15` and the separate 100-point base is no longer paid; neither corridor completes. All other snapshot lines, hash1950, smoke5 and scenario goldens are unchanged (was `452c65ece470e844f6898151c4d9328aa0b2e59df82db4763214d43a8e8ea7f1`). |
 | Combined #1186 + #791 (C20) | mvp-end | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` | The same full run and combined #1186 + #791 state as hash1952 (was `452c65ece470e844f6898151c4d9328aa0b2e59df82db4763214d43a8e8ea7f1`). |
+| GDD Phase 4 PR 7 (#791) on combat (#747) | 1952 | `b389b278` | #1226 merged with main after combat (#747). As in the rows above, the first-new-yishuv objective becomes the all-six `yishuvim` infrastructure part, recorded 15 July 1951 instead of 15 February 1951, and neither corridor completes, so the shared 100-point base is unpaid and the snapshot's `score=100` line goes (a zero score is not written). Only those two `obj{`/score lines move; hash1950, smoke5 and the four scenario goldens equal main (was `d9922fc9`) |
+| GDD Phase 4 PR 7 (#791) on combat (#747) | mvp-end | `b389b278` | same as 1952 (was `d9922fc9`) |

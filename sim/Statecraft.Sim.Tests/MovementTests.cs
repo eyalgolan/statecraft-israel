@@ -22,7 +22,7 @@ public class MovementTests
 
     /// <summary>A 6 x 3 board of coastal plain, q 0 to 5 and r 0 to 2, with <paramref name="biomes"/> replacing hexes (a
     /// "sea" or "lake" one is water). town_a stays on (1, 0) and site_a on (2, 0), as the fixture's other files need.</summary>
-    static string Board(params (int Q, int R, string Biome)[] biomes)
+    internal static string Board(params (int Q, int R, string Biome)[] biomes)
     {
         var rows = new List<string>();
         for (int r = 0; r < 3; r++)

@@ -281,4 +281,92 @@ public class CityProjectsTests
         s.CityProjects.Add(9, new CityProject(9, "industry", "town_a", 2, 0, 1));   // one at a time
         Assert.DoesNotContain(ReferencePlayer.Commands(c, s), x => x is StartProject);
     }
+
+    /// <summary>town_a on (1, 0) and town_b on (1, 1), next to it, both with the fixture's kinds; town_b has vineyards and the
+    /// winery needs them (R-PROJ-005). Fixture values, not the game's.</summary>
+    static Content Neighbours(bool lockIndustry = false) => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+    {
+        ["map/settlement_hexes.yaml"] = "settlements:\n  - { id: town_a, q: 1, r: 0 }\n  - { id: town_b, q: 1, r: 1 }\n",
+        ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"]
+            + "  - { id: town_b, name: Town B, lon: 34.42, lat: 33.28, type: town, founded: 1900, pre_modern: false }\n",
+        ["cities.yaml"] = "cities:\n" + Fixture.City("town_a", 12, 8, 10, 6)
+            + Fixture.City("town_b", 5, 2, 2, 1).Replace("facilities: [] }", Fixture.Vineyards + " }"),
+        ["projects.yaml"] = (lockIndustry ? Fixture.GddProjects.Replace("job_slots: 3 }", "job_slots: 3, locked: true }") : Fixture.GddProjects) + Fixture.Winery,
+    })));
+
+    // #1122 (owner ruling 1): the cities whose settlement hex is within map_action_max_distance of the hex, by CheckCity's own
+    // range check, nearest first and then in ordinal id order; none for a hex out of every city's reach.
+    [Fact]
+    public void CitiesForListsTheCitiesInReachNearestFirst()
+    {
+        var c = Neighbours();
+        var s = New(c);
+        Assert.Equal(new[] { "town_a" }, Projects.CitiesFor(c, s, 0, 0));
+        Assert.Equal(new[] { "town_a", "town_b" }, Projects.CitiesFor(c, s, 1, 0));   // its own hex first
+        Assert.Equal(new[] { "town_b", "town_a" }, Projects.CitiesFor(c, s, 1, 1));
+        Assert.Equal(new[] { "town_a", "town_b" }, Projects.CitiesFor(c, s, 2, 0));   // a tie: ordinal id order
+        Assert.Empty(Projects.CitiesFor(c, s, 5, 0));
+        var land = new[] { (1, 0), (2, 0), (1, 1), (3, 0) };
+        Assert.All(land, x => Assert.True(c.HexAt(x.Item1, x.Item2)?.Land, "precondition: land, so the validator gets to its distance check"));
+        Assert.Empty(Projects.CitiesFor(c, s, 3, 0));   // so both answers are compared below
+        foreach (var (q, r) in land)
+            foreach (var city in s.Cities.Keys)   // the same answer as the validator's distance refusal, never a second rule
+                Assert.Equal(Projects.CitiesFor(c, s, q, r).Contains(city), Projects.CheckCityReason(c, s, "industry", city, q, r)?.Kind != "too_far");
+    }
+
+    // #1122 (owner ruling 2): every refusal has a stable kind and invariant values for the UI, and the same English text
+    // CheckCity returns.
+    [Theory]
+    [InlineData("unknown kind", "unknown_kind", "")]
+    [InlineData("unknown city", "unknown_city", "")]
+    [InlineData("a locked kind", "locked", "industry")]
+    [InlineData("camp without the policy", "maabarot_policy", "")]
+    [InlineData("no resource", "no_resource", "town_a|vineyards|winery")]
+    [InlineData("sea", "not_land", "")]
+    [InlineData("too far", "too_far", "1|town_a")]
+    [InlineData("a placement there", "occupied", "transit_camp")]
+    [InlineData("a project there", "occupied_project", "housing")]
+    [InlineData("the turn's cap", "turn_cap", "2")]
+    public void EveryRefusalHasAKindAndInvariantValues(string why, string kind, string values)
+    {
+        var c = Neighbours(lockIndustry: why == "a locked kind");
+        var s = New(c);
+        if (why == "a project there") s.CityProjects.Add(s.NextId, new CityProject(s.NextId++, "housing", "town_a", 1, 1, 2));
+        if (why == "a placement there") s.Placements.Add(new Placement(MapActions.TransitCamp, 1, 1, s.Date));
+        if (why == "the turn's cap") { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 2; }
+        var (k, city, q, r) = why switch
+        {
+            "unknown kind" => ("harbour", "town_a", 1, 1),
+            "unknown city" => ("housing", "atlantis", 1, 1),
+            "a locked kind" => ("industry", "town_a", 1, 1),
+            "camp without the policy" => ("transit_camp", "town_a", 1, 1),
+            "no resource" => ("winery", "town_a", 1, 1),
+            "sea" => ("housing", "town_a", 0, 0),
+            "too far" => ("housing", "town_a", 3, 0),
+            _ => ("housing", "town_a", 1, 1),
+        };
+        var reason = Projects.CheckCityReason(c, s, k, city, q, r);
+        Assert.NotNull(reason);
+        Assert.Equal((kind, values), (reason!.Kind, string.Join("|", reason.Values)));
+        Assert.Equal(Projects.CheckCity(c, s, k, city, q, r), reason.Text);
+        Assert.Null(Projects.CheckCityReason(c, New(c), "housing", "town_a", 1, 1));
+    }
+
+    // #1122 (owner ruling 3): a kind may carry a draft Hebrew name pending a native speaker's review (#564); a review flag
+    // other than agent-checked, or one without a name, is refused; a kind without Hebrew still loads.
+    [Fact]
+    public void AKindMayCarryADraftHebrewName()
+    {
+        Content Load(string extra) => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["projects.yaml"] = Fixture.GddProjects + "  - { id: depot, name: a depot, cost: 1, turns: 1, capacity: 0, condition: 0, job_slots: 1" + extra + " }\n",
+        })));
+        var c = Load(", name_he: מחסן, name_he_review: agent-checked");
+        var depot = c.ProjectKinds.Single(x => x.Id == "depot");
+        Assert.Equal(("מחסן", "agent-checked"), (depot.NameHe, depot.NameHeReview));
+        Assert.Equal("", c.ProjectKinds.Single(x => x.Id == "housing").NameHe);
+        Assert.Contains("name_he_review", Assert.Throws<ContentException>(() => Load(", name_he: מחסן, name_he_review: reviewed")).Message);
+        Assert.Contains("name_he_review", Assert.Throws<ContentException>(() => Load(", name_he: מחסן, name_he_review: ''")).Message);   // a blank flag is not "reviewed"
+        Assert.Contains("name_he", Assert.Throws<ContentException>(() => Load(", name_he_review: agent-checked")).Message);
+    }
 }

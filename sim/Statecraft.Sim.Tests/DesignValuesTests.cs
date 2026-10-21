@@ -15,7 +15,7 @@ public class DesignValuesTests
 
     /// <summary>Every design value: file, then the path of its key (a list item by its id). Adding one here and in content is
     /// a balance change for the owner to set or accept in review.</summary>
-    public static readonly (string File, string Key)[] Listed =
+    public static readonly (string File, string Key)[] Listed = new (string File, string Key)[]
     {
         ("rules.yaml", "attention_cost.assign_workers"),
         ("rules.yaml", "attention_cost.train"),
@@ -143,6 +143,15 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.move_cost.desert"),
         ("rules.yaml", "mvp.move_cost.mountains"),
         ("rules.yaml", "mvp.stack_limit"),
+        // Combat (Phase 5 PR 8, #747; Q-COMBAT-1 to Q-COMBAT-4): agent-proposed, accepted by the owner as design values on 20 October 2026 (#747, https://github.com/eyalgolan/statecraft-israel/issues/747#issuecomment-6299184133). The table's cells are
+        // listed by CombatTableCells below.
+        ("rules.yaml", "mvp.arms_per_attack"),
+        ("rules.yaml", "mvp.combat_terrain_percent.coastal_plain"),
+        ("rules.yaml", "mvp.combat_terrain_percent.valley"),
+        ("rules.yaml", "mvp.combat_terrain_percent.lowland"),
+        ("rules.yaml", "mvp.combat_terrain_percent.hills"),
+        ("rules.yaml", "mvp.combat_terrain_percent.desert"),
+        ("rules.yaml", "mvp.combat_terrain_percent.mountains"),
         ("rules.yaml", "mvp.road_move_cost"),   // R-MOVE-007, #745 (Q-MOVE-2): agent-proposed
         ("rules.yaml", "mvp.rail_move_cost"),
         ("unit_types.yaml", "types[veteran_soldier].movement_points"),
@@ -158,7 +167,19 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.arms_start"),
         ("rules.yaml", "mvp.arms_price"),
         ("rules.yaml", "mvp.arms_per_recruit_group"),
-    };
+    }.Concat(CombatTableCells()).ToArray();
+
+    /// <summary>rules.yaml mvp.combat_table, every cell: its five rows (below 1:2, 1:2, 1:1, 2:1, 3:1) with their start ratio
+    /// and, for each of the draw's six faces, the two losses and the retreat (R-COMBAT-002, R-COMBAT-003; #747).</summary>
+    static IEnumerable<(string File, string Key)> CombatTableCells()
+    {
+        for (int row = 0; row < 5; row++)
+        {
+            yield return ("rules.yaml", $"mvp.combat_table[{row}].min_ratio_percent");
+            foreach (var list in new[] { "attacker_loss", "defender_loss", "defender_retreats" })
+                for (int face = 0; face < 6; face++) yield return ("rules.yaml", $"mvp.combat_table[{row}].{list}[{face}]");
+        }
+    }
 
 
     /// <summary>Every number in the GDD files and blocks, as (file, key path, the line it is on). Scope: all of cities.yaml,
@@ -249,6 +270,7 @@ public class DesignValuesTests
         Assert.Equal((0.35, 0.15), (m.HousingStartCondition, m.OverflowConditionLoss));   // Q-START-3, Q-HOUSE-1 (D-D1)
         Assert.Equal((5, 0.5), (m.DelegationLoyaltyFloor, m.DisloyalEffectShare));   // R-EVT-003, #107 (D-H1)
         Assert.Equal((12, 1.0, 1, 1.0), (m.ArmsStart, m.ArmsPrice, m.ArmsPerRecruitGroup, c.Rules.AttentionCost["buy_arms"]));   // #781 (D-G6)
+        Assert.Equal((1, 5, 6), (m.ArmsPerAttack, m.CombatTable.Count, m.CombatTable[0].AttackerLoss.Count));   // #747 (D-G6, D-G3), accepted by the owner 20 Oct 2026
         Assert.Equal(12, c.Cities.Count);
         foreach (var x in c.Cities)   // the listed housing and job values are the ones Cities.Init starts from
             Assert.Equal(((int)x.Housing!.Value, (int)x.Jobs!.Value), (x.HousingCapacity, x.JobSlots));

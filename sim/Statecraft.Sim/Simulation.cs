@@ -175,7 +175,8 @@ namespace Statecraft.Sim
                 case StopWork w:
                     return Projects.Stop(c, s, w.Unit, why);
                 case UnitOrder o:
-                    return Orders.Give(s, o.Unit, o.Order, why);
+                    if (o.Order == Combat.Attack) return Combat.Give(c, s, o.Unit, o.Q, o.R, why);
+                    return o.Q != null || o.R != null ? "That order names no hex" : Orders.Give(s, o.Unit, o.Order, why);
                 case StartProject p:
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);
                 case CancelProject p:
