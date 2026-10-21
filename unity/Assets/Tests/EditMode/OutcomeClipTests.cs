@@ -293,9 +293,9 @@ public class OutcomeClipTests
         var gate = build.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         Assert.IsTrue(gated.Single(r => r.File == "operation_horev-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-14");
         Assert.IsTrue(gated.Single(r => r.File == "altalena-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-20 (#1102)");
-        // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
-        StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
-            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }));
+        // Isolate the clip gate from the other content gates (the starting forces' rows); never change the shipped content or shared C.
+        StringAssert.DoesNotContain("illustration clips", (string?)gate.Invoke(null,
+            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }) ?? "");
         var reviewedContent = BuildGateTests.Checked();
         foreach (var e in reviewedContent.Events)
             if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;

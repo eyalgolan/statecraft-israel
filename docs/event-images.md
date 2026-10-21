@@ -37,8 +37,9 @@ pictures may go into `content/`. `EventImageMappingTests.TheMappingIsNotGameCont
 and `SaveGameTests` stay unchanged.
 
 The `burma_road_complete` card (#791) carries the owner-selected Road of Valour frame (Rothenberg 997008137268105171,
-SHA-1 `55b3ea19042035fbd45812ffc6576029b3d171dc`). Its photograph remains `sensitive: true`,
-`sensitivity_reviewed: false` and `owner-verify`; the card stays draft. It blocks shareable builds pending owner review.
+SHA-1 `55b3ea19042035fbd45812ffc6576029b3d171dc`). Its photograph is `sensitive: true`. The owner approved it on
+21 October 2026 (#1226), so it is `sensitivity_reviewed: true` and `verified`; the owner approved the card's text the
+same day, and the card is `sensitivity-reviewed` ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6323448636)).
 
 ## The card
 
@@ -88,8 +89,8 @@ cover this. The decision layer under the top bar bounds the card's height.
 ## Owner steps
 
 - **Sensitivity review.** Seven pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
-  `operation_hiram`, `operation_horev`, `bernadotte_assassination` and `burma_road_complete`. The last remains unreviewed;
-  the historical sign-offs below cover the original six.
+  `operation_hiram`, `operation_horev`, `bernadotte_assassination` and `burma_road_complete`. The sign-offs below cover
+  the original six; the owner approved `burma_road_complete` on 21 October 2026 (#1226, #791).
   - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads

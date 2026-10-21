@@ -124,10 +124,11 @@ public class RealContentTests
         foreach (var g in C.Governments) { Assert.Equal("fact-checked", g.Status); Assert.NotEmpty(g.Sources); }
         foreach (var a in C.Aliyah) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
         foreach (var a in C.PopulationAnchors) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
-        // #791's exact three cards remain drafts until the human source/sensitivity reviews. Other records keep the gate.
-        var objectiveDrafts = new[] { "burma_road_complete", "first_new_yishuv", "railway_complete" };
+        // #791's cards remain drafts until the human source/sensitivity reviews. Other records keep the gate.
+        // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
+        var objectiveDrafts = new[] { "first_new_yishuv", "railway_complete" };
         Assert.Equal(objectiveDrafts, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
-        Assert.Contains("burma_road_complete", ReleaseGate.SensitiveUnreviewed(C));
+        Assert.Empty(ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {
             Assert.Equal(objectiveDrafts.Contains(e.Id) ? "draft"

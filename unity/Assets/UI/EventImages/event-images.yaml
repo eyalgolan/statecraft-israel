@@ -368,8 +368,8 @@ images:
     alt: "The opening of the Road of Valour, December 1948."
     crop: [0.5, 0.5, 1.0]
     sensitive: true
-    sensitivity_reviewed: false
-    note: "Owner-selected original (#791, 18 October 2026); the ceremony also commemorated the fallen. Sensitivity review remains pending. Original SHA-1 and Commons credit/licence verified 21 October 2026; VRTS ticket 2021092910005788."
+    sensitivity_reviewed: true
+    note: "Owner-selected original (#791, 18 October 2026); the ceremony also commemorated the fallen. Owner sign-off, 21 October 2026 (coordinator session): the photograph from #1226 is approved. Original SHA-1 and Commons credit/licence verified 21 October 2026; VRTS ticket 2021092910005788."
   - event: absorb_immigrants
     file: absorb_immigrants.jpg
     commons: "https://commons.wikimedia.org/wiki/File:Haifa_(997008136781905171).jpg"

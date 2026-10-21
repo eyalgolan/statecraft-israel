@@ -67,7 +67,7 @@ public class FinalWaveTests
     {
         // The owner signed off all seven on 2026-10-10 (docs/oss/DECISIONS.md D11), and re-reviewed altalena,
         // bernadotte_assassination, operation_hiram and ten_days after #577 changed them on 2026-10-15 ("Approve all 4", #600).
-        Assert.Equal(new[] { "burma_road_complete" }, ReleaseGate.SensitiveUnreviewed(Real)); // #791 draft: owner review remains required
+        Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real)); // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
             ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nstatus: sensitivity-reviewed\n",

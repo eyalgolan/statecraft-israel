@@ -73,7 +73,7 @@ MonoBehaviour:
       The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
       and cropped"
     sensitive: 1
-    sensitivityReviewed: 0
+    sensitivityReviewed: 1
   - eventId: clothing_rationing_1950
     image: {fileID: 2800000, guid: a2430cb25bd4644c3a6040cf18617c73, type: 3}
     alt: Shops on Nahalat Binyamin Street, Tel Aviv, shut in protest after the government
