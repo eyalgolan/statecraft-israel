@@ -356,3 +356,17 @@ images:
     sensitive: false
     sensitivity_reviewed: false
     note: "The GDD objective card (content/events/first_new_yishuv.yaml; #380). NLI title 'ימיו הראשונים של קיבוץ מפלסים' (the first days of kibbutz Mefalsim), dated June 1949, the founding month (research_notes/GDD objectives/designated-site-1.md). Two unnamed men at work; nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-16."
+  - event: absorb_immigrants
+    file: absorb_immigrants.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Haifa_(997008136781905171).jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/0/06/Haifa_%28997008136781905171%29.jpg"
+    sha1: d36e8aaecf1122c11d7b07d9ab33e96ad187133a
+    original_size: [1281, 1273]
+    licence: CC-BY-4.0
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "New immigrants from Romania come down a ship's gangway at Haifa port, June 1951."
+    crop: [0.5, 0.5, 1.0]
+    sensitive: false
+    sensitivity_reviewed: false
+    note: "The objective card absorb_immigrants (#739; the owner's ruling of 19 October 2026: a generic arrival photograph). NLI title 'עולים מטרנסילבניה רומניה מגיעים באוניה לנמל חיפה' (immigrants from Transylvania, Romania, arrive by ship at Haifa port), description 'עולים חדשים יורדים מכבש הספינה' (new immigrants come down the ship's gangway), taken 25 June 1951; NLI archive ARC. 4* 2068 / 6027. A generic arrival, not the card's own date (the card is December 1949). Unnamed adults on the gangway and men in uniform caps at its foot; no child, nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-21. Waits for the owner's look (ASSETS.yaml status owner-verify)."

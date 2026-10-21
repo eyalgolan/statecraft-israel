@@ -19,11 +19,11 @@ public class EventImageMappingTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static IReadOnlyList<EventImageMapping.Row> Rows => EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
 
-    /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate (absorb_immigrants, an objective card, has no photograph: Q-ABS-3, #1039).</summary>
-    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks", "absorb_immigrants" };
+    /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate.</summary>
+    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks" };
     /// <summary>Photographs whose ASSETS.yaml row waits for the owner's sign-off (#380, "What needs maintainer sign-off"). When the
     /// owner signs one off, its row becomes verified and its name leaves this list.</summary>
-    static readonly string[] AwaitingSignOff = { };   // first_new_yishuv signed off 17 Oct 2026 ("Approve both", #879; #913)
+    static readonly string[] AwaitingSignOff = { "absorb_immigrants" };   // first_new_yishuv signed off 17 Oct 2026 ("Approve both", #879; #913); absorb_immigrants (#739) waits for the owner's look
     static readonly string[] SensitivePhotos =
         { "altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
 
@@ -31,7 +31,7 @@ public class EventImageMappingTests
     public void TheMappingIsSoundAgainstTheContent()
     {
         var rows = Rows;
-        Assert.AreEqual(25, rows.Count);   // first_new_yishuv's photograph came with #380
+        Assert.AreEqual(26, rows.Count);   // first_new_yishuv's photograph came with #380, absorb_immigrants's with #739
         CollectionAssert.IsEmpty(EventImageMapping.Problems(rows, C));
         CollectionAssert.AreEquivalent(C.Events.Select(e => e.Id).Except(Fallback), rows.Select(r => r.Event), "every event but the fallbacks has a picture");
         CollectionAssert.AreEquivalent(SensitivePhotos, rows.Where(r => r.Sensitive).Select(r => r.Event), "the owner's sensitive list");

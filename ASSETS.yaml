@@ -638,6 +638,15 @@ rules:
     adapted: "graded and cropped"
     commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
     note: "Event first_new_yishuv, the GDD objective card (#380). Original 1528x1566, SHA-1 f4d82b8f08f810081145eec13d24ac09f672873f (https://upload.wikimedia.org/wikipedia/commons/e/e3/Mefalsim_%28997009452698205171.jpg); made by tools/event_images.py (crop [0.5, 0.53, 1.0]). Commons VRTS permission ticket 2021092910005788. NLI title 'the first days of kibbutz Mefalsim', June 1949. Licence, artist and credit read through the Commons API on 2026-10-16. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Approve both'."
+  - glob: "unity/Assets/UI/EventImages/absorb_immigrants.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Haifa_(997008136781905171).jpg"
+    status: owner-verify
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
+    note: "Event absorb_immigrants, the objective card (#739; the owner's ruling of 19 October 2026: a generic arrival photograph). Original 1281x1273, SHA-1 d36e8aaecf1122c11d7b07d9ab33e96ad187133a, SHA-256 aabe75a574f61f6af62b7d861f8f55c2845f5ba7443a70b64cc471e79bb9a5a3 (https://upload.wikimedia.org/wikipedia/commons/0/06/Haifa_%28997008136781905171%29.jpg), retrieved 2026-10-21; made by tools/event_images.py (crop [0.5, 0.5, 1.0]). Commons VRTS permission ticket 2021092910005788. NLI 997008136781905171 (archive ARC. 4* 2068 / 6027): immigrants from Transylvania, Romania, arrive by ship at Haifa port; new immigrants come down the ship's gangway; taken 25 June 1951. Licence, artist and credit read through the Commons API on 2026-10-21. Unnamed adults, no child, nothing graphic (AI screen, 2026-10-21); waits for the owner's look before release (owner-verify)."
   - glob: "unity/Assets/UI/EventImages/israel_bonds.jpg"
     licence: Public-Domain
     source: "https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office,_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg"
