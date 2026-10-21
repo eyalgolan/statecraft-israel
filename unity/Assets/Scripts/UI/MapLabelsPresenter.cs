@@ -121,6 +121,7 @@ namespace Statecraft.Game.UI
         readonly MapScene map;
         readonly CameraRig? rig;
         readonly Func<float>? zoomDistance;
+        readonly bool hebrew;
         readonly List<Item> items = new List<Item>();        // in placing (priority) order
         readonly List<Item> settlementOrder = new List<Item>();
         readonly List<VisualElement> occluders = new List<VisualElement>();
@@ -195,6 +196,7 @@ namespace Statecraft.Game.UI
             this.camera = camera;
             this.map = map;
             this.zoomDistance = zoomDistance;
+            this.hebrew = hebrew;
             rig = camera.TryGetComponent(out CameraRig r) ? r : null;
             container.Clear();   // one layer, one owner: the newest presenter (GameRoot makes one per Begin)
             var labels = new List<Label>(); var slots = new List<VisualElement>();
@@ -346,7 +348,8 @@ namespace Statecraft.Game.UI
             {
                 var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
                 slot.AddToClassList(SlotClass);
-                var label = new Label(s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                // #1219: the Hebrew UI shows the site's name_he, as the settlements' pills do.
+                var label = new Label(hebrew && !string.IsNullOrWhiteSpace(s.NameHe) ? s.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass); label.AddToClassList("map-label-" + s.Type); label.AddToClassList(Centre);
                 slot.Add(label);
                 container.Insert(System.Math.Max(0, container.IndexOf(Tooltip)), slot);   // under the tooltip, as the others

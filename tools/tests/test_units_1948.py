@@ -187,9 +187,10 @@ def test_strength_has_one_value_and_a_source():
 # Owner, 20 October 2026, on #743: "the 15 May 1948 IDF brigade strengths may come from secondary sources, since no
 # primary order of battle gives them. Every row cites its source, carries `status: to_verify`, and is replaced when a
 # primary source turns up." The figures are the brigade table of research_notes/M4 war mode/war-1948.md, section 1
-# (#906); the brigades it gives no size for get none.
-IDF_STRENGTH = {'golani': 4500, 'carmeli': 2000, 'alexandroni': 5200, 'kiryati': 1400, 'givati': 5000, 'harel': 1400,
-                'yiftach': 4500, 'negev': 2400}
+# (#906); the brigades it gives no size for get none. Owner, 21 October 2026, #1240: seven of them take Ben-Gurion's
+# diary for 15 May 1948 instead (Golani 3,573 + 522 paid recruits); they stay `to_verify` until a person checks them.
+IDF_STRENGTH = {'golani': 4095, 'carmeli': 2289, 'alexandroni': 3588, 'kiryati': 2504, 'givati': 3229, 'harel': 1300,
+                'yiftach': 4500, 'negev': 1300}
 
 
 def test_idf_brigade_strengths_are_secondary_and_to_verify():

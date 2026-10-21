@@ -26,5 +26,11 @@ namespace Statecraft.Sim
         public static IReadOnlyList<string> AlternateUnsigned(Content c) =>
             c.Events.Where(e => (e.Kind == EventKinds.Consequence || e.Variants.Count > 0) && e.ReviewedBy == "")
                 .Select(e => e.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+        /// <summary>R-UNIT-006, Q-START-3 (owner, 15 October 2026; #743, owner, 20 October 2026): the units_1948.yaml rows a
+        /// new game starts a unit from whose status is not yet fact-checked, in id order. Once the sim reads a row it is game
+        /// state, so a shareable build refuses while this is not empty.</summary>
+        public static IReadOnlyList<string> StartingForcesUnchecked(Content c) =>
+            c.StartingForces.Where(f => f.Status != "fact-checked").Select(f => f.Row).OrderBy(x => x, StringComparer.Ordinal).ToList();
     }
 }

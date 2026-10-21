@@ -7,9 +7,11 @@ Publication update, 18 October 2026: the examples below were audited at 46abd99c
 
 Revision 19 October 2026: targeted implementation and terminology checks at upstream/main 9e571342 address the #970 review. The original snapshot count is dated, not a claim about every subsequent string or its native review.
 
-This guide covers how Hebrew is written and displayed in the game and its surfaces. It builds on the English UI microcopy guide and the glossary. It does not cover event card prose, which exists in English only today (HE-12).
+This guide covers how Hebrew is written and displayed in the game and its surfaces. It builds on the English UI microcopy guide and the glossary. It does not set the prose rules for event cards; those remain in WRITING_GUIDE.md and WRITING_EVENTS.md. Event fields and unit-card names now use Hebrew where supplied, with a per-field English fallback (HE-12).
 
 Revision 21 October 2026: the budget and map-hint quotations and Beri's agreement note were checked against upstream/main 001a59d0 (#1136, #1134). The original snapshot evidence remains dated above.
+
+Revision 21 October 2026, localisation follow-up: event/unit field fallbacks and Cabinet government/legislature names were checked against upstream/main e123971c. Native review status remains separate from implementation.
 
 ## How to use this guide
 
@@ -26,7 +28,7 @@ Rule status legend: **observed** (already the practice), **proposed** (new), **m
 - Each text takes its direction from its own first letter, and a repo test checks it. Older test comments about English dates predate the localized date paths in #687 and #701.
 - The map, top bar, Budget, Why and info panel dates now use localized date.* keys (#687, #701). PlayerText.Date remains English for other callers. Money and untranslated content still need separate review.
 - Since #543 `UiText.Format` puts an invisible left-to-right mark (U+200E) on both sides of each value it inserts into a Hebrew pattern, unless the value already contains Hebrew. An English date, an amount or a minus sign then reads as one run.
-- Event text and unit text are English only. Whether to localise content is open (#55). Since #558 the content files carry sourced Hebrew names for offices (with feminine forms where a woman held the office), parties, governments, legislatures and places. At 9e571342, Unity reads Hebrew names of places; #985 added people, office and party names in Cabinet refusal reasons, and #861 added ContentNames.Of for people, offices, parties, governments and legislature body_he in the Cabinet/Defence paths.
+- Event titles, bodies and option labels now use their Hebrew fields where supplied, with English fallback for each missing field (EventCardPresenter and ContentNames.Fill). UnitCard uses sourced Hebrew unit names and optional place, commander and sector fields where supplied, with English fallback per field. Native review remains pending on #564; displaying Hebrew does not establish approval. Since #558 the content files carry sourced Hebrew names for offices (with feminine forms where a woman held the office), parties, governments, legislatures and places. At 9e571342, Unity reads Hebrew names of places; #985 added people, office and party names in Cabinet refusal reasons, and #861 added ContentNames.Of for people, offices, parties, governments and legislature body_he in the Cabinet/Defence paths.
 
 ## Agent brief
 
@@ -128,8 +130,8 @@ Status: observed in English, proposed for Hebrew. The settings.tiltshift string 
 Check: a pattern search over the strings files.
 
 ### HE-12 Content text (events, units, names)
-Status: maintainer (#55). Event text and unit labels arrive in English today. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. The native reviewer removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564). If content is localised, the same rules apply: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events need review by a native reader and the existing sensitivity review, in addition to the historian review.
-For the maintainer: whether and when content gets Hebrew, and who reviews it.
+Status: implemented localisation, native review pending (#564). In the Hebrew UI, EventCardPresenter uses the Hebrew title, body and option labels where supplied through ContentNames.Fill; each missing field falls back to English. An alternate-timeline variant without Hebrew keeps its English variant text. UnitCard uses a sourced Hebrew unit name and optional Hebrew place, commander and sector text where supplied, otherwise the English value for that field. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. The native reviewer removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564). Localised content keeps the same rules: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events need review by a native reader and the existing sensitivity review, in addition to the historian review.
+For the maintainer: the remaining localisation scope and review ownership; the Hebrew fields and per-field English fallbacks above are already implemented.
 
 ### HE-13 Tone
 Status: proposed, native. The project voice is sober, direct and institutional. Hebrew should match: no slang, no drama, no filler. The government guide's principle of personal but gender-neutral wording (HE-03) applies. No Hebrew-specific tone source has been found beyond that.

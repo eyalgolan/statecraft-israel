@@ -10,6 +10,8 @@ Evidence limits: the original 46abd99c snapshot checker matched 289 cited forms;
 
 Revision 21 October 2026: budget wording and map hints match upstream/main 001a59d0 (#1136, #1134). The native agreement note records the current bodies and its limit; other snapshot evidence retains its original date.
 
+Revision 21 October 2026, localisation follow-up: the Cabinet reads government and legislature Hebrew names through ContentNames.Of (upstream/main e123971c), with English fallback for a missing name.
+
 ## At a glance
 
 | Concept | Status | English | Hebrew | Decision owner |
@@ -411,8 +413,8 @@ Category: politics. Scope: ui, docs, events.
 
 **Recommendation (see status).**
 - English: No change.
-- Hebrew: Use the name the content now carries, sourced to the Knesset's own date table and Hebrew Wikipedia (#558). The reviewer confirms it, and no Hebrew string uses it yet because the UI does not read the body names.
-- Reasons: (1) The Hebrew name is in the content but not in the strings, so a Hebrew screen still shows the English name.
+- Hebrew: Use the sourced name carried in content (#558). The Cabinet now reads legislature BodyHe through ContentNames.Of, showing the Hebrew name in the Hebrew UI where supplied and English otherwise. Keep any outstanding native review on #564 separate from that implementation; displaying a name does not establish its approval.
+- Reasons: (1) CabinetPresenter uses ContentNames.Of for the legislature name; it is no longer an unread content field.
 
 **Decision owner.** Native reviewer; Eyal for #55.
 
@@ -1204,7 +1206,7 @@ Category: politics. Scope: ui, docs, events, code.
 
 **Recommendation (see status).**
 - English: No change to the English; it separates the two words.
-- Hebrew: The Hebrew uses 'ממשלה' for the Cabinet screen, and 'ממשלה' is also the word for a government. Since #558 the content carries sourced Hebrew names for the governments ("הממשלה הזמנית", "ממשלת ישראל הראשונה"), so a period name and the screen label share the word. No UI code reads those names yet. The reviewer decides whether the two senses need a different label when they do.
+- Hebrew: The Hebrew uses 'ממשלה' for the Cabinet screen, and 'ממשלה' is also the word for a government. Since #558 the content carries sourced Hebrew names for the governments ("הממשלה הזמנית", "ממשלת ישראל הראשונה"), so a period name and the screen label share the word. The Cabinet now displays the government name through ContentNames.Of, using NameHe in the Hebrew UI where supplied and English otherwise. The native reviewer decides whether the two senses need distinct labels; implementation does not settle that terminology choice.
 - Reasons: (1) The English separates the two senses and the Hebrew uses one word for both.
 
 **Decision owner.** Native reviewer.

@@ -53,7 +53,7 @@ public class OrdersTests
         var c = Load();
         var s = With(c, Soldier(1, 2, 1));
         var given = s.Clone();
-        Assert.Null(Orders.Give(given, 1, Orders.Fortify, new List<Cause>()));
+        Assert.Null(Orders.Give(c, given, 1, Orders.Fortify, new List<Cause>()));
         Assert.Equal(Orders.Fortifying, given.Units[1].Order);
         Assert.Equal(100, Defence(c, given, 1));   // the turn it is given
 
@@ -108,7 +108,7 @@ public class OrdersTests
     // R-ORDER-001: refusals leave the state as it was.
     [Theory]
     [InlineData(9, "fortify", "There is no such unit")]
-    [InlineData(1, "attack", "That order is not known")]
+    [InlineData(1, "advance", "That order is not known")]   // attack is known since #747 (CombatTests)
     [InlineData(5, "hold", "Only a military unit takes that order")]
     [InlineData(3, "hold", "That unit is not yours")]
     [InlineData(2, "hold", "That unit already has that order")]

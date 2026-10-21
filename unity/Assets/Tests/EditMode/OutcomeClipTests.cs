@@ -22,7 +22,7 @@ using Object = UnityEngine.Object;
 /// skips one; the focus then goes back. A sensitive one waits for the owner's review before a shareable build.</summary>
 public class OutcomeClipTests
 {
-    static readonly Content C = ContentLoader.Load(Paths.Content);
+    static readonly Content C = BuildGateTests.Checked();   // the starting forces' rows fact-checked: these tests are about the clips (R-UNIT-006)
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
     static string Yaml => File.ReadAllText(EventVideoMapping.Path);
@@ -293,9 +293,15 @@ public class OutcomeClipTests
         var gate = build.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         Assert.IsTrue(gated.Single(r => r.File == "operation_horev-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-14");
         Assert.IsTrue(gated.Single(r => r.File == "altalena-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-20 (#1102)");
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }), "reviewed: the clips may ship");
+        // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
+        StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
+            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }));
+        var reviewedContent = BuildGateTests.Checked();
+        foreach (var e in reviewedContent.Events)
+            if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, gated }), "reviewed: the clips may ship");
         var unreviewed = gated.Select(r => { r.SensitivityReviewed = false; return r; }).ToList();
-        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, unreviewed });
+        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, unreviewed });
         StringAssert.Contains("illustration clips: altalena, operation_horev, operation_yoav, ten_days", refusal ?? "");
     }
 }

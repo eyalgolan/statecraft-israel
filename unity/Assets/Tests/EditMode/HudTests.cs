@@ -351,9 +351,12 @@ public class HudTests
             EditorApplication.QueuePlayerLoopUpdate();
             yield return null;
         }
-        Assert.AreEqual(DisplayStyle.None, window.style.display.value, "the safety net hides it when no shrink end comes");
-        Assert.GreaterOrEqual(Time.realtimeSinceStartup - closedAt, ScreenNav.ClosingNetMs / 1000f - 0.05f,
-            "not before ClosingNetMs");
+        // a scale TransitionEndEvent from the panel (EndClosing) or the safety net (ClosingNetMs), whichever comes first:
+        // on a busy machine the panel's end can come well before ClosingNetMs (0.30 s in #1216, 0.06 s in a rerun under
+        // load), so only the end state is asserted, not the elapsed time
+        Assert.AreEqual(DisplayStyle.None, window.style.display.value, "a transition end or the safety net hides it");
+        Assert.IsFalse(window.ClassListContains(ScreenNav.ClosingClass) || window.ClassListContains(ScreenNav.OpeningClass),
+            "it leaves the layout through Hide");
     }
 
     [Test]

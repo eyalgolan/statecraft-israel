@@ -18,6 +18,7 @@ namespace Statecraft.Sim
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
             Pools.Init(c, s);
+            StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
             AttentionSystem.Refill(c, s);
             EventSystem.Trigger(c, s, why);
@@ -174,7 +175,8 @@ namespace Statecraft.Sim
                 case StopWork w:
                     return Projects.Stop(c, s, w.Unit, why);
                 case UnitOrder o:
-                    return Orders.Give(s, o.Unit, o.Order, why);
+                    if (o.Order == Combat.Attack) return Combat.Give(c, s, o.Unit, o.Q, o.R, why);
+                    return o.Q != null || o.R != null ? "That order names no hex" : Orders.Give(c, s, o.Unit, o.Order, why);
                 case StartProject p:
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);
                 case CancelProject p:

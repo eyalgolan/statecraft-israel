@@ -5,7 +5,8 @@
 #   passing 1,000,000: JTA, 20 December 1949.
 # - The count of 1,000,000 announced with the arrival of 663 immigrants from Tripoli, 321,991 newcomers since 15 May 1948,
 #   by the acting director of the Ministry of Immigration: JTA daily bulletin, 22 November 1949.
-# No photograph (Q-ABS-3: none usable found for option (A); a generic arrival photograph needs the owner's approval).
+# Photograph: a generic arrival photograph, by the owner's ruling of 19 October 2026 (#739). The picture and its
+# credit live outside content/ (docs/event-images.md).
 id: absorb_immigrants
 title: One million
 text: 'On 20 December 1949 Israel marked Ingathering of the Exiles Day: its Jewish population had passed one million. A month earlier, with the arrival of 663 immigrants from Tripoli, the Ministry of Immigration had put the Jewish population at 1,000,000, with 321,991 newcomers since 15 May 1948.'

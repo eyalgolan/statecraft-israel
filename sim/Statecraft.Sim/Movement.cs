@@ -18,7 +18,7 @@ namespace Statecraft.Sim
 
         /// <summary>The six axial directions in tools/hexgrid.py's NEIGHBOURS order, the fixed order of hexes.json's layout
         /// (R-MOVE-002).</summary>
-        static readonly (int Q, int R)[] Neighbours = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };
+        internal static readonly (int Q, int R)[] Neighbours = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };
 
         static bool IsEnemy(Unit u) => u.Side != "" && u.Side != PlayerSide;
 
@@ -91,7 +91,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-MOVE-005: the hexes of mvp.enemy_held_localities.</summary>
-        static HashSet<(int Q, int R)> NoEntry(Content c, GameState s)
+        internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s)
         {
             var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
             return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));

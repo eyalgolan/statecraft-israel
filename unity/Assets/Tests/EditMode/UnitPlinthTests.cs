@@ -16,7 +16,9 @@ using UnityEngine;
 /// (docs/units.md, "The plinth and the flag").</summary>
 public class UnitPlinthTests
 {
-    static readonly Content C = ContentLoader.Load(Paths.Content);
+    /// <summary>The legacy loop, whose roster follows the rows' dated windows and the call-up: these tests sweep the war's
+    /// tokens by date (the GDD loop draws the sim's units, UnitsFromStateTests).</summary>
+    static readonly Content C = SimBridgeGddTests.Legacy;
     static string CommittedYaml => File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName));
     static readonly DateTime[] Dates = { new DateTime(1948, 5, 29), new DateTime(1948, 7, 12), new DateTime(1948, 12, 4) };
 

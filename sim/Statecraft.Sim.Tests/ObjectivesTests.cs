@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Sim;
 
-/// <summary>The GDD slice's objectives (Phase 1 PR 6): an objective is recorded once, at the end of the turn its site is built,
-/// and scores once (R-OBJ-001), with the owner's points and timing bonus (R-OBJ-002; D-B6 and D-B2, #456), and its card fires
-/// only once it is recorded, never in the legacy loop (R-OBJ-003). The first objective is the first new yishuv, Mefalsim (#378).</summary>
+/// <summary>The GDD objectives: an objective is recorded once when its condition holds and its card fires once
+/// (R-OBJ-001 to R-OBJ-005). A multipart objective pays its base points once, when its final part completes (R-OBJ-006).</summary>
 public class ObjectivesTests
 {
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
@@ -25,6 +24,61 @@ options:
     text: Continue
     historical: true
 ";
+
+    const string PartsYaml = @"
+objectives:
+  - id: railway
+    part_of: infrastructure
+    name: Railway
+    completes_when: { corridor_complete: rail_a }
+    reference_date: 1949-09-20
+    card: railway_card
+    sources: [{ url: https://example.org/railway, checked: 2026-10-20 }]
+  - id: road
+    part_of: infrastructure
+    name: Road
+    completes_when: { corridor_complete: road_a }
+    reference_date: 1948-12-07
+    card: road_card
+    sources: [{ url: https://example.org/road, checked: 2026-10-20 }]
+  - id: yishuvim
+    part_of: infrastructure
+    name: Yishuvim
+    completes_when: { sites_built: [site_a, site_b] }
+    reference_date: 1950-12-15
+    card: yishuvim_card
+    sources: [{ url: https://example.org/yishuvim, checked: 2026-10-20 }]
+";
+
+    static string PartCard(string id, string objective) => $@"
+id: {id}
+title: Completed
+text: Completed.
+from: 1948-05-15
+to: 1957-01-01
+objective: {objective}
+options:
+  - id: continue
+    text: Continue
+    historical: true
+";
+
+    static Content LoadParts(string objectives = PartsYaml)
+    {
+        var secondSite = Fixture.GddSites.Substring(Fixture.GddSites.IndexOf("  - id:", StringComparison.Ordinal))
+            .Replace("site_a", "site_b").Replace("Site A", "Site B").Replace("q: 2", "q: 3");
+        var files = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["objectives.yaml"] = objectives,
+            ["sites.yaml"] = Fixture.GddSites + secondSite,
+        });
+        return ContentLoader.Load(Fixture.Write(files, new Dictionary<string, string>
+        {
+            ["railway_card.yaml"] = PartCard("railway_card", "railway"),
+            ["road_card.yaml"] = PartCard("road_card", "road"),
+            ["yishuvim_card.yaml"] = PartCard("yishuvim_card", "yishuvim"),
+        }));
+    }
 
     static readonly MvpRules Rules = new MvpRules { ObjectivePoints = 100, ObjectiveBonusPerMonth = 5, ObjectiveBonusCap = 60 };
 
@@ -243,18 +297,26 @@ eras:
         Assert.Equal(g.State.Score, loaded.Score);
     }
 
-    // The real content: the first new yishuv is Mefalsim, and its reference date is the site's founding date (#378).
+    // The real content: objective 3 is three parts. Each names its condition, sourced reference date and card (#791).
     [Fact]
-    public void TheObjectiveIsTheFirstNewYishuvAtMefalsim()
+    public void TheInfrastructureObjectiveHasItsThreeParts()
     {
-        var o = Real.Objectives.Single(x => x.Id == "first_new_yishuv");   // absorb_immigrants is the other (#1039)
-        Assert.Equal(("first_new_yishuv", "mefalsim", "first_new_yishuv"), (o.Id, o.CompletesWhen!.SiteBuilt, o.Card));
-        Assert.Equal(Real.Sites.Single(x => x.Id == "mefalsim").Founded, o.ReferenceDate);
-        Assert.Equal(new DateTime(1949, 6, 12), o.ReferenceDate);
-        var card = Real.Events.Single(e => e.Id == o.Card);
-        Assert.Equal(("first_new_yishuv", "soft"), (card.Objective, card.Anchor));
-        Assert.True(Assert.Single(card.Options).Historical);
-        Assert.Empty(card.Tags);
+        var parts = Real.Objectives.Where(x => x.PartOf == "establish_key_infrastructure").ToList();
+        Assert.Equal(new[] { "burma_road", "railway", "yishuvim" }, parts.Select(x => x.Id));
+        Assert.Equal("burma_road", parts.Single(x => x.Id == "burma_road").CompletesWhen!.CorridorComplete);
+        Assert.Equal("tlv_haifa_rail", parts.Single(x => x.Id == "railway").CompletesWhen!.CorridorComplete);
+        Assert.Equal(new[] { "mefalsim", "beit_kama", "reim", "gilat", "kiryat_shmona", "beit_shemesh" },
+            parts.Single(x => x.Id == "yishuvim").CompletesWhen!.SitesBuilt);
+        Assert.Equal(new DateTime(1948, 12, 7), parts.Single(x => x.Id == "burma_road").ReferenceDate);
+        Assert.Equal(new DateTime(1949, 9, 20), parts.Single(x => x.Id == "railway").ReferenceDate);
+        Assert.Equal(new DateTime(1950, 12, 15), parts.Single(x => x.Id == "yishuvim").ReferenceDate);
+        Assert.All(parts, x => Assert.NotEmpty(x.Sources));
+        Assert.All(parts, x =>
+        {
+            var card = Real.Events.Single(e => e.Id == x.Card);
+            Assert.Equal((x.Id, "soft"), (card.Objective, card.Anchor));
+            Assert.True(Assert.Single(card.Options).Historical);
+        });
     }
 
     // The real content: the absorb objective as #738 decides it (Q-ABS-1's 1,000,000; Q-ABS-2's 10% and 40%), its reference
@@ -270,23 +332,18 @@ eras:
         Assert.Equal("absorb_immigrants", Real.Events.Single(e => e.Id == o.Card).Objective);
     }
 
-    // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 February 1951, after its 12 June 1949
-    // founding, so the first new yishuv scores 100 with no early bonus (D-B2), and its card fires and is answered.
-    // Since GDD Phase 3 PR 1 the cities start with every job filled (Q-START-1), so the player trains its halutz group on the
-    // first turn instead of on 15 August 1948 (ReferencePlayerTests); before, it built on 15 June 1949 and scored 100.
+    // R-OBJ-005, R-OBJ-006 in the golden run: the reference player builds the last required yishuv on 15 July 1951, so
+    // the yishuvim part records and its card fires. Neither corridor finishes in the run, so the objective's base points
+    // have not yet been paid.
     [Fact]
-    public void TheGoldenRunCompletesTheFirstNewYishuvOnTheBuildDate()
+    public void TheGoldenRunCompletesTheYishuvimPartWhenTheLastSiteIsBuilt()
     {
         var s = GoldenRun.Play(Real, GoldenRun.Until1952);
-        var built = s.Sites["mefalsim"].BuiltOn!.Value;
-        // Since Phase 4 PR 1 (#785) the reference player builds the yishuv sites in id order, one after another as its halutzim
-        // come free: Beit Kama and Gilat first. Since Phase 4 PR 6 (#790) its group is a veteran after Beit Kama; with the
-        // Agriculture minister's multiplier (R-MIN-002, #808) a veteran's build is 5 turns (2 x 0.624 = 1.248 a turn, the carry
-        // kept), so Mefalsim is built in February 1951 (March 1950 before the ministers, September 1949 before that) - still
-        // after its 12 June 1949 founding.
-        Assert.Equal(new DateTime(1951, 2, 15), built);
-        Assert.Equal(built, s.Objectives["first_new_yishuv"]);
-        Assert.Equal(100, s.Score);   // D-B6; no D-B2 bonus, as it is built after the reference date
+        var built = Real.Objectives.Single(x => x.Id == "yishuvim").CompletesWhen!.SitesBuilt
+            .Max(id => s.Sites[id].BuiltOn!.Value);
+        Assert.Equal(new DateTime(1951, 7, 15), built);
+        Assert.Equal(built, s.Objectives["yishuvim"]);
+        Assert.Equal(0, s.Score);
         Assert.Equal("continue", s.ChosenOptions["first_new_yishuv"]);
     }
 
@@ -302,15 +359,19 @@ eras:
             {
                 ["first_new_yishuv.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "first_new_yishuv.yaml")),
                 ["absorb_immigrants.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "absorb_immigrants.yaml")),   // objectives.yaml's second card (#1039)
+                ["railway_complete.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "railway_complete.yaml")),
+                ["burma_road_complete.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "burma_road_complete.yaml")),
             }));
         Assert.False(legacy.IsGdd);
-        Assert.Equal(2, legacy.Objectives.Count);
+        Assert.Equal(4, legacy.Objectives.Count);
         var s = Simulation.NewGame(legacy, GoldenRun.Seed, Mode.Historical);
         for (int i = 0; i < 40 && s.GameOver == null; i++)
         {
             s = Step(legacy, s).State;
             Assert.DoesNotContain("first_new_yishuv", s.FiredEvents);
             Assert.DoesNotContain("absorb_immigrants", s.FiredEvents);
+            Assert.DoesNotContain("railway_complete", s.FiredEvents);
+            Assert.DoesNotContain("burma_road_complete", s.FiredEvents);
         }
         Assert.Empty(s.Objectives);
         Assert.Equal(0, s.Score);
@@ -326,6 +387,164 @@ eras:
 
     [Fact]
     public void ContentWithoutObjectivesHasNone() => Assert.Empty(ContentLoader.Load(Fixture.Write()).Objectives);
+
+    // R-OBJ-005: a corridor part is open while even one segment is absent and records on the first end turn after every
+    // segment is built (R-COR-003).
+    [Fact]
+    public void TheRailwayPartCompletesWithItsCorridor()
+    {
+        // road_a has two segments in the fixture, so this also pins the gap mutation without changing the real rail content.
+        var c = LoadParts(PartsYaml.Replace("corridor_complete: rail_a", "corridor_complete: road_a"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Corridors["road_a"] = new CorridorWork("road_a", new SegmentWork?[]
+        {
+            new SegmentWork(null, 3, D("1948-06-15")), null,
+        });
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1948-06-15"), new List<Cause>());
+        Assert.DoesNotContain("railway", s.Objectives.Keys);
+
+        s.Corridors["road_a"] = new CorridorWork("road_a", new SegmentWork?[]
+        {
+            new SegmentWork(null, 3, D("1948-06-15")), new SegmentWork(null, 3, D("1948-06-15")),
+        });
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1948-06-15"), new List<Cause>());
+        Assert.Equal(D("1948-06-15"), s.Objectives["railway"]);
+    }
+
+    // R-OBJ-005: every listed site is required; building a proper subset does not complete the part.
+    [Fact]
+    public void TheYishuvimPartNeedsEveryListedSite()
+    {
+        var c = LoadParts();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Sites["site_a"] = SiteWork.Built("site_a", D("1948-06-15"));
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1948-06-15"), new List<Cause>());
+        Assert.DoesNotContain("yishuvim", s.Objectives.Keys);
+
+        s.Sites["site_b"] = SiteWork.Built("site_b", D("1948-06-15"));
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1948-06-15"), new List<Cause>());
+        Assert.Equal(D("1948-06-15"), s.Objectives["yishuvim"]);
+    }
+
+    // R-OBJ-006: each part adds its timing bonus, but objective_points is added once, with the last part. Rechecking the
+    // completed group changes neither its records nor its score.
+    [Fact]
+    public void ThePointsArePaidOnce()
+    {
+        var c = LoadParts();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var done = D("1948-06-15");
+        s.Corridors["rail_a"] = new CorridorWork("rail_a", new SegmentWork?[] { new SegmentWork(null, 2, done) });
+        s.Corridors["road_a"] = new CorridorWork("road_a", new SegmentWork?[]
+        {
+            new SegmentWork(null, 3, done), new SegmentWork(null, 3, done),
+        });
+        s.Sites["site_a"] = SiteWork.Built("site_a", done);
+        s.Sites["site_b"] = SiteWork.Built("site_b", done);
+
+        Objectives.Complete(c, s, c.Rules.Mvp!, done, new List<Cause>());
+        Assert.Equal(3, s.Objectives.Count);
+        Assert.Equal(250, s.Score);   // base 100 once; bonuses 30 (road), 60 (railway) and 60 (yishuvim)
+        var hash = s.Hash();
+        Objectives.Complete(c, s, c.Rules.Mvp!, done.AddMonths(1), new List<Cause>());
+        Assert.Equal(hash, s.Hash());
+    }
+
+    // R-OBJ-006: completing parts on different turns pays no base early, in every possible completion order.
+    [Theory]
+    [InlineData("railway", "road", "yishuvim")]
+    [InlineData("railway", "yishuvim", "road")]
+    [InlineData("road", "railway", "yishuvim")]
+    [InlineData("road", "yishuvim", "railway")]
+    [InlineData("yishuvim", "railway", "road")]
+    [InlineData("yishuvim", "road", "railway")]
+    public void OnlyTheLastPartPaysTheBaseInAnyOrder(string first, string second, string last)
+    {
+        var c = LoadParts();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+        var ids = new[] { first, second, last };
+        for (int i = 0; i < ids.Length; i++)
+        {
+            var done = D("1951-01-15").AddMonths(i); // late for every part, so no timing bonus
+            Assert.True(Objectives.Record(c, s, c.Rules.Mvp!, ids[i], done, why));
+            Assert.Equal(done, s.Objectives[ids[i]]);
+            Assert.Equal(i == 2 ? 100 : 0, s.Score);
+            var hash = s.Hash();
+            Assert.False(Objectives.Record(c, s, c.Rules.Mvp!, ids[i], done.AddMonths(1), why));
+            Assert.Equal(hash, s.Hash());
+        }
+    }
+
+    // R-OBJ-003, R-OBJ-005: all three newly completed parts make their cards pending that turn, and resolving them keeps
+    // them from firing again.
+    [Fact]
+    public void EachCardFiresOnceTheTurnAfter()
+    {
+        var c = LoadParts();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Corridors["rail_a"] = new CorridorWork("rail_a", new SegmentWork?[] { new SegmentWork(null, 2, s.Date) });
+        s.Corridors["road_a"] = new CorridorWork("road_a", new SegmentWork?[]
+        {
+            new SegmentWork(null, 3, s.Date), new SegmentWork(null, 3, s.Date),
+        });
+        s.Sites["site_a"] = SiteWork.Built("site_a", s.Date);
+        s.Sites["site_b"] = SiteWork.Built("site_b", s.Date);
+
+        var first = Step(c, s);
+        Assert.Equal(new[] { "railway_card", "road_card", "yishuvim_card" }, first.State.PendingEvents.OrderBy(x => x));
+        var resolved = Step(c, first.State,
+            new ChooseEventOption("railway_card", "continue"), new ChooseEventOption("road_card", "continue"),
+            new ChooseEventOption("yishuvim_card", "continue"));
+        Assert.Empty(resolved.State.PendingEvents);
+        var next = Step(c, resolved.State);
+        Assert.Empty(next.State.PendingEvents);
+        Assert.Equal(3, next.State.Objectives.Count);
+    }
+
+    // R-OBJ-005: every part carries a sourced in-window reference date; its condition names content of the right kind.
+    [Theory]
+    [InlineData("    sources: [{ url: https://example.org/railway, checked: 2026-10-20 }]\n", "", "objectives[railway].sources", "needs a source")]
+    [InlineData("    reference_date: 1949-09-20", "    reference_date: 1957-01-01", "objectives[railway].reference_date", "inside the MVP")]
+    [InlineData("corridor_complete: rail_a", "corridor_complete: nowhere", "objectives[railway].completes_when.corridor_complete", "unknown corridor")]
+    [InlineData("sites_built: [site_a, site_b]", "sites_built: [site_a, site_a]", "objectives[yishuvim].completes_when.sites_built[1]", "duplicate site")]
+    public void EveryPartHasASourcedDate(string from, string to, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => LoadParts(PartsYaml.Replace(from, to)));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    // R-OBJ-005: grouping changes the base-score contract, so standalone conditions cannot masquerade as parts.
+    [Theory]
+    [InlineData("site_built: site_a")]
+    [InlineData("absorbed: { population_at_least: 1500, overflow_at_most: 0.10, employed_at_least: 0.40 }")]
+    public void PartsRejectStandaloneConditions(string condition)
+    {
+        var yaml = PartsYaml.Replace("corridor_complete: rail_a", condition)
+            .Replace("reference_date: 1949-09-20", "reference_date: 1949-06-12");
+        var ex = Assert.Throws<ContentException>(() => LoadParts(yaml));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal("objectives[railway].completes_when", ex.Field);
+        Assert.Contains("part_of is set", ex.Message);
+        Assert.Contains("corridor_complete or sites_built", ex.Message);
+    }
+
+    // R-OBJ-001, R-OBJ-004, R-OBJ-005: a missing part_of must not turn a part condition into a standalone base award.
+    [Theory]
+    [InlineData("corridor_complete: rail_a")]
+    [InlineData("sites_built: [site_a, site_b]")]
+    public void StandaloneObjectivesRejectPartConditions(string condition)
+    {
+        var yaml = PartsYaml.Replace("  - id: railway\n    part_of: infrastructure", "  - id: railway")
+            .Replace("corridor_complete: rail_a", condition);
+        var ex = Assert.Throws<ContentException>(() => LoadParts(yaml));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal("objectives[railway].completes_when", ex.Field);
+        Assert.Contains("part_of is not set", ex.Message);
+        Assert.Contains("site_built or absorbed", ex.Message);
+    }
 
     // ---- R-OBJ-004, the "absorb immigrants" objective (D-B4; owner, 18 October 2026, #738: option (a)) ----
 

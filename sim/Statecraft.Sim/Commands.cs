@@ -103,13 +103,16 @@ namespace Statecraft.Sim
         public StopWork(int unit) { Unit = unit; }
     }
 
-    /// <summary>Gives unit <see cref="Unit"/> the standing order <see cref="Order"/>, fortify or hold (Orders.Give, R-ORDER-001
-    /// to R-ORDER-003). GDD v0.1 loop only.</summary>
+    /// <summary>Gives unit <see cref="Unit"/> the standing order <see cref="Order"/>: fortify or hold (Orders.Give, R-ORDER-001
+    /// to R-ORDER-003), or attack, which names the hex (<see cref="Q"/>, <see cref="R"/>) (Combat.Give, R-COMBAT-001). GDD v0.1
+    /// loop only.</summary>
     public sealed class UnitOrder : Command
     {
         public override string Kind => Orders.Kind;
         public int Unit { get; } public string Order { get; }
-        public UnitOrder(int unit, string order) { Unit = unit; Order = order; }
+        /// <summary>The hex an attack names; null for fortify and hold.</summary>
+        public int? Q { get; } public int? R { get; }
+        public UnitOrder(int unit, string order, int? q = null, int? r = null) { Unit = unit; Order = order; Q = q; R = r; }
     }
 
     /// <summary>Starts city project <see cref="ProjectKind"/> (a projects.yaml id) for <see cref="City"/> on hex (<see cref="Q"/>,

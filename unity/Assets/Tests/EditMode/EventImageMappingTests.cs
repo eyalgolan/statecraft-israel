@@ -19,23 +19,24 @@ public class EventImageMappingTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static IReadOnlyList<EventImageMapping.Row> Rows => EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
 
-    /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate (absorb_immigrants, an objective card, has no photograph: Q-ABS-3, #1039).</summary>
-    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks", "absorb_immigrants" };
+    /// <summary>Cards without a wired photograph (docs/event-images.md). The railway series is not wired yet; the other
+    /// fallbacks had no suitable photograph found. Cards without an office have no portrait plate either.</summary>
+    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks", "railway_complete" };
     /// <summary>Photographs whose ASSETS.yaml row waits for the owner's sign-off (#380, "What needs maintainer sign-off"). When the
     /// owner signs one off, its row becomes verified and its name leaves this list.</summary>
-    static readonly string[] AwaitingSignOff = { };   // first_new_yishuv signed off 17 Oct 2026 ("Approve both", #879; #913)
+    static readonly string[] AwaitingSignOff = { "burma_road_complete" };   // first_new_yishuv signed off 17 Oct 2026 ("Approve both", #879; #913); absorb_immigrants (#739, #1268) by the owner on 21 Oct 2026
     static readonly string[] SensitivePhotos =
-        { "altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
+        { "altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
 
     [Test]
     public void TheMappingIsSoundAgainstTheContent()
     {
         var rows = Rows;
-        Assert.AreEqual(25, rows.Count);   // first_new_yishuv's photograph came with #380
+        Assert.AreEqual(27, rows.Count);   // first_new_yishuv's photograph came with #380, absorb_immigrants's with #739
         CollectionAssert.IsEmpty(EventImageMapping.Problems(rows, C));
         CollectionAssert.AreEquivalent(C.Events.Select(e => e.Id).Except(Fallback), rows.Select(r => r.Event), "every event but the fallbacks has a picture");
         CollectionAssert.AreEquivalent(SensitivePhotos, rows.Where(r => r.Sensitive).Select(r => r.Event), "the owner's sensitive list");
-        CollectionAssert.AreEquivalent(SensitivePhotos, rows.Where(r => r.SensitivityReviewed).Select(r => r.Event), "the owner's sign-off of 2026-10-11, and nothing else");
+        CollectionAssert.AreEquivalent(SensitivePhotos.Except(AwaitingSignOff), rows.Where(r => r.SensitivityReviewed).Select(r => r.Event), "the owner's sign-off of 2026-10-11, and nothing else");
     }
 
     [Test]

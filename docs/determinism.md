@@ -10,13 +10,17 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   seeds 0 and 1234567. The expected values come from Sebastiano Vigna's reference `splitmix64.c`
   (https://prng.di.unimi.it/splitmix64.c), compiled and run separately. They were not copied from this implementation.
 - **No trigonometry in the sim:** the sim calls only `Math.Abs`, `Math.Min` and `Math.Max`. Geometry that needs
-  cos/sin (which hex owns a settlement) is precomputed by `tools/settlement_hexes.py` and read as content.
+  cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
+  `tools/settlement_hexes.py` and `tools/unit_anchor_hexes.py` and read as content.
 - **Canonical hash:** `GameState.Hash()` is SHA-256 over a canonical text. Keys are sorted ordinally. Doubles are
   written as IEEE bit patterns, with -0.0 written as 0.0. Culture is invariant. Fractional site and city-project
   carry follows the same rule: nonzero carry is written as 16 hexadecimal digits of its IEEE bit pattern, and zero carry is omitted.
   Round-trip decimal formatting is only a display concern: .NET and Unity Mono can spell the same carry bits
   differently. The Phase 7 minister carry correction re-pins hash1950, hash1952 and mvp-end for this representation
   only; stored values, gameplay and completion dates are unchanged.
+- **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
+  positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
+  target list is empty, so no golden captures a place.
 
 ## Golden playthroughs
 
@@ -32,9 +36,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `e3c76f5f6fc45e4941a4499afd2e5c226a4677a651f39c6cef789447d123267a` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `37866907babc55e9477320db32467d1314aa59c8fe86d4d4ad82d8db61731fde` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `37866907babc55e9477320db32467d1314aa59c8fe86d4d4ad82d8db61731fde` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `a1ad42117a8523a79cf36cc03f33c63fbe887820d7f6fb89a834f2f952510548` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `9cbd73eda1440e1ee3e1ee565cf81960f2e7ee5595e55bdb4ed661f1d5e0ab40` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `9cbd73eda1440e1ee3e1ee565cf81960f2e7ee5595e55bdb4ed661f1d5e0ab40` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -43,7 +47,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa`.
+ministers): `SMOKE OK 5 turns 1948-10-15 ed761c3b9c4e9b76520af20080b2a7c8b984a1f44f1d52e5127aae1baa992a8d`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -54,7 +58,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 8d000459d26a08a49583adfc88c14799ce6e6f653dcecff1e30b5e737f0959aa"
+  --expect "SMOKE OK 5 turns 1948-10-15 ed761c3b9c4e9b76520af20080b2a7c8b984a1f44f1d52e5127aae1baa992a8d"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -321,3 +325,28 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | Phase 7 PR 4 carry canonical fix | 1952 | `37866907` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `ef8c5fea`). |
 | Phase 7 PR 4 carry canonical fix | mvp-end | `37866907` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `ef8c5fea`). |
 | #738 remaining scenario step | scenario-mvp-absorb-first | `c045ea90` | extends the run to 15 January 1950 so it completes `absorb_immigrants` (R-OBJ-004): two halutz cohorts free city housing, fourteen housing projects take the overflow and two industry projects raise employment, using only existing commands (was `234e32ee`) |
+| GDD Phase 4 PR 7 (#791) | 1952 | `c17ac550` | The first-new-yishuv objective becomes the all-six `yishuvim` infrastructure part, recorded 15 July 1951 instead of 15 February 1951. Neither corridor completes in the reference run, so the shared 100-point base is not paid: score 0 instead of 100. Only the objective record/date and score change; hash1950, smoke5 and all scenario goldens stay unchanged (was `37866907`). |
+| GDD Phase 4 PR 7 (#791) | mvp-end | `c17ac550` | Same full run and changes as hash1952 (was `37866907`). |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | 1950 | `259133fc` | A new game starts with the 12 forces of `map/units_1948.yaml` (R-UNIT-006): seven IDF brigades as `veteran_soldier` and the five Arab forces with a row, ids 0 to 11, so the `units[` section gains them and every later unit, cohort and city project id moves up by 12 (the halutz group 1 is now 13, `next=` 4 is 16). Nothing else in the snapshot moves: no rule reads the forces yet (was `e3c76f5f`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | 1952 | `452c65ec` | same; `next=` 7 is 19 (was `37866907`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | mvp-end | `452c65ec` | same as 1952 (was `37866907`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | smoke5 | `e5a66f9c` | same; the 12 forces are in the state from the first turn (was `8d000459`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-cautious | `b4e5caa1` | same; the scenario has no unit of its own, so it gains the `units[` section and `next=12` (was `9a3d241e`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-reckless | `8d644f6e` | same as cautious (was `d7dbcf75`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-mvp-absorb-first | `7d37c0d0` | same as cautious; the longer #738 run now also carries the 12 forces (was `c045ea90`) |
+| GDD Phase 5 PR 4: the sourced starting forces enter the state | scenario-mvp-defeat | `7bd5158f` | same as cautious; the defeat is unchanged (was `f3daaa70`) |
+| GDD Phase 5 PR 8: combat (#747) | 1950 | `73eb50db` | The reference player's attack policy (attack a neighbouring enemy hex at 3:2 or better) sends unit 0 (strength 5, 10,9) against the Syrian unit 9 (3, the valley's 10,10) from 15 May 1948. Four engagements, one RNG draw each, 15 May to 15 August 1948: unit 0 ends at strength 3, unit 9 is destroyed and leaves `units[`, and the Arms stock falls from 12 to 8 (1 an attack). The RNG state moves from the seed for the first time in the run, since nothing else in it draws. Nothing else in the snapshot moves; the scenarios and smoke5 give no attack and are unchanged (was `259133fc`) |
+| GDD Phase 5 PR 8: combat (#747) | 1952 | `d9922fc9` | same (was `452c65ec`) |
+| GDD Phase 5 PR 8: combat (#747) | mvp-end | `d9922fc9` | same as 1952 (was `452c65ec`) |
+| Combined #1186 + #791 (C20) | 1952 | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` | Keeps all 12 starting forces and their shifted ids from #1186, plus the three-part infrastructure objective from #791. Relative to main, only the objective record moves from `first_new_yishuv=1951-02-15` to `yishuvim=1951-07-15` and the separate 100-point base is no longer paid; neither corridor completes. All other snapshot lines, hash1950, smoke5 and scenario goldens are unchanged (was `452c65ece470e844f6898151c4d9328aa0b2e59df82db4763214d43a8e8ea7f1`). |
+| Combined #1186 + #791 (C20) | mvp-end | `72b8e8014c96c943e390f0fd109df68b78f59e5560b05c2d231e1fbe599d1280` | The same full run and combined #1186 + #791 state as hash1952 (was `452c65ece470e844f6898151c4d9328aa0b2e59df82db4763214d43a8e8ea7f1`). |
+| GDD Phase 4 PR 7 (#791) on combat (#747) | 1952 | `b389b278` | #1226 merged with main after combat (#747). As in the rows above, the first-new-yishuv objective becomes the all-six `yishuvim` infrastructure part, recorded 15 July 1951 instead of 15 February 1951, and neither corridor completes, so the shared 100-point base is unpaid and the snapshot's `score=100` line goes (a zero score is not written). Only those two `obj{`/score lines move; hash1950, smoke5 and the four scenario goldens equal main (was `d9922fc9`) |
+| GDD Phase 4 PR 7 (#791) on combat (#747) | mvp-end | `b389b278` | same as 1952 (was `d9922fc9`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | 1950 | `a1ad4211` | The seven IDF starting rows take the diary's 15 May strengths, so the starting units move: Golani 5 -> 4, Alexandroni 5 -> 4, Kiryati 1 -> 3, Givati 5 -> 3, Negev 2 -> 1 (Carmeli 2 and Harel 1 unchanged). Unit 0 (Golani, 4 on 10,9) against the Syrian 3 on 10,10 is now 133 percent, under the reference player's 150, so the run has no engagement: unit 0 ends at 4, not 3, the Syrian unit 9 stays in `units[`, the Arms stay at 12 (was 8), and the RNG is never drawn, so the snapshot's header shows the seed, 1948. Nothing else in the snapshot moves (was `73eb50db`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | 1952 | `9cbd73ed` | same (was `b389b278`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | mvp-end | `9cbd73ed` | same as 1952 (was `b389b278`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | smoke5 | `ed761c3b` | same starting strengths; the smoke run gives no attack (was `e5a66f9c`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-reckless | `574c8a19` | same starting strengths; only those five `units[` lines move (was `8d644f6e`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-cautious | `00ec7ec2` | same as reckless (was `b4e5caa1`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-mvp-absorb-first | `ac5f51bb` | same as reckless (was `7d37c0d0`) |
+| #1240: the seven IDF rows re-sourced to Ben-Gurion's diary of 15 May 1948, owner 21 Oct 2026 | scenario-mvp-defeat | `f2ad1114` | same as reckless; the defeat is unchanged (was `7bd5158f`) |

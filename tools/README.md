@@ -20,6 +20,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
 - `hexgrid.py` writes `content/map/hexes.json` from the heightmap and those committed precipitation inputs (no network).
 - `settlement_hexes.py` writes `content/map/settlement_hexes.yaml` (committed): the hex that owns each settlement, by the
   `hexgrid.settlement_hex` rule. The sim reads it, so it needs no projection maths.
+- `unit_anchor_hexes.py` writes `content/map/unit_anchor_hexes.yaml` (committed): the hex holding each anchor of
+  `units_1948.yaml`, for the sim's starting forces (R-UNIT-006). Rerun it after changing an anchor.
 - `routes_1948.py [--fetch] [--only ID ...] [--preview DIR]` traces the railways and main roads of May 1948 (issue #35)
   on the Survey of Palestine 1:250,000 map of 1946 (public domain; Palestine Open Maps' tiles, downloaded with `--fetch`
   into `tools/.cache/pal250k-1946/`, not committed): it reads the hand-written routes, sources and waypoints in

@@ -16,7 +16,7 @@ namespace Statecraft.Game.UI
     /// <summary>Starts the game once GameBoot has loaded the inputs and built the map (GameBoot.Ready): continues the
     /// autosave or starts a new game (GameStart.Begin, with its notes in the toast), creates every screen, autosaves each
     /// turn, and wires the camera and the map pointer to the game panel (UiPointer.IsOverUi), map clicks to the info panel,
-    /// the minimap to the camera, and State.Placements to the placement layer. Disabling it disposes all of that.
+    /// the minimap to the camera, and State.Placements with the built city projects to the placement layer. Disabling it disposes all of that.
     /// With "smoke" in the page URL (WebGL, e.g. ?smoke=5) or -smoke N (desktop) it starts a fresh game with the golden
     /// seed (the player's autosave is neither read nor written), plays N turns through the UI's own buttons and logs
     /// "SMOKE OK ..." (or "SMOKE FAIL ..."). In a player, unless an automated run skips it (StartScreenPresenter.Skipped),
@@ -330,7 +330,8 @@ namespace Statecraft.Game.UI
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,
                 regions: regions, localitiesAt: localitiesAt,
                 townHex: InfoPanelPresenter.TownHex(map.SettlementsFor(inputs.Map.SettlementsYaml), map.Hexes),
-                townNamesHe: map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe)));
+                townNamesHe: map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe),
+                showReachable: map.ShowReachable));
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -525,7 +526,8 @@ namespace Statecraft.Game.UI
 
         /// <summary>A map click: on a unit's hex it selects the unit (the ring and its card; the hex outline is cleared, so
         /// the unit has the promo's one highlight); a second click on it, or a click anywhere else, shows the hex (so a token
-        /// never hides the hex's map actions).</summary>
+        /// never hides the hex's map actions). While the card's Move pick is open (#754), a click on a lit hex queues the move
+        /// and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
         internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r)
         {
             if (info.Covered)
@@ -535,6 +537,7 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
+            if (info.PickMoveTarget(q, r)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             var id = units.UnitToSelectAt(q, r);
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
@@ -586,8 +589,9 @@ namespace Statecraft.Game.UI
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
         }
 
-        /// <summary>Draws the placements only when State.Placements differs from what was drawn (every order and every turn
-        /// raises Changed; rebuilding the markers each time would be wasted work).</summary>
+        /// <summary>Draws the placements only when State.Placements with the built city projects (PlacementLayer.Drawn, #1123)
+        /// differs from what was drawn (every order and every turn raises Changed; rebuilding the markers each time would be
+        /// wasted work). A project finishing redraws though State.Placements did not change.</summary>
         Statecraft.Game.Map.Collection.SeaAirCollection? seaAir;   // the 1948 Collection's craft (#669), for the labels to keep clear of
         IReadOnlyList<Bounds[]>? keptTokens, keptCraft, keptBoth;
 
@@ -608,10 +612,11 @@ namespace Statecraft.Game.UI
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
-            var now = Bridge.State.Placements.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
+            var shown = PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values);
+            var now = shown.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
             if (drawn != null && drawn.SequenceEqual(now)) return;
             drawn = now;
-            placements.Render(Bridge.State.Placements, Bridge.Content, map);
+            placements.Render(shown, Bridge.Content, map);
         }
 
         /// <summary>Draws the designated sites (#381) only when a site's state differs from what was drawn: being built, or

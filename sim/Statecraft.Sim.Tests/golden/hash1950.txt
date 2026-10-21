@@ -114,14 +114,26 @@ city{
   tiberias=6,2,8,2,1,c0.18928571428571433 [3FC83A83A83A83AA]
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
-  1:veteran_halutz@-3,19/6
+  0:veteran_soldier@10,9|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@-2,23|side=israel|strength=1
+  6:veteran_soldier@-9,27|side=israel|strength=1
+  7:egyptian_army@-11,27|side=egypt|strength=10
+  8:arab_legion@0,22|side=jordan|strength=5
+  9:syrian_army@10,10|side=syria|strength=3
+  10:iraqi_army@9,11|side=iraq|strength=3
+  11:arab_liberation_army@12,4|side=ala|strength=4
+  13:veteran_halutz@-3,19/6
 site{
   beit_kama=done,1949-06-15
   beit_shemesh=done,1949-11-15
-  gilat=b,1,4,3FE4DD2F1A9FBE78
+  gilat=b,13,4,3FE4DD2F1A9FBE78
 cproj[
-  2:housing@tel_aviv,-4,20/done,1949-10-15
-  3:housing@tel_aviv,-3,19/4,3FDB851EB851EB88
-next=4
+  14:housing@tel_aviv,-4,20/done,1949-10-15
+  15:housing@tel_aviv,-3,19/4,3FDB851EB851EB88
+next=16
 food=3003,1001,0
 arms=12

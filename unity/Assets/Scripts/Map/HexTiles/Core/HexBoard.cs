@@ -17,6 +17,36 @@ namespace Statecraft.HexTiles
         public string unit = ""; public float facing;
         /// <summary>Environment, not play: dressed as continuous landscape (no tile, no hex lines) round the playable hexes.</summary>
         public bool env;
+        /// <summary>The landscape region the generator put the hex in (a BoardRegion id; tools/hex_tiles/regions.yaml).
+        /// Its environment hexes take that region's trees and rocks; empty takes the built-in mix.</summary>
+        public string region = "";
+    }
+
+    /// <summary>One kind of tree (or rock) a region plants on its environment hexes: a model id, the stand-in shape drawn
+    /// while the model is missing (tree, pine, palm, rock, box), and its share of the mix.</summary>
+    [Serializable] public sealed class BoardSpecies
+    {
+        public string model = ""; public string shape = "tree"; public float weight = 1f;
+        public StandIn StandIn => shape switch { "pine" => StandIn.Pine, "palm" => StandIn.Palm, "rock" => StandIn.Rock, "box" => StandIn.Box, _ => StandIn.Tree };
+    }
+
+    /// <summary>A landscape region's environment dress (written by tools/hex_tiles/make_board.py from regions.yaml): the
+    /// species on flat and on hills ground, a density multiplier, and the rock outcrop model, how often it shows (two
+    /// tries a hex) and whether it also shows on the flat.</summary>
+    [Serializable] public sealed class BoardRegion
+    {
+        public string id = ""; public string title = ""; public float density = 1f;
+        public BoardSpecies[] flat = Array.Empty<BoardSpecies>(); public BoardSpecies[] hills = Array.Empty<BoardSpecies>();
+        public string rock = "sandbox:limestone*"; public float rockChance = 0.6f; public bool rocksOnFlat;
+
+        /// <summary>The mix every hex without a region gets: olive and carob on the flat, Tabor oak and Aleppo pine on
+        /// hills, limestone outcrops on hills.</summary>
+        public static readonly BoardRegion BuiltIn = new BoardRegion
+        {
+            id = "", title = "built-in",
+            flat = new[] { new BoardSpecies { model = "sandbox:olive_lite", weight = 0.6f }, new BoardSpecies { model = "sandbox:carob_lite", weight = 0.4f } },
+            hills = new[] { new BoardSpecies { model = "sandbox:tabor_oak_lite", weight = 0.55f }, new BoardSpecies { model = "sandbox:aleppo_pine_lite", shape = "pine", weight = 0.45f } },
+        };
     }
 
     /// <summary>A board file (Boards/&lt;id&gt;.json): a fixed, hand-edited layout, so captures compare like for like.</summary>
@@ -31,13 +61,23 @@ namespace Statecraft.HexTiles
     {
         public string id = ""; public string title = ""; public BoardHex[] hexes = Array.Empty<BoardHex>();
         public BoardRoad[] roads = Array.Empty<BoardRoad>(); public BoardRiver[] rivers = Array.Empty<BoardRiver>();
+        /// <summary>The landscape regions the hexes name (environment dress); empty on boards made without regions.</summary>
+        public BoardRegion[] regions = Array.Empty<BoardRegion>();
     }
 
     public sealed class HexBoard
     {
         public readonly HexBoardFile File;
         public readonly Dictionary<(int q, int r), BoardHex> Hexes;
-        public HexBoard(HexBoardFile file) { File = file; Hexes = file.hexes.ToDictionary(h => (h.q, h.r)); }
+        public readonly Dictionary<string, BoardRegion> Regions;
+        public HexBoard(HexBoardFile file)
+        {
+            File = file; Hexes = file.hexes.ToDictionary(h => (h.q, h.r));
+            Regions = (file.regions ?? Array.Empty<BoardRegion>()).ToDictionary(g => g.id, StringComparer.Ordinal);
+        }
+
+        /// <summary>The region dressing hex <paramref name="h"/>'s environment: its own, else the built-in mix.</summary>
+        public BoardRegion RegionOf(BoardHex h) => h.region != null && Regions.TryGetValue(h.region, out var g) ? g : BoardRegion.BuiltIn;
 
         /// <summary>Each river as world points along hex corners.</summary>
         public List<Vector3[]> RiverLines(float sizeM = HexScale.HexM) => (File.rivers ?? Array.Empty<BoardRiver>()).Select(rv =>
@@ -49,9 +89,16 @@ namespace Statecraft.HexTiles
         public static HexBoard FromJson(string json) => new HexBoard(JsonUtility.FromJson<HexBoardFile>(json));
 
         public const string BoardsFolder = "HexTiles/Boards";
-        /// <summary>A board shipped in Resources/HexTiles/Boards/&lt;id&gt;.json (runtime and editor alike).</summary>
-        public static HexBoard Load(string id) =>
-            FromJson((Resources.Load<TextAsset>(BoardsFolder + "/" + id) ?? throw new System.IO.FileNotFoundException($"no board Resources/{BoardsFolder}/{id}.json")).text);
+        /// <summary>A board shipped in Resources/HexTiles/Boards/&lt;id&gt;.json (runtime and editor alike), with the hand edits
+        /// of its sibling &lt;id&gt;.overrides.json applied last (HexBoardOverrides), so the Hex Painter's edits show before
+        /// the board is regenerated.</summary>
+        public static HexBoard Load(string id)
+        {
+            var board = FromJson((Resources.Load<TextAsset>(BoardsFolder + "/" + id) ?? throw new System.IO.FileNotFoundException($"no board Resources/{BoardsFolder}/{id}.json")).text);
+            var overrides = Resources.Load<TextAsset>(BoardsFolder + "/" + id + HexBoardOverrides.Suffix);
+            if (overrides != null) HexBoardOverrides.FromJson(overrides.text).Apply(board);
+            return board;
+        }
 
         /// <summary>Ground textures from Resources/HexTiles/Ground/&lt;texture&gt;_diff_2k and _nor_gl_2k (local while the
         /// textures await their asset batch); missing ones paint the layer's flat colour.</summary>

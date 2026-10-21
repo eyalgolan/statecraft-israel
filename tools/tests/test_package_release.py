@@ -9,8 +9,8 @@ from pathlib import Path
 import package_release
 
 REPO = Path(package_release.REPO)
-SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
-SENSITIVE = ["altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
+SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
+SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
 
 
 def photo_manifest(build, reviewed=True, shareable=True):
@@ -20,8 +20,10 @@ def photo_manifest(build, reviewed=True, shareable=True):
     (build / package_release.PHOTO_MANIFEST).write_text(json.dumps({"version": 1, "shareable": shareable, "photos": photos}))
 
 
-def fake_build(tmp_path, reviewed, photos_reviewed=True):
-    """A build folder with index.html, the real content copied into StreamingAssets/content and the photo manifest."""
+def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True):
+    """A build folder with index.html, the real content copied into StreamingAssets/content and the photo manifest.
+    forces_checked: the starting forces' rows in units_1948.yaml are fact-checked, as a person's check would leave them
+    (R-UNIT-006, Q-START-3); the real rows are draft or to_verify."""
     build = tmp_path / "Web-brotli"
     (build / "StreamingAssets").mkdir(parents=True)
     (build / "index.html").write_text("<html></html>")
@@ -31,6 +33,9 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True):
     for e in SENSITIVE:
         f = content / "events" / f"{e}.yaml"
         f.write_text(re.sub(r"(?m)^status: .*$", f"status: {status}", f.read_text()))
+    if forces_checked:
+        units = content / "map" / "units_1948.yaml"
+        units.write_text(re.sub(r"(?m)^  status: .*$", "  status: fact-checked", units.read_text(encoding="utf-8")), encoding="utf-8")
     photo_manifest(build, reviewed=photos_reviewed)
     return build
 
@@ -43,6 +48,17 @@ def test_packaging_is_refused_until_every_sensitive_event_is_reviewed(tmp_path, 
     assert "PACKAGE REFUSED" in out
     for e in SENSITIVE:
         assert e in out
+
+
+def test_packaging_is_refused_until_every_starting_row_is_fact_checked(tmp_path, capsys):
+    # R-UNIT-006, Q-START-3 (#743): the rows the sim starts a unit from are game state, so they are checked first.
+    build, zip_path = fake_build(tmp_path, reviewed=True, forces_checked=False), tmp_path / "out.zip"
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 1
+    assert not zip_path.exists()
+    out = capsys.readouterr().out
+    assert "PACKAGE REFUSED" in out
+    for row in ("golani", "egyptian_expeditionary_force", "arab_liberation_army"):
+        assert row in out
 
 
 def test_packaging_writes_the_zip_once_all_are_reviewed(tmp_path, capsys):

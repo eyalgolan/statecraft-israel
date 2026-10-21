@@ -1,6 +1,10 @@
-# The military formations the map draws in 1948-49 (docs/units.md, "Units in play"). Map-only: the sim never reads this
-# file (ContentLoader reads only its own files), so it does not move the content hash or the goldens. The map reads it
-# (UnitRoster) together with the sim's security level and reserve call-up, and draws one token per unit.
+# The military formations the map draws in 1948-49 (docs/units.md, "Units in play"). The map reads it (UnitRoster)
+# together with the sim's security level and reserve call-up, and draws one token per unit. The sim reads it too, for the
+# starting forces (StartingForces, docs/rules/mvp.md R-UNIT-006; Phase 5 PR 4): a Historical game starts with one unit per
+# army row that is not hidden, has a 15 May strength and an anchor window covering 15 May 1948, on the anchor's hex in
+# unit_anchor_hexes.yaml (rerun tools/unit_anchor_hexes.py after changing an anchor). So the file is in the
+# content hash, and a change to such a row moves the goldens. Those rows must be fact-checked before a shareable build
+# (the release gate; Q-START-3).
 #
 # Owner rulings (2026-10-11): one token per brigade; the number of figures follows the call-up (1, 2 or 3); an Avia
 # S-199 until the Spitfire's sourced date, then the Spitfire; brigades with no sourced position are listed but hidden;
@@ -54,9 +58,13 @@
 #   side other than israel gives it. An IDF brigade gives it where research_notes/M4 war mode/war-1948.md (section 1,
 #   #906) has a size: no primary order of battle gives the 15 May strengths, so a secondary source may, the row cites it
 #   and carries `status: to_verify`, and a primary source replaces it when one turns up (owner, 20 October 2026, #743).
+#   Ben-Gurion's diary for 15 May 1948 is that primary source for Golani, Carmeli, Alexandroni, Kiryati, Givati, Harel
+#   and Negev (owner, 21 October 2026, #1240); en.wiki's table stays as their second source. They keep
+#   `status: to_verify` until a person checks the figures against the diary page.
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian. to_verify = as draft, with a
-#   secondary-source strength that a primary source must replace (above).
+#   secondary-source strength that a primary source must replace, or a primary-source strength no person has checked
+#   yet (above; #1240).
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
 # that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 units:
@@ -72,16 +80,18 @@ units:
   formed: 22 February 1948
   first_commander: Moshe Mann
   sector: "Much of the Lower Galilee and the Jezreel Valley, the Jordan Valley and the Hula Valley; headquarters in Yavne'el. In December 1948 it moved to the southern front, at the Julis camp."
-  wikipedia_only: true
+  wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 4500
+    value: 4095
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Golani has 3,573 + 522 paid recruits\". The value counts both, 3,573 + 522 = 4,095: the diary lists the 522 paid recruits under Golani, as enlisted men of the brigade on the day (an agent's reading, flagged for the owner on #1240; without them the value would be 3,573, 4 units either way). Until #1240 the row gave en.wiki's undated brigade-table figure, 4,500 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Golani 4,500. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Golani 4,500, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   anchors:
   - place: "Yavne'el"
@@ -125,13 +135,15 @@ units:
   wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 2000
+    value: 2289
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Carmeli 2,289\". Until #1240 the row gave en.wiki's undated brigade-table figure, 2,000 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Carmeli 2,000. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Carmeli 2,000, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   vehicles:
   - type: gun_65mm
@@ -198,13 +210,15 @@ units:
   wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 5200
+    value: 3588
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Alexandroni 3,588\". Until #1240 the row gave en.wiki's undated brigade-table figure, 5,200 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Alexandroni 5,200. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Alexandroni 5,200, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   anchors:
   - place: Netanya (Camp Dora)
@@ -243,13 +257,15 @@ units:
   wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 1400
+    value: 2504
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Kiriati 2,504\" (the transcription's spelling). Until #1240 the row gave en.wiki's undated brigade-table figure, 1,400 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Kiryati 1,400. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Kiryati 1,400, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   anchors:
   - place: Tel Aviv
@@ -280,13 +296,15 @@ units:
   wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 5000
+    value: 3229
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Givati 3,229\". Until #1240 the row gave en.wiki's undated brigade-table figure, 5,000 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Givati 5,000. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Givati 5,000, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   vehicles:
   - type: gun_65mm
@@ -462,13 +480,15 @@ units:
   wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 1400
+    value: 1300
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Palmach – about 6,000, of whom 1,300 are in Harel\". Harel was a Palmach brigade (number: 10th Brigade (Palmach)), so the value reads the diary's Palmach in Harel as the brigade's strength; the diary gives no other figure for Harel. Until #1240 the row gave en.wiki's undated brigade-table figure, 1,400 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Harel 1,400. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Harel 1,400, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   vehicles:
   - type: jeep
@@ -566,13 +586,15 @@ units:
   wikipedia_only: false
   status: to_verify
   to_verify:
-  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
   strength:
-    value: 2400
+    value: 1300
     as_of: '1948-05-15'
-    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    note: "Ben-Gurion's diary for 15 May 1948: \"Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev\". The Negev Brigade was the Palmach's brigade in the Negev (number: 12th Brigade (Palmach)), so the value reads the diary's Palmach in the Negev as the brigade's strength; the diary gives no other figure for it. Until #1240 the row gave en.wiki's undated brigade-table figure, 2,400 (the second source)."
     sources:
-    # en.wiki, 1948 Arab-Israeli War, the brigade table: Negev 2,400. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    # Ben-Gurion's diary, 15 May 1948, the Ben-Gurion Archive's English transcription, item 221910 (the live page https://bengurionarchive.bgu.ac.il/en/node/8733 refused connections on 2026-10-21, so the Wayback copy is cited): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Negev 2,400, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   headgear: [wool_cap, steel_helmet, wool_cap]
   headgear_sources:

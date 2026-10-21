@@ -148,8 +148,12 @@
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />
+                    <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
+                    <ui:Button name="info-move" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
+                <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
+                <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
                  second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
@@ -368,7 +372,6 @@
                     <ui:Button name="settings-language-he" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
             <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-uiscale-label" text="UI scale" class="settings-name" />
@@ -507,20 +510,28 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- "Share" (#1170, SharePresenter): over everything, the turn report too, after the frame was captured without it.
-             The share links show only where the browser cannot share the picture itself. Before the toast. -->
+             A preview of that picture, the Share/Download button, then Copy (#1238), which puts the picture, or the post
+             text, on the clipboard, with a line under it that says which. Then the site buttons in the owner's order (#1237);
+             the notes show once the picture downloaded, where the browser cannot share it itself. Before the toast. -->
         <ui:VisualElement name="share-layer" class="share-layer">
             <ui:VisualElement name="share-panel" class="panel share-panel">
                 <ui:VisualElement class="screen-header"><ui:Label name="share-title" text="Share a picture of the game" class="title" /></ui:VisualElement>
+                <ui:VisualElement name="share-preview" class="share-preview" />
                 <ui:Label name="share-post" class="share-post" />
                 <ui:Button name="share-go" class="share-go" />
+                <ui:Button name="share-copy" class="share-go" />
+                <ui:Label name="share-copied" class="muted share-copied" />
+                <ui:VisualElement class="row share-sites">
+                    <ui:Button name="share-x" />
+                    <ui:Button name="share-facebook" />
+                    <ui:Button name="share-instagram" />
+                    <ui:Button name="share-whatsapp" />
+                    <ui:Button name="share-telegram" />
+                    <ui:Button name="share-linkedin" />
+                </ui:VisualElement>
+                <ui:Label name="share-instagram-note" class="muted share-instagram-note" />
                 <ui:VisualElement name="share-fallback" class="share-fallback">
                     <ui:Label name="share-attach" text="These sites can't take a picture through a link: attach the downloaded picture to your post." class="muted share-attach" />
-                    <ui:VisualElement class="row share-sites">
-                        <ui:Button name="share-x" />
-                        <ui:Button name="share-facebook" />
-                        <ui:Button name="share-whatsapp" />
-                        <ui:Button name="share-linkedin" />
-                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="row share-actions"><ui:Button name="share-close" text="Close" /></ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame />

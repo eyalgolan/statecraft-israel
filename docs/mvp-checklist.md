@@ -45,7 +45,7 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: CHANGELOG entry "The GDD game has its twelve cities".** PR 1 twelve cities' start values (#821).
 - [x] **Done: CHANGELOG entry "The GDD game's immigrants arrive in all twelve cities".** PR 2 arrivals over the cities (#847).
 - [x] **Done: CHANGELOG entry "The GDD game's cities house every arriving immigrant".** PR 3 housing capacity, condition and overflow (#855; `docs/rules/mvp.md`, R-HOUSE-001 to R-HOUSE-004).
-- [ ] **Open: #735.** PR 4 city projects. Housing types and industry are on `main` (#982; `docs/rules/mvp.md`, R-PROJ-001 to R-PROJ-003); R-PROJ-004 (map actions refused in the GDD loop) remains.
+- [x] **Done: `docs/rules/mvp.md`, R-PROJ-001 to R-PROJ-004.** PR 4 city projects: housing types and industry (#982), and the legacy map actions refused in the GDD loop (#735).
 - [x] **Done: `docs/rules/mvp.md`, R-CRAFT-001, R-CRAFT-002 and R-CITY-009.** PR 5 the craftsman (#1049; #736).
 - [ ] **Open: #737.** PR 6 the winery. The local-resource rule is on `main` (#1025). **Decided (owner, 20 Oct 2026; #737):** the winery is in Rishon LeZion. Its content rows are the `winery` kind and Rishon LeZion's vineyards, flagged `to_verify`; the vineyards' source still waits for a person's check.
 - [x] **Done: `docs/rules/mvp.md`, R-OBJ-004, and `content/objectives.yaml`.** PR 7 objective 2, absorb immigrants: the condition is on `main` (#1019), followed by the sourced objective and card (#1055; #1039, #738).

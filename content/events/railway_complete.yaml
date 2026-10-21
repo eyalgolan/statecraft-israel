@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Objective 3's railway-part card (R-OBJ-003, R-OBJ-005; Q-RAIL-2). The plan requires a person to read both cited
+# newspaper pages before this card becomes fact-checked, so it remains draft.
+id: railway_complete
+title: Haifa–Tel Aviv rail service restored
+text: 'Regular passenger service between Haifa and Tel Aviv North began on 20 September 1949. Trains ran through Binyamina, Hadera East and Rosh HaAyin, using the new link from the Petah Tikva branch to Tel Aviv North.'
+anchor: soft
+objective: railway
+from: 1948-05-15
+to: 1957-01-01
+options:
+  - id: continue
+    text: Continue
+    historical: true
+tags: []
+sources:
+  - { url: "https://www.nli.org.il/he/newspapers/hbkr/1949/09/14/01/article/70", checked: 2026-10-14 }
+  - { url: "https://www.nli.org.il/he/newspapers/mar/1949/09/22/01/article/21", checked: 2026-10-14 }
+  - { url: "https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf", checked: 2026-10-15 }
+status: draft

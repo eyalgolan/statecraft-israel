@@ -1,11 +1,13 @@
 # Event-card photographs
 
 The event card's header picture, as in the promo (`promo/final/03-gameplay-1936.png`, `05-event-transit-camps.png`), is a
-real archival photograph of the event, never an AI image. 25 of the 33 events in `content/events/` have one. Seven
+real archival photograph of the event, never an AI image. 27 of the 35 events in `content/events/` have one. Seven
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
-free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). `absorb_immigrants`, an
-objective card with no office, shows none (no photograph of it was found, Q-ABS-3, #1039). The GDD objective card
+free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The objective card
+`absorb_immigrants` shows a generic arrival photograph, new immigrants from Romania coming down a ship's gangway at
+Haifa port (Benno Rothenberg, June 1951, CC BY 4.0; the owner's ruling of 19 October 2026, #739), as no photograph of
+the card's own event was found (Q-ABS-3, #1039). The new `railway_complete` card has no photograph wired yet. The GDD objective card
 `first_new_yishuv` shows Mefalsim's first days (Boris Carmi, June 1949, CC BY 4.0; #380).
 
 Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` section 4):
@@ -33,6 +35,10 @@ Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` sectio
 The mapping is **not game content**. The event YAMLs feed the content hash and save compatibility, so nothing about
 pictures may go into `content/`. `EventImageMappingTests.TheMappingIsNotGameContent` guards this, and the golden hashes
 and `SaveGameTests` stay unchanged.
+
+The `burma_road_complete` card (#791) carries the owner-selected Road of Valour frame (Rothenberg 997008137268105171,
+SHA-1 `55b3ea19042035fbd45812ffc6576029b3d171dc`). Its photograph remains `sensitive: true`,
+`sensitivity_reviewed: false` and `owner-verify`; the card stays draft. It blocks shareable builds pending owner review.
 
 ## The card
 
@@ -81,8 +87,9 @@ cover this. The decision layer under the top bar bounds the card's height.
 
 ## Owner steps
 
-- **Sensitivity review.** Six pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
-  `operation_hiram`, `operation_horev` and `bernadotte_assassination`.
+- **Sensitivity review.** Seven pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
+  `operation_hiram`, `operation_horev`, `bernadotte_assassination` and `burma_road_complete`. The last remains unreviewed;
+  the historical sign-offs below cover the original six.
   - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads

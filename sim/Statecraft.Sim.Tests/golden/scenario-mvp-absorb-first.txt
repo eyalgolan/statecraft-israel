@@ -115,18 +115,18 @@ city{
   tiberias=6,2,8,2,1,c0.18928571428571433 [3FC83A83A83A83AA]
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
-  7:halutz@-3,19
-  8:halutz@-3,19
-  9:halutz@-3,19
-  10:halutz@-3,19
-  11:halutz@-3,19
-  12:halutz@-3,19
-  13:halutz@-3,19
-  14:halutz@-3,19
-  15:halutz@-3,19
-  16:halutz@-3,19
-  17:halutz@-3,19
-  18:halutz@-3,19
+  0:veteran_soldier@10,9|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@-2,23|side=israel|strength=1
+  6:veteran_soldier@-9,27|side=israel|strength=1
+  7:egyptian_army@-11,27|side=egypt|strength=10
+  8:arab_legion@0,22|side=jordan|strength=5
+  9:syrian_army@10,10|side=syria|strength=3
+  10:iraqi_army@9,11|side=iraq|strength=3
+  11:arab_liberation_army@12,4|side=ala|strength=4
   19:halutz@-3,19
   20:halutz@-3,19
   21:halutz@-3,19
@@ -273,18 +273,18 @@ units[
   162:halutz@-3,19
   163:halutz@-3,19
   164:halutz@-3,19
+  165:halutz@-3,19
+  166:halutz@-3,19
+  167:halutz@-3,19
+  168:halutz@-3,19
+  169:halutz@-3,19
+  170:halutz@-3,19
+  171:halutz@-3,19
+  172:halutz@-3,19
+  173:halutz@-3,19
+  174:halutz@-3,19
+  175:halutz@-3,19
   176:halutz@-3,19
-  177:halutz@-3,19
-  178:halutz@-3,19
-  179:halutz@-3,19
-  180:halutz@-3,19
-  181:halutz@-3,19
-  182:halutz@-3,19
-  183:halutz@-3,19
-  184:halutz@-3,19
-  185:halutz@-3,19
-  186:halutz@-3,19
-  187:halutz@-3,19
   188:halutz@-3,19
   189:halutz@-3,19
   190:halutz@-3,19
@@ -356,24 +356,36 @@ units[
   256:halutz@-3,19
   257:halutz@-3,19
   258:halutz@-3,19
+  259:halutz@-3,19
+  260:halutz@-3,19
+  261:halutz@-3,19
+  262:halutz@-3,19
+  263:halutz@-3,19
+  264:halutz@-3,19
+  265:halutz@-3,19
+  266:halutz@-3,19
+  267:halutz@-3,19
+  268:halutz@-3,19
+  269:halutz@-3,19
+  270:halutz@-3,19
 cproj[
-  1:housing@haifa,5,8/done,1949-02-15
-  2:housing@haifa,4,9/done,1949-02-15
-  3:housing@haifa,5,9/done,1949-03-15
-  4:industry@haifa,6,8/done,1949-03-15
-  5:housing@jerusalem,0,22/done,1949-04-15
-  6:housing@jerusalem,1,22/done,1949-04-15
-  165:housing@jerusalem,-1,23/done,1949-05-15
-  166:housing@jerusalem,1,23/done,1949-06-15
-  167:industry@jerusalem,-1,24/done,1949-06-15
-  168:housing@petah_tikva,-2,18/done,1949-07-15
-  169:housing@petah_tikva,-1,18/done,1949-07-15
-  170:housing@rehovot,-4,20/done,1949-08-15
-  171:housing@hadera,2,12/done,1949-08-15
-  172:housing@netanya,0,15/done,1949-09-15
-  173:housing@jerusalem,0,23/done,1949-09-15
-  174:housing@rishon_lezion,-4,21/done,1949-10-15
-next=259
+  13:housing@haifa,5,8/done,1949-02-15
+  14:housing@haifa,4,9/done,1949-02-15
+  15:housing@haifa,5,9/done,1949-03-15
+  16:industry@haifa,6,8/done,1949-03-15
+  17:housing@jerusalem,0,22/done,1949-04-15
+  18:housing@jerusalem,1,22/done,1949-04-15
+  177:housing@jerusalem,-1,23/done,1949-05-15
+  178:housing@jerusalem,1,23/done,1949-06-15
+  179:industry@jerusalem,-1,24/done,1949-06-15
+  180:housing@petah_tikva,-2,18/done,1949-07-15
+  181:housing@petah_tikva,-1,18/done,1949-07-15
+  182:housing@rehovot,-4,20/done,1949-08-15
+  183:housing@hadera,2,12/done,1949-08-15
+  184:housing@netanya,0,15/done,1949-09-15
+  185:housing@jerusalem,0,23/done,1949-09-15
+  186:housing@rishon_lezion,-4,21/done,1949-10-15
+next=271
 obj{
   absorb_immigrants=1950-01-15
 score=100

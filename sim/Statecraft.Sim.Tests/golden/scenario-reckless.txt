@@ -98,5 +98,19 @@ city{
   tel_aviv=248,106,255,106,9,c0.3458823529411765 [3FD622EFBC895623]
   tiberias=6,2,6,2,0,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
+units[
+  0:veteran_soldier@10,9|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@-2,23|side=israel|strength=1
+  6:veteran_soldier@-9,27|side=israel|strength=1
+  7:egyptian_army@-11,27|side=egypt|strength=10
+  8:arab_legion@0,22|side=jordan|strength=5
+  9:syrian_army@10,10|side=syria|strength=3
+  10:iraqi_army@9,11|side=iraq|strength=3
+  11:arab_liberation_army@12,4|side=ala|strength=4
+next=12
 food=2253,751,0
 arms=12

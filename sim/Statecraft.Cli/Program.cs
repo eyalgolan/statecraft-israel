@@ -62,12 +62,14 @@ catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message
 
 // --release-gate: the sensitivity gate before a build is shared (spec 5.5; tools/package_release.py, Build -shareable).
 // Exit 0 and "RELEASE GATE OK" when every sensitive event is sensitivity-reviewed and (R-ALT-011, Q-ALT-9) every
-// consequence card and every event with variants has a person's reviewed_by; else exit 3 naming them.
+// consequence card and every event with variants has a person's reviewed_by, and (R-UNIT-006, Q-START-3) every
+// units_1948.yaml row a new game starts a unit from is fact-checked; else exit 3 naming them.
 if (Array.IndexOf(args, "--release-gate") >= 0)
 {
     var open = ReleaseGate.SensitiveUnreviewed(content);
     var unsigned = ReleaseGate.AlternateUnsigned(content);
-    if (open.Count == 0 && unsigned.Count == 0) { Console.WriteLine("RELEASE GATE OK"); return 0; }
+    var forces = ReleaseGate.StartingForcesUnchecked(content);
+    if (open.Count == 0 && unsigned.Count == 0 && forces.Count == 0) { Console.WriteLine("RELEASE GATE OK"); return 0; }
     if (open.Count > 0)
         Console.WriteLine("RELEASE GATE REFUSED: the owner's sensitivity review is missing for: " + string.Join(", ", open)
             + " (set status: sensitivity-reviewed in each event's YAML; see docs/m3-release.md)");
@@ -76,6 +78,9 @@ if (Array.IndexOf(args, "--release-gate") >= 0)
         Console.WriteLine("RELEASE GATE REFUSED: no person has signed off (reviewed_by) these alternate cards: " + string.Join(", ", unsigned)
             + " (see docs/m3-release.md)");
     foreach (var id in unsigned) Console.WriteLine("  unsigned alternate card: " + id);
+    if (forces.Count > 0)
+        Console.WriteLine("RELEASE GATE REFUSED: these starting forces' rows are not fact-checked: " + string.Join(", ", forces)
+            + " (status: fact-checked in content/map/units_1948.yaml; Q-START-3, #743)");
     return 3;
 }
 
