@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
-    /// <summary>Unit movement in the GDD v0.1 loop (Phase 5 PR 5; docs/rules/mvp.md R-MOVE-001 to R-MOVE-006). A Move goes at
-    /// command time along the cheapest path within the unit's movement points (spec 2026-10-12 section 2.3); Reachable and
-    /// Path are the preview the UI reads (spec section 2.6), from the same search.</summary>
+    /// <summary>Unit movement in the GDD v0.1 loop (Phase 5 PRs 5 and 6; docs/rules/mvp.md R-MOVE-001 to R-MOVE-007). A Move
+    /// goes at command time along the cheapest path within the unit's movement points (spec 2026-10-12 section 2.3); Reachable
+    /// and Path are the preview the UI reads (spec section 2.6), from the same search.</summary>
     public static class Movement
     {
         public const string Kind = "move";
@@ -97,9 +97,25 @@ namespace Statecraft.Sim
             return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
         }
 
-        /// <summary>R-MOVE-001, R-MOVE-002, R-MOVE-004, R-MOVE-005: the cheapest cost of every hex within <paramref name="budget"/>
-        /// points from the unit's hex, and the hex each is entered from. A path enters only land hexes, at their biome's cost,
-        /// and never an enemy unit's hex or an enemy-held locality's; passing next to either costs nothing extra (no zone of
+        /// <summary>R-MOVE-007: the hexes of each built corridor segment (a segment not started or being built is no road yet),
+        /// with its kind's mvp.road_move_cost or mvp.rail_move_cost.</summary>
+        static List<(HashSet<(int Q, int R)> Hexes, int Cost)> BuiltSegments(Content c, GameState s)
+        {
+            var m = c.RulesAt(s.Date).Mvp!;   // the loader requires both costs in the GDD loop
+            var built = new List<(HashSet<(int Q, int R)>, int)>();
+            foreach (var d in c.Corridors)
+                if (s.Corridors.TryGetValue(d.Id, out var w))
+                    for (int i = 0; i < d.Segments.Count; i++)
+                        if (w.Segments[i]?.BuiltOn != null)
+                            built.Add((new HashSet<(int Q, int R)>(d.Segments[i].Hexes.Select(h => (h[0], h[1]))),
+                                d.Kind == Corridors.Rail ? m.RailMoveCost!.Value : m.RoadMoveCost!.Value));
+            return built;
+        }
+
+        /// <summary>R-MOVE-001, R-MOVE-002, R-MOVE-004, R-MOVE-005, R-MOVE-007: the cheapest cost of every hex within
+        /// <paramref name="budget"/> points from the unit's hex, and the hex each is entered from. A path enters only land hexes,
+        /// at their biome's cost or, from a hex of the same built corridor segment, at the kind's cost when that is lower, and
+        /// never an enemy unit's hex or an enemy-held locality's; passing next to either costs nothing extra (no zone of
         /// control, Q-MOVE-4). Hexes leave the frontier in (cost, q, r) order and neighbours are tried in the fixed
         /// <see cref="Neighbours"/> order, so a hex reached at the same cost twice keeps the first, and the path is the same
         /// every run. Stacking limits only where a move ends, so it is not checked here.</summary>
@@ -107,6 +123,7 @@ namespace Statecraft.Sim
         {
             var costs = c.RulesAt(s.Date).Mvp!.MoveCost;   // the loader requires a cost for every land biome in the GDD loop
             var blocked = NoEntry(c, s);
+            var built = BuiltSegments(c, s);
             foreach (var x in s.Units.Values) if (IsEnemy(x)) blocked.Add((x.Q, x.R));
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };
             var prev = new Dictionary<(int Q, int R), (int Q, int R)>();
@@ -119,7 +136,10 @@ namespace Statecraft.Sim
                 {
                     var next = (q + dq, r + dr);
                     if (!(c.HexAt(next.Item1, next.Item2) is MapHex hex) || !hex.Land || blocked.Contains(next)) continue;
-                    var total = cost + costs[hex.Biome];
+                    var step = costs[hex.Biome];
+                    foreach (var (hexes, kindCost) in built)
+                        if (kindCost < step && hexes.Contains((q, r)) && hexes.Contains(next)) step = kindCost;
+                    var total = cost + step;
                     if (total > budget || (dist.TryGetValue(next, out var known) && known <= total)) continue;
                     if (dist.ContainsKey(next)) frontier.Remove((known, next.Item1, next.Item2));
                     dist[next] = total;

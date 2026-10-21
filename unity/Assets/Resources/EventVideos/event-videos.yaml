@@ -12,11 +12,17 @@
 # ai". So those three rows are sensitivity_reviewed: true, and no clip carries a burned-in caption any more
 # (docs/oss/DECISIONS.md G4). The four Dreamina (Seedance) clips keep Dreamina's own small "AI" watermark: owner ruling
 # "Keep the badge", 2026-10-14 (G5).
+# Owner ruling of 2026-10-20 (#1102, https://github.com/eyalgolan/statecraft-israel/issues/1102#issuecomment-6300646067), after
+# watching the five shots A27, A05, TILE1, A07 and A09: "looks good". That approves seven uses and nothing else: the
+# altalena loop and enforce outcome (A27), the operation_horev loop (A05), the first_new_yishuv loop and continue outcome
+# (TILE1, a generic Negev settlement, not Mefalsim), the iraqi_exodus airlift outcome (A07) and the austerity_1949 impose
+# outcome (A09). The three sensitive ones (both altalena rows, the operation_horev loop) are sensitivity_reviewed: true on
+# that ruling.
 # Rights: owner ruling D-V (docs/oss/DECISIONS.md), "no need to check, just use them"; ai_generated: true on every row.
 # Deport never gets a clip (GDD owner ruling 1): EventVideoMapping refuses a row for an event with a deport option.
 # tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, no burned-in caption (owner ruling
 # 2026-10-14 above; ai_generated: true stays on every row).
-checked: 2026-10-14
+checked: 2026-10-20
 clips:
   - event: latrun_proposal
     file: latrun_proposal.mp4
@@ -139,6 +145,39 @@ clips:
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
+  - event: altalena
+    file: altalena.mp4
+    shot: A27
+    source: promo/demo2/clips-v2/A27.mp4
+    source_sha256: e64b1969ccda99ab19f0595e2e42deae76bd3f478e6d6bf78a7f4120072eb8c4
+    generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
+    generated: 2026-10-13
+    alt: "Illustration: a ship burning off the Tel Aviv shore, smoke rising, small figures on the promenade seen from behind."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: true   # the owner, 2026-10-20 (#1102: watched the clip, "looks good")
+  - event: operation_horev
+    file: operation_horev.mp4
+    shot: A05
+    source: promo/demo2/clips/A05.mp4
+    source_sha256: c0725105f17ae4b9a9f91417f83e5357ba725504a737d557da380573fc6e77d0
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    alt: "Illustration: a column of jeeps and armoured carriers crossing the Negev dunes at dawn."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: true   # the owner, 2026-10-20 (#1102: watched the clip, "looks good")
+  - event: first_new_yishuv
+    file: first_new_yishuv.mp4
+    shot: TILE1
+    source: promo/demo2/clips/TILE1.mp4
+    source_sha256: 222da9ae6e866efad171c776518ba3be4c98957a5875c218cc236550c3069ec9
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    alt: "Illustration: a model of a new Negev settlement, its tents and stockade giving way to huts, a water tower and fields."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
 # Outcome clips (decision videos, phase 3; docs/event-videos.md): played at End Turn, once, when the player queued the
 # event's historical option (historical: true in content) and the turn applied it. 3.5 s, silent, skippable (a click,
 # Esc, Enter or Space; Esc skips them all), captioned as the order ("Your order: ..."), never for a counterfactual option,
@@ -190,3 +229,62 @@ outcomes:
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
+  - event: altalena
+    option: enforce
+    file: altalena-outcome.mp4
+    shot: A27
+    source: promo/demo2/clips-v2/A27.mp4
+    source_sha256: e64b1969ccda99ab19f0595e2e42deae76bd3f478e6d6bf78a7f4120072eb8c4
+    generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
+    generated: 2026-10-13
+    start_frame: 12
+    frames: 84
+    alt: "Illustration: a ship burning off the Tel Aviv shore, smoke rising, small figures on the promenade seen from behind."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: true   # the owner, 2026-10-20 (#1102: watched the clip, "looks good")
+  - event: first_new_yishuv
+    option: continue
+    file: first_new_yishuv-outcome.mp4
+    shot: TILE1
+    source: promo/demo2/clips/TILE1.mp4
+    source_sha256: 222da9ae6e866efad171c776518ba3be4c98957a5875c218cc236550c3069ec9
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    decimate: true
+    start_frame: 37
+    frames: 84
+    alt: "Illustration: a model of a new Negev settlement growing, huts, a water tower, a pipeline and its first fields."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: iraqi_exodus
+    option: airlift
+    file: iraqi_exodus-outcome.mp4
+    shot: A07
+    source: promo/demo2/clips/A07.mp4
+    source_sha256: 8b3fc06d8a7836e82896a9fd09a3b874dbfdd7f9eca9e7be63f70202630af783
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    decimate: true
+    start_frame: 34
+    frames: 84
+    alt: "Illustration: families arriving by air at Lydda, coming down an airliner's steps with suitcases at dusk."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: austerity_1949
+    option: impose
+    file: austerity_1949-outcome.mp4
+    shot: A09
+    source: promo/demo2/clips/A09.mp4
+    source_sha256: 79ab0b07145177d9899e1c39136e5e04c3f7ca8f0a310a7c905042fab1dc6cd2
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    decimate: true
+    start_frame: 10
+    frames: 84
+    alt: "Illustration: a queue with ration books outside a grocer's in a seaside town."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false

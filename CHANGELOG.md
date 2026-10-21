@@ -9,6 +9,12 @@ checks this (see `CONTRIBUTING.md`).
 ## [Unreleased]
 
 ### Added
+- Sound effects: one audio service plays a short clip when a turn ends, when an order is refused and when an event card
+  comes into view, and the Settings screen has a sound effects volume (off, low, high) that is kept per browser. The
+  three clips are AI-generated with the project's ElevenLabs subscription (26,005 bytes in all), each listed in
+  `ASSETS.yaml`; the owner listened to them and chose this set. Presentation
+  only, so the golden hashes do not move (refs #39).
+
 - The city panel in the GDD loop shows the city's overflow, the people beyond its housing (`Cities.Overflow`,
   R-HOUSE-002), beside the refugees waiting, and its trained craftsmen (`City.Craftsmen`, R-CRAFT-001) beside the jobs,
   in English and Hebrew; both numbers are the sim's, and each pair shares a row so the panel stays clear of the left
@@ -120,6 +126,11 @@ checks this (see `CONTRIBUTING.md`).
   info panel's actions. Covering screens and the start screen take the stop out of reach, and mouse and touch clicks pass
   through it as before. The empty info panel's hint says so in English and Hebrew, and keeps the right-drag (Hebrew
   flagged for a native speaker's review; Fixes #1116, refs #41).
+- Event card: a consequence card names the road it follows and the record beside it ("Alternative course. It follows
+  the government's decision: [option] ([card]). In the record: [historical option]."), from the sim's `Timeline.Origin` and
+  `Timeline.HistoricalOption`; a card chained on a consequence card, which has no record of its own, leaves the
+  comparison out. An option that rejoins the record says "Returns to the recorded course." under it. Ordinary cards are
+  unchanged; English and Hebrew, the Hebrew flagged for a native speaker's review (#564) (refs #939, #954).
 ### Fixed
 - Hebrew budget vote labels use the legislature as their subject, following the native review, so names beginning with ה no longer follow an uninflected ב־ prefix (refs #564).
 - Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.

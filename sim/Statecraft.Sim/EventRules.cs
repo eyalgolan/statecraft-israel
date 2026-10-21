@@ -180,6 +180,16 @@ namespace Statecraft.Sim
                 if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(file, F("id"), ContentLoader.IdRule);
                 if (!seen.Add(o.Id)) throw new ContentException(file, F("id"), "duplicate id");
                 ContentLoader.Named(file, F("name"), o.Name);
+                // The Hebrew name (#1187): an agent translation of the English until a native speaker reads it (#564),
+                // so it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
+                if (o.NameHeReviewGiven && o.NameHeReview != HebrewReview.AgentChecked)
+                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                if (o.NameHe == "")
+                {
+                    if (o.NameHeReviewGiven) throw new ContentException(file, F("name_he"), "required: name_he_review is set but the name is empty");
+                }
+                else if (!o.NameHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA'))
+                    throw new ContentException(file, F("name_he"), "must be Hebrew, in Hebrew letters");
                 if (o.CompletesWhen == null || (o.CompletesWhen.SiteBuilt == "") == (o.CompletesWhen.Absorbed == null))
                     throw new ContentException(file, F("completes_when"), "required, exactly one of: { site_built: <site id> }, { absorbed: { ... } }");
                 if (o.CompletesWhen.Absorbed is AbsorbCondition a)

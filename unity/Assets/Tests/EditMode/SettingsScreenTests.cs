@@ -441,6 +441,61 @@ public class SettingsScreenTests
         Assert.AreEqual("גודל הממשק", He["settings.uiscale"]);
     }
 
+    /// <summary>#1168: the Community row's "Star on GitHub" asks to open exactly the repository, once per press, from the
+    /// mouse (on pointer down, where the web build arms its listener: ExternalLink) and from the keyboard. Through the
+    /// injectable opener, so no browser opens.</summary>
+    [Test]
+    public void TheStarButtonOpensTheRepositoryOncePerPress([Values(false, true)] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var opened = new List<string>();
+        ExternalLink.Opener = opened.Add;
+        try
+        {
+            using var ui = new UiTestKit();
+            using (new SettingsPresenter(ui.Root, text, new SettingsStore(dir)))
+            {
+                var star = ui.Q<Button>("settings-star");
+                Assert.AreEqual(text["community.star"], star.text);
+                Assert.AreEqual(text["settings.community"], ui.Q<Label>("settings-community-label").text);
+                PressWithPointer(star);
+                CollectionAssert.AreEqual(new[] { "https://github.com/eyalgolan/statecraft-israel" }, opened, "a click");
+                UiTestKit.Press(star);
+                Assert.AreEqual(2, opened.Count, "Enter or Space");
+                using (var right = PointerDownEvent.GetPooled()) { right.target = star; SetButton(right, 1); star.SendEvent(right); }
+                Assert.AreEqual(2, opened.Count, "a right click opens nothing");
+            }
+            UiTestKit.Press(ui.Q<Button>("settings-star"));
+            Assert.AreEqual(2, opened.Count, "disposed, the button is unwired");
+        }
+        finally { ExternalLink.Opener = ExternalLink.Default; }
+    }
+
+    /// <summary>The two labels; Beri approved their Hebrew as a native speaker on #1178.</summary>
+    [Test]
+    public void TheCommunityLabelsAreInBothLanguages()
+    {
+        Assert.AreEqual("Community", En["settings.community"]);
+        Assert.AreEqual("Star on GitHub", En["community.star"]);
+        Assert.AreEqual("קהילה", He["settings.community"]);
+        Assert.AreEqual("סימון בכוכב בגיטהאב", He["community.star"]);
+    }
+
+    /// <summary>A mouse press as the player makes it (StartScreenTests.PressWithPointer): a primary-button pointer down
+    /// (GetPooled leaves the button at -1), then the button's Clickable fires on the release.</summary>
+    internal static void PressWithPointer(Button b)
+    {
+        using (var down = PointerDownEvent.GetPooled()) { down.target = b; SetButton(down, 0); b.SendEvent(down); }
+        using var click = ClickEvent.GetPooled();
+        click.target = b;
+        typeof(Clickable).GetMethod("Invoke", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic,
+            null, new[] { typeof(EventBase) }, null)!.Invoke(b.clickable, new object[] { click });
+    }
+
+    /// <summary>PointerDownEvent.button has no public setter.</summary>
+    static void SetButton(PointerDownEvent e, int button) =>
+        typeof(PointerDownEvent).GetProperty("button")!.SetValue(e, button);
+
     static void AssertUiScale(UiTestKit ui, int set)
     {
         foreach (var (name, percent) in UiScaleButtons)
@@ -514,13 +569,17 @@ public class SettingsScreenTests
                 foreach (var name in new[] { "settings-screen-title", "settings-tiltshift-label", "settings-tiltshift",
                     "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low",
                     "settings-language-label", "settings-language-en", "settings-language-he", "settings-language-note",
-                    "settings-uiscale-label", "settings-uiscale-100", "settings-uiscale-125", "settings-uiscale-150" })
+                    "settings-uiscale-label", "settings-uiscale-100", "settings-uiscale-125", "settings-uiscale-150",
+                    "settings-community-label", "settings-star" })
                 {
                     var e = root.Q<TextElement>(name);
                     Assert.IsFalse(string.IsNullOrWhiteSpace(e.text), $"{at}: {name} has its text");
                     Assert.IsTrue(Inside(e.worldBound, screen), $"{at}: {name} {e.worldBound} leaves the screen {screen}");
                     Assert.IsTrue(UiLayoutTests.TextFits(e), $"{at}: {name} '{e.text}' is cut ({e.contentRect})");
                 }
+                // The Community row (#1168) runs right to left in Hebrew, like the language row: the button left of its name.
+                var starAt = root.Q("settings-star").worldBound; var communityAt = root.Q("settings-community-label").worldBound;
+                Assert.AreEqual(hebrew, starAt.xMax <= communityAt.xMin + 0.5f, $"{at}: the Star button {starAt} beside its name {communityAt}");
                 // The set choice reads as set while it has the focus a press leaves on it: dark text on the gold fill.
                 var low = root.Q<Button>("settings-quality-low");
                 using (var e = NavigationSubmitEvent.GetPooled()) { e.target = low; low.SendEvent(e); }

@@ -607,6 +607,11 @@ namespace Statecraft.Sim
         public Dictionary<string, int> MoveCost { get; set; } = new Dictionary<string, int>();
         /// <summary>The most units of one side a hex holds (R-MOVE-003; Q-MOVE-3). Required in the GDD loop, at least 1.</summary>
         public int? StackLimit { get; set; }
+        /// <summary>The movement points a step costs between two hexes of one built road segment, or of one built rail segment,
+        /// when lower than the terrain's (R-MOVE-007; Q-MOVE-2). Required in the GDD loop, at least 1.</summary>
+        public int? RoadMoveCost { get; set; }
+        /// <inheritdoc cref="RoadMoveCost"/>
+        public int? RailMoveCost { get; set; }
         /// <summary>The settlements (settlements_1948.yaml ids) whose hexes no player unit may enter or cross before Phase 6
         /// (R-MOVE-005; Q-CIV-1). The owner sets the list.</summary>
         public List<string> EnemyHeldLocalities { get; set; } = new List<string>();
@@ -1009,6 +1014,14 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         /// <summary>The name the player reads (in the Why list).</summary>
         public string Name { get; set; } = "";
+        /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> while it waits for a native
+        /// speaker's review (#564); empty means none yet (the UI keeps the English).</summary>
+        public string NameHe { get; set; } = "";
+        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
         /// <summary>What completes it, checked at the end of every GDD turn (R-OBJ-001).</summary>
         public ObjectiveCondition? CompletesWhen { get; set; }
         /// <summary>The date the real event happened: completing earlier earns the timing bonus (R-OBJ-002).</summary>

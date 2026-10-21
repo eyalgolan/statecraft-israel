@@ -168,7 +168,9 @@ published in Iton Rishmi (Official Gazette) No. 1, and the official English tran
 Affairs (https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel). An official State publication, in the
 public domain; sources in docs/sources/declaration-1948/.
 
-Builds also contain YamlDotNet, Copyright (c) Antoine Aubry and contributors, MIT (LICENSES/YamlDotNet-MIT.txt), and
+Builds also contain YamlDotNet, Copyright (c) Antoine Aubry and contributors, MIT (LICENSES/YamlDotNet-MIT.txt), two
+Octicons drawn in code (star-fill and mark-github, the start screen's Star on GitHub button), Copyright (c) 2026 GitHub
+Inc., MIT (LICENSES/Octicons-MIT.txt), and
 the Unity runtime, used under the Unity Terms of Service. The Unity runtime includes the ICU data file that
 UI Toolkit's advanced text generator uses (Hebrew on the start screen): Copyright (c) 2016 and later Unicode, Inc. and
 others, Unicode License v3 (https://www.unicode.org/license.txt).

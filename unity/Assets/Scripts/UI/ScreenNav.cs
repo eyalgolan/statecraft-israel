@@ -4,13 +4,13 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, How to play and Settings screens, one at a time; pressing the open
+    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, How to play, Objectives and Settings screens, one at a time; pressing the open
     /// screen's button again closes it. Every press toggles, synchronously, with no debounce: two presses in one frame (a
     /// double click, or a click plus Enter) open and close again, so the result depends only on the number of presses
     /// (HudTests.TwoPressesInOneFrameToggleTwice; playtest 1, item 11).</summary>
     public sealed class ScreenNav : System.IDisposable
     {
-        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "how-to-play", "settings" };
+        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "how-to-play", "objectives", "settings" };
         /// <summary>The class on the open screen's button (Statecraft.uss lights its ring).</summary>
         public const string OpenClass = "nav-open";
         /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence) is
@@ -20,6 +20,9 @@ namespace Statecraft.Game.UI
         /// and in the two-row (narrow) HUD, where every screen takes the full width, the minimap column and the info panel
         /// too (#210).</summary>
         public const string ScreenOpenClass = "screen-open";
+        /// <summary>#1106: the classes on a window (a side-menu screen, the decision card) while it opens and while it
+        /// closes (Statecraft.uss holds the transitions).</summary>
+        public const string OpeningClass = "window-opening", ClosingClass = "window-closing";
 
         /// <summary>Disables each HUD panel that a class on the "root" element hides, and enables it again when none does: a
         /// child of an undisplayed element can still take the keyboard focus, so hiding alone leaves its buttons in Tab's
@@ -40,7 +43,8 @@ namespace Statecraft.Game.UI
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
             bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
-            bool report = r.ClassListContains(TurnReportPresenter.OpenClass);   // the turn report covers the HUD under it
+            bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
+            bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
             bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
@@ -60,9 +64,16 @@ namespace Statecraft.Game.UI
             var panel = r.Q(TurnReportPresenter.ElementName);
             if (panel != null)
             {
-                bool was = panel.enabledSelf, now = report && !(start || outcome);
+                bool was = panel.enabledSelf, now = r.ClassListContains(TurnReportPresenter.OpenClass) && !(start || outcome || end);
                 panel.SetEnabled(now);
                 if (!was && now) (panel.userData as System.Action)?.Invoke();   // TurnReportPresenter: Close takes the focus
+            }
+            var over = r.Q(EndScreenPresenter.ElementName);
+            if (over != null)
+            {
+                bool was = over.enabledSelf, now = end && !(start || outcome);
+                over.SetEnabled(now);
+                if (!was && now) (over.userData as System.Action)?.Invoke();   // EndScreenPresenter: Close takes the focus
             }
         }
 
@@ -74,9 +85,78 @@ namespace Statecraft.Game.UI
         /// rendering while its screen is hidden catches up then).</summary>
         public static void OnOpened(VisualElement screen, System.Action action) => screen.userData = action;
 
-        /// <summary>True when <paramref name="screen"/> is open (ScreenNav shows it inline; the stylesheet hides it).</summary>
+        /// <summary>True when <paramref name="screen"/> is open (ScreenNav shows it inline; the stylesheet hides it), and not
+        /// shrinking away (<see cref="Show"/>).</summary>
         public static bool IsOpen(VisualElement screen) =>
-            screen.style.display.keyword == StyleKeyword.Undefined && screen.style.display.value == DisplayStyle.Flex;
+            screen.style.display.keyword == StyleKeyword.Undefined && screen.style.display.value == DisplayStyle.Flex
+            && !screen.ClassListContains(ClosingClass);
+
+        /// <summary>Test seam: whether windows move. Only in play mode: an EditMode panel does not tick (EventImageCatalog's
+        /// note), so there a window shows and hides at once and the layout tests measure it at full size; HudTests turns
+        /// the motion on to see the classes switch.</summary>
+        internal static System.Func<bool> Moves = () => UnityEngine.Application.isPlaying;
+
+        /// <summary>Shows or hides a window (a side-menu screen, the decision card) with #1106's motion, all of it USS
+        /// transitions: a hidden window opens in OpeningClass (small and transparent) for one layout, then grows and fades
+        /// in to its normal style over 0.5 s; Unity runs no transition on an element coming out of display: none, hence the
+        /// start class. A shown window closes in ClosingClass, disabled so nothing in it takes a click or the focus while it
+        /// shrinks over 0.3 s, and leaves the layout when that scale transition ends. Opened again while it shrinks, it grows back
+        /// from where it is; closed before its first layout (two presses in one frame), it just hides.</summary>
+        public static void Show(VisualElement window, bool shown)
+        {
+            if (!Moves()) { window.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None; return; }
+            bool inView = window.style.display.keyword == StyleKeyword.Undefined && window.style.display.value == DisplayStyle.Flex;
+            if (shown)
+            {
+                window.SetEnabled(true);
+                window.RemoveFromClassList(ClosingClass);   // grows back, if it was shrinking
+                if (inView) return;
+                window.AddToClassList(OpeningClass);
+                window.RegisterCallback<GeometryChangedEvent>(EndOpening);
+                window.style.display = DisplayStyle.Flex;
+                return;
+            }
+            if (!inView || window.ClassListContains(OpeningClass)) { Hide(window); return; }
+            if (window.ClassListContains(ClosingClass)) return;
+            window.AddToClassList(ClosingClass);
+            window.SetEnabled(false);
+            window.RegisterCallback<TransitionEndEvent>(EndClosing);
+            // a safety net for a shrink that never reports its end (an ancestor hidden meanwhile, a panel that stops):
+            // the window must not stay in the layout, disabled. A net left from an earlier close can cut a quick
+            // close-reopen-close's shrink short; it never leaves a window stuck.
+            window.schedule.Execute(() => { if (window.ClassListContains(ClosingClass)) Hide(window); }).StartingIn(ClosingNetMs);
+        }
+
+        /// <summary>The safety net's delay: the 0.3 s shrink of .window-closing, plus a margin.</summary>
+        internal const long ClosingNetMs = 400;
+
+        static void Hide(VisualElement window)
+        {
+            window.UnregisterCallback<GeometryChangedEvent>(EndOpening);
+            window.UnregisterCallback<TransitionEndEvent>(EndClosing);
+            window.RemoveFromClassList(OpeningClass);
+            window.RemoveFromClassList(ClosingClass);
+            window.style.display = DisplayStyle.None;
+        }
+
+        /// <summary>The window's first layout out of display: none: its start state is resolved, so it can grow.</summary>
+        static void EndOpening(GeometryChangedEvent e)
+        {
+            var window = (VisualElement)e.currentTarget;
+            window.UnregisterCallback<GeometryChangedEvent>(EndOpening);
+            window.RemoveFromClassList(OpeningClass);
+        }
+
+        /// <summary>The shrink ended: the window leaves the layout, unless it was opened again meanwhile. Only the scale
+        /// counts: closed within 0.5 s of opening, the grow's opacity transition ends during the shrink. A cancelled
+        /// transition does not count: closing mid-grow cancels the grow's scale, and a shrink that stops is the safety
+        /// net's (Show).</summary>
+        static void EndClosing(TransitionEndEvent e) => EndClosing((VisualElement)e.currentTarget, e.target, e.AffectsProperty(Scale));
+        static readonly StylePropertyName Scale = new StylePropertyName("scale");
+        static void EndClosing(VisualElement window, IEventHandler target, bool scale)
+        {
+            if (scale && target == window && window.ClassListContains(ClosingClass)) Hide(window);
+        }
         readonly VisualElement root;
         readonly List<(Button, System.Action)> hooks = new List<(Button, System.Action)>();
         readonly List<Button> closes = new List<Button>();
@@ -196,7 +276,7 @@ namespace Statecraft.Game.UI
             foreach (var s in Screens)
             {
                 var element = root.Q<VisualElement>("screen-" + s);
-                element.style.display = s == screen ? DisplayStyle.Flex : DisplayStyle.None;
+                Show(element, s == screen);   // #1106: grows in, shrinks away
                 root.Q<Button>("nav-" + s).EnableInClassList(OpenClass, s == screen);   // the open screen's button is lit
                 if (s == screen) wide = element.ClassListContains(WideClass);
             }

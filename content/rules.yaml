@@ -147,6 +147,12 @@ mvp:
     desert: 2                            # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
     mountains: 3                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
   stack_limit: 3                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-3: units of one side a hex holds)
+  # Roads and rail (R-MOVE-007; Q-MOVE-2, owner, 15 October 2026, #375: option (a), only the corridors Phase 4 builds).
+  # Proposed in Phase 5 PR 6 (#745) under "Agents propose design values"; the owner may override them. 1 is the lowest
+  # whole cost, so a built segment halves a hills step and thirds a mountain one, but on the coastal plain, valley and
+  # lowland (already 1) it saves nothing. Not historical figures.
+  road_move_cost: 1                      # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-2: movement points for a step along a built road segment)
+  rail_move_cost: 1                      # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-2: movement points for a step along a built rail segment)
   # R-MOVE-005 (Q-CIV-1, owner, 15 October 2026: "No entry until Phase 6"): the settlements no player unit may enter or
   # cross. DRAFT, UNCHECKED: the owner accepted this list as a draft on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259083180).
   # No person has yet checked each place's control on 15 May 1948; research task #1096 will check it. Do not treat it as history.

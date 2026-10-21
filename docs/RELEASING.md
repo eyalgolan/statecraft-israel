@@ -166,7 +166,7 @@ The README's screenshots are claims about the current build. Re-take them whenev
    Before that, capture by hand at 1640×920 in Chrome.
 2. Replace `docs/images/build-m3-map.jpg`, `build-m3-start.jpg`, `build-m3-city.jpg`, `build-m3-cabinet.jpg` and `build-m3-why.jpg` (or add `build-<milestone>-*`
    and update the README to the new names). Each must show a non-sensitive moment: no unreviewed sensitive event card.
-3. Update the visible caption "Real screenshots from build X.Y.Z (Mn), YYYY-MM-DD." in `README.md`, and the
+3. Update the visible caption "Real screenshots, main at abc1234, YYYY-MM-DD." in `README.md`, and the
    "Is this any good?" and "Roadmap" text the change made stale.
 4. Rebuild `docs/images/social-preview.jpg` (1280×640) from the new map shot: `sips --resampleWidth 1280 <shot> --out /tmp/sp.jpg` then `sips --padToHeightWidth 640 1280 --padColor 0B1220 /tmp/sp.jpg --out docs/images/social-preview.jpg` (padded, not cropped, so no text is cut off). The owner re-uploads it under Settings →
    General → Social preview. Never use concept art for the social preview.
@@ -182,7 +182,7 @@ What `README.md` shows at the top, and what `scripts/oss/tests/test_readme.py` c
    AI-generated concept art and not the current build, and the caption under it says "Concept art (AI-generated)",
    "set in 1936" and "not the current build" (`test_concept_art_opens_what_is_this_captioned_as_concept_art`).
 3. **Real gameplay comes next:** the clip (`CLIP`) and the five screenshots (`GRID`, one wide over two pairs), with the
-   captions "Real gameplay, build X.Y.Z, YYYY-MM-DD, commit abc1234." and "Real screenshots from build X.Y.Z (M3),
+   captions "Real gameplay, main at abc1234, YYYY-MM-DD." and "Real screenshots, main at abc1234,
    YYYY-MM-DD." (`test_real_dated_screenshots_in_a_one_plus_two_plus_two_grid`; refreshing them is the section above).
 
 To change any of these, edit `README.md` and `README.he.md` together (the Hebrew README's tests keep the same facts),

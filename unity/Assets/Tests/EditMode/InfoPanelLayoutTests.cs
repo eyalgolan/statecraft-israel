@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
-/// <summary>HUD round 1 (#398): the info panel in the promo's shape (promo/final/03): a one-line hint before a hex is chosen,
+/// <summary>HUD round 1 (#398): the info panel in the promo's shape (promo/final/03): a compact hint before a hex is chosen,
 /// the hex's facts as icon rows (only what the game models: no yields, no land-use name), its text inside the panel at
 /// every window size (#397), and the panels' filigree trim, which takes no clicks.</summary>
 public class InfoPanelLayoutTests
@@ -169,10 +169,10 @@ public class InfoPanelLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>Before a hex is chosen the panel is a one-line hint (the promo shows no panel until a tile is chosen): no
-    /// terrain sign, no rows, and no taller than the hint's line and the panel's padding.</summary>
+    /// <summary>The empty hint stays inside the window and clear of the minimap in both languages: one line on desktop,
+    /// at most two on the phone tier, with no terrain sign, fact rows or spare panel height.</summary>
     [UnityTest]
-    public IEnumerator TheEmptyInfoPanelIsAOneLineHint()
+    public IEnumerator TheEmptyInfoPanelHintFitsBothLanguages()
     {
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
@@ -180,19 +180,24 @@ public class InfoPanelLayoutTests
             foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
                 yield return Rendered(w, h, g, (root, info) => { }, root =>
                 {
+                    var at = $"{(hebrew ? "he" : "en")} {w}x{h}";
                     var panel = root.Q("info-panel");
                     var hint = root.Q<Label>("info-title");
-                    Assert.AreEqual((hebrew ? he : Text)["info.hint"], hint.text);
-                    Assert.IsTrue(TextFits(hint), $"{w}x{h}: the hint fits");
-                    Assert.IsTrue(Inside(panel.worldBound, root.worldBound), $"{w}x{h}: the hint panel fits the window");
-                    Assert.IsFalse(panel.worldBound.Overlaps(root.Q("minimap").worldBound), $"{w}x{h}: the hint stays clear of the minimap");
-                    Assert.AreEqual(DisplayStyle.None, root.Q("info-thumb").resolvedStyle.display, $"{w}x{h}: no terrain sign");
+                    Assert.AreEqual((hebrew ? he : Text)["info.hint"], hint.text, at);
+                    Assert.IsTrue(TextFits(hint), $"{at}: the hint fits");
+                    Assert.IsTrue(Inside(hint.worldBound, panel.worldBound), $"{at}: the hint fits the panel");
+                    Assert.IsTrue(Inside(panel.worldBound, root.worldBound), $"{at}: the hint panel fits the window");
+                    Assert.IsFalse(panel.worldBound.Overlaps(root.Q("minimap").worldBound), $"{at}: the hint stays clear of the minimap");
+                    var lines = root.Q("root").ClassListContains("hud-three-row") ? 2 : 1;
+                    var natural = hint.MeasureTextSize(hint.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                    Assert.LessOrEqual(hint.contentRect.height, natural.y * lines + 1f, $"{at}: the hint uses at most {lines} lines");
+                    Assert.AreEqual(DisplayStyle.None, root.Q("info-thumb").resolvedStyle.display, $"{at}: no terrain sign");
                     foreach (var row in panel.Query(className: InfoPanelPresenter.RowClass).ToList())
-                        Assert.IsFalse(Shown(row), $"{w}x{h}: no fact row before a hex is chosen");
+                        Assert.IsFalse(Shown(row), $"{at}: no fact row before a hex is chosen");
                     var s = panel.resolvedStyle;
-                    var oneLine = hint.worldBound.height + hint.resolvedStyle.marginTop + hint.resolvedStyle.marginBottom
+                    var tightHeight = hint.worldBound.height + hint.resolvedStyle.marginTop + hint.resolvedStyle.marginBottom
                         + s.paddingTop + s.paddingBottom + s.borderTopWidth + s.borderBottomWidth;
-                    Assert.LessOrEqual(panel.worldBound.height, oneLine + 4f, $"{w}x{h}: the empty panel {panel.worldBound} is one line ({hint.worldBound})");
+                    Assert.LessOrEqual(panel.worldBound.height, tightHeight + 4f, $"{at}: the empty panel {panel.worldBound} hugs its hint ({hint.worldBound})");
                 }, hebrew ? he : Text, hebrew);
     }
 
