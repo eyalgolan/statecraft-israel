@@ -30,6 +30,13 @@ namespace Statecraft.Sim
             return r.ObjectivePoints!.Value + (int)bonus;
         }
 
+        /// <summary>The Objectives screen's reading (#1189): one row per objective, in id order (as the loader sorts them),
+        /// done or not, with the player's completion date when it is done and the historical reference date. No score: the
+        /// owner's ruling for the screen (20 October 2026). A pure reading: it writes nothing, so the hash stays put.</summary>
+        public static IReadOnlyList<ObjectiveStatus> Status(Content c, GameState s) =>
+            c.Objectives.Select(o => new ObjectiveStatus(o.Id, o.Name, s.Objectives.TryGetValue(o.Id, out var done) ? done : (DateTime?)null,
+                o.ReferenceDate)).ToList();
+
         /// <summary>Step 11 of the GDD turn (spec 2026-10-12 §2.3, D-A6): records, in id order, every objective whose condition
         /// holds, completed on <paramref name="next"/>, the turn's end date (R-OBJ-001). <paramref name="r"/> is the rules of
         /// the date the turn starts from (docs/determinism.md, "Rules per era").</summary>
@@ -78,6 +85,22 @@ namespace Statecraft.Sim
             // In the Why list's "events" group: the card that follows is an event (Unity's WhyPresenter groups by system).
             why.Add(new Cause("events", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points)));
             return true;
+        }
+    }
+
+    /// <summary>One row of <see cref="Objectives.Status"/>: the objective's id and name, the date the player completed it (null
+    /// until then) and the date of the real event.</summary>
+    public sealed class ObjectiveStatus
+    {
+        public string Id { get; }
+        public string Name { get; }
+        public DateTime? Completed { get; }
+        public DateTime Historical { get; }
+        public bool Done => Completed != null;
+
+        public ObjectiveStatus(string id, string name, DateTime? completed, DateTime historical)
+        {
+            Id = id; Name = name; Completed = completed; Historical = historical;
         }
     }
 }

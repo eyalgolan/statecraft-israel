@@ -13,6 +13,9 @@ waypoints the line is the least-cost path over the scanned map, where the cost i
   track  any dark line (cart tracks, footpaths, the thin narrow-gauge railway symbol): the 1948 Burma Road, which the
          1946 map cannot show as a road, and the 1,050 mm lines (a route's `trace` names the symbol when it is not its
          kind's).
+A route with `trace: straight` is not traced: its line is its waypoints joined by straight lines, for a road the map
+does not show and no source gives the line of (the 1950 Tel Aviv-Netanya road, owner, 18 October 2026, #786). It reads
+no tile, none of it is on a symbol (on_symbol 0), and its max_gap_m is its whole length.
 Each waypoint first snaps to the nearest pixel of its symbol within SNAP_M. The traced pixel chain is simplified
 (a SMOOTH_PX moving average, then Douglas-Peucker at SIMPLIFY_M) and written with 5 decimals (about 1 m).
 
@@ -55,6 +58,7 @@ TILE_CACHE = Path(os.environ.get("STATECRAFT_TILE_CACHE", ROOT / "tools" / ".cac
 USER_AGENT = "statecraft-israel-routes/1.0 (+https://github.com/eyalgolan/statecraft-israel)"
 
 KINDS = ("rail", "road", "track")
+TRACES = KINDS + ("straight",)   # what `trace` may name: a kind's symbol, or straight lines between the waypoints
 SNAP_M = 1500.0           # a waypoint (a town's or a station's coordinates) snaps to its symbol this close
 WINDOW_MARGIN_M = 3000.0  # the search window around two waypoints: their box grown by this (or 35% of their distance)
 SPUR_M = 130.0            # a trace that comes back this close to where it was cuts the loop (a waypoint off the line)
@@ -361,6 +365,10 @@ def trace_route(route: dict, fetch: bool, preview: Path | None = None) -> list[t
     """The route's lon/lat polyline: least-cost paths between its consecutive waypoints, joined and simplified."""
     via = [(float(w["lon"]), float(w["lat"])) for w in route["via"]]
     kind = route.get("trace", route["kind"])
+    if kind == "straight":
+        route["_on_symbol"] = 0.0
+        route["_max_gap_m"] = length_km(via) * 1000
+        return via
     chain: list[tuple[int, int]] = []          # global pixel (x, y)
     on_symbol = total = 0
     off: set[tuple[int, int]] = set()           # global pixels traced off the symbol
@@ -450,8 +458,8 @@ def validate_routes(doc: dict, bounds: dict) -> None:
         if rid in seen:
             raise ValueError(f"routes_1948.yaml: duplicate id {rid}")
         seen.add(rid)
-        if r.get("kind") not in KINDS or r.get("trace", r["kind"]) not in KINDS:
-            raise ValueError(f"{rid}: kind (and trace, when given) must be one of {KINDS}")
+        if r.get("kind") not in KINDS or r.get("trace", r["kind"]) not in TRACES:
+            raise ValueError(f"{rid}: kind must be one of {KINDS}, and trace, when given, one of {TRACES}")
         if r.get("status") not in STATUSES:
             raise ValueError(f"{rid}: status must be one of {STATUSES}")
         signoff = review_record.problem(r)   # a person's sign-off beside the status (#375)

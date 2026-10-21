@@ -1,0 +1,1 @@
+- Opt-in hex player: stream existing Collection figure aliases after the first frame, replace loading stand-ins without rebuilding terrain, and cancel refreshes on board teardown.

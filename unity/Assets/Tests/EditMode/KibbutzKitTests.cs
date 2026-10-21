@@ -61,7 +61,7 @@ public class KibbutzKitTests
     {
         var map = OpenMap();
         var g = new KitGround(map.Terrain, map.Frame, map.Hexes, HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta.elev_min_m);
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
         var localities = map.Localities.Select(p => p.Settlement).ToList();
         var built = SettlementKits.Build(map.Settlements, localities, new List<Localities.Area>(), g);

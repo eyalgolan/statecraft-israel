@@ -35,8 +35,10 @@ namespace Statecraft.Game.Map.Kits
             float yaw = RingYaw(p - heart);
             var (bottom, top) = GroundSpan(p, yaw, w, d, ground, m);
             var wall = C(0.91f, 0.86f, 0.75f); var roof = C(0.70f, 0.30f, 0.20f);
+            var start = km.CutStart();
             km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Village, m, roofed: true);
             km.Gable(p.x, p.y, yaw, w, d, top + h, d * 0.42f, roof, wall);
+            AtWorldScale(owner, "public_building", km, start, p, top, m);   // #1032
             Record(owner, "public_building", p, yaw, w, d, h, wall);
             return 1;
         }

@@ -420,7 +420,7 @@ eras:
 
     static string GddRules(string from, string to) => Fixture.Gdd()["rules.yaml"].Replace(from, to);
 
-    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n";
+    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\n";
 
     static string Objective(string from, string to) => ObjectivesYaml.Replace(from, to);
 
@@ -457,6 +457,52 @@ eras:
         var ex = Assert.Throws<ContentException>(() => Load(gdd: true, new Dictionary<string, string> { [file] = text }, card));
         Assert.Equal(errorFile, ex.File);
         Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    /// <summary>#1189: the Objectives screen's reading, one row per objective in content order, with its name, whether it is done,
+    /// the player's date (none until it is done) and the historical date. Pure: the state's hash is the same afterwards.</summary>
+    [Fact]
+    public void StatusListsEveryObjectiveDoneOrNotWithBothDates()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var hash = s.Hash();
+        var open = Objectives.Status(Real, s);
+        Assert.Equal(hash, s.Hash());
+        Assert.Equal(Real.Objectives.Select(o => (o.Id, o.Name, o.ReferenceDate)), open.Select(o => (o.Id, o.Name, o.Historical)));
+        Assert.All(open, o => { Assert.False(o.Done); Assert.Null(o.Completed); });
+
+        var first = Real.Objectives[0];
+        var date = first.ReferenceDate.AddMonths(-2);
+        Assert.True(Objectives.Record(Real, s, Real.RulesAt(s.Date).Mvp!, first.Id, date, new List<Cause>()));
+        hash = s.Hash();
+        var after = Objectives.Status(Real, s);
+        Assert.Equal(hash, s.Hash());
+        Assert.True(after[0].Done);
+        Assert.Equal(date, after[0].Completed);
+        Assert.Equal(first.ReferenceDate, after[0].Historical);
+        Assert.All(after.Skip(1), o => { Assert.False(o.Done); Assert.Null(o.Completed); });
+    }
+
+    /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native read (#564).</summary>
+    [Fact]
+    public void TheHebrewNameLoadsBesideTheEnglish()
+    {
+        var c = Load(true, new Dictionary<string, string> { ["objectives.yaml"] = ObjectivesYaml.Replace("name: First goal,", "name: First goal, name_he: \u05de\u05d8\u05e8\u05d4 \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4, name_he_review: agent-checked,") });
+        var o = c.Objectives.Single(x => x.Id == "first_goal");
+        Assert.Equal(("First goal", "\u05de\u05d8\u05e8\u05d4 \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4", HebrewReview.AgentChecked, true), (o.Name, o.NameHe, o.NameHeReview, o.NameHeReviewGiven));
+    }
+
+    /// <summary>#1187: the Hebrew name is Hebrew letters, and the review flag is agent-checked or absent.</summary>
+    [Theory]
+    [InlineData("name_he: First goal", "name_he", "Hebrew letters")]
+    [InlineData("name_he: \u05de\u05d8\u05e8\u05d4 \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4, name_he_review: reviewed", "name_he_review", "agent-checked")]
+    [InlineData("name_he_review: agent-checked", "name_he", "required")]
+    public void BadHebrewNameIsAContentError(string insert, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(true, new Dictionary<string, string> { ["objectives.yaml"] = ObjectivesYaml.Replace("name: First goal,", $"name: First goal, {insert},") }));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal($"objectives[first_goal].{field}", ex.Field);
         Assert.Contains(message, ex.Message);
     }
 }

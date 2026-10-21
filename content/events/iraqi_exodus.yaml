@@ -2,6 +2,12 @@
 id: iraqi_exodus
 title: The Jews of Iraq
 text: 'Iraq has frozen the assets of the Jews who gave up their citizenship to leave, and some 64,000 people are still waiting to fly. The transit camps are already crowded. {immigration_minister} asks whether to bring everyone at once.'
+# For the native reviewer (#564): established names follow he.wiki "מבצע עזרא ונחמיה" and "יהדות עיראק"
+# (https://he.wikipedia.org/wiki/מבצע_עזרא_ונחמיה; https://he.wikipedia.org/wiki/יהדות_עיראק); "transit camps" is
+# מעברות, as in maabarot_policy.yaml (he.wiki "מעברה").
+title_he: יהודי עיראק
+text_he: 'עיראק הקפיאה את נכסיהם של היהודים שוויתרו על אזרחותם כדי לצאת, וכ־64,000 איש עדיין ממתינים לטיסה. המעברות כבר צפופות. ההחלטה אם להביא את כולם בבת אחת בידי {immigration_minister}.'
+text_he_review: agent-checked
 anchor: soft
 office: immigration_minister
 # The asset-freeze law of 10 March 1951; the mass airlift ran through 1951.
@@ -10,6 +16,7 @@ to: 1951-07-01
 options:
   - id: airlift
     text: Bring everyone as fast as aircraft allow
+    text_he: להביא את כולם מהר ככל שמאפשרים המטוסים
     historical: true
     recommended: true
     effects:
@@ -17,6 +24,8 @@ options:
       - { target: morale, delta: 0.03 }
   - id: pace
     text: Pace arrivals to the places in the camps
+    text_he: להתאים את קצב ההגעה למקומות הפנויים במעברות
+    alternative: { basis: design }
     effects:
       - { target: morale, delta: -0.05 }
       - { target: intl_standing, delta: -0.02 }

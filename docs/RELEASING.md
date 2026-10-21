@@ -2,11 +2,15 @@
 
 A release is a tagged commit on `main` with a CHANGELOG section and, from the first shared build on, a WebGL zip on the
 GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull request. Steps 4–7 happen on the merged `main`, and steps 5–7 are owner steps.
+The MVP release is web only (owner ruling, 20 Oct 2026 (#814)). Desktop players move after the MVP (#905), and the
+macOS IL2CPP parity check is not an MVP release gate.
 
 1. **Choose the version** (Semantic Versioning, pre-1.0 while the game is pre-release).
 2. **Bump every version site in one pull request:** `sim/Statecraft.Sim/SimInfo.cs` (`Version`) and
-   `unity/ProjectSettings/ProjectSettings.asset` (`bundleVersion`). Then move the `## [Unreleased]` entries in
-   `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD` and leave an empty `## [Unreleased]` above it.
+   `unity/ProjectSettings/ProjectSettings.asset` (`bundleVersion`). Fold the changelog fragments with
+   `uv run scripts/oss/changelog_fold.py`: it moves each `changelog.d/*.md` entry into `## [Unreleased]`, in filename
+   order, and deletes the fragments (it refuses, changing nothing, if one has no entry). Then move the
+   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD` and leave an empty `## [Unreleased]` above it.
    `scripts/oss/tests/test_release.py::test_versions_agree` fails if the three disagree.
 3. **Merge** the pull request (squash).
 4. **Run the release gate** on the merged `main` (it refuses to run elsewhere): `bash scripts/oss/release_gate.sh`. It must print
@@ -14,6 +18,10 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    sensitivity review), while an asset row is `owner-verify`, while the sim's sensitivity gate refuses `content/`, or
    while the history scan shows an open secret-shape row.
 5. **Build and package** on the owner's machine, from the merged `main`:
+
+   Build both web zips from the merged release commit, never from a pre-merge candidate. The .NET SDK includes the
+   source commit in `Statecraft.Sim.dll`'s informational version, so a candidate build cannot be reproduced from the
+   tag after a squash merge. Before building, check that the disk has several GB free for `unity/Library/Bee`.
 
    ```bash
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
@@ -81,7 +89,7 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    every build with the same `bundleVersion` adds one more `.data` there until that cap; the version bump in step 2
    clears them at each release.
 
-   **Desktop builds (macOS, Linux, Windows).** Desktop players are built on the owner's Mac (decisions O7 and O8 in
+   **Desktop builds after the MVP (macOS, Linux, Windows; #905).** Desktop players are built on the owner's Mac (decisions O7 and O8 in
    `docs/oss/DECISIONS.md`; plan in `docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md`). On the merged `main`, tag `HEAD` first
    (`git tag -a vX.Y.Z -m "Statecraft: Israel vX.Y.Z"`; step 6 pushes it), then:
 
@@ -107,30 +115,40 @@ GitHub Releases page (and, from M4, on itch.io). Steps 1–3 are a normal pull r
    archive's files and the build's `event-photos-<platform>.json` to `~/statecraft-release/v<version>-<commit>-<UTC time>/`
    (or `--out`), and prints the path. It never commits, pushes or uploads: copy the record files to the build records
    repository by hand. Signing and Steam upload are later steps, not yet scripted.
-6. **Tag and publish (owner), in one `gh release create`.** The release carries the web zip and, once desktop players
-   ship (decisions O1, O7 and O9 in `docs/oss/DECISIONS.md`), all three desktop archives from "Desktop builds" above, as
-   a pre-release with "unchecked" in its notes. Never publish first and upload the players afterwards:
+6. **Tag and publish (owner), in one `gh release create`.** The MVP release carries only the web zips (owner ruling,
+   20 Oct 2026 (#814)). Desktop players ship after the MVP under #905. For a later release with desktop players, include
+   all three desktop archives from "Desktop builds after the MVP" above, as a pre-release with "unchecked" in its notes.
+   Never publish first and upload the players afterwards:
 
    ```bash
    git tag -a vX.Y.Z -m "Statecraft: Israel vX.Y.Z"   # skip if "Desktop builds" already made it
    git push origin vX.Y.Z
-   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file <notes from CHANGELOG.md, saying "unchecked"> \
-     unity/Builds/statecraft-israel-vX.Y.Z-web.zip unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip \
-     <out>/statecraft-israel-vX.Y.Z-windows-x64.zip \
-     <out>/statecraft-israel-vX.Y.Z-linux-x64.tar.gz <out>/statecraft-israel-vX.Y.Z-macos-universal.zip
+   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file <notes from CHANGELOG.md> \
+     unity/Builds/statecraft-israel-vX.Y.Z-web.zip unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip
    ```
 
-   `<out>` is the folder `tools/release_build.py` printed. The notes are the version's CHANGELOG section
-   (`awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md`), the SHA-256 from step 5, and "unchecked".
+   The notes are the version's CHANGELOG section
+   (`awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md`) and the SHA-256 from step 5.
 
-   Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). It downloads each player,
+   After the MVP, a release with desktop players appends all three archives from the `<out>` folder that
+   `tools/release_build.py` printed. Its notes also say "unchecked" until the player checks below pass:
+
+   ```text
+   <out>/statecraft-israel-vX.Y.Z-windows-x64.zip
+   <out>/statecraft-israel-vX.Y.Z-linux-x64.tar.gz
+   <out>/statecraft-israel-vX.Y.Z-macos-universal.zip
+   ```
+
+   Publishing starts the `Player golden` workflow (`.github/workflows/player-golden.yml`). For the web-only MVP this
+   workflow is not a release gate, and no "unchecked" marker is required (owner ruling, 20 Oct 2026 (#814)). When a
+   release has desktop players, the workflow downloads each player,
    checks it against the SHA-256 GitHub records for the asset, and runs `-batchmode -nographics -golden` on GitHub's
    Windows and Linux machines (the Linux player under `xvfb-run -a`: with no display at all it crashes, issue #533), and the Mac app twice on Apple silicon (`macos-15`):
    its arm64 slice, and its x86_64 slice under Rosetta (`arch -x86_64`; GitHub retires its last Intel image,
    `macos-15-intel`, in August 2027, issue #548). It fails when only one or two of the
    three archives are attached. A release with none (a web-only release, before desktop players ship) passes, but its
    run summary says UNCHECKED.
-   - **The release stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release
+   - **A release with desktop players stays a pre-release marked "unchecked" until that run is green.** Testers can download a pre-release
      as soon as it is published, so do not announce it before then. Then remove "unchecked" from the notes.
    - **Uploading or replacing an archive later** (`gh release upload`, with or without `--clobber`) starts no run. After
      any such upload, run `gh workflow run player-golden.yml -f tag=vX.Y.Z` and wait for it to pass
@@ -152,7 +170,7 @@ The README's screenshots are claims about the current build. Re-take them whenev
    Before that, capture by hand at 1640×920 in Chrome.
 2. Replace `docs/images/build-m3-map.jpg`, `build-m3-start.jpg`, `build-m3-city.jpg`, `build-m3-cabinet.jpg` and `build-m3-why.jpg` (or add `build-<milestone>-*`
    and update the README to the new names). Each must show a non-sensitive moment: no unreviewed sensitive event card.
-3. Update the visible caption "Real screenshots from build X.Y.Z (Mn), YYYY-MM-DD." in `README.md`, and the
+3. Update the visible caption "Real screenshots, main at abc1234, YYYY-MM-DD." in `README.md`, and the
    "Is this any good?" and "Roadmap" text the change made stale.
 4. Rebuild `docs/images/social-preview.jpg` (1280×640) from the new map shot: `sips --resampleWidth 1280 <shot> --out /tmp/sp.jpg` then `sips --padToHeightWidth 640 1280 --padColor 0B1220 /tmp/sp.jpg --out docs/images/social-preview.jpg` (padded, not cropped, so no text is cut off). The owner re-uploads it under Settings →
    General → Social preview. Never use concept art for the social preview.
@@ -168,7 +186,7 @@ What `README.md` shows at the top, and what `scripts/oss/tests/test_readme.py` c
    AI-generated concept art and not the current build, and the caption under it says "Concept art (AI-generated)",
    "set in 1936" and "not the current build" (`test_concept_art_opens_what_is_this_captioned_as_concept_art`).
 3. **Real gameplay comes next:** the clip (`CLIP`) and the five screenshots (`GRID`, one wide over two pairs), with the
-   captions "Real gameplay, build X.Y.Z, YYYY-MM-DD, commit abc1234." and "Real screenshots from build X.Y.Z (M3),
+   captions "Real gameplay, main at abc1234, YYYY-MM-DD." and "Real screenshots, main at abc1234,
    YYYY-MM-DD." (`test_real_dated_screenshots_in_a_one_plus_two_plus_two_grid`; refreshing them is the section above).
 
 To change any of these, edit `README.md` and `README.he.md` together (the Hebrew README's tests keep the same facts),

@@ -172,15 +172,39 @@ namespace Statecraft.Game.Map.Collection
         /// (<paramref name="plots"/>) nearest its centre (<paramref name="centre"/>), and the radius that holds that share round
         /// it, no more than its kit footprint (<paramref name="footprint"/>), under <see cref="NeighbourShare"/> of the distance
         /// to the nearest of <paramref name="others"/>, then pulled in (by tenths, to a third of where it started) while more
-        /// than <see cref="MaxWaterShare"/> of the disc is water. With fewer than five plots: the centre and the footprint,
-        /// under the same two limits.</summary>
-        public static (Vector2 centre, float radius) CoreOf(Vector2 centre, float footprint, IReadOnlyList<Vector2> plots, IEnumerable<Vector2> others,
-            Func<float, float, bool> water)
+        /// than <see cref="MaxWaterShare"/> of the disc is water. With fewer than five plots (counting the clearings'): the centre
+        /// and the footprint, under the same two limits. A unit clearing in the town (<paramref name="clearings"/>, MapScene.UnitClearings) counts
+        /// as if it still held plots (#588, owner, 18 October 2026: "Clearing doesn't move the core"), so a token's clearing
+        /// does not pull the core away from it (Carmeli's put Haifa's model in the bay).</summary>
+        public static (Vector2 centre, float radius) CoreOf(Vector2 centre, float footprint, IReadOnlyList<Vector2> plots,
+            IEnumerable<(Vector2 centre, float radius)> clearings, IEnumerable<Vector2> others, Func<float, float, bool> water)
         {
             Vector2 c = centre; float r = footprint;
-            if (plots.Count >= 5)
+            // The clearings' ground as plots: a grid at the town's own plot spacing (the median distance from a plot to its
+            // nearest; at least a twentieth of the clearing's radius), over each clearing that is in the town as the unit
+            // placer counts it (UnitGround.FootprintMargin).
+            var counted = new List<Vector2>(plots);
+            var inTown = clearings.Where(cl => (cl.centre - centre).magnitude < footprint * Units.UnitGround.FootprintMargin).ToList();
+            if (inTown.Count > 0 && plots.Count >= 2)
             {
-                var near = plots.OrderBy(p => (p - centre).sqrMagnitude).Take(Mathf.Max(5, Mathf.CeilToInt(CoreShare * plots.Count))).ToList();
+                float step = Enumerable.Range(0, plots.Count)
+                    .Select(i => Enumerable.Range(0, plots.Count).Where(j => j != i).Min(j => (plots[j] - plots[i]).magnitude))
+                    .OrderBy(x => x).ElementAt(plots.Count / 2);
+                foreach (var (cc, cr) in inTown)
+                {
+                    float st = Mathf.Max(step, cr / 20f);
+                    int n = Mathf.FloorToInt(cr / st);
+                    for (int i = -n; i <= n; i++)
+                        for (int k = -n; k <= n; k++)
+                        {
+                            var q = cc + new Vector2(i, k) * st;
+                            if ((q - cc).magnitude < cr) counted.Add(q);
+                        }
+                }
+            }
+            if (counted.Count >= 5)
+            {
+                var near = counted.OrderBy(p => (p - centre).sqrMagnitude).Take(Mathf.Max(5, Mathf.CeilToInt(CoreShare * counted.Count))).ToList();
                 c = near.Aggregate(Vector2.zero, (a, p) => a + p) / near.Count;
                 var d = near.Select(p => (p - c).magnitude).OrderBy(x => x).ToList();
                 r = Mathf.Min(footprint, d[d.Count - 1]);
@@ -367,7 +391,7 @@ namespace Statecraft.Game.Map.Collection
                     var plots = layer == null ? (IReadOnlyList<Vector2>)Array.Empty<Vector2>()
                         : layer.InstancesOf(w.Key).Select(m => m.Plot).Distinct().ToList();
                     var others = wants.Where(o => o.OnTown && o.Key != w.Key).Select(o => o.At).Concat(townCentres.Where(o => o.id != w.Key).Select(o => o.c));
-                    var (core, rad) = CoreOf(w.At, w.Radius, plots, others, ground.Water);
+                    var (core, rad) = CoreOf(w.At, w.Radius, plots, map.UnitClearings, others, ground.Water);
                     at = core; edge = 2f * rad;
                     (normal, baseY) = SeatOn(at, rad, ground.Y, ground.Water);
                 }

@@ -2,6 +2,11 @@
 id: education_registration_1951
 title: Schools in the Transit Camps
 text: 'The coalition is split over schooling for immigrant children in the transit camps: the religious parties oppose a religious stream run by the labour movement. {education_minister} brings a registration plan to the Knesset.'
+# For the native reviewer (#564): מעברות follows he.wiki "מעברה": https://he.wikipedia.org/wiki/מעברה . "זרם דתי
+# המנוהל בידי תנועת העבודה" translates the English and is not a proper name; check it against the Knesset minutes below.
+title_he: בתי הספר במעברות
+text_he: 'הקואליציה מפולגת בסוגיית חינוך ילדי העולים במעברות: המפלגות הדתיות מתנגדות לזרם דתי המנוהל בידי תנועת העבודה. תוכנית רישום מטעם {education_minister} מובאת לכנסת.'
+text_he_review: agent-checked
 anchor: hard
 office: education_minister
 # The event opens on its first cited plenum record, 12 February 1951 (owner ruling, 18 October 2026, #457 item 9);
@@ -11,12 +16,21 @@ to: 1951-02-14
 options:
   - id: press_plan
     text: Press the registration plan and go to early elections if it fails
+    text_he: לקדם את תוכנית הרישום וללכת לבחירות מוקדמות אם תיכשל
     historical: true
     recommended: true
     effects:
       - { target: morale, delta: -0.02 }
   - id: concede
     text: Leave camp children in the religious stream
+    text_he: להשאיר את ילדי המחנות בזרם הדתי
+    # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
+    alternative:
+      basis: debated
+      by: the cabinet
+      date: 1951-01-04
+      sources:
+        - { url: "https://www.jta.org/archive/new-crisis-in-israel-cabinet-orthodox-minister-resigns-two-more-may-quit-government", checked: 2026-10-17 }
     # Conceding angers the labour-movement side of the coalition, which wanted the registration plan; its opinion weighs
     # morale and housing (model.yaml), so the cost is a morale penalty a little larger than the historical option's.
     effects:

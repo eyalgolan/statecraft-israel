@@ -5,12 +5,17 @@
 objectives:
   - id: first_new_yishuv
     name: First new yishuv
+    # AI translation of the English name, not yet read by a person (#564, as the cards' text_he_review).
+    name_he: היישוב החדש הראשון
+    name_he_review: agent-checked
     completes_when: { site_built: mefalsim }   # sites.yaml; built by a halutz group's Build yishuv (R-SITE-001 to R-SITE-003)
     # Mefalsim's founding, the ceremony of 12 June 1949 (sites.yaml has the sources). The loader refuses any other date.
     reference_date: 1949-06-12
     card: first_new_yishuv                     # content/events/first_new_yishuv.yaml
   - id: absorb_immigrants
     name: Absorb the immigrants
+    name_he: קליטת העולים
+    name_he_review: agent-checked
     # R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached the milestone,
     # the cities' overflow is at most a share of the people they house and their employed at least a share of civilians.
     completes_when:

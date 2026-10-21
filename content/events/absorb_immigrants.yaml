@@ -9,6 +9,12 @@
 id: absorb_immigrants
 title: One million
 text: 'On 20 December 1949 Israel marked Ingathering of the Exiles Day: its Jewish population had passed one million. A month earlier, with the arrival of 663 immigrants from Tripoli, the Ministry of Immigration had put the Jewish population at 1,000,000, with 321,991 newcomers since 15 May 1948.'
+# For the native reviewer (#564): the Hebrew below (#1187) is an AI translation of the English, not yet read by a
+# person. "יום קיבוץ הגלויות" as the day is commonly written; "משרד העלייה" for the Ministry of Immigration; the option's
+# "להמשיך" as first_new_yishuv.yaml writes it.
+title_he: המיליון
+text_he: 'ב־20 בדצמבר 1949 ציינה ישראל את יום קיבוץ הגלויות: אוכלוסייתה היהודית עברה את המיליון. חודש קודם לכן, עם הגעתם של 663 עולים מטריפולי, הודיע משרד העלייה שהאוכלוסייה היהודית מונה 1,000,000, ומהם 321,991 עולים חדשים שהגיעו מאז ה־15 במאי 1948.'
+text_he_review: agent-checked
 anchor: soft
 objective: absorb_immigrants
 # The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.
@@ -17,6 +23,7 @@ to: 1957-01-01
 options:
   - id: continue
     text: Continue
+    text_he: להמשיך
     historical: true
 tags: []
 sources:

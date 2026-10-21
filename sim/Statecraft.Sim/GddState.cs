@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace Statecraft.Sim
 {
@@ -243,5 +244,55 @@ namespace Statecraft.Sim
         public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2},{3},{4}/", Id, Kind, City, Q, R)
             + (BuiltOn is DateTime on ? "done," + on.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
                 : TurnsLeft.ToString(CultureInfo.InvariantCulture) + (Progress == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Progress).ToString("X16", CultureInfo.InvariantCulture)));
+    }
+
+    /// <summary>Work on one corridor segment (R-COR-001 to R-COR-003): <see cref="Unit"/> building it with
+    /// <see cref="Progress"/> turns of work done, or, once <see cref="BuiltOn"/> is set, built on that date. Immutable.</summary>
+    public sealed class SegmentWork
+    {
+        /// <summary>The halutz unit building the segment; null once it is built (unit ids start at 0).</summary>
+        public int? Unit { get; }
+        /// <summary>Turns of work done (spec section 2.2: "segment progress").</summary>
+        public int Progress { get; }
+        /// <summary>Fractional work carried to the next turn (R-MIN-002), omitted from the hash while zero.</summary>
+        public double Carry { get; }
+        /// <summary>The end date of the turn the segment was built on; null while it is being built.</summary>
+        public DateTime? BuiltOn { get; }
+
+        /// <summary>A segment being built (<paramref name="builtOn"/> null) needs its unit; a built segment has none.</summary>
+        public SegmentWork(int? unit, int progress, DateTime? builtOn, double carry = 0)
+        {
+            if ((builtOn == null) != (unit != null)) throw new ArgumentException("a segment being built has a unit, and a built segment has none", nameof(unit));
+            Unit = unit; Progress = progress; BuiltOn = builtOn; Carry = carry;
+        }
+
+        /// <summary>"b,UNIT,PROGRESS" while building, with nonzero carry appended as IEEE bits; "done,yyyy-MM-dd" once built.</summary>
+        public string Canonical() => BuiltOn is DateTime on
+            ? "done," + on.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : string.Format(CultureInfo.InvariantCulture, "b,{0},{1}", Unit, Progress)
+                + (Carry == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Carry).ToString("X16", CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>A corridor some of whose segments are being built or built (corridors.yaml; R-COR-001 to R-COR-003): one
+    /// entry per segment of the corridor, in index order, null for a segment not started. A corridor with no started
+    /// segment has no record. Immutable; a change replaces the record.</summary>
+    public sealed class CorridorWork
+    {
+        public string Id { get; }
+        public IReadOnlyList<SegmentWork?> Segments { get; }
+
+        public CorridorWork(string id, SegmentWork?[] segments) { Id = id; Segments = (SegmentWork?[])segments.Clone(); }
+
+        /// <summary>The same corridor with segment <paramref name="index"/> (0-based) replaced; null when no segment is left
+        /// with a record.</summary>
+        public CorridorWork? With(int index, SegmentWork? work)
+        {
+            var a = Segments.ToArray();
+            a[index] = work;
+            return a.All(x => x == null) ? null : new CorridorWork(Id, a);
+        }
+
+        /// <summary>"id=SEG;SEG;...", each segment "-" when not started.</summary>
+        public string Canonical() => Id + "=" + string.Join(";", Segments.Select(x => x?.Canonical() ?? "-"));
     }
 }

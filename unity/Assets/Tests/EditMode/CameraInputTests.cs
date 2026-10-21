@@ -27,10 +27,15 @@ public class CameraInputTests
     {
         var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
         var map = asset.FindActionMap("Camera", true);
-        foreach (var name in new[] { "Pan", "DragPan", "Zoom", "Orbit" }) Assert.IsNotNull(map.FindAction(name), name);
+        foreach (var name in new[] { "Pan", "DragPan", "Zoom", "ZoomKeys", "Orbit" }) Assert.IsNotNull(map.FindAction(name), name);
         Assert.AreEqual(8, map.FindAction("Pan").bindings.Count(b => b.isPartOfComposite && b.path.StartsWith("<Keyboard>/")));
         Assert.AreEqual(3, map.FindAction("DragPan").bindings.Count);
         Assert.AreEqual(1, map.FindAction("Zoom").bindings.Count);
+        // a11y B1a: = and -, and the numpad's + and -, as two 1D composites; the wheel's Zoom keeps its one binding.
+        CollectionAssert.AreEquivalent(new[] { "<Keyboard>/equals", "<Keyboard>/minus", "<Keyboard>/numpadPlus", "<Keyboard>/numpadMinus" },
+            map.FindAction("ZoomKeys").bindings.Where(b => b.isPartOfComposite).Select(b => b.path).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "<Keyboard>/equals", "<Keyboard>/numpadPlus" },   // positive = in, as the wheel
+            map.FindAction("ZoomKeys").bindings.Where(b => b.isPartOfComposite && b.name == "positive").Select(b => b.path).ToArray());
         Assert.AreEqual(3, map.FindAction("Orbit").bindings.Count);
         var added = new System.Collections.Generic.List<InputDevice>();
         if (Keyboard.current == null) added.Add(InputSystem.AddDevice<Keyboard>());
@@ -119,6 +124,76 @@ public class CameraInputTests
             Assert.Greater(rig.LookAt.z, 500000f);
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>a11y B1a: the zoom keys move the camera as keyboard pan does, also while the pointer rests over a panel,
+    /// at ZoomKeysPerSecond wheel notches a second held, so the closest to the farthest zoom takes about six seconds.</summary>
+    [Test]
+    public void ZoomKeysWorkOverTheUiAtSixNotchesASecond()
+    {
+        var rig = NewRig();
+        try
+        {
+            CameraController.Step(rig, new CameraInput { KeyZoom = 1, OverUi = true }, 1f, Map);
+            Assert.AreEqual(100000f * Mathf.Pow(1f - CameraController.ZoomPerStep, CameraController.ZoomKeysPerSecond), rig.Distance, 1f);
+            CameraController.Step(rig, new CameraInput { KeyZoom = -1, OverUi = true }, 1f, Map);
+            Assert.AreEqual(100000f, rig.Distance, 1f, "a second out undoes a second in");
+            Assert.AreEqual(6f, CameraController.ZoomKeysPerSecond, "the plan's rate (B1a option 1)");
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    [Test]
+    public void ZoomKeysTwoHalfStepsEqualOneFullStep()
+    {
+        var a = NewRig(); var b = NewRig();
+        try
+        {
+            var inp = new CameraInput { KeyZoom = 1 };
+            CameraController.Step(a, inp, 0.1f, Map);
+            CameraController.Step(b, inp, 0.05f, Map); CameraController.Step(b, inp, 0.05f, Map);
+            Assert.AreEqual(a.Distance, b.Distance, 1e-1);
+            Assert.Less(a.Distance, 100000f);
+        }
+        finally { Object.DestroyImmediate(a.gameObject); Object.DestroyImmediate(b.gameObject); }
+    }
+
+    /// <summary>a11y B1a: only an unmodified press zooms the map, so Ctrl or Cmd with + and - stays the browser's own page
+    /// zoom (and Alt combinations stay the system's). Shift is allowed: + is Shift and = on a US keyboard.</summary>
+    [Test]
+    public void ZoomKeysCountOnlyWithoutCtrlAltOrCmd()
+    {
+        var c = NewController(out var go);
+        try
+        {
+            Assert.AreEqual(1f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, 1f, false).KeyZoom);
+            Assert.AreEqual(-1f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, -1f, false).KeyZoom);
+            Assert.AreEqual(0f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, 1f, true).KeyZoom);
+            Assert.AreEqual(1f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null, 2f, false).KeyZoom, "both composites held count once");
+            Assert.AreEqual(0f, c.Gather(Vector2.zero, Vector2.zero, 0, 0, false, null).KeyZoom, "no keys, no key zoom");
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    /// <summary>The modifier read Update feeds Gather: each of Ctrl, Alt and Cmd on either side counts, Shift does not.</summary>
+    [Test]
+    public void CtrlAltAndCmdAreModifiersAndShiftIsNot()
+    {
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        try
+        {
+            Assert.IsFalse(CameraController.ModifierHeld(null));
+            foreach (var (key, want) in new[] { (Key.None, false), (Key.LeftShift, false), (Key.RightShift, false),
+                (Key.LeftCtrl, true), (Key.RightCtrl, true), (Key.LeftAlt, true), (Key.RightAlt, true), (Key.LeftMeta, true), (Key.RightMeta, true) })
+            {
+                var state = key == Key.None ? new UnityEngine.InputSystem.LowLevel.KeyboardState(Key.Equals)
+                    : new UnityEngine.InputSystem.LowLevel.KeyboardState(key, Key.Equals);
+                InputSystem.QueueStateEvent(keyboard, state); InputSystem.Update();
+                Assert.IsTrue(keyboard.equalsKey.isPressed, key + ": precondition, = is down");
+                Assert.AreEqual(want, CameraController.ModifierHeld(keyboard), key.ToString());
+            }
+        }
+        finally { InputSystem.RemoveDevice(keyboard); }
     }
 
     [Test]
@@ -261,6 +336,42 @@ public class CameraInputTests
             var f = CameraController.ViewFootprint(rig);
             Assert.Greater(f.width, RealMap.width, "at the overview the view is wider than the map");
             Assert.AreEqual(RealMap.center.x, rig.LookAt.x + f.center.x, 1f, "so it is centred on the map");
+        }
+        finally { Object.DestroyImmediate(rig.gameObject); }
+    }
+
+    /// <summary>Issue #1062 (player report): at the distance the game opens at (Map.unity's camera rig; MapScene.Build keeps
+    /// it), a 16:9 view (1280x720, 1920x1080) is narrower than the map, so the arrow keys and a right-drag pan it east and
+    /// west from the first frame, with or without the top bar's inset; panning on still stops where #174 stops it.</summary>
+    [Test]
+    public void AtTheOpeningZoomTheMapPansLeftAndRight()
+    {
+        UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Map.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+        float opening = Camera.main.GetComponent<CameraRig>().Distance;
+        UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
+            UnityEditor.SceneManagement.NewSceneMode.Single);
+        var rig = new GameObject("RigTest", typeof(Camera)).AddComponent<CameraRig>();
+        try
+        {
+            // A rig MapScene adds itself (a camera without one) opens there too.
+            Assert.AreEqual(opening, rig.Distance, "the rig's default is the scene's opening distance");
+            var cam = rig.GetComponent<Camera>(); cam.aspect = 16f / 9f; cam.fieldOfView = CameraRig.Fov;   // the game's view (Init is not run here)
+            foreach (var inset in new[] { 0f, 0.1f })
+                foreach (var (input, east) in new[]
+                {
+                    (new CameraInput { Pan = Vector2.right }, 0.08f), (new CameraInput { Pan = Vector2.left }, -0.08f),   // 0.8 distances a second for 0.1 s
+                    (new CameraInput { DragPan = new Vector2(-50f, 0f) }, 0.06f), (new CameraInput { DragPan = new Vector2(50f, 0f) }, -0.06f),
+                })
+                {
+                    var what = $"inset {inset}, pan {input.Pan}, drag {input.DragPan}";
+                    rig.LookAt = new Vector3(RealMap.center.x, 0, RealMap.center.y); rig.Distance = opening; rig.Yaw = 0; rig.TopInset = inset;
+                    CameraController.Step(rig, default, 0f, RealMap);
+                    float x = rig.LookAt.x;
+                    CameraController.Step(rig, input, 0.1f, RealMap);
+                    Assert.AreEqual(x + east * opening, rig.LookAt.x, 1f, what + ": the view moves sideways");
+                    for (int i = 0; i < 40; i++) CameraController.Step(rig, input, 0.1f, RealMap);
+                    AssertViewOnMap(rig, RealMap, what + ", panned on");
+                }
         }
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
@@ -537,5 +648,48 @@ public class CameraInputTests
             Assert.AreEqual(120000f / 0.9f, rig.Distance, 1f, "one notch out undoes one notch in (10%)");
         }
         finally { Object.DestroyImmediate(go); }
+    }
+}
+
+/// <summary>The zoom keys through Unity's own input path (#890, owner's ask): a virtual keyboard from the Input System's
+/// test fixture, the project-wide Camera actions, and CameraController's frame (Tick, which Update calls), so a key that
+/// stops being read or a modifier that stops being passed on goes red. Edit mode sends no Awake/OnEnable/OnDisable, so
+/// the test sends them.</summary>
+public class CameraZoomKeysThroughTheInputSystemTests : InputTestFixture
+{
+    static void Send(CameraController c, string message) =>
+        typeof(CameraController).GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Invoke(c, null);
+
+    [Test]
+    public void HeldZoomKeysMoveTheCameraAndCtrlStopsThem()
+    {
+        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        var go = new GameObject("KeyZoomTest", typeof(Camera));
+        var rig = go.AddComponent<CameraRig>();
+        rig.LookAt = new Vector3(500000, 0, 500000); rig.Distance = 100000f;
+        var c = go.AddComponent<CameraController>();
+        c.Bounds = new Rect(0, 0, 1000000, 1000000);   // far larger than the view: no view clamp here
+        Send(c, "Awake"); Send(c, "OnEnable");
+        try
+        {
+            float AfterOneSecond(float from) => from * Mathf.Pow(1f - CameraController.ZoomPerStep, CameraController.ZoomKeysPerSecond);
+
+            Press(keyboard.equalsKey);
+            for (int i = 0; i < 10; i++) c.Tick(0.1f);
+            Assert.AreEqual(AfterOneSecond(100000f), rig.Distance, 1f, "= held for a second: six notches in");
+
+            Press(keyboard.leftCtrlKey);
+            var held = rig.Distance;
+            c.Tick(0.1f);
+            Assert.AreEqual(held, rig.Distance, 1e-3, "Ctrl with = is the browser's zoom, not the map's");
+            Release(keyboard.leftCtrlKey); Release(keyboard.equalsKey);
+
+            Press(keyboard.numpadMinusKey);
+            for (int i = 0; i < 10; i++) c.Tick(0.1f);
+            Assert.AreEqual(100000f, rig.Distance, 1f, "the numpad's - held for a second undoes it");
+        }
+        finally { Send(c, "OnDisable"); Object.DestroyImmediate(go); }
     }
 }

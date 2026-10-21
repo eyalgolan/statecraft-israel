@@ -30,30 +30,31 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 You sit in the prime minister's chair from the founding of the state. Each turn you:
 
 - appoint and replace real ministers such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real coalition;
-- divide a tiny budget between security, immigrant absorption, the ma'abarot transit camps and austerity;
+- divide a tiny budget between the ministries, from defence to immigrant absorption;
+- house the immigrants in twelve cities, put them to work and train recruits and halutzim, with most orders paid for in Attention;
 - manage security on a five-level escalation ladder, from routine threats to full war;
 - face real decisions at their real dates, such as the First Truce, the Altalena affair and the Bernadotte assassination, and see why each outcome happened in the "Why?" panel.
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns are in; the rest of the new design is not playable yet, and the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings it in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities and training are in; units you command, combat and settlement control are not playable yet, and the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings it in phases.
 
 ## What it looks like today
 
 <p align="center">
-  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 22 to 29 May 1948: a pan across Tel Aviv, Jaffa and the coastal plain, a click on a hex that opens its panel, the One Army decision, and End turn moving the date to 29 May" width="820">
-  <br><em>Real gameplay, build 0.1.0, 2026-10-13, commit f93fd5e.</em>
+  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army decision, and End turn moving the date to 15 June, with the turn report" width="820">
+  <br><em>Real gameplay, main at 8dae186, 2026-10-20.</em>
 </p>
 <p align="center">
   <img src="docs/images/build-m3-map.jpg" alt="Current build, 15 May 1948: the One Army event card with an archival photograph over the map of the coast, with the top bar, the left icon column and the minimap" width="820">
 </p>
 <p align="center">
   <img src="docs/images/build-m3-start.jpg" alt="Current build: the start screen, two lines of the Declaration of Independence in Hebrew and English and the New game button, over an AI-generated painting of the 14 May 1948 ceremony" width="405">
-  <img src="docs/images/build-m3-city.jpg" alt="Current build: a closer look at Tel Aviv's white blocks, Jaffa and its sailing boats, Lydda, Ramle and Rehovot, with groves, railways, roads and the front lines" width="405">
+  <img src="docs/images/build-m3-city.jpg" alt="Current build: a closer look at Tel Aviv, Jaffa, Lydda, Ramle and Rehovot, with groves, railways, roads and the front lines, and Tel Aviv's city panel with its housing, jobs and training" width="405">
   <br>
   <img src="docs/images/build-m3-cabinet.jpg" alt="Current build: the Cabinet screen with the Provisional State Council as a half circle of seats and the ministers' portrait cards" width="405">
   <img src="docs/images/build-m3-why.jpg" alt="Current build: the Why panel after the first turn, listing each change and its cause" width="405">
-  <br><em>Real screenshots from build 0.1.0 (M3), 2026-10-18. Taken at commit 6c54c95. The start screen's painting is AI-generated.</em>
+  <br><em>Real screenshots, main at 8dae186, 2026-10-20; the start screen, unchanged since, main at 6c54c95, 2026-10-18. The start screen's painting is AI-generated.</em>
 </p>
 
 ## Is this any good?
@@ -63,19 +64,21 @@ It is an early, honest prototype.
 **What works now (M3, 1948–1951):**
 - Monthly turns from 15 May 1948 to 15 January 1952.
 - The start screen.
+- English and Hebrew, with a language switch in Settings. The Hebrew event cards wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
 - The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. They take no orders yet.
+- The twelve cities, with housing, jobs and training.
 - The Cabinet with appointments.
 - The Budget screen.
 - The Defence screen with the escalation ladder and reserve call-up.
 - Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.
-- The "Why?" panel.
+- The "Why?" panel, a turn report after End turn, and a short How to play screen.
 - Autosave and load.
 - The browser (WebGL) build.
 
 **What is missing:**
 - The art in the concept image above. Settlements and trees are still placeholder art.
-- Most of the [GDD](docs/GDD.md): units you train and command, cities with housing and jobs, construction, combat and the three objectives.
+- Most of the [GDD](docs/GDD.md): units you command, combat, building by pioneers, settlement control and the three objectives.
 - Diplomacy.
 - Anything after 1951.
 - A hosted build you can play with one click.
@@ -89,13 +92,13 @@ The live tracker is [#374](https://github.com/eyalgolan/statecraft-israel/issues
 ```mermaid
 flowchart LR
   V["Visual v1"]:::done --> P0["0 · Decisions"]:::now
-  P0 --> P1["1 · Vertical slice"]:::now
+  P0 --> P1["1 · Vertical slice"]:::done
   P1 --> P2["2 · Monthly turns"]:::now
-  P2 --> P3["3 · Cities"]:::next
-  P3 --> P4["4 · Pioneers"]:::next
-  P4 --> P5["5 · Units and combat"]:::next
-  P5 --> P6["6 · Settlement control"]:::next
-  P6 --> P7["7 · Full MVP"]:::next
+  P2 --> P3["3 · Cities"]:::now
+  P3 --> P4["4 · Pioneers"]:::now
+  P4 --> P5["5 · Units and combat"]:::now
+  P5 --> P6["6 · Settlement control"]:::now
+  P6 --> P7["7 · Full MVP"]:::now
   classDef done fill:#e3f1e8,stroke:#2f7d4f,color:#1c2430
   classDef now fill:#f8eedb,stroke:#b7791f,color:#1c2430
   classDef next fill:#eceff3,stroke:#8792a2,color:#1c2430
@@ -104,24 +107,24 @@ flowchart LR
 | Phase | What it adds | Status | Issue |
 |---|---|---|---|
 | 0 | Owner decisions on the open GDD items | In progress: the Phase 1 decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
-| 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | In progress: 8 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
-| 2 | Monthly turns for the real game, and the five resources | In progress: monthly turns and Money are done | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
-| 3 | Every city, with housing, jobs and immigrant absorption | Later | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
-| 4 | Pioneers, building sites, roads and railways | Later | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
-| 5 | Military units, movement and combat | Later | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
-| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | Later | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
-| 7 | Ministers, events and the full 44-turn game | Later | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+| 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | Done: 8 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
+| 2 | Monthly turns for the real game, and the five resources | In progress: all but the top bar for the five resources | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
+| 3 | Every city, with housing, jobs and immigrant absorption | In progress: 5 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
+| 4 | Pioneers, building sites, roads and railways | In progress: 5 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
+| 5 | Military units, movement and combat | In progress: 4 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 2 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | Ministers, events and the full 44-turn game | In progress: 4 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### Other tracks
 
 - **Art:** era-correct 3D settlements, vegetation and units, toward the concept image.
 - **Release (M4):** a historian review and a hosted browser build.
-- **Platforms:** desktop builds and Steam ([#54](https://github.com/eyalgolan/statecraft-israel/issues/54)).
+- **Platforms:** the MVP ships for the browser only; desktop builds ([#905](https://github.com/eyalgolan/statecraft-israel/issues/905)) and Steam ([#54](https://github.com/eyalgolan/statecraft-israel/issues/54)) come after it.
 - **Later eras:** the Yishuv before 1948, and the years after 1956, are paused until the MVP is done ([#49](https://github.com/eyalgolan/statecraft-israel/issues/49) to [#53](https://github.com/eyalgolan/statecraft-israel/issues/53)).
 
 ## Play
 
-There is no hosted build yet; one is planned for M4. To run it locally:
+There is no hosted build yet; one is planned for M4. Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is v0.1.2, a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
