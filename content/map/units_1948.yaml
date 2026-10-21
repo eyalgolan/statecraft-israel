@@ -1,6 +1,10 @@
-# The military formations the map draws in 1948-49 (docs/units.md, "Units in play"). Map-only: the sim never reads this
-# file (ContentLoader reads only its own files), so it does not move the content hash or the goldens. The map reads it
-# (UnitRoster) together with the sim's security level and reserve call-up, and draws one token per unit.
+# The military formations the map draws in 1948-49 (docs/units.md, "Units in play"). The map reads it (UnitRoster)
+# together with the sim's security level and reserve call-up, and draws one token per unit. The sim reads it too, for the
+# starting forces (StartingForces, docs/rules/mvp.md R-UNIT-006; Phase 5 PR 4): a Historical game starts with one unit per
+# army row that is not hidden, has a 15 May strength and an anchor window covering 15 May 1948, on the anchor's hex in
+# unit_anchor_hexes.yaml (rerun tools/unit_anchor_hexes.py after changing an anchor). So the file is in the
+# content hash, and a change to such a row moves the goldens. Those rows must be fact-checked before a shareable build
+# (the release gate; Q-START-3).
 #
 # Owner rulings (2026-10-11): one token per brigade; the number of figures follows the call-up (1, 2 or 3); an Avia
 # S-199 until the Spitfire's sourced date, then the Spitfire; brigades with no sourced position are listed but hidden;

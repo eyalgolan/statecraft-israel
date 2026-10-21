@@ -608,6 +608,43 @@ public class GameSceneTests
         Assert.IsNotNull(layer.Cast<Transform>().SingleOrDefault(t => t.name == $"{MapActions.Housing}_{tlv.Q}_{tlv.R}"));
     }
 
+    // #1123: a built city project is drawn on its hex as its kind's placement; one still being built is not, and its
+    // completion redraws the layer though State.Placements did not change.
+    [Test]
+    public void BuiltCityProjectsAreDrawnAndUnfinishedOnesAreNot()
+    {
+        var root = Boot();
+        var c = Inputs.Content;
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
+        var bridge = root.Bridge!;
+        bridge.Replace(g);
+        var layer = Object.FindFirstObjectByType<PlacementLayer>().transform;
+        bool Drawn(string kind, int q, int r) => layer.Cast<Transform>().Any(t => t.name == $"{kind}_{q}_{r}");
+        var placements = bridge.State.Placements.Count;
+        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var near = c.Hexes.First(h => MapActions.Distance(h.Q, h.R, tlv.Q, tlv.R) == 1
+            && Projects.CheckCity(c, bridge.State, MapActions.Housing, "tel_aviv", h.Q, h.R) == null);
+        Assert.IsNull(bridge.Queue(new StartProject(MapActions.TransitCamp, "tel_aviv", tlv.Q, tlv.R)));
+        Assert.IsNull(bridge.Queue(new StartProject(MapActions.Housing, "tel_aviv", near.Q, near.R)));
+        bridge.EndTurn();
+        var camp = bridge.State.CityProjects.Values.Single(p => p.Kind == MapActions.TransitCamp && p.Q == tlv.Q && p.R == tlv.R);
+        var housing = bridge.State.CityProjects.Values.Single(p => p.Kind == MapActions.Housing && p.Q == near.Q && p.R == near.R);
+        // The minister multiplier scales the progress (#1147; 0.81 here), so the camp's one turn can take two: end turns until it is built.
+        for (int i = 0; i < 10 && bridge.State.CityProjects[camp.Id].BuiltOn == null; i++) bridge.EndTurn();
+        Assert.IsNotNull(bridge.State.CityProjects[camp.Id].BuiltOn, "the transit camp is built");
+        Assert.IsNull(bridge.State.CityProjects[housing.Id].BuiltOn, "the housing, six turns at the same multiplier, is not");
+        Assert.AreEqual(placements, bridge.State.Placements.Count, "a city project is not a legacy placement");
+        Assert.AreEqual(placements + 1, layer.childCount, "the built camp is drawn beside the placements");
+        Assert.IsTrue(Drawn(MapActions.TransitCamp, tlv.Q, tlv.R), "the built camp is drawn on its hex");
+        Assert.IsFalse(Drawn(MapActions.Housing, near.Q, near.R), "unfinished housing is not drawn as built");
+        for (int i = 0; i < 10 && bridge.State.CityProjects[housing.Id].BuiltOn == null; i++) bridge.EndTurn();
+        Assert.IsNotNull(bridge.State.CityProjects[housing.Id].BuiltOn);
+        Assert.AreEqual(placements, bridge.State.Placements.Count);
+        Assert.IsTrue(Drawn(MapActions.Housing, near.Q, near.R), "finishing the housing redraws the layer");
+        Assert.IsTrue(Drawn(MapActions.TransitCamp, tlv.Q, tlv.R));
+    }
+
     // Amendment A2: the smoke run answers a pending event by pressing the card's option button.
     [Test]
     public void TheSmokeRunAnswersAPendingEventThroughTheCard()

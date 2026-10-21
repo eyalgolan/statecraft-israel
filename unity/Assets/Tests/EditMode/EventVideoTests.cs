@@ -21,7 +21,7 @@ using UnityEngine.UIElements;
 /// the owner's review before a shareable build.</summary>
 public class EventVideoTests
 {
-    static readonly Content C = ContentLoader.Load(Paths.Content);
+    static readonly Content C = BuildGateTests.Checked();   // the starting forces' rows fact-checked: these tests are about the clips (R-UNIT-006)
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static EventImageCatalog Photos => AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
     static IReadOnlyList<EventVideoMapping.Row> Rows => EventVideoMapping.Parse(File.ReadAllText(EventVideoMapping.Path));
@@ -205,7 +205,7 @@ public class EventVideoTests
         // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
         StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
             new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, Rows }));
-        var reviewedContent = ContentLoader.Load(Paths.Content);
+        var reviewedContent = BuildGateTests.Checked();
         foreach (var e in reviewedContent.Events)
             if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;
         Assert.IsNull(gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, Rows }), "reviewed: the clips may ship");

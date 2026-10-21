@@ -235,6 +235,8 @@ series:
             ["sites.yaml"] = GddSites,
             ["projects.yaml"] = GddProjects,
             ["corridors.yaml"] = GddCorridors,
+            ["map/units_1948.yaml"] = "units: []\n",   // no starting forces (R-UNIT-006); StartingForcesTests writes rows
+            ["map/unit_anchor_hexes.yaml"] = "anchors: []\n",   // their hexes (tools/unit_anchor_hexes.py)
         };
         if (extra != null) foreach (var kv in extra) o[kv.Key] = kv.Value;
         return o;

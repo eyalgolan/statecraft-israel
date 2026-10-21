@@ -20,16 +20,21 @@ namespace Statecraft.Game.UI
         public static UnitCard For(PlacedToken placed, GameState state, UiText text)
         {
             var t = placed.Token; var u = t.Unit; var a = t.Anchor;
+            bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
+            // In Hebrew each prose text shows its Hebrew counterpart where the row has one, else its English (#558).
+            string Local(string english, string? he) => hebrew && !string.IsNullOrEmpty(he) ? he! : english;
             var lines = new List<string>();
             if (u.Service == UnitData.Air)
             {
                 var aircraft = text[t.ArtType == UnitShowcase.SpitfireType ? "unit.aircraft.spitfire" : "unit.aircraft.s199"];
                 lines.Add(text.Format(t.Flying ? "unit.flying" : "unit.parked", aircraft));
             }
-            lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", a.Place) : text.Format("unit.position", a.Place, a.Since!));
+            var place = Local(a.Place, a.PlaceHe);
+            lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, a.Since!));
             if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", u.Formed!));
-            if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", u.FirstCommander!));
-            lines.Add(u.Sector);
+            // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
+            if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
+            lines.Add(Local(u.Sector, u.SectorHe));
             var hosts = u.AllSources().Select(s => new Uri(s.Url).Host).Distinct(StringComparer.Ordinal).OrderBy(h => h, StringComparer.Ordinal);
             return new UnitCard
             {

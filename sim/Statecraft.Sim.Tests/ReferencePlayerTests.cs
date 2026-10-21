@@ -82,7 +82,7 @@ public class ReferencePlayerTests
         training.Cohorts.Clear();
         Assert.Contains(ReferencePlayer.Commands(Mvp, training), x => x is Train);
         var trained = s.Clone();
-        trained.Units.Add(1, new Unit(1, "halutz", -3, 19));
+        trained.Units.Add(trained.NextId, new Unit(trained.NextId, "halutz", -3, 19));
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, trained), x => x is Train);
         var busy = s.Clone();
         busy.Cities["tel_aviv"] = busy.Cities["tel_aviv"].WithCounts(106, 106, 0);   // 106 jobs: all filled, nobody free
@@ -98,32 +98,32 @@ public class ReferencePlayerTests
     public void ItSendsAnIdleHalutzToTheFirstAvailableSite()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
-        s.Units.Add(7, new Unit(7, "halutz", -3, 19));
-        s.Units.Add(8, new Unit(8, "halutz", -3, 19));
-        s.NextId = 9;
+        s.Units.Add(17, new Unit(17, "halutz", -3, 19));
+        s.Units.Add(18, new Unit(18, "halutz", -3, 19));
+        s.NextId = 19;
         s.Treasury = 10;
         // Two groups, six yishuv sites (Q-SITE-1, #785): each group takes the next free site in ordinal id order.
         var builds = ReferencePlayer.Commands(Mvp, s).OfType<PioneerWork>().ToList();
-        Assert.Equal(new[] { (7, "build_yishuv", "beit_kama"), (8, "build_yishuv", "beit_shemesh") }, builds.Select(b => (b.Unit, b.Action, b.Site)));
+        Assert.Equal(new[] { (17, "build_yishuv", "beit_kama"), (18, "build_yishuv", "beit_shemesh") }, builds.Select(b => (b.Unit, b.Action, b.Site)));
         Assert.Empty(Simulation.Step(Mvp, s, ReferencePlayer.Commands(Mvp, s)).Rejected);
 
         var oneLeft = s.Clone();
-        oneLeft.Units.Add(9, new Unit(9, "halutz", -3, 19));   // a site being built names its unit (SiteWork, R-VET-002)
-        oneLeft.NextId = 10;
-        oneLeft.Sites["beit_kama"] = new SiteWork("beit_kama", 9, 3, null);
+        oneLeft.Units.Add(19, new Unit(19, "halutz", -3, 19));   // a site being built names its unit (SiteWork, R-VET-002)
+        oneLeft.NextId = 20;
+        oneLeft.Sites["beit_kama"] = new SiteWork("beit_kama", 19, 3, null);
         oneLeft.Sites["beit_shemesh"] = SiteWork.Built("beit_shemesh", new DateTime(1949, 6, 15));
         oneLeft.Sites["gilat"] = SiteWork.Built("gilat", new DateTime(1949, 6, 15));
         oneLeft.Sites["kiryat_shmona"] = SiteWork.Built("kiryat_shmona", new DateTime(1949, 6, 15));
         oneLeft.Sites["mefalsim"] = SiteWork.Built("mefalsim", new DateTime(1949, 6, 15));
         // One yishuv site left: the first group takes it, and the second plows the first ready field (R-FIELD-001).
         var last = ReferencePlayer.Commands(Mvp, oneLeft).OfType<PioneerWork>().ToList();
-        Assert.Equal(new[] { (7, "build_yishuv", "reim"), (8, "plow_fields", "beit_shemesh_field") }, last.Select(b => (b.Unit, b.Action, b.Site)));
+        Assert.Equal(new[] { (17, "build_yishuv", "reim"), (18, "plow_fields", "beit_shemesh_field") }, last.Select(b => (b.Unit, b.Action, b.Site)));
         var none = oneLeft.Clone();
-        none.Sites["reim"] = new SiteWork("reim", 7, 3, null);
+        none.Sites["reim"] = new SiteWork("reim", 17, 3, null);
         // Every yishuv site taken: the idle group plows the first ready field, beit_shemesh_field (beit_kama is still being
         // built, so its field is not ready).
         var plow = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
-        Assert.Equal((8, "plow_fields", "beit_shemesh_field"), (plow.Unit, plow.Action, plow.Site));
+        Assert.Equal((18, "plow_fields", "beit_shemesh_field"), (plow.Unit, plow.Action, plow.Site));
         Assert.Empty(Simulation.Step(Mvp, none, ReferencePlayer.Commands(Mvp, none)).Rejected);
         // Every ready field taken too: the idle group builds the first camp site (R-CAMP-001).
         none.Sites["beit_shemesh_field"] = SiteWork.Built("beit_shemesh_field", new DateTime(1949, 6, 15));
@@ -131,17 +131,17 @@ public class ReferencePlayerTests
         none.Sites["kiryat_shmona_field"] = SiteWork.Built("kiryat_shmona_field", new DateTime(1949, 6, 15));
         none.Sites["mefalsim_field"] = SiteWork.Built("mefalsim_field", new DateTime(1949, 6, 15));
         var camp = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
-        Assert.Equal((8, "build_camp", "camp_80"), (camp.Unit, camp.Action, camp.Site));
+        Assert.Equal((18, "build_camp", "camp_80"), (camp.Unit, camp.Action, camp.Site));
         // Every camp site taken as well: the idle group takes the lowest free corridor segment (R-COR-001).
         none.Sites["camp_80"] = SiteWork.Built("camp_80", new DateTime(1949, 6, 15));
         none.Sites["tzrifin"] = SiteWork.Built("tzrifin", new DateTime(1949, 6, 15));
         var road = Assert.Single(ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>());
-        Assert.Equal((8, "build_road", "burma_road:1"), (road.Unit, road.Action, road.Site));
+        Assert.Equal((18, "build_road", "burma_road:1"), (road.Unit, road.Action, road.Site));
         Assert.Empty(Simulation.Step(Mvp, none, ReferencePlayer.Commands(Mvp, none)).Rejected);
         // Two idle groups: each takes the next free segment.
         none.Sites["reim"] = SiteWork.Built("reim", new DateTime(1949, 12, 15));
         none.Sites["reim_field"] = SiteWork.Built("reim_field", new DateTime(1949, 12, 15));
-        Assert.Equal(new[] { (7, "burma_road:1"), (8, "burma_road:2") },
+        Assert.Equal(new[] { (17, "burma_road:1"), (18, "burma_road:2") },
                      ReferencePlayer.Commands(Mvp, none).OfType<PioneerWork>().Select(p => (p.Unit, p.Site)));
         var poor = s.Clone();
         poor.Treasury = 0;

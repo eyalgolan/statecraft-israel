@@ -18,6 +18,7 @@ namespace Statecraft.Sim
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
             Pools.Init(c, s);
+            StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
             AttentionSystem.Refill(c, s);
             EventSystem.Trigger(c, s, why);

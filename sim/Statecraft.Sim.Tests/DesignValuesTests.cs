@@ -148,6 +148,11 @@ public class DesignValuesTests
         ("unit_types.yaml", "types[veteran_soldier].movement_points"),
         ("unit_types.yaml", "types[artillery].movement_points"),
         ("unit_types.yaml", "types[armoured_car].movement_points"),
+        ("unit_types.yaml", "types[egyptian_army].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[arab_legion].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[syrian_army].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[iraqi_army].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[arab_liberation_army].movement_points"),   // #743, owner, 20 October 2026
         // The national Arms pool (Phase 2 PR 3b; #781, owner 18 October 2026: "Approve as drafted").
         ("rules.yaml", "attention_cost.buy_arms"),
         ("rules.yaml", "mvp.arms_start"),

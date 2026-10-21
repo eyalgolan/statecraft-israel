@@ -88,7 +88,8 @@ public class MovementTests
                      new SortedDictionary<string, int>(costs));
         Assert.Equal(new SortedSet<string>(costs.Keys), new SortedSet<string>(c.Hexes.Where(h => h.Land).Select(h => h.Biome)));
         Assert.DoesNotContain(c.Hexes, h => h.Land && (h.Biome == "sea" || h.Biome == "lake"));
-        Assert.Equal(new[] { ("veteran_soldier", 3), ("artillery", 2), ("armoured_car", 5) },
+        Assert.Equal(new[] { ("veteran_soldier", 3), ("artillery", 2), ("armoured_car", 5), ("egyptian_army", 3), ("arab_legion", 3),
+                             ("syrian_army", 3), ("iraqi_army", 3), ("arab_liberation_army", 3) },   // the Arab types: #743, owner, 20 October 2026
                      c.UnitTypes.Where(t => t.Side != "").Select(t => (t.Id, t.MovementPoints)));
     }
 
@@ -367,7 +368,7 @@ public class MovementTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         foreach (var h in c.SettlementHexes) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "armoured_car", h.Q, h.R, side: "israel")); }
-        Assert.Equal(25, s.Units.Count);
+        Assert.Equal(25 + c.StartingForces.Count, s.Units.Count);   // with the starting forces (R-UNIT-006): the enemy's hexes block
         var best = double.MaxValue;
         var listed = 0;
         for (int run = 0; run < 5; run++)
@@ -376,7 +377,7 @@ public class MovementTests
             listed = s.Units.Keys.Sum(id => Movement.Reachable(c, s, id).Count);
             best = Math.Min(best, w.Elapsed.TotalMilliseconds);
         }
-        _out.WriteLine(string.Format(CultureInfo.InvariantCulture, "25 Reachable calls, {0} hexes listed: {1:F2} ms (budget 16 ms, {2:F1}x margin)", listed, best, 16 / best));
+        _out.WriteLine(string.Format(CultureInfo.InvariantCulture, "{3} Reachable calls, {0} hexes listed: {1:F2} ms (budget 16 ms, {2:F1}x margin)", listed, best, 16 / best, s.Units.Count));
         Assert.True(listed > 25);
         Assert.True(best < 16, string.Format(CultureInfo.InvariantCulture, "{0:F2} ms", best));
     }

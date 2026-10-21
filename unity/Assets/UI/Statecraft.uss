@@ -371,6 +371,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }
 .info-empty .gold-rule, .info-empty #info-subtitle, .info-empty .reason { display: none; }
 .info-empty #info-title { font-size: 20px; }
+.hud-three-row .info-panel.info-empty { right: 254px; }
+.hud-three-row .info-empty #info-title { white-space: normal; }
 /* The hex's facts as the promo's icon rows: a gold sign, then the line, which wraps inside the panel (#397). A unit's card
    reuses the lines without the signs (they name a hex's facts, not a unit's). */
 .info-row { flex-direction: row; align-items: flex-start; margin-bottom: 3px; }

@@ -136,11 +136,15 @@ R-CAMP-002: A camp site's `city` is the MVP city (`cities.yaml`) nearest to the 
 
 ## Military units
 
-Phase 5 PR 2 (#741) adds the record and the types only; nothing moves, fights or trains into them yet (owner, 18 October 2026, #741: movement points in Phase 5 PR 5, upkeep in PR 3, enemy types in PR 4).
+Phase 5 PR 2 (#741) adds the record and the types only; nothing moves, fights or trains into them yet (owner, 18 October 2026, #741: movement points in Phase 5 PR 5, upkeep in PR 3, enemy types in PR 4). Phase 5 PR 4 (#743) adds the Arab forces' types and the sourced starting forces (R-UNIT-006).
 
 R-UNIT-001: A military unit is a group at formation scale, one token per formation (D-A1; Q-UNIT-1). It has a side, a type, a hex, a strength (an integer, in population units) and a standing order with its target. A military type in `unit_types.yaml` is a `unit` with a `side` (one of `units_1948.yaml`'s sides) and a `class` (infantry, artillery or armour); the loader refuses a type with only one of them, an unknown side or class, or a population type with either, naming the file and field. The MVP's military types are Israel's `veteran_soldier`, `artillery` and `armoured_car`; `recruit` stays a count per city (R-TRAIN-003).
 
 R-UNIT-002: A unit's side, strength, order and order target are written into the state hash only when they are not at their default ("" or 0), after its service (R-LOOP-002's rule), so a halutz unit's hash text, and every golden, is unchanged.
+
+R-UNIT-006: A new Historical game places one military unit per row of `map/units_1948.yaml` that is not `hidden`, has `service: army` (the squadron and the ships stay presentation-only tokens, Q-UNIT-5), has a `strength` whose `as_of` is the start day, and has an anchor window [from, to) covering the start. The unit stands on the hex that holds the first such anchor's coordinates, by the map's projection and cube rounding (`tools/hexgrid.py`, Unity's `HexPicker`), precomputed by `tools/unit_anchor_hexes.py` into `map/unit_anchor_hexes.yaml`, which the sim reads (no projection maths in the sim, docs/determinism.md); the token may stand one hex away (`UnitPlacer`), which is presentation. Every IDF brigade is a `veteran_soldier`; an Arab force takes its side's one military type, a labelled design value of class infantry with 3 movement points. Its strength is the row's people in population units, the nearest unit with a half up and never below 1 (`people_per_unit` 1,000: Golani's 4,500 is 5, Kiryati's 1,400 is 1). The units take ids 0 upward in the file's order, before any other unit (owner, 20 October 2026, #743: "all five defaults"). The file is in the content hash (Q-START-1), and so is the hex file. The loader refuses a starting row whose anchor is off the map or not on land or has no row in the hex file, a hex row for an anchor the unit file does not have, or whose side has no single military type, naming the file and the row. A shareable build refuses while any row a unit starts from is not `fact-checked` (Q-START-3): `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` name them.
+
+R-UNIT-007: Open mode starts no forces (Q-START-2, owner, 15 October 2026); `Simulation.NewGame` refuses Open mode until milestone M4.
 
 ## Corridors
 

@@ -66,10 +66,11 @@ Not in the slice:
 
 Normal play draws one token per unit from two inputs: the sim's state and `content/map/units_1948.yaml`.
 - **The state** gives the date, the security level and the reserve call-up (`GameState.Date`, `Rung`, `Mobilization`).
-  Nothing else in the sim describes the military: it has no formations and no positions (design:
-  `docs/superpowers/specs/2026-10-11-units-in-play-design.md`).
-- **The data file** is map-only. `ContentLoader` never reads it, so the content hash and the goldens do not move
-  (`UnitsInPlayTests.TheUnitFileDoesNotMoveTheContentHash`). The WebGL manifest ships it.
+  Since Phase 5 PR 4 it also holds the starting forces (below); the tokens do not read them yet, they keep reading the
+  file's rows until Phase 5 PR 14 (design: `docs/superpowers/specs/2026-10-11-units-in-play-design.md`).
+- **The data file** is read by both. The sim reads the rows a new game starts a unit from (`StartingForces`; Q-START-1,
+  owner, 15 October 2026), so the file is in the content hash and moves the goldens
+  (`StartingForcesTests.TheUnitFileEntersTheContentHash`). The WebGL manifest ships it.
 
 Code:
 - `UnitData`: the file.
@@ -182,8 +183,28 @@ date; `as_of` is 15 May 1948, the day the ruling gives the strengths for.
 
 - **No figure, no strength:** Etzioni, the 7th, the 8th and Oded have no size in the note, so their rows give none and
   stay `status: draft`.
-- **Still map-only:** the sim does not read the file yet, so the goldens do not move. Phase 5 PR 4's sim reading follows.
+- **The sim reads them** since Phase 5 PR 4: see "The starting forces" below.
 - Tests: `test_idf_brigade_strengths_are_secondary_and_to_verify` (Python) and `UnitsInPlayTests` (EditMode).
+
+### The starting forces (Phase 5 PR 4, #743)
+
+A Historical game on 15 May 1948 starts with one sim unit per row that is not hidden, is an army row, has a 15 May
+strength and has an anchor window covering the day (docs/rules/mvp.md R-UNIT-006; owner, 20 October 2026, #743: "all five
+defaults"). The unit stands on the hex holding the anchor's coordinates, by the map's own projection and rounding
+(`HexPicker`, `tools/hexgrid.py`), precomputed by `tools/unit_anchor_hexes.py` into `content/map/unit_anchor_hexes.yaml`
+(rerun it after changing an anchor); the token may still stand one hex away (`UnitPlacer`), which is presentation.
+- **Types:** every IDF brigade is a `veteran_soldier`. Each Arab side with a starting row has one infantry type, a labelled
+  design value with 3 movement points: `egyptian_army`, `arab_legion` (Jordan), `syrian_army`, `iraqi_army`,
+  `arab_liberation_army`. These ids are the sim's, not names shown to the player (Q-UI-2, Q-START-4).
+- **Strength** is the row's people in 1,000-person population units, the nearest unit with a half up, never below 1.
+- **Who starts:** Golani 5, Carmeli 2 (at Haifa, its sector seat), Alexandroni 5, Kiryati 1, Givati 5, Harel 1,
+  Negev 2; Egypt 10, the Arab Legion 5, Syria 3, Iraq 3, the ALA 4. Nothing starts for Etzioni (no sourced strength),
+  the 7th and Yiftach (no window on 15 May), Oded, the 8th and the Lebanese row (hidden), or the squadron and the two
+  ships (tokens only, Q-UNIT-5).
+- **Release gate:** every row the sim starts a unit from must be `fact-checked` before a shareable build carries it
+  (Q-START-3). `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` refuse until then, and
+  name the rows; today that is all twelve.
+- Tests: `StartingForcesTests` (dotnet) and `UnitsInPlayTests.TheStartMatchesTheMap` (EditMode).
 
 ### The 1948 Collection on the tokens (#665)
 
@@ -335,6 +356,16 @@ checks every anchor and logs each spot and its distance.
 - A second click shows the hex and its map actions. A hidden layer (the `units` toggle off) selects nothing.
 - The card gives the name, the number and the service, where the unit stands (with "since" only from a sourced start),
   its formation and first commander where sourced, and the sector in the source's words.
+- In the Hebrew UI the place, the first commander and the sector each show their optional Hebrew counterpart in
+  `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, each with its
+  `*_he_sources` (the sources of its proper names) and `*_he_review: agent-checked` until a native speaker has read it
+  (#564). A field without one shows its English, independently of the other two; the English card never changes.
+  `UnitData.Parse` refuses a Hebrew text without its English (so a Hebrew commander never adds a line), a present but
+  blank key, sources or a review flag without the text, and text without Hebrew letters; an unknown key such as
+  `formed_he` fails as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
+  never clear `wikipedia_only` (#902). The shipped rows carry none yet; the translations in `research_notes/Map/unit-card-hebrew-harel-givati-negev.md` wait for its
+  person's source checks. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
+  `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `BadHebrewProseNamesTheProblem`), on test-only fixtures.
 - It also gives the national values the token reflects ("Reserve call-up 80% · security level 5 of 5") and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.
 - It has no orders; a button opens the Defence screen.

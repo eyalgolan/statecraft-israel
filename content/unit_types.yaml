@@ -42,3 +42,32 @@ types:
     side: israel
     class: armour
     movement_points: 5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, Q-ARTY-2: points a turn)
+# The Arab forces' types (Phase 5 PR 4, R-UNIT-006; #743, owner, 20 October 2026: "one labelled design-value infantry type
+# per Arab side that has a row, 3 movement points"). One type per side whose units_1948.yaml rows start a unit; the
+# Lebanese row is hidden, and the local forces have no row yet. The ids are the sim's, not names shown to the player (those
+# stay with Q-UI-2 and Q-START-4). Their movement points equal veteran_soldier's.
+  - id: egyptian_army
+    kind: unit
+    side: egypt
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: arab_legion
+    kind: unit
+    side: jordan
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: syrian_army
+    kind: unit
+    side: syria
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: iraqi_army
+    kind: unit
+    side: iraq
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: arab_liberation_army
+    kind: unit
+    side: ala
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)

@@ -1205,6 +1205,9 @@ namespace Statecraft.Sim
         public List<CityStart> Cities = new List<CityStart>();
         /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>
         public List<UnitType> UnitTypes = new List<UnitType>();
+        /// <summary>The forces a Historical game starts with (map/units_1948.yaml; R-UNIT-006), in file order: the unit with id i
+        /// of a new game is the i-th. Empty in the legacy loop.</summary>
+        public List<StartingForce> StartingForces = new List<StartingForce>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>
