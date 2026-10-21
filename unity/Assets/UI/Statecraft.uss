@@ -335,6 +335,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-text { white-space: normal; margin-bottom: 8px; }
 /* An objective card's line under its text (#380): when it was completed against history. */
 .event-objective { white-space: normal; margin-bottom: 8px; }
+/* A consequence card's banner (#954): which road it follows and the record beside it, above the text; sober, in the muted
+   ink, set off by a thin gold rule at its start edge. The rejoin line under an option is in the same muted ink,
+   indented 46 px to line up with the option's text after its round sign (.event-option padding). */
+.event-alt-banner { display: none; white-space: normal; margin: 0 0 8px 0; padding: 2px 0 2px 10px; border-left-width: 2px; border-color: var(--gold); }
+.lang-he .event-alt-banner { border-left-width: 0; border-right-width: 2px; padding: 2px 10px 2px 0; }
+.event-rejoin { white-space: normal; margin: -1px 0 4px 46px; }
+.lang-he .event-rejoin { margin: -1px 46px 4px 0; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
@@ -494,6 +501,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .turn-report-row { margin-bottom: 10px; }
 .turn-report-heading { white-space: normal; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 .turn-report-causes { white-space: normal; padding-left: 12px; }
+/* The end screen (#812) reuses the report's backdrop and panel: its outcome in the heading face, one line per part. */
+.end-screen-outcome { white-space: normal; margin-bottom: 10px; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
+.end-screen-line { white-space: normal; margin-bottom: 6px; }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
 /* The first-turn guide (#42, FirstTurnGuidePresenter): shown while the root has guide-open. The layer and the ring take no
@@ -846,7 +856,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    in it. Each rule above that names EB Garamond is listed here; HebrewUiTests fails for one that is missed, including the
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
-.lang-he .why-group, .lang-he .turn-report-heading, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
+.lang-he .why-group, .lang-he .turn-report-heading, .lang-he .end-screen-outcome, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
 .lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;

@@ -181,7 +181,9 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="gold-rule" />
-                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
+                <!-- event-alt-banner: a consequence card's road and the record beside it (#954), hidden on every other card;
+                     inside the scroll, so on a short window it scrolls with the text and never pushes the options away. -->
+                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-alt-banner" class="muted event-alt-banner" /><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
                 <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
                 <ui:Label name="event-delegate" class="event-delegate" />
                 <ui:VisualElement name="event-options" />
@@ -410,6 +412,19 @@
                 <ui:VisualElement class="row turn-report-actions">
                     <ui:Button name="turn-report-all" />
                     <ui:Button name="turn-report-close" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- The end screen (#812, EndScreenPresenter): the sim's end report once the game is over. Over the turn report the
+             last turn brings, under the outcome clips' layer; the same backdrop and panel as the report. -->
+        <ui:VisualElement name="end-screen" class="turn-report">
+            <ui:VisualElement name="end-screen-panel" class="panel turn-report-panel">
+                <ui:VisualElement class="screen-header"><ui:Label name="end-screen-title" class="title" /></ui:VisualElement>
+                <ui:ScrollView name="end-screen-rows" class="turn-report-rows" />
+                <ui:VisualElement class="row turn-report-actions">
+                    <ui:Button name="end-screen-new-game" />
+                    <ui:Button name="end-screen-close" />
                 </ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>

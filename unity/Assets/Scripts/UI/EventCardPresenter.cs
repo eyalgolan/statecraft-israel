@@ -30,6 +30,8 @@ namespace Statecraft.Game.UI
         /// <summary>On End Turn while the shown card cannot be answered with the Attention left (#1034): Statecraft.uss
         /// highlights it, as ending the turn is then the way on (EventSystem.Delegate hands the card to its minister).</summary>
         public const string EndTurnWaitingClass = "end-turn-waiting";
+        /// <summary>The line under an option that returns the course to the record (EventOption.Rejoin, #954; Statecraft.uss).</summary>
+        public const string RejoinClass = "event-rejoin";
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -246,9 +248,11 @@ namespace Statecraft.Game.UI
             // the ministers' Hebrew names in its placeholders, and the English where it has none (fail open). A variant
             // (R-ALT-010) has no Hebrew, so a card on a road not taken keeps its variant's English.
             var variant = Timeline.Variant(c, s, e);
-            bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
-            string Local(string english, string he) => hebrew && he != "" ? Cabinet.Fill(c, s, he, date, p => ContentNames.Of(text, p)) : english;
+            string Local(string english, string he) => ContentNames.Fill(text, c, s, date, english, he);
             card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), variant == null || variant.Title == "" ? e.TitleHe : "");
+            var banner = card.Q<Label>("event-alt-banner");   // a consequence card's road (#954); none on any other card
+            banner.text = OriginLine(c, s, e, text);
+            banner.style.display = banner.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder), ContentNames.Of(text, holder));
             card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? e.TextHe : "");
@@ -269,6 +273,11 @@ namespace Statecraft.Game.UI
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid);
                 options.Add(b);
+                if (o.Rejoin == "") continue;
+                // Under the option, not in it: the button's label stays the choice itself, and a Label takes no Tab stop.
+                var rejoin = new Label(text["event.rejoin"]);
+                rejoin.AddToClassList("muted"); rejoin.AddToClassList(RejoinClass);
+                options.Add(rejoin);
             }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
@@ -292,6 +301,32 @@ namespace Statecraft.Game.UI
             var early = Objectives.MonthsEarly(done, o.ReferenceDate);
             return early == 1 ? t.Format("event.objective_early_one", Date(done), Date(o.ReferenceDate))
                 : t.Format("event.objective_early", Date(done), Date(o.ReferenceDate), early);
+        }
+
+        /// <summary>A consequence card's banner (#954; plan 2026-10-17-alternate-timelines.md, A.4.7): the road it follows as
+        /// the player took it (Timeline.Origin: that card's option and title, through the same text pipeline as that card's
+        /// own labels) and, where that card has one, the record's option beside it (Timeline.HistoricalOption). A chained
+        /// card follows a consequence card, which has no historical option: the comparison is left out, never made up.
+        /// Empty for any other card.</summary>
+        public static string OriginLine(Content c, GameState s, GameEvent e, UiText t)
+        {
+            var origin = Timeline.Origin(c, s, e);
+            if (origin == null) return "";
+            // The loader checks every requirement names an event, but a save from older content may hold an option the card
+            // no longer has: then no banner rather than a broken card.
+            var road = c.Events.FirstOrDefault(x => x.Id == origin.Value.Event);
+            var option = road?.Options.FirstOrDefault(o => o.Id == origin.Value.Option);
+            if (road == null || option == null) return "";
+            var date = EventSystem.FillDate(road, s.Date);
+            // Use the road card's own per-field fallback and name/date routing (#1064), not the consequence's date.
+            bool hebrew = t["ui.lang"] == UiLanguage.Hebrew;
+            string Local(string english, string he) => hebrew && he != "" ? Cabinet.Fill(c, s, he, date, p => ContentNames.Of(t, p)) : english;
+            var variant = Timeline.Variant(c, s, road);
+            var took = Local(Cabinet.Fill(c, s, option.Text, date), option.TextHe);
+            var title = Local(EventSystem.Title(c, s, road), variant == null || variant.Title == "" ? road.TitleHe : "");
+            var record = Timeline.HistoricalOption(road);
+            return record == null ? t.Format("event.alt_origin_no_record", took, title)
+                : t.Format("event.alt_origin", took, title, Local(Cabinet.Fill(c, s, record.Text, date), record.TextHe));
         }
 
         /// <summary>A newly shown event puts the keyboard focus on the card (keyboard play, #41): the next Tab reaches its

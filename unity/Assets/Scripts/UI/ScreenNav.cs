@@ -43,7 +43,8 @@ namespace Statecraft.Game.UI
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
             bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
-            bool report = r.ClassListContains(TurnReportPresenter.OpenClass);   // the turn report covers the HUD under it
+            bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
+            bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
             bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
@@ -63,9 +64,16 @@ namespace Statecraft.Game.UI
             var panel = r.Q(TurnReportPresenter.ElementName);
             if (panel != null)
             {
-                bool was = panel.enabledSelf, now = report && !(start || outcome);
+                bool was = panel.enabledSelf, now = r.ClassListContains(TurnReportPresenter.OpenClass) && !(start || outcome || end);
                 panel.SetEnabled(now);
                 if (!was && now) (panel.userData as System.Action)?.Invoke();   // TurnReportPresenter: Close takes the focus
+            }
+            var over = r.Q(EndScreenPresenter.ElementName);
+            if (over != null)
+            {
+                bool was = over.enabledSelf, now = end && !(start || outcome);
+                over.SetEnabled(now);
+                if (!was && now) (over.userData as System.Action)?.Invoke();   // EndScreenPresenter: Close takes the focus
             }
         }
 

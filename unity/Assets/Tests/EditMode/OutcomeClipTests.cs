@@ -24,6 +24,7 @@ public class OutcomeClipTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
     static string Yaml => File.ReadAllText(EventVideoMapping.Path);
 
     [Test]
@@ -59,8 +60,9 @@ public class OutcomeClipTests
         public int Closed;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<IDisposable> owned = new List<IDisposable>();
 
-        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null)
+        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null, Content? content = null)
         {
+            var t = text ?? Text; var c = content ?? C;
             rt = new RenderTexture(1920, 1080, 0);
             ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
@@ -72,14 +74,14 @@ public class OutcomeClipTests
             go.SetActive(true);
             Root = doc.rootVisualElement;
             Root.Q("root").RemoveFromClassList("loading");
-            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-            g.State.Date = C.Events.First(e => e.Id == events[0]).From;
+            var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+            g.State.Date = c.Events.First(e => e.Id == events[0]).From;
             g.State.PendingEvents.Clear(); g.State.PendingEvents.AddRange(events);
-            Bridge = new SimBridge(g, Text, step);
-            owned.Add(new HudPresenter(Root, Bridge, Text));
+            Bridge = new SimBridge(g, t, step);
+            owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
-            Card = new EventCardPresenter(Root, Bridge, Text, null, null, CardPlayer, _ => null); owned.Add(Card);
-            Outcomes = new OutcomePresenter(Root, Bridge, Text, OutcomePlayer, EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
+            Card = new EventCardPresenter(Root, Bridge, t, null, null, CardPlayer, _ => null); owned.Add(Card);
+            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
             owned.Add(Outcomes);
             owned.Add(CardPlayer); owned.Add(OutcomePlayer);
         }
@@ -116,6 +118,32 @@ public class OutcomeClipTests
         Assert.IsFalse(r.Root.Q("info-panel").enabledSelf);
         Assert.IsFalse(r.Root.Q("event-layer").enabledSelf);
         Assert.AreEqual("AI-generated illustration", r.Root.Q<Label>("outcome-label").text);
+    }
+
+    /// <summary>#1210: in Hebrew the caption is the order in the option's text_he, the way the event card shows it; an
+    /// option with no Hebrew falls back to its English text (fail open, like the card).</summary>
+    [Test]
+    public void InHebrewTheCaptionUsesTheOptionsHebrewTextAndFallsBackToEnglish()
+    {
+        LogAssert.ignoreFailingMessages = true;
+        var he = He;
+        var option = C.Events.First(e => e.Id == "maabarot_policy").Options.First(o => o.Id == "maabarot");
+        Assert.IsNotEmpty(option.TextHe, "precondition: the option has Hebrew text");
+        using (var r = new Rig(new[] { "maabarot_policy" }, text: he))
+        {
+            r.Order("maabarot_policy", "maabarot");
+            r.Bridge.EndTurn();
+            Assert.AreEqual(he.Format("outcome.order", option.TextHe), r.Outcomes.Caption);
+            StringAssert.DoesNotContain(option.Text, r.Outcomes.Caption, "no English in the Hebrew caption");
+        }
+        var c = ContentLoader.Load(Paths.Content);
+        c.Events.First(e => e.Id == "maabarot_policy").Options.First(o => o.Id == "maabarot").TextHe = "";
+        using (var r = new Rig(new[] { "maabarot_policy" }, text: he, content: c))
+        {
+            r.Order("maabarot_policy", "maabarot");
+            r.Bridge.EndTurn();
+            Assert.AreEqual(he.Format("outcome.order", option.Text), r.Outcomes.Caption, "no text_he: the English");
+        }
     }
 
     /// <summary>Scenario A of the review: a screen is open at End Turn. The clip closes it and is drawn over the screens

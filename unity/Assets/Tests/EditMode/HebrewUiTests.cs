@@ -630,4 +630,18 @@ public class HebrewUiTests
         }
         finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
     }
+
+    /// <summary>#1210: the one rule the event card and the outcome caption share. In Hebrew a text with a Hebrew form shows
+    /// it, a text without one falls back to the English (fail open); in English the English always.</summary>
+    [Test]
+    public void ContentNamesFillPicksTheHebrewTextOnlyInHebrewAndWhereThereIsOne()
+    {
+        var c = Inputs.Content;
+        var s = Statecraft.Sim.Simulation.NewGame(c, 1, Statecraft.Sim.Mode.Historical);
+        var option = c.Events.First(e => e.Id == "maabarot_policy").Options.First(o => o.Id == "maabarot");
+        StringAssert.DoesNotContain("{", option.TextHe, "precondition: no placeholder, so the Hebrew shows as written");
+        Assert.AreEqual(option.TextHe, ContentNames.Fill(He, c, s, s.Date, option.Text, option.TextHe));
+        Assert.AreEqual(option.Text, ContentNames.Fill(He, c, s, s.Date, option.Text, ""), "no text_he: the English");
+        Assert.AreEqual(option.Text, ContentNames.Fill(En, c, s, s.Date, option.Text, option.TextHe), "English UI: the English");
+    }
 }

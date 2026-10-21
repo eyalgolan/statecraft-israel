@@ -61,6 +61,9 @@ namespace Statecraft.Game.UI
         string? hoveredCity;   // the city HoverCity lit (#1063)
         OutcomePresenter? outcomes;
         TurnReportPresenter? report;
+        EndScreenPresenter? end;
+        /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
+        bool endClosed;
         FirstTurnGuidePresenter? guide;
         /// <summary>Tests: the first-turn guide of the last Begin.</summary>
         internal FirstTurnGuidePresenter? Guide => guide;
@@ -325,6 +328,10 @@ namespace Statecraft.Game.UI
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
                 Own(GameStart.Autosave(bridge, store, text, toast.Append));   // appends: the turn's refusals stay visible
             }
+            // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
+            // is its two presses; a smoke run has none.
+            end = Own(new EndScreenPresenter(root, bridge, text, newGame == null ? null : newGame.Press, show: !endClosed));
+            endClosed = false;
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
             Func<Vector2, bool> overUi = p => outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
@@ -472,6 +479,7 @@ namespace Statecraft.Game.UI
         {
             if (Bridge == null || smokeRun) return;
             Language = language;
+            endClosed = end != null && !end.IsOpen;   // read before Begin disposes it
             Begin(inputs, 0, keep: Bridge);
             nav?.Open("settings");
             document.rootVisualElement.Q<Button>("settings-language-" + language)?.Focus();
@@ -544,7 +552,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; guide = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -677,12 +685,12 @@ namespace Statecraft.Game.UI
             // With no screen to close, Escape skips the first-turn guide (FirstTurnGuidePresenter.Escape).
             // With nothing else to close, Escape on the open decision card is Hide (EventCardPresenter.Escape; the card itself
             // takes the Cancel event when it has the focus).
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null) card?.Escape(); }
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null) card?.Escape(); }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
             // stay with the camera (NavigationGuard, B6).
             var keys = UnityEngine.InputSystem.Keyboard.current;
-            if (keys != null && outcomes?.Showing == null && report?.IsOpen != true && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
+            if (keys != null && outcomes?.Showing == null && report?.IsOpen != true && end?.IsOpen != true && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
             {
                 KeyScroll.Key? page = keys.pageUpKey.wasPressedThisFrame ? KeyScroll.Key.PageUp : keys.pageDownKey.wasPressedThisFrame ? KeyScroll.Key.PageDown
                     : keys.homeKey.wasPressedThisFrame ? KeyScroll.Key.Home : keys.endKey.wasPressedThisFrame ? KeyScroll.Key.End : (KeyScroll.Key?)null;
