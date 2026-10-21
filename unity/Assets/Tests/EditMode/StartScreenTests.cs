@@ -273,6 +273,23 @@ public class StartScreenTests
         finally { ExternalLink.Opener = ExternalLink.Default; }
     }
 
+    /// <summary>#1169: the start screen's "Report a bug or idea" opens the report panel over the start screen, which stays
+    /// open under it and is out of Tab's reach until the panel closes.</summary>
+    [Test]
+    public void TheReportButtonOpensThePanelOverTheScreen()
+    {
+        using var rig = new Rig(TempStore());
+        using var feedback = new FeedbackPresenter(rig.Ui.Root, null, "0.1.0 / content ab12");
+        Assert.AreEqual("Report a bug or idea", rig.Ui.Q<Button>("start-report").text);
+        rig.Ui.Press("start-report");
+        Assert.IsTrue(feedback.IsOpen);
+        Assert.IsTrue(rig.Start.IsOpen, "the start screen stays under it");
+        Assert.IsFalse(rig.Ui.Q<VisualElement>("start-screen").enabledSelf, "out of Tab's reach");
+        rig.Ui.Press("feedback-close");
+        Assert.IsTrue(rig.Ui.Q<VisualElement>("start-screen").enabledSelf);
+        Assert.IsTrue(rig.Start.IsOpen);
+    }
+
     [Test]
     public void ContinueShowsOnlyWithASaveAndLoadsIt()
     {
@@ -360,7 +377,7 @@ public class StartScreenTests
         var cont = rig.Ui.Q<Button>("start-continue");
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
-        // Tab walks the screen's buttons only: Continue, New Game, the recording's button and Star on GitHub (#1168).
+        // Tab walks the screen's buttons only: Continue, New Game, the recording's button, Star on GitHub (#1168) and Report a bug or idea (#1169).
         var seen = new List<string>();
         for (int i = 0; i < 4; i++)
         {
@@ -370,7 +387,7 @@ public class StartScreenTests
             seen.Add((rig.Ui.Root.focusController.focusedElement as VisualElement)?.name ?? "none");
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
-        Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+        Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star" || n == "start-report"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -561,7 +578,7 @@ public class StartScreenTests
                     Assert.GreaterOrEqual(panel.yMin, window.yMin + painted * 0.5f - 0.5f, $"{at}: the panel {panel} covers the painting's upper half");
                 }
                 if (h > w) Assert.IsTrue(root.Q("start-screen").ClassListContains(StartScreenPresenter.BandClass), $"{at}: a phone held upright stacks the painting over the panel");
-                var lines = new[] { "start-title", "start-he-proclamation", "start-en-proclamation", "start-he-date", "start-en-date", "start-source", "start-actions" };
+                var lines = new[] { "start-title", "start-he-proclamation", "start-en-proclamation", "start-he-date", "start-en-date", "start-source", "start-actions", "start-community" };
                 foreach (var name in lines)
                 {
                     var r = R(name);
@@ -590,6 +607,8 @@ public class StartScreenTests
                 Assert.AreEqual(newGameStyle.fontSize, starStyle.fontSize, $"{at}: the Star button's text is New game's size");
                 Assert.Less(starStyle.backgroundColor.a, 0.01f, $"{at}: the Star button has no fill (secondary to New game)");
                 Assert.AreNotEqual(newGameStyle.borderTopColor, starStyle.borderTopColor, $"{at}: the Star button's edge is not New game's gold");
+                Assert.IsTrue(Inside(R("start-report"), R("start-community")), $"{at}: the Report button {R("start-report")} is in its row");   // #1169
+                Assert.IsFalse(R("start-report").Overlaps(star), at);
             }
             finally
             {
