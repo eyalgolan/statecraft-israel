@@ -1,4 +1,4 @@
-"""tools/slim_collection.py (issue #664) slims the same 31 models, in the same categories, that the game's catalog
+"""tools/slim_collection.py (issue #664) slims the same models, in the same categories, that the game's catalog
 (unity/Assets/Scripts/Map/Collection/CollectionCatalog.cs) streams; the caps match the Unity import tests."""
 import re
 from pathlib import Path
@@ -15,22 +15,72 @@ IMPORT_TESTS = REPO / "unity/Assets/Tests/EditMode/CollectionImportTests.cs"
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
     bundles = {}
-    for name, body in re.findall(r"\((People|Vehicles|Animals), new\[\]\s*\{(.*?)\}\)", text, re.S):
+    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns), new\[\]\s*\{(.*?)\}\)", text, re.S):
         bundles[name] = re.findall(r'"([a-z0-9-]+)"', body)
     return bundles
 
 
-def test_the_tool_slims_the_31_models_the_catalog_streams():
+def test_the_tool_slims_the_50_models_the_catalog_streams():
     bundles = catalog_bundles()
-    assert bundles == {"People": slim.PEOPLE, "Vehicles": slim.VEHICLES, "Animals": slim.ANIMALS}
-    assert len(slim.IDS) == len(set(slim.IDS)) == 31
+    assert bundles == {"People": slim.PEOPLE, "Vehicles": slim.VEHICLES, "Animals": slim.ANIMALS, "Towns": slim.TOWNS}
+    assert len(slim.IDS) == len(set(slim.IDS)) == 50
     assert all(not i.startswith("b") for i in slim.IDS), "the buildings are #659's"
+
+
+def test_the_towns_are_the_nine_of_507_and_the_jerusalem_variant_of_336():
+    # Owner ruling, 17 October 2026 (#663): "The nine whole-town models ship". Each is #507's folder name. The Jerusalem
+    # 3denhance variant is #336's only, and comes in beside them, not in place of #507's Jerusalem (owner, 19 October
+    # 2026, on #708: "Yes, both", under the terms of #708's eight figures).
+    assert slim.TOWNS == [
+        "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+        "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+        "jerusalem-stone-city-v1-3denhance",
+    ]
+
+
+# Issue #708: the eight figures offered only in #336 (owner, 18 Oct 2026, #708: "the 8 figures in #708 can be merged
+# without his license line"), and #886's pioneer farmer (owner, 19 Oct 2026: "Yes, both"), people like C01-C13, so they
+# stream in the people bundle after the twelve of #507.
+FIGURES_336 = [
+    "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
+    "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
+    "figure-pioneer-farmer-v1-tpose",
+]
+
+
+def test_the_nine_figures_of_336_are_people_after_the_twelve_of_507():
+    assert slim.PEOPLE[12:] == FIGURES_336
+    assert not set(FIGURES_336) & set(slim.POSE_CLIP)
+
+
+class _Actions:
+    def __init__(self, *names):
+        self.data = type("data", (), {"actions": [type("action", (), {"name": n})() for n in names]})()
+
+
+def test_the_idle_clip_is_found_with_or_without_blenders_numbered_suffix():
+    # #507 names it "Armature|Armature|idle"; #336's FBX files carry "Armature|idle.001" (docs/command-models.json there),
+    # and without the suffix match the eight rigged figures of #336 would ship static (the farmer in his T-pose).
+    found = slim.find_idle(_Actions("Armature|Armature|run", "Armature|Armature|idle"), ["rig"])
+    assert found.name == "Armature|Armature|idle"
+    assert slim.find_idle(_Actions("Armature|walk.001", "Armature|idle.001"), ["rig"]).name == "Armature|idle.001"
+    assert slim.find_idle(_Actions("Armature|Armature|idle_walk", "Armature|idle.01", "Armature|idle.0012"), ["rig"]) is None
+    assert slim.find_idle(_Actions("Armature|idle"), []) is None, "no rig, no idle"
+
+
+def test_a_pose_clip_poses_only_a_person_without_an_idle_clip():
+    # Issue #665: C05 has no idle clip and a T-pose rest, so his static meshes stand at his walk's first frame.
+    assert slim.POSE_CLIP == {"figure-c05-pioneer-veteran-v2": "idle_walk"}
+    animated = re.search(r"Animated = new HashSet<string>.*?\{(.*?)\};", CATALOG.read_text(encoding="utf-8"), re.S).group(1)
+    for mid in slim.POSE_CLIP:
+        assert mid in slim.PEOPLE and f'"{mid}"' not in animated, mid
 
 
 def test_the_caps_match_the_unity_import_tests():
     text = IMPORT_TESTS.read_text(encoding="utf-8")
     assert f"FarTriangles = {slim.FAR_TRIS}," in text
     assert f"FarTrianglesVehicle = {slim.FAR_TRIS_VEHICLE}," in text
+    assert f"FarTrianglesTown = {slim.FAR_TRIS_TOWN}," in text
     assert f"NearTriangles = {slim.NEAR_TRIS}" in text
     assert f"MaxTextureSize = {slim.TEX_PX}" in text
 

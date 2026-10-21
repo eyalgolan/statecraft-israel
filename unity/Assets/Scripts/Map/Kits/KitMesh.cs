@@ -21,6 +21,88 @@ namespace Statecraft.Game.Map.Kits
         readonly List<int> tri = new List<int>();
 
         public int VertexCount => pos.Count;
+        // ---- Issue #659: the close mesh (owner ruling on #700: "Models up close only") --------------------------------
+        // Up close the towns' buildings are Tal Heuberger's models (TownModelLayer); far off they are this mesh's kit buildings, as
+        // before. The close mesh is this mesh without its buildings (their vertex and index spans, CutStart/CutEnd), plus
+        // the stone plinths under the models (Plinths).
+
+        readonly List<(int v0, int v1, int i0, int i1)> cuts = new List<(int, int, int, int)>();
+        KitMesh? plinths;
+        /// <summary>The plinths under this mesh's building models, drawn only with the models (and, issue #1032, the
+        /// landmarks' close copies, CloseCopy).</summary>
+        internal KitMesh Plinths => plinths ??= new KitMesh();
+
+        /// <summary>Marks the start of a building's parts (CutEnd marks its end): the close mesh leaves them out.</summary>
+        internal (int v, int i) CutStart() => (pos.Count, tri.Count);
+        internal void CutEnd((int v, int i) start) { if (pos.Count > start.v) cuts.Add((start.v, pos.Count, start.i, tri.Count)); }
+
+        /// <summary>Issue #1032: the parts since <paramref name="start"/> (a landmark at a kit's symbolic scale) draw far off
+        /// only (cut, as a building's), and up close a copy of them draws instead (with the plinths): shrunk about
+        /// <paramref name="anchor"/>, on the ground by <paramref name="along"/> along the yaw <paramref name="yawDeg"/> and
+        /// <paramref name="across"/> across it, and what stands above the anchor's level by <paramref name="up"/>; what is
+        /// below keeps its depth, so the foundations stay in the slope. The facade uv stays in real metres, so the windows
+        /// shrink with the walls. Returns the copy's bounds.</summary>
+        internal Bounds CloseCopy((int v, int i) start, Vector3 anchor, float yawDeg, float along, float across, float up)
+        {
+            CutEnd(start);
+            var to = Plinths;
+            int off = to.pos.Count;
+            float a = yawDeg * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            var b = new Bounds(anchor, Vector3.zero);
+            for (int v = start.v; v < pos.Count; v++)
+            {
+                Vector3 p = pos[v] - anchor, n = nrm[v];
+                // Into the yaw's frame (u along, w across), scaled, and back; a normal by the inverse scale.
+                float u = (p.x * ca + p.z * sa) * along, w = (-p.x * sa + p.z * ca) * across;
+                float nu = (n.x * ca + n.z * sa) / along, nw = (-n.x * sa + n.z * ca) / across;
+                var q = anchor + new Vector3(u * ca - w * sa, p.y > 0f ? p.y * up : p.y, u * sa + w * ca);
+                to.pos.Add(q); b.Encapsulate(q);
+                to.nrm.Add(new Vector3(nu * ca - nw * sa, p.y > 0f ? n.y / up : n.y, nu * sa + nw * ca).normalized);
+                to.col.Add(col[v]); to.uv.Add(uv[v]);
+            }
+            for (int i = start.i; i < tri.Count; i++) to.tri.Add(tri[i] - start.v + off);
+            return b;
+        }
+        /// <summary>Buildings marked (a test aid).</summary>
+        internal int Cuts => cuts.Count;
+
+        /// <summary>This mesh without its marked buildings, plus its plinths (and the landmarks' close copies, CloseCopy), or null
+        /// when that is empty. A building's
+        /// triangles only use its own vertices (every part appends its vertices and indexes only those), so the kept
+        /// triangles are re-indexed and nothing else changes.</summary>
+        internal Mesh? ToCloseMesh(string name)
+        {
+            var map = new int[pos.Count];
+            var p = new List<Vector3>(); var n = new List<Vector3>(); var c = new List<Color32>(); var u = new List<Vector2>(); var t = new List<int>();
+            int k = 0;
+            for (int v = 0; v < pos.Count; v++)
+            {
+                while (k < cuts.Count && v >= cuts[k].v1) k++;
+                if (k < cuts.Count && v >= cuts[k].v0) { map[v] = -1; continue; }
+                map[v] = p.Count; p.Add(pos[v]); n.Add(nrm[v]); c.Add(col[v]); u.Add(uv[v]);
+            }
+            k = 0;
+            for (int i = 0; i < tri.Count; i++)
+            {
+                while (k < cuts.Count && i >= cuts[k].i1) k++;
+                if (k < cuts.Count && i >= cuts[k].i0) continue;
+                int at = map[tri[i]];
+                if (at < 0) throw new System.InvalidOperationException("a kept triangle uses a cut building's vertex");
+                t.Add(at);
+            }
+            if (plinths != null)
+            {
+                int off = p.Count;
+                p.AddRange(plinths.pos); n.AddRange(plinths.nrm); c.AddRange(plinths.col); u.AddRange(plinths.uv);
+                foreach (var i in plinths.tri) t.Add(i + off);
+            }
+            if (t.Count == 0) return null;
+            var m = new Mesh { name = name, indexFormat = p.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
+            m.SetVertices(p); m.SetNormals(n); m.SetColors(c); m.SetUVs(0, u); m.SetTriangles(t, 0);
+            m.RecalculateBounds();
+            m.UploadMeshData(true);
+            return m;
+        }
         public int TriangleCount => tri.Count / 3;
         /// <summary>Vertices whose normal is not unit length (a degenerate face): the shader would light them as NaN on WebGL 2.</summary>
         public int BadNormals { get { int n = 0; foreach (var v in nrm) if (Mathf.Abs(v.sqrMagnitude - 1f) > 1e-3f) n++; return n; } }

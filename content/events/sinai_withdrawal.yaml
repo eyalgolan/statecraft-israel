@@ -1,7 +1,12 @@
 # yaml-language-server: $schema=../schema/event.schema.json
 id: sinai_withdrawal
 title: The British Ultimatum
-text: 'Israeli forces crossed into Sinai and reached the outskirts of El-Arish airfield. The Security Council called for a cease-fire, the United States added its pressure, and Britain threatened to act against Israel under its 1936 treaty with Egypt. By 2 January the forces had been pulled back to the Negev frontier. {prime_minister} must decide whether they stay behind it.'
+text: 'Israeli forces crossed into Sinai and reached the outskirts of El-Arish airfield. The Security Council called for a cease-fire, the United States added its pressure, and Britain threatened to act against Israel under its 1936 treaty with Egypt. By 2 January most forces had pulled back to the Negev frontier, but a force remained west of Rafah, blocking the Rafah-El-Arish road. {prime_minister} must decide whether to complete the pullback.'
+# For the native reviewer (#564): סיני, אל־עריש, רפיח and הנגב follow he.wiki "מבצע חורב"
+# (https://he.wikipedia.org/wiki/מבצע_חורב).
+title_he: האולטימטום הבריטי
+text_he: 'כוחות ישראליים חצו לסיני והגיעו לפאתי שדה התעופה של אל־עריש. מועצת הביטחון קראה להפסקת אש, ארצות הברית הוסיפה את לחצה, ובריטניה איימה לפעול נגד ישראל מכוח ההסכם שלה עם מצרים משנת 1936. עד 2 בינואר נסוגו רוב הכוחות לגבול הנגב, אך כוח נשאר ממערב לרפיח וחסם את כביש רפיח–אל־עריש. ההחלטה אם להשלים את הנסיגה בידי {prime_minister}.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister
@@ -9,7 +14,9 @@ office: prime_minister
 # Security Council called for a cease-fire on 29 December (en.wiki "Operation Horev"). The State Department's message of
 # 30 December was read to Ben-Gurion by McDonald; Ben-Gurion said the forces had been ordered back to the Negev frontier
 # and that Britain threatened action under the 1936 treaty (FRUS 1949 v.VI doc 341, 1 January 1949). Withdrawal by
-# 2 January 1949 (FRUS doc 371 [S]). The date of the British note is a gap. Afterwards: the RAF clash [C] 7 January 1949
+# 2 January 1949 (FRUS doc 371 [S]), except for a force west of Rafah that blocked the Rafah-El-Arish road until its
+# evacuation by about 10 January (Michelson, PDF p. 7 / printed p. 53). The date of the British note is a gap.
+# Afterwards: the RAF clash [C] 7 January 1949
 # (JVL, en.wiki "1949 in Israel" and "1948 Arab-Israeli War") vs 6 January (en.wiki "Operation Horev"); Israel accepted the
 # cease-fire on 7 January. The alternative (holding El-Arish to cut off the Egyptian army) is in Avnery's commentary [S].
 # Research notes facts-1948.md section 9.
@@ -18,21 +25,33 @@ office: prime_minister
 # The card is a decision after the fact (owner decision, 15 October 2026, #567;
 # docs/superpowers/specs/2026-10-14-event-timing-monthly.md):
 # on monthly turns it comes on 15 January, after the withdrawal, so the window opens on 2 January and ends on
-# 15 January, and the text states the withdrawal.
+# 15 January, and the text states the withdrawal and the remaining force west of Rafah.
 from: 1949-01-02
 to: 1949-01-16
-requires: { event: operation_horev, option: launch }
+requires: [{ event: operation_horev, option: launch }]
 options:
   - id: withdraw
     text: Keep the forces behind the Negev frontier
+    text_he: להשאיר את הכוחות מאחורי גבול הנגב
     historical: true
     recommended: true
     effects:
       - { target: intl_standing, delta: 0.05 }
       - { target: security, delta: -0.01 }
   - id: hold_el_arish
-    # Game assumption: after the withdrawal, the alternative in Avnery's commentary becomes a return.
-    text: Send them back toward El-Arish to cut off the Egyptian army
+    # Michelson, "Operation Horev" (IDF), PDF p. 7 / printed p. 53, records the Southern Front commander's proposal
+    # to refuse the pullback; source accepted and wording chosen by the owner on 18 October 2026 (#939).
+    text: Refuse to pull back the force cutting off the Egyptian army at Rafah
+    text_he: לסרב להסיג את הכוח המנתק את הצבא המצרי ברפיח
+    # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
+    alternative:
+      basis: proposed
+      by: the Southern Front command
+      # Approximate: the earliest boundary of the note's inferred range (about 7-10 January 1949); no exact proposal day
+      # has been found. Owner rulings of 18 and 19 October 2026 (#949).
+      date: 1949-01-07
+      sources:
+        - { url: "https://www.idf.il/media/emxjtczk/%D7%A7%D7%95%D7%91%D7%A5-%D7%9E%D7%91%D7%A6%D7%A2-%D7%97%D7%95%D7%A8%D7%91.pdf", checked: 2026-10-18 }
     effects:
       - { target: intl_standing, delta: -0.10 }
       - { target: security, delta: 0.025 }
@@ -40,4 +59,5 @@ sources:
   - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d341", checked: 2026-10-10 }
   - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d371", checked: 2026-10-10 }
   - { url: "https://en.wikipedia.org/wiki/Operation_Horev", checked: 2026-10-10 }
+  - { url: "https://www.idf.il/media/emxjtczk/%D7%A7%D7%95%D7%91%D7%A5-%D7%9E%D7%91%D7%A6%D7%A2-%D7%97%D7%95%D7%A8%D7%91.pdf", checked: 2026-10-18 }
 status: fact-checked

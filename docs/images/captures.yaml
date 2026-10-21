@@ -13,44 +13,46 @@
 #     build: main abc1234      # optional; defaults to the build above
 #     date: 2026-10-13         # optional; defaults to the date above
 # A build-*.mp4 or .webm that is not listed there fails the site's build.
-build: main f93fd5e
-date: 2026-10-13
+build: main 8dae186
+date: 2026-10-20
 video:
   files: [build-gameplay.webm, build-gameplay.mp4]
-  title: { en: "Real gameplay: 22 to 29 May 1948", he: "משחק אמיתי: 22 עד 29 במאי 1948" }
+  build: main 8dae186
+  date: 2026-10-20
+  title: { en: "Real gameplay: 15 May to 15 June 1948", he: "משחק אמיתי: 15 במאי עד 15 ביוני 1948" }
   description:
-    en: "About 11 seconds of real play, recorded from the game's own browser build: a pan across Tel Aviv, Jaffa and the coastal plain, a click on a hex that opens its panel, the One Army decision, and End Turn."
-    he: "כ־11 שניות של משחק אמיתי, שהוקלטו מגרסת הדפדפן של המשחק עצמו: מעבר על תל אביב, יפו ומישור החוף, לחיצה על משושה שפותחת את הלוח שלו, ההחלטה על צבא אחד, וסיום תור."
+    en: "About 15 seconds of real play, recorded from the game's own browser build: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army decision, and End Turn."
+    he: "כ־15 שניות של משחק אמיתי, שהוקלטו מגרסת הדפדפן של המשחק עצמו: התקרבות ומעבר על תל אביב, יפו ומישור החוף, לחיצה על תל אביב שפותחת את לוח העיר, ההחלטה על צבא אחד, וסיום תור."
   alt:
-    en: "22 to 29 May 1948: the camera pans across Tel Aviv's white blocks, Jaffa and the coastal plain; a click on a hex opens its panel; the player answers the One Army event card and ends the turn, and the date moves to 29 May."
-    he: "22 עד 29 במאי 1948: המצלמה עוברת על הבתים הלבנים של תל אביב, על יפו ועל מישור החוף; לחיצה על משושה פותחת את הלוח שלו; השחקן עונה על כרטיס האירוע \"צבא אחד\" ומסיים את התור, והתאריך מתקדם ל־29 במאי."
+    en: "15 May to 15 June 1948: the camera zooms in and pans across Tel Aviv, Jaffa and the coastal plain; a click on Tel Aviv opens its city panel; the player answers the One Army event card and ends the turn, the date moves to 15 June, the turn report lists what changed, and the First Truce card opens."
+    he: "15 במאי עד 15 ביוני 1948: המצלמה מתקרבת ועוברת על תל אביב, על יפו ועל מישור החוף; לחיצה על תל אביב פותחת את לוח העיר; השחקן עונה על כרטיס האירוע \"צבא אחד\" ומסיים את התור, התאריך מתקדם ל־15 ביוני, סיכום התור מפרט מה השתנה, וכרטיס ההפוגה הראשונה נפתח."
 # `hero` is the home page's hero still: a clean in-engine render with no interface, composed for the title, with its
 # own build and date (it is not a README screenshot, so it is not in the gallery). tools/: MapCapture.Promo with
 # -extraPose, on the Mobile tier, which is the WebGL tier (docs/visual-v1.md).
 hero:
   file: hero-engine-coast.jpg
-  build: main 98515c5
-  date: 2026-10-15
+  build: main 6c54c95
+  date: 2026-10-18
   title: { en: "Tel Aviv, Jaffa and the coast, without the interface", he: "תל אביב, יפו והחוף, בלי הממשק" }
   alt:
     en: "An in-engine render of the 1948 map with no interface: the coast at Jaffa and Tel Aviv, with sailing boats off Jaffa's breakwater, Tel Aviv's white blocks, a train on the coastal railway, groves, villages and the sub-district borders."
     he: "תמונה מתוך מנוע המשחק של מפת 1948 בלי הממשק: החוף ביפו ובתל אביב, עם סירות מפרש מול שובר הגלים של יפו, הבתים הלבנים של תל אביב, רכבת על מסילת החוף, מטעים, כפרים וגבולות הנפות."
 images:
   - file: build-m3-city.jpg
-    title: { en: "Tel Aviv’s white blocks and Jaffa", he: "הבתים הלבנים של תל אביב, ויפו" }
+    title: { en: "Tel Aviv and its city panel", he: "תל אביב ולוח העיר שלה" }
     alt:
-      en: "The current build, 22 May 1948: a close-up of Tel Aviv's white blocks and Jaffa's stone town and harbour, with a brigade token, groves, villages, railways and the Mandate sub-district borders."
-      he: "הגרסה הנוכחית, 22 במאי 1948: תקריב של הבתים הלבנים של תל אביב ושל העיר העתיקה של יפו ונמלה, עם אסימון של חטיבה, מטעים, כפרים, מסילות ברזל וגבולות נפות המנדט."
+      en: "The current build, 15 May 1948: a closer look at Tel Aviv, Jaffa, Lydda, Ramle and Rehovot, with groves, villages, railways and roads, the front lines and the top bar, and Tel Aviv's city panel with its housing, jobs, refugees and training."
+      he: "הגרסה הנוכחית, 15 במאי 1948: מבט קרוב על תל אביב, יפו, לוד, רמלה ורחובות, עם מטעים, כפרים, מסילות ודרכים, קווי החזית והסרגל העליון, ולוח העיר של תל אביב עם הדיור, התעסוקה, הפליטים והאימון."
   - file: build-m3-map.jpg
     title: { en: "The map, the top bar and an event card", he: "המפה, הסרגל העליון וכרטיס אירוע" }
     alt:
-      en: "The current build, 22 May 1948: the coastal plain from Tel Aviv and Jaffa to Jerusalem with Tel Aviv's white blocks, towns and villages, groves, railways and roads, brigade tokens and an aircraft, the top bar, and the One Army event card with an archival photograph."
-      he: "הגרסה הנוכחית, 22 במאי 1948: מישור החוף מתל אביב ויפו ועד ירושלים, עם הבתים הלבנים של תל אביב, עיירות וכפרים, מטעים, מסילות ודרכים, אסימוני חטיבות ומטוס, הסרגל העליון, וכרטיס האירוע \"צבא אחד\" עם צילום ארכיון."
+      en: "The current build, 15 May 1948: the One Army event card with an archival photograph, over the map of the coast, with the top bar, the left icon column and the minimap."
+      he: "הגרסה הנוכחית, 15 במאי 1948: כרטיס האירוע \"צבא אחד\" עם צילום ארכיון, מעל מפת החוף, עם הסרגל העליון, עמודת הסמלים והמפה הקטנה."
   - file: build-m3-start.jpg
     title: { en: "The start screen", he: "מסך הפתיחה" }
     alt:
-      en: "The current build: the start screen, with two lines of the Declaration of Independence in Hebrew and English over an AI-generated painting of the 14 May 1948 ceremony."
-      he: "הגרסה הנוכחית: מסך הפתיחה, ובו שתי שורות ממגילת העצמאות בעברית ובאנגלית, על רקע ציור של טקס 14 במאי 1948 שנוצר בבינה מלאכותית."
+      en: "The current build: the start screen, with two lines of the Declaration of Independence in Hebrew and English, the Play the recording button and New game, over an AI-generated painting of the 14 May 1948 ceremony."
+      he: "הגרסה הנוכחית: מסך הפתיחה, ובו שתי שורות ממגילת העצמאות בעברית ובאנגלית, הכפתור להשמעת ההקלטה ומשחק חדש, על רקע ציור של טקס 14 במאי 1948 שנוצר בבינה מלאכותית."
     ai_part: { en: "The painting behind the text is AI-generated, with no identifiable person.", he: "הציור שמאחורי הטקסט נוצר בבינה מלאכותית, ואין בו אדם שאפשר לזהות." }
   - file: build-m3-cabinet.jpg
     title: { en: "The Cabinet screen", he: "מסך הממשלה" }
@@ -60,5 +62,10 @@ images:
   - file: build-m3-why.jpg
     title: { en: "The “Why?” panel", he: "לוח \"למה?\"" }
     alt:
-      en: "The current build: the Why panel, which lists what changed in a turn and the cause of each change."
-      he: "הגרסה הנוכחית: לוח \"למה?\", שמפרט מה השתנה בתור ומה גרם לכל שינוי."
+      en: "The current build, 15 June 1948: the Why panel after the first turn, which lists the choice made, the new events, and the changes to politics, the economy, immigration and the cities, each with its cause."
+      he: "הגרסה הנוכחית, 15 ביוני 1948: לוח \"למה?\" אחרי התור הראשון, שמפרט את הבחירה שנעשתה, את האירועים החדשים ואת השינויים בפוליטיקה, בכלכלה, בעלייה ובערים, ולכל אחד את הסיבה שלו."
+  - file: build-he-map.jpg
+    title: { en: "The map in the Hebrew interface", he: "המפה בממשק העברי" }
+    alt:
+      en: "The current build in the Hebrew interface (?lang=he), 15 May 1948: the coastal plain from Netanya to West Jerusalem with the town names in Hebrew and the towns' landmark models, the top bar and the legend in Hebrew, the front lines and the minimap."
+      he: "הגרסה הנוכחית בממשק העברי (?lang=he), 15 במאי 1948: מישור החוף מנתניה ועד מערב ירושלים עם שמות היישובים בעברית ודגמי הבניינים הבולטים של הערים, הסרגל העליון והמקרא בעברית, קווי החזית והמפה הקטנה."

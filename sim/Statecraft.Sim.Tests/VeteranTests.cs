@@ -52,8 +52,11 @@ public class VeteranTests
         Assert.NotNull(built.Sites["site_a"].BuiltOn);
     }
 
-    // R-VET-001: one completed yishuv makes a veteran pioneer in the real content (veteran_halutz_service is
-    // build_yishuv_turns), and the turn the build finishes counts.
+    // R-VET-001: veteran_halutz_service turns of service make a veteran pioneer in the real content, and the count is
+    // turns worked, not the build's length: with the Agriculture minister's R-MIN-002 multiplier (0.624, Zisling) the
+    // first yishuv takes 8 turns, so the promotion lands mid-build at the end of the sixth - and the veteran's faster
+    // progress (R-VET-002: 2 x 0.624 a turn from the seventh) is what finishes the build on the eighth. (The build
+    // finished on the sixth turn before the ministers, the promotion with it.)
     [Fact]
     public void OneYishuvMakesAVeteranInTheRealContent()
     {
@@ -63,9 +66,13 @@ public class VeteranTests
         var s = WithUnit(c, "halutz", out var id);
         var site = c.Sites.First(x => x.Kinds.Contains(Projects.YishuvKind)).Id;
         s = Step(c, s, new PioneerWork(id, Projects.BuildYishuv, site)).State;
-        for (int i = 1; i < r.BuildYishuvTurns; i++) s = Step(c, s).State;
-        Assert.NotNull(s.Sites[site].BuiltOn);
+        for (int i = 1; i < r.VeteranHalutzService; i++) s = Step(c, s).State;   // 6 turns of service
+        Assert.Null(s.Sites[site].BuiltOn);   // the build is still going: 3.744 of 6 turns of work
         Assert.Equal("veteran_halutz", s.Units[id].Type);
+        s = Step(c, s).State;   // the veteran's 1.248: 4.992
+        Assert.Null(s.Sites[site].BuiltOn);
+        s = Step(c, s).State;   // 6.24: built
+        Assert.NotNull(s.Sites[site].BuiltOn);
     }
 
     // R-VET-002: a veteran may start pioneer work, and the same build finishes sooner, by veteran_progress turns a turn.
@@ -92,6 +99,29 @@ public class VeteranTests
         }
         Assert.Equal(6, TurnsToBuild("halutz"));
         Assert.Equal(3, TurnsToBuild("veteran_halutz"));   // 6 turns of progress at 2 a turn
+    }
+
+    // R-SITE-003, R-VET-001, R-VET-002: TurnsToBuild is Advance's count, for a new build and for one under way, so the panel
+    // can show it (#869: it showed build_yishuv_turns for every group). A halutz promoted during the build speeds up.
+    [Theory]
+    [InlineData("halutz", 0, "veteran_halutz_service: 4", 3)]
+    [InlineData("veteran_halutz", 0, "veteran_halutz_service: 4", 2)]   // 3 turns of progress at 2 a turn
+    [InlineData("halutz", 0, "veteran_halutz_service: 1", 2)]           // promoted after its first turn: 1, then 2
+    [InlineData("halutz", 1, "veteran_halutz_service: 2", 2)]           // service carried from an earlier build
+    public void TurnsToBuildIsTheTurnsAdvanceTakes(string type, int service, string serviceRule, int expected)
+    {
+        var c = Town(("veteran_halutz_service: 4", serviceRule));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var id = s.NextId++;
+        s.Units.Add(id, new Unit(id, type, 1, 0, service));
+        Assert.Equal(expected, Projects.TurnsToBuild(c, s, id, c.Sites.Single(x => x.Id == "site_a"), c.Rules.Mvp!.BuildYishuvTurns, 0));
+        s = Step(c, s, Build(id)).State;
+        for (int done = 1; ; done++)
+        {
+            if (s.Sites["site_a"].BuiltOn != null) { Assert.Equal(expected, done); break; }
+            Assert.Equal(expected - done, Projects.TurnsToBuild(c, s, id, c.Sites.Single(x => x.Id == "site_a"), s.Sites["site_a"].TurnsLeft, s.Sites["site_a"].Progress));   // the turns left under way
+            s = Step(c, s).State;
+        }
     }
 
     // R-VET-001, R-VET-002: both values are required in the GDD loop and at least 1, so a missing key is never read as 0.

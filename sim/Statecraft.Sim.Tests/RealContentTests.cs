@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Statecraft.Sim;
+using YamlDotNet.RepresentationModel;
 
 /// <summary>Checks the real content/ folder at the repository root.</summary>
 public class RealContentTests
@@ -16,6 +17,24 @@ public class RealContentTests
 
     static readonly Content C = ContentLoader.Load(ContentRoot());
     static readonly DateTime Checked = new DateTime(2026, 10, 9);
+
+    /// <summary>R-ALT-004 on the real content: every one of the 30 alternatives carries its record.</summary>
+    [Fact]
+    public void EveryAlternativeInContentSaysWhoProposedIt()
+    {
+        var c = ContentLoader.Load(ContentRoot());
+        var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
+        Assert.Equal(30, alternatives.Count);
+        Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
+    }
+
+    // R-CTRL-001: rows ship only after research, a person's check and sensitivity review.
+    [Fact]
+    public void SettlementTargetsAreSensitivityReviewed()
+    {
+        Assert.Empty(C.SettlementTargets);
+        Assert.All(C.SettlementTargets, target => Assert.Equal(ReleaseGate.ReviewedStatus, target.Status));
+    }
 
     [Fact]
     public void MaimonBirthUsesHebrewBiographyDateAndSource()
@@ -60,6 +79,19 @@ public class RealContentTests
                 Assert.True(source.Checked >= new DateTime(2026, 10, 11), $"{key}: {source.Url} checked before the 11 October review");
             });
         }
+    }
+
+    /// <summary>Person.Loyalty is a plain int, so a row without loyalty: would load as 0 and that minister would half-deliver
+    /// every delegated decision (R-EVT-003, #107). Every row sets it.</summary>
+    [Fact]
+    public void EveryPersonSetsLoyalty()
+    {
+        var yaml = new YamlStream();
+        using (var r = new StringReader(File.ReadAllText(Path.Combine(ContentRoot(), "people.yaml")))) yaml.Load(r);
+        var rows = (YamlSequenceNode)((YamlMappingNode)yaml.Documents[0].RootNode)[new YamlScalarNode("people")];
+        Assert.Equal(C.People.Count, rows.Children.Count);
+        foreach (YamlMappingNode m in rows)
+            Assert.True(m.Children.ContainsKey(new YamlScalarNode("loyalty")), $"people[{m[new YamlScalarNode("id")]}] has no loyalty");
     }
 
     [Fact]
@@ -291,7 +323,9 @@ public class RealContentTests
         string Who(string office, int y, int m, int d) => Offices.Holder(C, office, new DateTime(y, m, d))?.Id ?? "(vacant)";
         Assert.Equal("shazar", Who("education_minister", 1950, 10, 31));
         Assert.Equal("remez", Who("education_minister", 1950, 11, 1));
-        Assert.Equal("ben_gurion", Who("education_minister", 1951, 5, 19));
+        Assert.Equal("remez", Who("education_minister", 1951, 5, 18));
+        Assert.Equal("(vacant)", Who("education_minister", 1951, 5, 19));
+        Assert.Equal("(vacant)", Who("education_minister", 1951, 10, 7));
         Assert.Equal("dinur", Who("education_minister", 1951, 10, 8));
         Assert.Equal("lavon", Who("rationing_minister", 1950, 11, 1));
         Assert.Equal("lavon", Who("rationing_minister", 1951, 10, 7));
@@ -328,6 +362,25 @@ public class RealContentTests
         Assert.Equal("united_religious_front", Offices.PartyOf(C, levin, new DateTime(1951, 8, 19)));
         Assert.Equal("agudat_yisrael", Offices.PartyOf(C, levin, new DateTime(1951, 8, 20)));
         Assert.Equal("", Offices.PartyOf(C, C.People.Single(p => p.Id == "geri"), new DateTime(1951, 1, 1)));
+    }
+
+    /// <summary>#457: the owner ruled for אהרון (18 October 2026) over the Knesset page's אהרן.</summary>
+    [Fact]
+    public void ZislingsHebrewNameIsTheOwnersSpelling() =>
+        Assert.Equal("אהרון ציזלינג", C.People.Single(p => p.Id == "zisling").NameHe);
+
+    [Fact]
+    public void TheSimulationStepsWithEducationVacant()
+    {
+        var s = GoldenRun.Play(C, new DateTime(1951, 6, 1));
+        Assert.Equal(new DateTime(1951, 6, 15), s.Date);
+        Assert.Null(Cabinet.Holder(C, s, "education_minister"));
+        Assert.Contains(Cabinet.Lineup(C, s), seat => seat.Office.Id == "education_minister" && seat.Holder == null);
+
+        var next = Simulation.Step(C, s, GoldenRun.Orders(C, s)).State;
+
+        Assert.Equal(new DateTime(1951, 7, 15), next.Date);
+        Assert.Null(Cabinet.Holder(C, next, "education_minister"));
     }
 
     [Fact]
@@ -381,9 +434,21 @@ public class RealContentTests
         var s = GoldenRun.Play(C, new DateTime(1952, 1, 1));
         Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);   // the run reaches the game's end, 15 January 1952 (R-LOOP-004)
         var expected = new[] { "clothing_rationing_1950", "education_registration_1951", "forex_crisis_1951", "frumkin_commission",
-            "hula_drainage", "iraqi_exodus", "israel_bonds", "law_of_return", "maabarot_policy", "ministry_supply_crisis", "reparations_claim" };
+            "iraqi_exodus", "israel_bonds", "law_of_return", "maabarot_policy", "ministry_supply_crisis", "reparations_claim" };
         var missing = expected.Where(id => !s.FiredEvents.Contains(id)).ToList();
         Assert.True(missing.Count == 0, "Never fired: " + string.Join(", ", missing));
+        Assert.DoesNotContain("hula_drainage", s.FiredEvents);   // R-SWAMP-002: it waits for works at the Hula, and this run starts none
         Assert.Equal(1.0, s.Policies["maabarot"]);   // the historical choice opens transit camps
+    }
+    /// <summary>#1187: every objective's player-facing name has its Hebrew (agent-checked until a native read, #564),
+    /// and the absorb-immigrants card - the last of the 33 without Hebrew - has its title, text and option in Hebrew.</summary>
+    [Fact]
+    public void ObjectivesAndTheAbsorbCardHaveTheirHebrew()
+    {
+        Assert.All(C.Objectives, o => Assert.False(string.IsNullOrEmpty(o.NameHe), $"objectives[{o.Id}].name_he"));
+        var card = C.Events.Single(e => e.Id == "absorb_immigrants");
+        Assert.False(string.IsNullOrEmpty(card.TitleHe), "absorb_immigrants.title_he");
+        Assert.False(string.IsNullOrEmpty(card.TextHe), "absorb_immigrants.text_he");
+        Assert.All(card.Options, o => Assert.False(string.IsNullOrEmpty(o.TextHe), $"absorb_immigrants.options[{o.Id}].text_he"));
     }
 }

@@ -2,6 +2,8 @@
 
 Status: DRAFT. Tags: [V] rechecked against the named source on 17 October 2026; see `09-source-audit.md`, [H] proposal, [Q] question for the maintainer. Social channels are not specified anywhere in the repo, so those rows are open.
 
+Press-kit and messaging references below were rechecked on 21 October 2026. Other [V] rows retain the dated audit above.
+
 | Channel | What the repo or platform says | What it means for a script | Status |
 |---|---|---|---|
 | **Steam store page** | Steam requires a trailer and recommends gameplay first, legible without sound. Its upload guidance prefers widescreen, high bitrate and H.264/AAC; use the current [Steamworks page](https://partner.steamgames.com/doc/store/trailer) for exact settings. A six-second micro-trailer is generated automatically from the first visible video; it cannot be customised. Custom poster images must be video frames; avoiding text is advice. | Lead with real gameplay; test without sound. Verify upload settings at export. | [V] |
@@ -9,8 +11,8 @@ Status: DRAFT. Tags: [V] rechecked against the named source on 17 October 2026; 
 | **GitHub README hero** | A cinematic trailer, 1:23, with a caption saying it was made with AI video tools and AI music and is not in-game footage. A test enforces the disclosure (`docs/RELEASING.md`). | Cinematic is allowed here, labelled. The caption wording is fixed by the test. | [V] |
 | **Website media page** | `site/public/media/` holds the trailer, the flythrough and English and Hebrew caption files. | Ship a `.vtt` in both languages with every video. | [V] |
 | **Decision-card clips** | Silent AI-generated illustration loops and separate 3.5-second outcome clips, labelled in the UI, never for a Deport option (`docs/event-videos.md`). | No voice-over. No script beyond alt text and the mapping row. | [V] |
-| **Social posts (LinkedIn, Slack, others)** | Not in the repo. | Assume sound off and autoplay until the maintainer says otherwise. Write the hook so it works as text and picture alone. | [H], [Q] which channels, which lengths |
-| **Press kit** | A press downloads page is planned (#417). | A one-line description and honest labelling of every asset. | [V] |
+| **Social posts (LinkedIn, Slack, others)** | The [messaging guide](../../../../docs/MESSAGING.md) supplies draft social formats, audience needs and claim scope. Channel choices remain open. | Assume sound off and autoplay until the maintainer says otherwise. Write the hook so it works as text and picture alone; distinguish released, in-development, planned and concept claims. | [H], [Q] which channels, which lengths |
+| **Press kit** | The [press page](../../../../site/src/content/en/press.md) and its downloads exist (#1026 closed #417). | A one-line description and honest labelling of every asset. | [V] |
 
 ## Length
 

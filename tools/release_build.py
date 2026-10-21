@@ -163,8 +163,8 @@ def expected_goldens() -> dict[str, str]:
     pins = {}
     for line in (REPO / "sim/Statecraft.Sim.Tests/golden/manifest.txt").read_text().splitlines():
         name, _, value = line.partition(" ")
-        if name in ("hash1950", "hash1952"):
-            pins[name[4:]] = value.strip()
+        if name and not name.startswith("#"):
+            pins[name] = value.strip()
     return pins
 
 
@@ -264,11 +264,10 @@ def golden_lines(log_text: str) -> list[str]:
 
 
 def golden_status(log_text: str, exit_code: int, expected: dict[str, str]) -> str:
-    """pass only on exit 0, both `GOLDEN OK <year> <pinned hash>` lines exactly as the player prints them (bare, one per
+    """pass only on exit 0, every manifest `GOLDEN OK <name> <pinned hash>` line exactly as the player prints it (bare, one per
     line), and no GOLDEN FAIL or BOOT FAIL line: player_golden_check.check_log, the rule CI applies (issue #546)."""
-    if sorted(expected) != [year for year, _ in pgc.GOLDENS]:
-        return "fail"
-    wanted = [f"GOLDEN OK {year} {expected[year]}" for year, _ in pgc.GOLDENS]
+    if not expected or any(not re.fullmatch(r"[0-9a-f]{64}", value) for value in expected.values()): return "fail"
+    wanted = [f"GOLDEN OK {name} {value}" for name, value in expected.items()]
     return "pass" if not pgc.check_log(log_text, wanted, exit_code) else "fail"
 
 

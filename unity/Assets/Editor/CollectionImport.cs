@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Statecraft.Game.EditorTools
 {
     /// <summary>The 1948 Collection's import (issue #664): sets the import settings of the 31 slimmed models in
-    /// <see cref="CollectionCatalog.Folder"/> (written by tools/slim_collection.py from MATKOT's #507 files), makes each model's
+    /// <see cref="CollectionCatalog.Folder"/> (written by tools/slim_collection.py from Tal Heuberger's #507 files), makes each model's
     /// &lt;id&gt;-far and &lt;id&gt;-near prefabs (and the near idle controller where there is one), and builds the streamed
     /// AssetBundles for a player build. CollectionImportTests pins what Run leaves behind. Idempotent.
     /// Run headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.Run</summary>
@@ -24,13 +24,13 @@ namespace Statecraft.Game.EditorTools
 
         public static void Run()
         {
-            foreach (var id in CollectionCatalog.Ids)
+            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings))
             {
                 ImportModel(Model(id, CollectionDetail.Far), animated: false);
                 ImportModel(Model(id, CollectionDetail.Near), animated: CollectionCatalog.Animated.Contains(id));
                 ImportColourMap($"{Dir(id)}/{id}_basecolor.jpg");
             }
-            foreach (var id in CollectionCatalog.Ids)
+            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings))
             {
                 var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat")
                     ?? throw new InvalidOperationException($"{id}: no material");
@@ -39,7 +39,31 @@ namespace Statecraft.Game.EditorTools
                 MakePrefab(id, CollectionDetail.Near, mat, CollectionCatalog.Animated.Contains(id) ? IdleController(id) : null);
             }
             AssetDatabase.SaveAssets();
-            Debug.Log($"CollectionImport: {CollectionCatalog.Ids.Count()} models");
+            MakeBuildingPrefabs();
+            Debug.Log($"CollectionImport: {CollectionCatalog.Ids.Count(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings)} collection models");
+        }
+
+        /// <summary>Issue #707: the special-buildings bundle's prefabs, one per model, beside #675's imported model in its own
+        /// folder (CollectionCatalog.PrefabPath): the model with its own material on every renderer. The models' import
+        /// settings are #675's and are left as they are.</summary>
+        public static void MakeBuildingPrefabs()
+        {
+            foreach (var id in CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Buildings).Ids)
+            {
+                string dir = $"{CollectionCatalog.BuildingsFolder}/{id}";
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{id}.fbx") ?? throw new InvalidOperationException($"{id}: no model");
+                var mat = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat") ?? throw new InvalidOperationException($"{id}: no material");
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                try
+                {
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                        r.sharedMaterials = Enumerable.Repeat(mat, Math.Max(1, r.sharedMaterials.Length)).ToArray();
+                    PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
+                }
+                finally { UnityEngine.Object.DestroyImmediate(go); }
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log("CollectionImport: the five special-building prefabs (#707)");
         }
 
         static void ImportModel(string path, bool animated)
@@ -153,7 +177,7 @@ namespace Statecraft.Game.EditorTools
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
-            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).ToArray(),
+            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct().ToArray(),
         }).ToArray();
 
         /// <summary>Writes <see cref="CollectionCatalog.ChecksFile"/> into <paramref name="folder"/> for the built

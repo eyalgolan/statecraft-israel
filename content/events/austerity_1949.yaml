@@ -2,6 +2,12 @@
 id: austerity_1949
 title: Austerity
 text: 'Food and foreign currency cannot keep pace with the immigrants arriving every week. {rationing_minister}, heading the new Ministry of Rationing and Supply, proposes strict rationing.'
+# For the native reviewer (#564): Hebrew terminology follows he.wiki "תקופת הצנע" and the ministry's he.wiki title
+# "משרד האספקה והקיצוב": https://he.wikipedia.org/wiki/תקופת_הצנע ; https://he.wikipedia.org/wiki/משרד_האספקה_והקיצוב
+# "הצעת ... היא" keeps the sentence the same for a minister of either gender, as in altalena.yaml.
+title_he: צנע
+text_he: 'אספקת המזון ומטבע החוץ אינן מדביקות את קצב העולים המגיעים מדי שבוע. הצעת {rationing_minister}, בראש משרד האספקה והקיצוב החדש, היא קיצוב מחמיר.'
+text_he_review: agent-checked
 anchor: hard
 office: rationing_minister
 # The rationing plan was presented to the Knesset on 26 April 1949, already decided by the cabinet: Dov Yosef told the
@@ -14,6 +20,7 @@ to: 1950-01-01
 options:
   - id: impose
     text: Impose rationing
+    text_he: להנהיג קיצוב
     historical: true
     recommended: true
     set_policy: { rationing: 1.0 }
@@ -22,6 +29,8 @@ options:
       - { target: morale, delta: -0.05 }
   - id: decline
     text: Keep markets free and import more
+    text_he: להשאיר את השווקים חופשיים ולהגדיל את היבוא
+    alternative: { basis: design }
     effects:
       - { target: fx_reserves, delta: -8 }
       - { target: food_supply, delta: -0.05 }

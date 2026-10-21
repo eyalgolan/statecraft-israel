@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Owner art checkpoint (exits 3 when diorama02's material guards fail, after finishing): a WebGL build (skipped with --no-build when the task has just built), screenshots at
 # the promo poses from the player itself (?shot: the web tier with its UI and labels), editor renders of both quality
-# tiers, and side-by-side images against the promo with colour-blind simulations. Re-checks both golden hashes in the same
+# tiers, and side-by-side images against the promo with colour-blind simulations. Re-checks every manifest golden in the same
 # player run and fails if a screenshot is missing or blank. The art log lives in the main checkout's captures/ so every
 # worktree appends to one history. --units adds the unit art slice (docs/units.md) to both the WebGL shots (&units) and the
 # editor renders (-units), and its art-log rows are named <checkpoint-name>-units, so they cannot be mistaken for plain
@@ -45,10 +45,14 @@ fi
 out="captures/visual/$name"
 rm -rf "$out"; mkdir -p "$out"
 # The expected hashes come from the golden manifest (docs/determinism.md), so a re-pin needs no edit here.
-golden() { awk -v k="$1" '$1 == k { print $2 }' sim/Statecraft.Sim.Tests/golden/manifest.txt; }
-hash1950=$(golden hash1950); hash1952=$(golden hash1952)
-[[ -n "$hash1950" && -n "$hash1952" ]] || { echo "art_checkpoint: no hash1950/hash1952 in sim/Statecraft.Sim.Tests/golden/manifest.txt" >&2; exit 2; }
-uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&shot${units_query}${proof_query}" --expect "GOLDEN OK 1950 $hash1950" --expect "GOLDEN OK 1952 $hash1952" --expect "SHOT done" --shots "$out" --stall 180 \
+golden_expect=()
+# (golden_name, not name: $name is the checkpoint's name, used below)
+while read -r golden_name golden_hash; do
+  [[ -z "$golden_name" || "$golden_name" == \#* ]] && continue
+  golden_expect+=(--expect "GOLDEN OK $golden_name $golden_hash")
+done < sim/Statecraft.Sim.Tests/golden/manifest.txt
+[[ ${#golden_expect[@]} -gt 0 ]] || { echo "art_checkpoint: empty golden manifest" >&2; exit 2; }
+uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&shot${units_query}${proof_query}" "${golden_expect[@]}" --expect "SHOT done" --shots "$out" --stall 180 \
   --fail 'GOLDEN FAIL|SMOKE FAIL|BOOT FAIL|Statecraft/.*(not supported|Unsupported)|(not supported|Unsupported).*Statecraft/'
 # The poses come from PromoPose.All's source, so a new pose is checked without editing this script (review M3).
 poses=$(grep -o 'new PromoPose("[A-Za-z0-9_]*"' unity/Assets/Scripts/Map/PromoPose.cs | cut -d'"' -f2)

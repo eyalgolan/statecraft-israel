@@ -59,13 +59,32 @@ namespace Statecraft.Game.UI
             CancelTraining x => FormattableString.Invariant($"untrain:{x.Cohort}"),
             PioneerWork w => FormattableString.Invariant($"unit:{w.Unit}"),
             StopWork w => FormattableString.Invariant($"unit:{w.Unit}"),
+            UnitOrder o => FormattableString.Invariant($"order:{o.Unit}"),
+            StartProject p => FormattableString.Invariant($"project:{p.Q},{p.R}"),
+            CancelProject x => FormattableString.Invariant($"unproject:{x.Project}"),
+            Move m => FormattableString.Invariant($"move:{m.Unit}"),
             _ => c.Kind,
         };
 
-        double Price(Command c) => AttentionSystem.IsCommandKind(c.Kind) ? AttentionSystem.Cost(Content, State, c.Kind) : 0;
+        /// <summary>The order's Attention price at this turn's prices: what <see cref="Queue"/> charges and the card shows.</summary>
+        public double Price(Command c) => AttentionSystem.Price(Content, State, c);
+
+        /// <summary>Whether the Attention left pays for the order (a queued order with its key is refunded first): the one
+        /// check <see cref="Queue"/> refuses on, so the event card (#1034) and a refusal can never disagree.</summary>
+        public bool CanPay(Command c) => Price(c) <= LeftFor(c) + 1e-9;
+
+        double LeftFor(Command c) { var old = QueuedLike(c); return AttentionLeft + (old != null ? Price(old) : 0); }
+
+        /// <summary>Who End Turn hands the event to with the orders queued now (Simulation.DelegatedTo), or null for the
+        /// cabinet: an appointment queued this turn is in office by then (#1034).</summary>
+        public Person? DelegatedTo(GameEvent e) => Simulation.DelegatedTo(Content, State, queue, e.Id);
+
+        /// <summary>The vacant seats the player can fill, less those an appointment queued now fills (Cabinet.Vacancies): the
+        /// side menu's Cabinet badge (#1109).</summary>
+        public IReadOnlyList<Office> Vacancies => Cabinet.Vacancies(Content, State, queue);
 
         /// <summary>Attention left after paying for the queued orders at this turn's prices.</summary>
-        public double AttentionLeft => State.Attention - queue.Sum(Price);
+        public double AttentionLeft => AttentionSystem.Left(Content, State, queue);
 
         /// <summary>The queued order with this key, or null.</summary>
         public Command? QueuedLike(Command c) => queue.FirstOrDefault(q => Key(q) == Key(c));
@@ -105,11 +124,27 @@ namespace Statecraft.Game.UI
                         ?? Unknown("training", t.Track, Content.UnitTypes.Where(x => !string.IsNullOrEmpty(x.Facility)).Select(x => x.Id));
                 case CancelTraining x:
                     return Unknown("cohort", x.Cohort.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Cohorts.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Pioneer work (#378): ids only; the sim refuses a busy unit, a built site or a short Treasury with its own reason.
+                // Pioneer work (#378, corridors #786): ids only; the sim refuses a busy unit, a built site or segment, a kind
+                // mismatch or a short Treasury with its own reason. A corridor action names "corridor:N", N from 1.
                 case PioneerWork w:
                     return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)))
-                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv }) ?? Unknown("site", w.Site, Content.Sites.Select(x => x.Id));
+                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv, Corridors.BuildRoad, Corridors.BuildRail })
+                        ?? (Corridors.IsAction(w.Action)
+                            ? Unknown("corridor_segment", w.Site, Content.Corridors.SelectMany(x => Enumerable.Range(1, x.Segments.Count).Select(n => x.Id + ":" + n.ToString(System.Globalization.CultureInfo.InvariantCulture))))
+                            : Unknown("site", w.Site, Content.Sites.Select(x => x.Id)));
                 case StopWork w: return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                // Movement (#744): the unit id only; the sim refuses an unreachable, full or forbidden hex with its own reason.
+                case Move m: return Unknown("unit", m.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
+                // Standing orders (#746): the unit id only; the sim refuses an unknown order, a halutz or an enemy unit itself.
+                case UnitOrder o: return Unknown("unit", o.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                // City projects (#735): ids only; the sim refuses a far or taken hex, the policy gate and the turn's limit itself.
+                case StartProject p:
+                    return Unknown("city_project", p.ProjectKind, Content.ProjectKinds.Select(x => x.Id)) ?? Unknown("city", p.City, Content.Cities.Select(x => x.Id));
+                case CancelProject x:
+                    return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                // Buying Arms (#781): no ids; the sim refuses a count below one itself.
+                case BuyArms _: return null;
                 default: return text["order.invalid"];
             }
         }
@@ -142,10 +177,9 @@ namespace Statecraft.Game.UI
             if (bad != null) return Refuse(bad);
             if (State.GameOver != null) return Refuse(text["order.game_over"]);
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
+            if (!CanPay(c))
+                return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
             var old = QueuedLike(c);
-            var left = AttentionLeft + (old != null ? Price(old) : 0);
-            if (Price(c) > left + 1e-9)
-                return Refuse(text.Format("order.no_attention", Price(c), left));
             if (old != null) queue[queue.IndexOf(old)] = c; else queue.Add(c);
             Changed?.Invoke();
             return null;

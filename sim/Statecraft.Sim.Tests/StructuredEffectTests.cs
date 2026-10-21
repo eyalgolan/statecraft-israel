@@ -7,8 +7,8 @@ using Statecraft.Sim;
 /// Q-HFX-1 to Q-HFX-3 on 17 October 2026 (#784): grants of units, city housing capacity, condition and job slots, and
 /// project unlock, each validated at load; a grant is free and stands at the military camp or at the site the event
 /// names (here a city it names); a sensitive option gains nothing from them (R-EFX-005). This first slice builds the kinds whose records are on
-/// main: unit grants and a city's housing capacity and job slots. Condition (#734), project unlock (#735) and site targets
-/// (once a site carries a date, R-EFX-006) follow.</summary>
+/// main: unit grants and a city's housing capacity and job slots; the second adds its housing condition (#855); the third
+/// project unlock (R-EFX-008). Site targets (once a site carries a date, R-EFX-006) follow.</summary>
 public class StructuredEffectTests
 {
     const string Arms = @"
@@ -25,6 +25,7 @@ from: 1948-05-15
         delta: -10
 {STRUCTURED}  - id: refuse
     text: Refuse
+    alternative: { basis: design }
 ";
 
     const string Grants = @"    grant_units:
@@ -33,15 +34,17 @@ from: 1948-05-15
     city_effects:
       - { city: town_a, field: housing_capacity, delta: 3 }
       - { city: town_a, field: job_slots, delta: -100 }
+      - { city: town_b, field: condition, delta: -0.05 }
 ";
 
     static string Event(string structured, string tags = "") =>
         Arms.Replace("{STRUCTURED}", structured).Replace("{TAGS}", tags == "" ? "" : "tags: [" + tags + "]\n");
 
     // A second town on its own hex, so a grant's `at` lands somewhere other than the camp city. Fixture values, not history.
-    static Content Load(string ev, string facilities = "[military_camp, hakhshara]") =>
+    static Content Load(string ev, string facilities = "[military_camp, hakhshara]", string projects = Fixture.GddProjects) =>
         ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
         {
+            ["projects.yaml"] = projects,
             ["map/settlement_hexes.yaml"] = "settlements:\n  - { id: town_a, q: 1, r: 0 }\n  - { id: town_b, q: 2, r: 1 }\n",
             ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"]
                 + "  - { id: town_b, name: Town B, lon: 34.42, lat: 33.28, type: town, founded: 1900, pre_modern: false }\n",
@@ -90,9 +93,23 @@ from: 1948-05-15
         var y = s.Cities["town_a"];
         Assert.Equal(x.HousingCapacity + 3, y.HousingCapacity);
         Assert.Equal(x.Employed, y.JobSlots);
-        Assert.Equal((x.Civilians, x.Employed, x.Refugees, x.Recruits), (y.Civilians, y.Employed, y.Refugees, y.Recruits));
+        Assert.Equal((x.Civilians, x.Employed, x.Refugees, x.Recruits, x.Craftsmen, x.JobsDefault),
+            (y.Civilians, y.Employed, y.Refugees, y.Recruits, y.Craftsmen, y.JobsDefault));
         Assert.Contains(why, w => w.System == "events" && w.Target == "town_a.housing_capacity" && w.Delta == 3);
         Assert.Contains(why, w => w.System == "events" && w.Target == "town_a.job_slots" && w.Delta == x.Employed - x.JobSlots);
+    }
+
+    // R-EFX-004: changing a city's capacity or slots preserves its housing condition with every other unnamed field.
+    [Fact]
+    public void ACityEffectKeepsTheHousingCondition()
+    {
+        var c = Load(Event(Grants));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Cities["town_a"] = s.Cities["town_a"].WithCondition(0.73);
+
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", new List<Cause>()));
+
+        Assert.Equal(0.73, s.Cities["town_a"].Condition);
     }
 
     // R-EFX-006: the structured effects apply after the numeric ones, in the option's list order (grants, then city effects).
@@ -103,7 +120,7 @@ from: 1948-05-15
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var why = new List<Cause>();
         Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
-        Assert.Equal(new[] { "fx_reserves", "halutz", "halutz", "town_a.housing_capacity", "town_a.job_slots" },
+        Assert.Equal(new[] { "fx_reserves", "halutz", "halutz", "town_a.housing_capacity", "town_a.job_slots", "town_b.condition" },
             why.Where(w => w.System == "events" && w.Target != "arms").Select(w => w.Target));
     }
 
@@ -117,8 +134,16 @@ from: 1948-05-15
     [InlineData("    grant_units:\n      - { type: halutz, n: 1, at: nowhere }\n", "grant_units[0].at", "unknown city")]
     [InlineData("    grant_units:\n      - { type: halutz, n: 1, at: site_a }\n", "grant_units[0].at", "sites cannot be grant targets")]
     [InlineData("    city_effects:\n      - { city: nowhere, field: job_slots, delta: 1 }\n", "city_effects[0].city", "unknown city")]
-    [InlineData("    city_effects:\n      - { city: town_a, field: condition, delta: 1 }\n", "city_effects[0].field", "housing_capacity or job_slots")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: morale, delta: 1 }\n", "city_effects[0].field", "housing_capacity, job_slots or condition")]
     [InlineData("    city_effects:\n      - { city: town_a, field: job_slots, delta: 0 }\n", "city_effects[0].delta", "must not be 0")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: condition, delta: 0 }\n", "city_effects[0].delta", "must not be 0")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: housing_capacity, delta: 1.5 }\n", "city_effects[0].delta", "whole number")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: job_slots, delta: 3000000000 }\n", "city_effects[0].delta", "whole number")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: condition, delta: 1.5 }\n", "city_effects[0].delta", "from -1 to 1")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: condition, delta: -1.01 }\n", "city_effects[0].delta", "from -1 to 1")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: condition, delta: .nan }\n", "city_effects[0].delta", "from -1 to 1")]
+    [InlineData("    unlock_projects: [nowhere]\n", "unlock_projects[0]", "unknown city project")]
+    [InlineData("    unlock_projects: [housing]\n", "unlock_projects[0]", "is not locked")]
     public void TheLoaderRefusesAnUnknownTarget(string structured, string field, string message)
     {
         var ex = Refused(structured);
@@ -136,11 +161,13 @@ from: 1948-05-15
         Assert.Contains("military camp", ex.Message);
     }
 
-    // R-EFX-005: an option of a sensitive event carries no grant and no capacity or slot gain; a cut stays allowed.
+    // R-EFX-005: an option of a sensitive event carries no grant and no capacity, slot or condition gain; a cut stays allowed.
     [Theory]
     [InlineData("    grant_units:\n      - { type: halutz, n: 1 }\n", "grant_units[0]")]
     [InlineData("    city_effects:\n      - { city: town_a, field: housing_capacity, delta: 1 }\n", "city_effects[0]")]
     [InlineData("    city_effects:\n      - { city: town_a, field: job_slots, delta: 2 }\n", "city_effects[0]")]
+    [InlineData("    city_effects:\n      - { city: town_a, field: condition, delta: 0.1 }\n", "city_effects[0]")]
+    [InlineData("    unlock_projects: [industry]\n", "unlock_projects[0]")]
     public void ASensitiveOptionGrantsNothing(string structured, string field)
     {
         var ex = Refused(structured, "war-casualties");
@@ -148,12 +175,39 @@ from: 1948-05-15
         Assert.Contains("sensitive events cannot reward", ex.Message);
     }
 
-    // R-EFX-005: a sensitive option may still cut a city's capacity or slots.
+    // R-EFX-005: a sensitive option may still cut a city's capacity, slots or condition.
     [Fact]
     public void ASensitiveOptionMayCut()
     {
         Assert.Single(Load(Event("    city_effects:\n      - { city: town_a, field: job_slots, delta: -1 }\n", "terror")).Events);
         Assert.Single(Load(Event("    city_effects:\n      - { city: town_a, field: housing_capacity, delta: -1 }\n", "war-casualties")).Events);
+        Assert.Single(Load(Event("    city_effects:\n      - { city: town_a, field: condition, delta: -0.2 }\n", "massacre")).Events);
+    }
+
+    // R-EFX-004 with R-HOUSE-001: a condition effect moves only that city's housing condition, and it stays from 0 to 1; the
+    // cause carries the change that applied. The fixture starts every city at housing_start_condition.
+    [Theory]
+    [InlineData(0.25)]
+    [InlineData(-0.2)]
+    [InlineData(1.0)]     // clipped at 1
+    [InlineData(-1.0)]   // clipped at 0
+    public void AConditionEffectStaysFrom0To1(double delta)
+    {
+        var c = Load(Event(FormattableString.Invariant($"    city_effects:\n      - {{ city: town_a, field: condition, delta: {delta} }}\n")));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var x = s.Cities["town_a"];
+        var other = s.Cities["town_b"].Canonical();
+        var start = x.Condition!.Value;
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
+        var y = s.Cities["town_a"];
+        var want = Math.Min(1.0, Math.Max(0.0, start + delta));
+        Assert.Equal(want, y.Condition!.Value, 12);
+        Assert.Equal((x.HousingCapacity, x.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, x.Craftsmen, x.JobsDefault),
+            (y.HousingCapacity, y.JobSlots, y.Civilians, y.Employed, y.Refugees, y.Recruits, y.Craftsmen, y.JobsDefault));
+        Assert.Equal(other, s.Cities["town_b"].Canonical());   // R-HOUSE-001: per city
+        var cause = Assert.Single(why, w => w.Target == "town_a.condition");
+        Assert.Equal(want - start, cause.Delta, 12);
     }
 
     // R-EFX-004: housing capacity never drops below 0; the cause carries the cut that applied.
@@ -175,6 +229,9 @@ from: 1948-05-15
     {
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string> { ["arms.yaml"] = Event(Grants) })));
         Assert.Equal("events[arms].options[accept].grant_units", ex.Field);
+        Assert.Contains("GDD loop", ex.Message);
+        ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string> { ["arms.yaml"] = Event(UnlockIndustry) })));
+        Assert.Equal("events[arms].options[accept].unlock_projects", ex.Field);
         Assert.Contains("GDD loop", ex.Message);
     }
 
@@ -201,12 +258,13 @@ from: 1948-05-15
         var c = Load(Event(Grants));
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var lines = EventSystem.OptionEffects(c, s, c.Events.Single().Options[0]);
-        Assert.Equal(new[] { "fx_reserves", "halutz", "halutz", "town_a.housing_capacity", "town_a.job_slots" }, lines.Select(l => l.Target));
-        Assert.Equal(new[] { -10.0, 2, 1, 3, -100 }, lines.Select(l => l.Delta));
+        Assert.Equal(new[] { "fx_reserves", "halutz", "halutz", "town_a.housing_capacity", "town_a.job_slots", "town_b.condition" }, lines.Select(l => l.Target));
+        Assert.Equal(new[] { -10.0, 2, 1, 3, -100, -0.05 }, lines.Select(l => l.Delta));
         Assert.Equal("2 halutz units at Town A", lines[1].Message);
         Assert.Equal("1 halutz unit at Town B", lines[2].Message);
         Assert.Equal("Town A: housing capacity +3", lines[3].Message);
         Assert.Equal("Town A: job slots -100", lines[4].Message);
+        Assert.Equal("Town B: housing condition -5.0%", lines[5].Message);
     }
 
     // A game with a granted unit replays from its save to the same hash.
@@ -224,8 +282,69 @@ from: 1948-05-15
         Assert.Equal(g.State.Units.Values.OrderBy(u => u.Id).Select(u => (u.Id, u.Type, u.Q, u.R)),
             loaded.State.Units.Values.OrderBy(u => u.Id).Select(u => (u.Id, u.Type, u.Q, u.R)));
         Assert.Equal(g.State.NextId, loaded.State.NextId);
-        Assert.Equal((g.State.Cities["town_a"].HousingCapacity, g.State.Cities["town_a"].JobSlots),
-            (loaded.State.Cities["town_a"].HousingCapacity, loaded.State.Cities["town_a"].JobSlots));
+        Assert.Equal((g.State.Cities["town_a"].HousingCapacity, g.State.Cities["town_a"].JobSlots, g.State.Cities["town_b"].Condition),
+            (loaded.State.Cities["town_a"].HousingCapacity, loaded.State.Cities["town_a"].JobSlots, loaded.State.Cities["town_b"].Condition));
         Assert.Equal(g.State.Hash(), loaded.State.Hash());
+    }
+
+    // A fixture where the industry project starts locked. No real project is locked in content: which ones start locked is
+    // the owner's call (#806). Fixture values, not the game's.
+    static readonly string LockedIndustry = Fixture.GddProjects.Replace("job_slots: 3 }", "job_slots: 3, locked: true }");
+
+    const string UnlockIndustry = "    unlock_projects: [industry]\n";
+
+    // R-EFX-006 and R-EFX-008: the unlock applies after the city effects, and naming a kind twice unlocks it once, with one cause.
+    [Fact]
+    public void AnUnlockAppliesAfterTheCityEffectsAndOnce()
+    {
+        var c = Load(Event("    city_effects:\n      - { city: town_a, field: job_slots, delta: 1 }\n    unlock_projects: [industry, industry]\n"), projects: LockedIndustry);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
+        Assert.Equal(new[] { "fx_reserves", "town_a.job_slots", "industry" },
+            why.Where(w => w.System == "events" && w.Target != "arms").Select(w => w.Target));
+        Assert.Equal(new[] { "industry" }, s.UnlockedProjects);
+        Assert.Equal(s.Hash(), s.Clone().Hash());   // Clone copies the unlocked kinds
+        Assert.Equal(s.UnlockedProjects, s.Clone().UnlockedProjects);
+    }
+
+    // R-EFX-008 with R-PROJ-001: a locked kind is refused by StartProject until an option that unlocks it is applied, and
+    // then allowed. The unlock applies after the grants and city effects (R-EFX-006), and the preview lists it (R-EVT-005).
+    [Fact]
+    public void ALockedProjectWaitsForItsUnlock()
+    {
+        var c = Load(Event(UnlockIndustry), projects: LockedIndustry);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("An industry project is not available yet", Projects.CheckCity(c, s, "industry", "town_a", 1, 1));
+        Assert.Null(Projects.CheckCity(c, s, "housing", "town_a", 1, 1));   // an unlocked kind is not touched
+        var refused = GameSession.New(c, 1, Mode.Historical);
+        Assert.Single(refused.Step(new Command[] { new StartProject("industry", "town_a", 1, 1) }).Rejected);
+
+        var preview = EventSystem.OptionEffects(c, s, c.Events.Single().Options[0]);
+        Assert.Equal(new[] { "fx_reserves", "industry" }, preview.Select(l => l.Target));
+        Assert.Equal("An industry project can now be built", preview[1].Message);
+
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
+        Assert.Contains(why, w => w.System == "events" && w.Target == "industry" && w.Delta == 1);
+        Assert.Null(Projects.CheckCity(c, s, "industry", "town_a", 1, 1));
+    }
+
+    // R-EFX-008: the unlock is game state, so a save replays it to the same hash.
+    [Fact]
+    public void ASaveWithAnUnlockReplays()
+    {
+        var c = Load(Event(UnlockIndustry), projects: LockedIndustry);
+        var g = GameSession.New(c, 7, Mode.Historical);
+        g.Step(new Command[] { new ChooseEventOption("arms", "accept") });
+        Assert.Empty(g.Step(new Command[] { new StartProject("industry", "town_a", 1, 1) }).Rejected);
+        Assert.Contains(g.State.CityProjects.Values, p => p.Kind == "industry");
+        var loaded = GameSession.Load(c, g.Save.Write(), out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(g.State.UnlockedProjects, loaded.State.UnlockedProjects);
+        Assert.Equal(g.State.Hash(), loaded.State.Hash());
+        var without = g.State.Clone();
+        without.UnlockedProjects.Clear();
+        Assert.NotEqual(without.Hash(), g.State.Hash());   // the unlock is hashed (R-LOOP-002: only when set)
     }
 }

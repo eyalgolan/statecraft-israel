@@ -151,8 +151,10 @@ namespace Statecraft.Game.Map.Units
                 var (type, hat, pose, faded, heading) = looks[i];
                 var p = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * DrawSpread * hex;
                 p.y = UnitPlinth.FigureY(map, plinth, p.x, p.z);
-                Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
+                var figure = Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
                     paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
+                var headgear = UnitData.Headgears.First(h => UnitRoster.RiflemanType(h) == type);
+                UnitFigures.Dress(figure.transform, UnitFigures.ByHeadgear[headgear]);   // the Collection's soldier, once streamed (#665)
             }
             Ring(map, assets, ringTemplate, root.transform, centre, RingRadius * hex);
 

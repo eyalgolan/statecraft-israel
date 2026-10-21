@@ -247,7 +247,7 @@ eras:
     [Fact]
     public void TheObjectiveIsTheFirstNewYishuvAtMefalsim()
     {
-        var o = Assert.Single(Real.Objectives);
+        var o = Real.Objectives.Single(x => x.Id == "first_new_yishuv");   // absorb_immigrants is the other (#1039)
         Assert.Equal(("first_new_yishuv", "mefalsim", "first_new_yishuv"), (o.Id, o.CompletesWhen!.SiteBuilt, o.Card));
         Assert.Equal(Real.Sites.Single(x => x.Id == "mefalsim").Founded, o.ReferenceDate);
         Assert.Equal(new DateTime(1949, 6, 12), o.ReferenceDate);
@@ -257,8 +257,21 @@ eras:
         Assert.Empty(card.Tags);
     }
 
-    // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 March 1949, three months before its
-    // 12 June 1949 founding, so the first new yishuv scores 100 and the early bonus (D-B2), and its card fires and is answered.
+    // The real content: the absorb objective as #738 decides it (Q-ABS-1's 1,000,000; Q-ABS-2's 10% and 40%), its reference
+    // date Ingathering of the Exiles Day, and its card (#1039). Nothing else pins these values.
+    [Fact]
+    public void TheAbsorbObjectiveIsTheMillionMilestone()
+    {
+        var o = Real.Objectives.Single(x => x.Id == "absorb_immigrants");
+        var a = o.CompletesWhen!.Absorbed!;
+        Assert.Equal((1_000_000L, 0.10m, 0.40m), (a.PopulationAtLeast, a.OverflowAtMost!.Value, a.EmployedAtLeast));
+        Assert.Equal(new DateTime(1949, 12, 20), o.ReferenceDate);
+        Assert.Equal("absorb_immigrants", o.Card);
+        Assert.Equal("absorb_immigrants", Real.Events.Single(e => e.Id == o.Card).Objective);
+    }
+
+    // R-OBJ-001 to R-OBJ-003 in the golden run: the reference player builds Mefalsim on 15 February 1951, after its 12 June 1949
+    // founding, so the first new yishuv scores 100 with no early bonus (D-B2), and its card fires and is answered.
     // Since GDD Phase 3 PR 1 the cities start with every job filled (Q-START-1), so the player trains its halutz group on the
     // first turn instead of on 15 August 1948 (ReferencePlayerTests); before, it built on 15 June 1949 and scored 100.
     [Fact]
@@ -267,9 +280,11 @@ eras:
         var s = GoldenRun.Play(Real, GoldenRun.Until1952);
         var built = s.Sites["mefalsim"].BuiltOn!.Value;
         // Since Phase 4 PR 1 (#785) the reference player builds the yishuv sites in id order, one after another as its halutzim
-        // come free: Beit Kama and Gilat first. Since Phase 4 PR 6 (#790) its group is a veteran after Beit Kama and builds in
-        // 3 turns, so Mefalsim is built in September 1949, three months after its founding date (12 June 1949); it was March 1950.
-        Assert.Equal(new DateTime(1949, 9, 15), built);
+        // come free: Beit Kama and Gilat first. Since Phase 4 PR 6 (#790) its group is a veteran after Beit Kama; with the
+        // Agriculture minister's multiplier (R-MIN-002, #808) a veteran's build is 5 turns (2 x 0.624 = 1.248 a turn, the carry
+        // kept), so Mefalsim is built in February 1951 (March 1950 before the ministers, September 1949 before that) - still
+        // after its 12 June 1949 founding.
+        Assert.Equal(new DateTime(1951, 2, 15), built);
         Assert.Equal(built, s.Objectives["first_new_yishuv"]);
         Assert.Equal(100, s.Score);   // D-B6; no D-B2 bonus, as it is built after the reference date
         Assert.Equal("continue", s.ChosenOptions["first_new_yishuv"]);
@@ -283,14 +298,19 @@ eras:
         var root = RealContentTests.ContentRoot();
         var legacy = ContentLoader.Load(Fixture.Write(
             new Dictionary<string, string> { ["objectives.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "objectives.yaml")) },
-            new Dictionary<string, string> { ["first_new_yishuv.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "first_new_yishuv.yaml")) }));
+            new Dictionary<string, string>
+            {
+                ["first_new_yishuv.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "first_new_yishuv.yaml")),
+                ["absorb_immigrants.yaml"] = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "events", "absorb_immigrants.yaml")),   // objectives.yaml's second card (#1039)
+            }));
         Assert.False(legacy.IsGdd);
-        Assert.Single(legacy.Objectives);
+        Assert.Equal(2, legacy.Objectives.Count);
         var s = Simulation.NewGame(legacy, GoldenRun.Seed, Mode.Historical);
         for (int i = 0; i < 40 && s.GameOver == null; i++)
         {
             s = Step(legacy, s).State;
             Assert.DoesNotContain("first_new_yishuv", s.FiredEvents);
+            Assert.DoesNotContain("absorb_immigrants", s.FiredEvents);
         }
         Assert.Empty(s.Objectives);
         Assert.Equal(0, s.Score);
@@ -307,9 +327,100 @@ eras:
     [Fact]
     public void ContentWithoutObjectivesHasNone() => Assert.Empty(ContentLoader.Load(Fixture.Write()).Objectives);
 
+    // ---- R-OBJ-004, the "absorb immigrants" objective (D-B4; owner, 18 October 2026, #738: option (a)) ----
+
+    /// <summary>The fixture's absorb objective: the fixture starts with 1000 people, so its gate is 1500.</summary>
+    const string AbsorbYaml = "objectives:\n  - { id: first_goal, name: First goal, completes_when: { absorbed: { population_at_least: 1500, overflow_at_most: 0.10, employed_at_least: 0.40 } }, reference_date: 1949-06-12, card: first_card }\n";
+
+    static Content LoadAbsorb(string objectives = AbsorbYaml) => Load(gdd: true, new Dictionary<string, string> { ["objectives.yaml"] = objectives });
+
+    // R-OBJ-004: town_a houses 10 units and its people are civilians only, so overflow = civilians - 10. Each row is just
+    // inside or just outside one bound; the shares are "at or below" and "at or above".
+    [Theory]
+    [InlineData(1500, 11, 5, 0, true)]     // overflow 1 <= 1.1, employed 5 >= 4.4
+    [InlineData(1499, 11, 5, 0, false)]    // below the population gate
+    [InlineData(1500, 10, 4, 0, true)]     // no overflow, employed 4 = 40% of 10: on the bound
+    [InlineData(1500, 10, 3, 0, false)]    // employed 30%
+    [InlineData(1500, 12, 5, 0, false)]    // overflow 2 > 1.2
+    [InlineData(1500, 11, 5, 7, true)]     // refugees waiting do not block it (the owner dropped that clause, #738)
+    public void AbsorptionCompletesWhenTheShareIsHousedAndEmployed(int population, int civilians, int employed, int refugees, bool done)
+    {
+        var c = LoadAbsorb();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Population = new Dictionary<string, double> { ["veterans"] = population };
+        s.Cities["town_a"] = new City("town_a", 10, 8, civilians, employed, refugees);
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1949-04-15"), new List<Cause>());
+        Assert.Equal(done, s.Objectives.ContainsKey("first_goal"));
+        Assert.Equal(done ? 110 : 0, s.Score);
+    }
+
+    // R-OBJ-004: overflow exactly on the bound completes it. With capacity 10 no integer overflow equals 10% of the people
+    // housed, so town_a here houses 9: 10 civilians, overflow 1 = 10% of 10 (review on #1019).
+    [Fact]
+    public void OverflowOnTheBoundCompletes()
+    {
+        var c = LoadAbsorb();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Population = new Dictionary<string, double> { ["veterans"] = 1500 };
+        s.Cities["town_a"] = new City("town_a", 9, 8, 10, 4, 0);
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1949-04-15"), new List<Cause>());
+        Assert.True(s.Objectives.ContainsKey("first_goal"));
+    }
+
+    // R-OBJ-004 (#738): Q-ABS-2 as first recorded (no refugees waiting, overflow <= 10%, employed >= 40%) already
+    // holds at the end of the real game's first turn, with nobody absorbed: the census start values are 41% employed with no
+    // overflow (#738, issuecomment-6242964308). The population gate keeps the objective open.
+    [Fact]
+    public void TheStartValuesDoNotCompleteItOnTheFirstTurn()
+    {
+        var c = Real;
+        var s = Step(c, Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical)).State;
+        Assert.Equal(0, s.Cities.Values.Sum(x => x.Refugees));
+        Assert.Equal(0, s.Cities.Values.Sum(x => Cities.Overflow(s, x)));
+        Assert.True(Cities.EmployedShare(s) >= 0.40, "precondition: the old condition holds on turn 1");
+        Assert.DoesNotContain("absorb_immigrants", s.Objectives.Keys);
+    }
+
+    // R-OBJ-004 (#738): arrivals with no housing or jobs built never complete it. The historical run with no orders
+    // passes 1,000,000 people, but its cities are then far below 40% employed.
+    [Fact]
+    public void ArrivalAloneDoesNotComplete()
+    {
+        var c = Real;
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var passed = false;
+        while (s.GameOver == null)
+        {
+            s = Step(c, s).State;
+            passed |= s.TotalPopulation >= 1_000_000;
+            Assert.DoesNotContain("absorb_immigrants", s.Objectives.Keys);
+        }
+        Assert.True(passed, "precondition: the run passes 1,000,000 people");
+    }
+
+    // R-OBJ-004 with R-OBJ-003: once the condition holds, the objective is recorded at the end of that turn and its card is
+    // pending for the next; it neither records nor fires again.
+    [Fact]
+    public void TheAbsorbCardFiresOnceTheTurnAfter()
+    {
+        var c = LoadAbsorb(AbsorbYaml.Replace("population_at_least: 1500", "population_at_least: 1000"));   // the start: 60% employed, no overflow
+        var r = Step(c, Simulation.NewGame(c, 1, Mode.Historical));
+        Assert.Equal(r.State.Date, Assert.Single(r.State.Objectives).Value);
+        Assert.Contains("first_card", r.State.PendingEvents);
+        var score = r.State.Score;
+        var s = Step(c, r.State, new ChooseEventOption("first_card", "continue")).State;
+        for (int i = 0; i < 3; i++)
+        {
+            s = Step(c, s).State;
+            Assert.DoesNotContain("first_card", s.PendingEvents);
+        }
+        Assert.Single(s.Objectives);
+        Assert.Equal(score, s.Score);
+    }
+
     static string GddRules(string from, string to) => Fixture.Gdd()["rules.yaml"].Replace(from, to);
 
-    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n";
+    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\n";
 
     static string Objective(string from, string to) => ObjectivesYaml.Replace(from, to);
 
@@ -319,6 +430,11 @@ eras:
         new object[] { "objectives.yaml", ObjectivesYaml + ObjectivesYaml.Replace("objectives:\n", ""), Card, "objectives.yaml", "objectives[first_goal].id", "duplicate id" },
         new object[] { "objectives.yaml", Objective("name: First goal, ", ""), Card, "objectives.yaml", "objectives[first_goal].name", "required" },
         new object[] { "objectives.yaml", Objective("completes_when: { site_built: site_a }, ", ""), Card, "objectives.yaml", "objectives[first_goal].completes_when", "required" },
+        new object[] { "objectives.yaml", Objective("site_built: site_a", "site_built: site_a, absorbed: { population_at_least: 1, overflow_at_most: 0.1, employed_at_least: 0.4 }"), Card, "objectives.yaml", "objectives[first_goal].completes_when", "exactly one of" },
+        new object[] { "objectives.yaml", AbsorbYaml.Replace("population_at_least: 1500", "population_at_least: 0"), Card, "objectives.yaml", "objectives[first_goal].completes_when.absorbed.population_at_least", "above 0" },
+        new object[] { "objectives.yaml", AbsorbYaml.Replace("overflow_at_most: 0.10, ", ""), Card, "objectives.yaml", "objectives[first_goal].completes_when.absorbed.overflow_at_most", "required" },
+        new object[] { "objectives.yaml", AbsorbYaml.Replace("overflow_at_most: 0.10", "overflow_at_most: 1.5"), Card, "objectives.yaml", "objectives[first_goal].completes_when.absorbed.overflow_at_most", "share from 0 to 1" },
+        new object[] { "objectives.yaml", AbsorbYaml.Replace("employed_at_least: 0.40", "employed_at_least: 0"), Card, "objectives.yaml", "objectives[first_goal].completes_when.absorbed.employed_at_least", "share above 0" },
         new object[] { "objectives.yaml", Objective("reference_date: 1949-06-12, ", ""), Card, "objectives.yaml", "objectives[first_goal].reference_date", "required" },
         new object[] { "objectives.yaml", Objective("card: first_card", "card: no_card"), Card, "objectives.yaml", "objectives[first_goal].card", "unknown event 'no_card'" },
         new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("objective: first_goal\n", ""), "events/first_card.yaml", "events[first_card].objective", "must be 'first_goal'" },
@@ -341,6 +457,52 @@ eras:
         var ex = Assert.Throws<ContentException>(() => Load(gdd: true, new Dictionary<string, string> { [file] = text }, card));
         Assert.Equal(errorFile, ex.File);
         Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    /// <summary>#1189: the Objectives screen's reading, one row per objective in content order, with its name, whether it is done,
+    /// the player's date (none until it is done) and the historical date. Pure: the state's hash is the same afterwards.</summary>
+    [Fact]
+    public void StatusListsEveryObjectiveDoneOrNotWithBothDates()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var hash = s.Hash();
+        var open = Objectives.Status(Real, s);
+        Assert.Equal(hash, s.Hash());
+        Assert.Equal(Real.Objectives.Select(o => (o.Id, o.Name, o.ReferenceDate)), open.Select(o => (o.Id, o.Name, o.Historical)));
+        Assert.All(open, o => { Assert.False(o.Done); Assert.Null(o.Completed); });
+
+        var first = Real.Objectives[0];
+        var date = first.ReferenceDate.AddMonths(-2);
+        Assert.True(Objectives.Record(Real, s, Real.RulesAt(s.Date).Mvp!, first.Id, date, new List<Cause>()));
+        hash = s.Hash();
+        var after = Objectives.Status(Real, s);
+        Assert.Equal(hash, s.Hash());
+        Assert.True(after[0].Done);
+        Assert.Equal(date, after[0].Completed);
+        Assert.Equal(first.ReferenceDate, after[0].Historical);
+        Assert.All(after.Skip(1), o => { Assert.False(o.Done); Assert.Null(o.Completed); });
+    }
+
+    /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native read (#564).</summary>
+    [Fact]
+    public void TheHebrewNameLoadsBesideTheEnglish()
+    {
+        var c = Load(true, new Dictionary<string, string> { ["objectives.yaml"] = ObjectivesYaml.Replace("name: First goal,", "name: First goal, name_he: \u05de\u05d8\u05e8\u05d4 \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4, name_he_review: agent-checked,") });
+        var o = c.Objectives.Single(x => x.Id == "first_goal");
+        Assert.Equal(("First goal", "\u05de\u05d8\u05e8\u05d4 \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4", HebrewReview.AgentChecked, true), (o.Name, o.NameHe, o.NameHeReview, o.NameHeReviewGiven));
+    }
+
+    /// <summary>#1187: the Hebrew name is Hebrew letters, and the review flag is agent-checked or absent.</summary>
+    [Theory]
+    [InlineData("name_he: First goal", "name_he", "Hebrew letters")]
+    [InlineData("name_he: \u05de\u05d8\u05e8\u05d4 \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4, name_he_review: reviewed", "name_he_review", "agent-checked")]
+    [InlineData("name_he_review: agent-checked", "name_he", "required")]
+    public void BadHebrewNameIsAContentError(string insert, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(true, new Dictionary<string, string> { ["objectives.yaml"] = ObjectivesYaml.Replace("name: First goal,", $"name: First goal, {insert},") }));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal($"objectives[first_goal].{field}", ex.Field);
         Assert.Contains(message, ex.Message);
     }
 }

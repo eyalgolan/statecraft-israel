@@ -71,4 +71,19 @@ public class GoldenManifestTests
         Assert.Contains($"Hash1952 = \"{GoldenRun.Hash1952}\"", after);
         Assert.NotEqual(src, after);
     }
+
+    [Fact]
+    public void EveryWebCheckExpectInReleasingShowsTheManifestHash()
+    {
+        // RELEASING.md runs web_check on two builds (the release zip and the Pages demo): both take the goldens from the manifest loop and pin smoke5
+        var doc = Text("docs", "RELEASING.md");
+        var webChecks = System.Text.RegularExpressions.Regex.Matches(doc, @"web_check\.py unity/Builds/\S+ --query ""golden&smoke=5""[^\n]*");
+        Assert.True(webChecks.Count >= 2, $"expected the golden web_check of both web builds in docs/RELEASING.md, found {webChecks.Count}");
+        foreach (System.Text.RegularExpressions.Match m in webChecks)
+            Assert.Contains("\"${golden_expect[@]}\"", m.Value);
+        var smokes = System.Text.RegularExpressions.Regex.Matches(doc, @"--expect ""SMOKE OK 5 turns 1948-10-15 ([0-9a-f]{64})""");
+        Assert.True(smokes.Count >= 2, $"expected the smoke5 --expect line of both web builds, found {smokes.Count}");
+        foreach (System.Text.RegularExpressions.Match m in smokes)
+            Assert.True(GoldenManifest.Expected("smoke5") == m.Groups[1].Value, $"docs/RELEASING.md shows a stale smoke5 hash: {m.Value}");
+    }
 }

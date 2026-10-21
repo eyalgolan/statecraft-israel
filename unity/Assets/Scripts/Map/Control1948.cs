@@ -111,6 +111,18 @@ namespace Statecraft.Game.Map
         /// so the bands run along the frontier and nothing is drawn beyond it, as for the sub-districts.</summary>
         public void SetOutside(IEnumerable<(int q, int r)> hexes) { outside = hexes.ToList(); Array.Clear(layers, 0, layers.Length); }
 
+        /// <summary>The map editor's control overrides (content/map/overrides.yaml, #1009), applied after the file's codes:
+        /// each changes one period of one hex and nothing else ("One period at a time", owner, 18 October 2026). Throws
+        /// ContentException naming the override file and field for a hex, period or code this file does not have.</summary>
+        public void ApplyOverrides(Statecraft.Sim.MapOverrides overrides)
+        {
+            var ids = Periods.Select(p => p.Id).ToList();
+            overrides.ValidateControl(codes.Keys, ids, CodeOf.Keys.Select(c => c.ToString()));
+            foreach (var hex in overrides.Control.Select(x => (q: x.Hex.Q, r: x.Hex.R)).Distinct().ToList())
+                codes[hex] = overrides.ApplyControl(hex.q, hex.r, ids, codes[hex]);
+            Array.Clear(layers, 0, layers.Length);
+        }
+
         /// <summary>The layer drawn on <paramref name="date"/> (null before the first period), built once per period: Israel
         /// primary, the other side secondary, contested, no-man's land and demilitarized zones neutral, no colour left out (no
         /// band, and it stops its neighbours' bands: the edge of the sourced data is not a front line).</summary>

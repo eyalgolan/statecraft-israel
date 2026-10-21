@@ -7,6 +7,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 ## Rules
 
 - The first objective, the first new yishuv, completes when Mefalsim is built (Build yishuv, R-SITE-001 to R-SITE-003). Its reference date is Mefalsim's founding, 12 June 1949 [S4][S5], and the loader refuses any other (R-OBJ-001).
+- The "absorb immigrants" objective (D-B4) completes once the Jewish population has reached a stated number, and then the cities' overflow is at most a stated share of the people they house and their employed at least a stated share of their civilians (owner, 18 October 2026, option (a) [S8]; R-OBJ-004). The population gate keeps the start values from completing it on the first turn; refugees waiting do not count, since each turn's arrivals come after housing. Its numbers, reference date and card are content (`objectives.yaml` and its card), added with a person's source check [S8].
 - An objective is recorded once, in the last step of the GDD turn, with the turn's end date, and only in the GDD loop (R-OBJ-001).
 - Completing an objective scores 100 points (unitless) once (D-B6 [S2], R-OBJ-002).
 - Each calendar month (unitless) between the completion's month and the reference date's month adds 5 points (unitless), up to 60 points (unitless) (D-B2 [S2], R-OBJ-002). The same month is on time and earns no bonus; finishing late costs nothing. Calendar months match the owner's card wording [S6], and the owner confirmed them on 15 October 2026 [S7].
@@ -17,7 +18,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 
 ## Data touched
 
-- `content/objectives.yaml` (`id`, `name`, `completes_when.site_built`, `reference_date`, `card`), read in both loops when present: `first_new_yishuv` on Mefalsim.
+- `content/objectives.yaml` (`id`, `name`, `completes_when.site_built` or `completes_when.absorbed` with `population_at_least`, `overflow_at_most`, `employed_at_least`, `reference_date`, `card`), read in both loops when present: `first_new_yishuv` on Mefalsim, and `absorb_immigrants` on the Jewish population, overflow and employment (#1039).
 - `content/events/first_new_yishuv.yaml`, the card: two sentences from the site's sources [S4][S5], `status: fact-checked`.
 - An event's `objective` key (`content/schema/event.schema.json`, `docs/WRITING_EVENTS.md`).
 - `rules.yaml` `mvp.objective_points`, `objective_bonus_per_month`, `objective_bonus_cap`, required in the GDD loop, as design values (R-LOOP-005). The score reads the rules of the date the turn starts from.
@@ -30,7 +31,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 
 ## Out of scope
 
-- The war, absorption and railway objectives (Phase 2 and later); the card's photograph and its "completed on, historically" line in English and Hebrew (PR 7); the score on the HUD is already in (#598).
+- The war and railway objectives (Phase 2 and later); the card's photograph and its "completed on, historically" line in English and Hebrew (PR 7); the score on the HUD is already in (#598).
 
 ## Sources
 
@@ -41,6 +42,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 - [S5] Haim Gvati, 100 Years of Settlement, vol. 2, Ben-Yehuda Project edition, <https://benyehuda.org/read/14684>, checked 2026-10-15
 - [S6] Owner decision on the card wording, <https://github.com/eyalgolan/statecraft-israel/issues/379>, checked 2026-10-15
 - [S7] Owner decision on calendar months, <https://github.com/eyalgolan/statecraft-israel/pull/653#issuecomment-6197448493>, checked 2026-10-15
+- [S8] Owner decision on the absorb condition and card, <https://github.com/eyalgolan/statecraft-israel/issues/738>, checked 2026-10-18
 
 ## Open questions
 

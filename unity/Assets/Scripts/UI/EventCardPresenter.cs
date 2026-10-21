@@ -27,6 +27,11 @@ namespace Statecraft.Game.UI
         public const string ModalClass = "event-modal";
         /// <summary>The media header's width over its height (the photographs and the clips are 960x540).</summary>
         public const float MediaAspect = 16f / 9f;
+        /// <summary>On End Turn while the shown card cannot be answered with the Attention left (#1034): Statecraft.uss
+        /// highlights it, as ending the turn is then the way on (EventSystem.Delegate hands the card to its minister).</summary>
+        public const string EndTurnWaitingClass = "end-turn-waiting";
+        /// <summary>The line under an option that returns the course to the record (EventOption.Rejoin, #954; Statecraft.uss).</summary>
+        public const string RejoinClass = "event-rejoin";
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -39,7 +44,8 @@ namespace Statecraft.Game.UI
         readonly bool hiddenInCapture;
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
-        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit;
+        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit, delegateLine;
+        readonly Button? endTurn;
         readonly Button hide, reopen, illustrationSwitch;
         readonly System.Action onHide, onReopen, onUncovered;
         readonly EventCallback<PointerDownEvent> onHidePointer;
@@ -62,6 +68,8 @@ namespace Statecraft.Game.UI
         string? collapsedFor;
         /// <summary>The event whose first option last took the focus, so an event already open never takes it again.</summary>
         string? focusedFor;
+        /// <summary>The event whose card last raised Opened, so a card already in view never raises it again.</summary>
+        string? openedFor;
         float appliedWidth = float.NaN;
 
         /// <param name="video">The illustration loop's player, or null when video is off (CardVideo.ForcedOff): then the
@@ -86,15 +94,18 @@ namespace Statecraft.Game.UI
             // size it was dropped at gets no geometry event of its own; the head below it always moves, so it checks too.
             head = card.Q<VisualElement>(className: "event-head");
             scroll = card.Q<VisualElement>("event-scroll"); options = card.Q<VisualElement>("event-options");
+            delegateLine = card.Q<Label>("event-delegate");
             layer = card.parent; hudRoot = root.Q("root") ?? root;
+            endTurn = hudRoot.Q<Button>("end-turn");
             hide = card.Q<Button>("event-hide"); reopen = layer.Q<Button>("event-reopen");
             hide.text = text["event.hide"]; reopen.text = text["event.reopen"];
             card.Q<Label>("event-draft").text = text["event.draft"];
             onHide = Collapse; onReopen = Reopen;
             onUncovered = () =>
             {
-                // The start screen has closed: the photograph now, in the same frame the card first shows (issue #592).
-                if (photoWaits) { photoWaits = false; if (Shown != null) Render(); }
+                // A cover has closed: render the first visible cue too; a start-screen photograph waits until now (#592).
+                photoWaits = false;
+                if (Shown != null) Render();
                 focusedFor = null; if (!hiddenInCapture && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
             };
             onHidePointer = _ => hideByPointer = true;
@@ -145,6 +156,7 @@ namespace Statecraft.Game.UI
             card.Q<VisualElement>("event-options")?.Clear(); card.style.display = DisplayStyle.None;
             reopen.style.display = DisplayStyle.None;
             hudRoot.RemoveFromClassList(OpenClass);
+            endTurn?.RemoveFromClassList(EndTurnWaitingClass);
             ScreenNav.DisableCovered(hudRoot);
         }
 
@@ -152,11 +164,16 @@ namespace Statecraft.Game.UI
         public bool Collapsed => Shown != null && collapsedFor == Shown.Id;
 
         /// <summary>Hide: the card gives the map back and waits behind the "Decision waiting" button, which takes the focus.</summary>
-        public void Collapse()
+        public void Collapse() => Collapse(takeFocus: true);
+
+        /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
+        /// first-turn guide hides the card while its own panel has the focus, FirstTurnGuidePresenter).</summary>
+        public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
             collapsedFor = Shown.Id;
             Render();
+            if (!takeFocus) return;
             if (hideByPointer) { hideByPointer = false; return; }
             reopen.Focus();
             // Tried again once styles resolve: the button was hidden a moment ago and may not take it yet.
@@ -182,20 +199,31 @@ namespace Statecraft.Game.UI
         /// <summary>The event the card shows, or null when every pending event has a queued answer.</summary>
         public GameEvent? Shown { get; private set; }
 
+        /// <summary>Raised with the event's id when its card comes into view: once per showing, never while the card waits
+        /// under the start screen, is collapsed or is hidden in a capture run (GameAudio's cue, #39).</summary>
+        public event System.Action<string>? Opened;
+
         public void Render()
         {
             var c = bridge.Content; var s = bridge.State;
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
             var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null).ToList();
             Shown = open.FirstOrDefault();
-            if (Shown == null) collapsedFor = null;
-            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; }
+            if (Shown == null) { collapsedFor = null; openedFor = null; }
+            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; }
             var shown = !hiddenInCapture && Shown != null && !Collapsed;
-            card.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+            ScreenNav.Show(card, shown);   // #1106: grows in, shrinks away
             card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
             reopen.style.display = !hiddenInCapture && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
             hudRoot.EnableInClassList(OpenClass, shown);
             ScreenNav.DisableCovered(hudRoot);
+            // An answer is an order and costs Attention (choose_event_option): the bridge prices it and checks it as Queue
+            // does. When the turn's Attention left cannot pay, every option would be refused (#1034, #1043): the options are
+            // greyed out with their price, the card says End Turn hands it to its minister, and End Turn is highlighted.
+            var answer = Shown == null ? null : new ChooseEventOption(Shown.Id, "");
+            var price = answer == null ? 0 : bridge.Price(answer);
+            var unpaid = answer != null && !bridge.CanPay(answer);
+            endTurn?.EnableInClassList(EndTurnWaitingClass, !hiddenInCapture && unpaid);
             if (Shown == null || Collapsed) video?.Stop();
             if (Shown == null) { clip = null; clipAlt = null; ShowPhoto(null); return; }
             var e = Shown;
@@ -216,23 +244,43 @@ namespace Statecraft.Game.UI
                 image.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Top,
                     new Length(PortraitFraming.PositionYPercent(portrait.width, portrait.height, PortraitWidth, PortraitHeight, entry!.Value.focusY), LengthUnit.Percent));
             card.Q<Label>("event-draft").style.display = e.Status == "draft" ? DisplayStyle.Flex : DisplayStyle.None;
-            card.Q<Label>("event-title").text = Cabinet.Fill(c, s, e.Title, date);
-            card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", c.Offices.First(o => o.Id == e.Office).Title, holder.Name);
-            card.Q<Label>("event-text").text = EventSystem.Render(c, s, e);
+            // The card in the UI's language (#1064): in Hebrew a field shows the event's Hebrew text where it has one, with
+            // the ministers' Hebrew names in its placeholders, and the English where it has none (fail open). A variant
+            // (R-ALT-010) has no Hebrew, so a card on a road not taken keeps its variant's English.
+            var variant = Timeline.Variant(c, s, e);
+            string Local(string english, string he) => ContentNames.Fill(text, c, s, date, english, he);
+            card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), variant == null || variant.Title == "" ? e.TitleHe : "");
+            var banner = card.Q<Label>("event-alt-banner");   // a consequence card's road (#954); none on any other card
+            banner.text = OriginLine(c, s, e, text);
+            banner.style.display = banner.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
+            card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder), ContentNames.Of(text, holder));
+            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? e.TextHe : "");
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            // The minister End Turn hands the card to, after this turn's queued orders (an appointment included): the sim's answer.
+            var minister = unpaid ? bridge.DelegatedTo(e) : null;
+            delegateLine.text = unpaid ? text.Format("event.no_attention", minister == null ? text["event.cabinet"] : ContentNames.Of(text, minister)) : "";
+            delegateLine.style.display = unpaid ? DisplayStyle.Flex : DisplayStyle.None;
             var options = card.Q<VisualElement>("event-options");
             options.Clear();
             foreach (var o in e.Options)
             {
                 var option = o;
-                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = Cabinet.Fill(c, s, o.Text, date) };
+                var label = Local(Cabinet.Fill(c, s, o.Text, date), o.TextHe);
+                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price > 0 ? text.Format("event.option_cost", label, price) : label };
                 b.AddToClassList(OptionClass);
-                b.generateVisualContent += PaintSign;                      // the promo's round sign at the option's left
+                b.SetEnabled(!unpaid);
                 options.Add(b);
+                if (o.Rejoin == "") continue;
+                // Under the option, not in it: the button's label stays the choice itself, and a Label takes no Tab stop.
+                var rejoin = new Label(text["event.rejoin"]);
+                rejoin.AddToClassList("muted"); rejoin.AddToClassList(RejoinClass);
+                options.Add(rejoin);
             }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
+            if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
         }
 
@@ -253,6 +301,32 @@ namespace Statecraft.Game.UI
             var early = Objectives.MonthsEarly(done, o.ReferenceDate);
             return early == 1 ? t.Format("event.objective_early_one", Date(done), Date(o.ReferenceDate))
                 : t.Format("event.objective_early", Date(done), Date(o.ReferenceDate), early);
+        }
+
+        /// <summary>A consequence card's banner (#954; plan 2026-10-17-alternate-timelines.md, A.4.7): the road it follows as
+        /// the player took it (Timeline.Origin: that card's option and title, through the same text pipeline as that card's
+        /// own labels) and, where that card has one, the record's option beside it (Timeline.HistoricalOption). A chained
+        /// card follows a consequence card, which has no historical option: the comparison is left out, never made up.
+        /// Empty for any other card.</summary>
+        public static string OriginLine(Content c, GameState s, GameEvent e, UiText t)
+        {
+            var origin = Timeline.Origin(c, s, e);
+            if (origin == null) return "";
+            // The loader checks every requirement names an event, but a save from older content may hold an option the card
+            // no longer has: then no banner rather than a broken card.
+            var road = c.Events.FirstOrDefault(x => x.Id == origin.Value.Event);
+            var option = road?.Options.FirstOrDefault(o => o.Id == origin.Value.Option);
+            if (road == null || option == null) return "";
+            var date = EventSystem.FillDate(road, s.Date);
+            // Use the road card's own per-field fallback and name/date routing (#1064), not the consequence's date.
+            bool hebrew = t["ui.lang"] == UiLanguage.Hebrew;
+            string Local(string english, string he) => hebrew && he != "" ? Cabinet.Fill(c, s, he, date, p => ContentNames.Of(t, p)) : english;
+            var variant = Timeline.Variant(c, s, road);
+            var took = Local(Cabinet.Fill(c, s, option.Text, date), option.TextHe);
+            var title = Local(EventSystem.Title(c, s, road), variant == null || variant.Title == "" ? road.TitleHe : "");
+            var record = Timeline.HistoricalOption(road);
+            return record == null ? t.Format("event.alt_origin_no_record", took, title)
+                : t.Format("event.alt_origin", took, title, Local(Cabinet.Fill(c, s, record.Text, date), record.TextHe));
         }
 
         /// <summary>A newly shown event puts the keyboard focus on the card (keyboard play, #41): the next Tab reaches its
@@ -410,19 +484,6 @@ namespace Statecraft.Game.UI
         /// <summary>The shown photograph's alt text (what it depicts), or null when the card shows no photograph (none for
         /// this event, or dropped on a short window).</summary>
         public string? PhotoAlt { get; private set; }
-
-        /// <summary>The round sign in an option's left padding (Statecraft.uss .event-option), painted into the button so it
-        /// stays a leaf whose wrapped text Yoga measures (UiIcon.Paint). In the Hebrew UI it sits in the right padding and
-        /// points left (#193).</summary>
-        const float SignRadius = 15f, SignLeft = 9f;
-
-        static void PaintSign(MeshGenerationContext m)
-        {
-            var e = m.visualElement;
-            bool rtl = UiLanguage.Within(e);
-            var x = rtl ? e.layout.width - SignLeft - SignRadius : SignLeft + SignRadius;
-            UiIcon.PaintDisc(m, rtl ? "chevron-back" : "chevron", new UnityEngine.Vector2(x, e.layout.height / 2f), SignRadius);
-        }
 
         void Choose(GameEvent e, EventOption o)
         {

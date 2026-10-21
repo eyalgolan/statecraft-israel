@@ -1,6 +1,6 @@
 # 01 Audience and purpose
 
-Status: DRAFT. The repo does not define its audiences in one place. The segments below are working hypotheses built from what the repo shows. The maintainer should confirm, correct or remove each one (to raise on #639). Tag legend: [V] seen in a repo file, [H] hypothesis to confirm.
+Status: DRAFT. The segments below are working hypotheses built from what the repo shows. The maintainer should confirm, correct or remove each one (to raise on #639). The [messaging guide](../../../../docs/MESSAGING.md), merged in #1138, now supplies shared audience and claim-scope proposals; these video-specific segments are not adopted audience decisions. Tag legend: [V] seen in a repo file, [H] hypothesis to confirm. Press-kit and messaging references rechecked on 21 October 2026.
 
 ## What the project says about itself
 
@@ -19,7 +19,7 @@ Status: DRAFT. The repo does not define its audiences in one place. The segments
 | 2 | History-minded players and readers who care about sourcing | "Every historical fact comes with a source"; a "Report a historical error" issue form. [V] | Proof that the facts are checkable. Real dates, real offices, archival images, no invented speeches. |
 | 3 | Hebrew readers in Israel and abroad | `README.he.md`, Hebrew UI, bilingual captions on the trailer. [V] | Hebrew that reads as natural Hebrew, with the right names and terms. Not a translation of an English script. |
 | 4 | Open-source contributors (historians, Unity developers, translators, content writers) | `CONTRIBUTING.md`, "Before you start, comment here" on issues. [V] | What is built, what is open, and how to help. A concrete next step. |
-| 5 | Press, curators and store visitors | Press kit issue (#417), Steam Coming Soon page work (#424). [V] | A clear one-line description, honest labelling of what is real footage and what is not. |
+| 5 | Press, curators and store visitors | The existing [press page](../../../../site/src/content/en/press.md) and its downloads (#1026 closed #417), Steam Coming Soon page work (#424). [V] | A clear one-line description, honest labelling of what is real footage and what is not. |
 | 6 | Teachers and students | No evidence in the repo. [H] | Do not write for this segment until the maintainer confirms it. |
 
 ## The viewer who disagrees

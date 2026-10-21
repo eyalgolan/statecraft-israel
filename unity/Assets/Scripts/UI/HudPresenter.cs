@@ -69,10 +69,12 @@ namespace Statecraft.Game.UI
         static readonly (string name, string key)[] Texts =
         {
             ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-            ("nav-why", "hud.nav.why"), ("nav-settings", "hud.nav.settings"), ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
+            ("nav-why", "hud.nav.why"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
+            ("nav-settings", "hud.nav.settings"),
+            ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         };
 
-        /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the six captions, Security's level
+        /// <summary>The owner's text floor (#624, 15 October 2026): the bar's small text (the seven captions, Security's level
         /// and the attention line, SmallTextPx in the stylesheet) stays at least this many pixels on screen. The panel scales
         /// with the window (about 0.67 at 1280x720, 0.62 at 1024x768), so at small windows the text is set larger in panel
         /// px (SmallTextSize).</summary>
@@ -90,7 +92,7 @@ namespace Statecraft.Game.UI
         /// owner's second answer, 15 October 2026). The plate keeps its width; the turn and the date take a line each, and the
         /// plate grows.</summary>
         readonly List<Label> plateText;
-        readonly VisualElement? dateRow;
+        readonly VisualElement? dateRow, captionRow;
         /// <summary>The plate's padding while the floor raises its text (the stylesheet's is 2 px top and bottom, 10-12 at the
         /// sides): PlateSidePx at both sides keeps every line at least 0 px from the 18 px corner zones (TopBarTests), each the
         /// corner scrolls' reach (about 14 px in) plus 4, and PlateEdgePx at the top and bottom keeps it inside the frame's
@@ -100,10 +102,24 @@ namespace Statecraft.Game.UI
         readonly VisualElement turnBox;
         readonly IVisualElementScheduledItem floorCheck;
         float smallTextSize = SmallTextPx;
+        bool captionFitWrap;
 
         /// <summary>The left icon column (promo 03): the screens' buttons (ScreenNav.Screens).</summary>
         public const string RailName = "left-column";
+        /// <summary>#1109: the class on a side-menu button whose screen has something the player can do this turn
+        /// (Statecraft.uss shows the button's BadgeClass dot). Only Cabinet has one: a vacant seat to fill (SimBridge.Vacancies).</summary>
+        public const string ActionClass = "nav-action", BadgeClass = "nav-badge";
         readonly HoverTip? railTips, barTips;
+        /// <summary>The meters' explanations under the bar (#1037): their words and the turn's causes.</summary>
+        readonly MeterTip? meterTip;
+
+        /// <summary>The panels under the bar (Statecraft.uss: top 456 px under the three-row bar), which PlaceUnderBar moves
+        /// by what the three-row bar grows past, or shrinks under, its 440 px (#1089).</summary>
+        readonly List<VisualElement> underBar;
+        /// <summary>The bar's items, whose rows set the three-row bar's height (RowsHeight).</summary>
+        readonly List<VisualElement> barItems;
+        /// <summary>Statecraft.uss .hud-three-row .top-bar height.</summary>
+        const float ThreeRowBarPx = 440f;
 
         public HudPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
@@ -133,18 +149,24 @@ namespace Statecraft.Game.UI
                 if (root.Q<Label>(HoverTip.TipName) != null)
                     barTips = new HoverTip(root, new[] { newGame }, () => hudRoot.ClassListContains(UiLanguage.HebrewClass) ? HoverTip.Side.Right : HoverTip.Side.Left);
             }
-            foreach (var id in new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" })
+            foreach (var id in HudModel.MeterIds)
             {
                 var meter = root.Q<VisualElement>("meter-" + id); var caption = text["hud.caption." + id];
                 meter.Q<Label>(className: "meter-name").text = caption;   // the bar shows the words its tooltip says
                 said[id] = (meter, caption);
             }
+            if (root.Q(MeterTip.TipName) != null) meterTip = new MeterTip(root, bridge, text, said.Values.Select(x => x.element));
             // The text floor: checked now and twice a second, since a window resized at the same shape changes the panel's
             // scale without changing its layout (no geometry event).
-            smallText = bar.Query<Label>(className: "meter-name").ToList();   // the six captions and Security's level
+            smallText = bar.Query<Label>(className: "meter-name").ToList();   // the seven captions and Security's level
             smallText.Add(root.Q<Label>("attention"));
             turnBox = bar.Q<VisualElement>(className: "turn-box");
+            underBar = new[] { "right-column", "left-column", "event-gutter", "event-layer", "screen", "toast" }
+                .SelectMany(c => root.Query(className: c).ToList()).ToList();
+            barItems = bar.Children().ToList();
+            foreach (var k in barItems) k.RegisterCallback<GeometryChangedEvent>(OnRowGeometry);   // a row grows inside the fixed bar
             dateRow = bar.Q<VisualElement>(className: "date-row");
+            captionRow = bar.Q(className: "meter-caption-row");
             plateText = dateRow?.Query<Label>().ToList() ?? new List<Label>();
             dateRow?.parent?.RegisterCallback<GeometryChangedEvent>(OnPlateGeometry);   // a wider raised plate needs room in the bar
             ApplyTextFloor();
@@ -157,10 +179,14 @@ namespace Statecraft.Game.UI
         /// <summary>Unsubscribes from the bridge and the button (the owner calls this when it is disabled).</summary>
         public void Dispose()
         {
-            railTips?.Dispose(); barTips?.Dispose();
+            railTips?.Dispose(); barTips?.Dispose(); meterTip?.Dispose();
             floorCheck.Pause();
             foreach (var l in smallText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; l.style.maxWidth = StyleKeyword.Null; }
+            if (captionRow != null) captionRow.style.flexWrap = StyleKeyword.Null;
             turnBox.style.width = StyleKeyword.Null; turnBox.style.minWidth = StyleKeyword.Null;
+            foreach (var k in barItems) k.UnregisterCallback<GeometryChangedEvent>(OnRowGeometry);
+            foreach (var e in underBar) e.style.marginTop = StyleKeyword.Null;
+            bar.style.height = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
             if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
@@ -179,7 +205,14 @@ namespace Statecraft.Game.UI
         // plate's width does not depend on the tier, so this settles in one pass.
         void OnPlateGeometry(GeometryChangedEvent e) { if (smallTextSize > SmallTextPx && e.oldRect.width != e.newRect.width) SetCompact(bar.layout.width); }
 
-        void OnMeterGeometry(GeometryChangedEvent e) => UpdateRoomy();
+        void OnMeterGeometry(GeometryChangedEvent e)
+        {
+            UpdateRoomy();
+            if (smallTextSize > SmallTextPx && bar.ClassListContains(CompactClass)) SetCompact(bar.layout.width);
+        }
+
+        // The rows' height does not depend on the bar's (RowsHeight), so this settles in one pass.
+        void OnRowGeometry(GeometryChangedEvent e) => PlaceUnderBar();
 
         /// <summary>Roomy only on the one-row bar with icons; see RoomyClass.</summary>
         void UpdateRoomy()
@@ -221,9 +254,9 @@ namespace Statecraft.Game.UI
             SetCompact(bar.layout.width);
         }
 
-        /// <summary>Whether the floor raises the text at this bar width. Not on the three-row bar (a phone held upright, about
-        /// 0.49 scale): its fixed rows have no room for 25 px captions, so it keeps the stylesheet's size (a follow-up, by the owner's answer).</summary>
-        bool FloorRaises(float width) => smallTextSize > SmallTextPx && !(width < ThreeRowBelowPx);
+        /// <summary>Whether the floor raises the text at this bar width: at every tier, the three-row bar of a phone held upright
+        /// (about 0.49 scale, 25 px) included (#642).</summary>
+        bool FloorRaises(float width) => smallTextSize > SmallTextPx;
 
         /// <summary>The room the raised text takes beyond what the tiers were set for (the 15 px captions, wrapped at their 120 px
         /// max-width, and the 150 px turn box): each caption on one line at the larger size (text width scales with font
@@ -241,8 +274,11 @@ namespace Statecraft.Game.UI
             }
             return UnityEngine.Mathf.Max(0f, growth);
         }
-        // Statecraft.uss .turn-box width, .meter .meter-name max-width, .date-box width.
+        // Statecraft.uss .turn-box width, .meter .meter-name max-width (170 on the three-row bar, where the tier is fixed), .date-box width.
         const float TurnBoxPx = 150f, CaptionMaxPx = 120f, PlateWidthPx = 230f;
+        /// <summary>The widest date line's width per px of font size, with a little to spare: the Hebrew 31 October 1956 is
+        /// about 7.8 times its size (196 px at 25 px), the English "30 September 1956" 7.2 (TopBarScoreLayoutTests.WorstDate).</summary>
+        const float DateLinePerPx = 8f;
 
         /// <summary>The raised plate's laid-out width (PadPlate lets it size to its widest line, at least the stylesheet's 230 px;
         /// at 23 px, 960x600, the date is wider), or 230 before it is laid out.</summary>
@@ -268,8 +304,10 @@ namespace Statecraft.Game.UI
                 l.style.fontSize = raised ? new StyleLength(smallTextSize) : new StyleLength(StyleKeyword.Null);
                 if (l.name == "attention") continue;
                 l.style.whiteSpace = oneLine ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
-                l.style.maxWidth = oneLine ? new StyleLength(StyleKeyword.None) : new StyleLength(StyleKeyword.Null);
+                l.style.maxWidth = oneLine || captionFitWrap ? new StyleLength(StyleKeyword.None) : new StyleLength(StyleKeyword.Null);
             }
+            if (captionRow != null) captionRow.style.flexWrap = captionFitWrap
+                ? new StyleEnum<Wrap>(Wrap.Wrap) : new StyleEnum<Wrap>(StyleKeyword.Null);
             foreach (var l in plateText)
             {
                 l.style.fontSize = raised ? new StyleLength(smallTextSize) : new StyleLength(StyleKeyword.Null);
@@ -294,10 +332,50 @@ namespace Statecraft.Game.UI
         {
             // Raised, the plate sizes to its widest line (the turn and the date, a line each, never wrapped), at least 230 px.
             plate.style.width = raised ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
-            plate.style.minWidth = raised ? new StyleLength(PlateWidthPx) : new StyleLength(StyleKeyword.Null);
+            // At least the widest date line too, so the plate keeps its width when the month changes (PromoHudTests): at 25 px
+            // (a phone upright, #642) the Hebrew 31 October 1956 is about 196 px, wider than 230 px less the padding.
+            plate.style.minWidth = raised ? new StyleLength(UnityEngine.Mathf.Max(PlateWidthPx, DateLinePerPx * smallTextSize + 2f * PlateSidePx + 2f))
+                                          : new StyleLength(StyleKeyword.Null);
             StyleLength Px(float v) => raised ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
             plate.style.paddingTop = Px(PlateEdgePx); plate.style.paddingBottom = Px(PlateEdgePx);
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
+        }
+
+        /// <summary>The three-row bar takes its rows' height, so the raised text of a smaller phone fits it when that is more than
+        /// its 440 px (Statecraft.uss; #642, the owner: "down to 375x667"), and on a phone whose rows come in shorter no empty band
+        /// is left between the stats and the map (#1089, the owner: "the three-row bar shrinks to fit its rows"). The panels under
+        /// it move by what it grew or shrank: a top margin (negative when it shrank), not a top, so the stylesheet's other
+        /// placements (the toast at the bottom beside a wide screen) still apply. Set here, not as height: auto in the stylesheet:
+        /// there Yoga sized the wrapping bar as if each quarter-width meter took a line of its own (about 1300 px). Its items'
+        /// geometry events re-run this (OnRowGeometry), and so does SetCompact.</summary>
+        void PlaceUnderBar()
+        {
+            // A hidden bar (the start screen) moves nothing: the start screen's toast keeps its own top (review of #859).
+            var rows = hudRoot.ClassListContains(ThreeRowClass) && bar.resolvedStyle.display != DisplayStyle.None ? RowsHeight() : 0f;
+            var grown = rows > 0f ? rows - ThreeRowBarPx : 0f;   // NaN before layout or 0 off the three-row bar: the stylesheet's height
+            var fit = UnityEngine.Mathf.Abs(grown) > 0.5f;
+            bar.style.height = fit ? new StyleLength(rows) : new StyleLength(StyleKeyword.Null);
+            var margin = fit ? new StyleLength(grown) : new StyleLength(StyleKeyword.Null);
+            foreach (var e in underBar) e.style.marginTop = margin;
+        }
+
+        /// <summary>The height the bar's rows take: each row's tallest item (its children laid out in the flow, grouped by the
+        /// rows they share), with the bar's padding and border. It does not depend on the bar's own height (the rows' spacing,
+        /// align-content, is not counted), so a bar set to it keeps it. NaN before layout.</summary>
+        float RowsHeight()
+        {
+            float total = 0f, top = float.NaN, bottom = float.NaN;
+            foreach (var k in bar.Children().Where(k => k.resolvedStyle.position == Position.Relative && k.resolvedStyle.display != DisplayStyle.None).OrderBy(k => k.layout.y))
+            {
+                float t = k.layout.y - k.resolvedStyle.marginTop, b = k.layout.yMax + k.resolvedStyle.marginBottom;
+                if (t < bottom) { top = UnityEngine.Mathf.Min(top, t); bottom = UnityEngine.Mathf.Max(bottom, b); continue; }   // the same row
+                if (bottom > top) total += bottom - top;
+                top = t; bottom = b;
+            }
+            if (bottom > top) total += bottom - top;
+            if (!(total > 0f)) return float.NaN;   // no laid-out row yet: not just the padding, which would collapse the bar (#1089)
+            var s = bar.resolvedStyle;
+            return total + s.paddingTop + s.paddingBottom + s.borderTopWidth + s.borderBottomWidth;
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -309,6 +387,40 @@ namespace Statecraft.Game.UI
         static float DevicePixelRatio() => 1f;
 #endif
 
+        // Compact raised captions need their intrinsic group width, not the shrunken meter-body allocation.
+        // Security and its level share a row; the fit-triggered two-row tier lets that group wrap.
+        bool CaptionsNeedAnotherRow(float width)
+        {
+            float Sides(VisualElement e)
+            {
+                var s = e.resolvedStyle;
+                return s.paddingLeft + s.paddingRight + s.borderLeftWidth + s.borderRightWidth;
+            }
+            float Margins(VisualElement e) => e.resolvedStyle.marginLeft + e.resolvedStyle.marginRight;
+            float needed = Sides(bar);
+            foreach (var child in bar.Children().Where(e => e.resolvedStyle.position == Position.Relative && e.resolvedStyle.display != DisplayStyle.None))
+            {
+                if (child.name != "meters") { needed += child.layout.width + Margins(child); continue; }
+                needed += Sides(child) + Margins(child);
+                foreach (var meter in meters.Where(e => e.resolvedStyle.display != DisplayStyle.None))
+                {
+                    float captions = 0f;
+                    foreach (var label in meter.Query<Label>(className: "meter-name").ToList().Where(l => !string.IsNullOrEmpty(l.text)))
+                    {
+                        float font = label.resolvedStyle.fontSize;
+                        if (!(font > 0f)) return false;   // wait for the first settled geometry
+                        captions += label.MeasureTextSize(label.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x
+                            * smallTextSize / font + Sides(label) + Margins(label);
+                    }
+                    var body = meter.Q(className: "meter-body");
+                    if (body == null) return false;   // a reduced tree has no complete caption-fit budget
+                    needed += UnityEngine.Mathf.Max(meter.resolvedStyle.minWidth.value,
+                        captions + Sides(body) + Margins(body) + Sides(meter)) + Margins(meter);
+                }
+            }
+            return needed > width;
+        }
+
         void SetCompact(float width)
         {
             if (!(width > 0)) return;   // NaN before layout: wait for it
@@ -316,9 +428,11 @@ namespace Statecraft.Game.UI
             var tierWidth = raised ? width - FloorGrowth() : width;   // the owner's text floor needs room (#624)
             bar.EnableInClassList(CompactClass, tierWidth < CompactBelowPx);
             hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || raised && smallTextSize > OneRowSmallMaxPx);
-            hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx);
+            captionFitWrap = raised && width >= TwoRowBelowPx && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
+            hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx || captionFitWrap);
             hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
             StyleSmallText(raised);
+            PlaceUnderBar();
             ScreenNav.DisableCovered(hudRoot);   // two rows or one: what an open screen covers changes with it (#400)
         }
 
@@ -359,6 +473,11 @@ namespace Statecraft.Game.UI
             Set("cohesion", m.Cohesion);
             said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);
+            // #1109: a vacant seat the player can fill lights the Cabinet disc's badge, and its tip says why.
+            var cabinet = root.Q<Button>("nav-cabinet"); bool vacant = bridge.Vacancies.Count > 0;
+            cabinet.EnableInClassList(ActionClass, vacant);
+            cabinet.tooltip = vacant ? text["hud.nav.cabinet_vacant"] : cabinet.text;
+            meterTip?.Refresh();   // an open tip follows the new words
         }
     }
 }

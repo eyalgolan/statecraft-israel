@@ -294,4 +294,48 @@ public class QualityFallbackTests
         }
         finally { Object.DestroyImmediate(go); }
     }
+
+    /// <summary>High or Low in Settings (#40) fixes the quality: the fallback holds (no step, the render scale and the
+    /// tilt-shift are the choice's). Back on Automatic it starts again from the tier's own look, not from the level it had
+    /// reached before.</summary>
+    [Test]
+    public void AFixedQualityChoiceHoldsTheFallbackAndAutomaticStartsItAgain()
+    {
+        var go = new GameObject("cam");
+        int level = QualitySettings.GetQualityLevel();
+        var asset = UniversalRenderPipeline.asset!;
+        float tierScale = asset.renderScale;
+        var mobile = (UniversalRenderPipelineAsset)QualitySettings.GetRenderPipelineAssetAt(System.Array.IndexOf(QualitySettings.names, "Mobile"));
+        float mobileScale = mobile.renderScale;
+        try
+        {
+            var undo = QualityFallbackDriver.Attach(go, wanted: true);
+            var driver = go.GetComponent<QualityFallbackDriver>();
+            GraphicsQuality.Apply(GraphicsQuality.Choice.High);
+            for (float t = 0; t < 60_000f; t += Slow) driver.Feed(Slow);
+            Assert.AreEqual(0, driver.Controller.Level, "slow frames move nothing while High is set");
+            Assert.AreEqual(1f, asset.renderScale, 1e-6f);
+            Assert.IsFalse(TiltShift.FallbackOff);
+
+            GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
+            for (float t = 0; t < 60_000f; t += Slow) driver.Feed(Slow);
+            Assert.AreEqual(3, driver.Controller.Level, "on Automatic the fallback steps down as before");
+            Assert.IsTrue(TiltShift.FallbackOff);
+
+            GraphicsQuality.Apply(GraphicsQuality.Choice.Low);
+            Assert.IsFalse(TiltShift.FallbackOff, "a fixed choice ends the fallback's last step");
+            GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
+            Assert.AreEqual(tierScale, asset.renderScale, 1e-6f, "Automatic puts the tier's own scale back");
+            driver.Feed(Fine);
+            Assert.AreEqual(0, driver.Controller.Level, "and the fallback starts again from the top");
+            undo();
+        }
+        finally
+        {
+            GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
+            QualitySettings.SetQualityLevel(level, true);
+            asset.renderScale = tierScale; mobile.renderScale = mobileScale;
+            Object.DestroyImmediate(go);
+        }
+    }
 }

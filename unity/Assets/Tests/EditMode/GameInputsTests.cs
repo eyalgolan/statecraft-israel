@@ -84,14 +84,14 @@ public class GameInputsTests
     }
 
     [UnityTest, Timeout(FetchTestTimeoutMs)]
-    public IEnumerator AMissingFileNamesTheFile()
+    public IEnumerator AMissingBundleNamesTheFile()
     {
         var site = StagedSite();
-        File.Delete(Path.Combine(site, "content", "people.yaml"));
+        File.Delete(Path.Combine(site, "content", ContentManifest.BundleFileName));
         var fetch = GameInputs.FetchAsync(new System.Uri(site).AbsoluteUri.TrimEnd('/')).GetAwaiter();
         yield return Await(fetch);
         var ex = Assert.Throws<IOException>(() => fetch.GetResult());
-        StringAssert.StartsWith("people.yaml: ", ex.Message);
+        StringAssert.StartsWith("bundle.json: ", ex.Message);
         Directory.Delete(site, true);
     }
 
@@ -99,104 +99,12 @@ public class GameInputsTests
     public IEnumerator AFailedFetchLeavesNoRequestOpen()
     {
         var site = StagedSite();
-        File.Delete(Path.Combine(site, "content", "people.yaml"));
+        File.Delete(Path.Combine(site, "content", ContentManifest.BundleFileName));
         var fetch = GameInputs.FetchAsync(new System.Uri(site).AbsoluteUri.TrimEnd('/')).GetAwaiter();
         yield return Await(fetch);
         Assert.Throws<IOException>(() => fetch.GetResult());
-        Assert.AreEqual(0, GameInputs.OpenRequests, "requests still in flight after a failed fetch were not disposed");
+        Assert.AreEqual(0, StreamingFetch.OpenRequests, "requests still in flight after a failed fetch were not disposed");
         Directory.Delete(site, true);
-    }
-
-    /// <summary>A minimal HTTP/1.0 server over a staged site (one connection per request, like web_check's) that fails
-    /// chosen files for their first <c>times</c> requests: "drop" resets the connection before any response (what
-    /// macOS did to web_check's server when its listen backlog overflowed on a loaded machine: BOOT FAIL
-    /// israel_bonds.yaml), a number answers with that status. HttpListener cannot model a drop: Mono's Abort() sends an
-    /// empty 200.</summary>
-    sealed class FlakySite : IDisposable
-    {
-        readonly TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
-        readonly string root;
-        readonly Dictionary<string, (string fault, int times)> faults;
-        readonly ConcurrentDictionary<string, int> hits = new ConcurrentDictionary<string, int>();
-        readonly ManualResetEventSlim stopped = new ManualResetEventSlim();
-        /// <summary>Every request target as sent, query included (e.g. "/content/people.yaml?b=..."), in arrival order.</summary>
-        public readonly ConcurrentQueue<string> Targets = new ConcurrentQueue<string>();
-        public readonly string BaseUrl;
-
-        public FlakySite(string root, Dictionary<string, (string fault, int times)> faults)
-        {
-            this.root = root; this.faults = faults;
-            listener.Start();
-            BaseUrl = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
-            Task.Run(Loop);
-        }
-
-        /// <summary>Requests seen for a site path (e.g. "content/people.yaml").</summary>
-        public int Hits(string rel) => hits.TryGetValue(rel, out var n) ? n : 0;
-
-        async Task Loop()
-        {
-            while (true)
-            {
-                TcpClient client;
-                try { client = await listener.AcceptTcpClientAsync(); }
-                catch (Exception) { return; }   // stopped
-                _ = Task.Run(() => Serve(client));
-            }
-        }
-
-        void Serve(TcpClient client)
-        {
-            using (client)
-            {
-                var stream = client.GetStream();
-                var head = new List<byte>();
-                var one = new byte[1];
-                while (head.Count < 4 || head[head.Count - 4] != '\r' || head[head.Count - 3] != '\n' || head[head.Count - 2] != '\r' || head[head.Count - 1] != '\n')
-                {
-                    if (stream.Read(one, 0, 1) == 0) return;
-                    head.Add(one[0]);
-                }
-                var target = System.Text.Encoding.ASCII.GetString(head.ToArray()).Split(' ')[1];
-                Targets.Enqueue(target);
-                var rel = Uri.UnescapeDataString(target.Split('?')[0].TrimStart('/'));
-                var n = hits.AddOrUpdate(rel, 1, (_, v) => v + 1);
-                if (faults.TryGetValue(rel, out var f) && n <= f.times)
-                {
-                    if (f.fault == "drop") { client.Client.LingerState = new LingerOption(true, 0); client.Client.Close(); return; }  // RST
-                    if (f.fault == "stall") { stopped.Wait(); return; }   // Accept the request but never answer it.
-                    if (f.fault == "trickle") { Trickle(stream, File.ReadAllBytes(Path.Combine(root, rel))); return; }
-                    Respond(stream, int.Parse(f.fault), new byte[0]);
-                    return;
-                }
-                var path = Path.Combine(root, rel);
-                if (File.Exists(path)) Respond(stream, 200, File.ReadAllBytes(path));
-                else Respond(stream, 404, new byte[0]);
-            }
-        }
-
-        static void Respond(NetworkStream stream, int status, byte[] body)
-        {
-            var head = System.Text.Encoding.ASCII.GetBytes($"HTTP/1.0 {status} {(status == 200 ? "OK" : "Fault")}\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
-            stream.Write(head, 0, head.Length);
-            stream.Write(body, 0, body.Length);
-        }
-
-        /// <summary>A slow but healthy download: the whole file, in TrickleChunks parts TrickleGapMs apart.</summary>
-        static void Trickle(NetworkStream stream, byte[] body)
-        {
-            var head = System.Text.Encoding.ASCII.GetBytes($"HTTP/1.0 200 OK\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
-            stream.Write(head, 0, head.Length);
-            var part = (body.Length + TrickleChunks - 1) / TrickleChunks;
-            for (var at = 0; at < body.Length; at += part)
-            {
-                Thread.Sleep(TrickleGapMs);
-                stream.Write(body, at, Math.Min(part, body.Length - at));
-                stream.Flush();
-            }
-        }
-
-        public void Dispose() { stopped.Set(); listener.Stop(); }
     }
 
     /// <summary>Seconds a fetch may go without progress before it counts as hung. Not a limit on the whole fetch: under
@@ -211,7 +119,7 @@ public class GameInputsTests
     /// progress reaches the cap, and with a bare timeout message instead of the wait's own.</summary>
     const int FetchTestTimeoutMs = (int)(CapSeconds * 1000) + 60_000;
 
-    /// <summary>Waits for a fetch for as long as it makes progress: it fails when GameInputs.OpenRequests (requests
+    /// <summary>Waits for a fetch for as long as it makes progress: it fails when StreamingFetch.OpenRequests (requests
     /// started and not yet released) has not changed for StallSeconds, or once CapSeconds have passed in all. The
     /// manifest's request is released and every file's started, then each file's request is released as the fetch takes
     /// it (a retry releases one and starts another), so the count keeps moving while the fetch works.
@@ -219,7 +127,7 @@ public class GameInputsTests
     /// retry's 0.5 s backoff measured 57 s over 2 frames. Each tick queues a player-loop update, as a player runs one
     /// every frame.</summary>
     static IEnumerator Await(Awaitable<GameInputs>.Awaiter fetch) =>
-        WaitWhileProgressing(() => fetch.IsCompleted, () => GameInputs.OpenRequests, StallSeconds, CapSeconds, () => Time.realtimeSinceStartup, "fetch");
+        WaitWhileProgressing(() => fetch.IsCompleted, () => StreamingFetch.OpenRequests, StallSeconds, CapSeconds, () => Time.realtimeSinceStartup, "fetch");
 
     /// <summary>Yields until <paramref name="done"/>; throws a TimeoutException once <paramref name="progress"/> has not
     /// changed for <paramref name="stallSeconds"/> by <paramref name="clock"/>, or once <paramref name="capSeconds"/> have
@@ -290,7 +198,7 @@ public class GameInputsTests
                 Assert.AreEqual(disk.Content.Hash, fetched.Content.Hash);
                 Assert.AreEqual(Simulation.NewGame(disk.Content, 7, Mode.Historical).Hash(), Simulation.NewGame(fetched.Content, 7, Mode.Historical).Hash());
                 CollectionAssert.AreEqual(disk.Map.HeightmapR16z, fetched.Map.HeightmapR16z);
-                Assert.AreEqual(0, GameInputs.OpenRequests);
+                Assert.AreEqual(0, StreamingFetch.OpenRequests);
                 check(server);
             }
         }
@@ -299,17 +207,150 @@ public class GameInputsTests
 
     [UnityTest, Timeout(FetchTestTimeoutMs)]
     public IEnumerator DroppedConnectionsAreRetried() =>
-        FetchesTheDiskContentDespite(new Dictionary<string, (string, int)> { ["content/events/israel_bonds.yaml"] = ("drop", 2) },
-            server => Assert.AreEqual(3, server.Hits("content/events/israel_bonds.yaml")));
+        FetchesTheDiskContentDespite(new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("drop", 2) },
+            server => Assert.AreEqual(3, server.Hits("content/bundle.json")));
 
     [UnityTest, Timeout(FetchTestTimeoutMs)]
     public IEnumerator AServerErrorIsRetried() =>
-        FetchesTheDiskContentDespite(new Dictionary<string, (string, int)> { ["content/people.yaml"] = ("503", 1), ["map/heightmap.r16z"] = ("500", 2) },
+        FetchesTheDiskContentDespite(new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("503", 1), ["map/heightmap.r16z"] = ("500", 2) },
             server =>
             {
-                Assert.AreEqual(2, server.Hits("content/people.yaml"));
+                Assert.AreEqual(2, server.Hits("content/bundle.json"));
                 Assert.AreEqual(3, server.Hits("map/heightmap.r16z"));
             });
+
+    /// <summary>#1054: a rate-limited host (itch.io) answers 429, some with a Retry-After. Twice for the bundle and the
+    /// heightmap, then 200: the boot still loads the disk's content.</summary>
+    [UnityTest, Timeout(FetchTestTimeoutMs)]
+    public IEnumerator TooManyRequestsTwiceThenOkStillBoots() =>
+        FetchesTheDiskContentDespite(new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("429|Retry-After: 1", 2), ["map/heightmap.r16z"] = ("429", 2) },
+            server =>
+            {
+                Assert.AreEqual(3, server.Hits("content/bundle.json"));
+                Assert.AreEqual(3, server.Hits("map/heightmap.r16z"));
+            });
+
+    /// <summary>#1054: a 429 with "Retry-After: 3" is fetched again no sooner than 3 s later (the backoff alone is 0.5 s).</summary>
+    [UnityTest, Timeout(FetchTestTimeoutMs)]
+    public IEnumerator ARetryAfterIsWaitedOut()
+    {
+        var started = Time.realtimeSinceStartup;
+        yield return FetchesTheDiskContentDespite(new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("429|Retry-After: 3", 1) },
+            server => Assert.AreEqual(2, server.Hits("content/bundle.json")));
+        Assert.GreaterOrEqual(Time.realtimeSinceStartup - started, 3f, "the second attempt came before the Retry-After");
+    }
+
+    /// <summary>A scripted download for StreamingFetch.Done: each attempt answers the next (status, Retry-After) at once;
+    /// status 0 is no response at all.</summary>
+    sealed class FakeDownload : StreamingFetch.IDownload
+    {
+        readonly Queue<(long status, string retryAfter)> answers;
+        (long status, string retryAfter) now;
+        public int Attempts = 1, Releases;
+
+        public FakeDownload(params (long, string)[] answers)
+        {
+            this.answers = new Queue<(long, string)>(answers);
+            now = this.answers.Dequeue();
+        }
+
+        public bool IsDone => true;
+        public ulong DownloadedBytes => 0;
+        public UnityWebRequest.Result Result => now.status == 0 ? UnityWebRequest.Result.ConnectionError
+            : now.status == 200 ? UnityWebRequest.Result.Success : UnityWebRequest.Result.ProtocolError;
+        public long Status => now.status;
+        public string Error => "HTTP " + now.status;
+        public string Url => "fake://site/x.yaml";
+        public string RetryAfter => now.retryAfter;
+        public void Release() => Releases++;
+        public void Restart() { Attempts++; now = answers.Dequeue(); }
+    }
+
+    /// <summary>Runs StreamingFetch.Done on a fake to its end; the exception it ended with, or null.</summary>
+    static IEnumerator RunDone(FakeDownload d, Action<Exception> ended)
+    {
+        var done = StreamingFetch.Done(d, "x.yaml", StreamingFetch.StallSeconds).GetAwaiter();
+        while (!done.IsCompleted)
+        {
+            UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+            yield return null;
+        }
+        try { done.GetResult(); ended(null); }
+        catch (Exception e) { ended(e); }
+    }
+
+    /// <summary>#1054, the shared helper with a fake transport: 429, 429, then 200 succeeds at the third attempt.</summary>
+    [UnityTest, Timeout(120_000)]
+    public IEnumerator TheRetryHelperGetsThroughTwoTooManyRequests()
+    {
+        var d = new FakeDownload((429, null), (429, "1"), (200, null));
+        Exception error = new Exception("not run");
+        yield return RunDone(d, e => error = e);
+        Assert.IsNull(error);
+        Assert.AreEqual(3, d.Attempts);
+        Assert.AreEqual(2, d.Releases, "each failed attempt is released before the next (the caller releases the good one)");
+    }
+
+    /// <summary>The helper gives up after MaxAttempts with an IOException naming the file, and never retries a 404.</summary>
+    [UnityTest, Timeout(120_000)]
+    public IEnumerator TheRetryHelperStopsAfterMaxAttemptsAndOnAClientError()
+    {
+        var d = new FakeDownload((429, null), (0, null), (503, null), (429, null));
+        Exception error = null;
+        yield return RunDone(d, e => error = e);
+        Assert.IsInstanceOf<IOException>(error);
+        Assert.AreEqual("x.yaml: HTTP 429 (fake://site/x.yaml) after 4 attempts", error.Message);
+        Assert.AreEqual(StreamingFetch.MaxAttempts, d.Attempts);
+        Assert.AreEqual(StreamingFetch.MaxAttempts, d.Releases);
+
+        var notFound = new FakeDownload((404, null), (200, null));
+        yield return RunDone(notFound, e => error = e);
+        Assert.AreEqual("x.yaml: HTTP 404 (fake://site/x.yaml)", error.Message);
+        Assert.AreEqual(1, notFound.Attempts);
+    }
+
+    /// <summary>The wait before the next attempt: the backoff, or a longer Retry-After (seconds or an HTTP-date), at most
+    /// MaxRetryAfter; a malformed or past one is ignored.</summary>
+    [Test]
+    public void ARetryAfterLongerThanTheBackoffIsHonouredUpToTheCap()
+    {
+        var now = new DateTime(2026, 10, 18, 12, 0, 0, DateTimeKind.Utc);
+        Assert.AreEqual(0.5f, StreamingFetch.Delay(1, null, now));
+        Assert.AreEqual(3f, StreamingFetch.Delay(1, "3", now));
+        Assert.AreEqual(3f, StreamingFetch.Delay(1, " 3 ", now));
+        Assert.AreEqual(2f, StreamingFetch.Delay(3, "1", now));   // the backoff is longer
+        Assert.AreEqual(StreamingFetch.MaxRetryAfter, StreamingFetch.Delay(1, "3600", now));
+        Assert.AreEqual(5f, StreamingFetch.Delay(1, "Sun, 18 Oct 2026 12:00:05 GMT", now));
+        Assert.AreEqual(0.5f, StreamingFetch.Delay(1, "Sun, 18 Oct 2026 11:00:00 GMT", now));   // in the past
+        Assert.AreEqual(1f, StreamingFetch.Delay(2, "soon", now));
+        Assert.AreEqual(1f, StreamingFetch.Delay(2, "-5", now));
+    }
+
+    /// <summary>#1054: the content packed into one file at build time gives back every file's text as the disk path reads
+    /// it, so the web boot loads the same content with the same content hash.</summary>
+    [Test]
+    public void ThePackedBundleRoundTripsToTheSameTextsAndContentHash()
+    {
+        var files = ContentManifest.Collect(Paths.Content);
+        var (listed, texts) = ContentManifest.ParseBundle(ContentManifest.WriteBundle(Paths.Content, files));
+        CollectionAssert.AreEqual(files, listed);
+        Assert.AreEqual(files.Count, texts.Count);
+        foreach (var f in files) Assert.AreEqual(File.ReadAllText(Path.Combine(Paths.Content, f)), texts[f], f);
+        var packed = GameInputs.FromTexts(texts, listed, "", new byte[0]);
+        var disk = ContentLoader.Load(Paths.Content);
+        Assert.AreEqual(disk.Hash, packed.Content.Hash);
+        Assert.AreEqual(Simulation.NewGame(disk, 7, Mode.Historical).Hash(), Simulation.NewGame(packed.Content, 7, Mode.Historical).Hash());
+    }
+
+    [Test]
+    public void ABrokenBundleIsAClearError()
+    {
+        Assert.AreEqual("bundle.json: no files", Assert.Throws<InvalidDataException>(() => ContentManifest.ParseBundle("{\"files\": []}")).Message);
+        Assert.AreEqual("bundle.json: 2 files but 1 texts",
+            Assert.Throws<InvalidDataException>(() => ContentManifest.ParseBundle("{\"files\": [\"a.yaml\", \"b.yaml\"], \"texts\": [\"x\"]}")).Message);
+        Assert.AreEqual("bundle.json: a.yaml twice",
+            Assert.Throws<InvalidDataException>(() => ContentManifest.ParseBundle("{\"files\": [\"a.yaml\", \"a.yaml\"], \"texts\": [\"x\", \"y\"]}")).Message);
+    }
 
     [UnityTest, Timeout(FetchTestTimeoutMs)]
     public IEnumerator AConnectionThatKeepsDroppingFailsNamingTheFileWithNothingLeftOpen()
@@ -317,22 +358,20 @@ public class GameInputsTests
         var site = StagedSite();
         try
         {
-            var faults = new Dictionary<string, (string, int)> { ["content/events/israel_bonds.yaml"] = ("drop", int.MaxValue) };
+            var faults = new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("drop", int.MaxValue) };
             using (var server = new FlakySite(site, faults))
             {
                 var fetch = GameInputs.FetchAsync(server.BaseUrl).GetAwaiter();
                 yield return Await(fetch);
                 var ex = Assert.Throws<IOException>(() => fetch.GetResult());
-                StringAssert.StartsWith("events/israel_bonds.yaml: ", ex.Message);
-                StringAssert.EndsWith($"after {GameInputs.MaxAttempts} attempts", ex.Message);
-                Assert.AreEqual(GameInputs.MaxAttempts, server.Hits("content/events/israel_bonds.yaml"));
-                Assert.AreEqual(0, GameInputs.OpenRequests, "requests still in flight after a failed fetch were not disposed");
+                StringAssert.StartsWith("bundle.json: ", ex.Message);
+                StringAssert.EndsWith($"after {StreamingFetch.MaxAttempts} attempts", ex.Message);
+                Assert.AreEqual(StreamingFetch.MaxAttempts, server.Hits("content/bundle.json"));
+                Assert.AreEqual(0, StreamingFetch.OpenRequests, "requests still in flight after a failed fetch were not disposed");
             }
         }
         finally { Directory.Delete(site, true); }
     }
-
-    const int TrickleChunks = 10, TrickleGapMs = 300;
 
     /// <summary>#911: the stall limit is on silence, not on the whole download. A file that takes 3 s to arrive, a part every
     /// 0.3 s, passes a 2 s stall limit at its first attempt (a fixed per-request timeout would cut it off).</summary>
@@ -342,7 +381,7 @@ public class GameInputsTests
         var site = StagedSite();
         try
         {
-            var faults = new Dictionary<string, (string, int)> { ["content/manifest.json"] = ("trickle", 1) };
+            var faults = new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("trickle", 1) };
             using (var server = new FlakySite(site, faults))
             {
                 var started = Time.realtimeSinceStartup;
@@ -350,9 +389,9 @@ public class GameInputsTests
                 yield return Await(fetch);
                 var fetched = fetch.GetResult();
                 Assert.AreEqual(GameInputs.FromDisk(Paths.Content, Paths.StreamingMap).Content.Hash, fetched.Content.Hash);
-                Assert.AreEqual(1, server.Hits("content/manifest.json"), "the slow download was aborted and retried");
-                Assert.Greater(Time.realtimeSinceStartup - started, TrickleChunks * TrickleGapMs / 1000f, "the download was slower than the stall limit");
-                Assert.AreEqual(0, GameInputs.OpenRequests);
+                Assert.AreEqual(1, server.Hits("content/bundle.json"), "the slow download was aborted and retried");
+                Assert.Greater(Time.realtimeSinceStartup - started, FlakySite.TrickleChunks * FlakySite.TrickleGapMs / 1000f, "the download was slower than the stall limit");
+                Assert.AreEqual(0, StreamingFetch.OpenRequests);
             }
         }
         finally { Directory.Delete(site, true); }
@@ -369,14 +408,14 @@ public class GameInputsTests
         var bootObject = new GameObject("StalledBoot");
         try
         {
-            var faults = new Dictionary<string, (string, int)> { ["content/manifest.json"] = ("stall", int.MaxValue) };
+            var faults = new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("stall", int.MaxValue) };
             using (var server = new FlakySite(site, faults))
             {
                 var boot = bootObject.AddComponent<GameBoot>();
                 string failure = null;
                 boot.Failed += reason => failure = reason;
-                LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("BOOT FAIL manifest.json: .* after 4 attempts"));
-                LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("manifest.json: .* after 4 attempts"));
+                LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("BOOT FAIL bundle.json: .* after 4 attempts"));
+                LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("bundle.json: .* after 4 attempts"));
 
                 var started = Time.realtimeSinceStartup;
                 var run = boot.BootAsync(() => GameInputs.FetchAsync(server.BaseUrl, "", testStallSeconds)).GetAwaiter();
@@ -387,12 +426,12 @@ public class GameInputsTests
                 }
                 run.GetResult();
 
-                StringAssert.StartsWith("manifest.json: ", failure);
-                StringAssert.EndsWith($"after {GameInputs.MaxAttempts} attempts", failure);
-                Assert.AreEqual(GameInputs.MaxAttempts, server.Hits("content/manifest.json"));
+                StringAssert.StartsWith("bundle.json: ", failure);
+                StringAssert.EndsWith($"after {StreamingFetch.MaxAttempts} attempts", failure);
+                Assert.AreEqual(StreamingFetch.MaxAttempts, server.Hits("content/bundle.json"));
                 Assert.Less(Time.realtimeSinceStartup - started,
-                    GameInputs.MaxAttempts * testStallSeconds + 10f, "boot failure was not visible within the stated retry time");
-                Assert.AreEqual(0, GameInputs.OpenRequests);
+                    StreamingFetch.MaxAttempts * testStallSeconds + 10f, "boot failure was not visible within the stated retry time");
+                Assert.AreEqual(0, StreamingFetch.OpenRequests);
             }
         }
         finally
@@ -419,23 +458,25 @@ public class GameInputsTests
             GameInputs.WithBuildId("/Applications/Statecraft.app/Contents/Resources/Data/StreamingAssets/video/a.mp4", "0123abcd"));
     }
 
+    /// <summary>#1054: the web boot makes three requests (the content bundle and the heightmap's two files), not one per
+    /// content file (66 StreamingAssets requests on the live v0.1.1 build), and every one carries the build id.</summary>
     [UnityTest, Timeout(FetchTestTimeoutMs)]
     public IEnumerator EveryFetchCarriesTheBuildIdRetriesIncluded()
     {
         var site = StagedSite();
         try
         {
-            var faults = new Dictionary<string, (string, int)> { ["content/people.yaml"] = ("503", 1) };
+            var faults = new Dictionary<string, (string, int)> { ["content/bundle.json"] = ("503", 1) };
             using (var server = new FlakySite(site, faults))
             {
                 var fetch = GameInputs.FetchAsync(server.BaseUrl, "0123abcd").GetAwaiter();
                 yield return Await(fetch);
                 fetch.GetResult();
                 var targets = server.Targets.ToArray();
-                var manifest = ContentManifest.Collect(Paths.Content);
-                Assert.AreEqual(manifest.Count + 4, targets.Length);   // the manifest, every file, heightmap.json and .r16z, one retry
+                CollectionAssert.AreEquivalent(new[] { "/content/bundle.json", "/content/bundle.json", "/map/heightmap.json", "/map/heightmap.r16z" },
+                    targets.Select(t => t.Split('?')[0]).ToArray());   // the bundle (once retried) and the heightmap's two files
                 foreach (var t in targets) StringAssert.EndsWith("?b=0123abcd", t);
-                Assert.AreEqual(2, server.Hits("content/people.yaml"));
+                Assert.AreEqual(2, server.Hits("content/bundle.json"));
             }
         }
         finally { Directory.Delete(site, true); }
@@ -444,34 +485,37 @@ public class GameInputsTests
     [Test]
     public void OnlyNoResponseAndServerSideStatusesAreRetried()
     {
-        Assert.IsTrue(GameInputs.Transient(UnityWebRequest.Result.ConnectionError, 0));
+        Assert.IsTrue(StreamingFetch.Transient(UnityWebRequest.Result.ConnectionError, 0));
         foreach (var status in new long[] { 500, 502, 503, 504, 408, 429 })
-            Assert.IsTrue(GameInputs.Transient(UnityWebRequest.Result.ProtocolError, status), status.ToString());
+            Assert.IsTrue(StreamingFetch.Transient(UnityWebRequest.Result.ProtocolError, status), status.ToString());
         foreach (var status in new long[] { 400, 403, 404, 410 })
-            Assert.IsFalse(GameInputs.Transient(UnityWebRequest.Result.ProtocolError, status), status.ToString());
-        Assert.IsFalse(GameInputs.Transient(UnityWebRequest.Result.DataProcessingError, 200));
-        Assert.AreEqual(4, GameInputs.MaxAttempts);
-        CollectionAssert.AreEqual(new[] { 0.5f, 1f, 2f }, new[] { GameInputs.Backoff(1), GameInputs.Backoff(2), GameInputs.Backoff(3) });
+            Assert.IsFalse(StreamingFetch.Transient(UnityWebRequest.Result.ProtocolError, status), status.ToString());
+        Assert.IsFalse(StreamingFetch.Transient(UnityWebRequest.Result.DataProcessingError, 200));
+        Assert.AreEqual(4, StreamingFetch.MaxAttempts);
+        CollectionAssert.AreEqual(new[] { 0.5f, 1f, 2f }, new[] { StreamingFetch.Backoff(1), StreamingFetch.Backoff(2), StreamingFetch.Backoff(3) });
     }
 
     [UnityTest, Timeout(FetchTestTimeoutMs)]
     public IEnumerator ANotFoundFileIsNotRetried()
     {
         var site = StagedSite();
-        File.Delete(Path.Combine(site, "content", "people.yaml"));
+        File.Delete(Path.Combine(site, "content", ContentManifest.BundleFileName));
         try
         {
             using (var server = new FlakySite(site, new Dictionary<string, (string, int)>()))
             {
                 var fetch = GameInputs.FetchAsync(server.BaseUrl).GetAwaiter();
                 yield return Await(fetch);
-                StringAssert.StartsWith("people.yaml: ", Assert.Throws<IOException>(() => fetch.GetResult()).Message);
-                Assert.AreEqual(1, server.Hits("content/people.yaml"));
-                Assert.AreEqual(0, GameInputs.OpenRequests);
+                StringAssert.StartsWith("bundle.json: ", Assert.Throws<IOException>(() => fetch.GetResult()).Message);
+                Assert.AreEqual(1, server.Hits("content/bundle.json"));
+                Assert.AreEqual(0, StreamingFetch.OpenRequests);
             }
         }
         finally { Directory.Delete(site, true); }
     }
+
+    /// <summary>bundle.json's shape (ContentManifest.BundleJson is private), to write a tampered one.</summary>
+    [Serializable] sealed class PackedForTest { public string[] files; public string[] texts; }
 
     [Test]
     public void VerifyAcceptsACopyAndRejectsAMissingFileOrManifestMismatch()
@@ -486,6 +530,16 @@ public class GameInputsTests
             ContentManifest.Copy(Paths.Content, target);
             File.WriteAllText(Path.Combine(target, ContentManifest.FileName), ContentManifest.Write(new[] { "people.yaml" }));
             StringAssert.Contains("does not match", Assert.Throws<InvalidDataException>(() => ContentManifest.Verify(Paths.Content, target)).Message);
+            ContentManifest.Copy(Paths.Content, target);
+            var files = ContentManifest.Collect(Paths.Content);
+            var (_, texts) = ContentManifest.ParseBundle(File.ReadAllText(Path.Combine(target, ContentManifest.BundleFileName)));
+            texts["people.yaml"] += "\n# edited after the copy\n";
+            File.WriteAllText(Path.Combine(target, ContentManifest.BundleFileName),
+                JsonUtility.ToJson(new PackedForTest { files = files.ToArray(), texts = files.Select(f => texts[f]).ToArray() }));
+            Assert.AreEqual("people.yaml: its text in bundle.json differs from the source",
+                Assert.Throws<InvalidDataException>(() => ContentManifest.Verify(Paths.Content, target)).Message);
+            File.Delete(Path.Combine(target, ContentManifest.BundleFileName));
+            StringAssert.StartsWith("bundle.json: missing", Assert.Throws<InvalidDataException>(() => ContentManifest.Verify(Paths.Content, target)).Message);
         }
         finally { if (Directory.Exists(target)) Directory.Delete(target, true); }
     }

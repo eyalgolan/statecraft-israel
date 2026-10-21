@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "content/map/overrides.yaml",
+  "description": "The map editor's overrides (#1009), applied after the generated map data. terrain: a land hex's biome (one of the land biomes in map/hexes.json). control: one period (an id in map/control_hexes_1948_49.yaml) of one hex, set to one of that file's codes. locations: a settlement's (map/settlements_1948.yaml) or map location's (map/locations_1948.yaml) land hex; its sourced coordinates stay in its own file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["terrain", "control", "locations"],
+  "definitions": {
+    "hex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["q", "r"],
+      "properties": { "q": { "type": "integer" }, "r": { "type": "integer" } }
+    }
+  },
+  "properties": {
+    "terrain": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["hex", "value"],
+        "properties": { "hex": { "$ref": "#/definitions/hex" }, "value": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "control": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["hex", "period", "value"],
+        "properties": {
+          "hex": { "$ref": "#/definitions/hex" },
+          "period": { "type": "string", "minLength": 1 },
+          "value": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "hex"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "hex": { "$ref": "#/definitions/hex" }
+        }
+      }
+    }
+  }
+}

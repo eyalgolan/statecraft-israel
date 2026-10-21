@@ -33,11 +33,15 @@
 #   Sword, 1961) or the IDF and Defense Establishment Archives. The card computes the same note per anchor.
 # headgear: the riflemen's headgear, only where a source ties it to the unit (otherwise the uniform default: bush hat,
 #   steel helmet, bush hat; docs/units.md).
+# vehicles: equipment a source puts with an army unit from a day, drawn on its token beside the figures (issue #665):
+#   gun_65mm, the 65 mm mountain gun (the "Napoleonchik"), or jeep. Each gives type, from ('YYYY-MM-DD', the first day a
+#   source puts it with the unit; it stays for the rest of the unit's windows), a note quoting the source, and sources.
 # side: whose formation it is: israel, or egypt, jordan, syria, iraq, lebanon, ala (the Arab Liberation Army) or
 #   local_arab_forces (Q-START-4, owner, 15 October 2026: "Armies + ALA + local forces"; #226). The token flies that side's
-#   flag where the repo has a sourced one (Israel's only, for now; docs/units.md, "The plinth and the flag"). Data only:
-#   the map draws Israel's rows alone until Phase 5 PR 17's figures land, after its sensitivity review (owner, 17 October
-#   2026, #740: "Nothing is drawn with IDF figures, and there is no placeholder art").
+#   flag where the repo has a sourced one (Israel's only, for now; docs/units.md, "The plinth and the flag"). The map draws
+#   Israel's rows and the sides with a 1948 Collection figure, the Arab Legion (jordan) and the ALA (ala), each only with its
+#   own figure (issue #665); every other side's rows are data only (owner, 17 October 2026, #740: "Nothing is drawn with
+#   IDF figures, and there is no placeholder art").
 # echelon: the formation's level: force (a state's whole force in the field, or the ALA), division, brigade, battalion or
 #   company. Every row of a side other than israel gives it, with the formations in `number` and their sources in the
 #   row's `sources`.
@@ -47,9 +51,12 @@
 #   The note's other figures and its conflicts stay in the note (research_notes/GDD phase 5/arab-forces-1948.md,
 #   sections 1 to 8), not here. Every row gives the 15 May strength only: no source found dates a strength on 11 June
 #   (the note, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented"). Every row of a
-#   side other than israel gives it.
+#   side other than israel gives it. An IDF brigade gives it where research_notes/M4 war mode/war-1948.md (section 1,
+#   #906) has a size: no primary order of battle gives the 15 May strengths, so a secondary source may, the row cites it
+#   and carries `status: to_verify`, and a primary source replaces it when one turns up (owner, 20 October 2026, #743).
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
-# status: draft = sourced and checked against the cited text, not yet by a historian.
+# status: draft = sourced and checked against the cited text, not yet by a historian. to_verify = as draft, with a
+#   secondary-source strength that a primary source must replace (above).
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
 # that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 units:
@@ -66,7 +73,16 @@ units:
   first_commander: Moshe Mann
   sector: "Much of the Lower Galilee and the Jezreel Valley, the Jordan Valley and the Hula Valley; headquarters in Yavne'el. In December 1948 it moved to the southern front, at the Julis camp."
   wikipedia_only: true
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 4500
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Golani 4,500. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   anchors:
   - place: "Yavne'el"
     lon: 35.49944
@@ -107,8 +123,39 @@ units:
   formed: 22 February 1948
   sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (from 13 May 1948; Acre surrendered on the night of 17-18 May), led Operation Brosh against the Syrian bridgehead at Mishmar HaYarden (9-18 July 1948) and fought in Operation Hiram."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 2000
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Carmeli 2,000. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
+  vehicles:
+  - type: gun_65mm
+    from: '1948-07-11'
+    note: "Ben-Gurion's diary for 11 July 1948 lists 4+4 of the 65 mm guns opposite the Syrian bridgehead, where this row stands from 9 July."
+    sources:
+    # Ben-Gurion's diary, 11 July 1948, the cannon distribution, 65 mm guns on every front, as the research note gives it: 4+4 opposite the Syrian bridgehead, 4 in the Acre sector, 4+4 Danny, 4+4 Harel, 3+3+4 Givati, 4 Negev (research_notes/M4 war mode/war-1948.md, section 8, Q-ART-2, read 2026-10-16).
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/14176', checked: '2026-10-16'}
   anchors:
+  - place: Haifa
+    lon: 34.99917
+    lat: 32.81917
+    from: '1948-05-15'
+    since: February 1948
+    to: '1948-07-09'
+    end_basis: source
+    end_note: "The Haganah Heritage lexicon (Brigade 2 Carmeli) has the brigade's headquarters and most of its forces in Operation Brosh against the Syrian bridgehead in July 1948; he.wiki Operation Brosh: from 9 July 1948. The next window, at Mishmar HaYarden, starts that day."
+    note: "The sector's seat, not a dated position: he.wiki gives the brigade's area as the Haifa area and the Zevulun district (Haifa and the Western Galilee) from the split of February 1948, and the Haganah Heritage lexicon has it organised in the Haifa area and the Western Galilee and operating in Haifa; no source found names its headquarters. In mid-May the lexicon has the brigade in the Western Galilee and at Acre, then at Jenin (2-4 June). The token stands in the town on Haifa's one unit clearing (#588)."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
+    # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": organised in the Haifa area and the Western Galilee, operated in Haifa; in Operation Brosh (July 1948) at the Syrian bridgehead.
+    - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47620', checked: '2026-10-15'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Haifa', checked: '2026-10-15'}
   - place: Facing the Syrian bridgehead at Mishmar HaYarden
     lon: 35.59972
     lat: 33.00278
@@ -117,7 +164,7 @@ units:
     to: '1948-07-19'
     end_basis: source
     end_note: "he.wiki Operation Brosh: the operation ran to 18 July 1948, when the second truce began at 19:00 with the front line unchanged. No source found places the brigade on this line between the truce and Operation Hiram (he.wiki Operation Hiram, at the end of October, names places for Carmeli, Manara and Misgav Am, where its main task was to block a possible Syrian attack, but no source dates the brigade at Mishmar HaYarden after Brosh), so the window ends with the operation, as Yiftach's ends with Dani."
-    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands facing it on the Israeli side, by Rosh Pinna. Not drawn before 9 July: its sector place, Haifa, has no clear spot outside the town on the map (coordinator's option (d), 2026-10-15)."
+    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands facing it on the Israeli side, by Rosh Pinna. Before 9 July the token stands at its sector seat, Haifa."
     toward:
       place: Rosh Pinna
       lon: 35.54222
@@ -136,8 +183,6 @@ units:
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Carmeli_Brigade', checked: '2026-10-11'}
   - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
-  # The sector's seat, Haifa (he.wiki Carmeli; the lexicon: organised in the Haifa area and the Western Galilee, operated in Haifa). Not a dated position: in mid-May the lexicon has the brigade in the Western Galilee and at Acre, then at Jenin (2-4 June). Not drawn there (no clear spot outside the town, #588).
-  - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
   - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
 - id: alexandroni
   name: Alexandroni Brigade
@@ -151,7 +196,16 @@ units:
   formed: November 1947 (the Haganah's decision of 7 November)
   sector: "The Sharon region: from the Carmel in the north to the Dan bloc in the south; headquarters at Camp Dora in Netanya. In November 1948 it replaced the Givati Brigade at the Faluja pocket."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 5200
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Alexandroni 5,200. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   anchors:
   - place: Netanya (Camp Dora)
     lon: 34.85667
@@ -187,7 +241,16 @@ units:
   formed: February 1948
   sector: "The urban area of Tel Aviv, from the Yarkon River in the north to Bat Yam in the south and Yazur in the east."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 1400
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Kiryati 1,400. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   anchors:
   - place: Tel Aviv
     lon: 34.78
@@ -215,7 +278,23 @@ units:
   first_commander: Shimon Avidan
   sector: "Moved to the south as the war entered its second stage, concentrated mainly around Gedera, Gan Yavne and Be'er Tuvia."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 5000
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Givati 5,000. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
+  vehicles:
+  - type: gun_65mm
+    from: '1948-07-11'
+    note: "Ben-Gurion's diary for 11 July 1948 lists 3+3+4 of the 65 mm guns with Givati."
+    sources:
+    # Ben-Gurion's diary, 11 July 1948, the cannon distribution, 65 mm guns on every front, as the research note gives it: 4+4 opposite the Syrian bridgehead, 4 in the Acre sector, 4+4 Danny, 4+4 Harel, 3+3+4 Givati, 4 Negev (research_notes/M4 war mode/war-1948.md, section 8, Q-ART-2, read 2026-10-16).
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/14176', checked: '2026-10-16'}
   anchors:
   - place: Gedera
     lon: 34.77722
@@ -381,7 +460,28 @@ units:
   first_commander: Yitzhak Rabin
   sector: "All units in the Jerusalem corridor and hills; in the first half of May 1948 it took the corridor and opened the road to Sha'ar HaGai. Later it fought in Operation Horev."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 1400
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Harel 1,400. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
+  vehicles:
+  - type: jeep
+    from: '1948-06-01'
+    note: "On the night of 31 May to 1 June 1948 a jeep convoy under Harel's operations officer reached the brigade over the Burma Road, 'the unofficial breakthrough' (Isseroff); the first, of 10 jeeps from Hulda on the night of 30-31 May, turned back."
+    sources:
+    - {url: 'https://web.archive.org/web/20210415133543/https://zionism-israel.com/dic/Burma_Road.htm', checked: '2026-10-18'}
+  - type: gun_65mm
+    from: '1948-07-11'
+    note: "Ben-Gurion's diary for 11 July 1948 lists 4+4 of the 65 mm guns with Harel."
+    sources:
+    # Ben-Gurion's diary, 11 July 1948, the cannon distribution, 65 mm guns on every front, as the research note gives it: 4+4 opposite the Syrian bridgehead, 4 in the Acre sector, 4+4 Danny, 4+4 Harel, 3+3+4 Givati, 4 Negev (research_notes/M4 war mode/war-1948.md, section 8, Q-ART-2, read 2026-10-16).
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/14176', checked: '2026-10-16'}
   anchors:
   - place: "Sha'ar HaGai"
     lon: 35.03333
@@ -418,8 +518,24 @@ units:
   formed: April 1948
   sector: "Formed from Palmach battalions of the Jezreel Valley and the eastern valleys; in July 1948 it fought in Operation Dani, which took Lydda and Ramle. Disbanded in May 1949."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 4500
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for. The table counts some Golani men in the figure."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Yiftach 4,500. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   disbanded: {date: '1949-05-01', precision: month, sources: [{url: 'https://en.wikipedia.org/wiki/Yiftach_Brigade', checked: '2026-10-11'}]}
+  vehicles:
+  - type: gun_65mm
+    from: '1948-07-11'
+    note: "Ben-Gurion's diary for 11 July 1948 lists 4+4 of the 65 mm guns with Danny, the operation Yiftach fought at Lydda."
+    sources:
+    # Ben-Gurion's diary, 11 July 1948, the cannon distribution, 65 mm guns on every front, as the research note gives it: 4+4 opposite the Syrian bridgehead, 4 in the Acre sector, 4+4 Danny, 4+4 Harel, 3+3+4 Givati, 4 Negev (research_notes/M4 war mode/war-1948.md, section 8, Q-ART-2, read 2026-10-16).
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/14176', checked: '2026-10-16'}
   anchors:
   - place: Lydda
     lon: 34.88806
@@ -448,11 +564,32 @@ units:
   first_commander: Nahum Sarig
   sector: "The Negev, in two sectors divided by the Beersheba-Gaza road; brigade headquarters at the Mekorot camp near Nir Am."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is a secondary-source figure, allowed until a primary order of battle turns up (owner, 20 October 2026, on #743): en.wiki's brigade table, citing Ben-Gurion's War Diaries, gives no date for the sizes (research_notes/M4 war mode/war-1948.md, section 1). Replace it from a primary source."
+  strength:
+    value: 2400
+    as_of: '1948-05-15'
+    note: "The brigade's size in en.wiki's brigade table of the 1948 war. The table gives no date; as_of is 15 May 1948, the day the owner's ruling of 20 October 2026 (#743) gives the brigade strengths for."
+    sources:
+    # en.wiki, 1948 Arab-Israeli War, the brigade table: Negev 2,400. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   headgear: [wool_cap, steel_helmet, wool_cap]
   headgear_sources:
   - {url: 'https://commons.wikimedia.org/wiki/File:Palmach-negev-instructed2operation.jpg', checked: '2026-10-11'}
   - {url: 'https://commons.wikimedia.org/wiki/File:Negev_Brigade_soldiers_1948.jpg', checked: '2026-10-11'}
+  vehicles:
+  - type: jeep
+    from: '1948-06-02'
+    note: "en.wiki Battles of Negba: in the Egyptian attack of 2 June 1948 'a jeep unit from the Negev Beasts Battalion was sent to the west of the kibbutz to harass the Egyptian flank' (the paragraph cites Wallach 1978, p. 32)."
+    sources:
+    - {url: 'https://en.wikipedia.org/wiki/Battles_of_Negba', checked: '2026-10-18'}
+  - type: gun_65mm
+    from: '1948-07-11'
+    note: "Ben-Gurion's diary for 11 July 1948 lists 4 of the 65 mm guns with Negev; a Commons photograph has Negev Brigade soldiers with a field gun on 20 October 1948 (docs/units.md, Sources)."
+    sources:
+    # Ben-Gurion's diary, 11 July 1948, the cannon distribution, 65 mm guns on every front, as the research note gives it: 4+4 opposite the Syrian bridgehead, 4 in the Acre sector, 4+4 Danny, 4+4 Harel, 3+3+4 Givati, 4 Negev (research_notes/M4 war mode/war-1948.md, section 8, Q-ART-2, read 2026-10-16).
+    - {url: 'https://bengurionarchive.bgu.ac.il/en/node/14176', checked: '2026-10-16'}
   anchors:
   - place: Nir Am (Mekorot camp)
     lon: 34.58083
@@ -544,6 +681,10 @@ units:
 # --- Navy: the first ships (four ex-Aliyah Bet ships impounded in Haifa harbour; two are named and sourced here) ----
 - id: ins_haganah
   name: INS Haganah (K-20)
+  name_he: "אח״י הגנה"
+  name_he_review: agent-checked
+  # The Palmach service record names the ship; Palyam identifies it as K-20. These sources check the name only.
+  name_he_sources: [{url: 'https://palmach.org.il/veterans/veteranpage/?itemId=76294', checked: '2026-10-19'}, {url: 'https://www.palyam.org/Hahapala/Teur_haflagot/hf_Hagana.php', checked: '2026-10-19'}]
   number: Corvette, commissioned 1948
   service: navy
   side: israel

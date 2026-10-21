@@ -1,48 +1,12 @@
 ---
-// A grid of people from site/src/data/contributors.yaml: photo, name and title in the page's language. Until the owner
-// supplies a photo, a monogram. Never a GitHub avatar and never a generated image of a person.
-// Three groups, each shown only when it has someone: the team (no heading, as before), historians and sensitivity
-// reviewers (category), and past contributors (anyone with `until`), with their years.
-import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
+// The people in site/src/data/contributors.yaml, through the ContributorsGrid component (also the home page's last section).
 import Layout from '../../layouts/Layout.astro';
+import ContributorsGrid from '../../components/ContributorsGrid.astro';
 import { type Lang, languages, t, REPO, repoFile } from '../../i18n/ui';
-import { contributors } from '../../lib/repo';
 
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
 const he = lang === 'he';
-const photos = import.meta.glob<{ default: ImageMetadata }>('../../assets/contributors/*.{jpg,jpeg,png,webp}', { eager: true });
-
-const people = contributors().map((p) => {
-  const name = p.name?.[lang] || p.name?.[lang === 'he' ? 'en' : 'he'] || p.github;
-  const display = p.name?.[lang] || p.name?.[lang === 'he' ? 'en' : 'he'];
-  const words = (display || '').trim().split(/\s+/).filter(Boolean);
-  const initials = words.length >= 2 ? (words[0][0] + words[words.length - 1][0]) : (display || p.github)[0];
-  const photoKey = p.photo ? `../../assets/contributors/${p.photo}` : undefined;
-  if (photoKey && !photos[photoKey]) throw new Error(`contributors: photo not found: site/src/assets/contributors/${p.photo}`);
-  return { ...p, name, nameIsHandle: !display, initials: initials.toUpperCase(), photo: photoKey ? photos[photoKey].default : undefined, tenure: tenure(p.since, p.until) };
-});
-
-// "2024–2026", "November 2024 – February 2026", "Since March 2025", "Until 2026". The years come from the file, never from the repository history.
-function when(v: string) {
-  if (v.length === 4) return v;
-  return new Intl.DateTimeFormat(he ? 'he-IL' : 'en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${v}-01T00:00:00Z`));
-}
-function tenure(since?: string, until?: string) {
-  // A month range takes a spaced dash, which also keeps the Hebrew month names in order in right-to-left text.
-  if (since && until) return since === until ? when(since) : `${when(since)}${since.length + until.length > 8 ? ' – ' : '–'}${when(until)}`;
-  if (since) return he ? `מאז ${when(since)}` : `Since ${when(since)}`;
-  if (until) return he ? `עד ${when(until)}` : `Until ${when(until)}`;
-  return undefined;
-}
-
-const groups = [
-  { id: 'team', heading: undefined, people: people.filter((p) => !p.until && p.category === 'team') },
-  { id: 'reviewers', heading: he ? 'ייעוץ היסטורי ובדיקת רגישות' : 'Historians and sensitivity reviewers',
-    people: people.filter((p) => !p.until && p.category !== 'team') },
-  { id: 'past', heading: he ? 'תרמו בעבר' : 'Past contributors', people: people.filter((p) => p.until) },
-].filter((g) => g.people.length > 0);
 ---
 <Layout lang={lang} page="contributors" title={t(lang, 'nav.contributors')}
   description={he ? 'האנשים שבונים את Statecraft: Israel.' : 'The people who build Statecraft: Israel.'}>
@@ -55,30 +19,7 @@ const groups = [
         : 'The people who have contributed to the project. Credits for the sources, photographs and data are on the Sources page.'}</p>
     </header>
 
-    {groups.map((g) => (
-      <section class="group" data-people={g.id} aria-labelledby={g.heading ? `people-${g.id}` : undefined}>
-        {g.heading && <h2 id={`people-${g.id}`}>{g.heading}</h2>}
-        <ul class="people" role="list">
-          {g.people.map((p) => (
-            <li>
-              <figure class="person">
-                {p.photo ? (
-                  <Image src={p.photo} alt={he ? `תמונה של ${p.name}` : `Photo of ${p.name}`} width={320} height={320} fit="cover" format="webp" class="portrait" loading="lazy" />
-                ) : (
-                  <span class="monogram" role="img" aria-label={`${p.name}: ${t(lang, 'contributors.photo.missing')}`} lang="en" dir="ltr">{p.initials}</span>
-                )}
-                <figcaption>
-                  <span class="name" lang={p.nameIsHandle ? 'en' : undefined} dir={p.nameIsHandle ? 'ltr' : undefined}>{p.name}</span>
-                  <span class="title">{p.title[lang]}</span>
-                  {p.tenure && <span class="tenure">{p.tenure}</span>}
-                  <a class="gh" href={`https://github.com/${p.github}`} aria-label={`${p.name}: ${t(lang, 'contributors.github')}`} lang="en" dir="ltr">@{p.github}</a>
-                </figcaption>
-              </figure>
-            </li>
-          ))}
-        </ul>
-      </section>
-    ))}
+    <ContributorsGrid lang={lang} />
 
     <div class="prose invite">
       {he ? (
@@ -91,19 +32,5 @@ const groups = [
   </div>
 </Layout>
 <style>
-  .people { list-style: none; padding: 0; margin: 0 0 3rem; display: grid; gap: clamp(1.25rem, 3vw, 2rem); grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); }
-  .person { margin: 0; text-align: center; display: grid; justify-items: center; gap: 0.9rem; padding: 1.5rem 1rem; background: var(--navy-solid); border: 1px solid var(--navy-line); block-size: 100%; }
-  .portrait, .monogram { inline-size: 10rem; block-size: 10rem; border-radius: 50%; border: 2px solid var(--gold-dim); }
-  .portrait { object-fit: cover; }
-  .monogram {
-    display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, rgb(30, 44, 70), var(--navy-raised));
-    color: var(--gold-light); font-family: var(--serif); font-size: 3.2rem; font-weight: 600; letter-spacing: 0.04em;
-  }
-  figcaption { display: grid; gap: 0.15rem; }
-  .name { font-weight: 600; font-size: 1.15rem; color: var(--ink); overflow-wrap: anywhere; }
-  .title { color: var(--gold-light); font-size: 1rem; }
-  .tenure { color: var(--ink-dim); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
-  .group h2 { margin-block-end: 1.25rem; }
-  .gh { font-size: 0.85rem; color: var(--ink-dim); margin-block-start: 0.35rem; overflow-wrap: anywhere; }
   .invite { border-block-start: 1px solid var(--gold-faint); padding-block-start: 1.5rem; }
 </style>

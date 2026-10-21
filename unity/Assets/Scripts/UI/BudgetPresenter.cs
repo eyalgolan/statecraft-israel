@@ -139,9 +139,10 @@ namespace Statecraft.Game.UI
                 var o = c.Offices.First(x => x.Id == (Offices.BudgetOwner(c, office, s.Date) ?? office));
                 var share = draft.TryGetValue(office, out var v) ? v : 0;
                 // A budget line can run before its ministry exists (Education from 10 March 1949): say so, not "vacant".
+                var holder = Cabinet.Holder(c, s, o.Id);
                 var who = o.From.HasValue && s.Date < o.From.Value ? text.Format("budget.not_established", Statecraft.Game.Map.Control1948.DateText(o.From.Value, k => text[k]))   // PlayerText.Date is always English (#701)
-                    : Cabinet.Holder(c, s, o.Id)?.Name ?? text["budget.vacant"];
-                ((Label)row[0]).text = text.Format("budget.office", o.Title, who);
+                    : holder == null ? text["budget.vacant"] : ContentNames.Of(text, holder);
+                ((Label)row[0]).text = text.Format("budget.office", ContentNames.Of(text, o, holder), who);
                 ((Label)row[2]).text = text.Format("budget.share", PlayerText.Percent(share));
                 ((Label)row[4]).text = text.Format("budget.factor", PlayerText.Percent(EffectsSystem.BudgetFactor(draft, office)));
             }
@@ -149,8 +150,8 @@ namespace Statecraft.Game.UI
             var (seats, size) = PoliticsSystem.CoalitionSeats(c, s.Date);
             // eras.yaml systems.legislature: an assembly's vote is held but does not bind (#58)
             var advisory = c.SystemsAt(s.Date).Legislature == EraSystems.Assembly;
-            screen.Q<Label>("budget-vote").text = leg == null ? "" : !leg.BudgetApproval ? text.Format("budget.no_vote", leg.Body)
-                : text.Format(advisory ? "budget.vote_advisory" : "budget.vote_needed", leg.Body, seats, size, CabinetPresenter.SeatUnit(text, leg));
+            screen.Q<Label>("budget-vote").text = leg == null ? "" : !leg.BudgetApproval ? text.Format("budget.no_vote", ContentNames.Of(text, leg))
+                : text.Format(advisory ? "budget.vote_advisory" : "budget.vote_needed", ContentNames.Of(text, leg), seats, size, CabinetPresenter.SeatUnit(text, leg));
             screen.Q<Label>("budget-money").text = text.Format("budget.money", PlayerText.Money(c, "treasury", s.Treasury), PlayerText.Money(c, "debt", s.Debt), PlayerText.Money(c, "fx_reserves", s.FxReserves));
             var flows = EconomySystem.Flows(c, s, 1.0);   // the sim's own arithmetic, for a year
             screen.Q<Label>("budget-flow").text = text.Format("budget.flow", PlayerText.Money(c, "treasury", flows.Tax), PlayerText.Money(c, "treasury", flows.Spending), PlayerText.Money(c, "treasury", flows.Mobilization));

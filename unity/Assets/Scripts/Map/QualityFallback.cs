@@ -132,7 +132,7 @@ namespace Statecraft.Game.Map
     /// to the map camera through Attach, whose undo (run by the map's teardown) removes it and puts both back.</summary>
     public sealed class QualityFallbackDriver : MonoBehaviour
     {
-        public QualityFallback Controller { get; } = new QualityFallback();
+        public QualityFallback Controller { get; private set; } = new QualityFallback();
         /// <summary>Whether the page is hidden now (tests replace it).</summary>
         public Func<bool> Hidden { get; set; } = DocumentHidden;
         float tierScale = 1f;
@@ -148,8 +148,12 @@ namespace Statecraft.Game.Map
             driver.tierScale = asset != null ? asset.renderScale : 1f;
             driver.setScale = s => { if (asset != null) asset.renderScale = s; };
             var tierScale = driver.tierScale;
+            // Every quality switch (#40) put the tier's own look or a fixed one in place: the fallback starts again from the top.
+            Action restart = () => driver.Controller = new QualityFallback();
+            GraphicsQuality.Changed += restart;
             return () =>
             {
+                GraphicsQuality.Changed -= restart;
                 if (asset != null) asset.renderScale = tierScale;
                 TiltShift.FallbackOff = false;
                 if (driver != null) { if (Application.isPlaying) Destroy(driver); else DestroyImmediate(driver); }
@@ -159,6 +163,8 @@ namespace Statecraft.Game.Map
         /// <summary>Feeds one frame (tests call it; Update feeds the real frames).</summary>
         public void Feed(float frameMs)
         {
+            // High or Low in Settings (#40) fixes the quality: GraphicsQuality.Apply set the scale and ended FallbackOff.
+            if (GraphicsQuality.Current != GraphicsQuality.Choice.Auto) return;
             if (!Controller.Feed(frameMs)) return;
             var step = Controller.Current;
             setScale(Mathf.Min(tierScale, step.RenderScale));

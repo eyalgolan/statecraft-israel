@@ -55,6 +55,9 @@ def test_hebrew_is_not_enabled_without_runtime_review():
 def test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms():
     he = strings('strings.he.yaml')
     assert he['event.more'] == 'החלטות ממתינות נוספות: {0}'
+    assert he['budget.no_vote'] == '{0} אינה מצביעה על התקציב'
+    assert he['budget.vote_advisory'] == '{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}'
+    assert he['cabinet.legislature_advisory'] == 'מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות'
     # A seat count's unit is its own string, by the body (CabinetPresenter.SeatUnit): the Knesset's seats are
     # "מנדטים", the appointed Provisional State Council's members "חברים"; no template hard-codes either.
     assert he['cabinet.seats'] == 'מנדטים'
@@ -123,3 +126,22 @@ def test_hebrew_acronyms_use_the_gershayim_character():
         assert values, file
         for value in values:
             assert not HEBREW_ACRONYM_STRAIGHT_QUOTE.search(value), (file, value)
+
+
+def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_wording():
+    """#901: every return path of Cabinet.CheckReason names a kind; the Cabinet screen formats it from
+    cabinet.reason.<kind>. Each kind needs a key in both files, and the English key must be the sim's own English text
+    (its interpolations as {0}, {1}, ... in order), so the English player sees what the sim says."""
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    src = (ROOT / 'sim/Statecraft.Sim/Cabinet.cs').read_text(encoding='utf-8')
+    paths = re.findall(r'new CabinetReason\("(\w+)",\s*(\$?)"((?:[^"\\]|\\.)*)"', src)
+    assert len(paths) == 15
+    assert len({kind for kind, _, _ in paths}) == len(paths)   # one kind per return path
+    for kind, interpolated, english in paths:
+        key = 'cabinet.reason.' + kind
+        assert key in en and key in he, key
+        n = iter(range(10))
+        template = re.sub(r'\{[^{}]+\}', lambda _: '{%d}' % next(n), english) if interpolated else english
+        assert en[key] == template, key
+        assert not re.search('[A-Za-z]', he[key]), key
+    assert sorted(k for k in en if k.startswith('cabinet.reason.')) == sorted('cabinet.reason.' + k for k, _, _ in paths)

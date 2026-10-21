@@ -37,6 +37,7 @@
 #   population   VS 1945 (1 April 1945), summed over listed_as; match: how the row was tied to the place (high, medium,
 #                low = transliteration, manual = set by hand); owner_verify: true for low and manual, for a VS row that
 #                names more than one place, and for a row with both Jews and Muslims over 10%.
+#                The owner cleared all 52 flags on 2026-10-18 (#200): #488 and #490 checked them against the VS scan.
 # Bedouin (owner ruling 2026-10-11): encampments has one row per sub-district whose VS rows are labelled tribes, tribal
 # units, nomads or nomadic, with no fixed point (plus the Jahalin, see its note), with their total. The map scatters
 # symbolic camps, one per 1,000 people rounded half up with no floor (so Nablus's 220 draw none), over the
@@ -124,7 +125,7 @@ places:
   listed_as:
   - Khān Yūnis (Urban) (Gaza subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q309348
   checked: '2026-10-11'
   status: draft
@@ -179,7 +180,7 @@ places:
   listed_as:
   - Majdal, El (Urban) (Gaza subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q60956
   checked: '2026-10-11'
   status: draft
@@ -379,7 +380,7 @@ places:
   listed_as:
   - Benei Beraq (Urban) (Jaffa subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q152467
   checked: '2026-10-11'
   status: draft
@@ -405,7 +406,7 @@ places:
   listed_as:
   - Tubas (includes Kashda and Bardala) (Nablus subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q275919
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -432,7 +433,7 @@ places:
   listed_as:
   - Umm el Fahm (includes ‘Aqqada, ‘Ein Ibrahim, Khirbat el Buweishat, El Murtafi‘a, Lajjun, Mu‘awiya, Musheirifa and Musmus) (Jenin subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q168245
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -485,7 +486,7 @@ places:
   - Karkur (Haifa subdistrict)
   - Pardes Hanna (Haifa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2475182
   note: Pardes Hanna (2,970) and Karkur (2,380) are two VS rows; Wikidata has one item for both today, so one kit at its point
   checked: '2026-10-11'
@@ -564,7 +565,7 @@ places:
   listed_as:
   - Beisan (Urban) (Beisan subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q152368
   checked: '2026-10-11'
   status: draft
@@ -704,7 +705,7 @@ places:
   listed_as:
   - Saffuriya (Nazareth subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q1132798
   checked: '2026-10-11'
   status: draft
@@ -1073,7 +1074,7 @@ places:
   listed_as:
   - Shafa ‘Amr (Urban) (Haifa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q990657
   note: 'the Urban row only (1,560 Christians, 1,380 Muslims, 690 Druze, 10 Jews): the Rural row (3,560 Muslims) is the town''s rural lands, which the draft had summed in, turning the landmark to a mosque'
   checked: '2026-10-11'
@@ -1100,7 +1101,7 @@ places:
   listed_as:
   - Jabāliya (Gaza subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q1015472
   checked: '2026-10-11'
   status: draft
@@ -1126,7 +1127,7 @@ places:
   listed_as:
   - Ya‘bad (includes Khirbat el Khuljan, Khirbat et Tarim, Khirbat Tura esh Sharqiya, Nazlat Sheikh Zeid and Khirbat Umm Rihan) (Jenin subdistrict)
   match: medium
-  owner_verify: true
+  owner_verify: false
   wikidata: Q1828708
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -1251,7 +1252,7 @@ places:
   listed_as:
   - Bani Suheila (Gaza subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q1983186
   checked: '2026-10-11'
   status: draft
@@ -1325,7 +1326,7 @@ places:
   listed_as:
   - Anabta and Iktaba (Tulkarm subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2701952
   draft_id: iktaba
   note: 'VS row ''Anabta and Iktaba'' (3,120): the draft placed it at Iktaba (Q5996268); moved to Anabta, the row''s first and larger place'
@@ -1420,7 +1421,7 @@ places:
   listed_as:
   - Ijzim (Haifa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2918334
   note: Village Statistics 1945, scan p14 #33 (https://users.cecs.anu.edu.au/~bdm/yabber/census/VSpages/VS1945_p14.jpg), Ijzim 2,970 (2,830 Muslims, 140 Christians); the transcription's "Ijzim (Nazareth subdistrict)" (1,310) is 'Ilut on the scan (p08 #12, https://users.cecs.anu.edu.au/~bdm/yabber/census/VSpages/VS1945_p08.jpg), a different village, so it is not part of this row (#200, research_notes/Map/localities-1948-owner-verify.md). Wikidata Q2918334 P1082 (1945) = 3000
   checked: '2026-10-11'
@@ -1469,7 +1470,7 @@ places:
   listed_as:
   - Bira (El) (Urban) (Ramallah subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q311326
   checked: '2026-10-11'
   status: draft
@@ -1495,7 +1496,7 @@ places:
   listed_as:
   - Deir el Ghusun (includes Khirbat el Masqifa, El Marja, Khirbat Jarishiya, Khirbat Bir es Sikka, Khirbat Yamma and Khirbat Ibthan) (Tulkarm subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q627230
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -1522,7 +1523,7 @@ places:
   listed_as:
   - Silat edh Dhahr (Jenin subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2898957
   checked: '2026-10-11'
   status: draft
@@ -1548,7 +1549,7 @@ places:
   listed_as:
   - Nesher (Haifa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q135432
   note: 'the VS row splits 1,430 Muslims and 1,400 Jews (the draft had arab_village): drawn as a mixed locality, Arab village and Jewish houses side by side (owner ruling 2026-10-12)'
   checked: '2026-10-11'
@@ -1671,7 +1672,7 @@ places:
   listed_as:
   - Si‘ir (Hebron subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q7395443
   checked: '2026-10-11'
   status: draft
@@ -1920,7 +1921,7 @@ places:
   listed_as:
   - Sur Bahir and Umm Tuba (Jerusalem subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2916287
   draft_id: umm_tuba
   note: 'VS row ''Sur Bahir and Umm Tuba'' (2,450): the draft placed it at Umm Tuba; moved to Sur Bahir, the row''s first place'
@@ -2058,7 +2059,7 @@ places:
   listed_as:
   - Shuweika (Tulkarm subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q12219298
   checked: '2026-10-11'
   status: draft
@@ -2227,7 +2228,7 @@ places:
   listed_as:
   - Abasân (Gaza subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q3303148
   checked: '2026-10-11'
   status: draft
@@ -2275,7 +2276,7 @@ places:
   listed_as:
   - Irāq el Manshiya and Gat (Gaza subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2777842
   note: the VS row 'Iraq el Manshiya and Gat' includes kibbutz Gat (210 Jews); the kit is sized on the whole row; Wikidata Q2777842 P1082 (1945) = 2010; chose Village Statistics figure 2220 (primary source, one value for every place)
   checked: '2026-10-11'
@@ -2302,7 +2303,7 @@ places:
   listed_as:
   - Rafah (Gaza subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q172343
   checked: '2026-10-11'
   status: draft
@@ -2476,7 +2477,7 @@ places:
   listed_as:
   - Maghar and El Mansura (Tiberias subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q930847
   draft_id: al_mansura_tiberias
   note: 'VS row ''Maghar and El Mansura'' (2,140): the draft placed it at al-Mansura (Q4702829); moved to Maghar, the row''s first place'
@@ -2677,7 +2678,7 @@ places:
   listed_as:
   - Na‘ana (Ni‘ana) (Ramle subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q4703007
   draft_id: naan
   note: VS row 'Na'ana (Ni'ana)' (2,060) is the Arab village; the draft placed it at kibbutz Na'an (Q1026840); the row is 1,450 Muslims, 20 Christians and 590 Jews of kibbutz Na'an; the kit is sized on the whole row
@@ -3187,7 +3188,7 @@ places:
   listed_as:
   - Wadi Hunein (Nes Tsiyona) (Ramle subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q168162
   checked: '2026-10-11'
   status: draft
@@ -3331,7 +3332,7 @@ places:
   listed_as:
   - Kefar Gannim (Jaffa subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q7033804
   checked: '2026-10-11'
   status: draft
@@ -3407,7 +3408,7 @@ places:
   listed_as:
   - Kefar ‘Atta (Kufritta) (Haifa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q152602
   checked: '2026-10-11'
   status: draft
@@ -3548,7 +3549,7 @@ places:
   listed_as:
   - Hunin (includes Hula and ‘Udeisa) (Safad subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q12406488
   note: the VS row names more than one place; the kit is sized on the whole row; Wikidata Q12406488 P1082 (1945) = 1670; chose Village Statistics figure 1620 (primary source, one value for every place)
   checked: '2026-10-11'
@@ -3672,7 +3673,7 @@ places:
   listed_as:
   - Fajja (Jaffa subdistrict)
   match: medium
-  owner_verify: true
+  owner_verify: false
   wikidata: Q5431395
   note: Wikidata Q5431395 P1082 (1945) = 1200; chose Village Statistics figure 1570 (primary source, one value for every place)
   checked: '2026-10-11'
@@ -3699,7 +3700,7 @@ places:
   listed_as:
   - Qaffin (includes Khirbat el ‘Aqqaba and Khirbat esh Sheikh Meisar) (Tulkarm subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2892780
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -3752,7 +3753,7 @@ places:
   listed_as:
   - Tarqumiya (Hebron subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q1998630
   checked: '2026-10-11'
   status: draft
@@ -3895,7 +3896,7 @@ places:
   listed_as:
   - Binyamina (Haifa subdistrict)
   match: medium
-  owner_verify: true
+  owner_verify: false
   wikidata: Q863886
   checked: '2026-10-11'
   status: draft
@@ -4114,7 +4115,7 @@ places:
   listed_as:
   - Awarta and Udala (Nablus subdistrict)
   match: medium
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2905293
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -4211,7 +4212,7 @@ places:
   listed_as:
   - Ilar (Tulkarm subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q5998781
   note: Village Statistics 1945, scan p20 #39 (https://users.cecs.anu.edu.au/~bdm/yabber/census/VSpages/VS1945_p20.jpg), Illar 1,450; Wikidata Q5998781 "Illar, Tulkarm" is the place's main item (0.04 km from the point), replacing the bare item Q33534652 (#200)
   checked: '2026-10-11'
@@ -4551,7 +4552,7 @@ places:
   listed_as:
   - Bidya (Nablus subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2533232
   checked: '2026-10-11'
   status: draft
@@ -4846,7 +4847,7 @@ places:
   listed_as:
   - Qabalan (Nablus subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q7265686
   checked: '2026-10-11'
   status: draft
@@ -5097,7 +5098,7 @@ places:
   listed_as:
   - Magdiel (Jaffa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2910711
   checked: '2026-10-11'
   status: draft
@@ -5141,7 +5142,7 @@ places:
   listed_as:
   - Deir el Qasi and El Mansura (Acre subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q5243305
   note: the transcription reads 370 Muslims and 880 Christians, the reverse of the en.wikipedia article citing the same VS page (880 Muslims, 370 Christians); the 1922 and 1931 censuses give an all-Muslim village, and the Christians most likely belong to El Mansura, the row's second place. Mosque (review I2). The scan (p04 #14, https://users.cecs.anu.edu.au/~bdm/yabber/census/VSpages/VS1945_p04.jpg) confirms the transcription's columns for the combined row, 370 Muslims and 880 Christians; the header's column rule would give church for the whole row, while Deir el Qasi alone was Muslim in 1922 and 1931: the owner's call (#200); the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -5189,7 +5190,7 @@ places:
   listed_as:
   - Na‘ima (En) (Safad subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q4703008
   note: Wikidata Q4703008 P1082 (1945) = 1030; chose Village Statistics figure 1240 (primary source, one value for every place)
   checked: '2026-10-11'
@@ -5260,7 +5261,7 @@ places:
   listed_as:
   - Beit Nuba and ‘Ajanjul (Ramle subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q4874907
   note: the VS row names more than one place; the kit is sized on the whole row. Village Statistics 1945, scan p29 #11 (https://users.cecs.anu.edu.au/~bdm/yabber/census/VSpages/VS1945_p29.jpg), "Beit Nuba and 'Ajanjul" 1,240 (the transcription reads 'Ajanul) (#200)
   checked: '2026-10-11'
@@ -5407,7 +5408,7 @@ places:
   listed_as:
   - Mesheq Yagur (Haifa subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q586687
   checked: '2026-10-11'
   status: draft
@@ -5498,7 +5499,7 @@ places:
   listed_as:
   - Burin and ‘Iraq Burin (Nablus subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2896916
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -5525,7 +5526,7 @@ places:
   listed_as:
   - Azzun and En Nabi Ilyas and ‘Isla (Tulkarm subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2918963
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -5595,7 +5596,7 @@ places:
   listed_as:
   - Zakariya (Hebron subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q4831967
   note: Village Statistics 1945, scan p23 #36 (https://users.cecs.anu.edu.au/~bdm/yabber/census/VSpages/VS1945_p23.jpg), Zakariya 1,180; the article Az-Zakariyya now redirects to Zekharia, which gives the same 1945 figure (#200)
   checked: '2026-10-11'
@@ -5807,7 +5808,7 @@ places:
   listed_as:
   - Qisariya (Caesarea) (Haifa subdistrict)
   match: medium
-  owner_verify: true
+  owner_verify: false
   wikidata: Q1615560
   note: Wikidata Q1615560 P1082 (1945) = 960; chose Village Statistics figure 1120 (primary source, one value for every place)
   checked: '2026-10-11'
@@ -6056,7 +6057,7 @@ places:
   listed_as:
   - Manshiya (Acre subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q4702804
   checked: '2026-10-11'
   status: draft
@@ -6104,7 +6105,7 @@ places:
   listed_as:
   - Saliha (includes Marun er Ras and Yarun) (Safad subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q7404513
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'
@@ -6131,7 +6132,7 @@ places:
   listed_as:
   - Yafa (Nazareth subdistrict)
   match: manual
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2468131
   checked: '2026-10-11'
   status: draft
@@ -6533,7 +6534,7 @@ places:
   listed_as:
   - Ashdot Ya‘aqov (Tiberias subdistrict)
   match: low
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2891543
   checked: '2026-10-11'
   status: draft
@@ -6680,7 +6681,7 @@ places:
   listed_as:
   - Tarbiha (includes En Nabi Rubin and Suruh) (Acre subdistrict)
   match: high
-  owner_verify: true
+  owner_verify: false
   wikidata: Q2777821
   note: the VS row names more than one place; the kit is sized on the whole row
   checked: '2026-10-11'

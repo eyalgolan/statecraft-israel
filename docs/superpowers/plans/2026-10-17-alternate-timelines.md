@@ -883,6 +883,8 @@ git commit -m "research: the roads not taken, fact-checked, with the premise tab
 
 ### Task 4 (#949): `alternative` on all 30 alternatives; the loader then requires it
 
+> **Decided (owner, 17 Oct 2026, "Accept all recommendations", [#945](https://github.com/eyalgolan/statecraft-israel/issues/945#issuecomment-6239061172)):** Q-ALT-10 and Q-ALT-12 as recorded above. **Then decided (owner, 18 Oct 2026, "all defaults"; [#949](https://github.com/eyalgolan/statecraft-israel/issues/949#issuecomment-6249500866)):** roads with only a date range use the first day of the range in the `YYYY-MM-DD` field, flagged approximate.
+
 **Files:**
 - Modify: the 25 `content/events/*.yaml` files that have a non-historical option (each such option)
 - Modify: `sim/Statecraft.Sim/EventRules.cs` (the option loop)
@@ -2116,3 +2118,7 @@ git commit -m "content: the first roads not taken get their sourced follow-up ca
 **3. Type consistency.** `EventRequirement.Diverged`, `GameEvent.Requires : List<EventRequirement>`, `GameEvent.Kind`, `EventKinds.*`, `OptionAlternative` (`Basis`, `By`, `Date`, `Sources`, `IsConsidered`), `EventOption.Alternative`, `EventOption.Rejoin`, `EventVariant` (`When`, `Title`, `Text`, `Sources`), `GameEvent.Variants`, `Timeline.{HistoricalOption, Diverged, Met, AllMet, Rejoined, Variant, Origin, Entries}`, `TimelineEntry`, `EventRules.{CheckRequirement, IsAlternativeRoad, CheckKinds, MaxConsequenceDepth}`, `EventSystem.Title`, `ReleaseGate.AlternateUnsigned`, `AltRun.{Play, RoadTo}`: each is defined in the task named in its Interfaces block and used with the same name and signature later. `CheckKinds` gains its `offices` parameter in Task 7, which says so.
 
 **4. Review Focus.** Each of the five has its test in the owning task: 1 in Tasks 5 and 7; 2 in Task 5; 3 in Task 6; 4 in Task 5; 5 in Task 7. A further risk with no test: a delegated alternative on a soft card brings a consequence card the player did not pick (Q-ALT-11); the banner text in Task 9 can say the minister decided once the answer is known.
+
+## Status update: 19 October 2026
+
+Gate G2 passed: the owner signed off the checked roads note on 19 October 2026 ([#949, G2 sign-off](https://github.com/eyalgolan/statecraft-israel/issues/949#issuecomment-6259161410)).

@@ -2,13 +2,12 @@
 import { getImage } from 'astro:assets';
 import Layout from '../../layouts/Layout.astro';
 import Figure from '../../components/Figure.astro';
-import PersonPortrait from '../../components/PersonPortrait.astro';
 import VideoFacade from '../../components/VideoFacade.astro';
 import MediaLabel from '../../components/MediaLabel.astro';
+import ContributorsGrid from '../../components/ContributorsGrid.astro';
 import { type Lang, languages, href, t, REPO, formatDate, asset } from '../../i18n/ui';
-import { capture, engine, concept, flythrough, trailer, gameplay, gameplayVideo, captureDateIso, heroShot } from '../../lib/media';
+import { capture, concept, flythrough, trailer, gameplay, gameplayVideo, captureDateIso, heroShot } from '../../lib/media';
 import { posts } from '../../lib/devlog';
-import { roadmap, cabinet as cabinetPeople } from '../../lib/repo';
 
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
@@ -16,24 +15,16 @@ const he = lang === 'he';
 
 const mapShot = capture('build-m3-map.jpg');
 const why = capture('build-m3-why.jpg');
-const topdown = engine.find((e) => e.id === 'm2-topdown')!;
+// The third feature shows the map in the page's language: the Hebrew interface on the Hebrew page.
+const city = he ? capture('build-he-map.jpg') : capture('build-m3-city.jpg');
 // The hero is a real screenshot of the build (the LCP image): preloaded as AVIF, never lazy.
 const heroWidths = [800, 1200, 1568];
 const heroSizes = '100vw';
 const heroAvif = await getImage({ src: heroShot.src, widths: heroWidths, format: 'avif', quality: 70 });
 const heroWebp = await getImage({ src: heroShot.src, widths: heroWidths, format: 'webp', quality: 78 });
-// The heartbeat strip: the release and the two newest devlog posts, from the same data as /devlog (proposal).
+// The heartbeat strip: the two newest devlog posts, from the same data as /devlog.
 const recent = posts(lang).slice(0, 2);
-const phases = roadmap(lang);
-// Proposal v2: the cabinet strip (archival portraits from the game's own catalogue) and the promo 03 concept band.
-const people = cabinetPeople();
-const cabinetCount = people.length;
-// The first six of the government, by office: a portrait where one may be shown, otherwise the lettered plate.
-const ministers = people.filter((p) => p.group === 'government').slice(0, 6);
 const target = concept.find((c) => c.id === 'gameplay-1936')!;
-const stateWord = (s: string) => ({
-  done: he ? 'הושלם' : 'Done', now: he ? 'בתהליך' : 'In progress', next: he ? 'הבא' : 'Next', later: he ? 'בהמשך' : 'Later',
-} as Record<string, string>)[s];
 const abs = (p: string) => new URL(p, Astro.site).href;
 const poster = await getImage({ src: flythrough.poster, width: 1280, format: 'jpg' });
 
@@ -81,31 +72,24 @@ const features = [
     item: mapShot, crop: '100% 0%',
     title: he ? 'החלטות אמיתיות במועדן האמיתי' : 'Real decisions at their real dates',
     text: he
-      ? 'ההפוגה הראשונה, פרשת אלטלנה ורצח ברנדוט מגיעים במועדם, ולכל אירוע יש מקורות. בעמוד ההיסטוריה מופיעים כל האירועים שבמשחק, עם המקורות שלהם.'
-      : 'The First Truce, the Altalena affair and the Bernadotte assassination arrive at their real dates, and every event cites its sources. The History page lists every event in the game with them.',
+      ? 'ההפוגה הראשונה, פרשת אלטלנה ורצח ברנדוט מגיעים במועדם, עם מקורות.'
+      : 'The First Truce, the Altalena affair and the Bernadotte assassination arrive on their real dates, with sources.',
   },
   {
     item: why,
     title: he ? 'למה זה קרה?' : 'Why did that happen?',
     text: he
-      ? 'לוח "למה?" מפרט מה השתנה בכל תור ומה גרם לכל שינוי. מתחת רצה סימולציה דטרמיניסטית ב־C#: אותן בחירות תמיד נותנות אותה תוצאה, ומשחק שמור הוא זרע ההגרלה ורשימת הפקודות.'
-      : 'The “Why?” panel lists what changed in a turn and the cause of each change. Underneath runs a deterministic C# simulation: the same choices always give the same result, and a saved game is the seed plus the list of commands.',
+      ? 'לוח "למה?" מראה מה השתנה בכל תור ומה גרם לזה.'
+      : 'The “Why?” panel shows what changed each turn, and what caused it.',
   },
   {
-    item: topdown,
+    item: city,
     title: he ? 'מפה מנתונים אמיתיים' : 'A map built from real data',
     text: he
-      ? 'מפת השטח נבנתה מנתוני גובה (Copernicus DEM) ומנתוני גשם (CHELSA ותחנות השירות המטאורולוגי). קווי הרכבת והדרכים של 1948 שורטטו על מפות Survey of Palestine.'
-      : 'The terrain is built from elevation data (Copernicus DEM) and rainfall data (CHELSA and the Israel Meteorological Service’s gauges). The railways and roads of 1948 are traced on Survey of Palestine maps.',
+      ? 'השטח בנוי מנתוני גובה וגשם אמיתיים, והמסילות והדרכים של 1948 שורטטו ממפות התקופה.'
+      : 'The terrain comes from real elevation and rainfall data, and the 1948 railways and roads are traced from maps of the time.',
   },
 ];
-
-const works = he
-  ? ['תורות חודשיים מ־15 במאי 1948 ועד 15 בינואר 1952.', 'מסך הפתיחה.', 'מפת 1948: עיירות, כפרים ומאהלי בדואים, מסילות ודרכים, השטחים שבידי כל צד מ־11 ביוני 1948, ואזורי שביתת הנשק וקוויה מ־1949, מתאריך כל הסכם.', 'עיירות וכפרים שגודלם לפי אוכלוסייתם ב־1945, ביניהם העיר הלבנה של תל אביב וכפרי האבן הערביים, עם מטעי זיתים והדרים.', 'החטיבות של 1948, טייסת 101 וספינות חיל הים הראשונות, כאסימונים במיקומים המתועדים שלהם. הם עוד לא מקבלים פקודות.', 'מסך הממשלה עם מינויים.', 'מסך התקציב, והסרגל העליון עם כסף ותמיכה בינלאומית.', 'מסך הביטחון עם סולם ההסלמה וגיוס המילואים.', 'אירועים היסטוריים עם מקורות, ממלחמת 1948 ועד משבר המטבע הזר של 1951, ולרובם צילום ארכיון.', 'לוח "למה?".', 'שמירה אוטומטית וטעינה.', 'גרסת הדפדפן (WebGL), שבונים מקוד המקור.']
-  : ['Monthly turns from 15 May 1948 to 15 January 1952.', 'The start screen.', 'The 1948 map: towns, villages and Bedouin camps, railways and roads, the areas each side held from 11 June 1948, and the 1949 armistice zones and lines from each agreement’s date.', 'Towns and villages sized by their 1945 population, among them Tel Aviv’s White City and the stone Arab villages, with olive and citrus groves.', 'The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. They take no orders yet.', 'The Cabinet with appointments.', 'The Budget screen, and the top bar with Money and International support.', 'The Defence screen with the escalation ladder and reserve call-up.', 'Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.', 'The “Why?” panel.', 'Autosave and load.', 'The browser (WebGL) build, built from source.'];
-const missing = he
-  ? ['האמנות שבתמונות הקונספט. היישובים והעצים הם עדיין מודלים פרוצדורליים; דגמי הבניינים ו"אוסף 1948" של MATKOT כבר במאגר, אבל עוד לא על המפה.', 'רוב מה שב־GDD: יחידות שמאמנים ומפקדים עליהן, ערים עם דיור ותעסוקה, בנייה, קרבות ושלוש המטרות. בסימולציה יש כבר חלק ראשון מהם (תל אביב, אימון, יישוב חדש אחד והמטרה הראשונה), אבל עוד אין מסך שנותן את הפקודות האלה.', 'דיפלומטיה.', 'כל מה שאחרי 15 בינואר 1952.', 'גרסה מתארחת שאפשר לשחק בה בלחיצה אחת.']
-  : ['The art in the concept images. Towns and trees are still procedural models; MATKOT’s building models and 1948 Collection are in the repository but not yet on the map.', 'Most of the GDD: units you train and command, cities with housing and jobs, construction, combat and the three objectives. The sim has a first slice of these (Tel Aviv, training, one new settlement and the first objective), but no screen gives their orders yet.', 'Diplomacy.', 'Anything after 15 January 1952.', 'A hosted build you can play with one click.'];
 ---
 <Layout lang={lang} page="" jsonLd={jsonLd}
   preload={[{ srcset: heroAvif.srcSet.attribute, sizes: heroSizes, type: 'image/avif' }]}>
@@ -131,14 +115,12 @@ const missing = he
         <a class="btn btn-primary" href={href(lang, 'play')}>{t(lang, 'cta.play')}</a>
         <a class="btn" href={REPO}>{t(lang, 'cta.github')}</a>
       </div>
-      <p class="hero-version"><span>{t(lang, 'version')}</span> · {t(lang, 'cta.play.note')}</p>
       </div>
     </div>
   </section>
 
   <aside class="heartbeat seam" aria-label={he ? 'מה חדש' : 'Latest'}>
     <div class="wrap hb">
-      <p class="hb-item"><span class="hb-k">{he ? 'גרסה' : 'Release'}</span> {t(lang, 'version')}</p>
       {recent.map((p) => (
         <p class="hb-item"><span class="hb-k">{he ? 'יומן פיתוח' : 'Devlog'}</span>
           <time datetime={p.date}>{formatDate(lang, p.date)}</time>{' · '}<a href={`${href(lang, 'devlog')}#${p.slug}`}>{p.title}</a></p>
@@ -148,38 +130,19 @@ const missing = he
   </aside>
 
   <section class="section band-grain seam" aria-labelledby="what"><div class="wrap">
+    <h2 id="what" class="visually-hidden">{he ? 'על מה המשחק' : 'What it is'}</h2>
     <p class="pitch">{pitch}</p>
-    <div class="split split-status">
-      <div class="prose">
-        <span class="eyebrow">{he ? 'על מה המשחק' : 'What it is'}</span>
-        <h2 id="what" class="plaque">{he ? 'אתם בכיסא ראש הממשלה מיום הקמת המדינה' : 'You sit in the prime minister’s chair from the founding of the state'}</h2>
-        {he ? (
-          <p>בכל תור אתם ממנים ומחליפים שרים אמיתיים בתוך קואליציה אמיתית, מחלקים תקציב זעום בין ביטחון, קליטת עלייה, המעברות והצנע, מנהלים את הביטחון על סולם הסלמה בן חמש דרגות, מאיומים שגרתיים ועד מלחמה כוללת, ומכריעים בהחלטות אמיתיות במועדן האמיתי.</p>
-        ) : (
-          <p>Each turn you appoint and replace real ministers inside a real coalition, divide a tiny budget between security, immigrant absorption, the ma’abarot transit camps and austerity, manage security on a five-level escalation ladder from routine threats to full war, and face real decisions at their real dates.</p>
-        )}
-        <p class="muted">{he
-          ? 'המשחק עוסק במלחמה, בטרור ובשואה כאירועים היסטוריים. המסגור שלו ישראלי, לכל עובדה יש מקור, ואף ציטוט אינו בדוי.'
-          : 'The game deals with war, terror and the Holocaust as historical events. Its framing is Israeli, every fact cites a source, and no quotes are invented.'}
-          {' '}<a href={href(lang, 'history/sources')}>{t(lang, 'nav.sources')}</a></p>
-      </div>
-      <div class="status panel">
-        <h3>{he ? 'מה עובד היום בקוד המקור' : 'What works now in the source code'}</h3>
-        <ul>{works.map((w) => <li>{w}</li>)}</ul>
-        <h3>{he ? 'מה עוד חסר' : 'What is missing'}</h3>
-        <ul>{missing.map((w) => <li>{w}</li>)}</ul>
-      </div>
-    </div>
+    <p class="muted prose what-note">{he
+      ? 'המשחק עוסק במלחמה, בטרור ובשואה כאירועים היסטוריים. המסגור שלו ישראלי, ואף ציטוט אינו בדוי. זה אב־טיפוס מוקדם.'
+      : 'The game deals with war, terror and the Holocaust as historical events. Its framing is Israeli, and no quotes are invented. It is an early prototype.'}
+      {' '}<a href={href(lang, 'history/sources')}>{t(lang, 'nav.sources')}</a></p>
   </div></section>
 
-  {/* The real gameplay clip, behind a click: the hero is now a clean still, so the first screen loads no video. */}
+  {/* The real gameplay clip, behind a click: the hero is a clean still, so the first screen loads no video. */}
   <section class="section" aria-labelledby="footage"><div class="wrap">
     <div class="section-head">
       <span class="eyebrow">{he ? 'צילום מתוך המשחק' : 'In-engine footage'}</span>
       <h2 id="footage" class="plaque">{gameplayVideo ? (he ? 'כך זה נראה כשמשחקים' : 'What playing looks like') : (he ? 'המפה, מהנגב ועד חיפה' : 'The map, from the Negev to Haifa')}</h2>
-      <p>{he
-        ? 'הסרטון הראשון באתר מצולם מתוך המשחק עצמו. הטריילר הקולנועי, שנוצר בכלי בינה מלאכותית, מופיע אחריו עם תווית משלו.'
-        : 'The first video on this site is recorded in the game itself. The cinematic trailer, made with AI tools, follows below under its own label.'}</p>
     </div>
     <VideoFacade video={gameplayVideo ?? flythrough} lang={lang} />
   </div></section>
@@ -203,33 +166,13 @@ const missing = he
     </div>
   </div></section>
 
-  <section class="section band-grain" aria-labelledby="cabinet"><div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">{he ? 'השרים' : 'The ministers'}</span>
-      <h2 id="cabinet" class="plaque">{he ? 'ממשלה אמיתית, שר אחר שר' : 'A real cabinet, minister by minister'}</h2>
-      <p>{he
-        ? 'צילומי ארכיון של השרים שמהם מרכיבים את הממשלה במשחק. בעמוד הממשלה יש כרטיס לכל אחד: התפקידים והתאריכים עם המקורות, ומה המשחק עושה איתו.'
-        : 'Archival photographs of the ministers you build the government from. The Cabinet page has a card for each: the offices and dates with their sources, and what the game does with them.'}</p>
-    </div>
-    <div class="cab-strip">
-      {ministers.map((p) => (
-        <div class="cab-card">
-          <PersonPortrait person={p} lang={lang} sizes="(min-width: 76rem) 14rem, 45vw" />
-          <p class="cab-name"><a href={`${href(lang, 'cabinet')}#${p.id}`}>{he ? p.name_he : p.name}</a>
-            <span class="cab-office">{he && !p.terms[0].title.he ? <span lang="en" dir="ltr">{p.terms[0].title.en}</span> : (he ? p.terms[0].title.he : p.terms[0].title.en)}</span></p>
-        </div>
-      ))}
-    </div>
-    <p class="cab-more"><a class="btn" href={href(lang, 'cabinet')}>{he ? `כל ${cabinetCount} נושאי המשרה` : `All ${cabinetCount} office holders`}</a></p>
-  </div></section>
-
   <section class="concept-band seam" aria-labelledby="target">
     <div class="wrap section-head">
       <span class="label label-concept">{t(lang, 'label.concept')}</span>
       <h2 id="target" class="plaque">{he ? 'המראה שאליו אנחנו שואפים' : 'The look we are building toward'}</h2>
       <p>{he
-        ? 'אמנות קונספט שנוצרה בבינה מלאכותית: יעד חזותי, לא הגרסה הנוכחית. יש בה דברים שאין במשחק. את המשחק עצמו רואים בצילומים שלמעלה.'
-        : 'Concept art made with AI: a visual target, not the current build. It shows things the game does not have. The game itself is in the captures above.'}</p>
+        ? 'אמנות קונספט שנוצרה בבינה מלאכותית. זו לא הגרסה הנוכחית.'
+        : 'Concept art made with AI. It is not the current build.'}</p>
     </div>
     <Figure item={target} lang={lang} sizes="100vw" widths={[800, 1200, 1600, 2400]} class="band-figure" />
   </section>
@@ -239,46 +182,10 @@ const missing = he
       <span class="label label-cinematic">{t(lang, 'label.cinematic')}</span>
       <h2 id="promo" class="plaque">{he ? 'הטריילר' : 'The trailer'}</h2>
       <p>{he
-        ? 'סיפור על התקופה שנוצר בכלי וידאו של בינה מלאכותית מאמנות הקונספט שלנו. זה אינו צילום מהמשחק: את המשחק עצמו רואים בצילומים שלמעלה ובעמוד המדיה.'
-        : 'A story about the era, made with AI video tools from our concept art. It is not gameplay: the game itself is in the captures above and on the Media page.'}</p>
+        ? 'נוצר בכלי וידאו של בינה מלאכותית מאמנות הקונספט שלנו. זה אינו צילום מהמשחק.'
+        : 'Made with AI video tools from our concept art. It is not gameplay.'}</p>
     </div>
     <VideoFacade video={trailer} lang={lang} />
-  </div></section>
-
-  <section class="section band-grain" aria-labelledby="next"><div class="wrap">
-    <div class="split">
-      <div class="prose">
-        <span class="eyebrow">{he ? 'לאן זה הולך' : 'Where it is going'}</span>
-        <h2 id="next" class="plaque">{he ? 'עיצוב חדש, עדיין בעבודה' : 'A new design, still in progress'}</h2>
-        {he ? (
-          <>
-            <p>מסמך עיצוב המשחק של הבעלים, GDD v0.1 מ־12 באוקטובר 2026, הוא העיצוב המחייב. הוא מתאר תורות חודשיים, יחידות, ערים, עבודת חלוצים ושלוש מטרות לשנים 1948 עד 1951. רבים מהכללים בו עדיין מסומנים כפתוחים, ובגרסה 0.1.0 הם לא קיימים.</p>
-            <p>מאז 15 באוקטובר 2026 המשחק שבקוד המקור משוחק בתורות החודשיים של ה־GDD. שאר החלקים נבנים עכשיו, שלב אחר שלב.</p>
-          </>
-        ) : (
-          <>
-            <p>The design of record is the owner’s game design document, GDD v0.1 of 12 October 2026. It describes monthly turns, units, cities, pioneer work and three objectives for 1948 to 1951. Many of its rules are still marked open, and the 0.1.0 build does not have them.</p>
-            <p>Since 15 October 2026 the game in the source code plays the GDD’s monthly turns. The rest is being built phase by phase.</p>
-          </>
-        )}
-        <p><a href={`${REPO}/blob/main/docs/GDD.md`}>{he ? 'מסמך העיצוב (GDD, באנגלית)' : 'The design document (GDD)'}</a></p>
-      </div>
-      <div class="panel roadmap">
-        <span class="eyebrow">{he ? 'מפת הדרכים' : 'Roadmap'}</span>
-        <h3>{he ? 'ה־MVP של 1948 עד 1951' : 'The 1948 to 1951 MVP'}</h3>
-        <ol class="phases">
-          <li class="ph ph-done"><span class="ph-mark" aria-hidden="true"></span>
-            <span class="ph-what">{t(lang, 'version')}</span><span class="ph-state">{stateWord('done')}</span></li>
-          {phases.map((p) => (
-            <li class={`ph ph-${p.state}`}><span class="ph-mark" aria-hidden="true"></span>
-              <span class="ph-what"><span class="ph-n">{he ? `שלב ${p.n}` : `Phase ${p.n}`}</span> · {p.what.map((w) => w.href ? <a href={w.href}>{w.text}</a> : w.text)}</span>
-              <span class="ph-state">{p.state === 'now' ? p.status : stateWord(p.state)} · <a href={p.url}>{p.issue}</a></span></li>
-          ))}
-        </ol>
-        <p class="muted ph-note">{he ? 'מתוך טבלת מפת הדרכים ב־README. מפת הדרכים אינה קובעת תאריכים.' : 'From the roadmap table in the README. The roadmap sets no dates.'}
-          {' '}<a href={`${REPO}/issues/374`}>#374</a></p>
-      </div>
-    </div>
   </div></section>
 
   <section class="section honest" aria-labelledby="honest"><div class="wrap">
@@ -288,24 +195,24 @@ const missing = he
     </div>
     <div class="cards3">
       <div class="panel">
-        <h3>{he ? 'קודם המשחק האמיתי' : 'The real build first'}</h3>
+        <h3>{he ? 'תוויות' : 'Labels'}</h3>
         <p>{he
-          ? 'כל תמונה וכל סרטון באתר אומרים מה הם: צילום מתוך המשחק עם הגרסה והתאריך, אמנות קונספט שנוצרה בבינה מלאכותית, או פרומו קולנועי שנוצר בבינה מלאכותית ואינו צילום מהמשחק.'
-          : 'Every image and video on this site says what it is: an in-engine capture with its build and date, concept art made with AI, or a cinematic promo made with AI that is not gameplay.'}</p>
+          ? 'כל תמונה וסרטון אומרים מה הם: צילום מתוך המשחק, אמנות קונספט של בינה מלאכותית, או פרומו של בינה מלאכותית.'
+          : 'Every image and video says what it is: an in-engine capture, AI concept art, or an AI promo.'}</p>
         <a href={href(lang, 'media')}>{t(lang, 'nav.media')}</a>
       </div>
       <div class="panel">
-        <h3>{he ? 'מקורות ומסגור' : 'Sources and framing'}</h3>
+        <h3>{he ? 'מקורות' : 'Sources'}</h3>
         <p>{he
-          ? 'לכל אירוע, שר, תאריך ונתון היסטורי במשחק יש מקורות; ערכי האיזון של המשחק אינם עובדות. המסגור ישראלי, והאתר אומר זאת. עדיין אף היסטוריון לא בדק את המשחק; בדיקה כזו מתוכננת לאבן הדרך M4.'
-          : 'Every event, minister, date and historical figure in the game cites its sources; game-balance values do not. The framing is Israeli, and the site says so. No historian has reviewed the game yet; that is planned for M4.'}</p>
+          ? 'לכל אירוע, שר ותאריך יש מקורות. עדיין אף היסטוריון לא בדק את המשחק.'
+          : 'Every event, minister and date cites its sources. No historian has reviewed the game yet.'}</p>
         <a href={href(lang, 'history/sources')}>{t(lang, 'nav.sources')}</a>
       </div>
       <div class="panel">
         <h3>{he ? 'בינה מלאכותית' : 'AI use'}</h3>
         <p>{he
-          ? 'הקוד, אמנות הקונספט והטריילר הקולנועי נעשו בסיוע נרחב של בינה מלאכותית. דבר אינו נוצר בזמן אמת במהלך המשחק.'
-          : 'The code, the concept art and the cinematic trailer were made with heavy AI assistance. Nothing is generated live while you play.'}</p>
+          ? 'הקוד, אמנות הקונספט והטריילר הקולנועי נעשו בסיוע נרחב של בינה מלאכותית. מודלי התלת־ממד הם של טל הויברגר. דבר אינו נוצר בזמן אמת במהלך המשחק.'
+          : 'The code, the concept art and the cinematic trailer were made with heavy AI assistance. The 3D models are by Tal Heuberger. Nothing is generated live while you play.'}</p>
         <a href={href(lang, 'how-we-make-it')}>{t(lang, 'nav.how')}</a>
       </div>
     </div>
@@ -313,15 +220,18 @@ const missing = he
 
   <section class="section band-grain closing" aria-labelledby="join"><div class="wrap">
     <h2 id="join" class="plaque">{he ? 'להשתתף' : 'Take part'}</h2>
-    <p class="muted prose">{he
-      ? 'שאלות ורעיונות נכנסים לדיונים ב־GitHub, ובאגים וטעויות היסטוריות לרשימת הבעיות. מתכנתים, היסטוריונים, אמנים, מעצבי משחק, כותבים ומתרגמים מוזמנים.'
-      : 'Questions and ideas go in GitHub Discussions; bugs and historical errors go in the issue tracker. Programmers, historians, artists, game designers, writers and translators are welcome.'}</p>
     <div class="btn-row">
-      <a class="btn btn-primary" href={href(lang, 'play')}>{t(lang, 'cta.play')}</a>
-      <a class="btn" href={href(lang, 'contribute')}>{t(lang, 'nav.contribute')}</a>
+      <a class="btn btn-primary" href={href(lang, 'contribute')}>{t(lang, 'nav.contribute')}</a>
       <a class="btn" href={`${REPO}/discussions`}>{he ? 'דיונים' : 'Discussions'}</a>
       <a class="btn" href={`${REPO}/issues/new?template=historical_accuracy.yml`}>{he ? 'דיווח על טעות היסטורית' : 'Report a historical error'}</a>
     </div>
+  </div></section>
+
+  <section class="section contributors" aria-labelledby="people"><div class="wrap">
+    <div class="section-head">
+      <h2 id="people" class="plaque">{t(lang, 'nav.contributors')}</h2>
+    </div>
+    <ContributorsGrid lang={lang} level="h3" />
   </div></section>
 
 </Layout>
@@ -361,8 +271,6 @@ const missing = he
   .lk-era::after { inline-size: min(16.25rem, 60%); }
   :lang(he) .lk-era { letter-spacing: 0; } /* the rule is no letter-spacing on Hebrew pages; the range is wrapped in .ltr */
   .pitch { font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem); line-height: 1.45; text-align: center; max-inline-size: 46rem; margin: 0 auto clamp(2.5rem, 5vw, 4rem); color: var(--ink); text-wrap: balance; }
-  .hero-version { margin: 1rem 0 0; color: var(--ink-dim); font-size: 0.95rem; }
-  .hero-version span { color: var(--gold-light); }
   @media (max-width: 48rem) {
     .hero-media img { block-size: auto; min-block-size: 0; max-block-size: none; aspect-ratio: 4 / 3; object-position: 38% 50%; }
     .hero-copy { position: static; background: var(--navy-deep); padding-block: 1.5rem 2rem; }
@@ -377,16 +285,6 @@ const missing = he
   .hb-item { margin: 0; }
   .hb-k { color: var(--gold); font-weight: 600; margin-inline-end: 0.4em; }
   .hb a { color: var(--ink); }
-  .split { display: grid; gap: clamp(1.5rem, 4vw, 3.5rem); grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
-  /* The status panel is long: it goes under the text, full width, with its lists in two columns. */
-  .split-status { grid-template-columns: minmax(0, 1fr); }
-  /* Its text takes the full row: the two paragraphs side by side, so no gap is left beside them. */
-  .split-status > .prose { max-inline-size: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
-  .split-status > .prose > :not(p) { grid-column: 1 / -1; }
-  @media (max-width: 56rem) { .split, .split-status > .prose { grid-template-columns: 1fr; } }
-  .status ul { padding-inline-start: 1.2rem; font-size: 0.97em; columns: 2 15rem; column-gap: 2.5rem; }
-  .status li { break-inside: avoid; }
-  .status h3 { font-size: 1.15rem; color: var(--gold-light); }
   /* Larger imagery: the feature pictures take about two thirds of a wider column. */
   .features { display: grid; gap: clamp(3rem, 7vw, 6rem); }
   .feature { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(1.25rem, 4vw, 3.5rem); align-items: center; }
@@ -399,33 +297,13 @@ const missing = he
     .feature, .feature:nth-child(even) { grid-template-columns: 1fr; }
     .feature:nth-child(even) > :global(figure) { order: 0; }
   }
-  .cab-strip { display: grid; gap: clamp(1rem, 2vw, 1.75rem); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (min-width: 40rem) { .cab-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (min-width: 64rem) { .cab-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-  .cab-card :global(.label) { font-size: 0.7rem; }
-  .cab-card :global(.credit) { font-size: 0.66rem; }
-  .cab-name { display: grid; text-align: center; margin-block-start: 0.4rem; }
-  .cab-name a { font-size: 1.1rem; color: var(--ink); text-decoration: none; }
-  .cab-name a:hover, .cab-name a:focus-visible { color: var(--gold-light); text-decoration: underline; }
-  .cab-office { color: var(--ink-dim); font-size: 0.9rem; }
-  .cab-more { text-align: center; margin-block-start: 2rem; }
   /* The promo 03 band: once, edge to edge, with its label on the picture and in the heading, and the AI mark. */
   .concept-band { padding-block: clamp(3rem, 7vw, 5.5rem) 0; background: var(--navy-deep); }
   .concept-band :global(.band-figure .media-frame) { border-inline: 0; box-shadow: none; border-block: 1px solid var(--gold-dim); }
   .concept-band :global(.band-figure figcaption) { max-inline-size: var(--wide); margin-inline: auto; padding: 0.6rem var(--gutter) 0; }
   .cards3 { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
   .cards3 p { color: var(--ink-dim); font-size: 0.97em; }
-  .phases { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 0.15rem; }
-  .ph { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0 0.5rem; padding-block: 0.4rem; border-block-end: 1px solid var(--navy-line); font-size: 0.95em; }
-  .ph-what { grid-column: 2; }
-  .ph-state { grid-column: 2; font-size: 0.85rem; color: var(--ink-dim); }
-  .ph-n { color: var(--gold-light); font-weight: 600; }
-  .ph-mark { grid-row: 1 / span 2; inline-size: 0.8rem; block-size: 0.8rem; margin-block-start: 0.45rem; transform: rotate(45deg); border: 1.5px solid var(--gold-dim); }
-  .ph-done .ph-mark { background: var(--gold); border-color: var(--gold); }
-  .ph-now .ph-mark { border-color: var(--gold-light); background: linear-gradient(135deg, var(--gold-light) 50%, transparent 50%); }
-  .ph-done .ph-what, .ph-now .ph-what { color: var(--ink); }
-  .ph-next .ph-what, .ph-later .ph-what { color: var(--ink-dim); }
-  .ph-note { font-size: 0.9rem; margin: 0; }
   .closing .btn-row { margin-block-start: 1.25rem; }
+  .what-note { text-align: center; margin-inline: auto; }
 </style>
 

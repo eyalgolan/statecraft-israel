@@ -19,7 +19,7 @@ import player_golden_check as pg
 REPO = Path(__file__).resolve().parents[2]
 H50, H52 = "a" * 64, "b" * 64
 MANIFEST = f"# comment\nhash1950 {H50}\nhash1952 {H52}\nsmoke5 {'c' * 64}\n"
-EXPECTED = [f"GOLDEN OK 1950 {H50}", f"GOLDEN OK 1952 {H52}"]
+EXPECTED = [f"GOLDEN OK hash1950 {H50}", f"GOLDEN OK hash1952 {H52}", f"GOLDEN OK smoke5 {'c' * 64}"]
 
 
 def digest(name):
@@ -147,17 +147,20 @@ def test_plan_lists_all_three_players_with_githubs_digests():
          "sha256": digest(lin)[7:]},
         {"platform": "macos", "label": "macos arm64", "runner": "macos-15", "arch": "arm64", "asset": mac,
          "sha256": digest(mac)[7:]},
-        {"platform": "macos", "label": "macos x86_64", "runner": "macos-15-intel", "arch": "x86_64", "asset": mac,
+        {"platform": "macos", "label": "macos x86_64", "runner": "macos-15", "arch": "x86_64", "asset": mac,
          "sha256": digest(mac)[7:]},
     ]
 
 
-def test_the_mac_player_runs_on_apple_silicon_and_on_intel():
-    # Review S3: the Universal app has two native IL2CPP slices; each is run on its own CPU, never under Rosetta.
-    assert pg.RUNNERS["macos"] == [("macos-15", "arm64"), ("macos-15-intel", "x86_64")]
+def test_the_mac_player_runs_both_slices_on_apple_silicon():
+    # Review S3: the Universal app has two native IL2CPP slices and each is checked on its own. #548: GitHub retires
+    # macos-15-intel, its last x86_64 image, in August 2027, so the x86_64 slice runs under Rosetta on the arm64 runner
+    # (`arch -x86_64`, MAC_SLICE) and no runner is an Intel one.
+    assert pg.RUNNERS["macos"] == [("macos-15", "arm64"), ("macos-15", "x86_64")]
     include, _, ok = pg.plan("v0.2.0", release("v0.2.0", *players("v0.2.0")), "workflow_dispatch")
     assert ok and [(e["runner"], e["arch"]) for e in include if e["platform"] == "macos"] == [
-        ("macos-15", "arm64"), ("macos-15-intel", "x86_64")]
+        ("macos-15", "arm64"), ("macos-15", "x86_64")]
+    assert not any("intel" in e["runner"] for e in include)
     assert len({e["label"] for e in include}) == len(include)   # the job names differ
 
 
@@ -223,10 +226,10 @@ def test_plan_command_writes_the_matrix_to_the_github_output(tmp_path, monkeypat
 
 def test_expected_lines_come_from_the_manifest_and_the_real_manifest_has_them():
     assert pg.expected_lines(pg.read_manifest(MANIFEST)) == EXPECTED
-    with pytest.raises(ValueError, match="hash1952"):
-        pg.expected_lines(pg.read_manifest(f"hash1950 {H50}\n"))
+    with pytest.raises(ValueError, match="bad"):
+        pg.expected_lines(pg.read_manifest("bad nope\n"))
     real = pg.read_manifest((REPO / "sim/Statecraft.Sim.Tests/golden/manifest.txt").read_text(encoding="utf-8"))
-    assert [l.split()[2] for l in pg.expected_lines(real)] == ["1950", "1952"]
+    assert [l.split()[2] for l in pg.expected_lines(real)] == list(real)
 
 
 def test_a_passing_log_needs_both_lines_and_exit_zero():
@@ -234,17 +237,17 @@ def test_a_passing_log_needs_both_lines_and_exit_zero():
     assert pg.check_log(log, EXPECTED, 0) == []
     assert pg.check_log(log, EXPECTED, 1) == ["the player exited 1"]
     assert pg.check_log(log, EXPECTED, None) == ["the player did not exit before the timeout"]
-    assert pg.check_log(EXPECTED[0], EXPECTED, 0) == [f"missing line: {EXPECTED[1]}"]
+    assert pg.check_log(EXPECTED[0], EXPECTED, 0) == [f"missing line: {line}" for line in EXPECTED[1:]]
 
 
 def test_a_wrong_hash_or_a_fail_line_fails():
-    wrong = f"GOLDEN OK 1950 {H50}\nGOLDEN FAIL 1952 {'d' * 64} expected {H52}\n"
+    wrong = f"GOLDEN OK hash1950 {H50}\nGOLDEN FAIL hash1952 {'d' * 64} expected {H52}\n"
     assert pg.check_log(wrong, EXPECTED, 1) == ["the player exited 1", f"missing line: {EXPECTED[1]}",
-                                                 f"failure line: GOLDEN FAIL 1952 {'d' * 64} expected {H52}"]
+                                                 f"missing line: {EXPECTED[2]}", f"failure line: GOLDEN FAIL hash1952 {'d' * 64} expected {H52}"]
     assert pg.check_log("\n".join(EXPECTED) + "\nBOOT FAIL content missing", EXPECTED, 0) == [
         "failure line: BOOT FAIL content missing"]
     # A hash prefix or a line with more after it is not the line.
-    assert pg.check_log(f"GOLDEN OK 1950 {H50[:8]}\nGOLDEN OK 1952 {H52}x", EXPECTED, 0) == [
+    assert pg.check_log(f"GOLDEN OK hash1950 {H50[:8]}\nGOLDEN OK hash1952 {H52}x\n{EXPECTED[2]}", EXPECTED, 0) == [
         f"missing line: {EXPECTED[0]}", f"missing line: {EXPECTED[1]}"]
 
 
@@ -301,7 +304,15 @@ def test_the_linux_player_runs_under_a_virtual_x_display_and_the_others_run_bare
     args = [str(exe), "-batchmode", "-nographics", "-golden", "-logFile", str(log.resolve())]
     assert pg.player_command(exe, log, "linux") == ["xvfb-run", "-a", *args]
     assert pg.player_command(exe, log, "windows") == args
-    assert pg.player_command(exe, log, "macos") == args
+
+
+def test_the_mac_player_runs_the_slice_it_checks(tmp_path):
+    # #548: a Universal app started bare runs the runner's native slice, so each slice is started through `arch`: the
+    # x86_64 one under Rosetta on an arm64 runner.
+    exe, log = tmp_path / "Statecraft Israel", tmp_path / "player.log"
+    args = [str(exe), "-batchmode", "-nographics", "-golden", "-logFile", str(log.resolve())]
+    assert pg.player_command(exe, log, "macos", "x86_64") == ["arch", "-x86_64", *args]
+    assert pg.player_command(exe, log, "macos", "arm64") == ["arch", "-arm64", *args]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="the fake player is a shell script")
@@ -447,7 +458,7 @@ def test_the_pass_rule_matches_the_real_player_log_format():
     # more hex digit, is not the expected line.
     assert pg.check_log("Loading content\n" + "\n".join(EXPECTED) + "\n", EXPECTED, 0) == []
     assert pg.check_log("\n".join("12:00:01 " + l for l in EXPECTED), EXPECTED, 0) == [f"missing line: {l}" for l in EXPECTED]
-    assert pg.check_log(EXPECTED[0] + "a\n" + EXPECTED[1], EXPECTED, 0) == [f"missing line: {EXPECTED[0]}"]
+    assert pg.check_log(EXPECTED[0] + "a\n" + "\n".join(EXPECTED[1:]), EXPECTED, 0) == [f"missing line: {EXPECTED[0]}"]
 
 
 def test_the_release_script_shares_the_asset_names_the_tag_rule_and_the_pass_rule():
@@ -455,7 +466,7 @@ def test_the_release_script_shares_the_asset_names_the_tag_rule_and_the_pass_rul
     import release_build as rb
     assert rb.ARCHIVES == {"mac": pg.ASSETS["macos"], "linux": pg.ASSETS["linux"], "windows": pg.ASSETS["windows"]}
     assert rb.TAG is pg.TAG
-    expected = {"1950": H50, "1952": H52}
+    expected = {"hash1950": H50, "hash1952": H52, "smoke5": "c" * 64}
     logs = ["\n".join(EXPECTED), "\n".join("12:00:01 " + l for l in EXPECTED), EXPECTED[0] + "a\n" + EXPECTED[1],
             "\n".join(EXPECTED) + "\nBOOT FAIL x", EXPECTED[0], ""]
     for log in logs:
@@ -499,20 +510,71 @@ def test_arch_is_required_for_macos_and_refused_elsewhere(tmp_path, capsys):
         pg.main(base + ["--platform", "macos", "--arch", "", "--work", str(tmp_path / "w3")])
 
 
-@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="needs ditto, lipo and uname")
-def test_run_refuses_a_mac_runner_of_the_other_architecture_before_running(tmp_path, capsys):
-    # Review T53 nit: pins the call into check_arch (the `if a.arch:` wiring), not only check_arch itself.
+def fake_mac_release(tmp_path):
     (tmp_path / "manifest.txt").write_text(MANIFEST)
     macos = tmp_path / "build" / "Statecraft.app" / "Contents" / "MacOS"
     macos.mkdir(parents=True)
     shutil.copy("/usr/bin/true", macos / "Statecraft Israel")
     z = mac_release_zip(tmp_path)
-    here = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
-    other = "x86_64" if here == "arm64" else "arm64"
-    code = pg.main(["run", "--platform", "macos", "--arch", other, "--manifest", str(tmp_path / "manifest.txt"),
-                    "--archive", str(z), "--sha256", pg.sha256(z), "--work", str(tmp_path / "w")])
+    return ["run", "--platform", "macos", "--manifest", str(tmp_path / "manifest.txt"), "--archive", str(z),
+            "--sha256", pg.sha256(z), "--work", str(tmp_path / "w")]
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="needs ditto, lipo and uname")
+def test_run_refuses_a_mac_slice_the_runner_cannot_run_before_running(tmp_path, capsys, monkeypatch):
+    # #548: the CPU is read through `arch -<slice>`. On an arm64 runner without Rosetta (or an Intel one asked for
+    # arm64) `arch` cannot start uname at all ("Bad CPU type in executable"), so the run stops before the player.
+    real_run = subprocess.run
+    seen = []
+
+    def fake_run(cmd, *a, **k):
+        seen.append(cmd)
+        if cmd == ["arch", "-x86_64", "uname", "-m"]:
+            raise subprocess.CalledProcessError(1, cmd, "", "arch: posix_spawnp: uname: Bad CPU type in executable\n")
+        return real_run(cmd, *a, **k)
+    monkeypatch.setattr(pg.subprocess, "run", fake_run)
+    code = pg.main(fake_mac_release(tmp_path) + ["--arch", "x86_64"])
     out = capsys.readouterr().out
-    assert code == 2 and f"the runner is {here}, not {other}: check the runner label" in out and "RUN " not in out
+    assert code == 2 and "PLAYER GOLDEN ERROR macos" in out and "RUN " not in out
+    assert "['arch', '-x86_64', 'uname', '-m']" in out
+    assert ["arch", "-x86_64", "uname", "-m"] in seen and ["uname", "-m"] not in seen
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="needs ditto, lipo and uname")
+def test_run_refuses_a_mac_player_without_the_slice_before_running(tmp_path, capsys, monkeypatch):
+    # Review T53 nit: pins the call into check_arch (the `if a.arch:` wiring), not only check_arch itself.
+    real_run = subprocess.run
+
+    def fake_run(cmd, *a, **k):
+        if cmd == ["arch", "-x86_64", "uname", "-m"]:
+            return subprocess.CompletedProcess(cmd, 0, "x86_64\n", "")
+        if cmd[:2] == ["lipo", "-archs"]:
+            return subprocess.CompletedProcess(cmd, 0, "arm64\n", "")
+        return real_run(cmd, *a, **k)
+    monkeypatch.setattr(pg.subprocess, "run", fake_run)
+    code = pg.main(fake_mac_release(tmp_path) + ["--arch", "x86_64"])
+    out = capsys.readouterr().out
+    assert code == 2 and "Statecraft Israel has no x86_64 slice (lipo -archs: arm64)" in out and "RUN " not in out
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("ditto"), reason="needs ditto, lipo and uname")
+def test_run_starts_the_mac_player_through_arch_for_its_slice(tmp_path, capsys, monkeypatch):
+    # Review of #643: a bare start would run the runner's native arm64 slice and could pass green for x86_64.
+    real_run = subprocess.run
+    started = []
+
+    def fake_run(cmd, *a, **k):
+        if cmd == ["arch", "-x86_64", "uname", "-m"]:
+            return subprocess.CompletedProcess(cmd, 0, "x86_64\n", "")   # Rosetta on an arm64 runner
+        if cmd[:2] == ["lipo", "-archs"]:
+            return subprocess.CompletedProcess(cmd, 0, "x86_64 arm64\n", "")
+        return real_run(cmd, *a, **k)
+    monkeypatch.setattr(pg.subprocess, "run", fake_run)
+    monkeypatch.setattr(pg, "run_player", lambda *args: started.append(args) or 0)
+    pg.main(fake_mac_release(tmp_path) + ["--arch", "x86_64"])
+    assert len(started) == 1 and started[0][4:] == ("x86_64",)
+    exe, log, _, platform, arch = started[0]
+    assert pg.player_command(exe, log, platform, arch)[:2] == ["arch", "-x86_64"]
 
 
 def mac_release_zip(tmp_path, notices=pg.REQUIRED_NOTICES, extra=()):

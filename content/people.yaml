@@ -123,11 +123,6 @@ people:
           - { url: "https://en.wikipedia.org/wiki/Seventh_government_of_Israel", checked: 2026-10-12 }
           - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251333.pdf", checked: 2026-10-12 }
           - { url: "https://fs.knesset.gov.il/3/Plenum/3_ptm_251016.pdf", checked: 2026-10-12 }
-      # Held Education after Remez died in office on 19 May 1951 (en.wiki and he.wiki Second Government). The Knesset
-      # position records have no Education row between Remez's death and the Third Government, and the plenum records
-      # have Sharett standing in for Education while Ben-Gurion was abroad (Begin on 30 May 1951, 1_ptm_254469; Sharett
-      # answering as acting minister on 27 June 1951, 1_ptm_254275). No primary record of the term was found (#457).
-      - { office: education_minister, from: 1951-05-19, to: 1951-10-08, sources: &second [&second_en { url: "https://en.wikipedia.org/wiki/Second_government_of_Israel", checked: 2026-10-10 }, &second_he { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השנייה", checked: 2026-10-10 }] }
       # Held Transportation after Pinkas died in office on 14 August 1952, until the Fourth Government was sworn in on
       # 24 December 1952 (Knesset data: Ben-Gurion 14 Aug - 24 Dec 1952; Serlin from 24 Dec). Serlin and Sapir are not
       # authored yet (#26), so the seat shows as vacant from 24 December rather than keeping a wrong holder.
@@ -135,8 +130,8 @@ people:
     status: fact-checked
   - id: zisling
     name: Aharon Zisling
+    # name_he: the Knesset member page spells the first name אהרן; the owner ruled for אהרון (18 October 2026, #457), and on 19 October that the ruling is the native-speaker read, so no review flag.
     name_he: אהרון ציזלינג
-    name_he_review: agent-checked
     born: 1901-02-26
     died: 1964-01-16
     biography_sources:
@@ -267,7 +262,7 @@ people:
       # and Immigration (research notes 1c). en.wiki is used.
       # Second Knesset from 20 August 1951: the Knesset faction records put him in the Hapoel HaMizrachi faction
       # (row 25993); to then, the United Religious Front (row 25848). Issue #457.
-      - { office: health_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: &second_urf [*gov2_k, *second_en, *second_he] }
+      - { office: health_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: &second_urf [*gov2_k, &second_en { url: "https://en.wikipedia.org/wiki/Second_government_of_Israel", checked: 2026-10-10 }, &second_he { url: "https://he.wikipedia.org/wiki/ממשלת_ישראל_השנייה", checked: 2026-10-10 }] }
       - { office: immigration_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: *second_urf }
       - { office: interior_minister, from: 1950-11-01, to: 1951-08-20, party: united_religious_front, sources: *second_urf }
       - { office: health_minister, from: 1951-08-20, to: 1951-10-08, party: hapoel_hamizrachi, sources: &shapira_k2 [*gov2_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition(25993)", checked: 2026-10-14 }] }
@@ -305,12 +300,17 @@ people:
       born: &gruenbaum_bio [{ url: "https://en.wikipedia.org/wiki/Yitzhak_Gruenbaum", checked: 2026-10-11 }]
       died: *gruenbaum_bio
     living: false
-    party: independent
+    party: general_zionists
     competence: 6
     loyalty: 6
     portrait: { file: promo/ref/people/Yitzhak_Gruenbaum.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Yitzhak_Gruenbaum_1948.jpg", focus_y: 0.3 }
     offices:
-      - { office: interior_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
+      - office: interior_minister
+        from: 1948-05-14
+        to: 1949-03-10
+        sources:
+          - *gov0_k
+          - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%205904%20and%20KnessetNum%20eq%200", checked: 2026-10-18 }
     status: fact-checked
   - id: rosen
     name: Pinchas Rosen
@@ -473,7 +473,11 @@ people:
     offices:
       - { office: transportation_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
       - { office: transportation_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
-      - { office: education_minister, from: 1950-11-01, to: 1951-05-19, sources: *gov2 }
+      # KNS_PersonToPosition row 3860 ends this term on 19 May 1951, and it is Government 2's only Education row. No
+      # official Education term follows before the Third Government on 8 October, so the seat is vacant from 19 May to
+      # 8 October 1951; the plenum of 27 June 1951 lists Sharett only as acting Education Minister (owner ruling
+      # "Follow the official records", 18 October 2026, #457 item 8).
+      - { office: education_minister, from: 1950-11-01, to: 1951-05-19, sources: [*gov2_k, { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition(3860)", checked: 2026-10-18 }, { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_254275.doc", checked: 2026-10-18 }] }
     status: fact-checked
   - id: levin
     name: Yitzhak-Meir Levin

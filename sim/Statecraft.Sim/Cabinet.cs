@@ -29,6 +29,18 @@ namespace Statecraft.Sim
         }
     }
 
+    /// <summary>A Cabinet refusal's stable UI kind and invariant values, beside the unchanged English text used by commands.</summary>
+    public sealed class CabinetReason
+    {
+        public string Kind { get; }
+        public IReadOnlyList<string> Values { get; }
+        public string Text { get; }
+        public CabinetReason(string kind, string text, params string[] values)
+        {
+            Kind = kind; Text = text; Values = values;
+        }
+    }
+
     /// <summary>The cabinet as the game sees it: the historical holders from people.yaml, overridden by the player's
     /// appointments until the government changes (a new government takes office with its own, historical, ministers).</summary>
     public static class Cabinet
@@ -54,11 +66,15 @@ namespace Statecraft.Sim
             return a != null ? c.People.First(p => p.Id == a.Person) : Offices.Holder(c, office, d);
         }
 
-        /// <summary>Offices.Fill with the player's appointments: {office_id} becomes the name of whoever holds it.</summary>
-        public static string Fill(Content c, GameState s, string text, DateTime date) =>
+        /// <summary>Offices.Fill with the player's appointments: {office_id} becomes the name of whoever holds it, as
+        /// <paramref name="name"/> gives it (the Hebrew card text wants the Hebrew name, #1064), or else the English one.</summary>
+        public static string Fill(Content c, GameState s, string text, DateTime date, Func<Person, string>? name = null) =>
             Offices.Placeholder.Replace(text, m =>
-                Holder(c, s, m.Groups[1].Value, date)?.Name
-                ?? throw new InvalidOperationException(FormattableString.Invariant($"no holder of '{m.Groups[1].Value}' on {date:yyyy-MM-dd}")));
+            {
+                var p = Holder(c, s, m.Groups[1].Value, date)
+                    ?? throw new InvalidOperationException(FormattableString.Invariant($"no holder of '{m.Groups[1].Value}' on {date:yyyy-MM-dd}"));
+                return name == null ? p.Name : name(p);
+            });
 
         /// <summary>Every playable office that exists on the state's date, in offices.yaml order, with its holder (null = vacant).
         /// A player's appointee is the seat's only holder (an appointment from a save made before an office allowed several
@@ -79,38 +95,63 @@ namespace Statecraft.Sim
         /// government is in office; a Chief of Staff must be a career officer (has held the post in people.yaml); a
         /// minister's party, if any, must be in the coalition.</summary>
         /// <remarks>Holding two portfolios is allowed by design: historically Ben-Gurion was Prime Minister and Defence, and Shapira held three.</remarks>
-        public static string? Check(Content c, GameState s, string officeId, string personId)
+        public static string? Check(Content c, GameState s, string officeId, string personId) => CheckReason(c, s, officeId, personId)?.Text;
+
+        /// <summary>Null when the appointment is legal, else a stable kind and invariant values for a UI, plus English text.</summary>
+        public static CabinetReason? CheckReason(Content c, GameState s, string officeId, string personId)
         {
             var office = c.Offices.FirstOrDefault(o => o.Id == officeId);
-            if (office == null) return "That office does not exist in this game";
-            if (office.HistoricalOnly) return $"{office.Title} is a historical title, not an appointable office";
+            if (office == null) return new CabinetReason("office_unknown", "That office does not exist in this game");
+            if (office.HistoricalOnly) return new CabinetReason("historical_office", $"{office.Title} is a historical title, not an appointable office", officeId);
             if (office.Until.HasValue && s.Date >= office.Until.Value)
-                return $"The office of {office.Title} was abolished on {PlayerText.Date(office.Until.Value)}";
+                return new CabinetReason("abolished", $"The office of {office.Title} was abolished on {PlayerText.Date(office.Until.Value)}", officeId,
+                    office.Until.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
             if (office.From.HasValue && s.Date < office.From.Value)
-                return $"The office of {office.Title} is not established until {PlayerText.Date(office.From.Value)}";
-            if (office.SeveralHolders) return $"{office.Title} can have several holders at once, and appointing to it is not part of the game yet";
-            if (officeId == "prime_minister") return "You are the Prime Minister: that office is not yours to fill";
-            if (officeId == "president") return "The President is elected by the Knesset, not appointed";
+                return new CabinetReason("not_established", $"The office of {office.Title} is not established until {PlayerText.Date(office.From.Value)}", officeId,
+                    office.From.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            if (office.SeveralHolders) return new CabinetReason("several_holders", $"{office.Title} can have several holders at once, and appointing to it is not part of the game yet", officeId);
+            if (officeId == "prime_minister") return new CabinetReason("prime_minister", "You are the Prime Minister: that office is not yours to fill");
+            if (officeId == "president") return new CabinetReason("president", "The President is elected by the Knesset, not appointed");
             var person = c.People.FirstOrDefault(p => p.Id == personId);
-            if (person == null) return "That person is not in this game";
+            if (person == null) return new CabinetReason("person_unknown", "That person is not in this game");
             if (person.Died.HasValue && s.Date >= person.Died.Value)
-                return $"{person.Name} died on {PlayerText.Date(person.Died.Value)}";
-            if (Holder(c, s, "president")?.Id == personId) return $"{person.Name} is the President";
-            if (officeId != "chief_of_staff" && Holder(c, s, "chief_of_staff")?.Id == personId) return $"{person.Name} is the serving Chief of Staff";
-            if (Holder(c, s, officeId)?.Id == personId) return $"{person.Name} already holds the office of {office.Title}";
+                return new CabinetReason("died", $"{person.Name} died on {PlayerText.Date(person.Died.Value)}", personId,
+                    person.Died.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            if (Holder(c, s, "president")?.Id == personId) return new CabinetReason("is_president", $"{person.Name} is the President", personId);
+            if (officeId != "chief_of_staff" && Holder(c, s, "chief_of_staff")?.Id == personId)
+                return new CabinetReason("is_chief_of_staff", $"{person.Name} is the serving Chief of Staff", personId);
+            if (Holder(c, s, officeId)?.Id == personId)
+                return new CabinetReason("already_holds", $"{person.Name} already holds the office of {office.Title}", personId, officeId);
             var gov = Offices.Government(c, s.Date);
-            if (gov == null) return "No government is in office";
+            if (gov == null) return new CabinetReason("no_government", "No government is in office");
             if (officeId == "chief_of_staff")
-                return person.Offices.Any(t => t.Office == "chief_of_staff") ? null : $"{person.Name} is not an IDF career officer";
+                return person.Offices.Any(t => t.Office == "chief_of_staff") ? null
+                    : new CabinetReason("not_career_officer", $"{person.Name} is not an IDF career officer", personId);
             var party = Offices.PartyOf(c, person, s.Date);
             if (party != "" && !gov.CoalitionOn(s.Date).Contains(party))
-                return $"{person.Name}'s party ({c.Parties.First(p => p.Id == party).Name}) is not in the coalition";
+                return new CabinetReason("party_not_coalition", $"{person.Name}'s party ({c.Parties.First(p => p.Id == party).Name}) is not in the coalition", personId, party);
             return null;
         }
 
         /// <summary>Every person with the reason they cannot be appointed (null = they can), in people.yaml order.</summary>
-        public static IReadOnlyList<(Person person, string? reason)> Candidates(Content c, GameState s, string officeId) =>
-            c.People.Select(p => (p, Check(c, s, officeId, p.Id))).ToList();
+        public static IReadOnlyList<(Person person, CabinetReason? reason)> Candidates(Content c, GameState s, string officeId) =>
+            c.People.Select(p => (p, CheckReason(c, s, officeId, p.Id))).ToList();
+
+        /// <summary>#1109: the playable offices that are vacant now (<see cref="Lineup"/>, no holder), that someone may be
+        /// appointed to (<see cref="CheckReason"/>), and that no Appoint in <paramref name="pending"/> (this turn's queue)
+        /// fills. Empty when no appointment can be queued this turn, for SimBridge.Queue's reasons: the game is over, or the
+        /// Attention left after <paramref name="pending"/> does not pay for one (#1110 review). A query only: the side menu's
+        /// Cabinet badge reads it.</summary>
+        public static IReadOnlyList<Office> Vacancies(Content c, GameState s, IEnumerable<Command> pending)
+        {
+            var queued = pending.ToList();
+            if (s.GameOver != null || AttentionSystem.Cost(c, s, "appoint") > AttentionSystem.Left(c, s, queued) + 1e-9)
+                return new Office[0];
+            var filled = queued.OfType<Appoint>().Select(a => a.Office).ToList();
+            return Lineup(c, s)
+                .Where(x => x.Holders.Count == 0 && !filled.Contains(x.Office.Id) && c.People.Any(p => CheckReason(c, s, x.Office.Id, p.Id) == null))
+                .Select(x => x.Office).ToList();
+        }
 
         /// <summary>Returns null and appoints, or the reason (state untouched). Replacing a minister costs coalition
         /// stability: rules appoint_stability_cost_other_party when the seat leaves the displaced minister's party (a

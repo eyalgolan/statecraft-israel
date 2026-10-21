@@ -15,7 +15,9 @@ namespace Statecraft.Game.EditorTools
     /// first (IPreprocessBuildWithReport), and CollectionImport.BuildBundles puts The 1948 Collection's streamed bundles in
     /// StreamingAssets/collection. Exits non-zero on failure.
     ///   Web: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web
-    ///        [-compression disabled|gzip|brotli] [-out Builds/Web-disabled] [-textureSubtarget dxt|etc2|astc]
+    ///        [-compression disabled|gzip|brotli] [-decompressionFallback] [-out Builds/Web-disabled] [-textureSubtarget dxt|etc2|astc]
+    ///        (-decompressionFallback: Unity's Decompression Fallback, for hosts that cannot set response headers,
+    ///        like GitHub Pages; the website's demo build uses it, docs/RELEASING.md)
     ///        (-textureSubtarget: the compressed format of every automatic texture; the default build is DXT, for desktop
     ///        browsers; astc or etc2 makes a build for browsers without S3TC, as on phones)
     ///   Mac: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod Statecraft.Game.EditorTools.Build.Mac
@@ -180,7 +182,7 @@ namespace Statecraft.Game.EditorTools
             var name = Arg("-compression") ?? "disabled";
             ProjectSetup.Apply();
             PlayerSettings.WebGL.compressionFormat = Compression(name);
-            PlayerSettings.WebGL.decompressionFallback = false;   // itch.io and web_check send .gz/.br with Content-Encoding; the release is gzip (#879)
+            PlayerSettings.WebGL.decompressionFallback = Flag("-decompressionFallback");   // off by default: itch.io and web_check send .gz/.br with Content-Encoding (#879); Pages needs the fallback
             var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
             var sub = TextureSubtarget(Arg("-textureSubtarget"));
             if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;

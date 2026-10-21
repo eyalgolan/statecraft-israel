@@ -22,7 +22,11 @@ namespace Statecraft.Game.Map.Units
     ///   Israel", https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence, checked 2026-10-14), so it flies from
     ///   the game's first day. The gazette says only "dark sky-blue" (tkhelet kehe); the cloth's blue
     ///   (<see cref="BlueColour"/>) is a choice, a little brighter than the roundel's so it reads unlit.
-    /// - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag in the repo yet, so none (#226 brings the Arab forces).
+    /// - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag in the repo yet, so none. A side the map draws without one (the
+    ///   Arab Legion and the Arab Liberation Army, issue #665) flies a neutral pennant instead (<see cref="BuildPennant"/>):
+    ///   Q-ART-1, decided by the owner on 15 October 2026 ("2+3"): "a neutral pennant now, replaced by a sourced emblem when
+    ///   one is found" (docs/superpowers/plans/2026-10-15-gdd-phase-5.md, PR 17). Never the ALA's dagger emblem (#226,
+    ///   ruling 8).
     /// Proportions on the token follow T29: the cloth about half a figure's height, the pole about one and a half.</summary>
     public static class UnitFlags
     {
@@ -40,6 +44,26 @@ namespace Statecraft.Game.Map.Units
         static readonly HashSet<string> Sourced = new HashSet<string> { UnitData.Israel };
 
         public static bool Has(string? side) => side != null && Sourced.Contains(side);
+
+        /// <summary>True when <paramref name="side"/>'s tokens fly the neutral pennant: a side the map draws with no sourced flag.</summary>
+        public static bool HasPennant(string? side) => side != null && !Has(side) && UnitFigures.SideFigure(side) != null;
+
+        public const string PennantMeshName = "UnitFlag/pennant";
+        /// <summary>The pennant's cloth: a plain triangle from the pole's top, <see cref="FlagWidth"/> long and
+        /// <see cref="PennantHeight"/> at the pole (figure heights), in the palette's neutral grey (<see cref="UnitPalette.HullGrey"/>):
+        /// no colour of any side, and not white.</summary>
+        public const float PennantHeight = 0.36f;
+
+        /// <summary>The pole and the neutral pennant, one submesh in the units' palette.</summary>
+        public static Mesh BuildPennant()
+        {
+            var m = new MiniatureMesh();
+            m.Rod(Vector3.zero, new Vector3(0, PoleHeight, 0), PoleRadius, PoleRadius * 0.8f, P.RifleWood, segments: 8, shade: 0.7f);
+            m.Ellipsoid(Matrix4x4.TRS(new Vector3(0, PoleHeight + 0.02f, 0), Quaternion.identity, Vector3.one * 0.035f), P.RifleWood, 8, 4, shade: 0.9f);
+            var cloth = new List<Vector2> { new Vector2(FlagLeft, FlagTop - PennantHeight), new Vector2(FlagLeft + FlagWidth, FlagTop - PennantHeight / 2f), new Vector2(FlagLeft, FlagTop) };
+            m.Plate(Plane(0f), cloth, P.HullGrey, shade: 0.9f);
+            return m.Build(PennantMeshName);
+        }
 
         public static string MeshName(string side) => "UnitFlag/" + side;
 

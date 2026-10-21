@@ -19,6 +19,8 @@ const here = fileURLToPath(new URL('../../', import.meta.url));
 
 export const SCREENSHOTS = 'statecraft-israel-screenshots';
 export const CONCEPT = 'statecraft-israel-ai-concept-art';
+// The press logo: the Steam kit wordmark (owner decision of 18 Oct 2026, issue #417), copied as it is.
+export const LOGO = { file: 'docs/steam/kit/library_logo_1280w.png', name: 'statecraft-israel-logo.png' };
 export const CONCEPT_TAG = 'AI concept art';
 export const LIKENESS_TAG = 'AI likeness, not a photograph';
 
@@ -84,9 +86,9 @@ export function plan(repo = here) {
     'current prototype as it is. No concept art and no trailer frames are in this zip.',
     '',
     'Label them "In-engine capture" with the build and date, and credit "Statecraft: Israel contributors"',
-    '(CC BY 4.0, https://creativecommons.org/licenses/by/4.0/).',
+    '(CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/).',
     '',
-    'צילומי מסך אמיתיים מתוך המשחק, ברישיון CC BY 4.0. הקרדיט: "Statecraft: Israel contributors".',
+    'צילומי מסך אמיתיים מתוך המשחק, ברישיון CC BY-SA 4.0. הקרדיט: "Statecraft: Israel contributors".',
     '',
     'Files:',
     '',
@@ -220,6 +222,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // source PNG and the sharp/libjpeg version.
   const jpeg = (file) => sharp(file).flatten({ background: '#ffffff' })
     .jpeg({ quality: 90, chromaSubsampling: '4:4:4', mozjpeg: false, progressive: false }).toBuffer();
+  fs.copyFileSync(path.join(here, LOGO.file), path.join(out, LOGO.name));
+  console.log(`press-kit: downloads/${LOGO.name} copied from ${LOGO.file}`);
   for (const z of plan()) {
     const files = [
       { name: `${z.dir}/README.txt`, data: Buffer.from(z.readme, 'utf8') },

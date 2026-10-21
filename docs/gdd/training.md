@@ -10,6 +10,7 @@ As a player of the MVP, I want to send Tel Aviv's civilians without work to basi
 - Pioneers build more: `PioneerWork(unit, build_camp, site)` at a camp site takes 6 turns and IL 2m, labelled design values an agent proposed and the owner accepted (#927; the balance pass, #813, may tune them), and follows the yishuv build's rules. Built, the site's city has the facility from the next turn, with no capacity limit (`Q-CAMP-1`, `Q-CAMP-3` [S4]) (R-CAMP-001).
 - The camp sites are `Camp 80` near Pardes Hanna, for Hadera, and Tzrifin, for Rishon LeZion, both military camps (`Q-CAMP-2` [S5]; owner, "Both military", #927). A camp serves the city nearest by hex, and a tie goes to the nearest by km (R-CAMP-002). Both rows are drafts: their sources were read by AI agents for the research note, and Tzrifin's exact position and a GIS clearance are still gaps.
 - `Train(city, track, n)` takes civilians without a job into training as recruits (military camp) or halutzim (Hakhshara). It costs 1 Attention and IL 0.5m per group, both placeholders, paid at once. A short Treasury borrows the rest, as map actions do (owner decision on #468) (R-TRAIN-001).
+- Basic training takes 1 unit of Arms a group when it starts, a design value the owner approved (#781); too few Arms refuses the order with a reason, and cancelling the group returns its Arms to the pool (owner, #1047). Pioneer training takes no Arms (R-ARMS-003).
 - It is refused, with the state unchanged, for fewer than 1 group (unitless), more than the city's civilians without a job, an unknown city or track, a city without the facility, or the legacy loop (R-TRAIN-001).
 - People in training are neither civilians nor recruits: they hold no job and are not counted by housing or Social cohesion while they train.
 - `CancelTraining(cohort)` returns the people as civilians without a job; the Money spent is not returned (D-A3 [S2]). It costs 0.5 Attention, a placeholder (R-TRAIN-002).
@@ -31,7 +32,7 @@ As a player of the MVP, I want to send Tel Aviv's civilians without work to basi
 
 ## Out of scope
 
-- The start camps of Jerusalem (Schneller) and Petah Tikva (Tel HaShomer), which the owner ruled the cities already have (#375); this PR keeps the start facilities as they are. Training capacity, recruits as units and combat (Phase 5), veterans, craftsmen (D-D4), Arms consumed by training (D-G6), and any display (PRs 7 and 8).
+- The start camps of Jerusalem (Schneller) and Petah Tikva (Tel HaShomer), which the owner ruled the cities already have (#375); this PR keeps the start facilities as they are. Training capacity, recruits as units and combat (Phase 5), veterans, craftsmen (D-D4), and any display (PRs 7 and 8).
 
 ## Sources
 

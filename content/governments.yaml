@@ -10,19 +10,22 @@ governments:
       - { url: "https://he.wikipedia.org/wiki/הממשלה_הזמנית", checked: 2026-10-14 }
     # from: every KNS_PersonToPosition row for GovernmentNum 0 starts 1948-05-14. The Declaration's clause 12
     # (minutes of 14 May 1948, 0_ptm_258580) puts Minhelet HaAm in office "from the termination of the Mandate,
-    # tonight", i.e. 15 May; the 14/15 May question is open as #457 item 2. to: the day the First Government was
-    # sworn in.
+    # tonight", i.e. 15 May. The owner ruled for the position records' 14 May ("Follow the official records",
+    # 18 October 2026, #457 item 2). to: the day the First Government was sworn in.
     # coalition: the two en.wiki articles below. The records name the 13 ministers across 17 ministry rows with
-    # null factions, so they do not carry the 11-list value.
+    # null factions, so they do not carry the 11-list value. One exception (#457): en.wiki lists Gruenbaum as an
+    # independent, but his Knesset 0 faction row (PersonID 5904) reads "הציונים הכלליים" (General Zionists), so he
+    # counts with general_zionists.
     from: 1948-05-14
     to: 1949-03-10
-    coalition: [mapai, mapam, general_zionists, new_aliyah, mizrachi, hapoel_hamizrachi, agudat_yisrael, sephardim, ahdut_haavoda_poalei_tzion, poale_zion_left, independent]
+    coalition: [mapai, mapam, general_zionists, new_aliyah, mizrachi, hapoel_hamizrachi, agudat_yisrael, sephardim, ahdut_haavoda_poalei_tzion, poale_zion_left]
     sources:
-      # coalition rests on these two en.wiki articles.
+      # coalition rests on these two en.wiki articles, except Gruenbaum's party (his faction row, below).
       - { url: "https://en.wikipedia.org/wiki/Provisional_government_of_Israel", checked: 2026-10-09 }
       - { url: "https://en.wikipedia.org/wiki/Provisional_State_Council", checked: 2026-10-09 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%200", checked: 2026-10-14 }
       - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=KnessetNum%20eq%200", checked: 2026-10-14 }
+      - { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=PersonID%20eq%205904%20and%20KnessetNum%20eq%200", checked: 2026-10-18 }
       - { url: "https://fs.knesset.gov.il/0/Plenum/0_ptm_258580.pdf", checked: 2026-10-14 }
       - { url: "https://fs.knesset.gov.il/1/Plenum/1_ptm_250182.pdf", checked: 2026-10-14 }
     status: fact-checked

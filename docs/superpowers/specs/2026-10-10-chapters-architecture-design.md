@@ -512,6 +512,7 @@ and `tools/package_release.py`:
 - Diplomacy state and actor standing in `GameState` (#11). When it lands, it follows §4.2 (persist; actors by window).
 - Open mode (#10); nothing here depends on the mode.
 - Hebrew content (#55); era variants of strings would follow #12's keys.
+  **Then decided (owner, 18 Oct 2026, "all defaults"; [#55](https://github.com/eyalgolan/statecraft-israel/issues/55#issuecomment-6249502081)):** yes, after the MVP: Hebrew versions of the English story texts, event titles and party names first.
 - Coastline changes from ports and land reclamation.
 - Water that changes what the sim allows (§10).
 

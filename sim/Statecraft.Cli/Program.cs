@@ -7,6 +7,7 @@ using Statecraft.Sim;
 //   dotnet run --project Statecraft.Cli -- --preview [--until YYYY-MM-DD] [--set key=value]... [--show id,id] [--every N]
 //       writer preview: the historical run with some rules.yaml values changed in memory, against the real content
 //   dotnet run --project Statecraft.Cli -- --release-gate [--content DIR]   (exit 0 when shareable, 3 when not)
+//   dotnet run --project Statecraft.Cli -- --timeline-report [--content DIR]   (each road not taken and what follows it)
 // Interactive commands: c EVENT OPTION | p POLICY LEVEL | m LEVEL | s DELTA | n (end turn) | q
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -60,14 +61,45 @@ catch (DirectoryNotFoundException) { Console.Error.WriteLine("Content error: con
 catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message}"); return 2; }
 
 // --release-gate: the sensitivity gate before a build is shared (spec 5.5; tools/package_release.py, Build -shareable).
-// Exit 0 and "RELEASE GATE OK" when every sensitive event is sensitivity-reviewed, else exit 3 naming them.
+// Exit 0 and "RELEASE GATE OK" when every sensitive event is sensitivity-reviewed and (R-ALT-011, Q-ALT-9) every
+// consequence card and every event with variants has a person's reviewed_by; else exit 3 naming them.
 if (Array.IndexOf(args, "--release-gate") >= 0)
 {
     var open = ReleaseGate.SensitiveUnreviewed(content);
-    if (open.Count == 0) { Console.WriteLine("RELEASE GATE OK"); return 0; }
-    Console.WriteLine("RELEASE GATE REFUSED: the owner's sensitivity review is missing for: " + string.Join(", ", open)
-        + " (set status: sensitivity-reviewed in each event's YAML; see docs/m3-release.md)");
+    var unsigned = ReleaseGate.AlternateUnsigned(content);
+    if (open.Count == 0 && unsigned.Count == 0) { Console.WriteLine("RELEASE GATE OK"); return 0; }
+    if (open.Count > 0)
+        Console.WriteLine("RELEASE GATE REFUSED: the owner's sensitivity review is missing for: " + string.Join(", ", open)
+            + " (set status: sensitivity-reviewed in each event's YAML; see docs/m3-release.md)");
+    // Its own REFUSED line too: tools/package_release.py keeps only lines containing "RELEASE GATE".
+    if (unsigned.Count > 0)
+        Console.WriteLine("RELEASE GATE REFUSED: no person has signed off (reviewed_by) these alternate cards: " + string.Join(", ", unsigned)
+            + " (see docs/m3-release.md)");
+    foreach (var id in unsigned) Console.WriteLine("  unsigned alternate card: " + id);
     return 3;
+}
+
+// --timeline-report (R-ALT-011): one line per road not taken, in window order: who proposed it (basis), the consequence
+// cards that follow it, the events whose variants name it, and the record's cards it suppresses (they require the
+// historical option). A writer's coverage view; "-" for none.
+if (Array.IndexOf(args, "--timeline-report") >= 0)
+{
+    static bool Names(EventRequirement r, GameEvent e, EventOption o) => r.Event == e.Id && (r.Diverged || r.Option == o.Id);
+    static string Ids(IEnumerable<GameEvent> es)
+    {
+        var ids = es.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
+        return ids.Count == 0 ? "-" : string.Join(",", ids);
+    }
+    foreach (var e in content.Events.Where(x => Timeline.HistoricalOption(x) != null).OrderBy(x => x.From).ThenBy(x => x.Id, StringComparer.Ordinal))
+    {
+        var record = Timeline.HistoricalOption(e)!.Id;
+        foreach (var o in e.Options.Where(x => !x.Historical))
+            Console.WriteLine($"{e.Id}/{o.Id}  basis={(o.Alternative?.Basis is { Length: > 0 } b ? b : "-")}"
+                + $"  cards={Ids(content.Events.Where(k => k.Kind == EventKinds.Consequence && k.Requires.Any(r => Names(r, e, o))))}"
+                + $"  variants={Ids(content.Events.Where(k => k.Variants.Any(v => v.When.Any(r => Names(r, e, o)))))}"
+                + $"  breaks={Ids(content.Events.Where(k => k.Requires.Any(r => r.Event == e.Id && !r.Diverged && r.Option == record)))}");
+    }
+    return 0;
 }
 
 ulong seed = 1948;

@@ -1,5 +1,7 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Sim;
 using UnityEngine;
@@ -86,8 +88,8 @@ namespace Statecraft.Game.UI
         string Describe(Person p)
         {
             var c = bridge.Content; var party = Offices.PartyOf(c, p, bridge.State.Date);
-            var partyName = party == "" ? text["cabinet.no_party"] : c.Parties.First(x => x.Id == party).Name;
-            return text.Format("cabinet.person", p.Name, partyName, p.Competence, p.Loyalty);
+            var partyName = party == "" ? text["cabinet.no_party"] : ContentNames.Of(text, c.Parties.First(x => x.Id == party));
+            return text.Format("cabinet.person", ContentNames.Of(text, p), partyName, p.Competence, p.Loyalty);
         }
 
         /// <summary>The legislature's party blocks in drawing order: the coalition's parties, then the opposition's, each by
@@ -119,9 +121,9 @@ namespace Statecraft.Game.UI
             var gov = Offices.Government(c, s.Date);
             var leg = Offices.Legislature(c, s.Date);
             var (seats, size) = PoliticsSystem.CoalitionSeats(c, s.Date);
-            screen.Q<Label>("cabinet-government").text = gov?.Name ?? "";
+            screen.Q<Label>("cabinet-government").text = gov == null ? "" : ContentNames.Of(text, gov);
             var advisory = c.SystemsAt(s.Date).Legislature == EraSystems.Assembly;   // eras.yaml systems.legislature (#58)
-            screen.Q<Label>("cabinet-legislature").text = leg == null ? "" : text.Format(advisory ? "cabinet.legislature_advisory" : "cabinet.legislature", leg.Body, leg.Size);
+            screen.Q<Label>("cabinet-legislature").text = leg == null ? "" : text.Format(advisory ? "cabinet.legislature_advisory" : "cabinet.legislature", ContentNames.Of(text, leg), leg.Size);
             RenderHouse(c, s, gov, leg, seats, size);
 
             var lineup = Cabinet.Lineup(c, s);
@@ -135,8 +137,8 @@ namespace Statecraft.Game.UI
             pmCard.EnableInClassList("seat-selected", Selected == PrimeMinister);
             if (pmSeat != null)
             {
-                var offices = pm == null ? pmSeat.Office.Title
-                    : string.Join(text["card.offices_separator"], lineup.Where(x => x.Office.Id == PrimeMinister || HeldByPm(x)).Select(x => x.Office.Title));
+                var offices = pm == null ? ContentNames.Of(text, pmSeat.Office, null)
+                    : string.Join(text["card.offices_separator"], lineup.Where(x => x.Office.Id == PrimeMinister || HeldByPm(x)).Select(x => ContentNames.Of(text, x.Office, pm)));
                 PersonCard.Fill(pmCard, "seat-" + PrimeMinister, c, s, pm, offices, pmSeat.Appointed, text, portraits, PmPortrait, partyLabel: true);
                 pmId = pm?.Id;
                 FramePm();
@@ -148,7 +150,7 @@ namespace Statecraft.Game.UI
                 foreach (var seat in pmHeld)
                 {
                     var office = seat.Office.Id;
-                    var b = new Button(() => Select(office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", seat.Office.Title) };
+                    var b = new Button(() => Select(office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm)) };
                     b.AddToClassList("pm-office");
                     pmOffices.Add(b);
                 }
@@ -177,12 +179,15 @@ namespace Statecraft.Game.UI
                 var card = cards[key];
                 card.EnableInClassList("seat-selected", seat.Office.Id == Selected);
                 card.EnableInClassList("seat-vacant", holder == null);
-                PersonCard.Fill(card, "seat-" + key, c, s, holder, seat.Office.Title, seat.Appointed, text, portraits, CardPortrait);
+                PersonCard.Fill(card, "seat-" + key, c, s, holder, ContentNames.Of(text, seat.Office, holder), seat.Appointed, text, portraits, CardPortrait);
             }
 
             RenderPick(c, s);
             var queued = bridge.Queued.OfType<Appoint>().Select(a =>
-                text.Format("cabinet.queued", c.People.First(p => p.Id == a.Person).Name, c.Offices.First(o => o.Id == a.Office).Title));
+            {
+                var person = c.People.First(p => p.Id == a.Person);
+                return text.Format("cabinet.queued", ContentNames.Of(text, person), ContentNames.Of(text, c.Offices.First(o => o.Id == a.Office), person));
+            });
             screen.Q<Label>("cabinet-status").text = string.Join("\n", queued);
         }
 
@@ -252,21 +257,41 @@ namespace Statecraft.Game.UI
                     }
             }
             if (Selected == null) return;
-            screen.Q<Label>("cabinet-pick-title").text = text.Format("cabinet.pick", c.Offices.First(o => o.Id == Selected).Title);
+            screen.Q<Label>("cabinet-pick-title").text = text.Format("cabinet.pick", ContentNames.Of(text, c.Offices.First(o => o.Id == Selected), null));
             var list = Cabinet.Candidates(c, s, Selected);
             // A refusal about the office itself (the Prime Minister's or the President's, an abolished one) is the same for
             // everyone: it is said once under the heading, not under every name (#215).
-            var shared = list.Count > 0 && list.All(x => x.reason != null && x.reason == list[0].reason) ? list[0].reason : null;
+            var shared = list.Count > 0 && list.All(x => x.reason != null && x.reason.Text == list[0].reason!.Text) ? list[0].reason : null;
             var common = screen.Q<Label>("cabinet-pick-reason");
-            common.text = shared ?? "";
+            common.text = shared == null ? "" : ReasonText(c, shared);
             common.style.display = shared == null ? DisplayStyle.None : DisplayStyle.Flex;
             foreach (var (person, reason) in list)
             {
                 if (!rows.TryGetValue(person.Id, out var r)) continue;
                 r.appoint.text = Describe(person);
                 r.appoint.SetEnabled(reason == null);
-                r.reason.text = shared == null ? reason ?? "" : "";
+                r.reason.text = shared == null && reason != null ? ReasonText(c, reason) : "";
                 r.reason.style.display = reason == null || shared != null ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+        }
+
+        string ReasonText(Content c, CabinetReason reason)
+        {
+            bool he = text["ui.lang"] == UiLanguage.Hebrew;
+            string Person(string id) { var p = c.People.First(x => x.Id == id); return he && p.NameHe != "" ? p.NameHe : p.Name; }
+            string Office(string id) { var o = c.Offices.First(x => x.Id == id); return he && o.TitleHe != "" ? o.TitleHe : o.Title; }
+            string Party(string id) { var p = c.Parties.First(x => x.Id == id); return he && p.NameHe != "" ? p.NameHe : p.Name; }
+            string Date(string iso) => Statecraft.Game.Map.Control1948.DateText(System.DateTime.ParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture), k => text[k]);
+            var key = "cabinet.reason." + reason.Kind;
+            switch (reason.Kind)
+            {
+                case "historical_office": case "several_holders": return text.Format(key, Office(reason.Values[0]));
+                case "abolished": case "not_established": return text.Format(key, Office(reason.Values[0]), Date(reason.Values[1]));
+                case "died": return text.Format(key, Person(reason.Values[0]), Date(reason.Values[1]));
+                case "is_president": case "is_chief_of_staff": case "not_career_officer": return text.Format(key, Person(reason.Values[0]));
+                case "already_holds": return text.Format(key, Person(reason.Values[0]), ContentNames.Of(text, c.Offices.First(o => o.Id == reason.Values[1]), c.People.First(p => p.Id == reason.Values[0])));
+                case "party_not_coalition": return text.Format(key, Person(reason.Values[0]), Party(reason.Values[1]));
+                default: return text[key];
             }
         }
 
@@ -284,7 +309,7 @@ namespace Statecraft.Game.UI
             screen.Q<Label>("cabinet-opposition").text = text.Format("cabinet.opposition", blocks.Where(b => !b.Coalition).Sum(b => b.Seats), unit);
             screen.Q<Label>("cabinet-majority").text = text.Format("cabinet.majority", hemicycle.Majority, unit);
             var largest = blocks.OrderByDescending(b => b.Seats).FirstOrDefault();
-            screen.Q<Label>("cabinet-largest").text = largest.Seats > 0 ? text.Format("cabinet.largest", c.Parties.First(p => p.Id == largest.Party).Name, largest.Seats, unit) : "";
+            screen.Q<Label>("cabinet-largest").text = largest.Seats > 0 ? text.Format("cabinet.largest", ContentNames.Of(text, c.Parties.First(p => p.Id == largest.Party)), largest.Seats, unit) : "";
             // The coalition's parties, not the government's id: a government's coalition_changes move parties between the
             // sides mid-term (governments.yaml, 25 May 1953), and the chips must follow the half circle (#41 M5).
             var key = leg.Id + "/" + string.Join(",", blocks.Where(b => b.Coalition).Select(b => b.Party));
@@ -302,7 +327,7 @@ namespace Statecraft.Game.UI
                 heading.AddToClassList("party-group-heading");
                 group.Add(heading);
                 foreach (var b in blocks.Where(b => b.Coalition == coalition))
-                    group.Add(Chip("party-" + b.Party, b.Colour, text.Format("cabinet.party_seats", c.Parties.First(p => p.Id == b.Party).Name, b.Seats), false));
+                    group.Add(Chip("party-" + b.Party, b.Colour, text.Format("cabinet.party_seats", ContentNames.Of(text, c.Parties.First(p => p.Id == b.Party)), b.Seats), false));
                 chips.Add(group);
             }
             var unrecorded = leg.Size - blocks.Sum(b => b.Seats);

@@ -16,6 +16,9 @@ BOUNDS = json.loads((ROOT / "content" / "map" / "hexes.json").read_text())["boun
 ROUTES = yaml12.load((ROOT / "content" / "map" / "routes_1948.yaml").read_text(encoding="utf-8"))
 PATHS = yaml12.load((ROOT / "content" / "map" / "route_paths_1948.yaml").read_text(encoding="utf-8"))["routes"]
 BY_ID = {r["id"]: r for r in PATHS}
+# Routes drawn as straight lines between their sourced places (`trace: straight`), not traced on a map symbol: the
+# tracer's quality checks below do not apply to them (#786).
+STRAIGHT = {r["id"] for r in ROUTES["routes"] if r.get("trace") == "straight"}
 
 
 def test_routes_file_is_valid():
@@ -69,6 +72,8 @@ def test_no_segment_jumps():
     the Sharon plain); and the trace itself never bridged more than 800 m off its symbol (max_gap_m, measured by the
     tool on the kept line), so no invented chord hides inside a straight."""
     for r in PATHS:
+        if r["id"] in STRAIGHT:
+            continue
         pts = [tuple(p) for p in r["points"]]
         worst = max(rt.km_between(a, b) for a, b in zip(pts, pts[1:]))
         assert worst < 7.0, (r["id"], worst)
@@ -77,18 +82,41 @@ def test_no_segment_jumps():
 
 def test_each_trace_follows_its_symbol():
     """At least 85% of every route's traced pixels lie on its own map symbol (the rest: names over the road, towns)."""
-    for r in PATHS:
+    for r in (r for r in PATHS if r["id"] not in STRAIGHT):
         assert r["on_symbol"] >= 0.85, (r["id"], r["on_symbol"])
 
 
 def test_display_windows():
     """Every route has a display window; the Burma Road shows from its completion on 14 June 1948 (C1), so it is not on
-    the map at the 15 May 1948 start; the rest are on the 1946 map and show from 1946 at the latest."""
+    the map at the 15 May 1948 start, and the 1949 Yarkon rail link (a Phase 4 corridor, #786) from its opening on 20
+    September 1949; the rest are on the 1946 map and show from 1946 at the latest."""
     for src in ROUTES["routes"]:
         assert BY_ID[src["id"]]["from"] == src["from"] and BY_ID[src["id"]].get("to") == src.get("to")
-        if src["id"] != "burma_road":
+        if src["id"] not in ("burma_road", "yarkon_rail_link", "tlv_netanya_road"):
             assert rt._as_date(src["from"]) <= rt._as_date("1946"), src["id"]
     assert BY_ID["burma_road"]["from"] == "1948-06-14"
+    assert BY_ID["yarkon_rail_link"]["from"] == "1949-09-20"
+    assert BY_ID["tlv_netanya_road"]["from"] == "1950-07-28"
+
+
+def test_the_tel_aviv_netanya_road_is_straight_draft_lines_between_its_five_places():
+    """Owner, 18 October 2026 (#786, Q-COR-3 (b)): the Tel Aviv-Netanya road is drawn as straight draft lines between the
+    five places The Jerusalem Post of 30 July 1950 names, since no source read gives its 1950 line. Its drawn line is
+    exactly those five points, in order."""
+    src = next(r for r in ROUTES["routes"] if r["id"] == "tlv_netanya_road")
+    assert (src["kind"], src.get("trace"), src["status"]) == ("road", "straight", "draft")
+    assert len(src["via"]) == 5
+    assert BY_ID["tlv_netanya_road"]["points"] == [[round(w["lon"], 5), round(w["lat"], 5)] for w in src["via"]]
+    assert STRAIGHT == {"tlv_netanya_road"}
+
+
+def test_a_straight_trace_joins_the_waypoints_without_the_map():
+    """`trace: straight` reads no map tile: the line is the waypoints, and none of it is on a map symbol."""
+    route = {"id": "x", "kind": "road", "trace": "straight",
+             "via": [{"lon": 34.78, "lat": 32.0958}, {"lon": 34.8343, "lat": 32.17}, {"lon": 34.8567, "lat": 32.3286}]}
+    assert rt.trace_route(route, fetch=False) == [(34.78, 32.0958), (34.8343, 32.17), (34.8567, 32.3286)]
+    assert route["_on_symbol"] == 0.0
+    assert route["_max_gap_m"] == pytest.approx(rt.length_km(rt.trace_route(route, fetch=False)) * 1000)
 
 
 @pytest.mark.parametrize("change, message", [
@@ -218,7 +246,10 @@ def test_no_sawtooth_on_straight_lines():
     15% of its points (the rest are real bends: the Sorek canyon, the hill roads, the Jericho descent)."""
     for r in PATHS:
         n = sawtooth(r["points"])
-        assert n <= 0.15 * len(r["points"]), (r["id"], n, len(r["points"]))
+        # #786: the 6 km Yarkon rail link's 11 points turn off the road onto the track to its station in one S-bend
+        # (two kinks), which 15% of 11 would count as a fault; every other route keeps the 15% bar.
+        limit = 2 if r["id"] == "yarkon_rail_link" else 0.15 * len(r["points"])
+        assert n <= limit, (r["id"], n, len(r["points"]))
         if r["id"] in ("hadera_haifa_railway", "kantara_main_line_south", "eastern_railway", "haifa_beirut_railway"):
             assert n <= 3, (r["id"], n)
 

@@ -71,18 +71,31 @@ public class SitesContentTests
 
     /// <summary>R-SITE-004, Q-SITE-1 and Q-SITE-2 (owner, 17 October 2026, #782: "take all of the plan's recommendations"): the
     /// MVP's yishuv sites are the four of the settlements note whose founding day two sources agree on (criteria 1, 2 and 4 of
-    /// Task 5.0). Each is founded inside the MVP's years and cites at least two sources with a checked date.</summary>
+    /// Task 5.0). Each is founded inside the MVP's years and cites at least two sources with a checked date. Kiryat Shmona and
+    /// Beit Shemesh join them (owner, 17 October 2026, #782 "Sign off now"); their days are the owner's (#785,
+    /// issuecomment-6237624501): 18 July 1949, and December 1950 under the monthly turn, 15 December 1950.</summary>
     [Fact]
     public void TheMvpYishuvSitesAreTheSourcedList()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var yishuvim = c.Sites.Where(x => x.Kinds.Contains("yishuv")).ToList();
-        Assert.Equal(new[] { "beit_kama", "gilat", "mefalsim", "reim" }, yishuvim.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal));
+        Assert.Equal(new[] { "beit_kama", "beit_shemesh", "gilat", "kiryat_shmona", "mefalsim", "reim" }, yishuvim.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal));
         var founded = yishuvim.ToDictionary(x => x.Id, x => x.Founded);
         Assert.Equal(new DateTime(1949, 4, 18), founded["beit_kama"]);
+        Assert.Equal(new DateTime(1950, 12, 15), founded["beit_shemesh"]);
         Assert.Equal(new DateTime(1949, 12, 4), founded["gilat"]);
+        Assert.Equal(new DateTime(1949, 7, 18), founded["kiryat_shmona"]);
         Assert.Equal(new DateTime(1949, 6, 12), founded["mefalsim"]);
         Assert.Equal(new DateTime(1949, 10, 20), founded["reim"]);
+        // Each hex is the one tools/hexgrid.py gives for the row's sourced point (the CBS point for the two that joined, rows 7
+        // and 16 of the settlements note), so moving a row to another hex is a content change a test sees.
+        var hexes = yishuvim.ToDictionary(x => x.Id, x => (x.Q, x.R));
+        Assert.Equal((-8, 28), hexes["beit_kama"]);
+        Assert.Equal((-3, 24), hexes["beit_shemesh"]);
+        Assert.Equal((-10, 30), hexes["gilat"]);
+        Assert.Equal((14, 2), hexes["kiryat_shmona"]);
+        Assert.Equal((-10, 27), hexes["mefalsim"]);
+        Assert.Equal((-12, 29), hexes["reim"]);
         Assert.All(yishuvim, x => Assert.True(x.Sources.Count(s => s.Checked != default) >= 2, x.Id));
     }
 

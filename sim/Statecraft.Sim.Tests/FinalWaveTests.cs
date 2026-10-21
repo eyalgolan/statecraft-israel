@@ -76,6 +76,18 @@ public class FinalWaveTests
         Assert.Equal(new[] { "b" }, ReleaseGate.SensitiveUnreviewed(ContentLoader.Load(reviewed)));
     }
 
+    /// <summary>R-ALT-011: a consequence card or a variant needs a person's sign-off before a shareable build.</summary>
+    [Fact]
+    public void AShareableBuildNeedsEveryAlternateCardSignedOff()
+    {
+        Assert.Empty(ReleaseGate.AlternateUnsigned(Real));
+        var c = AlternateTimelineTests.Load(("parent.yaml", AlternateTimelineTests.Parent), ("after_road.yaml", AlternateTimelineTests.Consequence), ("outside.yaml", AlternateTimelineTests.Outside));
+        Assert.Equal(new[] { "after_road", "outside" }, ReleaseGate.AlternateUnsigned(c));
+        var signed = AlternateTimelineTests.Consequence + "status: fact-checked\nreviewed_by: a-reviewer\nreviewed_on: 2026-10-20\n";
+        var c2 = AlternateTimelineTests.Load(("parent.yaml", AlternateTimelineTests.Parent), ("after_road.yaml", signed));
+        Assert.Empty(ReleaseGate.AlternateUnsigned(c2));
+    }
+
     // ---- M2: Cause text is derived output, deterministic ----
 
     [Fact]

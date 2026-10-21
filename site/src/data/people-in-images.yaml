@@ -10,16 +10,17 @@
 # with the date. Not listed means not shown. Concept art and the cinematic trailer are AI-generated and labelled as such
 # (src/lib/media.ts); the History page's archival photographs carry their own credits and rows. Neither is listed here.
 images:
-  docs/images/hero-engine-coast.jpg: { checked: 2026-10-15, note: "The coast at Jaffa and Tel Aviv, no interface: map only, no people." }
-  docs/images/build-m3-city.jpg: { checked: 2026-10-15, note: "Tel Aviv and Jaffa with the top bar: tiny brigade figures, no identifiable person." }
-  docs/images/build-m3-map.jpg: { checked: 2026-10-15, photos: [idf_founding], note: "The One Army event card: its archival photograph, no minister portrait." }
-  docs/images/build-m3-why.jpg: { checked: 2026-10-15, photos: [idf_founding], note: "The Why panel and the One Army card: its archival photograph, no minister portrait." }
-  docs/images/build-m3-start.jpg: { checked: 2026-10-15, note: "The start screen: an AI-generated painting with no identifiable person (its ai_part label)." }
+  docs/images/hero-engine-coast.jpg: { checked: 2026-10-18, note: "The coast at Jaffa and Tel Aviv, no interface: map, boats and a train only, no people." }
+  docs/images/build-m3-city.jpg: { checked: 2026-10-18, note: "Tel Aviv, Jaffa, Lydda and Ramle with the top bar: map only, no identifiable person." }
+  docs/images/build-m3-map.jpg: { checked: 2026-10-18, photos: [idf_founding], note: "The One Army event card: its archival photograph, no minister portrait." }
+  docs/images/build-m3-why.jpg: { checked: 2026-10-18, note: "The Why panel after the first turn, over the map: text only, no portrait or photograph." }
+  docs/images/build-m3-start.jpg: { checked: 2026-10-18, note: "The start screen: an AI-generated painting with no identifiable person (its ai_part label)." }
+  docs/images/build-he-map.jpg: { checked: 2026-10-18, note: "The map in the Hebrew interface: map only, no people." }
   docs/images/build-m3-cabinet.jpg:
-    checked: 2026-10-15
-    portraits: [ben_gurion, kaplan, sharett, shapira, gruenbaum]
-    unidentified: 5
-    note: "The Cabinet screen: named cards for Ben-Gurion, Kaplan, Sharett, Shapira (twice) and Gruenbaum, and five more portraits cut off below their names. Hidden: Kaplan and Gruenbaum are owner-verify, and five cannot be named."
+    checked: 2026-10-18
+    portraits: [ben_gurion, kaplan, sharett, shapira]
+    unidentified: 4
+    note: "The Cabinet screen: named cards for Ben-Gurion, Kaplan, Sharett and Shapira (twice), and four more portraits cut off below their names. Hidden: the four cut-off portraits cannot be named from the picture."
   docs/images/build-gameplay.mp4: { checked: 2026-10-15, photos: [idf_founding], note: "Real play, 22 to 29 May 1948: the map, the One Army card with its archival photograph, the hex panel. No minister portrait (frames checked at 1 per second)." }
   docs/images/build-gameplay.webm: { checked: 2026-10-15, photos: [idf_founding], note: "The same clip as the MP4." }
   promo/final/10-m2-topdown.png: { checked: 2026-10-15, note: "The M2 map from above: map only." }

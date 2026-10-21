@@ -1,12 +1,17 @@
-# The roads not taken, fact-checked, with the premise table (gate G2; AI DRAFT, research note, 2026-10-17)
+# The roads not taken, fact-checked, with the premise table (gate G2; research note, 2026-10-17)
 
-> **AI DRAFT. No person has checked this note yet.** It is Task 3 of the alternate-timeline plan (merged in PR #943, commit `66c66b0`,
-> `docs/superpowers/plans/2026-10-17-alternate-timelines.md`, issue #948). An AI pass (Claude, Anthropic) opened the
-> sources and wrote every row. Under the plan's Step 3, a person checks the note against its sources and records that
-> at the top in their own commit. Until then it is a draft, and no later task (4, 11 to 14) may use it. It carries no
-> source check-date fields and no "checked by" line, because nobody has checked it yet.
+Checked by: the owner, 19 October 2026 (G2 sign-off, #949)
+
+This is Task 3 of the alternate-timeline plan (merged in PR #943, commit `66c66b0`,
+`docs/superpowers/plans/2026-10-17-alternate-timelines.md`, issue #948). An AI pass (Claude, Anthropic) opened the
+sources and wrote every row; the owner signed off the independent G2 check on 19 October 2026 (#949).
 
 Status: research only. Nothing here changes `content/`. Refs #948, #943, #939.
+
+Corrected on 18 October 2026 after the independent G2 check (#949): road 29 follows the owner's ruling on the Sinai
+option (#975, #939), road 11 row 3 names the right view-holder, road 13 is flagged borderline, and the Knesset PDFs
+are noted as reachable. The sources of the corrected rows were opened again that day (dated 2026-10-18 where they
+appear). The owner's 18 October 2026 rulings on roads 1, 8, 19, 22 and 25 are recorded below (#949).
 
 ## Who did this and how
 
@@ -44,7 +49,7 @@ Status: research only. Nothing here changes `content/`. Refs #948, #943, #939.
 
 ## Summary
 
-Basis count: **proposed 1, debated 9, design 20** (30 roads: every non-historical option on `main` at the
+Basis count: **proposed 1, debated 8, design 21** (30 roads: every non-historical option on `main` at the
 branch point).
 
 | # | Road | Basis | Qualifying expected consequences | Note |
@@ -60,31 +65,33 @@ branch point).
 | 9 | `education_registration_1951/concede` | debated | none |  |
 | 10 | `first_truce/refuse` | design | 4 | Consequences are on record but no Israeli advocate: no follow-up card under Q-ALT-3 (a) |
 | 11 | `forex_crisis_1951/cut_imports` | design | 3 | The government did cut imports, but alongside the aid request; nobody is recorded proposing the cuts instead of it |
-| 12 | `frumkin_commission/dismiss` | debated | 2 | Borderline; the owner may prefer `design` |
-| 13 | `hula_drainage/halt` | debated | none |  |
+| 12 | `frumkin_commission/dismiss` | design | 2 | Owner ruling, 19 Oct 2026 (#949): `design`, no proposer and no date; the committee's date stays a research gap (see road 12) |
+| 13 | `hula_drainage/halt` | debated | none | Borderline: the reply on record asks for delay; the owner may prefer `design` |
 | 14 | `idf_founding/separate_units` | design | 1 |  |
 | 15 | `iraqi_exodus/pace` | design | 2 |  |
 | 16 | `israel_bonds/donations_only` | design | none |  |
 | 17 | `jerusalem_ceasefire/hold_out` | design | 2 |  |
 | 18 | `jerusalem_military_government/accept_demilitarisation` | debated | 5 | Q-ALT-13 (a) slice-1 road: holds as `debated` |
-| 19 | `latrun_proposal/press_offensive` | proposed | 1 |  |
+| 19 | `latrun_proposal/press_offensive` | debated | 1 | Reworded as an attack on Latrun before the cabinet votes (owner ruling, 18 Oct 2026, #949) |
 | 20 | `law_of_return/quota` | design | none |  |
 | 21 | `maabarot_policy/keep_camps` | design | 2 |  |
 | 22 | `ministry_supply_crisis/keep_ministry` | debated | none | Borderline; the owner may prefer `design` |
-| 23 | `operation_hiram/advance_into_lebanon` | design | 3 | Q-ALT-13 (a) slice-1 road: `proposed` only via Wikipedia (Kurzman 1970, p. 684); design until a person checks it |
+| 23 | `operation_hiram/advance_into_lebanon` | design | 3 | Q-ALT-13 (a) candidate, not in slice 1 (#939): `proposed` only via Wikipedia (Kurzman 1970, p. 684); design until a person checks it |
 | 24 | `operation_horev/hold` | design | none |  |
-| 25 | `operation_yoav/push_to_hebron` | debated | 1 | Q-ALT-13 (a) slice-1 road: `debated` on the IDF study (commanders who disagreed with the restraint); `proposed` waits on Peri 1983, pp. 58-59, or a diary entry |
+| 25 | `operation_yoav/push_to_hebron` | design | 1 | Owner ruling, 18 Oct 2026 (#949): `design`, because its source gives no date |
 | 26 | `reparations_claim/refuse` | design | none |  |
 | 27 | `rhodes_talks/decline` | design | none |  |
-| 28 | `second_truce/defy` | design | 3 | Q-ALT-13 (a) slice-1 road: design, so no follow-up card under Q-ALT-3 (a) unless an advocate is found |
-| 29 | `sinai_withdrawal/hold_el_arish` | design | 6 | Q-ALT-13 (a) slice-1 road: design, so no follow-up card under Q-ALT-3 (a) unless an advocate is found |
+| 28 | `second_truce/defy` | design | 3 | Q-ALT-13 (a) candidate, not in slice 1 (#939): design, so no follow-up card under Q-ALT-3 (a) |
+| 29 | `sinai_withdrawal/hold_el_arish` | proposed | 4 | Q-ALT-13 (a) slice-1 road: `proposed` on the IDF-published Michelson study, for the option as reworded (owner, 18 Oct, #975) |
 | 30 | `ten_days/southern_front` | debated | none | The weakest `debated`: one diary entry |
 
-Key finding for the owner: of the five slice-1 roads chosen under Q-ALT-13 (a), only `operation_yoav/push_to_hebron` (`debated`) and
-`jerusalem_military_government/accept_demilitarisation` (`debated`) pass the Q-ALT-3 (a) gate on this check.
-`second_truce/defy` and `sinai_withdrawal/hold_el_arish` have well-recorded consequences but no recorded Israeli
-advocate. `operation_hiram/advance_into_lebanon` has an advocate only in a secondary source. Q-ALT-13 was decided
-"subject to the fact-check (G2) and Q-ALT-3"; the owner decides what follows.
+Key finding for the owner: two roads from the first-slice candidates pass the Q-ALT-3 (a) gate (#939):
+`jerusalem_military_government/accept_demilitarisation` (`debated`) and `sinai_withdrawal/hold_el_arish` (`proposed`,
+after the owner's ruling of 18 October 2026, "Reword + accept source", #975). Of the five roads first chosen under
+Q-ALT-13 (a), `operation_yoav/push_to_hebron` is `design` under the owner's ruling of 18 October 2026 (#949),
+`second_truce/defy` has well-recorded consequences but no recorded Israeli advocate, and
+`operation_hiram/advance_into_lebanon` has an advocate only in a secondary source. Q-ALT-13 was decided "subject to
+the fact-check (G2) and Q-ALT-3"; the owner decides what follows.
 
 ## The roads
 
@@ -92,6 +99,7 @@ advocate. `operation_hiram/advance_into_lebanon` has an advocate only in a secon
 
 - Event: `content/events/altalena.yaml`, window 1948-06-15 to 1948-06-23, hard anchor; historical option `enforce`. Sensitive: `war-casualties`.
 - Basis: **debated**. By: the Provisional Government's representatives in the talks with the Irgun command (the request itself came from the Irgun command, which is not the deciding party, so this is not `proposed`). When: between the 15 June meeting and the 20 June landing (the source gives no exact day).
+  - **Owner ruling (G2, 18 Oct, #949):** use 15 June 1948, the first day of the source's range, flagged approximate.
   - Evidence: "was rejected by the Government representatives, who interpreted the request as a demand" (The Altalena Affair, the Irgun's own history, https://daat.ac.il/etzel/english/ac20.htm, opened 2026-10-17)
   - Evidence: "לא היה שום הסכם, מר פנקס, למסור חלק מן הנשק לאצ"ל" (Claude's translation: *There was no agreement, Mr. Pinkas, to hand part of the arms to the Irgun*) (Ben-Gurion's reply in the Provisional State Council's Altalena debate, June 1948, as republished in his collected speeches, https://benyehuda.org/read/56639, opened 2026-10-17). This shows a council member put the arms split on the floor; the government's account denies any agreement, and the Irgun account above differs.
 - Expected consequences:
@@ -177,6 +185,7 @@ None found that qualifies. The only source on foreign currency that could be ope
 
 - Event: `content/events/clothing_rationing_1950.yaml`, window 1950-07-01 to 1950-09-01, hard anchor; historical option `extend`.
 - Basis: **debated**. By: the Knesset (the plenum debate on the rationing strike, which ended in a confidence vote); the Minister of Supply then reportedly accepted a modified, lighter programme. When: August 1950 (vote of 8 August per the event file; JTA report 14 August).
+  - **Owner ruling (G2, 18 Oct, #949):** accept 8 August 1950; the basis stays `debated`.
   - Evidence: "a heated Knesset session in which the government sustained a 57-36 vote" (JTA, 14 Aug 1950, https://www.jta.org/archive/strike-of-clothing-and-shoe-storekeepers-in-israel-ends-modified-rationing-seen, opened 2026-10-17)
   - Evidence: "Minister Joseph agreed to accept a more modified rationing program" (same JTA report; the report says this was "understood", the details were not published)
   - Note: the demand to modify the law came from the Tel Aviv Merchants Association (JTA, 2 Aug 1950), a trade body outside the government, so it does not count as `proposed`. The opposition motions themselves are in the minutes of 8 August, which could not be opened. Relaxing rationing outright, as the option's text has it ("let imports fill the shops"), is not on record; only a lighter clothing ration is.
@@ -237,19 +246,20 @@ None found that qualifies. The one recorded fear in the opened sources runs the 
 |---|---|---|---|---|
 | US Ambassador in Israel (telegram on the position without emergency aid) | 1951-10-21 | "threatens so to jeopardize credit standing as to endanger imminent collapse of financing structure" | https://history.state.gov/historicaldocuments/frus1951v05/d514, 2026-10-17 | one source |
 | US Ambassador in Israel (recommending that Kaplan's request be met) | 1951-10-19 | "eventual embarrassment which cld not help but affect adversely their internatl reputation" | https://history.state.gov/historicaldocuments/frus1951v05/d513, 2026-10-17 | one source |
-| Israeli officials, via the New York Times as cited by JTA (on the import cuts already made) | 1951-10-23 | "enabled the Government to fulfill its obligations to foreign creditors" | https://www.jta.org/archive/u-s-credits-will-check-foreign-currency-crisis-in-israel, 2026-10-17 | one source |
+| The New York Times (Tel Aviv), via JTA (on the import cuts already made) | 1951-10-23 | "enabled the Government to fulfill its obligations to foreign creditors" | https://www.jta.org/archive/u-s-credits-will-check-foreign-currency-crisis-in-israel, 2026-10-17 | one source |
 
-  Rows 1 and 2 are the same embassy, two telegrams: one source each, not "several". Row 3 is an Israeli claim that the cuts worked, which cuts against rows 1-2; both are on record.
+  Rows 1 and 2 are the same embassy, two telegrams: one source each, not "several". Row 3 is the newspaper's own sentence that the cuts worked, which cuts against rows 1-2; both are on record. The officials it cites are reported saying only "All obligations will continue to be fulfilled" (same JTA report). A newspaper is not an official, so a person decides whether row 3 qualifies under the conventions; if not, the count is 2.
 - Dropped: none (§A.6 has no lead for this road).
 - Not reachable: none.
 
 ### 12. `frumkin_commission/dismiss`
 
 - Event: `content/events/frumkin_commission.yaml`, window 1950-01-01 to 1950-05-09, soft anchor; historical option `inquiry`.
-- Basis: **debated**. By: the Ministry of Education and Culture (its own inquiry, published in Davar), and the Ministers of Police and the Interior (in the Knesset). When: 17 January 1950 (Davar); February 1950 (Knesset, after the arrests of 14 February).
+- Basis: **design** (owner ruling, 19 October 2026, #949; the AI pass had proposed `debated`). By: none recorded, by the owner's ruling. When: n/a, by the owner's ruling. What the sources do show, kept as evidence: the Ministry of Education and Culture's own inquiry (Davar, 17 January 1950) and the Ministers of Police and the Interior (in the Knesset, February 1950, after the arrests of 14 February) rejected the charges.
+  - **Research gap (open):** the sources conflict on the date the cabinet decided on the committee (17 January 1950 in the event file and in one passage of Levitan; "a week later", about 24 January, elsewhere in Levitan; 19 January in JTA), and no source for a proposer was opened. The owner's decision accepts no specific committee date or historical attribution; a person must settle the date before this road can be recorded as `debated`.
   - Evidence: "חקירת משרד החינוך מפריכה את התלונות על רדיפות דת במחנות" (Claude's translation: *The Education Ministry's inquiry refutes the complaints of religious persecution in the camps*; the Davar headline of 17.1.50 as quoted in Levitan, "The First State Commission of Inquiry", Niv HaMidrasha 20-21, https://www.daat.ac.il/daat/kitveyet/niv/levitan-1.htm, opened 2026-10-17)
   - Evidence: "לא מצאו כל הצדקה לטענות נגד מנהלי ועובדי המחנות" (Claude's translation: *found no justification for the charges against the camps' managers and staff*; the Police Minister reporting his and the Interior Minister's camp visits, same Levitan article)
-  - Note: both are offices on the government side rejecting the charges, which is the option's first half. Nobody is recorded proposing that the cabinet refuse an inquiry; the cabinet discussed the camps on 17.1.50 and, per Levitan, decided on a committee "a week later", though elsewhere the same article puts the decision on 17.1.50 (JTA in the event file puts the appointment on 19 January; the event file says 17 January; the sources conflict and a person must settle it). The source is historiography quoting contemporary press and Knesset remarks; the Knesset minutes themselves could not be opened. A borderline case: the owner may prefer `design`.
+  - Note: both are offices on the government side rejecting the charges, which is the option's first half. Nobody is recorded proposing that the cabinet refuse an inquiry; the cabinet discussed the camps on 17.1.50 and, per Levitan, decided on a committee "a week later", though elsewhere the same article puts the decision on 17.1.50 (JTA in the event file puts the appointment on 19 January; the event file says 17 January; the sources conflict and a person must settle it). The source is historiography quoting contemporary press and Knesset remarks; the Knesset minutes themselves could not be opened. The owner chose `design` for this road (19 October 2026).
 - Expected consequences:
 
 | View-holder | Date | Excerpt (verbatim) | Source, opened | Strength |
@@ -270,6 +280,7 @@ None found that qualifies. The one recorded fear in the opened sources runs the 
   - Evidence: "its Government must give the question further and careful consideration" (FRUS 1951 v.V doc 308, State Department summary of 6 April 1951, entry for 8 March, https://history.state.gov/historicaldocuments/frus1951v05/d308, opened 2026-10-17)
   - Evidence: "Apparently at some point during this period the operations had ceased" (same document, entry for 19 March)
   - Note: the halt was requested by the UN (the Chief of Staff of the Truce Supervision Organisation and the MAC chairman), not by an Israeli body, so it is not `proposed`. On 15 March the Israeli delegate "flatly refused" to stop (same document), and JTA of 27 March has the work resumed. No cabinet record was opened.
+  - Borderline (G2, 18 Oct): "must give the question further and careful consideration" is a request for delay (the delegation sent it instead of appearing for the postponed vote), not a recorded consideration of halting the works. The label stays `debated`; the owner may prefer `design`.
 - Expected consequences:
 
 None found that qualifies. The recorded threats and fears concern continuing, not halting: the Syrian Minister of Defence said that "if Israel continued operations, the Syrian army was prepared to take punitive action" (FRUS d308, 18 March), and the UN Chief of Staff agreed that if the work "is continued without a mutual agreement" trouble may result (FRUS 1951 v.V doc 288, https://history.state.gov/historicaldocuments/frus1951v05/d288, opened 2026-10-17). These bear on `continue_works`.
@@ -338,6 +349,7 @@ None found that qualifies.
 
 - Event: `content/events/jerusalem_military_government.yaml`, window 1948-07-15 to 1948-08-03, hard anchor; historical option `military_government`.
 - Basis: **debated**. By: the Provisional Government of Israel, in its replies to the Mediator. When: before the end of the first truce (proposal of 3 July); rejection reaffirmed on 28 July 1948.
+  - Date in the event file: 1948-07-03, explicitly approximate: the Mediator-proposal boundary, not an independently dated government reply (owner ruling, 19 October 2026, #949). No new precision or person's source check is claimed.
   - Evidence: "the Provisional Government of Israel was prepared to discuss the proposal under certain assumptions" (Mediator's progress report A/648, part one ch. IV, https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf, opened 2026-10-17)
   - Evidence: "the Provisional Government reaffirms its rejection of the Mediator's plan of demilitarization" (Shertok's letter of 28 July, quoted in the same report, opened 2026-10-17)
 - Expected consequences:
@@ -356,7 +368,8 @@ None found that qualifies.
 ### 19. `latrun_proposal/press_offensive`
 
 - Event: `content/events/latrun_proposal.yaml`, window 1948-09-15 to 1948-09-27, hard anchor; historical option `accept_vote`.
-- Basis: **proposed**. By: the Prime Minister and Minister of Defence, in the cabinet. When: 26 September 1948.
+- Basis: **debated**. By: the Prime Minister and Minister of Defence, in the cabinet. When: 26 September 1948.
+  - **Owner ruling (G2, 18 Oct, #949):** reword the option as an attack on Latrun before the cabinet votes; the basis is `debated`.
   - Evidence: "about my proposal to attack and conquer Latrun" (Ben-Gurion's diary, 26 September 1948, Ben-Gurion Archive English translation, https://bengurionarchive.bgu.ac.il/en/node/6251, opened 2026-10-17)
 - Expected consequences:
 
@@ -401,6 +414,7 @@ None found that qualifies.
 
 - Event: `content/events/ministry_supply_crisis.yaml`, window 1950-10-01 to 1950-11-01, hard anchor; historical option `restructure`.
 - Basis: **debated**. By: Mapai (the Prime Minister's party), internally. When: October 1950.
+  - **Owner ruling (G2, 18 Oct, #949):** use 1 October 1950, the first day of the source's range, flagged approximate.
   - Evidence: "an internal crisis in the Prime Minister’s party over the liquidation" (Knesset, review of the First Knesset, archived copy, https://web.archive.org/web/20120307095248/http://www.knesset.gov.il/review/ReviewPage.aspx?kns=1&lng=3, opened 2026-10-17)
   - Note: a party, not the cabinet or the Knesset, and the source is the Knesset's later review, not a minute. No opened source names the Mapai faction that wanted to keep the ministry. The Knesset minutes of the crisis could not be opened, and two JTA searches found no report naming the ministry. Borderline between `debated` and `design`.
 - Expected consequences:
@@ -447,9 +461,10 @@ None found that qualifies. A Religious Bloc leader's JTA statement of 25 October
 ### 25. `operation_yoav/push_to_hebron`
 
 - Event: `content/events/operation_yoav.yaml`, window 1948-10-15 to 1948-10-23, hard anchor; historical option `stop_at_ceasefire`. Sensitive: `war-casualties`.
-- Basis: **debated**. By: the Southern Front command, as recorded by the IDF History Department. When: between Yoav and Horev (October to December 1948); the study gives no date.
+- Basis: **design**. By: none. When: n/a.
+  - **Owner ruling (G2, 18 Oct, #949):** the study gives no date, so this road is `design`.
   - Evidence: "וההנהגה, מצידה, בלמה מצביאים, כמו אלון" (Claude's translation: *and the leadership, for its part, held back commanders such as Allon*) (Benny Gshur, "Mount Hebron in the War of Independence", IDF History Department, 2022, p. 24, https://www.idf.il/media/rccdyzpl/%D7%94%D7%A8-%D7%97%D7%91%D7%A8%D7%95%D7%9F-%D7%91%D7%9E%D7%9C%D7%97%D7%9E%D7%AA-%D7%94%D7%A2%D7%A6%D7%9E%D7%90%D7%95%D7%AA-%D7%90%D7%97%D7%A8%D7%99-%D7%A2%D7%99%D7%9E%D7%95%D7%93-1.pdf, opened 2026-10-17)
-  - Claude's read of p. 24: the sentence names Allon and Yosef Tabenkin and ends "אשר חלקו עליה" (Claude's translation: *who disagreed with it*), citing Frankel, *Operation HaHar*, p. 117 (footnote 172). "It" is the policy of restraint toward the Legion, which the study traces from Yoav through Horev. The study records commanders disagreeing with that policy, not a dated request to push into Hebron. That is a record of debate, so `debated`, by the same standard as road 23: there too the request itself rests only on Wikipedia.
+  - Claude's read of p. 24: the sentence names Allon and Yosef Tabenkin and ends "אשר חלקו עליה" (Claude's translation: *who disagreed with it*), citing Frankel, *Operation HaHar*, p. 117 (footnote 172). "It" is the policy of restraint toward the Legion, which the study traces from Yoav through Horev. The study records commanders disagreeing with that policy, not a dated request to push into Hebron. The owner ruled on 18 October 2026 that the road is `design` because the source gives no date (#949).
   - Locator for the request itself (not counted as evidence): "General Allon sought permission to launch an attack on the Hebron hills" (English Wikipedia, "Operation Yoav", citing Peri 1983, pp. 58-59; https://en.wikipedia.org/wiki/Operation_Yoav, opened 2026-10-17). The IDF study records no such request, no date for it and no Jericho valley. On the same front it records Harel's advance being stopped at Husan, "שם נעצרה בהוראת הדרג המדיני" (Claude's translation: *where it was stopped by order of the political level*) (same study, p. 8).
 - Expected consequences:
 
@@ -501,22 +516,25 @@ None found that qualifies.
 
 ### 29. `sinai_withdrawal/hold_el_arish`
 
-- Event: `content/events/sinai_withdrawal.yaml`, window 1949-01-02 to 1949-01-16, hard anchor; historical option `withdraw`.
-- Basis: **design**. By: none found. When: n/a.
-  - The event file calls this a "game assumption" built on Avnery's commentary [S], which is a later account and names no body. Wikipedia's "Despite protests, but adhering to Ben-Gurion's directive, the Israelis withdrew" (https://en.wikipedia.org/wiki/Operation_Horev, opened 2026-10-17) does not say who protested. FRUS d371 (9 Jan 1949) records that after the 2 January withdrawal "Israeli units entered road to Egypt in order to cut it" as part of the Rafah attack, on the Chief of Staff's orders. That was a short re-entry near Rafah, not a proposal to return to El-Arish.
-- Expected consequences:
+- Event: `content/events/sinai_withdrawal.yaml`, window 1949-01-02 to 1949-01-16, hard anchor; historical option `withdraw`. The option on `main` (since #975) reads "Refuse to pull back the force cutting off the Egyptian army at Rafah".
+- Basis: **proposed**. By: the Southern Front command. When: about 7-10 January 1949 (the source places it after the block west of Rafah, set up on the day five British aircraft were shot down, 7 January per the Hansard statement below, and before the evacuation finished on 10 January; it gives no day for the proposal itself, so the range is an inference). As with roads 1, 8, 22 and 25, the record's `alternative.date` needs one day (YYYY-MM-DD) that the owner accepts.
+  - Date in the event file: 1949-01-07, explicitly approximate: the earliest boundary of the inferred about 7-10 January range; no exact proposal day has been found (owner ruling, 19 October 2026, #949). No new precision or person's source check is claimed.
+  - Evidence: "אלון שוב ניסה לשכנע את בן-גוריון לדחות את התביעה" (Claude's translation: *Allon again tried to persuade Ben-Gurion to reject the demand*; the demand was that Israel pull all its forces back to the international border before the talks) (Benny Michelson, "מבצע 'חורב'", published by the IDF, PDF p. 7 / printed p. 53, https://www.idf.il/media/emxjtczk/%D7%A7%D7%95%D7%91%D7%A5-%D7%9E%D7%91%D7%A6%D7%A2-%D7%97%D7%95%D7%A8%D7%91.pdf, opened 2026-10-18)
+  - Evidence: the force was "כוחות שניתקו בפועל את חיל-המשלוח המצרי" (Claude's translation: *forces that had in fact cut off the Egyptian expeditionary force*), placed "ממערב לרפיח" (Claude's translation: *west of Rafah*) (same page)
+  - Note: the owner ruled on 18 October 2026, "Reword + accept source" (#939): the option was reworded to match this proposal (#975) and the IDF-published study is accepted as its record. The study is later Israeli official historiography, not a record made at the time. The same page records an earlier proposal by the same command not to withdraw from Sinai at all (after the Security Council's call of 29 December), which comes before the window and is not this option.
+  - Correction (G2, 18 Oct): an earlier version of this note said FRUS d371 records Israeli units re-entering Egypt "on the Chief of Staff's orders". It records the opposite. The Chief of Staff told the US Air Attaché that units "entered road to Egypt in order to cut it as a phase of attack on Rafah", and that since the cease-fire hour all units had been "ordered out of Egypt", "on direct orders ICS" (FRUS 1949 VI d371, https://history.state.gov/historicaldocuments/frus1949v06/d371, opened 2026-10-18).
+- Expected consequences (of keeping the Rafah force inside Egypt):
 
 | View-holder | Date | Excerpt (verbatim) | Source, opened | Strength |
 |---|---|---|---|---|
-| The British Government (its note, as reported by the Israeli Prime Minister to the US Special Representative) | 1 Jan 1949 | "Great Britain threatens to take action against us under 1936 Treaty with Egypt" | https://history.state.gov/historicaldocuments/frus1949v06/d341, 2026-10-17 | one source |
-| The British Government (statement issued in London, printed in Hansard) | 8 Jan 1949 | "instructed to regard as hostile any Jewish aircraft encountered over Egyptian territory" | https://api.parliament.uk/historic-hansard/commons/1949/may/11/israel-attacked-british-aircraft, 2026-10-17 | one source |
-| The British Ambassador in Washington | 5 Jan 1949 | "shortly British reinforcements would be sent to the Gulf of Aqaba" | https://history.state.gov/historicaldocuments/frus1949v06/d354, 2026-10-17 | one source |
-| The Israeli Foreign Minister (reported by the US Special Representative) | 9 Jan 1949 | "presence British troops Akaba designed constitute threat to Israel territory in Negev" | https://history.state.gov/historicaldocuments/frus1949v06/d371, 2026-10-17 | one source |
-| The US Acting Secretary of State | 5 Jan 1949 | "incursion by Israeli forces into Egypt threatened a much more grave conflict" | https://history.state.gov/historicaldocuments/frus1949v06/d354, 2026-10-17 | one source |
-| The same | 5 Jan 1949 | "we had been willing to make strong representations" | https://history.state.gov/historicaldocuments/frus1949v06/d354, 2026-10-17 | one source |
+| The British Government (its note, as reported by the Israeli Prime Minister to the US Special Representative) | 1 Jan 1949 | "Great Britain threatens to take action against us under 1936 Treaty with Egypt" | https://history.state.gov/historicaldocuments/frus1949v06/d341, 2026-10-18 | one source |
+| The British Government (statement issued in London, printed in Hansard) | 8 Jan 1949 | "instructed to regard as hostile any Jewish aircraft encountered over Egyptian territory" | https://api.parliament.uk/historic-hansard/commons/1949/may/11/israel-attacked-british-aircraft, 2026-10-18 | one source |
+| The US Acting Secretary of State | 5 Jan 1949 | "incursion by Israeli forces into Egypt threatened a much more grave conflict" | https://history.state.gov/historicaldocuments/frus1949v06/d354, 2026-10-18 | one source |
+| The same | 5 Jan 1949 | "we had been willing to make strong representations" | https://history.state.gov/historicaldocuments/frus1949v06/d354, 2026-10-18 | one source |
 
-  Read together, the first four rows give "British action if Israeli forces return into Egypt" as several sources (d341, Hansard, d354, d371 are four separate documents), though each records a different form of it: the treaty threat, air combat, troops at Aqaba.
-- Dropped: none. All three §A.6 leads are confirmed: British action under the 1936 treaty (d341), US pressure (d354, "strong representations"), and a wider conflict outside Palestine (d354).
+  Rows 1 and 2 are two separate documents recording British measures aimed at Israeli forces in Egyptian territory, but they record different measures (a threat under the 1936 treaty; orders to treat Israeli aircraft over Egypt as hostile), so neither is "several sources". The Hansard statement says the RAF flights were made "to ascertain the depth and scale of Jewish incursion into Egyptian territory", which is the force this road keeps there. Rows 3 and 4 are one document.
+- Dropped: none. All three §A.6 leads still hold for the reworded option: British action under the 1936 treaty (d341), US pressure (d354, "strong representations"), and a wider conflict outside Palestine (d354).
+- Dropped (G2, 18 Oct): British troops at Aqaba (d354, the British Ambassador, 5 January; d371, the Israeli Foreign Minister, 9 January), counted in an earlier version as sources for British action if Israeli forces return into Egypt. They do not support that. The Foreign Office communiqué quoted in d354's footnote sends the force to Aqaba at Transjordan's request, "under the terms of the Anglo-Transjordan treaty of March 1948", and the Foreign Minister read the troops as a threat to "Israel territory in Negev" (d371), not to a force in Egypt.
 - Not reachable: none.
 
 ### 30. `ten_days/southern_front`
@@ -575,8 +593,8 @@ requires" means the card is already gated on the historical option, so a player 
 | `second_truce/defy` | `content/events/operation_hiram.yaml:4` | "In breach of the truce, the Arab Liberation Army attacked" | replace: no second truce exists to breach |
 | `second_truce/defy` | `content/events/operation_yoav.yaml:4` | "the offensive the cabinet approved on 6 October is under way" | variant: assumes a three-month lull before the October offensive |
 | `second_truce/defy` | `content/events/latrun_proposal.yaml:4` | "break the truce to attack and take Latrun" | no conflict (already requires `second_truce/comply`) |
-| `sinai_withdrawal/hold_el_arish` | `content/events/rhodes_talks.yaml:4` | "the cease-fire took effect on 7 January. The talks are to open at Rhodes." | variant: sending forces back into Egypt contradicts the cease-fire and the talks. |
-| `sinai_withdrawal/hold_el_arish` | `content/events/armistice_egypt.yaml:4` | "Talks in Rhodes have produced an armistice agreement with Egypt." | variant: a renewed Sinai offensive puts the Rhodes talks in doubt. |
+| `sinai_withdrawal/hold_el_arish` | `content/events/rhodes_talks.yaml:4` | "the cease-fire took effect on 7 January. The talks are to open at Rhodes." | variant: Israel was required to pull all its forces back to the border as a condition of the talks (Michelson, p. 53), so keeping the Rafah force puts the opening of the talks in doubt. |
+| `sinai_withdrawal/hold_el_arish` | `content/events/armistice_egypt.yaml:4` | "Talks in Rhodes have produced an armistice agreement with Egypt." | variant: with the Rafah force kept in Egypt, the Rhodes talks are in doubt (see the row above). |
 | `ten_days/southern_front` | (none) | (none). Checked `operation_yoav.yaml:4` ("passed the Egyptian positions"): the road does not make it untrue | no conflict |
 
 ## Sources the AI pass could not read
@@ -591,6 +609,11 @@ Each road's own "Not reachable" line gives the details. In summary:
   (404, never archived) and the Ben-Yehuda republication of the Altalena debate (it opened and is used for roads 1
   and 14). **This is the biggest gap.** Several roads are `design` or have no consequence partly because their sitting
   could not be read.
+  **Update, 18 October 2026:** this is no longer true from the network the G2 check ran on. A plain GET with a generic
+  User-Agent returned HTTP 200 `application/pdf` for `fs.knesset.gov.il/0/Plenum/0_ptm_249973.pdf` and
+  `fs.knesset.gov.il/1/Plenum/1_ptm_250241.pdf` (real minutes, not the block page), and for
+  `m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf`. The sittings have not been read yet, so the gap
+  stays open and no road above has changed because of it.
 - **Scanned UN documents** S/1071 and S/1187: the PDFs opened, but they are images and could not be read here. FRUS
   1949 VI doc 362 quotes the part of S/1187 that was needed. Nothing replaced S/1071.
 - **Two Ben-Gurion University PDFs** (`in.bgu.ac.il/.../ליאור-לביד.pdf`, `in.bgu.ac.il/bgi/iyunim/40/Meir-Glitzenstein.pdf`):
@@ -603,15 +626,15 @@ Before anyone writes "checked by" at the top (plan Task 3, Step 3):
 1. **Every excerpt against its page.** Open each URL and confirm that the quoted words are there, are not taken out of
    context, and support the row they sit in (view-holder, date, what they expected). The script confirmed only that
    the words appear on the saved page, not that they mean what the row says.
-2. **Every Hebrew excerpt and its translation** (roads 1, 12, 14, 21, 25): a Hebrew reader confirms both.
+2. **Every Hebrew excerpt and its translation** (roads 1, 12, 14, 21, 25, 29): a Hebrew reader confirms both.
 3. **The bases at the edge.** Road 23 (Hiram: `proposed` rests only on Kurzman 1970, p. 684, through Wikipedia; read
-   the book or a diary entry). Road 25 (Yoav: `debated` on the IDF study; `proposed` waits on Peri 1983,
-   pp. 58-59, or a diary entry; also the day of the war diary entry, vol. III, p. 819, the study's footnote 171, which
-   the consequence row needs). Roads 12 and 22 (`debated` or `design`?). Road 30 (one diary entry). Road 8 (only a modified ration is on record). Road 1 rows 1 and 3 (do they attach to `compromise`, or to the arms import under both options?). Road 12 (the date of the cabinet's committee decision: 17, 19 or about 24 January 1950). Road 1 (the request came
+   the book or a diary entry). Road 25 (Yoav: the owner ruled `design` on 18 October 2026 because the source gives no
+   date (#949); also the day of the war diary entry, vol. III, p. 819, the study's footnote 171, which the consequence
+   row needs). Roads 13 and 22 (`debated` or `design`?). Road 30 (one diary entry). Road 8 (only a modified ration is on record). Road 1 rows 1 and 3 (do they attach to `compromise`, or to the arms import under both options?). Road 12 (the date of the cabinet's committee decision: 17, 19 or about 24 January 1950). Road 1 (the request came
    from the Irgun, the deciding side only answered it). Road 11 (`design`: a measure taken alongside the aid request;
    confirm no body proposed it instead of the aid request). Road 9 (a cabinet dispute, not the religious parties' own demand).
-4. **The Knesset sittings that could not be opened** (list above), from an Israeli network or the printed Divrei
-   HaKnesset. Above all, the sittings behind roads 6, 8, 9, 12, 20, 22 and 26: an advocate or a recorded warning there
+4. **The Knesset sittings that could not be opened** (list above; the PDFs are reachable again as of 18 October 2026),
+   or the printed Divrei HaKnesset. Above all, the sittings behind roads 6, 8, 9, 12, 20, 22 and 26: an advocate or a recorded warning there
    could change a basis or add a consequence.
 5. **The dropped leads** (one "Dropped" line per road): confirm that each was right to drop. Check above all the
    FRUS 1948 V-2 doc 735 date for road 28 and the "fear of British intervention" for road 25 (Peri 1983).

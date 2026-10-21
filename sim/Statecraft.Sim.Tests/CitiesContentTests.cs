@@ -18,7 +18,7 @@ public class CitiesContentTests
         var c = Load();
         var city = Assert.Single(c.Cities);
         Assert.Equal(("town_a", 12, 8, 10, 6), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed));
-        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz" }, c.UnitTypes.Select(t => t.Id));
+        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz", "craftsman" }, c.UnitTypes.Select(t => t.Id));
         var halutz = c.UnitTypes.Single(t => t.Id == "halutz");
         Assert.Equal(("unit", "hakhshara", 3, 0.25), (halutz.Kind, halutz.Facility, halutz.TrainingTurns, halutz.TrainingCost));
         Assert.Equal("", c.UnitTypes.Single(t => t.Id == "civilian").Facility);
@@ -46,7 +46,7 @@ public class CitiesContentTests
         Assert.True(c.Rules.AttentionCost.ContainsKey("assign_workers"));
         Assert.Equal(new[] { "tel_aviv" }, c.Cities.Where(x => x.Facilities.Count > 0).Select(x => x.Id));
         Assert.Equal(new[] { "military_camp", "hakhshara" }, c.Cities.Single(x => x.Id == "tel_aviv").Facilities);   // D-D5: one of each at the start
-        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara") },
+        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara"), ("craftsman", "industry") },
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.Facility)));
         Assert.True(c.Rules.AttentionCost.ContainsKey("train") && c.Rules.AttentionCost.ContainsKey("cancel_training"));
     }
@@ -194,6 +194,8 @@ public class CitiesContentTests
         new object[] { "unit_types.yaml", "types:\n  - { id: civilian, kind: crowd }\n", "types[civilian].kind", "must be population or unit" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("people_per_unit: 10", "people_per_unit: 0")), "mvp.people_per_unit", "must be >= 1" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("income_per_job_per_year: 1.2", "income_per_job_per_year: -1")), "mvp.income_per_job_per_year", "must be a finite number >= 0" },
+        new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("craftsman_income_multiple: 2", "craftsman_income_multiple: 1")), "mvp.craftsman_income_multiple", "must be a finite number > 1" },
+        new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("  craftsman_income_multiple: 2\n", "")), "mvp.craftsman_income_multiple", "must be a finite number > 1" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("  city_arrivals_from: 1948-05-15\n", "")), "mvp.city_arrivals_from", "required when eras.yaml systems.loop is gdd" },
         new object[] { "rules.yaml", Rules(""), "mvp", "required when eras.yaml systems.loop is gdd" },
         new object[] { "rules.yaml", Fixture.Files["rules.yaml"] + Fixture.GddRules, "attention_cost.assign_workers", "missing cost" },
@@ -204,7 +206,8 @@ public class CitiesContentTests
         new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: -1 }\n"), "types[halutz].training_cost", "must be a finite number >= 0" },
         new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, training_turns: 3 }\n"), "types[halutz].training_turns", "only a type with a facility trains" },
         new object[] { "unit_types.yaml", Types("  - { id: halutz, kind: unit, training_cost: 0.5 }\n"), "types[halutz].training_cost", "only a type with a facility trains" },
-        new object[] { "unit_types.yaml", Types("  - { id: craftsman, kind: population, facility: hakhshara, training_turns: 3, training_cost: 0.5 }\n"), "types[craftsman].kind", "only recruit is a trained count" },
+        new object[] { "unit_types.yaml", Types("  - { id: craftsman, kind: population, facility: hakhshara, training_turns: 3, training_cost: 0.5 }\n"), "types[craftsman].facility", "a craftsman trains at industry" },
+        new object[] { "unit_types.yaml", Types("  - { id: settler, kind: population, facility: hakhshara, training_turns: 3, training_cost: 0.5 }\n"), "types[settler].kind", "only recruit and craftsman are trained counts" },
     };
 
     [Theory]

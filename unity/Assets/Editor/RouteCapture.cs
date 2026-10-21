@@ -13,7 +13,7 @@ using UnityEngine;
 public static class RouteCapture
 {
     /// <summary>(name, lon, lat, distance m, yaw): the still train east of Jaffa, Lydda junction, Latrun to Bab al-Wad with
-    /// the Burma Road, the Atlit coast line, the Sorek gorge, the Jericho road, the Jezreel Valley line's Jordan end and Jerusalem's Old City.</summary>
+    /// the Burma Road, the Atlit coast line, the Sorek gorge, the Jericho road, the Jezreel Valley line's Jordan end and Jerusalem's Old City (whole, and close).</summary>
     static readonly (string name, double lon, double lat, float distance, float yaw)[] Views =
     {
         ("train", 34.83, 32.01, 16000f, 10f),
@@ -24,6 +24,7 @@ public static class RouteCapture
         ("jericho", 35.36, 31.80, 14000f, 0f),     // the Jerusalem–Jericho road's descent (review A-I1)
         ("jezreel", 35.55, 32.60, 16000f, 0f),     // the Jezreel Valley line's Jordan end, Beisan to Gesher (#252)
         ("jerusalem", 35.234, 31.777, 32000f, 0f), // the Old City's walls and the roads that end at them (#319)
+        ("oldcity", 35.2355, 31.7765, 15000f, 0f), // the Old City close: its walls, gates, the Haram and Al-Aqsa (#319)
     };
 
     public static void Close()

@@ -25,7 +25,7 @@ public class ArrivalsTests
 
     /// <summary>The cities' people in units: civilians, refugees, recruits and the groups in training (Q-ARRV-2).</summary>
     static int CityUnits(GameState s) =>
-        s.Cities.Values.Sum(x => x.Civilians + x.Refugees + x.Recruits) + s.Cohorts.Values.Sum(x => x.Count);
+        s.Cities.Values.Sum(x => x.Civilians + x.Craftsmen + x.Refugees + x.Recruits) + s.Cohorts.Values.Sum(x => x.Count);
 
     /// <summary>The cities' arrivals P(t): the series' people from the census day to <paramref name="t"/> (Q-ARRV-3).</summary>
     static double CityPeople(Content c, DateTime t)

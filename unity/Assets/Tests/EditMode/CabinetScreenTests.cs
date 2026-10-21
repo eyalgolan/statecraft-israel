@@ -13,6 +13,7 @@ public class CabinetScreenTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
 
     /// <summary>The UI with the Cabinet screen open, as ScreenNav opens it (a hidden screen does not re-render).</summary>
     static UiTestKit Shown()
@@ -52,6 +53,102 @@ public class CabinetScreenTests
         Assert.IsFalse(ui.Q<Button>("appoint-zisling").enabledSelf);
         Assert.AreEqual("Aharon Zisling's party (Mapam) is not in the coalition", ui.Q<Label>("cand-zisling-reason").text);
         Assert.IsTrue(ui.Q<Button>("appoint-golda_meir").enabledSelf);
+    }
+
+    /// <summary>In Hebrew the screen shows the content's Hebrew names (#558): people, office titles (in the feminine for a
+    /// woman who holds the office, Office.TitleHeFor), parties, the government and the legislature's body.</summary>
+    [Test]
+    public void InHebrewTheScreenShowsTheContentsHebrewNames()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        using var ui = Shown();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        var bridge = new SimBridge(g, he);
+        var cabinet = new CabinetPresenter(ui.Root, bridge, he, null);
+        Assert.AreEqual("ממשלת ישראל הראשונה", ui.Q<Label>("cabinet-government").text);
+        StringAssert.Contains(Offices.Legislature(C, g.State.Date)!.BodyHe, ui.Q<Label>("cabinet-legislature").text);
+        Assert.AreEqual("אליעזר קפלן", ui.Q<Label>("seat-finance_minister-holder").text);
+        Assert.AreEqual("שר האוצר", ui.Q<Label>("seat-finance_minister-office").text);
+        Assert.AreEqual("מפא״י", ui.Q<Label>("seat-finance_minister-party").text);
+        Assert.AreEqual("גולדה מאיר", ui.Q<Label>("seat-labour_minister-holder").text);
+        Assert.AreEqual("שרת העבודה", ui.Q<Label>("seat-labour_minister-office").text, "the feminine title for her");
+        var pm = Cabinet.Holder(C, g.State, CabinetPresenter.PrimeMinister)!;
+        Assert.AreEqual(pm.NameHe, ui.Q<Label>("seat-" + CabinetPresenter.PrimeMinister + "-holder").text);
+        StringAssert.StartsWith("מפא״י ", ui.Q<Label>("party-mapai-label").text);
+        StringAssert.Contains("מפא״י", ui.Q<Label>("cabinet-largest").text);
+        cabinet.Select("finance_minister");
+        Assert.AreEqual("מינוי לתפקיד שר האוצר", ui.Q<Label>("cabinet-pick-title").text);
+        StringAssert.StartsWith("גולדה מאיר · מפא״י · ", ui.Q<Button>("appoint-golda_meir").text);
+        StringAssert.StartsWith("אהרון ציזלינג · מפ״ם · ", ui.Q<Button>("appoint-zisling").text);
+        UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
+        // She never held Finance; her order reads the office's title_he_f row all the same (owner on #861: "Move to content").
+        Assert.AreEqual("שרת האוצר", C.Offices.Single(o => o.Id == "finance_minister").TitleHeF);
+        Assert.AreEqual("ניתנה פקודה: גולדה מאיר לתפקיד שרת האוצר, בסיום התור", ui.Q<Label>("cabinet-status").text);
+        // A row with no Hebrew form in the content keeps its English one: the rationing office has no title_he yet.
+        var rationing = C.Offices.Single(o => o.Id == "rationing_minister");
+        Assert.AreEqual("", rationing.TitleHe);
+        Assert.AreEqual(rationing.Title, ui.Q<Label>("seat-rationing_minister-office").text);
+        // Every other card and party chip is in Hebrew.
+        foreach (var t in ui.Q<VisualElement>("screen-cabinet").Query<TextElement>().ToList())
+            if (t.name != null && t.name != "seat-rationing_minister-office"
+                && (t.name.EndsWith("-holder") || t.name.EndsWith("-office") || t.name.EndsWith("-party") || t.name.StartsWith("party-")))
+                Assert.IsFalse((t.text ?? "").Any(ch => ch < 128 && char.IsLetter(ch)), $"'{t.name}': {t.text}");
+        cabinet.Dispose();
+    }
+
+    /// <summary>A woman's title is the office's title_he_f row, also for an office she never held (owner on #861, 17 October
+    /// 2026: "Move to content"; the wording is Beri's, native speaker): a minister's title takes the feminine, the Prime
+    /// Minister's stays "ראש הממשלה". The UI derives no form: an office with no title_he_f keeps its English title for her.
+    /// A man's title and the English UI are unchanged.</summary>
+    [Test]
+    public void AWomansMinisterTitleIsFeminineAndThePrimeMinistersIsNot()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var golda = C.People.Single(p => p.Id == "golda_meir");
+        Office O(string id) => C.Offices.Single(o => o.Id == id);
+        foreach (var o in C.Offices.Where(o => o.TitleHeF != ""))
+            Assert.AreEqual(o.TitleHeF, ContentNames.Of(he, o, golda), o.Id);
+        var unsourced = new Office { Title = "Minister of Finance", TitleHe = "שר האוצר" };
+        Assert.AreEqual("Minister of Finance", ContentNames.Of(he, unsourced, golda), "no title_he_f: English, no derived form");
+        Assert.AreEqual("שרת האוצר", ContentNames.Of(he, O("finance_minister"), golda));
+        Assert.AreEqual("השרה לנפגעי מלחמה", ContentNames.Of(he, O("war_victims_minister"), golda));
+        Assert.AreEqual("שרה בלי תיק", ContentNames.Of(he, O("minister_without_portfolio"), golda));
+        Assert.AreEqual("ראש הממשלה", ContentNames.Of(he, O("prime_minister"), golda));
+        Assert.AreEqual("שרת העבודה", ContentNames.Of(he, O("labour_minister"), golda));
+        var own = new Office { Title = "Minister of Labour", TitleHe = "שר העבודה", TitleHeF = "שרת העבודה והרווחה" };
+        Assert.AreEqual("שרת העבודה והרווחה", ContentNames.Of(he, own, golda), "the content's title_he_f wins");
+        Assert.AreEqual("שר האוצר", ContentNames.Of(he, O("finance_minister"), C.People.Single(p => p.Id == "kaplan")));
+        Assert.AreEqual("Minister of Finance", ContentNames.Of(Text, O("finance_minister"), golda));
+        Assert.AreEqual(O("rationing_minister").Title, ContentNames.Of(he, O("rationing_minister"), golda), "no title_he: English");
+    }
+
+    /// <summary>#901: candidate refusal arguments are content ids from the sim; the Hebrew UI resolves and formats them.</summary>
+    [Test]
+    public void ARefusedCandidateHasAHebrewReasonInTheHebrewUi()
+    {
+        using var ui = Shown();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        var cabinet = new CabinetPresenter(ui.Root, new SimBridge(g, He), He, null);
+        cabinet.Select("finance_minister");
+        Assert.AreEqual("אהרון ציזלינג ממפלגת מפ״ם, שאינה בקואליציה", ui.Q<Label>("cand-zisling-reason").text);
+    }
+
+    [TestCase(true, "labour_minister", "golda_meir", "גולדה מאיר כבר בתפקיד שרת העבודה")]
+    [TestCase(false, "labour_minister", "golda_meir", "Golda Meir already holds the office of Minister of Labour")]
+    [TestCase(true, "finance_minister", "kaplan", "אליעזר קפלן כבר בתפקיד שר האוצר")]
+    [TestCase(false, "finance_minister", "kaplan", "Eliezer Kaplan already holds the office of Minister of Finance")]
+    public void AlreadyHeldOfficeUsesTheHoldersTitle(bool hebrew, string office, string person, string expected)
+    {
+        using var ui = Shown();
+        var text = hebrew ? He : Text;
+        var bridge = new SimBridge(In1950().Session, text);
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, text, null);
+        cabinet.Select(office);
+        Assert.AreEqual("already_holds", Cabinet.CheckReason(C, bridge.State, office, person)!.Kind);
+        Assert.IsFalse(ui.Q<Button>("appoint-" + person).enabledSelf);
+        Assert.AreEqual(expected, ui.Q<Label>("cand-" + person + "-reason").text);
     }
 
     [Test]
@@ -101,17 +198,17 @@ public class CabinetScreenTests
             cabinet.Select(office);
             var list = Cabinet.Candidates(C, bridge.State, office);
             // #215: a refusal shared by every candidate (the office itself) is said once under the heading.
-            var shared = list.All(x => x.reason != null && x.reason == list[0].reason) ? list[0].reason : null;
+            var shared = list.All(x => x.reason != null && x.reason.Text == list[0].reason!.Text) ? list[0].reason : null;
             Assert.AreEqual(office == "prime_minister" || office == "president", shared != null, office + ": an office-level refusal");
-            Assert.AreEqual(shared ?? "", ui.Q<Label>("cabinet-pick-reason").text, office);
+            Assert.AreEqual(shared?.Text ?? "", ui.Q<Label>("cabinet-pick-reason").text, office);
             Assert.AreEqual(shared == null ? DisplayStyle.None : DisplayStyle.Flex, ui.Q<Label>("cabinet-pick-reason").style.display.value, office);
             foreach (var (person, reason) in list)
             {
-                Assert.AreEqual(Cabinet.Check(C, bridge.State, office, person.Id), reason, office + " " + person.Id);   // Candidates is Check, row by row
+                Assert.AreEqual(Cabinet.Check(C, bridge.State, office, person.Id), reason?.Text, office + " " + person.Id);   // Candidates is CheckReason, row by row
                 Assert.AreEqual(reason == null, ui.Q<Button>("appoint-" + person.Id).enabledSelf, office + " " + person.Id);
                 var row = ui.Q<Label>("cand-" + person.Id + "-reason");
                 if (shared != null) Assert.AreEqual(DisplayStyle.None, row.style.display.value, office + " " + person.Id + ": not repeated");
-                else if (reason != null) Assert.AreEqual(reason, row.text);
+                else if (reason != null) Assert.AreEqual(reason.Text, row.text);
             }
         }
     }

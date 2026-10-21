@@ -48,7 +48,7 @@ namespace Statecraft.Game.Boot
                 Inputs = await load();
                 if (GoldenCheck.Requested())
                 {
-                    var (ok, lines) = GoldenCheck.Run(Inputs.Content);
+                    var (ok, lines) = GoldenCheck.Run(Inputs.Content, Inputs.Goldens);
                     foreach (var line in lines) Debug.Log(line);
                     // Desktop players run the check headless (-batchmode -nographics) and report through the exit code.
                     if (Application.platform != RuntimePlatform.WebGLPlayer) { Application.Quit(ok ? 0 : 1); return; }

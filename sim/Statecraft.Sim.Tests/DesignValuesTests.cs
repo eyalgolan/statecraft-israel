@@ -24,13 +24,28 @@ public class DesignValuesTests
         ("rules.yaml", "attention_cost.stop_work"),
         ("rules.yaml", "mvp.people_per_unit"),
         ("rules.yaml", "mvp.income_per_job_per_year"),
+        ("rules.yaml", "mvp.craftsman_income_multiple"),
+        ("rules.yaml", "mvp.city_upkeep_per_year"),
+        ("rules.yaml", "mvp.housing_upkeep_per_year"),
+        ("rules.yaml", "mvp.industry_upkeep_per_year"),
+        ("rules.yaml", "mvp.transit_camp_upkeep_per_year"),
+        ("rules.yaml", "mvp.military_camp_upkeep_per_year"),
+        ("rules.yaml", "mvp.hakhshara_upkeep_per_year"),
+        ("rules.yaml", "tax_per_capita_per_year"),
+        ("rules.yaml", "spending_per_capita_per_year"),
         ("rules.yaml", "mvp.build_yishuv_turns"),
         ("rules.yaml", "mvp.build_yishuv_cost"),
         ("rules.yaml", "mvp.build_camp_turns"),
         ("rules.yaml", "mvp.build_camp_cost"),
         ("rules.yaml", "mvp.plow_fields_turns"),
         ("rules.yaml", "mvp.plow_fields_cost"),
+        ("rules.yaml", "mvp.dry_swamp_turns"),
+        ("rules.yaml", "mvp.dry_swamp_cost"),
         ("rules.yaml", "mvp.field_food_per_turn"),
+        ("rules.yaml", "mvp.road_segment_turns"),
+        ("rules.yaml", "mvp.road_segment_cost"),
+        ("rules.yaml", "mvp.rail_segment_turns"),
+        ("rules.yaml", "mvp.rail_segment_cost"),
         ("rules.yaml", "mvp.objective_points"),
         ("rules.yaml", "mvp.objective_bonus_per_month"),
         ("rules.yaml", "mvp.objective_bonus_cap"),
@@ -38,6 +53,15 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.cover_months"),
         ("rules.yaml", "mvp.veteran_halutz_service"),
         ("rules.yaml", "mvp.veteran_progress"),
+        ("rules.yaml", "mvp.housing_start_condition"),
+        ("rules.yaml", "mvp.overflow_condition_loss"),
+        ("rules.yaml", "mvp.defeat_turns"),
+        ("rules.yaml", "mvp.debt_ceiling"),
+        ("rules.yaml", "mvp.fortify_defence_percent"),   // R-ORDER-002, #746 (Q-HOLD-1)
+        ("rules.yaml", "mvp.hold_defence_percent"),      // R-ORDER-003, #746 (Q-HOLD-2)
+        ("rules.yaml", "attention_cost.unit_order"),     // R-ORDER-001, #746 (D-A6)
+        ("rules.yaml", "mvp.delegation_loyalty_floor"),   // R-EVT-003, #107
+        ("rules.yaml", "mvp.disloyal_effect_share"),
         // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's
         // housing is its start people and its job slots its start employed; seven towns with no CBS working share take
         // the national one. The census people and the five CBS shares are sourced, not design values (R-CITY-006).
@@ -76,6 +100,8 @@ public class DesignValuesTests
         ("unit_types.yaml", "types[recruit].training_cost"),
         ("unit_types.yaml", "types[halutz].training_turns"),
         ("unit_types.yaml", "types[halutz].training_cost"),
+        ("unit_types.yaml", "types[craftsman].training_turns"),
+        ("unit_types.yaml", "types[craftsman].training_cost"),
         // Social cohesion's two new inputs and the national parameters' thresholds (Phase 2 PR 4; Q-NAT-2, Q-NAT-3; Reading 1).
         ("model.yaml", "effects[work_lifts_cohesion].k"),
         ("model.yaml", "effects[work_lifts_cohesion].inertia"),
@@ -85,18 +111,60 @@ public class DesignValuesTests
         ("model.yaml", "situations[low_cohesion].off_above"),
         ("model.yaml", "situations[low_intl_support].on_below"),
         ("model.yaml", "situations[low_intl_support].off_above"),
+        // City projects (Phase 3 PR 4; Q-PROJ-1, Q-PROJ-5): agent-proposed under "Agents propose design values" (#375).
+        ("rules.yaml", "attention_cost.start_project"),
+        ("rules.yaml", "attention_cost.cancel_project"),
+        ("projects.yaml", "projects[housing].cost"),
+        ("projects.yaml", "projects[housing].turns"),
+        ("projects.yaml", "projects[housing].capacity"),
+        ("projects.yaml", "projects[housing].condition"),
+        ("projects.yaml", "projects[housing].job_slots"),
+        ("projects.yaml", "projects[transit_camp].cost"),
+        ("projects.yaml", "projects[transit_camp].turns"),
+        ("projects.yaml", "projects[transit_camp].capacity"),
+        ("projects.yaml", "projects[transit_camp].condition"),
+        ("projects.yaml", "projects[transit_camp].job_slots"),
+        ("projects.yaml", "projects[industry].cost"),
+        ("projects.yaml", "projects[industry].turns"),
+        ("projects.yaml", "projects[industry].capacity"),
+        ("projects.yaml", "projects[industry].condition"),
+        ("projects.yaml", "projects[industry].job_slots"),
+        ("projects.yaml", "projects[winery].cost"),
+        ("projects.yaml", "projects[winery].turns"),
+        ("projects.yaml", "projects[winery].capacity"),
+        ("projects.yaml", "projects[winery].condition"),
+        ("projects.yaml", "projects[winery].job_slots"),
+        // Movement (Phase 5 PR 5, #744; Q-MOVE-1, Q-MOVE-3): agent-proposed under "Take all recommendations" (#375).
+        ("rules.yaml", "attention_cost.move"),
+        ("rules.yaml", "mvp.move_cost.coastal_plain"),
+        ("rules.yaml", "mvp.move_cost.valley"),
+        ("rules.yaml", "mvp.move_cost.lowland"),
+        ("rules.yaml", "mvp.move_cost.hills"),
+        ("rules.yaml", "mvp.move_cost.desert"),
+        ("rules.yaml", "mvp.move_cost.mountains"),
+        ("rules.yaml", "mvp.stack_limit"),
+        ("rules.yaml", "mvp.road_move_cost"),   // R-MOVE-007, #745 (Q-MOVE-2): agent-proposed
+        ("rules.yaml", "mvp.rail_move_cost"),
+        ("unit_types.yaml", "types[veteran_soldier].movement_points"),
+        ("unit_types.yaml", "types[artillery].movement_points"),
+        ("unit_types.yaml", "types[armoured_car].movement_points"),
+        // The national Arms pool (Phase 2 PR 3b; #781, owner 18 October 2026: "Approve as drafted").
+        ("rules.yaml", "attention_cost.buy_arms"),
+        ("rules.yaml", "mvp.arms_start"),
+        ("rules.yaml", "mvp.arms_price"),
+        ("rules.yaml", "mvp.arms_per_recruit_group"),
     };
 
 
-    /// <summary>Every number in the GDD files and blocks, as (file, key path, the line it is on). Scope: all of cities.yaml and
-    /// unit_types.yaml, rules.yaml mvp:, and the GDD kinds under rules.yaml attention_cost. A value whose own mapping says
+    /// <summary>Every number in the GDD files and blocks, as (file, key path, the line it is on). Scope: all of cities.yaml,
+    /// unit_types.yaml and projects.yaml, rules.yaml mvp:, and the GDD kinds under rules.yaml attention_cost. A value whose own mapping says
     /// `status: sourced`, `derived` or `wikipedia-only` is a historical figure, not balance: the loader holds it to its
     /// sources and date instead (cities.yaml, R-CITY-006), so it is left out. model.yaml predates the rule (its header calls
     /// every number there a design value), so only its tagged lines are in scope: the numbers Phase 2 PR 4 added.</summary>
     public static List<(string File, string Key, string Line)> Numbers(string root)
     {
         var found = new List<(string, string, string)>();
-        foreach (var file in new[] { "rules.yaml", "cities.yaml", "unit_types.yaml", "model.yaml" })
+        foreach (var file in new[] { "rules.yaml", "cities.yaml", "unit_types.yaml", "model.yaml", "projects.yaml" })
         {
             var path = Path.Combine(root, file);
             if (!File.Exists(path)) continue;
@@ -115,7 +183,9 @@ public class DesignValuesTests
                         {
                             var k = ((YamlScalarNode)kv.Key).Value!;
                             var child = key == "" ? k : key + "." + k;
-                            var scope = inScope || (file != "rules.yaml" && file != "model.yaml") || (file == "rules.yaml" && k == "mvp") || (key == "attention_cost" && AttentionSystem.IsGddKind(k));
+                            var scope = inScope || (file != "rules.yaml" && file != "model.yaml") || (file == "rules.yaml" && k == "mvp")
+                                || (file == "rules.yaml" && (k == "tax_per_capita_per_year" || k == "spending_per_capita_per_year"))
+                                || (key == "attention_cost" && AttentionSystem.IsGddKind(k));
                             Walk(kv.Value, child, scope);
                         }
                         break;
@@ -162,14 +232,22 @@ public class DesignValuesTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var m = c.Rules.Mvp!;
         Assert.Equal((1000, 0.06), (m.PeoplePerUnit, m.IncomePerJobPerYear));
+        Assert.Equal(2.0, m.CraftsmanIncomeMultiple);   // Q-CRAFT-2
+        Assert.Equal((0.0000545, 0.0001036), (c.Rules.TaxPerCapitaPerYear, c.Rules.SpendingPerCapitaPerYear));
+        Assert.Equal((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), (m.CityUpkeepPerYear!.Value, m.HousingUpkeepPerYear!.Value,
+            m.IndustryUpkeepPerYear!.Value, m.TransitCampUpkeepPerYear!.Value, m.MilitaryCampUpkeepPerYear!.Value, m.HakhsharaUpkeepPerYear!.Value));
         Assert.Equal((0.5, 1.0, 0.5), (c.Rules.AttentionCost["assign_workers"], c.Rules.AttentionCost["train"], c.Rules.AttentionCost["cancel_training"]));
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));
+        Assert.Equal((6, 2.0, 6, 4.0), (m.RoadSegmentTurns, m.RoadSegmentCost, m.RailSegmentTurns, m.RailSegmentCost));   // Q-COR-6
         Assert.Equal((100, 5, 60), (m.ObjectivePoints, m.ObjectiveBonusPerMonth, m.ObjectiveBonusCap));   // D-B6, D-B2
+        Assert.Equal((0.35, 0.15), (m.HousingStartCondition, m.OverflowConditionLoss));   // Q-START-3, Q-HOUSE-1 (D-D1)
+        Assert.Equal((5, 0.5), (m.DelegationLoyaltyFloor, m.DisloyalEffectShare));   // R-EVT-003, #107 (D-H1)
+        Assert.Equal((12, 1.0, 1, 1.0), (m.ArmsStart, m.ArmsPrice, m.ArmsPerRecruitGroup, c.Rules.AttentionCost["buy_arms"]));   // #781 (D-G6)
         Assert.Equal(12, c.Cities.Count);
         foreach (var x in c.Cities)   // the listed housing and job values are the ones Cities.Init starts from
             Assert.Equal(((int)x.Housing!.Value, (int)x.Jobs!.Value), (x.HousingCapacity, x.JobSlots));
-        Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5) },
+        Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5), ("craftsman", 3, 0.5) },   // the craftsman: Q-CRAFT-3
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.TrainingTurns, t.TrainingCost)));
     }
 
@@ -193,5 +271,7 @@ public class DesignValuesTests
         Assert.Contains("attention_cost.train", rules);
         Assert.DoesNotContain("attention_cost.set_policy", rules);
         Assert.DoesNotContain("treasury_start", rules);
+        Assert.Contains("tax_per_capita_per_year", rules);
+        Assert.Contains("spending_per_capita_per_year", rules);
     }
 }
