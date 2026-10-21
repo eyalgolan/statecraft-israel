@@ -6,7 +6,9 @@ not the content.
 
 Prepared on 14 October 2026 from `main` at `c0a38256` (P57). The text for the page is in
 [store-page-draft.md](store-page-draft.md); this file holds the media, the AI-disclosure fields, the draft Content Survey
-answers, the tags and platforms, and the owner's checklist.
+answers, the tags and platforms, the owner's checklist, and the draft community rules (section 8). Refreshed on 21
+October 2026 from `main` at `65ea0e6a`: the AI disclosure (section 4), the event cover (section 1), the platforms note
+(section 6) and the community rules.
 
 ## 1. Capsules and library art
 
@@ -50,6 +52,7 @@ transparency; artwork PG-13 (map, towns, boats and unit miniatures).
 | Shortcut icon (Community; one field) | `community/shortcut_icon_256x256.png` (alternative: the monogram .ico below) | 256 x 256 PNG | "256px x 256px or 512px x 512px, ICO or PNG"; Steam generates the .ico from a PNG | [store/assets/community](https://partner.steamgames.com/doc/store/assets/community) |
 | App icon (Community) | `community/app_icon_184x184.jpg` | 184 x 184 JPG | 184px x 184px .jpg | same page |
 | Shortcut icon, alternative for the same field (monogram) | `community/monogram/monogram.ico` (16, 24, 32, 48, 64, 128 and 256 px; `monogram_<n>.png` at each size) | 16 to 256 | as above: one Shortcut Icon field, ICO or PNG | [store/assets/community](https://partner.steamgames.com/doc/store/assets/community) |
+| Event cover (added 21 October 2026) | `events/event_cover_800x450.png` | 800 x 450 PNG | 800px x 450px, marked Required | [store/assets/eventassets](https://partner.steamgames.com/doc/store/assets/eventassets), seen in a web search result on 21 October 2026, not opened **[confirm]** in Steamworks |
 
 Valve's overview page also says, under "August, 2024", that "Old dimensions are no longer accepted"; the sizes above
 are the current ones on that page. The two Community icons, which Valve lists as Required, are made the same way: a
@@ -68,8 +71,13 @@ gives Windows the monogram at every shortcut size. Steam has one Shortcut Icon f
 title PNG or the monogram .ico, not both. **macOS:** Valve's Community assets page (read 15 October 2026) says a
 macOS desktop shortcut needs "an icon file in ICNS format in the 'Mac Icon' asset field", or it shows Steam's default
 icon. The kit has no ICNS yet; `sources/monogram.py` could produce the sizes for one if the owner wants the monogram
-there too. Not in the kit: the optional page background (1438 x 810) and the
-event assets.
+there too. Not in the kit: the optional page background (1438 x 810) and the other event assets (the event header).
+
+**The event cover (21 October 2026).** Every Steam event or announcement needs a cover. It is `telaviv40` used whole
+(the render is already 16:9), with the header capsule's bottom shade and title box scaled to 800 x 450, made by
+`sources/event_cover.py`, which runs `capsules.py`'s own helpers unchanged. No new capture and no AI. Checked by eye
+beside the header capsule: the same view and the same title. The render shows the map of `c0a38256` (14 October),
+like every other capsule.
 
 **Legibility at the small display sizes.** The small capsule sets the title on two lines so that it nearly fills the
 capsule, as Valve's page advises, over a dimmed background. Previews at Steam's generated sizes,
@@ -122,7 +130,7 @@ all-ages call:
 Folder: `~/statecraft-release/steam-kit/` on the owner's Mac.
 
 **Licences.** Every file derived from an engine render (the capsules, the library capsule, header and hero, the
-small-capsule previews, the two Community icons, the screenshots and the two source renders) is **CC BY-SA 4.0**. That is a licence fact, not a
+event cover, the small-capsule previews, the two Community icons, the screenshots and the two source renders) is **CC BY-SA 4.0**. That is a licence fact, not a
 choice (coordinator ruling, 15 October 2026): the renders show the land-use, biome and route bakes
 (`unity/Assets/Textures/Map/landuse.png`, `unity/Assets/Resources/Map/BiomeColours.bytes`,
 `unity/Assets/Resources/Routes/RouteRibbons.bytes`), which D13 (PR #565) made CC BY-SA 4.0. The library logo has no
@@ -145,12 +153,14 @@ CC BY-SA 4.0 asks two things of anyone who shares these images, Valve's store in
   covers it. Steam's own resized copies (the 120 x 45 and 184 x 69 small capsules, the half-size library art) are
   technical resizes by the platform.
 
-Sources per file: capsules and library art from `sources/PC-telaviv40.png` (hero: `sources/PC-galilee90.png`);
+Sources per file: capsules, library art and the event cover from `sources/PC-telaviv40.png` (hero:
+`sources/PC-galilee90.png`);
 screenshots as in section 2.
 
 | File | Bytes | Pixels | SHA-256 | Licence |
 | --- | --- | --- | --- | --- |
 | community/app_icon_184x184.jpg | 16950 | 184x184 | fe89fbe88126c2a9eae11a71c1d39b8243279c1525f47d107b0edaab7d340498 | CC BY-SA 4.0 |
+| events/event_cover_800x450.png | 628556 | 800x450 | c581e0705030bdfa83c415390814b60e15fdc7eba061c88f7e157088be0345d4 | CC BY-SA 4.0 |
 | community/shortcut_icon_256x256.png | 122559 | 256x256 | b37d19ec6b77ded41673d9ba1311e907b127c45cb12daee5423078a997c2f7d7 | CC BY-SA 4.0 |
 | community/monogram/monogram.ico | 15173 | 16 to 256 | 3f95ff84cc50a9abf2b3322e4ad78ec2162d36387ed8157aac5f2efd18d44065 | CC BY 4.0 (font OFL-1.1, credited) |
 | community/monogram/monogram_128.png | 3197 | 128x128 | 788876452fe03c07a43fd8d87ee5d2016b7a653bf307cf9bab544fb65b8aed4a | CC BY 4.0 (font OFL-1.1, credited) |
@@ -182,6 +192,7 @@ screenshots as in section 2.
 | sources/PC-telaviv40.png | 9851346 | 3840x2160 | 7101093fbf6348a9e588f0b6446217832d6f8540aa8fd13e25f04c6d5d4f9de5 | CC BY-SA 4.0 |
 | sources/SteamKitCapture.cs | 2635 | - | a57eb366b8e38b0f9eeb253cb92b886310c483ac17c26ca0d45f007c37a33f68 | MIT |
 | sources/capsules.py | 5999 | - | 2f79346dc4d426da74b882b52708b1e5baf47c46f107f78d7f7eab869b14ec3d | MIT |
+| sources/event_cover.py | 1214 | - | 4b47b4fc0b3ceca4107c28cb23b2b6aaf9e96978e523e0dedc79ed30ae8a0e0a | MIT |
 | sources/capture.py | 4367 | - | 728275b9bc35436264897bf9fd3904059c4c0d9401fd4e37a4a1c465900d02f9 | MIT |
 | sources/icons.py | 1640 | - | 249683bb8c357ceeb4ed24e9083376eac9def2024c0ce6256688bde4702dd235 | MIT |
 | sources/monogram.py | 2923 | - | f8f3965baab4c7058fc7383f032e5b04a1606cccb7c2c7155abdee90818e2800 | MIT |
@@ -197,17 +208,38 @@ eight screenshots at half size). Their rows are in ASSETS.yaml.
 
 ## 4. AI-content disclosure (Steam fields)
 
-Generated with `uv run scripts/oss/ai_disclosure.py` on `main` at `c0a38256`; the output is identical to the committed
-[docs/ai-disclosure.md](../ai-disclosure.md), so that file is the manifest list behind these answers. It lists only rows
-marked `ai_generated: true`. Steam's form asks about content that ships and that players consume (artwork, sound,
-narrative, localization), not about efficiency tools
+Regenerated on 21 October 2026 with `uv run scripts/oss/ai_disclosure.py` on `main` at `65ea0e6a`; the output is
+identical to the committed [docs/ai-disclosure.md](../ai-disclosure.md), so that file is the manifest list behind these
+answers. (The first version of this section, of 14 October at `c0a38256`, listed 14 clips and no AI sound or models.)
+It lists only rows marked `ai_generated: true`. Steam's form asks about content that ships and that players consume
+(artwork, sound, narrative, localization), not about efficiency tools
 ([Content Survey](https://partner.steamgames.com/doc/gettingstarted/contentsurvey), read 14 October 2026). The
 per-field wording of the form is visible only inside Steamworks, so the field names below follow that public page:
 **[confirm]** them on the form.
 
-**Owner rulings this text follows:** the clips carry no burned-in caption (G4), while the game's UI labels each one "AI-generated illustration" as it plays (`event.ai_label`, shown by `EventCardPresenter` and `OutcomePresenter`); the four Dreamina clips keep Dreamina's
-own small "AI" mark (G5); D-V covers the clips in every build; D-D (PR #565) covers the start-screen painting for the
-free game.
+Steam's form has two categories, and they are kept apart here: **Pre-Generated** (made with AI during development and
+shipped as files) is **yes**; **Live-Generated** (made by AI while the game runs) is **no**.
+
+**What the manifest lists today, for the game** (the website, `promo/` and the README trailer are not in any build):
+
+| What | Files | Made with | Rows in docs/ai-disclosure.md |
+| --- | --- | --- | --- |
+| The start-screen painting | `unity/Assets/UI/StartScreen/declaration-hall.jpg` | ElevenLabs Image API, GPT Image 2.5 | Images |
+| 21 silent video clips: 14 card loops behind the "Illustration" switch, 7 outcome clips at End Turn | `unity/Assets/StreamingAssets/video/*.mp4` | Veo 3.1 or Veo 3.1 Fast through ElevenLabs (12 files); Seedance 2.0 through Dreamina (9 files, which keep Dreamina's own "AI" mark) | Video |
+| 3 sound effects: a card opening, an order refused, a turn ending | `unity/Assets/Resources/Audio/event-card.ogg`, `refused.ogg`, `turn-ended.ogg` | ElevenLabs Sound Effects | Audio |
+| 3D models made from AI concept images | `unity/Assets/Art/Collection/*` (The 1948 Collection: people, vehicles, ships and aircraft, animals and whole-town models) and the settlement building modules `unity/Assets/Art/Settlements/Prototype/Models/b*` | Tripo Studio (tripo3d.ai) | Other |
+
+The 7 outcome clips play for the historical order of `maabarot_policy`, `hula_drainage`, `operation_horev`,
+`altalena`, `first_new_yishuv`, `iraqi_exodus` and `austerity_1949` ([docs/event-videos.md](../event-videos.md)). The
+14 card loops are the rows of `unity/Assets/Resources/EventVideos/event-videos.yaml` without an option. Several of the
+Collection models are recorded as "Imported, not yet placed"; Valve asks for content in the build even when play does not
+reach it, so they are disclosed all the same.
+
+**Owner rulings this text follows:** the clips carry no burned-in caption (G4), while the game's UI labels each one
+"AI-generated illustration" as it plays (`event.ai_label`, shown by `EventCardPresenter` and `OutcomePresenter`); the
+Dreamina clips keep Dreamina's own small "AI" mark (G5); D-V covers the clips in every build; D-D (PR #565) covers the
+start-screen painting for the free game (O2); in-game sound may be ElevenLabs, recorded as AI-generated (#39, 18 October
+2026).
 
 **Field: "Pre-Generated" content.** Tick it. Describe it as:
 
@@ -215,36 +247,40 @@ free game.
 >
 > - The painting behind the start screen (an imagined 1948 hall with no identifiable person), made with an AI image
 >   model.
-> - 14 short, silent video clips. 11 play on decision cards only when the player presses the card's "Illustration"
->   switch, in place of the card's archival photograph; 3 play once at End Turn when the player has ordered the
->   historical option of the transit camps, the Hula works or Operation Horev. They were made with Veo 3.1 (10 clips)
->   and Seedance 2.0 (4 clips). They show no recognisable real person. While a clip plays, the game labels it
->   "AI-generated illustration". The four Seedance clips keep the generator's small
->   "AI" mark in a corner.
+> - 21 short, silent video clips. 14 play on decision cards only when the player presses the card's "Illustration"
+>   switch, in place of the card's archival photograph; 7 play once at End Turn when the player has ordered the
+>   historical option of certain events. They were made with Veo 3.1 (12 clips) and Seedance 2.0 (9 clips). They show
+>   no recognisable real person. While a clip plays, the game labels it "AI-generated illustration". The Seedance clips
+>   keep the generator's small "AI" mark in a corner.
+> - Three short sound effects (a card opening, an order refused, a turn ending), made with an AI sound-effects tool.
+> - 3D models of people, vehicles, ships, aircraft, animals, towns and buildings, made with an AI 3D tool from
+>   AI-generated concept images.
 > - Event and content text was drafted with AI. A person checks every fact in it against its cited source, and every
 >   fact carries its source in the game's data.
 >
 > Not AI: the portraits and the event photographs are archival photographs; the terrain is built from real elevation
-> and climate data; the only audio is the archival 1948 recording of David Ben-Gurion reading the Declaration (Israel
-> State Archives). The game has no music. The code was written with the help of AI coding agents and goes through
-> tests and review.
+> and climate data; the archival 1948 recording of David Ben-Gurion reading the Declaration is from the Israel State
+> Archives. The game has no music. The code was written with the help of AI coding agents and goes through tests and
+> review.
 
 **Field: "Live-Generated" content.** Leave unticked. The game generates nothing with AI while it runs
 (`docs/ai-disclosure.md`: "Nothing is generated live while you play"; README.md "AI use"). RELEASING.md: keep this only
 while it remains true.
 
-**Store-page media.** None of this kit's media is AI: the capsules, library art and screenshots are engine output with
-the title set in EB Garamond. If the owner adds concept art (`promo/final/03`, `05`) to "About this game", or the
-cinematic demo2 as a second trailer, add to the description: "Images captioned 'concept art' were made with AI image
-tools and show the look we are working towards, not the current build" and "The cinematic teaser was made with AI
-video, voice and music tools and is not gameplay." Both still need the decisions listed in store-page-draft.md section 8.
+**Store-page media.** None of this kit's media is AI: the capsules, library art, event cover and screenshots are engine
+output with the title set in EB Garamond. If the owner adds concept art (`promo/final/03`, `05`) to "About this game",
+add to the description: "Images captioned 'concept art' were made with AI image tools and show the look we are working
+towards, not the current build". The Steam trailer comes from the real build (owner, 18 October 2026, "Keep the
+real-build rule"), so no AI trailer goes on the page.
 
 **Items to check before ticking (RELEASING.md):**
 
 - Compare `docs/ai-disclosure.md` with the build that actually ships. The web build's tab icon
   (`unity/Assets/WebGLTemplates/Statecraft/favicon.ico`, AI-assisted drawing) is not in a desktop build; the website's
   files (`site/`) and `promo/` are not in any build.
-- An `owner-verify` row is not cleared by appearing here: the start-screen painting's row is still `owner-verify`.
+- An `owner-verify` row is not cleared by appearing here. Today no row in `docs/ai-disclosure.md` is `owner-verify`.
+- README.md's "AI use" still says "Sound: no AI sound" (README.md:179). The three sound effects make that line out of
+  date; it should change before the page goes up.
 - The Hebrew UI strings (a hand-asked preview, #193): the repository does not record whether they were translated with
   AI. If the owner lists Hebrew, settle this first **[confirm]**.
 - The store text itself was drafted by an AI agent for the owner to edit (store-page-draft.md, To confirm 13).
@@ -319,7 +355,12 @@ Sim (the first tags shown carry the most weight).
 **Languages:** English (interface and subtitles; there is no voice-over). Hebrew only if the owner accepts the report's
 "Game Support Only" idea; the in-game Hebrew UI is a hand-asked preview and the content text is English (#193, #55).
 
-**Supported OS: Windows and macOS. Linux pending.** This follows M2's real run, the `Player golden` workflow on the
+**OWNER DECISION (open, 21 October 2026): which platforms the page lists.** The MVP release is web only and the
+desktop players come after it (RELEASING.md:5, #905), so the table below is M2's history, not a build that exists for
+Steam. The recommendation is Windows first (no signing, O4); macOS needs signing and notarization with the owner's
+Apple credentials (#905). The store text says "Windows" with the same note (store-page-draft.md section 2).
+
+**Supported OS on 14 October: Windows and macOS. Linux pending.** This follows M2's real run, the `Player golden` workflow on the
 pre-release `v0.1.0-rc.0` (commit `411b1124`, built 2026-10-14T19:54:20Z):
 [run 38637103937](https://github.com/eyalgolan/statecraft-israel/actions/runs/38637103937), with its result in a comment
 on #533 (issuecomment-6178471285).
@@ -342,7 +383,7 @@ None of these is done. Each is the owner's action.
 2. **App.** Pay the Steam Direct fee (US$100 per app, per #424's research) and create the app named "Statecraft: Israel"
    (D8). Set "This is a free product" (O2).
 3. **Store page, Basic Info.** Name, developer and publisher (the owner), the website (the project site or the GitHub
-   repository; no links in the description), "Coming Soon" with no date, the supported OS from section 6 (Windows and macOS; Linux only after a CI pass), languages from
+   repository; no links in the description), "Coming Soon" with no date, the supported OS from section 6 (the owner's platform decision; Windows first is recommended), languages from
    section 6, and the system requirements (from the M2 build record).
 4. **Store page, Description.** Short description (store-page-draft.md section 1; check the field's character limit),
    "About this game" (section 2; Hebrew from section 3 only after a native speaker's review), the mature-content
@@ -368,3 +409,68 @@ None of these is done. Each is the owner's action.
     text and the AI disclosure together (RELEASING.md's last checklist line).
 12. **Submit the store page for review** (#424's research: about 3 to 5 business days), answer any reviewer
     questions, then make the Coming Soon page visible yourself once it is approved.
+
+## 8. Community rules and reply templates (OWNER APPROVAL NEEDED)
+
+**OWNER APPROVAL NEEDED. Draft, 21 October 2026. Nothing here is posted.** The Steam Community hub opens with the
+page. The kit had no place for community material, so it starts here. The rules are about the topic and how people
+talk, not about a side: they apply in the same way to every poster.
+
+### The rules (for one pinned thread, "Read this first")
+
+> This forum is for Statecraft: Israel, the history it covers and the sources it uses.
+>
+> 1. Discuss the game and its sources. Disagreement is welcome; say what you think is wrong and why.
+> 2. Personal attacks, slurs, and hate against any people or group are removed. So is denial or celebration of any
+>    atrocity, including the Holocaust.
+> 3. Think a fact in the game is wrong? Open a "Historical accuracy" issue on the project's GitHub with the date, number
+>    or name, the place in the game, and a source someone else can check. Corrections land there, with their source.
+> 4. The game's framing is Israeli, and the game says so. Threads that only ask to change that are pointed to the
+>    content policy and locked.
+> 5. One thread per topic. A repeat of a thread already answered is locked with a link to the first.
+> 6. These rules are the same for everyone, whatever side they take.
+
+What each rule rests on:
+
+- Rule 3 is the project's existing correction route: [CONTENT_POLICY.md](../CONTENT_POLICY.md) section 3, "How to
+  dispute a fact" (CONTENT_POLICY.md:57-70), through the **Historical accuracy** issue form
+  (`.github/ISSUE_TEMPLATE/historical_accuracy.yml`). A social-media post is not a source there (CONTENT_POLICY.md:63-64),
+  and re-opening a closed dispute without a new source is off-topic (CONTENT_POLICY.md:69-70).
+- Rule 4 is the open perspective statement, CONTENT_POLICY.md section 1 (CONTENT_POLICY.md:7-17): facts are open to
+  correction, the framing is not (CONTENT_POLICY.md:59), and asking is "not a judgement on the person asking"
+  (CONTENT_POLICY.md:16).
+- Rule 2 matches CONTENT_POLICY.md:101 (no hate speech, slurs or dehumanising language about any group).
+- The owner moderates, or names who does. One pinned thread only; nothing else is pinned.
+
+### Reply templates
+
+Short, the same tone for everyone, no argument about the history itself in the thread. `<link>` means the repository
+link the owner fills in: the issue form is
+`https://github.com/eyalgolan/statecraft-israel/issues/new?template=historical_accuracy.yml`, and the content policy is
+`https://github.com/eyalgolan/statecraft-israel/blob/main/docs/CONTENT_POLICY.md`.
+
+1. **A fact dispute.**
+   > Thanks. Every fact in the game carries a source, and corrections go through one place so they are checked and
+   > recorded: please open a "Historical accuracy" issue (<link>) with the date, number or name, where it appears in the
+   > game, and your source. If the sources support it, the fix lands with its source and today's date.
+
+2. **"This is propaganda."**
+   > The game is played as Israel's government from 1948, and it says so openly, on this page and in its content policy
+   > (<link>). It does not present itself as neutral. Every event, date and number carries a source you can check in the
+   > game and in the open repository. If a fact is wrong, the correction route is in the pinned thread.
+
+3. **A burst of off-topic or coordinated reviews (a review bomb).** No reply in the reviews or the forum. The owner
+   notes the dates and the number of reviews, flags the off-topic ones with Steam's report button, and contacts Valve
+   through Steamworks support. Never argue with a reviewer, and never ask players for reviews in return.
+
+4. **A key request from a "journalist" or "creator".**
+   > Thanks for the interest. Statecraft: Israel is free on Steam, so there are no keys: anyone can add it to their
+   > library when it is released. Until then the source and the pre-release web builds are public on GitHub (<link>).
+
+   Send no keys and no private builds on an email alone. Free games need no keys, and key requests are a known scam.
+
+5. **A hate post** (a slur, an attack on a people, atrocity denial or celebration). Remove it. Do not reply, and do not
+   quote it. A repeat poster is reported to Steam.
+
+6. **A repeat thread.**
+   > This is answered in <link to the first thread>. Locking this one so the discussion stays in one place.

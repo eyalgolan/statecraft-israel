@@ -239,6 +239,8 @@ deletes any `frame-*.png` already in it first, so an older, longer run cannot le
 
 This is preparation, not a published store page or an answered content survey. The checklist does not clear the name,
 assets or content for commercial use. Finish the release gates above first; the owner reviews and submits the page.
+Exception (proposed 21 October 2026, OWNER DECISION pending): the Coming Soon page may open before the MVP, since it
+ships no build; the gates still apply to the first build uploaded to Steam.
 
 - [ ] Resolve D8 in `docs/oss/DECISIONS.md` before using "Statecraft: Israel" as the commercial name. Do not treat the
   repository name as trademark clearance. Review the description against the actual release build: distinguish
