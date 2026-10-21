@@ -121,14 +121,14 @@ public class UnitsFromStateTests
         Assert.IsNotEmpty(army);
         foreach (var t in army) Assert.AreEqual(3, t.Figures, $"{t}: full strength");
         var big = s.Units.Values.Where(u => u.Side == "israel").OrderByDescending(u => u.Strength).ThenBy(u => u.Id).First();
-        Assert.AreEqual(5, big.Strength, "the largest brigades start at 5 units (docs/units.md, the starting forces)");
+        Assert.AreEqual(4, big.Strength, "the largest brigades start at 4 units (docs/units.md, the starting forces; #1240)");
         var row = C.StartingForces[big.Id].Row;
-        foreach (var (strength, figures) in new[] { (5, 3), (4, 3), (3, 2), (2, 2), (1, 1) })
+        foreach (var (strength, figures) in new[] { (4, 3), (3, 3), (2, 2), (1, 1) })
         {
             var u = s.Units[big.Id];
             s.Units[big.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, strength, u.Order, u.OrderTarget);
             var t = Army(UnitRoster.FromState(units, C, s, _ => true, moved.At)).Single(x => x.Unit.Id == row);
-            Assert.AreEqual(figures, t.Figures, $"{row} at {strength} of 5");
+            Assert.AreEqual(figures, t.Figures, $"{row} at {strength} of 4");
             Assert.AreEqual(figures, t.Headgear.Count, "one headgear per figure");
         }
     }
