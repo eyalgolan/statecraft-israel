@@ -723,6 +723,9 @@ namespace Statecraft.Sim
                 // The player can order a woman into any office, so a Hebrew title without its feminine form would show her the
                 // masculine one (owner on #861, 17 October 2026).
                 if (o.TitleHe != "" && o.TitleHeF == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_f", $"required: office {o.Id} has a title_he, so it needs its feminine title_he_f beside it");
+                if ((o.TitleHeFrom.HasValue || o.TitleHeUntil.HasValue) && o.TitleHe == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he", "required: title_he_from/title_he_until bound a title_he");
+                if (o.TitleHeFrom.HasValue && o.TitleHeUntil.HasValue && o.TitleHeUntil.Value <= o.TitleHeFrom.Value)
+                    throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_until", FormattableString.Invariant($"must be after title_he_from ({o.TitleHeFrom:yyyy-MM-dd})"));
             }
             foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources, p.NameHeReview, p.NameHeReviewGiven);
             foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources, l.BodyHeReview, l.BodyHeReviewGiven);
@@ -1565,8 +1568,9 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex, with a
-        /// sourced operation and a review status.</summary>
+        /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
+        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), with a sourced
+        /// operation and a review status.</summary>
         static void ValidateSettlementTargets(Content c, IEnumerable<string> arabTownIds)
         {
             Unique(SettlementTargetsFileName, "targets", c.SettlementTargets.Select(x => x.Id));
@@ -1579,6 +1583,8 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
+                if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
+                    throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not {x.Id}'s hex in {SettlementHexesFileName}"));
                 if (string.IsNullOrWhiteSpace(x.Operation)) throw new ContentException(SettlementTargetsFileName, at + ".operation", "required");
                 if (x.Sources.Count == 0) throw new ContentException(SettlementTargetsFileName, at + ".sources", "needs at least one source");
                 for (int i = 0; i < x.Sources.Count; i++)

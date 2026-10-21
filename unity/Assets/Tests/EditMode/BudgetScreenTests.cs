@@ -256,8 +256,8 @@ public class BudgetScreenTests
         new BudgetPresenter(ui.Root, new SimBridge(g, he), he);
         Assert.AreEqual("שרת העבודה (גולדה מאיר)", ui.Q<Label>("budget-labour_minister-name").text, "the feminine title for her");
         var rationing = c.Offices.Single(o => o.Id == "rationing_minister");
-        Assert.AreEqual("", rationing.TitleHe);
-        Assert.AreEqual(rationing.Title + " (פנחס לבון)", ui.Q<Label>("budget-rationing_minister-name").text, "only the missing office title falls back");
+        Assert.AreEqual("שר האספקה והקיצוב", rationing.TitleHe);
+        Assert.AreEqual(rationing.Title + " (פנחס לבון)", ui.Q<Label>("budget-rationing_minister-name").text, "Lavon's term, after the ministry closed on 1 November 1950: the English title (owner on #1224)");
         StringAssert.Contains(Offices.Legislature(c, g.State.Date)!.BodyHe, ui.Q<Label>("budget-vote").text);
     }
 

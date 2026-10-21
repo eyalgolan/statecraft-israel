@@ -115,6 +115,15 @@ namespace Statecraft.Sim
         /// <see cref="Person.TitleHeForm"/> is feminine (the loader makes sure every office such a person holds has one),
         /// else <see cref="TitleHe"/>. Empty when the office has no Hebrew title (the UI then keeps the English).</summary>
         public string TitleHeFor(Person? holder) => holder?.TitleHeForm == TitleHeForms.Feminine ? TitleHeF : TitleHe;
+        /// <summary>The days the Hebrew titles hold (#1219, owner on #1224, 21 October 2026): from TitleHeFrom (inclusive) to
+        /// TitleHeUntil (exclusive), like the office's own from/until; null leaves that side open. A title that names one
+        /// ministry, while the office runs on under others, holds only while that ministry existed; outside the window the UI
+        /// keeps the English, as for an office with no title_he.</summary>
+        public DateTime? TitleHeFrom { get; set; }
+        public DateTime? TitleHeUntil { get; set; }
+        /// <summary><see cref="TitleHeFor"/> on <paramref name="date"/>: empty outside TitleHeFrom..TitleHeUntil.</summary>
+        public string TitleHeOn(Person? holder, DateTime date) =>
+            (TitleHeFrom.HasValue && date < TitleHeFrom.Value) || (TitleHeUntil.HasValue && date >= TitleHeUntil.Value) ? "" : TitleHeFor(holder);
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second

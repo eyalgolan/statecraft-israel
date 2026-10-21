@@ -30,11 +30,15 @@ The ID R-LOOP-003 (the Phase 1 overlay, `MvpSlice.Overlay`) is retired with the 
 
 ## Settlement control
 
-R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list is empty until researched rows have a person's check and the sensitivity review (D-F5).
+R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json` that is its own hex in `map/settlement_hexes.yaml`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list is empty until researched rows have a person's check and the sensitivity review (D-F5).
 
 R-CTRL-002: Settlement control is an ordinal `SortedDictionary<string, SettlementControl>`. It is written to the state hash as `ctrl{...}` only when non-empty, in ordinal id order; each record field is written only when it differs from its default (R-LOOP-002).
 
 R-CTRL-003: Residents and combatants are distinct fields. Residents are a state, inhabited or depopulated, not a count (Q-CAP-2 (b)). No rule reads residents as combatants, prisoners, refugee units, labour or a resource; annexation is the one place a later owner-approved rule may say otherwise.
+
+R-CTRL-004: Resolver step 3 is the capture check, after combat (step 2), in ordinal settlement id (Q-CAP-1 (a), Q-CAP-3 (a), owner rulings of 18 October 2026). A target that starts under enemy control, one listed in `mvp.enemy_held_localities` (owner, 21 October 2026, #796), is captured at turn end when Israeli military units are on its hex and no enemy military unit is; only enemy military units are combatants (Q-CAP-3 (a)), and a halutz holds nothing (#796). Its record names `israel` as owner, has the state `awaiting_choice` and starts on the turn's end (`Since`); the player's units stay on the hex. A captured target still awaiting the choice that only enemy military units are on is under enemy control again, and its record is removed (#796). A target not enemy-held at the start (Jaffa, owner ruling of 18 October 2026 on #793, "Only in a what-if") is never captured. The check is an integer rule on unit positions and draws nothing from the RNG. Enemy captures of the player's localities (Q-TGT-2 (c), the plan's R-CTRL-006) are not built yet: with the real starting forces a Syrian unit stands on Degania Alef's hex with no Israeli unit, so the rule would record a capture at the first turn's end (#796).
+
+R-CTRL-005: Capture writes the settlement state only. It changes no resident field (the place stays inhabited), no unit, no resource, parameter, city or score, and counts towards no objective (constraint 6 of the Phase 6 plan; impact plan section 4.3).
 
 ## Saves
 

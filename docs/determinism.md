@@ -18,6 +18,9 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   Round-trip decimal formatting is only a display concern: .NET and Unity Mono can spell the same carry bits
   differently. The Phase 7 minister carry correction re-pins hash1950, hash1952 and mvp-end for this representation
   only; stored values, gameplay and completion dates are unchanged.
+- **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
+  positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
+  target list is empty, so no golden captures a place.
 
 ## Golden playthroughs
 
