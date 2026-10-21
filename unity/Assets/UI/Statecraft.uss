@@ -462,6 +462,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The quality choice's buttons sit side by side; the one that is set is marked by a gold fill and dark text, not only a
    border colour, and keeps it while hovered or focused (Button:hover and :focus would otherwise win). */
 .settings-choices { flex-shrink: 0; }
+/* The Community row's three buttons (Star, Report, Share) are wider than the screen leaves them in Hebrew at 125%: they
+   wrap onto a second line instead, and the row's name keeps its width (SettingsScreenTests, 1280x720). */
+.settings-community-choices { flex-shrink: 1; flex-wrap: wrap; }
+#settings-community-label { flex-shrink: 0; }
 .settings-choice-selected, .settings-choice-selected:hover, .settings-choice-selected:focus { background-color: var(--gold); color: var(--navy-solid); }
 /* The regular cut's thin strokes fade on the gold. Only as specific as ".lang-he Button", which comes later and keeps
    the Hebrew face in Hebrew. */
@@ -512,6 +516,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .guide-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .guide-open .guide-layer { display: flex; }
 .guide-ring { position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+/* Attention sits about 3 px over End Turn in the bar: while the guide shows, more room under it keeps step 1's ring (4 px
+   round Attention) at least 4 px clear of End Turn's gold border, so the two read as two boxes (review of #1209;
+   FirstTurnGuideTests). 5 px is what the one-row bar's 70 px holds with End Turn in it; the taller narrow bar takes 8. */
+.guide-open #attention { margin-bottom: 5px; }
+.guide-open.hud-narrow #attention { margin-bottom: 8px; }
 .guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
 .guide-dock.guide-dock-top { bottom: auto; top: 16px; }
 .guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
@@ -524,6 +533,26 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* How to play's button that opens the guide again: under the lines, never squeezed by them. */
 .how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
 .lang-he .how-to-play-guide { align-self: flex-end; }
+/* "Report a bug or idea" (#1169, FeedbackPresenter): the same backdrop over everything, the start screen too; each GitHub
+   choice with the lines its form opens with under it, wrapped (a user agent is long). */
+.feedback-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
+.feedback-open .feedback-layer { display: flex; }
+.feedback-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
+.feedback-intro, .feedback-preview { white-space: normal; }
+.feedback-choice { margin-top: 10px; }
+.feedback-preview { font-size: 15px; margin: 2px 4px 0 4px; }
+.feedback-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
+/* "Share" (#1170, SharePresenter): the turn report's kind of backdrop, drawn over everything, the report too; the post, the Share button, and the share
+   links, which show only where the browser cannot share the picture itself. */
+.share-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
+.share-open .share-layer { display: flex; }
+.share-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
+.share-post, .share-attach { white-space: normal; }
+.share-go { margin-top: 12px; }
+.share-attach { margin-top: 12px; }
+.share-sites { flex-wrap: wrap; margin-top: 6px; }
+.share-sites > Button { margin: 4px 8px 0 0; }
+.share-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
 /* A top-bar number's explanation (MeterTip, #1037): under the bar, wrapped, kept inside the window by MeterTip. */
 .meter-tip {
     display: none; position: absolute; max-width: 420px; padding: 6px 10px;
@@ -832,7 +861,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    captions in a dark strip just above the panel, over the painting (the panel is the strip's positioned parent, so the
    strip follows it in every layout). */
 .start-recording { display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 8px; }
-.start-listen { font-size: 18px; padding: 4px 16px; margin: 2px 10px; -unity-text-align: middle-center; }
+.start-listen, .start-report { font-size: 18px; padding: 4px 16px; margin: 2px 10px; -unity-text-align: middle-center; }
+/* "Report a bug or idea" (#1169) in its own centred row under the actions, as quiet as the recording's button. A
+   whole-pixel height: a fractional one shifts the panel's lines off whole pixels, and on a phone held upright the band
+   layout (StartScreenPresenter.Fit) then rounds the panel's top back and forth, a layout that never settles. */
+.start-community { flex-direction: row; justify-content: center; align-items: center; height: 40px; margin-top: 8px; }
 /* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
    window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
    PaintStarSigns). Secondary to New game in colour: no fill and a grey edge instead of the gold one; hover and keyboard
@@ -869,7 +902,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .button, .lang-he Button, .lang-he #event-options Button { -unity-text-align: middle-right; }
 /* The buttons and cards whose text is centred stay centred (the rule above is the more specific one). */
 .lang-he .nav-button, .lang-he .seat { -unity-text-align: upper-center; }
-.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen { -unity-text-align: middle-center; }
+.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen, .lang-he .start-report { -unity-text-align: middle-center; }
 .lang-he .card-stat-name { -unity-text-align: middle-right; }
 .lang-he .card-stat-value { -unity-text-align: middle-left; }
 /* The Hebrew plate shows the first name's initial and the surname ("י. ידין", PersonCard.InitialAndSurname), not two

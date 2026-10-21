@@ -30,4 +30,12 @@ mergeInto(LibraryManager.library, {
     document.addEventListener("keyup", open);
     timer = setTimeout(disarm, 1500);
   },
+  // The bug form's platform line (#1169, ReportLinks.Environment): the browser's user agent and screen size, nothing else.
+  StatecraftBrowserEnv: function () {
+    var env = navigator.userAgent + ", screen " + screen.width + "x" + screen.height;
+    var size = lengthBytesUTF8(env) + 1;
+    var buffer = _malloc(size);
+    stringToUTF8(env, buffer, size);
+    return buffer;
+  },
 });

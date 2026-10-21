@@ -221,6 +221,89 @@ public class FirstTurnGuideTests
         Assert.IsTrue(rig.Card.Collapsed, "and Skip hides it again, as the player left it");
     }
 
+    /// <summary>End turn pressed with the guide open (it takes no pointer outside its panel, so the HUD stays usable): the
+    /// guide closes as the turn advances, at any step, and the new turn's card is left to its own rule (a new event opens),
+    /// not hidden or shown by what the guide found on the old card (review of #1209, follow-up 1).</summary>
+    [Test]
+    public void EndTurnClosesTheGuide([Values(0, 1, FirstTurnGuidePresenter.EventStep)] int step, [Values(false, true)] bool cardHidden)
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsTrue(game.Guide!.IsOpen, "precondition: the first new game opens the guide");
+        game.Guide.Close();
+        var card = game.Card!;
+        Assert.IsNotNull(card.Shown, "precondition: a new game opens on a card");
+        var first = card.Shown!.Id;
+        if (cardHidden) card.Collapse();
+        game.Guide.Open();
+        for (int i = 0; i < step; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        var turn = game.Bridge!.State.Turn;
+        UiTestKit.Press(Ui.Q<Button>("end-turn"));
+        Assert.AreEqual(turn + 1, game.Bridge.State.Turn, "precondition: End turn ran the turn");
+        Assert.IsFalse(game.Guide.IsOpen, "the guide closes when the turn advances");
+        Assert.AreEqual(-1, game.Guide.Step);
+        Assert.IsFalse(Ui.Q("root").ClassListContains(FirstTurnGuidePresenter.OpenClass));
+        if (card.Shown != null && card.Shown.Id != first)
+            Assert.IsFalse(card.Collapsed, $"the new turn's card ({card.Shown.Id}) opens by its own rule");
+        else if (card.Shown != null)
+            Assert.AreEqual(cardHidden, card.Collapsed, "the same card is put back as the guide found it");
+        Assert.AreEqual(card.Shown != null && !card.Collapsed, Ui.Q("root").ClassListContains(EventCardPresenter.OpenClass),
+            "the backdrop shows with an open card only");
+    }
+
+    /// <summary>The guide shows its city on steps 2 and 3; Done, Skip or Escape puts back the selection it found (none, a
+    /// hex or a unit) with the info panel and the map's outline; a selection the player made meanwhile is kept (review of
+    /// #1209, follow-up 3).</summary>
+    [Test]
+    public void ClosingPutsBackTheSelectionItFound()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var guide = game.Guide!; var info = game.Info!; var units = game.Units!; var bridge = game.Bridge!;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var city = FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State)!.Value;
+        bool Outlined() { var t = map.Terrain.transform.Find(MapScene.SelectionName); return t != null && t.GetComponent<MeshRenderer>().enabled; }
+        void ToCity() { UiTestKit.Press(Ui.Q<Button>("guide-next")); Assert.AreEqual(city, info.Selected, "step 2 shows the guide's city"); }
+        void Click(int q, int r) => GameRoot.OnHexClicked(map, units, info, q, r);
+
+        Assert.IsTrue(guide.IsOpen && info.Selected == null && !info.ShowsUnit, "precondition: a new game, nothing selected");
+        ToCity();
+        UiTestKit.Press(Ui.Q<Button>("guide-skip"));
+        Assert.IsNull(info.Selected, "Skip: nothing selected again");
+        Assert.IsFalse(info.ShowsUnit);
+        Assert.IsNull(units.Selected);
+        Assert.IsFalse(Outlined(), "and no outline on the map");
+
+        var hex = bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city && units.UnitToSelectAt(h.Item1, h.Item2) == null);
+        Click(hex.Item1, hex.Item2);
+        Assert.AreEqual(hex, info.Selected, "precondition: a hex selected");
+        guide.Open(); ToCity();
+        for (int i = 1; i < FirstTurnGuidePresenter.Steps.Length; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        Assert.IsFalse(guide.IsOpen, "Done");
+        Assert.AreEqual(hex, info.Selected, "Done: the hex the guide found");
+        Assert.IsTrue(Outlined(), "outlined again");
+
+        Assert.IsNotEmpty(units.Tokens, "precondition: units in play");
+        var token = units.Tokens[0];
+        Click(token.Q, token.R);
+        var unit = units.Selected;
+        Assert.IsTrue(unit != null && info.ShowsUnit, "precondition: a unit selected");
+        guide.Open(); ToCity();
+        Assert.IsTrue(guide.Escape());
+        Assert.AreEqual(unit, units.Selected, "Escape: the unit the guide found");
+        Assert.IsTrue(info.ShowsUnit, "its card in the info panel");
+        Assert.IsFalse(Outlined(), "with its ring, not a hex outline");
+
+        Click(hex.Item1, hex.Item2);
+        guide.Open(); ToCity();
+        var other = bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city && h != hex && units.UnitToSelectAt(h.Item1, h.Item2) == null);
+        Click(other.Item1, other.Item2);                                // the player picks a hex under the open guide
+        UiTestKit.Press(Ui.Q<Button>("guide-skip"));
+        Assert.AreEqual(other, info.Selected, "a selection the player made meanwhile stays");
+    }
+
     // --- Presentation only ------------------------------------------------------------------------------------------
 
     /// <summary>The whole guide, by itself, through How to play, through every step, Skip and Escape: the state hash, the
@@ -258,15 +341,16 @@ public class FirstTurnGuideTests
 
     // --- Where each step points --------------------------------------------------------------------------------------
 
-    /// <summary>Every step's target is on screen, in the window, with the gold ring round it and the panel inside the window
-    /// and clear of it, at 1280x720 and 390x844 (the phone the three-row bar is tuned for), in English and Hebrew, on a new
-    /// game's first turn (the opening card open).</summary>
+    /// <summary>Every step's target is on screen, in the window, with the gold ring round it (inside the window) and the panel
+    /// inside the window and clear of it, at 1920x1080 (the one-row bar), 1280x720 and 390x844 (the phone the three-row bar
+    /// is tuned for), in English and Hebrew, on a new game's first turn (the opening card open). Step 1's ring keeps clear of
+    /// End turn's border, so the two read as two boxes (review of #1209, follow-up 2).</summary>
     [UnityTest]
     public IEnumerator EveryStepPointsAtAVisibleElement()
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1280, 720), (390, 844) })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
                 yield return EachStep(w, h, hebrew, (root, guide, step) =>
                 {
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h} step {step + 1} ({FirstTurnGuidePresenter.Steps[step]})";
@@ -280,7 +364,15 @@ public class FirstTurnGuideTests
                     if (!Inside(area, window)) problems.Add($"{at}: the target {area} leaves the window {window}");
                     var ring = root.Q("guide-ring");
                     if (ring.resolvedStyle.display != DisplayStyle.Flex) problems.Add($"{at}: no ring");
-                    else if (!Inside(area, ring.worldBound)) problems.Add($"{at}: the ring {ring.worldBound} is not round the target {area}");
+                    else
+                    {
+                        if (!Inside(area, ring.worldBound)) problems.Add($"{at}: the ring {ring.worldBound} is not round the target {area}");
+                        if (!Inside(ring.worldBound, window)) problems.Add($"{at}: the ring {ring.worldBound} leaves the window {window}");
+                        // Step 1's ring round Attention must read as its own box, not one with End turn's gold border under it.
+                        var endTurn = root.Q("end-turn").worldBound;
+                        if (step == 0 && Gap(ring.worldBound, endTurn) < RingClearPx)
+                            problems.Add($"{at}: the ring {ring.worldBound} is {Gap(ring.worldBound, endTurn):0.#} px from End turn {endTurn} (under {RingClearPx})");
+                    }
                     var panel = root.Q("guide-panel").worldBound;
                     if (!(panel.width > 0) || !Inside(panel, window)) problems.Add($"{at}: the panel {panel} leaves the window {window}");
                     if (panel.Overlaps(area)) problems.Add($"{at}: the panel {panel} covers the target {area}");
@@ -289,6 +381,13 @@ public class FirstTurnGuideTests
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    /// <summary>The least clear space between the ring and End turn for them to read as two boxes, in panel px.</summary>
+    const float RingClearPx = 4f;
+
+    /// <summary>The clear space between two rects (the larger of the horizontal and vertical gaps; negative when they overlap).</summary>
+    static float Gap(Rect a, Rect b) =>
+        Mathf.Max(Mathf.Max(a.xMin - b.xMax, b.xMin - a.xMax), Mathf.Max(a.yMin - b.yMax, b.yMin - a.yMax));
 
     static bool Inside(Rect inner, Rect outer) =>
         inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
