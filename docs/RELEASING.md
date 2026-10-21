@@ -35,6 +35,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --query lang=he --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-gzip --persistence --timeout 300 --stall 90
    bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
 
@@ -47,6 +48,9 @@ macOS IL2CPP parity check is not an MVP release gate.
    The four `--startscreen` passes (owner decision on #967, 17 October 2026) open the start screen every player sees
    first, which the golden and smoke run skips: New game, and Play the recording then New game, in English and in
    Hebrew. Each must print `PASS`. A console exception, `RECORDING failed` or `BOOT FAIL` fails it (#908).
+
+   The English-only `--persistence` pass waits for each save's matching IndexedDB commit and checks that both reloads
+   restore its date, turn and state hash.
 
    For the website's playable demo, build a second web variant with Unity's Decompression Fallback - GitHub Pages
    cannot set response headers, so the loader must decompress the files itself (the site's Play page explains) -
@@ -61,6 +65,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --query lang=he --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-pages --persistence --timeout 300 --stall 90
    bash scripts/oss/package_web.sh unity/Builds/Web-pages unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip
    ```
 
