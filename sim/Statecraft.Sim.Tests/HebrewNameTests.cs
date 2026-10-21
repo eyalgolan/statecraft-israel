@@ -66,13 +66,13 @@ public class HebrewNameTests
     public void AnAgentCheckedFlagLoadsAndClearingItLoadsToo()
     {
         var flagged = Replace("offices.yaml", "    title: Prime Minister\n",
-            $"    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: {Src}\n    title_he_review: agent-checked\n");
+            $"    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: {Src}\n    title_he_review: agent-checked\n    title_he_f: ראשת הממשלה\n    title_he_f_sources: {Src}\n");
         flagged["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("name: Town A,", $"name: Town A, name_he: עיר א, name_he_sources: {Src}, name_he_review: agent-checked,");
         flagged["people.yaml"] = Fixture.Files["people.yaml"].Replace("    name: Pm One\n", $"    name: Pm One\n    name_he: ראש א\n    name_he_review: agent-checked\n    biography_sources: {{ name_he: {Src} }}\n");
         Assert.Equal(HebrewReview.AgentChecked, Load(flagged).Offices.Single(o => o.Id == "prime_minister").TitleHeReview);
         Assert.Equal(HebrewReview.AgentChecked, Load(flagged).People.Single(p => p.Id == "pm_one").NameHeReview);
         var cleared = Replace("offices.yaml", "    title: Prime Minister\n",
-            $"    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: {Src}\n");
+            $"    title: Prime Minister\n    title_he: ראש הממשלה\n    title_he_sources: {Src}\n    title_he_f: ראשת הממשלה\n    title_he_f_sources: {Src}\n");
         Assert.Equal("", Load(cleared).Offices.Single(o => o.Id == "prime_minister").TitleHeReview);
     }
 
@@ -181,12 +181,13 @@ public class HebrewNameTests
         Assert.All(C.Governments, g => Assert.NotEqual("", g.NameHe));
         Assert.All(C.Legislatures, l => Assert.NotEqual("", l.BodyHe));
         Assert.All(Rows("map/settlements_1948.yaml", "settlements"), r => Assert.True(r.Children.ContainsKey(new YamlScalarNode("name_he"))));
-        // Feminine titles only where a woman held the office (owner, 2026-10-14): Golda Meir, Labour and Foreign Affairs.
-        Assert.Equal(new[] { "foreign_minister", "labour_minister" }, C.Offices.Where(o => o.TitleHeF != "").Select(o => o.Id).OrderBy(x => x, StringComparer.Ordinal));
+        // A feminine title beside every Hebrew one (owner on #861, 17 October 2026), not only where a woman held the office.
+        Assert.Equal(C.Offices.Where(o => o.TitleHe != "").Select(o => o.Id), C.Offices.Where(o => o.TitleHeF != "").Select(o => o.Id));
     }
 
     /// <summary>The owner's 2026-10-14 answers: places in their 1948 form, parties by their short common names, the First
-    /// Knesset mirroring its English name, a feminine title where a woman held the office.</summary>
+    /// Knesset mirroring its English name, a feminine title where a woman held the office; and of 2026-10-18 (#875):
+    /// Hatzohar by its full name, not the acronym.</summary>
     [Fact]
     public void TheOwnerRulingsHold()
     {
@@ -196,6 +197,7 @@ public class HebrewNameTests
         Assert.Equal("לוד", Settlement("lod"));
         Assert.Equal("מפא״י", C.Parties.Single(p => p.Id == "mapai").NameHe);
         Assert.Equal("מק״י", C.Parties.Single(p => p.Id == "maki").NameHe);
+        Assert.Equal("התנועה הרוויזיוניסטית", C.Parties.Single(p => p.Id == "hatzohar").NameHe);
         Assert.Equal("האספה המכוננת (הכנסת הראשונה)", C.Legislatures.Single(l => l.Id == "first_knesset").BodyHe);
         var labour = C.Offices.Single(o => o.Id == "labour_minister");
         Assert.Equal(("שר העבודה", "שרת העבודה"), (labour.TitleHe, labour.TitleHeF));

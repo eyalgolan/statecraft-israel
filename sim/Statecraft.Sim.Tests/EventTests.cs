@@ -24,11 +24,13 @@ options:
         delta: 0.2
   - id: import
     text: Buy abroad
+    alternative: { basis: design }
     effects:
       - target: fx_reserves
         delta: -10
   - id: escalate
     text: Blame the border
+    alternative: { basis: design }
     set_rung: 3
 ";
 
@@ -117,15 +119,56 @@ options:
         Assert.Contains(why, w => w.Target == "food" && w.Delta == -3);
     }
 
-    /// <summary>R-EFX-001: any target that is not an indicator, `treasury`, `fx_reserves` or `food` is a load error
-    /// naming file and field. `arms` pins the boundary: the Arms stock becomes a target with its pool (#781).</summary>
-    [Fact]
-    public void AnUnknownTargetNamesTheField()
+    /// <summary>R-EFX-001: an `arms` effect moves the national Arms stock (#781) as `food` moves Food: whole units,
+    /// rounding half away from zero, the stock in 0..int.MaxValue, and the cause carries the change that applied.</summary>
+    [Theory]
+    [InlineData("7", 0, 7)]
+    [InlineData("2.5", 100, 103)]
+    [InlineData("-2.5", 100, 97)]
+    [InlineData("-10", 3, 0)]
+    [InlineData("2147483647", 100, 2147483647)]
+    public void AnOptionCanMoveTheArmsStock(string delta, int start, int expected)
     {
-        var ev = Shortage.Replace("target: fx_reserves", "target: arms");
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: arms\n        delta: " + delta);
+        var c = Load(new Dictionary<string, string> { ["shortage.yaml"] = ev });
+        var s = State(c, new DateTime(1948, 6, 1)); s.Arms = start; var why = new List<Cause>();
+        EventSystem.Trigger(c, s, why);
+        Assert.Null(EventSystem.Choose(c, s, "shortage", "import", why));
+        Assert.Equal(expected, s.Arms);
+        Assert.Contains(why, w => w.Target == "arms" && w.Delta == expected - start);
+    }
+
+    /// <summary>R-EFX-001: the event card's preview (R-EVT-005) names an Arms effect in whole units.</summary>
+    [Fact]
+    public void ThePreviewShowsAnArmsEffectInUnits()
+    {
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: arms\n        delta: -2");
+        var c = Load(new Dictionary<string, string> { ["shortage.yaml"] = ev });
+        var s = State(c, new DateTime(1948, 6, 1));
+        var o = c.Events.Single().Options.Single(x => x.Id == "import");
+        Assert.Contains(EventSystem.OptionEffects(c, s, o), l => l.Target == "arms" && l.Delta == -2 && l.Message == "Arms -2 units");
+    }
+
+    /// <summary>R-EFX-001: an Arms delta beyond the int range is a load error naming file and field, as for Food.</summary>
+    [Fact]
+    public void AnArmsDeltaBeyondTheIntRangeIsALoadError()
+    {
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: arms\n        delta: -3000000000");
         var ex = Assert.Throws<ContentException>(() => Load(new Dictionary<string, string> { ["shortage.yaml"] = ev }));
         Assert.Equal("events/shortage.yaml", ex.File);
         Assert.Equal("events[shortage].options[import].effects.arms", ex.Field);
+        Assert.Contains("arms delta out of range", ex.Message);
+    }
+
+    /// <summary>R-EFX-001: any target that is not an indicator, `treasury`, `fx_reserves`, `food` or `arms` is a load error
+    /// naming file and field.</summary>
+    [Fact]
+    public void AnUnknownTargetNamesTheField()
+    {
+        var ev = Shortage.Replace("target: fx_reserves", "target: steel");
+        var ex = Assert.Throws<ContentException>(() => Load(new Dictionary<string, string> { ["shortage.yaml"] = ev }));
+        Assert.Equal("events/shortage.yaml", ex.File);
+        Assert.Equal("events[shortage].options[import].effects.steel", ex.Field);
         Assert.Contains("unknown target", ex.Message);
     }
 
@@ -499,12 +542,13 @@ options:
 
     /// <summary>R-EFX-002 (owner decision of 15 October 2026 on Q-EFX-2, "Extend it"): a sensitive option may not raise any
     /// resource. The legacy indicators stand for Food (food_supply), Social cohesion (morale) and International Support
-    /// (intl_standing); `food` is Food's own target.</summary>
+    /// (intl_standing); `food` is Food's own target, and `arms` the Arms stock's (#781).</summary>
     [Theory]
     [InlineData("food_supply")]
     [InlineData("morale")]
     [InlineData("intl_standing")]
     [InlineData("food")]
+    [InlineData("arms")]
     public void SensitiveEventCannotRaiseFoodCohesionOrSupport(string target)
     {
         var ex = Assert.Throws<ContentException>(() => LoadWithStanding(Sensitive("war-casualties", target, "0.02")));
@@ -518,10 +562,32 @@ options:
     [InlineData("morale", "-0.02")]
     [InlineData("food", "0")]
     [InlineData("food", "-5")]
+    [InlineData("arms", "0")]
+    [InlineData("arms", "-5")]
     [InlineData("intl_standing", "-0.05")]
     public void SensitiveEventMayCostOrNotChangeFoodCohesionOrSupport(string target, string delta)
     {
         Assert.Single(LoadWithStanding(Sensitive("terror", target, delta)).Events);
+    }
+
+    /// <summary>R-EFX-007 (Q-DEP-6(a)): a displacement option cannot raise any available resource target, Arms included
+    /// (#781). Score is kept as an explicit boundary: it is not an event-effect target yet, so the loader refuses it as
+    /// unknown.</summary>
+    [Theory]
+    [InlineData("treasury", "sensitive events cannot reward")]
+    [InlineData("fx_reserves", "sensitive events cannot reward")]
+    [InlineData("food", "sensitive events cannot reward")]
+    [InlineData("food_supply", "sensitive events cannot reward")]
+    [InlineData("morale", "sensitive events cannot reward")]
+    [InlineData("intl_standing", "sensitive events cannot reward")]
+    [InlineData("arms", "sensitive events cannot reward")]
+    [InlineData("score", "unknown target")]
+    public void ADisplacementOptionCannotRaiseAnything(string target, string reason)
+    {
+        var ex = Assert.Throws<ContentException>(() => LoadWithStanding(Sensitive("displacement", target, "0.02")));
+        Assert.Equal("events/shortage.yaml", ex.File);
+        Assert.Equal($"events[shortage].options[import].effects.{target}", ex.Field);
+        Assert.Contains(reason, ex.Message);
     }
 
     /// <summary>A non-sensitive event may still raise them.</summary>
@@ -650,5 +716,17 @@ options:
         for (int i = 0; i < 3; i++) { r = Simulation.Step(c, s, new List<Command>()); s = r.State; }
         Assert.Equal(new DateTime(1949, 2, 15), s.Date);
         Assert.Contains(r.Why, w => w.Message == "New: late for Pm One");
+    }
+
+    // R-SWAMP-002, Phase 2 Q-CUT-4's rule: hula_drainage gained only a condition (site: hula), not new text or options, so
+    // its review status and the release gate's verdict on it are unchanged.
+    [Fact]
+    public void TheHulaConditionLeavesItsReleaseStatus()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var e = c.Events.Single(x => x.Id == "hula_drainage");
+        Assert.Equal(("hula", "fact-checked"), (e.Site, e.Status));
+        Assert.DoesNotContain("hula_drainage", ReleaseGate.SensitiveEvents(c));
+        Assert.DoesNotContain("hula_drainage", ReleaseGate.SensitiveUnreviewed(c));
     }
 }

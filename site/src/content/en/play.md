@@ -1,4 +1,4 @@
-There is no hosted build yet. A browser build you can play with one click is planned for M4. Until then the game runs from source on your own machine.
+There is no hosted build yet. For now the game runs from source on your own machine.
 
 ## Run it yourself
 
@@ -11,13 +11,8 @@ The exact commands, the tests and the browser check are in [BUILDING.md](https:/
 
 ## What you can play
 
-Turns from 15 May 1948 to the end of 1951: the start screen, the 1948 map with its towns, villages, railways, roads and armistice lines, the Cabinet, the Budget and Defence screens, sourced events at their real dates, the “Why?” panel, and autosave. Settlements and trees are still placeholder art. There is no diplomacy yet, and none of the GDD’s new systems (monthly turns, units you command, cities, construction, combat) are in the build.
+Monthly turns from 15 May 1948 to 15 January 1952: the map, the Cabinet, the Budget and Defence screens, sourced events at their real dates, the “Why?” panel and autosave. Much of the GDD is still being built.
 
-## For contributors: putting the build on this site
+## Hosting the build on this site
 
-This site is served by GitHub Pages, which cannot set response headers. That decides how the browser build must be made before it can go here:
-
-- **Decompression Fallback.** Unity's Brotli and gzip builds need the server to send `Content-Encoding`, which GitHub Pages cannot do. A build for this site needs Unity's Decompression Fallback: the compressed files get the `.unityweb` extension and the loader decompresses them in JavaScript, at the cost of a larger loader. Unity recommends it when the server cannot be configured ([Unity manual: deploying a Web application](https://docs.unity3d.com/6000.0/Documentation/Manual/webgl-deploying.html)). Today `Build.Web` in `unity/Assets/Editor/Build.cs` always turns the fallback off, because itch.io serves `.br` files correctly; a Pages build needs an option to turn it on.
-- **Single-threaded.** Multithreaded Web builds need the COOP and COEP headers, which GitHub Pages cannot send either. The project's builds are single-threaded now (`webGLThreadsSupport: 0`), and they must stay that way for this site.
-- **Shareable.** Only a `-shareable` build may be published: it refuses while any sensitive event or photograph lacks its sensitivity review ([docs/m3-release.md](https://github.com/eyalgolan/statecraft-israel/blob/main/docs/m3-release.md)).
-- **Not committed.** The M3 build was 23 MB in 51 files, and no file in the repository may pass 10 MB. The deploy workflow would add the build to the site at deploy time, not from git.
+What a browser build for this site needs is in the [site's README](https://github.com/eyalgolan/statecraft-israel/blob/main/site/README.md#hosting-the-game-here).

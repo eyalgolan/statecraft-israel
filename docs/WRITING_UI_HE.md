@@ -9,6 +9,8 @@ Revision 19 October 2026: targeted implementation and terminology checks at upst
 
 This guide covers how Hebrew is written and displayed in the game and its surfaces. It builds on the English UI microcopy guide and the glossary. It does not cover event card prose, which exists in English only today (HE-12).
 
+Revision 21 October 2026: the budget and map-hint quotations and Beri's agreement note were checked against upstream/main 001a59d0 (#1136, #1134). The original snapshot evidence remains dated above.
+
 ## How to use this guide
 
 - A writer or translator reads the rules and the checklist.
@@ -69,7 +71,7 @@ For the native reviewer: choose the word for each open concept above and record 
 ### HE-03 Form of address
 Status: proposed, native; source read directly. Source: the Israeli National Digital Agency's guide to government language, section 1.3.3 (paraphrased; reuse terms not found). It says: do not address users only in the masculine singular; do not use slash or dot forms; first priority is a setting that adapts the form to the user; second, a second person without a gender marker (words ending in ך, ת or ה); then a neutral first person; then an action noun, an infinitive, or rephrasing such as "יש לשלוח".
 - The strings already follow this apart from one masculine imperative: "הסתר" (`event.hide`). Candidate: "הסתרה" or "להסתיר".
-- Examples using "יש ל..." include "יש ללחוץ על המפה כדי לבדוק משושה" (`info.hint`). Action-noun labels include "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
+- Examples using "יש ל..." include "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה" (`info.hint`). Action-noun labels include "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
 - Two forms the reviewer should look at: "טוען את ההקלטה…" (`start.loading`), a masculine present-tense form with the program as its implied subject; and "המשך" (`start.continue`), which reads as a noun and also matches a masculine imperative. The Hebrew README addresses the reader as "אתם" (plural), a different choice again.
 - A player setting for the form of address is the guide's first priority. It is a design decision for the owner and is not proposed here.
 For the native reviewer: confirm that "יש ל..." and action nouns are right for a game, rule on the two forms above, and choose between "הסתרה" and "להסתיר".
@@ -137,8 +139,8 @@ For the native reviewer: say what register suits a sober political strategy game
 Status: proposed review process. New Hebrew recommendations need native review; adopted maintainer rules remain in effect unless explicitly overruled. Keep a review log with the date, the reviewer's name, the keys or rules reviewed, and the changes made. A reviewer's change is recorded as a decision with its reason, so later edits do not undo it.
 
 ### HE-15 Agreement with a placeholder
-Status: the earlier legislature-string finding is addressed in #1081; new agreement proposals remain native/owner-gated. A changing placeholder must not receive a fixed verb or pronoun that fits only one possible name. The earlier masculine forms were replaced with neutral wording: "התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}" (`budget.vote_advisory`), "אין הצבעה ב־{0} על התקציב" (`budget.no_vote`) and "מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות" (`cabinet.legislature_advisory`). ContentNames.Of now reads legislature body_he (#861), so this is no longer a hypothetical issue hidden behind English names. Keep the shipped neutral wording. A new grammatical-gender field would be a separate design decision, not a requirement of this guide.
-For the native reviewer: say whether these sentences need a structure that does not depend on the gender of `{0}`, and mark any other string with a verb or pronoun after a placeholder.
+Status: #1136 applied Beri's native review from #564 to the budget strings after the interim neutral wording in #1081. A changing placeholder must not receive a fixed verb or pronoun that fits only one possible name. The current strings are "{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}" (`budget.vote_advisory`), "{0} אינה מצביעה על התקציב" (`budget.no_vote`) and "מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות" (`cabinet.legislature_advisory`). Beri's note explains why the budget's feminine forms work: all three current legislature names are feminine. A masculine-named body would need new wording. Keep the native-reviewed wording for the current bodies; it is not a universal solution for every future name. ContentNames.Of reads legislature body_he (#861). A new grammatical-gender field remains a separate design decision.
+For the native reviewer: review any new body name against these sentences and mark any other string whose verb or pronoun assumes the gender of a changing placeholder.
 
 ## Candidate fixes for the Hebrew file (all unapproved)
 

@@ -17,7 +17,7 @@ namespace Statecraft.Game.UI
     /// press never wipes the save (#175, B6). Continue and Escape withdraw an open request.
     /// While it shows, the root has OpenClass (Statecraft.uss hides the HUD under it, so Tab reaches only these buttons)
     /// and <c>shownChanged</c> is told, so GameRoot can stop the camera keys. The panel's source line says the painting is
-    /// AI-generated.</summary>
+    /// AI-generated. Beside New game, "Star on GitHub" opens the repository in a new tab (#1168, ExternalLink).</summary>
     public sealed class StartScreenPresenter : IDisposable
     {
         /// <summary>On the "root" element while the start screen shows.</summary>
@@ -51,6 +51,8 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onGeometry;
         readonly Action onContinue, onNewGame, onStarted;
         readonly PressSource presses;
+        readonly Action unbindStar;
+        readonly Button starButton;
 
         /// <summary>Continue is offered: the session continues the autosave.</summary>
         public bool Resumed { get; private set; }
@@ -78,7 +80,11 @@ namespace Statecraft.Game.UI
             {
                 screen.Q<Label>("start-source").text = text["start.source"];
                 continueButton.text = text["start.continue"]; newGameButton.text = text["start.new_game"];
+                screen.Q<Button>("start-star").text = text["community.star"];
             }
+            starButton = screen.Q<Button>("start-star");
+            unbindStar = ExternalLink.Bind(starButton, ExternalLink.Repository);   // #1168
+            starButton.generateVisualContent += PaintStarSigns;
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;
@@ -182,6 +188,21 @@ namespace Statecraft.Game.UI
         /// <summary>The start body's top and bottom padding together in the band layout (Statecraft.uss .start-band .start-body).</summary>
         const float BodyPadding = 32f;
 
+        /// <summary>Star on GitHub's star and GitHub mark (#1168), side by side in the button's left padding (the right in
+        /// Hebrew; Statecraft.uss .start-star keeps 80 px for them), painted into the button so it stays a leaf sized by its
+        /// text (UiIcon.Paint). Lit while the button has the keyboard focus, as the other gold signs.</summary>
+        static void PaintStarSigns(MeshGenerationContext m)
+        {
+            const float Size = 22f, Edge = 18f, Gap = 6f;
+            var e = m.visualElement;
+            bool rtl = UiLanguage.Within(e), lit = UiIcon.IsFocused(e);
+            float y = (e.layout.height - Size) / 2f;
+            float first = rtl ? e.layout.width - Edge - Size : Edge;
+            float second = rtl ? first - Gap - Size : first + Size + Gap;
+            UiIcon.Paint(m, "star", new Rect(first, y, Size, Size), lit);
+            UiIcon.Paint(m, "mark-github", new Rect(second, y, Size, Size), lit);
+        }
+
         public void Dispose()
         {
             Hide(giveFocus: false);
@@ -189,6 +210,8 @@ namespace Statecraft.Game.UI
             continueButton.clicked -= onContinue;
             newGameButton.clicked -= onNewGame;
             newGame.Started -= onStarted;
+            unbindStar();
+            starButton.generateVisualContent -= PaintStarSigns;
             screen.UnregisterCallback(onCancel);
             screen.UnregisterCallback(onGeometry);
             panel.UnregisterCallback(onGeometry);

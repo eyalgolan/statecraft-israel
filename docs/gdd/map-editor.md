@@ -16,6 +16,7 @@ As a map author, I want to change tiles/hexes and move named locations, then reo
 - Reject unknown identities, invalid coordinates, out-of-map positions and edits that break applicable placement rules. Distinct locations can share a hex where the approved rules allow it; a shared hex alone is not a duplicate identity [S2].
 - Before saving, report affected site bindings, city/project associations and corridor endpoints or segment bindings. Keep references by identity. Require the author to resolve broken dependencies explicitly; moving a location must not silently reroute sourced transport geometry [S1][S3].
 - Report validation failures against the affected hex, location or dependent record. A failed save must leave the last valid saved map intact [S1].
+- The host is a Unity editor window. It saves edits to one override file, `content/map/overrides.yaml`, which map generation applies last so regeneration keeps the edits. The editable properties are a hex's terrain and control and a location's position; a location's id and sources stay unchanged. **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592))** [S4].
 
 ## Data touched
 
@@ -44,10 +45,11 @@ As a map author, I want to change tiles/hexes and move named locations, then reo
 - [S1] Game design of record, "Map and locations", docs/GDD.md
 - [S2] MVP location roster and location-record requirements, docs/locations.md
 - [S3] Route authoring, tracing and bake pipeline, docs/routes.md; designated corridors, docs/gdd/corridors.md
+- [S4] [Owner decision on host, override file and editable properties](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592), 18 October 2026, checked 2026-10-18.
 
 ## Open questions
 
-- Which host environment runs the authoring tool?
-- Which authoring-data format or override layer stores edits, and how does the generation pipeline apply it?
-- Which hex properties are editable, and how is the future terrain catalogue mapped to the existing biome-based movement and defence framework?
+- Which host environment runs the authoring tool? **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592)):** a Unity editor window.
+- Which authoring-data format or override layer stores edits, and how does the generation pipeline apply it? **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592)):** one override file, `content/map/overrides.yaml`, applied last by map generation.
+- Which hex properties are editable, and how is the future terrain catalogue mapped to the existing biome-based movement and defence framework? **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592)):** a hex's terrain and control and a location's position are editable; its id and sources stay. The future terrain catalogue mapping remains open.
 - Which placement rules apply to each location kind and to shared-hex city, site and corridor bindings?

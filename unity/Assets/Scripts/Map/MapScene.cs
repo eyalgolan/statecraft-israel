@@ -16,6 +16,9 @@ namespace Statecraft.Game.Map
         /// <summary>The art spike's procedural settlement kits and trees (Kit.mat, Tree.mat: Statecraft/Kit). Optional: without
         /// them the map keeps the placeholder marker boxes.</summary>
         [SerializeField] Material kitMaterial, treeMaterial;
+        /// <summary>Tal Heuberger's building models the towns draw up close (issue #659; Kits.TownModels.SetPath): they load with the
+        /// map, never from a Resources folder. Without them (or with one missing) the towns keep their kits at every zoom.</summary>
+        [SerializeField] Kits.TownModelSet townModels;
         /// <summary>The terrain water's mesh, baked (MapTexturePaths.WaterMesh, issue #195). Optional: without it, or when it
         /// is for other heights, the map derives the mesh at load (about 90 ms at the boot budget's CPU throttling).</summary>
         [SerializeField] TextAsset terrainWaterMesh;
@@ -51,6 +54,21 @@ namespace Statecraft.Game.Map
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
+        /// <summary>Who held which hex on a date (content/map/control_hexes_1948_49.yaml with the map editor's control
+        /// overrides), as Build read it, or null without the file: GameRoot draws the borders from it, and the road vehicles
+        /// (issue #725) stand only on ground Israel held. Display only.</summary>
+        public Control1948 Control { get; set; }
+        /// <summary>The map editor's overrides as the last Build applied them (content/map/overrides.yaml, #1009).</summary>
+        public Statecraft.Sim.MapOverrides Overrides { get; private set; } = Statecraft.Sim.MapOverrides.Parse(null);
+
+        /// <summary>Where a named location is drawn: its sourced point (<paramref name="lon"/>, <paramref name="lat"/>), or the
+        /// centre of the hex the map editor moved it to (Overrides), so its label and its logical hex agree.</summary>
+        public (double lon, double lat) LocationPoint(string id, double lon, double lat)
+        {
+            if (Hexes == null || !Overrides.TryLocation(id, out var q, out var r)) return (lon, lat);
+            foreach (var h in Hexes.hexes) if (h.q == q && h.r == r) return (h.lon, h.lat);
+            return (lon, lat);
+        }
 
         /// <summary>The selected hex's outline: a child of the terrain (so a rebuild destroys it).</summary>
         public const string SelectionName = "HexSelection";
@@ -139,6 +157,8 @@ namespace Statecraft.Game.Map
 
         /// <summary>The settlement kits' and trees' materials (null, null: placeholder markers only).</summary>
         public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
+        /// <summary>Sets the town models (issue #659): the editor bake saves them in the scene; tests set a broken list.</summary>
+        public void ConfigureTownModels(Kits.TownModelSet set) => townModels = set;
 
         /// <summary>Each settlement's footprint on the ground plane (centre x, z; radius m): the kits' discs
         /// (SettlementKits.FootprintRadiusM) of the game settlements and, with the kits, of the 1948 localities, so the units
@@ -151,9 +171,13 @@ namespace Statecraft.Game.Map
         /// keeps every kit (review of #559).</summary>
         public bool? ShowcaseClearing { get; set; }
 
-        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors), every route whatever its date, so the units keep
-        /// their figures off them. Empty before Build.</summary>
+        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors) of every route drawn while a unit token stands
+        /// (RouteLayer.UnitRoutes, #786), so the units keep their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
+
+        /// <summary>The corridors the kits keep off: those of the routes drawn at the game's start (RouteLayer.KitRoutes, #786).
+        /// Empty before Build.</summary>
+        public IReadOnlyList<(List<Vector2> line, float halfWidth)> KitRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
         /// <summary>The units of content/map/units_1948.yaml as the last Build read them (empty before a build, or when the
         /// file is missing or malformed). Read only: the units layer draws from this same list (UnitEntriesFor).</summary>
@@ -257,6 +281,19 @@ namespace Statecraft.Game.Map
             DiagLog.BootPhase("hexes parsed");
             var list = SettlementPlacer.Parse(inputs.SettlementsYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), SettlementsPath);
             Settlements = list; settlementsYamlRead = inputs.SettlementsYaml;
+            // The map editor's overrides (content/map/overrides.yaml, #1009) go on last, over the generated hexes, settlements
+            // and control, so a rerun of a generator keeps them; everything drawn below reads the result. The sim applies the
+            // same terrain and location overrides to its content (ContentLoader), which also checks the location ids.
+            Overrides = Statecraft.Sim.MapOverrides.Parse(inputs.OverridesYaml);
+            Overrides.ValidateMap(Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Land = h.land, Biome = h.biome }).ToList(), null);
+            var hexAt = Hexes.hexes.ToDictionary(h => (h.q, h.r));
+            foreach (var terrain in Overrides.Terrain) hexAt[(terrain.Hex.Q, terrain.Hex.R)].biome = terrain.Value;
+            foreach (var moved in list)
+                if (Overrides.TryLocation(moved.Id, out var hq, out var hr)) { moved.Lon = hexAt[(hq, hr)].lon; moved.Lat = hexAt[(hq, hr)].lat; }
+            Control = string.IsNullOrWhiteSpace(inputs.ControlYaml) ? null
+                : Control1948.ReadRuntimeOrYaml(inputs.ControlTsv, inputs.ControlYaml, Debug.LogWarning);
+            if (Control != null) Control.ApplyOverrides(Overrides);
+            else Overrides.ValidateControl(Array.Empty<(int, int)>(), Array.Empty<string>(), Array.Empty<string>());   // no control file: any control override is an error
             bool kitsOn = kitMaterial != null && treeMaterial != null;
             var localities = new Kits.Localities.Doc();
             if (kitsOn)
@@ -330,7 +367,8 @@ namespace Statecraft.Game.Map
             // From the baked runtime form when it matches the YAML (issue #321: boot time), else from the YAML with a warning.
             var routes = Routes.RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
             DiagLog.BootPhase("route paths read");   // issue #321: the splits of the units' phase
-            RouteCorridors = Routes.RouteLayer.Corridors(Frame, routes);
+            // Only the routes drawn at the start keep the kits off (#786); the units keep off those drawn while they stand.
+            KitRouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.KitRoutes(routes));
             DiagLog.BootPhase("route corridors");
             // The game settlements' and the 1948 localities' discs, as the kits will claim them (review I5: a token placed "off
             // the towns" keeps off the villages too). The camps are placed after the units and keep off them instead.
@@ -341,6 +379,9 @@ namespace Statecraft.Game.Map
             var unitData = Units.UnitData.ReadOrNone(inputs.UnitsYaml, Debug.LogWarning);
             UnitEntries = unitData; unitsYamlRead = inputs.UnitsYaml ?? "";
             DiagLog.BootPhase("unit data read");
+            // The end of the last token's window (anchors always have one): a route opened later takes no token's spot (#786).
+            var unitsUntil = unitData.SelectMany(u => u.Anchors).Select(a => Units.UnitData.Day(a.To)).DefaultIfEmpty(DateTime.MaxValue).Max();
+            RouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.UnitRoutes(routes, unitsUntil));
             var unitHexes = Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Lon = h.lon, Lat = h.lat, ElevM = h.elev_m, Land = h.land, Biome = h.biome }).ToList();
             UnitHexes = unitHexes;
             var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
@@ -386,8 +427,9 @@ namespace Statecraft.Game.Map
                 // The units' clearings go in as corridors (village houses and tents keep off them too); the tokens outside
                 // the towns are kept off by the Bedouin camps, the one kit placed where no footprint is (review I5).
                 var kits = Kits.KitLayer.Build(list, localitySettlements, localities.Encampments, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
+                    townModels != null ? townModels : null,   // a missing asset reference is Unity's fake null: pass a real null
                     terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
-                    RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
+                    KitRouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
                     unitRings);
                 kits.transform.SetParent(transform, true);
                 kitProbe = kits.GetComponentInChildren<MeshRenderer>(true);
@@ -400,7 +442,7 @@ namespace Statecraft.Game.Map
             // the service train from its sourced date (issue #668), streamed then, never at boot. The ribbons are
             // placed from their bake when it was made from these inputs (issue #321), else derived.
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
-                Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml));
+                Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();

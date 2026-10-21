@@ -22,10 +22,10 @@ npm run preview    # http://localhost:4321/statecraft-israel/en/
 - `src/content/<lang>/*.md`: longer page text. `src/content/devlog/<lang>/`: devlog posts, the same file name in both languages.
 - `src/lib/media.ts`: every image and video the site shows, with its label. The images are read from `docs/images/` and `promo/final/` and converted to AVIF and WebP at build time; they are not copied into `site/`.
 - `docs/images/captures.yaml`: the in-engine screenshots. The site's in-engine gallery is the README's `docs/images/build-*.jpg`, described by this file (build, date, title and alt text in both languages). Its `hero:` entry is the home page's hero still, `docs/images/hero-engine-*.jpg`: a clean in-engine render with no interface, with its own build and date (without the entry, the first screenshot is the hero). The build fails if a picture has no entry or an entry has no file.
-- `src/lib/repo.ts`: reads `content/events/`, `ASSETS.yaml` and the event photographs' mapping at build time. The History and Sources pages show that content as it is. It also reads the Roadmap table in `README.md` and `README.he.md` for the home page; the build fails if a phase row is missing or has a status it does not know. The Cabinet page reads `content/people.yaml`, `offices.yaml`, `parties.yaml`, the game's portraits in `unity/Assets/UI/Portraits/` and their credits in `ASSETS.portraits.yaml`; it shows no quote, because `content/` holds none.
-- `scripts/press-kit.mjs`: the Press page's two downloads, written to `public/downloads/` (git-ignored) at the start of every build and never committed: a zip of the in-engine screenshots from `captures.yaml`, and a zip of the AI concept art in `promo/final/` as full-size JPEG (quality 90), with "AI concept art" in every file name and "AI likeness, not a photograph" in the two with likenesses of real ministers. Each holds a README.txt with the label, licence and provenance of every image, taken from `ASSETS.yaml`.
+- `src/lib/repo.ts`: reads `content/events/`, `ASSETS.yaml` and the event photographs' mapping at build time. The History and Sources pages show that content as it is. The Cabinet page reads `content/people.yaml`, `offices.yaml`, `parties.yaml`, the game's portraits in `unity/Assets/UI/Portraits/` and their credits in `ASSETS.portraits.yaml`; it shows no quote, because `content/` holds none.
+- `scripts/press-kit.mjs`: the Press page's two downloads, written to `public/downloads/` (git-ignored) at the start of every build and never committed: a zip of the in-engine screenshots from `captures.yaml`, and a zip of the AI concept art in `promo/final/` as full-size JPEG (quality 90), with "AI concept art" in every file name and "AI likeness, not a photograph" in the two with likenesses of real ministers. Each holds a README.txt with the label, licence and provenance of every image, taken from `ASSETS.yaml`. The same script copies the press logo, `docs/steam/kit/library_logo_1280w.png`, to `public/downloads/statecraft-israel-logo.png` unchanged.
 - `src/data/people-in-images.yaml`: every in-engine picture and video the site shows, with the real people visible in it, checked by hand (a check cannot see inside a screenshot). A file is shown only if it is listed and every portrait and event photograph in it has a `verified` provenance row; `npm run build` (media.ts, press-kit.mjs and check-site) fails otherwise. The Cabinet screenshot is held back this way while its owner-verify portraits are hidden (decision D-P).
-- `src/data/contributors.yaml`: the Contributors grid. Photos go in `src/assets/contributors/`, each with an `ASSETS.yaml` row and the person's consent. Never a GitHub avatar, never a generated image of a person.
+- `src/data/contributors.yaml`: the Contributors grid (`src/components/ContributorsGrid.astro`), on the Contributors page and as the home page's last section. Photos go in `src/assets/contributors/`, each with an `ASSETS.yaml` row and the person's consent. Never a GitHub avatar, never a generated image of a person.
 
 ## The gameplay clip
 
@@ -34,8 +34,6 @@ A real gameplay clip in `docs/images/build-*.mp4` and `.webm`, listed under `vid
 ## Refreshing the screenshots
 
 The site always shows the README's screenshots. To refresh both, retake `docs/images/build-*.jpg` (same file names), then set `build` and `date` in `docs/images/captures.yaml`; the labels read "In-engine capture — <build>, <date>". A new screenshot needs an entry with its alt text in both languages.
-
-Visual changes are about to land: new towns with a much better Tel Aviv (#339), warmer land (#392) and the tilt-shift change that keeps far towns readable (#390). Once they are merged, the README screenshots get retaken once and the site picks them up through `captures.yaml`, with no change under `site/`.
 
 ## Labels
 
@@ -56,4 +54,11 @@ The site lives at `https://eyalgolan.github.io/statecraft-israel/` until there i
 
 ## Hosting the game here
 
-GitHub Pages cannot set response headers, so the browser build must use Unity's Decompression Fallback and stay single-threaded. The Play page explains this; today `Build.Web` turns the fallback off.
+GitHub Pages cannot set response headers, so the browser build for this site differs from the itch.io one:
+
+- **Decompression Fallback.** Unity's Brotli and gzip builds need the server to send `Content-Encoding`, which GitHub Pages cannot do. The Pages build uses Unity's Decompression Fallback: the compressed files get the `.unityweb` extension and the loader decompresses them in JavaScript, at the cost of a larger loader ([Unity manual: deploying a Web application](https://docs.unity3d.com/6000.0/Documentation/Manual/webgl-deploying.html)). `Build.Web` turns it on with `-decompressionFallback` (off by default, because itch.io serves the files correctly).
+- **Single-threaded.** Multithreaded Web builds need the COOP and COEP headers, which GitHub Pages cannot send either. The builds are single-threaded (`webGLThreadsSupport: 0`) and must stay so for this site.
+- **Shareable.** Only a `-shareable` build may be published: it refuses while any sensitive event or photograph lacks its sensitivity review (`docs/m3-release.md`).
+- **Not committed.** No file in the repository may pass 10 MB, so the build is never in git.
+
+`docs/RELEASING.md` step 5 builds it as `statecraft-israel-vX.Y.Z-web-pages.zip` (`Build.Web -decompressionFallback`) on each release, and the deploy step in `.github/workflows/site.yml` unpacks the latest release's zip at `/demo/` - at deploy time, never from git. Until a release carries one, the site deploys without the demo and the Play page keeps saying there is no hosted build. Updating the Play page (and the root README's Play section) to link to `/demo/` is a follow-up step when the first such release ships.

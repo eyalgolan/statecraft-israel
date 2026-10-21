@@ -21,7 +21,7 @@ title: TODO title
 text: TODO what the player reads, and who must decide
 # text may name an office, e.g. {defense_minister}; the office needs a holder on every day of the window.
 anchor: soft
-# tags: [security]   # holocaust, terror, massacre and war-casualties are sensitive (docs/CONTENT_POLICY.md)
+# tags: [security]   # holocaust, terror, massacre, war-casualties and displacement are sensitive (docs/CONTENT_POLICY.md)
 # office: prime_minister
 # Say in a comment what happened and when, with the source.
 from: @FROM@
@@ -30,7 +30,7 @@ from: @FROM@
     text: TODO what the player does
     effects:
       # targets: an indicator id (morale, food_supply, ...), treasury or fx_reserves (game money),
-      # or food (the national Food stock, in whole units); policies go in set_policy
+      # or food or arms (the national Food and Arms stocks, in whole units); policies go in set_policy
       - { target: morale, delta: 0.0 }
 sources: []   # each { url: "https://...", checked: YYYY-MM-DD }
 status: draft
@@ -42,7 +42,10 @@ def build(event_id: str, start: str, end: str | None) -> str:
 
 
 def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(
+        description=__doc__.split("\n")[0],
+        epilog="Sensitive tags: holocaust, terror, massacre, war-casualties and displacement.",
+    )
     p.add_argument("id")
     p.add_argument("--from", dest="start", default="1948-05-15")
     p.add_argument("--to", dest="end")

@@ -120,27 +120,37 @@ public class UnitPlinthTests
 
     // ---- The flag matches the side --------------------------------------------------------------------------------
 
-    /// <summary>Every row of the unit file names its side, and every formation the map draws is Israel's (the Arab forces'
-    /// rows are data only until Phase 5 PR 17; owner, 17 October 2026, #740); only Israel has a flag (built from the 1948
-    /// specification), so no flag is invented.</summary>
+    /// <summary>Every row of the unit file names its side, and every formation the map draws is Israel's or a force with a
+    /// Collection figure (the other Arab forces' rows are data only; owner, 17 October 2026, #740; issue #665); only Israel
+    /// has a flag (built from the 1948 specification), so no flag is invented: a drawn force with none flies the neutral
+    /// pennant (Q-ART-1, owner, 15 October 2026), in neither side's colours and not white, and no other side flies anything.</summary>
     [Test]
     public void TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn()
     {
         var units = UnitData.Parse(CommittedYaml);
-        Assert.IsTrue(units.Where(UnitRoster.OnMap).All(u => u.Side == UnitData.Israel), "every formation the map draws is Israel's");
+        Assert.IsTrue(units.Where(UnitRoster.OnMap).All(u => u.Side == UnitData.Israel || UnitFigures.SideFigure(u.Side) != null),
+            "every formation the map draws is Israel's or has its own figure");
         Assert.IsTrue(UnitFlags.Has(UnitData.Israel));
+        Assert.IsFalse(UnitFlags.HasPennant(UnitData.Israel));
         foreach (var side in UnitData.Sides.Where(s => s != UnitData.Israel))
         {
             Assert.IsFalse(UnitFlags.Has(side), $"{side}: no sourced, licensed flag in the repo, so none");
             Assert.IsNull(UnitFlags.Build(side), side);
+            Assert.AreEqual(UnitFigures.SideFigure(side) != null, UnitFlags.HasPennant(side), $"{side}: the pennant only on a drawn force");
         }
+        var pennant = UnitFlags.BuildPennant();
+        var slots = pennant.uv.Select(u => Enumerable.Range(0, UnitPalette.Count).Single(s => Mathf.Abs(u.x - UnitPalette.U(s)) < 1e-4f)).Distinct();
+        CollectionAssert.AreEquivalent(new[] { UnitPalette.RifleWood, UnitPalette.HullGrey }, slots, "a wooden pole and a plain grey cloth");
 
         // An Arab side's row draws nothing: no IDF figures, no placeholder (owner, 17 October 2026, #740). The file with
         // every Israeli row relabelled Egypt's (each given an echelon and a strength, as such a row needs) draws no token.
         var map = BuildMap();
         try
         {
-            var egypt = UnitData.Parse(CommittedYaml.Replace("side: israel", "side: egypt\n  echelon: brigade\n  strength: {value: 1, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}"));
+            // A brigade that already gives its strength (#743) keeps it: a second strength key would not parse.
+            var egypt = UnitData.Parse(string.Join("\n- id: ", CommittedYaml.Split(new[] { "\n- id: " }, StringSplitOptions.None).Select(row =>
+                row.Replace("side: israel", "side: egypt\n  echelon: brigade" + (row.Contains("\n  strength:") ? ""
+                    : "\n  strength: {value: 1, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}")))));
             Assert.Greater(egypt.Count(u => u.Side == "egypt" && u.Service == UnitData.Army), 3);
             var layer = UnitLayer.Create(map, egypt, C.Hexes, still: true);
             layer.Show(C, StateAt(Dates[0]));

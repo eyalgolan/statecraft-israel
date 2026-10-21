@@ -1,6 +1,9 @@
-"""Slims the 31 non-building models of The 1948 Collection (MATKOT's Tripo models from PR #507, issue #664) into the files
-the game ships, so only reduced meshes and compressed colour maps enter the repository (owner, 15 October 2026: "Plain
-git, slimmed first"; no masters, no Git LFS).
+"""Slims the 31 non-building models of The 1948 Collection (Tal Heuberger's Tripo models from PR #507, issue #664), and #507's
+nine whole-town models (issue #663; owner ruling of 17 October 2026: "The nine whole-town models ship"), and the eight
+figures offered only in #336 (issue #708; owner ruling of 18 October 2026: "the 8 figures in #708 can be merged without his
+license line"), with #886's pioneer farmer and Jerusalem variant from #336 (owner, 19 October 2026: "Yes, both"), into
+the files the game ships, so only reduced meshes and compressed colour maps enter the repository
+(owner, 15 October 2026: "Plain git, slimmed first"; no masters, no Git LFS).
 
   uv run --no-project --python 3.13 --with bpy==5.2.2 --with pillow==12.3.0 python -I tools/slim_collection.py \\
       --src <folder holding #507's Models/<id>/ folders> --out unity/Assets/Art/Collection
@@ -8,13 +11,16 @@ git, slimmed first"; no masters, no Git LFS).
 The source is #507 at 3ef0a7a5a36887aee7a24fd11ddf722507695f3c:
   git fetch origin +pull/507/head:refs/remotes/origin/pr-507
   git archive 3ef0a7a5a36887aee7a24fd11ddf722507695f3c unity/Assets/Art/Settlements/Prototype/Models | tar -x -C <dir>
+The ten models of #336 are slimmed from #336 at 1a5482a5864e812c1f5afdf0b31464ac92cbc7fa, with their ids:
+  git archive 1a5482a5864e812c1f5afdf0b31464ac92cbc7fa unity/Assets/Art/CommandModels/Models | tar -x -C <dir>
 
 For each model it writes, into <out>/<id>/:
   <id>-far.fbx    the strategic zoom: one static mesh of at most FAR_TRIS triangles (FAR_TRIS_VEHICLE for vehicles, ships
-                  and aircraft), no rig, no animation (posed at the idle clip's first frame when the model has one);
+                  and aircraft, FAR_TRIS_TOWN for a whole town), no rig, no animation (posed at the idle clip's first frame when the model has one,
+                  or at the first frame of its POSE_CLIP);
   <id>-near.fbx   the close zoom, at most NEAR_TRIS triangles: for a model with an "idle" clip, the skinned mesh, its rig
                   and that one clip sampled every ANIM_STEP frames (every other clip is dropped); for any other model one
-                  static mesh (#507 has those stand still too);
+                  static mesh (#507 has those stand still too), posed as the far mesh;
   <id>_basecolor.jpg   the colour map at TEX_PX px (Unity imports it crunched).
 A model's parts (a vehicle's wheels) are joined into one mesh, so it draws as one instanced mesh. Decimation is
 Blender's collapse decimator, which keeps the vertex weights, so the cut mesh still follows its rig.
@@ -29,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -38,6 +45,7 @@ import oss_policy  # noqa: E402  (stdlib only; the home, temp and session path p
 
 FAR_TRIS = 1500          # people and animals at the strategic zoom
 FAR_TRIS_VEHICLE = 4500  # hard-surface models lose their shape below this (the collapse stalls on the locomotive at ~4,150)
+FAR_TRIS_TOWN = 4500     # a whole town is drawn only at the overview zoom, where it is a landmark some dozens of pixels across
 NEAR_TRIS = 8000
 ANIM_STEP = 2.0
 TEX_PX = 512
@@ -49,6 +57,11 @@ PEOPLE = [
     "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
     "figure-c08-arab-legion-v2", "figure-c09-irregular-v2", "figure-c10-woman-blue-dress-v2",
     "figure-c12f-palmach-scout-v2", "figure-c13-nurse-v2",
+    # the eight figures of #336 (issue #708); the soldier has no rig, so both his meshes are static
+    "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
+    "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
+    # #886's pioneer farmer from #336: a T-pose at rest, so his static far mesh stands at his idle clip's first frame
+    "figure-pioneer-farmer-v1-tpose",
 ]
 VEHICLES = [
     "figure-vehicle-willys-jeep-1948-v2", "figure-vehicle-sandwich-convoy-1948-v2", "figure-vehicle-napoleonchik-65mm-1948-v2",
@@ -61,7 +74,18 @@ ANIMALS = [
     "figure-donkey-1948-v1", "figure-draught-horse-idle-1948-v2", "figure-dromedary-camel-1948-v1",
     "figure-nubian-ibex-1948-v1", "figure-sheep-idle-1948-v1", "figure-striped-hyena-1948-v1",
 ]
-IDS = PEOPLE + VEHICLES + ANIMALS
+# The nine whole-town models of #507 (the same files as #336's), each one static mesh, and #336's Jerusalem variant
+# (#886), an extra beside #507's Jerusalem.
+TOWNS = [
+    "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+    "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+    "jerusalem-stone-city-v1-3denhance",
+]
+IDS = PEOPLE + VEHICLES + ANIMALS + TOWNS
+# A model with no "idle" clip whose rest pose is a T-pose has its static meshes posed at the first frame of this clip of its
+# own instead (issue #665): C05's only clips are a walk and a run, and the walk's first frame stands with the arms down,
+# mid-step. Without it he stood on the army tokens with his arms straight out.
+POSE_CLIP = {"figure-c05-pioneer-veteran-v2": "idle_walk"}
 
 
 def tris(mesh) -> int:
@@ -195,7 +219,21 @@ def export(bpy, path: Path, src: Path, objects, animated: bool) -> None:
 
 
 def find_idle(bpy, arms):
-    return next((a for a in bpy.data.actions if a.name.split("|")[-1] == "idle"), None) if arms else None
+    """The "idle" clip; #336's FBX files name it with Blender's numbered suffix ("Armature|idle.001")."""
+    if not arms:
+        return None
+    return next((a for a in bpy.data.actions if re.fullmatch(r"idle(\.\d{3})?", a.name.split("|")[-1])), None)
+
+
+def find_pose(bpy, arms, mid: str):
+    """The clip whose first frame poses the static meshes: the idle clip, else the model's POSE_CLIP, else none (rest)."""
+    idle = find_idle(bpy, arms)
+    if idle is not None or mid not in POSE_CLIP:
+        return idle
+    pose = next((a for a in bpy.data.actions if a.name.split("|")[-1] == POSE_CLIP[mid]), None) if arms else None
+    if pose is None:
+        raise SystemExit(f"{mid}: no clip {POSE_CLIP[mid]!r} to pose it")
+    return pose
 
 
 def slim(bpy, src: Path, out: Path, mid: str) -> dict:
@@ -221,15 +259,15 @@ def slim(bpy, src: Path, out: Path, mid: str) -> dict:
         report["near"] = f"{tris(meshes[0].data)}tris+idle"
         export(bpy, dest / f"{mid}-near.fbx", src, [meshes[0], arms[0]], animated=True)
     else:
-        near = join_static(bpy, meshes, arms, None)
+        near = join_static(bpy, meshes, arms, find_pose(bpy, arms, mid))
         decimate(bpy, near, NEAR_TRIS)
         near.name = mid
         report["near"] = f"{tris(near.data)}tris"
         export(bpy, dest / f"{mid}-near.fbx", src, [near], animated=False)
 
     meshes, arms = load(bpy, fbx)   # the far mesh starts again from the full mesh
-    far = join_static(bpy, meshes, arms, find_idle(bpy, arms))
-    decimate(bpy, far, FAR_TRIS_VEHICLE if mid in VEHICLES else FAR_TRIS)
+    far = join_static(bpy, meshes, arms, find_pose(bpy, arms, mid))
+    decimate(bpy, far, FAR_TRIS_TOWN if mid in TOWNS else FAR_TRIS_VEHICLE if mid in VEHICLES else FAR_TRIS)
     far.name = mid
     report["far"] = f"{tris(far.data)}tris"
     export(bpy, dest / f"{mid}-far.fbx", src, [far], animated=False)
@@ -250,7 +288,7 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--src", required=True, type=Path)
     p.add_argument("--out", required=True, type=Path)
-    p.add_argument("ids", nargs="*", help="model ids (default: all 31)")
+    p.add_argument("ids", nargs="*", help="model ids (default: all 50)")
     a = p.parse_args(argv)
     import bpy
 

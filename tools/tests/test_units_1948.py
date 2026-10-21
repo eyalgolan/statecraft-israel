@@ -27,6 +27,8 @@ def sources(u):
     for t in u.get('aircraft') or []:
         out += t['sources']
     out += u.get('headgear_sources') or []
+    for v in u.get('vehicles') or []:
+        out += v['sources']
     out += (u.get('disbanded') or {}).get('sources') or []
     out += (u.get('strength') or {}).get('sources') or []
     return out
@@ -84,6 +86,20 @@ def test_hidden_brigades_and_headgear():
             assert u['anchors'] == []
         if 'headgear' in u:
             assert u['service'] == 'army' and len(u['headgear']) == 3 and u['headgear_sources'], u['id']
+
+
+def test_a_vehicle_is_a_known_type_from_a_sourced_day_on_an_army_unit():
+    # Issue #665: the 65 mm gun and the jeep stand on a token only where a source puts them with the unit, from that day.
+    placed = {}
+    for u in UNITS:
+        for v in u.get('vehicles') or []:
+            assert u['service'] == 'army' and u['side'] == 'israel', u['id']
+            assert v['type'] in ('gun_65mm', 'jeep'), (u['id'], v)
+            assert day(v['from']) >= GAME_START and v['note'].strip() and v['sources'], (u['id'], v)
+            placed.setdefault(v['type'], set()).add(u['id'])
+        types = [v['type'] for v in u.get('vehicles') or []]
+        assert len(types) == len(set(types)), u['id']
+    assert placed == {'gun_65mm': {'carmeli', 'givati', 'harel', 'yiftach', 'negev'}, 'jeep': {'harel', 'negev'}}
 
 
 def test_a_toward_point_is_sourced_and_says_why():
@@ -166,6 +182,33 @@ def test_strength_has_one_value_and_a_source():
     # Every row the file has today gives the 15 May strength only: no source in the note dates a strength on 11 June
     # (arab-forces-1948.md, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented").
     assert all(u['strength']['as_of'] == '1948-05-15' for u in rows)
+
+
+# Owner, 20 October 2026, on #743: "the 15 May 1948 IDF brigade strengths may come from secondary sources, since no
+# primary order of battle gives them. Every row cites its source, carries `status: to_verify`, and is replaced when a
+# primary source turns up." The figures are the brigade table of research_notes/M4 war mode/war-1948.md, section 1
+# (#906); the brigades it gives no size for get none.
+IDF_STRENGTH = {'golani': 4500, 'carmeli': 2000, 'alexandroni': 5200, 'kiryati': 1400, 'givati': 5000, 'harel': 1400,
+                'yiftach': 4500, 'negev': 2400}
+
+
+def test_idf_brigade_strengths_are_secondary_and_to_verify():
+    israel = {u['id']: u for u in UNITS if u['side'] == 'israel'}
+    for uid, value in IDF_STRENGTH.items():
+        u = israel[uid]
+        st = u.get('strength')
+        assert isinstance(st, dict), f"{uid}: no strength"
+        assert set(st) <= {'value', 'as_of', 'note', 'sources'}, (uid, sorted(st))
+        assert st.get('value') == value, f"{uid}: strength {st.get('value')!r} is not the note's {value}"
+        assert st.get('as_of') == '1948-05-15', f"{uid}: the 15 May strength only"
+        assert st.get('sources'), f"{uid}: the strength cites no source"
+        assert not RANGE.search(str(st.get('note', ''))), f"{uid}: the strength note copies a range"
+        assert u.get('status') == 'to_verify', f"{uid}: a secondary-source strength carries status: to_verify"
+        assert u.get('to_verify'), f"{uid}: to_verify says what a primary source must replace"
+    for uid, u in israel.items():
+        if uid not in IDF_STRENGTH:
+            assert 'strength' not in u, f"{uid}: no figure in the note, so none in the file"
+            assert u.get('status') == 'draft', uid
 
 
 def near(a, lon, lat, km=3.0):

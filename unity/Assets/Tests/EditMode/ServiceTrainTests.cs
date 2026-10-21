@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>Issue #668 (maintainer decision on #35, 16 October 2026: "Yes, normal play", on the Jaffa–Jerusalem line, only
 /// from the sourced date regular service resumed): the steam train in normal play. Its date and stretch come from the
-/// content (routes_1948.yaml, through the runtime file), its model is MATKOT's H09, streamed after the first frame through
+/// content (routes_1948.yaml, through the runtime file), its model is Tal Heuberger's H09, streamed after the first frame through
 /// CollectionStream, and it fails open.</summary>
 public class ServiceTrainTests
 {
@@ -144,7 +144,7 @@ public class ServiceTrainTests
             asked[0].done(FarPrefab());
             Assert.IsNotNull(service.Train);
             Assert.IsTrue(service.Train.gameObject.activeInHierarchy);
-            Assert.AreEqual(ServiceTrain.Cars, service.Train.Cars.Count, "MATKOT's locomotive and three coaches (owner, \"ride the track, cut walls\")");
+            Assert.AreEqual(ServiceTrain.Cars, service.Train.Cars.Count, "Tal Heuberger's locomotive and three coaches (owner, \"ride the track, cut walls\")");
             Assert.AreEqual("Locomotive", service.Train.Cars[0].name, "the locomotive leads");
             Assert.AreEqual(FarPrefab().name, service.Train.Cars[0].GetChild(0).name, "the streamed model is the locomotive");
             foreach (var car in service.Train.Cars) Assert.IsNotNull(car.GetComponentInChildren<Renderer>(), car.name);

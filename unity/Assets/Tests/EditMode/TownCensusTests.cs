@@ -39,7 +39,7 @@ public class TownCensusTests
     {
         g = new KitGround(map.Terrain, map.Frame, map.Hexes, HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta.elev_min_m);
         // The corridors MapScene.Build gives the kits: the routes and the units' clearings.
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
         // With the 1948 localities, as the map builds them (their landmarks claim their hearts before any town's houses).
         var localities = map.Localities.Select(p => p.Settlement).ToList();
@@ -157,7 +157,25 @@ public class TownCensusTests
             foreach (var k in expect) if (!kinds.Contains(k)) missing.Add($"{s.Id}: {k}");
         }
         CollectionAssert.IsEmpty(missing, "landmarks left out");
-        Assert.GreaterOrEqual(placed.Count(p => p.Id == "jerusalem" && p.Kind == "gate"), 3, "most of the Old City's gates stand");
+        // Eight gates, all open but the Gate of Mercy (the Golden Gate), Israel Ministry of Tourism,
+        // https://israel.travel/the-gates-of-jerusalem/, checked 18 October 2026; the seventh, the New Gate, opened in 1887
+        // or 1889 (https://en.wikipedia.org/wiki/Gates_of_the_Old_City_of_Jerusalem and
+        // https://en.wikipedia.org/wiki/New_Gate, both checked 18 October 2026), so seven stood open before the 1948 war.
+        var gates = placed.Where(p => p.Id == "jerusalem" && p.Kind == "gate").ToList();
+        Assert.AreEqual(7, gates.Count, "the Old City's seven open gates stand");
+        // Seven distinct gatehouses: none overlaps another, or none would read as two gates.
+        for (int i = 0; i < gates.Count; i++)
+            for (int j = i + 1; j < gates.Count; j++)
+                Assert.GreaterOrEqual((gates[i].C - gates[j].C).magnitude, gates[i].W, $"gates at {gates[i].C} and {gates[j].C} overlap");
+
+        // The Haram al-Sharif / Temple Mount: 488 m along the west, 470 m along the east, 315 m along the north and 280 m
+        // along the south (https://en.wikipedia.org/wiki/Temple_Mount, checked 18 October 2026): longer north-south.
+        // Al-Aqsa stands on its south wall (https://en.wikipedia.org/wiki/Al-Aqsa_Mosque, checked 18 October 2026).
+        var haram = placed.Single(p => p.Id == "jerusalem" && p.Kind == "haram");
+        var aqsa = placed.Single(p => p.Id == "jerusalem" && p.Kind == "al_aqsa");
+        Assert.Greater(haram.D, 1.4f * haram.W, "the Haram runs north-south, about 1.6 times as long as it is wide");
+        Assert.Less(aqsa.C.y - 0.5f * aqsa.D, haram.C.y - 0.5f * haram.D + 0.1f * haram.D, "Al-Aqsa stands at the Haram's south end");
+        Assert.Greater(aqsa.W, aqsa.D, "Al-Aqsa runs across the south end, not down it");
     }
 
     /// <summary>No building or landmark stands on a railway or a road (their corridors, RouteLayer.Corridors, and the units'
@@ -175,7 +193,19 @@ public class TownCensusTests
             bool building = p.Kind == "building" || p.Kind == "wing";
             float reach = building ? 0.5f * Mathf.Sqrt(p.W * p.W + p.D * p.D) : 0.5f * Mathf.Min(p.W, p.D);
             if (p.Kind == "wing") reach = 0.5f * Mathf.Min(p.W, p.D);   // inside its block's plot, which was checked whole
-            if (g.OnRoute(p.C, reach)) bad.Add($"{p.Id} {p.Kind} on a route at {p.C}");
+            // The Haram, the Dome of the Rock and Al-Aqsa (#319): the roads' traced lines still run inside the Old City's
+            // walls as corridors (RouteLayer.Corridors), but no road is drawn there (RouteLayer.Drawn cuts every road and
+            // the railway at the walls), and the real roads ran outside the real walls. So these three must stand wholly
+            // inside the walls, where no ribbon is drawn, and off every unit's clearing; other corridors do not move them.
+            bool oldCitySanctuary = p.Id == "jerusalem" && (p.Kind == "haram" || p.Kind == "dome_of_the_rock" || p.Kind == "al_aqsa");
+            if (oldCitySanctuary)
+            {
+                var (oc, half) = SettlementKits.OldCityWalls(map.Frame);
+                if (Mathf.Abs(p.C.x - oc.x) + 0.5f * p.W > half || Mathf.Abs(p.C.y - oc.y) + 0.5f * p.D > half) bad.Add($"{p.Id} {p.Kind} outside the Old City's walls at {p.C}");
+                foreach (var (cc, cr) in map.UnitClearings)
+                    if (Mathf.Abs(cc.x - p.C.x) < 0.5f * p.W + cr && Mathf.Abs(cc.y - p.C.y) < 0.5f * p.D + cr) bad.Add($"{p.Id} {p.Kind} on a unit's clearing at {cc}");
+            }
+            else if (g.OnRoute(p.C, reach)) bad.Add($"{p.Id} {p.Kind} on a route at {p.C}");
             if (g.Water(p.C.x, p.C.y)) bad.Add($"{p.Id} {p.Kind} in the sea at {p.C}");
             if (!building) continue;
             float a = p.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
@@ -270,10 +300,13 @@ public class TownCensusTests
     /// that thins a city back to round 1's sparse handful fails here; the cover floors are about 10% under the measure.
     /// Tel Aviv's row was #318's (owner ruling 2026-10-12: 55 / 25.2% / 25.6% drawn, core floor 25%). Since the owner's ruling on
     /// #652 (2026-10-15, "Lower floor to ~30, wider blocks") it is <see cref="TelAvivFloor"/>'s: fewer, larger blocks with
-    /// open plots between them; its localities' landmarks still stand at its street crossings.</summary>
+    /// open plots between them; its localities' landmarks still stand at its street crossings. Haifa's row drops by its one
+    /// unit clearing (<see cref="UnitClearingBudget"/>, #588): Carmeli's clearing took 11 houses and 6.8 / 3.9 points of
+    /// cover (main 0011470c draws 46 / 21.4% / 20.6%, with the clearing 35 / 14.6% / 16.7%), so 40 / 19% / 18.5% became
+    /// 29 / 12.2% / 14.6%.</summary>
     internal static readonly Dictionary<string, (int buildings, float all, float core)> Floors = new Dictionary<string, (int, float, float)>
     {
-        ["tel_aviv"] = (TelAvivFloor, 0.245f, 0.21f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (40, 0.19f, 0.185f), ["jerusalem"] = (95, 0.20f, 0.22f),
+        ["tel_aviv"] = (TelAvivFloor, 0.245f, 0.21f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (29, 0.122f, 0.146f), ["jerusalem"] = (95, 0.20f, 0.22f),
     };
 
     /// <summary>Tel Aviv's building floor here and in MainBuildings, and its cover floors in Floors (was 50 / 22.5% / 25%
@@ -375,8 +408,32 @@ public class TownCensusTests
     /// <summary>Bands for TelAvivsPlasterIsWarmCreamAndStillWhiterThanJaffa, in census mean-wall terms. Main: Tel Aviv
     /// (0.93, 0.93, 0.92), r - g 0.000; Jaffa (0.76, 0.69, 0.60).</summary>
     const float CreamRedOverGreen = 0.04f, CreamRedOverBlue = 0.08f, WhiteOverJaffa = 0.12f, CreamOfJaffasTint = 0.85f;
-    /// <summary>Haifa's census mean wall on main (2927defb), which #658 must not move.</summary>
-    static readonly Color HaifaMeanWall = new Color(0.8380f, 0.7945f, 0.7255f);
+    /// <summary>Haifa's census mean wall on main (2927defb), which #658 must not move. #588 moved it: Carmeli's clearing takes
+    /// 11 of Haifa's houses (was 0.8380, 0.7945, 0.7255).</summary>
+    static readonly Color HaifaMeanWall = new Color(0.8112f, 0.7568f, 0.6747f);
+
+    /// <summary>#588 (owner, 18 October 2026, "Beri's defaults"): Haifa and Tel Aviv each have a budget of one unit's
+    /// clearing (a token standing in the town, MapScene.UnitClearings), and their floors in <see cref="Floors"/> are
+    /// measured with it: Carmeli in Haifa, Kiryati in Tel Aviv. A second clearing in either town would thin it under its
+    /// measure; none would leave its floor loose. The placer does not count the budget: this test is the guard. Tel Aviv's
+    /// floor (<see cref="TelAvivFloor"/>, #652) was measured with Kiryati's clearing already in place, so its one clearing
+    /// takes nothing more and the floor stays.</summary>
+    internal static readonly Dictionary<string, int> UnitClearingBudget = new Dictionary<string, int> { ["haifa"] = 1, ["tel_aviv"] = 1 };
+
+    [Test]
+    public void HaifaAndTelAvivSpendTheirUnitClearingBudget()
+    {
+        var map = OpenMap();
+        foreach (var kv in UnitClearingBudget)
+        {
+            var (fc, fr, _) = map.KitFootprints.Single(f => f.id == kv.Key);
+            var inTown = map.UnitClearings.Where(c => (c.centre - fc).magnitude < fr * Statecraft.Game.Map.Units.UnitGround.FootprintMargin).ToList();
+            TestContext.WriteLine($"{kv.Key}: {inTown.Count} unit clearings {string.Join(" ", inTown.Select(c => c.centre))}");
+            Assert.AreEqual(kv.Value, inTown.Count, kv.Key + ": unit clearings in the town");
+            var own = map.UnitSpots.Where(s => s.Value.InTown && inTown.Any(c => c.centre == new Vector2((float)s.Value.X, (float)s.Value.Z))).Select(s => s.Key.Place);
+            CollectionAssert.AreEquivalent(new[] { kv.Key == "haifa" ? "Haifa" : "Tel Aviv" }, own, kv.Key + ": the clearing its floors were measured with");
+        }
+    }
 
     [Test]
     public void TheCitiesCoverTheirGround()

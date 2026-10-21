@@ -789,6 +789,9 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
   change the URP asset. Even on WebGL it stays off under `?vprofile`, `?profile` and `?shot` (instruments that must see the
   tier as configured) and with `?nofallback`; every change logs `QUALITY level=<n> scale=<s> tiltshift=<on|off>
   p95_ms=<ms>`.
+- **The player's quality choice (#40).** Automatic in Settings is this behaviour. High (the PC tier at render scale 1.0)
+  and Low (the Mobile tier at 0.8) fix the quality: the fallback holds while one is set (`QualityFallbackDriver.Feed`),
+  and every switch starts it again from the top (`GraphicsQuality.Changed`).
 - **Presentation only:** it reads no sim state and writes only the render scale and the tilt-shift flag, so turns, hashes
   and saves cannot change. The goldens and the 5-turn smoke match with it in the build: `uv run tools/web_check.py
   unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect` values from `docs/determinism.md`: PASS.
@@ -1642,8 +1645,9 @@ and the calm and swells are also behind `seatexture`.
   - Each hull, plus a margin, lies in open sea and meets no breakwater or mole piece. The kits now record each piece as
     a "breakwater" in the census. `SeaCraftTests.NoHullEverMeetsABreakwaterOrMole` sweeps five landmark scales and 16
     draws each.
-  - Sizes are symbolic, like the buildings: a felucca is 34 landmark metres (2 km at the default scale), a quarter of a
-    hex across, about promo 03's share.
+  - Each boat is its real length x `SettlementKits.ModelScale` (the train's 24x, #1094): a felucca 12 m (about 290 m), a
+    cutter 10, a moored fishing boat 8, the coastal steamer 50 (about 1,200 m). Design values, not sourced. Before #1094
+    a felucca was 34 landmark metres (2 km at the default scale).
   - Every boat heads east or west, give or take 35 degrees, so the north-looking gameplay camera sees its sails side-on.
   - The sails are lit as cloth turned mostly to the sky (each face's normal tipped up by 0.7). Lit as flat plates, the
     face the camera saw was often the one turned from the sun, and the sails read grey.
@@ -2265,9 +2269,12 @@ blocks, village houses, red-roofed villas), Jaffa 6 → 7, Tel Aviv 8 → 7.
   - It is 4 km across, about 4 times the real one. The drawn 1948 roads (300 m ribbons) meet by Jaffa Gate and loop
     round the north and east, so at any readable size they cross inside the square, through gaps in the walls.
     Since #319 the map cuts each road and the railway at the walls (`docs/routes.md`, "Jerusalem's Old City"), so none
-    runs inside them. The Haram's shape below, and the gates, are still as round 2 placed them.
-  - Only one place in its south-east quadrant fits a platform clear of every route: 1.3 x 1.1 km, wider than long. Al-Aqsa
-    therefore stands in its south-east corner, not across its south end.
+    runs inside them.
+  - Round 2 fitted the Haram's platform where it kept clear of every route's traced line: 1.3 x 1.1 km, wider than long,
+    with Al-Aqsa in its south-east corner, and it drew a gate wherever a road met the walls (13). Since #319 the platform
+    runs north-south (1.1 x 1.7 km, the real one's shape) against the east and south walls, Al-Aqsa stands across its
+    south end, and the walls have the seven gates open before 1948 on their real sides, the Golden Gate left sealed
+    (sources in `SettlementKits.Jerusalem`). The roads' traced lines inside the walls still keep houses off them.
   - The citadel is moved east off the drawn Hebron road.
   - The houses inside the walls are capped at two storeys, and the Dome's walls and drum are 30x high, so the walls and
     the Dome stand above the roofs.

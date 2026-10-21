@@ -33,7 +33,7 @@
         "title_he": { "type": "string", "minLength": 1, "description": "The Hebrew title (#558) as a source gives it. Leave out when no source gives one (the UI keeps the English). Needs title_he_sources." },
         "title_he_sources": { "$ref": "#/definitions/sources", "description": "Sources for title_he." },
         "title_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of title_he. agent-checked: an AI agent checked the name against its sources and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
-        "title_he_f": { "type": "string", "minLength": 1, "description": "The feminine Hebrew title, only where a woman held the office (the Knesset records write שרת העבודה). Needs title_he and title_he_f_sources." },
+        "title_he_f": { "type": "string", "minLength": 1, "description": "The feminine Hebrew title, shown for a woman in the office (the Knesset records write שרת העבודה). Every office with a title_he has one: the player can order a woman into any office. Needs title_he and title_he_f_sources." },
         "title_he_f_sources": { "$ref": "#/definitions/sources", "description": "Sources for title_he_f." },
         "title_he_f_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of title_he_f. agent-checked: an AI agent checked the name against its sources and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
         "historical_only": { "type": "boolean", "description": "Historical record only: no Cabinet seat, no player appointment, no gameplay." },

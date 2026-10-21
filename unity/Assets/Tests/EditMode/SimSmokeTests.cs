@@ -17,25 +17,6 @@ public class SimSmokeTests
         Assert.IsNotEmpty(ra.State.Hash());
     }
 
-    /// <summary>The golden playthroughs of docs/determinism.md, run on the Unity editor's Mono runtime. The constants are
-    /// GoldenRun's, which sim/Statecraft.Sim.Tests/DeterminismTests.cs pins on .NET; rebuild the DLLs
-    /// (uv run tools/build_sim_for_unity.py) after changing them.</summary>
-    [Test]
-    public void GoldenPlaythroughTo1950MatchesDotNet()
-    {
-        var s = GoldenRun.Play(ContentLoader.Load(Paths.Content), GoldenRun.Until1950);
-        Assert.IsNull(s.GameOver);
-        Assert.AreEqual(GoldenRun.Hash1950, s.Hash());
-    }
-
-    [Test]
-    public void GoldenPlaythroughTo1952MatchesDotNet()
-    {
-        var s = GoldenRun.Play(ContentLoader.Load(Paths.Content), GoldenRun.Until1952);
-        Assert.AreEqual(GameOverCodes.MvpEnded, s.GameOver);   // the game's last turn ends on 15 January 1952 (R-LOOP-004)
-        Assert.AreEqual(GoldenRun.Hash1952, s.Hash());
-    }
-
     /// <summary>The save format's strict UTF-8 decoding, on the Unity editor's Mono runtime (it must not depend on the
     /// BCL's Uri class): an overlong escape is refused, a surrogate pair round-trips.</summary>
     [Test]

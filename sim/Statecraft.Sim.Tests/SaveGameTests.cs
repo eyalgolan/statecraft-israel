@@ -27,9 +27,9 @@ public class SaveGameTests
             new Command[] { new AllocateBudget(new Dictionary<string, double> { ["finance_minister"] = 0.75, ["defense_minister"] = 0.25 }) },
             new Command[] { new Appoint("finance_minister", "pm_one"), new MapAction("housing", 2, 0) },
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
-            new Command[] { new AssignWorkers("town_a", "job", 1) },   // a GDD order: the legacy fixture refuses it
+            new Command[] { new AssignWorkers("town_a", "job", 1), new UnitOrder(1, "hold") },   // GDD orders: the legacy fixture refuses them
             new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1) },   // GDD orders too
-            new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1) },
+            new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2), new Move(1, -2, 3) },
             new Command[] { new SecurityOrder(1) }, new Command[0],
         };
         foreach (var o in orders) g.Step(o);
@@ -48,6 +48,40 @@ public class SaveGameTests
         Assert.Equal(10, loaded.Save.Turns.Count);
         Assert.Equal(text, loaded.Save.Write());                         // writing the loaded save gives the same text
         Assert.Equal(played.Previous!.Hash(), loaded.Previous!.Hash());  // "since last turn" survives a load
+    }
+
+    [Fact]
+    // R-ALT-009
+    public void ARejoinedRoadRoundTripsThroughASave()
+    {
+        var consequence = AlternateTimelineTests.Consequence.Replace("    text: Hold the course\n", "    text: Hold the course\n    rejoin: parent\n");
+        var c = ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
+        {
+            ["parent.yaml"] = AlternateTimelineTests.Parent,
+            ["after_road.yaml"] = consequence,
+            ["on_record.yaml"] = AlternateTimelineTests.RecordFollowUp,
+        }));
+        var played = GameSession.New(c, 1, Mode.Historical);
+        // The fixture's turns are a week long: wait for each card, then answer it.
+        void Answer(string id, string option)
+        {
+            for (int i = 0; i < 20 && !played.State.PendingEvents.Contains(id); i++) played.Step(new Command[0]);
+            Assert.Contains(id, played.State.PendingEvents);
+            Assert.Empty(played.Step(new Command[] { new ChooseEventOption(id, option) }).Rejected);
+        }
+        Answer("parent", "road");
+        Answer("after_road", "hold");
+        for (int i = 0; i < 20 && !played.State.FiredEvents.Contains("on_record"); i++) played.Step(new Command[0]);
+        Assert.Equal("road", played.State.ChosenOptions["parent"]);
+        Assert.Equal("hold", played.State.ChosenOptions["after_road"]);
+        Assert.True(Timeline.Rejoined(c, played.State, "parent"));
+        Assert.Contains("on_record", played.State.FiredEvents);
+
+        var loaded = GameSession.Load(c, played.Save.Write(), out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(played.State.Hash(), loaded.State.Hash());
+        Assert.Equal(played.State.ChosenOptions.OrderBy(kv => kv.Key), loaded.State.ChosenOptions.OrderBy(kv => kv.Key));
+        Assert.True(Timeline.Rejoined(c, loaded.State, "parent"));
     }
 
     /// <summary>#398 review S1: a load also keeps the step before the last, so a change that compares two steps (the top
@@ -168,6 +202,16 @@ public class SaveGameTests
         Assert.Equal(a.Hash, crlf.Hash);
         var map = ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["map/settlement_hexes.yaml"] = Fixture.Files["map/settlement_hexes.yaml"] + "# note\n" }));
         Assert.NotEqual(a.Hash, map.Hash);
+    }
+
+    [Fact]
+    public void TheContentHashCoversSettlementTargets()
+    {
+        var before = ContentLoader.Load(Fixture.Write()).Hash;
+        var edited = Fixture.Files["settlement_targets.yaml"] + "# edited\n";
+        var after = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+            { ["settlement_targets.yaml"] = edited })).Hash;
+        Assert.NotEqual(before, after);
     }
 
     /// <summary>Every command type the sim has must be savable: the played session uses each one, and a new Command type

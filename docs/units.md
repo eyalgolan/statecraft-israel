@@ -90,7 +90,7 @@ The owner ruled:
 3. 101 Squadron shows an Avia S-199 until the Spitfire's sourced date, then the Spitfire.
 4. The four brigades with no sourced position (Carmeli, Alexandroni, the 8th, Oded) are listed in the file and hidden.
    - 2026-10-15 (refs #385): Carmeli (from 9 July 1948; coordinator's option (d)) and Alexandroni now have sourced
-     positions (below) and are shown. The 8th
+     positions (below) and are shown. Since #588 (owner, 18 October 2026) Carmeli also stands at Haifa before that. The 8th
      is sourced at Tel Litvinsky (24 May to 9 July 1948; owner, 2026-10-15: "Accept, verify later") but stays hidden:
      the map has no clear spot for it on its own side within one hex of the camp. Oded stays hidden (its sources
      conflict and name no place).
@@ -116,7 +116,7 @@ After the staff review the controller ruled:
   asks for them (`&units`, `-units`). The editor's promo renders draw them only with `-units`.
 - **The promo's badge, a wider trio, sourced headgear; the ring stays selection-only (I6).** See "Look".
 
-### The Arab forces: data only
+### The Arab forces: two drawn, the rest data only
 
 The file also holds the Arab forces of 15 May and 11 June 1948 (#740, Phase 5 PR 1), one row per force, with `side`,
 `echelon` and one `strength` (owner's decision on #570). The source is `research_notes/GDD phase 5/arab-forces-1948.md`,
@@ -140,11 +140,19 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
 - **Two places at once.** At the first truce the Egyptian row stands at both its forward base (Isdud) and its rear base
   (Majdal) (owner, 17 October 2026, on #860). Its two anchors overlap in time. Only a row the map does not draw may do
   that: a drawn row has one token, at one place at a time. How PR 17 draws such a row is its decision.
-- **Not drawn** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to `units_1948.yaml` and
-  filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its sensitivity review. Nothing is
-  drawn with IDF figures, and there is no placeholder art." `UnitRoster.OnMap` (not hidden, and `side: israel`) keeps
-  both the roster and the placer to Israel's rows, so the Arab rows give no token, take no spot and clear no ground for
-  the kits; the goldens do not move. Test: `UnitsInPlayTests.OnlyIsraelsRowsAreDrawnTheArabForcesAreDataOnly`.
+- **Drawn only with their own figures** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to
+  `units_1948.yaml` and filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its
+  sensitivity review. Nothing is drawn with IDF figures, and there is no placeholder art." Tal Heuberger's 1948 Collection has
+  figures for two forces, and Tal Heuberger's unit models count as reviewed and approved (owner, 17 October 2026, #756), so
+  those two are drawn (issue #665; see "The 1948 Collection on the tokens"): the Arab Legion and the Arab Liberation
+  Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
+  those rows; the Egyptian, Syrian, Iraqi and Lebanese rows give no token, take no spot and clear no ground for the kits.
+  A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
+  bundle draws nothing. Three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May strength; owner,
+  17 October 2026, #226), under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
+  window's first day (#226, ruling 9; `control_hexes_1948_49.yaml`). The card leaves out Israel's call-up line. The
+  goldens do not move. Tests: `UnitsInPlayTests.OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived`,
+  `UnitFiguresTests.TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive`.
 - **Not in the file yet:** the local Arab forces (the note places them only beside places its "Conventions" lists as
   sensitive and does not describe), the Legion's Jerusalem battalions, the Egyptian eastern force, the ALA and
   the Lebanese Army on 11 June (al-Malikiyya's holder is contested), and the Saudi, Sudanese and Yemeni contingents (not
@@ -153,12 +161,72 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   `test_strength_has_one_value_and_a_source`, `test_no_anchor_rests_on_one_source_where_the_note_says_contested`,
   `test_the_arab_rows_name_no_sensitive_place`).
 
+### The IDF brigades' 15 May strengths (#743)
+
+No primary order of battle gives the IDF brigades' strengths on 15 May 1948, so a secondary source may give them (owner,
+20 October 2026, #743): "Every row cites its source, carries `status: to_verify`, and is replaced when a primary source
+turns up." The figures are the brigade table of `research_notes/M4 war mode/war-1948.md`, section 1 (#906): en.wiki's
+1948 war article, whose size column cites Ben-Gurion's War Diaries (Arabic edition, 1994, p. 303). The table gives no
+date; `as_of` is 15 May 1948, the day the ruling gives the strengths for.
+
+| Row | Strength (15 May) |
+|---|---|
+| Golani | 4,500 |
+| Carmeli | 2,000 |
+| Alexandroni | 5,200 |
+| Kiryati | 1,400 |
+| Givati | 5,000 |
+| Harel | 1,400 |
+| Yiftach | 4,500 (the table counts some Golani men in it) |
+| Negev | 2,400 |
+
+- **No figure, no strength:** Etzioni, the 7th, the 8th and Oded have no size in the note, so their rows give none and
+  stay `status: draft`.
+- **Still map-only:** the sim does not read the file yet, so the goldens do not move. Phase 5 PR 4's sim reading follows.
+- Tests: `test_idf_brigade_strengths_are_secondary_and_to_verify` (Python) and `UnitsInPlayTests` (EditMode).
+
+### The 1948 Collection on the tokens (#665)
+
+The tokens wear Tal Heuberger's figures from The 1948 Collection (#507, #680), streamed after the first frame
+(`CollectionStream`, the people and vehicles bundles); nothing is fetched before it, and nothing sits in `Resources/`.
+`UnitFigures` holds the table. Each model is the far (strategic-zoom) static mesh, put under the figure with the prefab's
+own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's yaw composes on top of it.
+
+| Model | Where | Source | From |
+|---|---|---|---|
+| C04 sabra pioneer | an Israeli rifleman in the bush hat (the uniform default's first figure; the showcase trio's first) | #507's pairing | always |
+| C06 young recruit | an Israeli rifleman in the Mk II steel helmet (every token's second figure) | #507's pairing | always |
+| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first and third, the showcase's third | the Negev headgear photographs (Sources) | always |
+| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel | a presentation choice: the default's third figure is not sourced | always |
+| C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
+| C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
+| C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
+| H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
+| H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
+
+- **The vehicles are data:** `vehicles` in `units_1948.yaml` (`type`, `from`, `note`, `sources`), checked by
+  `UnitData.Parse` and `tools/tests/test_units_1948.py`. A vehicle stays for the rest of the row's windows.
+- **Size:** a figure takes the code-built figure's height; a vehicle is drawn 0.7 of a figure's height long, sized against
+  the figures as the aircraft and the ship are, not to scale, so it fits on the base.
+- **C05's pose:** he had no idle clip and shipped in his rest pose, a T-pose. His static meshes are now posed at the first
+  frame of his own walk (`tools/slim_collection.py`, `POSE_CLIP`).
+- **Close zoom:** below the town models' switch (`TownModelLayer.CloseEnterM`, 40 km; far again beyond `CloseExitM`,
+  45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
+  clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
+  camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"). The vehicles
+  stay far.
+- **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
+  missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
+- Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
+  fail open; the close-zoom swap and its idle clip, the missing near model and C05).
+
 ### What the player sees
 
 | Unit | Positions (dated, from the sources) | Ends |
 |---|---|---|
 | Golani (1st) | Yavne'el (since February 1948); the Julis camp from December 1948 | December 1948 (source); 24 Feb 1949 (Egypt) |
-| Carmeli (2nd) | Facing the Syrian bridgehead at Mishmar HaYarden, on the Rosh Pinna side, 9-18 July 1948 (Operation Brosh). Not drawn at Haifa, its sector's seat: no clear spot outside the town (#588) | 19 Jul 1948, the second truce (source) |
+| Carmeli (2nd) | Haifa, its sector's seat (since February 1948), in the town on Haifa's one unit clearing (#588); facing the Syrian bridgehead at Mishmar HaYarden, on the Rosh Pinna side, 9-18 July 1948 (Operation Brosh) | 9 Jul 1948, Operation Brosh (source); 19 Jul 1948, the second truce (source) |
 | Alexandroni (3rd) | Netanya, its headquarters at Camp Dora (since March 1948) | November 1948, the move to the Faluja pocket (source) |
 | Kiryati (4th) | Tel Aviv (since February 1948) | 3 Apr 1949 (Jordan) |
 | Givati (5th) | Gedera, one of the three places its sector names (no start given) | November 1948, the move to the centre (source) |
@@ -195,13 +263,16 @@ The candidates are tried in three rounds:
 3. If the whole neighbourhood is town, the compact point that reaches least deep into it (then the nearest; with a
    `toward` point, the nearest to that). The map then keeps a clearing of the compact ring's radius free of the kits'
    buildings and trees there (`MapScene.UnitClearings`, computed before the kits from the same data), so the token never
-   stands in a building. The clearing may cut only into the anchor's own town, never a neighbour's. Kiryati (Tel Aviv)
-   and Etzioni (West Jerusalem) stand this way.
+   stands in a building. The clearing may cut only into the anchor's own town, never a neighbour's. Kiryati (Tel Aviv),
+   Carmeli (Haifa) and Etzioni (West Jerusalem) stand this way. Haifa and Tel Aviv each have a budget of one such
+   clearing, and their census floors are measured with it (#588, owner, 18 October 2026; `TownCensusTests`).
 
 A spot is clear when:
 - the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
 - an army token's three figure spots (always three, so the spot does not change with the call-up), or a parked
-  aircraft's centre, are on land and at least 700 m beyond every railway and road corridor;
+  aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
+  stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no
+  spot; #786);
 - a ship has a sea hex;
 - no other anchor whose window overlaps holds the hex.
 
@@ -303,7 +374,7 @@ headless `?vprofile` on the WebGL build of 943184c, 1920x1080 at DPR 1, 2026-10-
   archives.
 - No dated front line: tokens keep within one hex of their sourced place, and three anchors carry a sourced `toward`
   point to stay on their own side (review MF1).
-- **Kit baseline break:** from 943184c the kits keep the unit clearings in Tel Aviv and West Jerusalem, in plain
+- **Kit baseline break:** from 943184c the kits keep the unit clearings in Tel Aviv and West Jerusalem (and in Haifa since #588), in plain
   checkpoints too. So kit metrics before and after that commit are not comparable; this is marked in the art log.
 - Merges still to come (review I7). With promo-borderdata, the info panel's region label must be cleared when a unit
   card shows. With promo-screens, the wide-screen click guard must cover `ShowUnit` and `UnitLayer.Select` as well as
@@ -382,8 +453,9 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   before measuring ours. The figures read darker than their base, as T29's (0.5–0.9 of its luma), at those looks and at
   gameplay03 (`TheFiguresReadDarkerThanTheirBaseAsT29`, #645: the shirts at 0.9 of #559's paint, read beside the chest
   brace, which #559's sample point hit).
-- **Flag:** by the unit's `side` in `units_1948.yaml` (`israel` on every row the map draws; the Arab forces' rows are
-  data only, see "The Arab forces: data only"). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+- **Flag:** by the unit's `side` in `units_1948.yaml`. Israel's is the only sourced flag; the two Arab forces the map
+  draws fly the neutral pennant (Q-ART-1, owner, 15 October 2026: "a neutral pennant now, replaced by a sourced emblem
+  when one is found"): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it

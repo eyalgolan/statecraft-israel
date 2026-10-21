@@ -13,7 +13,8 @@
 //  8. the Press page's two zips (scripts/press-kit.mjs) exist, hold exactly the expected files and a README that names
 //     each of them, keep concept art out of the screenshots, carry "AI concept art" in every concept file name
 //     (and "AI likeness, not a photograph" in 04 and 08, which the README's first line names), and
-//     are linked from the Press page in both languages.
+//     are linked from the Press page in both languages; the logo download is the Steam kit wordmark byte for byte
+//     and is linked there too.
 //  9. the history approach page exists in both languages, links to the two documents it restates, and History links to it.
 // 10. no page publishes a game portrait whose ASSETS.portraits.yaml row is not verified (the owner-verify GPO
 //     photographs are hidden for now: owner, 15 October 2026, decision D-P), the Cabinet page exists in both languages,
@@ -25,7 +26,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
-import { plan, zipEntries, zipRead, CONCEPT_TAG, LIKENESS_TAG } from './press-kit.mjs';
+import { plan, zipEntries, zipRead, LOGO, CONCEPT_TAG, LIKENESS_TAG } from './press-kit.mjs';
 import { imageRules } from './people-in-images.mjs';
 
 const dist = path.resolve(process.argv[2] ?? 'dist');
@@ -204,7 +205,7 @@ for (const z of [shotsZip, artZip]) {
     }
     if (!/AI likeness/.test(first) || !/not photographs?/.test(first)) problems.push(`downloads/${z.zip}: README.txt's first line does not say the likenesses are not photographs`);
   } else {
-    if (!text.includes('In-engine capture') || !text.includes('CC BY 4.0')) problems.push(`downloads/${z.zip}: README.txt lacks the label or the licence`);
+    if (!text.includes('In-engine capture') || !text.includes('CC BY-SA 4.0')) problems.push(`downloads/${z.zip}: README.txt lacks the label or the licence`);
     for (const n of names) if (/concept|hero|social|trailer|cinematic|\.(mp4|webm|png)$/i.test(n)) problems.push(`downloads/${z.zip}: ${n} is not an in-engine screenshot`);
   }
   for (const lang of ['en', 'he']) {
@@ -212,6 +213,17 @@ for (const z of [shotsZip, artZip]) {
     if (!fs.existsSync(page) || !new RegExp(`href="[^"]*/downloads/${z.zip.replace(/\./g, '\\.')}"`).test(fs.readFileSync(page, 'utf8'))) {
       problems.push(`${lang}/press/index.html: no link to downloads/${z.zip}`);
     }
+  }
+}
+// The press logo is the Steam kit wordmark itself, linked from both Press pages.
+const logoBuilt = path.join(dist, 'downloads', LOGO.name);
+if (!fs.existsSync(logoBuilt) || !fs.readFileSync(logoBuilt).equals(fs.readFileSync(path.join(path.resolve(dist, '..', '..'), LOGO.file)))) {
+  problems.push(`downloads/${LOGO.name}: missing, or not the same bytes as ${LOGO.file}`);
+}
+for (const lang of ['en', 'he']) {
+  const page = path.join(dist, lang, 'press', 'index.html');
+  if (!fs.existsSync(page) || !new RegExp(`href="[^"]*/downloads/${LOGO.name.replace(/\./g, '\\.')}"`).test(fs.readFileSync(page, 'utf8'))) {
+    problems.push(`${lang}/press/index.html: no link to downloads/${LOGO.name}`);
   }
 }
 

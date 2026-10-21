@@ -93,7 +93,7 @@ public class DecisionCardTests
     [UnityTest]
     public IEnumerator TheBackdropReachesTheWindowsEdgesAtEveryTier()
     {
-        foreach (var (w, h) in new[] { (1920, 1080), (1280, 1024), (1024, 1024), (960, 1080), (800, 1000), (390, 844) })
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 1024), (1024, 1024), (960, 1080), (800, 1000), (390, 844), (375, 667) })
         {
             using var r = new Rig(w, h, "law_of_return");
             yield return Frames(4);

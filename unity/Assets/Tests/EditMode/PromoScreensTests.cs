@@ -272,6 +272,11 @@ public class PromoScreensTests
         Assert.AreEqual("HS", PersonCard.Initials("Haim-Moshe Shapira"));
         Assert.AreEqual("M", PersonCard.Initials("Mordechai"));
         Assert.AreEqual("", PersonCard.Initials(""));
+        // In Hebrew the plate shows the first name's initial and the surname (Beri, 17 October 2026), not two letters.
+        Assert.AreEqual("י. ידין", PersonCard.InitialAndSurname("יגאל ידין"));
+        Assert.AreEqual("ש. בן-מאיר", PersonCard.InitialAndSurname("שלמה-ישראל בן-מאיר"));
+        Assert.AreEqual("ש. בורג", PersonCard.InitialAndSurname("שלמה יוסף בורג"));
+        Assert.AreEqual("", PersonCard.InitialAndSurname(""));
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         using var ui = new UiTestKit();
         var catalog = ScriptableObject.CreateInstance<PortraitCatalog>();
@@ -293,6 +298,64 @@ public class PromoScreensTests
             }
         }
         finally { Object.DestroyImmediate(catalog); }
+    }
+
+    /// <summary>In Hebrew a card with no portrait shows the first name's initial and the surname ("י. ידין", Beri), and the
+    /// longest such plate text of any person fits every plate at a desktop, the short browser, a laptop and a phone size.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewThePlateShowsTheInitialAndSurnameAndItFits()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        var plates = C.People.Where(p => p.NameHe != "").Select(p => PersonCard.InitialAndSurname(p.NameHe)).ToList();
+        var problems = new List<string>();
+        foreach (var (w, h) in new[] { (1920, 1080), (1568, 752), (1024, 768), (390, 844) })
+        {
+            var rt = new RenderTexture(w, h, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("HebrewInitialsTest");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var owned = new List<IDisposable>();
+            try
+            {
+                for (int i = 0; i < 20 && !(root.Q("top-bar").worldBound.width > 0); i++) yield return null;
+                root.Q("root").RemoveFromClassList("loading");
+                root.Q("root").AddToClassList(UiLanguage.HebrewClass);
+                var bridge = new SimBridge(g, he);
+                owned.Add(new HudPresenter(root, bridge, he));
+                owned.Add(new CabinetPresenter(root, bridge, he, null));
+                owned.Add(new DefencePresenter(root, bridge, he));
+                var nav = new ScreenNav(root); owned.Add(nav);
+                foreach (var s in new[] { "cabinet", "defence" })
+                {
+                    nav.Open(s);
+                    for (int i = 0; i < 6; i++) yield return null;
+                    if (s == "defence")   // no catalog here, so Yadin, the Chief of Staff in February 1950, has no portrait
+                        Assert.AreEqual("י. ידין", root.Q<Label>("lead-chief_of_staff-initials").text, "Yadin's plate, no portrait");
+                    var shown = root.Q("screen-" + s).Query<Label>(className: PersonCard.InitialsClass).ToList().Where(l => l.contentRect.width > 0).ToList();
+                    if (shown.Count == 0) problems.Add($"{w}x{h} {s}: no plate laid out");
+                    foreach (var l in shown)
+                    {
+                        var (widest, px) = plates.Select(t => (t, l.MeasureTextSize(t, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x))
+                            .OrderByDescending(x => x.Item2).First();
+                        if (px > l.contentRect.width + 0.5f) problems.Add($"{w}x{h} {l.name}: '{widest}' is {px:0} px in {l.contentRect.width:0} px at {l.resolvedStyle.fontSize} px");
+                    }
+                }
+            }
+            finally
+            {
+                for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems.Distinct().Take(40)));
     }
 
     [Test]
@@ -880,6 +943,8 @@ public class PromoScreensTests
                 owned.Add(new DefencePresenter(root, bridge, Text));
                 owned.Add(new BudgetPresenter(root, bridge, Text));
                 owned.Add(new WhyPresenter(root, bridge, Text));
+                owned.Add(new HowToPlayPresenter(root, Text));
+                owned.Add(new ObjectivesPresenter(root, bridge, Text));
                 var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
                 var nav = new ScreenNav(root); owned.Add(nav);
                 var toast = root.Q<Label>("toast");

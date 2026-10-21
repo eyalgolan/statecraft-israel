@@ -1,0 +1,22 @@
+# City projects (GDD "Cities and construction", city projects; docs/rules/mvp.md R-PROJ-001 to R-PROJ-003). The GDD loop
+# only. A project is started in a city on a land hex within rules.yaml map_action_max_distance of the city's settlement hex
+# (Q-PROJ-2), paid in full at the start and borrowed if the Treasury is short (Q-PROJ-1, Q-MONEY-3), needs no workers
+# (Q-PROJ-3), and when its turns are done adds its capacity, condition and job slots to the city once (R-PROJ-003).
+# A transit camp also needs the ma'abarot policy (Q-HOUSE-3, D-D3), which carries its sourced date (rules.yaml map actions).
+#
+# Every number here is a DESIGN VALUE, not a historical figure. Agents proposed them under "Agents propose design values"
+# (owner, 15 October 2026, #375; plan docs/superpowers/plans/2026-10-15-gdd-phase-3.md, PR 0, Q-PROJ-1); the owner may
+# override them. Costs are IL millions, turns are monthly turns (the turn of the order is the first), capacity and job
+# slots are population units, condition is the change to the city's housing condition (0 to 1, R-HOUSE-001).
+#   housing: the `housing` map action's cost and +0.03 (rules.yaml map_actions), and build_yishuv_turns' 6 turns.
+#   transit_camp: the `transit_camp` map action's cost; built in one turn, as the map action is; its +0.02 housing turned
+#     into a condition cost, since D-D3 makes the camp low-condition.
+#   industry: the Mefalsim build's pair (build_yishuv_cost 2, build_yishuv_turns 6).
+#   winery: the plan's Q-SPEC-2 values (PR 6: industry's IL 2m and 6 turns, and 10 job slots, more than industry's 5).
+#     It needs vineyards (`requires:`, R-PROJ-005), which only Rishon LeZion has (cities.yaml; owner, 20 October 2026, #737).
+# name: the phrase the player reads in a sentence ("a transit camp").
+projects:
+  - { id: housing, name: a housing project, cost: 6, turns: 6, capacity: 5, condition: 0.03, job_slots: 0 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: permanent housing)
+  - { id: transit_camp, name: a transit camp, cost: 1.5, turns: 1, capacity: 5, condition: -0.02, job_slots: 0 }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: the low-condition type)
+  - { id: industry, name: an industry project, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 5 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3; Q-PROJ-1: job slots)
+  - { id: winery, name: a winery, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 10, requires: vineyards }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D8, D-C6; Q-SPEC-2: the specialised industry)

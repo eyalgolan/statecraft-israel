@@ -17,8 +17,7 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - Two housing types: permanent housing adds capacity and condition from the game's start; the transit camp is cheap, adds capacity and lowers condition, and keeps the ma'abarot policy gate in 1950 (`Q-HOUSE-3`, decided 15 October 2026 [S3]). Residents are assigned automatically, and people in training and recruits count against their city's housing while halutz units do not (`Q-HOUSE-4` and `Q-HOUSE-5`, decided 15 October 2026 [S3]).
 - City projects (housing and industry) are paid in full at the start and borrowed if the Treasury is short, need no workers, take a free land hex within one hex of the settlement hex that holds no other placement, and at most two start per turn nationally (`Q-PROJ-1` to `Q-PROJ-4`, decided 15 October 2026 [S3]). Starting a project costs Attention and cancelling costs half as much, both labelled design values (`Q-PROJ-5`, decided 15 October 2026 [S3]). Their costs, times and capacities are labelled design values taken from the plan's PR zero table (the plan's table merged by #604; `Q-PROJ-1`).
 - The craftsman trains in a city with a completed industry project, fills an ordinary job slot and earns a multiple of the job income (`Q-CRAFT-1` and `Q-CRAFT-2`, decided 15 October 2026 [S3]; D-D4). The income multiple, training time and training cost are labelled design values taken from the plan's PR zero table (the plan's table merged by #604; `Q-CRAFT-2` and `Q-CRAFT-3`). Free job slots fill automatically at no Attention cost until the player fixes a city's number with `AssignWorkers` (`Q-JOBS-1`, decided 15 October 2026 [S3]).
-- The one specialised industry is the winery, in Rishon LeZion, subject to a dated 1948 to 1951 source for the town's vineyards (`Task 6.0`) (`Q-SPEC-1`, decided 15 October 2026 [S3]; Carmel Winery's first winery is in Rishon LeZion [S5]). The winery's job slots are a labelled design value taken from the plan's PR zero table (the plan's table merged by #604; `Q-SPEC-2`).
-- Zichron Ya'akov's map entry adds a location-specific industry opportunity; it does not move the Rishon LeZion winery or define another winery's balance or implementation in this phase [S13].
+- The one specialised industry is the winery, in Rishon LeZion, its vineyards flagged `to_verify`: `Task 6.0` found no dated 1948 to 1951 source for any town's vineyards [S14], and the owner ruled the city on #737 (20 October 2026, as GDD v0.2 and the map roster say [S16], [S13]; Carmel Winery's first winery is in Rishon LeZion [S5]). This replaces the 18 October default of Zikhron Ya'akov [S15], which has no winery. The winery's job slots are a labelled design value taken from the plan's PR zero table (the plan's table merged by #604; `Q-SPEC-2`).
 - The "absorb immigrants" objective completes when, over all city residents, no refugees wait for housing, overflow stays within its bound, and employed civilians reach their share (`Q-ABS-2`, decided 15 October 2026 [S3]; D-B4; the two shares are labelled design values taken from the plan's PR zero table, merged by #604). Its milestone is the Jewish population passing one million, marked on 20 December 1949 (`Q-ABS-1`, the owner's pick, 15 October 2026 [S3]; JTA [S6]). With that milestone the card shows no photograph unless the owner approves a generic arrival one (`Q-ABS-3`, decided 15 October 2026 [S3]).
 - The on-screen Hebrew words: craftsman בעל מלאכה, housing condition מצב הדיור, housing project מיזם דיור, industry תעשייה, winery יקב (`Q-UI-2`, all five approved, decided 15 October 2026 [S11]).
 
@@ -40,7 +39,10 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - The yishuvim part of D-B4: Phase 4.
 - Kit density on the map by housing condition (Q-UI-1): left out of this phase (decided 15 October 2026 [S3]).
 - No text in this phase names abandoned Arab housing; the panel and the absorb card describe housing in general terms, and any later text goes through D-F1 review (Q-SENS-1, owner, 15 October 2026 [S3]).
-- Upkeep (D-C6): Q-MONEY-2 adds no upkeep "until Phase 3 has cities to charge" (the Phase 2 plan's Q-MONEY-2 row [S12]), and `docs/gdd/cutover-resource-layer.md` says the values arrive in Phase 3, but no Phase 3 PR owns them yet; recorded for the owner to assign. Income is owned: Q-MONEY-2 keeps the legacy per-head tax and spending until Phase 3, with job income on top, and `income_per_job_per_year` stays a labelled design value [S12].
+- Upkeep and income (D-C6): the owner chose option 3 on 18 October 2026 (#884). Cities, permanent housing, industry,
+  transit camps, military camps and Hakhsharot each have IL 0m annual upkeep in the MVP; the values are labelled design
+  values, not historical claims. Step 7 pays a kind only when its configured rate is non-zero (R-MONEY-002). The MVP
+  keeps the per-head tax and spending alongside job income at the accepted calibrated values. Phase 5 owns unit upkeep.
 
 ## Sources
 
@@ -57,6 +59,9 @@ As a player of the MVP, I want the twelve Jewish cities and towns to start at th
 - [S11] The owner's decision on #375, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6190619484, checked 2026-10-15
 - [S12] GDD v0.1 Phase 2 plan, docs/superpowers/plans/2026-10-14-gdd-phase-2.md, the Q-MONEY-2 row; and docs/gdd/cutover-resource-layer.md (merged by #580), "Out of scope": "Upkeep: none until the third phase", checked 2026-10-15
 - [S13] MVP location scope, map priorities and separate location identities, docs/locations.md
+- [S14] The winery's city: a dated 1948-51 source for its vineyards, research note merged by #823, research_notes/GDD phase 3/winery-vineyards-1948-51.md
+- [S15] The owner's ruling on #737, 18 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6249501060, checked 2026-10-18
+- [S16] The owner's ruling on #737, 20 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6296386086, checked 2026-10-20
 
 ## Open questions
 

@@ -27,7 +27,7 @@ def test_contributing_links_security_and_untrusted_review():
 def test_contributing_has_no_cla_and_names_every_sensitive_tag():
     text = read("CONTRIBUTING.md")
     assert "There is no CLA and no sign-off" in text
-    for tag in ("holocaust", "terror", "massacre", "war-casualties"):
+    for tag in ("holocaust", "terror", "massacre", "war-casualties", "displacement"):
         assert f"`{tag}`" in text, tag
 
 

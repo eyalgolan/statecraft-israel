@@ -174,7 +174,8 @@ public class FieldsTests
         Assert.Contains(message, e.Message);
     }
 
-    // The real content: every field site lies in a yishuv's hex (Q-FIELD-1), and the design values are those of Q-FIELD-3.
+    // The real content: every field site lies in a yishuv's hex (Q-FIELD-1) or the swamp's (Q-SWAMP-1), and the design
+    // values are those of Q-FIELD-3.
     [Fact]
     public void TheRealFieldsAreThePlannedOnes()
     {
@@ -182,6 +183,6 @@ public class FieldsTests
         var m = c.Rules.Mvp!;
         Assert.Equal((1, 3, 0.5), (m.FieldFoodPerTurn!.Value, m.PlowFieldsTurns, m.PlowFieldsCost!.Value));
         foreach (var f in c.Sites.Where(x => x.Kinds.Contains(Projects.FieldKind)))
-            Assert.Contains(c.Sites, y => y.Kinds.Contains(Projects.YishuvKind) && (y.Q, y.R) == (f.Q, f.R));
+            Assert.Contains(c.Sites, y => (y.Kinds.Contains(Projects.YishuvKind) || y.Kinds.Contains(Projects.SwampKind)) && (y.Q, y.R) == (f.Q, f.R));
     }
 }

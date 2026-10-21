@@ -10,13 +10,17 @@ namespace Statecraft.Game.Map
     public struct CameraInput
     {
         public Vector2 Pan, DragPan; public float Zoom, Orbit;
+        /// <summary>The zoom keys (a11y B1a: = and -, the numpad's + and -) in [-1, 1], positive = in. Step scales it by
+        /// ZoomKeysPerSecond and the frame time, as keyboard pan is, and like keyboard pan it is not dropped over the UI.</summary>
+        public float KeyZoom;
         /// <summary>True while the pointer is over the UI: the camera then ignores pointer input (wheel zoom, drag).</summary>
         public bool OverUi;
         /// <summary>True when the current right-button drag started over the UI (latched on button-down): that drag never pans the map.</summary>
         public bool DragFromUi;
     }
 
-    /// <summary>Pans, zooms and orbits the diorama camera from the project-wide "Camera" action map (Input System only).
+    /// <summary>Pans, zooms and orbits the diorama camera from the project-wide "Camera" action map (Input System only),
+    /// and from the touchscreen: one finger drags like the right button, a pinch zooms like the wheel.
     /// While the pointer is over the UI (IsOverUi, wired by the scene) the wheel and the drag belong to the UI; keyboard pan
     /// and orbit still move the camera (plan amendment A4). Pan speed scales with
     /// distance, zoom is clamped to [MinDistance, MaxDistance], and the view stays on the map (issue #174): the look-at
@@ -33,6 +37,9 @@ namespace Statecraft.Game.Map
         public const float PanPerSecond = 0.8f;        // distances per second at full key press
         public const float DragPanPerPixel = 0.0012f;  // distances per pixel of drag
         public const float ZoomPerStep = 0.1f;         // fraction of the distance per wheel notch
+        /// <summary>Wheel notches a second while a zoom key is held (a11y B1a, option 1 of the keyboard plan): the closest to
+        /// the farthest zoom (6 to 250 km, 35 notches) in about six seconds, held like pan and orbit, not pressed 35 times.</summary>
+        public const float ZoomKeysPerSecond = 6f;
         public const float OrbitDegreesPerSecond = 60f;
         public const float MaxFrameSeconds = 0.1f;     // a stalled frame (tab in the background) must not fling the camera
         /// <summary>The least height above the ground beneath it the camera keeps, as a share of its height above the
@@ -72,7 +79,7 @@ namespace Statecraft.Game.Map
         public float GroundTop = ShadowFit.GroundY;
 
         CameraRig rig = null!;
-        InputAction? pan, dragPan, zoom, orbit;
+        InputAction? pan, dragPan, zoom, zoomKeys, orbit;
 
         void Awake() => rig = GetComponent<CameraRig>();
 
@@ -83,7 +90,7 @@ namespace Statecraft.Game.Map
             var map = InputSystem.actions?.FindActionMap("Camera", throwIfNotFound: true);
             if (map == null) return;
             pan = map.FindAction("Pan", true); dragPan = map.FindAction("DragPan", true);
-            zoom = map.FindAction("Zoom", true); orbit = map.FindAction("Orbit", true);
+            zoom = map.FindAction("Zoom", true); zoomKeys = map.FindAction("ZoomKeys", true); orbit = map.FindAction("Orbit", true);
             map.Enable();
         }
 
@@ -91,14 +98,71 @@ namespace Statecraft.Game.Map
 
         bool dragFromUi, dragWasDown;
 
-        void Update()
+        void Update() => Tick(Time.unscaledDeltaTime);
+
+        /// <summary>One frame from the live actions, <paramref name="dt"/> seconds long. Test seam (internal; the tests see it
+        /// through InternalsVisibleTo): an EditMode test has no frame clock, so it drives the real key path with a fixed
+        /// frame time (#890).</summary>
+        internal void Tick(float dt)
         {
-            if (pan == null || dragPan == null || zoom == null || orbit == null) return;
+            if (pan == null || dragPan == null || zoom == null || zoomKeys == null || orbit == null) return;
             Vector2? pointer = Pointer.current != null ? Pointer.current.position.ReadValue() : (Vector2?)null;
             var down = Mouse.current != null && Mouse.current.rightButton.isPressed;
-            Step(rig, Gather(pan.ReadValue<Vector2>(), dragPan.ReadValue<Vector2>(), WheelOr(zoom.ReadValue<float>()),
-                orbit.ReadValue<float>(), down, pointer), ClampDt(Time.unscaledDeltaTime), Bounds, Ground, GroundTop);
+            var drag = dragPan.ReadValue<Vector2>();
+            var zoomRaw = WheelOr(zoom.ReadValue<float>());
+            var ts = Touchscreen.current;
+            if (ts != null)
+            {
+                switch (FingersDown(ts, out var a, out var b))
+                {
+                    // one finger drags the map, like the right button: Gather's latch answers whether it started over the UI
+                    case 1:
+                        drag += a.delta.ReadValue();
+                        down = true;
+                        pointer = a.position.ReadValue();
+                        break;
+                    // a pinch zooms by how far the fingers move; the UI check follows the first finger
+                    case 2:
+                        zoomRaw += PinchNotches(a.position.ReadValue(), a.delta.ReadValue(), b.position.ReadValue(), b.delta.ReadValue());
+                        pointer = a.position.ReadValue();
+                        break;
+                }
+            }
+            var modifier = ModifierHeld(Keyboard.current);
+            Step(rig, Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier),
+                ClampDt(dt), Bounds, Ground, GroundTop);
         }
+
+        /// <summary>The first two touches down (2 stands for two or more), or fewer.</summary>
+        static int FingersDown(Touchscreen ts, out UnityEngine.InputSystem.Controls.TouchControl a,
+            out UnityEngine.InputSystem.Controls.TouchControl b)
+        {
+            a = null!; b = null!;
+            int n = 0;
+            foreach (var t in ts.touches)
+            {
+                if (!t.press.isPressed) continue;
+                if (n == 0) a = t; else b = t;
+                n++;
+                if (n == 2) break;
+            }
+            return n;
+        }
+
+        /// <summary>A two-finger pinch in wheel notches, positive = in (the fingers spread): the change in the distance
+        /// between them this frame, 100 px to the notch (PixelsPerNotch, the touchpad's rate). A finger's position one
+        /// event ago is its position minus its delta.</summary>
+        public static float PinchNotches(Vector2 now0, Vector2 delta0, Vector2 now1, Vector2 delta1)
+        {
+            var now = Vector2.Distance(now0, now1);
+            var was = Vector2.Distance(now0 - delta0, now1 - delta1);
+            return (now - was) / PixelsPerNotch;
+        }
+
+        /// <summary>Ctrl, Alt or Cmd (either side) held: the zoom keys then belong to the browser or the system. Shift is not
+        /// a modifier here, since + is Shift and = on a US keyboard.</summary>
+        public static bool ModifierHeld(Keyboard? keys) =>
+            keys != null && (keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed);
 
         /// <summary>Fits the rig's current pose with no input (review B-m3: a minimap jump goes through the same view fit and
         /// ground clearance as panning, so no frame shows the map's frame or the inside of a hill).</summary>
@@ -160,8 +224,11 @@ namespace Statecraft.Game.Map
         public static float ClampDt(float dt) => Mathf.Min(dt, MaxFrameSeconds);
 
         /// <summary>Builds one frame of input from raw action values. The wheel is checked against the UI at the pointer every frame;
-        /// the drag is checked once, when the button goes down, and that answer holds until it is released. No pointer means not over the UI.</summary>
-        public CameraInput Gather(Vector2 panValue, Vector2 dragValue, float zoomRaw, float orbitValue, bool dragDown, Vector2? pointer)
+        /// the drag is checked once, when the button goes down, and that answer holds until it is released. No pointer means not over the UI.
+        /// The zoom keys count only with no Ctrl, Alt or Cmd held (<paramref name="modifierHeld"/>), so Ctrl/Cmd with + and - stays the
+        /// browser's page zoom; both composites held at once (= and the numpad's +) still count as one key.</summary>
+        public CameraInput Gather(Vector2 panValue, Vector2 dragValue, float zoomRaw, float orbitValue, bool dragDown, Vector2? pointer,
+            float zoomKeys = 0f, bool modifierHeld = false)
         {
             var over = pointer.HasValue && IsOverUi != null && IsOverUi(pointer.Value);
             if (dragDown && !dragWasDown) dragFromUi = over;
@@ -173,6 +240,7 @@ namespace Statecraft.Game.Map
                 // Notches: on desktop the Input System's default scroll behaviour (UniformAcrossAllPlatforms) gives 1 per
                 // notch; in WebGL WheelOr counts the browser's events (#43). Clamp bursts.
                 Zoom = Mathf.Clamp(zoomRaw, -3f, 3f),
+                KeyZoom = modifierHeld ? 0f : Mathf.Clamp(zoomKeys, -1f, 1f),
                 Orbit = orbitValue, OverUi = over, DragFromUi = dragFromUi,
             };
         }
@@ -182,7 +250,8 @@ namespace Statecraft.Game.Map
         public static void Step(CameraRig rig, CameraInput input, float dt, Rect bounds, Func<Vector2, float>? ground = null,
             float groundTop = ShadowFit.GroundY)
         {
-            var zoom = input.OverUi ? 0f : input.Zoom;
+            // The wheel is the UI's while the pointer is over it; the zoom keys are not (plan amendment A4, as keyboard pan).
+            var zoom = (input.OverUi ? 0f : input.Zoom) + input.KeyZoom * ZoomKeysPerSecond * dt;
             var drag = input.DragFromUi ? Vector2.zero : input.DragPan;
             rig.Yaw = Mathf.Repeat(rig.Yaw + input.Orbit * OrbitDegreesPerSecond * dt, 360f);
             // (1 - step)^zoom: one notch in is exactly ZoomPerStep closer, and n notches out undo n notches in (Task 24 review M3).

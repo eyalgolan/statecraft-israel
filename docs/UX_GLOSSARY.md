@@ -8,6 +8,8 @@ Revision 19 October 2026: targeted terminology and implementation checks against
 
 Evidence limits: the original 46abd99c snapshot checker matched 289 cited forms; nine references were outside its supported inputs or used summary notation. Those totals do not include the new rows checked directly against 9e571342 in this revision. Provisional-state-council, truce, yishuv and unit still have no Hebrew candidate here. The new in-use pioneer terms are recorded without native approval.
 
+Revision 21 October 2026: budget wording and map hints match upstream/main 001a59d0 (#1136, #1134). The native agreement note records the current bodies and its limit; other snapshot evidence retains its original date.
+
 ## At a glance
 
 | Concept | Status | English | Hebrew | Decision owner |
@@ -664,13 +666,13 @@ Category: game-system. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| Click the map to inspect a hex | strings.en.yaml info.hint |
+| Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map | strings.en.yaml info.hint |
 
 **Hebrew.** Preferred: open.
 
 | In use | Where |
 |---|---|
-| משושה | strings.he.yaml info.hint |
+| יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה | strings.he.yaml info.hint |
 
 **Recommendation (see status).**
 - English: Keep, but write the first mention so a player who has never met a hex map understands it.
@@ -1110,8 +1112,8 @@ Category: politics. Scope: ui, docs, events.
 | In use | Where |
 |---|---|
 | נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_needed |
-| התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_advisory |
-| אין הצבעה ב־{0} על התקציב | strings.he.yaml budget.no_vote |
+| {0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_advisory |
+| {0} אינה מצביעה על התקציב | strings.he.yaml budget.no_vote |
 | אחראית בפני {0} · {1} חברים | strings.he.yaml cabinet.legislature |
 | מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות | strings.he.yaml cabinet.legislature_advisory |
 | body_he: "מועצת המדינה הזמנית" | content/legislatures.yaml |
@@ -1119,8 +1121,8 @@ Category: politics. Scope: ui, docs, events.
 
 **Recommendation (see status).**
 - English: No change. The wording states the rule and the coalition's seats without comment.
-- Hebrew: The earlier masculine verbs and pronouns after {0} were replaced with neutral wording in #1081. Keep the shipped neutral strings; this draft does not reopen them. ContentNames.Of now reads BodyHe for legislature names (#861). Any new agreement or gender-field proposal still needs native review and an owner decision.
-- Reasons: (1) Neutral structures avoid a fixed gendered verb after a changing body name. (2) The earlier finding has been addressed in #1081; record the current implementation rather than presenting it as unfixed.
+- Hebrew: After the interim neutral wording in #1081, #1136 applied Beri's native review from #564 to the budget strings. The current feminine forms work because all three legislature names are feminine; a masculine-named body would need new wording. Keep these native-reviewed strings for the current bodies. ContentNames.Of reads BodyHe (#861). Any new agreement or gender-field proposal still needs native review and an owner decision.
+- Reasons: (1) Beri's native note on #564 supports the feminine forms for the three current bodies, not every future body name. (2) #1136 applied that review; record the current wording and its limit rather than reopening the earlier finding.
 
 **Decision owner.** Native reviewer; Eyal for any key change.
 

@@ -1,0 +1,25 @@
+# A player who overspends and turns down every source of foreign currency (GDD Phase 7 PR 5, D-B5): full mobilisation
+# from the first turn, then the non-historical option of each foreign currency card (no austerity, clothing rationing
+# relaxed, no reparations claim, donations instead of Israel Bonds). The debt passes the ceiling in April 1951, foreign
+# currency runs out in August, food imports stop, and after three turn ends with Money and Food both exhausted the game
+# ends with defeat_economy on 15 January 1952 (R-END-001, R-END-002), the game's last day: a defeat on the last turn is
+# a defeat. A balance change that delays the third empty turn makes this run end as mvp_ended, and DefeatTests says so.
+# It plays the real content, so it moves whenever a rule or value it reaches changes.
+name: mvp-defeat
+until: 1952-01-15
+steps:
+  - on: 1948-05-15
+    commands:
+      - { kind: set_mobilization, level: 1.0 }
+  - on: 1949-05-15
+    commands:
+      - { kind: choose_event_option, event: austerity_1949, option: decline }
+  - on: 1950-07-15
+    commands:
+      - { kind: choose_event_option, event: clothing_rationing_1950, option: relax }
+  - on: 1951-03-15
+    commands:
+      - { kind: choose_event_option, event: reparations_claim, option: refuse }
+  - on: 1951-05-15
+    commands:
+      - { kind: choose_event_option, event: israel_bonds, option: donations_only }

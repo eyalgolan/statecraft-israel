@@ -22,6 +22,11 @@
 id: first_new_yishuv
 title: Mefalsim founded
 text: 'On 12 June 1949 a garin of graduates of the Dror youth movement from Argentina and Uruguay went onto Jewish National Fund land in the Negev, facing the Gaza Strip, and founded Kibbutz Mefalsim of HaKibbutz HaMeuhad. Because of direct fire from Gaza, the kibbutz moved to its present site a year later, in 1950.'
+# For the native reviewer (#564): Hebrew names follow the cited Yad Ben-Zvi page "קיבוץ מפלסים" (גרעין דרור,
+# קרן קיימת לישראל, הקיבוץ המאוחד): https://israelalbum.org.il/mercazim/קיבוץ-מפלסים/
+title_he: ייסוד מפלסים
+text_he: 'ב־12 ביוני 1949 עלה על אדמת קרן קיימת לישראל בנגב, מול רצועת עזה, גרעין של בוגרי תנועת הנוער דרור מארגנטינה ומאורוגוואי, והקים את קיבוץ מפלסים של הקיבוץ המאוחד. בשל אש ישירה מעזה עבר הקיבוץ למקומו הנוכחי כעבור שנה, ב־1950.'
+text_he_review: agent-checked
 anchor: soft
 objective: first_new_yishuv
 # The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.
@@ -30,6 +35,7 @@ to: 1957-01-01
 options:
   - id: continue
     text: Continue
+    text_he: להמשיך
     historical: true
 tags: []
 sources:

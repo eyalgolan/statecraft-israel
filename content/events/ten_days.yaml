@@ -2,6 +2,12 @@
 id: ten_days
 title: The Ten Days
 text: 'The first truce has ended and the fighting has resumed, with Egypt attacking in the south. In the centre, Operation Dani under Yigal Allon has taken Lydda airport and is pushing to secure the road to Jerusalem. {defense_minister} must decide where the main effort goes for the rest of the fighting.'
+# For the native reviewer (#564): קרבות עשרת הימים, מבצע דני, יגאל אלון and שדה התעופה בלוד (the 1948 name in
+# he.wiki "מבצע דני") follow he.wiki (https://he.wikipedia.org/wiki/קרבות_עשרת_הימים;
+# https://he.wikipedia.org/wiki/מבצע_דני; https://he.wikipedia.org/wiki/יגאל_אלון).
+title_he: קרבות עשרת הימים
+text_he: 'ההפוגה הראשונה הסתיימה והלחימה התחדשה, כשמצרים תוקפת בדרום. במרכז, מבצע דני בפיקוד יגאל אלון כבש את שדה התעופה בלוד וממשיך לפעול לאבטחת הדרך לירושלים. ההחלטה לאן יופנה המאמץ העיקרי בהמשך הלחימה בידי {defense_minister}.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -21,10 +27,11 @@ office: defense_minister
 # accepted the first truce sees this card (its text is about the truce ending).
 from: 1948-07-10
 to: 1948-07-18
-requires: { event: first_truce, option: accept }
+requires: [{ event: first_truce, option: accept }]
 options:
   - id: central_front
     text: Keep the main effort in the centre with Operation Dani, toward the Jerusalem road
+    text_he: להשאיר את המאמץ העיקרי במרכז עם מבצע דני, לעבר הדרך לירושלים
     historical: true
     recommended: true
     set_rung: 5
@@ -34,6 +41,14 @@ options:
     # Game assumption: a design alternative. The notes found no cabinet debate in July; Ben-Gurion's diary of 11 July
     # records Yadin asking where forces should go next [S].
     text: Shift the main effort south, against Egypt
+    text_he: להעביר את המאמץ העיקרי דרומה, נגד מצרים
+    # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
+    alternative:
+      basis: debated
+      by: the General Staff, its head of operations
+      date: 1948-07-11
+      sources:
+        - { url: "https://bengurionarchive.bgu.ac.il/en/node/9706", checked: 2026-10-17 }
     set_rung: 5
     effects:
       - { target: security, delta: 0.015 }

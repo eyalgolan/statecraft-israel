@@ -19,8 +19,8 @@ public class EventImageMappingTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static IReadOnlyList<EventImageMapping.Row> Rows => EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
 
-    /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate.</summary>
-    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks" };
+    /// <summary>No free photograph was found for these (docs/event-images.md): they keep the minister's portrait plate (absorb_immigrants, an objective card, has no photograph: Q-ABS-3, #1039).</summary>
+    static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks", "absorb_immigrants" };
     /// <summary>Photographs whose ASSETS.yaml row waits for the owner's sign-off (#380, "What needs maintainer sign-off"). When the
     /// owner signs one off, its row becomes verified and its name leaves this list.</summary>
     static readonly string[] AwaitingSignOff = { };   // first_new_yishuv signed off 17 Oct 2026 ("Approve both", #879; #913)

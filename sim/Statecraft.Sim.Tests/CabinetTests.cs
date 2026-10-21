@@ -76,16 +76,19 @@ public class CabinetTests
     }
 
     [Theory]
-    [InlineData("prime_minister", "loyalist", "You are the Prime Minister: that office is not yours to fill")]
-    [InlineData("finance_minister", "outsider", "Out Sider's party (Beta) is not in the coalition")]
-    [InlineData("finance_minister", "gone", "Gone Early died on 1 May 1948")]
-    [InlineData("finance_minister", "def_two", "Def Two already holds the office of Minister of Finance")]
-    [InlineData("finance_minister", "nobody", "That person is not in this game")]
-    [InlineData("treasurer", "loyalist", "That office does not exist in this game")]
-    public void IllegalAppointmentsAreRejectedWithAReason(string office, string person, string reason)
+    [InlineData("prime_minister", "loyalist", "prime_minister", "You are the Prime Minister: that office is not yours to fill")]
+    [InlineData("finance_minister", "outsider", "party_not_coalition", "Out Sider's party (Beta) is not in the coalition")]
+    [InlineData("finance_minister", "gone", "died", "Gone Early died on 1 May 1948")]
+    [InlineData("finance_minister", "def_two", "already_holds", "Def Two already holds the office of Minister of Finance")]
+    [InlineData("finance_minister", "nobody", "person_unknown", "That person is not in this game")]
+    [InlineData("treasurer", "loyalist", "office_unknown", "That office does not exist in this game")]
+    public void IllegalAppointmentsAreRejectedWithAStableCodeAndUnchangedEnglish(string office, string person, string kind, string reason)
     {
         var s = Simulation.NewGame(C, 42, Mode.Historical);
         var before = s.Hash();
+        var coded = Cabinet.CheckReason(C, s, office, person)!;
+        Assert.Equal(kind, coded.Kind);
+        Assert.Equal(reason, coded.Text);
         Assert.Equal(reason, Cabinet.Appoint(C, s, office, person, new List<Cause>()));
         Assert.Equal(before, s.Hash());
     }
@@ -262,6 +265,18 @@ public class CabinetTests
     }
 
     [Fact]
+    public void DelegatedToNamesWhoEndTurnHandsTheEventToAfterTheQueuedOrders()
+    {
+        // #1034 review: Step runs the orders (Appoint included) before EventSystem.Delegate, so the card must ask after them.
+        var c = Load(new Dictionary<string, string> { ["drought.yaml"] = ValidationTests.Event });
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        Assert.Equal("def_two", Simulation.DelegatedTo(c, s, None, "drought")!.Id);
+        Assert.Equal("loyalist", Simulation.DelegatedTo(c, s, new Command[] { new Appoint("finance_minister", "loyalist") }, "drought")!.Id);
+        Assert.Equal("def_two", Simulation.DelegatedTo(c, s, new Command[] { new Appoint("finance_minister", "outsider") }, "drought")!.Id);   // refused: nobody changes
+        Assert.Equal("def_two", Cabinet.Holder(c, s, "finance_minister")!.Id);   // a dry run on a clone: the state is untouched
+    }
+
+    [Fact]
     public void HistoricalOnlyOfficesKeepTheirTermsButAreNotCabinetSeatsOrAppointable()
     {
         var c = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
@@ -331,5 +346,45 @@ public class CabinetTests
         Assert.Equal("Yigael Yadin is the serving Chief of Staff", Cabinet.Check(c, s, "finance_minister", "yadin"));
         s.Date = new DateTime(1951, 6, 1);
         Assert.Equal("David Remez died on 19 May 1951", Cabinet.Check(c, s, "transportation_minister", "remez"));
+    }
+
+    /// <summary>#1109: the side menu's Cabinet badge reads Cabinet.Vacancies, the playable seats with no holder that someone
+    /// may be appointed to now and that no order in this turn's queue fills. Education is vacant from Remez's death (19 May
+    /// 1951) to Dinur (8 October 1951); the presidency, vacant in December 1952, is the Knesset's to fill, not the player's.</summary>
+    [Fact]
+    public void VacanciesAreTheSeatsThePlayerCanFill()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var none = new Command[0];
+        // Attention 4 = a full turn (rules.yaml attention_per_turn): an appointment (2) is affordable unless a case says otherwise.
+        Assert.Empty(Cabinet.Vacancies(c, new GameState { Date = new DateTime(1948, 6, 12), Attention = 4 }, none));   // #217: none in 1948
+        var s = new GameState { Date = new DateTime(1951, 5, 19), Attention = 4 };
+        // Minority Affairs has had no holder in people.yaml since 10 March 1949, and offices.yaml gives it no end date.
+        Assert.Equal(new[] { "minority_affairs_minister", "education_minister" }, Cabinet.Vacancies(c, s, none).Select(o => o.Id).ToArray());
+        var fill = Cabinet.Candidates(c, s, "education_minister").First(x => x.reason == null).person.Id;
+        Assert.Equal(new[] { "minority_affairs_minister" },   // a queued appointment fills its seat, and only that one
+            Cabinet.Vacancies(c, s, new Command[] { new Appoint("education_minister", fill) }).Select(o => o.Id).ToArray());
+        Assert.Contains(Cabinet.Vacancies(c, s, new Command[] { new Appoint("finance_minister", fill) }), o => o.Id == "education_minister");
+        var president = new GameState { Date = new DateTime(1952, 12, 15), Attention = 4 };
+        Assert.Contains(Cabinet.Lineup(c, president), seat => seat.Office.Id == "president" && seat.Holder == null);
+        Assert.DoesNotContain(Cabinet.Vacancies(c, president, none), o => o.Id == "president");
+    }
+
+    /// <summary>#1110 review: the badge promises only an appointment SimBridge.Queue would take this turn. On 19 May 1951 two
+    /// seats are vacant (above), yet none is offered with no Attention left, with the game over, or with this turn's other
+    /// orders (allocate_budget 2 + set_mobilization 1 of 4) leaving less than an appointment costs (2).</summary>
+    [Theory]
+    [InlineData("attention_zero")]
+    [InlineData("game_over")]
+    [InlineData("attention_queued")]
+    public void VacanciesAreEmptyWhenNoAppointmentCanBeQueued(string probe)
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var s = new GameState { Date = new DateTime(1951, 5, 19), Attention = probe == "attention_zero" ? 0 : 4 };
+        if (probe == "game_over") s.GameOver = GameOverCodes.CoalitionCollapse;
+        var pending = probe == "attention_queued"
+            ? new Command[] { new AllocateBudget(new Dictionary<string, double>()), new SetMobilization(0.5) }
+            : new Command[0];
+        Assert.Empty(Cabinet.Vacancies(c, s, pending));
     }
 }

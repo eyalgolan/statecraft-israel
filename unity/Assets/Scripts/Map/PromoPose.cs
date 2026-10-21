@@ -33,6 +33,28 @@ namespace Statecraft.Game.Map
             new PromoPose("hero06judea", 35.15, 31.78, 6000f, 0f), new PromoPose("hero06negev", 34.90, 30.60, 6000f, 0f),
         };
 
+        /// <summary>Issue #659 (owner ruling on #700: "Models up close only"): the close views where Tal Heuberger's building models
+        /// draw instead of the kits (TownModelLayer.CloseEnterM): Tel Aviv at 30 km and Jaffa's old town at 12 km. Not promo
+        /// matches: VisualShots shoots them after All (everything on), and FrameProfile prices them under "vclose".</summary>
+        public static IReadOnlyList<PromoPose> CloseUps { get; } = new[]
+        {
+            new PromoPose("tel_aviv30", 34.78, 32.08, 30000f, 10f), new PromoPose("jaffa12", 34.755, 32.052, 12000f, 10f),
+        };
+
+        /// <summary>Issue #659: the other town types up close, for the main / branch captures the issue's done-when asks for:
+        /// Jerusalem and Haifa at 12 km, the moshava Rishon LeZion (its b23 winery) and the Arab town Nazareth at 8 km, the
+        /// kibbutz Degania Alef and the moshav Nahalal at 6 km, each over its settlements_1948.yaml point; and start120, the
+        /// README map's 120 km over the centre, where #917's whole-town landmarks draw and the kits do. Capture poses
+        /// only: VisualShots shoots them after CloseUps; FrameProfile and the model tests keep to CloseUps (a kibbutz at 6 km
+        /// holds fewer models than their floors).</summary>
+        public static IReadOnlyList<PromoPose> TownChecks { get; } = new[]
+        {
+            new PromoPose("jerusalem12", 35.2256, 31.7789, 12000f, 10f), new PromoPose("haifa12", 34.9992, 32.8192, 12000f, 10f),
+            new PromoPose("rishon08", 34.80, 31.95, 8000f, 10f), new PromoPose("degania06", 35.5747, 32.7081, 6000f, 10f),
+            new PromoPose("nazareth08", 35.3033, 32.7019, 8000f, 10f), new PromoPose("nahalal06", 35.1967, 32.69, 6000f, 10f),
+            new PromoPose("start120", 35.00, 32.20, 120000f, 0f),
+        };
+
         public void Apply(CameraRig rig, GeoFrame frame)
         {
             rig.LookAt = frame.ToWorld(Lon, Lat, 0); rig.Distance = Distance; rig.Yaw = Yaw; rig.Apply();

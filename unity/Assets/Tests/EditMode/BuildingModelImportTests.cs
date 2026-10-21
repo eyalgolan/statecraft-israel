@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-/// <summary>MATKOT's 23 Tripo building models (issue #659, from #507) are imported to load light, the maintainer's gate of
+/// <summary>Tal Heuberger's 23 Tripo building models (issue #659, from #507) are imported to load light, the maintainer's gate of
 /// 15 October 2026: "we need to make sure this is built in a way that doesnt make the game extremely hard to load". No
 /// model sits under a Resources folder (Unity ships every file there whether used or not); each mesh is a static,
 /// compressed, non-readable mesh with no animation, rig, blend shapes, cameras, lights, colliders or tangents; each
@@ -32,11 +32,18 @@ public class BuildingModelImportTests
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>The 23 buildings (model, material, colour map), and beside each of #707's five the prefab its streamed
+    /// bundle carries (CollectionImport.MakeBuildingPrefabs).</summary>
     [Test]
     public void TheFolderHoldsTheTwentyThreeBuildingsAndNothingElse()
     {
         Assert.AreEqual(23, Ids.Length);
+        var streamed = Statecraft.Game.Map.Collection.CollectionCatalog.Bundles
+            .Single(b => b.Bundle == Statecraft.Game.Map.Collection.CollectionCatalog.Buildings).Ids;
+        Assert.AreEqual(5, streamed.Length);
+        CollectionAssert.IsSubsetOf(streamed, Ids);
         var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) })
+            .Concat(streamed.Select(id => Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, Statecraft.Game.Map.Collection.CollectionDetail.Near)))
             .OrderBy(p => p, StringComparer.Ordinal);
         var found = AssetDatabase.FindAssets("", new[] { Folder }).Select(AssetDatabase.GUIDToAssetPath)
             .Where(p => !AssetDatabase.IsValidFolder(p)).Distinct().OrderBy(p => p, StringComparer.Ordinal);

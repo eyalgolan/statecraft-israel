@@ -55,9 +55,7 @@ const en = {
   'video.length': 'length',
 
   'cta.play': 'Play',
-  'cta.play.note': 'There is no hosted build yet. The Play page says how to run it.',
   'cta.github': 'GitHub',
-  'version': 'Prototype 0.1.0 (M3), 11 October 2026',
 
   'figure.full': 'Full size',
   'date.window': 'In the game from',
@@ -119,9 +117,7 @@ const he: Dict = {
   'video.length': 'אורך',
 
   'cta.play': 'לשחק',
-  'cta.play.note': 'עדיין אין גרסה מתארחת. בעמוד "לשחק" מוסבר איך מריצים את המשחק.',
   'cta.github': 'GitHub',
-  'version': 'אב־טיפוס 0.1.0 (M3), 11 באוקטובר 2026',
 
   'figure.full': 'בגודל מלא',
   'date.window': 'במשחק מ־',

@@ -38,6 +38,21 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
+        /// <summary>Issue #1032 (follow-up to #1030): a kit landmark drawn since <paramref name="start"/> at the symbolic scale
+        /// <paramref name="kitScale"/> stays as it is far off, and up close stands at the models' world scale
+        /// (<see cref="ModelScale"/>, the locomotive's rule), shrunk about its spot <paramref name="at"/> on its ground level
+        /// <paramref name="y"/> (KitMesh.CloseCopy), never grown: the Old City's Al-Aqsa and citadel keep the 16x and 20x they
+        /// were fitted at. A wall's piece (<paramref name="keepLength"/>) keeps its length along <paramref name="yaw"/>, so the
+        /// circuit stays closed round the symbolic Old City; only its thickness and height shrink. Recorded in
+        /// <see cref="Result.CloseLandmarks"/>.</summary>
+        static void AtWorldScale(string id, string kind, KitMesh km, (int v, int i) start, Vector2 at, float y, float kitScale, float yaw = 0f,
+            bool keepLength = false)
+        {
+            float k = Mathf.Min(1f, ModelScale / kitScale);
+            var b = km.CloseCopy(start, new Vector3(at.x, y, at.y), yaw, keepLength ? 1f : k, k, k);
+            closeLandmarks?.Add(new Placed(id, kind, at, yaw, b.size.x, b.size.z, b.max.y - y, default, y));
+        }
+
         static Vector2 World(KitGround g, double lon, double lat) { var w = g.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }
 
         /// <summary>The unit vector from settlement <paramref name="s"/>'s point towards a sourced coordinate.</summary>
@@ -85,9 +100,11 @@ namespace Statecraft.Game.Map.Kits
             if (Claim(lots, mosqueWant + new Vector2(20f * m, 2f * m), 4.5f * m, s.Id, ground, out var p))
             {
                 float y = ground.Y(p.x, p.y);
+                var start = km.CutStart();
                 km.Box(p.x, p.y, 15f, 5f * m, 5f * m, y - 2f * m, y, 24f * m, stone, stone, Facade.Stone, m, roofed: true);
                 km.Box(p.x, p.y, 15f, 4f * m, 4f * m, y + 24f * m, y + 24f * m, 4f * m, C(0.90f, 0.82f, 0.64f), stone, Facade.Plain, m, roofed: true);
                 km.Pyramid(p.x, p.y, 15f, 4.4f * m, 4.4f * m, y + 28f * m, 3.5f * m, C(0.55f, 0.47f, 0.40f));
+                AtWorldScale(s.Id, "clock_tower", km, start, p, y, m);
                 Record(s.Id, "clock_tower", p, 15f, 5f * m, 5f * m, 31.5f * m, stone);
                 n++;
             }
@@ -101,6 +118,7 @@ namespace Statecraft.Game.Map.Kits
                 if (Claim(lots, want, 2.6f * m, s.Id, ground, out var q))
                 {
                     float y = ground.Y(q.x, q.y);
+                    var start = km.CutStart();
                     var white = C(0.93f, 0.92f, 0.88f); var red = C(0.70f, 0.22f, 0.17f);
                     const int bands = 4; float bandH = 12f * m / bands;
                     for (int b = 0; b < bands; b++)
@@ -108,6 +126,7 @@ namespace Statecraft.Game.Map.Kits
                             Mathf.Lerp(1.9f, 1.4f, b / (float)bands) * m, Mathf.Lerp(1.9f, 1.4f, (b + 1) / (float)bands) * m, b % 2 == 0 ? white : red, 10);
                     km.Shaft(new Vector3(q.x, y + 12f * m, q.y), new Vector3(q.x, y + 14.5f * m, q.y), 1.5f * m, 1.5f * m, C(0.30f, 0.32f, 0.30f), 10);
                     km.Cone(new Vector3(q.x, y + 14.5f * m, q.y), 1.8f * m, 2.2f * m, red, 10);
+                    AtWorldScale(s.Id, "lighthouse", km, start, q, y, m);
                     Record(s.Id, "lighthouse", q, 0f, 3.8f * m, 3.8f * m, 16.7f * m, white);
                     n++;
                 }
@@ -169,8 +188,8 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>How far inside the walls the Old City's houses keep (and outside them the new city's).</summary>
         const float OldCityInset = 220f;
 
-        /// <summary>Jerusalem: Suleiman's walls (1537-41) round a symbolic square Old City with five gates (Jaffa Gate on the
-        /// west, Damascus Gate on the north wall's west side, Lions' Gate on the east, Zion and Dung Gates on the south) and a
+        /// <summary>Jerusalem: Suleiman's walls (1537-41) round a symbolic square Old City with its seven gates open in 1948
+        /// (Jaffa west; New, Damascus and Herod's north; Lions' east; Zion and Dung south) and a
         /// gap wherever a 1948 road or the railway crosses the line, the citadel near Jaffa Gate, and the Haram al-Sharif in
         /// the city's east: its platform, the Dome of the Rock (blue and white Ottoman tiles; its dome blackened lead until
         /// the 1959-64 restoration) and the Al-Aqsa Mosque at the platform's south end (its dome lead). The rest of the
@@ -182,19 +201,22 @@ namespace Statecraft.Game.Map.Kits
             float wallT = 380f, wallH = 900f;
             var stone = C(0.82f, 0.72f, 0.55f); var top = C(0.86f, 0.78f, 0.62f);
             int n = 0;
-            // The Haram al-Sharif in the city's south-east (in the real city it fills the east side down to the south wall):
-            // its platform, the Dome of the Rock and Al-Aqsa, where the platform keeps clear of the drawn Jericho road. The
-            // roads left no room for the real platform's north-south length, so it is wider than long and Al-Aqsa stands in
-            // its south-east corner rather than across its south end (docs/visual-v1.md, "Towns round 2"). Since #319 the
-            // roads stop at the walls; reshaping the platform is the rest of that issue.
-            float pw = 1300f, pl = 1100f;
-            var pc = oc + new Vector2(350f, -1200f);
+            // The Haram al-Sharif / Temple Mount in the Old City's south-east, against its east and south walls: "in the
+            // southeast corner of the Old City" (L. Nees, Age of Transition, Metropolitan Museum 2015, p. 94,
+            // https://resources.metmuseum.org/resources/metpublications/pdf/Age_of_Transition_Byzantine_Culture_in_the_Islamic_World.pdf).
+            // Its platform measures 488 m along the west, 470 m along the east, 315 m along the north and 280 m along the
+            // south (https://en.wikipedia.org/wiki/Temple_Mount), about 1.6 times as long north-south as east-west; the
+            // symbolic one keeps that shape (1.1 x 1.7 km). Both checked 18 October 2026. The 1948 roads are drawn only
+            // outside the walls (RouteLayer.Drawn, #319), so their traced lines inside the walls (the corridors) do not
+            // move it; it still keeps off the units' clearings (TownCensusTests.NoBuildingStandsOnARouteOrInTheSea).
+            float pw = 1100f, pl = 1700f;
+            var pc = oc + new Vector2(1300f, -1000f);
             var paving = C(0.86f, 0.82f, 0.72f);
-            if (RectClear(pc, pw, pl, ground) && lots.Free(pc, 0.5f * Mathf.Sqrt(pw * pw + pl * pl)))   // first in the Old City
+            if (lots.Free(pc, 0.5f * Mathf.Sqrt(pw * pw + pl * pl)))   // first in the Old City
             {
                 var (pb, pg) = GroundSpan(pc, 0f, pw, pl, ground, 1f);
                 km.Box(pc.x, pc.y, 0f, pw, pl, pb, pg, 80f, C(0.80f, 0.72f, 0.58f), paving, Facade.Plain, 10f);
-                // Its lots: discs over the platform, each clear of the routes (RectClear checked the whole platform).
+                // Its lots: discs over the platform, each clear of the routes.
                 for (float u = -pw * 0.5f + 150f; u < pw * 0.5f; u += 260f)
                     for (float v = -pl * 0.5f + 150f; v < pl * 0.5f; v += 260f)
                     {
@@ -204,31 +226,51 @@ namespace Statecraft.Game.Map.Kits
                 Record(s.Id, "haram", pc, 0f, pw, pl, 80f, paving);
                 n++;
                 float deck = pg + 80f;
-                // The Dome of the Rock in the platform's west (18x across: the 52 m octagon about 0.95 km; its walls and drum 30x
+                // The Dome of the Rock on the raised platform near the Haram's centre (18x across: the 52 m octagon about 0.95 km; its walls and drum 30x
                 // high, so it rises over the Old City's roofs): marble below, blue and white tiles above, a tiled drum and the
                 // lead dome (dark: before the 1959-64 restoration).
                 float k = 18f, kv = 30f;
                 float rOct = 27f * k;
-                var dc = pc + new Vector2(-0.5f * pw + rOct + 30f, 0f);
+                var dc = pc + new Vector2(-40f, 260f);
                 var marble = C(0.88f, 0.86f, 0.80f); var tiles = C(0.36f, 0.50f, 0.64f); var lead = C(0.26f, 0.27f, 0.29f);
+                var start = km.CutStart();
                 km.Shaft(new Vector3(dc.x, deck - 60f, dc.y), new Vector3(dc.x, deck + 5f * kv, dc.y), rOct, rOct, marble, 8);
                 km.Shaft(new Vector3(dc.x, deck + 5f * kv, dc.y), new Vector3(dc.x, deck + 11f * kv, dc.y), rOct, rOct, tiles, 8);
                 km.Cone(new Vector3(dc.x, deck + 11f * kv, dc.y), rOct, 2.5f * k, C(0.62f, 0.62f, 0.60f), 8);
                 km.Shaft(new Vector3(dc.x, deck + 11f * kv, dc.y), new Vector3(dc.x, deck + 19f * kv, dc.y), 11f * k, 11f * k, tiles, 16);
                 km.Dome(dc.x, dc.y, deck + 19f * kv, 11f * k, lead, 16, 6);
+                AtWorldScale(s.Id, "dome_of_the_rock", km, start, dc, deck, kv);
                 Record(s.Id, "dome_of_the_rock", dc, 0f, 2f * rOct, 2f * rOct, 19f * kv + 11f * k, tiles);
                 n++;
-                // Al-Aqsa in the platform's south-east corner: a hall running north-south (16x) and its lead dome.
-                float aw = 230f, al = 480f;
-                var ac = pc + new Vector2(0.5f * pw - 0.5f * aw - 40f, -0.5f * pl + 0.5f * al + 40f);
+                // Al-Aqsa (the Qibli Mosque) "located on the south wall of the compound"
+                // (https://en.wikipedia.org/wiki/Al-Aqsa_Mosque, checked 18 October 2026): a hall across the platform's south
+                // end (16x) and its lead dome.
+                float aw = 700f, al = 360f;
+                var ac = pc + new Vector2(0f, -0.5f * pl + 0.5f * al + 40f);
+                start = km.CutStart();
                 km.Box(ac.x, ac.y, 0f, aw, al, deck - 60f, deck, 300f, C(0.84f, 0.77f, 0.62f), C(0.70f, 0.70f, 0.68f), Facade.Stone, 16f);
                 km.Dome(ac.x, ac.y + 0.3f * al, deck + 280f, 0.45f * aw, C(0.55f, 0.56f, 0.57f), 12, 5);
+                AtWorldScale(s.Id, "al_aqsa", km, start, ac, deck, 16f);
                 Record(s.Id, "al_aqsa", ac, 0f, aw, al, 300f, C(0.84f, 0.77f, 0.62f));
                 n++;
             }
 
             // Gates: (side, position along it as a share of the half side). Sides: 0 north, 1 east, 2 south, 3 west.
-            var gates = new (int side, float at)[] { (3, 0.05f), (0, -0.15f), (1, 0.6f), (2, -0.45f), (2, -0.05f) };
+            // The seven gates open before the 1948 war; the eighth, the Gate of Mercy (the Golden Gate) in the Haram's east
+            // wall, has been blocked for centuries and is not drawn. The Israel Ministry of Tourism lists them
+            // counter-clockwise from the south: Zion, Dung (leading to the Western Wall), Mercy, Lion's, Herod's
+            // (north-facing), Damascus (north), New and Jaffa (https://israel.travel/the-gates-of-jerusalem/). The New Gate,
+            // the only one not in Suleiman's design, opened in 1887 or 1889 (https://en.wikipedia.org/wiki/Gates_of_the_Old_City_of_Jerusalem
+            // and https://en.wikipedia.org/wiki/New_Gate); Herod's Gate has its present opening since 1875
+            // (https://en.wikipedia.org/wiki/Herod%27s_Gate). All checked 18 October 2026. Where a road's corridor meets the
+            // wall at a gate's spot, the gate moves along the same wall to the nearest clear spot.
+            var gates = new (int side, float at)[]
+            {
+                (3, 0.05f),                           // Jaffa: west
+                (0, -0.85f), (0, -0.5f), (0, 0.35f),  // New, Damascus, Herod's: north, west to east, where the north wall is clear
+                (1, -0.35f),                          // Lion's: east, north of the Haram (and of the Gate of Mercy)
+                (2, -0.21f), (2, 0.125f),             // Dung (by the Haram's south-west corner), Zion (west of it): south
+            };
             const int pieces = 12;
             float len = 2f * half / pieces, pieceR = 0.5f * Mathf.Sqrt(len * len + wallT * wallT);   // a piece's half-diagonal
             int built = 0;
@@ -245,8 +287,10 @@ namespace Statecraft.Game.Map.Kits
                     var mid = oc + a0 + dir * (len * (i + 0.5f));
                     if (gap[i]) continue;
                     var (bottom, gy) = GroundSpan(mid, yaw, len, wallT, ground, 1f);
+                    var start = km.CutStart();
                     km.Box(mid.x, mid.y, yaw, len * 1.01f, wallT, bottom, gy, wallH, stone, top, Facade.Plain, KitScale.Houses);
                     km.Box(mid.x, mid.y, yaw, len * 1.01f, wallT * 0.35f, gy + wallH, gy + wallH, 90f, top, top, Facade.Plain, KitScale.Houses);   // the parapet
+                    AtWorldScale(s.Id, "walls", km, start, mid, gy, KitScale.Houses, yaw, keepLength: true);
                     lots.Add(new Lot { c = mid, r = pieceR, id = s.Id });
                     built++;
                     // A gate tower where a road passes the wall line (a road entered by a gate), else a square tower at every
@@ -260,17 +304,32 @@ namespace Statecraft.Game.Map.Kits
                         var t = oc + a0 + dir * (len * (i + end) + (byRoad ? (end == 0 ? 1f : -1f) * 0.5f * tw : 0f));
                         if (ground.OnRoute(t, 0.5f * tw + 10f)) continue;   // the tower itself stays off the road
                         var (tb, ty) = GroundSpan(t, yaw, tw, tw, ground, 1f);
+                        var tower = km.CutStart();
                         km.Box(t.x, t.y, yaw, tw, tw, tb, ty, th, stone, top, byRoad ? Facade.Stone : Facade.Plain, KitScale.Houses);
-                        if (byRoad) Record(s.Id, "gate", t, yaw, tw, tw, th, stone);
+                        AtWorldScale(s.Id, "wall_tower", km, tower, t, ty, KitScale.Houses);
                     }
                 }
                 foreach (var (gs, at) in gates)
                 {
                     if (gs != side) continue;
                     var gp = oc + a0 + dir * (half + at * half);
+                    // A road corridor may meet the wall at a gate. Put the symbolic gatehouse beside that opening, on the
+                    // same wall and nearest clear side, rather than dropping the sourced gate from the census.
+                    if (ground.OnRoute(gp, 330f))
+                    {
+                        for (int step = 1; step <= 3 && ground.OnRoute(gp, 330f); step++)
+                        {
+                            var before = gp - dir * (step * 380f);
+                            var after = gp + dir * (step * 380f);
+                            if (!ground.OnRoute(before, 330f)) gp = before;
+                            else if (!ground.OnRoute(after, 330f)) gp = after;
+                        }
+                    }
                     if (ground.OnRoute(gp, 330f)) continue;
                     var (gb, gy) = GroundSpan(gp, yaw, 650f, 420f, ground, 1f);
+                    var start = km.CutStart();
                     km.Box(gp.x, gp.y, yaw, 650f, 420f, gb, gy, wallH + 400f, stone, top, Facade.Stone, KitScale.Houses);
+                    AtWorldScale(s.Id, "gate", km, start, gp, gy, KitScale.Houses);
                     Record(s.Id, "gate", gp, yaw, 650f, 420f, wallH + 400f, stone);
                 }
             }
@@ -282,25 +341,16 @@ namespace Statecraft.Game.Map.Kits
             if (Claim(lots, oc + new Vector2(-450f, -150f), 10f * m, s.Id, ground, out var cp))
             {
                 float y = ground.Y(cp.x, cp.y);
+                var start = km.CutStart();
                 km.Box(cp.x, cp.y, 0f, 18f * m, 16f * m, y - 2f * m, y, 12f * m, stone, top, Facade.Stone, m);
                 km.Box(cp.x - 5f * m, cp.y + 4f * m, 0f, 7f * m, 7f * m, y + 12f * m - 1f, y + 12f * m, 6f * m, stone, top, Facade.Stone, m);
                 km.Shaft(new Vector3(cp.x + 6f * m, y, cp.y - 5f * m), new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.7f * m, 1.4f * m, stone, 8);
                 km.Cone(new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.6f * m, 3.5f * m, C(0.62f, 0.62f, 0.58f), 8);
+                AtWorldScale(s.Id, "citadel", km, start, cp, y, m);
                 Record(s.Id, "citadel", cp, 0f, 18f * m, 16f * m, 33.5f * m, stone);
                 n++;
             }
             return n;
-        }
-
-        /// <summary>True when a north-aligned w x l rectangle at <paramref name="c"/> keeps 60 m off every route corridor
-        /// (sampled every ScanStepM, edges included).</summary>
-        static bool RectClear(Vector2 c, float w, float l, KitGround ground)
-        {
-            int nx = Mathf.CeilToInt(w / ScanStepM), nz = Mathf.CeilToInt(l / ScanStepM);
-            for (int i = 0; i <= nx; i++)
-                for (int j = 0; j <= nz; j++)
-                    if (ground.OnRoute(c + new Vector2(-0.5f * w + w * i / nx, -0.5f * l + l * j / nz), 60f)) return false;
-            return true;
         }
 
         // ---- Haifa ----------------------------------------------------------------------------------------------------
@@ -346,8 +396,11 @@ namespace Statecraft.Game.Map.Kits
                     if (!(ToLand(along + new Vector2(0f, 10f * m), Vector2.down, ground, 4000f) is Vector2 land)) continue;
                     if (!Claim(lots, land + new Vector2(0f, -6f * m), 8f * m, s.Id, ground, out var q)) continue;
                     var (b, y) = GroundSpan(q, 0f, 15f * m, 6f * m, ground, m);
+                    AddModel(s.Id, TownModel.B32CargoShed, q, 0f, 15f * m, 6f * m, 5.1f * m, b, y, km, m, exactHeight: false, flip: false);   // #659
+                    var cut = km.CutStart();
                     km.Box(q.x, q.y, 0f, 15f * m, 6f * m, b, y, 3.5f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
                     km.Gable(q.x, q.y, 0f, 15f * m, 6f * m, y + 3.5f * m, 1.6f * m, C(0.58f, 0.55f, 0.52f), shed);
+                    km.CutEnd(cut);
                     Record(s.Id, "warehouse", q, 0f, 15f * m, 6f * m, 5.1f * m, shed);
                     n++;
                 }
@@ -408,8 +461,11 @@ namespace Statecraft.Game.Map.Kits
                 // Behind the beach strip (BeachSetbackM), so the sand stays open in front of them.
                 if (!Claim(lots, l + new Vector2(BeachSetbackM + 4f * m, (i - 1) * 17f * m), 8.5f * m, s.Id, ground, out var q)) continue;
                 var (bt, gy) = GroundSpan(q, 90f, 15f * m, 6f * m, ground, m);
+                AddModel(s.Id, TownModel.B32CargoShed, q, 90f, 15f * m, 6f * m, 5f * m, bt, gy, km, m, exactHeight: false, flip: false);   // #659
+                var cut = km.CutStart();
                 km.Box(q.x, q.y, 90f, 15f * m, 6f * m, bt, gy, 3.2f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
                 km.Gable(q.x, q.y, 90f, 15f * m, 6f * m, gy + 3.2f * m, 1.8f * m, C(0.60f, 0.58f, 0.55f), shed);
+                km.CutEnd(cut);
                 Record(s.Id, "warehouse", q, 90f, 15f * m, 6f * m, 5f * m, shed);
                 n++;
             }
@@ -426,6 +482,7 @@ namespace Statecraft.Game.Map.Kits
             if (!Claim(lots, want, 5f * m, owner, ground, out var p)) return 0;
             float y = ground.Y(p.x, p.y), storey = 27f / 5f * m;
             var stone = C(0.90f, 0.86f, 0.76f);
+            var start = km.CutStart();
             for (int i = 0; i < 5; i++)
             {
                 float w = Mathf.Lerp(7f, 5.6f, i / 4f) * m;
@@ -433,6 +490,7 @@ namespace Statecraft.Game.Map.Kits
             }
             km.Box(p.x, p.y, 0f, 3.2f * m, 3.2f * m, y + 27f * m - 1f, y + 27f * m, 2.6f * m, stone, stone, Facade.Plain, m, roofed: true);
             km.Dome(p.x, p.y, y + 29.6f * m, 1.6f * m, C(0.80f, 0.78f, 0.72f));
+            AtWorldScale(owner, "white_tower", km, start, p, y, m);
             Record(owner, "white_tower", p, 0f, 7f * m, 7f * m, 31f * m, stone);
             return 1;
         }
@@ -443,6 +501,7 @@ namespace Statecraft.Game.Map.Kits
             if (!Claim(lots, want, 11f * m, owner, ground, out var p)) return 0;   // the lot covers the minaret too
             float y = ground.Y(p.x, p.y);
             var stone = Jitter(C(0.87f, 0.80f, 0.66f), ref rnd, 0.03f);
+            var start = km.CutStart();
             km.Box(p.x, p.y, 0f, 14f * m, 14f * m, y - 2f * m, y, 7f * m, stone, stone, Facade.Stone, KitScale.Landmarks);
             km.Dome(p.x, p.y, y + 7f * m - 0.5f * m, 5.5f * m, C(0.80f, 0.80f, 0.76f));
             float mx = p.x + 8.5f * m, mz = p.y - 6f * m;
@@ -450,6 +509,7 @@ namespace Statecraft.Game.Map.Kits
             km.Shaft(new Vector3(mx, my - 2f * m, mz), new Vector3(mx, my + 26f * m, mz), 1.6f * m, 1.35f * m, stone, 8);
             km.Shaft(new Vector3(mx, my + 20f * m, mz), new Vector3(mx, my + 21f * m, mz), 2.1f * m, 2.1f * m, stone, 8);   // the balcony
             km.Cone(new Vector3(mx, my + 26f * m, mz), 1.5f * m, 4.5f * m, C(0.62f, 0.62f, 0.58f), 8);
+            AtWorldScale(owner, "mosque", km, start, p, y, m);
             Record(owner, "mosque", p, 0f, 14f * m, 14f * m, 30.5f * m, stone);
             return 1;
         }
@@ -468,11 +528,13 @@ namespace Statecraft.Game.Map.Kits
             var (bottom, top) = GroundSpan(p, yaw, w, d, ground, m);
             var stone = Jitter(C(0.84f, 0.77f, 0.63f), ref rnd, 0.04f);
             var roof = Jitter(LimeRoof, ref rnd, 0.03f);
+            var start = km.CutStart();
             km.Box(p.x, p.y, yaw, w, d, bottom, top, 5.5f * m, stone, roof, Facade.Stone, m);
             float a = yaw * Mathf.Deg2Rad, u = 0.5f * w - 1.4f * m, v = -(0.5f * d - 1.4f * m);
             float mx = p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), mz = p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a);
             km.Box(mx, mz, yaw, 2.8f * m, 2.8f * m, top + 5.5f * m - 0.3f * m, top + 5.5f * m, 7.9f * m, stone, roof, Facade.Plain, m);
             km.Box(mx, mz, yaw, 3.3f * m, 3.3f * m, top + 13.4f * m - 0.2f * m, top + 13.4f * m, 0.6f * m, stone, roof, Facade.Plain, m);   // the balcony's parapet
+            AtWorldScale(owner, "village_mosque", km, start, p, top, m);
             Record(owner, "village_mosque", p, yaw, w, d, 14f * m, stone);
             return 1;
         }
@@ -485,21 +547,27 @@ namespace Statecraft.Game.Map.Kits
             var stone = C(0.86f, 0.76f, 0.57f);
             if (!Claim(lots, want, 10f * m, owner, ground, out var q)) return false;
             float yq = ground.Y(q.x, q.y);
+            var start = km.CutStart();
             km.Box(q.x, q.y, 0f, 9f * m, 18f * m, yq - 2f * m, yq, 12f * m, stone, stone, Facade.Stone, m, roofed: true);
             km.Box(q.x, q.y + 7f * m, 0f, 4.5f * m, 4.5f * m, yq + 12f * m, yq + 12f * m, 14f * m, stone, stone, Facade.Stone, m, roofed: true);
             km.Pyramid(q.x, q.y + 7f * m, 0f, 4.8f * m, 4.8f * m, yq + 26f * m, 6f * m, C(0.60f, 0.52f, 0.44f));
             km.Gable(q.x, q.y, 0f, 9f * m, 18f * m, yq + 12f * m, 4f * m, C(0.66f, 0.34f, 0.24f), stone);
+            AtWorldScale(owner, "church", km, start, q, yq, m);
             Record(owner, "church", q, 0f, 9f * m, 18f * m, 32f * m, stone);
             return true;
         }
 
-        static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size = 1f)
+        /// <summary>A Jewish place's water tower: the kit's, and up close Tal Heuberger's b28 model (issue #659), unless
+        /// <paramref name="model"/> is false (a ma'abara's, drawn by PlacementLayer with the kit's parts only).</summary>
+        static int WaterTower(string owner, Vector2 want, KitGround ground, KitMesh km, Lots lots, float size = 1f, bool model = true)
         {
             float m = KitScale.Houses * size;
             if (!Claim(lots, want, 4f * m, owner, ground, out var p)) return 0;
             float y = ground.Y(p.x, p.y);
             var concrete = C(0.82f, 0.80f, 0.76f);
             Record(owner, "water_tower", p, 0f, 6f * m, 6f * m, 14.7f * m, concrete);
+            if (model) AddModel(owner, TownModel.B28WaterTower, p, 0f, 6f * m, 6f * m, 14.7f * m, y - 2f * m, y, km, m, exactHeight: true, flip: false);
+            var cut = km.CutStart();
             for (int i = 0; i < 4; i++)
             {
                 float a = Mathf.PI * 0.5f * i + 0.6f;
@@ -508,6 +576,7 @@ namespace Statecraft.Game.Map.Kits
             }
             km.Shaft(new Vector3(p.x, y + 9f * m, p.y), new Vector3(p.x, y + 13.5f * m, p.y), 3f * m, 3f * m, concrete, 10);
             km.Cone(new Vector3(p.x, y + 13.5f * m, p.y), 3.1f * m, 1.2f * m, C(0.66f, 0.64f, 0.60f), 10);
+            if (model) km.CutEnd(cut);   // up close the model stands here instead
             return 1;
         }
     }

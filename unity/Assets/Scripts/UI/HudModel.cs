@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Sim;
 
@@ -37,6 +38,44 @@ namespace Statecraft.Game.UI
             m.SayChange.Length == 0 ? t.Format("hud.say", name, m.SayValue)
             : t.Format(m.Sign > 0 ? "hud.say_up" : "hud.say_down", name, m.SayValue, m.SayChange);
 
+        /// <summary>The top bar's meters, in its order (Game.uxml's "meters"), by the ids their elements are named after.</summary>
+        public static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
+
+        /// <summary>How many causes a meter's explanation names (#1037): the turn report and the bar's tip.</summary>
+        public const int MaxCauses = 2;
+
+        /// <summary>The meter named <paramref name="id"/> (one of <see cref="MeterIds"/>).</summary>
+        public Meter For(string id) => id switch
+        {
+            "treasury" => Treasury, "immigration" => Immigration, "security" => Security, "support" => Support,
+            "cohesion" => Cohesion, "standing" => Standing, "fx" => Fx,
+            _ => throw new ArgumentOutOfRangeException(nameof(id), id, "not a top-bar meter"),
+        };
+
+        /// <summary>The main causes of a meter's change in <paramref name="turn"/> (#1037): the messages of the sim's own causes
+        /// (StepResult.Why) for the quantity the meter shows, the largest change first (each meter's causes share its unit),
+        /// the sim's order breaking a tie, at most <see cref="MaxCauses"/>. Nothing is computed or reworded here: a cause is
+        /// matched by its target, as <see cref="From"/> reads the state (Money: the Treasury and the debt; Immigration: the
+        /// population system's arrivals; Social cohesion: morale; International support: intl_standing; Foreign currency:
+        /// fx_reserves; Security: security). Public support is an average the sim computes from the indicators
+        /// (EffectsSystem.Approval) and no cause names it, so it has none.</summary>
+        public static IReadOnlyList<string> Causes(StepResult? turn, string meter)
+        {
+            if (turn == null) return Array.Empty<string>();
+            Func<Cause, bool> match = meter switch
+            {
+                "treasury" => w => w.Target == "treasury" || w.Target == "debt",
+                "immigration" => w => w.System == "population",
+                "security" => w => w.Target == "security",
+                "cohesion" => w => w.Target == "morale",
+                "standing" => w => w.Target == "intl_standing",
+                "fx" => w => w.Target == "fx_reserves",
+                _ => w => false,
+            };
+            return turn.Why.Select((w, i) => (w, i)).Where(x => match(x.w) && x.w.Delta != 0)
+                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(MaxCauses).Select(x => x.w.Message).ToList();
+        }
+
         public static HudModel From(SimBridge b, UiText t)
         {
             // After a reload the changes are the ones the player saw: GameSession.Load replays the save's own commands and
@@ -50,7 +89,7 @@ namespace Statecraft.Game.UI
             string Millions(string id, double millions)
             {
                 var (sign, prefix, amount) = PlayerText.MoneyParts(c, id, millions);
-                return t.Format("hud.say_million", sign + prefix, amount);
+                return t.Format("hud.say_million", prefix + sign, amount);
             }
             Meter Money(string id, double now, double? before)
             {

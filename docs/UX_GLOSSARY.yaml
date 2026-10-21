@@ -6,6 +6,7 @@ status: DRAFT, unapproved
 snapshot_date: '2026-10-17'
 version: '0.5'
 snapshot_commit: 46abd99c
+# Revision 21 October 2026: targeted budget and map-hint checks at upstream/main 001a59d0.
 conventions:
 - id: spelling
   status: preferred
@@ -732,13 +733,13 @@ concepts:
     preferred: hex, defined at first use
     avoid: []
     in_use:
-    - form: Click the map to inspect a hex
+    - form: "Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map"
       where: strings.en.yaml info.hint
   he:
     preferred: null
     avoid: []
     in_use:
-    - form: משושה
+    - form: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה"
       where: strings.he.yaml info.hint
   recommendation:
     en: Keep, but write the first mention so a player who has never met a hex map understands it.
@@ -1329,9 +1330,9 @@ concepts:
     in_use:
     - form: 'נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3}'
       where: strings.he.yaml budget.vote_needed
-    - form: 'התקציב מובא להצבעה ב־{0}, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}'
+    - form: '{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}'
       where: strings.he.yaml budget.vote_advisory
-    - form: אין הצבעה ב־{0} על התקציב
+    - form: "{0} אינה מצביעה על התקציב"
       where: strings.he.yaml budget.no_vote
     - form: אחראית בפני {0} · {1} חברים
       where: strings.he.yaml cabinet.legislature
@@ -1343,12 +1344,13 @@ concepts:
       where: content/legislatures.yaml
   recommendation:
     en: No change. The wording states the rule and the coalition's seats without comment.
-    he: 'The earlier masculine verbs and pronouns after {0} were replaced with neutral wording in #1081. Keep the shipped
-      neutral strings; this draft does not reopen them. ContentNames.Of now reads BodyHe for legislature names (#861). Any
-      new agreement or gender-field proposal still needs native review and an owner decision.'
+    he: 'After the interim neutral wording in #1081, #1136 applied Beri''s native review from #564 to the budget strings.
+      The current feminine forms work because all three legislature names are feminine; a masculine-named body would
+      need new wording. Keep these native-reviewed strings for the current bodies. ContentNames.Of reads BodyHe (#861).
+      Any new agreement or gender-field proposal still needs native review and an owner decision.'
     reasons:
-    - Neutral structures avoid a fixed gendered verb after a changing body name.
-    - 'The earlier finding has been addressed in #1081; record the current implementation rather than presenting it as unfixed.'
+    - "Beri's native note on #564 supports the feminine forms for the three current bodies, not every future body name."
+    - '#1136 applied that review; record the current wording and its limit rather than reopening the earlier finding.'
   decision_owner: Native reviewer; Eyal for any key change
 - id: stability
   status: preferred

@@ -31,6 +31,11 @@ public class SimBridgeGuardTests
         [typeof(CancelTraining)] = new CancelTraining(1),
         [typeof(PioneerWork)] = new PioneerWork(1, "build_yishuv", "mefalsim"),
         [typeof(StopWork)] = new StopWork(1),
+        [typeof(UnitOrder)] = new UnitOrder(1, "fortify"),
+        [typeof(StartProject)] = new StartProject("housing", "tel_aviv", 1, 0),
+        [typeof(CancelProject)] = new CancelProject(1),
+        [typeof(Move)] = new Move(1, 2, 0),
+        [typeof(BuyArms)] = new BuyArms(0),
     };
 
     static IEnumerable<Type> CommandTypes() =>
@@ -46,8 +51,8 @@ public class SimBridgeGuardTests
     }
 
     /// <summary>The command types whose order is one per turn by design, so their key is their kind (SimBridge.Key's
-    /// default): one budget, one call-up level, one security order.</summary>
-    static readonly HashSet<Type> OnePerTurn = new HashSet<Type> { typeof(AllocateBudget), typeof(SetMobilization), typeof(SecurityOrder) };
+    /// default): one budget, one call-up level, one security order, one Arms purchase (its count is the whole order).</summary>
+    static readonly HashSet<Type> OnePerTurn = new HashSet<Type> { typeof(AllocateBudget), typeof(SetMobilization), typeof(SecurityOrder), typeof(BuyArms) };
 
     /// <summary>Every other command type has its own branch in SimBridge.Key, so its orders are not one per turn by accident
     /// (a new type with a Validate branch and no Key branch would silently keep only the last order of the turn).</summary>

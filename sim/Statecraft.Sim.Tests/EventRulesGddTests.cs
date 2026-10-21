@@ -35,7 +35,7 @@ public class EventRulesGddTests
     public void HardAnchorsAlwaysFire()
     {
         Assert.Equal(GameOverCodes.MvpEnded, Run[Run.Count - 1].GameOver);
-        var plain = C.Events.Where(e => e.Anchor == "hard" && e.Requires == null && e.Conditions.Count == 0 && e.Objective == "").ToList();
+        var plain = C.Events.Where(e => e.Anchor == "hard" && e.Requires.Count == 0 && e.Conditions.Count == 0 && e.Objective == "").ToList();
         Assert.NotEmpty(plain);
         foreach (var e in plain)
         {
@@ -105,6 +105,7 @@ from: 1948-05-15
 options:
   - id: first
     text: The first way
+    alternative: { basis: design }
     recommended: true
     effects:
       - target: fx_reserves
@@ -142,6 +143,68 @@ options:
         EventSystem.Delegate(hard, h, new List<Cause>());
         Assert.Equal("history", h.ChosenOptions["choice"]);   // not the recommended one: the historical option, always
         Assert.Equal(rng, h.RngState);                       // and no draw
+    }
+
+    // R-EVT-003 (#107; owner, 18 October 2026): a holder whose loyalty is below delegation_loyalty_floor carries a delegated
+    // decision out half-heartedly: disloyal_effect_share of each numeric effect lands. Which option is drawn does not change.
+    [Theory]
+    [InlineData(5, -10.0)]   // at the fixture's floor (5): the whole effect
+    [InlineData(4, -5.0)]    // below it: the fixture's share, 0.5
+    public void ADisloyalMinisterDeliversPartOfTheEffect(int loyalty, double want)
+    {
+        var files = Fixture.Gdd();
+        // def_two holds finance_minister on the first day; competence 10 always draws the recommended option
+        files["people.yaml"] = Fixture.Files["people.yaml"].Replace("competence: 4", "competence: 10").Replace("loyalty: 5", $"loyalty: {loyalty}");
+        var c = ContentLoader.Load(Fixture.Write(files, new Dictionary<string, string> { ["choice.yaml"] = Choice.Replace("{ANCHOR}", "soft") }));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+        EventSystem.Delegate(c, s, why);
+        Assert.Equal("first", s.ChosenOptions["choice"]);
+        Assert.Equal(want, Assert.Single(why, w => w.Target == "fx_reserves").Delta);
+        Assert.Equal(loyalty < 5, Assert.Single(why, w => w.Target == "choice").Message.Contains("carried out half-heartedly"));   // the Why says why the numbers are cut
+    }
+
+    // R-EVT-003 (#107): the share reaches the Treasury and Food paths too; a hard anchor's historical option, and the
+    // option's structured effects (here its policy and security level), stay whole.
+    [Fact]
+    public void TheShareReachesEveryNumericEffectAndNothingElse()
+    {
+        var files = Fixture.Gdd();
+        files["people.yaml"] = Fixture.Files["people.yaml"].Replace("competence: 4", "competence: 10").Replace("loyalty: 5", "loyalty: 4");
+        var money = Choice.Replace("{ANCHOR}", "soft").Replace("        delta: -10\n",
+            "        delta: -10\n      - target: treasury\n        delta: 4\n      - target: food\n        delta: 7\n");
+        var c = ContentLoader.Load(Fixture.Write(files, new Dictionary<string, string> { ["choice.yaml"] = money }));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var (treasury, food) = (s.Treasury, s.Food);
+        var why = new List<Cause>();
+        EventSystem.Delegate(c, s, why);
+        Assert.Equal(treasury + 2, s.Treasury, 12);
+        Assert.Equal(food + 4, s.Food);   // 3.5 rounds half away from zero
+
+        var hard = ContentLoader.Load(Fixture.Write(files, new Dictionary<string, string> { ["choice.yaml"] = Choice.Replace("{ANCHOR}", "hard") }));
+        var h = Simulation.NewGame(hard, 1, Mode.Historical);
+        var whyHard = new List<Cause>();
+        EventSystem.Delegate(hard, h, whyHard);
+        Assert.Equal("history", h.ChosenOptions["choice"]);
+        Assert.Equal(0.1, Assert.Single(whyHard, w => w.Target == "food_supply").Delta, 12);   // whole, not 0.05
+        Assert.Equal(0.4, h.Policies["rationing"]);
+        Assert.Equal(3, h.Rung);
+    }
+
+    // R-EVT-003 (#107): both values are required in the GDD loop, so a missing key is never read as 0.
+    [Theory]
+    [InlineData("  delegation_loyalty_floor: 5\n", "", "mvp.delegation_loyalty_floor", "required")]
+    [InlineData("  delegation_loyalty_floor: 5\n", "  delegation_loyalty_floor: 11\n", "mvp.delegation_loyalty_floor", "0-10")]
+    [InlineData("  disloyal_effect_share: 0.5\n", "", "mvp.disloyal_effect_share", "required")]
+    [InlineData("  disloyal_effect_share: 0.5\n", "  disloyal_effect_share: 1.5\n", "mvp.disloyal_effect_share", "from 0 to 1")]
+    public void TheLoyaltyValuesAreRequiredAndInRange(string line, string replacement, string field, string reason)
+    {
+        var files = Fixture.Gdd();
+        Assert.Contains(line, files["rules.yaml"]);
+        files["rules.yaml"] = files["rules.yaml"].Replace(line, replacement);
+        var e = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files)));
+        Assert.Contains(field, e.Message);
+        Assert.Contains(reason, e.Message);
     }
 
     // R-EVT-004: an option's effects apply on the turn it is chosen, never later; no option can carry a delay.
@@ -196,14 +259,21 @@ options:
     public void ThePreviewListsEveryEffectOnTheRealContent()
     {
         var checkedOptions = 0;
+        // A consequence card never fires in the historical run (R-ALT-012); its state comes from a run on its road.
         foreach (var e in C.Events)
         {
-            var s = Run.First(x => x.FiredEvents.Contains(e.Id));   // every event fires in the run (EventRetimingTests)
+            // Every historical event fires in the run (EventRetimingTests) but hula_drainage, which waits for works the
+            // reference player never starts (R-SWAMP-002), and absorb_immigrants, which waits for its objective (R-OBJ-004, #1039);
+            // their options are read on the first turn of their window.
+            var s = e.Kind != EventKinds.Consequence
+                ? Run.FirstOrDefault(x => x.FiredEvents.Contains(e.Id)) ?? Run.First(x => (e.Site != "" || e.Objective != "") && x.Date >= e.From)
+                : AltRun.Play(C, AltRun.RoadTo(C, e)).First(x => x.FiredEvents.Contains(e.Id));
             foreach (var o in e.Options)
             {
                 var expected = o.Effects.Select(fx => (fx.Target, fx.Delta))
                     .Concat(o.SetPolicy.OrderBy(k => k.Key, StringComparer.Ordinal).Select(k => (k.Key, k.Value)))
-                    .Concat(o.SetRung.HasValue ? new[] { ("rung", (double)o.SetRung.Value) } : new (string, double)[0]);
+                    .Concat(o.SetRung.HasValue ? new[] { ("rung", (double)o.SetRung.Value) } : new (string, double)[0])
+                    .Concat(o.Rejoin != "" ? new[] { ("rejoin", 0.0) } : new (string, double)[0]);
                 Assert.Equal(expected, EventSystem.OptionEffects(C, s, o).Select(l => (l.Target, l.Delta)));
                 checkedOptions++;
             }

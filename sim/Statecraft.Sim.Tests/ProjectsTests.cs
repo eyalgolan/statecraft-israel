@@ -74,7 +74,7 @@ public class ProjectsTests
         {
             case "unknown unit": order = Build(999); break;
             case "busy": s.Sites["site_b"] = new SiteWork("site_b", id, 2, null); break;
-            case "unknown action": order = new PioneerWork(id, "build_road", "site_a"); break;
+            case "unknown action": order = new PioneerWork(id, "dig_well", "site_a"); break;   // build_road is a corridor action since #786
             case "unknown site": order = Build(id, "nowhere"); break;
             case "not a yishuv site": order = Build(id, "site_b"); break;
             case "being built": s.Sites["site_a"] = new SiteWork("site_a", other, 2, null); break;   // question 15: one unit per site
@@ -198,27 +198,35 @@ public class ProjectsTests
     }
 
     /// <summary>The timing rule, the same reading of D-A6 as training's (R-TRAIN-003): the turn of the order is the first build
-    /// turn, so with build_yishuv_turns 6 an order on turn T is built at the end of turn T+5.</summary>
-    // R-SITE-001, R-SITE-003
+    /// turn. R-MIN-002 scales the progress: Zisling's Agriculture multiplier is (0.5 + 6/20) x (0.5 + 0.07 x 8/2) = 0.8 x 0.78 =
+    /// 0.624, so the 6 turns of work accumulate 0.624, 1.248, 1.872, 2.496, 3.12, 3.744 - the halutz is a veteran from the end
+    /// of the sixth turn (R-VET-001, 6 turns of service) and adds 2 x 0.624 = 1.248 a turn from the seventh (R-VET-002):
+    /// 4.992, 6.24 - so an order on turn T is built at the end of turn T+7. (Six turns, and T+5, before the ministers.)</summary>
+    // R-SITE-001, R-SITE-003, R-MIN-002
     [Fact]
-    public void AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive()
+    public void AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusSeven()
     {
         Assert.Equal(6, Mvp.RulesAt(Mvp.Eras[0].From).Mvp!.BuildYishuvTurns);
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         var id = s.NextId++;
         s.Units.Add(id, new Unit(id, "halutz", -3, 19));
         s = Step(Mvp, s, Build(id, "mefalsim")).State;   // the end of turn T
-        for (int turn = 1; turn <= 4; turn++) s = Step(Mvp, s).State;   // T+1 to T+4
+        for (int turn = 1; turn <= 6; turn++) s = Step(Mvp, s).State;   // T+1 to T+6
         Assert.Null(s.Sites["mefalsim"].BuiltOn);
-        var built = Step(Mvp, s).State;                  // T+5
+        var built = Step(Mvp, s).State;                  // T+7
         Assert.Equal(built.Date, built.Sites["mefalsim"].BuiltOn);
+        Assert.Equal(new DateTime(1949, 1, 15), built.Sites["mefalsim"].BuiltOn);
     }
 
-    /// <summary>Q-SITE-1 (#782): every MVP yishuv site builds as Mefalsim does, in build_yishuv_turns from the order.</summary>
-    // R-SITE-001, R-SITE-003, R-SITE-004
+    /// <summary>Q-SITE-1 (#782): every MVP yishuv site builds as Mefalsim does: build_yishuv_turns of work from the
+    /// order, at the Agriculture minister's R-MIN-002 multiplier (0.624 while Zisling holds it), so T+7 as
+    /// AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusSeven pins.</summary>
+    // R-SITE-001, R-SITE-003, R-SITE-004, R-MIN-002
     [Theory]
     [InlineData("beit_kama")]
+    [InlineData("beit_shemesh")]
     [InlineData("gilat")]
+    [InlineData("kiryat_shmona")]
     [InlineData("mefalsim")]
     [InlineData("reim")]
     public void EveryYishuvSiteBuildsAsMefalsimDoes(string site)
@@ -229,7 +237,7 @@ public class ProjectsTests
         var r = Step(Mvp, s, Build(id, site));
         Assert.Empty(r.Rejected);
         s = r.State;
-        for (int turn = 1; turn <= 4; turn++) s = Step(Mvp, s).State;
+        for (int turn = 1; turn <= 6; turn++) s = Step(Mvp, s).State;
         Assert.Null(s.Sites[site].BuiltOn);
         var built = Step(Mvp, s).State;
         Assert.Equal(built.Date, built.Sites[site].BuiltOn);

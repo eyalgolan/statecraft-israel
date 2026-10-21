@@ -45,6 +45,35 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
           SITE_BASE: ${{ vars.SITE_BASE }}
         run: npm run build
+      - name: Add the playable demo, when the latest release has a Pages build
+        # The demo is the release's *-web-pages.zip (Build.Web -decompressionFallback; docs/RELEASING.md, step 5),
+        # unpacked at /demo/. It never comes from git (the Play page explains why). No such asset yet: the site
+        # deploys without it.
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SITE_DEPLOY == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Lookup failures (auth, network, rate limit) must fail the step, not deploy without the demo: no
+          # error swallowing. Only two quiet skips: no releases at all, and a latest release without the zip.
+          # `gh release view/download` without a tag resolve the latest non-prerelease, and every release is a
+          # prerelease (docs/RELEASING.md step 6), so read the tag from the list and pass it to both calls.
+          tag="$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // empty')"
+          if [ -z "$tag" ]; then
+            echo "No releases yet: deploying without the demo."
+            exit 0
+          fi
+          asset="$(gh release view "$tag" --json assets --jq '[.assets[].name | select(endswith("-web-pages.zip"))] | first // empty')"
+          if [ -z "$asset" ]; then
+            echo "No *-web-pages.zip in the latest release ($tag): deploying without the demo."
+            exit 0
+          fi
+          mkdir -p /tmp/web-pages site/dist/demo
+          gh release download "$tag" --pattern "$asset" --dir /tmp/web-pages --clobber
+          unzip -q -o "/tmp/web-pages/$asset" -d site/dist/demo
+          test -f site/dist/demo/index.html
+          jq -e '.shareable == true' site/dist/demo/event-photos.json > /dev/null
+          echo "Demo at /demo/ from $asset"
       - name: Keep the built site for deploying
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SITE_DEPLOY == 'true'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

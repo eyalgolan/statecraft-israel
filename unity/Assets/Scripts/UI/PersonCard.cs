@@ -29,6 +29,15 @@ namespace Statecraft.Game.UI
             return words.Length == 1 ? words[0].Substring(0, 1) : words[0].Substring(0, 1) + words[words.Length - 1].Substring(0, 1);
         }
 
+        /// <summary>The plate's text in Hebrew (Beri, native speaker, 17 October 2026): the first name's initial and the
+        /// surname, "י. ידין", since two Hebrew letters ("יי") read as a gershayim more than as a name.</summary>
+        public static string InitialAndSurname(string name)
+        {
+            var words = name.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0) return "";
+            return words.Length == 1 ? words[0] : words[0].Substring(0, 1) + ". " + words[words.Length - 1];
+        }
+
         /// <summary>Makes the card's elements inside <paramref name="card"/> (cleared first), empty.</summary>
         public static void Build(VisualElement card, string prefix, UiText text)
         {
@@ -67,11 +76,12 @@ namespace Statecraft.Game.UI
             else portrait.style.backgroundImage = StyleKeyword.None;
             portrait.style.display = tex != null ? DisplayStyle.Flex : DisplayStyle.None;   // never an invented portrait
             var initials = card.Q<Label>(prefix + "-initials");
-            initials.text = person == null || tex != null ? "" : Initials(person.Name);
+            var name = person == null ? "" : ContentNames.Of(text, person);
+            initials.text = person == null || tex != null ? "" : text["ui.lang"] == UiLanguage.Hebrew && person.NameHe != "" ? InitialAndSurname(name) : Initials(name);
             initials.style.display = tex == null ? DisplayStyle.Flex : DisplayStyle.None;
 
             var holder = card.Q<Label>(prefix + "-holder");
-            holder.text = person == null ? text["cabinet.vacant"] : appointed ? text.Format("card.appointed_name", person.Name) : person.Name;
+            holder.text = person == null ? text["cabinet.vacant"] : appointed ? text.Format("card.appointed_name", name) : name;
             holder.EnableInClassList("appointed", appointed);
             card.Q<Label>(prefix + "-office").text = office;
 
@@ -82,7 +92,7 @@ namespace Statecraft.Game.UI
             card.Q(prefix + "-loyalty-row").style.display = shown;
             if (person == null) return;
             var partyId = Offices.PartyOf(c, person, s.Date);
-            var partyName = partyId == "" ? text["cabinet.no_party"] : c.Parties.First(x => x.Id == partyId).Name;
+            var partyName = partyId == "" ? text["cabinet.no_party"] : ContentNames.Of(text, c.Parties.First(x => x.Id == partyId));
             party.text = partyLabel ? text.Format("card.party", partyName) : partyName;
             SetStat(card, prefix + "-competence", person.Competence);
             SetStat(card, prefix + "-loyalty", person.Loyalty);

@@ -30,6 +30,13 @@ namespace Statecraft.Sim
             return r.ObjectivePoints!.Value + (int)bonus;
         }
 
+        /// <summary>The Objectives screen's reading (#1189): one row per objective, in id order (as the loader sorts them),
+        /// done or not, with the player's completion date when it is done and the historical reference date. No score: the
+        /// owner's ruling for the screen (20 October 2026). A pure reading: it writes nothing, so the hash stays put.</summary>
+        public static IReadOnlyList<ObjectiveStatus> Status(Content c, GameState s) =>
+            c.Objectives.Select(o => new ObjectiveStatus(o.Id, o.Name, s.Objectives.TryGetValue(o.Id, out var done) ? done : (DateTime?)null,
+                o.ReferenceDate)).ToList();
+
         /// <summary>Step 11 of the GDD turn (spec 2026-10-12 §2.3, D-A6): records, in id order, every objective whose condition
         /// holds, completed on <paramref name="next"/>, the turn's end date (R-OBJ-001). <paramref name="r"/> is the rules of
         /// the date the turn starts from (docs/determinism.md, "Rules per era").</summary>
@@ -39,9 +46,30 @@ namespace Statecraft.Sim
                 if (Holds(s, o)) Record(c, s, r, o.Id, next, why);
         }
 
-        /// <summary>Whether the objective's condition holds: its site is built (R-SITE-003).</summary>
+        /// <summary>Whether the objective's condition holds: the immigrants are absorbed (R-OBJ-004), or its site is built
+        /// (R-SITE-003).</summary>
         static bool Holds(GameState s, Objective o) =>
-            s.Sites.TryGetValue(o.CompletesWhen!.SiteBuilt, out var w) && w.BuiltOn != null;
+            o.CompletesWhen!.Absorbed is AbsorbCondition a ? Absorbed(s, a)
+            : s.Sites.TryGetValue(o.CompletesWhen.SiteBuilt, out var w) && w.BuiltOn != null;
+
+        /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population (the national count,
+        /// as it stands when step 11 runs, before the turn's population step) has reached the gate, the cities' overflow is at
+        /// most its share of the people they house and their employed at least its share of their civilians. Refugees waiting
+        /// do not count: the turn's arrivals (step 9) always wait at step 11, after housing (step 8). The city counts are
+        /// integer sums times a decimal share, so city order and the runtime cannot change them.</summary>
+        static bool Absorbed(GameState s, AbsorbCondition a)
+        {
+            if (s.TotalPopulation < a.PopulationAtLeast) return false;
+            long housed = 0, over = 0, civilians = 0, employed = 0;
+            foreach (var x in s.Cities.Values)
+            {
+                housed += Cities.Housed(s, x);
+                over += Cities.Overflow(s, x);
+                civilians += x.Civilians;
+                employed += x.Employed;
+            }
+            return over <= a.OverflowAtMost!.Value * housed && employed >= a.EmployedAtLeast * civilians;
+        }
 
         /// <summary>Records objective <paramref name="id"/> as completed on <paramref name="date"/> and adds its points to the
         /// score (R-OBJ-001, R-OBJ-002). Returns false, and changes nothing, when it is already recorded or the loop is not
@@ -57,6 +85,22 @@ namespace Statecraft.Sim
             // In the Why list's "events" group: the card that follows is an event (Unity's WhyPresenter groups by system).
             why.Add(new Cause("events", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points)));
             return true;
+        }
+    }
+
+    /// <summary>One row of <see cref="Objectives.Status"/>: the objective's id and name, the date the player completed it (null
+    /// until then) and the date of the real event.</summary>
+    public sealed class ObjectiveStatus
+    {
+        public string Id { get; }
+        public string Name { get; }
+        public DateTime? Completed { get; }
+        public DateTime Historical { get; }
+        public bool Done => Completed != null;
+
+        public ObjectiveStatus(string id, string name, DateTime? completed, DateTime historical)
+        {
+            Id = id; Name = name; Completed = completed; Historical = historical;
         }
     }
 }

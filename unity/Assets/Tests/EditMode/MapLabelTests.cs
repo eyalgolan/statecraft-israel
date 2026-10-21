@@ -203,6 +203,127 @@ public class MapLabelTests
         Assert.AreEqual(StyleKeyword.Null, container.style.display.keyword, "on clears the inline display, so the loading rule still wins (review M1)");
     }
 
+    static System.Collections.Generic.List<Statecraft.Sim.MapLocation> Locations() => Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).MapLocations;
+
+    /// <summary>Issue #1008: every GDD v0.2 map location in content/map/locations_1948.yaml is named on the map, in English and
+    /// in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's pill, so Jerusalem reads
+    /// "West Jerusalem" with no second pill; each other location has exactly one pill of its own, which ignores the pointer.</summary>
+    [Test]
+    public void EveryMapLocationIsNamedOnceInEnglishAndHebrew()
+    {
+        var locations = Locations();
+        var settlementIds = map.Settlements.Select(s => s.Id).ToHashSet();
+        var own = locations.Where(l => !settlementIds.Contains(l.Id)).ToList();
+        Assert.AreEqual(10, locations.Count, "the #1008 roster");
+        Assert.AreEqual(new[] { "jerusalem" }, locations.Where(l => settlementIds.Contains(l.Id)).Select(l => l.Id).ToArray());
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var ui = new UiTestKit();
+            using var labels = new MapLabelsPresenter(ui.Root, map, cam, hebrew: hebrew, locations: locations);
+            var container = ui.Q<VisualElement>(MapLabelsPresenter.ContainerName);
+            CollectionAssert.AreEqual(own.Select(l => hebrew ? l.NameHe : l.Name).ToArray(), labels.LocationLabels.Select(l => l.text).ToArray(), hebrew ? "he" : "en");
+            foreach (var l in own)
+            {
+                Assert.AreEqual(1, container.Query<VisualElement>("slot-" + l.Id).ToList().Count, l.Id + ": one pill");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(hebrew ? l.NameHe : l.Name), l.Id);
+            }
+            foreach (var l in labels.LocationLabels)
+            {
+                Assert.IsTrue(l.ClassListContains(MapLabelsPresenter.LabelClass) && l.ClassListContains(MapLabelsPresenter.LocationClass), l.text);
+                Assert.AreEqual(PickingMode.Ignore, l.pickingMode, l.text + " must not catch map clicks");
+            }
+            Assert.AreEqual(1, container.Query<VisualElement>("slot-jerusalem").ToList().Count, "Jerusalem keeps one pill");
+            Assert.AreEqual(hebrew ? "מערב ירושלים" : "West Jerusalem", labels.Labels[map.Settlements.ToList().FindIndex(s => s.Id == "jerusalem")].text);
+            Assert.AreEqual(map.Settlements.Count + own.Count + map.Localities.Count + 1, container.childCount, "settlements, locations, localities and the tooltip");
+        }
+        Assert.AreEqual("village", MapLabelsPresenter.LabelType("fort"));
+        Assert.AreEqual("kibbutz", MapLabelsPresenter.LabelType("kibbutz"));
+        Assert.AreEqual("city", MapLabelsPresenter.LabelType("city"));
+    }
+
+    /// <summary>Issue #1008: two locations in one hex stay two readable pills. Negba and the Iraq Suwaydan police fort share
+    /// hex (-7, 25), and West Jerusalem (the jerusalem settlement's pill) and East Jerusalem / Old City share (0, 23). Close up,
+    /// in English and in Hebrew, both pills of each pair are shown, and no two shown pills overlap.</summary>
+    [UnityTest]
+    public IEnumerator LocationsSharingAHexAreBothNamedAndNeverOverlap()
+    {
+        var locations = Locations();
+        var failures = new System.Collections.Generic.List<string>();
+        foreach (var hebrew in new[] { false, true })
+        {
+            var hd = new HdPanel(cam);
+            if (hebrew) (hd.Root.Q("root") ?? hd.Root).AddToClassList(UiLanguage.HebrewClass);
+            var labels = new MapLabelsPresenter(hd.Root, map, cam, hebrew: hebrew, locations: locations);
+            try
+            {
+                foreach (var (a, b, lon, lat) in new[] { ("negba", "iraq_suwaydan_fort", 34.6825, 31.6545), ("jerusalem", "east_jerusalem_old_city", 35.23, 31.778) })
+                {
+                    Pose(lon, lat, 20000f);
+                    for (int i = 0; i < 20 && labels.LocationLabels.Concat(labels.Labels).Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    var all = labels.Slots.Concat(labels.LocationSlots).Concat(labels.LocalitySlots).ToList();
+                    string lang = hebrew ? "he" : "en";
+                    foreach (var id in new[] { a, b })
+                        if (!Shown(all.Single(s => s.name == "slot-" + id))) failures.Add($"{lang} at {lon},{lat}: {id} is not shown");
+                    var shown = all.Where(Shown).Select(x => (id: x.name, rect: x.Q<Label>().worldBound)).ToList();
+                    TestContext.WriteLine($"{lang} 20 km over {a}/{b}: {string.Join(" ", shown.Select(x => x.id + "@" + x.rect))}");
+                    for (int i = 0; i < shown.Count; i++)
+                        for (int j = i + 1; j < shown.Count; j++)
+                            if (shown[i].rect.Overlaps(shown[j].rect)) failures.Add($"{lang}: {shown[i].id} overlaps {shown[j].id}");
+                }
+            }
+            finally { labels.Dispose(); hd.Dispose(); }
+        }
+        Assert.IsEmpty(failures, string.Join("\n", failures));
+    }
+
+    /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and Tal Heuberger's Tegart fort model (SpecialBuildingModels,
+    /// streamed close up from 15 May 1948) do not cover each other. With the real prefab placed and the camera at 30 km over
+    /// Latrun (inside the model's close zoom), the pill is shown and its rectangle clears the model's projected bounds.</summary>
+    [UnityTest]
+    public IEnumerator TheLatrunFortsPillClearsTheTegartFortModel()
+    {
+        var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;
+        Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = (id, detail, done) =>
+            done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+        var hd = new HdPanel(cam);
+        MapLabelsPresenter? labels = null;
+        try
+        {
+            var layer = Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, new System.DateTime(1948, 5, 15))!;
+            var fort = layer.transform.Find("latrun_tegart");
+            Assert.IsNotNull(fort, "the Tegart fort model stands at Latrun on 15 May 1948");
+            labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
+            Pose(34.98, 31.835, 30000f);
+            for (int i = 0; i < 20 && labels.LocationLabels.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+            labels.Refresh(force: true); yield return null;
+            labels.Refresh(force: true); yield return null;
+            var slot = labels.LocationSlots.Single(s => s.name == "slot-latrun_fort");
+            Assert.IsTrue(Shown(slot), "the Latrun police fort is named at 30 km");
+            var pill = slot.Q<Label>().worldBound;
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var r in fort!.GetComponentsInChildren<Renderer>(true))
+            {
+                var b = r.bounds;
+                for (int c = 0; c < 8; c++)
+                {
+                    var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
+                    var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
+                    x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                }
+            }
+            var model = Rect.MinMaxRect(x0, y0, x1, y1);
+            TestContext.WriteLine($"latrun_fort pill {pill}; Tegart model {model}");
+            Assert.IsFalse(pill.Overlaps(model), $"the pill {pill} covers the fort model {model}");
+        }
+        finally
+        {
+            labels?.Dispose(); hd.Dispose();
+            Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = saved;
+        }
+    }
+
     [Test]
     public void LabelsOffScreenAreHiddenAndComeBack()
     {
@@ -340,18 +461,36 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
-    /// <summary>Issue #710 (owner, 15 October 2026): a city's or town's pill starts with its static 1948 population tier, from
-    /// cities.yaml's people; a pill with no 1948 figure (an Arab town, a kibbutz, a locality) has no badge. The tiers double
-    /// from 1,000 (the proposed design values): 999 is tier 1, 1,000 tier 2, 128,000 and up tier 9, which gives eight distinct
-    /// tiers across the twelve rows. The badge sits inside its pill, at the left, before the name; with the pointer over
-    /// Haifa's pill the tooltip explains the number.</summary>
-    [UnityTest]
-    public IEnumerator CitiesWearTheirStatic1948PopulationTier()
+    /// <summary>Owner, 18 October 2026, on #710 ("Accept as shipped"): tiers 1 to 9, doubling from 1,000 people. 999 is
+    /// tier 1, 1,000 tier 2, 128,000 and up tier 9.</summary>
+    [Test]
+    public void PopulationTierBoundariesDoubleFromOneThousandAndCapAtNine()
     {
         Assert.AreEqual(1, MapLabelsPresenter.Tier(999)); Assert.AreEqual(2, MapLabelsPresenter.Tier(1000));
         Assert.AreEqual(2, MapLabelsPresenter.Tier(1999)); Assert.AreEqual(3, MapLabelsPresenter.Tier(2000));
         Assert.AreEqual(8, MapLabelsPresenter.Tier(127999)); Assert.AreEqual(9, MapLabelsPresenter.Tier(128000));
         Assert.AreEqual(9, MapLabelsPresenter.Tier(248459));
+    }
+
+    /// <summary>Owner, 18 October 2026, on #710 ("Keep tier 1 from 350"): Rosh Pinna's badge comes from its May 1948 figure
+    /// of 350, which is Hebrew Wikipedia only (CBS lists no population), so the data marks it wikipedia-only.</summary>
+    [Test]
+    public void RoshPinnaKeepsTierOneFromItsWikipediaOnlyFigure()
+    {
+        var roshPinna = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).Cities.Single(c => c.Id == "rosh_pinna");
+        var people = roshPinna.People ?? throw new AssertionException("Rosh Pinna has no population figure");
+        Assert.AreEqual("wikipedia-only", people.Status);
+        Assert.AreEqual(350m, people.Value); Assert.AreEqual("1948-05", people.Date);
+        Assert.AreEqual(1, MapLabelsPresenter.Tier(people.Value));
+    }
+
+    /// <summary>Issue #710 (owner, 15 October 2026): a city's or town's pill starts with its static 1948 population tier, from
+    /// cities.yaml's people; a pill with no 1948 figure (an Arab town, a kibbutz, a locality) has no badge. The tiers double
+    /// from 1,000 (owner-approved, 18 October 2026), which gives eight distinct tiers across the twelve rows. The badge sits
+    /// inside its pill, at the left, before the name; with the pointer over Haifa's pill the tooltip explains the number.</summary>
+    [UnityTest]
+    public IEnumerator CitiesWearTheirStatic1948PopulationTier()
+    {
         // The game's tooltip comes from map.tier (GameRoot); both languages format it with the tier, the count and the people.
         var en = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
@@ -391,41 +530,102 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
-    /// <summary>Owner decision on #897 (17 October 2026, "Yes, mirror it"): in the Hebrew UI the tier badge sits at the start of
-    /// the Hebrew name, which is the pill's right; inside the pill and clear of the name. The English pill keeps it on the left.</summary>
+    /// <summary>#1063 (player report: cities are hard to pick on the map): a city's name pill is a click target. PillAtLayer
+    /// finds the shown game settlement's pill under a point, and none off every pill or where a pill is hidden; Highlight
+    /// lights that one pill (HoverClass, a lighter fill) and puts it out again. English and Hebrew alike.</summary>
     [UnityTest]
-    public IEnumerator InHebrewTheTierBadgeSitsOnTheRightOfThePill()
+    public IEnumerator ThePillUnderThePointerIsFoundAndLit()
     {
-        var people = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).Cities
-            .Where(c => c.People != null).ToDictionary(c => c.Id, c => c.People!.Value);
-        foreach (var hebrew in new[] { true, false })
+        foreach (var hebrew in new[] { false, true })
         {
             var hd = new HdPanel(cam);
             if (hebrew) (hd.Root.Q("root") ?? hd.Root).AddToClassList(UiLanguage.HebrewClass);
-            var labels = new MapLabelsPresenter(hd.Root, map, cam, population: people, hebrew: hebrew);
+            var labels = new MapLabelsPresenter(hd.Root, map, cam, hebrew: hebrew);
+            string lang = hebrew ? "he" : "en";
             try
             {
                 Pose(34.99, 32.80, 40000f);
                 yield return Settle(labels);
                 var haifa = labels.Labels.Single(l => l.name == "label-haifa");
-                Assert.IsTrue(Shown(labels.Slots.Single(x => x.name == "slot-haifa")), "Haifa is named at 40 km");
-                var pill = haifa.worldBound;
-                var badge = labels.Slots.Single(x => x.name == "slot-haifa").Q<Label>(className: MapLabelsPresenter.TierClass).worldBound;
-                TestContext.WriteLine($"{(hebrew ? "he" : "en")} '{haifa.text}': pill {pill}, badge {badge}");
-                Assert.IsTrue(pill.Contains(badge.min) && pill.Contains(badge.max - Vector2.one * 0.01f), $"the badge {badge} lies inside its pill {pill}");
-                if (hebrew)
-                {
-                    Assert.Greater(badge.center.x, pill.center.x, "Hebrew: at the start of the name, on the right");
-                    Assert.GreaterOrEqual(badge.xMin, pill.xMax - haifa.resolvedStyle.paddingRight, "Hebrew: clear of the name's text");
-                }
-                else
-                {
-                    Assert.Less(badge.center.x, pill.center.x, "English: on the left, unchanged");
-                    Assert.LessOrEqual(badge.xMax, pill.xMin + haifa.resolvedStyle.paddingLeft, "English: clear of the name's text");
-                }
+                Assert.IsTrue(Shown(labels.Slots.Single(x => x.name == "slot-haifa")), lang + ": Haifa is named at 40 km");
+                var container = hd.Root.Q<VisualElement>(MapLabelsPresenter.ContainerName).worldBound.position;
+                var centre = haifa.worldBound.center - container;
+                Assert.AreEqual("haifa", labels.PillAtLayer(centre), lang + ": the pointer over Haifa's pill");
+                Assert.IsNull(labels.PillAtLayer(new Vector2(-50f, -50f)), lang + ": off every pill");
+                var fill = haifa.resolvedStyle.backgroundColor;
+                labels.Highlight("haifa"); yield return null;
+                Assert.IsTrue(haifa.ClassListContains(MapLabelsPresenter.HoverClass), lang + ": Haifa's pill is lit");
+                Assert.AreEqual(1, labels.Labels.Count(l => l.ClassListContains(MapLabelsPresenter.HoverClass)), lang + ": that pill alone");
+                Assert.AreNotEqual(fill, haifa.resolvedStyle.backgroundColor, lang + ": the lit pill has another fill");
+                labels.Highlight(null); yield return null;
+                Assert.IsFalse(labels.Labels.Any(l => l.ClassListContains(MapLabelsPresenter.HoverClass)), lang + ": put out");
+                Assert.AreEqual(fill, haifa.resolvedStyle.backgroundColor, lang + ": its own fill again");
+
+                Pose(34.78, 31.25, 40000f);   // Beersheba: Haifa is off screen
+                yield return Settle(labels);
+                Assert.IsFalse(Shown(labels.Slots.Single(x => x.name == "slot-haifa")), lang + ": precondition, Haifa's pill is hidden");
+                Assert.AreNotEqual("haifa", labels.PillAtLayer(centre), lang + ": a hidden pill is no target");
             }
             finally { labels.Dispose(); hd.Dispose(); }
         }
+    }
+
+    /// <summary>Owner decision on #897 (17 October 2026, "Yes, mirror it"): in the Hebrew UI the tier badge sits at the start of
+    /// the Hebrew name, which is the pill's right; inside the pill and clear of the name. The English pill keeps it on the left.
+    /// Pinned at every window size of InfoPanelLayoutTests and on one pill per anchor (Haifa centre, Safed right, Petah Tikva
+    /// left; owner review on #940): the badge's start edge sits 7 px (to within one screen pixel) inside the pill's start edge in both languages.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheTierBadgeSitsOnTheRightOfThePill()
+    {
+        const float Inset = 7f;   // MapLabelsPresenter.TierInsetPx, the room Statecraft.uss ".map-label-with-tier" leaves
+        var people = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).Cities
+            .Where(c => c.People != null).ToDictionary(c => c.Id, c => c.People!.Value);
+        var failures = new System.Collections.Generic.List<string>();
+        var anchorsAt = new System.Collections.Generic.List<(string window, System.Collections.Generic.HashSet<string> anchors)>();   // one entry per window and language
+        int total = 0;
+        foreach (var (w, h) in InfoPanelLayoutTests.Windows)
+            foreach (var hebrew in new[] { true, false })
+            {
+                var hd = new HdPanel(cam, w, h);
+                if (hebrew) (hd.Root.Q("root") ?? hd.Root).AddToClassList(UiLanguage.HebrewClass);
+                var labels = new MapLabelsPresenter(hd.Root, map, cam, population: people, hebrew: hebrew);
+                string lang = hebrew ? "he" : "en"; int seen = 0;
+                var anchors = new System.Collections.Generic.HashSet<string>();
+                anchorsAt.Add(($"{w}x{h} {lang}", anchors));
+                try
+                {
+                    foreach (var (lon, lat) in new[] { (34.99, 32.80), (35.50, 32.96), (34.89, 32.09) })   // Haifa, Safed, Petah Tikva
+                    {
+                        Pose(lon, lat, 40000f);
+                        yield return Settle(labels);
+                        float screenPx = hd.Root.worldBound.width / w;   // one screen pixel in panel units
+                        foreach (var slot in labels.Slots.Where(Shown))
+                        {
+                            var b = slot.Q<Label>(className: MapLabelsPresenter.TierClass); if (b == null) continue;
+                            var name = slot.Q<Label>("label-" + slot.name.Substring("slot-".Length));
+                            Rect pill = name.worldBound, badge = b.worldBound; seen++;
+                            anchors.Add(name.GetClasses().Single(c => c.StartsWith("anchor-")));
+                            string at = $"{w}x{h} {lang} {slot.name}: pill {pill}, badge {badge}";
+                            if (!(pill.Contains(badge.min) && pill.Contains(badge.max - Vector2.one * 0.01f))) failures.Add(at + ": the badge leaves its pill");
+                            // worldBound snaps to the screen's pixels, so the inset is 7 px give or take one screen pixel (in panel units).
+                            float inset = hebrew ? pill.xMax - badge.xMax : badge.xMin - pill.xMin;
+                            if (Mathf.Abs(inset - Inset) > screenPx)
+                                failures.Add(at + $": the badge's {(hebrew ? "right" : "left")} edge is {inset:0.##} px inside the pill's, not {Inset} (+-{screenPx:0.##})");
+                            if (hebrew ? badge.xMin < pill.xMax - name.resolvedStyle.paddingRight : badge.xMax > pill.xMin + name.resolvedStyle.paddingLeft)
+                                failures.Add(at + ": the badge overlaps the name's text");
+                        }
+                    }
+                    total += seen;
+                    if (seen == 0) failures.Add($"{w}x{h} {lang}: no tier badge shown at all");
+                }
+                finally { labels.Dispose(); hd.Dispose(); }
+            }
+        TestContext.WriteLine($"{total} badges checked; anchors per window: {string.Join("; ", anchorsAt.Select(a => a.window + " = " + string.Join("/", a.anchors.OrderBy(x => x))))}");
+        Assert.IsEmpty(failures, string.Join("\n", failures));
+        // Each window and language must show a centre, a right and a left anchored pill (Haifa, Safed, Petah Tikva); a set pooled
+        // across windows would pass with one anchor missing at some window. No window is exempt: at today's window sizes declutter hides none of the three.
+        foreach (var (window, seenAnchors) in anchorsAt)
+            Assert.AreEqual(3, seenAnchors.Count, $"{window}: a centre, a right and a left anchored pill, saw {string.Join(", ", seenAnchors.OrderBy(x => x))}");
     }
 
     /// <summary>Owner rulings 2026-10-11 and 2026-10-12: the 1948 localities are named by their 1948 names only at close zoom,
@@ -1113,5 +1313,56 @@ public class MapLabelTests
             Assert.LessOrEqual(mOn, MaxRatio * mOff, $"keeping clear of the units: {mOn:0} us against {mOff:0} us without them");
         }
         finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>Issue #669: the 1948 Collection's craft stay off the labels. At the 60 km gameplay view over Tel Aviv and Jaffa,
+    /// Haifa and Acre, and Lod, on the Altalena's turn (15 June 1948) and in Magic Carpet's main wave (15 August 1949), no
+    /// shown pill meets a drawn craft (its renderers' world box, every corner through the camera's pixels): the pills keep
+    /// clear of the craft's boxes as GameRoot passes them (SeaAirCollection.KeepClear).</summary>
+    [UnityTest]
+    public IEnumerator TheCollectionCraftStayOffEveryShownPill()
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var saved = Statecraft.Game.Map.Collection.SeaAirCollection.Request;
+        Statecraft.Game.Map.Collection.SeaAirCollection.Request = (id, d, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(
+            Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, d)));
+        var hd = new HdPanel(cam);
+        Statecraft.Game.Map.Collection.SeaAirCollection? craftLayer = null;
+        // As GameRoot wires it: the names keep clear of the craft's boxes (SeaAirCollection.KeepClear), as of the unit tokens.
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => craftLayer != null ? craftLayer.KeepClear : null);
+        int checkedCraft = 0;
+        try
+        {
+            foreach (var date in new[] { new System.DateTime(1948, 6, 15), new System.DateTime(1949, 8, 15) })
+            {
+                var layer = craftLayer = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, date, System.Array.Empty<Statecraft.Sim.Placement>(), c)!;
+                Assert.AreEqual(4, layer.Placed.Count, "every craft drawn on " + date.ToString("d MMM yyyy"));
+                foreach (var (lon, lat) in new[] { (34.76, 32.07), (35.03, 32.86), (34.88, 32.0) })
+                {
+                    Pose(lon, lat, 60000f);
+                    yield return Settle(labels);
+                    var pills = labels.Labels.Where(l => Shown(l.parent)).Concat(labels.LocalityLabels.Where(l => Shown(l.parent))).Select(l => l.worldBound).ToList();
+                    Assert.Greater(pills.Count, 0, $"pills shown over {lon}, {lat}");
+                    foreach (Transform craft in layer.transform)
+                    {
+                        var b = craft.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((a, x) => { a.Encapsulate(x); return a; });
+                        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue; bool front = true;
+                        for (int k = 0; k < 8; k++)
+                        {
+                            var corner = new Vector3((k & 1) == 0 ? b.min.x : b.max.x, (k & 2) == 0 ? b.min.y : b.max.y, (k & 4) == 0 ? b.min.z : b.max.z);
+                            var q = hd.ToPanel(corner, out var inFront); front &= inFront;
+                            x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                        }
+                        var rect = Rect.MinMaxRect(x0, y0, x1, y1);
+                        if (!front || !rect.Overlaps(hd.Root.worldBound)) continue;   // off this view
+                        checkedCraft++;
+                        foreach (var pill in pills)
+                            Assert.IsFalse(pill.Overlaps(rect), $"{craft.name} {rect} under a pill {pill} at {lon}, {lat} on {date:d MMM yyyy}");
+                    }
+                }
+            }
+            Assert.GreaterOrEqual(checkedCraft, 5, "the craft were in view");
+        }
+        finally { labels.Dispose(); hd.Dispose(); Statecraft.Game.Map.Collection.SeaAirCollection.Request = saved; }
     }
 }

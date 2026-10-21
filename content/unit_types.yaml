@@ -16,3 +16,29 @@ types:
     training_turns: 4                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3)
     training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3: IL millions per group)
   - { id: veteran_halutz, kind: unit }  # a halutz unit after rules.yaml mvp.veteran_halutz_service turns of work (R-VET-001; D-D9); not trained
+  - id: craftsman                        # civilian to craftsman, through craft training (D-D4, Q-CRAFT-1; R-CRAFT-001)
+    kind: population                     # a count per city (D-A2)
+    facility: industry                   # a city with a completed industry project (projects.yaml, R-PROJ-003)
+    training_turns: 3                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3, D-D4: Q-CRAFT-3)
+    training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3, D-D4: Q-CRAFT-3, IL millions per group)
+# Phase 5's military types (R-UNIT-001; Q-UNIT-1, owner, 15 October 2026; #741, owner, 18 October 2026: "all defaults").
+# A side, a class and movement points (Phase 5 PR 5, R-MOVE-001); strength comes from the unit's sourced row or its cohort
+# (Q-UNIT-4) and upkeep with Phase 5 PR 3. The recruit stays a count per city until PR 3; the enemy types come in PR 4.
+# Movement points were proposed in PR #1073 (#744; Q-MOVE-1, owner, 15 October 2026: "Take all recommendations") and
+# accepted by the owner as design values on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259021508). At about 8.7 km between hex centres, 3 plain hexes is about 26 km a monthly turn, an operational pace; the
+# armoured car carries more (Q-ARTY-2) and the guns fewer.
+  - id: veteran_soldier
+    kind: unit
+    side: israel
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: points a turn)
+  - id: artillery
+    kind: unit
+    side: israel
+    class: artillery
+    movement_points: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: points a turn)
+  - id: armoured_car
+    kind: unit
+    side: israel
+    class: armour
+    movement_points: 5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, Q-ARTY-2: points a turn)

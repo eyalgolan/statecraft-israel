@@ -101,7 +101,7 @@ public class RouteTests
         using var sha = System.Security.Cryptography.SHA256.Create();
         return string.Concat(sha.ComputeHash(bytes.ToArray()).Select(b => b.ToString("x2")));
     }
-    const string RailMeshHash = "e6b1710041c05f9ce18d1591e5173c003b933308e9cb84fa807e23b015f16fbd";   // #252: full width where only one side leaves the tolerance; #319: cut at the Old City's walls
+    const string RailMeshHash = "7a48e169031f093824b2f85f0f4d451d84ed14514f16ce35fc6390c6a3e9c55b";   // #252: full width where only one side leaves the tolerance; #319: cut at the Old City's walls; #786: the 1949 rail link
 
     [Test]
     public void TheMapBuildsRibbonsOnTheGroundAndTheTogglesHideThem()
@@ -349,7 +349,12 @@ public class RouteTests
             var groups = RoutesRoot(map).Find(RouteLayer.RibbonsName).GetComponentsInChildren<RouteGroup>(true).ToList();
             var burma = groups.Single(g => g.Window.From == new System.DateTime(1948, 6, 14));
             Assert.IsFalse(burma.gameObject.activeSelf, "built as at the game's start, 15 May 1948");
-            Assert.IsTrue(groups.Where(g => g != burma).All(g => g.gameObject.activeSelf), "the rest are on the 1946 map");
+            var start = new System.DateTime(1948, 5, 15);
+            Assert.IsTrue(groups.Where(g => g != burma && g.Window.From <= start).All(g => g.gameObject.activeSelf), "the rest are on the 1946 map");
+            // #786: the 1949 rail link and the 1950 Tel Aviv–Netanya road (Phase 4 corridors) are the routes built after the
+            // Burma Road, hidden at the start.
+            Assert.IsTrue(groups.Where(g => g.Window.From > start).All(g => g == burma || ((g.Window.From == new System.DateTime(1949, 9, 20)
+                || g.Window.From == new System.DateTime(1950, 7, 28)) && !g.gameObject.activeSelf)));
             RouteLayer.ShowAt(map, new System.DateTime(1948, 6, 13));
             Assert.IsFalse(burma.gameObject.activeSelf);
             RouteLayer.ShowAt(map, new System.DateTime(1948, 6, 14));
@@ -525,9 +530,40 @@ public class RouteTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>Kits and routes together (#179 on main): no kit building, landmark or tree reaches into any route's
-    /// corridor, half the drawn width plus RouteLayer.CorridorMarginM, the Burma Road included (the kits are built once,
-    /// not per date). Checked by brute force against every segment, independent of KitGround's grid.</summary>
+    /// <summary>Owner, 18 October 2026 (#786: the floors are kept): only the routes drawn at the game's start, 15 May 1948, keep
+    /// the kits off. The kits are built once, not per date, so a later route (the Burma Road, the 1949 rail link, the 1950
+    /// Tel Aviv–Netanya road) clears no town's houses or trees from the start; it draws over them when it appears.</summary>
+    [Test]
+    public void OnlyTheRoutesDrawnAtTheStartKeepTheKitsOff()
+    {
+        var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+        var kept = RouteLayer.KitRoutes(routes).Select(r => r.Id).ToList();
+        CollectionAssert.AreEquivalent(routes.Where(r => RoutePaths.Bound(r.From) <= RouteLayer.DefaultDate).Select(r => r.Id), kept);
+        CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_railway", "tel_aviv_haifa_road", "jaffa_jerusalem_road" }, kept);
+        foreach (var later in new[] { "burma_road", "yarkon_rail_link", "tlv_netanya_road" })
+            CollectionAssert.DoesNotContain(kept, later);
+    }
+
+    /// <summary>#786: the unit tokens keep off the routes drawn while any of them stands (to the end of the last anchor's
+    /// window in units_1948.yaml): the Burma Road, opened in June 1948, still does; the 1949 rail link and the 1950 Tel
+    /// Aviv–Netanya road, opened after the last token leaves, take no spot (the straight 1950 road left Kiryati none in
+    /// Tel Aviv).</summary>
+    [Test]
+    public void TheUnitsKeepOffOnlyTheRoutesDrawnWhileTheyStand()
+    {
+        var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+        var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
+        var until = units.SelectMany(u => u.Anchors).Max(a => Statecraft.Game.Map.Units.UnitData.Day(a.To));
+        var kept = RouteLayer.UnitRoutes(routes, until).Select(r => r.Id).ToList();
+        CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_railway", "tel_aviv_haifa_road", "burma_road" }, kept);
+        foreach (var later in new[] { "yarkon_rail_link", "tlv_netanya_road" })
+            CollectionAssert.DoesNotContain(kept, later);
+        Assert.AreEqual(routes.Count - 2, kept.Count, "only the two Phase 4 routes open after the war's last token");
+    }
+
+    /// <summary>Kits and routes together (#179 on main): no kit building, landmark or tree reaches into the corridor of a
+    /// route drawn at the start (RouteLayer.KitRoutes), half the drawn width plus RouteLayer.CorridorMarginM. Checked by
+    /// brute force against every segment, independent of KitGround's grid.</summary>
     [Test]
     public void NoKitBuildingOrTreeStandsOnARoute()
     {
@@ -537,11 +573,12 @@ public class RouteTests
         {
             map.Build();
             Assert.IsNotNull(map.KitStats, "Map.unity builds the kits");
-            var routes = RoutePaths.Parse(CommittedYaml, Bounds);
+            var all = RoutePaths.Parse(CommittedYaml, Bounds);
+            var routes = RouteLayer.KitRoutes(all).ToList();
             var corridors = RouteLayer.Corridors(map.Frame, routes);
             // Plus one segment per unit clearing (a unit token in a town: docs/units.md, "Placement").
             Assert.AreEqual(corridors.Sum(c => c.line.Count - 1) + map.UnitClearings.Count, map.KitStats.CorridorSegments, "the map hands every route to the kits");
-            Assert.IsTrue(routes.Any(r => r.Id == "burma_road"), "the dated Burma Road keeps its corridor from the start");
+            Assert.IsFalse(routes.Any(r => r.Id == "burma_road"), "a route drawn after the start keeps no kits off (#786)");
             // Every corridor clears its drawn ribbon by at least the roads' margin, and the roads' stays main's 250 m (so the
             // wider road moves no town kit).
             for (int i = 0; i < routes.Count; i++)
@@ -572,6 +609,12 @@ public class RouteTests
                 return Clearance(new Vector2(p.x, p.z)) < crown - 0.01f;
             });
             TestContext.WriteLine($"{lots.Count} lots, {trees.Count} trees, {map.KitStats.CorridorSegments} route segments: {badLots} lots and {badTrees} trees on a route");
+            // What the later routes now draw over (#786), for the record: not a failure.
+            var later = RouteLayer.Corridors(map.Frame, all.Where(r => !routes.Contains(r)));
+            float LaterClearance(Vector2 p) => later.Min(c => Enumerable.Range(0, c.line.Count - 1)
+                .Min(i => Statecraft.Game.Map.Kits.KitGround.SegmentDistance(p, c.line[i], c.line[i + 1]) - c.halfWidth));
+            TestContext.WriteLine($"LATER ROUTES {string.Join(",", all.Where(r => !routes.Contains(r)).Select(r => r.Id))}: "
+                + $"{lots.Count(l => LaterClearance(l.centre) < l.radius)} lots and {trees.Count(t => { Vector3 p = t.Item2.GetColumn(3); return LaterClearance(new Vector2(p.x, p.z)) < 0f; })} trees within their corridors");
             Assert.AreEqual(0, badLots, "no building or landmark lot reaches a route corridor");
             Assert.AreEqual(0, badTrees, "no tree crown reaches a route corridor");
             Assert.AreEqual(map.Settlements.Count, lots.Select(l => l.id).Distinct().Count(), "every town still has buildings");

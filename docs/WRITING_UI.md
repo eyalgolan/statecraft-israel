@@ -7,6 +7,8 @@ Revision 19 October 2026: targeted corrections against upstream/main 9e571342 ad
 
 This guide covers short player-facing text: labels, buttons, status lines, toasts, refusals, errors, hints and empty states. It does not cover event card prose (`docs/WRITING_EVENTS.md`, `docs/WRITING_GUIDE.md`) or historical sourcing (`docs/CONTENT_POLICY.md`). Those stay as they are.
 
+Revision 21 October 2026: map-hint quotations were checked against upstream/main 001a59d0 (#1134); this remains a targeted update.
+
 ## How to use this guide
 
 - A writer reads the rules and the review checklist.
@@ -176,7 +178,7 @@ Check: manual.
 | `order.unknown` | Unknown {0} | Fixed in #630 (kind only) | UI-07 |
 | `order.no_attention` | Not enough attention (need {0:0.0}, have {1:0.0}) | Mixed, no next step, repeats "Not" after "Not done:" | UI-05 |
 | `save.write_failed` | Your game could not be saved. | Weak, no why or next step | UI-05 |
-| `info.hint` | Click the map to inspect a hex | Exception to settle | UI-08 |
+| `info.hint` | Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map | Exception to settle | UI-08 |
 | `cabinet.majority` | Majority: {0} {1} | Reads as a holding; candidate "Needed for a majority: {0} {1}" | UI-03 |
 | `hud.say_point` | {0:0} point | Good, the two-key plural (with `hud.say_points`) | UI-17 |
 | `hud.caption.support` | Public support | Sentence case since #630 | UI-02 |

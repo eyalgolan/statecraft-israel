@@ -20,6 +20,8 @@ namespace Statecraft.Game.UI
         public const string RowClass = "info-row";
         /// <summary>On the panel while it shows a unit's card: the rows keep their lines but drop the hex signs (Statecraft.uss).</summary>
         public const string UnitClass = "info-unit";
+        /// <summary>On the panel while it shows the GDD loop's city or site part (#381): a second column (Statecraft.uss).</summary>
+        public const string GddClass = "info-gdd-shown";
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
@@ -29,6 +31,8 @@ namespace Statecraft.Game.UI
         readonly Label title, subtitle, region, settlements, localitiesLabel, placement, reason;
         readonly System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt;
         readonly UiIcon thumb;
+        /// <summary>The GDD loop's part (GddHexPanel, #381): a city's counts and orders, or the designated site's.</summary>
+        readonly VisualElement gdd;
         readonly IReadOnlyDictionary<string, string> settlementNames;
         readonly MapRegions? regions;
         readonly System.Func<string, (int q, int r)>? townHex;
@@ -59,6 +63,7 @@ namespace Statecraft.Game.UI
             localitiesLabel = panel.Q<Label>("info-localities");
             placement = panel.Q<Label>("info-placement"); reason = panel.Q<Label>("info-reason");
             thumb = panel.Q<UiIcon>("info-thumb");
+            gdd = panel.Q<VisualElement>(GddHexPanel.HostName);
             foreach (var row in panel.Query(className: RowClass).ToList()) rows.Add((row, row.Q<Label>()));
             campButton = panel.Q<Button>("build-camp"); housingButton = panel.Q<Button>("build-housing");
             onCamp = () => Build(MapActions.TransitCamp); onHousing = () => Build(MapActions.Housing);
@@ -105,6 +110,13 @@ namespace Statecraft.Game.UI
         {
             if (Covered) return;
             unitMode = true; Selected = null; Render();
+        }
+
+        /// <summary>Shows nothing selected (the hint), as before the first click; ignored while covered.</summary>
+        public void Clear()
+        {
+            if (Covered) return;
+            unitMode = false; Selected = null; Render();
         }
 
         void Build(string action)
@@ -210,6 +222,7 @@ namespace Statecraft.Game.UI
         public void Render()
         {
             RenderLines();
+            panel.EnableInClassList(GddClass, gdd.style.display.value == DisplayStyle.Flex);
             // A fact row shows only when its line has something to say (an empty row would leave a lone sign).
             foreach (var (row, line) in rows)
                 row.style.display = string.IsNullOrEmpty(line.text) ? DisplayStyle.None : DisplayStyle.Flex;
@@ -232,6 +245,7 @@ namespace Statecraft.Game.UI
                 placement.text = card.Footer; reason.text = card.Note;
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
                 ShowThumb(null);
+                GddHexPanel.Hide(gdd);
                 return;
             }
             panel.EnableInClassList("info-empty", Selected == null);
@@ -242,6 +256,7 @@ namespace Statecraft.Game.UI
                 ShowLocalities("");
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
                 ShowThumb(null);
+                GddHexPanel.Hide(gdd);
                 return;
             }
             var (q, r) = Selected.Value;
@@ -249,6 +264,9 @@ namespace Statecraft.Game.UI
             ShowThumb(hex?.Biome);
             var owned = c.SettlementHexes.Where(x => x.Q == q && x.R == r).Select(x => TownName(x.Id)).ToList();   // strict: every settlement hex has a name (final review M4)
             title.text = owned.Count > 0 ? owned[0] : hex == null ? text["info.off_map"] : text["info.biome." + hex.Biome];
+            // The GDD loop's city or designated site (#381); a site's hex has no settlement, so its name is the title.
+            var siteName = GddHexPanel.Render(gdd, bridge, text, q, r);
+            if (siteName != null && owned.Count == 0) title.text = siteName;
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)
             // The armistice zone in force, else the sub-district on 15 May 1948, and any armistice line in force through the
             // hex, each with its agreement (true lines drawn to the nearest hex edge: the owner's ruling).
@@ -262,8 +280,10 @@ namespace Statecraft.Game.UI
             ShowLocalities(localitiesAt == null ? "" : LocalitiesText(text, localitiesAt(q, r)));
             var here = MapActions.At(s, q, r);
             var queued = bridge.QueuedLike(new MapAction(MapActions.Housing, q, r)) as MapAction;
-            placement.text = queued != null ? text.Format("info.queued", PlayerText.Capitalised(PlayerText.MapAction(c, queued.Action)))
-                : here != null ? text.Format("info.built", PlayerText.Capitalised(PlayerText.MapAction(c, here.Action)),
+            // The action's name from the UI strings (#929): PlayerText.MapAction is the content's English name (#924's tools
+            // test keeps the English string equal to it).
+            placement.text = queued != null ? text.Format("info.queued", PlayerText.Capitalised(text["info.map_action." + queued.Action]))
+                : here != null ? text.Format("info.built", PlayerText.Capitalised(text["info.map_action." + here.Action]),
                     Control1948.LineDateText(here.Date.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), k => text[k])) : "";   // PlayerText.Month is always English (#701)
             var campReason = MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
             var housingReason = MapActions.CheckReason(c, s, MapActions.Housing, q, r);

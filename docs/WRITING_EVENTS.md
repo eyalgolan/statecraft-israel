@@ -31,14 +31,19 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `id` | yes | Unique across all events. Lowercase letters, digits and underscores, starting with a letter. |
 | `title` | yes | The card title. May contain office placeholders. |
 | `text` | yes | The card body. May contain office placeholders. |
+| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` while no native speaker has read the Hebrew (#564); remove it once one has. |
+| `text_he` | no | The body in Hebrew (#1064). See `title_he`. |
 | `anchor` | no (default `soft`) | `hard` or `soft`. See below. |
-| `tags` | no | A list of free-form labels. Four are sensitive. See below. |
+| `tags` | no | A list of free-form labels. Five are sensitive. See below. |
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
-| `requires` | no | Fires only after another event was resolved with a given option. See below. |
+| `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken; `reconvergence` for an outside event with course-specific text. See below. |
+| `requires` | no | Fires only after every listed requirement holds. See below. |
+| `variants` | no | `kind: reconvergence` only. Course-specific title and text, each with `when`, `text`, optional `title` and `sources` (R-ALT-010). See "kind". |
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
+| `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -72,16 +77,22 @@ Write plain description. Do not put words in anyone's mouth: no invented quotes
 
 ### tags and the sensitive review
 
-Tags are free-form, but these four are sensitive (checked without regard to case): `holocaust`, `terror`, `massacre`,
-`war-casualties`. An event with any of them:
+Tags are free-form, but these five are sensitive (checked without regard to case): `holocaust`, `terror`, `massacre`,
+`war-casualties`, `displacement`. An event with any of them:
 
-- cannot give a positive delta to any resource in any option: `treasury`, `fx_reserves`, `food`, `food_supply`, `morale`
-  (standing for Social cohesion) or `intl_standing` (standing for International Support). The loader refuses: it would
-  reward the atrocity. Owner decision of 15 October 2026 (Q-EFX-2, "Extend it"); until then the rule covered money only;
+- cannot give a positive delta to any resource in any option: `treasury`, `fx_reserves`, `food`, `arms`, `food_supply`,
+  `morale` (standing for Social cohesion) or `intl_standing` (standing for International Support). The loader refuses:
+  it would reward the atrocity. Owner decision of 15 October 2026 (Q-EFX-2, "Extend it"); until then the rule covered
+  money only;
 - needs `status: sensitivity-reviewed` before any build is shared. That status is set by the maintainer, not by you.
   Submit it as `fact-checked`. `Statecraft.Cli --release-gate`, the `-shareable` build and `tools/package_release.py`
   refuse to release while any sensitive event is not `sensitivity-reviewed`, and a test requires every sensitive event
   in `content/` to carry exactly that status once reviewed.
+
+For `displacement`, the no-gain rule has no exception: no option may raise Money, Food, Arms, Social cohesion,
+International Support or score (R-EFX-007). Score is not an event-effect target yet, so the loader already refuses
+it as unknown; do not add it to an event. The rule applies when that target exists. No event in `content/` uses
+`displacement` yet.
 
 The other tag used so far is `security`. It has no rule attached.
 
@@ -112,14 +123,88 @@ conditions:
 
 `min` and `max` are both optional, and `min` must not exceed `max`. Not every event needs this; the example has none.
 
+### kind
+
+Every event on the record is `historical`, the default; leave the key out. A **consequence card**, `kind: consequence`,
+exists only because the player took a road that did not happen (R-ALT-005 to R-ALT-008):
+
+```yaml
+id: after_the_road
+kind: consequence
+anchor: soft                  # always soft
+title: ...
+text: '...'                   # only what was threatened, promised or recorded as feared at the time; office placeholders
+from: 1948-07-15              # absolute dates, opening after the parent's window closes
+to: 1948-09-15
+requires: [{ event: parent_event, option: road_not_taken }]   # or { event: parent_event, diverged: true }
+options:
+  - id: hold
+    text: ...
+    rejoin: parent_event        # optional: this answer returns later cards to the recorded course
+    alternative: { basis: debated, by: ..., date: ..., sources: [...] }   # every option carries one
+```
+
+The loader refuses a consequence card that:
+- is `hard`, or has an option marked `historical: true`;
+- has no requirement on a road not taken (an option that did not happen, `diverged: true`, or an option of another
+  consequence card);
+- has an option without an `alternative` record;
+- follows a road nobody is recorded proposing (the Ferguson test, R-ALT-006, owner's answer Q-ALT-3): the option it
+  follows must have `alternative.basis` `proposed` or `debated`. With `diverged: true`, every option that did not
+  happen must;
+- does not carry each sensitive tag of every event it requires (R-ALT-007). The no-gain rule then covers it too;
+- has an `objective`, or is required by an event that is not itself a consequence card;
+- lies more than 2 cards deep from the record (`EventRules.MaxConsequenceDepth`, a design value, Q-ALT-5).
+
+Consequence cards take a turn's soft slots before the other soft events (R-ALT-008). They never fire in the historical
+run (R-ALT-012), so `EventRetimingTests` counts only the other events.
+
+An option on a consequence card may `rejoin` the event whose alternative road the card follows, provided that event has
+a historical option (R-ALT-009). Choosing it makes requirements on that historical option hold again, but only later
+cards whose absolute windows are still open can fire. It does not erase the option the player actually chose: a
+`diverged: true` requirement on the same event remains true. The loader refuses `rejoin` on any other kind of event, an
+unknown or self target, or a target whose alternative road the card does not follow.
+
+A **reconvergence event**, `kind: reconvergence`, is a real outside event that happened regardless of the player's
+course. It has a historical option and may bend only its title and text to a road not taken (R-ALT-010):
+
+```yaml
+kind: reconvergence
+title: The outside event
+text: It happened regardless.
+from: 1948-07-01
+to: 1948-08-01
+variants:
+  - when: [{ event: parent_event, diverged: true }]
+    title: The outside event, on your course
+    text: It happened regardless; the earlier decision went the other way.
+    sources: [{ url: https://example.org/source, checked: 2026-10-18 }]
+```
+
+Variants are tested in file order; the first whose every `when` entry holds supplies the text and, when present, the
+title. Options and effects never vary. Each variant needs a source and at least one requirement on a road not taken.
+Every road it names must have a window that closes on or before the reconvergence event opens, so wording cannot change
+while the card is shown. A variant that names an event's historical option also needs every consequence card that can
+`rejoin` that event (R-ALT-009) to close by then, since a rejoin makes that option hold. Variant title and text use the same checked office placeholders as the event itself. Only a
+reconvergence event may carry `variants`.
+
 ### requires
 
 ```yaml
-requires: { event: other_event_id, option: other_option_id }
+requires: [{ event: other_event_id, option: other_option_id }]
 ```
 
-The event waits until `other_event_id` was resolved (chosen or delegated) with `other_option_id`. Both must exist, an
-event cannot require itself, and requirements cannot form a cycle.
+A list: the event waits until **every** entry holds (R-ALT-001). An entry holds when that event was resolved (chosen or
+delegated) with that option. An entry can instead say `diverged: true`:
+
+```yaml
+requires: [{ event: other_event_id, diverged: true }]
+```
+
+which holds when that event was resolved with any option except its historical one (R-ALT-002). The loader checks that
+every named event exists, that an entry gives an option or `diverged: true` (not both, not neither), that the option
+exists, that a `diverged` event has a historical option, that no event is named twice in one list, that an event does
+not require itself, and that requirements do not form a cycle.
 
 ### options
 
@@ -129,6 +214,7 @@ Each option has:
 |---|---|---|
 | `id` | yes | Unique within the event. Same shape as an event id. |
 | `text` | yes in practice | What the player reads on the button. May use placeholders. |
+| `text_he` | with the event's `title_he` | The button's text in Hebrew (#1064). |
 | `historical` | no (default false) | `true` on the option that matches what really happened. At most one per event. |
 | `recommended` | no (default false) | The option a competent minister picks when the event is delegated. |
 | `effects` | no | A list of `{ target, delta }`. |
@@ -136,9 +222,35 @@ Each option has:
 | `set_policy` | no | A map of policy id to a level from 0 to 1. |
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
+| `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
+| `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
+| `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
 An event needs at least one option. `historical` is a statement of fact and needs a source; `recommended` is a game
 design choice and does not.
+
+### alternative
+
+An option that did not happen can say who put it forward, and on what record (R-ALT-003):
+
+```yaml
+  - id: road
+    text: The road not taken
+    alternative:
+      basis: debated            # proposed, debated or design
+      by: the Provisional State Council
+      date: 1948-06-20
+      sources: [{ url: "https://example.org/minutes", checked: 2026-10-17 }]
+```
+
+- `proposed` or `debated`: `by` names the body or office in words, never a person and never a `{placeholder}`;
+  `date` is the day it was put forward; `sources` (at least one, `https://`, with `checked`) support both.
+- `design`: nobody is recorded proposing it. It is a design assumption (GDD "Events and consequences"), so it has no
+  `by` and no `date`. Sources are optional.
+- The historical option carries none. In an event that has a historical option, every other option must carry one
+  (R-ALT-004): the loader refuses an option that did not happen and says nothing about who proposed it. Copy the
+  record from the checked note (`research_notes/Alternate timelines/roads-checked.md`), or write `{ basis: design }`
+  when nobody is recorded proposing it.
 
 ### effects
 
@@ -148,10 +260,13 @@ design choice and does not.
   live between 0 and 1, so a delta of `0.03` is three points of the scale. Keep deltas small, as the example does;
 - `treasury` or `fx_reserves`, in game money;
 - `food`, the national Food stock, in whole units (one unit is one population unit's food for a month). The delta
-  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. The
-  Arms stock becomes a target with its pool (#781). Note that the monthly import (R-FOOD-002) refills the stock to
-  `cover_months` of the need unless the foreign-currency crisis is on, so outside a crisis a cut only matters if it
-  leaves less than one month's need; a gain stays.
+  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. Note
+  that the monthly import (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency
+  crisis is on, so outside a crisis a cut only matters if it leaves less than one month's need; a gain stays;
+- `arms`, the national Arms stock, in whole units (one unit is one 1,000-person recruit group's equipment, R-ARMS-001).
+  The delta rounds and the stock clamps at 0 exactly as `food` does. Arms has no monthly import refill: purchases
+  (R-ARMS-002), event gains and equipment returned when recruit training is cancelled (R-ARMS-003) can raise the
+  stock.
 
 `delta` must be a finite number. Any other target is an error. Policy ids (`rationing`, ...) are not effect targets;
 use `set_policy` for those.
@@ -159,7 +274,7 @@ use `set_policy` for those.
 ### grant_units and city_effects
 
 These act on the GDD records, so only content whose `eras.yaml` sets `systems.loop: gdd` may use them. They apply after
-`effects`, grants first, each list in its own order (R-EFX-006).
+`effects`: grants, then city effects, then project unlocks, each list in its own order (R-EFX-006).
 
 - `grant_units: [{ type: halutz, n: 2, at: tel_aviv }]` adds `n` units of a `unit_types.yaml` type of kind `unit`. A
   grant is free: put what the deal cost in `effects`. Leave out `at` and the units stand at the city with the military
@@ -168,8 +283,13 @@ These act on the GDD records, so only content whose `eras.yaml` sets `systems.lo
 - `city_effects: [{ city: haifa, field: housing_capacity, delta: 5 }]` changes one city's `housing_capacity` or
   `job_slots` by a whole, non-zero number. Capacity never drops below 0 and job slots never below the city's employed
   (R-EFX-004).
+- `city_effects: [{ city: haifa, field: condition, delta: -0.1 }]` moves the city's housing condition (0 to 1,
+  R-HOUSE-001) by a non-zero number from -1 to 1. It stays from 0 to 1, so a cut larger than the condition stops at 0.
 
-An event with a sensitive tag may carry no grant and no positive `city_effects` delta; a cut is allowed (R-EFX-005).
+- `unlock_projects: [industry]` makes a `projects.yaml` kind marked `locked: true` available to StartProject for the rest
+  of the game (R-EFX-008). Naming a kind that is not locked is an error, since it would do nothing.
+
+An event with a sensitive tag may carry no grant, no positive `city_effects` delta and no unlock; a cut is allowed (R-EFX-005).
 
 ### sources
 
@@ -232,27 +352,63 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `at least one option required` | `options` is empty. |
 | `at most one option can be historical` | Two options have `historical: true`. |
 | `hard anchor needs a historical option` | `anchor: hard` and no option is `historical`. |
-| `unknown target` | An effect `target` is neither an indicator nor `treasury`, `fx_reserves` or `food`. |
-| `sensitive events cannot reward` | A sensitive-tagged event with a positive `treasury`, `fx_reserves`, `food`, `food_supply`, `morale` or `intl_standing` delta. |
+| `unknown target` | An effect `target` is neither an indicator nor `treasury`, `fx_reserves`, `food` or `arms`. |
+| `sensitive events cannot reward` | A sensitive-tagged event with a positive `treasury`, `fx_reserves`, `food`, `arms`, `food_supply`, `morale` or `intl_standing` delta. |
 | `must be 1-5` | `set_rung` outside 1 to 5. |
 | `unknown policy` | `set_policy` names a policy that does not exist. |
-| `needs the GDD loop` | `grant_units` or `city_effects` in content that runs the legacy loop. |
+| `needs the GDD loop` | `grant_units`, `city_effects` or `unlock_projects` in content that runs the legacy loop. |
 | `unknown unit type` | A grant's `type` is not in `unit_types.yaml`. |
 | `is not a unit type` | A grant's `type` is a population type. |
 | `must be at least 1` | A grant's `n` is 0 or negative. |
 | `sites cannot be grant targets` | A grant's `at` names a site. |
 | `no single city has the military camp` | A grant leaves out `at` when no single city has the camp. |
 | `unknown city` | A grant's `at` or a `city_effects` entry names no city. |
-| `unknown field` | A `city_effects` field other than `housing_capacity` or `job_slots`. |
+| `unknown field` | A `city_effects` field other than `housing_capacity`, `job_slots` or `condition`. |
 | `must not be 0` | A `city_effects` delta of 0. |
-| `sensitive events cannot reward units` | A sensitive-tagged event with a grant. A positive `city_effects` delta gives the same message with the field's name. |
+| `must be a whole number` | A `housing_capacity` or `job_slots` delta with a fraction, or beyond the int range. |
+| `must be a number from -1 to 1` | A `condition` delta outside -1 to 1. |
+| `unknown city project` | An `unlock_projects` entry is not in `projects.yaml`. |
+| `is not locked` | An `unlock_projects` entry names a kind without `locked: true`. |
+| `sensitive events cannot reward units` | A sensitive-tagged event with a grant. A positive `city_effects` delta gives the same message with the field's name, and an unlock says `a project unlock`. |
 | `unknown objective` | `objective` names an objective that is not in `objectives.yaml`. |
 | `has another card` | `objective` names an objective whose `card` is a different event. |
 | `an objective's card has exactly one option` | An objective's card has more than one option. |
+| `unknown site` | `site` names a site that is not in `sites.yaml` (GDD loop). |
+| `is not a swamp site` | `site` names a site whose kinds do not include `swamp` (GDD loop). |
 | `must be a list` | A list field (such as `tags:`) written with no value. |
-| `an event cannot require itself` | `requires.event` is the event's own id. |
+| `an event cannot require itself` | `requires[n].event` is the event's own id. |
 | `requirements form a cycle` | Event A needs B and B needs A, directly or through others. |
-| `unknown event '` | `requires.event` names an event that does not exist. |
+| `unknown event '` | `requires[n].event` names an event that does not exist. |
+| `needs an option or diverged: true` | A `requires` entry names neither an option nor `diverged: true`. |
+| `not both` | A `requires` entry names an option and `diverged: true`. |
+| `has no historical option, so it cannot diverge` | `diverged: true` on an event with no historical option. |
+| `the historical option is the record, not an alternative` | An `alternative` on the option marked `historical: true`. |
+| `must be proposed, debated or design` | `alternative.basis` is another word. |
+| `names who put it forward` | A proposed or debated `alternative` with no `by`. |
+| `words only, no placeholder` | `alternative.by` has a `{` or `}`. |
+| `needs the date it was put forward` | A proposed or debated `alternative` with no `date`. |
+| `a design alternative names nobody and no date` | A `design` alternative with a `by` or a `date`. |
+| `needs at least one source` | A proposed or debated `alternative` with no `sources`. |
+| `needs an https url and a checked date` | An `alternative` source without `https://` or without `checked`. |
+| `a consequence card is soft` | `kind: consequence` with `anchor: hard`. |
+| `a consequence card has no historical option` | A consequence card's option is marked `historical: true`. |
+| `a consequence card follows a road not taken` | A consequence card with no requirement on an option that did not happen. |
+| `every option of a consequence card says who proposed it` | A consequence card's option has no `alternative`. |
+| `which nobody is recorded proposing` | The road it follows has `basis: design`, or no record (R-ALT-006). |
+| `must carry '` | A consequence card lacks a sensitive tag of the event it follows (R-ALT-007). |
+| `cards deep; the most is` | A chain of consequence cards longer than `EventRules.MaxConsequenceDepth`, 2 (Q-ALT-5). |
+| `only a consequence card may follow a consequence card` | A historical event requires a consequence card. |
+| `a consequence card is not an objective's card` | A consequence card has `objective:`. |
+| `must be historical, consequence or reconvergence` | `kind` is another word. |
+| `only a consequence card rejoins the record` | An option of another kind of event has `rejoin`. |
+| `rejoins only an event whose road this card follows` | `rejoin` names an event the card does not follow on a road not taken, or one with no historical option. |
+| `only a reconvergence event carries variants` | An event with another `kind` has `variants`. |
+| `a reconvergence event happened` | A reconvergence event has no historical option. |
+| `a variant follows a road not taken` | A variant has no `when` requirement on a non-historical road. |
+| `can still be open when this card opens` | A variant names a road whose window has not closed by this event's `from`. |
+| `while this card is open` | A variant names an event's historical option, and a consequence card that rejoins that event can still be open when this card opens. |
+| `a variant has text` | A variant's `text` is empty. |
+| `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):
 
@@ -274,6 +430,14 @@ gate by hand:
 
 ```
 dotnet run --project sim/Statecraft.Cli -- --release-gate
+```
+
+To see every road not taken (each non-historical option of an event that has a historical one), with who proposed it
+(`basis`, `-` when the option has no `alternative` record), the consequence cards that follow it, the events whose
+variants name it, and the record's cards it suppresses (`breaks`, the events that require the historical option):
+
+```
+dotnet run --project sim/Statecraft.Cli -- --timeline-report
 ```
 
 The Python checks (`uv run --with pytest==9.1.1 --with pyyaml==6.0.3 pytest scripts/oss/tests -q`, and

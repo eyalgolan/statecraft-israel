@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ProsePage from '../../components/ProsePage.astro';
 import { type Lang, languages, href, t, asset } from '../../i18n/ui';
-import { plan } from '../../../scripts/press-kit.mjs';
+import { plan, LOGO } from '../../../scripts/press-kit.mjs';
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
 const he = lang === 'he';
@@ -23,14 +23,20 @@ const mb = (z: ReturnType<typeof plan>[number]) =>
       <li>
         <a href={asset(`downloads/${shots.zip}`)} download>{he ? 'צילומי מסך מתוך המשחק' : 'In-engine screenshots'}</a>{' '}
         <span dir="ltr">(zip, {mb(shots)})</span>{he
-          ? `: ${shots.entries.length} צילומי מסך מהגרסה הנוכחית, ברישיון CC BY 4.0. בלי אמנות קונספט ובלי הטריילר.`
-          : `: ${shots.entries.length} screenshots of the current build, CC BY 4.0. No concept art and no trailer.`}
+          ? `: ${shots.entries.length} צילומי מסך מהגרסה הנוכחית, ברישיון CC BY-SA 4.0. בלי אמנות קונספט ובלי הטריילר.`
+          : `: ${shots.entries.length} screenshots of the current build, CC BY-SA 4.0. No concept art and no trailer.`}
       </li>
       <li>
         <a href={asset(`downloads/${art.zip}`)} download>{he ? 'אמנות קונספט שנוצרה בבינה מלאכותית' : 'AI concept art'}</a>{' '}
         <span dir="ltr">(zip, {mb(art)})</span>{he
           ? <>: {art.entries.length} תמונות שנוצרו בבינה מלאכותית, ללא טענת זכויות (CC0). הן אינן מראות את המשחק, ובשם כל קובץ מופיע הכיתוב <span lang="en" dir="ltr">AI concept art</span>.</>
           : <>: {art.entries.length} AI-generated images, CC0 with no rights claimed. They do not show the game, and every file name says “AI concept art”.</>}
+      </li>
+      <li>
+        <a href={asset(`downloads/${LOGO.name}`)} download>{he ? 'לוגו' : 'Logo'}</a>{' '}
+        <span dir="ltr">(PNG, 1280 px wide)</span>{he
+          ? <>: הכיתוב <span lang="en" dir="ltr">Statecraft: Israel</span> בצבע שמנת על רקע שקוף, לכן כדאי להניח אותו על רקע כהה. ברישיון CC BY 4.0.</>
+          : ': the wordmark “Statecraft: Israel” in cream on a transparent background, so place it on a dark one. CC BY 4.0.'}
       </li>
     </ul>
     <p>{he

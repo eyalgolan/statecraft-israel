@@ -74,6 +74,29 @@ public class CollectionStreamTests
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
 
+    /// <summary>Issue #663 (owner, 17 October 2026: the nine whole-town models are "streamed after the first frame"): a town
+    /// model comes from the towns bundle, after the frame that asked for it, as every other model does.</summary>
+    [Test]
+    public void AWholeTownModelIsServedFromTheTownsBundleAfterTheFrameThatAskedForIt()
+    {
+        var go = new GameObject("prefab");
+        try
+        {
+            var src = new FakeSource { Prefab = go };
+            var stream = new CollectionStream(src);
+            var got = new List<GameObject?>();
+            Assert.IsTrue(stream.Enqueue("tel-aviv-white-city-v1", CollectionDetail.Far, got.Add));
+            var run = stream.Run();
+            Assert.IsTrue(run.MoveNext());
+            CollectionAssert.IsEmpty(got, "nothing comes back in the frame of the request");
+            CollectionAssert.IsEmpty(src.Opened, "nothing is fetched in the frame of the request");
+            Step(run, 10);
+            CollectionAssert.AreEqual(new[] { go }, got);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.Towns }, src.Opened, "only the towns bundle");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
     [Test]
     public void AMissingBundleWarnsOnceAndEveryRequestForItGetsNull()
     {
@@ -368,6 +391,62 @@ public class CollectionStreamTests
         }
         finally
         {
+            source.UnloadAll();
+            Directory.Delete(folder, true);
+        }
+    }
+
+    /// <summary>#1054: on WebGL the bundles come by URL from a host that may rate-limit (itch.io). The checks file and the
+    /// bundle each answer 429 twice (the bundle with a Retry-After), then 200: the shared retry (StreamingFetch) gets
+    /// both through and the sheep is served, where before the first 429 left the animals off the map.</summary>
+    [UnityTest]
+    public IEnumerator ABundleOverHttpIsServedAfterTwoTooManyRequests()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "statecraft-http-collection-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        var animals = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Animals);
+        var build = new AssetBundleBuild
+        {
+            assetBundleName = animals.Bundle,
+            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).ToArray(),
+        };
+        var manifest = BuildPipeline.BuildAssetBundles(folder, new[] { build }, BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode,
+            EditorUserBuildSettings.activeBuildTarget);
+        Assert.IsNotNull(manifest, "bundle build");
+        WriteChecks(folder, manifest.GetAllAssetBundles());
+        var faults = new Dictionary<string, (string, int)> { [CollectionCatalog.ChecksFile] = ("429", 2), [animals.Bundle] = ("429|Retry-After: 1", 2) };
+        var server = new FlakySite(folder, faults);
+        var source = new CollectionStream.BundleSource(server.BaseUrl);
+        try
+        {
+            var stream = new CollectionStream(source);
+            var got = new List<GameObject?>();
+            stream.Enqueue(Sheep, CollectionDetail.Near, got.Add);
+            var stack = new Stack<IEnumerator>();
+            stack.Push(stream.Run());
+            var started = Time.realtimeSinceStartup;
+            while (got.Count < 1 && Time.realtimeSinceStartup - started < 60f)
+            {
+                while (stack.Count > 0)
+                {
+                    var top = stack.Peek();
+                    if (!top.MoveNext()) { stack.Pop(); continue; }
+                    if (top.Current is IEnumerator nested) { stack.Push(nested); continue; }
+                    if (top.Current is AsyncOperation op) while (!op.isDone) yield return null;
+                    break;
+                }
+                EditorApplication.QueuePlayerLoopUpdate();   // a batch-mode editor resumes the retry's frame waits only on a player-loop update
+                yield return null;
+            }
+            Assert.AreEqual(1, got.Count, "the request was answered");
+            Assert.AreEqual(Sheep + "-near", got[0]?.name, "the bundle got through the 429s");
+            Assert.AreEqual(3, server.Hits(CollectionCatalog.ChecksFile));
+            Assert.AreEqual(3, server.Hits(animals.Bundle));
+            Assert.AreEqual(0, Statecraft.Game.Boot.StreamingFetch.OpenRequests);
+        }
+        finally
+        {
+            server.Dispose();
             source.UnloadAll();
             Directory.Delete(folder, true);
         }

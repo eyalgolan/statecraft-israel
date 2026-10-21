@@ -72,7 +72,7 @@ public class UnitsInPlayTests
         Assert.AreEqual(1, israel.Count(u => u.Service == UnitData.Air));
         Assert.AreEqual(2, israel.Count(u => u.Service == UnitData.Navy));
         CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, israel.Where(u => u.Hidden != null).Select(u => u.Id),
-            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (from 9 July 1948, by Mishmar HaYarden) and Alexandroni are placed (refs #385)");
+            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (at Haifa, then from 9 July 1948 by Mishmar HaYarden; #588) and Alexandroni are placed (refs #385)");
         double lon0 = C.Hexes.Min(h => h.Lon), lon1 = C.Hexes.Max(h => h.Lon), lat0 = C.Hexes.Min(h => h.Lat), lat1 = C.Hexes.Max(h => h.Lat);
         // The Arab forces (#740): data only, each with its echelon and its 15 May strength (owner, 17 October 2026).
         var arab = units.Where(u => u.Side != UnitData.Israel).ToList();
@@ -91,7 +91,8 @@ public class UnitsInPlayTests
             .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
-            Assert.AreEqual("draft", u.Status, u.Id);
+            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`".
+            Assert.AreEqual(u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
             Assert.AreEqual(UnitData.IsWikipediaOnly(u), u.WikipediaOnly, $"{u.Id}: wikipedia_only must say whether every source is Wikipedia or Wikidata");
             foreach (var s in u.AllSources())
                 Assert.LessOrEqual(UnitData.Day(s.Checked), DateTime.Today, $"{u.Id}: {s.Url} checked in the future");
@@ -123,16 +124,14 @@ public class UnitsInPlayTests
         Assert.AreEqual(LastArmistice, UnitData.FrontArmistice["syria"]);
     }
 
-    /// <summary>#902: 20 Hebrew names, each from a cited IDF, Palmach, Haganah Heritage or other Israeli page. INS Haganah's
-    /// name stays absent until a reviewer settles its spelling; every agent-checked value carries its own dated source
-    /// pending the native-speaker review in #564.</summary>
+    /// <summary>#902: every Hebrew unit name has a dated source and stays agent-checked pending the native-speaker
+    /// review in #564.</summary>
     [Test]
     public void HebrewUnitNamesAreSourcedAndAgentChecked()
     {
         var units = Units;
-        CollectionAssert.AreEquivalent(new[] { "ins_haganah" },
-            units.Where(u => string.IsNullOrEmpty(u.NameHe)).Select(u => u.Id));
-        foreach (var u in units.Where(u => !string.IsNullOrEmpty(u.NameHe)))
+        CollectionAssert.IsEmpty(units.Where(u => string.IsNullOrEmpty(u.NameHe)).Select(u => u.Id));
+        foreach (var u in units)
         {
             StringAssert.IsMatch("[א-ת]", u.NameHe, u.Id);
             Assert.AreEqual("agent-checked", u.NameHeReview, u.Id);
@@ -206,8 +205,8 @@ public class UnitsInPlayTests
     {
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
         var tokens = UnitRoster.Build(Units, C, s);
-        CollectionAssert.AreEqual(new[] { "golani", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
-            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli from 9 July (Operation Brosh), Yiftach only in Operation Dani");
+        CollectionAssert.AreEqual(new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
+            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli at Haifa (its sector seat, #588), Yiftach only in Operation Dani");
         Assert.AreEqual(5, s.Rung);
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Army).All(t => t.Figures == 3), "full war: call-up at least 0.8");
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Navy).All(t => t.ArtType == UnitShowcase.CorvetteType && t.Anchor.Place == "Haifa harbour"));
@@ -218,26 +217,47 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." The 15 May roster keeps exactly the Israeli tokens, no row of another side gives a token on any
-    /// day of the war, and the placer gives such a row no spot (so the kits clear no ground for it).</summary>
+    /// no placeholder art." Tal Heuberger's figures have landed for two forces (issue #665; owner, 17 October 2026, #756: Tal Heuberger's
+    /// unit models count as reviewed and approved): the Arab Legion and the Arab Liberation Army. Every other side's rows
+    /// stay data only, on every day of the war, and the placer gives them no spot (so the kits clear no ground for them).
+    /// The two forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
+    /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
-    public void OnlyIsraelsRowsAreDrawnTheArabForcesAreDataOnly()
+    public void OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived()
     {
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
+        var drawn = new[] { "arab_legion", "arab_liberation_army" };
+        CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
-        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s)), "the 15 May roster is Israel's tokens, exactly");
+        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s)), "before any figure arrives: Israel's tokens, exactly");
+        CollectionAssert.AreEqual(Ids(UnitRoster.Build(israelOnly, C, s)), Ids(UnitRoster.Build(units, C, s, id => false)), "nor while none has");
+        var seen = new HashSet<string>();
         for (var d = C.Rules.Start; d < LastArmistice; d = d.AddDays(1))
         {
-            var tokens = UnitRoster.Build(units, C.Rules, d, 5, 0.8);
-            Assert.IsTrue(tokens.All(t => t.Unit.Side == UnitData.Israel), $"{d:yyyy-MM-dd}: {string.Join(",", tokens.Where(t => t.Unit.Side != UnitData.Israel))}");
+            var none = UnitRoster.Build(units, C.Rules, d, 5, 0.8);
+            Assert.IsTrue(none.All(t => t.Unit.Side == UnitData.Israel), $"{d:yyyy-MM-dd}: no figure has arrived: {string.Join(",", none.Where(t => t.Unit.Side != UnitData.Israel))}");
+            foreach (var t in UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => true).Where(t => t.Unit.Side != UnitData.Israel))
+            {
+                CollectionAssert.Contains(drawn, t.Unit.Id, $"{d:yyyy-MM-dd}");
+                Assert.AreEqual(UnitFigures.SideFigure(t.Unit.Side), t.ArtType, $"{t}: its own figure");
+                Assert.AreEqual(3, t.Figures, $"{t}: Q-UI-3 at full strength (owner, 17 October 2026, #226)");
+                Assert.IsEmpty(t.Headgear, $"{t}: no IDF rifleman's headgear");
+                Assert.IsEmpty(t.Vehicles, $"{t}: no vehicle");
+                seen.Add(t.Unit.Id);
+            }
+            var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
+            Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
+        CollectionAssert.AreEquivalent(drawn, seen, "both forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
-        Assert.IsFalse(others.SelectMany(u => u.Anchors).Any(spots.ContainsKey), "no spot for a row the map does not draw");
-        Assert.IsEmpty(UnitPlacer.SkipMessages(others, spots), "and no warning for it either");
+        var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();
+        Assert.IsFalse(dataOnly.SelectMany(u => u.Anchors).Any(spots.ContainsKey), "no spot for a row the map does not draw");
+        Assert.IsEmpty(UnitPlacer.SkipMessages(dataOnly, spots), "and no warning for it either");
+        Assert.IsTrue(others.Where(u => drawn.Contains(u.Id)).SelectMany(u => u.Anchors).All(spots.ContainsKey), "a spot for each drawn force's anchor");
     }
 
     [TestCase(0.80, 3)]
@@ -325,8 +345,12 @@ public class UnitsInPlayTests
     }
 
     // GDD Phase 2 PR 1 (the cutover): the golden run is 20 monthly turns with the reference player (was f07b1655).
-    const string RosterGolden1950 = "573f30998628a434e6b4156cba5d20f8d974ca28b62f74388f9480de84592baa";
-    const string WeeklyGolden = "323cbe046b9666b1d9ab46abeb139540d6e06e394a65ad03e043aa0912cba96e";
+    // Issue #665: each token's line now ends with its sourced vehicles ("+figure-vehicle-..."), the 65 mm gun and the jeep
+    // (was 573f3099... and 323cbe04...; every line is otherwise the same, checked against main's logged rosters).
+    // #588: Carmeli stands at Haifa from 15 May to 9 July 1948 (was 0612f518... and db15a031...; with its "carmeli@Haifa"
+    // entries taken out, the logged rosters hash to those again).
+    const string RosterGolden1950 = "e11d180e619f602009b652679e1967f0faa18c674bcdee440125cf15d2de1036";
+    const string WeeklyGolden = "b459d9a4b8af7547b64a5f82f00dc877d707afabd1e065202ae361972e169ac0";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 
@@ -759,9 +783,9 @@ public class UnitsInPlayTests
             Assert.IsTrue(layer.Show(C, session.State));
             Assert.AreEqual(before, session.State.Hash(), "drawing the units changed the state");
             Assert.IsFalse(layer.Show(C, session.State), "the same roster draws nothing new");
-            Assert.AreEqual(9, layer.Tokens.Count);
+            Assert.AreEqual(10, layer.Tokens.Count);
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            Assert.AreEqual(9, tokens.childCount);
+            Assert.AreEqual(10, tokens.childCount);
             var kiryati = tokens.Find("kiryati");
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full call-up");
             var badge = kiryati.Find("Badge");
@@ -788,6 +812,33 @@ public class UnitsInPlayTests
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
         CollectionAssert.DoesNotContain(VisualToggles.Names, UnitLayer.ToggleName, "the map's teardown removes the switch");
+    }
+
+    [Test]
+    public void TheHebrewUnitCardShowsTheSourcedNameAndEnglishKeepsItsName()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var state = StateAt(C.Rules.Start, 5, 0.8);
+        foreach (var u in Units)
+        {
+            // Hidden rows can have no sourced anchor; the card formatter still reads their names.
+            var anchor = u.Anchors.FirstOrDefault() ?? new UnitAnchor { Place = "test position" };
+            var placed = new PlacedToken(new UnitToken(u, anchor, 0, "", false), default);
+            Assert.AreEqual(u.NameHe, UnitCard.For(placed, state, he).Title, u.Id + ": Hebrew title");
+            Assert.AreEqual(u.Name, UnitCard.For(placed, state, Text).Title, u.Id + ": English title");
+            StringAssert.Contains(u.Sector, UnitCard.For(placed, state, he).Body, u.Id + ": sourced biography retained");
+        }
+    }
+
+    [Test]
+    public void AUnitWithNoHebrewNameKeepsItsEnglishNameInTheHebrewCard()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var u = Units.First(x => x.Id == "golani");
+        u.NameHe = "";
+        var placed = new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default);
+        var state = StateAt(C.Rules.Start, 5, 0.8);
+        Assert.AreEqual(u.Name, UnitCard.For(placed, state, he).Title);
     }
 
     /// <summary>Review I1: "since" only from a sourced start; never the game's first day.</summary>

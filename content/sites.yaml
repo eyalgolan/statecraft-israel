@@ -1,19 +1,25 @@
 # GDD v0.1 designated sites (docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a new yishuv
 # takes its site's name). Phase 1 had one site (owner decision D-A4; the owner chose Mefalsim on #378, 14 October 2026).
 # Phase 4 PR 1 (#785) adds the MVP's other yishuv sites, Beit Kama, Re'im and Gilat (Q-SITE-1, owner, 17 October 2026, #782:
-# "take all of the plan's recommendations"), and a field site in each yishuv's hex (Q-FIELD-1). The Hula swamp site waits
-# for the owner (#785). Research for the three: research_notes/GDD objectives/settlements-1949-51.md, rows
-# 22, 23 and 25. Their sources carry that note's checked date (14 October 2026); no person has re-read them since, so the
-# rows stay draft.
+# "take all of the plan's recommendations"), and a field site in each yishuv's hex (Q-FIELD-1). Research for the three:
+# research_notes/GDD objectives/settlements-1949-51.md, rows 22, 23 and 25. Their sources carry that note's checked date
+# (14 October 2026); no person has re-read them since, so the rows stay draft.
 # Phase 4 PR 3 (#787) adds the two camp sites (Q-CAMP-2, owner, 17 October 2026, #785: "Both"): Camp 80 near Pardes Hanna
 # and Tzrifin, both military camps (owner, "Both military", 17 October 2026, #927). Research: research_notes/gdd-phase-4-sourcing.md, rows C1 and C4, and the research recorded on #785
 # (issuecomment-6233553842 and the camp-site gaps, issuecomment-6237625295). Their sources carry the checked date of the
 # note or comment that read them (15 or 17 October 2026). Only AI agents have read them (the note's pass and the #785
 # research); no person has, so the rows stay draft, and a person verifies them before release (owner, "OK for draft rows",
 # 17 October 2026, #927; the #570 "verify later" rule).
+# Phase 4 PR 5 (#789) adds the Hula swamp site and the field site its drainage gives (Q-SWAMP-1, owner, 17 October 2026,
+# #782; Q-SWAMP-3, "Allow as planned", owner, 17 October 2026, #789).
 # The yishuv rows are sourced facts. The field rows are design placements, not facts (Q-FIELD-1). The build turns and cost
 # are labelled design values in rules.yaml mvp: (Q-CUT-1, owner, 15 October 2026; R-LOOP-005). The loader reads this file
 # only when eras.yaml systems.loop is gdd. Research: #459, research_notes/GDD objectives/designated-site-1.md.
+# Kiryat Shmona and Beit Shemesh join them (owner, 17 October 2026, #782: "Sign off now"; settlements note rows 7 and
+# 16). Their founding days are the owner's (#785, issuecomment-6237624501), from the research note posted there. Their
+# sources carry that note's checked date (17 October 2026, when AI agents re-fetched every page), except the Central Bureau
+# of Statistics file, which keeps the settlements note's 14 October 2026, as do their field rows; no person has re-read
+# them, so the rows stay draft.
 sites:
   - id: mefalsim
     name: Mefalsim
@@ -125,6 +131,92 @@ sites:
     sources:
       - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
     status: draft
+  - id: kiryat_shmona
+    name: Kiryat Shmona
+    name_he: קריית שמונה
+    # Hex from the Central Bureau of Statistics point 33.21316 N, 35.57461 E (tools/hexgrid.py; Hebrew Wikipedia 214 m
+    # away). No 1948 settlement in the hex. On the Lebanon line hex lebanon_adl in map/armistice_hexes_1949.yaml
+    # (display only; a site may sit on one, #378, question 2). Founded "on the remains of the Arab village Halsa"
+    # (Yad Ben-Zvi), al-Khalisa, abandoned in 1948 (Hebrew Wikipedia; "depopulated", English Wikipedia; settlements
+    # note, row 7). The owner signed off on the site (#782, Q-SENS-1); any text that names the village goes through
+    # D-F1 review.
+    q: 14
+    r: 2
+    kinds: [yishuv]
+    # 18 July 1949, the first families and the start of the settlement (owner, #785): 14 families of immigrants from
+    # Yemen arrived (Hebrew Wikipedia, citing Goldstein, not read), and the municipality's chronology gives the same day
+    # for the decision to make the place a settlement, first called Kiryat Yosef. It is the only day two independent
+    # sources give (Task 5.0, criterion 2). [Conflict] The municipality's name page gives 21 July 1949 as the
+    # establishment day, and its chronology also lists the arrival of 18 families on 8 and on 21 July 1949 (one source,
+    # not used). Hebrew Wikipedia dates the ma'abara to 26 December 1949 (citing Gelber, not read; one source). The CBS
+    # file gives the year 1950.
+    founded: 1949-07-18
+    sources:
+      # Hebrew Wikipedia, the revision read for the note: the first 14 families on 18 July 1949; the ma'abara on 26
+      # December 1949.
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=44043359", checked: 2026-10-17 }
+      # English Wikipedia, the revision read for the note: 18 July 1949 (the same line of evidence as the Hebrew
+      # article).
+      - { url: "https://en.wikipedia.org/w/index.php?oldid=1376419614", checked: 2026-10-17 }
+      # Kiryat Shmona Municipality, "Main dates and events": 18.07.49, the decision to make it a settlement named Kiryat
+      # Yosef.
+      - { url: "https://www.k-8.co.il/he/faq/3/", checked: 2026-10-17 }
+      # Kiryat Shmona Municipality, "The evolution of a name": established on 21.7.49 (the conflict above).
+      - { url: "https://www.k-8.co.il/he/05-04-2020-%D7%92%D7%9C%D7%92%D7%95%D7%9C%D7%95-%D7%A9%D7%9C-%D7%A9%D7%9D/", checked: 2026-10-17 }
+      # Yad Ben-Zvi, "Israel Revealed to the Eye", Kiryat Shmona: established in July 1949.
+      - { url: "https://israelalbum.org.il/mercazim/%D7%A7%D7%A8%D7%99%D7%99%D7%AA-%D7%A9%D7%9E%D7%95%D7%A0%D7%94/", checked: 2026-10-17 }
+      # Central Bureau of Statistics, localities file 2024: the founding year (1950) and the coordinates of the hex.
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: kiryat_shmona_field
+    name: Kiryat Shmona fields
+    # For the native reviewer (#564): "the fields of Kiryat Shmona".
+    name_he: שדות קריית שמונה
+    # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
+    q: 14
+    r: 2
+    kinds: [field]
+    sources:
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: beit_shemesh
+    name: Beit Shemesh
+    name_he: בית שמש
+    # Hex from the Central Bureau of Statistics point 31.73178 N, 34.98828 E (tools/hexgrid.py; Hebrew Wikipedia 562 m
+    # away, the same hex). No 1948 settlement in the hex; next to the Jordan line hexes jordan_adl_a_latrun and
+    # jordan_adl_bc_south (display only). No source read places it on a village (settlements note, row 16).
+    q: -3
+    r: 24
+    kinds: [yishuv]
+    # December 1950, when the transit camp Ma'abarat Har-Tuv was set up (National Library), the town's start. The owner
+    # accepted the month (#785): under the monthly turn the founding is the 15th, 15 December 1950. The Ministry of
+    # Education sheet gives 1950, as a ma'abara. Wikipedia's day, 6 December 1950, rests on Wikipedia alone (two copies
+    # of its wording are not independent) and is not used. [GAP] No source dates the first families separately.
+    founded: 1950-12-15
+    sources:
+      # National Library of Israel, "Ma'abarot": Ma'abarat Har-Tuv was established in December 1950. The live page
+      # answers scripted requests with 403; the text was read in the Internet Archive copy of 12 October 2026,
+      # https://web.archive.org/web/20261012142858/https://www.nli.org.il/he/discover/israel/zionism/zionism-history/maabarot
+      - { url: "https://www.nli.org.il/he/discover/israel/zionism/zionism-history/maabarot", checked: 2026-10-17 }
+      # Ministry of Education, development-towns sheet: Beit Shemesh was established in 1950 as a ma'abara.
+      - { url: "https://meyda.education.gov.il/files/Pop/0files/geography_adam_sviva/70-shana/ari-pitoah.pdf", checked: 2026-10-17 }
+      # Hebrew Wikipedia, the revision read for the note: 6 December 1950 (not used, above); first called Ma'abarat
+      # Har-Tuv.
+      - { url: "https://he.wikipedia.org/w/index.php?oldid=43925345", checked: 2026-10-17 }
+      # Central Bureau of Statistics, localities file 2024: the founding year (1950) and the coordinates of the hex.
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
+  - id: beit_shemesh_field
+    name: Beit Shemesh fields
+    # For the native reviewer (#564): "the fields of Beit Shemesh".
+    name_he: שדות בית שמש
+    # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
+    q: -3
+    r: 24
+    kinds: [field]
+    sources:
+      - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
+    status: draft
   - id: gilat
     name: Gilat
     name_he: גילת
@@ -215,4 +307,44 @@ sites:
       # LeZion, Derekh Haim Herzog and Road 4313, Compound 1's grid point, 1939-46 plans and maps, and the camp taken by
       # the Givati Brigade in 1948.
       - { url: "https://soil-remediation.co.il/wp-content/uploads/2019/06/%D7%A1%D7%A7%D7%A8-%D7%96%D7%99%D7%94%D7%95%D7%9D-%D7%A7%D7%A8%D7%A7%D7%A2-2016.pdf", checked: 2026-10-17 }
+    status: draft
+  - id: hula
+    name: Hula swamp
+    # For the native reviewer (#564): "the Hula swamps", the place the works drain; the site names nothing but the drainage's
+    # target (Q-SWAMP-3).
+    name_he: ביצות החולה
+    # The swamp hex: in the 1946 Survey of Palestine 1:250,000 map the marsh fills the valley north of Lake Hula, with "Hula
+    # Conces. Area" printed in it, and (14, 3) is the one hex it makes mostly wet; the lake itself is about a fifth of a hex
+    # (research_notes/Map/historical-water-1948.md, findings 6 and 7, and section 2.5). No 1948 settlement in the hex. No
+    # yishuv site may share it: a yishuv there would also gate hula_field (Projects.YishuvToBuildFirst). The one site stands
+    # for the concession's works, of which the 1951 DMZ dispute was the Jordan work below the lake.
+    q: 14
+    r: 3
+    kinds: [swamp]
+    # Q-SWAMP-1: one swamp site, the Hula, sourced to the hula_drainage event's own sources, which date the works to 1951 and
+    # place them under the Palestine Land Development Company's concession. Q-SWAMP-3 (Task 5.0 criterion 4; owner, "Allow
+    # as planned", #789): the site text names only the drainage, as the event does. The factual brief on #789
+    # (issuecomment-6233554138) records Arab and Ghawarna villages around the marsh, al-Salihiyya depopulated on 25 May
+    # 1948; any card text that names a depopulated place goes through D-F1 review. [GAP] No overlay of this hex with a
+    # sourced 1948 village or cadastral map has been done. The sources keep the event's checked date; no person has
+    # re-read them for this row, so it stays draft.
+    sources:
+      # FRUS 1951 v.V doc 288: the works begun about 14 February 1951 under the Hula concession, and their reach into the
+      # demilitarised zone.
+      - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d288", checked: 2026-10-10 }
+      # JTA: Israel resumes the drainage of the Huleh swamps.
+      - { url: "https://www.jta.org/archive/israel-resumes-drainage-of-huleh-swamps-syria-concentrates-troops-situation-tense", checked: 2026-10-10 }
+    status: draft
+  - id: hula_field
+    name: Hula fields
+    # For the native reviewer (#564): "the fields of the Hula".
+    name_he: שדות החולה
+    # Design placement (Q-SWAMP-1, Q-FIELD-1, owner, #782), not a historical field: drained, the Hula becomes one field site,
+    # in the swamp's hex, ready once the swamp is drained (R-SWAMP-001). No new place and no new fact: the source is the
+    # swamp site's.
+    q: 14
+    r: 3
+    kinds: [field]
+    sources:
+      - { url: "https://history.state.gov/historicaldocuments/frus1951v05/d288", checked: 2026-10-10 }
     status: draft

@@ -1,0 +1,138 @@
+1952-01-15;8709371129873692656;Historical;44;
+ind{
+  food_supply=0 [0000000000000000]
+  housing=0.08527429756872115 [3FB5D4894F3F3D56]
+  intl_standing=0.8100000000000003 [3FE9EB851EB851EE]
+  morale=0.6946902205214107 [3FE63AE6FC3FB212]
+  security=0.5061322526321603 [3FE0323C441030A6]
+pol{
+  border_settlement=0.2 [3FC999999999999A]
+  housing_construction=0.3 [3FD3333333333333]
+  maabarot=1 [3FF0000000000000]
+  rationing=0 [0000000000000000]
+eff{
+  border_villages_secure=0.04113225263216018 [3FA50F495FBB5C36]
+  building_houses=0.08504947742483629 [3FB5C5CD7414E142]
+  food_lifts_cohesion=0.012063175589914928 [3F88B49405281EDE]
+  homes_lift_morale=0.01282220528531898 [3F8A428742E78348]
+  rationing_feeds=0 [0000000000000000]
+  rationing_grates=0 [0000000000000000]
+  safety_lifts_morale=0.05054370052651369 [3FA9E0DD298F75A0]
+  work_lifts_cohesion=0.019261139119662984 [3F93B9312A691F60]
+shift{
+  food_supply=-0.04999999999999999 [BFA9999999999998]
+  housing=-2.7755575615628914E-17 [BC80000000000000]
+  intl_standing=0.3100000000000003 [3FD3D70A3D70A3DC]
+  morale=0.050000000000000044 [3FA99999999999A0]
+  security=0.16500000000000015 [3FC51EB851EB8524]
+bud{
+  agriculture_minister=0.07 [3FB1EB851EB851EC]
+  defense_minister=0.45 [3FDCCCCCCCCCCCCD]
+  education_minister=0.06 [3FAEB851EB851EB8]
+  finance_minister=0.05 [3FA999999999999A]
+  health_minister=0.07 [3FB1EB851EB851EC]
+  interior_minister=0.05 [3FA999999999999A]
+  labour_minister=0.1 [3FB999999999999A]
+  prime_minister=0.15 [3FC3333333333333]
+pop{
+  africa=96949.99317400213 [40F7AB5FE40A6C26]
+  america_oceania=5289.453220790847 [40B4A97406471A8E]
+  asia=243048.8631066492 [410DAB46E7A4757A]
+  europe=338908.0345349915 [4114AF70235D240C]
+  unknown=25443.180026717586 [40D8D8CB858EC81C]
+  veterans=690883.9968027371 [41251587FE5CEDA9]
+sit[
+  food_crisis
+  fx_crisis
+  housing_crisis
+treasury=0 [0000000000000000]
+debt=339.14012071283804 [4075323DEF37721B]
+fx=-74.99043132809655 [C052BF633A14C6F2]
+rung=2;cf=0;
+mob=1 [3FF0000000000000]
+stab=0.4576489406596934 [3FDD4A1EC84BACE6]
+att=4 [4010000000000000]
+fired[
+  altalena
+  armistice_egypt
+  armistice_jordan
+  armistice_lebanon
+  armistice_syria
+  austerity_1949
+  bernadotte_assassination
+  clothing_rationing_1950
+  education_registration_1951
+  elections_1949
+  first_truce
+  forex_crisis_1951
+  frumkin_commission
+  idf_founding
+  iraqi_exodus
+  israel_bonds
+  jerusalem_ceasefire
+  jerusalem_military_government
+  latrun_proposal
+  law_of_return
+  maabarot_policy
+  ministry_supply_crisis
+  operation_hiram
+  operation_horev
+  operation_yoav
+  reparations_claim
+  rhodes_talks
+  second_truce
+  sinai_withdrawal
+  ten_days
+pending[
+chosen{
+  altalena=enforce
+  armistice_egypt=sign
+  armistice_jordan=sign
+  armistice_lebanon=sign
+  armistice_syria=sign
+  austerity_1949=decline
+  bernadotte_assassination=outlaw
+  clothing_rationing_1950=relax
+  education_registration_1951=press_plan
+  elections_1949=hold
+  first_truce=accept
+  forex_crisis_1951=request_aid
+  frumkin_commission=inquiry
+  idf_founding=one_army
+  iraqi_exodus=airlift
+  israel_bonds=donations_only
+  jerusalem_ceasefire=keep
+  jerusalem_military_government=military_government
+  latrun_proposal=accept_vote
+  law_of_return=enact
+  maabarot_policy=maabarot
+  ministry_supply_crisis=restructure
+  operation_hiram=stop_at_ceasefire
+  operation_horev=launch
+  operation_yoav=stop_at_ceasefire
+  reparations_claim=refuse
+  rhodes_talks=send_delegation
+  second_truce=comply
+  sinai_withdrawal=withdraw
+  ten_days=central_front
+appt{
+under=;
+map[
+mapturn=0001-01-01:0;
+over=defeat_economy
+city{
+  hadera=12,5,26,5,0,c0 [0000000000000000]
+  haifa=99,42,215,42,2,c0 [0000000000000000]
+  jerusalem=84,29,183,29,1,c0 [0000000000000000]
+  netanya=12,5,25,5,1,c0 [0000000000000000]
+  petah_tikva=22,10,48,10,0,c0 [0000000000000000]
+  rehovot=13,5,28,5,0,c0 [0000000000000000]
+  rishon_lezion=10,5,22,5,0,c0 [0000000000000000]
+  rosh_pinna=1,0,2,0,0,c0.12499999999999996 [3FBFFFFFFFFFFFFD]
+  safed=2,1,5,1,0,c0 [0000000000000000]
+  tel_aviv=248,106,541,106,4,c0 [0000000000000000]
+  tiberias=6,2,13,2,0,c0 [0000000000000000]
+  zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
+food=0,1390,1390
+exhausted=3
+arms=12

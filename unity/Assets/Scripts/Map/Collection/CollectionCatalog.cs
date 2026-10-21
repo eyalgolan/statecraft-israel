@@ -9,8 +9,13 @@ namespace Statecraft.Game.Map.Collection
     /// or aircraft) or the close zoom's (at most 8,000; skinned and playing its idle clip on the models that have one).</summary>
     public enum CollectionDetail { Far, Near }
 
-    /// <summary>The 31 non-building models of The 1948 Collection, made by MATKOT with Tripo Studio and
-    /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026). They are slimmed by
+    /// <summary>The 31 non-building models of The 1948 Collection, made by Tal Heuberger with Tripo Studio and
+    /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026), and #507's nine whole-town models (issue
+    /// #663; owner, 17 October 2026: "The nine whole-town models ship"), standing on their towns far off (<see cref="TownLandmarks"/>);
+    /// and ten models offered only in #336, by Tal Heuberger: eight figures (issue #708; owner, 18 October 2026: "the 8 figures
+    /// in #708 can be merged without his license line"), the pioneer farmer and a second Jerusalem town (issue #886; owner,
+    /// 19 October 2026: "Yes, both"), imported but not yet placed.
+    /// They are slimmed by
     /// tools/slim_collection.py and live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
     /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
     /// (<see cref="CollectionStream"/>), so the first download does not grow. A category is one bundle, so a placement
@@ -60,7 +65,8 @@ namespace Statecraft.Game.Map.Collection
             return string.Concat(sha.ComputeHash(f).Select(x => x.ToString("x2")));
         }
 
-        public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals";
+        public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals",
+            Towns = "collection-towns", Buildings = "collection-special-buildings";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles = new (string, string[])[]
@@ -71,6 +77,10 @@ namespace Statecraft.Game.Map.Collection
                 "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
                 "figure-c08-arab-legion-v2", "figure-c09-irregular-v2", "figure-c10-woman-blue-dress-v2",
                 "figure-c12f-palmach-scout-v2", "figure-c13-nurse-v2",
+                // #336's eight figures (#708) and pioneer farmer (#886)
+                "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
+                "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
+                "figure-pioneer-farmer-v1-tpose",
             }),
             (Vehicles, new[]
             {
@@ -87,16 +97,31 @@ namespace Statecraft.Game.Map.Collection
                 "figure-donkey-1948-v1", "figure-draught-horse-idle-1948-v2", "figure-dromedary-camel-1948-v1",
                 "figure-nubian-ibex-1948-v1", "figure-sheep-idle-1948-v1", "figure-striped-hyena-1948-v1",
             }),
+            (Towns, new[]
+            {
+                // the nine whole-town models of #507, each one static mesh
+                "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+                "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+                // #336's Jerusalem variant (#886), an extra beside #507's Jerusalem
+                "jerusalem-stone-city-v1-3denhance",
+            }),
+            (Buildings, new[]
+            {
+                "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b18-military-barracks-v2",
+                "b21-artisan-workshop-v2", "b22-industrial-factory-v2",
+            }),
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
-        /// a walk; #507 has him stand still), the sheep and the draught horse.</summary>
+        /// a walk; #507 has him stand still) and #336's soldier (no rig), the sheep and the draught horse.</summary>
         public static readonly IReadOnlyCollection<string> Animated = new HashSet<string>(StringComparer.Ordinal)
         {
             "figure-c01-arriving-man-v2", "figure-c02-townsman-v2", "figure-c03-smith-carpenter-v2", "figure-c04-sabra-pioneer-v3",
             "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2", "figure-c08-arab-legion-v2", "figure-c09-irregular-v2",
             "figure-c10-woman-blue-dress-v2", "figure-c12f-palmach-scout-v2", "figure-c13-nurse-v2",
             "figure-draught-horse-idle-1948-v2", "figure-sheep-idle-1948-v1",
+            "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
+            "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
         };
 
         public static IEnumerable<string> Ids => Bundles.SelectMany(b => b.Ids);
@@ -109,8 +134,14 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
+        /// <summary>Where #675 imported Tal Heuberger's single-building models; the special-buildings bundle's prefabs (#707) sit
+        /// beside each model there, one prefab for both details (the buildings draw only close up).</summary>
+        public const string BuildingsFolder = "Assets/Art/Settlements/Prototype/Models";
+
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
-            $"{Folder}/{id}/{id}-{(detail == CollectionDetail.Far ? "far" : "near")}.prefab";
+            BundleOf(id) == Buildings
+                ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"
+                : $"{Folder}/{id}/{id}-{(detail == CollectionDetail.Far ? "far" : "near")}.prefab";
     }
 }

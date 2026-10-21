@@ -30,6 +30,10 @@
 # into units to the nearest unit (a half rounds up), with at least 1 for a city with people (Q-START-2, owner,
 # 15 October 2026, #375), and the employed to the nearest unit of people times employed_share. housing_capacity and
 # job_slots are already in units.
+#
+# resources (R-PROJ-005, D-D8: "A winery requires areas for grapes"): a city's local resources, each with its sources (a url
+# and the day it was last fetched) and what they leave open (to_verify). A project kind that `requires:` one starts only
+# in a city that lists it. The winery's vineyards are Rishon LeZion's (owner, 20 October 2026, on #737, as GDD v0.2 says).
 cities:
   - id: jerusalem
     people: { value: 83984, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf", checked: 2026-10-15 }] }
@@ -71,6 +75,20 @@ cities:
     employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the national share)
     housing_capacity: { value: 10, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D1, Q-START-1: the start people)
     job_slots: { value: 5, status: design }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-START-1: the start employed)
+    resources:
+      - id: vineyards
+        # Carmel Winery's first vineyards were planted near the town and its first cellar is here (Wikipedia); "largely
+        # viniculture ... Rishon le Zion is famous for its wine cellars" (Hoffman, 1950); land "set aside for the
+        # cultivation of wine grapes by growers connected with the Rishon-Lezion cellars" (Halperin, 1957). Research: #823.
+        sources:
+          - { url: "https://en.wikipedia.org/wiki/Carmel_Winery", checked: 2026-10-20 }
+          - { url: "https://archive.org/details/bwb_P2-AFF-053", checked: 2026-10-20 }
+          - { url: "https://archive.org/details/changingpatterns0000haim", checked: 2026-10-20 }
+        to_verify: >-
+          No source read on the page dates the town's own vineyards to 1948-51. Hoffman and Halperin were read only as
+          archive.org full-text search snippets (lending-only books; the antecedent of Hoffman's "this case" is not shown),
+          and Encyclopaedia Judaica says citrus became the town's main farming branch before the First World War. An AI
+          agent re-fetched these sources on 2026-10-20; no person has checked them yet.
   - id: zikhron_yaakov
     # CBS SA No. 3 (1951/52), Settlements in Israel, p. 133: 1,935 on 8 November 1948. It replaces the owner-accepted Hebrew
     # Wikipedia figure of about 1,900 (#569).

@@ -205,7 +205,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var probe = new Lots();
                 foreach (var l in lots.List) probe.Add(l);
-                if (Claim(probe, tower, 4f * m, id, ground, out var spot) && Free(spot, 4f * m)) WaterTower(id, tower, ground, km, lots);
+                if (Claim(probe, tower, 4f * m, id, ground, out var spot) && Free(spot, 4f * m)) WaterTower(id, tower, ground, km, lots, model: false);
             }
             return (tents, huts, c);
         }

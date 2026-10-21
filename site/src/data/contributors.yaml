@@ -51,3 +51,12 @@ people:
       en: Contributor
       he: תרומה לפרויקט   # TODO owner: confirm Hebrew title (neutral wording)
     photo:
+
+  - github: beriki770-ship-it
+    name:
+      en: Beri Kirsh
+      he: בערי קירש
+    title:
+      en: Hebrew UI and Gameplay Contributor
+      he: תורם לממשק העברי ולמשחקיות   # gendered Hebrew title chosen by the person (17 Oct 2026)
+    photo:   # photo offered by Beri (CC BY 4.0, credit 'Beri Kirsh & WILD'), owner to add - see the PR

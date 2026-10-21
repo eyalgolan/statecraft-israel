@@ -46,6 +46,19 @@ def test_scope_is_the_1000_plus_places_beside_the_game_settlements():
     assert [p["population"] for p in PLACES] == sorted((p["population"] for p in PLACES), reverse=True)
 
 
+# The 52 rows that carried owner_verify until the owner cleared them on 2026-10-18 (#200): #488 checked them against
+# the Village Statistics 1945 scan and #490 applied the corrections. A new low/manual/multi-place row still needs the flag.
+OWNER_CLEARED = {
+    "abasan_al_kabira", "al_bireh", "al_majdal", "al_manshiyya_acre", "al_naima", "anabta", "ashdot_yaakov",
+    "awarta", "az_zakariyya", "azzoun", "bani_suheila", "bayt_nuba", "beit_shean", "biddya", "binyamina",
+    "bnei_brak", "burin", "caesarea", "dayr_al_qassi", "deir_al_ghusun", "fajja", "hunin", "ijzim", "ilar",
+    "iraq_al_manshiyya", "jabalia", "kfar_ganim", "khan_yunis", "kiryat_ata", "magdiel", "maghar", "naana", "nesher",
+    "ness_ziona", "pardes_hanna_karkur", "qabalan", "qaffin", "rafah", "sair", "saliha", "sepphoris", "shefa_amr",
+    "shwiaka_tulkarm", "silat_adh_dhahr", "sur_bahir", "tarbikha", "tarqumiyah", "tubas", "umm_al_fahm", "yabad",
+    "yafa_an_naseriyye", "yagur",
+}
+
+
 @pytest.mark.parametrize("p", PLACES, ids=lambda p: p["id"])
 def test_place_is_sourced_named_and_on_land(p):
     sourced(p)
@@ -55,7 +68,7 @@ def test_place_is_sourced_named_and_on_land(p):
         assert p["today"]["name"].strip() and p["today"]["source"].startswith("https://"), "a today name carries its source"
     assert p["type"] in TYPES and KINDS[p["kind"]] == p["type"] and p["landmark"] in LANDMARKS
     multi = any(" and " in x.rsplit(" (", 1)[0] for x in p["listed_as"])
-    if p["match"] in ("low", "manual") or multi:
+    if (p["match"] in ("low", "manual") or multi) and p["id"] not in OWNER_CLEARED:
         assert p["owner_verify"], "low and manual matches, and VS rows that name more than one place, stay owner-verify"
     assert f"https://www.wikidata.org/wiki/{p['wikidata']}" in p["sources"]
     b = HEXES["bounds"]
@@ -129,7 +142,7 @@ def test_no_place_that_did_not_carry_on_has_a_today_name():
 def test_shafa_amr_deir_el_qasi_nesher_review_fixes():
     by = {p["id"]: p for p in PLACES}
     assert (by["shefa_amr"]["population"], by["shefa_amr"]["landmark"]) == (3640, "church")   # the Urban row only (review I1)
-    assert by["dayr_al_qassi"]["landmark"] == "mosque" and by["dayr_al_qassi"]["owner_verify"]   # review I2
+    assert by["dayr_al_qassi"]["landmark"] == "mosque"   # review I2
     assert (by["nesher"]["kind"], by["nesher"]["landmark"]) == ("mixed_locality", "mosque_and_water_tower")   # owner ruling 2026-10-12
     assert "huj" not in by and "dorot" not in by   # the village alone is under 1,000 (review M2)
 
