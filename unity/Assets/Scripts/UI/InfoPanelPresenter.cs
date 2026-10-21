@@ -112,6 +112,13 @@ namespace Statecraft.Game.UI
             unitMode = true; Selected = null; Render();
         }
 
+        /// <summary>Shows nothing selected (the hint), as before the first click; ignored while covered.</summary>
+        public void Clear()
+        {
+            if (Covered) return;
+            unitMode = false; Selected = null; Render();
+        }
+
         void Build(string action)
         {
             if (Selected == null) return;

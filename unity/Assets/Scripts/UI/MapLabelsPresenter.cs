@@ -560,6 +560,43 @@ namespace Statecraft.Game.UI
             return true;
         }
 
+        /// <summary>The class that lights the pill of the city under the pointer (#1063: the player sees the city can be clicked).</summary>
+        public const string HoverClass = "map-label-hover";
+        Label? lit;   // the pill Highlight lit
+
+        /// <summary>The id of the shown pill at <paramref name="screenYUp"/> (an Input System pointer position, y up), or null:
+        /// GameRoot lets a click there go to that city's hex (#1063). The pills themselves ignore the pointer, so the map
+        /// still pans and zooms under them.</summary>
+        public string? PillAt(Vector2 screenYUp)
+        {
+            var panel = container.panel;
+            return panel == null ? null : PillAtLayer(UiPointer.ToPanel(panel, screenYUp, Screen.height) - container.worldBound.position);
+        }
+
+        /// <summary>The hit test under PillAt, at a point in the labels layer's coordinates: the first shown pill (in placing
+        /// order, so a city before a smaller place) that contains it, never a 1948 locality's; null when none does.</summary>
+        public string? PillAtLayer(Vector2 layerPoint)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                var it = items[i];
+                if (!it.IsLocality && it.ShownLast && it.Placed.Contains(layerPoint)) return it.Settlement.Id;
+            }
+            return null;
+        }
+
+        /// <summary>Lights the pill of game settlement <paramref name="id"/> (HoverClass) and puts out the one lit before; null
+        /// puts it out. Only the colours change, so the pill keeps its size and its place.</summary>
+        public void Highlight(string? id)
+        {
+            Label? next = null;
+            if (id != null) foreach (var it in settlementOrder) if (!it.IsLocality && it.Settlement.Id == id) { next = it.Label; break; }
+            if (next == lit) return;
+            lit?.RemoveFromClassList(HoverClass);
+            next?.AddToClassList(HoverClass);
+            lit = next;
+        }
+
         /// <summary>The pointer position the hover tooltip may follow, or null: a touchscreen has no hover (the Input System
         /// keeps its last touch position after the finger lifts, which would leave a tooltip up), so a touch is answered by
         /// <see cref="Tap"/> instead. A mouse, a pen or any other pointer hovers. Decided by the device type, not guessed.</summary>
@@ -667,7 +704,7 @@ namespace Statecraft.Game.UI
         /// <summary>Viewport to the layer's coordinates through the camera's own rect, not
         /// RuntimePanelUtils.CameraTransformWorldToPanel: that flips y with Screen.height, which is wrong whenever the camera
         /// draws to a texture of another size (edit-mode tests, captures).</summary>
-        static Vector2 ToPanel(Vector3 v, Rect cameraRect, Vector2 screen, Vector2 origin) =>
+        internal static Vector2 ToPanel(Vector3 v, Rect cameraRect, Vector2 screen, Vector2 origin) =>
             new Vector2((cameraRect.x + v.x * cameraRect.width) * screen.x, (1f - (cameraRect.y + v.y * cameraRect.height)) * screen.y) - origin;
 
         static float Gap(Rect r, Vector2 p) =>

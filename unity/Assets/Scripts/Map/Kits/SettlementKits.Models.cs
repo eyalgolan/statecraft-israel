@@ -10,7 +10,8 @@ namespace Statecraft.Game.Map.Kits
     /// <see cref="ModelScale"/>),
     /// standing on the plot's ground level with a stone plinth below it where the ground falls away. Far off the kit's
     /// own buildings draw, exactly as before; up close (TownModelLayer.CloseEnterM) the models draw instead, with each
-    /// town's close mesh (KitMesh.ToCloseMesh: its landmarks and palms without the kit buildings, plus the plinths). The
+    /// town's close mesh (KitMesh.ToCloseMesh: its palms without the kit buildings, plus the plinths and, issue #1032, its
+    /// landmarks at the world scale, KitMesh.CloseCopy). The
     /// layout, the lots and the census do not change.</summary>
     public static partial class SettlementKits
     {
@@ -42,6 +43,7 @@ namespace Statecraft.Game.Map.Kits
         }
 
         [System.ThreadStatic] static List<ModelInstance>? models;
+        [System.ThreadStatic] static List<Placed>? closeLandmarks;
         [System.ThreadStatic] static Dictionary<string, Settlement>? places;
         [System.ThreadStatic] static HashSet<string>? onceGiven;
 
@@ -98,12 +100,17 @@ namespace Statecraft.Game.Map.Kits
         public const float PlotGapShare = 0.25f;
         /// <summary>The most models a plot holds along either of its sides.</summary>
         public const int MaxPerSide = 4;
+        /// <summary>Issue #1032: the most a plot's model is turned off the plot's yaw (degrees).</summary>
+        public const float MaxTurnDeg = 10f;
+        /// <summary>Issue #1032: the share of a plot's cells left empty (never its first), and the chance a plot three or more
+        /// cells long has a street through it (one line of cells left empty).</summary>
+        const float EmptyShare = 0.15f, StreetChance = 0.5f;
 
         /// <summary>Fills a house's or block's plot with models at the world scale (<see cref="ModelScale"/>): the plot is the
         /// kit's building at the kit's symbolic scale, several times the building at the world scale, so it holds a grid of
         /// them (as many as fit along each side with <see cref="PlotGapShare"/> between them, at most
         /// <see cref="MaxPerSide"/> a side), each one of <paramref name="from"/> (TownModels.Pick at its own spot), turned
-        /// with the plot and centred on it, on the plot's ground level. A place's first house is its
+        /// with the plot and laid out round its centre, on the plot's ground level; the grid is broken up (issue #1032, below). A place's first house is its
         /// <see cref="TownModels.Once"/> building, alone on its plot. One plinth stands under the group where the ground falls
         /// away.</summary>
         static void PlaceModel(string id, TownModel[] from, Vector2 p, float yaw, float w, float d, float h, float bottom, float top, KitMesh km,
@@ -124,16 +131,45 @@ namespace Statecraft.Game.Map.Kits
             int nu = once ? 1 : Mathf.Clamp(Mathf.FloorToInt((w + gap) / pu), 1, MaxPerSide);
             int nv = once ? 1 : Mathf.Clamp(Mathf.FloorToInt((d + gap) / pv), 1, MaxPerSide);
             float a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            // Issue #1032: not a regular grid (it read as regular clusters). Seeded by the place and the plot, not the town's
+            // stream, so the kit's layout and census stay: a plot three or more cells long may get a street through it, some
+            // cells stay empty (never the first), and each model is turned up to MaxTurnDeg and moved within its cell, inside
+            // the plot and a quarter gap clear of each inner side, so no two touch. One that cannot turn in its cell stands
+            // square; one bigger than its plot stands at the cell's centre, as before.
+            var rnd = new KitRandom(KitRandom.Fnv1a(id) ^ ((ulong)(uint)Mathf.RoundToInt(p.x) * 0x9E3779B97F4A7C15UL)
+                ^ ((ulong)(uint)Mathf.RoundToInt(p.y) * 0xC2B2AE3D27D4EB4FUL) ^ 0x1032UL);
+            int streetU = -1, streetV = -1;
+            if (!once && Mathf.Max(nu, nv) >= 3 && rnd.Chance(StreetChance))
+            {
+                if (nu >= nv) streetU = rnd.Range(1, nu - 1); else streetV = rnd.Range(1, nv - 1);
+            }
             for (int i = 0; i < nu; i++)
                 for (int j = 0; j < nv; j++)
                 {
-                    float u = (i - 0.5f * (nu - 1)) * pu, v = (j - 0.5f * (nv - 1)) * pv;
+                    bool firstCell = i == 0 && j == 0;
+                    if (!firstCell && (i == streetU || j == streetV || rnd.Chance(EmptyShare))) continue;
+                    float u0 = (i - 0.5f * (nu - 1)) * pu, v0 = (j - 0.5f * (nv - 1)) * pv;
+                    var model = firstCell ? first : TownModels.Pick(from, id, p + new Vector2(u0 * ca - v0 * sa, u0 * sa + v0 * ca), out flip);
+                    float turn = once ? 0f : rnd.Range(-MaxTurnDeg, MaxTurnDeg), du = rnd.Value(), dv = rnd.Value();
+                    // The cell: from the plot's edge on an outer side, a quarter gap inside the grid's line on an inner one.
+                    float loU = i == 0 ? -0.5f * w : u0 - 0.5f * pu + 0.25f * gap, hiU = i == nu - 1 ? 0.5f * w : u0 + 0.5f * pu - 0.25f * gap;
+                    float loV = j == 0 ? -0.5f * d : v0 - 0.5f * pv + 0.25f * gap, hiV = j == nv - 1 ? 0.5f * d : v0 + 0.5f * pv - 0.25f * gap;
+                    float u = u0, v = v0;
+                    for (int tries = 0; tries < 2; tries++, turn = 0f)
+                    {
+                        var probe = Fit(id, model, p, yaw + turn, w, d, h, top, exactHeight, flip, m);
+                        float t = turn * Mathf.Deg2Rad, ct = Mathf.Abs(Mathf.Cos(t)), st = Mathf.Abs(Mathf.Sin(t));
+                        float eu = 0.5f * (probe.W * ct + probe.D * st), ev = 0.5f * (probe.W * st + probe.D * ct);
+                        if (loU + eu > hiU - eu || loV + ev > hiV - ev) continue;
+                        u = Mathf.Lerp(loU + eu, hiU - eu, du); v = Mathf.Lerp(loV + ev, hiV - ev, dv);
+                        break;
+                    }
                     var q = p + new Vector2(u * ca - v * sa, u * sa + v * ca);
-                    var model = i == 0 && j == 0 ? first : TownModels.Pick(from, id, q, out flip);
-                    models.Add(Fit(id, model, q, yaw, w, d, h, top, exactHeight, flip, m).OnPlot(p));
+                    models.Add(Fit(id, model, q, yaw + turn, w, d, h, top, exactHeight, flip, m).OnPlot(p));
                 }
             if (top - bottom > PlinthRiseM * m)
-                km.Plinths.Box(p.x, p.y, yaw, nu * pu - gap, nv * pv - gap, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
+                km.Plinths.Box(p.x, p.y, yaw, Mathf.Max(w, nu * pu - gap), Mathf.Max(d, nv * pv - gap), bottom, top,   // #1032: models may stand out to the plot edge
+                    0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
         }
 
         static void AddModel(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float bottom, float top, KitMesh km,

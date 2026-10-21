@@ -175,11 +175,13 @@ public class MinimapReliefTests
                     Assert.GreaterOrEqual(bt.tabIndex, 0, $"{at}: {bt.name} is in the Tab order");
                     Assert.AreEqual(text[keys[i]], bt.tooltip, $"{at}: {bt.name} has its name");
                 }
-                // Tree order is Tab order: End Turn, then the three buttons, then nothing else of the minimap.
+                // Tree order is Tab order: End Turn, the map's keyboard stop (#41 B1b), then the three buttons, then nothing else
+                // of the minimap.
                 var order = root.Query<VisualElement>().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0).ToList().Select(e => e.name).ToList();
                 int end = order.IndexOf("end-turn");
                 Assert.GreaterOrEqual(end, 0, at + ": End Turn takes focus");
-                CollectionAssert.AreEqual(ButtonNames, order.Skip(end + 1).Take(3).ToArray(), $"{at}: the Tab order after End Turn: {string.Join(", ", order)}");
+                Assert.AreEqual("map-focus", order.ElementAtOrDefault(end + 1), $"{at}: the map stop follows End Turn: {string.Join(", ", order)}");
+                CollectionAssert.AreEqual(ButtonNames, order.Skip(end + 2).Take(3).ToArray(), $"{at}: the Tab order after End Turn: {string.Join(", ", order)}");
             });
     }
 

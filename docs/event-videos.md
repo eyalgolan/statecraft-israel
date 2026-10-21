@@ -32,7 +32,8 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
 - **Sensitive events.** A clip on an event with a sensitive tag is `sensitive: true`. A `-shareable` build refuses it
   until the owner sets `sensitivity_reviewed: true` (`Build.ShareableRefusal`). That applies to `ten_days` (J09) and
   `operation_yoav` (W04a), and to the `operation_horev` outcome clip (A05). The owner reviewed all three on 14 October
-  2026 (relayed by the coordinator), so a shareable build may carry them.
+  2026 (relayed by the coordinator), so a shareable build may carry them. It also applies to the `altalena` loop and
+  outcome (A27) and the `operation_horev` loop (A05), which the owner reviewed on 20 October 2026 (#1102, below).
 - **Rights:** owner ruling D-V (`docs/oss/DECISIONS.md`, merged in #449), "no need to check, just use them". Every clip has an
   `ASSETS.yaml` row with `ai_generated: true`, the generator and the date, and those rows feed `docs/ai-disclosure.md`.
 
@@ -62,6 +63,19 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
   - operation_horev / launch: A05, jeeps and an armoured carrier crossing the Negev. This one is sensitive; the owner
     reviewed it on 14 October 2026. Its vehicles (jeeps, a tracked carrier) match the 8th Brigade's tanks,
     jeeps and APCs (en.wikipedia "8th Armored Brigade (Israel)", checked 2026-10-14), and it shows no flag or marking.
+  - altalena / enforce: A27, the Altalena burning off the Tel Aviv shore, small figures on the promenade seen from
+    behind. Sensitive; the owner reviewed it on 20 October 2026.
+  - first_new_yishuv / continue: TILE1, a model of a new Negev settlement growing: huts, a water tower, a pipeline and
+    its first fields. A generic settlement, not a reconstruction of Mefalsim.
+  - iraqi_exodus / airlift: A07, families arriving by air at Lydda. The alt text names no ethnicity.
+  - austerity_1949 / impose: A09, the raw shot of a queue with ration books (not the trailer's composite with a card).
+- **More clips (#1102, owner ruling of 20 October 2026):** the owner watched the five shots A27, A05, TILE1, A07 and A09
+  and approved them ("looks good", https://github.com/eyalgolan/statecraft-israel/issues/1102#issuecomment-6300646067)
+  for exactly seven uses: the four outcome clips above and three card loops, `altalena` (A27), `operation_horev` (A05,
+  the same shot as its outcome) and `first_new_yishuv` (TILE1). The card loops are the whole shot, as before; the outcome
+  windows are the encoder's steadiest 3.5 s (A27 frames 12-95, TILE1 37-120, A07 34-117, A09 10-93). The other cards and
+  historical outcomes have no shot that fits; the reason for each is in
+  https://github.com/eyalgolan/statecraft-israel/issues/1102#issuecomment-6300539663.
 - **Dropped in review (2026-10-14):** first_truce / accept (A02, the Burma Road convoy of June 1948, a poor picture for
   a truce whose terms bar bringing in men and materiel) and law_of_return / enact (K04b, not in the plan's list and with
   no recorded ruling). A replacement needs the owner's word before anything new is generated.

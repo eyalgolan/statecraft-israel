@@ -8,7 +8,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>GDD Phase 1 PR 8 (#381): the info panel's part for the GDD loop (Content.IsGdd), built into the
     /// <see cref="HostName"/> element on every render.
-    /// <para>On a city hex (State.Cities), its counts (housing, jobs, refugees waiting, recruits) and training cohorts with
+    /// <para>On a city hex (State.Cities), its counts (housing, overflow, jobs, craftsmen, refugees waiting, recruits) and training cohorts with
     /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001, R-CAMP-001) and Cancel
     /// (R-TRAIN-002). On a yishuv site's hex (sites.yaml, Projects.IsYishuvSite), its state, and Build with each idle pioneer
     /// group (Projects.IsPioneer: a halutz or a veteran one), with the rules' cost and the unit's own turns (Projects.TurnsToBuild;
@@ -19,7 +19,7 @@ namespace Statecraft.Game.UI
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
-        const string LineClass = "info-gdd-line", RowClass = "info-gdd-row";
+        const string LineClass = "info-gdd-line", RowClass = "info-gdd-row", PairsClass = "info-gdd-pairs";
 
         public static void Hide(VisualElement host) { host.Clear(); host.style.display = DisplayStyle.None; }
 
@@ -55,8 +55,16 @@ namespace Statecraft.Game.UI
             Line(host, "city-housing", city.Condition is double condition
                 ? text.Format("city.housing_condition", housed, capacity, PlayerText.Percent(condition))
                 : text.Format("city.housing", housed, capacity));
-            Line(host, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
-            Line(host, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            // #1121: the craftsmen (R-CRAFT-001) beside Jobs, as they fill ordinary jobs (R-CRAFT-002), and the overflow
+            // (R-HOUSE-002, Cities.Overflow) beside the refugees waiting, the other people without housing. Each pair shares a
+            // row (the labels keep their width and the row wraps only when they do not fit, Statecraft.uss), so on a short
+            // window the panel stays clear of the left column (InfoPanelLayoutTests). Bare counts, like the Jobs line, to fit.
+            var jobs = Row(host, "city-jobs-row"); jobs.AddToClassList(PairsClass);
+            Line(jobs, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
+            Line(jobs, "city-craftsmen", text.Format("city.craftsmen", city.Craftsmen));
+            var waiting = Row(host, "city-waiting-row"); waiting.AddToClassList(PairsClass);
+            Line(waiting, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            Line(waiting, "city-overflow", text.Format("city.overflow", Cities.Overflow(s, city)));
             Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
@@ -117,14 +125,14 @@ namespace Statecraft.Game.UI
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id)) is PioneerWork p && p.Site == site.Id;
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost),
-                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, rules.BuildYishuvTurns))),
+                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, rules.BuildYishuvTurns, 0))),
                         () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered && !taken);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
-                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, work.TurnsLeft))));
+                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }

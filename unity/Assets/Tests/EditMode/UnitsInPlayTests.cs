@@ -72,7 +72,7 @@ public class UnitsInPlayTests
         Assert.AreEqual(1, israel.Count(u => u.Service == UnitData.Air));
         Assert.AreEqual(2, israel.Count(u => u.Service == UnitData.Navy));
         CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, israel.Where(u => u.Hidden != null).Select(u => u.Id),
-            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (from 9 July 1948, by Mishmar HaYarden) and Alexandroni are placed (refs #385)");
+            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (at Haifa, then from 9 July 1948 by Mishmar HaYarden; #588) and Alexandroni are placed (refs #385)");
         double lon0 = C.Hexes.Min(h => h.Lon), lon1 = C.Hexes.Max(h => h.Lon), lat0 = C.Hexes.Min(h => h.Lat), lat1 = C.Hexes.Max(h => h.Lat);
         // The Arab forces (#740): data only, each with its echelon and its 15 May strength (owner, 17 October 2026).
         var arab = units.Where(u => u.Side != UnitData.Israel).ToList();
@@ -91,7 +91,8 @@ public class UnitsInPlayTests
             .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
-            Assert.AreEqual("draft", u.Status, u.Id);
+            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`".
+            Assert.AreEqual(u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
             Assert.AreEqual(UnitData.IsWikipediaOnly(u), u.WikipediaOnly, $"{u.Id}: wikipedia_only must say whether every source is Wikipedia or Wikidata");
             foreach (var s in u.AllSources())
                 Assert.LessOrEqual(UnitData.Day(s.Checked), DateTime.Today, $"{u.Id}: {s.Url} checked in the future");
@@ -204,8 +205,8 @@ public class UnitsInPlayTests
     {
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
         var tokens = UnitRoster.Build(Units, C, s);
-        CollectionAssert.AreEqual(new[] { "golani", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
-            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli from 9 July (Operation Brosh), Yiftach only in Operation Dani");
+        CollectionAssert.AreEqual(new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
+            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli at Haifa (its sector seat, #588), Yiftach only in Operation Dani");
         Assert.AreEqual(5, s.Rung);
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Army).All(t => t.Figures == 3), "full war: call-up at least 0.8");
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Navy).All(t => t.ArtType == UnitShowcase.CorvetteType && t.Anchor.Place == "Haifa harbour"));
@@ -346,8 +347,10 @@ public class UnitsInPlayTests
     // GDD Phase 2 PR 1 (the cutover): the golden run is 20 monthly turns with the reference player (was f07b1655).
     // Issue #665: each token's line now ends with its sourced vehicles ("+figure-vehicle-..."), the 65 mm gun and the jeep
     // (was 573f3099... and 323cbe04...; every line is otherwise the same, checked against main's logged rosters).
-    const string RosterGolden1950 = "0612f518c91b436ab5dbe1bf75a52d266a7c617255a4622030d01e51d852a03b";
-    const string WeeklyGolden = "db15a031d3d15961053161ab132363c19566d98e5ad310dc08ce2e79f742a4fc";
+    // #588: Carmeli stands at Haifa from 15 May to 9 July 1948 (was 0612f518... and db15a031...; with its "carmeli@Haifa"
+    // entries taken out, the logged rosters hash to those again).
+    const string RosterGolden1950 = "e11d180e619f602009b652679e1967f0faa18c674bcdee440125cf15d2de1036";
+    const string WeeklyGolden = "b459d9a4b8af7547b64a5f82f00dc877d707afabd1e065202ae361972e169ac0";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 
@@ -780,9 +783,9 @@ public class UnitsInPlayTests
             Assert.IsTrue(layer.Show(C, session.State));
             Assert.AreEqual(before, session.State.Hash(), "drawing the units changed the state");
             Assert.IsFalse(layer.Show(C, session.State), "the same roster draws nothing new");
-            Assert.AreEqual(9, layer.Tokens.Count);
+            Assert.AreEqual(10, layer.Tokens.Count);
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            Assert.AreEqual(9, tokens.childCount);
+            Assert.AreEqual(10, tokens.childCount);
             var kiryati = tokens.Find("kiryati");
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full call-up");
             var badge = kiryati.Find("Badge");

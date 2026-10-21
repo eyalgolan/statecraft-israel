@@ -147,7 +147,10 @@ public class UnitPlinthTests
         var map = BuildMap();
         try
         {
-            var egypt = UnitData.Parse(CommittedYaml.Replace("side: israel", "side: egypt\n  echelon: brigade\n  strength: {value: 1, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}"));
+            // A brigade that already gives its strength (#743) keeps it: a second strength key would not parse.
+            var egypt = UnitData.Parse(string.Join("\n- id: ", CommittedYaml.Split(new[] { "\n- id: " }, StringSplitOptions.None).Select(row =>
+                row.Replace("side: israel", "side: egypt\n  echelon: brigade" + (row.Contains("\n  strength:") ? ""
+                    : "\n  strength: {value: 1, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}")))));
             Assert.Greater(egypt.Count(u => u.Side == "egypt" && u.Service == UnitData.Army), 3);
             var layer = UnitLayer.Create(map, egypt, C.Hexes, still: true);
             layer.Show(C, StateAt(Dates[0]));

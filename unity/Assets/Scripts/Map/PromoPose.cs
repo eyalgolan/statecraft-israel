@@ -44,7 +44,7 @@ namespace Statecraft.Game.Map
         /// <summary>Issue #659: the other town types up close, for the main / branch captures the issue's done-when asks for:
         /// Jerusalem and Haifa at 12 km, the moshava Rishon LeZion (its b23 winery) and the Arab town Nazareth at 8 km, the
         /// kibbutz Degania Alef and the moshav Nahalal at 6 km, each over its settlements_1948.yaml point; and start120, the
-        /// 120 km starting distance over the centre, where #917's whole-town landmarks draw and the kits do. Capture poses
+        /// README map's 120 km over the centre, where #917's whole-town landmarks draw and the kits do. Capture poses
         /// only: VisualShots shoots them after CloseUps; FrameProfile and the model tests keep to CloseUps (a kibbutz at 6 km
         /// holds fewer models than their floors).</summary>
         public static IReadOnlyList<PromoPose> TownChecks { get; } = new[]

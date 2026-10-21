@@ -110,7 +110,7 @@ public class GameSceneTests
         var root = Boot();
         Assert.IsNotNull(root.Bridge);
         Assert.AreEqual(root.Bridge!.State.Date.Year.ToString(System.Globalization.CultureInfo.InvariantCulture), Ui.Q<Label>("year").text);
-        Assert.AreEqual("Click the map to inspect a hex", Ui.Q<Label>("info-title").text);
+        Assert.AreEqual(Text["info.hint"], Ui.Q<Label>("info-title").text);
         Assert.AreEqual(new DateTime(1948, 5, 15), root.Bridge.State.Date, "no autosave: a new game");
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         Assert.AreSame(Object.FindFirstObjectByType<MapScene>(), pointer.Map);
@@ -349,6 +349,91 @@ public class GameSceneTests
         Ui.panel?.Pick(Vector2.zero);   // settle the layout first: the top bar's height sets the camera's inset (TopBarInset)
         var p = cam.WorldToScreenPoint(new Vector3(ground.x, map.Terrain.SampleHeight(ground), ground.z));
         return new Vector2(p.x, p.y);   // projected, not the screen centre: the frame below the top bar is off-centre (TopBarInset)
+    }
+
+    /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click). Hovering Tel Aviv's
+    /// hex or its name pill lights the pill (GameRoot.HoverCity); a hex with no city lights nothing. A click on the hex and a
+    /// click on the pill each open the city panel, the pill's also where the land under the pill is another hex.</summary>
+    [UnityTest]
+    public IEnumerator ACitysHexAndItsNamePillBothOpenTheCityPanel()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        var cam = Camera.main!;
+        var rt = new RenderTexture(1920, 1080, 0);
+        var camRt = new RenderTexture(1920, 1080, 24);   // the camera fills the panel, as in the game (MapLabelsPresenter)
+        var ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        try
+        {
+            doc.panelSettings = ps;
+            cam.targetTexture = camRt;
+            var map = Object.FindFirstObjectByType<MapScene>();
+            map.Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(Inputs, 0);
+            var ui = doc.rootVisualElement;
+            HideTheOpeningCard(ui);
+            var pointer = Object.FindFirstObjectByType<MapPointer>();
+            var c = Inputs.Content;
+            var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+            var label = ui.Q<Label>("label-tel_aviv");
+            var host = ui.Q<VisualElement>(GddHexPanel.HostName);
+            var onHex = AimAtTelAviv();
+            for (int i = 0; i < 30 && !(label.resolvedStyle.width > 0); i++) yield return null;
+            root.Labels!.Refresh(force: true); yield return null;
+            root.Labels.Refresh(force: true); yield return null;
+            Assert.AreEqual(Visibility.Visible, label.parent.style.visibility.value, "precondition: Tel Aviv is named");
+
+            // The land under a screen point (camera pixels), asked of the terrain alone, as a click without the pills would be.
+            (int q, int r)? Land(Vector2 px) =>
+                map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(px), out var hit, 1_000_000f) ? MapPointer.Pick(map, hit.point) : ((int, int)?)null;
+            var panel = ui.panel; float h = Screen.height;
+            Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
+            Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
+            float scale = ui.panel.visualTree.worldBound.width / camRt.width;
+            Vector2 CameraPixel(Vector2 p) => new Vector2(p.x / scale, camRt.height - p.y / scale);
+
+            // The hex.
+            Assert.AreEqual((tlv.Q, tlv.R), Land(onHex), "precondition: the probe is on Tel Aviv's hex");
+            Assert.AreEqual("tel_aviv", root.HoverCity(onHex), "the pointer over Tel Aviv's hex");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights Tel Aviv's pill");
+            Assert.IsTrue(pointer.HandleClick(onHex));
+            Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
+            Assert.AreEqual(DisplayStyle.Flex, host.style.display.value, "a click on the hex opens the city panel");
+
+            // A hex with no city: the sea off Tel Aviv.
+            var sea = onHex + new Vector2(-250f, 0f);
+            var seaHex = Land(sea);
+            Assert.IsNotNull(seaHex, "precondition: the sea probe is on the map");
+            Assert.IsFalse(c.SettlementHexes.Any(x => (x.Q, x.R) == seaHex!.Value && root.Bridge!.State.Cities.ContainsKey(x.Id)), "precondition: no city there");
+            Assert.IsNull(root.HoverCity(sea), "no city under the pointer");
+            Assert.IsFalse(label.ClassListContains(MapLabelsPresenter.HoverClass), "Tel Aviv's pill is out");
+            Assert.IsTrue(pointer.HandleClick(sea));
+            Assert.AreNotEqual(DisplayStyle.Flex, host.style.display.value, "precondition: the panel shows the sea, no city");
+
+            // The pill: a point of it over another hex, so only the pill can make it Tel Aviv's click.
+            var pill = label.worldBound;
+            var points = new[] { pill.center, new Vector2(pill.xMin + 2f, pill.yMin + 2f), new Vector2(pill.xMax - 2f, pill.yMin + 2f),
+                new Vector2(pill.xMin + 2f, pill.yMax - 2f), new Vector2(pill.xMax - 2f, pill.yMax - 2f) };
+            var off = points.Where(p => Land(CameraPixel(p)) is (int q, int r) && (q, r) != (tlv.Q, tlv.R)).Cast<Vector2?>().FirstOrDefault();
+            Assert.IsNotNull(off, $"precondition: some point of the pill {pill} lies over another hex than Tel Aviv's");
+            var onPill = ScreenFor(off!.Value);
+            Assert.AreEqual("tel_aviv", root.HoverCity(onPill), "the pointer over Tel Aviv's pill");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights the pill");
+            Assert.IsTrue(pointer.HandleClick(onPill), "the pill takes the click");
+            Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
+            Assert.AreEqual(DisplayStyle.Flex, host.style.display.value, "a click on the pill opens the city panel");
+        }
+        finally
+        {
+            cam.targetTexture = null;
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (ps != null) Object.DestroyImmediate(ps);
+            if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+            if (camRt != null) { camRt.Release(); Object.DestroyImmediate(camRt); }
+        }
     }
 
     // One label each presenter writes on every change: HUD, toast, info panel, Why, Budget, Defence, Cabinet, event card

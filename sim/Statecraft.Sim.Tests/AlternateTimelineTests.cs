@@ -102,12 +102,14 @@ options:
         Assert.Contains("the historical option is the record, not an alternative", ex.Message);
     }
 
-    // R-ALT-003: optional at load until #949 requires it, so the content on main loads unchanged.
     [Fact]
-    public void AnOptionWithoutARecordStillLoads()
+    // R-ALT-004
+    public void AnAlternativeWithoutARecordIsALoadError()
     {
         var bare = Parent.Substring(0, Parent.IndexOf("    alternative:", StringComparison.Ordinal));
-        Assert.Null(Load(("parent.yaml", bare)).Events.Single().Options.Single(o => o.Id == "road").Alternative);
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", bare)));
+        Assert.Equal("events[parent].options[road].alternative", ex.Field);
+        Assert.Contains("an option that did not happen says who proposed it, or basis: design", ex.Message);
     }
 
     // ---- Task 5 (#950): consequence cards ------------------------------------------------------------------------
@@ -291,16 +293,6 @@ options:
         var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", DesignParent), ("after_road.yaml", Consequence.Replace("option: road", entry))));
         Assert.Equal("events[after_road].requires[0]", ex.Field);
         Assert.Contains("follows 'parent/road', which nobody is recorded proposing (basis: design)", ex.Message);
-    }
-
-    // R-ALT-006
-    [Fact]
-    public void NoConsequenceFollowsAnAlternativeWithNoRecord()
-    {
-        // Until #949 makes the record required, an alternative without one is not "recorded proposing" either.
-        var bare = Parent.Substring(0, Parent.IndexOf("    alternative:", StringComparison.Ordinal));
-        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", bare), ("after_road.yaml", Consequence)));
-        Assert.Contains("which nobody is recorded proposing", ex.Message);
     }
 
     static string Chained(string id, string parent, string option) => Consequence

@@ -70,7 +70,7 @@ rules:
     status: verified
   - glob: "docs/images/build-*.jpg"
     licence: CC-BY-SA-4.0
-    source: "In-engine capture: real screenshots of the game's own WebGL build (main at 6c54c95, Unity 6000.3.25f1, Build.Web with -compression disabled), taken 2026-10-18 in headed Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with tools/headed.py's Browser (?nostart; build-he-map.jpg with ?nostart&lang=he; build-m3-start.jpg with no flag), scaled to 1568x882 and saved as JPEG (quality 74). Map derived from Copernicus DEM (NOTICE); the portraits on the Cabinet screen are the rows in ASSETS.portraits.yaml; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE); the start screen's painting AI-generated (CC0, its row above)"
+    source: "In-engine capture: real screenshots of the game's own WebGL build (Unity 6000.3.25f1, Build.Web with -compression disabled). build-m3-start.jpg: main at 6c54c95, taken 2026-10-18 in headed Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with tools/headed.py's Browser, no flag (the start screen's code and layout are unchanged on main at 8dae186). The others: taken 2026-10-20 from a build of main at 8dae186, in headless Chrome for Testing at a 1920x1080 viewport, DPR 1, driven over CDP with Playwright through the real start screen's New game (build-he-map.jpg with ?lang=he); scaled to 1568x882 and saved as JPEG (quality 80). Map derived from Copernicus DEM (NOTICE); the portraits on the Cabinet screen are the rows in ASSETS.portraits.yaml; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE); the start screen's painting AI-generated (CC0, its row above)"
     status: verified
     note: "Screenshots of the game, not AI images; the AI-made parts they show are the start screen's painting and Tal Heuberger's 3D models (Tripo Studio, their rows above). CC BY-SA 4.0 as for the Steam kit's screenshots (coordinator ruling, 2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13 (landuse.png, BiomeColours.bytes, RouteRibbons.bytes)."
   - glob: "docs/images/hero-engine-*.jpg"
@@ -80,7 +80,7 @@ rules:
     note: "CC BY-SA 4.0 as for the Steam kit's renders (coordinator ruling, 2026-10-15): the render shows the CC BY-SA 4.0 bakes of D13."
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
-    source: "In-engine capture: about 11 seconds of real play recorded from the game's own WebGL build (commit f93fd5e, 2026-10-13) in headed Chrome at 1920x1080; the animated WebP for the README, the MP4 (H.264) and WebM (VP9) for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"
+    source: "In-engine capture: about 15 seconds of real play recorded from the game's own WebGL build (main at 8dae186, 2026-10-20) in headless Chrome for Testing at 1920x1080 with the DevTools screencast; the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264) and WebM (VP9) at 24 fps for the website. Map derived from Copernicus DEM; the event-card photograph CC BY 4.0 with its credit line in the picture (Meitar Collection / National Library of Israel; NOTICE)"
     status: verified
   - glob: "docs/steam/kit/*_capsule_*.png"
     licence: CC-BY-SA-4.0
@@ -103,7 +103,7 @@ rules:
     status: verified
   - glob: "docs/images/social-preview.jpg"
     licence: CC-BY-SA-4.0
-    source: "Padded copy of docs/images/build-m3-map.jpg (main at 6c54c95, 2026-10-18), 1280x640, for the GitHub social preview (a real build image, not concept art)"
+    source: "Padded copy of docs/images/build-m3-map.jpg (main at 8dae186, 2026-10-20), 1280x640, for the GitHub social preview (a real build image, not concept art)"
     status: verified
   - glob: "spikes/m0/evidence/*.jpg"
     licence: CC-BY-4.0
@@ -265,6 +265,25 @@ rules:
     status: verified
     credit: "Recording: Ralph Hellinger, Israel State Archives"
     note: "Played only from the start screen's 'Play the recording' button, over the still painting, with the declaration's own Hebrew and English text as captions and the credit on screen; never automatic. Rights basis and open questions: docs/oss/DECISIONS.md D-R (the terms' commercial clause, a copy taken from the archive's YouTube channel, the creator's rights, the US status). D-R (owner, 17 Oct 2026)."
+  # --- AI-generated sound effects (#39, GameAudio): owner-attested written permission ---
+  - glob: "unity/Assets/Resources/Audio/turn-ended.ogg"
+    licence: LicenseRef-ElevenLabs-Owner-Permission
+    ai_generated: true
+    source: "ElevenLabs Sound Effects, generated through the project's paid owner subscription; variant turn-ended-02.ogg renamed byte-for-byte to turn-ended.ogg (8909 B, SHA-256 1397e16a0715c66d8a85cbaef7cd10963bdc2c3652c41ec7f2b6abc52cfef334); original master SHA-256 3083c33e4d011b9d7e873f7785c740718a3fd5167132a68958b705e2128fdef5. Generation UI: https://elevenlabs.io/app/sound-effects; terms: https://elevenlabs.io/creative-terms (Exhibit 4, section 2)."
+    status: verified
+    note: "AI-generated, not an archival recording. Prompt: A small wooden desk stamp pressed once onto thick paper, a cushioned low wooden knock with a tiny mechanical release. Decisive but gentle strategy-game turn confirmation. Close-miked isolated one-shot, warm and restrained, dry short tail, quiet room. No speech, music, digital beeps, alarm, or ambience. Actual requested duration 0.8 s; prompt influence 75%; loop and enhancer off. Provider model/output IDs and generation timestamps were not observed. Processed from the original master with DC removal, conservative near-silence trimming, short edge fades and attenuation only, then mono 48 kHz Vorbis encoding. owner holds written permission from ElevenLabs for publishing these files in this repo; owner, 20 Oct 2026. This is the owner-attested publication basis; the written permission document has not been independently inspected. Recorded as LicenseRef-ElevenLabs-Owner-Permission. Owner ruling, 20 Oct 2026: ship the Codex pick and make sure all twelve candidates were considered. No listening gate was requested; Codex has not listened and no human listening verification is claimed."
+  - glob: "unity/Assets/Resources/Audio/event-card.ogg"
+    licence: LicenseRef-ElevenLabs-Owner-Permission
+    ai_generated: true
+    source: "ElevenLabs Sound Effects, generated through the project's paid owner subscription; variant event-card-04.ogg renamed byte-for-byte to event-card.ogg (9943 B, SHA-256 14f6c85b1d095e0b2926b4fab5fe9b87cc6f2bbd5ebdd7b0c79a476e197831b4); original master SHA-256 db8ac1e41837b1badde7f8e4e098a61ac144c9be70bfae5504539427139fcf9e. Generation UI: https://elevenlabs.io/app/sound-effects; terms: https://elevenlabs.io/creative-terms (Exhibit 4, section 2)."
+    status: verified
+    note: "AI-generated, not an archival recording. Prompt: One thick paper card slid a short distance across a wooden desk and gently set down. Crisp light paper texture, soft final contact; discreet new-information cue. Close-miked isolated one-shot, warm and restrained, dry short tail, quiet room. No speech, music, digital beeps, alarm, or ambience. Actual requested duration 0.7 s; prompt influence 75%; loop and enhancer off. Provider model/output IDs and generation timestamps were not observed. Processed from the original master with DC removal, conservative near-silence trimming, short edge fades and attenuation only, then mono 48 kHz Vorbis encoding. owner holds written permission from ElevenLabs for publishing these files in this repo; owner, 20 Oct 2026. This is the owner-attested publication basis; the written permission document has not been independently inspected. Recorded as LicenseRef-ElevenLabs-Owner-Permission. Owner ruling, 20 Oct 2026: ship the Codex pick and make sure all twelve candidates were considered. No listening gate was requested; Codex has not listened and no human listening verification is claimed."
+  - glob: "unity/Assets/Resources/Audio/refused.ogg"
+    licence: LicenseRef-ElevenLabs-Owner-Permission
+    ai_generated: true
+    source: "ElevenLabs Sound Effects, generated through the project's paid owner subscription; variant refused-04.ogg renamed byte-for-byte to refused.ogg (7153 B, SHA-256 57df465af2d152319bd4de05e24ca972d5f1f181c519dd223dd570d6e1cace2a); original master SHA-256 b8962a23cea4d96b2a24fad0ba4216b53c88007fcfdb2120f3543ff799911d23. Generation UI: https://elevenlabs.io/app/sound-effects; terms: https://elevenlabs.io/creative-terms (Exhibit 4, section 2)."
+    status: verified
+    note: "AI-generated, not an archival recording. Prompt: Two small muted wooden knocks in quick succession, the second lower and softer. A restrained blocked-action cue, rounded attacks, a gentle stop rather than punishment. Close-miked isolated one-shot, warm and restrained, dry short tail, quiet room. No speech, music, digital beeps, alarm, or ambience. Actual requested duration 0.5 s; prompt influence 75%; loop and enhancer off. Provider model/output IDs and generation timestamps were not observed. Processed from the original master with DC removal, conservative near-silence trimming, short edge fades and attenuation only, then mono 48 kHz Vorbis encoding. owner holds written permission from ElevenLabs for publishing these files in this repo; owner, 20 Oct 2026. This is the owner-attested publication basis; the written permission document has not been independently inspected. Recorded as LicenseRef-ElevenLabs-Owner-Permission. Owner ruling, 20 Oct 2026: ship the Codex pick and make sure all twelve candidates were considered. No listening gate was requested; Codex has not listened and no human listening verification is claimed."
   # --- Decision-card illustration loops: silent AI clips behind the Illustration switch (docs/event-videos.md; owner ruling D-V) ---
   # Made by tools/encode_event_videos.py from promo shots that are not in the repository (path and SHA-256 per row in
   # unity/Assets/Resources/EventVideos/event-videos.yaml). Rights: owner ruling D-V, 2026-10-13 (docs/oss/DECISIONS.md, merged in #449):
@@ -335,6 +354,24 @@ rules:
     source: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still, generated 2026-10-13 (promo shot J09, promo/demo2/clips-v2/J09.mp4, not in the repository; sha256 7a1242da163d3fae432889643a64abf7fd9eff73d700cad978d30c0c32b6c571); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
     status: verified
     note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the ten_days card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14). SENSITIVE: the owner reviewed the clip on 2026-10-14 (relayed by the coordinator), so sensitivity_reviewed is true in event-videos.yaml and a shareable build may carry it (Build.cs)."
+  - glob: "unity/Assets/StreamingAssets/video/altalena.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still, generated 2026-10-13 (promo shot A27, promo/demo2/clips-v2/A27.mp4, not in the repository; sha256 e64b1969ccda99ab19f0595e2e42deae76bd3f478e6d6bf78a7f4120072eb8c4); encoded 2026-10-20 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Shown on the altalena card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-20). SENSITIVE: the owner reviewed the shot on 2026-10-20 (#1102, \"looks good\"), so sensitivity_reviewed is true in event-videos.yaml and a shareable build may carry it (Build.cs)."
+  - glob: "unity/Assets/StreamingAssets/video/operation_horev.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A05, promo/demo2/clips/A05.mp4, not in the repository; sha256 c0725105f17ae4b9a9f91417f83e5357ba725504a737d557da380573fc6e77d0); encoded 2026-10-20 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Shown on the operation_horev card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-20). SENSITIVE: the owner reviewed the shot on 2026-10-20 (#1102, \"looks good\"), so sensitivity_reviewed is true in event-videos.yaml and a shareable build may carry it (Build.cs)."
+  - glob: "unity/Assets/StreamingAssets/video/first_new_yishuv.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot TILE1, promo/demo2/clips/TILE1.mp4, not in the repository; sha256 222da9ae6e866efad171c776518ba3be4c98957a5875c218cc236550c3069ec9); encoded 2026-10-20 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Shown on the first_new_yishuv card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. A generic new Negev settlement, not a reconstruction of Mefalsim. No identifiable real person (frames checked 2026-10-20)."
   # --- Decision outcome clips: played once at End Turn for the historical order (docs/event-videos.md; owner ruling D-V) ---
   - glob: "unity/Assets/StreamingAssets/video/maabarot_policy-outcome.mp4"
     licence: CC0-1.0
@@ -354,6 +391,30 @@ rules:
     source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A05, promo/demo2/clips/A05.mp4, not in the repository; sha256 c0725105f17ae4b9a9f91417f83e5357ba725504a737d557da380573fc6e77d0); cut and re-encoded 2026-10-14 by tools/encode_event_videos.py: the steadiest 3.5 s (frames 2-85 at 24 fps, duplicate frames of the 60 fps file dropped first (decimate)), 960x540, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
     status: verified
     note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Played once at End Turn when the player ordered the historical option (operation_horev: launch), captioned as the order, skippable; never for a counterfactual option or Deport. No identifiable real person (frames checked 2026-10-14). SENSITIVE: the owner reviewed the clip on 2026-10-14 (relayed by the coordinator), so sensitivity_reviewed is true in event-videos.yaml and a shareable build may carry it (Build.cs)."
+  - glob: "unity/Assets/StreamingAssets/video/altalena-outcome.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still, generated 2026-10-13 (promo shot A27, promo/demo2/clips-v2/A27.mp4, not in the repository; sha256 e64b1969ccda99ab19f0595e2e42deae76bd3f478e6d6bf78a7f4120072eb8c4); cut and encoded 2026-10-20 by tools/encode_event_videos.py: the steadiest 3.5 s (frames 12-95 at 24 fps), 960x540, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Played once at End Turn when the player ordered the historical option (altalena: enforce), captioned as the order, skippable; never for a counterfactual option or Deport. No identifiable real person (frames checked 2026-10-20). SENSITIVE: the owner reviewed the shot on 2026-10-20 (#1102, \"looks good\"), so sensitivity_reviewed is true in event-videos.yaml and a shareable build may carry it (Build.cs)."
+  - glob: "unity/Assets/StreamingAssets/video/first_new_yishuv-outcome.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot TILE1, promo/demo2/clips/TILE1.mp4, not in the repository; sha256 222da9ae6e866efad171c776518ba3be4c98957a5875c218cc236550c3069ec9); cut and encoded 2026-10-20 by tools/encode_event_videos.py: the steadiest 3.5 s (frames 37-120 at 24 fps, duplicate frames of the 60 fps file dropped first (decimate)), 960x540, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Played once at End Turn when the player ordered the historical option (first_new_yishuv: continue), captioned as the order, skippable; never for a counterfactual option or Deport. A generic new Negev settlement, not a reconstruction of Mefalsim. No identifiable real person (frames checked 2026-10-20)."
+  - glob: "unity/Assets/StreamingAssets/video/iraqi_exodus-outcome.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A07, promo/demo2/clips/A07.mp4, not in the repository; sha256 8b3fc06d8a7836e82896a9fd09a3b874dbfdd7f9eca9e7be63f70202630af783); cut and encoded 2026-10-20 by tools/encode_event_videos.py: the steadiest 3.5 s (frames 34-117 at 24 fps, duplicate frames of the 60 fps file dropped first (decimate)), 960x540, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Played once at End Turn when the player ordered the historical option (iraqi_exodus: airlift), captioned as the order, skippable; never for a counterfactual option or Deport. No identifiable real person (frames checked 2026-10-20)."
+  - glob: "unity/Assets/StreamingAssets/video/austerity_1949-outcome.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A09, promo/demo2/clips/A09.mp4, not in the repository; sha256 79ab0b07145177d9899e1c39136e5e04c3f7ca8f0a310a7c905042fab1dc6cd2); cut and encoded 2026-10-20 by tools/encode_event_videos.py: the steadiest 3.5 s (frames 10-93 at 24 fps, duplicate frames of the 60 fps file dropped first (decimate)), 960x540, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Owner ruling of 2026-10-20 (#1102): approved after watching the shot. Played once at End Turn when the player ordered the historical option (austerity_1949: impose), captioned as the order, skippable; never for a counterfactual option or Deport. No identifiable real person (frames checked 2026-10-20)."
   # --- Event-card header photographs: real archival photos, never AI (docs/event-images.md; owner rulings 2026-10-11) ---
   # Licences and artists re-read from each Commons file page on 2026-10-11; CC BY 4.0 credits are the licensor's credit
   # line from the page's licence template. The mapping and alt texts: unity/Assets/UI/EventImages/event-images.yaml.
