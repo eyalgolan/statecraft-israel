@@ -19,6 +19,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    while the history scan shows an open secret-shape row.
 5. **Build and package** on the owner's machine, from the merged `main`:
 
+   Build both web zips from the merged release commit, never from a pre-merge candidate. The .NET SDK includes the
+   source commit in `Statecraft.Sim.dll`'s informational version, so a candidate build cannot be reproduced from the
+   tag after a squash merge. Before building, check that the disk has several GB free for `unity/Library/Bee`.
+
    ```bash
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
