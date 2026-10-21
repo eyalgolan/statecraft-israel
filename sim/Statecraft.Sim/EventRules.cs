@@ -199,6 +199,12 @@ namespace Statecraft.Sim
                     + (o.CompletesWhen.SitesBuilt.Count == 0 ? 0 : 1);
                 if (conditionKinds != 1)
                     throw new ContentException(file, F("completes_when"), "required, exactly one of: { site_built: <site id> }, { absorbed: { ... } }, { corridor_complete: <corridor id> }, { sites_built: [<site id>, ...] }");
+                // R-OBJ-005: only parts use corridor/list conditions; PartOf also controls their base-score award.
+                var partCondition = o.CompletesWhen!.CorridorComplete != "" || o.CompletesWhen.SitesBuilt.Count > 0;
+                if (o.PartOf != "" && !partCondition)
+                    throw new ContentException(file, F("completes_when"), "part_of is set: requires corridor_complete or sites_built");
+                if (o.PartOf == "" && partCondition)
+                    throw new ContentException(file, F("completes_when"), "part_of is not set: requires site_built or absorbed");
                 if (o.CompletesWhen!.Absorbed is AbsorbCondition a)
                 {
                     if (a.PopulationAtLeast <= 0) throw new ContentException(file, F("completes_when.absorbed.population_at_least"), "must be above 0");

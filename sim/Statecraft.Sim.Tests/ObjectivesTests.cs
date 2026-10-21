@@ -516,6 +516,36 @@ eras:
         Assert.Contains(message, ex.Message);
     }
 
+    // R-OBJ-005: grouping changes the base-score contract, so standalone conditions cannot masquerade as parts.
+    [Theory]
+    [InlineData("site_built: site_a")]
+    [InlineData("absorbed: { population_at_least: 1500, overflow_at_most: 0.10, employed_at_least: 0.40 }")]
+    public void PartsRejectStandaloneConditions(string condition)
+    {
+        var yaml = PartsYaml.Replace("corridor_complete: rail_a", condition)
+            .Replace("reference_date: 1949-09-20", "reference_date: 1949-06-12");
+        var ex = Assert.Throws<ContentException>(() => LoadParts(yaml));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal("objectives[railway].completes_when", ex.Field);
+        Assert.Contains("part_of is set", ex.Message);
+        Assert.Contains("corridor_complete or sites_built", ex.Message);
+    }
+
+    // R-OBJ-001, R-OBJ-004, R-OBJ-005: a missing part_of must not turn a part condition into a standalone base award.
+    [Theory]
+    [InlineData("corridor_complete: rail_a")]
+    [InlineData("sites_built: [site_a, site_b]")]
+    public void StandaloneObjectivesRejectPartConditions(string condition)
+    {
+        var yaml = PartsYaml.Replace("  - id: railway\n    part_of: infrastructure", "  - id: railway")
+            .Replace("corridor_complete: rail_a", condition);
+        var ex = Assert.Throws<ContentException>(() => LoadParts(yaml));
+        Assert.Equal("objectives.yaml", ex.File);
+        Assert.Equal("objectives[railway].completes_when", ex.Field);
+        Assert.Contains("part_of is not set", ex.Message);
+        Assert.Contains("site_built or absorbed", ex.Message);
+    }
+
     // ---- R-OBJ-004, the "absorb immigrants" objective (D-B4; owner, 18 October 2026, #738: option (a)) ----
 
     /// <summary>The fixture's absorb objective: the fixture starts with 1000 people, so its gate is 1500.</summary>
