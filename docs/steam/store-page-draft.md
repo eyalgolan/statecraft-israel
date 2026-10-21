@@ -42,7 +42,7 @@ section 8 (which game the page leads with) still applies.
 Four facts changed: the game ends on 15 January 1952, after 44 monthly turns (GDD, "MVP runs from 15 May 1948 to
 15 January 1952"; `content/rules.yaml` `mvp.end`); the map shows sides from the first turn, not from 11 June (#686);
 both sides now start with their sourced forces of 15 May 1948 (#1186); and the game has three AI sound effects
-(docs/ai-disclosure.md). The platforms are an open owner decision (see the notes below). The rest of "In the build today" still describes the build of 14 October.
+(docs/ai-disclosure.md). The first platform is Windows (owner, 21 October 2026; see the notes below). The rest of "In the build today" still describes the build of 14 October.
 
 Steam's rules, from the report: the description may contain no links (the website goes in the Basic Info website
 field), and the page may show only what will be in the game at launch, with planned content marked as not yet
@@ -69,7 +69,7 @@ released.
 >
 > **In the build today**
 >
-> - Play from 15 May 1948 to 15 January 1952, on Windows. **[OWNER DECISION: platforms; see the notes below]**
+> - Play from 15 May 1948 to 15 January 1952, on Windows.
 > - Appoint and replace real ministers, such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real
 >   coalition.
 > - Divide a small budget between security, immigrant absorption, the ma'abarot transit camps and austerity.
@@ -113,9 +113,8 @@ Notes on this text:
   "In development" restates only what the GDD fixes, plus G1 (the Burma Road joins objective 3). It leaves out
   everything the GDD marks Open, Proposal or TBD: costs, durations, point values, how ministers are chosen and what
   they do, the role of the coalition, combat rules, and the whole settlement-control system.
-- **OWNER DECISION: platforms (open, 21 October 2026).** The text says "Windows" as the recommended first platform,
-  not as a settled one. The MVP release is web only and the desktop players come after it (RELEASING.md:5, #905), so
-  no desktop build for Steam exists yet. Windows first is recommended because it needs no signing (O4), while macOS
+- **Platforms: Windows first (owner, 21 October 2026, in the coordinator session).** The MVP release is web only and the desktop players come after it (RELEASING.md:5, #905), so
+  no desktop build for Steam exists yet. Windows comes first because it needs no signing (O4), while macOS
   needs signing and notarization with the owner's Apple credentials (#905, item 2) and Linux has not passed the player
   check in CI (To confirm 12). If the owner picks more platforms, add them here, in section 3 and in
   [coming-soon-kit.md, section 6](coming-soon-kit.md#6-tags-languages-and-platforms).
@@ -158,7 +157,7 @@ platform); the changed lines are listed for the native read in #564.
 >
 > **מה יש בגרסה היום**
 >
-> - משחקים מ־15 במאי 1948 ועד 15 בינואר 1952, ב־Windows. **[OWNER DECISION: platforms; see the notes in section 2]**
+> - משחקים מ־15 במאי 1948 ועד 15 בינואר 1952, ב־Windows.
 > - ממנים ומחליפים שרים אמיתיים, כמו דוד בן־גוריון, אליעזר קפלן ומשה שרת, בתוך קואליציה אמיתית.
 > - מחלקים תקציב זעום בין ביטחון, קליטת עלייה, המעברות והצנע.
 > - מנהלים את הביטחון על סולם הסלמה של חמש דרגות, מאיום שגרתי ועד מלחמה כוללת, ומגייסים מילואים.
@@ -287,8 +286,8 @@ Facts this draft could not settle. Each is flagged above instead of being assert
     M2's CI player golden check ([run 38637103937](https://github.com/eyalgolan/statecraft-israel/actions/runs/38637103937))
     passed Windows and both macOS slices; the Linux player crashed headless on CI (fix PR #581), so Linux stays pending
     until a CI run passes. The OS list is in [coming-soon-kit.md, section 6](coming-soon-kit.md#6-tags-languages-and-platforms).
-    Since then the owner moved the desktop players after the MVP (RELEASING.md:5, #905), so the platforms are an open
-    owner decision; the text says "Windows" as the recommendation (section 2 notes).
+    Since then the owner moved the desktop players after the MVP (RELEASING.md:5, #905), so the owner chose
+    Windows first on 21 October 2026 (section 2 notes).
 13. **The store text is itself AI-drafted.** Sections 1 to 3 were written by an AI agent for the owner to edit. Whether
     that needs a line in the disclosure is the owner's call once the text is final.
 
@@ -381,7 +380,7 @@ coming-soon-kit.md section 2. The README's 1568 x 882 shots stay too small. No A
    launch as a fully working MVP from 15 May 1948 to January 1952 that looks like demo2. That points to the GDD game, but
    which game the page shows before that build exists is still the owner's call.
 3. **Whether the page may open before the release gates.** RELEASING.md's checklist says to finish the gates first.
-   Opening earlier is an amendment the owner records. Proposed on 21 October 2026 (OWNER DECISION): a line in
+   Opening earlier is an amendment the owner made on 21 October 2026: a line in
    RELEASING.md's store-page checklist that lets the Coming Soon page open before the MVP, since the page ships no
    build.
 4. **Whether an AI cinematic may be the second trailer.** RELEASING.md says trailers come from the real build only.

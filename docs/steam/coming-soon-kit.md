@@ -355,9 +355,9 @@ Sim (the first tags shown carry the most weight).
 **Languages:** English (interface and subtitles; there is no voice-over). Hebrew only if the owner accepts the report's
 "Game Support Only" idea; the in-game Hebrew UI is a hand-asked preview and the content text is English (#193, #55).
 
-**OWNER DECISION (open, 21 October 2026): which platforms the page lists.** The MVP release is web only and the
+**Platforms: Windows first (owner, 21 October 2026, in the coordinator session).** The MVP release is web only and the
 desktop players come after it (RELEASING.md:5, #905), so the table below is M2's history, not a build that exists for
-Steam. The recommendation is Windows first (no signing, O4); macOS needs signing and notarization with the owner's
+Steam. Windows comes first (no signing, O4); macOS needs signing and notarization with the owner's
 Apple credentials (#905). The store text says "Windows" with the same note (store-page-draft.md section 2).
 
 **Supported OS on 14 October: Windows and macOS. Linux pending.** This follows M2's real run, the `Player golden` workflow on the
@@ -410,9 +410,9 @@ None of these is done. Each is the owner's action.
 12. **Submit the store page for review** (#424's research: about 3 to 5 business days), answer any reviewer
     questions, then make the Coming Soon page visible yourself once it is approved.
 
-## 8. Community rules and reply templates (OWNER APPROVAL NEEDED)
+## 8. Community rules and reply templates
 
-**OWNER APPROVAL NEEDED. Draft, 21 October 2026. Nothing here is posted.** The Steam Community hub opens with the
+**Approved as drafted (owner, 21 October 2026, in the coordinator session). Nothing here is posted yet.** The Steam Community hub opens with the
 page. The kit had no place for community material, so it starts here. The rules are about the topic and how people
 talk, not about a side: they apply in the same way to every poster.
 
