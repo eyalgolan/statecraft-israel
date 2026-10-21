@@ -31,6 +31,9 @@ namespace Statecraft.Sim
                 // R-SWAMP-002: an event about a site's works waits for those works, and stops once the site is built (drained).
                 // The legacy loop reads no sites, so it ignores the key and the legacy goldens hold.
                 .Where(e => e.Site == "" || !c.IsGdd || (s.Sites.TryGetValue(e.Site, out var works) && works.BuiltOn == null))
+                // R-POW-004: a front's exchange card waits for prisoners held either way. Only the GDD loop takes any, so the
+                // legacy loop never fires one.
+                .Where(e => e.Prisoners == "" || Prisoners.Held(s, e.Prisoners))
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
@@ -144,6 +147,8 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})"));
             }
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
+            // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
+            if (Get(c, eventId).Prisoners is var front && front != "") Prisoners.Return(c, s, front, why);
         }
 
         /// <summary>A late-fired event can be resolved after a dated record's window has ended (chapters design 3.2): an
@@ -209,7 +214,7 @@ namespace Statecraft.Sim
             {
                 var e = Get(c, id);
                 var minister = DelegatedTo(c, s, e);
-                if (e.Objective != "")
+                if (e.Objective != "" || e.Prisoners != "")   // R-POW-004: an exchange card, like an objective's, has one option and draws nothing
                 {
                     Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why);
                     continue;

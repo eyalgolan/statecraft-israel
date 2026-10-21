@@ -663,7 +663,7 @@ public class CityPanelTests
 
     /// <summary>The Done-when playthrough (#381) through the panel's own buttons, on the real content from a new game: on
     /// Tel Aviv's hex, Train halutzim (pressed again on a later turn when the Attention left refuses it); when the group has
-    /// trained, on the site's hex, Build with it; End Turn until the first new yishuv's objective card is pending, then answer
+    /// trained, on the site's hex, Build with it; build every designated yishuv through the panel and End Turn until their objective card is pending, then answer
     /// the cards before it with their first option until the event card shows it, with its objective line. Cards are left to
     /// their ministers otherwise, as the smoke run does with the cards the Attention cannot pay for.</summary>
     [Test]
@@ -690,13 +690,28 @@ public class CityPanelTests
                 UiTestKit.Press(build!);
                 if (bridge.Queued.Any(x => x is PioneerWork)) buildOn = bridge.State.Date;
             }
+            else if (buildOn != null && bridge.State.Sites.TryGetValue(Site, out var firstWork) && firstWork.BuiltOn != null)
+            {
+                var remaining = C.Objectives.Single(o => o.Id == "yishuvim").CompletesWhen!.SitesBuilt
+                    .Select(id => C.Sites.Single(site => site.Id == id))
+                    .FirstOrDefault(site => !bridge.State.Sites.TryGetValue(site.Id, out var work) || work.BuiltOn == null);
+                if (remaining != null)
+                {
+                    panel.Show(remaining.Q, remaining.R);
+                    var build = ui.Root.Query<Button>().ToList().FirstOrDefault(b => b.name.StartsWith("site-build-"));
+                    if (build != null) UiTestKit.Press(build);
+                }
+            }
             var r = bridge.EndTurn();
             Assert.IsEmpty(r.Rejected.Where(x => x.Command is Train || x.Command is PioneerWork).Select(x => x.Reason).ToList(), $"{bridge.State.Date:yyyy-MM-dd}: the panel's orders are taken");
         }
         Assert.IsNotNull(trainedOn, "Train halutzim was taken");
         Assert.IsNotNull(buildOn, "Build was taken");
         Assert.IsTrue(bridge.State.Sites.TryGetValue(Site, out var work) && work.BuiltOn != null, $"the site is built (by {bridge.State.Date:yyyy-MM-dd})");
-        Assert.IsTrue(bridge.State.PendingEvents.Contains("first_new_yishuv"), "the objective card is pending");
+        Assert.IsTrue(C.Objectives.Single(o => o.Id == "yishuvim").CompletesWhen!.SitesBuilt
+            .All(id => bridge.State.Sites.TryGetValue(id, out var completed) && completed.BuiltOn != null), "all designated sites are built");
+        Assert.IsTrue(bridge.State.Objectives.ContainsKey("yishuvim"), "the objective is recorded under its new id");
+        Assert.IsTrue(bridge.State.PendingEvents.Contains("first_new_yishuv"), "the unchanged event-card id is pending");
         for (int guard = 0; card.Shown != null && card.Shown.Id != "first_new_yishuv" && guard < 20; guard++)
             UiTestKit.Press(ui.Root.Q<VisualElement>("event-options").Q<Button>());
         Assert.AreEqual("first_new_yishuv", card.Shown?.Id, "the event card shows the objective card");

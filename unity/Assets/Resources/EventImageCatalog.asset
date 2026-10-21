@@ -66,6 +66,14 @@ MonoBehaviour:
       and cropped"
     sensitive: 1
     sensitivityReviewed: 1
+  - eventId: burma_road_complete
+    image: {fileID: 2800000, guid: b0668911c758942cfaf0c6bbd7cd863d, type: 3}
+    alt: The opening of the Road of Valour, December 1948.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 0
   - eventId: clothing_rationing_1950
     image: {fileID: 2800000, guid: a2430cb25bd4644c3a6040cf18617c73, type: 3}
     alt: Shops on Nahalat Binyamin Street, Tel Aviv, shut in protest after the government

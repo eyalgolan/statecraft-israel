@@ -14,7 +14,8 @@ using UnityEngine.UIElements;
 
 public class MapActionUiTests
 {
-    static readonly Content C = ContentLoader.Load(Paths.Content);
+    // The legacy loop: the GDD loop refuses every map action and offers no Build button (R-PROJ-004).
+    static readonly Content C = SimBridgeGddTests.Legacy;
     static readonly HexFile Hexes = MapBuilder.LoadHexes(Path.Combine(Paths.Content, "map", "hexes.json"));
     static readonly System.Collections.Generic.List<Settlement> Towns =
         SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName)));
@@ -478,12 +479,34 @@ public class MapActionUiTests
         Assert.AreEqual(0, clicks);
     }
 
+    /// <summary>R-PROJ-004: the GDD game (the real content) offers no legacy Build button and no map-action reason, before
+    /// 1950 or after it: the sim refuses every map action there, and city projects replace them.</summary>
+    [Test]
+    public void TheGddLoopShowsNoMapActionButtons()
+    {
+        var gdd = ContentLoader.Load(Paths.Content);
+        Assert.IsTrue(gdd.IsGdd);
+        var g = GameSession.New(gdd, GoldenRun.Seed, Mode.Historical);
+        using var ui = new UiTestKit();
+        var info = new InfoPanelPresenter(ui.Root, new SimBridge(g, Text), Text, Towns.ToDictionary(t => t.Id, t => t.Name));
+        var tlv = gdd.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        foreach (var date in new[] { new DateTime(1949, 6, 1), new DateTime(1950, 8, 1) })
+        {
+            while (g.State.Date < date) g.Step(HistoricalAI.Commands(gdd, g.State));
+            info.Show(tlv.Q, tlv.R);
+            foreach (var b in new[] { "build-camp", "build-housing" })
+                Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(b).style.display.value, $"{b} on {date:yyyy-MM-dd}");
+            Assert.AreEqual("", ui.Q<Label>("info-reason").text, $"no map-action reason on {date:yyyy-MM-dd}");
+        }
+        info.Dispose();
+    }
+
     /// <summary>eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason; with
     /// both allowed both show. Played on a copy of the content, switching the list between renders.</summary>
     [Test]
     public void OnlyTheErasMapActionsHaveButtons()
     {
-        var c = ContentLoader.Load(Paths.Content);
+        var c = SimBridgeGddTests.LoadLegacy();
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
         using var ui = new UiTestKit();

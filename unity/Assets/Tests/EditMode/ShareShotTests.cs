@@ -184,6 +184,86 @@ public class ShareShotTests
         }
     }
 
+    /// <summary>#1238: Copy asks the browser once, on the player's press, to copy the picture; the browser falls back to the
+    /// post text (with the itch link) and reports which one landed, or that neither did (ShareShot.jslib, in that order).
+    /// The panel says which, in both languages, polling ShareShot.Copied as it polls Failed; nothing shows while the copy
+    /// is still pending, and on a failure the Share or Download button stays where it was. The order itself (picture, then
+    /// text, then the error) lives in the jslib's promises, which an edit-mode test cannot run; the PR's browser check
+    /// covers it.</summary>
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator CopySaysWhetherThePictureOrTheTextWasCopied(
+        [Values(ShareShot.CopyResult.Picture, ShareShot.CopyResult.Text, ShareShot.CopyResult.Failed)] ShareShot.CopyResult result,
+        [Values(false, true)] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var copies = new List<string>();
+        var copied = ShareShot.CopyResult.Pending;
+        ShareShot.Keep = (png, name) => { }; ShareShot.Share = (a, b) => { };
+        ShareShot.Copy = copies.Add; ShareShot.Copied = () => copied;
+        var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+            using var share = new SharePresenter(ui.Root, bridge, text, done => done(new byte[] { 1 }));
+            UiTestKit.Press(ui.Q<Button>("settings-share"));
+            var copy = ui.Q<Button>("share-copy");
+            var said = ui.Q<Label>("share-copied");
+            Assert.IsNotNull(copy, "the panel has a Copy button");
+            Assert.AreEqual(text["share.copy"], copy.text);
+            Assert.AreEqual(DisplayStyle.None, said.style.display.value, "nothing to say before the press");
+            SettingsScreenTests.PressWithPointer(copy);
+            CollectionAssert.AreEqual(new[] { ui.Q<Label>("share-post").text }, copies, "one copy, of the post, on the press");
+            // The batch editor idles between frames unless asked for one, and the panel's scheduler runs on those frames.
+            var until = Time.realtimeSinceStartup + 0.6f;
+            while (Time.realtimeSinceStartup < until) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+            Assert.AreEqual(DisplayStyle.None, said.style.display.value, "still pending after a few looks: nothing yet");
+            copied = result;
+            until = Time.realtimeSinceStartup + 4f;   // the panel looks every 250 ms
+            while (said.style.display.value != DisplayStyle.Flex && Time.realtimeSinceStartup < until) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+            Assert.AreEqual(DisplayStyle.Flex, said.style.display.value);
+            var key = result switch { ShareShot.CopyResult.Picture => "share.copied_picture", ShareShot.CopyResult.Text => "share.copied_text", _ => "share.copy_failed" };
+            Assert.AreEqual(text[key], said.text);
+            var go = ui.Q<Button>("share-go");
+            Assert.IsTrue(go.enabledInHierarchy && go.style.display.value != DisplayStyle.None, "the Share or Download button stays available");
+            UiTestKit.Press(ui.Q<Button>("share-close"));
+            UiTestKit.Press(ui.Q<Button>("settings-share"));
+            Assert.AreEqual(DisplayStyle.None, said.style.display.value, "a new picture, a new copy: the old message goes");
+        }
+        finally
+        {
+            ui.Dispose();
+            ShareShot.Keep = ShareShot.DefaultKeep; ShareShot.Share = ShareShot.DefaultShare;
+            ShareShot.Copy = ShareShot.DefaultCopy; ShareShot.Copied = ShareShot.DefaultCopied;
+        }
+    }
+
+    /// <summary>A Copy press whose release never reached the browser stays Pending; after a few seconds the panel says
+    /// the copy failed instead of staying silent.</summary>
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator ACopyThatNeverAnswersSaysItFailed()
+    {
+        ShareShot.Keep = (png, name) => { };
+        ShareShot.Copy = t => { }; ShareShot.Copied = () => ShareShot.CopyResult.Pending;
+        var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
+            using var share = new SharePresenter(ui.Root, bridge, En, done => done(new byte[] { 1 }));
+            UiTestKit.Press(ui.Q<Button>("settings-share"));
+            SettingsScreenTests.PressWithPointer(ui.Q<Button>("share-copy"));
+            var said = ui.Q<Label>("share-copied");
+            var until = Time.realtimeSinceStartup + 7f;
+            while (said.style.display.value != DisplayStyle.Flex && Time.realtimeSinceStartup < until) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+            Assert.AreEqual(DisplayStyle.Flex, said.style.display.value);
+            Assert.AreEqual(En["share.copy_failed"], said.text);
+        }
+        finally
+        {
+            ui.Dispose();
+            ShareShot.Keep = ShareShot.DefaultKeep; ShareShot.Copy = ShareShot.DefaultCopy; ShareShot.Copied = ShareShot.DefaultCopied;
+        }
+    }
+
     /// <summary>The turn report's Share opens the same panel over the report.</summary>
     [Test]
     public void TheTurnReportHasAShareButton()

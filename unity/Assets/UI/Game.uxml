@@ -508,12 +508,15 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- "Share" (#1170, SharePresenter): over everything, the turn report too, after the frame was captured without it.
-             The share links show only where the browser cannot share the picture itself. Before the toast. -->
+             The share links show only where the browser cannot share the picture itself. Copy (#1238) puts the picture, or the
+             post text, on the clipboard, and the line under it says which. Before the toast. -->
         <ui:VisualElement name="share-layer" class="share-layer">
             <ui:VisualElement name="share-panel" class="panel share-panel">
                 <ui:VisualElement class="screen-header"><ui:Label name="share-title" text="Share a picture of the game" class="title" /></ui:VisualElement>
                 <ui:Label name="share-post" class="share-post" />
                 <ui:Button name="share-go" class="share-go" />
+                <ui:Button name="share-copy" class="share-go" />
+                <ui:Label name="share-copied" class="muted share-copied" />
                 <ui:VisualElement name="share-fallback" class="share-fallback">
                     <ui:Label name="share-attach" text="These sites can't take a picture through a link: attach the downloaded picture to your post." class="muted share-attach" />
                     <ui:VisualElement class="row share-sites">

@@ -94,6 +94,13 @@ namespace Statecraft.Sim
         public int ExhaustedTurns;
         /// <summary>The national Arms stock (R-ARMS-001; D-G6): one Arms is the equipment package for one 1,000-person recruit group. Never below 0.</summary>
         public int Arms;
+        /// <summary>The enemy prisoners held, in population units, by the side of the unit that surrendered (R-POW-001; impact
+        /// plan section 4.3). Only a surrender in combat adds to it; only a front's exchange card takes from it (R-POW-004).</summary>
+        public SortedDictionary<string, int> PrisonersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>The prisoners returned so far, in population units, by side (R-POW-004).</summary>
+        public SortedDictionary<string, int> PrisonersReturned = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>The player's soldiers held by the enemy, in population units, by the side that took them (R-POW-005; Q-POW-4).</summary>
+        public SortedDictionary<string, int> SoldiersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
 
         public double TotalPopulation => Population.Values.Sum();
 
@@ -121,6 +128,9 @@ namespace Statecraft.Sim
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
             c.Settlements = new SortedDictionary<string, SettlementControl>(Settlements, StringComparer.Ordinal);
+            c.PrisonersHeld = new SortedDictionary<string, int>(PrisonersHeld, StringComparer.Ordinal);
+            c.PrisonersReturned = new SortedDictionary<string, int>(PrisonersReturned, StringComparer.Ordinal);
+            c.SoldiersHeld = new SortedDictionary<string, int>(SoldiersHeld, StringComparer.Ordinal);
             return c;
         }
 
@@ -224,6 +234,11 @@ namespace Statecraft.Sim
             }
             if (ExhaustedTurns != 0) { Sep(); Nl(); sb.Append("exhausted=").Append(ExhaustedTurns.ToString(CultureInfo.InvariantCulture)); }
             if (Arms != 0) { Sep(); Nl(); sb.Append("arms=").Append(Arms.ToString(CultureInfo.InvariantCulture)); }
+            // Prisoners (R-POW-001 to R-POW-005): written only once a surrender has happened, so a run with none hashes as before.
+            IEnumerable<string> Counts(SortedDictionary<string, int> m) => m.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture));
+            if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));
+            if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
+            if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
             return sb.ToString();
         }
     }

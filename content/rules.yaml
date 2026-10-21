@@ -195,6 +195,16 @@ mvp:
       attacker_loss: [1, 0, 0, 0, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
       defender_loss: [1, 1, 1, 2, 2, 2]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
       defender_retreats: [0, 1, 1, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+  # Prisoners (R-POW-002, R-POW-004, R-POW-005; Q-POW-2, Q-POW-4, Q-POW-5, owner, 15 October 2026, #375). The amounts are
+  # agent defaults posted on #751 (https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6318787961) for
+  # the owner to set or accept; none is a historical figure. A prisoner unit eats the ration any population unit eats (one
+  # Food is one unit's food for a month, R-FOOD-001). A return scores a tenth of an objective (D-B6) per unit. The player's
+  # soldiers held cost one month of income_per_job_per_year (0.06 / 12) a unit, in Money, so Q-CIV-3 keeps the Food
+  # shortfall as its one cohesion exemption.
+  food_per_prisoner_unit: 1              # DESIGN VALUE: owner-set balance, not a historical figure (D-C2, Q-POW-5: Food a population unit of prisoners eats a turn)
+  prisoner_shortfall_cohesion: 0.01      # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-POW-5: Social cohesion lost per unit of the prisoners' Food not given)
+  points_per_prisoner_unit_returned: 10  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6, Q-POW-2: points per population unit of prisoners returned)
+  held_soldier_cost_per_turn: 0.005      # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-POW-4: IL millions a turn per population unit of our soldiers held)
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06

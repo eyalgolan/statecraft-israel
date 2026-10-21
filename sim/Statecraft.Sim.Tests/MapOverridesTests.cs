@@ -50,6 +50,22 @@ public class MapOverridesTests
     }
 
     [Fact]
+    public void SerializeWritesTheShippedFormatInAStableOrderAndParsesBack()
+    {
+        // #1009 step 2: the editor's only writer. The shipped file comes back byte for byte, so an unchanged save writes nothing.
+        var shipped = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), MapOverrides.FileName));
+        Assert.Equal(shipped, MapOverrides.Serialize(MapOverrides.Parse(shipped)));
+        var text = MapOverrides.Serialize(Checked("terrain:\n  - { hex: { q: 2, r: 2 }, value: desert }\n  - { hex: { q: 1, r: 2 }, value: hills }\n"
+            + "control:\n  - { hex: { q: 1, r: 2 }, period: truce1, value: E }\n  - { hex: { q: 1, r: 2 }, period: opening, value: '-' }\n"
+            + "locations:\n  - { id: town_a, hex: { q: 1, r: 2 } }\n  - { id: fort_a, hex: { q: 2, r: 2 } }\n"));
+        Assert.Equal("# yaml-language-server: $schema=../schema/map-overrides.schema.json\n"
+            + "terrain:\n  - { hex: { q: 1, r: 2 }, value: 'hills' }\n  - { hex: { q: 2, r: 2 }, value: 'desert' }\n"
+            + "control:\n  - { hex: { q: 1, r: 2 }, period: 'opening', value: '-' }\n  - { hex: { q: 1, r: 2 }, period: 'truce1', value: 'E' }\n"
+            + "locations:\n  - { id: 'fort_a', hex: { q: 2, r: 2 } }\n  - { id: 'town_a', hex: { q: 1, r: 2 } }\n", text);
+        Assert.Equal(text, MapOverrides.Serialize(Checked(text)));
+    }
+
+    [Fact]
     public void AControlOverrideReplacesOnePeriodOfOneHexAndNothingElse()
     {
         var o = Checked("terrain: []\ncontrol:\n  - { hex: { q: 1, r: 2 }, period: truce1, value: E }\nlocations: []\n");

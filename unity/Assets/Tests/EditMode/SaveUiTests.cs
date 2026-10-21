@@ -58,6 +58,38 @@ public class SaveUiTests
     }
 
     [Test]
+    public void AutosaveReceiptsKeepTheirGenerationAndSavedState()
+    {
+        var store = TempStore();
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 77UL, new List<string>(), Text), Text);
+        var lines = new List<string>();
+        void Logged(string message, string stack, LogType kind)
+        {
+            if (message.StartsWith("AUTOSAVE ", System.StringComparison.Ordinal)) lines.Add(message);
+        }
+        Application.logMessageReceived += Logged;
+        try
+        {
+            using var save = GameStart.Autosave(bridge, store, Text);
+            bridge.EndTurn();
+            var first = bridge.State.Hash();
+            bridge.EndTurn();
+            Assert.AreEqual(4, lines.Count);
+            var receipt1 = lines[0].Substring("AUTOSAVE PENDING ".Length);
+            var receipt2 = lines[2].Substring("AUTOSAVE PENDING ".Length);
+            Assert.AreEqual("AUTOSAVE OK " + receipt1, lines[1]);
+            Assert.AreEqual("AUTOSAVE OK " + receipt2, lines[3]);
+            var g1 = long.Parse(receipt1.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture);
+            var g2 = long.Parse(receipt2.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture);
+            Assert.Greater(g2, g1);
+            StringAssert.EndsWith("turn 1 hash " + first, receipt1);
+            StringAssert.EndsWith("turn 2 hash " + bridge.State.Hash(), receipt2);
+            Assert.AreEqual(bridge.State.Hash(), GameStart.Begin(C, store, () => 1UL, new List<string>(), Text).State.Hash());
+        }
+        finally { Application.logMessageReceived -= Logged; }
+    }
+
+    [Test]
     public void AnUnreadableAutosaveIsSetAsideAndANewGameStarts()
     {
         var store = TempStore();

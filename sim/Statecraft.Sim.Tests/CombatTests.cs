@@ -197,7 +197,7 @@ public class CombatTests
         var next = s.NextId;
         var why = Resolve(c, s);
         Assert.False(s.Units.ContainsKey(2));
-        Assert.Contains(why, x => x.Message == "Unit 2 surrendered with 20 people: it had no hex to retreat to");
+        Assert.Contains(why, x => x.Message == "Unit 2 surrendered with 20 people: it had no hex to retreat to. They are held as prisoners");
         Assert.Equal(next, s.NextId);
     }
 
@@ -281,13 +281,16 @@ public class CombatTests
         AssertOnlyCombatantsChanged(before, s);
     }
 
-    /// <summary>R-COMBAT-005: <paramref name="after"/> differs from <paramref name="before"/> only in its units, its Arms and the
-    /// RNG: with those three copied back, the hashes match.</summary>
+    /// <summary>R-COMBAT-005: <paramref name="after"/> differs from <paramref name="before"/> only in its units, its Arms, the
+    /// RNG and, from a surrender, the counts of prisoners and of the player's soldiers held (R-POW-001, R-POW-005): with those
+    /// copied back, the hashes match.</summary>
     internal static void AssertOnlyCombatantsChanged(GameState before, GameState after)
     {
         var copy = before.Clone();
         copy.Units.Clear();
         foreach (var u in after.Units.Values) copy.Units.Add(u.Id, u);
+        copy.PrisonersHeld = new SortedDictionary<string, int>(after.PrisonersHeld, StringComparer.Ordinal);
+        copy.SoldiersHeld = new SortedDictionary<string, int>(after.SoldiersHeld, StringComparer.Ordinal);
         copy.Arms = after.Arms;
         copy.RngState = after.RngState;
         Assert.Equal(after.Describe(), copy.Describe());

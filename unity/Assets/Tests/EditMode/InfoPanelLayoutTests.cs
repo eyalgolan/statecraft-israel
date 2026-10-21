@@ -305,12 +305,13 @@ public class InfoPanelLayoutTests
     public void OneSharedRefusalShowsOnceWithoutButtons()
     {
         using var ui = new UiTestKit();
-        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        var legacy = SimBridgeGddTests.Legacy;   // the GDD loop shows no map-action button or reason (R-PROJ-004)
+        var bridge = new SimBridge(GameSession.New(legacy, GoldenRun.Seed, Mode.Historical), Text);
         var info = new InfoPanelPresenter(ui.Root, bridge, Text, Names());
-        var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var tlv = legacy.SettlementHexes.Single(s => s.Id == "tel_aviv");
         info.Show(tlv.Q, tlv.R);
-        var why = MapActions.Check(C, bridge.State, MapActions.TransitCamp, tlv.Q, tlv.R);
-        Assert.AreEqual(why, MapActions.Check(C, bridge.State, MapActions.Housing, tlv.Q, tlv.R), "precondition: one shared reason in 1948");
+        var why = MapActions.Check(legacy, bridge.State, MapActions.TransitCamp, tlv.Q, tlv.R);
+        Assert.AreEqual(why, MapActions.Check(legacy, bridge.State, MapActions.Housing, tlv.Q, tlv.R), "precondition: one shared reason in 1948");
         Assert.AreEqual(why, ui.Q<Label>("info-reason").text, "the reason, once");
         foreach (var b in new[] { "build-camp", "build-housing" })
         {

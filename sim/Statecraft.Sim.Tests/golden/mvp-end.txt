@@ -164,7 +164,6 @@ cproj[
   18:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
 next=19
 obj{
-  first_new_yishuv=1951-02-15
-score=100
+  yishuvim=1951-07-15
 food=2734,1390,0
 arms=8

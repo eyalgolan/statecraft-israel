@@ -24,6 +24,7 @@ namespace Statecraft.Sim
             Cities.Produce(c, s, r, yearFraction, why);   // 6. production
             Pools.Harvest(c, s, r, why);                  //    and the plowed fields' Food (R-FIELD-002)
             Pools.Consume(c, s, r, why);                  // 7. consumption: the nation eats, then imports (R-FOOD-002)
+            Prisoners.Upkeep(c, s, r, why);               //    then the prisoners eat, and the soldiers held are paid for (R-POW-002, R-POW-005)
             EconomySystem.PayCivilianUpkeep(c, s, r, yearFraction, why); //    and pays Money upkeep (R-MONEY-002)
             Cities.House(c, s, r, why);                      // 8. housing, then the housing condition; Social cohesion is morale, which the effects web moves after the resolution
             Cities.UpdateCondition(c, s, r, why);

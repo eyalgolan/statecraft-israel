@@ -1,17 +1,47 @@
 # GDD v0.1 objectives (docs/GDD.md "Objectives" and "Historical events on objective completion"; docs/gdd/objective-card.md).
 # Completing an objective records it, scores it and fires its card (R-OBJ-001 to R-OBJ-003); only the GDD loop completes one.
 # Sourced facts and links only: the points and the timing bonus are design values in rules.yaml's mvp: block (D-B6 and D-B2,
-# #456). Phase 1 has two objectives, the first new yishuv (D-A4) and absorbing the immigrants (#738).
+# #456). Objective 3 is the three-part infrastructure objective decided on #782 and #791 (R-OBJ-005, R-OBJ-006).
 objectives:
-  - id: first_new_yishuv
-    name: First new yishuv
-    # AI translation of the English name, not yet read by a person (#564, as the cards' text_he_review).
-    name_he: היישוב החדש הראשון
+  - id: railway
+    part_of: establish_key_infrastructure
+    name: Lay the Haifa–Tel Aviv rail link
+    # Q-UI-2's owner-approved Hebrew action label (#782); no new translation was made for this PR.
+    name_he: הנחת מסילה
     name_he_review: agent-checked
-    completes_when: { site_built: mefalsim }   # sites.yaml; built by a halutz group's Build yishuv (R-SITE-001 to R-SITE-003)
-    # Mefalsim's founding, the ceremony of 12 June 1949 (sites.yaml has the sources). The loader refuses any other date.
-    reference_date: 1949-06-12
-    card: first_new_yishuv                     # content/events/first_new_yishuv.yaml
+    completes_when: { corridor_complete: tlv_haifa_rail }
+    reference_date: 1949-09-20
+    card: railway_complete
+    sources:
+      - { url: "https://www.nli.org.il/he/newspapers/hbkr/1949/09/14/01/article/70", checked: 2026-10-14 }
+      - { url: "https://www.nli.org.il/he/newspapers/mar/1949/09/22/01/article/21", checked: 2026-10-14 }
+  - id: burma_road
+    part_of: establish_key_infrastructure
+    name: Build the Burma Road corridor
+    # Q-UI-2's owner-approved Hebrew action label (#782); no new translation was made for this PR.
+    name_he: סלילת כביש
+    name_he_review: agent-checked
+    completes_when: { corridor_complete: burma_road }
+    reference_date: 1948-12-07
+    card: burma_road_complete
+    sources:
+      - { url: "https://www.nli.org.il/he/newspapers/hayomjlm/1948/12/08/01/article/2", checked: 2026-10-14 }
+      - { url: "https://www.nli.org.il/he/newspapers/haretz/1948/12/08/01/article/18", checked: 2026-10-14 }
+      - { url: "https://www.nli.org.il/he/newspapers/mar/1948/12/07/01/article/10", checked: 2026-10-14 }
+  - id: yishuvim
+    part_of: establish_key_infrastructure
+    name: Establish the designated yishuvim
+    # Q-UI-2's owner-approved Hebrew action label (#782); no new translation was made for this PR.
+    name_he: הקמת יישוב
+    name_he_review: agent-checked
+    completes_when: { sites_built: [mefalsim, beit_kama, reim, gilat, kiryat_shmona, beit_shemesh] }
+    # The last required founding: Beit Shemesh in December 1950, represented by the monthly turn's 15th (#785).
+    reference_date: 1950-12-15
+    card: first_new_yishuv
+    sources:
+      - { url: "https://benyehuda.org/read/14684", checked: 2026-10-14 }
+      - { url: "https://www.k-8.co.il/he/faq/3/", checked: 2026-10-17 }
+      - { url: "https://www.nli.org.il/he/discover/israel/zionism/zionism-history/maabarot", checked: 2026-10-17 }
   - id: absorb_immigrants
     name: Absorb the immigrants
     name_he: קליטת העולים

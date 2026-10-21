@@ -11,6 +11,7 @@ namespace Statecraft.Game.UI
     /// before the panel shows, so the panel is never in the picture. Where the browser can share files, Share opens its share
     /// sheet with the picture, the post and the itch URL; elsewhere the same button downloads the picture, and the panel then
     /// shows the X, Facebook, WhatsApp and LinkedIn share links and says to attach the picture, which a link cannot carry.
+    /// Copy (#1238) puts the picture on the clipboard, or the post text where the browser refuses the picture, and says which.
     /// <para>While it shows, the root has <see cref="OpenClass"/> and every other part of the UI is disabled, so Tab stays in
     /// the panel; Close, Esc or Cancel give each part its own state back and the focus back to the button that opened it.
     /// <see cref="Escape"/> is what GameRoot's Escape poll and ScreenNav (TakesEscape) ask first.</para></summary>
@@ -23,16 +24,19 @@ namespace Statecraft.Game.UI
             { ["x"] = "X", ["facebook"] = "Facebook", ["whatsapp"] = "WhatsApp", ["linkedin"] = "LinkedIn" };
 
         readonly VisualElement hudRoot, layer, fallback;
-        readonly Button go, close, settingsOpen, reportOpen;
-        readonly Label post;
+        readonly Button go, copy, close, settingsOpen, reportOpen;
+        readonly Label post, copied;
         readonly SimBridge bridge; readonly UiText text;
         readonly Action<Action<byte[]?>> capture;
         readonly EventCallback<PointerDownEvent> onGoPointer;
         readonly EventCallback<NavigationSubmitEvent> onGoSubmit;
+        readonly EventCallback<PointerDownEvent> onCopyPointer;
+        readonly EventCallback<NavigationSubmitEvent> onCopySubmit;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly List<Action> unbindSites = new List<Action>();
         readonly List<(VisualElement part, bool enabled)> covered = new List<(VisualElement, bool)>();
         Button? opener;
+        IVisualElementScheduledItem? copyPoll;
         bool capturing, canShareFiles, disposed;
         int closedAt = -1;
 
@@ -46,6 +50,8 @@ namespace Statecraft.Game.UI
             fallback = layer.Q("share-fallback");
             go = layer.Q<Button>("share-go"); close = layer.Q<Button>("share-close");
             post = layer.Q<Label>("share-post");
+            copy = layer.Q<Button>("share-copy"); copied = layer.Q<Label>("share-copied");
+            copy.text = text["share.copy"];
             settingsOpen = root.Q<Button>("settings-share"); reportOpen = root.Q<Button>("turn-report-share");
             settingsOpen.text = reportOpen.text = text["share.open"];
             layer.Q<Label>("share-title").text = text["share.title"];
@@ -58,6 +64,10 @@ namespace Statecraft.Game.UI
             onGoSubmit = _ => Go();
             go.RegisterCallback(onGoPointer, TrickleDown.TrickleDown);
             go.RegisterCallback(onGoSubmit, TrickleDown.TrickleDown);
+            onCopyPointer = e => { if (e.button == 0) Copy(); };
+            onCopySubmit = _ => Copy();
+            copy.RegisterCallback(onCopyPointer, TrickleDown.TrickleDown);
+            copy.RegisterCallback(onCopySubmit, TrickleDown.TrickleDown);
             settingsOpen.clicked += OpenFromSettings;
             reportOpen.clicked += OpenFromReport;
             close.clicked += Close;
@@ -86,6 +96,8 @@ namespace Statecraft.Game.UI
                 post.text = ShareShot.Text(text, shown.Date, bridge.State.Turn);
                 go.text = text[canShareFiles ? "share.native" : "share.download"];
                 fallback.style.display = DisplayStyle.None;
+                copyPoll?.Pause();
+                copied.style.display = DisplayStyle.None;
                 foreach (var unbind in unbindSites) unbind();
                 unbindSites.Clear();
                 foreach (var site in ShareShot.Sites) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, post.text)));
@@ -110,6 +122,33 @@ namespace Statecraft.Game.UI
             // The share sheet can still be refused on the release (ShareShot.jslib); then the picture downloads and the
             // share links show, as where files cannot be shared. A refusal comes at once; a few seconds is enough to wait.
             go.schedule.Execute(() => { if (IsOpen && ShareShot.Failed()) fallback.style.display = DisplayStyle.Flex; }).Every(250).ForDuration(3000);
+        }
+
+        /// <summary>Copy: the browser copies on the release and answers after a promise (ShareShot.jslib), so the panel looks
+        /// for the answer as it looks for a refused share sheet, and then says what was copied, or that nothing was.</summary>
+        void Copy()
+        {
+            if (!IsOpen) return;
+            copyPoll?.Pause();
+            copied.style.display = DisplayStyle.None;
+            ShareShot.Copy(post.text);
+            // A press whose release never reached the browser (shorter than a frame, or another press first) copies
+            // nothing and stays Pending: after a few seconds the panel says so rather than staying silent.
+            var giveUpAt = UnityEngine.Time.realtimeSinceStartup + 4.5f;
+            copyPoll = copy.schedule.Execute(() =>
+            {
+                var result = ShareShot.Copied();
+                if (result == ShareShot.CopyResult.Pending && UnityEngine.Time.realtimeSinceStartup >= giveUpAt) result = ShareShot.CopyResult.Failed;
+                if (!IsOpen || result == ShareShot.CopyResult.Pending) return;
+                copied.text = text[result switch
+                {
+                    ShareShot.CopyResult.Picture => "share.copied_picture",
+                    ShareShot.CopyResult.Text => "share.copied_text",
+                    _ => "share.copy_failed",
+                }];
+                copied.style.display = DisplayStyle.Flex;
+                copyPoll?.Pause();
+            }).Every(250).ForDuration(5000);
         }
 
         public void Close()
@@ -139,6 +178,9 @@ namespace Statecraft.Game.UI
             foreach (var unbind in unbindSites) unbind();
             go.UnregisterCallback(onGoPointer, TrickleDown.TrickleDown);
             go.UnregisterCallback(onGoSubmit, TrickleDown.TrickleDown);
+            copyPoll?.Pause();
+            copy.UnregisterCallback(onCopyPointer, TrickleDown.TrickleDown);
+            copy.UnregisterCallback(onCopySubmit, TrickleDown.TrickleDown);
             settingsOpen.clicked -= OpenFromSettings;
             reportOpen.clicked -= OpenFromReport;
             close.clicked -= Close;

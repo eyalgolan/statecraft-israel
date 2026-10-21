@@ -1,44 +1,23 @@
 # yaml-language-server: $schema=../schema/event.schema.json
-# The first new yishuv's completion card (objectives.yaml first_new_yishuv; docs/gdd/objective-card.md). It fires only once
-# the objective is completed, in the GDD loop, and never in the legacy loop (R-OBJ-003). The facts are the site's (sites.yaml
-# mefalsim, #378, research_notes/GDD objectives/designated-site-1.md). Claims and their sources:
-# - 12 June 1949, the ceremony of going onto Jewish National Fund land: Yad Ben-Zvi; Gvati's list gives 12.6.49.
-# - A garin of graduates of the Dror youth movement, from Uruguay and Argentina: Yad Ben-Zvi.
-# - HaKibbutz HaMeuhad: Yad Ben-Zvi (the kibbutz counted itself in it); Gvati: a Mefalsim garin of HaKibbutz HaMeuhad set up
-#   a kibbutz in the Negev in Sivan 5709. Gvati's list puts "האיחוד" (Ihud HaKvutzot VeHaKibbutzim) in its movement column:
-#   that is the kibbutz's affiliation after the 1951 split that Yad Ben-Zvi records, not its movement in 1949.
-# - First set up facing the Gaza Strip, moved to its present site a year later (1950) because of direct fire from Gaza:
-#   Yad Ben-Zvi.
-# Left out on purpose: the advance party of 8 June 1949 (one source), the Speaker's attendance and the 64 founders (one
-# source each), and 7 October 2023, which is outside the MVP's years (#378, question 4). The gazetteer check (#378, question
-# 7): no 1948 locality in map/localities_1948.yaml (places of 1,000 or more) lies on the Israeli side within 9 km. The
-# nearest depopulated villages, by en.wiki/Wikidata coordinates against Mefalsim's 31.5019 N, 34.5644 E, are Huj (about
-# 5.6 km; counted with Dorot in Village Statistics 1945, so not in the file), al-Muharraqa (about 5.9 km; its article names
-# Yakhini, 1950, on village land), Najd (about 6.3 km; names Sderot and Or HaNer) and Dimra (about 6.3 km; names Erez).
-# None of the four articles names Mefalsim. Places under 1,000 were checked in #706 against Village Statistics 1945
-# and the 1942 Gaza sheet: seven depopulated villages lie in the two sweeps (the four above plus Dayr Sunayd,
-# Kawfakha and Bayt Jirja), and none names Mefalsim. Three Bedouin localities (Gatatweh, Urour, Rawashdeh) cannot be
-# population-tested: Village Statistics 1945 counts the Beersheba bedouin by tribe (designated-site-1.md section 5).
+# The yishuvim part's completion card (objectives.yaml yishuvim; R-OBJ-003, R-OBJ-005). It keeps the Mefalsim photograph
+# cleared for the Phase 1 card (Q-OBJ-2, Q-CARD-1) and now covers all six required foundings. Claims and sources:
+# - Mefalsim, Beit Kama, Re'im and Gilat's dates: Gvati's settlement list (the site rows carry the corroborating sources).
+# - Kiryat Shmona, 18 July 1949: the municipality's chronology; Beit Shemesh, December 1950: the National Library.
 id: first_new_yishuv
-title: Mefalsim founded
-text: 'On 12 June 1949 a garin of graduates of the Dror youth movement from Argentina and Uruguay went onto Jewish National Fund land in the Negev, facing the Gaza Strip, and founded Kibbutz Mefalsim of HaKibbutz HaMeuhad. Because of direct fire from Gaza, the kibbutz moved to its present site a year later, in 1950.'
-# For the native reviewer (#564): Hebrew names follow the cited Yad Ben-Zvi page "קיבוץ מפלסים" (גרעין דרור,
-# קרן קיימת לישראל, הקיבוץ המאוחד): https://israelalbum.org.il/mercazim/קיבוץ-מפלסים/
-title_he: ייסוד מפלסים
-text_he: 'ב־12 ביוני 1949 עלה על אדמת קרן קיימת לישראל בנגב, מול רצועת עזה, גרעין של בוגרי תנועת הנוער דרור מארגנטינה ומאורוגוואי, והקים את קיבוץ מפלסים של הקיבוץ המאוחד. בשל אש ישירה מעזה עבר הקיבוץ למקומו הנוכחי כעבור שנה, ב־1950.'
-text_he_review: agent-checked
+title: Six new yishuvim
+text: 'Six designated yishuvim were founded in 1949 and 1950: Beit Kama, Mefalsim, Kiryat Shmona, Re’im, Gilat and Beit Shemesh. The last required founding was Beit Shemesh in December 1950.'
 anchor: soft
-objective: first_new_yishuv
+objective: yishuvim
 # The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.
 from: 1948-05-15
 to: 1957-01-01
 options:
   - id: continue
     text: Continue
-    text_he: להמשיך
     historical: true
 tags: []
 sources:
-  - { url: "https://israelalbum.org.il/mercazim/%D7%A7%D7%99%D7%91%D7%95%D7%A5-%D7%9E%D7%A4%D7%9C%D7%A1%D7%99%D7%9D/", checked: 2026-10-15 }
   - { url: "https://benyehuda.org/read/14684", checked: 2026-10-15 }
-status: fact-checked
+  - { url: "https://www.k-8.co.il/he/faq/3/", checked: 2026-10-17 }
+  - { url: "https://www.nli.org.il/he/discover/israel/zionism/zionism-history/maabarot", checked: 2026-10-17 }
+status: draft

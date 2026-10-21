@@ -294,6 +294,10 @@ mvp:
   rail_move_cost: 2
   enemy_held_localities: []
   arms_per_attack: 2
+  food_per_prisoner_unit: 2
+  prisoner_shortfall_cohesion: 0.05
+  points_per_prisoner_unit_returned: 7
+  held_soldier_cost_per_turn: 0.5
   combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }
   combat_table:
     - { min_ratio_percent: 0, attacker_loss: [1, 1], defender_loss: [1, 1], defender_retreats: [0, 0] }

@@ -82,6 +82,10 @@ namespace Statecraft.Game.Map
         readonly Dictionary<(int q, int r), string> codes;
         /// <summary>Each hex's codes as read (a test aid: the runtime file must give the YAML's, issue #321).</summary>
         internal IReadOnlyDictionary<(int q, int r), string> Codes => codes;
+        /// <summary>The control codes the map editor may assign, in a stable order.</summary>
+        public static IReadOnlyList<string> EditorCodes { get; } = CodeOf.Keys.Select(x => x.ToString()).OrderBy(x => x, StringComparer.Ordinal).ToList();
+        /// <summary>The control-file hexes the map editor may change.</summary>
+        public IEnumerable<(int q, int r)> EditorHexes => codes.Keys;
         readonly RegionLayer?[] layers;
         IReadOnlyCollection<(int q, int r)> outside = Array.Empty<(int, int)>();
 
@@ -105,6 +109,18 @@ namespace Statecraft.Game.Map
         {
             for (int i = 0; i < Periods.Count; i++) if (Periods[i].Covers(date)) return i;
             return -1;
+        }
+
+        /// <summary>A control-file hex's code in one named period, for the map editor. Throws with the same vocabulary as
+        /// override validation when either target is absent.</summary>
+        public string EditorCodeAt(int q, int r, string period)
+        {
+            if (!codes.TryGetValue((q, r), out var row))
+                throw new ArgumentException(FormattableString.Invariant($"unknown control hex q={q} r={r}"), nameof(q));
+            int index = -1;
+            for (int i = 0; i < Periods.Count; i++) if (Periods[i].Id == period) { index = i; break; }
+            if (index < 0) throw new ArgumentException($"unknown control period '{period}'", nameof(period));
+            return row[index].ToString();
         }
 
         /// <summary>The hexes outside Mandatory Palestine (the sub-district layer's "outside" region): a region of style none,

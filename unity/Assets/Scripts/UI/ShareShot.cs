@@ -29,6 +29,11 @@ namespace Statecraft.Game.UI
         public static Action<string, string> Share = DefaultShare;
         /// <summary>True when the browser refused the share sheet (not a cancel) and the picture downloaded instead.</summary>
         public static Func<bool> Failed = DefaultFailed;
+        /// <summary>What Copy (#1238) put on the clipboard: Pending until the browser has answered.</summary>
+        public enum CopyResult { Pending, Picture, Text, Failed }
+        /// <summary>Copies the kept picture on the player's release, or the post text if the browser refuses the picture.</summary>
+        public static Action<string> Copy = DefaultCopy;
+        public static Func<CopyResult> Copied = DefaultCopied;
 
         /// <summary>The post, in the UI's language, with the in-game date and turn and the itch URL.</summary>
         public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch);
@@ -103,6 +108,10 @@ namespace Statecraft.Game.UI
         public static void DefaultShare(string text, string url) => StatecraftShareOnRelease(text, url);
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftShareFailed();
         public static bool DefaultFailed() => StatecraftShareFailed() == 1;
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareCopyOnRelease(string text);
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftShareCopied();
+        public static void DefaultCopy(string text) => StatecraftShareCopyOnRelease(text);
+        public static CopyResult DefaultCopied() => (CopyResult)StatecraftShareCopied();
 #else
         static byte[]? kept; static string keptName = "";
         public static void DefaultKeep(byte[] png, string name) { kept = png; keptName = name; }
@@ -117,6 +126,10 @@ namespace Statecraft.Game.UI
             File.WriteAllBytes(path, kept);
             Debug.Log("SHARE picture saved to " + path);
         }
+        static CopyResult copied;
+        /// <summary>Outside the browser Unity can only put text on the clipboard: the post.</summary>
+        public static void DefaultCopy(string text) { GUIUtility.systemCopyBuffer = text; copied = CopyResult.Text; }
+        public static CopyResult DefaultCopied() => copied;
 #endif
     }
 }

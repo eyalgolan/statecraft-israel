@@ -243,67 +243,66 @@ def test_page_query_adds_navlog_only_to_the_start_screen_runs():
     assert wc.page_query(_args("--query", "golden")) == "golden"
 
 
+def _committed_turn(check, generation, date, turn, digest):
+    receipt = f"{generation} {date} turn {turn} hash {digest}"
+    check.feed("AUTOSAVE PENDING " + receipt)
+    check.feed(f"TURN {turn} {date} hash {digest}")
+    check.feed("AUTOSAVE OK " + receipt)
+
+
 def test_persistence_check_reloads_after_a_settled_and_an_immediate_autosave(capsys):
     actions, sleeps = [], []
-    buttons = _buttons()
-    check = wc.PersistenceCheck(actions.append, buttons, sleeps.append)
+    check = wc.PersistenceCheck(actions.append, _buttons(), sleeps.append)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa00")
-    check.feed("TURN 1 1948-06-01 turn 1 hash one")       # unrelated malformed diagnostic is ignored
-    check.feed("TURN 1 1948-06-01 hash aaa1")
-    assert buttons.centres == {}, "a reload forgets the old page's layout"
-    buttons.feed(LAID_OUT)                                 # the reloaded page logs its own
+    check.feed("TURN 1 1948-06-01 turn 1 hash one")       # malformed diagnostic is ignored
+    _committed_turn(check, 1, "1948-06-01", 1, "aaa1")
+    assert check.buttons.centres == {}, "a reload forgets the old page's layout"
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-01 turn 1 hash aaa1")
-    check.feed("TURN 2 1948-07-01 hash aaa2")
+    _committed_turn(check, 1, "1948-07-01", 2, "aaa2")    # a reload resets the page's counter
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-07-01 turn 2 hash aaa2")
     new_game, cont, end_turn = _clicks(AT["start-new-game"], AT["start-continue"], wc.END_TURN)
     assert actions == [new_game, end_turn, "reload", cont, end_turn, "reload"]
-    assert sleeps == [3, 2, 2, 3, 2]     # no wait between the second TURN and its reload
+    assert sleeps == [3, 2, 3, 2]     # UI layout only; neither commit uses a settling delay
     assert check.done
     assert "settled reload OK" in capsys.readouterr().out
 
 
-def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_saved_turn():
-    buttons = _buttons()
-    check = wc.PersistenceCheck(lambda action: action == "reload" and buttons.feed(LAID_OUT), buttons, lambda seconds: None)
-    for text in ("GAME OK 1948-05-15 turn 0 hash aa", "TURN 1 1948-06-01 hash bb",
-                 "GAME OK 1948-06-01 turn 1 hash bb", "TURN 2 1948-07-01 hash cc"):
-        check.feed(text)
-    try:
-        check.feed("GAME OK 1948-06-01 turn 1 hash bb")
-    except ValueError as e:
-        assert "PERSISTENCE FAIL immediate reload" in str(e) and "file a follow-up" in str(e)
-    else:
-        raise AssertionError("a lost immediate autosave must fail")
-
-
 def _played_to_the_settled_reload(check):
-    for text in ("GAME OK 1948-05-15 turn 0 hash aa", "TURN 1 1948-06-15 hash bb"):
-        check.feed(text)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    _committed_turn(check, 1, "1948-06-15", 1, "bb")
+
+
+def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_saved_turn():
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    _committed_turn(check, 1, "1948-07-15", 2, "cc")
+    with pytest.raises(ValueError, match="PERSISTENCE FAIL immediate reload"):
+        check.feed("GAME OK 1948-06-15 turn 1 hash bb")
 
 
 def test_persistence_check_fails_when_the_settled_reload_did_not_load_the_saved_turn():
     check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
     _played_to_the_settled_reload(check)
     with pytest.raises(ValueError, match="PERSISTENCE FAIL settled reload got 1948-05-15 turn 0"):
-        check.feed("GAME OK 1948-05-15 turn 0 hash aa")      # the reload came up with no save: a fresh game
-    assert not check.done
+        check.feed("GAME OK 1948-05-15 turn 0 hash aa")
 
 
 def test_persistence_check_fails_when_continue_started_a_new_game():
-    """A click that misses Continue and starts a new game must not pass: the turn after Continue is the reloaded
-    game's next turn (2), not a new game's turn 1."""
     check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
     _played_to_the_settled_reload(check)
-    check.buttons.feed(LAID_OUT)
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-15 turn 1 hash bb")
-    with pytest.raises(ValueError, match="PERSISTENCE FAIL End turn after Continue: turn 1 .*expected turn 2"):
-        check.feed("TURN 1 1948-06-15 hash cc")
-    assert not check.done
+    with pytest.raises(ValueError, match="expected turn 2"):
+        check.feed("TURN 1 1948-06-15 hash bb")
 
 
 def test_persistence_check_fails_when_the_first_boot_is_not_a_fresh_game():
     check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
-    with pytest.raises(ValueError, match="PERSISTENCE FAIL first boot"):
+    with pytest.raises(ValueError, match="expected turn 0"):
         check.feed("GAME OK 1948-06-15 turn 1 hash bb")
 
 
@@ -470,3 +469,81 @@ def test_mobile_only_flips_the_emulation_flag():
     assert wc.viewport_override(1920, 1080, 1.0)["mobile"] is False          # the desktop default (review ruling 1)
     phone = wc.viewport_override(390, 844, 3.0, True)
     assert phone == {"width": 390, "height": 844, "deviceScaleFactor": 3.0, "mobile": True}
+
+
+def test_persistence_check_does_not_reload_turn_two_before_its_commit_ack():
+    actions = []
+    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("AUTOSAVE PENDING 1 1948-06-15 turn 1 hash bb")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    check.feed("AUTOSAVE OK 1 1948-06-15 turn 1 hash bb")
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    assert actions.count("reload") == 1
+    check.feed("AUTOSAVE PENDING 2 1948-07-15 turn 2 hash cc")
+    check.feed("TURN 2 1948-07-15 hash cc")
+    assert actions.count("reload") == 1, "TURN is not an IndexedDB commit acknowledgement"
+    check.feed("AUTOSAVE OK 2 1948-07-15 turn 2 hash cc")
+    assert actions.count("reload") == 2
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-07-15 turn 2 hash cc")
+    assert check.done
+
+
+@pytest.mark.parametrize("ack", [
+    "AUTOSAVE OK 1 1948-07-15 turn 2 hash cc",  # old generation, identical state
+    "AUTOSAVE OK 2 1948-07-15 turn 2 hash dd",  # wrong hash
+    "AUTOSAVE OK 2 1948-06-15 turn 1 hash bb",  # old turn/date
+])
+def test_a_stale_or_mismatched_save_ack_cannot_authorize_reload(ack):
+    actions = []
+    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    check.feed("AUTOSAVE PENDING 2 1948-07-15 turn 2 hash cc")
+    check.feed("TURN 2 1948-07-15 hash cc")
+    check.feed(ack)
+    assert actions.count("reload") == 1
+    assert not check.done
+    check.feed("AUTOSAVE OK 2 1948-07-15 turn 2 hash cc")
+    assert actions.count("reload") == 2
+
+
+def test_a_commit_timeout_fails_even_without_any_further_console_line():
+    clock = [0.0]
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    clock[0] = 5
+    with pytest.raises(ValueError, match="no matching IndexedDB commit within 5s"):
+        _ = check.done
+
+
+def test_an_indexeddb_failure_fails_the_driver_loudly():
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    with pytest.raises(ValueError, match="IndexedDB autosave failed"):
+        check.feed("AUTOSAVE FAIL 1 1948-06-15 turn 1 hash bb")
+
+
+def test_commit_ack_before_turn_diagnostic_is_not_lost():
+    actions = []
+    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("AUTOSAVE PENDING 1 1948-06-15 turn 1 hash bb")
+    check.feed("AUTOSAVE OK 1 1948-06-15 turn 1 hash bb")
+    assert "reload" not in actions
+    check.feed("TURN 1 1948-06-15 hash bb")
+    assert actions.count("reload") == 1
+
+
+def test_commit_timeout_is_polled_while_an_unrelated_expectation_is_still_missing():
+    clock = [0.0]
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    with pytest.raises(ValueError, match="no matching IndexedDB commit within 5s"):
+        wc.watch(queue.Queue(), lambda: None, lambda: None, ["UNRELATED"], re.compile("BOOT FAIL"), 20,
+                 now=lambda: clock[0], sleep=lambda seconds: clock.__setitem__(0, clock[0] + 1),
+                 complete=lambda: check.done)

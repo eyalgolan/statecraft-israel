@@ -562,6 +562,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .share-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
 .share-post, .share-attach { white-space: normal; }
 .share-go { margin-top: 12px; }
+.share-copied { white-space: normal; margin-top: 6px; }
 .share-attach { margin-top: 12px; }
 .share-sites { flex-wrap: wrap; margin-top: 6px; }
 .share-sites > Button { margin: 4px 8px 0 0; }
