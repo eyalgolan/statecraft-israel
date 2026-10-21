@@ -170,6 +170,8 @@ checks this (see `CONTRIBUTING.md`).
 
 ### Fixed
 - The Settings note that said event cards are English only is gone: every event card has Hebrew text (#1191).
+- The refused-order sound is two distinct knocks a quarter second apart; before, its two hits were 15 ms apart and sounded
+  like a glitch.
 - A tapped top-bar meter tip closes on a tap on the bare map too (#1184, follow-up to #1173): such a tap never reaches
   the UI panel, so MeterTip hears the press on the device itself and closes the tip when no element is under it. A tap
   on the UI and the mouse's hover work as before.
