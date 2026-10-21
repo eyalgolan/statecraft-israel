@@ -555,14 +555,15 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .feedback-choice { margin-top: 10px; }
 .feedback-preview { font-size: 15px; margin: 2px 4px 0 4px; }
 .feedback-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
-/* "Share" (#1170, SharePresenter): the turn report's kind of backdrop, drawn over everything, the report too; the post, the Share button, and the share
-   links, which show only where the browser cannot share the picture itself. */
+/* "Share" (#1170, SharePresenter): the turn report's kind of backdrop, drawn over everything, the report too; a preview of the picture (#1237), which
+   gives way first in a short window, the post, the Share button, the site buttons, and the notes once the picture downloaded. */
 .share-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
 .share-open .share-layer { display: flex; }
 .share-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
-.share-post, .share-attach { white-space: normal; }
+.share-preview { height: 160px; min-height: 48px; flex-shrink: 1; margin-bottom: 12px; background-size: contain; background-repeat: no-repeat; background-position-x: center; background-position-y: center; }
+.share-post, .share-attach, .share-instagram-note { white-space: normal; }
 .share-go { margin-top: 12px; }
-.share-attach { margin-top: 12px; }
+.share-attach, .share-instagram-note { margin-top: 12px; }
 .share-sites { flex-wrap: wrap; margin-top: 6px; }
 .share-sites > Button { margin: 4px 8px 0 0; }
 .share-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }

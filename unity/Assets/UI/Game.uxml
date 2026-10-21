@@ -508,20 +508,25 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- "Share" (#1170, SharePresenter): over everything, the turn report too, after the frame was captured without it.
-             The share links show only where the browser cannot share the picture itself. Before the toast. -->
+             A preview of that picture, then the site buttons in the owner's order (#1237); the notes show once the picture
+             downloaded, where the browser cannot share it itself. Before the toast. -->
         <ui:VisualElement name="share-layer" class="share-layer">
             <ui:VisualElement name="share-panel" class="panel share-panel">
                 <ui:VisualElement class="screen-header"><ui:Label name="share-title" text="Share a picture of the game" class="title" /></ui:VisualElement>
+                <ui:VisualElement name="share-preview" class="share-preview" />
                 <ui:Label name="share-post" class="share-post" />
                 <ui:Button name="share-go" class="share-go" />
+                <ui:VisualElement class="row share-sites">
+                    <ui:Button name="share-x" />
+                    <ui:Button name="share-facebook" />
+                    <ui:Button name="share-instagram" />
+                    <ui:Button name="share-whatsapp" />
+                    <ui:Button name="share-telegram" />
+                    <ui:Button name="share-linkedin" />
+                </ui:VisualElement>
+                <ui:Label name="share-instagram-note" class="muted share-instagram-note" />
                 <ui:VisualElement name="share-fallback" class="share-fallback">
                     <ui:Label name="share-attach" text="These sites can't take a picture through a link: attach the downloaded picture to your post." class="muted share-attach" />
-                    <ui:VisualElement class="row share-sites">
-                        <ui:Button name="share-x" />
-                        <ui:Button name="share-facebook" />
-                        <ui:Button name="share-whatsapp" />
-                        <ui:Button name="share-linkedin" />
-                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="row share-actions"><ui:Button name="share-close" text="Close" /></ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame />
