@@ -372,3 +372,47 @@ def test_no_stale_statements_about_the_1950_line():
     assert "Art. V (the signed map decides)" not in ad.MV_TEXT["cite"] and "used only as a named cross-check" not in ad.S1471["cite"]
     urls = [s["url"] for s in SOURCE["statecraft"]["sources"]]
     assert len(urls) == len(set(urls)), "each source listed once"
+
+
+# --- the PDF image decode (#1251) -------------------------------------------------------------------------------------
+
+def _jpeg(mode: str) -> bytes:
+    import io
+    from PIL import Image
+    rng = np.random.default_rng(1251)
+    shape = (64, 96, 3) if mode == "RGB" else (64, 96)
+    buf = io.BytesIO()
+    Image.fromarray(rng.integers(0, 256, shape, dtype=np.uint8), mode).save(buf, format="JPEG", quality=95)
+    return buf.getvalue()
+
+
+@pytest.mark.parametrize("mode", ["RGB", "L"])
+def test_a_pdf_jpeg_decodes_as_pypdf_5_did(mode):
+    """pypdf 5.x re-saved a /DCTDecode image as a JPEG with Pillow's defaults and decoded that copy; the committed lines
+    were digitised on those pixels (R0005czg.pdf page 2: a9321f3f..., khan_yunis.pdf: 8a3187fa...), so the tools keep it."""
+    import io
+    from PIL import Image
+    raw = _jpeg(mode)
+    once = Image.open(io.BytesIO(raw))
+    buf = io.BytesIO()
+    once.save(buf, format="JPEG")
+    twice = np.asarray(Image.open(io.BytesIO(buf.getvalue())))
+    got = ad.jpeg_as_pypdf5(raw)
+    assert got.mode == mode
+    assert np.array_equal(np.asarray(got), twice)
+    assert not np.array_equal(np.asarray(got), np.asarray(once)), "a single decode is pypdf 6.3+'s, not the tools'"
+
+
+def test_pdf_page_image_takes_the_raw_jpeg_stream(tmp_path):
+    """The largest image of the page, its /DCTDecode stream decoded by jpeg_as_pypdf5 whatever pypdf's own decode is."""
+    import io
+    pytest.importorskip("pypdf")
+    from PIL import Image
+    raw = _jpeg("RGB")
+    small = Image.new("RGB", (8, 8), (255, 0, 0))
+    pdf = tmp_path / "scan.pdf"
+    Image.open(io.BytesIO(raw)).save(pdf, format="PDF", save_all=True, append_images=[small])
+    from pypdf import PdfReader
+    xobj = PdfReader(pdf).pages[0].images[0].indirect_reference.get_object()
+    assert xobj["/Filter"] == "/DCTDecode"
+    assert np.array_equal(np.asarray(ad.pdf_page_image(pdf, 0)), np.asarray(ad.jpeg_as_pypdf5(xobj.get_data())))
