@@ -538,7 +538,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .guide-dock.guide-dock-top { bottom: auto; top: 16px; }
 /* Sizes raised for player feedback (21 October 2026, "too small"): the panel scales with the window (0.67 at 1280x720, the
    itch embed), so the text is 22 px (about 15 on screen there) and the step count 18 (the owner's 12 px floor); the panel
-   is wider in step, so a step keeps about its line count (FirstTurnGuideTests.TheGuideReadsAtTheItchEmbedSize). */
+   is wider in step, so a step keeps about its line count (FirstTurnGuideTests.TheGuideReadsAtTheItchEmbedSize). Where the
+   scale is small (a phone, about 0.49) FirstTurnGuidePresenter raises them to the owner's 12 px floor on screen; its CountPx,
+   TitlePx, TextPx and ButtonPx mirror these sizes and Button's 19 px. */
 .guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 640px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
 .guide-count { font-size: 18px; }
 .guide-title { color: var(--gold-light); font-size: 29px; white-space: normal; }

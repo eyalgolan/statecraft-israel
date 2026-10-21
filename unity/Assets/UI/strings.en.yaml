@@ -71,7 +71,7 @@ objectives.done: "Completed on {0}; historically {1}"
 objectives.open: "Not completed yet; historically {0}"
 # How to play's button that opens the first-turn guide again (#42).
 how_to_play.guide: "Show the first-turn guide"
-# The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): five steps, each pointing at its part of the HUD
+# The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): six steps, each pointing at its part of the HUD
 # (FirstTurnGuidePresenter). Like the How to play lines, they describe the sim without balance values. {0} the step, {1} the
 # number of steps.
 guide.step: "Step {0} of {1}"
@@ -84,6 +84,9 @@ guide.city.title: "A city's housing and jobs"
 guide.city.text: "Select a city to see its housing and jobs. The + and − buttons set how many people, including craftsmen, work. The order takes effect when you end the turn."
 guide.training.title: "Training"
 guide.training.text: "At a military camp, train civilians without work as recruits. At a Hakhshara (pioneer training camp), train them as halutzim (pioneers who build settlements). Buttons show cost and training time."
+# The move step (#1141, owner, 21 October 2026): the unit card's Move button (unit.order.move, unit.move_pick).
+guide.move.title: "Moving a unit"
+guide.move.text: "Select one of your units, press Move, and choose a lit hex. The unit moves when you end the turn."
 guide.event.title: "An event card"
 guide.event.text: "An event card asks for a decision. Answering it costs Attention, and your choice takes effect when you end the turn. A card you leave unanswered goes to the responsible minister."
 guide.objectives.title: "Objectives"

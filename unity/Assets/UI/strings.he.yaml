@@ -74,6 +74,10 @@ guide.city.title: "דיור ומשרות בעיר"
 guide.city.text: "בחרו עיר כדי לראות את הדיור והמשרות בה. הכפתורים + ו־− קובעים כמה אנשים עובדים, ובהם בעלי מלאכה. ההוראה מתבצעת בסיום התור."
 guide.training.title: "אימון והכשרה"
 guide.training.text: "במחנה צבאי אפשר לאמן אזרחים ללא עבודה כמגויסים. בהכשרה (מחנה הכשרה לחלוצים) אפשר להכשיר אותם כחלוצים שבונים יישובים. הכפתורים מציגים עלות ומשך הכשרה."
+# The move step (#1141): agent-drafted Hebrew, not yet read by a native speaker, in unit.order.move's, unit.move_pick's
+# and unit.move_queued's terms. For the native reviewer (#564).
+guide.move.title: "תנועת יחידה"
+guide.move.text: "בחרו אחת מהיחידות שלכם, לחצו על תנועה ובחרו משושה מואר. היחידה תנוע בסיום התור."
 guide.event.title: "כרטיס אירוע"
 guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
 guide.objectives.title: "יעדים"
