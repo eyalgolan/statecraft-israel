@@ -240,8 +240,9 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 |---|---|---|---|
 | C04 sabra pioneer | an Israeli rifleman in the bush hat (the uniform default's first figure; the showcase trio's first) | #507's pairing | always |
 | C06 young recruit | an Israeli rifleman in the Mk II steel helmet (every token's second figure) | #507's pairing | always |
-| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first and third, the showcase's third | the Negev headgear photographs (Sources) | always |
-| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel | a presentation choice: the default's third figure is not sourced | always |
+| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first, the showcase's third | the Negev headgear photographs (Sources) | always |
+| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel and Yiftach | a presentation choice: the default's third figure is not sourced | always |
+| #336's 1948 soldier | the third figure of Yiftach and Negev, the Palmach brigades other than Harel: a rifleman in khaki in the Palmach's knitted stocking cap, so Negev's token shows C07, C06 and him and keeps its sourced caps | owner, 21 October 2026 (#708, through the coordinator): "a third figure on some brigade unit tokens, next to C06 and C07"; the rows' numbers (11th and 12th Brigade (Palmach)) | always |
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
@@ -258,8 +259,8 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
   clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
   camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
-  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"). The vehicles
-  stay far.
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"); #336's soldier
+  has no rig and keeps his still far model too. The vehicles stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
