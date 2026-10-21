@@ -376,11 +376,49 @@ public class FirstTurnGuideTests
                     var panel = root.Q("guide-panel").worldBound;
                     if (!(panel.width > 0) || !Inside(panel, window)) problems.Add($"{at}: the panel {panel} leaves the window {window}");
                     if (panel.Overlaps(area)) problems.Add($"{at}: the panel {panel} covers the target {area}");
+                    // The ring too (its gap and border round the target), so the larger text (player feedback, 21 October
+                    // 2026) never pushes the panel onto the gold box it points at.
+                    if (ring.resolvedStyle.display == DisplayStyle.Flex && panel.Overlaps(ring.worldBound))
+                        problems.Add($"{at}: the panel {panel} covers the ring {ring.worldBound}");
                     foreach (var name in new[] { "guide-title", "guide-text", "guide-skip", "guide-next" })
                         if (!Inside(root.Q(name).worldBound, panel)) problems.Add($"{at}: {name} {root.Q(name).worldBound} leaves the panel {panel}");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    /// <summary>Player feedback relayed by the owner (21 October 2026: the guide's text was too small; "make it slightly
+    /// bigger"): at 1280x720 (the itch embed) and 1920x1080, in English and Hebrew, the guide's text is at least
+    /// <see cref="GuideTextOnScreenPx"/> on screen and its smallest line, the step count, at least the owner's text floor
+    /// (HudPresenter.TextFloorPx). Before the change they were 12.7 and 10.7 at 1280x720. On screen px are the resolved size
+    /// times the panel's scale (EditMode draws at one pixel per CSS px). Every size and step is logged, the phone (390x844)
+    /// too, which is not held to it (about 0.49 scale: its own follow-up).</summary>
+    [UnityTest]
+    public IEnumerator TheGuideReadsAtTheItchEmbedSize()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
+                yield return EachStep(w, h, hebrew, (root, guide, step) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h} step {step + 1}";
+                    float scale = root.panel.scaledPixelsPerPoint;
+                    float OnScreen(string name) => root.Q(name).resolvedStyle.fontSize * scale;
+                    var panel = root.Q("guide-panel").worldBound;
+                    Debug.Log($"GUIDE SIZE {at}: scale {scale:0.###}, text {OnScreen("guide-text"):0.#} px, title {OnScreen("guide-title"):0.#} px, " +
+                              $"count {OnScreen("guide-count"):0.#} px, buttons {OnScreen("guide-next"):0.#} px on screen; panel {panel.width * scale:0}x{panel.height * scale:0} px");
+                    if (w == 390) return;
+                    if (OnScreen("guide-text") < GuideTextOnScreenPx - 0.01f)
+                        problems.Add($"{at}: the guide's text is {OnScreen("guide-text"):0.##} px on screen (under {GuideTextOnScreenPx})");
+                    if (OnScreen("guide-count") < HudPresenter.TextFloorPx - 0.01f)
+                        problems.Add($"{at}: the step count is {OnScreen("guide-count"):0.##} px on screen (under the {HudPresenter.TextFloorPx} px floor)");
+                    if (OnScreen("guide-title") <= OnScreen("guide-text"))
+                        problems.Add($"{at}: the title ({OnScreen("guide-title"):0.#} px) is not larger than the text ({OnScreen("guide-text"):0.#} px)");
+                });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>The guide's text on screen at 1280x720 and larger, in px (22 panel px at 0.67 scale is 14.7).</summary>
+    const float GuideTextOnScreenPx = 14f;
 
     /// <summary>The least clear space between the ring and End turn for them to read as two boxes, in panel px.</summary>
     const float RingClearPx = 4f;

@@ -536,10 +536,13 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .guide-open.hud-narrow #attention { margin-bottom: 8px; }
 .guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
 .guide-dock.guide-dock-top { bottom: auto; top: 16px; }
-.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
-.guide-count { font-size: 16px; }
-.guide-title { color: var(--gold-light); font-size: 26px; white-space: normal; }
-.guide-text { white-space: normal; font-size: 19px; margin: 4px 0 8px 0; }
+/* Sizes raised for player feedback (21 October 2026, "too small"): the panel scales with the window (0.67 at 1280x720, the
+   itch embed), so the text is 22 px (about 15 on screen there) and the step count 18 (the owner's 12 px floor); the panel
+   is wider in step, so a step keeps about its line count (FirstTurnGuideTests.TheGuideReadsAtTheItchEmbedSize). */
+.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 640px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
+.guide-count { font-size: 18px; }
+.guide-title { color: var(--gold-light); font-size: 29px; white-space: normal; }
+.guide-text { white-space: normal; font-size: 22px; margin: 4px 0 8px 0; }
 .guide-actions { justify-content: space-between; }
 .guide-actions > Button { min-height: 44px; }
 .guide-next, .lang-he .guide-next { min-width: 120px; -unity-text-align: middle-center; }
