@@ -134,7 +134,7 @@ public class CaptureTests
         var c = Load(AllTargets);
         var s = With(c, Soldier(1, 4, 2));   // town_e: an enemy-held arab_town, not a target
         Assert.Empty(Step(c, s).Settlements);
-        var none = Load();   // the real list ships empty
+        var none = Load();   // an empty list
         Assert.Empty(Step(none, With(none, Soldier(1, 1, 0))).Settlements);
     }
 

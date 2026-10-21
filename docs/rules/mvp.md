@@ -30,7 +30,7 @@ The ID R-LOOP-003 (the Phase 1 overlay, `MvpSlice.Overlay`) is retired with the 
 
 ## Settlement control
 
-R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json` that is its own hex in `map/settlement_hexes.yaml`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list is empty until researched rows have a person's check and the sensitivity review (D-F5).
+R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json` that is its own hex in `map/settlement_hexes.yaml`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list holds the six rows the owner approved on 19 October 2026 and filled on 21 October 2026 (#793: jaffa, acre, nazareth, lod, ramla, beersheba; Gaza excluded), each `status: draft` until a person checks its sources (D-F5).
 
 R-CTRL-002: Settlement control is an ordinal `SortedDictionary<string, SettlementControl>`. It is written to the state hash as `ctrl{...}` only when non-empty, in ordinal id order; each record field is written only when it differs from its default (R-LOOP-002).
 

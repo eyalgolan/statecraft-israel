@@ -20,7 +20,9 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   only; stored values, gameplay and completion dates are unchanged.
 - **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
   positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
-  target list is empty, so no golden captures a place.
+  list has six targets (#793), and no golden captures a place: the five enemy-held ones are no-entry hexes for player
+  units (R-MOVE-005), and the reference player's unit on Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa
+  is not enemy-held at the start.
 
 ## Golden playthroughs
 
