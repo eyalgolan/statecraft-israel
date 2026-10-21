@@ -59,12 +59,14 @@
 #   #906) has a size: no primary order of battle gives the 15 May strengths, so a secondary source may, the row cites it
 #   and carries `status: to_verify`, and a primary source replaces it when one turns up (owner, 20 October 2026, #743).
 #   Ben-Gurion's diary for 15 May 1948 is that primary source for Golani, Carmeli, Alexandroni, Kiryati, Givati, Harel
-#   and Negev (owner, 21 October 2026, #1240); en.wiki's table stays as their second source. They keep
-#   `status: to_verify` until a person checks the figures against the diary page.
+#   and Negev (owner, 21 October 2026, #1240); en.wiki's table stays as their second source. The owner checked them
+#   against the diary page on 21 October 2026, with the five Arab-army starting rows (#1240): those twelve rows are
+#   fact-checked. A row added later is not covered by that check.
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian. to_verify = as draft, with a
 #   secondary-source strength that a primary source must replace, or a primary-source strength no person has checked
-#   yet (above; #1240).
+#   yet (above; #1240). fact-checked = a person has checked the row against its sources; every row a new game starts
+#   a unit from must be, before a shareable build (the release gate; Q-START-3). A comment above it links the check.
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
 # that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 units:
@@ -81,9 +83,8 @@ units:
   first_commander: Moshe Mann
   sector: "Much of the Lower Galilee and the Jezreel Valley, the Jordan Valley and the Hula Valley; headquarters in Yavne'el. In December 1948 it moved to the southern front, at the Julis camp."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 4095
     as_of: '1948-05-15'
@@ -133,9 +134,8 @@ units:
   formed: 22 February 1948
   sector: "The Haifa area and the Zevulun district, that is Haifa and the Western Galilee (split from the Levanoni Brigade in February 1948). It took Acre in Operation Ben-Ami (from 13 May 1948; Acre surrendered on the night of 17-18 May), led Operation Brosh against the Syrian bridgehead at Mishmar HaYarden (9-18 July 1948) and fought in Operation Hiram."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 2289
     as_of: '1948-05-15'
@@ -208,9 +208,8 @@ units:
   formed: November 1947 (the Haganah's decision of 7 November)
   sector: "The Sharon region: from the Carmel in the north to the Dan bloc in the south; headquarters at Camp Dora in Netanya. In November 1948 it replaced the Givati Brigade at the Faluja pocket."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 3588
     as_of: '1948-05-15'
@@ -255,9 +254,8 @@ units:
   formed: February 1948
   sector: "The urban area of Tel Aviv, from the Yarkon River in the north to Bat Yam in the south and Yazur in the east."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 2504
     as_of: '1948-05-15'
@@ -294,9 +292,8 @@ units:
   first_commander: Shimon Avidan
   sector: "Moved to the south as the war entered its second stage, concentrated mainly around Gedera, Gan Yavne and Be'er Tuvia."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 3229
     as_of: '1948-05-15'
@@ -478,9 +475,8 @@ units:
   first_commander: Yitzhak Rabin
   sector: "All units in the Jerusalem corridor and hills; in the first half of May 1948 it took the corridor and opened the road to Sha'ar HaGai. Later it fought in Operation Horev."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 1300
     as_of: '1948-05-15'
@@ -584,9 +580,8 @@ units:
   first_commander: Nahum Sarig
   sector: "The Negev, in two sectors divided by the Beersheba-Gaza road; brigade headquarters at the Mekorot camp near Nir Am."
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 1300
     as_of: '1948-05-15'
@@ -778,11 +773,12 @@ units:
   echelon: force
   sector: "The Egyptian Army's force in Palestine. The coastal brigade group crossed at Rafah on 15 May 1948 and entered Gaza that evening; the inland column crossed at al-Auja. At the first truce its forward base was at Isdud and its rear base, its headquarters from 24 May, at Majdal, with the force along the road from Gaza and a link east through Faluja to Bayt Jibrin."
   wikipedia_only: false
-  status: draft
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 10000
     as_of: '1948-05-15'
-    note: "The force that entered on 15 May. Two of the note's sources agree on the value (O'Ballance; the CIA's summary for the week to 19 May), and Glubb's snippet gives it too. No Israeli source in the note gives one."
+    note: "The force that entered on 15 May. Two of the note's sources agree on the value (O'Ballance; the CIA's summary for the week to 19 May), and Glubb's snippet gives it too. No Israeli source in the note gives one. Dupuy (Elusive Victory, p. 55) gives a smaller figure for the invasion force as it concentrated in the Sinai, \"approximately 7,000 men\"."
     sources:
     # O'Ballance, The Arab-Israeli War 1948 (1956), pp. 77 and 90: "hard put to raise 10,000 men for the initial invasion force".
     - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-10-13'}
@@ -855,7 +851,8 @@ units:
   echelon: division
   sector: "Transjordan's army. On 15 May 1948 its division headquarters was at Ramallah, with the 1st Brigade on the hills northwest of Jerusalem and the 3rd Brigade behind Bab al-Wad. At the first truce it held Latrun and the hills over the Tel Aviv-Jerusalem road."
   wikipedia_only: false
-  status: draft
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   strength:
     value: 5000
     as_of: '1948-05-15'
@@ -910,13 +907,14 @@ units:
   echelon: force
   sector: "Syria's force on the Jordan. The 1st Infantry Brigade crossed south of Lake Tiberias on 15 May 1948 toward Samakh, and the 2nd had its base at the Bnot Yaakov bridge. At the first truce it held a bridgehead west of the Jordan at Mishmar HaYarden, taken on 10 June."
   wikipedia_only: false
-  status: draft
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   to_verify:
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
   strength:
     value: 3000
     as_of: '1948-05-15'
-    note: "The Syrian troops that took the field on 15 May. No Israeli source in the note gives a figure."
+    note: "The Syrian troops that took the field on 15 May. No Israeli source in the note gives a figure. Glubb's own figure is unread: only full-text search snippets were seen, of Glubb (1957) and of Rogan and Shlaim (2007), which reproduces Glubb's figures (to_verify)."
     sources:
     # Glubb (1957), snippet: Syria 3,000 of the troops "which took the field on May 15th, 1948".
     - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
@@ -966,14 +964,15 @@ units:
   echelon: force
   sector: "Iraq's force in Palestine. On 15 May 1948 it forded the Jordan south of Ma'ad and took the high ground over Gesher; it then crossed at the Damiya and Allenby bridges to Nablus and took over that sector from the Arab Legion. At the first truce it held a line from Jisr al-Majami through Jenin and Tulkarm south to Ras al-Ayn."
   wikipedia_only: false
-  status: draft
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   to_verify:
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
   - "The 15 May window holds the game's first day only, by the owner's decision (17 October 2026, on #860), though Dupuy p. 51 has the force at Gesher on 16 and 17 May too and the diary of 16 May has it attacking farms in the Jordan Valley."
   strength:
     value: 3000
     as_of: '1948-05-15'
-    note: "The Iraqi troops that took the field on 15 May. No Israeli source in the note gives a figure."
+    note: "The Iraqi troops that took the field on 15 May. No Israeli source in the note gives a figure. Glubb's own figure is unread: only full-text search snippets were seen, of Glubb (1957) and of Rogan and Shlaim (2007), which reproduces Glubb's figures (to_verify)."
     sources:
     # Glubb (1957), snippet: Iraq 3,000 of the troops "which took the field on May 15th, 1948".
     - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
@@ -1055,13 +1054,14 @@ units:
   echelon: force
   sector: "The Arab League's volunteer army, in Palestine from January 1948, with its headquarters at Jaba' from March. On 15 May 1948 it was withdrawing from central Palestine as the regular armies entered; its Second Yarmuk Battalion held the al-Malikiyya, Qadas and Bar'am sector on the Lebanese border."
   wikipedia_only: false
-  status: draft
+  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  status: fact-checked
   to_verify:
   - "al-Malikiyya on 15 May follows the owner's ruling for the later research (#226, ruling 2), which he.wiki reports; Lorch has a Lebanese counter-attack there. The anchor rests on he.wiki until the later research (the Lebanese official account) is read."
   strength:
     value: 4000
     as_of: '1948-05-15'
-    note: "The army's size as it was raised from January 1948, not the al-Malikiyya garrison. Both sources give it undated (the Journal of Palestine Studies' editors; Shlaim); as_of is the game's first day. No Israeli source in the note gives one."
+    note: "The army's size as it was raised from January 1948, not the al-Malikiyya garrison. Both sources give it undated (the Journal of Palestine Studies' editors; Shlaim); as_of is the game's first day. No Israeli source in the note gives one. About 70 men held al-Malikiyya itself (he.wiki, Battles of al-Malikiyya, the anchor's source: \"guarded by an ALA garrison of about 70 irregular volunteers, most of Lebanese origin\")."
     sources:
     # al-Qawuqji, "Memoirs, 1948, Part I", Journal of Palestine Studies 1(4), editor's note, p. 27: almost 4,000.
     - {url: 'https://www.palquest.org/sites/default/files/al-Qawuqji_-_part_I.pdf', checked: '2026-10-13'}

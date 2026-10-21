@@ -22,6 +22,9 @@ public class UnitsInPlayTests
     static List<UnitEntry> Units => UnitData.Parse(CommittedYaml);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static readonly DateTime LastArmistice = new DateTime(1949, 7, 20);
+    /// <summary>The starting rows the owner person-checked on 21 October 2026 (#1240); a row added later is not covered.</summary>
+    static readonly HashSet<string> PersonChecked = new HashSet<string> { "alexandroni", "arab_legion", "arab_liberation_army", "carmeli",
+        "egyptian_expeditionary_force", "givati", "golani", "harel", "iraqi_expeditionary_force", "kiryati", "negev", "syrian_army" };
 
     static IEnumerable<string> Ids(IEnumerable<UnitToken> tokens) => tokens.Select(t => t.Unit.Id);
 
@@ -111,8 +114,9 @@ public class UnitsInPlayTests
             .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
-            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`".
-            Assert.AreEqual(u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
+            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`"; the twelve
+            // starting rows the owner person-checked on 21 October 2026 (#1240) are fact-checked.
+            Assert.AreEqual(PersonChecked.Contains(u.Id) ? "fact-checked" : u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
             Assert.AreEqual(UnitData.IsWikipediaOnly(u), u.WikipediaOnly, $"{u.Id}: wikipedia_only must say whether every source is Wikipedia or Wikidata");
             foreach (var s in u.AllSources())
                 Assert.LessOrEqual(UnitData.Day(s.Checked), DateTime.Today, $"{u.Id}: {s.Url} checked in the future");

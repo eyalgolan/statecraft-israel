@@ -188,9 +188,21 @@ def test_strength_has_one_value_and_a_source():
 # primary order of battle gives them. Every row cites its source, carries `status: to_verify`, and is replaced when a
 # primary source turns up." The figures are the brigade table of research_notes/M4 war mode/war-1948.md, section 1
 # (#906); the brigades it gives no size for get none. Owner, 21 October 2026, #1240: seven of them take Ben-Gurion's
-# diary for 15 May 1948 instead (Golani 3,573 + 522 paid recruits); they stay `to_verify` until a person checks them.
+# diary for 15 May 1948 instead (Golani 3,573 + 522 paid recruits); the owner person-checked them against the diary on
+# 21 October 2026 (#1240), so they are fact-checked and their person-check item is gone. Yiftach keeps the secondary figure.
 IDF_STRENGTH = {'golani': 4095, 'carmeli': 2289, 'alexandroni': 3588, 'kiryati': 2504, 'givati': 3229, 'harel': 1300,
                 'yiftach': 4500, 'negev': 1300}
+
+
+# The twelve starting rows the owner person-checked on 21 October 2026 (#1240,
+# https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250). A row added later is not covered.
+PERSON_CHECKED = {'alexandroni', 'arab_legion', 'arab_liberation_army', 'carmeli', 'egyptian_expeditionary_force', 'givati',
+                  'golani', 'harel', 'iraqi_expeditionary_force', 'kiryati', 'negev', 'syrian_army'}
+
+
+def test_only_the_person_checked_rows_are_fact_checked():
+    checked = {u['id'] for u in UNITS if u.get('status') == 'fact-checked'}
+    assert checked == PERSON_CHECKED, sorted(checked ^ PERSON_CHECKED)
 
 
 def test_idf_brigade_strengths_are_secondary_and_to_verify():
@@ -204,6 +216,10 @@ def test_idf_brigade_strengths_are_secondary_and_to_verify():
         assert st.get('as_of') == '1948-05-15', f"{uid}: the 15 May strength only"
         assert st.get('sources'), f"{uid}: the strength cites no source"
         assert not RANGE.search(str(st.get('note', ''))), f"{uid}: the strength note copies a range"
+        if uid in PERSON_CHECKED:
+            assert u.get('status') == 'fact-checked', f"{uid}: the owner person-checked it (#1240)"
+            assert 'to_verify' not in u, f"{uid}: the person check was its only open item"
+            continue
         assert u.get('status') == 'to_verify', f"{uid}: a secondary-source strength carries status: to_verify"
         assert u.get('to_verify'), f"{uid}: to_verify says what a primary source must replace"
     for uid, u in israel.items():
