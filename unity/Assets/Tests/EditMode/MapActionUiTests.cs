@@ -190,6 +190,46 @@ public class MapActionUiTests
         finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
     }
 
+    // #1123: a built city project is drawn on its recorded hex as its kind's placement; one still being built, and a kind
+    // with no approved art (industry), are not; the legacy placements are drawn as before.
+    [Test]
+    public void BuiltCityProjectsAreDrawnOnTheirHexes()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        try
+        {
+            new GameObject("TestMainCamera") { tag = "MainCamera" }.AddComponent<Camera>();
+            var map = new GameObject("MapScene").AddComponent<MapScene>();
+            map.Configure(AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Terrain.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SettlementMarker.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/HexSelection.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Sea.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/MapFrame.mat"));
+            map.Build();
+            var layer = new GameObject("Placements").AddComponent<PlacementLayer>();
+            var hexes = C.SettlementHexes.Select(s => (s.Id, s.Q, s.R)).GroupBy(h => (h.Q, h.R)).Select(g => g.First()).Take(5).ToList();
+            var built = new DateTime(1950, 9, 30);
+            var legacy = new[] { new Placement(MapActions.Housing, hexes[0].Q, hexes[0].R, new DateTime(1950, 8, 26)) };
+            var projects = new[]
+            {
+                new CityProject(1, MapActions.Housing, hexes[1].Id, hexes[1].Q, hexes[1].R, 0, built),
+                new CityProject(2, MapActions.TransitCamp, hexes[2].Id, hexes[2].Q, hexes[2].R, 0, built),
+                new CityProject(3, MapActions.Housing, hexes[3].Id, hexes[3].Q, hexes[3].R, 4),           // being built
+                new CityProject(4, "industry", hexes[4].Id, hexes[4].Q, hexes[4].R, 0, built),            // no approved art
+            };
+            CollectionAssert.AreEqual(legacy, PlacementLayer.Drawn(legacy, new CityProject[0]), "no projects: the placements as they are");
+            layer.Render(PlacementLayer.Drawn(legacy, projects), C, map);
+            CollectionAssert.AreEquivalent(new[]
+            {
+                $"housing_{hexes[0].Q}_{hexes[0].R}", $"housing_{hexes[1].Q}_{hexes[1].R}", $"transit_camp_{hexes[2].Q}_{hexes[2].R}",
+            }, layer.transform.Cast<Transform>().Select(t => t.name).ToList());
+            var box = layer.transform.Cast<Transform>().Single(t => t.name == $"housing_{hexes[1].Q}_{hexes[1].R}");
+            Assert.AreEqual((hexes[1].Q, hexes[1].R), MapPointer.Pick(map, box.position), "drawn on the project's recorded hex");
+            Assert.AreEqual(built, PlacementLayer.Drawn(legacy, projects)[1].Date, "dated the day it was built");
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
+    }
+
     [Test]
     public void TheInfoPanelShowsNoTileYields()
     {

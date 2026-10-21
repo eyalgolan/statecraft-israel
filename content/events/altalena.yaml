@@ -2,6 +2,12 @@
 id: altalena
 title: The Altalena
 text: 'The Altalena, a ship carrying arms for the Irgun, is due off the coast within days. Begin asks that a fifth of the arms go to the Irgun''s battalion in Jerusalem and the rest to Irgun battalions inside the IDF. {defense_minister} must decide.'
+# For the native reviewer (#564): the Hebrew below (#1064) is an AI translation of the English, not yet read by a
+# person. Names as he.wiki "פרשת אלטלנה" writes them (אלטלנה, אצ"ל, צה"ל, בגין; its "חמישית מהנשק" for the fifth).
+# "ההחלטה בידי" keeps the sentence the same for a minister of either gender.
+title_he: אלטלנה
+text_he: 'אלטלנה, אונייה המובילה נשק לאצ"ל, צפויה להגיע לחוף בתוך ימים. בגין מבקש שחמישית מהנשק תועבר לגדוד האצ"ל בירושלים והשאר לגדודי האצ"ל בתוך צה"ל. ההחלטה בידי {defense_minister}.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -26,6 +32,7 @@ to: 1948-06-23
 options:
   - id: enforce
     text: Grant the Jerusalem share, demand the rest for the IDF, and use force if necessary
+    text_he: 'לאשר את החלק לירושלים, לדרוש את השאר לצה"ל ולהשתמש בכוח אם יהיה צורך'
     historical: true
     recommended: true
     effects:
@@ -35,6 +42,7 @@ options:
     # Begin's second request, put on the table and rejected (en.wiki "Altalena Affair"; the Etzel account; the Izkor page
     # records the dispute over whether the arms went to the IDF as a whole or mainly to Irgun units).
     text: Grant both requests, arming Irgun battalions inside the IDF
+    text_he: 'לאשר את שתי הבקשות ולחמש את גדודי האצ"ל בתוך צה"ל'
     # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
     alternative:
       basis: debated

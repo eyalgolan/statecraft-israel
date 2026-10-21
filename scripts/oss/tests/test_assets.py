@@ -115,3 +115,14 @@ removed: []
     root = make_repo({"ASSETS.yaml": rules, "audio/a.wav": b"RIFF"})
     assert run(root) == 0
     assert run(root, "--release") == 1
+
+
+def test_elevenlabs_owner_permission_is_allowed_but_owner_verify_blocks_release(make_repo, capsys):
+    rules = RULES.replace("licence: CC-BY-4.0", "licence: LicenseRef-ElevenLabs-Owner-Permission")
+    root = make_repo({"ASSETS.yaml": rules, "img/a.png": b"\x89PNG"})
+    assert run(root) == 0
+    assert run(root, "--release") == 0
+    (root / "ASSETS.yaml").write_text(rules.replace("status: verified", "status: owner-verify", 1))
+    assert run(root) == 0
+    assert run(root, "--release") == 1
+    assert "owner-verify img/*.png" in capsys.readouterr().out

@@ -90,7 +90,7 @@ The owner ruled:
 3. 101 Squadron shows an Avia S-199 until the Spitfire's sourced date, then the Spitfire.
 4. The four brigades with no sourced position (Carmeli, Alexandroni, the 8th, Oded) are listed in the file and hidden.
    - 2026-10-15 (refs #385): Carmeli (from 9 July 1948; coordinator's option (d)) and Alexandroni now have sourced
-     positions (below) and are shown. The 8th
+     positions (below) and are shown. Since #588 (owner, 18 October 2026) Carmeli also stands at Haifa before that. The 8th
      is sourced at Tel Litvinsky (24 May to 9 July 1948; owner, 2026-10-15: "Accept, verify later") but stays hidden:
      the map has no clear spot for it on its own side within one hex of the camp. Oded stays hidden (its sources
      conflict and name no place).
@@ -161,6 +161,30 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   `test_strength_has_one_value_and_a_source`, `test_no_anchor_rests_on_one_source_where_the_note_says_contested`,
   `test_the_arab_rows_name_no_sensitive_place`).
 
+### The IDF brigades' 15 May strengths (#743)
+
+No primary order of battle gives the IDF brigades' strengths on 15 May 1948, so a secondary source may give them (owner,
+20 October 2026, #743): "Every row cites its source, carries `status: to_verify`, and is replaced when a primary source
+turns up." The figures are the brigade table of `research_notes/M4 war mode/war-1948.md`, section 1 (#906): en.wiki's
+1948 war article, whose size column cites Ben-Gurion's War Diaries (Arabic edition, 1994, p. 303). The table gives no
+date; `as_of` is 15 May 1948, the day the ruling gives the strengths for.
+
+| Row | Strength (15 May) |
+|---|---|
+| Golani | 4,500 |
+| Carmeli | 2,000 |
+| Alexandroni | 5,200 |
+| Kiryati | 1,400 |
+| Givati | 5,000 |
+| Harel | 1,400 |
+| Yiftach | 4,500 (the table counts some Golani men in it) |
+| Negev | 2,400 |
+
+- **No figure, no strength:** Etzioni, the 7th, the 8th and Oded have no size in the note, so their rows give none and
+  stay `status: draft`.
+- **Still map-only:** the sim does not read the file yet, so the goldens do not move. Phase 5 PR 4's sim reading follows.
+- Tests: `test_idf_brigade_strengths_are_secondary_and_to_verify` (Python) and `UnitsInPlayTests` (EditMode).
+
 ### The 1948 Collection on the tokens (#665)
 
 The tokens wear Tal Heuberger's figures from The 1948 Collection (#507, #680), streamed after the first frame
@@ -202,7 +226,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | Unit | Positions (dated, from the sources) | Ends |
 |---|---|---|
 | Golani (1st) | Yavne'el (since February 1948); the Julis camp from December 1948 | December 1948 (source); 24 Feb 1949 (Egypt) |
-| Carmeli (2nd) | Facing the Syrian bridgehead at Mishmar HaYarden, on the Rosh Pinna side, 9-18 July 1948 (Operation Brosh). Not drawn at Haifa, its sector's seat: no clear spot outside the town (#588) | 19 Jul 1948, the second truce (source) |
+| Carmeli (2nd) | Haifa, its sector's seat (since February 1948), in the town on Haifa's one unit clearing (#588); facing the Syrian bridgehead at Mishmar HaYarden, on the Rosh Pinna side, 9-18 July 1948 (Operation Brosh) | 9 Jul 1948, Operation Brosh (source); 19 Jul 1948, the second truce (source) |
 | Alexandroni (3rd) | Netanya, its headquarters at Camp Dora (since March 1948) | November 1948, the move to the Faluja pocket (source) |
 | Kiryati (4th) | Tel Aviv (since February 1948) | 3 Apr 1949 (Jordan) |
 | Givati (5th) | Gedera, one of the three places its sector names (no start given) | November 1948, the move to the centre (source) |
@@ -239,13 +263,16 @@ The candidates are tried in three rounds:
 3. If the whole neighbourhood is town, the compact point that reaches least deep into it (then the nearest; with a
    `toward` point, the nearest to that). The map then keeps a clearing of the compact ring's radius free of the kits'
    buildings and trees there (`MapScene.UnitClearings`, computed before the kits from the same data), so the token never
-   stands in a building. The clearing may cut only into the anchor's own town, never a neighbour's. Kiryati (Tel Aviv)
-   and Etzioni (West Jerusalem) stand this way.
+   stands in a building. The clearing may cut only into the anchor's own town, never a neighbour's. Kiryati (Tel Aviv),
+   Carmeli (Haifa) and Etzioni (West Jerusalem) stand this way. Haifa and Tel Aviv each have a budget of one such
+   clearing, and their census floors are measured with it (#588, owner, 18 October 2026; `TownCensusTests`).
 
 A spot is clear when:
 - the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
 - an army token's three figure spots (always three, so the spot does not change with the call-up), or a parked
-  aircraft's centre, are on land and at least 700 m beyond every railway and road corridor;
+  aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
+  stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no
+  spot; #786);
 - a ship has a sea hex;
 - no other anchor whose window overlaps holds the hex.
 
@@ -308,6 +335,16 @@ checks every anchor and logs each spot and its distance.
 - A second click shows the hex and its map actions. A hidden layer (the `units` toggle off) selects nothing.
 - The card gives the name, the number and the service, where the unit stands (with "since" only from a sourced start),
   its formation and first commander where sourced, and the sector in the source's words.
+- In the Hebrew UI the place, the first commander and the sector each show their optional Hebrew counterpart in
+  `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, each with its
+  `*_he_sources` (the sources of its proper names) and `*_he_review: agent-checked` until a native speaker has read it
+  (#564). A field without one shows its English, independently of the other two; the English card never changes.
+  `UnitData.Parse` refuses a Hebrew text without its English (so a Hebrew commander never adds a line), a present but
+  blank key, sources or a review flag without the text, and text without Hebrew letters; an unknown key such as
+  `formed_he` fails as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
+  never clear `wikipedia_only` (#902). The shipped rows carry none yet; the translations in `research_notes/Map/unit-card-hebrew-harel-givati-negev.md` wait for its
+  person's source checks. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
+  `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `BadHebrewProseNamesTheProblem`), on test-only fixtures.
 - It also gives the national values the token reflects ("Reserve call-up 80% · security level 5 of 5") and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.
 - It has no orders; a button opens the Defence screen.
@@ -347,7 +384,7 @@ headless `?vprofile` on the WebGL build of 943184c, 1920x1080 at DPR 1, 2026-10-
   archives.
 - No dated front line: tokens keep within one hex of their sourced place, and three anchors carry a sourced `toward`
   point to stay on their own side (review MF1).
-- **Kit baseline break:** from 943184c the kits keep the unit clearings in Tel Aviv and West Jerusalem, in plain
+- **Kit baseline break:** from 943184c the kits keep the unit clearings in Tel Aviv and West Jerusalem (and in Haifa since #588), in plain
   checkpoints too. So kit metrics before and after that commit are not comparable; this is marked in the art log.
 - Merges still to come (review I7). With promo-borderdata, the info panel's region label must be cleared when a unit
   card shows. With promo-screens, the wide-screen click guard must cover `ShowUnit` and `UnitLayer.Select` as well as

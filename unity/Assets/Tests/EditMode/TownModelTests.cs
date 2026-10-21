@@ -35,7 +35,7 @@ public class TownModelTests
     static SettlementKits.Result Build(MapScene map, out List<SettlementKits.Placed> placed)
     {
         var g = new KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
         var built = SettlementKits.Build(map.Settlements, map.Localities.Select(p => p.Settlement).ToList(), new List<Localities.Area>(), g, out placed);
         foreach (var k in built.Towns) UnityEngine.Object.DestroyImmediate(k.mesh);

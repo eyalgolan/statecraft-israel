@@ -172,7 +172,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    changes its rows end at about 431 px; each meter line already holds two caption lines, Security's level or "International
    support", so a caption that wraps once more does not add to it). Smaller phones raise it further (26 px at 360x800, 30 px
    at 375x667; the owner: the floor holds "down to 375x667", and the bar grows taller to fit, review of #859): the bar takes
-   its rows' height when that is more than 440 px, and the panels under it move down by what it grew (HudPresenter.PlaceUnderBar). */
+   its rows' height when that is more than 440 px, and the panels under it move down by what it grew (HudPresenter.PlaceUnderBar).
+   When its rows come in shorter (390x844 with turn 1's values, or in Hebrew), it shrinks to them and the panels move up, so
+   no empty band lies between the stats and the map (#1089, the owner: 440 px "stays as the maximum, not a fixed height"). */
 .hud-three-row .top-bar { height: 440px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
 /* Each meter a quarter of the row, so the seven always take two lines (four, then three) and the bar's second line is
@@ -220,12 +222,17 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
 .event-gutter { display: none; position: absolute; left: 0; top: 112px; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
 .event-modal .event-gutter { display: flex; }
-.left-column .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.left-column .rail-button { width: 45px; height: 45px; margin: 0 0 3px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
-/* Six discs since How to play (#1041): 50 px, 6 px apart, so the column ends at 112 + 336 px (the five 56 px discs: 340),
-   above the info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests); the column keeps its 56 px width,
-   so the backdrop, the screens and the toast keep their places. */
-.left-column .rail-button .nav-disc { top: 0; left: 0; width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
+/* Seven discs since Objectives (#1189). On the one-row bar: 45 px, 3 px apart, so the column still ends at 112 + 336 px
+   (six 50 px discs 6 px apart, #1041: the same), above the info panel's top (456 px) in a short, wide window
+   (InfoPanelLayoutTests), and at least 29 screen px in the smallest one-row window (1366x657). The narrow, two-row and
+   three-row tiers keep their discs (50 px; 60 px on a phone): the column starts lower there, the info panel is far
+   below it, and 960x600 needs 50 px for the 24 screen px floor (LeftColumnTests). The column keeps its 56 px width, so
+   the backdrop, the screens and the toast keep their places. */
+.left-column .rail-button .nav-disc { top: 0; left: 0; width: 45px; height: 45px; padding: 10.5px; border-radius: 22.5px; }
+.hud-narrow .left-column > .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; }
+.hud-narrow .left-column > .rail-button .nav-disc { width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
 /* A screen with something to do this turn (#1109, HudPresenter.ActionClass): a small gold dot on the disc's upper right,
    ringed in the column's navy so it reads against the rim; the gold-light of End Turn's waiting highlight (#1034). */
 .nav-badge {
@@ -320,13 +327,21 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     color: var(--ink); background-color: rgba(5, 9, 18, 0.92); -unity-font-style: italic;   /* 0.92: blending is linear, so less reads grey */
 }
 .event-office { white-space: normal; -unity-text-align: middle-center; font-size: 18px; }
-/* Options wrap inside the card (playtest 2, P2-2); each has a round gold-rimmed sign at its left, as the promo's choices. */
+/* Options wrap inside the card (playtest 2, P2-2). No sign beside the text: a chevron read as "expand", but the press
+   chooses (#1105); the gold rim and the hover and focus fills (Button:hover, :focus) mark it as a button. */
 #event-options Button { white-space: normal; -unity-text-align: middle-left; }
-.event-option { min-height: 42px; padding: 5px 12px 5px 46px; margin: 3px 0; border-color: rgba(196, 160, 92, 0.6); }
+.event-option { min-height: 42px; padding: 5px 12px; margin: 3px 0; border-color: rgba(196, 160, 92, 0.6); }
 .event-title { -unity-text-align: middle-center; margin-bottom: 4px; white-space: normal; font-size: 28px; }   /* centred, as before, in the card */
 .event-text { white-space: normal; margin-bottom: 8px; }
 /* An objective card's line under its text (#380): when it was completed against history. */
 .event-objective { white-space: normal; margin-bottom: 8px; }
+/* A consequence card's banner (#954): which road it follows and the record beside it, above the text; sober, in the muted
+   ink, set off by a thin gold rule at its start edge. The rejoin line under an option is in the same muted ink,
+   indented 46 px to line up with the option's text after its round sign (.event-option padding). */
+.event-alt-banner { display: none; white-space: normal; margin: 0 0 8px 0; padding: 2px 0 2px 10px; border-left-width: 2px; border-color: var(--gold); }
+.lang-he .event-alt-banner { border-left-width: 0; border-right-width: 2px; padding: 2px 10px 2px 0; }
+.event-rejoin { white-space: normal; margin: -1px 0 4px 46px; }
+.lang-he .event-rejoin { margin: -1px 46px 4px 0; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
@@ -348,11 +363,16 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-gdd-line { font-size: 17px; flex-shrink: 1; }
 .info-gdd-row { flex-wrap: wrap; align-items: center; }
 .info-gdd Button { margin: 2px 6px 2px 0; font-size: 17px; white-space: normal; flex-shrink: 1; }
+/* Two counts on one row (Jobs | Craftsmen, Refugees waiting | Overflow; #1121): each keeps its width, so the row wraps
+   whole rather than squeezing a line into two, and a gap follows each (mirrored in Hebrew). */
+.info-gdd-pairs > .info-gdd-line { flex-shrink: 0; margin-right: 14px; }
 /* Before a hex is chosen only the hint shows (InfoPanelPresenter sets info-empty): a one-line chip that hugs its text, as
    the promo shows no panel until a tile is chosen (HUD round 1, #398). */
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }
 .info-empty .gold-rule, .info-empty #info-subtitle, .info-empty .reason { display: none; }
 .info-empty #info-title { font-size: 20px; }
+.hud-three-row .info-panel.info-empty { right: 254px; }
+.hud-three-row .info-empty #info-title { white-space: normal; }
 /* The hex's facts as the promo's icon rows: a gold sign, then the line, which wraps inside the panel (#397). A unit's card
    reuses the lines without the signs (they name a hex's facts, not a unit's). */
 .info-row { flex-direction: row; align-items: flex-start; margin-bottom: 3px; }
@@ -397,6 +417,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* Full screens (Cabinet, Budget, Defence, Why, Settings) open in the centre, one at a time. */
 /* Hidden until ScreenNav opens one (never visible while loading; playtest 2, P2-1). Right edge clear of the 480px column. */
 .screen { display: none; position: absolute; left: 552px; right: 512px; top: 112px; bottom: 16px; padding: 18px; background-color: rgb(11, 18, 32); }   /* opaque: a reading screen, and the map labels must not show through */
+/* #1106 (play-test of v0.1.2): a window, every side-menu screen and the decision card, grows and fades in over 0.5 s when
+   it opens and shrinks over 0.3 s when it closes. ScreenNav.Show switches the classes: .window-opening is the start state
+   for one layout (no transition, as Unity runs none out of display: none), .window-closing the shrink (the window leaves
+   the layout when it ends). Play mode only: an EditMode panel does not tick (ScreenNav.Moves). */
+.screen, .event-card { transition-property: scale, opacity; transition-duration: 0.5s, 0.5s; transition-timing-function: ease-out-cubic, ease-out-cubic; }
+.screen.window-opening, .event-card.window-opening { scale: 0.8 0.8; opacity: 0; transition-duration: 0s, 0s; }
+.screen.window-closing, .event-card.window-closing { scale: 0 0; transition-property: scale; transition-duration: 0.3s; transition-timing-function: ease-in-cubic; }
+/* The shrinking window is disabled (out of reach); the theme's half opacity for disabled elements would make the shrink a fade. */
+.screen.window-closing.unity-disabled, .event-card.window-closing.unity-disabled, .window-closing .unity-disabled { opacity: 1; }
 .screen-header { flex-direction: column; align-items: stretch; border-bottom-width: 1px; border-color: var(--gold-dim); margin-bottom: 10px; padding-bottom: 4px; }   /* the X's side padding is set inline by ScreenNav.FitCloseButtons (it grows with the X) */
 /* Screen titles and section names in gold, letter-spaced, as the promo's "DEFENSE" and "LEADERSHIP". */
 .screen-header > .title { color: var(--gold-light); letter-spacing: 1px; }
@@ -425,11 +454,20 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .settings-row { margin-top: 8px; }
 .how-to-play-body { min-height: 0; }
 .how-to-play-line { white-space: normal; margin-bottom: 12px; font-size: 18px; }
+/* The Objectives screen (#1189): a row per objective, its name over its status and dates; both wrap at 390x844. */
+.objectives-rows { min-height: 0; }
+.objectives-row { margin-bottom: 14px; }
+.objectives-name { white-space: normal; font-size: 18px; -unity-font-style: bold; }
+.objectives-status { white-space: normal; font-size: 18px; color: var(--ink-dim); }
 .settings-name { flex-grow: 1; flex-shrink: 1; min-width: 0; white-space: normal; }
 .settings-switch { flex-shrink: 0; min-width: 96px; -unity-text-align: middle-center; }
 /* The quality choice's buttons sit side by side; the one that is set is marked by a gold fill and dark text, not only a
    border colour, and keeps it while hovered or focused (Button:hover and :focus would otherwise win). */
 .settings-choices { flex-shrink: 0; }
+/* The Community row's three buttons (Star, Report, Share) are wider than the screen leaves them in Hebrew at 125%: they
+   wrap onto a second line instead, and the row's name keeps its width (SettingsScreenTests, 1280x720). */
+.settings-community-choices { flex-shrink: 1; flex-wrap: wrap; }
+#settings-community-label { flex-shrink: 0; }
 .settings-choice-selected, .settings-choice-selected:hover, .settings-choice-selected:focus { background-color: var(--gold); color: var(--navy-solid); }
 /* The regular cut's thin strokes fade on the gold. Only as specific as ".lang-he Button", which comes later and keeps
    the Hebrew face in Hebrew. */
@@ -469,8 +507,54 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .turn-report-row { margin-bottom: 10px; }
 .turn-report-heading { white-space: normal; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 .turn-report-causes { white-space: normal; padding-left: 12px; }
+/* The end screen (#812) reuses the report's backdrop and panel: its outcome in the heading face, one line per part. */
+.end-screen-outcome { white-space: normal; margin-bottom: 10px; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
+.end-screen-line { white-space: normal; margin-bottom: 6px; }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
+/* The first-turn guide (#42, FirstTurnGuidePresenter): shown while the root has guide-open. The layer and the ring take no
+   pointer; the ring goes round the step's targets (placed in code), the dock holds the panel at the bottom of the window,
+   or at the top (guide-dock-top) when the targets are in the lower half. */
+.guide-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.guide-open .guide-layer { display: flex; }
+.guide-ring { position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+/* Attention sits about 3 px over End Turn in the bar: while the guide shows, more room under it keeps step 1's ring (4 px
+   round Attention) at least 4 px clear of End Turn's gold border, so the two read as two boxes (review of #1209;
+   FirstTurnGuideTests). 5 px is what the one-row bar's 70 px holds with End Turn in it; the taller narrow bar takes 8. */
+.guide-open #attention { margin-bottom: 5px; }
+.guide-open.hud-narrow #attention { margin-bottom: 8px; }
+.guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
+.guide-dock.guide-dock-top { bottom: auto; top: 16px; }
+.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
+.guide-count { font-size: 16px; }
+.guide-title { color: var(--gold-light); font-size: 26px; white-space: normal; }
+.guide-text { white-space: normal; font-size: 19px; margin: 4px 0 8px 0; }
+.guide-actions { justify-content: space-between; }
+.guide-actions > Button { min-height: 44px; }
+.guide-next, .lang-he .guide-next { min-width: 120px; -unity-text-align: middle-center; }
+/* How to play's button that opens the guide again: under the lines, never squeezed by them. */
+.how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
+.lang-he .how-to-play-guide { align-self: flex-end; }
+/* "Report a bug or idea" (#1169, FeedbackPresenter): the same backdrop over everything, the start screen too; each GitHub
+   choice with the lines its form opens with under it, wrapped (a user agent is long). */
+.feedback-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
+.feedback-open .feedback-layer { display: flex; }
+.feedback-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
+.feedback-intro, .feedback-preview { white-space: normal; }
+.feedback-choice { margin-top: 10px; }
+.feedback-preview { font-size: 15px; margin: 2px 4px 0 4px; }
+.feedback-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
+/* "Share" (#1170, SharePresenter): the turn report's kind of backdrop, drawn over everything, the report too; the post, the Share button, and the share
+   links, which show only where the browser cannot share the picture itself. */
+.share-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
+.share-open .share-layer { display: flex; }
+.share-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
+.share-post, .share-attach { white-space: normal; }
+.share-go { margin-top: 12px; }
+.share-attach { margin-top: 12px; }
+.share-sites { flex-wrap: wrap; margin-top: 6px; }
+.share-sites > Button { margin: 4px 8px 0 0; }
+.share-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
 /* A top-bar number's explanation (MeterTip, #1037): under the bar, wrapped, kept inside the window by MeterTip. */
 .meter-tip {
     display: none; position: absolute; max-width: 420px; padding: 6px 10px;
@@ -688,6 +772,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 }
 .map-label-city { font-size: 23px; color: rgb(250, 242, 224); }
 .map-label-town, .map-label-arab_town { font-size: 19px; }
+/* #1063: the city under the pointer (its hexes or its pill) lights its pill, ivory like the map's selected-hex outline, to say
+   a click opens it. Colours only: a border or padding change would resize the pill and move the names round it. */
+.map-label-hover { background-color: rgb(250, 242, 224); color: rgb(14, 22, 38); }
 /* The population tier (#710): the city's static 1948 tier as a gold disc at the start of its name, over the pill's start
    padding (left, or right in Hebrew). The disc is the pill's sibling in its slot; MapLabelsPresenter sets its left and
    top from the pill's size. */
@@ -764,15 +851,30 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .start-en { font-size: 18px; color: var(--ink-dim); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
 .start-source { font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
 .start-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+/* A whole-pixel height (#1168): with Star on GitHub wrapped under New game on a phone held upright, a fractional row
+   height shifts the panel's lines off whole pixels and the band layout (StartScreenPresenter.Fit) then rounds the
+   panel's top back and forth, a layout that never settles. 50 px is the text's own height (49.5) rounded up. 300 px
+   wide: Star on GitHub's label and its two signs (about 260 px in English, 290 in Hebrew) fit, so all are one size. */
 .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
-    font-size: 24px; min-width: 220px; margin: 4px 10px; padding: 8px 24px; -unity-text-align: middle-center;
+    font-size: 24px; min-width: 300px; height: 50px; margin: 4px 10px; padding: 8px 24px; -unity-text-align: middle-center;
 }
 /* The recording (DeclarationRecording): a quiet button and its credit under the source line; while it plays, its words as
    captions in a dark strip just above the panel, over the painting (the panel is the strip's positioned parent, so the
    strip follows it in every layout). */
 .start-recording { display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 8px; }
-.start-listen { font-size: 18px; padding: 4px 16px; margin: 2px 10px; -unity-text-align: middle-center; }
+.start-listen, .start-report { font-size: 18px; padding: 4px 16px; margin: 2px 10px; -unity-text-align: middle-center; }
+/* "Report a bug or idea" (#1169) in its own centred row under the actions, as quiet as the recording's button. A
+   whole-pixel height: a fractional one shifts the panel's lines off whole pixels, and on a phone held upright the band
+   layout (StartScreenPresenter.Fit) then rounds the panel's top back and forth, a layout that never settles. */
+.start-community { flex-direction: row; justify-content: center; align-items: center; height: 40px; margin-top: 8px; }
+/* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
+   window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
+   PaintStarSigns). Secondary to New game in colour: no fill and a grey edge instead of the gold one; hover and keyboard
+   focus still light it like any button (Button:hover and :focus are the more specific rules). */
+.start-star { background-color: rgba(0, 0, 0, 0); border-color: var(--ink-dim); padding-left: 80px; -unity-text-align: middle-left; }
+/* The label starts right after the signs, on their side. "Button." so it beats .lang-he .start-button (centred, later). */
+.lang-he Button.start-star { padding-left: 24px; padding-right: 80px; -unity-text-align: middle-right; }
 .start-recording-credit { font-size: 15px; color: var(--ink-dim); margin: 2px 6px; }
 .start-caption {
     display: none; position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 12px; padding: 8px 20px 10px 20px;
@@ -789,7 +891,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    in it. Each rule above that names EB Garamond is listed here; HebrewUiTests fails for one that is missed, including the
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
-.lang-he .why-group, .lang-he .turn-report-heading, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
+.lang-he .why-group, .lang-he .turn-report-heading, .lang-he .end-screen-outcome, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
 .lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
@@ -802,7 +904,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .button, .lang-he Button, .lang-he #event-options Button { -unity-text-align: middle-right; }
 /* The buttons and cards whose text is centred stay centred (the rule above is the more specific one). */
 .lang-he .nav-button, .lang-he .seat { -unity-text-align: upper-center; }
-.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen { -unity-text-align: middle-center; }
+.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen, .lang-he .start-report { -unity-text-align: middle-center; }
 .lang-he .card-stat-name { -unity-text-align: middle-right; }
 .lang-he .card-stat-value { -unity-text-align: middle-left; }
 /* The Hebrew plate shows the first name's initial and the surname ("י. ידין", PersonCard.InitialAndSurname), not two
@@ -839,8 +941,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .rung-turn { margin-left: 0; margin-right: 8px; }
 .lang-he .budget-title { margin: 0 0 0 18px; }
 .lang-he .budget-share { margin-left: 0; margin-right: 16px; }
-/* The option's round sign and End Turn's hourglass are painted on the right in Hebrew (EventCardPresenter, HudPresenter). */
-.lang-he .event-option { padding: 5px 46px 5px 12px; }
+/* End Turn's hourglass is painted on the right in Hebrew (HudPresenter). */
 .lang-he .end-turn { padding: 4px 40px 4px 14px; }
 /* A bar fills from the right: the whole bar is flipped, so its fill and its mark (placed from the left in code) follow. */
 .lang-he .ui-bar { scale: -1 1; }
@@ -850,5 +951,6 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    rules above at equal specificity. */
 .lang-he .info-gdd { margin-left: 0; padding-left: 0; border-left-width: 0; margin-right: 14px; padding-right: 14px; border-right-width: 1px; }
 .lang-he .info-gdd Button { margin: 2px 0 2px 6px; }
+.lang-he .info-gdd-pairs > .info-gdd-line { margin-right: 0; margin-left: 14px; }
 .hud-two-row .info-panel.info-gdd-shown { width: 520px; flex-wrap: wrap; }
 .hud-two-row .info-gdd { width: 100%; margin: 8px 0 0 0; padding: 8px 0 0 0; border-left-width: 0; border-right-width: 0; border-top-width: 1px; }

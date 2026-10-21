@@ -2,6 +2,12 @@
 id: first_truce
 title: The First Truce
 text: 'The Security Council has called for a four-week cease-fire, supervised by the UN mediator, Count Folke Bernadotte. Neither side may bring fighting men or war material into Palestine or the Arab states, and the Council has warned of Chapter VII action if the terms are broken. {prime_minister} must decide whether Israel accepts.'
+# For the native reviewer (#564): Hebrew terminology follows he.wiki "ההפוגה הראשונה" (מועצת הביטחון, האו"ם,
+# פולקה ברנדוט): https://he.wikipedia.org/wiki/ההפוגה_הראשונה . "ארץ ישראל" for the resolution's "Palestine" and
+# "פרק VII" are for the native reader to confirm.
+title_he: ההפוגה הראשונה
+text_he: 'מועצת הביטחון קראה להפסקת אש בת ארבעה שבועות, בפיקוח מתווך האו"ם, הרוזן פולקה ברנדוט. אסור לשום צד להכניס לוחמים או חומרי מלחמה לארץ ישראל או למדינות ערב, והמועצה הזהירה מפעולה לפי פרק VII אם התנאים יופרו. על {prime_minister} להחליט אם ישראל תקבל את ההפוגה.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Security Council Resolution 50, 29 May 1948 (the resolution's text). Israel's acceptance went to the UN on 10 June
@@ -19,6 +25,7 @@ to: 1948-06-11
 options:
   - id: accept
     text: Accept the truce from 11 June
+    text_he: לקבל את ההפוגה החל מ־11 ביוני
     historical: true
     recommended: true
     effects:
@@ -29,6 +36,7 @@ options:
     # Game assumption: the notes found no Israeli voice for refusing. The morale cost (an army short of arms, under the
     # Chapter VII warning) is a design inference.
     text: Refuse the truce and keep fighting
+    text_he: לסרב להפוגה ולהמשיך בלחימה
     alternative: { basis: design }
     effects:
       - { target: intl_standing, delta: -0.08 }

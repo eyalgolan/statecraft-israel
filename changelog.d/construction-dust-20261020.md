@@ -1,0 +1,1 @@
+- An opt-in construction reveal prototype and isolated one-hex editor preview: soft base dust, small bouncing stone chunks, original/refined comparison on an existing designed game hex, replay and cancellation, without changing simulation timing.

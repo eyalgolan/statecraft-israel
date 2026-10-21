@@ -48,14 +48,15 @@ mvp:
   # factor, EffectsSystem.Multiplier) scales each GDD system. Q-MIN-1's mapping, "each with its office's sourced remit
   # in a comment": the Ministry of Labour ran housing and public construction; the Ministry of Agriculture, the fields
   # and the new settlements; the Ministry of Immigration, the immigrants' housing (the offices and their terms are the
-  # sourced rows of offices.yaml; the remits are as the decision names them). Corridors (Transportation) and military
-  # training (Defense) join the map when their integrations land (#870, #742).
+  # sourced rows of offices.yaml; the remits are as the decision names them). Transportation scales corridor work
+  # (Q-MIN-1); military training (Defense) joins the map with #742.
   minister_systems:
     housing_construction: labour_minister
     industry_construction: labour_minister
     field_work: agriculture_minister
     yishuv_work: agriculture_minister
     absorption: immigration_minister
+    corridors: transportation_minister
   # The day the cities start taking arrivals (R-CITY-003; Q-ARRV-3, owner, 15 October 2026, #375): the census day of their
   # start values, 8 November 1948 (CBS Statistical Abstract of Israel No. 14, Table 11, pp. 30-31). The census already
   # counts the people who arrived from 15 May, so the cities take none before it; the national head count takes them all.
@@ -78,6 +79,12 @@ mvp:
   dry_swamp_turns: 12                    # DESIGN VALUE: owner-set balance, not a historical figure (D-D6, Q-SWAMP-1: turns draining the Hula takes)
   dry_swamp_cost: 4                      # DESIGN VALUE: owner-set balance, not a historical figure (D-D6, Q-SWAMP-1: IL millions, paid at the start)
   field_food_per_turn: 1                 # DESIGN VALUE: owner-set balance, not a historical figure (D-D10, Q-FIELD-3: Food units a plowed field adds each turn)
+  # Q-COR-6 (agents propose design values, owner, 15 October 2026, #375; taken with the plan on 17 October 2026, #782): a
+  # road segment as the Mefalsim build, a rail segment twice its Money at the same pace. Not historical figures.
+  road_segment_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: turns a road segment takes)
+  road_segment_cost: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: IL millions, paid at the start)
+  rail_segment_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: turns a rail segment takes)
+  rail_segment_cost: 4                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: IL millions, paid at the start)
   objective_points: 100                  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6: points per objective)
   objective_bonus_per_month: 5           # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: points per month early)
   objective_bonus_cap: 60                # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: the most bonus points)
@@ -140,6 +147,12 @@ mvp:
     desert: 2                            # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
     mountains: 3                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
   stack_limit: 3                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-3: units of one side a hex holds)
+  # Roads and rail (R-MOVE-007; Q-MOVE-2, owner, 15 October 2026, #375: option (a), only the corridors Phase 4 builds).
+  # Proposed in Phase 5 PR 6 (#745) under "Agents propose design values"; the owner may override them. 1 is the lowest
+  # whole cost, so a built segment halves a hills step and thirds a mountain one, but on the coastal plain, valley and
+  # lowland (already 1) it saves nothing. Not historical figures.
+  road_move_cost: 1                      # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-2: movement points for a step along a built road segment)
+  rail_move_cost: 1                      # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-2: movement points for a step along a built rail segment)
   # R-MOVE-005 (Q-CIV-1, owner, 15 October 2026: "No entry until Phase 6"): the settlements no player unit may enter or
   # cross. DRAFT, UNCHECKED: the owner accepted this list as a draft on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259083180).
   # No person has yet checked each place's control on 15 May 1948; research task #1096 will check it. Do not treat it as history.

@@ -31,6 +31,8 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `id` | yes | Unique across all events. Lowercase letters, digits and underscores, starting with a letter. |
 | `title` | yes | The card title. May contain office placeholders. |
 | `text` | yes | The card body. May contain office placeholders. |
+| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` while no native speaker has read the Hebrew (#564); remove it once one has. |
+| `text_he` | no | The body in Hebrew (#1064). See `title_he`. |
 | `anchor` | no (default `soft`) | `hard` or `soft`. See below. |
 | `tags` | no | A list of free-form labels. Five are sensitive. See below. |
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
@@ -212,6 +214,7 @@ Each option has:
 |---|---|---|
 | `id` | yes | Unique within the event. Same shape as an event id. |
 | `text` | yes in practice | What the player reads on the button. May use placeholders. |
+| `text_he` | with the event's `title_he` | The button's text in Hebrew (#1064). |
 | `historical` | no (default false) | `true` on the option that matches what really happened. At most one per event. |
 | `recommended` | no (default false) | The option a competent minister picks when the event is delegated. |
 | `effects` | no | A list of `{ target, delta }`. |
@@ -257,10 +260,13 @@ An option that did not happen can say who put it forward, and on what record (R-
   live between 0 and 1, so a delta of `0.03` is three points of the scale. Keep deltas small, as the example does;
 - `treasury` or `fx_reserves`, in game money;
 - `food`, the national Food stock, in whole units (one unit is one population unit's food for a month). The delta
-  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. The
-  Arms stock becomes a target with its pool (#781): `arms` moves it the same way. Note that the monthly import
-  (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency crisis is on, so outside a
-  crisis a cut only matters if it leaves less than one month's need; a gain stays.
+  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. Note
+  that the monthly import (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency
+  crisis is on, so outside a crisis a cut only matters if it leaves less than one month's need; a gain stays;
+- `arms`, the national Arms stock, in whole units (one unit is one 1,000-person recruit group's equipment, R-ARMS-001).
+  The delta rounds and the stock clamps at 0 exactly as `food` does. Arms has no monthly import refill: purchases
+  (R-ARMS-002), event gains and equipment returned when recruit training is cancelled (R-ARMS-003) can raise the
+  stock.
 
 `delta` must be a finite number. Any other target is an error. Policy ids (`rationing`, ...) are not effect targets;
 use `set_policy` for those.

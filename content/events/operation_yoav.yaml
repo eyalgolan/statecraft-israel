@@ -2,6 +2,12 @@
 id: operation_yoav
 title: Operation Yoav
 text: 'An Israeli supply convoy was fired on as it passed the Egyptian positions on 15 October, and the offensive the cabinet approved on 6 October is under way under Yigal Allon. {defense_minister} must decide how far it goes.'
+# For the native reviewer (#564): מבצע יואב, יגאל אלון, הר חברון and בקעת יריחו follow he.wiki
+# (https://he.wikipedia.org/wiki/מבצע_יואב; https://he.wikipedia.org/wiki/יגאל_אלון;
+# https://he.wikipedia.org/wiki/הר_חברון; https://he.wikipedia.org/wiki/בקעת_יריחו).
+title_he: מבצע יואב
+text_he: 'שיירת אספקה ישראלית נורתה כשעברה ליד העמדות המצריות ב־15 באוקטובר, והמתקפה שהממשלה אישרה ב־6 באוקטובר מתנהלת בפיקוד יגאל אלון. ההחלטה עד היכן תתקדם בידי {defense_minister}.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -17,6 +23,7 @@ to: 1948-10-23
 options:
   - id: stop_at_ceasefire
     text: Stop at the cease-fire and stay out of the Hebron hills
+    text_he: לעצור עם הפסקת האש ולא להיכנס להר חברון
     historical: true
     recommended: true
     set_rung: 5
@@ -24,6 +31,7 @@ options:
       - { target: security, delta: 0.025 }
   - id: push_to_hebron
     text: Let Allon push on into the Hebron hills and the Jericho valley
+    text_he: לאפשר לאלון להתקדם לתוך הר חברון ובקעת יריחו
     # No day on record for the Southern Front command's disagreement, so `design`: owner ruling of 18 October 2026 (#949).
     alternative: { basis: design }
     set_rung: 5

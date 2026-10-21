@@ -42,6 +42,10 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.dry_swamp_turns"),
         ("rules.yaml", "mvp.dry_swamp_cost"),
         ("rules.yaml", "mvp.field_food_per_turn"),
+        ("rules.yaml", "mvp.road_segment_turns"),
+        ("rules.yaml", "mvp.road_segment_cost"),
+        ("rules.yaml", "mvp.rail_segment_turns"),
+        ("rules.yaml", "mvp.rail_segment_cost"),
         ("rules.yaml", "mvp.objective_points"),
         ("rules.yaml", "mvp.objective_bonus_per_month"),
         ("rules.yaml", "mvp.objective_bonus_cap"),
@@ -125,6 +129,11 @@ public class DesignValuesTests
         ("projects.yaml", "projects[industry].capacity"),
         ("projects.yaml", "projects[industry].condition"),
         ("projects.yaml", "projects[industry].job_slots"),
+        ("projects.yaml", "projects[winery].cost"),
+        ("projects.yaml", "projects[winery].turns"),
+        ("projects.yaml", "projects[winery].capacity"),
+        ("projects.yaml", "projects[winery].condition"),
+        ("projects.yaml", "projects[winery].job_slots"),
         // Movement (Phase 5 PR 5, #744; Q-MOVE-1, Q-MOVE-3): agent-proposed under "Take all recommendations" (#375).
         ("rules.yaml", "attention_cost.move"),
         ("rules.yaml", "mvp.move_cost.coastal_plain"),
@@ -134,6 +143,8 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.move_cost.desert"),
         ("rules.yaml", "mvp.move_cost.mountains"),
         ("rules.yaml", "mvp.stack_limit"),
+        ("rules.yaml", "mvp.road_move_cost"),   // R-MOVE-007, #745 (Q-MOVE-2): agent-proposed
+        ("rules.yaml", "mvp.rail_move_cost"),
         ("unit_types.yaml", "types[veteran_soldier].movement_points"),
         ("unit_types.yaml", "types[artillery].movement_points"),
         ("unit_types.yaml", "types[armoured_car].movement_points"),
@@ -228,6 +239,7 @@ public class DesignValuesTests
         Assert.Equal((0.5, 1.0, 0.5), (c.Rules.AttentionCost["assign_workers"], c.Rules.AttentionCost["train"], c.Rules.AttentionCost["cancel_training"]));
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));
+        Assert.Equal((6, 2.0, 6, 4.0), (m.RoadSegmentTurns, m.RoadSegmentCost, m.RailSegmentTurns, m.RailSegmentCost));   // Q-COR-6
         Assert.Equal((100, 5, 60), (m.ObjectivePoints, m.ObjectiveBonusPerMonth, m.ObjectiveBonusCap));   // D-B6, D-B2
         Assert.Equal((0.35, 0.15), (m.HousingStartCondition, m.OverflowConditionLoss));   // Q-START-3, Q-HOUSE-1 (D-D1)
         Assert.Equal((5, 0.5), (m.DelegationLoyaltyFloor, m.DisloyalEffectShare));   // R-EVT-003, #107 (D-H1)

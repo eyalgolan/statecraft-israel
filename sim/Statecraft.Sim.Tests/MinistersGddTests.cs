@@ -8,7 +8,7 @@ using Xunit;
 /// docs/superpowers/plans/2026-10-15-gdd-phase-7.md): R-MIN-001 (each named system reads its office's multiplier,
 /// Q-MIN-1), R-MIN-002 (the multiplier scales output and progress per turn, rounded by the one stated rule: floor with
 /// carry, so no fraction of a turn or a person enters the state, Q-MIN-2) and R-MIN-003 (an ended office reads its named
-/// successor, or is neutral 1.0 with none, Q-MIN-3). Corridors and military training stay unmapped until #870 and #742.</summary>
+/// successor, or is neutral 1.0 with none, Q-MIN-3). Military training stays unmapped until #742.</summary>
 public class MinistersGddTests
 {
     /// <summary>The base GDD fixture plus the three offices of the slice, each with a budget line, and the
@@ -233,6 +233,7 @@ offices:
             ["field_work"] = "agriculture_minister",
             ["yishuv_work"] = "agriculture_minister",
             ["absorption"] = "immigration_minister",
+            ["corridors"] = "transportation_minister",
         }, m);
     }
 

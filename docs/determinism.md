@@ -87,7 +87,7 @@ fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet te
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
 command; its snapshot diff in the PR shows what moved, and the commit message says why. All four play the real content.
 `cautious` and `reckless` stay in 1948, so they move only when a 1948 rule or event does; `mvp-absorb-first` (GDD Phase 1
-PR 3) fills Tel Aviv's jobs on the first turn and plays to 15 June 1949; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
+PR 3) fills Tel Aviv's jobs on the first turn and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
 turns down every source of foreign currency until Money and Food run out, and ends in `defeat_economy` (R-END-002).
 
 **MVP goldens after the cutover.** The real game is the GDD game, so every golden above is an MVP golden. Each PR that
@@ -320,3 +320,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | Phase 7 PR 4 carry canonical fix | 1950 | `e3c76f5f` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `25ea8fbf`). |
 | Phase 7 PR 4 carry canonical fix | 1952 | `37866907` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `ef8c5fea`). |
 | Phase 7 PR 4 carry canonical fix | mvp-end | `37866907` | Nonzero site and city-project carry is written as IEEE bits, consistently on .NET and Unity Mono, instead of runtime-dependent round-trip decimal text. Only canonical representation changes; the stored progress, all other snapshot lines, completion dates and gameplay are unchanged (was `ef8c5fea`). |
+| #738 remaining scenario step | scenario-mvp-absorb-first | `c045ea90` | extends the run to 15 January 1950 so it completes `absorb_immigrants` (R-OBJ-004): two halutz cohorts free city housing, fourteen housing projects take the overflow and two industry projects raise employment, using only existing commands (was `234e32ee`) |

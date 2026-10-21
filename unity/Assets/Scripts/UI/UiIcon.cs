@@ -8,7 +8,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>A small vector icon drawn with Painter2D (no image asset), in the promo's style (promo/final/03): a gold coin
     /// for the Treasury, figures for Immigration and Public Support, a blue shield for Security, a globe for International
-    /// Standing, a banknote for Foreign Currency, two linked rings for Social cohesion, gold line icons for the screen buttons, and a terrain sign per biome. Each
+    /// Standing, a banknote for Foreign Currency, two linked rings for Social cohesion, gold line icons for the screen buttons, a star and the GitHub mark for "Star on GitHub" (#1168), and a terrain sign per biome. Each
     /// glyph is drawn in a 24 x 24 design box, scaled to the element's content box and centred in it. In UXML:
     /// <c>&lt;Statecraft.Game.UI.UiIcon glyph="coin" /&gt;</c>. An unknown glyph draws nothing.</summary>
     [UxmlElement]
@@ -42,7 +42,7 @@ namespace Statecraft.Game.UI
         {
             ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote, ["rings"] = Rings,
             ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["book"] = Book, ["restart"] = Restart, ["gear"] = Gear,
-            ["chevron"] = Chevron, ["chevron-back"] = ChevronBack, ["hourglass"] = Hourglass,
+            ["hourglass"] = Hourglass, ["star"] = Star, ["mark-github"] = MarkGithub,
             ["region"] = Region, ["house"] = House, ["village"] = Village, ["flag"] = Flag,
             ["peaks"] = Peaks, ["skyline"] = Skyline, ["ledger"] = Ledger,
             ["biome-sea"] = Waves, ["biome-lake"] = Waves, ["biome-coastal_plain"] = Plain, ["biome-hills"] = Hills,
@@ -77,17 +77,6 @@ namespace Statecraft.Game.UI
             var p = mgc.painter2D;
             p.lineJoin = LineJoin.Round; p.lineCap = LineCap.Round;
             paint(p, (x, y) => origin + new Vector2(x, y) * s, s, LineColour(lit));
-        }
-
-        /// <summary>A round navy disc with a gold rim and <paramref name="glyph"/> inside it, centred on <paramref name="centre"/>
-        /// (the promo's round option and button sign).</summary>
-        public static void PaintDisc(MeshGenerationContext mgc, string glyph, Vector2 centre, float radius)
-        {
-            var p = mgc.painter2D;
-            p.fillColor = new Color32(14, 22, 38, 255); p.strokeColor = new Color32(196, 160, 92, 150); p.lineWidth = 1f;
-            Circle(p, centre, radius); p.Fill(); p.Stroke();
-            var inner = radius * 0.62f;
-            Paint(mgc, glyph, new Rect(centre.x - inner, centre.y - inner, 2 * inner, 2 * inner));
         }
 
         // --- helpers (design-box coordinates) ---
@@ -293,19 +282,6 @@ namespace Statecraft.Game.UI
             Circle(p, at(12, 12), 3.2f * s); p.Stroke();
         }
 
-        static void Chevron(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
-        {
-            p.strokeColor = gold; p.lineWidth = 2.2f * s;
-            p.BeginPath(); p.MoveTo(at(9.6f, 6.4f)); p.LineTo(at(15.2f, 12)); p.LineTo(at(9.6f, 17.6f)); p.Stroke();
-        }
-
-        /// <summary>The chevron mirrored, pointing left: the option sign in the Hebrew UI.</summary>
-        static void ChevronBack(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
-        {
-            p.strokeColor = gold; p.lineWidth = 2.2f * s;
-            p.BeginPath(); p.MoveTo(at(14.4f, 6.4f)); p.LineTo(at(8.8f, 12)); p.LineTo(at(14.4f, 17.6f)); p.Stroke();
-        }
-
         static void Hourglass(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
         {
             p.strokeColor = gold; p.lineWidth = 1.5f * s;
@@ -316,6 +292,81 @@ namespace Statecraft.Game.UI
             p.fillColor = gold;
             p.BeginPath(); p.MoveTo(at(8.6f, 20)); p.LineTo(at(12, 16.4f)); p.LineTo(at(15.4f, 20)); p.ClosePath(); p.Fill();
         }
+
+        // --- the start screen's "Star on GitHub" signs (#1168): Octicons star-fill-24 and mark-github-24 (GitHub's Primer
+        // icons, primer/octicons at 6dbe38e4, MIT, THIRD-PARTY-NOTICES.md and LICENSES/Octicons-MIT.txt). Each SVG path is
+        // one closed outline in the same 24 x 24 box, written out as absolute cubic segments (its lines and its corner arcs
+        // as cubics), so Painter2D fills it without an SVG parser. Filled in the gold glyphs' colour.
+        static void Star(Painter2D p, Func<float, float, Vector2> at, float s, Color gold) => FillCubics(p, at, StarPath, gold);
+
+        static void MarkGithub(Painter2D p, Func<float, float, Vector2> at, float s, Color gold) => FillCubics(p, at, MarkGithubPath, gold);
+
+        /// <summary>Fills the outline <paramref name="d"/>: a start point, then (control 1, control 2, end) per segment.</summary>
+        static void FillCubics(Painter2D p, Func<float, float, Vector2> at, float[] d, Color fill)
+        {
+            p.fillColor = fill;
+            p.BeginPath(); p.MoveTo(at(d[0], d[1]));
+            for (int i = 2; i + 5 < d.Length; i += 6) p.BezierCurveTo(at(d[i], d[i + 1]), at(d[i + 2], d[i + 3]), at(d[i + 4], d[i + 5]));
+            p.ClosePath(); p.Fill();
+        }
+
+        static readonly float[] StarPath =
+        {
+            12.672f, 0.668f,
+            13.692f, 2.734f, 14.711f, 4.799f, 15.731f, 6.865f,
+            18.01f, 7.196f, 20.29f, 7.527f, 22.569f, 7.858f,
+            22.852f, 7.899f, 23.087f, 8.097f, 23.175f, 8.369f,
+            23.264f, 8.64f, 23.19f, 8.939f, 22.985f, 9.138f,
+            21.336f, 10.746f, 19.686f, 12.353f, 18.037f, 13.961f,
+            18.426f, 16.232f, 18.816f, 18.502f, 19.205f, 20.773f,
+            19.253f, 21.054f, 19.137f, 21.338f, 18.906f, 21.506f,
+            18.675f, 21.673f, 18.37f, 21.696f, 18.117f, 21.563f,
+            16.078f, 20.491f, 14.039f, 19.419f, 12f, 18.347f,
+            9.961f, 19.419f, 7.923f, 20.491f, 5.884f, 21.563f,
+            5.631f, 21.696f, 5.325f, 21.674f, 5.094f, 21.506f,
+            4.863f, 21.338f, 4.748f, 21.053f, 4.796f, 20.772f,
+            5.185f, 18.502f, 5.575f, 16.231f, 5.964f, 13.961f,
+            4.315f, 12.353f, 2.665f, 10.746f, 1.016f, 9.138f,
+            0.811f, 8.939f, 0.737f, 8.641f, 0.825f, 8.369f,
+            0.914f, 8.097f, 1.149f, 7.899f, 1.432f, 7.859f,
+            3.711f, 7.528f, 5.991f, 7.196f, 8.27f, 6.865f,
+            9.289f, 4.799f, 10.308f, 2.734f, 11.327f, 0.668f,
+            11.453f, 0.412f, 11.714f, 0.25f, 12f, 0.25f,
+            12.285f, 0.25f, 12.546f, 0.412f, 12.672f, 0.668f
+        };
+
+        static readonly float[] MarkGithubPath =
+        {
+            10.226f, 17.284f,
+            7.261f, 16.924f, 5.172f, 14.791f, 5.172f, 12.028f,
+            5.172f, 10.905f, 5.576f, 9.692f, 6.25f, 8.884f,
+            5.958f, 8.143f, 6.003f, 6.57f, 6.34f, 5.919f,
+            7.238f, 5.807f, 8.451f, 6.279f, 9.17f, 6.929f,
+            10.023f, 6.66f, 10.922f, 6.525f, 12.023f, 6.525f,
+            13.123f, 6.525f, 14.022f, 6.66f, 14.83f, 6.907f,
+            15.526f, 6.278f, 16.762f, 5.807f, 17.66f, 5.919f,
+            17.975f, 6.525f, 18.02f, 8.098f, 17.727f, 8.861f,
+            18.447f, 9.715f, 18.828f, 10.861f, 18.828f, 12.028f,
+            18.828f, 14.791f, 16.739f, 16.88f, 13.73f, 17.262f,
+            14.493f, 17.756f, 15.01f, 18.834f, 15.01f, 20.069f,
+            15.01f, 20.848f, 15.01f, 21.626f, 15.01f, 22.405f,
+            15.01f, 23.079f, 15.571f, 23.461f, 16.245f, 23.191f,
+            20.311f, 21.641f, 23.5f, 17.576f, 23.5f, 12.545f,
+            23.5f, 6.188f, 18.334f, 1f, 11.978f, 1f,
+            5.62f, 1f, 0.5f, 6.188f, 0.5f, 12.545f,
+            0.5f, 17.531f, 3.667f, 21.665f, 7.935f, 23.214f,
+            8.541f, 23.439f, 9.125f, 23.034f, 9.125f, 22.428f,
+            9.125f, 21.829f, 9.125f, 21.229f, 9.125f, 20.63f,
+            8.783f, 20.773f, 8.417f, 20.849f, 8.047f, 20.854f,
+            6.564f, 20.854f, 5.688f, 20.046f, 5.06f, 18.541f,
+            4.813f, 17.934f, 4.543f, 17.575f, 4.026f, 17.508f,
+            3.756f, 17.485f, 3.667f, 17.373f, 3.667f, 17.238f,
+            3.667f, 16.968f, 4.117f, 16.767f, 4.565f, 16.767f,
+            5.217f, 16.767f, 5.778f, 17.171f, 6.362f, 18.002f,
+            6.812f, 18.653f, 7.283f, 18.945f, 7.845f, 18.945f,
+            8.406f, 18.945f, 8.765f, 18.743f, 9.282f, 18.226f,
+            9.664f, 17.845f, 9.956f, 17.508f, 10.226f, 17.283f
+        };
 
         // --- the info panel's fact rows (gold line art, as the promo's row signs; HUD round 1) ---
         /// <summary>The region row: a folded map of three panels.</summary>

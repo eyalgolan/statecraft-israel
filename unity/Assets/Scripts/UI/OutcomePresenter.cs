@@ -120,7 +120,12 @@ namespace Statecraft.Game.UI
                 var option = ev?.Options.FirstOrDefault(o => o.Id == order.OptionId);
                 if (ev == null || option == null || !option.Historical) continue;   // the mapping refuses this too
                 string words;
-                try { words = Cabinet.Fill(c, s, option.Text, EventSystem.FillDate(ev, bridge.LastBatchDate)); }   // the card's date
+                try
+                {
+                    var date = EventSystem.FillDate(ev, bridge.LastBatchDate);   // the card's date
+                    // The option as the card shows it (#1210): its text_he in Hebrew, the English when it has none.
+                    words = ContentNames.Fill(text, c, s, date, Cabinet.Fill(c, s, option.Text, date), option.TextHe);
+                }
                 catch (Exception e)   // never let a caption break the turn's other TurnEnded work (the autosave)
                 {
                     UnityEngine.Debug.LogWarning($"VIDEO outcome caption for {order.EventId}/{order.OptionId}: {e.Message}");

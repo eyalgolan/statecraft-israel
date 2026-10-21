@@ -2,6 +2,11 @@
 id: hula_drainage
 title: Draining the Hula
 text: 'Drainage works south of Lake Hula, under the Palestine Land Development Company''s concession, reach into the demilitarised zone with Syria. Syria has complained, and the chairman of the armistice commission asks that work stop pending agreement. {prime_minister} must decide.'
+# For the native reviewer (#564): Hebrew terminology follows he.wiki "ייבוש החולה" (ימת החולה, החברה להכשרת
+# היישוב, השטח המפורז): https://he.wikipedia.org/wiki/ייבוש_החולה
+title_he: ייבוש החולה
+text_he: 'עבודות הניקוז מדרום לימת החולה, במסגרת הזיכיון של החברה להכשרת היישוב, מגיעות אל השטח המפורז עם סוריה. סוריה התלוננה, ויושב ראש ועדת שביתת הנשק מבקש להפסיק את העבודות עד להשגת הסכמה. על {prime_minister} להחליט.'
+text_he_review: agent-checked
 anchor: soft
 tags: [security]
 office: prime_minister
@@ -16,6 +21,7 @@ site: hula
 options:
   - id: continue_works
     text: Continue the works and assert Israel's rights in the zone
+    text_he: להמשיך בעבודות ולעמוד על זכויות ישראל באזור
     historical: true
     recommended: true
     effects:
@@ -23,6 +29,7 @@ options:
       - { target: intl_standing, delta: -0.05 }
   - id: halt
     text: Halt the works until there is agreement
+    text_he: להפסיק את העבודות עד להשגת הסכמה
     # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
     alternative:
       basis: debated

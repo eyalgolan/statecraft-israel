@@ -69,7 +69,8 @@ namespace Statecraft.Game.UI
         static readonly (string name, string key)[] Texts =
         {
             ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-            ("nav-why", "hud.nav.why"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-settings", "hud.nav.settings"),
+            ("nav-why", "hud.nav.why"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
+            ("nav-settings", "hud.nav.settings"),
             ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         };
 
@@ -113,7 +114,7 @@ namespace Statecraft.Game.UI
         readonly MeterTip? meterTip;
 
         /// <summary>The panels under the bar (Statecraft.uss: top 456 px under the three-row bar), which PlaceUnderBar moves
-        /// down by what the three-row bar grows past its 440 px.</summary>
+        /// by what the three-row bar grows past, or shrinks under, its 440 px (#1089).</summary>
         readonly List<VisualElement> underBar;
         /// <summary>The bar's items, whose rows set the three-row bar's height (RowsHeight).</summary>
         readonly List<VisualElement> barItems;
@@ -340,18 +341,21 @@ namespace Statecraft.Game.UI
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
         }
 
-        /// <summary>The three-row bar takes its rows' height when that is more than its 440 px (Statecraft.uss), so the raised
-        /// text of a smaller phone fits it (#642, the owner: "down to 375x667"), and the panels under it move down by what it
-        /// grew: a top margin, not a top, so the stylesheet's other placements (the toast at the bottom beside a wide screen)
-        /// still apply. Set here, not as height: auto in the stylesheet: there Yoga sized the wrapping bar as if each quarter-width
-        /// meter took a line of its own (about 1300 px). Its items' geometry events re-run this (OnRowGeometry), and so does SetCompact.</summary>
+        /// <summary>The three-row bar takes its rows' height, so the raised text of a smaller phone fits it when that is more than
+        /// its 440 px (Statecraft.uss; #642, the owner: "down to 375x667"), and on a phone whose rows come in shorter no empty band
+        /// is left between the stats and the map (#1089, the owner: "the three-row bar shrinks to fit its rows"). The panels under
+        /// it move by what it grew or shrank: a top margin (negative when it shrank), not a top, so the stylesheet's other
+        /// placements (the toast at the bottom beside a wide screen) still apply. Set here, not as height: auto in the stylesheet:
+        /// there Yoga sized the wrapping bar as if each quarter-width meter took a line of its own (about 1300 px). Its items'
+        /// geometry events re-run this (OnRowGeometry), and so does SetCompact.</summary>
         void PlaceUnderBar()
         {
             // A hidden bar (the start screen) moves nothing: the start screen's toast keeps its own top (review of #859).
             var rows = hudRoot.ClassListContains(ThreeRowClass) && bar.resolvedStyle.display != DisplayStyle.None ? RowsHeight() : 0f;
-            var grown = rows - ThreeRowBarPx;
-            bar.style.height = grown > 0.5f ? new StyleLength(rows) : new StyleLength(StyleKeyword.Null);
-            var margin = grown > 0.5f ? new StyleLength(grown) : new StyleLength(StyleKeyword.Null);
+            var grown = rows > 0f ? rows - ThreeRowBarPx : 0f;   // NaN before layout or 0 off the three-row bar: the stylesheet's height
+            var fit = UnityEngine.Mathf.Abs(grown) > 0.5f;
+            bar.style.height = fit ? new StyleLength(rows) : new StyleLength(StyleKeyword.Null);
+            var margin = fit ? new StyleLength(grown) : new StyleLength(StyleKeyword.Null);
             foreach (var e in underBar) e.style.marginTop = margin;
         }
 
@@ -369,6 +373,7 @@ namespace Statecraft.Game.UI
                 top = t; bottom = b;
             }
             if (bottom > top) total += bottom - top;
+            if (!(total > 0f)) return float.NaN;   // no laid-out row yet: not just the padding, which would collapse the bar (#1089)
             var s = bar.resolvedStyle;
             return total + s.paddingTop + s.paddingBottom + s.borderTopWidth + s.borderBottomWidth;
         }

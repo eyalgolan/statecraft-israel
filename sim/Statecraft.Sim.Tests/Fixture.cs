@@ -234,6 +234,7 @@ series:
             ["unit_types.yaml"] = GddUnitTypes,
             ["sites.yaml"] = GddSites,
             ["projects.yaml"] = GddProjects,
+            ["corridors.yaml"] = GddCorridors,
         };
         if (extra != null) foreach (var kv in extra) o[kv.Key] = kv.Value;
         return o;
@@ -263,6 +264,10 @@ mvp:
   dry_swamp_turns: 3
   dry_swamp_cost: 2
   field_food_per_turn: 7
+  road_segment_turns: 3
+  road_segment_cost: 1.5
+  rail_segment_turns: 2
+  rail_segment_cost: 3
   objective_points: 100
   objective_bonus_per_month: 5
   objective_bonus_cap: 60
@@ -283,6 +288,8 @@ mvp:
   disloyal_effect_share: 0.5
   move_cost: { coastal_plain: 1, hills: 2, desert: 3 }
   stack_limit: 2
+  road_move_cost: 1
+  rail_move_cost: 2
   enemy_held_localities: []
 ";
 
@@ -315,6 +322,32 @@ projects:
 
     /// <summary>A projects.yaml kind that requires vineyards (R-PROJ-005), to add to <see cref="GddProjects"/>. Fixture values.</summary>
     public const string Winery = "  - { id: winery, name: a winery, cost: 2, turns: 2, capacity: 0, condition: 0, job_slots: 6, requires: vineyards }\n";
+
+    /// <summary>Two corridors on the fixture's land hexes, in file order: road_a, two segments along r = 0, and rail_a, one
+    /// segment along r = 1. Fixture values, not history.</summary>
+    public const string GddCorridors = @"
+corridors:
+  - id: road_a
+    kind: road
+    name: Road A
+    name_he: כביש א
+    route: road_a
+    segments:
+      - { to: X, hexes: [[2, 0], [3, 0]] }
+      - { to: Y, hexes: [[3, 0], [4, 0]] }
+    sources:
+      - { url: ""https://example.org/road_a"", checked: 2026-10-15 }
+    status: draft
+  - id: rail_a
+    kind: rail
+    name: Rail A
+    name_he: מסילה א
+    route: rail_a
+    segments: [{ to: Y, hexes: [[2, 1], [3, 1]] }]
+    sources:
+      - { url: ""https://example.org/rail_a"", checked: 2026-10-15 }
+    status: draft
+";
 
     /// <summary>One designated site on a land hex next to town_a, with no settlement on it. Fixture values, not history.</summary>
     public const string GddSites = @"

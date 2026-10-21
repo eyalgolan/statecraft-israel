@@ -88,8 +88,9 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>Whether a site being built names <paramref name="unit"/>: the unit has a project (D-D6).</summary>
-        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
+        /// <summary>Whether a site or a corridor segment being built names <paramref name="unit"/>: the unit has a project
+        /// (D-D6).</summary>
+        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit) || Corridors.WorkOf(s, unit) != null;
 
         /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
         /// record. The Treasury pays build_yishuv_cost now and borrows what it lacks; the site gets build_yishuv_turns to go; the unit
@@ -106,6 +107,10 @@ namespace Statecraft.Sim
             if (!IsPioneer(u.Type)) return "Only halutzim do pioneer work";
             var busy = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
             if (busy != null) return $"That group of halutzim is already building {PlayerText.Site(c, busy.Site)}";
+            if (Corridors.WorkOf(s, unit) is var (cw, ci))
+                return $"That group of halutzim is already building {Corridors.SegmentName(c.Corridors.First(x => x.Id == cw.Id), ci)}";
+            // Phase 4 PR 2 (#786): build_road and build_rail take a corridor segment, "corridor:N" (R-COR-001).
+            if (Corridors.IsAction(action)) return Corridors.Start(c, s, unit, action, site, why);
             if (action != BuildYishuv && action != BuildCamp && action != PlowFields && action != DrySwamp) return "There is no such pioneer work";
             var place = c.Sites.FirstOrDefault(x => x.Id == site);
             if (place == null) return "There is no such site";
@@ -121,17 +126,28 @@ namespace Statecraft.Sim
                 return $"{place.Name} can be plowed once {first.Name} is {(first.Kinds.Contains(SwampKind) ? "drained" : "built")}";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             // Owner decision "Allow borrowing" (2026-10-15, #378 question 13): a short Treasury borrows, as map actions do.
-            var cost = camp ? r.BuildCampCost!.Value : plow ? r.PlowFieldsCost!.Value : drain ? r.DrySwampCost!.Value : r.BuildYishuvCost;   // the loader requires them in the GDD loop
+            var (cost, turns) = Terms(r, action);
             EconomySystem.PayOrBorrow(c, s, cost, camp ? "to build a training camp" : plow ? "to plow fields" : drain ? "to drain a swamp" : "to build a yishuv", why);
             // The same reading of D-A6 as training's: the turn of the order is the first build turn, so with
             // build_yishuv_turns 6 an order on turn T is built at the end of T+5
             // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).
-            s.Sites[site] = new SiteWork(site, unit, camp ? r.BuildCampTurns!.Value : plow ? r.PlowFieldsTurns : drain ? r.DrySwampTurns!.Value : r.BuildYishuvTurns, null);
+            s.Sites[site] = new SiteWork(site, unit, turns, null);
             why.Add(plow || drain
                 ? new Cause("map", site, 1, $"{place.Name}: a group of halutzim began {(plow ? "plowing" : "draining the swamp")}, cost {PlayerText.Money(c, "treasury", cost)}")
                 : new Cause("map", site, 1, $"{place.Name}: a group of halutzim began building {(camp ? "a training camp" : "a yishuv")}, cost {PlayerText.Money(c, "treasury", cost)}"));
             return null;
         }
+
+        /// <summary>What pioneer <paramref name="action"/> costs the Treasury and how many turns of progress it takes, under
+        /// rules <paramref name="r"/>: what <see cref="Start"/> charges and gives the site, and what the info panel shows (#1124).
+        /// The loader requires every value in the GDD loop.</summary>
+        public static (double Cost, int Turns) Terms(MvpRules r, string action) => action switch
+        {
+            BuildCamp => (r.BuildCampCost!.Value, r.BuildCampTurns!.Value),
+            PlowFields => (r.PlowFieldsCost!.Value, r.PlowFieldsTurns),
+            DrySwamp => (r.DrySwampCost!.Value, r.DrySwampTurns!.Value),
+            _ => (r.BuildYishuvCost, r.BuildYishuvTurns),
+        };
 
         /// <summary>Whether a training camp may be built at <paramref name="site"/>: its kinds include military_camp or hakhshara
         /// (R-CAMP-001). Built, its city gains those facilities (Training.HasFacility).</summary>
@@ -151,7 +167,7 @@ namespace Statecraft.Sim
         {
             if (!s.Units.ContainsKey(unit)) return "There is no such unit";
             var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
-            if (work == null) return "That group of halutzim is not building anything";
+            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : "That group of halutzim is not building anything";
             s.Sites.Remove(work.Site);
             why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned"));
             return null;
@@ -190,6 +206,7 @@ namespace Statecraft.Sim
                 s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget);
                 if (promoted) why.Add(new Cause("map", w.Site, 1, "A group of halutzim became veteran pioneers"));
             }
+            Corridors.Advance(c, s, next, why);   // R-COR-002: after the sites (Phase 4 PR 2)
         }
 
         /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex).</summary>

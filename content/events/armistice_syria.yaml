@@ -2,6 +2,11 @@
 id: armistice_syria
 title: Armistice with Syria
 text: 'Negotiators have reached an armistice agreement with Syria. {prime_minister} must decide whether Israel signs.'
+# For the native reviewer (#564): Hebrew terminology follows he.wiki "הסכמי שביתת הנשק בתום מלחמת העצמאות":
+# https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות
+title_he: שביתת הנשק עם סוריה
+text_he: 'המשא ומתן הניב הסכם שביתת נשק עם סוריה. על {prime_minister} להחליט אם ישראל תחתום עליו.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 from: 1949-07-20
@@ -11,6 +16,7 @@ to: 1950-01-01
 options:
   - id: sign
     text: Sign the armistice
+    text_he: לחתום על הסכם שביתת הנשק
     historical: true
     recommended: true
     set_rung: 2
@@ -18,6 +24,7 @@ options:
       - { target: intl_standing, delta: 0.05 }
   - id: hold_out
     text: Refuse and keep fighting
+    text_he: לסרב ולהמשיך בלחימה
     alternative: { basis: design }
     set_rung: 4
     effects:
