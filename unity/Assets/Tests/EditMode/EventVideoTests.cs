@@ -192,14 +192,15 @@ public class EventVideoTests
 
     /// <summary>A sensitive clip waits for the owner's review before a shareable build. The owner reviewed the three
     /// sensitive clips on 14 October 2026 (relayed by the coordinator: "the 3 ilustration clips are great but no need to
-    /// say there were created by ai"), so the shipped mapping passes; the same rows unreviewed still refuse.</summary>
+    /// say there were created by ai"), and on 20 October 2026 the altalena and operation_horev shots (#1102, "looks good"),
+    /// so the shipped mapping passes; the same rows unreviewed still refuse.</summary>
     [Test]
     public void ASensitiveClipWaitsForTheOwnersReviewBeforeAShareableBuild()
     {
         var gate = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         var shareable = new[] { "Unity", "-shareable" };
-        CollectionAssert.AreEqual(new[] { "operation_yoav", "ten_days" }, Rows.Where(x => x.SensitivityReviewed).Select(x => x.Event).ToArray(),
-            "the owner's review of 2026-10-14, and nothing else");
+        CollectionAssert.AreEqual(new[] { "operation_yoav", "ten_days", "altalena", "operation_horev" }, Rows.Where(x => x.SensitivityReviewed).Select(x => x.Event).ToArray(),
+            "the owner's reviews of 2026-10-14 and 2026-10-20, and nothing else");
         CollectionAssert.IsEmpty(EventVideoMapping.SensitiveUnreviewed(Rows));
         // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
         StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
@@ -210,8 +211,8 @@ public class EventVideoTests
         Assert.IsNull(gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, Rows }), "reviewed: the clips may ship");
         var unreviewed = Rows.Select(x => { x.SensitivityReviewed = false; return x; }).ToList();
         var refusal = (string?)gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, unreviewed });
-        StringAssert.Contains("illustration clips: operation_yoav, ten_days", refusal ?? "");
+        StringAssert.Contains("illustration clips: altalena, operation_horev, operation_yoav, ten_days", refusal ?? "");
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity" }, reviewedContent, null, false, null, unreviewed }), "a dev build is not gated");
-        CollectionAssert.AreEqual(new[] { "operation_yoav", "ten_days" }, EventVideoMapping.SensitiveUnreviewed(unreviewed));
+        CollectionAssert.AreEqual(new[] { "altalena", "operation_horev", "operation_yoav", "ten_days" }, EventVideoMapping.SensitiveUnreviewed(unreviewed));
     }
 }

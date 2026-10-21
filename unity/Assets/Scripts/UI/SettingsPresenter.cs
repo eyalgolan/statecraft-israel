@@ -10,8 +10,9 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>The Settings screen (#40), opened from the left column's gear like the other screens (ScreenNav). Its options:
-    /// the graphics quality (GraphicsQuality: Auto / High / Low), the sound effects volume (GameAudio, #39), the UI's language (#1036), the UI scale (100% / 125% / 150%)
-    /// and the tilt-shift blur. The blur option turns it off and on: applied at once (TiltShift.Enabled, what the "tiltshift"
+    /// the graphics quality (GraphicsQuality: Auto / High / Low), the sound effects volume (GameAudio, #39), the UI's language (#1036),
+    /// the UI scale (100% / 125% / 150%), the tilt-shift blur, and a Community row whose "Star on GitHub" opens the repository
+    /// (#1168, ExternalLink). The blur option turns it off and on: applied at once (TiltShift.Enabled, what the "tiltshift"
     /// toggle sets) and kept in the SettingsStore, so it holds after a reload. A stored "off" only ever turns the blur off, so ?notiltshift still boots without it. The
     /// button says what is set ("On" / "Off"), not only a colour: the player's choice (Enabled), not the web tier's
     /// automatic last fallback step (TiltShift.FallbackOff), which it never changes.</summary>
@@ -39,6 +40,7 @@ namespace Statecraft.Game.UI
         readonly Action<string>? switchLanguage;
         readonly PanelSettings? panel; readonly Vector2Int reference; int uiScale = UiScales[0], chosen = UiScales[0];
         readonly (Button button, int percent, Action pick)[] scales;
+        readonly Action unbindStar;
 
         /// <param name="store">Where the choice is kept; null keeps nothing (the option still works until the page closes).</param>
         /// <param name="switchLanguage">Puts the UI in the language pressed (GameRoot builds the screens again); null changes
@@ -116,6 +118,11 @@ namespace Statecraft.Game.UI
             // The fit depends on the window's shape, which a resize changes: the offer and the applied scale follow the
             // root's geometry (as TopBarInset does). The file keeps the choice, so a shape that holds it again gets it back.
             root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
+            // Community (#1168): Star on GitHub opens the repository in a new tab.
+            screen.Q<Label>("settings-community-label").text = text["settings.community"];
+            var star = screen.Q<Button>("settings-star");
+            star.text = text["community.star"];
+            unbindStar = ExternalLink.Bind(star, ExternalLink.Repository);
             ScreenNav.OnOpened(screen, Show);   // a dev toggle may have changed it while the screen was shut
             Show();
         }
@@ -127,6 +134,7 @@ namespace Statecraft.Game.UI
             foreach (var (b, _, pick) in languages) b.clicked -= pick;
             foreach (var (b, _, pick) in sound) b.clicked -= pick;
             foreach (var (b, _, pick) in scales) b.clicked -= pick;
+            unbindStar();
             root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             if (panel != null) panel.referenceResolution = reference;
             if (screen.userData is Action) screen.userData = null;

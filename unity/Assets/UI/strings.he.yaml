@@ -64,6 +64,24 @@ objectives.name.railway: "הנחת מסילה"
 objectives.name.burma_road: "סלילת כביש"
 objectives.name.yishuvim: "הקמת יישוב"
 objectives.name.absorb_immigrants: "קליטת העולים"
+# How to play's button that opens the first-turn guide again (#42). For the native reviewer (#564).
+how_to_play.guide: "הצגת המדריך לתור הראשון"
+# The first-turn guide (#42): agent-drafted Hebrew, the How to play screen's terms (#1041) and the city panel's (city.*).
+# For the native reviewer (#564).
+guide.step: "שלב {0} מתוך {1}"
+guide.next: "הבא"
+guide.done: "סיום"
+guide.skip: "דילוג על המדריך"
+guide.attention.title: "תשומת לב"
+guide.attention.text: "רוב ההוראות עולות תשומת לב. כאן מוצג כמה נשאר לכם בתור הזה. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא."
+guide.city.title: "דיור ומשרות בעיר"
+guide.city.text: "בחרו עיר במפה כדי לראות כאן את הדיור ואת המשרות בה. הכפתורים + ו־− קובעים כמה מאזרחיה עובדים."
+guide.training.title: "אימון והכשרה"
+guide.training.text: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים. כל כפתור מראה כמה עולה האימון וכמה תורות הוא נמשך."
+guide.event.title: "כרטיס אירוע"
+guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
+guide.objectives.title: "יעדים"
+guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק, כמו היישוב החדש הראשון, ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
 settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
@@ -88,6 +106,12 @@ settings.language.note: "כרטיסי האירועים באנגלית בלבד �
 # The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
 # reviewer (#564).
 settings.uiscale: "גודל הממשק"
+# The Community row and the start screen's button (#1168): "קהילה" for the row; the button is a noun phrase ("marking
+# with a star on GitHub"), like the other buttons, so no verb agrees with the player's gender; GitHub in Hebrew letters,
+# as the static texts carry no Latin (HebrewUiTests). Approved by Beri, a native speaker, on #1178 (20 Oct 2026). For
+# the native reviewer (#564).
+settings.community: "קהילה"
+community.star: "סימון בכוכב בגיטהאב"
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item

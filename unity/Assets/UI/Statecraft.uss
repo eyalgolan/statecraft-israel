@@ -496,6 +496,24 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .turn-report-causes { white-space: normal; padding-left: 12px; }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
+/* The first-turn guide (#42, FirstTurnGuidePresenter): shown while the root has guide-open. The layer and the ring take no
+   pointer; the ring goes round the step's targets (placed in code), the dock holds the panel at the bottom of the window,
+   or at the top (guide-dock-top) when the targets are in the lower half. */
+.guide-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.guide-open .guide-layer { display: flex; }
+.guide-ring { position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+.guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
+.guide-dock.guide-dock-top { bottom: auto; top: 16px; }
+.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
+.guide-count { font-size: 16px; }
+.guide-title { color: var(--gold-light); font-size: 26px; white-space: normal; }
+.guide-text { white-space: normal; font-size: 19px; margin: 4px 0 8px 0; }
+.guide-actions { justify-content: space-between; }
+.guide-actions > Button { min-height: 44px; }
+.guide-next, .lang-he .guide-next { min-width: 120px; -unity-text-align: middle-center; }
+/* How to play's button that opens the guide again: under the lines, never squeezed by them. */
+.how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
+.lang-he .how-to-play-guide { align-self: flex-end; }
 /* A top-bar number's explanation (MeterTip, #1037): under the bar, wrapped, kept inside the window by MeterTip. */
 .meter-tip {
     display: none; position: absolute; max-width: 420px; padding: 6px 10px;
@@ -792,15 +810,26 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .start-en { font-size: 18px; color: var(--ink-dim); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
 .start-source { font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
 .start-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+/* A whole-pixel height (#1168): with Star on GitHub wrapped under New game on a phone held upright, a fractional row
+   height shifts the panel's lines off whole pixels and the band layout (StartScreenPresenter.Fit) then rounds the
+   panel's top back and forth, a layout that never settles. 50 px is the text's own height (49.5) rounded up. 300 px
+   wide: Star on GitHub's label and its two signs (about 260 px in English, 290 in Hebrew) fit, so all are one size. */
 .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
-    font-size: 24px; min-width: 220px; margin: 4px 10px; padding: 8px 24px; -unity-text-align: middle-center;
+    font-size: 24px; min-width: 300px; height: 50px; margin: 4px 10px; padding: 8px 24px; -unity-text-align: middle-center;
 }
 /* The recording (DeclarationRecording): a quiet button and its credit under the source line; while it plays, its words as
    captions in a dark strip just above the panel, over the painting (the panel is the strip's positioned parent, so the
    strip follows it in every layout). */
 .start-recording { display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 8px; }
 .start-listen { font-size: 18px; padding: 4px 16px; margin: 2px 10px; -unity-text-align: middle-center; }
+/* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
+   window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
+   PaintStarSigns). Secondary to New game in colour: no fill and a grey edge instead of the gold one; hover and keyboard
+   focus still light it like any button (Button:hover and :focus are the more specific rules). */
+.start-star { background-color: rgba(0, 0, 0, 0); border-color: var(--ink-dim); padding-left: 80px; -unity-text-align: middle-left; }
+/* The label starts right after the signs, on their side. "Button." so it beats .lang-he .start-button (centred, later). */
+.lang-he Button.start-star { padding-left: 24px; padding-right: 80px; -unity-text-align: middle-right; }
 .start-recording-credit { font-size: 15px; color: var(--ink-dim); margin: 2px 6px; }
 .start-caption {
     display: none; position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 12px; padding: 8px 20px 10px 20px;

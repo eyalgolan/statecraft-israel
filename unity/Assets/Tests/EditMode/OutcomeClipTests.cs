@@ -30,10 +30,11 @@ public class OutcomeClipTests
     public void EveryOutcomeIsAHistoricalOrderWithItsClipAndNoDeport()
     {
         var rows = EventVideoMapping.ParseOutcomes(Yaml);
-        CollectionAssert.AreEquivalent(new[] { "maabarot_policy", "hula_drainage", "operation_horev" }, rows.Select(r => r.Event));
+        CollectionAssert.AreEquivalent(new[] { "maabarot_policy", "hula_drainage", "operation_horev", "altalena", "first_new_yishuv", "iraqi_exodus", "austerity_1949" },
+            rows.Select(r => r.Event), "the three of 2026-10-14 and the four the owner approved on 2026-10-20 (#1102)");
         var problems = EventVideoMapping.OutcomeProblems(rows, C, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
-        Assert.AreEqual(3, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
+        Assert.AreEqual(7, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
     }
 
     [Test]
@@ -254,7 +255,8 @@ public class OutcomeClipTests
 
     /// <summary>The build gate reads the outcome clips from the mapping (Build.GatedClips, used by RefuseUnlessShareable):
     /// the sensitive Horev clip refuses a shareable build until the owner's review. The owner reviewed it on 14 October 2026
-    /// (relayed by the coordinator), so the shipped mapping passes and the same rows unreviewed refuse.</summary>
+    /// (relayed by the coordinator), and the altalena outcome on 20 October 2026 (#1102), so the shipped mapping passes and
+    /// the same rows unreviewed refuse.</summary>
     [Test]
     public void TheSensitiveHorevClipWaitsForTheOwnersReview()
     {
@@ -262,6 +264,7 @@ public class OutcomeClipTests
         var gated = (IReadOnlyList<EventVideoMapping.Row>)build.GetMethod("GatedClips", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { Yaml })!;
         var gate = build.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         Assert.IsTrue(gated.Single(r => r.File == "operation_horev-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-14");
+        Assert.IsTrue(gated.Single(r => r.File == "altalena-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-20 (#1102)");
         // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
         StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
             new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }));
@@ -271,6 +274,6 @@ public class OutcomeClipTests
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, gated }), "reviewed: the clips may ship");
         var unreviewed = gated.Select(r => { r.SensitivityReviewed = false; return r; }).ToList();
         var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, unreviewed });
-        StringAssert.Contains("illustration clips: operation_horev, operation_yoav, ten_days", refusal ?? "");
+        StringAssert.Contains("illustration clips: altalena, operation_horev, operation_yoav, ten_days", refusal ?? "");
     }
 }

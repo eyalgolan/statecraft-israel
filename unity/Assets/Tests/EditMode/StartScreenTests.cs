@@ -252,6 +252,27 @@ public class StartScreenTests
         Assert.IsFalse(Directory.Exists(store.Directory) && Directory.GetFiles(store.Directory).Length > 0);
     }
 
+    /// <summary>#1168: the start screen's "Star on GitHub" asks to open exactly the repository, once per press (mouse or
+    /// keyboard), through the injectable opener; the screen stays open.</summary>
+    [Test]
+    public void TheStarButtonOpensTheRepositoryAndLeavesTheScreenOpen()
+    {
+        var opened = new List<string>();
+        ExternalLink.Opener = opened.Add;
+        try
+        {
+            using var rig = new Rig(TempStore());
+            var star = rig.Ui.Q<Button>("start-star");
+            Assert.AreEqual("Star on GitHub", star.text);
+            SettingsScreenTests.PressWithPointer(star);
+            CollectionAssert.AreEqual(new[] { "https://github.com/eyalgolan/statecraft-israel" }, opened, "a click");
+            rig.Ui.Press("start-star");
+            Assert.AreEqual(2, opened.Count, "Enter or Space");
+            Assert.IsTrue(rig.Start.IsOpen, "the screen stays open");
+        }
+        finally { ExternalLink.Opener = ExternalLink.Default; }
+    }
+
     [Test]
     public void ContinueShowsOnlyWithASaveAndLoadsIt()
     {
@@ -339,7 +360,7 @@ public class StartScreenTests
         var cont = rig.Ui.Q<Button>("start-continue");
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
-        // Tab walks the screen's buttons only: Continue, New Game and the recording's button.
+        // Tab walks the screen's buttons only: Continue, New Game, the recording's button and Star on GitHub (#1168).
         var seen = new List<string>();
         for (int i = 0; i < 4; i++)
         {
@@ -349,7 +370,7 @@ public class StartScreenTests
             seen.Add((rig.Ui.Root.focusController.focusedElement as VisualElement)?.name ?? "none");
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
-        Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+        Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -557,6 +578,18 @@ public class StartScreenTests
                     Assert.GreaterOrEqual(r.height, 40f, $"{at}: {b} is a usable target");
                 }
                 Assert.IsFalse(R("start-continue").Overlaps(R("start-new-game")), at);
+                // #1168 review: Star on GitHub is New game's size, beside it or (in a narrow window) wrapped under it, and
+                // secondary in colour: no fill and no gold edge.
+                var star = R("start-star");
+                Assert.IsTrue(Inside(star, R("start-actions")) && Inside(star, panel), $"{at}: the Star button {star} is with New game, inside the panel");
+                var onePixel = Mathf.Max(0.5f, window.width / w + 0.01f);   // a scaled panel snaps each edge to a screen pixel
+                Assert.AreEqual(R("start-new-game").height, star.height, onePixel, $"{at}: the Star button is New game's height");
+                Assert.AreEqual(R("start-new-game").width, star.width, onePixel, $"{at}: the Star button is New game's width");
+                Assert.IsFalse(star.Overlaps(R("start-new-game")) || star.Overlaps(R("start-continue")), $"{at}: the Star button overlaps a button");
+                var starStyle = root.Q("start-star").resolvedStyle; var newGameStyle = root.Q("start-new-game").resolvedStyle;
+                Assert.AreEqual(newGameStyle.fontSize, starStyle.fontSize, $"{at}: the Star button's text is New game's size");
+                Assert.Less(starStyle.backgroundColor.a, 0.01f, $"{at}: the Star button has no fill (secondary to New game)");
+                Assert.AreNotEqual(newGameStyle.borderTopColor, starStyle.borderTopColor, $"{at}: the Star button's edge is not New game's gold");
             }
             finally
             {

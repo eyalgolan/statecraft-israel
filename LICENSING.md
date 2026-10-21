@@ -26,6 +26,7 @@ Different parts of this repository are under different licences. Where a file is
 | Rain-gauge data | `content/map/precip_stations.json` | Israel Meteorological Service, data.gov.il dataset 481, under the licence stated on the dataset ("Other (Open)") |
 | Unity engine and packages | `unity/Packages/`, `unity/ProjectSettings/` | Configuration only. The Unity engine and its packages are under Unity's own terms and are not included. Two editor-only packages come from OpenUPM under their own licences and are not included either: `com.ivanmurzak.unity.mcp` (Unity-MCP, Apache-2.0) and its dependency `extensions.unity.playerprefsex` (MIT); see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). No Asset Store content is in this repository. |
 | In every build | `YamlDotNet.dll` | MIT, Copyright (c) Antoine Aubry and contributors ([LICENSES/YamlDotNet-MIT.txt](LICENSES/YamlDotNet-MIT.txt)) |
+| The star and the GitHub mark on the start screen's "Star on GitHub" button | `unity/Assets/Scripts/UI/UiIcon.cs` (`StarPath`, `MarkGithubPath`: Octicons `star-fill-24` and `mark-github-24`, primer/octicons at 6dbe38e4, written out as cubic segments; #1168) | MIT, Copyright (c) 2026 GitHub Inc. ([LICENSES/Octicons-MIT.txt](LICENSES/Octicons-MIT.txt)). The GitHub mark is GitHub's trademark (see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)) |
 
 Historical facts are not owned by anyone. The text describing them paraphrases the cited sources. The research notes and reports quote short passages from their sources for commentary; those quotes remain © their authors.
 
