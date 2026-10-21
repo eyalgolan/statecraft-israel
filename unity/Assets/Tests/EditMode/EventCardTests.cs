@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
@@ -528,5 +530,226 @@ public class EventCardTests
         using var ui = new UiTestKit();
         new EventCardPresenter(ui.Root, new SimBridge(g, text), text, null);
         Assert.AreEqual(line, ui.Q<Label>("event-delegate").text);
+    }
+
+    // ---- The consequence card's banner (#954; plan docs/superpowers/plans/2026-10-17-alternate-timelines.md, A.4.7) ----
+
+    /// <summary>A test-only road, never shipped (the example.org sources say so): a hard card on the game's first day whose
+    /// second option was proposed; a consequence card that follows that road, with an option that rejoins the record; and a
+    /// card chained on the consequence card, which has no historical option of its own. Schema-valid
+    /// (content/schema/event.schema.json); loaded beside the real content through the loader's own checks.</summary>
+    static readonly Dictionary<string, string> RoadFixture = new Dictionary<string, string>
+    {
+        ["events/zz_banner_parent.yaml"] = @"id: banner_parent
+title: 'The road of {prime_minister}'
+title_he: 'הדרך של {prime_minister}'
+text: 'A decision with a record.'
+text_he: 'החלטה שיש לה תיעוד.'
+text_he_review: agent-checked
+anchor: hard
+from: 1948-05-15
+to: 1948-06-11
+options:
+  - id: record
+    text: What happened
+    text_he: מה שקרה
+    historical: true
+  - id: road
+    text: The road not taken
+    text_he: הדרך שלא נבחרה
+    alternative:
+      basis: proposed
+      by: the opposition benches
+      date: 1948-05-20
+      sources: [{ url: ""https://example.org/minutes"", checked: 2026-10-17 }]
+sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
+",
+        ["events/zz_banner_after.yaml"] = @"id: banner_after
+kind: consequence
+title: After the road
+text: 'What was feared.'
+from: 1948-06-15
+to: 1948-08-15
+requires: [{ event: banner_parent, option: road }]
+options:
+  - id: hold
+    text: Hold the course
+    alternative: { basis: debated, by: the cabinet, date: 1948-06-20, sources: [{ url: ""https://example.org/cabinet"", checked: 2026-10-17 }] }
+  - id: back
+    text: Go back
+    rejoin: banner_parent
+    alternative: { basis: design }
+sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
+",
+        ["events/zz_banner_second.yaml"] = @"id: banner_second
+kind: consequence
+title: Further along
+text: 'Later still.'
+from: 1948-07-15
+to: 1948-08-15
+requires: [{ event: banner_after, option: hold }]
+options:
+  - id: go_on
+    text: Go on
+    alternative: { basis: design }
+sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
+",
+    };
+
+    static Content WithRoad()
+    {
+        string Read(string rel) => RoadFixture.TryGetValue(rel, out var yaml) ? yaml
+            : File.Exists(Path.Combine(Paths.Content, rel)) ? File.ReadAllText(Path.Combine(Paths.Content, rel)) : null;
+        var files = Directory.GetFiles(Path.Combine(Paths.Content, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f));
+        return ContentLoader.Load(Read, files.Concat(RoadFixture.Keys));
+    }
+
+    /// <summary>The historical game with the fixture's road taken (banner_parent: road, banner_after: hold, ahead of the
+    /// reference player's orders), played until <paramref name="until"/> waits for a decision.</summary>
+    static SimBridge OnTheRoad(Content c, string until, UiText text)
+    {
+        var answers = new Dictionary<string, string> { ["banner_parent"] = "road", ["banner_after"] = "hold" };
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        for (int turn = 0; turn < 6 && !g.State.PendingEvents.Contains(until); turn++)
+        {
+            var mine = answers.Where(a => g.State.PendingEvents.Contains(a.Key)).Select(a => (Command)new ChooseEventOption(a.Key, a.Value));
+            var rest = GoldenRun.Orders(c, g.State).Where(o => !(o is ChooseEventOption ch && answers.ContainsKey(ch.EventId)));
+            g.Step(mine.Concat(rest).ToArray());
+        }
+        Assert.Contains(until, g.State.PendingEvents.ToList(), "precondition: the road's card waits");
+        return new SimBridge(g, text);
+    }
+
+    [Test]
+    public void AConsequenceCardSaysWhichRoadItFollows()
+    {
+        var c = WithRoad();
+        var bridge = OnTheRoad(c, "banner_after", Text);
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, Text, null);
+        Assert.AreEqual("banner_after", card.Shown!.Id);
+        var banner = ui.Q<Label>("event-alt-banner");
+        Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value);
+        // The option the player took and its card's title, then the record's option on that card (Timeline.Origin, HistoricalOption).
+        Assert.AreEqual("Alternative course. It follows the government's decision: The road not taken (The road of David Ben-Gurion). In the record: What happened.", banner.text);
+        // The card itself is as before: its title, text and priced options.
+        Assert.AreEqual("After the road", ui.Q<Label>("event-title").text);
+        Assert.AreEqual("What was feared.", ui.Q<Label>("event-text").text);
+        Assert.AreEqual(new[] { "option-hold", "option-back" }, ui.Q<VisualElement>("event-options").Query<Button>().ToList().Select(b => b.name).ToArray());
+        StringAssert.EndsWith("(costs 2.0 Attention)", ui.Q<Button>("option-hold").text);
+        Assert.IsTrue(ui.Q<VisualElement>("event-options").Query<Button>().ToList().All(b => b.enabledSelf));
+    }
+
+    [Test]
+    public void AChainedCardOmitsTheRecordItDoesNotHave()
+    {
+        var c = WithRoad();
+        var bridge = OnTheRoad(c, "banner_second", Text);
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, Text, null);
+        Assert.AreEqual("banner_second", card.Shown!.Id);
+        Assert.IsNull(Timeline.HistoricalOption(c.Events.First(e => e.Id == "banner_after")), "precondition: the card it follows has no record");
+        var banner = ui.Q<Label>("event-alt-banner");
+        Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value);
+        Assert.AreEqual("Alternative course. It follows the government's decision: Hold the course (After the road).", banner.text);
+    }
+
+    [Test]
+    public void AnOrdinaryCardHasNoBanner()
+    {
+        using var ui = new UiTestKit();
+        new EventCardPresenter(ui.Root, AtArmistice(), Text, null);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-alt-banner").style.display.value);
+        Assert.AreEqual("", ui.Q<Label>("event-alt-banner").text);
+        Assert.AreEqual(0, ui.Q<VisualElement>("event-options").Query<Label>(className: EventCardPresenter.RejoinClass).ToList().Count);
+    }
+
+    [Test]
+    public void ARejoinOptionSaysItReturnsToTheRecord()
+    {
+        var bridge = OnTheRoad(WithRoad(), "banner_after", Text);
+        using var ui = new UiTestKit();
+        new EventCardPresenter(ui.Root, bridge, Text, null);
+        var lines = ui.Q<VisualElement>("event-options").Query<Label>(className: EventCardPresenter.RejoinClass).ToList();
+        Assert.AreEqual(1, lines.Count, "only the option with `rejoin` has the line");
+        Assert.AreEqual("Returns to the recorded course.", lines[0].text);
+        var children = ui.Q<VisualElement>("event-options").Children().ToList();
+        Assert.AreEqual(children.IndexOf(ui.Q<Button>("option-back")) + 1, children.IndexOf(lines[0]), "the line sits under its option");
+        Assert.IsFalse(lines[0].focusable, "Tab still reaches only the options");
+    }
+
+    /// <summary>The banner belongs to the card it is on: Hide and "Decision waiting" bring it back unchanged, and once the
+    /// consequence card is answered the next, ordinary card shows none.</summary>
+    [Test]
+    public void TheBannerFollowsItsCardThroughHideAndAnAnswer()
+    {
+        var bridge = OnTheRoad(WithRoad(), "banner_after", Text);
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, Text, null);
+        var banner = ui.Q<Label>("event-alt-banner");
+        var shown = banner.text;
+        card.Collapse();
+        Assert.IsTrue(card.Collapsed);
+        card.Reopen();
+        Assert.AreEqual("banner_after", card.Shown!.Id);
+        Assert.AreEqual(shown, banner.text);
+        Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value);
+        UiTestKit.Press(ui.Q<Button>("option-hold"));
+        Assert.AreNotEqual("banner_after", card.Shown!.Id, "the answer is queued and the next card shows");
+        Assert.AreEqual(DisplayStyle.None, banner.style.display.value);
+        Assert.AreEqual(0, ui.Q<VisualElement>("event-options").Query<Label>(className: EventCardPresenter.RejoinClass).ToList().Count);
+    }
+
+    /// <summary>A save from older content can name an option the road card no longer has: the card shows, with no banner.</summary>
+    [Test]
+    public void AStaleOptionOnTheRoadShowsNoBanner()
+    {
+        var bridge = OnTheRoad(WithRoad(), "banner_after", Text);
+        bridge.State.ChosenOptions["banner_parent"] = "gone";
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, Text, null);
+        Assert.AreEqual("banner_after", card.Shown!.Id);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-alt-banner").style.display.value);
+    }
+
+    [Test]
+    public void InHebrewTheBannerUsesTheRoadCardsHebrewFieldsAndTheRejoinLineUsesHebrew()
+    {
+        var c = WithRoad();
+        var bridge = OnTheRoad(c, "banner_after", He);
+        using var ui = new UiTestKit();
+        new EventCardPresenter(ui.Root, bridge, He, null);
+        Assert.AreEqual(He.Format("event.alt_origin", "הדרך שלא נבחרה", "הדרך של דוד בן-גוריון", "מה שקרה"), ui.Q<Label>("event-alt-banner").text);
+        StringAssert.StartsWith("מסלול חלופי.", ui.Q<Label>("event-alt-banner").text);
+        Assert.AreEqual(He["event.rejoin"], ui.Q<VisualElement>("event-options").Q<Label>(className: EventCardPresenter.RejoinClass).text);
+        var chained = OnTheRoad(c, "banner_second", He);
+        using var ui2 = new UiTestKit();
+        new EventCardPresenter(ui2.Root, chained, He, null);
+        Assert.AreEqual(He.Format("event.alt_origin_no_record", "Hold the course", "After the road"), ui2.Q<Label>("event-alt-banner").text);
+    }
+
+    [Test]
+    public void InHebrewTheBannerFallsBackPerFieldAndKeepsAnEnglishVariantTitle()
+    {
+        var c = WithRoad();
+        var bridge = OnTheRoad(c, "banner_after", He);
+        var parent = c.Events.First(e => e.Id == "banner_parent");
+        var taken = parent.Options.First(o => o.Id == "road");
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, He, null);
+
+        taken.TextHe = "";
+        card.Render();
+        Assert.AreEqual(He.Format("event.alt_origin", "The road not taken", "הדרך של דוד בן-גוריון", "מה שקרה"), ui.Q<Label>("event-alt-banner").text);
+
+        taken.TextHe = "הדרך שלא נבחרה";
+        parent.Variants.Add(new EventVariant
+        {
+            When = { new EventRequirement { Event = "banner_parent", Option = "road" } },
+            Title = "A different road title",
+            Text = "A different road text"
+        });
+        card.Render();
+        Assert.AreEqual(He.Format("event.alt_origin", "הדרך שלא נבחרה", "A different road title", "מה שקרה"), ui.Q<Label>("event-alt-banner").text);
     }
 }

@@ -11,9 +11,21 @@ public class ProjectsContentTests
     public void TheRealKindsLoad()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        Assert.Equal(new[] { ("housing", 6.0, 6, 5, 0.03, 0), ("transit_camp", 1.5, 1, 5, -0.02, 0), ("industry", 2.0, 6, 0, 0.0, 5) },
+        Assert.Equal(new[] { ("housing", 6.0, 6, 5, 0.03, 0), ("transit_camp", 1.5, 1, 5, -0.02, 0), ("industry", 2.0, 6, 0, 0.0, 5),
+                             ("winery", 2.0, 6, 0, 0.0, 10) },
                      c.ProjectKinds.Select(k => (k.Id, k.Cost, k.Turns, k.Capacity, k.Condition, k.JobSlots)));
         Assert.Equal((1.0, 0.5), (c.Rules.AttentionCost["start_project"], c.Rules.AttentionCost["cancel_project"]));   // Q-PROJ-5
+    }
+
+    // R-PROJ-005: the winery needs vineyards, and Rishon LeZion is the one city that has them (owner, 20 October 2026, on
+    // #737, replacing the 18 October default of Zikhron Ya'akov), with what its sources leave open.
+    [Fact]
+    public void TheWineryIsInRishonLeZion()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        Assert.Equal("vineyards", c.ProjectKinds.Single(k => k.Id == "winery").Requires);
+        Assert.Equal(new[] { "rishon_lezion" }, c.Cities.Where(x => x.Resources.Any(r => r.Id == "vineyards")).Select(x => x.Id));
+        Assert.NotEmpty(c.Cities.Single(x => x.Id == "rishon_lezion").Resources.Single().ToVerify);
     }
 
     [Theory]

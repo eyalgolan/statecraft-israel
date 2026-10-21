@@ -12,8 +12,11 @@
 #   transit_camp: the `transit_camp` map action's cost; built in one turn, as the map action is; its +0.02 housing turned
 #     into a condition cost, since D-D3 makes the camp low-condition.
 #   industry: the Mefalsim build's pair (build_yishuv_cost 2, build_yishuv_turns 6).
+#   winery: the plan's Q-SPEC-2 values (PR 6: industry's IL 2m and 6 turns, and 10 job slots, more than industry's 5).
+#     It needs vineyards (`requires:`, R-PROJ-005), which only Rishon LeZion has (cities.yaml; owner, 20 October 2026, #737).
 # name: the phrase the player reads in a sentence ("a transit camp").
 projects:
   - { id: housing, name: a housing project, cost: 6, turns: 6, capacity: 5, condition: 0.03, job_slots: 0 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: permanent housing)
   - { id: transit_camp, name: a transit camp, cost: 1.5, turns: 1, capacity: 5, condition: -0.02, job_slots: 0 }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: the low-condition type)
   - { id: industry, name: an industry project, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 5 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3; Q-PROJ-1: job slots)
+  - { id: winery, name: a winery, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 10, requires: vineyards }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D8, D-C6; Q-SPEC-2: the specialised industry)

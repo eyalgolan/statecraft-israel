@@ -8,9 +8,9 @@ namespace Statecraft.Game.UI
 {
     /// <summary>GDD Phase 1 PR 8 (#381): the info panel's part for the GDD loop (Content.IsGdd), built into the
     /// <see cref="HostName"/> element on every render.
-    /// <para>On a city hex (State.Cities), its counts (housing, jobs, refugees waiting, recruits) and training cohorts with
+    /// <para>On a city hex (State.Cities), its counts (housing, overflow, jobs, craftsmen, refugees waiting, recruits) and training cohorts with
     /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001, R-CAMP-001) and Cancel
-    /// (R-TRAIN-002). On a yishuv site's hex (sites.yaml, Projects.IsYishuvSite), its state, and Build with each idle pioneer
+    /// (R-TRAIN-002). On a site's hex (sites.yaml: a yishuv, camp, field or swamp site, #1124), its state, and Build with each idle pioneer
     /// group (Projects.IsPioneer: a halutz or a veteran one), with the rules' cost and the unit's own turns (Projects.TurnsToBuild;
     /// R-SITE-001, R-VET-002), or Stop while it is built (R-SITE-002).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
@@ -19,7 +19,7 @@ namespace Statecraft.Game.UI
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
-        const string LineClass = "info-gdd-line", RowClass = "info-gdd-row";
+        const string LineClass = "info-gdd-line", RowClass = "info-gdd-row", PairsClass = "info-gdd-pairs";
 
         public static void Hide(VisualElement host) { host.Clear(); host.style.display = DisplayStyle.None; }
 
@@ -34,11 +34,14 @@ namespace Statecraft.Game.UI
             {
                 foreach (var at in c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)))
                     City(host, bridge, text, at.Id);
-                var site = c.Sites.FirstOrDefault(x => x.Q == q && x.R == r && Projects.IsYishuvSite(x));
-                if (site != null)
+                // A hex may hold two sites, a yishuv or the Hula swamp and the field it readies (R-FIELD-001, R-SWAMP-001): each
+                // gets its own part, the one to finish first on top, and its name is the title (#1124).
+                foreach (var site in c.Sites.Where(x => x.Q == q && x.R == r && Work(x) != null).OrderBy(x => x.Kinds.Contains(Projects.FieldKind)))
                 {
-                    title = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
-                    Site(host, bridge, text, site);
+                    title ??= Name(text, site);
+                    var part = new VisualElement { name = "site-part-" + site.Id };
+                    host.Add(part);
+                    Site(part, bridge, text, site, Work(site)!.Value);
                 }
             }
             host.style.display = host.childCount > 0 ? DisplayStyle.Flex : DisplayStyle.None;
@@ -55,8 +58,16 @@ namespace Statecraft.Game.UI
             Line(host, "city-housing", city.Condition is double condition
                 ? text.Format("city.housing_condition", housed, capacity, PlayerText.Percent(condition))
                 : text.Format("city.housing", housed, capacity));
-            Line(host, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
-            Line(host, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            // #1121: the craftsmen (R-CRAFT-001) beside Jobs, as they fill ordinary jobs (R-CRAFT-002), and the overflow
+            // (R-HOUSE-002, Cities.Overflow) beside the refugees waiting, the other people without housing. Each pair shares a
+            // row (the labels keep their width and the row wraps only when they do not fit, Statecraft.uss), so on a short
+            // window the panel stays clear of the left column (InfoPanelLayoutTests). Bare counts, like the Jobs line, to fit.
+            var jobs = Row(host, "city-jobs-row"); jobs.AddToClassList(PairsClass);
+            Line(jobs, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
+            Line(jobs, "city-craftsmen", text.Format("city.craftsmen", city.Craftsmen));
+            var waiting = Row(host, "city-waiting-row"); waiting.AddToClassList(PairsClass);
+            Line(waiting, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            Line(waiting, "city-overflow", text.Format("city.overflow", Cities.Overflow(s, city)));
             Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
@@ -98,14 +109,34 @@ namespace Statecraft.Game.UI
             if (bridge.QueuedLike(new AssignWorkers(city, "job", 0)) is Command order) bridge.Withdraw(order);
         }
 
-        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site)
+        /// <summary>The pioneer action a site is for, as Projects.Start matches them (R-SITE-001, R-CAMP-001, R-FIELD-001,
+        /// R-SWAMP-001), and the suffix of its strings; null for a site no pioneer work is for. A site of two kinds would get
+        /// the first here; sites.yaml has none.</summary>
+        static (string Action, string Key)? Work(Statecraft.Sim.Site site) =>
+            Projects.IsYishuvSite(site) ? (Projects.BuildYishuv, "")
+            : Projects.IsCamp(site) ? (Projects.BuildCamp, "_camp")
+            : site.Kinds.Contains(Projects.FieldKind) ? (Projects.PlowFields, "_field")
+            : site.Kinds.Contains(Projects.SwampKind) ? (Projects.DrySwamp, "_swamp")
+            : ((string, string)?)null;
+
+        static string Name(UiText text, Statecraft.Sim.Site site) =>
+            text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
+
+        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site, (string Action, string Key) kind)
         {
             var c = bridge.Content; var s = bridge.State;
+            var (action, key) = kind;
             s.Sites.TryGetValue(site.Id, out var work);
             if (work == null)
             {
-                Line(host, "site-state", text["site.available"]);
-                var rules = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
+                // The sim refuses to plow while the hex's yishuv or swamp is unfinished: the same helper Projects.Start asks.
+                if (action == Projects.PlowFields && Projects.YishuvToBuildFirst(c, s, site) is Statecraft.Sim.Site first)
+                {
+                    Line(host, "site-state", text.Format(first.Kinds.Contains(Projects.SwampKind) ? "site.waits_swamp" : "site.waits_yishuv", Name(text, first)));
+                    return;
+                }
+                Line(host, "site-state", text["site.available" + key]);
+                var terms = Projects.Terms(c.RulesAt(s.Date).Mvp!, action);   // the loader requires the rules in the GDD loop
                 var idle = s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && !Projects.IsBusy(s, u.Id)).ToList();
                 if (idle.Count == 0) Line(host, "site-no-halutz", text["site.no_halutz"]);
                 // One unit builds a site (question 15): once a group is ordered here, the others' Build is off, as the sim
@@ -114,21 +145,21 @@ namespace Statecraft.Game.UI
                 foreach (var u in idle)
                 {
                     // PioneerWork and StopWork share the unit's key: an order for this unit at this site is this button's.
-                    var ordered = bridge.QueuedLike(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id)) is PioneerWork p && p.Site == site.Id;
+                    var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, site.Id)) is PioneerWork p && p.Site == site.Id;
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
-                            : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost),
-                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, rules.BuildYishuvTurns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered && !taken);
+                            : text.Format("site.build" + key, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
+                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, terms.Turns, 0))),
+                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
-                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
+                Line(host, "site-state", text.Format("site.building" + key, Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
-                Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
+                Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }
-            else Line(host, "site-state", text.Format("site.built", Date(text, work.BuiltOn.Value)));
+            else Line(host, "site-state", text.Format("site.built" + key, Date(text, work.BuiltOn.Value)));
         }
 
         /// <summary>"1 group" or "n groups" (population groups, D-A1), in the UI's language.</summary>

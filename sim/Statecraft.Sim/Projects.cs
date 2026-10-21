@@ -126,17 +126,28 @@ namespace Statecraft.Sim
                 return $"{place.Name} can be plowed once {first.Name} is {(first.Kinds.Contains(SwampKind) ? "drained" : "built")}";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             // Owner decision "Allow borrowing" (2026-10-15, #378 question 13): a short Treasury borrows, as map actions do.
-            var cost = camp ? r.BuildCampCost!.Value : plow ? r.PlowFieldsCost!.Value : drain ? r.DrySwampCost!.Value : r.BuildYishuvCost;   // the loader requires them in the GDD loop
+            var (cost, turns) = Terms(r, action);
             EconomySystem.PayOrBorrow(c, s, cost, camp ? "to build a training camp" : plow ? "to plow fields" : drain ? "to drain a swamp" : "to build a yishuv", why);
             // The same reading of D-A6 as training's: the turn of the order is the first build turn, so with
             // build_yishuv_turns 6 an order on turn T is built at the end of T+5
             // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).
-            s.Sites[site] = new SiteWork(site, unit, camp ? r.BuildCampTurns!.Value : plow ? r.PlowFieldsTurns : drain ? r.DrySwampTurns!.Value : r.BuildYishuvTurns, null);
+            s.Sites[site] = new SiteWork(site, unit, turns, null);
             why.Add(plow || drain
                 ? new Cause("map", site, 1, $"{place.Name}: a group of halutzim began {(plow ? "plowing" : "draining the swamp")}, cost {PlayerText.Money(c, "treasury", cost)}")
                 : new Cause("map", site, 1, $"{place.Name}: a group of halutzim began building {(camp ? "a training camp" : "a yishuv")}, cost {PlayerText.Money(c, "treasury", cost)}"));
             return null;
         }
+
+        /// <summary>What pioneer <paramref name="action"/> costs the Treasury and how many turns of progress it takes, under
+        /// rules <paramref name="r"/>: what <see cref="Start"/> charges and gives the site, and what the info panel shows (#1124).
+        /// The loader requires every value in the GDD loop.</summary>
+        public static (double Cost, int Turns) Terms(MvpRules r, string action) => action switch
+        {
+            BuildCamp => (r.BuildCampCost!.Value, r.BuildCampTurns!.Value),
+            PlowFields => (r.PlowFieldsCost!.Value, r.PlowFieldsTurns),
+            DrySwamp => (r.DrySwampCost!.Value, r.DrySwampTurns!.Value),
+            _ => (r.BuildYishuvCost, r.BuildYishuvTurns),
+        };
 
         /// <summary>Whether a training camp may be built at <paramref name="site"/>: its kinds include military_camp or hakhshara
         /// (R-CAMP-001). Built, its city gains those facilities (Training.HasFacility).</summary>

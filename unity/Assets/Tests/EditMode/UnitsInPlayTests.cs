@@ -72,7 +72,7 @@ public class UnitsInPlayTests
         Assert.AreEqual(1, israel.Count(u => u.Service == UnitData.Air));
         Assert.AreEqual(2, israel.Count(u => u.Service == UnitData.Navy));
         CollectionAssert.AreEquivalent(new[] { "brigade_8", "oded" }, israel.Where(u => u.Hidden != null).Select(u => u.Id),
-            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (from 9 July 1948, by Mishmar HaYarden) and Alexandroni are placed (refs #385)");
+            "hidden: Oded (no sourced position) and the 8th (sourced at Tel Litvinsky, no clear spot on its own side); Carmeli (at Haifa, then from 9 July 1948 by Mishmar HaYarden; #588) and Alexandroni are placed (refs #385)");
         double lon0 = C.Hexes.Min(h => h.Lon), lon1 = C.Hexes.Max(h => h.Lon), lat0 = C.Hexes.Min(h => h.Lat), lat1 = C.Hexes.Max(h => h.Lat);
         // The Arab forces (#740): data only, each with its echelon and its 15 May strength (owner, 17 October 2026).
         var arab = units.Where(u => u.Side != UnitData.Israel).ToList();
@@ -205,8 +205,8 @@ public class UnitsInPlayTests
     {
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
         var tokens = UnitRoster.Build(Units, C, s);
-        CollectionAssert.AreEqual(new[] { "golani", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
-            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli from 9 July (Operation Brosh), Yiftach only in Operation Dani");
+        CollectionAssert.AreEqual(new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni", "harel", "negev", "ins_haganah", "ins_wedgwood" }, Ids(tokens),
+            "on 15 May 1948: no aircraft yet (101 Squadron from 20 May), the 7th Brigade from 24 May, Carmeli at Haifa (its sector seat, #588), Yiftach only in Operation Dani");
         Assert.AreEqual(5, s.Rung);
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Army).All(t => t.Figures == 3), "full war: call-up at least 0.8");
         Assert.IsTrue(tokens.Where(t => t.Unit.Service == UnitData.Navy).All(t => t.ArtType == UnitShowcase.CorvetteType && t.Anchor.Place == "Haifa harbour"));
@@ -347,8 +347,10 @@ public class UnitsInPlayTests
     // GDD Phase 2 PR 1 (the cutover): the golden run is 20 monthly turns with the reference player (was f07b1655).
     // Issue #665: each token's line now ends with its sourced vehicles ("+figure-vehicle-..."), the 65 mm gun and the jeep
     // (was 573f3099... and 323cbe04...; every line is otherwise the same, checked against main's logged rosters).
-    const string RosterGolden1950 = "0612f518c91b436ab5dbe1bf75a52d266a7c617255a4622030d01e51d852a03b";
-    const string WeeklyGolden = "db15a031d3d15961053161ab132363c19566d98e5ad310dc08ce2e79f742a4fc";
+    // #588: Carmeli stands at Haifa from 15 May to 9 July 1948 (was 0612f518... and db15a031...; with its "carmeli@Haifa"
+    // entries taken out, the logged rosters hash to those again).
+    const string RosterGolden1950 = "e11d180e619f602009b652679e1967f0faa18c674bcdee440125cf15d2de1036";
+    const string WeeklyGolden = "b459d9a4b8af7547b64a5f82f00dc877d707afabd1e065202ae361972e169ac0";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 
@@ -781,9 +783,9 @@ public class UnitsInPlayTests
             Assert.IsTrue(layer.Show(C, session.State));
             Assert.AreEqual(before, session.State.Hash(), "drawing the units changed the state");
             Assert.IsFalse(layer.Show(C, session.State), "the same roster draws nothing new");
-            Assert.AreEqual(9, layer.Tokens.Count);
+            Assert.AreEqual(10, layer.Tokens.Count);
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            Assert.AreEqual(9, tokens.childCount);
+            Assert.AreEqual(10, tokens.childCount);
             var kiryati = tokens.Find("kiryati");
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full call-up");
             var badge = kiryati.Find("Badge");
@@ -837,6 +839,103 @@ public class UnitsInPlayTests
         var placed = new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default);
         var state = StateAt(C.Rules.Start, 5, 0.8);
         Assert.AreEqual(u.Name, UnitCard.For(placed, state, he).Title);
+    }
+
+    // ---- Optional Hebrew card prose (#558) -------------------------------------------------------------------------
+    // Test-only fixtures: the Hebrew below is placeholder text ("test place", "test commander", "test sector"), not a
+    // translation of any real row and not a historical source. content/map/units_1948.yaml carries none of these keys yet.
+
+    const string HeSource = "[{url: 'https://he.example.org/a', checked: '2026-10-19'}]";
+    const string PlaceHe = "place_he: מקום בדיקה, place_he_sources: " + HeSource + ", place_he_review: agent-checked, ";
+    const string CommanderHe = "first_commander_he: מפקד בדיקה, first_commander_he_sources: " + HeSource + ", first_commander_he_review: agent-checked, ";
+    const string SectorHe = "sector_he: גזרת בדיקה, sector_he_sources: " + HeSource + ", sector_he_review: agent-checked, ";
+
+    /// <summary>A one-unit file with the three English prose fields, an anchor whose only source is Wikipedia, and the
+    /// given Hebrew counterparts (any of <see cref="PlaceHe"/>, <see cref="CommanderHe"/>, <see cref="SectorHe"/>).</summary>
+    static UnitEntry ProseUnit(string placeHe = "", string unitHe = "", string commander = "first_commander: Test Commander, ")
+        => UnitData.Parse("units:\n- {id: a, name: A, number: '1', service: army, side: israel, " + commander + unitHe
+            + "sector: Test sector, status: draft, wikipedia_only: true, anchors: [{place: Test Place, " + placeHe
+            + "lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, "
+            + "sources: [{url: 'https://en.wikipedia.org/wiki/X', checked: '2026-10-11'}]}]}", "u.yaml")[0];
+
+    static UnitCard ProseCard(UnitEntry u, UiText text)
+        => UnitCard.For(new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default), StateAt(C.Rules.Start, 5, 0.8), text);
+
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    /// <summary>#558: the three Hebrew counterparts load beside the English and show in the Hebrew card only; the English
+    /// card is the same as for the row without them, and their sources join the footer without clearing the draft note.</summary>
+    [Test]
+    public void TheHebrewProseShowsInTheHebrewCardAndTheEnglishCardIsUnchanged()
+    {
+        var u = ProseUnit(PlaceHe, CommanderHe + SectorHe);
+        Assert.AreEqual(("מקום בדיקה", "מפקד בדיקה", "גזרת בדיקה"), (u.Anchors[0].PlaceHe, u.FirstCommanderHe, u.SectorHe));
+        Assert.AreEqual(("agent-checked", "agent-checked", "agent-checked"), (u.Anchors[0].PlaceHeReview, u.FirstCommanderHeReview, u.SectorHeReview));
+        var he = ProseCard(u, He);
+        Assert.AreEqual("מיקום: מקום בדיקה\nמפקד ראשון: מפקד בדיקה\nגזרת בדיקה", he.Body);
+        var english = ProseCard(u, Text);
+        var plain = ProseCard(ProseUnit(), Text);
+        Assert.AreEqual((plain.Title, plain.Subtitle, plain.Body, plain.Note), (english.Title, english.Subtitle, english.Body, english.Note));
+        Assert.AreEqual("At Test Place\nFirst commander: Test Commander\nTest sector", english.Body);
+        StringAssert.Contains("he.example.org", he.Footer, "the Hebrew text's sources are listed, as name_he's are");
+        StringAssert.Contains("he.example.org", english.Footer, "in both languages, as name_he's are");
+        Assert.AreEqual(He["unit.draft_wikipedia"], he.Note, "a Hebrew text's source does not check a fact (#902)");
+        Assert.IsTrue(UnitData.IsWikipediaOnly(u));
+    }
+
+    /// <summary>#558: each Hebrew field falls back to its own English value when it is left out, whatever the other two do.
+    /// (The Hebrew strings wrap an English value in left-to-right marks, U+200E, as they do on main.)</summary>
+    [TestCase("", CommanderHe + SectorHe, "מיקום: \u200ETest Place\u200E\nמפקד ראשון: מפקד בדיקה\nגזרת בדיקה")]
+    [TestCase(PlaceHe, SectorHe, "מיקום: מקום בדיקה\nמפקד ראשון: \u200ETest Commander\u200E\nגזרת בדיקה")]
+    [TestCase(PlaceHe, CommanderHe, "מיקום: מקום בדיקה\nמפקד ראשון: מפקד בדיקה\nTest sector")]
+    [TestCase("", "", "מיקום: \u200ETest Place\u200E\nמפקד ראשון: \u200ETest Commander\u200E\nTest sector")]
+    public void EachHebrewFieldFallsBackToItsOwnEnglish(string placeHe, string unitHe, string body)
+    {
+        Assert.AreEqual(body, ProseCard(ProseUnit(placeHe, unitHe), He).Body);
+    }
+
+    /// <summary>#558 (owner, 19 October 2026): a Hebrew commander never adds the line the English row does not have.</summary>
+    [Test]
+    public void AHebrewCommanderWithoutTheEnglishAddsNoLine()
+    {
+        var u = ProseUnit(commander: "");
+        u.FirstCommanderHe = "מפקד בדיקה"; // past the loader, which refuses this row (BadHebrewProseNamesTheProblem)
+        Assert.AreEqual("מיקום: \u200ETest Place\u200E\nTest sector", ProseCard(u, He).Body);
+    }
+
+    // hidden: the rows with "anchors: []" reach the source checks, which run after the anchors'.
+    const string ProseRow = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, hidden: h, ";
+    const string ProseAnchor = "anchors: [{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}], ";
+
+    // Orphans: a Hebrew text, its sources or its review flag without what it belongs to.
+    [TestCase(ProseRow + CommanderHe + "anchors: []}", "first_commander_he is set without first_commander")]
+    [TestCase(ProseRow + "first_commander: C, first_commander_he_sources: " + HeSource + ", anchors: []}", "first_commander_he_sources is set without first_commander_he")]
+    [TestCase(ProseRow + "first_commander: C, first_commander_he_review: agent-checked, anchors: []}", "first_commander_he_review is set without first_commander_he")]
+    [TestCase(ProseRow + "sector_he_sources: " + HeSource + ", anchors: []}", "sector_he_sources is set without sector_he")]
+    [TestCase(ProseRow + "sector_he_review: agent-checked, anchors: []}", "sector_he_review is set without sector_he")]
+    [TestCase(ProseRow + ProseAnchor + "place_he_sources: " + HeSource + "}]}", "place_he_sources is set without place_he")]
+    [TestCase(ProseRow + ProseAnchor + "place_he_review: agent-checked}]}", "place_he_review is set without place_he")]
+    // Present but blank: an empty or null key is an error, never read as "left out".
+    [TestCase(ProseRow + "sector_he: '', anchors: []}", "sector_he is blank")]
+    [TestCase(ProseRow + "sector_he: ~, anchors: []}", "sector_he is blank")]
+    [TestCase(ProseRow + ProseAnchor + "place_he: '  '}]}", "place_he is blank")]
+    [TestCase(ProseRow + "first_commander: C, first_commander_he: מפקד, first_commander_he_sources: ~, anchors: []}", "first_commander_he_sources is empty")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: [], anchors: []}", "sector_he_sources is empty")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: " + HeSource + ", sector_he_review: '', anchors: []}", "sector_he_review must be agent-checked")]
+    [TestCase(ProseRow + "sector_he_review: ~, anchors: []}", "sector_he_review must be agent-checked")]
+    // Invalid metadata and text.
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: " + HeSource + ", sector_he_review: reviewed, anchors: []}", "sector_he_review must be agent-checked")]
+    [TestCase(ProseRow + "sector_he: Sector, sector_he_sources: " + HeSource + ", anchors: []}", "sector_he must contain Hebrew letters")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: [{url: 'http://x.org', checked: '2026-10-19'}], anchors: []}", "without an https url")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: [{url: 'https://x.org'}], anchors: []}", "source https://x.org: checked")]
+    // Only the three meanings: other Hebrew keys are unknown, and a key twice is refused.
+    [TestCase(ProseRow + "formed: '1948', formed_he: '1948', anchors: []}", "Property 'formed_he' not found")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he: גזרה, anchors: []}", "duplicate key sector_he")]
+    public void BadHebrewProseNamesTheProblem(string yaml, string expected)
+    {
+        var e = Assert.Throws<InvalidDataException>(() => UnitData.Parse(yaml, "u.yaml"));
+        StringAssert.StartsWith("u.yaml:", e.Message);
+        StringAssert.Contains(expected, e.Message);
     }
 
     /// <summary>Review I1: "since" only from a sourced start; never the game's first day.</summary>

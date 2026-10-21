@@ -141,6 +141,21 @@ units:
     # Ben-Gurion's diary, 11 July 1948, the cannon distribution, 65 mm guns on every front, as the research note gives it: 4+4 opposite the Syrian bridgehead, 4 in the Acre sector, 4+4 Danny, 4+4 Harel, 3+3+4 Givati, 4 Negev (research_notes/M4 war mode/war-1948.md, section 8, Q-ART-2, read 2026-10-16).
     - {url: 'https://bengurionarchive.bgu.ac.il/en/node/14176', checked: '2026-10-16'}
   anchors:
+  - place: Haifa
+    lon: 34.99917
+    lat: 32.81917
+    from: '1948-05-15'
+    since: February 1948
+    to: '1948-07-09'
+    end_basis: source
+    end_note: "The Haganah Heritage lexicon (Brigade 2 Carmeli) has the brigade's headquarters and most of its forces in Operation Brosh against the Syrian bridgehead in July 1948; he.wiki Operation Brosh: from 9 July 1948. The next window, at Mishmar HaYarden, starts that day."
+    note: "The sector's seat, not a dated position: he.wiki gives the brigade's area as the Haifa area and the Zevulun district (Haifa and the Western Galilee) from the split of February 1948, and the Haganah Heritage lexicon has it organised in the Haifa area and the Western Galilee and operating in Haifa; no source found names its headquarters. In mid-May the lexicon has the brigade in the Western Galilee and at Acre, then at Jenin (2-4 June). The token stands in the town on Haifa's one unit clearing (#588)."
+    sources:
+    - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
+    # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": organised in the Haifa area and the Western Galilee, operated in Haifa; in Operation Brosh (July 1948) at the Syrian bridgehead.
+    - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47620', checked: '2026-10-15'}
+    - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-15'}
+    - {url: 'https://en.wikipedia.org/wiki/Haifa', checked: '2026-10-15'}
   - place: Facing the Syrian bridgehead at Mishmar HaYarden
     lon: 35.59972
     lat: 33.00278
@@ -149,7 +164,7 @@ units:
     to: '1948-07-19'
     end_basis: source
     end_note: "he.wiki Operation Brosh: the operation ran to 18 July 1948, when the second truce began at 19:00 with the front line unchanged. No source found places the brigade on this line between the truce and Operation Hiram (he.wiki Operation Hiram, at the end of October, names places for Carmeli, Manara and Misgav Am, where its main task was to block a possible Syrian attack, but no source dates the brigade at Mishmar HaYarden after Brosh), so the window ends with the operation, as Yiftach's ends with Dani."
-    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands facing it on the Israeli side, by Rosh Pinna. Not drawn before 9 July: its sector place, Haifa, has no clear spot outside the town on the map (coordinator's option (d), 2026-10-15)."
+    note: "The Haganah Heritage lexicon (Brigade 2 Carmeli): the brigade's headquarters and most of its forces operated in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden. he.wiki Operation Brosh: 9-18 July 1948, commanded by the Carmeli commander with the brigade's 22nd, 23rd and 24th battalions; the operation's headquarters was at the Hotel Shulamit in Rosh Pinna; the bridgehead was not taken. The Syrians held the moshava from 10 June 1948, so the token stands facing it on the Israeli side, by Rosh Pinna. Before 9 July the token stands at its sector seat, Haifa."
     toward:
       place: Rosh Pinna
       lon: 35.54222
@@ -168,8 +183,6 @@ units:
   sources:
   - {url: 'https://en.wikipedia.org/wiki/Carmeli_Brigade', checked: '2026-10-11'}
   - {url: 'https://en.wikipedia.org/wiki/Golani_Brigade', checked: '2026-10-11'}
-  # The sector's seat, Haifa (he.wiki Carmeli; the lexicon: organised in the Haifa area and the Western Galilee, operated in Haifa). Not a dated position: in mid-May the lexicon has the brigade in the Western Galilee and at Acre, then at Jenin (2-4 June). Not drawn there (no clear spot outside the town, #588).
-  - {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-15'}
   - {url: 'https://en.wikipedia.org/wiki/Operation_Ben-Ami', checked: '2026-10-15'}
 - id: alexandroni
   name: Alexandroni Brigade

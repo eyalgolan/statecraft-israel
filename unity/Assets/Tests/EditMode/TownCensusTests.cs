@@ -300,10 +300,13 @@ public class TownCensusTests
     /// that thins a city back to round 1's sparse handful fails here; the cover floors are about 10% under the measure.
     /// Tel Aviv's row was #318's (owner ruling 2026-10-12: 55 / 25.2% / 25.6% drawn, core floor 25%). Since the owner's ruling on
     /// #652 (2026-10-15, "Lower floor to ~30, wider blocks") it is <see cref="TelAvivFloor"/>'s: fewer, larger blocks with
-    /// open plots between them; its localities' landmarks still stand at its street crossings.</summary>
+    /// open plots between them; its localities' landmarks still stand at its street crossings. Haifa's row drops by its one
+    /// unit clearing (<see cref="UnitClearingBudget"/>, #588): Carmeli's clearing took 11 houses and 6.8 / 3.9 points of
+    /// cover (main 0011470c draws 46 / 21.4% / 20.6%, with the clearing 35 / 14.6% / 16.7%), so 40 / 19% / 18.5% became
+    /// 29 / 12.2% / 14.6%.</summary>
     internal static readonly Dictionary<string, (int buildings, float all, float core)> Floors = new Dictionary<string, (int, float, float)>
     {
-        ["tel_aviv"] = (TelAvivFloor, 0.245f, 0.21f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (40, 0.19f, 0.185f), ["jerusalem"] = (95, 0.20f, 0.22f),
+        ["tel_aviv"] = (TelAvivFloor, 0.245f, 0.21f), ["jaffa"] = (28, 0.29f, 0.285f), ["haifa"] = (29, 0.122f, 0.146f), ["jerusalem"] = (95, 0.20f, 0.22f),
     };
 
     /// <summary>Tel Aviv's building floor here and in MainBuildings, and its cover floors in Floors (was 50 / 22.5% / 25%
@@ -405,8 +408,32 @@ public class TownCensusTests
     /// <summary>Bands for TelAvivsPlasterIsWarmCreamAndStillWhiterThanJaffa, in census mean-wall terms. Main: Tel Aviv
     /// (0.93, 0.93, 0.92), r - g 0.000; Jaffa (0.76, 0.69, 0.60).</summary>
     const float CreamRedOverGreen = 0.04f, CreamRedOverBlue = 0.08f, WhiteOverJaffa = 0.12f, CreamOfJaffasTint = 0.85f;
-    /// <summary>Haifa's census mean wall on main (2927defb), which #658 must not move.</summary>
-    static readonly Color HaifaMeanWall = new Color(0.8380f, 0.7945f, 0.7255f);
+    /// <summary>Haifa's census mean wall on main (2927defb), which #658 must not move. #588 moved it: Carmeli's clearing takes
+    /// 11 of Haifa's houses (was 0.8380, 0.7945, 0.7255).</summary>
+    static readonly Color HaifaMeanWall = new Color(0.8112f, 0.7568f, 0.6747f);
+
+    /// <summary>#588 (owner, 18 October 2026, "Beri's defaults"): Haifa and Tel Aviv each have a budget of one unit's
+    /// clearing (a token standing in the town, MapScene.UnitClearings), and their floors in <see cref="Floors"/> are
+    /// measured with it: Carmeli in Haifa, Kiryati in Tel Aviv. A second clearing in either town would thin it under its
+    /// measure; none would leave its floor loose. The placer does not count the budget: this test is the guard. Tel Aviv's
+    /// floor (<see cref="TelAvivFloor"/>, #652) was measured with Kiryati's clearing already in place, so its one clearing
+    /// takes nothing more and the floor stays.</summary>
+    internal static readonly Dictionary<string, int> UnitClearingBudget = new Dictionary<string, int> { ["haifa"] = 1, ["tel_aviv"] = 1 };
+
+    [Test]
+    public void HaifaAndTelAvivSpendTheirUnitClearingBudget()
+    {
+        var map = OpenMap();
+        foreach (var kv in UnitClearingBudget)
+        {
+            var (fc, fr, _) = map.KitFootprints.Single(f => f.id == kv.Key);
+            var inTown = map.UnitClearings.Where(c => (c.centre - fc).magnitude < fr * Statecraft.Game.Map.Units.UnitGround.FootprintMargin).ToList();
+            TestContext.WriteLine($"{kv.Key}: {inTown.Count} unit clearings {string.Join(" ", inTown.Select(c => c.centre))}");
+            Assert.AreEqual(kv.Value, inTown.Count, kv.Key + ": unit clearings in the town");
+            var own = map.UnitSpots.Where(s => s.Value.InTown && inTown.Any(c => c.centre == new Vector2((float)s.Value.X, (float)s.Value.Z))).Select(s => s.Key.Place);
+            CollectionAssert.AreEquivalent(new[] { kv.Key == "haifa" ? "Haifa" : "Tel Aviv" }, own, kv.Key + ": the clearing its floors were measured with");
+        }
+    }
 
     [Test]
     public void TheCitiesCoverTheirGround()

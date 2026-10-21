@@ -335,6 +335,30 @@ public class TownLandmarksTests
         Assert.Greater(Vector3.Angle(Vector3.up, t.Seats["degania_alef"].Normal), 0.5f, "Degania Alef leans with its slope");
     }
 
+    /// <summary>#588 (owner, 18 October 2026, option (a), "Clearing doesn't move the core"): a unit clearing's ground in a
+    /// town counts as if it still held plots, so the token's clearing does not pull the whole-town model's core away from
+    /// it (Carmeli's in Haifa pushed Haifa's model into the bay). A town's plots on a 100 m grid with a hole cut where a
+    /// clearing stands keep the core of the whole grid; without the clearing the core moves off it.</summary>
+    [Test]
+    public void AUnitClearingDoesNotMoveATownsCore()
+    {
+        var centre = new Vector2(10000f, 10000f);
+        var clearing = (centre: centre + new Vector2(250f, 0f), radius: 200f);
+        var all = new List<Vector2>();
+        for (int i = -6; i <= 6; i++) for (int k = -6; k <= 6; k++) all.Add(centre + new Vector2(100f * i, 100f * k));
+        var holed = all.Where(p => (p - clearing.centre).magnitude >= clearing.radius).ToList();
+        Assert.Less(holed.Count, all.Count, "the clearing takes plots");
+        var none = new (Vector2, float)[0];
+        bool Dry(float x, float z) => false;
+        var whole = TownLandmarks.CoreOf(centre, 1500f, all, none, new Vector2[0], Dry);
+        var kept = TownLandmarks.CoreOf(centre, 1500f, holed, new[] { clearing }, new Vector2[0], Dry);
+        var moved = TownLandmarks.CoreOf(centre, 1500f, holed, none, new Vector2[0], Dry);
+        Assert.Greater((moved.centre - whole.centre).magnitude, 10f, "without the clearing's ground the core moves away from it");
+        Assert.Less((kept.centre - whole.centre).magnitude, 5f, "with it the core stays where the full town's is");
+        // The grid ties at the core's edge, so which edge plots make the share shifts its radius by a few metres.
+        Assert.AreEqual(whole.radius, kept.radius, 0.03f * whole.radius, "and keeps its size");
+    }
+
     [Test]
     public void ASpotIsTheFirstFreeOneAndNoneWhenAllAreTaken()
     {

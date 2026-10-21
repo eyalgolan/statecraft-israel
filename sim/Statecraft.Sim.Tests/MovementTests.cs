@@ -36,12 +36,14 @@ public class MovementTests
             + string.Join(",\n", rows) + "]}\n";
     }
 
-    static Content Load(string board, params (string From, string To)[] edits)
+    static Content Load(string board, params (string From, string To)[] edits) => Load(board, "corridors: []\n", edits);
+
+    static Content Load(string board, string corridors, params (string From, string To)[] edits)
     {
-        // This custom movement board has no buildable corridors; the shared fixture's corridors belong to its own map.
+        // The shared fixture's corridors belong to its own map, so this custom board has only the corridors given.
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
-            ["unit_types.yaml"] = Types, ["map/hexes.json"] = board, ["corridors.yaml"] = "corridors: []\n"
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = board, ["corridors.yaml"] = corridors
         });
         foreach (var (from, to) in edits) files["rules.yaml"] = files["rules.yaml"].Replace(from, to);
         return ContentLoader.Load(Fixture.Write(files));
@@ -272,8 +274,71 @@ public class MovementTests
         Assert.Equal(Step(c, s).State.Hash(), refused.State.Hash());   // as a turn with no Move: the order is the turn's own
     }
 
+    /// <summary>One corridor of <paramref name="kind"/> on the desert row r = 1: segment 1 over (1, 1) and (2, 1), segment 2
+    /// over (2, 1) and (3, 1). Fixture values, not history.</summary>
+    static string DesertCorridor(string kind) => "corridors:\n  - id: cor_a\n    kind: " + kind + "\n    name: Cor A\n    name_he: מסלול א\n"
+        + "    route: cor_a\n    segments:\n      - { to: X, hexes: [[1, 1], [2, 1]] }\n      - { to: Y, hexes: [[2, 1], [3, 1]] }\n"
+        + "    sources:\n      - { url: \"https://example.org/cor_a\", checked: 2026-10-15 }\n    status: draft\n";
+
+    static Content DesertRow(string kind) => Load(Board((1, 1, "desert"), (2, 1, "desert"), (3, 1, "desert"), (4, 1, "desert")), DesertCorridor(kind));
+
+    static readonly DateTime Built = new DateTime(1948, 6, 15);
+
+    // R-MOVE-007: a step from one hex of a built segment to another hex of the same segment costs the kind's cost (the
+    // fixture's road 1, rail 2) instead of the desert's 3, and Move charges it; the step onto the unbuilt segment 2 costs
+    // the terrain again.
+    [Theory]
+    [InlineData("road", 1)]
+    [InlineData("rail", 2)]
+    public void RoadsAreCheaper(string kind, int cost)
+    {
+        var c = DesertRow(kind);
+        var s = With(c, Soldier(1, 1, 1));
+        s.Corridors["cor_a"] = new CorridorWork("cor_a", new SegmentWork?[] { new SegmentWork(null, 6, Built), null });
+        var reach = Movement.Reachable(c, s, 1);
+        Assert.Equal(cost, reach[(2, 1)]);
+        Assert.False(reach.ContainsKey((3, 1)));   // cost + the desert's 3 is more than 3 points
+        var r = Step(c, s, new Move(1, 2, 1));
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, x => x.System == "map" && x.Message == $"Unit 1 moved to hex 2,1 for {cost} movement points");
+    }
+
+    // R-MOVE-007: a kind's cost applies only when it is lower than the terrain's, so the fixture's rail (2) on coastal plain
+    // (1) costs the plain's 1.
+    [Fact]
+    public void ACorridorNeverCostsMoreThanTheTerrain()
+    {
+        var c = Load(Board(), DesertCorridor("rail"));
+        var s = With(c, Soldier(1, 1, 1));
+        s.Corridors["cor_a"] = new CorridorWork("cor_a", new SegmentWork?[] { new SegmentWork(null, 6, Built), null });
+        Assert.Equal(1, Movement.Reachable(c, s, 1)[(2, 1)]);
+    }
+
+    // R-MOVE-007: a segment not started, or being built, is no corridor yet: the step costs the terrain.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnUnbuiltSegmentCostsTerrain(bool started)
+    {
+        var c = DesertRow("road");
+        var s = With(c, Soldier(1, 1, 1));
+        if (started) s.Corridors["cor_a"] = new CorridorWork("cor_a", new SegmentWork?[] { new SegmentWork(9, 5, null), null });
+        Assert.Equal(3, Movement.Reachable(c, s, 1)[(2, 1)]);
+    }
+
+    // R-MOVE-007: a kind's cost needs BOTH ends on the segment: a step from a hex off the built segment onto one of its hexes
+    // costs the terrain's 3, not the road's 1.
+    [Fact]
+    public void AStepOntoABuiltSegmentFromOutsideItCostsTerrain()
+    {
+        var c = DesertRow("road");
+        var s = With(c, Soldier(1, 1, 2));
+        s.Corridors["cor_a"] = new CorridorWork("cor_a", new SegmentWork?[] { new SegmentWork(null, 6, Built), null });
+        Assert.Equal(3, Movement.Reachable(c, s, 1)[(1, 1)]);
+    }
+
     // R-MOVE-001: the loader refuses a military type with no movement points, a population type with some, a land biome
-    // with no cost, a cost for water, a stack limit below 1 and an unknown locality.
+    // with no cost, a cost for water, a stack limit below 1, a missing or zero corridor cost and an unknown locality.
     [Theory]
     [InlineData("unit_types.yaml", "types[soldier].movement_points", "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }", "  - { id: soldier, kind: unit, side: israel, class: infantry }", "required for a military type, at least 1")]
     [InlineData("unit_types.yaml", "types[civilian].movement_points", "  - { id: civilian, kind: population }", "  - { id: civilian, kind: population, movement_points: 2 }", "only a unit moves")]
@@ -281,6 +346,8 @@ public class MovementTests
     [InlineData("rules.yaml", "mvp.move_cost.sea", "move_cost: { coastal_plain: 1, hills: 2, desert: 3 }", "move_cost: { coastal_plain: 1, hills: 2, desert: 3, sea: 1 }", "is water in map/hexes.json: lake and sea are impassable")]
     [InlineData("rules.yaml", "mvp.move_cost.hills", "move_cost: { coastal_plain: 1, hills: 2, desert: 3 }", "move_cost: { coastal_plain: 1, hills: 0, desert: 3 }", "must be >= 1")]
     [InlineData("rules.yaml", "mvp.stack_limit", "stack_limit: 2", "stack_limit: 0", "must be >= 1")]
+    [InlineData("rules.yaml", "mvp.road_move_cost", "  road_move_cost: 1\n", "", "required when eras.yaml systems.loop is gdd")]
+    [InlineData("rules.yaml", "mvp.rail_move_cost", "rail_move_cost: 2", "rail_move_cost: 0", "must be >= 1")]
     [InlineData("rules.yaml", "mvp.enemy_held_localities", "enemy_held_localities: []", "enemy_held_localities: [atlantis]", "unknown settlement 'atlantis'")]
     public void TheLoaderRefusesABadMovementValue(string file, string field, string from, string to, string message)
     {

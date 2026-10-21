@@ -121,6 +121,7 @@ namespace Statecraft.Game.UI
         readonly MapScene map;
         readonly CameraRig? rig;
         readonly Func<float>? zoomDistance;
+        readonly bool hebrew;
         readonly List<Item> items = new List<Item>();        // in placing (priority) order
         readonly List<Item> settlementOrder = new List<Item>();
         readonly List<VisualElement> occluders = new List<VisualElement>();
@@ -195,6 +196,7 @@ namespace Statecraft.Game.UI
             this.camera = camera;
             this.map = map;
             this.zoomDistance = zoomDistance;
+            this.hebrew = hebrew;
             rig = camera.TryGetComponent(out CameraRig r) ? r : null;
             container.Clear();   // one layer, one owner: the newest presenter (GameRoot makes one per Begin)
             var labels = new List<Label>(); var slots = new List<VisualElement>();
@@ -346,7 +348,8 @@ namespace Statecraft.Game.UI
             {
                 var slot = new VisualElement { name = "slot-" + s.Id, pickingMode = PickingMode.Ignore };
                 slot.AddToClassList(SlotClass);
-                var label = new Label(s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
+                // #1219: the Hebrew UI shows the site's name_he, as the settlements' pills do.
+                var label = new Label(hebrew && !string.IsNullOrWhiteSpace(s.NameHe) ? s.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass); label.AddToClassList("map-label-" + s.Type); label.AddToClassList(Centre);
                 slot.Add(label);
                 container.Insert(System.Math.Max(0, container.IndexOf(Tooltip)), slot);   // under the tooltip, as the others
@@ -558,6 +561,43 @@ namespace Statecraft.Game.UI
             it.Placed = r;
             shift = r.position - home.position;
             return true;
+        }
+
+        /// <summary>The class that lights the pill of the city under the pointer (#1063: the player sees the city can be clicked).</summary>
+        public const string HoverClass = "map-label-hover";
+        Label? lit;   // the pill Highlight lit
+
+        /// <summary>The id of the shown pill at <paramref name="screenYUp"/> (an Input System pointer position, y up), or null:
+        /// GameRoot lets a click there go to that city's hex (#1063). The pills themselves ignore the pointer, so the map
+        /// still pans and zooms under them.</summary>
+        public string? PillAt(Vector2 screenYUp)
+        {
+            var panel = container.panel;
+            return panel == null ? null : PillAtLayer(UiPointer.ToPanel(panel, screenYUp, Screen.height) - container.worldBound.position);
+        }
+
+        /// <summary>The hit test under PillAt, at a point in the labels layer's coordinates: the first shown pill (in placing
+        /// order, so a city before a smaller place) that contains it, never a 1948 locality's; null when none does.</summary>
+        public string? PillAtLayer(Vector2 layerPoint)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                var it = items[i];
+                if (!it.IsLocality && it.ShownLast && it.Placed.Contains(layerPoint)) return it.Settlement.Id;
+            }
+            return null;
+        }
+
+        /// <summary>Lights the pill of game settlement <paramref name="id"/> (HoverClass) and puts out the one lit before; null
+        /// puts it out. Only the colours change, so the pill keeps its size and its place.</summary>
+        public void Highlight(string? id)
+        {
+            Label? next = null;
+            if (id != null) foreach (var it in settlementOrder) if (!it.IsLocality && it.Settlement.Id == id) { next = it.Label; break; }
+            if (next == lit) return;
+            lit?.RemoveFromClassList(HoverClass);
+            next?.AddToClassList(HoverClass);
+            lit = next;
         }
 
         /// <summary>The pointer position the hover tooltip may follow, or null: a touchscreen has no hover (the Input System
