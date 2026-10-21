@@ -121,18 +121,18 @@ public class CityProjectsTests
         Assert.Empty(Step(c, r.State, new StartProject("industry", "town_a", 0, 1)).Rejected);
     }
 
-    // R-PROJ-001 (Q-PROJ-4): the cap counts map actions too, so two map actions leave no start for a project.
+    // R-PROJ-004 with R-PROJ-001 (Q-PROJ-4): the GDD loop refuses map actions, so two of them use none of the turn's starts.
     [Fact]
-    public void TwoMapActionsUseUpTheTurnsStarts()
+    public void RefusedMapActionsUseNoneOfTheTurnsStarts()
     {
         var c = Town();
         var s = New(c);
         s.Attention = 10;
         s.Date = new DateTime(1948, 6, 1);   // map_actions_from in the fixture
         var two = new Command[] { new MapAction("housing", 1, 1), new MapAction("housing", 2, 0) };
-        var r = Step(c, s, two.Append(new StartProject("industry", "town_a", 0, 1)).ToArray());
-        Assert.Equal("No more than 2 map actions and city projects in one turn", Assert.Single(r.Rejected).Reason);
-        Assert.Equal(Step(c, s, two).State.Hash(), r.State.Hash());
+        var r = Step(c, s, two.Append(new StartProject("industry", "town_a", 0, 1)).Append(new StartProject("industry", "town_a", 2, 0)).ToArray());
+        Assert.Equal(two, r.Rejected.Select(x => x.Command));
+        Assert.Equal(2, r.State.CityProjects.Count);
     }
 
     // R-PROJ-001 (Q-MONEY-3): a short Treasury borrows, it is not refused.

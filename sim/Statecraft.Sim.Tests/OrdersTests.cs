@@ -53,7 +53,7 @@ public class OrdersTests
         var c = Load();
         var s = With(c, Soldier(1, 2, 1));
         var given = s.Clone();
-        Assert.Null(Orders.Give(given, 1, Orders.Fortify, new List<Cause>()));
+        Assert.Null(Orders.Give(c, given, 1, Orders.Fortify, new List<Cause>()));
         Assert.Equal(Orders.Fortifying, given.Units[1].Order);
         Assert.Equal(100, Defence(c, given, 1));   // the turn it is given
 

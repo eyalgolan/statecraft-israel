@@ -813,6 +813,15 @@ namespace Statecraft.Sim
         /// <summary>The movement points a unit of this type has each turn (R-MOVE-001; Q-MOVE-1), or 0 for a type that does not
         /// move. Required on a military type.</summary>
         public int MovementPoints { get; set; }
+        /// <summary>The percent a unit of this military type's strength counts for in combat, attacking and defending
+        /// (R-COMBAT-007, R-COMBAT-008; Q-ARTY-1, Q-ARTY-2), or null for 100.</summary>
+        public int? CombatPercent { get; set; }
+        /// <summary>An artillery type's range in hexes: it supports an attack on an enemy hex this far away (R-COMBAT-007;
+        /// Q-ARTY-1). Required on an artillery type, null on any other.</summary>
+        public int? Range { get; set; }
+        /// <summary>The Arms a unit of an artillery type spends each time it fires (R-COMBAT-007; Q-ARTY-1). Required on an
+        /// artillery type, null on any other.</summary>
+        public int? ArmsPerFire { get; set; }
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>

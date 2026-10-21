@@ -15,6 +15,24 @@ public class RealContentTests
         return Path.Combine(dir?.FullName ?? throw new DirectoryNotFoundException("content/people.yaml not found above test dir"), "content");
     }
 
+    /// <summary>The real content with the GDD loop switch taken out of eras.yaml: the legacy loop, where the map actions
+    /// still run (R-PROJ-004 refuses them in the GDD loop; D-E1 keeps the legacy code until it is deleted). Unity's tests
+    /// use the same content (SimBridgeGddTests.Legacy).</summary>
+    public static Content Legacy()
+    {
+        const string loop = "    systems: { loop: gdd }\n";
+        var dir = ContentRoot();
+        Assert.Contains(loop, File.ReadAllText(Path.Combine(dir, "eras.yaml")));   // the switch to take out
+        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        return ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == "eras.yaml" ? text.Replace(loop, "") : text;
+        }, events);
+    }
+
     static readonly Content C = ContentLoader.Load(ContentRoot());
     static readonly DateTime Checked = new DateTime(2026, 10, 9);
 

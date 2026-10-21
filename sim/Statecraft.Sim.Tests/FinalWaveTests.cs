@@ -128,7 +128,7 @@ public class FinalWaveTests
     [Fact]
     public void MapActionReasonsAndCausesNameNoCoordinates()
     {
-        var c = Real;
+        var c = RealContentTests.Legacy();   // R-PROJ-004: the map actions build only in the legacy loop
         var s = GoldenRun.Play(c, new DateTime(1950, 6, 15));
         var sea = c.Hexes.First(h => !h.Land);
         Assert.Equal("This hex is not land", MapActions.Check(c, s, MapActions.Housing, sea.Q, sea.R));

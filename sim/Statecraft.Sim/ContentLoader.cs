@@ -1099,6 +1099,20 @@ namespace Statecraft.Sim
                 if (x.Kind == "population" && x.MovementPoints != 0) throw new ContentException(uf, at + ".movement_points", "only a unit moves");
                 if (x.Side != "" && x.MovementPoints < 1) throw new ContentException(uf, at + ".movement_points", "required for a military type, at least 1");
                 if (x.MovementPoints < 0) throw new ContentException(uf, at + ".movement_points", "must be >= 0");
+                // R-COMBAT-007, R-COMBAT-008 (Q-ARTY-1, Q-ARTY-2): only a military type fights, so only it has a combat
+                // factor; range and Arms per firing are artillery's support role and are read for nothing else.
+                if (x.CombatPercent != null && x.Side == "") throw new ContentException(uf, at + ".combat_percent", "only a military type has a combat factor");
+                if (x.CombatPercent < 1) throw new ContentException(uf, at + ".combat_percent", "must be at least 1");
+                if (x.Class == Combat.ArtilleryClass)
+                {
+                    if (!(x.Range >= 1)) throw new ContentException(uf, at + ".range", "required for an artillery type, at least 1");
+                    if (!(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
+                }
+                else
+                {
+                    if (x.Range != null) throw new ContentException(uf, at + ".range", "only an artillery type has a range");
+                    if (x.ArmsPerFire != null) throw new ContentException(uf, at + ".arms_per_fire", "only an artillery type fires");
+                }
                 if (x.Facility == "")
                 {
                     // Training (R-TRAIN-001) needs a place to train; values without one would be read by nothing.

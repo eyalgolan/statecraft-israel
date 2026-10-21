@@ -449,23 +449,24 @@ public class StartScreenTests
     [UnityTest]
     public IEnumerator ASaveFrom1950KeepsTheLiveHudOutOfReach()
     {
-        var g = GameSession.New(C, 9, Mode.Historical);
-        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(C, g.State));
+        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
+        var g = GameSession.New(legacy, 9, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(legacy, g.State));
         var store = TempStore();
         store.WriteAutosave(g.Save.Write());
         using var ui = new RenderedUi();
-        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
+        var bridge = new SimBridge(GameStart.Begin(legacy, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
         var owned = new List<IDisposable>();
         try
         {
             ui.Root.Q("root").RemoveFromClassList("loading");
             owned.Add(new HudPresenter(ui.Root, bridge, Text));
             owned.Add(new ScreenNav(ui.Root));
-            var info = new InfoPanelPresenter(ui.Root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
             var card = new EventCardPresenter(ui.Root, bridge, Text, null); owned.Add(card);
             var toast = new ToastPresenter(ui.Root, bridge, Text); owned.Add(toast);
             var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL); owned.Add(newGame);
-            var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
             info.Show(tlv.Q, tlv.R);
             var start = new StartScreenPresenter(ui.Root, newGame, resumed); owned.Add(start);
             start.Show();

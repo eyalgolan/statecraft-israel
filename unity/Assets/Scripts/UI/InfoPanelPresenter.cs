@@ -299,12 +299,14 @@ namespace Statecraft.Game.UI
             placement.text = queued != null ? text.Format("info.queued", PlayerText.Capitalised(text["info.map_action." + queued.Action]))
                 : here != null ? text.Format("info.built", PlayerText.Capitalised(text["info.map_action." + here.Action]),
                     Control1948.LineDateText(here.Date.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), k => text[k])) : "";   // PlayerText.Month is always English (#701)
-            var campReason = MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
-            var housingReason = MapActions.CheckReason(c, s, MapActions.Housing, q, r);
+            // The GDD loop refuses every map action and builds with city projects instead (R-PROJ-004): it has no map-action
+            // button and no reason, so its refusal is not asked for (the UI has no words for it).
+            var campReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
+            var housingReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.Housing, q, r);
             var campWhy = campReason == null ? null : MapActionReasonText(campReason, text);
             var housingWhy = housingReason == null ? null : MapActionReasonText(housingReason, text);
             // eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason
-            var allowed = c.SystemsAt(s.Date).MapActions;
+            var allowed = c.IsGdd ? new System.Collections.Generic.List<string>() : c.SystemsAt(s.Date).MapActions;
             bool campOn = allowed.Contains(MapActions.TransitCamp), housingOn = allowed.Contains(MapActions.Housing);
             // Both refused for the same reason (in 1948: "...can be placed from 1 January 1950"; or not land, too far, the
             // turn's cap): neither can be ordered on this hex now, so the reason is said once and no button shows (#398).
