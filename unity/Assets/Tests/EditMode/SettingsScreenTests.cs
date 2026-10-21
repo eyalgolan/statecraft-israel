@@ -481,6 +481,73 @@ public class SettingsScreenTests
         Assert.AreEqual("סימון בכוכב בגיטהאב", He["community.star"]);
     }
 
+    /// <summary>#1169: the Community row's "Report a bug or idea" opens the report panel over the screen. The panel shows
+    /// each GitHub form's prefilled lines before anything opens, and each choice opens its link (through the injectable
+    /// opener, so no browser opens): the bug form with the version and this platform, the feature form, the itch page.
+    /// While it shows the rest of the UI is disabled; Esc closes it and gives the focus back to the button.</summary>
+    [Test]
+    public void TheReportButtonShowsWhatEachFormGetsAndOpensIt([Values(false, true)] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var opened = new List<string>();
+        ExternalLink.Opener = opened.Add;
+        try
+        {
+            using var ui = new UiTestKit();
+            using var settings = new SettingsPresenter(ui.Root, text, new SettingsStore(dir));
+            using var feedback = new FeedbackPresenter(ui.Root, text, "0.1.0 / content ab12");
+            var report = ui.Q<Button>("settings-report");
+            Assert.AreEqual(text["feedback.open"], report.text);
+            Assert.AreEqual(text["feedback.bug"], ui.Q<Button>("feedback-bug").text);
+            Assert.IsFalse(feedback.IsOpen);
+            UiTestKit.Press(report);
+            Assert.IsTrue(feedback.IsOpen, "the panel opens");
+            Assert.IsEmpty(opened, "nothing opens before a choice");
+            Assert.IsFalse(ui.Q<VisualElement>("screen-settings").enabledSelf, "the screen under the panel is out of Tab's reach");
+            var env = ReportLinks.Environment();
+            Assert.AreEqual($"title: {ReportLinks.BugTitle}\nversion: 0.1.0 / content ab12\nenv: {env}", ui.Q<Label>("feedback-bug-preview").text);
+            Assert.AreEqual($"title: {ReportLinks.FeatureTitle}", ui.Q<Label>("feedback-feature-preview").text);
+            PressWithPointer(ui.Q<Button>("feedback-bug"));
+            UiTestKit.Press(ui.Q<Button>("feedback-feature"));
+            UiTestKit.Press(ui.Q<Button>("feedback-itch"));
+            CollectionAssert.AreEqual(new[] { ReportLinks.Bug("0.1.0 / content ab12", env), ReportLinks.Feature(), ReportLinks.Itch }, opened);
+            using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = ui.Q<Button>("feedback-bug"); ui.Q<Button>("feedback-bug").SendEvent(esc); }
+            Assert.IsFalse(feedback.IsOpen, "Esc closes it");
+            Assert.IsTrue(ui.Q<VisualElement>("screen-settings").enabledSelf, "the screen is usable again");
+            Assert.AreSame(report, report.focusController?.focusedElement, "the focus is back on the button that opened it");
+            UiTestKit.Press(report);
+            UiTestKit.Press(ui.Q<Button>("feedback-close"));
+            Assert.IsFalse(feedback.IsOpen, "Close closes it");
+            // GameRoot's Escape poll asks the panel first, in the frame its own Cancel closed it too, so the same key does
+            // not also close the Settings screen under it.
+            Assert.IsTrue(feedback.Escape(), "closed this frame: the key is used");
+            UiTestKit.Press(report);
+            Assert.IsTrue(feedback.Escape());
+            Assert.IsFalse(feedback.IsOpen, "the poll's Escape closes it");
+        }
+        finally { ExternalLink.Opener = ExternalLink.Default; }
+    }
+
+    /// <summary>#1169: with the screens' navigation wired as GameRoot wires it, Esc in the report panel closes the panel
+    /// only; ScreenNav's Cancel handler trickles down from the root before the panel's own and asks the panel first.
+    /// (Time.frameCount does not move in an edit-mode test, so after this the panel keeps saying "used this frame".)</summary>
+    [Test]
+    public void EscapeInTheReportPanelLeavesTheSettingsScreenOpen()
+    {
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using var settings = new SettingsPresenter(ui.Root, En, new SettingsStore(dir));
+        using var feedback = new FeedbackPresenter(ui.Root, En, "0.1.0 / content ab12");
+        nav.TakesEscape = feedback.Escape;
+        nav.Open("settings");
+        UiTestKit.Press(ui.Q<Button>("settings-report"));
+        Assert.IsTrue(feedback.IsOpen);
+        var bug = ui.Q<Button>("feedback-bug");
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = bug; bug.SendEvent(esc); }
+        Assert.IsFalse(feedback.IsOpen, "Esc closes the panel");
+        Assert.AreEqual("settings", nav.Current, "and only the panel");
+    }
+
     /// <summary>A mouse press as the player makes it (StartScreenTests.PressWithPointer): a primary-button pointer down
     /// (GetPooled leaves the button at -1), then the button's Clickable fires on the release.</summary>
     internal static void PressWithPointer(Button b)
@@ -529,8 +596,8 @@ public class SettingsScreenTests
     }
 
     /// <summary>The open screen at 1280x720 (the issue's size), in English and Hebrew, at each UI scale: the title, the option's name and its
-    /// button inside the screen, below the top bar and inside the window, each text whole (on one line or wrapped). 125% and
-    /// 150% run as if verified (VerifyOnEveryShape): the screen itself must hold them once the rest of the UI does.</summary>
+    /// button (the Community row's three: Star, Report and Share) inside the screen, below the top bar and inside the window,
+    /// each text whole (on one line or wrapped). 125% and 150% run as if verified (VerifyOnEveryShape): the screen itself must hold them once the rest of the UI does.</summary>
     [UnityTest]
     public IEnumerator TheOpenScreenFitsAt1280x720InBothLanguages([Values(100, 125, 150)] int uiScale)
     {
@@ -570,16 +637,21 @@ public class SettingsScreenTests
                     "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low",
                     "settings-language-label", "settings-language-en", "settings-language-he", "settings-language-note",
                     "settings-uiscale-label", "settings-uiscale-100", "settings-uiscale-125", "settings-uiscale-150",
-                    "settings-community-label", "settings-star" })
+                    "settings-community-label", "settings-star", "settings-report", "settings-share" })
                 {
                     var e = root.Q<TextElement>(name);
                     Assert.IsFalse(string.IsNullOrWhiteSpace(e.text), $"{at}: {name} has its text");
                     Assert.IsTrue(Inside(e.worldBound, screen), $"{at}: {name} {e.worldBound} leaves the screen {screen}");
                     Assert.IsTrue(UiLayoutTests.TextFits(e), $"{at}: {name} '{e.text}' is cut ({e.contentRect})");
                 }
-                // The Community row (#1168) runs right to left in Hebrew, like the language row: the button left of its name.
-                var starAt = root.Q("settings-star").worldBound; var communityAt = root.Q("settings-community-label").worldBound;
-                Assert.AreEqual(hebrew, starAt.xMax <= communityAt.xMin + 0.5f, $"{at}: the Star button {starAt} beside its name {communityAt}");
+                // The Community row (#1168) runs right to left in Hebrew, like the language row: its buttons (Star, #1169's
+                // Report and #1170's Share) left of its name.
+                var communityAt = root.Q("settings-community-label").worldBound;
+                foreach (var button in new[] { "settings-star", "settings-report", "settings-share" })
+                {
+                    var buttonAt = root.Q(button).worldBound;
+                    Assert.AreEqual(hebrew, buttonAt.xMax <= communityAt.xMin + 0.5f, $"{at}: {button} {buttonAt} beside its name {communityAt}");
+                }
                 // The set choice reads as set while it has the focus a press leaves on it: dark text on the gold fill.
                 var low = root.Q<Button>("settings-quality-low");
                 using (var e = NavigationSubmitEvent.GetPooled()) { e.target = low; low.SendEvent(e); }

@@ -110,6 +110,28 @@ settings.uiscale: "גודל הממשק"
 # the native reviewer (#564).
 settings.community: "קהילה"
 community.star: "סימון בכוכב בגיטהאב"
+# "Report a bug or idea" (#1169, FeedbackPresenter): the button and the panel's title ("a report of a bug or an idea"),
+# its note ("the form opens with these lines already filled in; nothing is sent before the sending on GitHub"), and the
+# three choices, all noun phrases or impersonal forms, so no verb agrees with the player's gender; GitHub and itch in
+# Hebrew letters, as the static texts carry no Latin (HebrewUiTests). Approved by Beri, a native speaker, on #1179
+# (20 Oct 2026). For the native reviewer (#564).
+feedback.open: "דיווח על באג או רעיון"
+feedback.intro: "הטופס נפתח עם השורות האלה כבר ממולאות. שום דבר לא נשלח לפני השליחה בגיטהאב."
+feedback.bug: "דיווח על באג"
+feedback.feature: "הצעה לתכונה חדשה"
+feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק באיץ׳"
+# "Share" (#1170, SharePresenter): the button and the panel's title ("sharing a picture from the game"), the post, Share,
+# "downloading the picture", and the note ("these sites do not take a picture through a link: the downloaded picture is
+# to be attached to the post"). The post opens with a noun phrase ("running the State of Israel in 1948 in the game
+# Statecraft: Israel, ...") instead of the English "I'm running", which in Hebrew would agree with the player's gender;
+# it keeps the game's name and the URL in Latin letters, as README.he.md does. Approved by Beri, a native speaker,
+# on #1182 (20 Oct 2026). For the native reviewer (#564).
+share.open: "שיתוף"
+share.title: "שיתוף תמונה מהמשחק"
+share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי בקוד פתוח. {0}, תור {1}. לשחק: {2}"
+share.native: "שיתוף"
+share.download: "הורדת התמונה"
+share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item

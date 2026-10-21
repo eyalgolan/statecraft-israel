@@ -163,13 +163,17 @@ namespace Statecraft.Game.UI
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly EventCallback<GeometryChangedEvent> onGeometry;
 
+        /// <summary>A layer over the screens that takes Escape first (GameRoot: the report panel, #1169, and the share panel, #1170): true when it used the
+        /// key, and the open screen under it stays open. This handler trickles down from the root, so it runs before the layer's own.</summary>
+        public System.Func<bool>? TakesEscape;
+
         public ScreenNav(VisualElement root)
         {
             this.root = root;
             // Escape (the UI map's Cancel, from any focused element or the panel) closes the open screen. NavigationGuard
             // handles only NavigationMoveEvent, so the two never meet. GameRoot also polls the Escape key for the case where
             // no element has the focus (CloseOnEscape).
-            onCancel = e => { if (Close()) e.StopPropagation(); };
+            onCancel = e => { if (TakesEscape?.Invoke() == true || Close()) e.StopPropagation(); };
             root.RegisterCallback(onCancel, TrickleDown.TrickleDown);
             onGeometry = e => FitCloseButtons();
             root.RegisterCallback(onGeometry);
