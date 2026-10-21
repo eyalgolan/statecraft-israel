@@ -419,6 +419,8 @@ unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
 unit.flying: "{0}, בטיסה מעל הבסיס"
 unit.parked: "{0}, על הקרקע בבסיס"
 unit.national: "גיוס מילואים {0} · רמת ביטחון {1} מתוך 5"
+# The squadron card's footer in the GDD loop: the security level alone (#753). For the native reviewer (#564).
+unit.security: "רמת ביטחון {0} מתוך 5"
 unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"

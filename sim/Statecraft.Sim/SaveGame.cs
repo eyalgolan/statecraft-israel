@@ -123,7 +123,7 @@ namespace Statecraft.Sim
             CancelTraining t => $"untrain {Int(t.Cohort)}",
             PioneerWork p => $"pioneer {Int(p.Unit)} {Esc(p.Action)} {Esc(p.Site)}",
             StopWork w => $"stop {Int(w.Unit)}",
-            UnitOrder o => $"order {Int(o.Unit)} {Esc(o.Order)}",
+            UnitOrder o => $"order {Int(o.Unit)} {Esc(o.Order)}" + (o.Q is int q && o.R is int r ? $" {Int(q)} {Int(r)}" : ""),
             StartProject p => $"project {Esc(p.ProjectKind)} {Esc(p.City)} {Int(p.Q)} {Int(p.R)}",
             CancelProject p => $"unproject {Int(p.Project)}",
             Move m => $"move {Int(m.Unit)} {Int(m.Q)} {Int(m.R)}",
@@ -221,7 +221,9 @@ namespace Statecraft.Sim
                 case "untrain": Arity(2); return new CancelTraining(I(f[1]));
                 case "pioneer": Arity(4); return new PioneerWork(I(f[1]), Str(f[2]), Str(f[3]));
                 case "stop": Arity(2); return new StopWork(I(f[1]));
-                case "order": Arity(3); return new UnitOrder(I(f[1]), Str(f[2]));
+                case "order":   // an attack carries its hex (R-COMBAT-001); fortify and hold none
+                    if (f.Length != 5) Arity(3);
+                    return f.Length == 5 ? new UnitOrder(I(f[1]), Str(f[2]), I(f[3]), I(f[4])) : new UnitOrder(I(f[1]), Str(f[2]));
                 case "project": Arity(5); return new StartProject(Str(f[1]), Str(f[2]), I(f[3]), I(f[4]));
                 case "unproject": Arity(2); return new CancelProject(I(f[1]));
                 case "move": Arity(4); return new Move(I(f[1]), I(f[2]), I(f[3]));

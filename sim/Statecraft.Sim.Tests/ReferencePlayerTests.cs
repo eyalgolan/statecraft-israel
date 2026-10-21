@@ -32,8 +32,12 @@ public class ReferencePlayerTests
         var orders = ReferencePlayer.Commands(Mvp, s);
         var history = HistoricalAI.Commands(Mvp, s);
         Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
-        Assert.Equal(history.Count + 1, orders.Count);
+        Assert.Equal(history.Count + 2, orders.Count);
         Assert.DoesNotContain(orders, x => x is AssignWorkers);
+        // The attack policy (#747): unit 0 (strength 5, on 10,9) meets the Syrian unit next to it (3, on the valley's 10,10)
+        // at 166 percent, past the policy's 150.
+        var attack = Assert.IsType<UnitOrder>(orders[history.Count]);
+        Assert.Equal((0, Combat.Attack, (int?)10, (int?)10), (attack.Unit, attack.Order, attack.Q, attack.R));
         var train = Assert.IsType<Train>(orders.Last());
         Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 152 civilians without work
         var r = Simulation.Step(Mvp, s, orders);
@@ -201,7 +205,9 @@ public class ReferencePlayerTests
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, full), x => x is AssignWorkers);
         var tired = s.Clone();
         tired.Attention = 0;
-        Assert.Empty(ReferencePlayer.Commands(Mvp, tired));
+        Assert.All(ReferencePlayer.Commands(Mvp, tired), x => Assert.Equal(Combat.Attack, Assert.IsType<UnitOrder>(x).Order));   // unit orders are free (D-A6)
+        tired.Arms = 0;
+        Assert.Empty(ReferencePlayer.Commands(Mvp, tired));   // and the attack needs the Arms
     }
 
     /// <summary>With more jobs than civilians, the default (not the player) fills no more jobs than there are civilians.</summary>

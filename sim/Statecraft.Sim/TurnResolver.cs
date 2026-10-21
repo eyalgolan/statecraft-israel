@@ -14,7 +14,9 @@ namespace Statecraft.Sim
         {
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
-            // 1-3. Enemy orders, combat, capture: Phase 5.
+            // 1. Enemy orders: Phase 5 PR 10.
+            Combat.Resolve(c, s, why);                    // 2. combat, in ascending attacker id (R-COMBAT-002)
+            // 3. Capture: Phase 6.
             Orders.Settle(s, why);                        // 3b. after combat: fortify given this turn is set, and lost where a unit left its hex (R-ORDER-002)
             Training.Progress(c, s, why);                 // 4. training
             Projects.Advance(c, s, next, why);            // 5. construction

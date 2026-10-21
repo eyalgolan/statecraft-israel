@@ -251,7 +251,7 @@ namespace Statecraft.Game.UI
             panel.EnableInClassList(UnitClass, unit != null);
             if (unit != null)
             {
-                var card = UnitCard.For(unit.Value, s, text);
+                var card = UnitCard.For(unit.Value, s, text, c.IsGdd);
                 panel.EnableInClassList("info-empty", false);
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = card.Body;
                 ShowLocalities("");

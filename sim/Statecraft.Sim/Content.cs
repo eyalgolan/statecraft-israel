@@ -615,9 +615,30 @@ namespace Statecraft.Sim
         /// <summary>The settlements (settlements_1948.yaml ids) whose hexes no player unit may enter or cross before Phase 6
         /// (R-MOVE-005; Q-CIV-1). The owner sets the list.</summary>
         public List<string> EnemyHeldLocalities { get; set; } = new List<string>();
+        /// <summary>The Arms each of the player's units spends on an attack, paid when it resolves (R-COMBAT-004; D-G6,
+        /// Q-COMBAT-4). Required in the GDD loop, &gt;= 0.</summary>
+        public int? ArmsPerAttack { get; set; }
+        /// <summary>A defender's strength in percent for its hex's land biome (R-COMBAT-002; D-G3, Q-COMBAT-2: the defender's
+        /// biome modifies the ratio). The loader requires one for every land biome in the GDD loop, each &gt;= 1.</summary>
+        public Dictionary<string, int> CombatTerrainPercent { get; set; } = new Dictionary<string, int>();
+        /// <summary>The combat table (R-COMBAT-002, R-COMBAT-003; D-G3, Q-COMBAT-1): its rows in ascending
+        /// <see cref="CombatRow.MinRatioPercent"/>, the first at 0. Required in the GDD loop.</summary>
+        public List<CombatRow> CombatTable { get; set; } = new List<CombatRow>();
         /// <summary>The share of each numeric effect a delegated option applies when its minister is below the loyalty floor
         /// (R-EVT-003; #107). Required in the GDD loop, 0 to 1.</summary>
         public double? DisloyalEffectShare { get; set; }
+    }
+
+    /// <summary>One row of rules.yaml mvp.combat_table (R-COMBAT-002, R-COMBAT-003): it applies from an attack : defence
+    /// ratio of <see cref="MinRatioPercent"/> percent up to the next row's. Each list has one entry per face of the
+    /// engagement's one draw, all the same length: the population units the attackers and the defenders lose, and 1 where
+    /// the defenders that are left retreat.</summary>
+    public sealed class CombatRow
+    {
+        public int MinRatioPercent { get; set; }
+        public List<int> AttackerLoss { get; set; } = new List<int>();
+        public List<int> DefenderLoss { get; set; } = new List<int>();
+        public List<int> DefenderRetreats { get; set; } = new List<int>();
     }
 
     /// <summary>A kind of city project (projects.yaml; GDD "Cities and construction"; R-PROJ-001 to R-PROJ-003): permanent
