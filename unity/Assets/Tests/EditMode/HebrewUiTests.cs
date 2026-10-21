@@ -296,6 +296,7 @@ public class HebrewUiTests
         ("settings-uiscale-label", "settings.uiscale"),
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
+        ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236
         ("feedback-intro", "feedback.intro"), ("feedback-bug", "feedback.bug"), ("feedback-feature", "feedback.feature"),
         ("feedback-itch", "feedback.itch"), ("feedback-close", "report.close"),
         ("settings-share", "share.open"), ("turn-report-share", "share.open"), ("share-title", "share.title"),   // #1170

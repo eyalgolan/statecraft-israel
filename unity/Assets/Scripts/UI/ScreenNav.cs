@@ -49,6 +49,7 @@ namespace Statecraft.Game.UI
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
             r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
+            r.Q(CommunityIconsPresenter.ColumnName)?.SetEnabled(!(start || outcome || report));   // Star, Report, Share (#1236): in the same lane
             r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome || report));
             bool infoCovered = start || full || modal || outcome || report || r.ClassListContains(WideOpenClass);
             r.Q("info-panel")?.SetEnabled(!infoCovered);

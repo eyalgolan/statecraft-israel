@@ -279,6 +279,8 @@ namespace Statecraft.Game.UI
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));
             // "Share" (#1170), from Settings and the turn report: the frame is captured at its end, before the panel shows.
             var sharePanel = share = Own(new SharePresenter(root, bridge, text, done => StartCoroutine(ShareShot.Capture(done))));
+            // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
+            Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
             nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape();
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)

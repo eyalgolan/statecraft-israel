@@ -169,11 +169,12 @@ public class StartingForcesTests
         Assert.Throws<NotSupportedException>(() => Simulation.NewGame(Real, GoldenRun.Seed, Mode.Open));
 
     // R-UNIT-006, Q-START-3 (#743, owner, 20 October 2026): a shareable build waits until every row the sim starts a unit
-    // from is fact-checked.
+    // from is fact-checked. The owner person-checked the twelve real ones on 21 October 2026 (#1240), so none waits.
     [Fact]
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
-        Assert.Equal(Real.StartingForces.Select(f => f.Row).OrderBy(x => x, StringComparer.Ordinal), ReleaseGate.StartingForcesUnchecked(Real));
+        Assert.Equal(12, Real.StartingForces.Count);
+        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }

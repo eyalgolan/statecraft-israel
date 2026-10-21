@@ -160,6 +160,14 @@
             <ui:VisualElement name="info-gdd" class="info-gdd" />
             <Statecraft.Game.UI.UiFrame filigree="true" />
         </ui:VisualElement>
+        <!-- Star, Report and Share (#1236, CommunityIconsPresenter): three round icons at the foot of the side menu's lane, at
+             the bottom left (the info panel starts right of the lane). Icon-only as the side menu: each one's name is its text,
+             drawn clear, and its tooltip (HoverTip). After the info panel in the tree, so Tab reaches them after its actions. -->
+        <ui:VisualElement name="community-column" class="community-column" picking-mode="Ignore">
+            <ui:Button name="hud-star" text="Star on GitHub" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="star" class="nav-disc" /></ui:Button>
+            <ui:Button name="hud-report" text="Report a bug or idea" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="speech" class="nav-disc" /></ui:Button>
+            <ui:Button name="hud-share" text="Share" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="share" class="nav-disc" /></ui:Button>
+        </ui:VisualElement>
         <!-- The decision layer under the top bar (decision cards, 2026-10-13): while an event is open a dim backdrop blocks the
              map and the panels under it, and the card sits in the middle, up to 1040 px wide, with a 16:9 media header (the
              event's photograph). Hidden under the start screen and any open screen (ScreenNav.DisableCovered). -->

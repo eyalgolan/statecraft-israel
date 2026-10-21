@@ -52,7 +52,7 @@ As a player of the MVP, I want the real game to switch to the GDD loop with mont
 - [S5] The owner's answers on #375, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6178976670, checked 2026-10-15
 - [S6] The maintainer's food rule on #382, 16 October 2026 (option (b)), https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6213237277, checked 2026-10-16
 - [S7] The owner's decision on #781, 18 October 2026, "Approve as drafted", https://github.com/eyalgolan/statecraft-israel/issues/781#issuecomment-6251995002, checked 2026-10-18
-- [S8] The owner's decision on #782, 17 October 2026 (the railway and its card date), https://github.com/eyalgolan/statecraft-israel/issues/782#issuecomment-6231352128, checked 2026-10-21
+- [S8] The owner's decision on #782, 17 October 2026 (the railway and its card date, and the required yishuvim of D-B4), https://github.com/eyalgolan/statecraft-israel/issues/782#issuecomment-6231352128, checked 2026-10-21
 
 ## Open questions
 
