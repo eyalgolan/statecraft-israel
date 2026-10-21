@@ -169,6 +169,7 @@ checks this (see `CONTRIBUTING.md`).
   unchanged; English and Hebrew, the Hebrew flagged for a native speaker's review (#564) (refs #939, #954).
 
 ### Fixed
+- The Settings note that said event cards are English only is gone: every event card has Hebrew text (#1191).
 - A tapped top-bar meter tip closes on a tap on the bare map too (#1184, follow-up to #1173): such a tap never reaches
   the UI panel, so MeterTip hears the press on the device itself and closes the tip when no element is under it. A tap
   on the UI and the mouse's hover work as before.

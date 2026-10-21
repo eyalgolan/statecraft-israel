@@ -370,7 +370,6 @@
                     <ui:Button name="settings-language-he" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
             <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-uiscale-label" text="UI scale" class="settings-name" />

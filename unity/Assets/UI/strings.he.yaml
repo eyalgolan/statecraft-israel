@@ -97,10 +97,9 @@ settings.sound: "צליל"
 settings.sound.off: "כבוי"
 settings.sound.low: "חלש"
 settings.sound.high: "חזק"
-# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). The note
-# says that the event cards are not translated yet (#55). For the native reviewer (#564).
+# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
+# native reviewer (#564).
 settings.language: "שפה"
-settings.language.note: "כרטיסי האירועים באנגלית בלבד בינתיים."
 # The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
 # reviewer (#564).
 settings.uiscale: "גודל הממשק"

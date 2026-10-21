@@ -485,12 +485,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the Hebrew face in Hebrew. */
 Button.settings-choice-selected { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 /* The language choice (#1036): "עברית" is in the Hebrew face in the English UI too (EB Garamond has no Hebrew), by id so
-   that it beats the selected button's face above. The note under the row wraps. */
+   that it beats the selected button's face above. */
 #settings-language-he {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
 }
-.settings-note { white-space: normal; margin-top: 4px; }
 
 /* The toast sits in the map's free top-left corner, above the info panel: opaque, and never over an open screen's title or
    the minimap column (B7). */

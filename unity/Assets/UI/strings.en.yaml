@@ -105,9 +105,8 @@ settings.sound.off: "Off"
 settings.sound.low: "Low"
 settings.sound.high: "High"
 # The language choice (#1036). The two languages are named on their buttons in themselves ("English", "עברית"), set in
-# SettingsPresenter, not here. The note says what is not translated yet (#55).
+# SettingsPresenter, not here.
 settings.language: "Language"
-settings.language.note: "Event cards are English only for now."
 settings.uiscale: "UI scale"
 # The Community row and the start screen's button (#1168): it opens the repository in a new tab (ExternalLink).
 settings.community: "Community"

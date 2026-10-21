@@ -75,7 +75,6 @@ namespace Statecraft.Game.UI
             // The UI's language (#1036): each button names its language in that language, so a player who cannot read the
             // UI's one still finds their own; the one in use is marked. UiLanguage.AtStart reads the stored choice.
             screen.Q<Label>("settings-language-label").text = text["settings.language"];
-            screen.Q<Label>("settings-language-note").text = text["settings.language.note"];
             languages = Array.ConvertAll(new[] { (UiLanguage.English, "English"), (UiLanguage.Hebrew, "עברית") }, l =>
             {
                 var b = screen.Q<Button>("settings-language-" + l.Item1);
