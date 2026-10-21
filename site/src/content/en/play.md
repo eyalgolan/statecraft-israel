@@ -5,7 +5,7 @@ There is no hosted build yet. For now the game runs from source on your own mach
 1. Install the tools in [docs/dev-setup.md](https://github.com/eyalgolan/statecraft-israel/blob/main/docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `tools/build_sim_for_unity.sh`.
 3. Build the web version. The command is in [docs/dev-setup.md](https://github.com/eyalgolan/statecraft-israel/blob/main/docs/dev-setup.md).
-4. Run `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
+4. Run `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
 
 The exact commands, the tests and the browser check are in [BUILDING.md](https://github.com/eyalgolan/statecraft-israel/blob/main/BUILDING.md).
 
