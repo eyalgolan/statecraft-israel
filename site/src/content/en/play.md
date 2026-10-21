@@ -1,4 +1,4 @@
-There is no hosted build yet. For now the game runs from source on your own machine.
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel), or run it from source on your own machine.
 
 ## Run it yourself
 
