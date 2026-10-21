@@ -81,7 +81,6 @@ It is an early, honest prototype.
 - Most of the [GDD](docs/GDD.md): units you command, combat, building by pioneers, settlement control and the three objectives.
 - Diplomacy.
 - Anything after 1951.
-- A hosted build you can play with one click.
 
 ## Roadmap
 
@@ -124,7 +123,7 @@ flowchart LR
 
 ## Play
 
-There is no hosted build yet; one is planned for M4. Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.1.3](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.3), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.1.3](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.3), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
@@ -176,7 +175,7 @@ This project is built with heavy AI assistance, disclosed here using itch.io's c
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
 - **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
-- **Sound:** no AI sound. The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives).
+- **Sound:** the game's three short sound effects (turn ended, refused order, event card) were made with ElevenLabs, and the trailer's music is AI-generated (ElevenLabs Music). The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives).
 
 Nothing is generated live while you play.
 
