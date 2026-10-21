@@ -108,7 +108,7 @@ flowchart LR
 | 0 | Owner decisions on the open GDD items | In progress: the Phase 1 decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
 | 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | Done: 8 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
 | 2 | Monthly turns for the real game, and the five resources | In progress: all but the top bar for the five resources | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
-| 3 | Every city, with housing, jobs and immigrant absorption | In progress: 5 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
+| 3 | Every city, with housing, jobs and immigrant absorption | Done: 8 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | Pioneers, building sites, roads and railways | In progress: 5 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
 | 5 | Military units, movement and combat | In progress: 4 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
 | 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 2 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
@@ -123,7 +123,7 @@ flowchart LR
 
 ## Play
 
-Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.1.3](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.3), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.1.4](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.4), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
