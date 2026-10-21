@@ -113,7 +113,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Each shown button's centre as a fraction of the panel's width and height, in Buttons' order:
-        /// "start buttons start-new-game=0.4479,0.9278 start-star=0.5521,0.9278 ..." (invariant culture). A fraction maps
+        /// "start buttons start-new-game=0.4167,0.9278 start-star=0.5833,0.9278 ..." (invariant culture). A fraction maps
         /// onto the browser's viewport at any DPR or panel scale; tools/web_check.py clicks there (--startscreen,
         /// --persistence). Null while the screen is closed or not laid out.</summary>
         public string? ButtonCentres()

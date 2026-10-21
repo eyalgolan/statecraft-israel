@@ -382,7 +382,7 @@ END_TURN, END_TURN_HE = (1840, 45), (80, 45)
 # The start screen's buttons are not measured: their row changes as buttons are added (#1178's Star on GitHub moved New
 # game off the viewport's centre), so the game says where they are. Under ?navlog, StartScreenPresenter.ButtonCentres logs
 # each shown button's centre as a fraction of the window, again whenever the layout moves it:
-#   NAV f=88 t=9625 start buttons start-new-game=0.4479,0.9278 start-star=0.5521,0.9278 start-listen=0.4229,0.8704
+#   NAV f=4 t=4094 start buttons start-new-game=0.4167,0.9278 start-star=0.5833,0.9278 start-listen=0.4229,0.8704
 NEW_GAME, CONTINUE, PLAY_RECORDING = "start-new-game", "start-continue", "start-listen"
 START_BUTTONS = re.compile(r"^NAV f=\d+ t=\d+ start buttons (.+)$")
 START_BUTTON = re.compile(r"(\S+)=(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)")
