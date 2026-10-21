@@ -135,6 +135,9 @@ namespace Statecraft.Sim
                 var applied = housing - city.HousingCapacity + jobs - city.JobSlots;
                 why.Add(new Cause("events", x.City + "." + x.Field, applied, $"{CityChange(c, x.City, x.Field, applied)} ({title})"));
             }
+            // R-EFX-008: after the city effects. A kind already unlocked stays so, with no second cause.
+            foreach (var kind in o.UnlockProjects)
+                if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})"));
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Policies[kv.Key] = kv.Value;
@@ -159,6 +162,9 @@ namespace Statecraft.Sim
         static string Granted(UnitGrant g, string place) =>
             FormattableString.Invariant($"{g.N} {g.Type} unit{(g.N == 1 ? "" : "s")} at {place}");
 
+        static string Unlocked(Content c, string kind) =>
+            $"{PlayerText.Capitalised(c.ProjectKinds.First(k => k.Id == kind).Name)} can now be built";
+
         static string CityChange(Content c, string city, string field, double delta) =>
             field == ConditionField
                 ? $"{PlayerText.Settlement(c, city)}: housing condition {PlayerText.PercentChange(delta)}"
@@ -174,6 +180,7 @@ namespace Statecraft.Sim
                 .Select(fx => new Cause("events", fx.Target, fx.Delta, PlayerText.Change(c, fx.Target, fx.Delta))).ToList();
             lines.AddRange(o.GrantUnits.Select(g => new Cause("events", g.Type, g.N, Granted(g, GrantPlace(c, g).Name))));
             lines.AddRange(o.CityEffects.Select(x => new Cause("events", x.City + "." + x.Field, x.Delta, CityChange(c, x.City, x.Field, x.Delta))));
+            lines.AddRange(o.UnlockProjects.Select(k => new Cause("events", k, 1, Unlocked(c, k))));
             lines.AddRange(o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal)
                 .Select(k => new Cause("events", k.Key, k.Value, $"{PlayerText.Target(c, k.Key)} set to {PlayerText.Percent(k.Value)}")));
             if (o.SetRung.HasValue) lines.Add(new Cause("events", "rung", o.SetRung.Value, FormattableString.Invariant($"Security level set to {o.SetRung.Value}")));

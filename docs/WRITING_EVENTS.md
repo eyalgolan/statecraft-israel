@@ -31,6 +31,8 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `id` | yes | Unique across all events. Lowercase letters, digits and underscores, starting with a letter. |
 | `title` | yes | The card title. May contain office placeholders. |
 | `text` | yes | The card body. May contain office placeholders. |
+| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` while no native speaker has read the Hebrew (#564); remove it once one has. |
+| `text_he` | no | The body in Hebrew (#1064). See `title_he`. |
 | `anchor` | no (default `soft`) | `hard` or `soft`. See below. |
 | `tags` | no | A list of free-form labels. Five are sensitive. See below. |
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
@@ -212,6 +214,7 @@ Each option has:
 |---|---|---|
 | `id` | yes | Unique within the event. Same shape as an event id. |
 | `text` | yes in practice | What the player reads on the button. May use placeholders. |
+| `text_he` | with the event's `title_he` | The button's text in Hebrew (#1064). |
 | `historical` | no (default false) | `true` on the option that matches what really happened. At most one per event. |
 | `recommended` | no (default false) | The option a competent minister picks when the event is delegated. |
 | `effects` | no | A list of `{ target, delta }`. |
@@ -219,7 +222,8 @@ Each option has:
 | `set_policy` | no | A map of policy id to a level from 0 to 1. |
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
-| `alternative` | no (required later, #949) | On an option that did not happen: who put it forward, on what record. See below. |
+| `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
+| `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
 An event needs at least one option. `historical` is a statement of fact and needs a source; `recommended` is a game
@@ -243,8 +247,10 @@ An option that did not happen can say who put it forward, and on what record (R-
   `date` is the day it was put forward; `sources` (at least one, `https://`, with `checked`) support both.
 - `design`: nobody is recorded proposing it. It is a design assumption (GDD "Events and consequences"), so it has no
   `by` and no `date`. Sources are optional.
-- The historical option carries none. For now the record is optional; #949 makes it required on every option that did
-  not happen, once the fact-check (#948) has checked each one.
+- The historical option carries none. In an event that has a historical option, every other option must carry one
+  (R-ALT-004): the loader refuses an option that did not happen and says nothing about who proposed it. Copy the
+  record from the checked note (`research_notes/Alternate timelines/roads-checked.md`), or write `{ basis: design }`
+  when nobody is recorded proposing it.
 
 ### effects
 
@@ -254,10 +260,13 @@ An option that did not happen can say who put it forward, and on what record (R-
   live between 0 and 1, so a delta of `0.03` is three points of the scale. Keep deltas small, as the example does;
 - `treasury` or `fx_reserves`, in game money;
 - `food`, the national Food stock, in whole units (one unit is one population unit's food for a month). The delta
-  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. The
-  Arms stock becomes a target with its pool (#781): `arms` moves it the same way. Note that the monthly import
-  (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency crisis is on, so outside a
-  crisis a cut only matters if it leaves less than one month's need; a gain stays.
+  rounds to whole units and the stock never drops below 0, so a larger cut than the stock takes what is there. Note
+  that the monthly import (R-FOOD-002) refills the stock to `cover_months` of the need unless the foreign-currency
+  crisis is on, so outside a crisis a cut only matters if it leaves less than one month's need; a gain stays;
+- `arms`, the national Arms stock, in whole units (one unit is one 1,000-person recruit group's equipment, R-ARMS-001).
+  The delta rounds and the stock clamps at 0 exactly as `food` does. Arms has no monthly import refill: purchases
+  (R-ARMS-002), event gains and equipment returned when recruit training is cancelled (R-ARMS-003) can raise the
+  stock.
 
 `delta` must be a finite number. Any other target is an error. Policy ids (`rationing`, ...) are not effect targets;
 use `set_policy` for those.
@@ -265,7 +274,7 @@ use `set_policy` for those.
 ### grant_units and city_effects
 
 These act on the GDD records, so only content whose `eras.yaml` sets `systems.loop: gdd` may use them. They apply after
-`effects`, grants first, each list in its own order (R-EFX-006).
+`effects`: grants, then city effects, then project unlocks, each list in its own order (R-EFX-006).
 
 - `grant_units: [{ type: halutz, n: 2, at: tel_aviv }]` adds `n` units of a `unit_types.yaml` type of kind `unit`. A
   grant is free: put what the deal cost in `effects`. Leave out `at` and the units stand at the city with the military
@@ -277,7 +286,10 @@ These act on the GDD records, so only content whose `eras.yaml` sets `systems.lo
 - `city_effects: [{ city: haifa, field: condition, delta: -0.1 }]` moves the city's housing condition (0 to 1,
   R-HOUSE-001) by a non-zero number from -1 to 1. It stays from 0 to 1, so a cut larger than the condition stops at 0.
 
-An event with a sensitive tag may carry no grant and no positive `city_effects` delta; a cut is allowed (R-EFX-005).
+- `unlock_projects: [industry]` makes a `projects.yaml` kind marked `locked: true` available to StartProject for the rest
+  of the game (R-EFX-008). Naming a kind that is not locked is an error, since it would do nothing.
+
+An event with a sensitive tag may carry no grant, no positive `city_effects` delta and no unlock; a cut is allowed (R-EFX-005).
 
 ### sources
 
@@ -344,7 +356,7 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `sensitive events cannot reward` | A sensitive-tagged event with a positive `treasury`, `fx_reserves`, `food`, `arms`, `food_supply`, `morale` or `intl_standing` delta. |
 | `must be 1-5` | `set_rung` outside 1 to 5. |
 | `unknown policy` | `set_policy` names a policy that does not exist. |
-| `needs the GDD loop` | `grant_units` or `city_effects` in content that runs the legacy loop. |
+| `needs the GDD loop` | `grant_units`, `city_effects` or `unlock_projects` in content that runs the legacy loop. |
 | `unknown unit type` | A grant's `type` is not in `unit_types.yaml`. |
 | `is not a unit type` | A grant's `type` is a population type. |
 | `must be at least 1` | A grant's `n` is 0 or negative. |
@@ -355,7 +367,9 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `must not be 0` | A `city_effects` delta of 0. |
 | `must be a whole number` | A `housing_capacity` or `job_slots` delta with a fraction, or beyond the int range. |
 | `must be a number from -1 to 1` | A `condition` delta outside -1 to 1. |
-| `sensitive events cannot reward units` | A sensitive-tagged event with a grant. A positive `city_effects` delta gives the same message with the field's name. |
+| `unknown city project` | An `unlock_projects` entry is not in `projects.yaml`. |
+| `is not locked` | An `unlock_projects` entry names a kind without `locked: true`. |
+| `sensitive events cannot reward units` | A sensitive-tagged event with a grant. A positive `city_effects` delta gives the same message with the field's name, and an unlock says `a project unlock`. |
 | `unknown objective` | `objective` names an objective that is not in `objectives.yaml`. |
 | `has another card` | `objective` names an objective whose `card` is a different event. |
 | `an objective's card has exactly one option` | An objective's card has more than one option. |

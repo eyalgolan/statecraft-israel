@@ -280,11 +280,12 @@ public class PlayerTextTests
         foreach (var w in AllCauses(Real))
         {
             // Every number in the line must carry the unit (fix round 2, N3): strip the unit tokens; no digit may remain.
-            if (money.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?(IL |\$)\d+\.\dm", ""), @"\d"))
+            if (money.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"(IL |\$)[+-]?\d+\.\dm", ""), @"\d"))
                 bad.Add("money without a unit: " + w.Message);
             if (w.System == "map")   // "Built a housing project: cost IL 6.0m, Housing +3.0%, ...": every number with its unit
             {
-                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)", ""), @"[+-]?(IL |\$)\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
+                // A hex "(q, r)" and a corridor's "segment N" (R-COR-001, Q-SENS-1) are names, not amounts.
+                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+", ""), @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
                     bad.Add("map line number without a unit: " + w.Message);
             }
             else if (indicators.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?\d+(\.\d)?%", ""), @"\d"))
@@ -300,13 +301,13 @@ public class PlayerTextTests
     {
         Assert.Equal("IL 18.6m", PlayerText.Money(Real, "treasury", 18.6));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
-        Assert.Equal("+IL 1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
-        Assert.Equal("-$0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
+        Assert.Equal("IL +1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
+        Assert.Equal("$-0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
         Assert.Equal("$0.0m", PlayerText.MoneyChange(Real, "fx_reserves", -0.004));
         Assert.Equal(30.0, PlayerText.Scale(0.3), 9);
         Assert.Equal("55%", PlayerText.Percent(0.55));
         Assert.Equal("+4.1%", PlayerText.PercentChange(0.041));
-        Assert.Equal("Money -IL 2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
+        Assert.Equal("Money IL -2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
         Assert.Equal("Social cohesion +5.0%", PlayerText.Change(Real, "morale", 0.05));
         Assert.Equal("Foreign currency", PlayerText.Target(Real, "fx_reserves"));
     }
@@ -365,7 +366,7 @@ public class PlayerTextTests
     // ---- Fix round 2 (N2): one sign style, unsigned zero, no NaN ----
 
     [Fact]
-    public void ZeroIsUnsignedAndTheSignGoesBeforeTheCurrency()
+    public void ZeroIsUnsignedAndTheSignSitsNextToTheNumber()
     {
         Assert.Equal("0%", PlayerText.Percent(-0.004));
         Assert.Equal("55%", PlayerText.Percent(0.55));
@@ -376,15 +377,15 @@ public class PlayerTextTests
         Assert.Equal("-4.0%", PlayerText.PercentChange(-0.04));
         Assert.Equal("+5%", PlayerText.PercentChange(0.05, 0));
         Assert.Equal("0%", PlayerText.PercentChange(-0.004, 0));
-        Assert.Equal("-IL 3.0m", PlayerText.Money(Real, "treasury", -3));
+        Assert.Equal("IL -3.0m", PlayerText.Money(Real, "treasury", -3));
         Assert.Equal("IL 0.0m", PlayerText.Money(Real, "treasury", -0.04));
         // #398 review N2: the parts Money is built from, for the top bar's words ("IL 18.6 million").
         Assert.Equal(("-", "IL ", "3.0"), PlayerText.MoneyParts(Real, "treasury", -3));
         Assert.Equal(("", "IL ", "0.0"), PlayerText.MoneyParts(Real, "treasury", -0.04));
         Assert.Equal(("", "$", "41.5"), PlayerText.MoneyParts(Real, "fx_reserves", 41.46));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
-        Assert.Equal("+IL 1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
-        Assert.Equal("-$0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
+        Assert.Equal("IL +1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
+        Assert.Equal("$-0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
         Assert.Equal("$0.0m", PlayerText.MoneyChange(Real, "fx_reserves", -0.04));
         Assert.Equal("IL 0.0m", PlayerText.MoneyChange(Real, "treasury", 0.04));
     }

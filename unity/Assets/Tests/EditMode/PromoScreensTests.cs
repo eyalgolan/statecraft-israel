@@ -944,6 +944,7 @@ public class PromoScreensTests
                 owned.Add(new BudgetPresenter(root, bridge, Text));
                 owned.Add(new WhyPresenter(root, bridge, Text));
                 owned.Add(new HowToPlayPresenter(root, Text));
+                owned.Add(new ObjectivesPresenter(root, bridge, Text));
                 var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
                 var nav = new ScreenNav(root); owned.Add(nav);
                 var toast = root.Q<Label>("toast");

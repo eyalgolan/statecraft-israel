@@ -3,11 +3,125 @@
 All notable changes to Statecraft: Israel. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/). Every pull request that changes the game (`sim/`, `content/`, `unity/`)
-adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIBUTING.md`).
+adds a line under **Unreleased**, or a fragment in `changelog.d/` that a release folds in here; CI's `Changelog` job
+checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-21
+
 ### Added
+- A "Star on GitHub" button opens the game's repository in a new tab: in a new Community row in Settings and beside New
+  game on the start screen, at New game's size with a star and the GitHub mark (Octicons, MIT, drawn in code), with no
+  fill and a grey edge, so it stays secondary. On the web a press arms a one-shot listener for its release, so the
+  browser opens the tab inside the player's own gesture and does not block it (`ExternalLink.jslib`); any new press on
+  the canvas cancels an arm its release never reached. The editor and desktop builds use `Application.OpenURL`. English
+  and Hebrew labels; Beri approved the Hebrew as a native speaker (refs #564; fixes #1168).
+- A "Report a bug or idea" button, beside Star in Settings and in a quiet row under the start screen's buttons, opens a
+  small panel with three choices: GitHub's bug form prefilled with a title, the game's version and content hash, and the
+  browser's user agent and screen size; the feature form with its title; and the itch page's comments for a player with
+  no GitHub account. The panel shows every prefilled line before anything opens, the game sends nothing itself, and each
+  value is URL-encoded with the whole link kept under GitHub's 8000 characters (`ReportLinks`). English and Hebrew
+  labels; Beri approved the Hebrew as a native speaker (refs #564; fixes #1169).
+- A "Share" button, beside Star in Settings and on the turn report, captures the frame (at its end, never inside the
+  click, capped at 1920 px on the long side) and opens a small panel with the post: the in-game date and turn and the
+  itch page, in English or Hebrew. Where the browser can share files, Share opens its share sheet with the picture
+  (`navigator.share`, inside the player's own gesture, `ShareShot.jslib`); elsewhere it downloads
+  `statecraft-<date>.png` and offers X, Facebook, WhatsApp and LinkedIn share links with a note to attach the picture.
+  Nothing is uploaded by the game and nothing is counted. Beri approved the Hebrew as a native speaker (refs #564;
+  fixes #1170).
+- Hebrew for the absorb-immigrants card and the objectives' names (refs #1187, owner on #55): the last event card
+  without Hebrew gains its title_he, text_he and option text_he, and each objective in content/objectives.yaml gains a
+  name_he the loader reads (EventRules checks it) with a test that it is non-empty. All agent translations, marked
+  agent-checked until a native speaker reads them (#564).
+- **An Objectives screen in the side menu (#1189).** A seventh disc (a flag) opens a read-only list of every objective in
+  `content/objectives.yaml`: its name, whether it is done, the date you completed it and the historical date, in English
+  and Hebrew. No score on it (owner's ruling). The sim reads it through a new pure helper, `Objectives.Status`; the goldens
+  do not move. On the one-row bar the side menu's discs are 45 px, 3 px apart (they were 50 px, 6 px apart), so seven
+  fit where six did; the narrow, two-row and three-row bars keep their discs.
+- Roads and rail lower the movement cost (GDD Phase 5 PR 6, refs #745): a unit stepping between two hexes of one built
+  corridor segment pays `road_move_cost` or `rail_move_cost` instead of the terrain's cost, when that is lower
+  (R-MOVE-007). Only the corridors the pioneers build count (Q-MOVE-2). Both values are 1, labelled design values the
+  owner may override; a segment not yet built costs the terrain.
+- Decision videos: five more demo clips for seven card loops and outcomes (refs #1102, owner ruling of 20 October 2026,
+  "looks good"). The altalena, operation_horev and first_new_yishuv cards gain an Illustration loop (A27, A05, TILE1),
+  and four historical orders gain an End Turn outcome clip: altalena / enforce (A27), first_new_yishuv / continue
+  (TILE1), iraqi_exodus / airlift (A07) and austerity_1949 / impose (A09). The three sensitive rows are
+  sensitivity_reviewed on the owner's ruling. About 4.4 MB more in StreamingAssets, fetched only when a clip plays.
+- A first-turn guide (#42): five short steps (Attention, a city's housing and jobs, training, an event card, the
+  objectives), each with a gold ring round its part of the screen. It shows once, on your first new game, can be
+  skipped at any step, and opens again from How to play. In English and Hebrew; it never changes the game or the save.
+- Extend the absorb-first scenario through completion of the immigrant-absorption objective.
+- When the game ends, an end screen shows the sim's end report in English and Hebrew: the outcome, the score, each
+  objective's date beside its historical date, Social cohesion, International Support and the population beside its
+  CBS anchor. Close leaves the map to look at (orders stay refused), and New Game is the usual two presses; showing the
+  screen keeps the save (refs #812).
+- Windows open and close with motion (#1106, play-test of v0.1.2): every side-menu screen and the decision card scale
+  up and fade in over 0.5 s when they open and scale down over 0.3 s when they close. USS transitions only, switched by
+  ScreenNav.Show; a closing window is out of reach while it shrinks and leaves the layout when the shrink ends, also when
+  it is closed while it still grows. Play mode only: an EditMode panel does not tick, so the layout tests still see
+  windows at full size.
+- The winery is a city project in Rishon LeZion (owner, 20 Oct 2026, on #737, as GDD v0.2 says; this replaces the
+  18 Oct default of Zikhron Ya'akov, which has no winery). `projects.yaml` gains the `winery` kind (10 job slots, IL 2m,
+  6 turns, design values, Q-SPEC-2), which needs vineyards, and Rishon LeZion's `cities.yaml` row lists them with three
+  sources, flagged `to_verify`: no source read on the page dates the town's vineyards to 1948-51, and no person has
+  checked them yet (R-PROJ-005; refs #737). The goldens do not move: the reference player builds no winery.
+- Sound effects: one audio service plays a short clip when a turn ends, when an order is refused and when an event card
+  comes into view, and the Settings screen has a sound effects volume (off, low, high) that is kept per browser. The
+  three clips are AI-generated with the project's ElevenLabs subscription (26,005 bytes in all), each listed in
+  `ASSETS.yaml`; the owner listened to them and chose this set. Presentation
+  only, so the golden hashes do not move (refs #39).
+- The city panel in the GDD loop shows the city's overflow, the people beyond its housing (`Cities.Overflow`,
+  R-HOUSE-002), beside the refugees waiting, and its trained craftsmen (`City.Craftsmen`, R-CRAFT-001) beside the jobs,
+  in English and Hebrew; both numbers are the sim's, and each pair shares a row so the panel stays clear of the left
+  column on a short window (fixes #1121).
+- The IDF brigades' 15 May 1948 strengths in `content/map/units_1948.yaml` (the first step of GDD Phase 5 PR 4, refs
+  #743): the eight brigades with a size in the #906 research note (en.wiki's brigade table, citing Ben-Gurion's War
+  Diaries) carry it, cite it and are `status: to_verify` until a primary source replaces it (owner, 20 October 2026).
+  Etzioni, the 7th, the 8th and Oded have no figure and get none. Map-only data: the sim does not read the file yet, so
+  no golden moves.
+- GDD Phase 4 PR 2: corridors (refs #786, #384). Halutz units build the Burma Road (four segments, one between each pair
+  of its sourced waypoints), the 1949 Haifa–Tel Aviv rail link (the Yarkon link, one segment) and the Tel Aviv–Netanya
+  road (four segments) with `PioneerWork(unit, build_road | build_rail, corridor:N)`, any segment in any order, one unit
+  per segment (R-COR-001 to R-COR-003; owner, 17 October 2026, #782). `content/corridors.yaml` holds the corridors;
+  `tools/corridor_hexes.py` derives each segment's hexes from the traced route and a CI test keeps them in step. Segment
+  Money and turns are labelled design values (road IL 2m and 6 turns, rail IL 4m and 6 turns). The map gains the rail
+  link's route (`yarkon_rail_link`, from 20 September 1949) and the Tel Aviv–Netanya road (`tlv_netanya_road`, from 28
+  July 1950), drawn as straight draft lines between the five places *The Jerusalem Post* names (`trace: straight`;
+  owner, 18 October 2026, #786). Only the routes drawn at the game's start keep the settlement kits off, so the later
+  routes clear no town's houses or trees (owner, #786: the floors are kept). The unit tokens keep off only the routes
+  drawn while a token stands, so the two later routes move no 1948 token. The reference player builds segments once
+  every yishuv, ready field and camp site is taken; on the current minister-scaled historical run it reaches none by
+  1952, so the goldens do not move. Transportation scales segment progress with fractional work carried as on sites;
+  base prices and durations stay unchanged. Veteran progress and a halutz's service follow R-VET-001 and R-VET-002.
+- Hebrew titles, body text and option text for the first batch of 16 event cards, each marked for native-speaker
+  review (refs #1065, #564).
+- Hebrew titles, card text and option text for the 16 events in the second translation batch, pending native-speaker
+  review (refs #1066, #564).
+- An event option can unlock a city project (GDD Phase 7 PR 2, D-H2): a `projects.yaml` kind marked `locked: true` is
+  refused by StartProject until an option with `unlock_projects` naming it has applied. The loader refuses an unknown
+  kind or one that is not locked, and a sensitive option may not unlock (R-EFX-008, R-EFX-005; refs #806). No real
+  project is locked yet, so no golden moves.
+- Standing orders (GDD Phase 5 PR 7): `UnitOrder(unit, fortify / hold)` gives one of the player's military units a
+  standing order that stays until the player changes it. Fortify is free, is set by the end of the turn it is given and
+  is lost when the unit leaves its hex (Q-HOLD-1); hold acts on the unit's own hex only and intercepts nothing (Q-HOLD-2).
+  `Orders.DefencePercent` gives combat (PR 8) the defence: fortify 125% (owner-decided, 19 Oct 2026) and hold 100% of strength (design
+  values; the balance pass #813 may tune both). Orders are free (D-A6). No golden moves: nothing gives an order yet
+  (R-ORDER-001 to R-ORDER-003; fixes #746, refs #385).
+- The ministers reach the GDD systems (D-H3's first slice, refs #808): the Labour minister's office scales housing and
+  industry construction, the Agriculture minister's office pioneer and field work, and the Immigration minister's
+  office refugee absorption, each at the cabinet multiplier (competence x budget share) on the turn's date. Prices and
+  stated durations are unchanged, a build's fractional progress is carried on its record, and an office that does not
+  exist on the date reads its named successor's multiplier. In the historical run every build and absorption moves:
+  the reference player builds Mefalsim on 15 February 1951 (was 15 March 1950), the camps are never started, and every
+  golden is re-pinned.
+- The map zooms from the keyboard (a11y B1a, refs #41): hold = or - (or the numpad's + and -) to zoom in or out at
+  six wheel notches a second, so 6 to 250 km takes about six seconds. Like keyboard pan, the keys work while the
+  pointer rests over a panel, and only without Ctrl, Alt or Cmd, so Ctrl/Cmd with + and - stays the browser's own
+  zoom. A new `ZoomKeys` action in the Camera map; the wheel's `Zoom` keeps its one binding.
+- The sim's end report, `EndReport.For`, reads a finished game for the end screen: the outcome, the score, each
+  objective's date beside its historical date, Social cohesion and International Support, and the population beside
+  its latest CBS anchor (R-END-005, R-END-006; refs #810). It changes no state and no golden; the score's parts wait for #809.
 - An opt-in Civilization-style hex-tile map (`?hex-tiles`, desktop `-hex-tiles`; `?hex-tiles=tel_aviv_crop` for the
   Tel Aviv crop): one-file hex prototypes (towns, orchards, fields, forests, hills), units as their own layer, painted
   ground, a landscape ring round the play hexes and a warmer light while it is on. Presentation only; off by default,
@@ -19,10 +133,68 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   priced by the sim's new `AttentionSystem.Price`/`Left`, which `SimBridge` now uses too); the UI only reads it (refs #1109).
 - Unit cards show the sourced Hebrew unit name in the Hebrew UI, with an English fallback. INS Haganah gains its
   sourced Hebrew name, still flagged for a native speaker's review (#902).
+- Settings: a UI scale choice, 100%, 125% or 150%, default 100% (refs #40, third slice; owner decision of 18 Oct 2026).
+  It scales the whole UI at once (the one panel's reference resolution divided by the scale) and is kept in
+  `settings.txt` (key `uiscale`), never in the sim or the save. Only the scales verified to fit the window are
+  offered, 100% always (owner ruling of 19 Oct 2026 on #1011): the layout suites do not pass at 125% or 150% yet, so
+  for now the row offers 100% alone, and a saved 125% or 150% starts at 100% (the file keeps the choice).
+
+### Changed
+- The map's code-built boats (SeaCraft's feluccas, cutters, moored fishing boats and Haifa's coastal steamer) are
+  now their real length at the train's one 24x scale, like every other model: a felucca about 290 m (1.4 locomotive
+  cars) where it was 2,040 m. Seen from 60 km off Jaffa they are white flecks a few pixels across (Fixes #1094).
+- The map pans left and right from the first frame (#1062, player report): the game opens at 90 km, not 120 km, under
+  the ~106 km where a 16:9 view is wider than the map and held centred (#174). A 21:9 window still opens centred
+  until zoomed in a little.
+- An event card's options no longer show a chevron (play-test of v0.1.2: it read as "expand", but the press chooses,
+  #1105). The text starts at the button's edge padding in English and Hebrew; the gold rim and the hover and focus
+  fills still mark each option as a button.
+- Content: every option that did not happen now says who proposed it, with sources, or that it is a design assumption
+  (R-ALT-004; refs #949, #939). The 30 records are copied from the owner-checked
+  `research_notes/Alternate timelines/roads-checked.md` with the owner's road rulings of 18 October 2026: roads 1, 22
+  and 29 take the first day of their source's range, road 8 keeps 8 August 1950, road 25 (`push_to_hebron`) becomes
+  `design`, and the Latrun option now reads "Attack Latrun before the cabinet votes", `debated`. Road 12
+  (`frumkin_commission/dismiss`) is `design` too, by the owner's ruling of 19 October 2026, with no proposer and no
+  date; the conflicting committee dates stay a research gap in the note.
+- The map can be used from the keyboard: Tab reaches a map stop right after End Turn, a gold ring with a dark outline
+  marks the centre of the view while it has the focus, the camera keys pan the map under it, and Enter or Space selects
+  the hex under the ring through the same pick as a click, with the focus staying on the map. The next Tabs reach the
+  info panel's actions. Covering screens and the start screen take the stop out of reach, and mouse and touch clicks pass
+  through it as before. The empty info panel's hint says so in English and Hebrew, and keeps the right-drag (Hebrew
+  flagged for a native speaker's review; Fixes #1116, refs #41).
+- Event card: a consequence card names the road it follows and the record beside it ("Alternative course. It follows
+  the government's decision: [option] ([card]). In the record: [historical option]."), from the sim's `Timeline.Origin` and
+  `Timeline.HistoricalOption`; a card chained on a consequence card, which has no record of its own, leaves the
+  comparison out. An option that rejoins the record says "Returns to the recorded course." under it. Ordinary cards are
+  unchanged; English and Hebrew, the Hebrew flagged for a native speaker's review (#564) (refs #939, #954).
+
 ### Fixed
-- English save warnings describe changed content without assuming an older version and suggest checking a changed
-  restored game. The map-action limit explains that the player can try again next turn
-  (refs #622; paired Hebrew review pending).
+- A tapped top-bar meter tip closes on a tap on the bare map too (#1184, follow-up to #1173): such a tap never reaches
+  the UI panel, so MeterTip hears the press on the device itself and closes the tip when no element is under it. A tap
+  on the UI and the mouse's hover work as before.
+- The first-turn guide (#42) closes when End turn is pressed under it, so the next turn's decision card no longer opens
+  with its backdrop over a guide step about something else. Step 1's gold ring round Attention now sits clear of End
+  turn's border. Done, Skip or Escape puts back the hex or unit that was selected before the guide showed its city.
+- In Hebrew the outcome clip's caption ("הפקודה שלך: ...") shows the option's Hebrew text, the way the event card shows
+  it; an option with no Hebrew keeps its English (#1210).
+- The browser page now fills a notched phone's whole screen (`viewport-fit=cover` in the WebGL template): iPhone
+  Safari letterboxed the game inside the safe area, so the notch and home-indicator insets read 0 and no safe-area
+  padding could apply (found on Agam's iPhone run; refs #1013).
+- Money negatives and changes put the sign next to the number, not the currency ("IL -3.0m", "IL +1.2m"), everywhere the player sees money - top bar, Budget, Why?, the turn report and tooltips - in English and Hebrew (player feedback, 19 October 2026, refs #1107).
+- On a phone held upright the three-row top bar shrinks to fit its rows instead of keeping a fixed 440 px, so no
+  empty band is left between the stats and the map, and Attention and End Turn sit at the bar's bottom; the panels
+  under it move up with it. 440 px is no longer reserved; smaller phones whose rows need more still grow it (#1089).
+- Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
+- Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
+- On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
+  the browser's `env(safe-area-inset-*)` values (the camera's top inset and the map labels follow as before), and it
+  follows the insets even when the root bounds do not change, as a same-size landscape flip moves the notch with no
+  geometry event (a per-frame poll); desktops and notch-free phones are unchanged.
+  With a side inset, raised meter captions reflow into the existing two-row bar when their measured widths no longer
+  fit; Security's level wraps with its caption, and the 12 px text floor is preserved.
+- A top-bar number's tip no longer stays open after the mouse leaves it: a mouse click no longer pins it (the mouse
+  hovers), and a tip pinned by a tap closes on the next tap anywhere, on the map or on another control (Fixes #1108).
+- Hebrew budget vote labels use the legislature as their subject, following the native review, so names beginning with ה no longer follow an uninflected ב־ prefix (refs #564).
 - Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.
 - Keep the capsule-collider dependency used while creating hex unit stand-ins in stripped player builds; the temporary collider is still removed.
 - Missing unit models on the opt-in hex-tile map use an owned copy of the shipped material in player builds.
@@ -32,6 +204,36 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
 - The Cabinet, Budget, Defence, Why, How to play and Settings screens each gain an X in the header that closes
   them (the same close as Escape): a phone has no Escape key, and re-tapping the lit rail button was the only way
   out (v0.1.1 playtest feedback).
+- The Carmeli Brigade stands at Haifa, its sector's seat, from 15 May to 9 July 1948 (before its Operation Brosh
+  window), in the town on a clearing kept free of the kits' buildings. Haifa and Tel Aviv each get a budget of one unit
+  clearing, and Haifa's census floors drop by what Carmeli's clearing takes: 11 houses and 6.8 / 3.9 points of cover
+  (owner, #588). The 8th Brigade stays hidden: Tel Aviv's clearing is Kiryati's, and every spot within 7.4 km of Tel
+  Litvinsky also cuts into another town or village. A unit clearing's ground counts as if it still held plots when a
+  whole-town model finds its town's core (`TownLandmarks.CoreOf`; owner, #588: "Clearing doesn't move the core"), so
+  Haifa's model stays on land beside Carmeli's clearing.
+- Map: a city shows it can be clicked. With the mouse over one of its hexes or its name, the city's name lights up in
+  ivory and the browser's pointer becomes a hand; a click on the name opens the city panel, as a click on its hex does,
+  in English and Hebrew and at every zoom (Fixes #1063).
+- Event cards in Hebrew (#1064, owner decision on #55): an event can carry `title_he`, `text_he` and each option's
+  `text_he`, all or none, in Hebrew letters, with `text_he_review: agent-checked` until a native speaker has read them
+  (#564). In the Hebrew UI the card shows them, with the minister's Hebrew name in the placeholder, and keeps the English
+  for any field that has no Hebrew. The Altalena card is the first, an AI translation for the native reviewer; the other
+  cards follow in #1065 and #1066. The content hash moves (an older save warns once); no golden does.
+- Up close the kit landmarks (mosques, churches, minarets, Jerusalem's walls, gates and towers, the Dome of the Rock,
+  Jaffa's clock tower and lighthouse, Ramla's White Tower, Nahalal's hall, Revivim's walled lookout) stand at the
+  models' world scale too, real size x 24 (`SettlementKits.ModelScale`), instead of the kits' 60x and 100x that towered
+  over the houses; never bigger than far off, and Jerusalem's walls keep their circuit and shrink only in height and
+  thickness. A plot's models no longer sit in a regular grid: seeded by the place and the plot, each is turned up to
+  10 degrees and moved within its cell, some cells stay empty and a long plot may get a street through it. Far off
+  nothing changes. The rural life and special buildings take their 24x from the same constant (#1032).
+- Unit movement (GDD Phase 5 PR 5): `Move(unit, q, r)` moves a player unit at command time along the cheapest path
+  within the movement points it has left this turn, and `Movement.Reachable` and `Movement.Path` give the preview.
+  Movement points per military type and a cost per land biome are owner-accepted design values (Q-MOVE-1, 19 October 2026); lake and sea are
+  impassable; a hex holds at most three units of a side (Q-MOVE-3); no zone of control, and no entry to an enemy unit's
+  hex or to an enemy-held locality (Q-MOVE-4, Q-CIV-1; the list is an owner-accepted draft: acre, nazareth, lod, ramla, gaza, beersheba, unchecked until research task #1096). Orders are free (D-A6).
+  A Move that goes through clears fortify (set or given this turn) at once, even out and back to the same hex; hold
+  moves with the unit (Q-HOLD-1).
+  No golden moves: nothing issues a Move yet (R-MOVE-001 to R-MOVE-006; fixes #744, refs #385).
 - The national Arms pool in the GDD loop (R-ARMS-001 to R-ARMS-003; fixes #781): one Arms is the equipment package for a
   1,000-person recruit group, and the state holds 12 on 15 May 1948. A `BuyArms(count)` order pays IL 1m an Arms,
   borrows a short Treasury and costs 1 Attention whatever the count; recruit training takes 1 Arms a group when it
@@ -162,6 +364,7 @@ adds a line under **Unreleased**; CI's `Changelog` job checks this (see `CONTRIB
   `delegation_loyalty_floor` (5), only `disloyal_effect_share` (0.5) of each numeric effect of the option lands. Both
   are labelled design values in `rules.yaml` `mvp:`. No minister in `people.yaml` is rated below 5 today, so the
   goldens do not move (refs #107).
+
 
 ### Changed
 - Hebrew vote text (`budget.no_vote`, `budget.vote_advisory`, `cabinet.legislature_advisory`) is reworded so it needs

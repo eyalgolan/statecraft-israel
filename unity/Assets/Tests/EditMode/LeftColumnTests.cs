@@ -33,7 +33,7 @@ public class LeftColumnTests
     {
         ("nav-cabinet", "hud.nav.cabinet", "columns"), ("nav-budget", "hud.nav.budget", "ledger"),
         ("nav-defence", "hud.nav.defence", "helmet"), ("nav-why", "hud.nav.why", "question"),
-        ("nav-how-to-play", "hud.nav.how_to_play", "book"),
+        ("nav-how-to-play", "hud.nav.how_to_play", "book"), ("nav-objectives", "hud.nav.objectives", "flag"),
         ("nav-settings", "hud.nav.settings", "gear"),
     };
 
@@ -255,7 +255,7 @@ public class LeftColumnTests
                 var order = root.Query<VisualElement>().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0 && e is Button).ToList()
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
                 // Under the open card the minimap column is out of reach (the backdrop covers it); the column and the bar are not.
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-settings", "new-game", "end-turn" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" },
                     order, $"{at}: the Tab order under the open card");
                 var r = root.Q("root");
                 Assert.IsTrue(r.ClassListContains(EventCardPresenter.ModalClass), at + ": precondition: the card is open");

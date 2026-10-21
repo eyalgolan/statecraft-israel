@@ -7,7 +7,7 @@ namespace Statecraft.Sim.Reference
     /// <summary>Test policy for the GDD goldens (D-A7): a stated simple policy, not game AI and not historical. It sends
     /// HistoricalAI's orders and no AssignWorkers (R-CITY-009's default fills the jobs, and an order would turn it off), then,
     /// when no city project is being built, starts a housing project in the city with the most overflow that has a hex for it, then sends each idle halutz
-    /// unit to the first available yishuv site (then to the first ready field, then to the first available camp site), then,
+    /// unit to the first available yishuv site (then to the first ready field, then to the first available camp site, then to the lowest free segment of the lowest-id corridor), then,
     /// when there is no halutz and none in training, trains one halutz group in
     /// the first city with a Hakhshara and a civilian left without work, while the turn's Attention lasts (both orders borrow). It lives in Statecraft.Sim only so Unity can replay the goldens (#394; GoldenRun); no game mode or UI may reach it
     /// (ReferencePlayerTests.NoGameModeOrUiReachesIt).</summary>
@@ -62,14 +62,16 @@ namespace Statecraft.Sim.Reference
 
         /// <summary>Sends each idle halutz unit, veterans too, in id order, to the first yishuv site without a record, in ordinal id order,
         /// and once every yishuv site has one, to plow the first ready field site without a record (R-FIELD-001), and when there
-        /// is none, to build the first camp site without a record (R-CAMP-001), while the turn's Attention lasts. Pioneer work
-        /// borrows, so the Treasury does not hold it back.</summary>
+        /// is none, to build the first camp site without a record (R-CAMP-001), and when there is none, to the lowest unbuilt,
+        /// unclaimed segment of the lowest-id corridor (ordinal), with the action its kind takes (R-COR-001), while the turn's
+        /// Attention lasts. Pioneer work borrows, so the Treasury does not hold it back.</summary>
         static void Build(Content c, GameState s, List<Command> list, ref double left)
         {
             var cost = AttentionSystem.Cost(c, s, Projects.PioneerKind);
             var taken = new HashSet<string>(s.Sites.Keys, StringComparer.Ordinal);
             foreach (var u in s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && !Projects.IsBusy(s, u.Id)))
             {
+                if (cost > left + 1e-9) return;
                 var site = c.Sites.Where(x => x.Kinds.Contains(Projects.YishuvKind) && !taken.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault();
                 var action = Projects.BuildYishuv;
                 if (site == null)
@@ -83,11 +85,37 @@ namespace Statecraft.Sim.Reference
                     site = c.Sites.Where(x => Projects.IsCamp(x) && !taken.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault();
                     action = Projects.BuildCamp;
                 }
-                if (site == null || cost > left + 1e-9) return;
-                list.Add(new PioneerWork(u.Id, action, site.Id));
-                taken.Add(site.Id);
+                if (site != null)
+                {
+                    list.Add(new PioneerWork(u.Id, action, site.Id));
+                    taken.Add(site.Id);
+                }
+                else
+                {
+                    var segment = FreeSegment(c, s, taken);
+                    if (segment == null) return;
+                    list.Add(new PioneerWork(u.Id, segment.Value.Action, segment.Value.Target));
+                    taken.Add(segment.Value.Target);
+                }
                 left -= cost;
             }
+        }
+
+        /// <summary>The lowest segment, by ordinal corridor id then index, that has no record and is not in
+        /// <paramref name="taken"/> (this turn's orders), as its action and "corridor:N" target; null when there is none.</summary>
+        static (string Action, string Target)? FreeSegment(Content c, GameState s, HashSet<string> taken)
+        {
+            foreach (var d in c.Corridors.OrderBy(x => x.Id, StringComparer.Ordinal))
+            {
+                s.Corridors.TryGetValue(d.Id, out var w);
+                for (int i = 0; i < d.Segments.Count; i++)
+                {
+                    var target = d.Id + ":" + (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    if (w?.Segments[i] == null && !taken.Contains(target))
+                        return (d.Kind == Corridors.Rail ? Corridors.BuildRail : Corridors.BuildRoad, target);
+                }
+            }
+            return null;
         }
     }
 }

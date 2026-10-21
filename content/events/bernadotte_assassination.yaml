@@ -2,6 +2,12 @@
 id: bernadotte_assassination
 title: The Mediator Assassinated
 text: 'Lehi gunmen assassinated the UN mediator, Count Folke Bernadotte, in Jerusalem on 17 September, a day after he completed his second plan. Emergency regulations proclaimed Lehi a terrorist organisation, about 250 of its members were arrested, and the Irgun battalions in Jerusalem were given 24 hours to disband into the IDF. {prime_minister} must decide whether the government keeps up the crackdown.'
+# For the native reviewer (#564): names follow he.wiki "פולקה ברנדוט", section "ההתנקשות בברנדוט" (פולקה ברנדוט,
+# לח"י, אצ"ל, צה"ל; "לח"י ... הוכרזו ארגוני טרור"): https://he.wikipedia.org/wiki/פולקה_ברנדוט
+# "צעדי האכיפה" for "crackdown": a sober term, for the native reader to confirm.
+title_he: המתווך נרצח
+text_he: 'אנשי לח"י התנקשו בחיי מתווך האו"ם, הרוזן פולקה ברנדוט, בירושלים ב־17 בספטמבר, יום לאחר שהשלים את תוכניתו השנייה. תקנות לשעת חירום הכריזו על לח"י כארגון טרור, כ־250 מחבריו נעצרו, ולגדודי האצ"ל בירושלים ניתנו 24 שעות להתפרק ולהשתלב בצה"ל. על {prime_minister} להחליט אם הממשלה תמשיך בצעדי האכיפה.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security, terror]
 office: prime_minister
@@ -36,6 +42,7 @@ to: 1948-10-16
 options:
   - id: outlaw
     text: Keep Lehi outlawed and its members under arrest, and hold the Irgun in Jerusalem to disbanding into the IDF
+    text_he: 'להותיר את לח"י מחוץ לחוק ואת אנשיו במעצר, ולעמוד על כך שהאצ"ל בירושלים יתפרק וישתלב בצה"ל'
     historical: true
     recommended: true
     effects:
@@ -47,6 +54,8 @@ options:
   - id: investigate_only
     # Game assumption: the notes name no advocate for this option.
     text: Ease the crackdown and leave the killing to the investigation
+    text_he: להקל את צעדי האכיפה ולהותיר את הרצח לחקירה
+    alternative: { basis: design }
     effects:
       - { target: intl_standing, delta: -0.05 }   # the killing itself, shared by both options (notes section 6)
       - { target: intl_standing, delta: -0.10 }

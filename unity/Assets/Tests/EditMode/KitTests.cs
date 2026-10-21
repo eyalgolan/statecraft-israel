@@ -180,13 +180,13 @@ public class KitTests
         return doc;
     }
 
-    /// <summary>The railways' and roads' corridors as MapScene hands them to the kits.</summary>
+    /// <summary>The railways' and roads' corridors as MapScene hands them to the kits: the routes drawn at the start (#786).</summary>
     static IReadOnlyList<(List<Vector2> line, float halfWidth)> Corridors(MapScene map)
     {
         var inputs = Statecraft.Game.Boot.GameInputs.MapFromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         var b = HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta;
         var routes = Statecraft.Game.Map.Routes.RoutePaths.ReadOrNone(inputs.RoutesYaml, (b.lon0, b.lon1, b.lat0, b.lat1), _ => { });
-        return Statecraft.Game.Map.Routes.RouteLayer.Corridors(map.Frame, routes);
+        return Statecraft.Game.Map.Routes.RouteLayer.Corridors(map.Frame, Statecraft.Game.Map.Routes.RouteLayer.KitRoutes(routes));
     }
 
     /// <summary>Owner rulings 2026-10-11 and 2026-10-12: the 271 places of 1,000+ people beside the 25 game settlements, as Arab village and

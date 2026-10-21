@@ -39,6 +39,7 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, F("office"), "historical-only titles cannot be delegated events");
                 CheckPlaceholders(c, e, F("title"), e.Title, offices);
                 CheckPlaceholders(c, e, F("text"), e.Text, offices);
+                CheckHebrew(c, e, offices);
                 // Chapters design 3.2: an event may only name model records that are active for its whole window.
                 void Active(string field, string id)
                 {
@@ -74,6 +75,9 @@ namespace Statecraft.Sim
                     if (!optionIds.Add(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), "duplicate option id");
                     CheckPlaceholders(c, e, F($"options[{o.Id}].text"), o.Text, offices);
                     if (o.Alternative != null) CheckAlternative(e, o, F($"options[{o.Id}].alternative"));
+                    // R-ALT-004: an option that did not happen says who proposed it, or that it is a design assumption.
+                    if (!o.Historical && e.Options.Any(x => x.Historical) && o.Alternative == null)
+                        throw new ContentException(e.File, F($"options[{o.Id}].alternative"), "an option that did not happen says who proposed it, or basis: design");
                     foreach (var kv in o.SetPolicy)
                     {
                         if (c.Policies.All(p => p.Id != kv.Key)) throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "unknown policy");
@@ -111,10 +115,10 @@ namespace Statecraft.Sim
 
         static void CheckStructured(Content c, GameEvent e, EventOption o, bool sensitive, Func<string, string> F)
         {
-            if (o.GrantUnits.Count + o.CityEffects.Count == 0) return;
-            // They act on the GDD records (cities.yaml, unit_types.yaml, sites.yaml), which the legacy loop does not load.
+            if (o.GrantUnits.Count + o.CityEffects.Count + o.UnlockProjects.Count == 0) return;
+            // They act on the GDD records (cities.yaml, unit_types.yaml, sites.yaml, projects.yaml), which the legacy loop does not load.
             if (!c.IsGdd)
-                throw new ContentException(e.File, F($"options[{o.Id}].{(o.GrantUnits.Count > 0 ? "grant_units" : "city_effects")}"), "needs the GDD loop (eras.yaml systems.loop: gdd)");
+                throw new ContentException(e.File, F($"options[{o.Id}].{(o.GrantUnits.Count > 0 ? "grant_units" : o.CityEffects.Count > 0 ? "city_effects" : "unlock_projects")}"), "needs the GDD loop (eras.yaml systems.loop: gdd)");
             for (int i = 0; i < o.GrantUnits.Count; i++)
             {
                 var g = o.GrantUnits[i];
@@ -151,6 +155,16 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, X(".delta"), "must be a whole number in the int range");
                 if (sensitive && x.Delta > 0) throw new ContentException(e.File, X(""), $"sensitive events cannot reward {x.Field}");
             }
+            for (int i = 0; i < o.UnlockProjects.Count; i++)
+            {
+                // R-EFX-008. Unlocking a kind that starts unlocked would do nothing, so it is a mistake, as an unknown kind is.
+                var kind = o.UnlockProjects[i];
+                var field = F(FormattableString.Invariant($"options[{o.Id}].unlock_projects[{i}]"));
+                if (sensitive) throw new ContentException(e.File, field, "sensitive events cannot reward a project unlock");
+                var k = c.ProjectKinds.FirstOrDefault(x => x.Id == kind)
+                    ?? throw new ContentException(e.File, field, $"unknown city project '{kind}'");
+                if (!k.Locked) throw new ContentException(e.File, field, $"'{kind}' is not locked in projects.yaml");
+            }
         }
 
         /// <summary>Objectives and their cards name each other (R-OBJ-003): an event's `objective` names an objective whose
@@ -166,6 +180,16 @@ namespace Statecraft.Sim
                 if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(file, F("id"), ContentLoader.IdRule);
                 if (!seen.Add(o.Id)) throw new ContentException(file, F("id"), "duplicate id");
                 ContentLoader.Named(file, F("name"), o.Name);
+                // The Hebrew name (#1187): an agent translation of the English until a native speaker reads it (#564),
+                // so it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
+                if (o.NameHeReviewGiven && o.NameHeReview != HebrewReview.AgentChecked)
+                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                if (o.NameHe == "")
+                {
+                    if (o.NameHeReviewGiven) throw new ContentException(file, F("name_he"), "required: name_he_review is set but the name is empty");
+                }
+                else if (!o.NameHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA'))
+                    throw new ContentException(file, F("name_he"), "must be Hebrew, in Hebrew letters");
                 if (o.CompletesWhen == null || (o.CompletesWhen.SiteBuilt == "") == (o.CompletesWhen.Absorbed == null))
                     throw new ContentException(file, F("completes_when"), "required, exactly one of: { site_built: <site id> }, { absorbed: { ... } }");
                 if (o.CompletesWhen.Absorbed is AbsorbCondition a)
@@ -366,6 +390,29 @@ namespace Statecraft.Sim
                 path.RemoveAt(path.Count - 1);
             }
             return null;
+        }
+
+        /// <summary>An event's Hebrew text (#1064): title_he, text_he and every option's text_he, all or none (a card half in
+        /// Hebrew would mix the languages), in Hebrew letters, with placeholders that resolve as the English ones must.
+        /// text_he_review is agent-checked until a native speaker has read the text (#564), and needs the text.</summary>
+        static void CheckHebrew(Content c, GameEvent e, HashSet<string> offices)
+        {
+            string F(string field) => $"events[{e.Id}].{field}";
+            if (e.TextHeReviewGiven && e.TextHeReview != HebrewReview.AgentChecked)
+                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the text");
+            var fields = new List<(string Field, string Value)> { ("title_he", e.TitleHe), ("text_he", e.TextHe) };
+            fields.AddRange(e.Options.Select(o => ($"options[{o.Id}].text_he", o.TextHe)));
+            if (fields.All(x => x.Value == ""))
+            {
+                if (e.TextHeReviewGiven) throw new ContentException(e.File, F("text_he"), "required: text_he_review is set but the event has no Hebrew text");
+                return;
+            }
+            foreach (var (field, value) in fields)
+            {
+                if (value == "") throw new ContentException(e.File, F(field), "required: an event with Hebrew text has it for its title, its text and every option");
+                if (!value.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F(field), "must be Hebrew, in Hebrew letters");
+                CheckPlaceholders(c, e, F(field), value, offices);
+            }
         }
 
         static void CheckPlaceholders(Content c, GameEvent e, string field, string text, HashSet<string> offices)
