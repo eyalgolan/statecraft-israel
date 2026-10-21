@@ -8,13 +8,69 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-21
+
 ### Added
+- A "Star on GitHub" button opens the game's repository in a new tab: in a new Community row in Settings and beside New
+  game on the start screen, at New game's size with a star and the GitHub mark (Octicons, MIT, drawn in code), with no
+  fill and a grey edge, so it stays secondary. On the web a press arms a one-shot listener for its release, so the
+  browser opens the tab inside the player's own gesture and does not block it (`ExternalLink.jslib`); any new press on
+  the canvas cancels an arm its release never reached. The editor and desktop builds use `Application.OpenURL`. English
+  and Hebrew labels; Beri approved the Hebrew as a native speaker (refs #564; fixes #1168).
+- A "Report a bug or idea" button, beside Star in Settings and in a quiet row under the start screen's buttons, opens a
+  small panel with three choices: GitHub's bug form prefilled with a title, the game's version and content hash, and the
+  browser's user agent and screen size; the feature form with its title; and the itch page's comments for a player with
+  no GitHub account. The panel shows every prefilled line before anything opens, the game sends nothing itself, and each
+  value is URL-encoded with the whole link kept under GitHub's 8000 characters (`ReportLinks`). English and Hebrew
+  labels; Beri approved the Hebrew as a native speaker (refs #564; fixes #1169).
+- A "Share" button, beside Star in Settings and on the turn report, captures the frame (at its end, never inside the
+  click, capped at 1920 px on the long side) and opens a small panel with the post: the in-game date and turn and the
+  itch page, in English or Hebrew. Where the browser can share files, Share opens its share sheet with the picture
+  (`navigator.share`, inside the player's own gesture, `ShareShot.jslib`); elsewhere it downloads
+  `statecraft-<date>.png` and offers X, Facebook, WhatsApp and LinkedIn share links with a note to attach the picture.
+  Nothing is uploaded by the game and nothing is counted. Beri approved the Hebrew as a native speaker (refs #564;
+  fixes #1170).
+- Hebrew for the absorb-immigrants card and the objectives' names (refs #1187, owner on #55): the last event card
+  without Hebrew gains its title_he, text_he and option text_he, and each objective in content/objectives.yaml gains a
+  name_he the loader reads (EventRules checks it) with a test that it is non-empty. All agent translations, marked
+  agent-checked until a native speaker reads them (#564).
+- **An Objectives screen in the side menu (#1189).** A seventh disc (a flag) opens a read-only list of every objective in
+  `content/objectives.yaml`: its name, whether it is done, the date you completed it and the historical date, in English
+  and Hebrew. No score on it (owner's ruling). The sim reads it through a new pure helper, `Objectives.Status`; the goldens
+  do not move. On the one-row bar the side menu's discs are 45 px, 3 px apart (they were 50 px, 6 px apart), so seven
+  fit where six did; the narrow, two-row and three-row bars keep their discs.
+- Roads and rail lower the movement cost (GDD Phase 5 PR 6, refs #745): a unit stepping between two hexes of one built
+  corridor segment pays `road_move_cost` or `rail_move_cost` instead of the terrain's cost, when that is lower
+  (R-MOVE-007). Only the corridors the pioneers build count (Q-MOVE-2). Both values are 1, labelled design values the
+  owner may override; a segment not yet built costs the terrain.
+- Decision videos: five more demo clips for seven card loops and outcomes (refs #1102, owner ruling of 20 October 2026,
+  "looks good"). The altalena, operation_horev and first_new_yishuv cards gain an Illustration loop (A27, A05, TILE1),
+  and four historical orders gain an End Turn outcome clip: altalena / enforce (A27), first_new_yishuv / continue
+  (TILE1), iraqi_exodus / airlift (A07) and austerity_1949 / impose (A09). The three sensitive rows are
+  sensitivity_reviewed on the owner's ruling. About 4.4 MB more in StreamingAssets, fetched only when a clip plays.
+- A first-turn guide (#42): five short steps (Attention, a city's housing and jobs, training, an event card, the
+  objectives), each with a gold ring round its part of the screen. It shows once, on your first new game, can be
+  skipped at any step, and opens again from How to play. In English and Hebrew; it never changes the game or the save.
+- Extend the absorb-first scenario through completion of the immigrant-absorption objective.
+- When the game ends, an end screen shows the sim's end report in English and Hebrew: the outcome, the score, each
+  objective's date beside its historical date, Social cohesion, International Support and the population beside its
+  CBS anchor. Close leaves the map to look at (orders stay refused), and New Game is the usual two presses; showing the
+  screen keeps the save (refs #812).
+- Windows open and close with motion (#1106, play-test of v0.1.2): every side-menu screen and the decision card scale
+  up and fade in over 0.5 s when they open and scale down over 0.3 s when they close. USS transitions only, switched by
+  ScreenNav.Show; a closing window is out of reach while it shrinks and leaves the layout when the shrink ends, also when
+  it is closed while it still grows. Play mode only: an EditMode panel does not tick, so the layout tests still see
+  windows at full size.
+- The winery is a city project in Rishon LeZion (owner, 20 Oct 2026, on #737, as GDD v0.2 says; this replaces the
+  18 Oct default of Zikhron Ya'akov, which has no winery). `projects.yaml` gains the `winery` kind (10 job slots, IL 2m,
+  6 turns, design values, Q-SPEC-2), which needs vineyards, and Rishon LeZion's `cities.yaml` row lists them with three
+  sources, flagged `to_verify`: no source read on the page dates the town's vineyards to 1948-51, and no person has
+  checked them yet (R-PROJ-005; refs #737). The goldens do not move: the reference player builds no winery.
 - Sound effects: one audio service plays a short clip when a turn ends, when an order is refused and when an event card
   comes into view, and the Settings screen has a sound effects volume (off, low, high) that is kept per browser. The
   three clips are AI-generated with the project's ElevenLabs subscription (26,005 bytes in all), each listed in
   `ASSETS.yaml`; the owner listened to them and chose this set. Presentation
   only, so the golden hashes do not move (refs #39).
-
 - The city panel in the GDD loop shows the city's overflow, the people beyond its housing (`Cities.Overflow`,
   R-HOUSE-002), beside the refugees waiting, and its trained craftsmen (`City.Craftsmen`, R-CRAFT-001) beside the jobs,
   in English and Hebrew; both numbers are the sim's, and each pair shares a row so the panel stays clear of the left
@@ -63,27 +119,6 @@ checks this (see `CONTRIBUTING.md`).
   six wheel notches a second, so 6 to 250 km takes about six seconds. Like keyboard pan, the keys work while the
   pointer rests over a panel, and only without Ctrl, Alt or Cmd, so Ctrl/Cmd with + and - stays the browser's own
   zoom. A new `ZoomKeys` action in the Camera map; the wheel's `Zoom` keeps its one binding.
-
-### Fixed
-- The browser page now fills a notched phone's whole screen (`viewport-fit=cover` in the WebGL template): iPhone
-  Safari letterboxed the game inside the safe area, so the notch and home-indicator insets read 0 and no safe-area
-  padding could apply (found on Agam's iPhone run; refs #1013).
-- Money negatives and changes put the sign next to the number, not the currency ("IL -3.0m", "IL +1.2m"), everywhere the player sees money - top bar, Budget, Why?, the turn report and tooltips - in English and Hebrew (player feedback, 19 October 2026, refs #1107).
-- On a phone held upright the three-row top bar shrinks to fit its rows instead of keeping a fixed 440 px, so no
-  empty band is left between the stats and the map, and Attention and End Turn sit at the bar's bottom; the panels
-  under it move up with it. 440 px is no longer reserved; smaller phones whose rows need more still grow it (#1089).
-- Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
-- Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
-- On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
-  the browser's `env(safe-area-inset-*)` values (the camera's top inset and the map labels follow as before), and it
-  follows the insets even when the root bounds do not change, as a same-size landscape flip moves the notch with no
-  geometry event (a per-frame poll); desktops and notch-free phones are unchanged.
-  With a side inset, raised meter captions reflow into the existing two-row bar when their measured widths no longer
-  fit; Security's level wraps with its caption, and the 12 px text floor is preserved.
-- A top-bar number's tip no longer stays open after the mouse leaves it: a mouse click no longer pins it (the mouse
-  hovers), and a tip pinned by a tap closes on the next tap anywhere, on the map or on another control (Fixes #1108).
-
-### Added
 - The sim's end report, `EndReport.For`, reads a finished game for the end screen: the outcome, the score, each
   objective's date beside its historical date, Social cohesion and International Support, and the population beside
   its latest CBS anchor (R-END-005, R-END-006; refs #810). It changes no state and no golden; the score's parts wait for #809.
@@ -103,6 +138,7 @@ checks this (see `CONTRIBUTING.md`).
   `settings.txt` (key `uiscale`), never in the sim or the save. Only the scales verified to fit the window are
   offered, 100% always (owner ruling of 19 Oct 2026 on #1011): the layout suites do not pass at 125% or 150% yet, so
   for now the row offers 100% alone, and a saved 125% or 150% starts at 100% (the file keeps the choice).
+
 ### Changed
 - The map's code-built boats (SeaCraft's feluccas, cutters, moored fishing boats and Haifa's coastal steamer) are
   now their real length at the train's one 24x scale, like every other model: a felucca about 290 m (1.4 locomotive
@@ -131,7 +167,33 @@ checks this (see `CONTRIBUTING.md`).
   `Timeline.HistoricalOption`; a card chained on a consequence card, which has no record of its own, leaves the
   comparison out. An option that rejoins the record says "Returns to the recorded course." under it. Ordinary cards are
   unchanged; English and Hebrew, the Hebrew flagged for a native speaker's review (#564) (refs #939, #954).
+
 ### Fixed
+- A tapped top-bar meter tip closes on a tap on the bare map too (#1184, follow-up to #1173): such a tap never reaches
+  the UI panel, so MeterTip hears the press on the device itself and closes the tip when no element is under it. A tap
+  on the UI and the mouse's hover work as before.
+- The first-turn guide (#42) closes when End turn is pressed under it, so the next turn's decision card no longer opens
+  with its backdrop over a guide step about something else. Step 1's gold ring round Attention now sits clear of End
+  turn's border. Done, Skip or Escape puts back the hex or unit that was selected before the guide showed its city.
+- In Hebrew the outcome clip's caption ("הפקודה שלך: ...") shows the option's Hebrew text, the way the event card shows
+  it; an option with no Hebrew keeps its English (#1210).
+- The browser page now fills a notched phone's whole screen (`viewport-fit=cover` in the WebGL template): iPhone
+  Safari letterboxed the game inside the safe area, so the notch and home-indicator insets read 0 and no safe-area
+  padding could apply (found on Agam's iPhone run; refs #1013).
+- Money negatives and changes put the sign next to the number, not the currency ("IL -3.0m", "IL +1.2m"), everywhere the player sees money - top bar, Budget, Why?, the turn report and tooltips - in English and Hebrew (player feedback, 19 October 2026, refs #1107).
+- On a phone held upright the three-row top bar shrinks to fit its rows instead of keeping a fixed 440 px, so no
+  empty band is left between the stats and the map, and Attention and End Turn sit at the bar's bottom; the panels
+  under it move up with it. 440 px is no longer reserved; smaller phones whose rows need more still grow it (#1089).
+- Fractional site and city-project carry is hashed as IEEE bits on every runtime, avoiding different decimal spellings on .NET and Unity Mono; gameplay progress is unchanged.
+- Site construction forecasts use the current minister rate and saved fractional work, including pioneer promotion.
+- On a notched phone the HUD and the panels keep clear of the notch and the home indicator: the root is padded by
+  the browser's `env(safe-area-inset-*)` values (the camera's top inset and the map labels follow as before), and it
+  follows the insets even when the root bounds do not change, as a same-size landscape flip moves the notch with no
+  geometry event (a per-frame poll); desktops and notch-free phones are unchanged.
+  With a side inset, raised meter captions reflow into the existing two-row bar when their measured widths no longer
+  fit; Security's level wraps with its caption, and the 12 px text floor is preserved.
+- A top-bar number's tip no longer stays open after the mouse leaves it: a mouse click no longer pins it (the mouse
+  hovers), and a tip pinned by a tap closes on the next tap anywhere, on the map or on another control (Fixes #1108).
 - Hebrew budget vote labels use the legislature as their subject, following the native review, so names beginning with ה no longer follow an uninflected ב־ prefix (refs #564).
 - Keep the opt-in hex terrain overlay out of automatic neighboring with the real map terrain.
 - Keep the capsule-collider dependency used while creating hex unit stand-ins in stripped player builds; the temporary collider is still removed.
