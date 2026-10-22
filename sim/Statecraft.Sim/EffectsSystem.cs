@@ -14,6 +14,38 @@ namespace Statecraft.Sim
             foreach (var e in v.Effects) s.EffectContributions[e.Id] = 0;
         }
 
+        /// <summary>The GDD systems a minister's office scales (R-MIN-001; D-H3, Q-MIN-1): the keys of
+        /// mvp.minister_systems in rules.yaml.</summary>
+        public const string HousingConstructionSystem = "housing_construction";
+        public const string IndustryConstructionSystem = "industry_construction";
+        public const string FieldWorkSystem = "field_work";
+        public const string YishuvWorkSystem = "yishuv_work";
+        public const string AbsorptionSystem = "absorption";
+
+        /// <summary>R-MIN-001 and R-MIN-003 (D-H3; Q-MIN-1, Q-MIN-3): the multiplier a GDD system reads on the state's date.
+        /// A system the map does not name is neutral (1.0). An office that does not exist on the date (ended or not yet
+        /// created) reads its named successor office's multiplier, or is neutral with none (Q-MIN-3) - never the
+        /// absent-holder 0.5 of <see cref="Multiplier(Content, GameState, string)"/>, which stays the rule for an office that
+        /// exists but is vacant. A multiplier within 1e-9 of 1.0 reads as exactly 1.0, so float noise in the competence and
+        /// budget factors never stalls a system whose true multiplier is neutral.</summary>
+        public static double GddSystemMultiplier(Content c, GameState s, MvpRules r, string system)
+        {
+            if (!r.MinisterSystems.TryGetValue(system, out var office) || office == "") return 1.0;
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            while (seen.Add(office))
+            {
+                var o = c.Offices.FirstOrDefault(x => x.Id == office);
+                if (o != null && o.ExistsOn(s.Date))
+                {
+                    var m = Multiplier(c, s, office);
+                    return Math.Abs(m - 1.0) < 1e-9 ? 1.0 : m;
+                }
+                if (o == null || o.Successor == "") return 1.0;
+                office = o.Successor;
+            }
+            return 1.0;   // a successor cycle: neutral rather than a loop (the loader refuses unknown successors)
+        }
+
         /// <summary>Competence (0.5 + competence/20) of the office holder (player appointments included) times budget
         /// factor. No office: 1.0.</summary>
         public static double Multiplier(Content c, GameState s, string office)

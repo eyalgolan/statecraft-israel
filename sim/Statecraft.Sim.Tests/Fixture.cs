@@ -234,13 +234,16 @@ series:
             ["unit_types.yaml"] = GddUnitTypes,
             ["sites.yaml"] = GddSites,
             ["projects.yaml"] = GddProjects,
+            ["corridors.yaml"] = GddCorridors,
+            ["map/units_1948.yaml"] = "units: []\n",   // no starting forces (R-UNIT-006); StartingForcesTests writes rows
+            ["map/unit_anchor_hexes.yaml"] = "anchors: []\n",   // their hexes (tools/unit_anchor_hexes.py)
         };
         if (extra != null) foreach (var kv in extra) o[kv.Key] = kv.Value;
         return o;
     }
 
     /// <summary>The fixture's attention_cost line with the GDD command kinds added (replaces "map_action: 1 }").</summary>
-    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, pioneer_work: 0, stop_work: 0, start_project: 1, cancel_project: 0.5, buy_arms: 1 }";
+    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, pioneer_work: 0, stop_work: 0, start_project: 1, cancel_project: 0.5, buy_arms: 1, move: 0, unit_order: 0, resolve_capture: 0 }";
 
     public const string GddRules = @"
 mvp:
@@ -263,6 +266,10 @@ mvp:
   dry_swamp_turns: 3
   dry_swamp_cost: 2
   field_food_per_turn: 7
+  road_segment_turns: 3
+  road_segment_cost: 1.5
+  rail_segment_turns: 2
+  rail_segment_cost: 3
   objective_points: 100
   objective_bonus_per_month: 5
   objective_bonus_cap: 60
@@ -277,8 +284,25 @@ mvp:
   overflow_condition_loss: 0.2
   defeat_turns: 3
   debt_ceiling: 10
+  fortify_defence_percent: 150
+  hold_defence_percent: 120
   delegation_loyalty_floor: 5
   disloyal_effect_share: 0.5
+  move_cost: { coastal_plain: 1, hills: 2, desert: 3 }
+  stack_limit: 2
+  road_move_cost: 1
+  rail_move_cost: 2
+  enemy_held_localities: []
+  arms_per_attack: 2
+  food_per_prisoner_unit: 2
+  prisoner_shortfall_cohesion: 0.05
+  points_per_prisoner_unit_returned: 7
+  held_soldier_cost_per_turn: 0.5
+  combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }
+  combat_table:
+    - { min_ratio_percent: 0, attacker_loss: [1, 1], defender_loss: [1, 1], defender_retreats: [0, 0] }
+    - { min_ratio_percent: 200, attacker_loss: [0, 0], defender_loss: [1, 1], defender_retreats: [1, 1] }
+  enemy_attack_ratio_percent: 200
 ";
 
     public static readonly string GddCities = "\ncities:\n" + City("town_a", 12, 8, 10, 6, "[military_camp, hakhshara]");
@@ -310,6 +334,32 @@ projects:
 
     /// <summary>A projects.yaml kind that requires vineyards (R-PROJ-005), to add to <see cref="GddProjects"/>. Fixture values.</summary>
     public const string Winery = "  - { id: winery, name: a winery, cost: 2, turns: 2, capacity: 0, condition: 0, job_slots: 6, requires: vineyards }\n";
+
+    /// <summary>Two corridors on the fixture's land hexes, in file order: road_a, two segments along r = 0, and rail_a, one
+    /// segment along r = 1. Fixture values, not history.</summary>
+    public const string GddCorridors = @"
+corridors:
+  - id: road_a
+    kind: road
+    name: Road A
+    name_he: כביש א
+    route: road_a
+    segments:
+      - { to: X, hexes: [[2, 0], [3, 0]] }
+      - { to: Y, hexes: [[3, 0], [4, 0]] }
+    sources:
+      - { url: ""https://example.org/road_a"", checked: 2026-10-15 }
+    status: draft
+  - id: rail_a
+    kind: rail
+    name: Rail A
+    name_he: מסילה א
+    route: rail_a
+    segments: [{ to: Y, hexes: [[2, 1], [3, 1]] }]
+    sources:
+      - { url: ""https://example.org/rail_a"", checked: 2026-10-15 }
+    status: draft
+";
 
     /// <summary>One designated site on a land hex next to town_a, with no settlement on it. Fixture values, not history.</summary>
     public const string GddSites = @"

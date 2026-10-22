@@ -59,9 +59,11 @@ namespace Statecraft.Game.Map.Units
         /// <param name="clear">(service, x, z, compact, inTown, anchor x, anchor z): true when a token of that service may
         /// stand there.</param>
         /// <param name="townOverlap">(x, z): how deep (m) a compact token there reaches into a town (round 3's ranking).</param>
+        /// <param name="taken">Hexes other tokens already hold for good (a moved unit's spot keeps off the drawn tokens'
+        /// hexes, UnitLayer); null: none.</param>
         public static Dictionary<UnitAnchor, AnchorSpot> PlaceAll(IReadOnlyList<UnitEntry> units, IReadOnlyList<MapHex> hexes, double hexSizeM,
             Func<double, double, (double x, double z)> toXZ, Func<string, double, double, bool, bool, double, double, bool> clear,
-            Func<double, double, double> townOverlap, Action<string>? skipped = null)
+            Func<double, double, double> townOverlap, Action<string>? skipped = null, IEnumerable<(int q, int r)>? taken = null)
         {
             if (units == null) throw new ArgumentNullException(nameof(units));
             if (hexes == null || hexes.Count == 0) throw new ArgumentException("no hexes", nameof(hexes));
@@ -69,6 +71,7 @@ namespace Statecraft.Game.Map.Units
             for (int i = 0; i < hexes.Count; i++) centres[i] = toXZ(hexes[i].Lon, hexes[i].Lat);
             double maxOffset = Math.Sqrt(3.0) * hexSizeM + 1.0;   // one hex step (plus a metre of rounding)
             var held = new List<(int q, int r, DateTime from, DateTime to)>();
+            if (taken != null) foreach (var (q, r) in taken) held.Add((q, r, DateTime.MinValue, DateTime.MaxValue));
             var result = new Dictionary<UnitAnchor, AnchorSpot>();
             foreach (var u in units)
             {

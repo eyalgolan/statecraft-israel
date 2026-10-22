@@ -12,6 +12,8 @@ namespace Statecraft.Game.UI
     /// session never touches the player's save, and tests use it. New Game goes through SimBridge.Replace instead.</summary>
     public static class GameStart
     {
+        static long saveGeneration;
+
         public static ulong NewSeed() => (ulong)DateTime.UtcNow.Ticks;
 
         public static GameSession Begin(Content c, SaveStore store, Func<ulong> newSeed, List<string> notes, UiText text, bool fresh = false) =>
@@ -64,7 +66,20 @@ namespace Statecraft.Game.UI
         {
             void Save(IReadOnlyList<Rejection> _)
             {
-                try { store.WriteAutosave(bridge.Session.Save.Write()); }
+                try
+                {
+                    store.WriteAutosave(bridge.Session.Save.Write());
+                    // Capture this save, not the mutable session at an asynchronous commit's completion.
+                    var state = bridge.State;
+                    var generation = System.Threading.Interlocked.Increment(ref saveGeneration);
+                    var receipt = FormattableString.Invariant($"{generation} {state.Date:yyyy-MM-dd} turn {state.Turn} hash {state.Hash()}");
+                    UnityEngine.Debug.Log("AUTOSAVE PENDING " + receipt);
+#if UNITY_WEBGL && !UNITY_EDITOR
+                    StatecraftPersistAutosave(receipt);
+#else
+                    UnityEngine.Debug.Log("AUTOSAVE OK " + receipt);
+#endif
+                }
                 catch (Exception e)
                 {
                     UnityEngine.Debug.LogWarning("Autosave could not be written: " + e);
@@ -74,6 +89,11 @@ namespace Statecraft.Game.UI
             bridge.TurnEnded += Save;
             return new Unsubscribe(() => bridge.TurnEnded -= Save);
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")]
+        static extern void StatecraftPersistAutosave(string receipt);
+#endif
 
         sealed class Unsubscribe : IDisposable
         {

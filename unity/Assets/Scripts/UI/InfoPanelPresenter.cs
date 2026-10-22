@@ -12,8 +12,8 @@ namespace Statecraft.Game.UI
     /// <summary>The info panel (bottom-left): the selected hex's land, height and the settlements it owns, what the player
     /// built there, and the two map actions (transit camp, housing project) with the reason when one is not possible
     /// (MapActions.Check). Tile yields are deliberately not shown (owner decision, M3 rulings 2). A selected unit
-    /// (<see cref="ShowUnit"/>) shows its read-only card instead (<see cref="UnitCard"/>): no orders, only a button to the
-    /// Defence screen (owner ruling, 2026-10-11).</summary>
+    /// (<see cref="ShowUnit"/>) shows its card instead (<see cref="UnitCard"/>), with a button to the Defence screen (owner
+    /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify and Hold orders (GDD Phase 5 PR 15, #754).</summary>
     public sealed class InfoPanelPresenter : System.IDisposable
     {
         /// <summary>The class of a fact row (Game.uxml): a sign, then the fact's line; hidden while the line is empty.</summary>
@@ -25,14 +25,22 @@ namespace Statecraft.Game.UI
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
-        readonly Button campButton, housingButton, defenceButton; readonly System.Action onCamp, onHousing, onDefence;
+        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton;
+        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold;
         readonly System.Func<PlacedToken?> selectedUnit;
         bool unitMode;
+        /// <summary>Lights the hexes the Move pick offers on the map (none: clears them); null: nothing is drawn.</summary>
+        readonly System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable;
+        /// <summary>While the player picks a Move's hex: the unit, the hexes Movement.Reachable gave (the only ones a click
+        /// takes), and the session and turn they were read on (a turn or a load ends the pick, as the hexes change).</summary>
+        (int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn)? pick;
         readonly Label title, subtitle, region, settlements, localitiesLabel, placement, reason;
         readonly System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt;
         readonly UiIcon thumb;
         /// <summary>The GDD loop's part (GddHexPanel, #381): a city's counts and orders, or the designated site's.</summary>
         readonly VisualElement gdd;
+        /// <summary>The hex's city projects (GddHexPanel, #1122), under the facts.</summary>
+        readonly VisualElement projects;
         readonly IReadOnlyDictionary<string, string> settlementNames;
         readonly MapRegions? regions;
         readonly System.Func<string, (int q, int r)>? townHex;
@@ -51,10 +59,13 @@ namespace Statecraft.Game.UI
         /// <param name="townNamesHe">Each settlement's Hebrew name (name_he), by id: the Hebrew UI names the town with it in the
         /// title, the "Settlements" line and that note (#899), or with the English name where it has none (null: English
         /// names).</param>
+        /// <param name="showReachable">Lights the hexes a Move can go to while the player picks one, and clears them with none
+        /// (GameRoot: MapScene.ShowReachable; null: the pick still works, with nothing lit).</param>
         public InfoPanelPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, string> settlementNames,
             ScreenNav? nav = null, System.Func<PlacedToken?>? selectedUnit = null, MapRegions? regions = null,
             System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt = null,
-            System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null)
+            System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null,
+            System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
             this.settlementNames = settlementNames; this.regions = regions; this.localitiesAt = localitiesAt; this.townHex = townHex;
@@ -64,6 +75,7 @@ namespace Statecraft.Game.UI
             placement = panel.Q<Label>("info-placement"); reason = panel.Q<Label>("info-reason");
             thumb = panel.Q<UiIcon>("info-thumb");
             gdd = panel.Q<VisualElement>(GddHexPanel.HostName);
+            projects = panel.Q<VisualElement>(GddHexPanel.ProjectsHostName);
             foreach (var row in panel.Query(className: RowClass).ToList()) rows.Add((row, row.Q<Label>()));
             campButton = panel.Q<Button>("build-camp"); housingButton = panel.Q<Button>("build-housing");
             onCamp = () => Build(MapActions.TransitCamp); onHousing = () => Build(MapActions.Housing);
@@ -73,12 +85,30 @@ namespace Statecraft.Game.UI
             onDefence = () => nav?.Open("defence");
             defenceButton.clicked += onDefence;
             defenceButton.text = text["unit.defence"];
+            this.showReachable = showReachable;
+            moveButton = panel.Q<Button>("info-move");
+            onMove = ToggleMovePick;
+            moveButton.clicked += onMove;
+            moveButton.text = text["unit.order.move"];
+            fortifyButton = panel.Q<Button>("info-fortify"); holdButton = panel.Q<Button>("info-hold");
+            onFortify = () => GiveOrder(Orders.Fortify); onHold = () => GiveOrder(Orders.Hold);
+            fortifyButton.clicked += onFortify; holdButton.clicked += onHold;
+            fortifyButton.text = text["unit.order.fortify"]; holdButton.text = text["unit.order.hold"];
             bridge.Changed += Render;
+            panel.parent?.RegisterCallback<GeometryChangedEvent>(OnHudGeometry);
             Render();
         }
 
+        void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
+
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { bridge.Changed -= Render; campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; }
+        public void Dispose() { bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; EndPick(); }
+
+        /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
+        /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
+        /// the left column (InfoPanelLayoutTests).</summary>
+        public const float ShortBelowPx = 1040f;
+        public const string ShortClass = "info-short";
 
         public (int q, int r)? Selected { get; private set; }
 
@@ -102,14 +132,84 @@ namespace Statecraft.Game.UI
         public void Show(int q, int r)
         {
             if (Covered) return;   // covered (#210)
-            unitMode = false; Selected = (q, r); Render();
+            if (unitMode || Selected != (q, r)) projects.RemoveFromClassList(GddHexPanel.OpenClass);   // a newly chosen hex starts with its city projects folded
+            EndPick();
+            unitMode = false; Selected = (q, r);
+            Render();
         }
 
         /// <summary>Shows the selected unit's card (the unit comes from the selectedUnit callback); ignored while covered.</summary>
         public void ShowUnit()
         {
             if (Covered) return;
+            EndPick();
             unitMode = true; Selected = null; Render();
+        }
+
+        /// <summary>Shows nothing selected (the hint), as before the first click; ignored while covered.</summary>
+        public void Clear()
+        {
+            if (Covered) return;
+            EndPick();
+            unitMode = false; Selected = null; Render();
+        }
+
+        /// <summary>The shown unit's sim id and the hexes its Move can go to (Movement.Reachable: the sim's answer, spec section
+        /// 2.6), or null when there is no Move to give: no unit card, no sim unit for it, no hex in reach, or the game is over.</summary>
+        (int unit, IReadOnlyDictionary<(int Q, int R), int> hexes)? MoveTargets()
+        {
+            var unit = unitMode ? selectedUnit() : null;
+            if (unit == null || bridge.State.GameOver != null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token.Unit) is int id)) return null;
+            var reach = Movement.Reachable(bridge.Content, bridge.State, id);
+            return reach.Count == 0 ? null : (id, reach);
+        }
+
+        /// <summary>Move's button: starts the pick (the reachable hexes lit), or ends it when pressed again.</summary>
+        void ToggleMovePick()
+        {
+            if (pick != null) { EndPick(); Render(); return; }
+            if (!(MoveTargets() is { } moves)) return;
+            var hexes = moves.hexes.Keys.Select(h => (h.Q, h.R)).ToList();
+            pick = (moves.unit, new HashSet<(int q, int r)>(hexes), bridge.Session, bridge.State.Turn);
+            showReachable?.Invoke(hexes);
+            Render();
+        }
+
+        /// <summary>The shown unit's sim id, or null when it can take no order: no unit card, no sim unit for it, or the game
+        /// is over (the bridge would refuse every order).</summary>
+        int? OrderUnit()
+        {
+            var unit = unitMode ? selectedUnit() : null;
+            return unit == null || bridge.State.GameOver != null ? null : UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token.Unit);
+        }
+
+        /// <summary>Fortify's or Hold's button: queues the sim's standing order for the shown unit (one per unit: the other is
+        /// replaced). A refusal is raised by the bridge (Refused); the card redraws either way.</summary>
+        void GiveOrder(string order)
+        {
+            if (!(OrderUnit() is int id)) return;
+            bridge.Queue(new UnitOrder(id, order));
+            Render();
+        }
+
+        void EndPick()
+        {
+            if (pick == null) return;
+            pick = null;
+            showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
+        }
+
+        /// <summary>A map click while the player picks a Move's hex (GameRoot.OnHexClicked asks first): on a lit hex it queues
+        /// the sim's Move through the bridge and returns true (the click is taken, the card stays); anywhere else it only ends
+        /// the pick and returns false, so the click selects as usual. False when no pick is open.</summary>
+        public bool PickMoveTarget(int q, int r)
+        {
+            if (!(pick is { } p)) return false;
+            EndPick();
+            if (!p.hexes.Contains((q, r))) return false;
+            bridge.Queue(new Move(p.unit, q, r));   // a refusal is raised by the bridge (Refused)
+            Render();   // the card drops the pick line either way: a refused Queue raises no Changed
+            return true;
         }
 
         void Build(string action)
@@ -227,18 +327,41 @@ namespace Statecraft.Game.UI
             var camp = campButton; var housing = housingButton;
             var unit = unitMode ? selectedUnit() : null;
             defenceButton.style.display = unit != null ? DisplayStyle.Flex : DisplayStyle.None;
+            // A pick read on another turn or session, or for a unit no longer shown, is over: its hexes are not the sim's now.
+            if (pick is { } open
+                && (open.session != bridge.Session || open.turn != s.Turn || unit == null || UnitCard.SimUnit(c, s, unit.Value.Token.Unit) != open.unit))
+                EndPick();
+            var moves = MoveTargets();
+            moveButton.style.display = moves != null ? DisplayStyle.Flex : DisplayStyle.None;
+            // Fortify and Hold (#754): each offered only where the sim's Orders.Check takes it; else the sim's reason, as given,
+            // on Israel's units only (an enemy's card would only repeat the sim's English "That unit is not yours").
+            var orderUnit = OrderUnit();
+            var own = unit?.Token.Unit.Side == UnitData.Israel;
+            var refusals = new List<string>();
+            foreach (var (order, button) in new[] { (Orders.Fortify, fortifyButton), (Orders.Hold, holdButton) })
+            {
+                var why = orderUnit is int ou ? Orders.Check(c, s, ou, order) : null;
+                button.style.display = orderUnit != null && why == null ? DisplayStyle.Flex : DisplayStyle.None;
+                if (why != null && own && !refusals.Contains(why)) refusals.Add(why);
+            }
             panel.EnableInClassList(UnitClass, unit != null);
             if (unit != null)
             {
-                var card = UnitCard.For(unit.Value, s, text);
+                var card = UnitCard.For(unit.Value, s, text, c.IsGdd);
                 panel.EnableInClassList("info-empty", false);
-                title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = card.Body;
+                // The orders' state under the card's lines: the pick asks for a hex; a queued Move, Fortify or Hold waits for End turn.
+                var order = pick != null ? text["unit.move_pick"]
+                    : moves is { } m && bridge.QueuedLike(new Move(m.unit, 0, 0)) != null ? text["unit.move_queued"] : "";
+                var standing = orderUnit is int su && bridge.QueuedLike(new UnitOrder(su, Orders.Hold)) is UnitOrder given
+                    ? given.Order == Orders.Fortify ? text["unit.fortify_queued"] : given.Order == Orders.Hold ? text["unit.hold_queued"] : "" : "";
+                var lines = new[] { card.Body, order, standing }.Where(x => x != "");
+                title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = string.Join("\n", lines);
                 ShowLocalities("");
                 region.text = "";   // a unit's card names no sub-district (the last hex's would stay under it)
-                placement.text = card.Footer; reason.text = card.Note;
+                placement.text = card.Footer; reason.text = string.Join("\n", new[] { card.Note }.Where(x => x != "").Concat(refusals));
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
                 ShowThumb(null);
-                GddHexPanel.Hide(gdd);
+                GddHexPanel.Hide(gdd); GddHexPanel.Hide(projects);
                 return;
             }
             panel.EnableInClassList("info-empty", Selected == null);
@@ -249,7 +372,7 @@ namespace Statecraft.Game.UI
                 ShowLocalities("");
                 camp.style.display = DisplayStyle.None; housing.style.display = DisplayStyle.None;
                 ShowThumb(null);
-                GddHexPanel.Hide(gdd);
+                GddHexPanel.Hide(gdd); GddHexPanel.Hide(projects);
                 return;
             }
             var (q, r) = Selected.Value;
@@ -258,7 +381,7 @@ namespace Statecraft.Game.UI
             var owned = c.SettlementHexes.Where(x => x.Q == q && x.R == r).Select(x => TownName(x.Id)).ToList();   // strict: every settlement hex has a name (final review M4)
             title.text = owned.Count > 0 ? owned[0] : hex == null ? text["info.off_map"] : text["info.biome." + hex.Biome];
             // The GDD loop's city or designated site (#381); a site's hex has no settlement, so its name is the title.
-            var siteName = GddHexPanel.Render(gdd, bridge, text, q, r);
+            var siteName = GddHexPanel.Render(gdd, projects, bridge, text, q, r, TownName);
             if (siteName != null && owned.Count == 0) title.text = siteName;
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)
             // The armistice zone in force, else the sub-district on 15 May 1948, and any armistice line in force through the
@@ -278,12 +401,14 @@ namespace Statecraft.Game.UI
             placement.text = queued != null ? text.Format("info.queued", PlayerText.Capitalised(text["info.map_action." + queued.Action]))
                 : here != null ? text.Format("info.built", PlayerText.Capitalised(text["info.map_action." + here.Action]),
                     Control1948.LineDateText(here.Date.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), k => text[k])) : "";   // PlayerText.Month is always English (#701)
-            var campReason = MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
-            var housingReason = MapActions.CheckReason(c, s, MapActions.Housing, q, r);
+            // The GDD loop refuses every map action and builds with city projects instead (R-PROJ-004): it has no map-action
+            // button and no reason, so its refusal is not asked for (the UI has no words for it).
+            var campReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
+            var housingReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.Housing, q, r);
             var campWhy = campReason == null ? null : MapActionReasonText(campReason, text);
             var housingWhy = housingReason == null ? null : MapActionReasonText(housingReason, text);
             // eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason
-            var allowed = c.SystemsAt(s.Date).MapActions;
+            var allowed = c.IsGdd ? new System.Collections.Generic.List<string>() : c.SystemsAt(s.Date).MapActions;
             bool campOn = allowed.Contains(MapActions.TransitCamp), housingOn = allowed.Contains(MapActions.Housing);
             // Both refused for the same reason (in 1948: "...can be placed from 1 January 1950"; or not land, too far, the
             // turn's cap): neither can be ordered on this hex now, so the reason is said once and no button shows (#398).

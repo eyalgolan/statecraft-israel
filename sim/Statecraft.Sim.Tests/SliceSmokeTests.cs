@@ -256,7 +256,8 @@ public class SliceSmokeTests
         AssertClean("player", run, Play(Real, Player, reload: false, guard: null));
         // Attention runs out some turns: the UI refuses those extra orders at queue time, which is not a sim refusal.
         Assert.True(run.Orders > run.Turns, $"{run.Orders} orders in {run.Turns} turns");
-        var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget", "set_mobilization", "map_action", "security_order" };
+        // No map_action: the GDD loop refuses it (R-PROJ-004) and the info panel offers no legacy Build button there.
+        var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget", "set_mobilization", "security_order" };
         Assert.Empty(uiKinds.Except(run.Carried));                     // every order a UI screen can queue was carried out
         Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
     }

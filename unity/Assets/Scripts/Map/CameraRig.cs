@@ -11,7 +11,9 @@ namespace Statecraft.Game.Map
     public sealed class CameraRig : MonoBehaviour
     {
         public const float Pitch = 50f, Fov = 35f;
-        public Vector3 LookAt; public float Distance = 120000f; public float Yaw;
+        // The opening zoom: under the ~106 km where a 16:9 view grows wider than the map and CameraController centres it
+        // (issue #1062: at 120 km the map could not be panned left or right).
+        public Vector3 LookAt; public float Distance = 90000f; public float Yaw;
         /// <summary>Share of the screen height (0..1) the UI covers at the top. The view is shifted so LookAt sits in the
         /// middle of the map area below it (an off-centre frustum: picking rays and WorldToScreenPoint follow it).</summary>
         public float TopInset;

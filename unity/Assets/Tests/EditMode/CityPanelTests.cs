@@ -55,15 +55,20 @@ public class CityPanelTests
     [Test]
     public void TheCityHexShowsItsCountsFromTheSim()
     {
+        // #1121: 4 civilians over the housing and 3 craftsmen trained (housed too, R-HOUSE-003) are 7 groups of overflow
+        // (R-HOUSE-002), so both new lines read nonzero sim values.
         using var ui = new UiTestKit();
-        var bridge = Bridge(En);
+        var bridge = Bridge(En, s => { var x = s.Cities[City]; s.Cities[City] = x.WithCounts(x.HousingCapacity + 4, x.Employed, x.Refugees).WithCraftsmen(3); });
         using var panel = Panel(ui, bridge, En);
         panel.Show(CityHex.q, CityHex.r);
         var city = bridge.State.Cities[City];
         Assert.AreEqual((0, 0), (city.Refugees, city.Recruits), "precondition: no refugees or recruits at the start (the plural forms below)");
+        Assert.AreEqual((7, 3), (Cities.Overflow(bridge.State, city), city.Craftsmen), "precondition: the sim's overflow and craftsmen");
         Assert.AreEqual(DisplayStyle.Flex, Host(ui).style.display.value, "the GDD part of the panel shows");
         Assert.AreEqual(En.Format("city.housing_condition", Cities.Housed(bridge.State, city), En.Format("city.groups", city.HousingCapacity), PlayerText.Percent(city.Condition!.Value)), ui.Q<Label>("city-housing").text);
+        Assert.AreEqual(En.Format("city.overflow", 7), ui.Q<Label>("city-overflow").text);
         Assert.AreEqual(En.Format("city.jobs", city.Employed, city.JobSlots), ui.Q<Label>("city-jobs").text);
+        Assert.AreEqual(En.Format("city.craftsmen", 3), ui.Q<Label>("city-craftsmen").text);
         Assert.AreEqual(En.Format("city.refugees", En.Format("city.groups", city.Refugees)), ui.Q<Label>("city-refugees").text);
         Assert.AreEqual(En.Format("city.recruits", En.Format("city.groups", city.Recruits)), ui.Q<Label>("city-recruits").text);
         Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", city.Employed)), ui.Q<Label>("city-workers").text);
@@ -301,8 +306,21 @@ public class CityPanelTests
         Assert.AreEqual(SiteDef.Name, ui.Q<Label>("info-title").text, "the site's name is the title");
         Assert.AreEqual(En["site.available"], ui.Q<Label>("site-state").text);
         var r = C.RulesAt(bridge.State.Date).Mvp!;
+        Assert.AreEqual(0.624, EffectsSystem.GddSystemMultiplier(C, bridge.State, r, EffectsSystem.YishuvWorkSystem), 1e-9, "precondition: real Agriculture multiplier");
+        Assert.AreEqual(6, r.BuildYishuvTurns, "the owner's base work is unchanged");
+        Assert.AreEqual(0, bridge.State.Units[a].Service, "the idle group is not already partway to veteran");
+        var played = bridge.State.Clone();
+        int elapsed = 0;
+        do
+        {
+            var result = Simulation.Step(C, played, elapsed == 0 ? new Command[] { new PioneerWork(a, Projects.BuildYishuv, Site) } : new Command[0]);
+            Assert.IsEmpty(result.Rejected);
+            played = result.State; elapsed++;
+        } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
+        Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
+        Assert.AreEqual(8, elapsed, "six work units at the real multiplier, including veteran promotion");
         var first = ui.Q<Button>($"site-build-{a}");
-        Assert.AreEqual(En.Format("site.build", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildYishuvCost), En.Format("city.turns", r.BuildYishuvTurns)), first.text);
+        Assert.AreEqual(En.Format("site.build", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildYishuvCost), En.Format("city.turns", 8)), first.text);
         StringAssert.Contains(En.Format("site.group", 2), ui.Q<Button>($"site-build-{b}").text, "every idle group has its button, numbered from 1");
         UiTestKit.Press(first);
         var order = bridge.QueuedLike(new PioneerWork(a, Projects.BuildYishuv, Site)) as PioneerWork;
@@ -349,7 +367,7 @@ public class CityPanelTests
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
         var r = C.RulesAt(bridge.State.Date).Mvp!;
-        var turns = Projects.TurnsToBuild(C, bridge.State, vet, r.BuildYishuvTurns);
+        var turns = Projects.TurnsToBuild(C, bridge.State, vet, SiteDef, r.BuildYishuvTurns, 0);
         Assert.Less(turns, r.BuildYishuvTurns, "precondition: a veteran builds faster in the real content");
         var button = ui.Q<Button>($"site-build-{vet}");
         Assert.IsNotNull(button, "a veteran group has a Build button");
@@ -358,16 +376,18 @@ public class CityPanelTests
         Assert.IsNotNull(bridge.QueuedLike(new PioneerWork(vet, Projects.BuildYishuv, Site)));
     }
 
-    [Test]
-    public void AVeteransSiteShowsTheTurnsItReallyHasLeft()
+    [TestCase(0d, 4)]
+    [TestCase(0.75d, 3)]
+    public void AVeteransSiteShowsTheTurnsItReallyHasLeft(double carry, int expected)
     {
         using var ui = new UiTestKit();
         int vet = -1;
-        var bridge = Bridge(En, s => { vet = AddHalutz(s, Projects.VeteranType); s.Sites[Site] = new SiteWork(Site, vet, 4, null); });
+        var bridge = Bridge(En, s => { vet = AddHalutz(s, Projects.VeteranType); s.Sites[Site] = new SiteWork(Site, vet, 4, null, carry); });
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
-        var turns = Projects.TurnsToBuild(C, bridge.State, vet, 4);
-        Assert.AreEqual(2, turns, "precondition: 4 turns of progress at the real content's 2 a turn");
+        var turns = Projects.TurnsToBuild(C, bridge.State, vet, SiteDef, 4, carry);
+        Assert.AreEqual(0.624, EffectsSystem.GddSystemMultiplier(C, bridge.State, C.RulesAt(bridge.State.Date).Mvp!, EffectsSystem.YishuvWorkSystem), 1e-9, "precondition: current real Agriculture rate");
+        Assert.AreEqual(expected, turns, "four work units at 2 x 0.624 per turn, including saved carry");
         Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", turns)), ui.Q<Label>("site-state").text);
     }
 
@@ -393,20 +413,179 @@ public class CityPanelTests
     }
 
     [Test]
-    public void AHexWithOnlyAFieldSiteOffersNoBuild()
+    public void AHexWithOnlyAFieldSiteOffersPlow()
     {
+        // #1124: a field with no yishuv or swamp in its hex is ready (Projects.YishuvToBuildFirst), so it offers Plow.
         var field = new Statecraft.Sim.Site { Id = "a_lone_field", Name = "A lone field", Q = CityHex.q, R = CityHex.r, Kinds = new System.Collections.Generic.List<string> { "field" } };
         C.Sites.Add(field);
         try
         {
             using var ui = new UiTestKit();
-            var bridge = Bridge(En, s => AddHalutz(s));
+            int a = -1;
+            var bridge = Bridge(En, s => a = AddHalutz(s));
             using var panel = Panel(ui, bridge, En);
             panel.Show(CityHex.q, CityHex.r);
-            Assert.IsNull(ui.Root.Q<Label>("site-state"), "Projects.Start refuses a yishuv on a field site");
-            Assert.IsFalse(ui.Root.Query<Button>().ToList().Any(x => x.name.StartsWith("site-build-")));
+            Assert.AreEqual(En["site.available_field"], SiteBox(ui, field.Id).Q<Label>("site-state").text);
+            UiTestKit.Press(SiteBox(ui, field.Id).Q<Button>($"site-build-{a}"));
+            Assert.AreEqual(Projects.PlowFields, (bridge.QueuedLike(new StopWork(a)) as PioneerWork)?.Action);
         }
         finally { C.Sites.Remove(field); }
+    }
+
+    /// <summary>The part of the panel for one site: a hex may hold two (a yishuv or swamp and its field).</summary>
+    static VisualElement SiteBox(UiTestKit ui, string site) => ui.Q<VisualElement>("site-part-" + site);
+    static Statecraft.Sim.Site Def(string site) => C.Sites.Single(x => x.Id == site);
+
+    /// <summary>#1124: a camp site offers Build a training camp to each idle group, with build_camp_cost and the group's own
+    /// turns (Projects.Terms, Projects.TurnsToBuild), and the button, a focusable one for the keyboard, queues build_camp there.</summary>
+    [Test]
+    public void ACampSiteOffersBuildCampWithTheRulesCostAndTurns()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var bridge = Bridge(En, s => a = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        var camp = Def("camp_80");
+        panel.Show(camp.Q, camp.R);
+        Assert.AreEqual(camp.Name, ui.Q<Label>("info-title").text);
+        Assert.AreEqual(En["site.available_camp"], SiteBox(ui, camp.Id).Q<Label>("site-state").text);
+        var r = C.RulesAt(bridge.State.Date).Mvp!;
+        var button = SiteBox(ui, camp.Id).Q<Button>($"site-build-{a}");
+        Assert.AreEqual(En.Format("site.build_camp", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildCampCost!.Value),
+            GddHexPanel.Turns(En, Projects.TurnsToBuild(C, bridge.State, a, camp, r.BuildCampTurns!.Value, 0))), button.text);
+        Assert.IsTrue(button.focusable, "the keyboard reaches it");
+        UiTestKit.Press(button);
+        var order = bridge.QueuedLike(new StopWork(a)) as PioneerWork;
+        Assert.AreEqual((Projects.BuildCamp, camp.Id), (order?.Action, order?.Site));
+        Assert.AreEqual(En["site.ordered"], SiteBox(ui, camp.Id).Q<Button>($"site-build-{a}").text);
+    }
+
+    /// <summary>#1124 (R-SWAMP-001): the Hula hex offers Drain the swamp, and its field says it waits for the drainage, as
+    /// Projects.YishuvToBuildFirst has it, with no Plow button.</summary>
+    [Test]
+    public void TheHulaHexDrainsTheSwampAndItsFieldWaits()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var bridge = Bridge(En, s => a = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        var swamp = Def("hula");
+        panel.Show(swamp.Q, swamp.R);
+        Assert.AreEqual(swamp.Name, ui.Q<Label>("info-title").text, "the swamp, not its field, is the title");
+        Assert.AreEqual(En["site.available_swamp"], SiteBox(ui, "hula").Q<Label>("site-state").text);
+        var r = C.RulesAt(bridge.State.Date).Mvp!;
+        var drain = SiteBox(ui, "hula").Q<Button>($"site-build-{a}");
+        Assert.AreEqual(En.Format("site.build_swamp", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.DrySwampCost!.Value),
+            GddHexPanel.Turns(En, Projects.TurnsToBuild(C, bridge.State, a, swamp, r.DrySwampTurns!.Value, 0))), drain.text);
+        Assert.AreEqual(En.Format("site.waits_swamp", swamp.Name), SiteBox(ui, "hula_field").Q<Label>("site-state").text);
+        Assert.IsNull(SiteBox(ui, "hula_field").Q<Button>($"site-build-{a}"), "the sim refuses to plow it before the drainage");
+        UiTestKit.Press(drain);
+        var order = bridge.QueuedLike(new StopWork(a)) as PioneerWork;
+        Assert.AreEqual((Projects.DrySwamp, "hula"), (order?.Action, order?.Site));
+    }
+
+    /// <summary>#1124 (R-FIELD-001): a yishuv's field waits while the yishuv is not built, and offers Plow once it is.</summary>
+    [Test]
+    public void AYishuvsFieldIsPlowedOnceTheYishuvIsBuilt()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var bridge = Bridge(En, s => a = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        Assert.AreEqual(En.Format("site.waits_yishuv", SiteDef.Name), SiteBox(ui, "mefalsim_field").Q<Label>("site-state").text);
+        Assert.IsNull(SiteBox(ui, "mefalsim_field").Q<Button>($"site-build-{a}"));
+
+        bridge = Bridge(En, s => { a = AddHalutz(s); s.Sites[Site] = SiteWork.Built(Site, s.Date); });
+        using var ui2 = new UiTestKit();
+        using var panel2 = Panel(ui2, bridge, En);
+        panel2.Show(SiteDef.Q, SiteDef.R);
+        Assert.AreEqual(En["site.available_field"], SiteBox(ui2, "mefalsim_field").Q<Label>("site-state").text);
+        var r = C.RulesAt(bridge.State.Date).Mvp!;
+        var plow = SiteBox(ui2, "mefalsim_field").Q<Button>($"site-build-{a}");
+        var turns = Projects.TurnsToBuild(C, bridge.State, a, Def("mefalsim_field"), r.PlowFieldsTurns, 0);
+        Assert.AreEqual(5, turns, "field work runs at Agriculture's rate (0.624), so a fresh plow takes 5 turns, not 3 (#1147)");
+        Assert.AreEqual(En.Format("site.build_field", En.Format("site.group", 1), PlayerText.Money(C, "treasury", r.PlowFieldsCost!.Value),
+            GddHexPanel.Turns(En, turns)), plow.text);
+        UiTestKit.Press(plow);
+        var order = bridge.QueuedLike(new StopWork(a)) as PioneerWork;
+        Assert.AreEqual((Projects.PlowFields, "mefalsim_field"), (order?.Action, order?.Site));
+    }
+
+    /// <summary>#1124: a field being plowed and a plowed one say so in their own words, from the sim's state.</summary>
+    [Test]
+    public void AFieldBeingPlowedAndAPlowedFieldSaySo()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var on = new DateTime(1950, 3, 31);
+        var bridge = Bridge(En, s => { a = AddHalutz(s); s.Sites[Site] = SiteWork.Built(Site, s.Date); s.Sites["mefalsim_field"] = new SiteWork("mefalsim_field", a, 2, null); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        Assert.AreEqual(En.Format("site.building_field", En.Format("site.group", 1), GddHexPanel.Turns(En, Projects.TurnsToBuild(C, bridge.State, a, Def("mefalsim_field"), 2, bridge.State.Sites["mefalsim_field"].Progress))),
+            SiteBox(ui, "mefalsim_field").Q<Label>("site-state").text);
+        Assert.AreEqual(En["site.stop_field"], SiteBox(ui, "mefalsim_field").Q<Button>("site-stop").text);
+        bridge.State.Sites["mefalsim_field"] = SiteWork.Built("mefalsim_field", on);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        Assert.AreEqual(En.Format("site.built_field", PlayerText.Date(on)), SiteBox(ui, "mefalsim_field").Q<Label>("site-state").text);
+    }
+
+    /// <summary>#1124: a group busy at one site is not offered at another (D-D6), and a group whose order is queued for one
+    /// site is offered at another, where its button moves that order (one order a unit, SimBridge.Key).</summary>
+    [Test]
+    public void ABusyGroupIsNotOfferedAndAQueuedGroupsOrderMoves()
+    {
+        using var ui = new UiTestKit();
+        int busy = -1, a = -1;
+        var bridge = Bridge(En, s => { busy = AddHalutz(s); a = AddHalutz(s); s.Sites["hula"] = new SiteWork("hula", busy, 5, null); });
+        Assert.IsNull(bridge.Queue(new PioneerWork(a, Projects.BuildYishuv, Site)));
+        using var panel = Panel(ui, bridge, En);
+        var camp = Def("camp_80");
+        panel.Show(camp.Q, camp.R);
+        Assert.IsNull(SiteBox(ui, camp.Id).Q<Button>($"site-build-{busy}"), "a group with a project is not idle");
+        var button = SiteBox(ui, camp.Id).Q<Button>($"site-build-{a}");
+        Assert.IsTrue(button.enabledSelf, "its order is for another site");
+        UiTestKit.Press(button);
+        var orders = bridge.Queued.OfType<PioneerWork>().ToList();
+        Assert.AreEqual(1, orders.Count);
+        Assert.AreEqual((a, Projects.BuildCamp, camp.Id), (orders[0].Unit, orders[0].Action, orders[0].Site));
+    }
+
+    /// <summary>#1124 (R-SITE-002): Stop on a field being plowed queues StopWork; the turn withdraws the group and cancels the
+    /// work, so the field offers Plow to it again.</summary>
+    [Test]
+    public void StopOnAFieldWithdrawsTheGroupAndCancelsTheWork()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var bridge = Bridge(En, s => { a = AddHalutz(s); s.Sites[Site] = SiteWork.Built(Site, s.Date); s.Sites["mefalsim_field"] = new SiteWork("mefalsim_field", a, 2, null); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        UiTestKit.Press(SiteBox(ui, "mefalsim_field").Q<Button>("site-stop"));
+        Assert.IsInstanceOf<StopWork>(bridge.QueuedLike(new StopWork(a)));
+        Assert.IsFalse(SiteBox(ui, "mefalsim_field").Q<Button>("site-stop").enabledSelf);
+        var result = bridge.EndTurn();
+        Assert.IsEmpty(result.Rejected.Where(x => x.Command is StopWork).ToList());
+        Assert.IsFalse(bridge.State.Sites.ContainsKey("mefalsim_field"), "the work is cancelled");
+        Assert.IsFalse(Projects.IsBusy(bridge.State, a), "the group is idle");
+        panel.Show(SiteDef.Q, SiteDef.R);
+        Assert.IsNotNull(SiteBox(ui, "mefalsim_field").Q<Button>($"site-build-{a}"), "the field offers Plow again");
+    }
+
+    [Test]
+    public void TheHebrewCampSiteSpeaksHebrew()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var bridge = Bridge(He, s => a = AddHalutz(s));
+        using var panel = Panel(ui, bridge, He);
+        var camp = Def("camp_80");
+        panel.Show(camp.Q, camp.R);
+        Assert.AreEqual(camp.NameHe, ui.Q<Label>("info-title").text);
+        Assert.AreEqual(He["site.available_camp"], SiteBox(ui, camp.Id).Q<Label>("site-state").text);
+        var r = C.RulesAt(bridge.State.Date).Mvp!;
+        Assert.AreEqual(He.Format("site.build_camp", He.Format("site.group", 1), PlayerText.Money(C, "treasury", r.BuildCampCost!.Value),
+            GddHexPanel.Turns(He, Projects.TurnsToBuild(C, bridge.State, a, camp, r.BuildCampTurns!.Value, 0))), SiteBox(ui, camp.Id).Q<Button>($"site-build-{a}").text);
     }
 
     [Test]
@@ -428,7 +607,19 @@ public class CityPanelTests
         var bridge = Bridge(En, s => { a = AddHalutz(s); s.Sites[Site] = new SiteWork(Site, a, 4, null); });
         using var panel = Panel(ui, bridge, En);
         panel.Show(SiteDef.Q, SiteDef.R);
-        Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", 4)), ui.Q<Label>("site-state").text);
+        Assert.AreEqual(0.624, EffectsSystem.GddSystemMultiplier(C, bridge.State, C.RulesAt(bridge.State.Date).Mvp!, EffectsSystem.YishuvWorkSystem), 1e-9, "precondition: real Agriculture multiplier");
+        Assert.AreEqual((0, 4, 0d), (bridge.State.Units[a].Service, bridge.State.Sites[Site].TurnsLeft, bridge.State.Sites[Site].Progress), "precondition: a fresh halutz with four whole work units and no carry");
+        var played = bridge.State.Clone();
+        int elapsed = 0;
+        do
+        {
+            var result = Simulation.Step(C, played, new Command[0]);
+            Assert.IsEmpty(result.Rejected);
+            played = result.State; elapsed++;
+        } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
+        Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
+        Assert.AreEqual(7, elapsed, "remaining work at the real multiplier, including veteran promotion");
+        Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), En.Format("city.turns", 7)), ui.Q<Label>("site-state").text);
         UiTestKit.Press(ui.Q<Button>("site-stop"));
         Assert.IsNotNull(bridge.QueuedLike(new StopWork(a)), "Stop queues StopWork");
     }
@@ -472,7 +663,7 @@ public class CityPanelTests
 
     /// <summary>The Done-when playthrough (#381) through the panel's own buttons, on the real content from a new game: on
     /// Tel Aviv's hex, Train halutzim (pressed again on a later turn when the Attention left refuses it); when the group has
-    /// trained, on the site's hex, Build with it; End Turn until the first new yishuv's objective card is pending, then answer
+    /// trained, on the site's hex, Build with it; build every designated yishuv through the panel and End Turn until their objective card is pending, then answer
     /// the cards before it with their first option until the event card shows it, with its objective line. Cards are left to
     /// their ministers otherwise, as the smoke run does with the cards the Attention cannot pay for.</summary>
     [Test]
@@ -499,13 +690,28 @@ public class CityPanelTests
                 UiTestKit.Press(build!);
                 if (bridge.Queued.Any(x => x is PioneerWork)) buildOn = bridge.State.Date;
             }
+            else if (buildOn != null && bridge.State.Sites.TryGetValue(Site, out var firstWork) && firstWork.BuiltOn != null)
+            {
+                var remaining = C.Objectives.Single(o => o.Id == "yishuvim").CompletesWhen!.SitesBuilt
+                    .Select(id => C.Sites.Single(site => site.Id == id))
+                    .FirstOrDefault(site => !bridge.State.Sites.TryGetValue(site.Id, out var work) || work.BuiltOn == null);
+                if (remaining != null)
+                {
+                    panel.Show(remaining.Q, remaining.R);
+                    var build = ui.Root.Query<Button>().ToList().FirstOrDefault(b => b.name.StartsWith("site-build-"));
+                    if (build != null) UiTestKit.Press(build);
+                }
+            }
             var r = bridge.EndTurn();
             Assert.IsEmpty(r.Rejected.Where(x => x.Command is Train || x.Command is PioneerWork).Select(x => x.Reason).ToList(), $"{bridge.State.Date:yyyy-MM-dd}: the panel's orders are taken");
         }
         Assert.IsNotNull(trainedOn, "Train halutzim was taken");
         Assert.IsNotNull(buildOn, "Build was taken");
         Assert.IsTrue(bridge.State.Sites.TryGetValue(Site, out var work) && work.BuiltOn != null, $"the site is built (by {bridge.State.Date:yyyy-MM-dd})");
-        Assert.IsTrue(bridge.State.PendingEvents.Contains("first_new_yishuv"), "the objective card is pending");
+        Assert.IsTrue(C.Objectives.Single(o => o.Id == "yishuvim").CompletesWhen!.SitesBuilt
+            .All(id => bridge.State.Sites.TryGetValue(id, out var completed) && completed.BuiltOn != null), "all designated sites are built");
+        Assert.IsTrue(bridge.State.Objectives.ContainsKey("yishuvim"), "the objective is recorded under its new id");
+        Assert.IsTrue(bridge.State.PendingEvents.Contains("first_new_yishuv"), "the unchanged event-card id is pending");
         for (int guard = 0; card.Shown != null && card.Shown.Id != "first_new_yishuv" && guard < 20; guard++)
             UiTestKit.Press(ui.Root.Q<VisualElement>("event-options").Q<Button>());
         Assert.AreEqual("first_new_yishuv", card.Shown?.Id, "the event card shows the objective card");
