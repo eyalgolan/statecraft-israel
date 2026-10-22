@@ -44,6 +44,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `variants` | no | `kind: reconvergence` only. Course-specific title and text, each with `when`, `text`, optional `title` and `sources` (R-ALT-010). See "kind". |
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
+| `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |

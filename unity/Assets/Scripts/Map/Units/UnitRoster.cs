@@ -109,6 +109,62 @@ namespace Statecraft.Game.Map.Units
             return list;
         }
 
+        /// <summary>The GDD loop's tokens (GDD Phase 5 PR 14, #753; impact plan §2.6): one army token per military unit in
+        /// <see cref="GameState.Units"/>, grouped per hex ((q, r) order, then id), and the squadron and the ships from their
+        /// rows as <see cref="Build(IReadOnlyList{UnitEntry}, Content, GameState, Func{string, bool})"/> draws them (they are
+        /// tokens only, Q-UNIT-5). The sim hex is authoritative: a unit on its starting hex stands on its row's starting
+        /// anchor (that anchor's spot, UnitPlacer's one-hex offset included); a unit that moved takes
+        /// <paramref name="moved"/>'s anchor for its row and hex (the layer caches it with its spot). Its figures follow
+        /// Q-UI-3 (<see cref="FiguresForStrength"/>), not the call-up. A unit is drawn only from a row: unit i of a new game is
+        /// <c>content.StartingForces[i]</c> (R-UNIT-006), whose row is its card, flag and figures, and a unit with no row (a
+        /// halutz; a unit raised in play, which has no art yet) draws no token. An Arab force's token still waits for its
+        /// Collection figure (<paramref name="arrived"/>), and a row off the map (<see cref="OnMap"/>) draws nothing.
+        /// Pure and read-only like Build.</summary>
+        public static List<UnitToken> FromState(IReadOnlyList<UnitEntry> units, Content content, GameState state, Func<string, bool>? arrived,
+            Func<UnitEntry, UnitAnchor, int, int, UnitAnchor> moved)
+        {
+            if (units == null) throw new ArgumentNullException(nameof(units));
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (moved == null) throw new ArgumentNullException(nameof(moved));
+            var list = new List<UnitToken>();
+            foreach (var unit in state.Units.Values.OrderBy(v => v.Q).ThenBy(v => v.R).ThenBy(v => v.Id))
+            {
+                // Unit i of a new game is StartingForces[i] (R-UNIT-006); a unit raised in play takes the next id, at or above
+                // the count, and has no row yet (UnitsFromStateTests.AUnitRaisedInPlayDrawsNoToken).
+                if (unit.Side == "" || unit.Id >= content.StartingForces.Count) continue;
+                var force = content.StartingForces[unit.Id];
+                var row = units.FirstOrDefault(u => u.Id == force.Row);
+                if (row == null || !OnMap(row) || row.Service != UnitData.Army) continue;
+                var start = AnchorAt(row, force.Arrives ?? content.Rules.Start);   // an arriving row stands on its arrival day's anchor (R-UNIT-009)
+                if (start == null) continue;   // the map's copy of the file disagrees with the sim's; nothing to stand on
+                var anchor = unit.Q == force.Q && unit.R == force.R ? start : moved(row, start, unit.Q, unit.R);
+                int figures = FiguresForStrength(unit.Strength, force.Strength);
+                if (row.Side != UnitData.Israel)
+                {
+                    var figure = UnitFigures.SideFigure(row.Side)!;
+                    if (arrived != null && arrived(figure)) list.Add(new UnitToken(row, anchor, figures, figure, false));
+                    continue;
+                }
+                var hats = (row.Headgear ?? (IReadOnlyList<string>)UnitData.DefaultHeadgear).Take(figures).ToList();
+                list.Add(new UnitToken(row, anchor, figures, RiflemanType(hats[0]), false, hats, UnitFigures.VehiclesAt(row, state.Date)));
+            }
+            list.AddRange(Build(units, content, state, arrived).Where(t => t.Unit.Service != UnitData.Army));
+            return list;
+        }
+
+        /// <summary>Q-UI-3 (owner, 15 October 2026, "Take all recommendations"; #226, 17 October 2026): "3 figures at two
+        /// thirds or more of the type's full strength, 2 at a third or more, 1 below that". A unit's full strength is the
+        /// sourced strength it started with (Q-UNIT-4: a starting unit's Strength is its row's), so a new game draws every
+        /// unit with three, and losses take figures away. Integers only: 3s &gt;= 2f, then 3s &gt;= f.</summary>
+        public static int FiguresForStrength(int strength, int full)
+        {
+            if (full <= 0) throw new ArgumentOutOfRangeException(nameof(full), full, "a full strength is at least 1");
+            if (3 * strength >= 2 * full) return 3;
+            if (3 * strength >= full) return 2;
+            return 1;
+        }
+
         /// <summary>The art type of a rifleman with <paramref name="headgear"/> (the authored-prefab hook's key).</summary>
         public static string RiflemanType(string headgear) => headgear switch
         {

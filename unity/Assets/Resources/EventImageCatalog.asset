@@ -13,6 +13,15 @@ MonoBehaviour:
   m_Name: EventImageCatalog
   m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.UI.EventImageCatalog
   entries:
+  - eventId: absorb_immigrants
+    image: {fileID: 2800000, guid: 691fb304c2ad844a6bc3434c864c8b7b, type: 3}
+    alt: New immigrants from Romania come down a ship's gangway at Haifa port, June
+      1951.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 0
+    sensitivityReviewed: 0
   - eventId: altalena
     image: {fileID: 2800000, guid: 778f252f061854a6191a38a48bba8dd1, type: 3}
     alt: "The Altalena off the Tel Aviv shore, seen from a seafront caf\xE9 shortly
@@ -52,6 +61,14 @@ MonoBehaviour:
     image: {fileID: 2800000, guid: bd6487f6ceba74ad3a9060a52cabc3ba, type: 3}
     alt: UN and Israeli officials salute at Lydda airport as Count Bernadotte's coffin
       leaves for Sweden, September 1948.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
+  - eventId: burma_road_complete
+    image: {fileID: 2800000, guid: b0668911c758942cfaf0c6bbd7cd863d, type: 3}
+    alt: The opening of the Road of Valour, December 1948.
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
       The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
       and cropped"

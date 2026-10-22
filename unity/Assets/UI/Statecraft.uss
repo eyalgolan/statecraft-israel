@@ -247,6 +247,20 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-three-row .left-column > .rail-button { width: 60px; height: 60px; margin: 0 0 12px 0; }
 .hud-three-row .left-column > .rail-button .nav-disc { width: 60px; height: 60px; padding: 14px; border-radius: 30px; }
 .hud-three-row .event-gutter { width: 76px; }
+/* Star, Report and Share (#1236, CommunityIconsPresenter): the side menu's discs at each tier (the same numbers as the rules
+   above, in rules of their own: tools/headed.py reads the side menu's rules by their selectors), one above the other at
+   the foot of the same lane, from the window's bottom up, so they keep the bottom left whatever the bar's height. The side
+   menu ends far above them at every size (CommunityIconsTests). In Hebrew they stay at the left, as the side menu does
+   (#550): the Hebrew UI mirrors rows, not the screen's corners. The info panel starts right of the lane to make room. */
+.community-column { position: absolute; left: 16px; bottom: 16px; width: 56px; align-items: center; }
+.community-column .rail-button { width: 45px; height: 45px; margin: 0 0 3px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.community-column .rail-button:hover, .community-column .rail-button:focus { color: rgba(0, 0, 0, 0); }
+.community-column .rail-button .nav-disc { top: 0; left: 0; width: 45px; height: 45px; padding: 10.5px; border-radius: 22.5px; }
+.hud-narrow .community-column > .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; }
+.hud-narrow .community-column > .rail-button .nav-disc { width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
+.hud-three-row .community-column { width: 60px; }
+.hud-three-row .community-column > .rail-button { width: 60px; height: 60px; margin: 0 0 12px 0; }
+.hud-three-row .community-column > .rail-button .nav-disc { width: 60px; height: 60px; padding: 14px; border-radius: 30px; }
 .hud-three-row .event-scrim { left: 60px; }
 .right-gap { flex-grow: 1; flex-shrink: 0; min-height: 16px; }
 /* The decision layer: the room under the bar, top per HUD tier as the column's. While an event is open (event-open on the
@@ -345,8 +359,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
-/* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. */
-.info-panel { position: absolute; left: 16px; bottom: 16px; width: 520px; min-height: 160px; flex-direction: row; align-items: flex-start; }
+/* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. It starts
+   right of the left icon lane (84 px, as the toast; #1236: Star, Report and Share sit at the lane's foot) and keeps its right
+   edge (536 px; 936 px with the GDD column), so the side screens beside it keep their place. */
+.info-panel { position: absolute; left: 84px; bottom: 16px; width: 452px; min-height: 160px; flex-direction: row; align-items: flex-start; }
 .info-thumb {
     width: 92px; height: 116px; flex-shrink: 0; margin-right: 14px; padding: 10px;
     border-width: 1px; border-color: var(--gold); border-radius: 2px; background-color: var(--navy-deep);
@@ -358,11 +374,23 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    Build/Stop. A second column beside the hex's facts, so the panel stays under the left column on a short window
    (InfoPanelLayoutTests.TheGddCityAndSitePanelsFitEveryWindow): the panel widens to hold it. Its rows wrap their buttons,
    a long button label wraps, and a row mirrors in Hebrew (.lang-he .row). */
-.info-panel.info-gdd-shown { width: 920px; }
+.info-panel.info-gdd-shown { width: 852px; }
 .info-gdd { flex-direction: column; width: 380px; flex-shrink: 0; margin-left: 14px; padding-left: 14px; border-left-width: 1px; border-color: var(--gold-dim); }
 .info-gdd-line { font-size: 17px; flex-shrink: 1; }
 .info-gdd-row { flex-wrap: wrap; align-items: center; }
-.info-gdd Button { margin: 2px 6px 2px 0; font-size: 17px; white-space: normal; flex-shrink: 1; }
+.info-projects { flex-direction: column; }
+.info-gdd Button, .info-projects Button { margin: 2px 6px 2px 0; font-size: 17px; white-space: normal; flex-shrink: 1; }
+/* Shorter buttons and lines than the GDD column's: the project part sits under a city's facts and must keep the panel clear of the
+   left column on a phone (InfoPanelLayoutTests, #1122). */
+.info-projects Button { padding-top: 2px; padding-bottom: 2px; margin-top: 0; margin-bottom: 1px; }
+.info-projects Label { margin-top: 0; margin-bottom: 0; padding-top: 1px; padding-bottom: 1px; }
+/* Owner ruling on #1150 (21 Oct 2026): on the city's own hex the project list folds behind "City projects (N)" on a stacked bar
+   or a short window (InfoPanelPresenter.ShortClass), where the full list ran into the left column; elsewhere the toggle
+   hides and the list shows. The toggle opens the list with .info-projects-open (GddHexPanel). */
+#city-projects-toggle { display: none; }
+.hud-two-row #city-projects-toggle, .info-short #city-projects-toggle { display: flex; }
+.hud-two-row .city-projects-list, .info-short .city-projects-list { display: none; }
+.hud-two-row .info-projects-open > .city-projects-list, .info-short .info-projects-open > .city-projects-list { display: flex; }
 /* Two counts on one row (Jobs | Craftsmen, Refugees waiting | Overflow; #1121): each keeps its width, so the row wraps
    whole rather than squeezing a line into two, and a gap follows each (mirrored in Hebrew). */
 .info-gdd-pairs > .info-gdd-line { flex-shrink: 0; margin-right: 14px; }
@@ -371,7 +399,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }
 .info-empty .gold-rule, .info-empty #info-subtitle, .info-empty .reason { display: none; }
 .info-empty #info-title { font-size: 20px; }
-.hud-three-row .info-panel.info-empty { right: 254px; }
+/* On a phone upright the hint chip keeps the window's width from the left edge (two lines, InfoPanelLayoutTests), so it sits
+   over Star, Report and Share (#1236): the window's 16 px, three 60 px discs with their 12 px margins, and a 12 px gap. */
+.hud-three-row .info-panel.info-empty { left: 16px; bottom: 244px; right: 254px; }
 .hud-three-row .info-empty #info-title { white-space: normal; }
 /* The hex's facts as the promo's icon rows: a gold sign, then the line, which wraps inside the panel (#397). A unit's card
    reuses the lines without the signs (they name a hex's facts, not a unit's). */
@@ -473,12 +503,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the Hebrew face in Hebrew. */
 Button.settings-choice-selected { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 /* The language choice (#1036): "עברית" is in the Hebrew face in the English UI too (EB Garamond has no Hebrew), by id so
-   that it beats the selected button's face above. The note under the row wraps. */
+   that it beats the selected button's face above. */
 #settings-language-he {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
 }
-.settings-note { white-space: normal; margin-top: 4px; }
 
 /* The toast sits in the map's free top-left corner, above the info panel: opaque, and never over an open screen's title or
    the minimap column (B7). */
@@ -525,10 +554,15 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .guide-open.hud-narrow #attention { margin-bottom: 8px; }
 .guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
 .guide-dock.guide-dock-top { bottom: auto; top: 16px; }
-.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 560px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
-.guide-count { font-size: 16px; }
-.guide-title { color: var(--gold-light); font-size: 26px; white-space: normal; }
-.guide-text { white-space: normal; font-size: 19px; margin: 4px 0 8px 0; }
+/* Sizes raised for player feedback (21 October 2026, "too small"): the panel scales with the window (0.67 at 1280x720, the
+   itch embed), so the text is 22 px (about 15 on screen there) and the step count 18 (the owner's 12 px floor); the panel
+   is wider in step, so a step keeps about its line count (FirstTurnGuideTests.TheGuideReadsAtTheItchEmbedSize). Where the
+   scale is small (a phone, about 0.49) FirstTurnGuidePresenter raises them to the owner's 12 px floor on screen; its CountPx,
+   TitlePx, TextPx and ButtonPx mirror these sizes and Button's 19 px. */
+.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 640px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
+.guide-count { font-size: 18px; }
+.guide-title { color: var(--gold-light); font-size: 29px; white-space: normal; }
+.guide-text { white-space: normal; font-size: 22px; margin: 4px 0 8px 0; }
 .guide-actions { justify-content: space-between; }
 .guide-actions > Button { min-height: 44px; }
 .guide-next, .lang-he .guide-next { min-width: 120px; -unity-text-align: middle-center; }
@@ -544,14 +578,16 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .feedback-choice { margin-top: 10px; }
 .feedback-preview { font-size: 15px; margin: 2px 4px 0 4px; }
 .feedback-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
-/* "Share" (#1170, SharePresenter): the turn report's kind of backdrop, drawn over everything, the report too; the post, the Share button, and the share
-   links, which show only where the browser cannot share the picture itself. */
+/* "Share" (#1170, SharePresenter): the turn report's kind of backdrop, drawn over everything, the report too; a preview of the picture (#1237), which
+   gives way first in a short window, the post, the Share button, the site buttons, and the notes once the picture downloaded. */
 .share-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }
 .share-open .share-layer { display: flex; }
 .share-panel { width: 560px; max-width: 100%; max-height: 100%; padding: 18px; background-color: rgb(11, 18, 32); }
-.share-post, .share-attach { white-space: normal; }
+.share-preview { height: 160px; min-height: 48px; flex-shrink: 1; margin-bottom: 12px; background-size: contain; background-repeat: no-repeat; background-position-x: center; background-position-y: center; }
+.share-post, .share-attach, .share-instagram-note { white-space: normal; }
 .share-go { margin-top: 12px; }
-.share-attach { margin-top: 12px; }
+.share-copied { white-space: normal; margin-top: 6px; }
+.share-attach, .share-instagram-note { margin-top: 12px; }
 .share-sites { flex-wrap: wrap; margin-top: 6px; }
 .share-sites > Button { margin: 4px 8px 0 0; }
 .share-actions { justify-content: flex-end; margin-top: 12px; flex-shrink: 0; }
@@ -735,7 +771,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .loading-line { display: none; position: absolute; left: 0; right: 0; top: 45%; -unity-text-align: middle-center; font-size: 28px; color: var(--ink); white-space: normal; padding-left: 24px; padding-right: 24px; }
 .loading .loading-line { display: flex; }
 .root.loading { background-color: var(--navy-solid); }   /* the template's navy, not the default sky (final review M1) */
-.loading .date-box, .loading .meters, .loading .nav, .loading .left-column, .loading .turn-box, .loading .info-panel, .loading .right-column, .loading .event-layer { visibility: hidden; }
+.loading .date-box, .loading .meters, .loading .nav, .loading .left-column, .loading .community-column, .loading .turn-box, .loading .info-panel, .loading .right-column, .loading .event-layer { visibility: hidden; }
 
 /* Map labels (visual v1 Task 9; promo HUD pass: rounder, a firmer gold edge): the promo's dark pill with a thin gold edge, in EB Garamond SemiBold. Each pill sits in a
    zero-size slot that MapLabelsPresenter moves with an inline translate; the anchor class says which corner of the pill sits
@@ -822,7 +858,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    whole painting, as a full-width band, over the panel (StartScreenPresenter.Fit). */
 .start-screen { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--navy-deep); }
 .start-open .start-screen { display: flex; }
-.start-open .top-bar, .start-open .left-column, .start-open .right-column, .start-open .event-layer, .start-open .info-panel, .start-open .screen, .start-open .map-labels { display: none; }
+.start-open .top-bar, .start-open .left-column, .start-open .community-column, .start-open .right-column, .start-open .event-layer, .start-open .info-panel, .start-open .screen, .start-open .map-labels { display: none; }
 .start-art {
     position: absolute; left: 0; top: 0; right: 0; bottom: 0;
     background-image: url("project://database/Assets/UI/StartScreen/declaration-hall.jpg");
@@ -950,7 +986,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    panel keeps its 520 px and the GDD part stacks under the hex's facts, clear of the minimap. Last, so they win over the
    rules above at equal specificity. */
 .lang-he .info-gdd { margin-left: 0; padding-left: 0; border-left-width: 0; margin-right: 14px; padding-right: 14px; border-right-width: 1px; }
-.lang-he .info-gdd Button { margin: 2px 0 2px 6px; }
+.lang-he .info-gdd Button, .lang-he .info-projects Button { margin: 2px 0 2px 6px; }
 .lang-he .info-gdd-pairs > .info-gdd-line { margin-right: 0; margin-left: 14px; }
-.hud-two-row .info-panel.info-gdd-shown { width: 520px; flex-wrap: wrap; }
+.hud-two-row .info-panel.info-gdd-shown { width: 452px; flex-wrap: wrap; }
 .hud-two-row .info-gdd { width: 100%; margin: 8px 0 0 0; padding: 8px 0 0 0; border-left-width: 0; border-right-width: 0; border-top-width: 1px; }

@@ -78,8 +78,9 @@ public class SimBridgeSiteTests
     {
         var t = Text;
         var b = Bridge(Legacy);
-        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(1, Projects.BuildYishuv, "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(1)));
+        var none = b.State.NextId;   // no unit has it: the starting forces take ids 0 to 11 (R-UNIT-006)
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(none, Projects.BuildYishuv, "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(none)));
         Assert.AreEqual(0, b.Queued.Count);
     }
 }

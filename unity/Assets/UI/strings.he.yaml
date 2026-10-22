@@ -60,8 +60,6 @@ how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לרא�
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
-objectives.name.first_new_yishuv: "יישוב חדש ראשון"
-objectives.name.absorb_immigrants: "קליטת העולים"
 # How to play's button that opens the first-turn guide again (#42). For the native reviewer (#564).
 how_to_play.guide: "הצגת המדריך לתור הראשון"
 # The first-turn guide (#42): agent-drafted Hebrew, the How to play screen's terms (#1041) and the city panel's (city.*).
@@ -76,10 +74,14 @@ guide.city.title: "דיור ומשרות בעיר"
 guide.city.text: "בחרו עיר כדי לראות את הדיור והמשרות בה. הכפתורים + ו־− קובעים כמה אנשים עובדים, ובהם בעלי מלאכה. ההוראה מתבצעת בסיום התור."
 guide.training.title: "אימון והכשרה"
 guide.training.text: "במחנה צבאי אפשר לאמן אזרחים ללא עבודה כמגויסים. בהכשרה (מחנה הכשרה לחלוצים) אפשר להכשיר אותם כחלוצים שבונים יישובים. הכפתורים מציגים עלות ומשך הכשרה."
+# The move step (#1141): agent-drafted Hebrew, not yet read by a native speaker, in unit.order.move's, unit.move_pick's
+# and unit.move_queued's terms. For the native reviewer (#564).
+guide.move.title: "תנועת יחידה"
+guide.move.text: "בחרו אחת מהיחידות שלכם, לחצו על תנועה ובחרו משושה מואר. היחידה תנוע בסיום התור."
 guide.event.title: "כרטיס אירוע"
 guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
 guide.objectives.title: "יעדים"
-guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק, כמו היישוב החדש הראשון, ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
+guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
 settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
@@ -97,10 +99,9 @@ settings.sound: "צליל"
 settings.sound.off: "כבוי"
 settings.sound.low: "חלש"
 settings.sound.high: "חזק"
-# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). The note
-# says that the event cards are not translated yet (#55). For the native reviewer (#564).
+# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
+# native reviewer (#564).
 settings.language: "שפה"
-settings.language.note: "כרטיסי האירועים באנגלית בלבד בינתיים."
 # The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
 # reviewer (#564).
 settings.uiscale: "גודל הממשק"
@@ -132,6 +133,15 @@ share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Is
 share.native: "שיתוף"
 share.download: "הורדת התמונה"
 share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
+share.instagram: "לאינסטגרם אין קישור לשיתוף: התמונה הורדה, ויש לפרסם אותה מאפליקציית אינסטגרם."
+# Copy (#1238): the button ("copying"), "the picture was copied", "the text was copied", and the failure ("copying is
+# not possible here; the picture can still be shared or downloaded with the button above"). Agent-drafted.
+# Approved by Beri, a native speaker, on #1253 (21 Oct 2026).
+# For the native reviewer (#564).
+share.copy: "העתקה"
+share.copied_picture: "התמונה הועתקה"
+share.copied_text: "הטקסט הועתק"
+share.copy_failed: "לא ניתן להעתיק כאן. אפשר לשתף או להוריד את התמונה בכפתור שלמעלה."
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item
@@ -420,10 +430,25 @@ unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
 unit.flying: "{0}, בטיסה מעל הבסיס"
 unit.parked: "{0}, על הקרקע בבסיס"
 unit.national: "גיוס מילואים {0} · רמת ביטחון {1} מתוך 5"
+# The squadron card's footer in the GDD loop: the security level alone (#753). For the native reviewer (#564).
+unit.security: "רמת ביטחון {0} מתוך 5"
 unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
+# The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
+unit.order.move: "תנועה"
+# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
+unit.move_pick: "בחרו משושה מואר שאליו היחידה תנוע"
+# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
+unit.move_queued: "ניתנה פקודת תנועה: היחידה תנוע בסיום התור"
+# Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375).
+unit.order.fortify: "ביצור"
+unit.order.hold: "החזקה"
+# Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
+unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
+# Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
+unit.hold_queued: "ניתנה פקודת החזקה: היחידה תחזיק במשושה שלה בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
 newgame.delete_failed: "לא ניתן היה להסיר את השמירה הקודמת; היא תוחלף אחרי התור הבא."
 save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0}). משחק חדש התחיל."
@@ -464,6 +489,20 @@ city.groups: "{0} קבוצות"
 city.turns_one: "תור אחד"
 city.turns: "{0} תורות"
 city.cancel_ordered: "הביטול הוזמן"
+# City projects on the chosen hex (#1122). The kind names come from content/projects.yaml name_he, nouns ("מעברה"), so
+# every sentence takes them as nouns; "הקמת" keeps the order line's gender neutral. The resource id in no_resource has no
+# Hebrew name yet (no content kind requires one). For the native reviewer (#564).
+city.project_for: "מיזם עבור {0}"
+city.project_start: "הקמת {0}: {1}, {2}"
+city.project_ordered: "הוזמנה הקמת {0}"
+city.project_building: "{0} עבור {1}: עוד {2}"
+city.project_built: "{0} עבור {1}: הבנייה הושלמה ב־{2}"
+city.project_reason.no_resource: "ב־{0} אין {1} עבור {2}"
+# turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
+city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
+# The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
+# number of kinds. For the native reviewer (#564).
+city.projects_toggle: "מיזמי העיר ({0})"
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
 site.build: "הקמת יישוב עם {0}: {1}, {2}"

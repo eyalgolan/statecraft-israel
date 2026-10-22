@@ -6,6 +6,9 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 # Statecraft: Israel
 
+[![Play on itch.io](https://img.shields.io/badge/play-itch.io-FA5C5C.svg?logo=itchdotio&logoColor=white)](https://eyalgolan.itch.io/statecraft-israel)
+[![Latest release, pre-releases included](https://img.shields.io/github/v/release/eyalgolan/statecraft-israel?include_prereleases&sort=semver)](https://github.com/eyalgolan/statecraft-israel/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/eyalgolan/statecraft-israel/ci.yml?branch=main&label=CI)](https://github.com/eyalgolan/statecraft-israel/actions/workflows/ci.yml)
 [![Code license: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
 [![Assets license: CC BY 4.0 / content CC BY-SA 4.0](https://img.shields.io/badge/assets-CC%20BY%20%2F%20BY--SA%204.0-lightgrey.svg)](LICENSING.md)
 [![Unity 6000.3.25f1](https://img.shields.io/badge/Unity-6000.3.25f1-black.svg)](unity/ProjectSettings/ProjectVersion.txt)
@@ -37,7 +40,7 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities and training are in; units you command, combat and settlement control are not playable yet, and the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings it in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and moving units are in; the attacks you order and settlement control are not playable yet, and the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings it in phases.
 
 ## What it looks like today
 
@@ -66,22 +69,23 @@ It is an early, honest prototype.
 - The start screen.
 - English and Hebrew, with a language switch in Settings. The Hebrew event cards wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
-- The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. They take no orders yet.
+- The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, and the Arab forces move and attack on their own.
 - The twelve cities, with housing, jobs and training.
+- Pioneers who build yishuvim, training camps and fields, and drain the Hula swamp.
 - The Cabinet with appointments.
 - The Budget screen.
 - The Defence screen with the escalation ladder and reserve call-up.
 - Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.
-- The "Why?" panel, a turn report after End turn, and a short How to play screen.
+- The "Why?" panel, a turn report after End turn, a short How to play screen and a six-step first-turn guide.
+- Share: a screenshot of your game for X, Facebook, Instagram, WhatsApp, Telegram or LinkedIn.
 - Autosave and load.
 - The browser (WebGL) build.
 
 **What is missing:**
 - The art in the concept image above. Settlements and trees are still placeholder art.
-- Most of the [GDD](docs/GDD.md): units you command, combat, building by pioneers, settlement control and the three objectives.
+- Most of the [GDD](docs/GDD.md): the attacks you order, settlement control, the war objective and the end screen.
 - Diplomacy.
 - Anything after 1951.
-- A hosted build you can play with one click.
 
 ## Roadmap
 
@@ -94,7 +98,7 @@ flowchart LR
   V["Visual v1"]:::done --> P0["0 · Decisions"]:::now
   P0 --> P1["1 · Vertical slice"]:::done
   P1 --> P2["2 · Monthly turns"]:::now
-  P2 --> P3["3 · Cities"]:::now
+  P2 --> P3["3 · Cities"]:::done
   P3 --> P4["4 · Pioneers"]:::now
   P4 --> P5["5 · Units and combat"]:::now
   P5 --> P6["6 · Settlement control"]:::now
@@ -106,30 +110,30 @@ flowchart LR
 
 | Phase | What it adds | Status | Issue |
 |---|---|---|---|
-| 0 | Owner decisions on the open GDD items | In progress: the Phase 1 decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
+| 0 | Owner decisions on the open GDD items | In progress: every phase's main decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
 | 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | Done: 8 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
 | 2 | Monthly turns for the real game, and the five resources | In progress: all but the top bar for the five resources | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
-| 3 | Every city, with housing, jobs and immigrant absorption | In progress: 5 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
-| 4 | Pioneers, building sites, roads and railways | In progress: 5 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
-| 5 | Military units, movement and combat | In progress: 4 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 3 | Every city, with housing, jobs and immigrant absorption | Done: 8 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
+| 4 | Pioneers, building sites, roads and railways | In progress: 6 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
+| 5 | Military units, movement and combat | In progress: 7 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
 | 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 2 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
 | 7 | Ministers, events and the full 44-turn game | In progress: 4 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### Other tracks
 
 - **Art:** era-correct 3D settlements, vegetation and units, toward the concept image.
-- **Release (M4):** a historian review and a hosted browser build.
+- **Release (M4):** a historian review.
 - **Platforms:** the MVP ships for the browser only; desktop builds ([#905](https://github.com/eyalgolan/statecraft-israel/issues/905)) and Steam ([#54](https://github.com/eyalgolan/statecraft-israel/issues/54)) come after it.
 - **Later eras:** the Yishuv before 1948, and the years after 1956, are paused until the MVP is done ([#49](https://github.com/eyalgolan/statecraft-israel/issues/49) to [#53](https://github.com/eyalgolan/statecraft-israel/issues/53)).
 
 ## Play
 
-There is no hosted build yet; one is planned for M4. Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is v0.1.2, a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.1.4](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.4), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
 3. Build the web version. The command is in [docs/dev-setup.md](docs/dev-setup.md).
-4. Run `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
+4. Run `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
 
 The exact commands are in [BUILDING.md](BUILDING.md).
 
@@ -174,9 +178,9 @@ You need Unity **6000.3.25f1 (6.3 LTS)** with Web Build Support; the exact versi
 
 This project is built with heavy AI assistance, disclosed here using itch.io's categories:
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such.
+- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. Tal Heuberger made the 3D models with Tripo, an AI 3D tool. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
-- **Sound:** no AI sound. The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives).
+- **Sound:** the game's three short sound effects (turn ended, refused order, event card) were made with ElevenLabs, and the trailer's music is AI-generated (ElevenLabs Music). The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives).
 
 Nothing is generated live while you play.
 
@@ -194,5 +198,5 @@ Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE
 
 Questions and ideas go in [Discussions](https://github.com/eyalgolan/statecraft-israel/discussions); bugs and historical errors go in the [issue tracker](https://github.com/eyalgolan/statecraft-israel/issues). Report security problems privately ([SECURITY.md](SECURITY.md)). [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies everywhere.
 
-Created by Eyal Golan. Source credits live with each fact in `content/`, the portrait credits are in `content/people.yaml`, and third-party credits are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Created by Eyal Golan. The 3D models are by Tal Heuberger. Source credits live with each fact in `content/`, the portrait credits are in `content/people.yaml`, and third-party credits are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

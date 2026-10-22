@@ -92,9 +92,9 @@ def test_roadmap_phase_1_progress_matches_in_both_readmes():
     assert en and he and en.groups() == he.groups()
 
 
-def test_play_is_run_locally_with_hosted_build_planned_for_m4():
+def test_play_links_the_itch_build_and_running_locally():
     play = section(read("README.md"), "## Play")
-    assert "planned for M4" in play and "BUILDING.md" in play and "TODO" not in read("README.md")
+    assert "https://eyalgolan.itch.io/statecraft-israel" in play and "BUILDING.md" in play and "TODO" not in read("README.md")
 
 
 def test_build_section_pins_unity_and_points_to_building():

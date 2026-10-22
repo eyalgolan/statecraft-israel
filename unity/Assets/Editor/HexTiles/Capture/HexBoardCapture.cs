@@ -22,7 +22,9 @@ namespace Statecraft.HexTiles.Capture
     /// -prototype &lt;id&gt; builds and shoots only that tile (with the board's ground and mountains around it).
     /// Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity
     ///   -executeMethod Statecraft.HexTiles.Capture.HexBoardCapture.Run [-board tel_aviv] [-prototype &lt;id&gt; [-on &lt;tile&gt;]]
-    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160]</summary>
+    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly]
+    /// A board too large for the standard board shot (the whole country) is framed whole instead. Each prototype and unit
+    /// is shot once (its last hex in the board file, the one whose shots used to be kept); -boardOnly skips those shots.</summary>
     public static class HexBoardCapture
     {
         public const string BoardsFolder = "Assets/Resources/HexTiles/Boards";
@@ -71,17 +73,20 @@ namespace Statecraft.HexTiles.Capture
                 Vector3 OnGround(Vector3 p) => new Vector3(p.x, Mathf.Max(surface.Height(p), 0f), p.z);
                 var centres = board.Hexes.Values.Select(h => HexGeometry.Centre(h.q, h.r, HexScale.HexM)).ToList();
                 var middle = new Vector3(centres.Average(c => c.x), 0f, centres.Average(c => c.z));
-                if (only == null) Shoot(cam, OnGround(middle), BoardDistanceM, Path.Combine(dir, "board.png"), width, height);
+                float boardDistance = BoardDistance(board, cam, width / (float)height);
+                if (only == null) Shoot(cam, OnGround(middle), boardDistance, Path.Combine(dir, "board.png"), width, height);
                 // A board with an environment ring: one wider shot that takes in the landscape round the play hexes.
-                if (only == null && board.Hexes.Values.Any(h => h.env)) Shoot(cam, OnGround(middle), BoardDistanceM * 1.6f, Path.Combine(dir, "board-wide.png"), width, height);
-                foreach (var t in board.Hexes.Values.Where(h => h.prototype != "" && (only == null || h.prototype == only)))
+                if (only == null && board.Hexes.Values.Any(h => h.env)) Shoot(cam, OnGround(middle), boardDistance * 1.6f, Path.Combine(dir, "board-wide.png"), width, height);
+                bool tiles = !Environment.GetCommandLineArgs().Contains("-boardOnly");
+                // One mid and one close shot per prototype, of its last hex (the shots are named by prototype).
+                foreach (var t in board.Hexes.Values.Where(h => tiles && h.prototype != "" && (only == null || h.prototype == only)).GroupBy(h => h.prototype).Select(g => g.Last()))
                 {
                     var c = OnGround(HexGeometry.Centre(t.q, t.r, HexScale.HexM));
                     Shoot(cam, c, MidDistanceM, Path.Combine(dir, $"{t.prototype}-mid.png"), width, height);
                     Shoot(cam, c, CloseDistanceM, Path.Combine(dir, $"{t.prototype}-close.png"), width, height);
                 }
                 // Units: one close shot each, at the unit's own zoom.
-                foreach (var u in board.Hexes.Values.Where(h => h.unit != "" && (only == null || h.prototype == only)))
+                foreach (var u in board.Hexes.Values.Where(h => tiles && h.unit != "" && (only == null || h.prototype == only)).GroupBy(h => h.unit).Select(g => g.Last()))
                     Shoot(cam, OnGround(HexGeometry.Centre(u.q, u.r, HexScale.HexM)), CloseDistanceM, Path.Combine(dir, $"unit-{u.unit}-close.png"), width, height);
                 var lines = new List<string> { $"board {boardId}: {board.Hexes.Count} hexes, built in {buildMs} ms, {width}x{height}" };
                 lines.AddRange(reports.Select(r => "  " + r));
@@ -110,6 +115,16 @@ namespace Statecraft.HexTiles.Capture
             MapGrade.Apply(volume.profile);
             HexLook.Apply(volume.profile, sun);   // the hex-tile look's warm, saturated light, as in the game under ?hex-tiles
             return cam;
+        }
+
+        /// <summary>The board shot's distance: the standard one, unless the board would not fit at twice it (the whole
+        /// country), when it is framed whole: its width across the view, its depth foreshortened by the pitch.</summary>
+        static float BoardDistance(HexBoard board, Camera cam, float aspect)
+        {
+            var b = HexBoardBuilder.Bounds(board);
+            float tanV = Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad), tanH = tanV * aspect;
+            float fit = 1.05f * Mathf.Max(b.width * 0.5f / tanH, b.height * 0.5f * Mathf.Sin(Pitch * Mathf.Deg2Rad) / tanV);
+            return fit > 2f * BoardDistanceM ? fit : BoardDistanceM;
         }
 
         public static void Shoot(Camera cam, Vector3 lookAt, float distance, string path, int width, int height)

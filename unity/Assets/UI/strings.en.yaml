@@ -65,15 +65,13 @@ how_to_play.end_turn: "End turn carries out your orders and moves to the next mo
 how_to_play.why: "After a turn, open Why? to see each change and its cause."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
-# {1} the historical date (objectives.open: {0}). A name falls back to objectives.yaml's when it has no key here.
+# {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
 objectives.title: "Objectives"
 objectives.done: "Completed on {0}; historically {1}"
 objectives.open: "Not completed yet; historically {0}"
-objectives.name.first_new_yishuv: "First new yishuv"
-objectives.name.absorb_immigrants: "Absorb the immigrants"
 # How to play's button that opens the first-turn guide again (#42).
 how_to_play.guide: "Show the first-turn guide"
-# The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): five steps, each pointing at its part of the HUD
+# The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): six steps, each pointing at its part of the HUD
 # (FirstTurnGuidePresenter). Like the How to play lines, they describe the sim without balance values. {0} the step, {1} the
 # number of steps.
 guide.step: "Step {0} of {1}"
@@ -86,10 +84,13 @@ guide.city.title: "A city's housing and jobs"
 guide.city.text: "Select a city to see its housing and jobs. The + and − buttons set how many people, including craftsmen, work. The order takes effect when you end the turn."
 guide.training.title: "Training"
 guide.training.text: "At a military camp, train civilians without work as recruits. At a Hakhshara (pioneer training camp), train them as halutzim (pioneers who build settlements). Buttons show cost and training time."
+# The move step (#1141, owner, 21 October 2026): the unit card's Move button (unit.order.move, unit.move_pick).
+guide.move.title: "Moving a unit"
+guide.move.text: "Select one of your units, press Move, and choose a lit hex. The unit moves when you end the turn."
 guide.event.title: "An event card"
 guide.event.text: "An event card asks for a decision. Answering it costs Attention, and your choice takes effect when you end the turn. A card you leave unanswered goes to the responsible minister."
 guide.objectives.title: "Objectives"
-guide.objectives.text: "Objectives lists the game's goals, such as the first new yishuv, with the date you completed each beside the historical one. Completing one also brings its card."
+guide.objectives.text: "Objectives lists the game's goals, with the date you completed each beside the historical one. Completing one also brings its card."
 # The Settings screen (#40): its title, the tilt-shift option and the button that says what is set.
 settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
@@ -105,9 +106,8 @@ settings.sound.off: "Off"
 settings.sound.low: "Low"
 settings.sound.high: "High"
 # The language choice (#1036). The two languages are named on their buttons in themselves ("English", "עברית"), set in
-# SettingsPresenter, not here. The note says what is not translated yet (#55).
+# SettingsPresenter, not here.
 settings.language: "Language"
-settings.language.note: "Event cards are English only for now."
 settings.uiscale: "UI scale"
 # The Community row and the start screen's button (#1168): it opens the repository in a new tab (ExternalLink).
 settings.community: "Community"
@@ -126,6 +126,11 @@ share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free open-sourc
 share.native: "Share"
 share.download: "Download the picture"
 share.attach: "These sites can't take a picture through a link: attach the downloaded picture to your post."
+share.instagram: "Instagram has no share link: the picture downloaded, so post it from the Instagram app."
+share.copy: "Copy"
+share.copied_picture: "Picture copied"
+share.copied_text: "Text copied"
+share.copy_failed: "Couldn't copy here. Share or download the picture with the button above."
 event.draft: "DRAFT"
 start.source: "From the Declaration of the Establishment of the State of Israel (Official Gazette No. 1, 14 May 1948) and its official English translation. Painting: AI-generated."
 start.recording_credit: "Recording: Ralph Hellinger, Israel State Archives"
@@ -403,10 +408,20 @@ unit.aircraft.spitfire: "Supermarine Spitfire LF Mk IXe"
 unit.flying: "{0}, flying over the base"
 unit.parked: "{0}, on the ground at the base"
 unit.national: "Reserve call-up {0} · security level {1} of 5"
+unit.security: "Security level {0} of 5"
 unit.sources: "Sources: {0}"
 unit.draft_wikipedia: "Draft: from Wikipedia only, not yet checked against a published history"
 unit.draft: "Draft: not yet checked by a historian"
 unit.defence: "Open the Defence screen"
+# The unit card's Move order (GDD Phase 5 PR 15, #754): the order's name is Q-UI-2's, approved by the owner (#375).
+unit.order.move: "Move"
+unit.move_pick: "Choose a lit hex to move to"
+unit.move_queued: "Move ordered: the unit moves when you end the turn"
+# Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375). Fortify is set at the end of the turn (R-ORDER-002).
+unit.order.fortify: "Fortify"
+unit.order.hold: "Hold"
+unit.fortify_queued: "Fortify ordered: the unit is fortified from the end of the turn"
+unit.hold_queued: "Hold ordered: the unit holds its hex when you end the turn"
 newgame.confirm: "Press New game again to abandon this game and start over."
 newgame.delete_failed: "The old saved game could not be removed; it will be replaced after your next turn."
 save.unreadable: "Your saved game could not be loaded ({0}). A new game has started."
@@ -440,6 +455,18 @@ city.groups: "{0} groups"
 city.turns_one: "1 turn"
 city.turns: "{0} turns"
 city.cancel_ordered: "Cancel ordered"
+# City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
+# turns from content), the order, and a project under way or finished. Refusals the map actions share use their
+# info.map_action_reason.* strings; these are the city projects' own.
+city.project_for: "Project for {0}"
+city.project_start: "Build {0}: {1}, {2}"
+city.project_ordered: "Ordered: {0}"
+city.project_building: "{0} for {1}: {2} left"
+city.project_built: "{0} for {1}, finished on {2}"
+city.project_reason.no_resource: "{0} has no {1} for {2}"
+city.project_reason.turn_cap: "No more than {0} city projects in one turn"
+# The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
+city.projects_toggle: "City projects ({0})"
 site.available: "A designated site for a new yishuv"
 site.group: "halutz group {0}"
 site.build: "Build a yishuv with {0}: {1}, {2}"

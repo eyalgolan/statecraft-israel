@@ -1,0 +1,177 @@
+# Region recipes for the hex-tile map (docs/hex-tiles/README.md, "Laying out the whole map"). Read by
+# tools/hex_tiles/make_board.py --regions; one command lays out the whole map:
+#
+#   python3 tools/hex_tiles/make_board.py --regions tools/hex_tiles/regions.yaml --id israel --all --env-ring 1
+#
+# Presentation only: the sim never reads this file or the boards. The regions are landscape zones for choosing tiles and
+# trees (Galilee woods, coastal orchards, desert acacia), drawn roughly by eye on the map; they are not borders and say
+# nothing about who held a place.
+#
+# How a hex is dressed:
+#   region      the first region that lists the hex in `hexes` (q, r pairs), else the first whose `polygon` ([lon, lat]
+#               points) holds the hex centre, in file order, else defaults.region.
+#   ground      the region's `ground` table by the hex's biome (content/map/hexes.json), over defaults.ground.
+#   tile        a settlement hex (the game's 25 settlements, then the 1948 localities of at least min_population, the
+#               largest first, one per hex) takes the first matching rule of the region's `settlements`, then the
+#               defaults'. Any other land hex takes the first matching rule of `nature`. A rule matches when every key
+#               it names matches: id, type (city, town, arab_town, village, kibbutz, moshav), tier (from `tiers`, by the
+#               place's 1945 population), terrain (flat, hills, mountain), biome, coastal (next to the sea). It sets
+#               `prototype`, or `pick` ([prototype, weight] pairs drawn by a stable per-hex value), and may set `ground`.
+#   flora       the trees and rocks HexEnvironment plants on the region's environment hexes (the ring with no tiles):
+#               species per flat and hills ground (model, stand-in shape tree/pine/palm/rock/box, weight; picked by a
+#               noise field, so woods of one kind clump), a density multiplier, and a rock. A region with no flora gets
+#               the built-in mix (olive and carob on the flat, Tabor oak and Aleppo pine on hills, limestone outcrops).
+#
+# Every prototype must be a registered [HexPrototype] id and every ground a HexGround layer
+# (tools/tests/test_hex_regions.py checks both).
+
+defaults:
+  region: central_hills
+  # Localities below this many people (Village Statistics 1945) are left off the board.
+  min_population: 1000
+  # Population tiers, by the 1945 figure: the largest tier the place reaches.
+  tiers: {city: 25000, town: 5000, village: 0}
+  ground: {coastal_plain: grass, lowland: grass, valley: plains, hills: hills, mountains: mountain, desert: desert, default: grass}
+  # Tiles that want low ground lower a mountain hex to hills.
+  lowland: [wheat_fields, citrus_orchard, grazing_land, moshava_village, kibbutz, tel_aviv_city, tel_aviv_city_mixed, jaffa_old_city, coastal_dunes]
+  # Roads follow the traced 1948 routes (content/map/route_paths_1948.tsv) of these kinds that the map draws before
+  # this date.
+  roads: {kinds: [road], before: '1948-05-15'}
+  units:
+    - {unit: palmach_squad, near: tel_aviv, facing: 40}
+    - {unit: sandwich_truck, near: ramla, facing: 100}
+    - {unit: willys_jeep, near: jerusalem, facing: 270}
+  settlements:
+    - {id: tel_aviv, prototype: tel_aviv_city}
+    - {id: jaffa, prototype: jaffa_old_city}
+    - {id: jerusalem, prototype: jerusalem_old_city}
+    - {type: [city, town], tier: city, prototype: tel_aviv_city_mixed}
+    - {type: arab_town, tier: city, prototype: jaffa_old_city}
+    - {type: [city, town], prototype: moshava_village}
+    - {type: [kibbutz, moshav], prototype: kibbutz}
+    - {type: [arab_town, village], prototype: arab_village}
+    - {prototype: arab_village}
+  nature:
+    - {biome: desert, prototype: desert_edge}
+    - {terrain: mountain, pick: [[judean_highlands, 0.75], [pine_forest, 0.15], [olive_terraces, 0.10]]}
+    - {terrain: hills, pick: [[olive_terraces, 0.45], [pine_forest, 0.25], [grazing_land, 0.30]]}
+    - {coastal: true, pick: [[coastal_dunes, 0.45], [citrus_orchard, 0.30], [wheat_fields, 0.25]], ground: beach}
+    - {biome: valley, pick: [[wheat_fields, 0.60], [grazing_land, 0.25], [citrus_orchard, 0.15]]}
+    - {pick: [[wheat_fields, 0.42], [citrus_orchard, 0.33], [grazing_land, 0.25]]}
+
+regions:
+  - id: jerusalem
+    title: Jerusalem and its hills
+    polygon: [[35.07, 31.70], [35.32, 31.70], [35.32, 31.88], [35.07, 31.88]]
+    nature:
+      - {terrain: mountain, pick: [[judean_highlands, 0.50], [olive_terraces, 0.35], [pine_forest, 0.15]]}
+      - {terrain: hills, pick: [[olive_terraces, 0.60], [pine_forest, 0.25], [grazing_land, 0.15]]}
+    flora:
+      density: 1.0
+      flat:
+        - {model: 'sandbox:olive_lite', shape: tree, weight: 0.6}
+        - {model: 'sandbox:cypress_lite', shape: pine, weight: 0.4}
+      hills:
+        - {model: 'sandbox:olive_lite', shape: tree, weight: 0.4}
+        - {model: 'sandbox:aleppo_pine_lite', shape: pine, weight: 0.35}
+        - {model: 'sandbox:cypress_lite', shape: pine, weight: 0.25}
+      rock: {model: 'sandbox:limestone*', chance: 0.7}
+
+  - id: jordan_valley
+    title: Jordan valley and the Dead Sea
+    polygon: [[35.36, 31.05], [35.60, 31.05], [35.62, 31.75], [35.65, 32.30], [35.68, 32.72], [35.50, 32.72], [35.50, 32.30], [35.43, 31.75]]
+    ground: {valley: plains, lowland: plains, coastal_plain: plains}
+    nature:
+      - {terrain: mountain, pick: [[desert_edge, 0.70], [grazing_land, 0.30]]}
+      - {terrain: hills, pick: [[grazing_land, 0.50], [desert_edge, 0.50]]}
+      - {biome: desert, prototype: desert_edge}
+      - {pick: [[wheat_fields, 0.40], [grazing_land, 0.30], [citrus_orchard, 0.15], [desert_edge, 0.15]]}
+    flora:
+      density: 0.6
+      flat:
+        - {model: 'sandbox:date_palm', shape: palm, weight: 0.55}
+        - {model: 'sandbox:acacia_lite', shape: tree, weight: 0.45}
+      hills:
+        - {model: 'sandbox:acacia_lite', shape: tree, weight: 1.0}
+      rock: {model: 'sandbox:desert_rock*', chance: 0.4, on_flat: true}
+
+  - id: arava
+    title: Arava
+    polygon: [[34.88, 29.40], [35.10, 29.40], [35.52, 31.05], [35.25, 31.05]]
+    ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
+    nature:
+      - {terrain: mountain, pick: [[desert_edge, 0.60], [mountain_peaks, 0.40]]}
+      - {prototype: desert_edge}
+    flora:
+      density: 0.25
+      flat:
+        - {model: 'sandbox:acacia_lite', shape: tree, weight: 0.75}
+        - {model: 'sandbox:date_palm', shape: palm, weight: 0.25}
+      hills:
+        - {model: 'sandbox:acacia_lite', shape: tree, weight: 1.0}
+      rock: {model: 'sandbox:desert_rock*', chance: 0.8, on_flat: true}
+
+  - id: coastal_plain
+    title: Coastal plain
+    polygon: [[34.20, 31.20], [34.50, 31.20], [34.72, 31.60], [34.92, 32.00], [35.00, 32.40], [35.03, 32.70], [35.12, 32.85], [35.15, 33.10], [35.05, 33.40], [34.20, 33.40]]
+    nature:
+      - {coastal: true, terrain: flat, pick: [[coastal_dunes, 0.45], [citrus_orchard, 0.35], [wheat_fields, 0.20]], ground: beach}
+      - {terrain: flat, pick: [[citrus_orchard, 0.45], [wheat_fields, 0.35], [grazing_land, 0.20]]}
+      - {terrain: hills, pick: [[olive_terraces, 0.50], [grazing_land, 0.30], [pine_forest, 0.20]]}
+    flora:
+      density: 0.9
+      flat:
+        - {model: 'sandbox:citrus_lite', shape: tree, weight: 0.55}
+        - {model: 'sandbox:date_palm', shape: palm, weight: 0.45}
+      hills:
+        - {model: 'sandbox:olive_lite', shape: tree, weight: 0.5}
+        - {model: 'sandbox:carob_lite', shape: tree, weight: 0.5}
+      rock: {model: 'sandbox:limestone*', chance: 0.3}
+
+  - id: negev
+    title: Negev and the southern deserts
+    # Everything south of the hills not already Arava or Jordan valley (listed first), the desert either side of them.
+    polygon: [[34.20, 29.40], [35.95, 29.40], [35.95, 31.35], [34.20, 31.35]]
+    ground: {valley: desert, lowland: desert, coastal_plain: desert, hills: desert, mountains: desert}
+    nature:
+      - {terrain: mountain, pick: [[desert_edge, 0.70], [mountain_peaks, 0.30]]}
+      - {biome: desert, terrain: flat, pick: [[desert_edge, 0.75], [grazing_land, 0.20], [wheat_fields, 0.05]]}
+      - {prototype: desert_edge}
+    flora:
+      density: 0.35
+      flat:
+        - {model: 'sandbox:acacia_lite', shape: tree, weight: 1.0}
+      hills:
+        - {model: 'sandbox:acacia_lite', shape: tree, weight: 1.0}
+      rock: {model: 'sandbox:desert_rock*', chance: 0.7, on_flat: true}
+
+  - id: north
+    title: Galilee and the north
+    polygon: [[34.90, 32.40], [35.90, 32.40], [35.90, 33.40], [34.90, 33.40]]
+    nature:
+      - {terrain: mountain, pick: [[pine_forest, 0.50], [judean_highlands, 0.35], [olive_terraces, 0.15]]}
+      - {terrain: hills, pick: [[pine_forest, 0.45], [olive_terraces, 0.35], [grazing_land, 0.20]]}
+      - {terrain: flat, pick: [[wheat_fields, 0.50], [grazing_land, 0.30], [citrus_orchard, 0.20]]}
+    flora:
+      density: 1.25
+      flat:
+        - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.6}
+        - {model: 'sandbox:carob_lite', shape: tree, weight: 0.4}
+      hills:
+        - {model: 'sandbox:aleppo_pine_lite', shape: pine, weight: 0.55}
+        - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.45}
+      rock: {model: 'sandbox:limestone*', chance: 0.6}
+
+  - id: central_hills
+    title: Central hills and the Shephelah
+    polygon: [[34.85, 31.35], [35.45, 31.35], [35.55, 32.45], [34.95, 32.45]]
+    # The built-in mix, written out: olive and carob on the flat, Tabor oak and Aleppo pine on hills.
+    flora:
+      density: 1.0
+      flat:
+        - {model: 'sandbox:olive_lite', shape: tree, weight: 0.6}
+        - {model: 'sandbox:carob_lite', shape: tree, weight: 0.4}
+      hills:
+        - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.55}
+        - {model: 'sandbox:aleppo_pine_lite', shape: pine, weight: 0.45}
+      rock: {model: 'sandbox:limestone*', chance: 0.6}
