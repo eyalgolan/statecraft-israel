@@ -209,13 +209,13 @@ public class StartingForcesTests
         Assert.Throws<NotSupportedException>(() => Simulation.NewGame(Real, GoldenRun.Seed, Mode.Open));
 
     // R-UNIT-006, Q-START-3 (#743, owner, 20 October 2026): a shareable build waits until every row the sim starts a unit
-    // from is fact-checked. The owner person-checked the twelve real ones on 21 October 2026 (#1240); Etzioni and the 7th
-    // (#1241) came later, so those two wait.
+    // from is fact-checked. The owner person-checked the twelve real ones on 21 October 2026 (#1240), and Etzioni and the
+    // 7th (#1241) after them (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840), so none waits.
     [Fact]
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
         Assert.Equal(14, Real.StartingForces.Count);
-        Assert.Equal(new[] { "brigade_7", "etzioni" }, ReleaseGate.StartingForcesUnchecked(Real));
+        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }

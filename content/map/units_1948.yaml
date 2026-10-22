@@ -64,8 +64,9 @@
 #   Ben-Gurion's diary for 15 May 1948 is that primary source for Golani, Carmeli, Alexandroni, Kiryati, Givati, Harel
 #   and Negev (owner, 21 October 2026, #1240); en.wiki's table stays as their second source. The owner checked them
 #   against the diary page on 21 October 2026, with the five Arab-army starting rows (#1240): those twelve rows are
-#   fact-checked. A row added later is not covered by that check: Etzioni's 3,166 cites the same page (#1241) and
-#   keeps `status: to_verify` until a person checks it.
+#   fact-checked. A row added later is not covered by that check. The owner person-checked the two later starting rows,
+#   Etzioni (3,166, the same diary page) and the 7th Brigade (1,650, en.wiki's Battles of Latrun), on #1241
+#   (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840): they are fact-checked too.
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian. to_verify = as draft, with a
 #   secondary-source strength that a primary source must replace, or a primary-source strength no person has checked
@@ -343,9 +344,8 @@ units:
   first_commander: Yisrael Amir
   sector: The defence of Jerusalem and its surroundings.
   wikipedia_only: false
-  status: to_verify
-  to_verify:
-  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  # The owner person-checked this row (#1241): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+  status: fact-checked
   strength:
     value: 3166
     as_of: '1948-05-15'
@@ -390,7 +390,8 @@ units:
   first_commander: Shlomo Shamir
   sector: "The battles of Latrun (Operation Bin Nun, 24 to 31 May 1948), from the headquarters at Hulda; in June 1948 it moved to the northern front, organising for a time at Ein Shemer."
   wikipedia_only: false
-  status: to_verify
+  # The owner person-checked this row (#1241): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+  status: fact-checked
   to_verify:
   - "The strength is a secondary-source figure (en.wiki, citing Morris, 1948, pp. 221-224, which was not opened), allowed until a primary source turns up (owner, 20 October 2026, on #743). Replace it from a primary source."
   # R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): the brigade has no sourced place or single strength on 15 May, so it arrives on its first anchor's day with its first sourced strength.

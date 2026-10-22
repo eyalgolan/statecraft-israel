@@ -194,15 +194,18 @@ IDF_STRENGTH = {'golani': 4095, 'carmeli': 2289, 'alexandroni': 3588, 'kiryati':
                 'yiftach': 4500, 'negev': 1300}
 
 
-# #1241 (owner, 21 October 2026): Etzioni's 15 May strength from Ben-Gurion's diary (to_verify until a person checks it,
-# as the #1240 rows), and the 7th's first sourced strength, dated on its first anchor's day, the day it arrives
-# (secondary, so to_verify). The figures are research_notes/GDD phase 5/later-brigades-1241.md, sections 1 and 4.
-LATER_STRENGTH = {'etzioni': (3166, '1948-05-15', 'to_verify'), 'brigade_7': (1650, '1948-05-24', 'to_verify')}
+# #1241 (owner, 21 October 2026): Etzioni's 15 May strength from Ben-Gurion's diary, and the 7th's first sourced
+# strength, dated on its first anchor's day, the day it arrives (secondary). The figures are research_notes/GDD phase
+# 5/later-brigades-1241.md, sections 1 and 4. The owner person-checked both rows (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840): Etzioni's
+# person-check item is gone; the 7th keeps its to_verify item, since a primary source must still replace its figure.
+LATER_STRENGTH = {'etzioni': (3166, '1948-05-15', 'fact-checked'), 'brigade_7': (1650, '1948-05-24', 'fact-checked')}
+LATER_OPEN_ITEM = {'etzioni': False, 'brigade_7': True}
 
 # The twelve starting rows the owner person-checked on 21 October 2026 (#1240,
-# https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250). A row added later is not covered.
-PERSON_CHECKED = {'alexandroni', 'arab_legion', 'arab_liberation_army', 'carmeli', 'egyptian_expeditionary_force', 'givati',
-                  'golani', 'harel', 'iraqi_expeditionary_force', 'kiryati', 'negev', 'syrian_army'}
+# https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250), and the two later ones (#1241,
+# https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840). A row added later is not covered.
+PERSON_CHECKED = {'alexandroni', 'arab_legion', 'arab_liberation_army', 'brigade_7', 'carmeli', 'egyptian_expeditionary_force',
+                  'etzioni', 'givati', 'golani', 'harel', 'iraqi_expeditionary_force', 'kiryati', 'negev', 'syrian_army'}
 
 
 def test_only_the_person_checked_rows_are_fact_checked():
@@ -236,7 +239,7 @@ def test_idf_brigade_strengths_are_secondary_and_to_verify():
         assert st.get('sources'), f"{uid}: the strength cites no source"
         assert not RANGE.search(str(st.get('note', ''))), f"{uid}: the strength note copies a range"
         assert u.get('status') == status, uid
-        assert u.get('to_verify'), f"{uid}: to_verify says what a person or a primary source must settle"
+        assert bool(u.get('to_verify')) == LATER_OPEN_ITEM[uid], f"{uid}: to_verify {u.get('to_verify')!r}"
         # R-UNIT-009: a strength dated after the start is the arrival day, so an anchor window opens on it.
         assert as_of == '1948-05-15' or any(a['from'] == as_of for a in u['anchors']), f"{uid}: no anchor opens on {as_of}"
     for uid, u in israel.items():
