@@ -158,8 +158,8 @@ namespace Statecraft.Game.UI
                 var shownEarlier = seat?.Holder != null && seats.Take(i).Any(x => x?.Holder?.Id == seat.Holder.Id);
                 card.style.display = seat == null || shownEarlier ? DisplayStyle.None : DisplayStyle.Flex;
                 if (seat == null || shownEarlier) continue;
-                var titles = seat.Holder == null ? ContentNames.Of(text, seat.Office, null)
-                    : string.Join("\n", seats.Skip(i).Where(x => x?.Holder?.Id == seat.Holder.Id).Select(x => ContentNames.Of(text, x!.Office, seat.Holder)));   // one office a line: the narrow card measured "A · B" as two lines but drew one (a blank line at 1366x768)
+                var titles = seat.Holder == null ? ContentNames.Of(text, seat.Office, null, s.Date)
+                    : string.Join("\n", seats.Skip(i).Where(x => x?.Holder?.Id == seat.Holder.Id).Select(x => ContentNames.Of(text, x!.Office, seat.Holder, s.Date)));   // one office a line: the narrow card measured "A · B" as two lines but drew one (a blank line at 1366x768)
                 PersonCard.Fill(card, "lead-" + Leaders[i], c, s, seat.Holder, titles, seat.Appointed, text, portraits, LeaderPortrait);
             }
             var ceasefire = screen.Q<Label>("ceasefire");

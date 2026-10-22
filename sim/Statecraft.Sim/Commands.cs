@@ -103,13 +103,16 @@ namespace Statecraft.Sim
         public StopWork(int unit) { Unit = unit; }
     }
 
-    /// <summary>Gives unit <see cref="Unit"/> the standing order <see cref="Order"/>, fortify or hold (Orders.Give, R-ORDER-001
-    /// to R-ORDER-003). GDD v0.1 loop only.</summary>
+    /// <summary>Gives unit <see cref="Unit"/> the standing order <see cref="Order"/>: fortify or hold (Orders.Give, R-ORDER-001
+    /// to R-ORDER-003), or attack, which names the hex (<see cref="Q"/>, <see cref="R"/>) (Combat.Give, R-COMBAT-001). GDD v0.1
+    /// loop only.</summary>
     public sealed class UnitOrder : Command
     {
         public override string Kind => Orders.Kind;
         public int Unit { get; } public string Order { get; }
-        public UnitOrder(int unit, string order) { Unit = unit; Order = order; }
+        /// <summary>The hex an attack names; null for fortify and hold.</summary>
+        public int? Q { get; } public int? R { get; }
+        public UnitOrder(int unit, string order, int? q = null, int? r = null) { Unit = unit; Order = order; Q = q; R = r; }
     }
 
     /// <summary>Starts city project <see cref="ProjectKind"/> (a projects.yaml id) for <see cref="City"/> on hex (<see cref="Q"/>,
@@ -145,6 +148,16 @@ namespace Statecraft.Sim
         public override string Kind => Pools.BuyArmsKind;
         public int Count { get; }
         public BuyArms(int count) { Count = count; }
+    }
+
+    /// <summary>Answers the capture of <see cref="Settlement"/> with <see cref="Outcome"/>: raid, occupy or deport
+    /// (SettlementControl.Resolve, R-CTRL-007 to R-CTRL-010). One kind for every outcome, so they cost the same Attention
+    /// (Q-TECH-3). GDD v0.1 loop only.</summary>
+    public sealed class ResolveCapture : Command
+    {
+        public override string Kind => SettlementControl.ResolveKind;
+        public string Settlement { get; } public string Outcome { get; }
+        public ResolveCapture(string settlement, string outcome) { Settlement = settlement; Outcome = outcome; }
     }
 
     public sealed class Rejection
@@ -185,6 +198,7 @@ namespace Statecraft.Sim
                     case CancelProject _: break;
                     case Move _: break;
                     case BuyArms _: break;
+                    case ResolveCapture r: Text(r.Settlement, "Settlement"); Text(r.Outcome, "Outcome"); break;
                     case SetMobilization _: case SecurityOrder _: break;
                     default: throw new ArgumentException("unknown command type " + cmd.GetType().Name, "commands");
                 }

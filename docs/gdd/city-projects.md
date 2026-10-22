@@ -15,10 +15,11 @@ As a player of the MVP, I want to build housing and industry in a city over seve
 - `CancelProject(id)` stops a project being built; the Money is not returned. It costs 0.5 Attention (R-PROJ-002).
 - Construction resolves on the turn's construction step, after the pioneer work; the turn of the order counts. A finished project adds its capacity, condition and job slots once (R-PROJ-003).
 - A specialised project, such as the winery, needs a local resource: it starts only in a city whose `cities.yaml` row lists that resource with its sources, and otherwise it is an ordinary project. The winery needs vineyards, adds 10 units of job slots for IL 2m over 6 turns (design values, `Q-SPEC-2`) and goes in Rishon LeZion, its vineyards flagged `to_verify` (owner, 20 October 2026, on #737 [S6], replacing the 18 October default of Zikhron Ya'akov [S5]; R-PROJ-005).
+- The info panel offers the projects on any hex a city can build on (#1122): the city that builds (the player picks when several are in reach, `Projects.CitiesFor`), Build for each kind with its cost and turns, or the sim's own refusal (`Projects.CheckCityReason`) in English or Hebrew; a project there shows its turns left and Cancel, or the day it was finished.
 
 ## Data touched
 
-- `content/projects.yaml` (new; design values), read only in the GDD loop.
+- `content/projects.yaml` (new; design values), read only in the GDD loop; an optional draft Hebrew `name_he` per kind, pending native review (#564).
 - `rules.yaml` `attention_cost.start_project` and `cancel_project`.
 - `GameState.CityProjects`, hashed as `cproj[...]` when there are some; the map actions' per-turn counter; the city's capacity, condition and job slots; `Treasury` and `Debt`.
 - Save files: the `project KIND CITY Q R` and `unproject ID` lines. Scenarios: `start_project` and `cancel_project`.

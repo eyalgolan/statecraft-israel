@@ -23,7 +23,9 @@ using UnityEngine.TestTools;
 /// force's token is not drawn at all (#740: no IDF figures, no placeholder).</summary>
 public class UnitFiguresTests
 {
-    static readonly Content C = ContentLoader.Load(Paths.Content);
+    /// <summary>The legacy loop, whose roster follows the rows' dated windows and the call-up: these tests sweep the war's
+    /// tokens by date (the GDD loop draws the sim's units, UnitsFromStateTests).</summary>
+    static readonly Content C = SimBridgeGddTests.Legacy;
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
     static readonly DateTime May20 = new DateTime(1948, 5, 20), July12 = new DateTime(1948, 7, 12), LastArmistice = new DateTime(1949, 7, 20);
 

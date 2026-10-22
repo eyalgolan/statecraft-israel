@@ -17,11 +17,48 @@ public class BuildGateTests
         return (string?)t!.GetMethod("ShareableRefusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object?[] { c, null, false, null, null });   // event content only
     }
 
+    /// <summary>The real content with its starting forces' rows fact-checked (R-UNIT-006, Q-START-3) and its settlement
+    /// target rows sensitivity-reviewed (Q-TGT-3 (b), #793), as a person's check would leave them, for the tests about the
+    /// other gates. In memory only: the shipped target rows stay draft until the owner's review.</summary>
+    internal static Content Checked()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        foreach (var f in c.StartingForces) f.Status = "fact-checked";
+        foreach (var t in c.SettlementTargets) t.Status = ReleaseGate.ReviewedStatus;
+        return c;
+    }
+
+    /// <summary>R-UNIT-006, Q-START-3 (#743): a starting force's row that is not fact-checked blocks a shareable build, by name.</summary>
+    [Test]
+    public void AShareableBuildWaitsForTheStartingForcesRows()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        CollectionAssert.AreEqual(new[] { "brigade_7", "etzioni" }, ReleaseGate.StartingForcesUnchecked(c), "the owner person-checked the real rows (21 October 2026, #1240); the later brigades' new rows wait for his check (#1241, Q-START-3)");
+        foreach (var f in c.StartingForces) f.Status = "to_verify";   // in memory only: the rows as they were before that check
+        var refusal = Refusal(c);
+        Assert.IsNotNull(refusal, "a row that is not fact-checked blocks a shareable build");
+        foreach (var f in c.StartingForces) StringAssert.Contains(f.Row, refusal);
+        Assert.IsNull(Refusal(ReviewedContent()));
+    }
+
+    /// <summary>Q-TGT-3 (b) (#783, #1274): a settlement target row that is not sensitivity-reviewed blocks a shareable build,
+    /// by name; a reviewed row does not.</summary>
+    [Test]
+    public void AShareableBuildWaitsForTheSettlementTargetsReview()
+    {
+        var c = ReviewedContent();
+        var target = new SettlementTarget { Id = "fixture_target", Status = "draft" };
+        c.SettlementTargets.Add(target);
+        StringAssert.Contains("fixture_target", Refusal(c));
+        target.Status = ReleaseGate.ReviewedStatus;
+        Assert.IsNull(Refusal(c));
+    }
+
     [Test]
     public void AShareableBuildWaitsForTheSensitivityReview()
     {
-        var c = ContentLoader.Load(Paths.Content);
-        Assert.IsNull(Refusal(c), "the owner signed off all seven on 2026-10-10 (D11)");
+        var c = Checked();
+        Assert.IsNull(Refusal(c), "every shipped sensitive event is reviewed (burma_road_complete: owner, 21 Oct 2026, #791)");
         foreach (var e in c.Events) if (ReleaseGate.SensitiveEvents(c).Contains(e.Id)) e.Status = "fact-checked";   // as before the sign-off
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "an unreviewed sensitive event blocks a shareable build");
@@ -37,9 +74,10 @@ public class BuildGateTests
     {
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
         var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
-        var c = ContentLoader.Load(Paths.Content);
+        var c = Checked();
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null, null }), "a dev build is not gated");
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }), "all seven are sensitivity-reviewed (D11)");
+        Assert.AreEqual(ReleaseGate.ReviewedStatus, c.Events.Single(e => e.Id == "burma_road_complete").Status, "the owner's review of 21 Oct 2026 (#791)");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
         foreach (var e in c.Events) if (e.Id == "reparations_claim") e.Status = "fact-checked";
         StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
         var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
@@ -69,10 +107,19 @@ public class BuildGateTests
             UnityEditor.PlayerSettings.GetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone), "the committed Standalone backend");
     }
 
+    // A test fixture only: isolate photo refusals from the separately tested draft event's sensitivity refusal.
+    static Content ReviewedContent()
+    {
+        var c = Checked();
+        foreach (var e in c.Events)
+            if (ReleaseGate.SensitiveEvents(c).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;
+        return c;
+    }
+
     // Owner ruling 2026-10-11: the event photographs of sensitive events need the
     // owner's sensitivity review before a shareable build may carry them. The gate reads the catalog the build ships.
     static readonly string[] SensitivePhotos =
-        { "altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
+        { "altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" };
 
     static Statecraft.Game.UI.EventImageCatalog ShippedPhotos()
     {
@@ -98,12 +145,12 @@ public class BuildGateTests
     {
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
         var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
-        var c = ContentLoader.Load(Paths.Content);
+        var c = ReviewedContent();
         var photos = ShippedPhotos();
         try
         {
-            CollectionAssert.IsEmpty(photos.SensitiveUnreviewed(), "the owner signed off all six on 2026-10-11");
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null }), "the shipped catalog and mapping pass");
+            CollectionAssert.IsEmpty(photos.SensitiveUnreviewed(), "every shipped sensitive photograph is reviewed (burma_road_complete: owner, 21 Oct 2026)");
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null }), "the shipped catalog and mapping may be shared");
             Unreview(photos);
             CollectionAssert.AreEqual(SensitivePhotos, photos.SensitiveUnreviewed(), "exactly the owner's list");
             var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null });
@@ -141,7 +188,7 @@ public class BuildGateTests
     [Test]
     public void TheGateFailsClosedWhenTheCatalogDoesNotLoad()
     {
-        var c = ContentLoader.Load(Paths.Content);
+        var c = ReviewedContent();
         var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, null, null });
         Assert.IsNotNull(refusal, "an existing catalog that did not load is a refusal");
         StringAssert.Contains("did not load", refusal);
@@ -155,11 +202,11 @@ public class BuildGateTests
     [Test]
     public void TheGateRefusesACatalogThatDoesNotMatchTheMapping()
     {
-        var c = ContentLoader.Load(Paths.Content);
+        var c = ReviewedContent();
         var photos = ShippedPhotos();
         try
         {
-            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "the shipped catalog matches the mapping");
+            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "the shipped catalog matches the mapping, all reviewed");
             Unreview(photos);
             for (int i = 0; i < photos.entries.Count; i++)                       // a hand edit, not the owner's sign-off
             {
@@ -191,8 +238,8 @@ public class BuildGateTests
             var dev = (string)json.Invoke(null, new object?[] { photos, false })!;
             StringAssert.IsMatch("\"shareable\":\\s*false", dev);
             foreach (var id in SensitivePhotos)
-                StringAssert.IsMatch($"\"event_id\":\\s*\"{id}\",\\s*\"sensitive\":\\s*true,\\s*\"sensitivity_reviewed\":\\s*true", dev);
-            Assert.AreEqual(25, System.Text.RegularExpressions.Regex.Matches(dev, "\"event_id\"").Count);   // first_new_yishuv came with #380
+                StringAssert.IsMatch($"\"event_id\":\\s*\"{id}\",\\s*\"sensitive\":\\s*true,\\s*\"sensitivity_reviewed\":\\s*true", dev);   // burma_road_complete: owner, 21 Oct 2026
+            Assert.AreEqual(27, System.Text.RegularExpressions.Regex.Matches(dev, "\"event_id\"").Count);   // first_new_yishuv came with #380, absorb_immigrants with #739
             StringAssert.IsMatch("\"shareable\":\\s*true", (string)json.Invoke(null, new object?[] { photos, true })!);
             StringAssert.IsMatch("\"photos\":\\s*\\[\\s*\\]", (string)json.Invoke(null, new object?[] { null, true })!);
         }

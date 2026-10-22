@@ -1,49 +1,72 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Statecraft.HexTiles
 {
     /// <summary>Dresses the board's environment hexes (BoardHex.env) as one continuous landscape round the playable
     /// hexes: woods, scattered trees and rock outcrops whose density follows a noise field in world space, so they run
-    /// across hex boundaries with no tile shape, no inset and no hex lines (the builder skips their edges). Deterministic.</summary>
+    /// across hex boundaries with no tile shape, no inset and no hex lines (the builder skips their edges). Deterministic.
+    /// The species, their density and the rocks come from the hex's region (BoardRegion, from tools/hex_tiles/regions.yaml:
+    /// oak and pine woods in the north, citrus and date palm on the coast, acacia and desert rock in the south); a hex with
+    /// no region gets the built-in mix (BoardRegion.BuiltIn), which plants exactly what this did before regions.</summary>
     public static class HexEnvironment
     {
         const float GridM = 820f, WoodScaleM = 7000f, DetailScaleM = 1900f;
 
-        public static IEnumerable<HexPlacement> Dress(HexBoard board, IHexSurface surface, int seed = 1948)
+        public static IEnumerable<HexPlacement> Dress(HexBoard board, IHexSurface surface, int seed = 1948) =>
+            board.Hexes.Values.SelectMany(h => DressHex(board, h, surface, seed));
+
+        /// <summary>One environment hex's trees and rocks (none for a play or water hex). Each hex plants only inside
+        /// itself, so a hex can be redressed alone (the Hex Painter).</summary>
+        public static IEnumerable<HexPlacement> DressHex(HexBoard board, BoardHex h, IHexSurface surface, int seed = 1948)
         {
-            foreach (var h in board.Hexes.Values)
-            {
-                if (!h.env || HexBoard.TerrainOf(h) == HexTerrain.Water) continue;
-                var ctx = new HexTileContext(h.q, h.r, surface, seed ^ 0x5eed, HexScale.HexM, insetShare: 0f);
-                var c = ctx.Centre;
-                bool hills = HexBoard.TerrainOf(h) != HexTerrain.Flat;
-                int n = Mathf.CeilToInt(HexScale.HexM / GridM);
-                for (int i = -n; i <= n; i++)
-                    for (int j = -n; j <= n; j++)
-                    {
-                        // A world-aligned jittered grid, so neighbouring hexes continue the same pattern.
-                        float gx = Mathf.Round(c.x / GridM) * GridM + i * GridM, gz = Mathf.Round(c.z / GridM) * GridM + j * GridM;
-                        uint hsh = unchecked((uint)(Mathf.FloorToInt(gx) * 73856093 ^ Mathf.FloorToInt(gz) * 19349663 ^ seed));
-                        float r1 = (hsh & 0xFFFF) / 65535f, r2 = ((hsh >> 16) & 0xFFFF) / 65535f;
-                        var p = new Vector3(gx + (r1 - 0.5f) * GridM * 0.8f, 0f, gz + (r2 - 0.5f) * GridM * 0.8f);
-                        if (!HexGeometry.InHex(p, c, HexScale.HexM)) continue;
-                        float wood = Mathf.PerlinNoise(p.x / WoodScaleM + 3.3f, p.z / WoodScaleM + 7.7f);
-                        float detail = Mathf.PerlinNoise(p.x / DetailScaleM + 1.1f, p.z / DetailScaleM + 2.2f);
-                        // Woods in clumps with open country between (a few lone trees), never an even sprinkle.
-                        float density = hills ? Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.48f, 0.6f, wood)) : Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.56f, 0.68f, wood)) * 0.85f;
-                        density = Mathf.Max(density * (0.6f + 0.6f * detail), 0.035f);
-                        if (r1 * 0.7f + r2 * 0.3f > density) continue;
-                        string model = hills ? (detail > 0.55f ? "sandbox:aleppo_pine_lite" : "sandbox:tabor_oak_lite") : (detail > 0.6f ? "sandbox:carob_lite" : "sandbox:olive_lite");
-                        ctx.PlaceByHeight(model, p, r1 * 360f, (0.11f + 0.04f * r2) * HexScale.HexM, hills && detail > 0.55f ? StandIn.Pine : StandIn.Tree, null, 0.3f, 40f);
-                    }
-                if (hills)
-                    for (int k = 0; k < 2; k++)
-                        if (ctx.Rng.NextDouble() < 0.6)
-                            ctx.PlaceByWidth("sandbox:limestone*", ctx.RandomPoint(), ctx.Range(0f, 360f), ctx.Range(0.06f, 0.1f) * HexScale.HexM, StandIn.Rock, null, 60f);
-                foreach (var placement in ctx.Placements) yield return placement;
-            }
+            if (!h.env || HexBoard.TerrainOf(h) == HexTerrain.Water) yield break;
+            var ctx = new HexTileContext(h.q, h.r, surface, seed ^ 0x5eed, HexScale.HexM, insetShare: 0f);
+            var c = ctx.Centre;
+            bool hills = HexBoard.TerrainOf(h) != HexTerrain.Flat;
+            var region = board.RegionOf(h);
+            var species = Mix(hills ? region.hills : region.flat, hills ? BoardRegion.BuiltIn.hills : BoardRegion.BuiltIn.flat);
+            int n = Mathf.CeilToInt(HexScale.HexM / GridM);
+            for (int i = -n; i <= n; i++)
+                for (int j = -n; j <= n; j++)
+                {
+                    // A world-aligned jittered grid, so neighbouring hexes continue the same pattern.
+                    float gx = Mathf.Round(c.x / GridM) * GridM + i * GridM, gz = Mathf.Round(c.z / GridM) * GridM + j * GridM;
+                    uint hsh = unchecked((uint)(Mathf.FloorToInt(gx) * 73856093 ^ Mathf.FloorToInt(gz) * 19349663 ^ seed));
+                    float r1 = (hsh & 0xFFFF) / 65535f, r2 = ((hsh >> 16) & 0xFFFF) / 65535f;
+                    var p = new Vector3(gx + (r1 - 0.5f) * GridM * 0.8f, 0f, gz + (r2 - 0.5f) * GridM * 0.8f);
+                    if (!HexGeometry.InHex(p, c, HexScale.HexM)) continue;
+                    float wood = Mathf.PerlinNoise(p.x / WoodScaleM + 3.3f, p.z / WoodScaleM + 7.7f);
+                    float detail = Mathf.PerlinNoise(p.x / DetailScaleM + 1.1f, p.z / DetailScaleM + 2.2f);
+                    // Woods in clumps with open country between (a few lone trees), never an even sprinkle.
+                    float density = hills ? Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.48f, 0.6f, wood)) : Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.56f, 0.68f, wood)) * 0.85f;
+                    density = Mathf.Max(density * (0.6f + 0.6f * detail), 0.035f) * region.density;
+                    if (r1 * 0.7f + r2 * 0.3f > density) continue;
+                    // The species by the detail noise, so each kind clumps: the first whose share of the mix reaches it.
+                    var kind = Pick(species, detail);
+                    ctx.PlaceByHeight(kind.model, p, r1 * 360f, (0.11f + 0.04f * r2) * HexScale.HexM, kind.StandIn, null, 0.3f, 40f);
+                }
+            // Rounded so the built-in 0.6 compares exactly as the double it always was.
+            double rockChance = Math.Round(region.rockChance, 4);
+            if (hills || region.rocksOnFlat)
+                for (int k = 0; k < 2; k++)
+                    if (ctx.Rng.NextDouble() < rockChance)
+                        ctx.PlaceByWidth(region.rock, ctx.RandomPoint(), ctx.Range(0f, 360f), ctx.Range(0.06f, 0.1f) * HexScale.HexM, StandIn.Rock, null, 60f);
+            foreach (var placement in ctx.Placements) yield return placement;
+        }
+
+        static BoardSpecies[] Mix(BoardSpecies[]? own, BoardSpecies[] builtIn) => own != null && own.Sum(s => s.weight) > 0f ? own : builtIn;
+
+        /// <summary>The first species whose running share of the mix reaches <paramref name="u"/> (0..1); the last otherwise.</summary>
+        public static BoardSpecies Pick(BoardSpecies[] mix, float u)
+        {
+            float total = 0f; foreach (var s in mix) total += s.weight;
+            float acc = 0f;
+            for (int i = 0; i < mix.Length - 1; i++) { acc += mix[i].weight; if (u * total <= acc) return mix[i]; }
+            return mix[mix.Length - 1];
         }
     }
 

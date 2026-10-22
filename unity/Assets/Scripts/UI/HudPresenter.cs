@@ -84,8 +84,15 @@ namespace Statecraft.Game.UI
 
         /// <summary>The small text's size in panel px when one panel px is <paramref name="screenPxPerPanelPx"/> pixels on
         /// screen: the stylesheet's SmallTextPx, or the whole px that keeps it at TextFloorPx on screen if that is larger.</summary>
-        public static float SmallTextSize(float screenPxPerPanelPx) =>
-            screenPxPerPanelPx > 0f ? UnityEngine.Mathf.Max(SmallTextPx, UnityEngine.Mathf.Ceil(TextFloorPx / screenPxPerPanelPx - 0.01f)) : SmallTextPx;
+        public static float SmallTextSize(float screenPxPerPanelPx) => FlooredTextSize(SmallTextPx, screenPxPerPanelPx);
+
+        /// <summary>The same rule for any text (the first-turn guide's too): its stylesheet size <paramref name="stylesheetPx"/>,
+        /// or the whole px that keeps it at TextFloorPx on screen if that is larger.</summary>
+        public static float FlooredTextSize(float stylesheetPx, float screenPxPerPanelPx) =>
+            screenPxPerPanelPx > 0f ? UnityEngine.Mathf.Max(stylesheetPx, UnityEngine.Mathf.Ceil(TextFloorPx / screenPxPerPanelPx - 0.01f)) : stylesheetPx;
+
+        /// <summary>Screen pixels per panel px on <paramref name="panel"/> (a CSS pixel in the browser: DevicePixelRatio).</summary>
+        internal static float ScreenPxPerPanelPx(IPanel panel) => panel.scaledPixelsPerPoint / DevicePixelRatio();
 
         readonly List<Label> smallText;
         /// <summary>The plate's turn and date line (Statecraft.uss .date-row Label, 15 px): raised with the bar's small text (the
@@ -248,7 +255,7 @@ namespace Statecraft.Game.UI
         {
             var p = root.panel;
             if (p == null) return;
-            var size = SmallTextSize(p.scaledPixelsPerPoint / DevicePixelRatio());
+            var size = SmallTextSize(ScreenPxPerPanelPx(p));
             if (size == smallTextSize) return;
             smallTextSize = size;
             SetCompact(bar.layout.width);

@@ -72,6 +72,16 @@ public class SettingsScreenTests
         Assert.IsFalse(ScreenNav.IsOpen(screen), "pressed again, it closes");
     }
 
+    /// <summary>#1191: every event card has Hebrew text, so Settings makes no obsolete English-only claim.</summary>
+    [Test]
+    public void TheLanguageChoiceHasNoObsoleteEnglishOnlyNote()
+    {
+        using var ui = new UiTestKit();
+        Assert.IsNull(ui.Root.Q("settings-language-note"));
+        Assert.IsFalse(En.Has("settings.language.note"));
+        Assert.IsFalse(He.Has("settings.language.note"));
+    }
+
     [Test]
     public void TheTiltShiftOptionTakesEffectAtOnceAndSurvivesAReload([Values(false, true)] bool hebrew)
     {
@@ -635,7 +645,7 @@ public class SettingsScreenTests
                 Assert.GreaterOrEqual(screen.yMin, root.Q("top-bar").worldBound.yMax - 0.5f, at + ": the screen starts below the top bar");
                 foreach (var name in new[] { "settings-screen-title", "settings-tiltshift-label", "settings-tiltshift",
                     "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low",
-                    "settings-language-label", "settings-language-en", "settings-language-he", "settings-language-note",
+                    "settings-language-label", "settings-language-en", "settings-language-he",
                     "settings-uiscale-label", "settings-uiscale-100", "settings-uiscale-125", "settings-uiscale-150",
                     "settings-community-label", "settings-star", "settings-report", "settings-share" })
                 {

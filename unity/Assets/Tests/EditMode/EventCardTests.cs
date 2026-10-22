@@ -368,26 +368,26 @@ public class EventCardTests
     {
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         g.State.Date = done;
-        g.State.Objectives["first_new_yishuv"] = done;
+        g.State.Objectives["yishuvim"] = done;
         g.State.PendingEvents.Clear(); g.State.PendingEvents.Add("first_new_yishuv");
         return new SimBridge(g, text);
     }
 
-    /// <summary>The objective card's line under its text, in the owner's wording (#379, 14 October 2026), against Mefalsim's
-    /// reference date of 12 June 1949 (objectives.yaml), by calendar months (Objectives.MonthsFromHistory): early with both
+    /// <summary>The objective card's line under its text, in the owner's wording (#379, 14 October 2026), against the yishuvim part's
+    /// reference date of 15 December 1950 (objectives.yaml), by calendar months (Objectives.MonthsFromHistory): early with both
     /// dates and the months, on time in the same month, later with the months; one month in the singular.</summary>
     [Test]
     public void TheObjectiveCardSaysWhenItWasCompletedAgainstHistory()
     {
-        Assert.AreEqual(new System.DateTime(1949, 6, 12), C.Objectives.Single(o => o.Id == "first_new_yishuv").ReferenceDate, "precondition");
+        Assert.AreEqual(new System.DateTime(1950, 12, 15), C.Objectives.Single(o => o.Id == "yishuvim").ReferenceDate, "precondition");
         foreach (var (done, line) in new[]
         {
-            (new System.DateTime(1949, 3, 15), "Completed on 15 March 1949; historically 12 June 1949; 3 months early."),
-            (new System.DateTime(1949, 5, 31), "Completed on 31 May 1949; historically 12 June 1949; 1 month early."),
-            (new System.DateTime(1949, 6, 1), "Completed on time, as in history."),
-            (new System.DateTime(1949, 6, 30), "Completed on time, as in history."),
-            (new System.DateTime(1949, 7, 1), "Completed 1 month later than in history."),
-            (new System.DateTime(1950, 2, 15), "Completed 8 months later than in history."),
+            (new System.DateTime(1950, 9, 15), "Completed on 15 September 1950; historically 15 December 1950; 3 months early."),
+            (new System.DateTime(1950, 11, 30), "Completed on 30 November 1950; historically 15 December 1950; 1 month early."),
+            (new System.DateTime(1950, 12, 1), "Completed on time, as in history."),
+            (new System.DateTime(1950, 12, 31), "Completed on time, as in history."),
+            (new System.DateTime(1951, 1, 1), "Completed 1 month later than in history."),
+            (new System.DateTime(1951, 8, 15), "Completed 8 months later than in history."),
         })
         {
             using var ui = new UiTestKit();
@@ -405,11 +405,11 @@ public class EventCardTests
     {
         foreach (var (done, line) in new[]
         {
-            (new System.DateTime(1949, 3, 15), "הושלם ב־15 במרץ 1949; בהיסטוריה ב־12 ביוני 1949; מוקדם ב־3 חודשים."),
-            (new System.DateTime(1949, 5, 31), "הושלם ב־31 במאי 1949; בהיסטוריה ב־12 ביוני 1949; מוקדם בחודש אחד."),
-            (new System.DateTime(1949, 6, 30), "הושלם בזמן, כמו בהיסטוריה."),
-            (new System.DateTime(1949, 7, 1), "הושלם באיחור של חודש אחד לעומת ההיסטוריה."),
-            (new System.DateTime(1950, 2, 15), "הושלם באיחור של 8 חודשים לעומת ההיסטוריה."),
+            (new System.DateTime(1950, 9, 15), "הושלם ב־15 בספטמבר 1950; בהיסטוריה ב־15 בדצמבר 1950; מוקדם ב־3 חודשים."),
+            (new System.DateTime(1950, 11, 30), "הושלם ב־30 בנובמבר 1950; בהיסטוריה ב־15 בדצמבר 1950; מוקדם בחודש אחד."),
+            (new System.DateTime(1950, 12, 31), "הושלם בזמן, כמו בהיסטוריה."),
+            (new System.DateTime(1951, 1, 1), "הושלם באיחור של חודש אחד לעומת ההיסטוריה."),
+            (new System.DateTime(1951, 8, 15), "הושלם באיחור של 8 חודשים לעומת ההיסטוריה."),
         })
         {
             using var ui = new UiTestKit();
