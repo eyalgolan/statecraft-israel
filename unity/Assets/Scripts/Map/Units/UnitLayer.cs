@@ -323,6 +323,33 @@ namespace Statecraft.Game.Map.Units
             return null;
         }
 
+        /// <summary>The token <paramref name="cam"/> draws under <paramref name="screen"/> (pixels, y up): its badge's or its
+        /// standing pieces' box (<see cref="KeepClear"/>) as that camera projects it, the nearest to the camera when several
+        /// hold the point; null off every token, behind the camera, or while the "units" toggle hides the layer. The badge
+        /// floats over the figures and behind them, so the terrain under it is often the next hex (owner's report on v0.2.0:
+        /// a click on a unit's badge showed the hex behind it, with no Move). No allocation.</summary>
+        public PlacedToken? TokenAtScreen(Camera cam, Vector2 screen)
+        {
+            if (cam == null || !gameObject.activeInHierarchy) return null;
+            FaceCamera(cam);   // the boxes as this camera draws them (a no-op from the pose it last turned them to)
+            PlacedToken? best = null; float nearest = float.MaxValue;
+            for (int i = 0; i < placed.Count && i < keepClear.Count; i++)
+                foreach (var box in keepClear[i])
+                {
+                    float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue; bool behind = false;
+                    for (int c = 0; c < 8 && !behind; c++)
+                    {
+                        var p = cam.WorldToScreenPoint(new Vector3((c & 1) == 0 ? box.min.x : box.max.x, (c & 2) == 0 ? box.min.y : box.max.y, (c & 4) == 0 ? box.min.z : box.max.z));
+                        behind = p.z <= 0f;
+                        x0 = Mathf.Min(x0, p.x); y0 = Mathf.Min(y0, p.y); x1 = Mathf.Max(x1, p.x); y1 = Mathf.Max(y1, p.y);
+                    }
+                    if (behind || screen.x < x0 || screen.x > x1 || screen.y < y0 || screen.y > y1) continue;
+                    float depth = (box.center - cam.transform.position).sqrMagnitude;
+                    if (depth < nearest) { nearest = depth; best = placed[i]; }
+                }
+            return best;
+        }
+
         /// <summary>Selects a drawn unit by id (the ring goes round it), or clears the selection (null).</summary>
         public void Select(string? id)
         {

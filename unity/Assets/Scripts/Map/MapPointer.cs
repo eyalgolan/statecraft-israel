@@ -120,7 +120,8 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The hex a click at <paramref name="pos"/> (screen pixels) would pick, or null over the UI or off the map:
-        /// a pill's city hex (PillHex), else the hex of the terrain under the pointer. GameRoot also asks it for the hover.</summary>
+        /// a pill's city hex (PillHex), else the hex of the unit token drawn under the pointer (UnitLayer.TokenAtScreen), else
+        /// the hex of the terrain under the pointer. GameRoot also asks it for the hover.</summary>
         public (int q, int r)? HexAt(Vector2 pos) => HexAt(pos, IsOverUi != null && IsOverUi(pos), true);
 
         (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills)
@@ -129,6 +130,11 @@ namespace Statecraft.Game.Map
             if (Map == null || Map.Terrain == null) return null;
             if (pills && PillHex?.Invoke(pos) is (int, int) pill) return pill;
             var cam = Camera.main;
+            // A unit's badge and figures stand above the ground: a click on them is a click on the unit's hex, not on the
+            // terrain behind them (owner's report on v0.2.0). Not for the keyboard's look-at point (pills false).
+            var units = pills && cam != null ? Map.Terrain.transform.Find(Units.UnitLayer.RootName) : null;
+            if (units != null && units.TryGetComponent<Units.UnitLayer>(out var layer) && layer.TokenAtScreen(cam!, pos) is Units.PlacedToken token)
+                return (token.Q, token.R);
             if (cam == null || !TryGroundHit(Map, cam.ScreenPointToRay(pos), out var hit)) return null;
             return Pick(Map, hit.point);
         }

@@ -1,4 +1,3 @@
-import fcntl
 import os
 import subprocess
 import sys
@@ -7,7 +6,10 @@ from pathlib import Path
 
 import pytest
 
-import machine_lock as ml
+# machine_lock is the Mac's flock-based lock; fcntl does not exist on Windows, so the module skips there.
+fcntl = pytest.importorskip("fcntl", reason="fcntl is POSIX-only (machine_lock uses flock); not available on Windows")
+
+import machine_lock as ml  # noqa: E402
 
 
 def test_the_command_follows_the_double_dash_and_a_mode_is_required():

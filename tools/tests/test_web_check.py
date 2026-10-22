@@ -12,6 +12,15 @@ import pytest
 
 import web_check as wc
 
+# A client connects to the address serve() bound (127.0.0.1), not "localhost": Windows resolves localhost to ::1 first,
+# where nothing listens, and with no timeout the connect waits with no end. The timeout bounds every request.
+TIMEOUT = 10
+
+
+def base_url(server) -> str:
+    host, port = server.server_address[:2]
+    return f"http://{host}:{port}"
+
 
 @pytest.mark.parametrize("error", [BrokenPipeError, ConnectionResetError])
 def test_server_client_disconnects_do_not_print_a_false_failure(error, capsys):
@@ -56,12 +65,12 @@ def test_precompressed_files_get_content_encoding_and_wasm_its_type(tmp_path):
     (tmp_path / "index.html").write_text("<html></html>")
     server = wc.serve(tmp_path)
     try:
-        base = f"http://localhost:{server.server_address[1]}"
-        r = urllib.request.urlopen(base + "/Build/game.wasm.br")
+        base = base_url(server)
+        r = urllib.request.urlopen(base + "/Build/game.wasm.br", timeout=TIMEOUT)
         assert (r.headers["Content-Encoding"], r.headers["Content-Type"]) == ("br", "application/wasm")
         r = urllib.request.Request(base + "/Build/game.data.gz", headers={"Accept-Encoding": "identity"})
-        assert urllib.request.urlopen(r).headers["Content-Encoding"] == "gzip"
-        assert urllib.request.urlopen(base + "/index.html").headers["Content-Encoding"] is None
+        assert urllib.request.urlopen(r, timeout=TIMEOUT).headers["Content-Encoding"] == "gzip"
+        assert urllib.request.urlopen(base + "/index.html", timeout=TIMEOUT).headers["Content-Encoding"] is None
     finally:
         server.shutdown()
         server.server_close()
@@ -135,10 +144,12 @@ def test_compressed_scripts_and_data_keep_their_types_and_traversal_is_404(tmp_p
     (tmp_path / "secret.txt").write_text("secret")
     server = wc.serve(tmp_path / "site")
     try:
-        base = f"http://localhost:{server.server_address[1]}"
-        assert urllib.request.urlopen(base + "/a.framework.js.gz").headers["Content-Type"] == "application/javascript"
-        assert urllib.request.urlopen(base + "/a.data.br").headers["Content-Type"] == "application/octet-stream"
-        conn = http.client.HTTPConnection("localhost", server.server_address[1])
+        base = base_url(server)
+        js = urllib.request.urlopen(base + "/a.framework.js.gz", timeout=TIMEOUT)
+        assert js.headers["Content-Type"] == "application/javascript"
+        data = urllib.request.urlopen(base + "/a.data.br", timeout=TIMEOUT)
+        assert data.headers["Content-Type"] == "application/octet-stream"
+        conn = http.client.HTTPConnection(*server.server_address[:2], timeout=TIMEOUT)
         for path in ("/../secret.txt", "/%2e%2e/secret.txt"):
             conn.request("GET", path)
             r = conn.getresponse(); r.read()
