@@ -17,6 +17,9 @@ checks this (see `CONTRIBUTING.md`).
 - Closing a screen (Cabinet, Budget, Objectives and the rest) with its X by mouse or touch no longer lights up its button
   in the left column and pops up the button's name beside it. Closed from the keyboard, the focus still goes back to
   that button and its name still shows (#1323).
+- A city that has finished an industry project opens its panel again. The panel now offers Train craftsmen there and shows
+  the craftsmen in training, in English and Hebrew; before, the panel came up empty (fixes #1353 and #1357; reported by
+  Beri in #1353, found while testing #1346).
 - Trained recruit formations keep counting toward their home city's housing after graduation, movement and veteran
   promotion. The home survives standing orders, attacks, retreats, withdrawals and save replay; a formation that survives combat
   counts at its remaining strength. Pioneer units still leave city housing (refs #742, #1130; Q-HOUSE-5).
