@@ -7,3 +7,5 @@
   files keep their own licences. New code contributions come in under MIT to the maintainer, so code pull requests
   need the licence tick again (`CONTRIBUTING.md`). The README's Hebrew line is agent-checked until a native speaker
   reads it (#564).
+- The README notice, the website's tagline, footer and press pages, the in-game share text and the Steam draft now
+  call the game free instead of open source (owner, 22 October 2026). The changed Hebrew is agent-checked (#564).

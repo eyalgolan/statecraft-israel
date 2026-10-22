@@ -12,7 +12,7 @@ export type Page = (typeof pages)[number];
 
 const en = {
   'site.name': 'Statecraft: Israel',
-  'site.tagline': 'A turn-based strategy game about governing Israel from 15 May 1948. Open source, with a source for every historical fact.',
+  'site.tagline': 'A turn-based strategy game about governing Israel from 15 May 1948. Free, with a source for every historical fact.',
   'lang.other': 'עברית',
   'lang.other.label': 'Hebrew version of this page',
   'skip': 'Skip to content',
@@ -34,7 +34,7 @@ const en = {
   'footer.more': 'More',
   'footer.repo': 'Source code on GitHub',
   'footer.licence': 'Code PolyForm Noncommercial 1.0.0. Art and docs CC BY 4.0. Game content CC BY-SA 4.0. AI-generated images CC0.',
-  'footer.notaffiliated': 'An independent open-source project. Not affiliated with or endorsed by Firaxis, 2K, the State of Israel or any person depicted.',
+  'footer.notaffiliated': 'An independent, free project. Not affiliated with or endorsed by Firaxis, 2K, the State of Israel or any person depicted.',
   'footer.privacy': 'No analytics and no cookies.',
 
   'label.engine': 'In-engine capture',
@@ -74,7 +74,7 @@ type Dict = Record<keyof typeof en, string>;
 
 const he: Dict = {
   'site.name': 'Statecraft: Israel',
-  'site.tagline': 'משחק אסטרטגיה מבוסס־תורות על ניהול מדינת ישראל מ־15 במאי 1948. קוד פתוח, ולכל עובדה היסטורית יש מקור.',
+  'site.tagline': 'משחק אסטרטגיה מבוסס־תורות על ניהול מדינת ישראל מ־15 במאי 1948. המשחק חינמי, ולכל עובדה היסטורית יש מקור.',
   'lang.other': 'English',
   'lang.other.label': 'הגרסה האנגלית של העמוד',
   'skip': 'דילוג לתוכן',
@@ -96,7 +96,7 @@ const he: Dict = {
   'footer.more': 'עוד',
   'footer.repo': 'קוד המקור ב־GitHub',
   'footer.licence': 'קוד: PolyForm Noncommercial 1.0.0. אמנות ומסמכים: CC BY 4.0. תוכן המשחק: CC BY-SA 4.0. תמונות שנוצרו בבינה מלאכותית: CC0.',
-  'footer.notaffiliated': 'פרויקט קוד פתוח עצמאי. אין לו קשר ל־Firaxis, ל־2K, למדינת ישראל או לאדם כלשהו המופיע בו, והם אינם תומכים בו.',
+  'footer.notaffiliated': 'פרויקט עצמאי וחינמי. אין לו קשר ל־Firaxis, ל־2K, למדינת ישראל או לאדם כלשהו המופיע בו, והם אינם תומכים בו.',
   'footer.privacy': 'בלי כלי אנליטיקה ובלי עוגיות.',
 
   'label.engine': 'צילום מתוך המשחק',

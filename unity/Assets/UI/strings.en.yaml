@@ -122,7 +122,7 @@ feedback.itch: "No GitHub account? Comment on itch"
 # in-game date ({0}), the turn ({1}) and the itch URL ({2}).
 share.open: "Share"
 share.title: "Share a picture of the game"
-share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free open-source strategy game. {0}, turn {1}. Play: {2}"
+share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. {0}, turn {1}. Play: {2}"
 share.native: "Share"
 share.download: "Download the picture"
 share.attach: "These sites can't take a picture through a link: attach the downloaded picture to your post."
