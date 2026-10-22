@@ -17,6 +17,7 @@
             <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-timeline" text="Timeline" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="hourglass" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-how-to-play" text="How to play" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-objectives" text="Objectives" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="flag" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-settings" text="Settings" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="gear" class="nav-disc" /></ui:Button>
@@ -324,6 +325,12 @@
         <ui:VisualElement name="screen-why" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label name="why-screen-title" text="Why did this happen?" class="title" /><ui:Label name="why-turn" class="muted" /></ui:VisualElement>
             <ui:ScrollView name="why-rows" class="grow" />
+            <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
+        <ui:VisualElement name="screen-timeline" class="panel screen screen-wide">
+            <ui:VisualElement class="screen-header"><ui:Label name="timeline-screen-title" class="title" /></ui:VisualElement>
+            <ui:VisualElement class="timeline-columns timeline-headings"><ui:Label name="timeline-yours-heading" /><ui:Label name="timeline-record-heading" /></ui:VisualElement>
+            <ui:ScrollView name="timeline-list" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <!-- A short guide to the existing loop (#1041). It is a normal side-menu screen, so ScreenNav owns opening and closing. -->

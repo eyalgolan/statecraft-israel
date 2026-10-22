@@ -7,8 +7,13 @@ Unity editor.
 
 Usage: uv run tools/machine_lock.py (--shared | --exclusive) [--wait-unity] [--timeout SECONDS] -- <command> [args...]
 --shared takes the machine lock shared (Unity builds, captures and edit-mode runs); --exclusive takes it alone (frame-time
-profiles and boot budgets) and, with --wait-unity, then waits until no Unity is left running: no batch-mode Unity process,
-and no process (an interactive editor included) holding any worktree's unity/Temp/UnityLockfile. The lock file is
+profiles and boot budgets). In either mode, --wait-unity waits until no Unity is left running: no batch-mode Unity process,
+and no process (an interactive editor included) holding any worktree's unity/Temp/UnityLockfile. Shared --wait-unity
+requests also take a separate exclusive reservation (the lock path plus ".unity") before checking for Unity and hold it
+while running their command. Two such requests therefore cannot both pass an idle check and launch together, even
+before either child appears in process listings. Ordinary --shared requests and unwrapped Unity launches can still
+overlap them; --exclusive excludes every participating shared holder. --timeout limits the Unity-process wait, not lock
+acquisition. The lock file is
 ~/.cache/statecraft/machine.lock (fcntl.flock; STATECRAFT_MACHINE_LOCK overrides it), shared by every worktree of this
 user. Exit code: the command's, or 3 when --wait-unity times out.
 
@@ -26,10 +31,12 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 LOCK = Path(os.environ.get("STATECRAFT_MACHINE_LOCK", str(Path.home() / ".cache" / "statecraft" / "machine.lock")))
 GATE = LOCK.with_name(LOCK.name + ".gate")
+UNITY_LOCK = LOCK.with_name(LOCK.name + ".unity")
 UNITY_EXE = "/Unity.app/Contents/MacOS/Unity"
 HOLDER_ENV = "STATECRAFT_LOCK_HOLDER"
 
@@ -108,11 +115,14 @@ def wait_for_unity(timeout: float, pids=unity_pids, sleep=time.sleep, now=time.m
 def main(argv: list[str] | None = None) -> int:
     a = parse(sys.argv[1:] if argv is None else argv)
     LOCK.parent.mkdir(parents=True, exist_ok=True)
-    with open(GATE, "a+") as gate, open(LOCK, "a+") as f:
+    with open(GATE, "a+") as gate, open(LOCK, "a+") as f, ExitStack() as reservations:
         print(f"machine_lock: taking the machine lock ({'exclusive' if a.exclusive else 'shared'})", flush=True)
         fcntl.flock(gate, fcntl.LOCK_EX)
         fcntl.flock(f, fcntl.LOCK_EX if a.exclusive else fcntl.LOCK_SH)
         fcntl.flock(gate, fcntl.LOCK_UN)
+        if a.shared and a.wait_unity:
+            unity_lock = reservations.enter_context(open(UNITY_LOCK, "a+"))
+            fcntl.flock(unity_lock, fcntl.LOCK_EX)
         if a.wait_unity and not wait_for_unity(a.timeout):
             print("machine_lock: timed out waiting for Unity")
             return 3

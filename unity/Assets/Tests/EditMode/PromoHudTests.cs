@@ -40,7 +40,8 @@ public class PromoHudTests
         using var ui = new UiTestKit();
         foreach (var (button, name, glyph) in new[] { ("nav-cabinet", "Cabinet", "columns"), ("nav-budget", "Budget", "ledger"),
                                                       ("nav-defence", "Defence", "helmet"), ("nav-why", "Why?", "question"),
-                                                      ("nav-how-to-play", "How to play", "book"), ("nav-objectives", "Objectives", "flag"), ("nav-settings", "Settings", "gear"),
+                                                      ("nav-timeline", "Timeline", "hourglass"), ("nav-how-to-play", "How to play", "book"), ("nav-objectives", "Objectives", "flag"),
+                                                      ("nav-settings", "Settings", "gear"),
                                                       ("new-game", "New game", "restart") })
         {
             var b = ui.Q<Button>(button);
