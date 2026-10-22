@@ -40,6 +40,11 @@ PR [#1146](https://github.com/eyalgolan/statecraft-israel/pull/1146) owns comple
 `GameRoot.RenderPlacementsIfChanged` and `PlacementLayer.Render`; hex-map PRs #1153–#1155 own their board builders.
 This prototype changes none of those files. Other runtime-figure and building-LOD experiments remain separate.
 
+Until a gameplay caller exists, the Dust and Stone materials and their shaders live under
+`unity/Assets/Editor/Construction/Materials/`, so player builds carry none of them. `ConstructionReveal` asks for them
+through its static `Templates` loader, which only the editor sets (`ConstructionMaterials`). Wiring the reveal in means
+setting `Templates` to load them when the opt-in is on, never from a `Resources` folder, which Unity packs into every build.
+
 After the completed-visual flow settles, diff stable placement/project IDs following authoritative state updates. On a newly
 completed visual, put `ConstructionReveal` on its stationary pick root and create a direct mesh-only child pivot, then call
 `Bind(pivot, conservativeWorldFootprintRadius)` and `Play()`. Preserve the existing mesh, material and final transform.
@@ -58,7 +63,7 @@ no global setting was invented.
 Two native CPU ParticleSystems, at most **36 soft puffs + 8 mesh stones**. The stones share one eight-triangle mesh and one opaque material;
 maximum added geometry is 136 triangles (72 dust + 64 stones), with two particle renderers. The original look uses 88 billboard triangles.
 No rigidbodies, collision, persistent debris, trails, lights, sub-emitters, compute shaders, VFX Graph, new packages or textures.
-The tiny Resources materials retain their URP shaders. Dust alpha blends with depth testing and no depth writes; stones depth-write.
+The two tiny materials retain their URP shaders. Dust alpha blends with depth testing and no depth writes; stones depth-write.
 Particles use Ignore Raycast and no colliders. Only the visual pivot rises; scale, pick root and collider remain fixed.
 Sampling uses preallocated arrays and a local visual hash; it never consumes Unity's global RNG.
 

@@ -16,6 +16,15 @@ public class ConstructionRevealTests
     }
 
     [Test]
+    public void TheRevealsMaterialsShipInNoPlayerBuild()
+    {
+        // Nothing in gameplay calls the reveal yet, so the default player build must carry none of its assets.
+        Assert.That(Resources.LoadAll<Object>("Construction"), Is.Empty, "Resources folders ship in every build");
+        Assert.That(UnityEditor.AssetDatabase.FindAssets("t:Material", new[] { "Assets/Editor/Construction/Materials" }), Has.Length.EqualTo(2),
+            "the Dust and Stone templates stay editor-only");
+    }
+
+    [Test]
     public void SeededParticlesAreRepeatableBoundedAndDoNotConsumeGlobalRandom()
     {
         Assert.That(RevealType, Is.Not.Null, "a standalone construction reveal must exist");

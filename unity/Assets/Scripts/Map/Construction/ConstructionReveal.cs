@@ -10,7 +10,9 @@ namespace Statecraft.Game.Map.Construction
     public enum ConstructionLook { Original, Stones }
 
     /// <summary>Opt-in presentation only. Bind a mesh-only visual child, never the authoritative pick root.
-    /// No callbacks into simulation, global random state, coroutines or per-frame allocations.</summary>
+    /// No callbacks into simulation, global random state, coroutines or per-frame allocations.
+    /// Its Dust and Stone materials come from <see cref="Templates"/>, which nothing in the player sets, so builds carry
+    /// no construction assets until a gameplay caller loads them behind the opt-in.</summary>
     [ExecuteAlways, DisallowMultipleComponent]
     public sealed class ConstructionReveal : MonoBehaviour
     {
@@ -22,6 +24,9 @@ namespace Statecraft.Game.Map.Construction
         public ConstructionLook Look = ConstructionLook.Stones;
         [Min(0f)] public float GroundOffset;
         public const int DustBudget = 36, DebrisBudget = 8;
+        /// <summary>The template material by name ("Dust", "Stone"). The editor preview sets it
+        /// (Assets/Editor/Construction/Materials); never a Resources folder, which Unity packs into every build.</summary>
+        public static Func<string, Material?>? Templates;
         public bool IsPlaying { get; private set; }
         public float Elapsed { get; private set; }
         public float FootprintRadius { get; private set; }
@@ -117,8 +122,7 @@ namespace Statecraft.Game.Map.Construction
             Dispose(particles); Dispose(material);
             particles = null; dust = null; debris = null; material = null;
             debrisRenderer = null; lookConfigured = false;
-            var template = Resources.Load<Material>("Construction/Dust");
-            if (template == null) throw new InvalidOperationException("Construction/Dust material is missing.");
+            var template = Template("Dust");
             material = new Material(template) { name = "Construction dust (owned)", hideFlags = HideFlags.DontSave };
             particles = new GameObject("Construction particles (owned)") { hideFlags = HideFlags.DontSave, layer = 2 };
             particles.transform.SetParent(transform, false);
@@ -192,8 +196,7 @@ namespace Statecraft.Game.Map.Construction
             {
                 if (stoneMaterial == null)
                 {
-                    var template = Resources.Load<Material>("Construction/Stone");
-                    if (template == null) throw new InvalidOperationException("Construction/Stone material is missing.");
+                    var template = Template("Stone");
                     stoneMaterial = new Material(template) { name = "Construction stones (owned)", hideFlags = HideFlags.DontSave };
                     stoneMesh = MakeStone();
                 }
@@ -229,6 +232,9 @@ namespace Statecraft.Game.Map.Construction
                 }
             debris!.SetParticles(flecks, count);
         }
+
+        static Material Template(string name) => Templates?.Invoke(name)
+            ?? throw new InvalidOperationException($"Construction {name} material is missing: set ConstructionReveal.Templates.");
 
         static Mesh MakeStone()
         {
