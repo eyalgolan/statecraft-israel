@@ -385,8 +385,10 @@ coming-soon-kit.md section 2. The README's 1568 x 882 shots stay too small. No A
    build.
 4. **Whether an AI cinematic may be the second trailer.** RELEASING.md says trailers come from the real build only.
    Demo2 needs a recorded amendment, and its final cut.
-5. **D-P, the portraits.** Open. It blocks `promo/final/04` and `08`, and it bears on Steam's requirement that the
-   developer holds rights to everything shown, including the in-game portraits still marked `owner-verify`.
+5. **D-P, the portraits.** Decided (owner, 17 Oct 2026, [DECISIONS](../oss/DECISIONS.md) D-P): "Accept for free
+   release". The 6 remaining GPO portraits are accepted for free, non-commercial distribution, and there is no paid
+   release (#30). No row in `ASSETS.portraits.yaml` is still `owner-verify`. `promo/final/04` and `08` still derive
+   from the GPO photographs; the ruling names the in-game portraits, not those two images.
 6. **D-D, the start-screen painting.** Decided (owner, 2026-10-14, PR #565): Dreamina output is approved for free,
    non-commercial distribution and CC0 marking. The game is free (O2), so the painting can ship on the Coming Soon page
    and in the free build. Its caveat for a paid release no longer applies: there is no paid release (owner, 22 October
