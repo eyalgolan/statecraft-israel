@@ -29,6 +29,10 @@ checks this (see `CONTRIBUTING.md`).
   service, preserving their identity and orders. Initial upkeep IL 0.05m per formation per turn, six service turns, and
   recruit movement 3 are owner-accepted design values; military event grants await a separate strength/side/source schema
   (19 October 2026; refs #742, #1130).
+- Player units may enter enemy-held target towns, GDD Phase 6 (#1304; R-MOVE-005, by Beri): a `Move` onto the hex of an
+  enemy-held place on the curated target list is allowed, the unit card's Move preview lists it, and a unit that ends
+  there with no enemy unit on it captures the place at turn end. Gaza, enemy-held but not a target, stays closed, and
+  no path passes through it. Raid's withdrawal, combat retreat and the enemy's moves are unchanged.
 - GDD Phase 4 PR 8, slice 1: in the GDD loop the map draws a corridor's route by its built segments (refs #792). The
   Burma Road, the Haifa–Tel Aviv rail link and the Tel Aviv–Netanya road appear one segment at a time as the halutzim
   build them, at any date; outside the GDD loop they keep their dates. The route index lists each corridor segment's
