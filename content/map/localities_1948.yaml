@@ -24,7 +24,10 @@
 #                and the he.wiki page that gives it are in name_he_sources ({url, checked}); Majdal cites he.wiki's article
 #                on the town.
 #                Thirteen villages have no Hebrew label or article (#558). Eight have a name_he from a he.wiki page
-#                (2026-10-21, #1219 item 3); the five with no he.wiki source keep the English.
+#                (2026-10-21, #1219 item 3). Three more have one from the sources the owner allowed on 2026-10-21
+#                (#1219): Salihiya and Karatiya from moreshet-map.org.il battle pages, Zuq et Tahtani from an Israel
+#                Antiquities Authority final report (2026-10-22). Ni'ilya and Ghazawiya keep the English: their only
+#                Hebrew forms so far are Zochrot's, which the ruling does not allow.
 #                name_he_review: agent-checked on the rows with a sourced name_he: an AI agent checked the name against its sources and no
 #                person has read it yet (owner, 2026-10-15); a native speaker reviews it (#564) and removes the flag.
 #   reviewed_by/on  a person's sign-off beside status (a place or a camp row), their GitHub handle and the day, both or
@@ -3846,6 +3849,11 @@ places:
   name: Salihiya
   name_basis: vs1945
   name_ar: الصالحية
+  name_he: סאלחיה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://moreshet-map.org.il/step-3/בלימת-צבא-סוריה-במשמר-הירדן/סאלחיה/
+    checked: '2026-10-22'
   lon: 35.6124
   lat: 33.1673
   kind: arab_village
@@ -4523,6 +4531,11 @@ places:
   name: Karatiya
   name_basis: vs1945
   name_ar: كرتيا
+  name_he: כרתיא
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://moreshet-map.org.il/step-4/מבצע-אנ-פאר/כרתיא/
+    checked: '2026-10-22'
   lon: 34.7258
   lat: 31.6436
   kind: arab_village
@@ -6322,6 +6335,11 @@ places:
   name: Zuq et Tahtani
   name_basis: vs1945
   name_ar: الزوق التحتاني
+  name_he: זוק אל-תחתני
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://hadashot.iaa.org.il/report_detail.aspx?id=20766&mag_id=122
+    checked: '2026-10-22'
   lon: 35.6011
   lat: 33.215
   kind: arab_village
