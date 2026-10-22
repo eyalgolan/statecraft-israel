@@ -2,7 +2,8 @@
 # together with the sim's security level and reserve call-up, and draws one token per unit. The sim reads it too, for the
 # starting forces (StartingForces, docs/rules/mvp.md R-UNIT-006; Phase 5 PR 4): a Historical game starts with one unit per
 # army row that is not hidden, has a 15 May strength and an anchor window covering 15 May 1948, on the anchor's hex in
-# unit_anchor_hexes.yaml (rerun tools/unit_anchor_hexes.py after changing an anchor). So the file is in the
+# unit_anchor_hexes.yaml (rerun tools/unit_anchor_hexes.py after changing an anchor). A row whose strength is dated after
+# 15 May, with an anchor window covering that day, arrives on that day instead (R-UNIT-009, #1241). So the file is in the
 # content hash, and a change to such a row moves the goldens. Those rows must be fact-checked before a shareable build
 # (the release gate; Q-START-3).
 #
@@ -54,14 +55,17 @@
 #   official or mainstream source where one gives it, otherwise the value two of the research note's sources agree on.
 #   The note's other figures and its conflicts stay in the note (research_notes/GDD phase 5/arab-forces-1948.md,
 #   sections 1 to 8), not here. Every row gives the 15 May strength only: no source found dates a strength on 11 June
-#   (the note, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented"). Every row of a
+#   (the note, section 9; owner, 17 October 2026, #740: "15 May strength only ... Nothing is invented"), except a brigade
+#   with no 15 May place, which gives its first sourced strength dated on its first anchor's day, the day it arrives
+#   (owner, 21 October 2026, #1241: "enters the game on that date with its sourced strength"). Every row of a
 #   side other than israel gives it. An IDF brigade gives it where research_notes/M4 war mode/war-1948.md (section 1,
 #   #906) has a size: no primary order of battle gives the 15 May strengths, so a secondary source may, the row cites it
 #   and carries `status: to_verify`, and a primary source replaces it when one turns up (owner, 20 October 2026, #743).
 #   Ben-Gurion's diary for 15 May 1948 is that primary source for Golani, Carmeli, Alexandroni, Kiryati, Givati, Harel
 #   and Negev (owner, 21 October 2026, #1240); en.wiki's table stays as their second source. The owner checked them
 #   against the diary page on 21 October 2026, with the five Arab-army starting rows (#1240): those twelve rows are
-#   fact-checked. A row added later is not covered by that check.
+#   fact-checked. A row added later is not covered by that check: Etzioni's 3,166 cites the same page (#1241) and
+#   keeps `status: to_verify` until a person checks it.
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian. to_verify = as draft, with a
 #   secondary-source strength that a primary source must replace, or a primary-source strength no person has checked
@@ -339,7 +343,18 @@ units:
   first_commander: Yisrael Amir
   sector: The defence of Jerusalem and its surroundings.
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The 15 May strength is Ben-Gurion's diary figure for 15 May 1948 (owner, 21 October 2026, #1240), read by an agent, not yet by a person. A person opens the diary page (strength.sources), confirms the figure, and only then marks the row fact-checked."
+  strength:
+    value: 3166
+    as_of: '1948-05-15'
+    note: "The Manpower Directorate's figure for the brigade, reported to Ben-Gurion on 15 May 1948 (research_notes/GDD phase 5/later-brigades-1241.md, section 1). en.wiki gives the same figure from the published diary (Rivlin and Oren, 1982, p. 428): one source, a primary one."
+    sources:
+    # Ben-Gurion Archive, diary, 15 May 1948 (item 221910), English transcription; the live page refuses connections, so the Wayback copy of 3 February 2024 is cited: "Givati 3,229; Etsiyyoni 3,166 – the total for all brigades is about 24,400."
+    - {url: 'https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733', checked: '2026-10-21'}
+    # en.wiki, Etzioni Brigade: "Altogether, on May 15, Moshe Zadok of the Manpower Directorate reported the strength of the brigade to be 3,166."
+    - {url: 'https://en.wikipedia.org/wiki/Etzioni_Brigade', checked: '2026-10-21'}
   anchors:
   - place: Jerusalem
     lon: 35.22556
@@ -375,7 +390,17 @@ units:
   first_commander: Shlomo Shamir
   sector: "The battles of Latrun (Operation Bin Nun, 24 to 31 May 1948), from the headquarters at Hulda; in June 1948 it moved to the northern front, organising for a time at Ein Shemer."
   wikipedia_only: false
-  status: draft
+  status: to_verify
+  to_verify:
+  - "The strength is a secondary-source figure (en.wiki, citing Morris, 1948, pp. 221-224, which was not opened), allowed until a primary source turns up (owner, 20 October 2026, on #743). Replace it from a primary source."
+  # R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): the brigade has no sourced place or single strength on 15 May, so it arrives on its first anchor's day with its first sourced strength.
+  strength:
+    value: 1650
+    as_of: '1948-05-24'
+    note: "The brigade's men in Operation Bin Nun Alef (from 24 May 1948), its first single sourced figure (research_notes/GDD phase 5/later-brigades-1241.md, section 4). The 450 Alexandroni men who joined it on 23 May are counted apart. as_of is the first day of its Hulda window, the day it arrives (R-UNIT-009)."
+    sources:
+    # en.wiki, Battles of Latrun (1948), Operation Bin Nun Alef: "His force consisted of 450 men of the Alexandroni Brigade and 1,650 men of the 7th Brigade." (citing Morris, 1948, 2008, pp. 221-224).
+    - {url: 'https://en.wikipedia.org/wiki/Battles_of_Latrun_(1948)', checked: '2026-10-21'}
   sources:
   # Ma'arachot 263-4 (June 1978), "קרבות לטרון", PDF p. 11 (a scan; read on the page image): "ב־14 במאי יצאה פקודה להקמת
   # חטיבת עתודה ... כמפקד החטיבה התמנה שלמה שמיר". The founding order's date (owner, 17 October 2026: "14 May (the order)").

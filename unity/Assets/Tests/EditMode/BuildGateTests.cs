@@ -17,12 +17,14 @@ public class BuildGateTests
         return (string?)t!.GetMethod("ShareableRefusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object?[] { c, null, false, null, null });   // event content only
     }
 
-    /// <summary>The real content with its starting forces' rows fact-checked, as a person's check would leave them
-    /// (R-UNIT-006, Q-START-3), for the tests about the other gates.</summary>
+    /// <summary>The real content with its starting forces' rows fact-checked (R-UNIT-006, Q-START-3) and its settlement
+    /// target rows sensitivity-reviewed (Q-TGT-3 (b), #793), as a person's check would leave them, for the tests about the
+    /// other gates. In memory only: the shipped target rows stay draft until the owner's review.</summary>
     internal static Content Checked()
     {
         var c = ContentLoader.Load(Paths.Content);
         foreach (var f in c.StartingForces) f.Status = "fact-checked";
+        foreach (var t in c.SettlementTargets) t.Status = ReleaseGate.ReviewedStatus;
         return c;
     }
 
@@ -31,7 +33,7 @@ public class BuildGateTests
     public void AShareableBuildWaitsForTheStartingForcesRows()
     {
         var c = ContentLoader.Load(Paths.Content);
-        CollectionAssert.IsEmpty(ReleaseGate.StartingForcesUnchecked(c), "the owner person-checked the real rows (21 October 2026, #1240)");
+        CollectionAssert.AreEqual(new[] { "brigade_7", "etzioni" }, ReleaseGate.StartingForcesUnchecked(c), "the owner person-checked the real rows (21 October 2026, #1240); the later brigades' new rows wait for his check (#1241, Q-START-3)");
         foreach (var f in c.StartingForces) f.Status = "to_verify";   // in memory only: the rows as they were before that check
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "a row that is not fact-checked blocks a shareable build");

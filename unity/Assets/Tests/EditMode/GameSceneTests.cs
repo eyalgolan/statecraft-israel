@@ -645,6 +645,30 @@ public class GameSceneTests
         Assert.IsTrue(Drawn(MapActions.TransitCamp, tlv.Q, tlv.R));
     }
 
+    // #1275: a transit camp built as a city project (the GDD loop) brings its ma'abara landmark, as a legacy placement does.
+    [Test]
+    public void ACampBuiltAsACityProjectShowsItsLandmark()
+    {
+        var root = Boot();
+        var c = Inputs.Content;
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
+        var bridge = root.Bridge!;
+        bridge.Replace(g);
+        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var key = $"{MapActions.TransitCamp}_{tlv.Q}_{tlv.R}";
+        Assert.IsNull(bridge.Queue(new StartProject(MapActions.TransitCamp, "tel_aviv", tlv.Q, tlv.R)));
+        bridge.EndTurn();
+        var camp = bridge.State.CityProjects.Values.Single(p => p.Kind == MapActions.TransitCamp && p.Q == tlv.Q && p.R == tlv.R);
+        for (int i = 0; i < 10 && bridge.State.CityProjects[camp.Id].BuiltOn == null; i++) bridge.EndTurn();
+        Assert.IsNotNull(bridge.State.CityProjects[camp.Id].BuiltOn, "the transit camp is built");
+        Assert.IsFalse(bridge.State.Placements.Any(p => p.Q == tlv.Q && p.R == tlv.R), "the camp is a city project, not a legacy placement");
+        var landmarks = Object.FindFirstObjectByType<Statecraft.Game.Map.Collection.TownLandmarks>();
+        Assert.IsNotNull(landmarks);
+        Assert.AreEqual(1, landmarks.Wanted.Count(w => w.Key == key && w.Model == Statecraft.Game.Map.Collection.TownLandmarks.Maabara),
+            "the built camp's ma'abara landmark is wanted");
+    }
+
     // Amendment A2: the smoke run answers a pending event by pressing the card's option button.
     [Test]
     public void TheSmokeRunAnswersAPendingEventThroughTheCard()

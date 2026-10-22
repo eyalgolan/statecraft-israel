@@ -177,8 +177,7 @@ figures with the diary's for the day, a primary source: the Ben-Gurion Archive's
 women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni
 3,166 – the total for all brigades is about 24,400." Golani counts the 522 paid recruits (4 units either way); Harel and
 Negev, Palmach brigades, take the diary's Palmach in Harel and in the Negev. en.wiki's table stays as each row's second
-source. The rows stay `to_verify` until a person checks the seven figures against the page; then they can be marked
-`fact-checked`.
+source. A person has checked the seven figures against the page, so the rows are `fact-checked`.
 
 | Row | Strength (15 May) |
 |---|---|
@@ -191,8 +190,12 @@ source. The rows stay `to_verify` until a person checks the seven figures agains
 | Yiftach | 4,500 (the table counts some Golani men in it) |
 | Negev | 1,300 (diary, the Palmach in the Negev; the table gave 2,400) |
 
-- **No figure, no strength:** Etzioni, the 7th, the 8th and Oded have no size in the note, so their rows give none and
-  stay `status: draft`.
+- **No figure, no strength:** the 8th and Oded have no size in the note, so their rows give none and stay `status: draft`.
+- **Etzioni and the 7th (#1241):** Etzioni gives 3,166 on 15 May 1948 from Ben-Gurion's diary, the same page as the
+  seven rows above, which are `fact-checked`; Etzioni stays `status: to_verify` until a person checks the figure.
+  The 7th gives 1,650, its men in Operation Bin Nun Alef, dated 24 May 1948, the day its Hulda window opens: a
+  secondary figure, so `status: to_verify` (`research_notes/GDD phase 5/later-brigades-1241.md`).
+  Yiftach's 4,500 stays until a person settles the note's conflict (4,500, about 2,000 or 1,200).
 - **The sim reads them** since Phase 5 PR 4: see "The starting forces" below.
 - Tests: `test_idf_brigade_strengths_are_secondary_and_to_verify` (Python) and `UnitsInPlayTests` (EditMode).
 
@@ -208,12 +211,17 @@ defaults"). The unit stands on the hex holding the anchor's coordinates, by the 
   `arab_liberation_army`. These ids are the sim's, not names shown to the player (Q-UI-2, Q-START-4).
 - **Strength** is the row's people in 1,000-person population units, the nearest unit with a half up, never below 1.
 - **Who starts:** Golani 4, Carmeli 2 (at Haifa, its sector seat), Alexandroni 4, Kiryati 3, Givati 3, Harel 1,
-  Negev 1 (#1240); Egypt 10, the Arab Legion 5, Syria 3, Iraq 3, the ALA 4. Nothing starts for Etzioni (no sourced strength),
-  the 7th and Yiftach (no window on 15 May), Oded, the 8th and the Lebanese row (hidden), or the squadron and the two
-  ships (tokens only, Q-UNIT-5).
+  Etzioni 3 (Jerusalem), Negev 1 (#1240, #1241); Egypt 10, the Arab Legion 5, Syria 3, Iraq 3, the ALA 4. Nothing starts
+  for Yiftach (no window on 15 May), Oded, the 8th and the Lebanese row (hidden), or the squadron and the two ships
+  (tokens only, Q-UNIT-5).
+- **Arrivals (R-UNIT-009, #1241):** a row whose strength is dated after 15 May, with an anchor window covering that day,
+  arrives on that day: in the resolution of the monthly turn that reaches it, on that anchor's hex, with that strength. Its
+  unit id is reserved at the start, after the starting rows, so unit i is still row i. Today that is the 7th: 2 units at
+  Hulda from the 15 June 1948 turn.
 - **Release gate:** every row the sim starts a unit from must be `fact-checked` before a shareable build carries it
   (Q-START-3). `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` refuse until then, and
-  name the rows; today that is all twelve.
+  name the rows; today that is Etzioni and the 7th (#1241), since the owner checked the other twelve on 21 October 2026
+  (#1240).
 - Tests: `StartingForcesTests` (dotnet) and `UnitsInPlayTests.TheStartMatchesTheMap` (EditMode).
 
 ### Tokens from the state (Phase 5 PR 14, #753)
@@ -234,9 +242,8 @@ deletes it.
   token's card has no national line, and the squadron's gives the security level alone ("Security level 5 of 5"), which
   still sets whether it flies.
 - **The squadron and the ships** are tokens only (Q-UNIT-5): they still come from their rows' windows.
-- So from 15 May 1948 the map draws the twelve starting forces where the sim holds them. A row with no sim unit (Etzioni,
-  which has no sourced strength, and the brigades whose windows open later, such as Yiftach and the 7th) draws no token
-  in the GDD loop until a later Phase 5 PR raises it.
+- So from 15 May 1948 the map draws the thirteen starting forces where the sim holds them, and the 7th from its arrival,
+  on its arrival anchor. A row with no sim unit (Yiftach, whose window opens later) draws no token in the GDD loop.
 - Tests: `UnitsFromStateTests` (EditMode).
 
 ### The 1948 Collection on the tokens (#665)

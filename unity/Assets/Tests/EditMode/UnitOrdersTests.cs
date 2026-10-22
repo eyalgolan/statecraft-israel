@@ -46,7 +46,7 @@ public class UnitOrdersTests
         var id = C.StartingForces.ToList().FindIndex(f => f.Row == "golani");
         Assert.GreaterOrEqual(id, 0, "precondition: Golani is a starting force");
         Assert.AreEqual(id, UnitCard.SimUnit(C, s, golani));
-        Assert.IsNull(UnitCard.SimUnit(C, s, Units.Single(u => u.Id == "etzioni")), "Etzioni has no starting force (#1205)");
+        Assert.IsNull(UnitCard.SimUnit(C, s, Units.Single(u => u.Id == "yiftach")), "Yiftach has no starting force (its window does not cover the start, #1241)");
         s.Units.Remove(id);
         Assert.IsNull(UnitCard.SimUnit(C, s, golani), "a unit no longer in the state");
         Assert.IsNull(UnitCard.SimUnit(SimBridgeGddTests.Legacy, s, golani), "the legacy loop has no starting forces");

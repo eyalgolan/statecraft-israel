@@ -618,7 +618,9 @@ namespace Statecraft.Game.UI
             if (Bridge == null) return;
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date);   // dated routes (the Burma Road from June 1948)
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
-            Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
+            // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
+            Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date,
+                PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
             // Tal Heuberger's civilian figures at towns and transit camps, ambience only and streamed after the first frame (#666).
