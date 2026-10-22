@@ -36,6 +36,19 @@ public class RealContentTests
     static readonly Content C = ContentLoader.Load(ContentRoot());
     static readonly DateTime Checked = new DateTime(2026, 10, 9);
 
+    // R-UNIT-005's Signed helper ties Send home to the content by name: every front Prisoners.Fronts names must keep
+    // its armistice_<front> event with a `sign` option, or Send home would quietly never open for that front.
+    [Fact]
+    public void EveryFrontHasItsArmisticeEventWithASignOption()
+    {
+        Assert.Equal(new[] { "egypt", "jordan", "lebanon", "syria" }, Prisoners.Fronts);
+        foreach (var front in Prisoners.Fronts)
+        {
+            var e = Assert.Single(C.Events, e => e.Id == "armistice_" + front);
+            Assert.Contains(e.Options, o => o.Id == "sign");
+        }
+    }
+
     /// <summary>R-ALT-004 on the real content: every one of the 30 alternatives carries its record.</summary>
     [Fact]
     public void EveryAlternativeInContentSaysWhoProposedIt()

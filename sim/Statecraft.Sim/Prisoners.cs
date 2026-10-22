@@ -16,7 +16,7 @@ namespace Statecraft.Sim
         /// <summary>The front whose exchange card returns each enemy side's prisoners: the armistice agreements' parties
         /// (Q-OBJ-1), with Iraq under Jordan, whose agreement took over the Iraqi sector (Art. VI). The ALA and the local
         /// forces belong to no front, so no card returns their prisoners (they stay held to the game's end).</summary>
-        static readonly Dictionary<string, string> FrontOf = new Dictionary<string, string>(StringComparer.Ordinal)
+        internal static readonly Dictionary<string, string> FrontOf = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["egypt"] = "egypt", ["lebanon"] = "lebanon", ["syria"] = "syria", ["jordan"] = "jordan", ["iraq"] = "jordan",
         };

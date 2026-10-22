@@ -151,5 +151,62 @@ options:
             Assert.NotEqual(5, cease.State.Rung);
             Assert.Contains(cease.Why, w => w.Target == "ceasefire");
         }
+
+        // R-WAR-004 (Q-CIV-3, the owner's "No effect in Phase 5" of 15 October 2026 on #375; the #750 last-slice
+        // scope of 22 October 2026): military actions move no parameter in the GDD loop. An attack and its losses,
+        // an attack refused in a truce, and a move leave International Support (intl_standing) and
+        // Social cohesion (morale) exactly where a turn without them does. R-POW-002's prisoner Food-shortfall
+        // cohesion cost is the stated exemption (PrisonersTests pins it).
+        [Fact]
+        public void MilitaryActionsMoveNoParameter()
+        {
+            var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+            {
+                ["model.yaml"] = Fixture.Files["model.yaml"].Replace(
+                    "policies:", "  - id: intl_standing\n    base: 0.5\n    name: Standing\npolicies:"),
+                ["unit_types.yaml"] = Fixture.GddUnitTypes
+                    + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+                    + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n",
+                ["map/hexes.json"] = MovementTests.Board(),
+                ["corridors.yaml"] = "corridors: []\n",
+            })));
+            GameState State(DateTime? date = null, params (string Event, string Option)[] chosen)
+            {
+                var s = Simulation.NewGame(c, 42, Mode.Historical);
+                if (date is DateTime d) s.Date = d;
+                s.Arms = 10;
+                s.Units.Add(1, new Unit(1, "soldier", 3, 0, side: "israel", strength: 5));
+                s.Units.Add(2, new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
+                foreach (var (e, o) in chosen) s.ChosenOptions[e] = o;
+                return s;
+            }
+            (double Morale, double Intl) Params(GameState s) => (s.Indicators["morale"], s.Indicators["intl_standing"]);
+            StepResult Step(GameState s, params Command[] cmds) => Simulation.Step(c, s, cmds);
+
+            // The reference: a turn with no military action.
+            var clean = Params(Step(State()).State);
+
+            // An attack and its losses: the fixture's below-2:1 row costs both sides a strength point, so the test
+            // is not vacuous, and the parameters stay where the clean turn leaves them.
+            var attack = Step(State(), new UnitOrder(1, Combat.Attack, 2, 0));
+            Assert.Empty(attack.Rejected);
+            Assert.Equal(4, attack.State.Units[1].Strength);
+            Assert.Equal(2, attack.State.Units[2].Strength);
+            Assert.Equal(clean, Params(attack.State));
+
+            // An attack refused in a truce (R-COMBAT-009): the refusal leaves the state as the turn without the
+            // order does.
+            var inside = new DateTime(1948, 6, 15);
+            var refused = Step(State(inside, ("first_truce", "accept")), new UnitOrder(1, Combat.Attack, 2, 0));
+            Assert.Equal("A truce is in force", Assert.Single(refused.Rejected).Reason);
+            Assert.Equal(Params(Step(State(inside, ("first_truce", "accept"))).State), Params(refused.State));
+
+            // A move. The sim has no frontier (Q-MOVE-4: units may enter any land hex), so a frontier crossing
+            // is an ordinary Move.
+            var move = Step(State(), new Move(1, 4, 0));
+            Assert.Empty(move.Rejected);
+            Assert.Equal((4, 0), (move.State.Units[1].Q, move.State.Units[1].R));
+            Assert.Equal(clean, Params(move.State));
+        }
     }
 }
