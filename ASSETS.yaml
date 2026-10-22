@@ -6,6 +6,7 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
+  # --- AI-generated concept art: CC0 / no rights claimed (LICENSING.md); published 2026-10-10 before D5 was checked ---
   - glob: "promo/final/0[1-8]-*.png"
     licence: CC0-1.0
     ai_generated: true
