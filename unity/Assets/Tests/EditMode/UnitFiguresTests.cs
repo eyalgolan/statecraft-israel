@@ -29,12 +29,14 @@ public class UnitFiguresTests
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
     static readonly DateTime May20 = new DateTime(1948, 5, 20), July12 = new DateTime(1948, 7, 12), LastArmistice = new DateTime(1949, 7, 20);
 
-    /// <summary>The nine unit models of #665.</summary>
+    /// <summary>The nine unit models of #665, and #336's 1948 soldier (#708; owner, 21 October 2026: "a third figure on some
+    /// brigade unit tokens, next to C06 and C07").</summary>
     static readonly string[] Nine =
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2", "figure-c09-irregular-v2",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
+        "figure-soldier-1948-v1",
     };
 
     [SetUp] public void Fresh() { UnitFigures.Source = null; UnitFigures.Forget(); }
@@ -130,10 +132,18 @@ public class UnitFiguresTests
         // By headgear, as #507 paired them: bush hat C04, steel helmet C06, stocking cap C07.
         CollectionAssert.AreEqual(new[] { UnitFigures.SabraPioneer, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter },
             UnitData.Headgears.Select(h => UnitFigures.ByHeadgear[h]).ToArray());
-        // The uniform default's third figure is the pioneer veteran, Harel's the Palmach scout; Negev's headgear is sourced.
+        // The uniform default's third figure is the pioneer veteran, Harel's the Palmach scout; Yiftach's and Negev's the 1948
+        // soldier, in the Palmach's stocking cap, where Negev's sourced third cap is that cap (so its token is C07, C06 and him).
         CollectionAssert.AreEqual(new[] { UnitFigures.SabraPioneer, UnitFigures.YoungRecruit, UnitFigures.PioneerVeteran }, Trio("givati"));
         CollectionAssert.AreEqual(new[] { UnitFigures.SabraPioneer, UnitFigures.YoungRecruit, UnitFigures.PalmachScout }, Trio("harel"));
-        CollectionAssert.AreEqual(new[] { UnitFigures.VeteranFighter, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter }, Trio("negev"));
+        CollectionAssert.AreEqual(new[] { UnitFigures.SabraPioneer, UnitFigures.YoungRecruit, UnitFigures.Soldier1948 }, Trio("yiftach"));
+        CollectionAssert.AreEqual(new[] { UnitFigures.VeteranFighter, UnitFigures.YoungRecruit, UnitFigures.Soldier1948 }, Trio("negev"));
+        CollectionAssert.AreEqual(new[] { "harel", "negev", "yiftach" }, UnitFigures.ThirdFigure.Keys.OrderBy(k => k, StringComparer.Ordinal),
+            "the three Palmach brigades (10th, 11th and 12th Brigade (Palmach), their rows' numbers)");
+        foreach (var id in UnitFigures.ThirdFigure.Keys) StringAssert.EndsWith("(Palmach)", units[id].Number, id);
+        // A third figure whose sourced cap is not the soldier's keeps its headgear's figure.
+        var helmeted = new UnitEntry { Id = "negev", Side = UnitData.Israel, Headgear = new List<string> { UnitData.WoolCap, UnitData.SteelHelmet, UnitData.SteelHelmet } };
+        Assert.AreEqual(UnitFigures.YoungRecruit, UnitFigures.FigureFor(helmeted, 2, UnitData.SteelHelmet), "a source's steel helmet is never swapped for his cap");
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.Irregular, 3), Trio("arab_liberation_army"));
         foreach (var side in UnitData.Sides.Where(s => s != UnitData.Israel && s != "jordan" && s != "ala"))
@@ -194,7 +204,7 @@ public class UnitFiguresTests
             CollectionAssert.AreEquivalent(new[] { "carmeli", "givati", "harel", "harel", "yiftach", "negev", "negev" }, vehicles.Select(v => v.parent.name),
                 "the guns of the 11 July distribution and the Harel and Negev jeeps");
             Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "the strategic-zoom mesh");
-            CollectionAssert.AreEquivalent(Nine, asked.Select(a => a.id), "each model once: the seven on the tokens, and the two forces' figures asked for ahead");
+            CollectionAssert.AreEquivalent(Nine, asked.Select(a => a.id), "each model once: the eight on the tokens, and the two forces' figures asked for ahead");
             Assert.IsTrue(figures.All(f => !UnitFigures.Dressed(f) && f.GetComponent<MeshRenderer>().enabled), "the code-built figures until the models arrive");
             Assert.IsTrue(vehicles.All(v => v.childCount == 0 && v.GetComponentsInChildren<Renderer>().Length == 0), "no vehicle is drawn before it arrives");
             var before = figures.ToDictionary(f => f, f => (f.position, f.rotation));
@@ -212,7 +222,10 @@ public class UnitFiguresTests
                 Assert.AreEqual(prefab.transform.localRotation, holder.GetChild(0).localRotation, $"{f.name}: the prefab keeps its own rotation (the FBX axis turn)");
                 var b = ModelBox(f); float want = f.GetComponent<MeshFilter>().sharedMesh.bounds.size.y;
                 Assert.AreEqual(want, b.size.y, 0.02f * want, $"{f.name}: as tall as the code-built figure");
-                Assert.Less(Mathf.Max(b.size.x, b.size.z), 0.55f * b.size.y, $"{f.name}: standing upright, arms down");
+                // #336's soldier stands with his arms a little out from his sides (0.550 of his height across, measured):
+                // still far from a T-pose, which is about as wide as it is tall.
+                float arms = f.Find(UnitFigures.ModelName).GetChild(0).name.StartsWith(UnitFigures.Soldier1948, StringComparison.Ordinal) ? 0.56f : 0.55f;
+                Assert.Less(Mathf.Max(b.size.x, b.size.z), arms * b.size.y, $"{f.name}: standing upright, arms down");
                 Assert.AreEqual(0f, b.min.y, 0.01f, $"{f.name}: feet on the figure's origin");
             }
             foreach (var v in vehicles)

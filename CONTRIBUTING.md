@@ -23,6 +23,13 @@ There is no CLA and no sign-off. By opening a pull request you agree that your c
 
 [LICENSING.md](LICENSING.md) lists which licence covers each path. Only contribute work you have the right to license this way. If you add a third-party file, include its source and licence. Material from the Unity Asset Store is never accepted.
 
+**The licence line in the pull request.** The template's last box, "I contribute this under the repository's licences for the paths it changes", is asked of everyone; please tick it.
+
+- **Code or docs only:** the maintainer may merge without the tick, relying on GitHub's Terms of Service, section D.6 ("inbound = outbound"). That means every changed path is in `sim/`, `tools/`, `scripts/`, `.github/`, `.gitignore`, `unity/Assets/Scripts/`, `unity/Assets/Editor/`, `unity/Assets/Tests/` or `promo/*.py` (code, MIT), or is one of the other `unity/Assets/` files (UI text and layout such as `strings.*.yaml`, `*.uxml` and `*.uss`, materials, shaders, `.meta` files, prefabs, scenes, `.asset` files and `WebGLTemplates/`) outside `Settings/`, `StreamingAssets/`, `UI/Fonts/` and `UI/Portraits/` and other than a Shader Graph, or in `docs/` (except `docs/sources/`), `research_notes/`, `reports/`, `changelog.d/` or a root `*.md` file other than `LICENSING.md` and `THIRD-PARTY-NOTICES.md` (docs). No image, audio, video, 3D model, font, PDF or other binary file anywhere.
+- **Everything else needs the tick:** `content/`, `ASSETS.yaml`, the licence and notice files, art, audio, video, models, fonts, `unity/Assets/Settings/`, `unity/Assets/StreamingAssets/`, `unity/Assets/UI/Fonts/`, `unity/Assets/UI/Portraits/`, Shader Graphs, `site/`, `spikes/`, `unity/Packages/`, `unity/ProjectSettings/` and any other path. A pull request that mixes the two needs it too.
+
+These are the owner's decisions of 22 October 2026 (D2 in [docs/oss/DECISIONS.md](docs/oss/DECISIONS.md)).
+
 ## Setup
 
 Follow [docs/dev-setup.md](docs/dev-setup.md). In short:

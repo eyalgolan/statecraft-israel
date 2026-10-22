@@ -9,8 +9,7 @@ checks this (see `CONTRIBUTING.md`).
 ## [Unreleased]
 
 ### Fixed
-- Clicks on the opt-in hex board use its displayed ground instead of the lowered terrain beneath it, so oblique
-  near-edge clicks select the visible hex. Sea holes and ground outside the board still use the real map (refs #18).
+- The map info panel formats armistice zone and line dates in the selected UI language, reusing the existing date strings and isolating Hebrew dates inside English fallback rows; English output and agreement data are unchanged (refs #558).
 
 ## [0.1.4] - 2026-10-22
 

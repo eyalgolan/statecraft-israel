@@ -187,15 +187,25 @@ namespace Statecraft.Game.UI
         public static int SmokeTurns() =>
             SmokeTurns(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
 
+        /// <summary>"?smoke-orders" (WebGL) or "-smoke-orders" (desktop): the smoke-orders golden's one-turn run (SmokeOrders, #754)
+        /// instead of the smoke turns. A whole query parameter, so the "smoke" flag never matches it, nor it "?smoke-orders-x".</summary>
+        internal static bool SmokeOrdersRequested(string? url, string[] args, bool webgl) =>
+            webgl ? UrlFlags.Has(url, "smoke-orders") : Array.IndexOf(args, "-smoke-orders") >= 0;
+
         /// <summary>GameBoot.Ready: starts the game, smoke-testing when the URL or command line asks, with the start screen
         /// unless an automated run skips it.</summary>
-        public void Begin(GameInputs inputs) => Begin(inputs, SmokeTurns(), Application.isPlaying && !StartScreenPresenter.Skipped());
+        public void Begin(GameInputs inputs)
+        {
+            bool orders = SmokeOrdersRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
+            Begin(inputs, orders ? 1 : SmokeTurns(), Application.isPlaying && !StartScreenPresenter.Skipped(), smokeOrders: orders);
+        }
 
-        /// <summary>Starts (or restarts) the game over the built map. <paramref name="smoke"/> &gt; 0 plays that many turns;
+        /// <summary>Starts (or restarts) the game over the built map. <paramref name="smoke"/> &gt; 0 plays that many turns
+        /// (with <paramref name="smokeOrders"/>, the smoke-orders run's one turn instead);
         /// <paramref name="startScreen"/> shows the start screen first (never in a smoke run, which has no New Game).
         /// <paramref name="keep"/> (Settings' language switch) goes on with that bridge's game and its queued orders instead
         /// of loading the autosave.</summary>
-        internal void Begin(GameInputs inputs, int smoke, bool startScreen = false, SimBridge? keep = null)
+        internal void Begin(GameInputs inputs, int smoke, bool startScreen = false, SimBridge? keep = null, bool smokeOrders = false)
         {
             if (inputs == null) throw new ArgumentNullException(nameof(inputs));
             foreach (var (value, field) in new (UnityEngine.Object?, string)[] { (document, nameof(document)), (strings, nameof(strings)), (stringsHe, nameof(stringsHe)),
@@ -265,6 +275,7 @@ namespace Statecraft.Game.UI
             Own(new DefencePresenter(root, bridge, text, portraits));
             Own(new BudgetPresenter(root, bridge, text));
             Own(new WhyPresenter(root, bridge, text));
+            Own(new TimelinePresenter(root, bridge, text));
             Own(new HowToPlayPresenter(root, text));
             Own(new ObjectivesPresenter(root, bridge, text));
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
@@ -495,7 +506,7 @@ namespace Statecraft.Game.UI
                 StartCoroutine(FirstCardCheck(root, card!, Debug.Log));
             if (smoke > 0)
             {
-                if (Application.isPlaying) StartCoroutine(Smoke(root, bridge, card!, smoke, Debug.Log));
+                if (Application.isPlaying) StartCoroutine(smokeOrders ? SmokeOrders(root, bridge, unitLayer, onHex, Debug.Log) : Smoke(root, bridge, card!, smoke, Debug.Log));
                 else Debug.LogWarning("SMOKE FAIL the smoke run needs play mode or a player");
             }
             if (Application.isPlaying && PixelErrorProfile.Requested()) StartCoroutine(PixelErrorProfile.Run(map.Terrain));
@@ -616,8 +627,10 @@ namespace Statecraft.Game.UI
                 PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
-            // Tal Heuberger's civilian figures at towns and transit camps, ambience only and streamed after the first frame (#666).
-            Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
+            // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
+            // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
+            Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
+                Bridge.State.Settlements, Bridge.State.CityProjects.Values);
             // Tal Heuberger's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
             // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
@@ -789,6 +802,46 @@ namespace Statecraft.Game.UI
                 log(FormattableString.Invariant($"SMOKE turn {s.Turn} {s.Date:yyyy-MM-dd} refused {refused}"));
             }
             log(FormattableString.Invariant($"SMOKE OK {turns} turns {bridge.State.Date:yyyy-MM-dd} {bridge.State.Hash()}"));
+        }
+
+        /// <summary>The smoke-orders golden (#754, docs/determinism.md): turn 1 with one unit order given as a player gives it.
+        /// An open event card takes the panels under it out of reach, so it first presses the card's Hide (the turn's events
+        /// go to their ministers). It clicks the hex of the unit GoldenRun.SmokeMove names (<paramref name="clickHex"/>: what
+        /// a map click raises), presses the unit card's Move button, clicks the order's lit hex, then presses End Turn and
+        /// closes the turn report. Logs "SMOKE ORDERS move unit &lt;id&gt; to &lt;q&gt;,&lt;r&gt;", then
+        /// "SMOKE ORDERS OK &lt;date&gt; &lt;hash&gt;", or "SMOKE FAIL &lt;reason&gt;" when a click or press does not take effect.
+        /// Static, so an edit-mode test can drive it.</summary>
+        public static IEnumerator SmokeOrders(VisualElement root, SimBridge bridge, Statecraft.Game.Map.Units.UnitLayer units,
+            Action<int, int> clickHex, Action<string> log)
+        {
+            yield return null;
+            var hud = root.Q("root") ?? root;
+            if (hud.ClassListContains(EventCardPresenter.OpenClass))
+            {
+                if (!Press(root.Q<Button>("event-hide"), log)) yield break;
+                if (hud.ClassListContains(EventCardPresenter.OpenClass)) { log("SMOKE FAIL the event card did not hide"); yield break; }
+            }
+            var move = GoldenRun.SmokeMove(bridge.Content, bridge.State);
+            var token = units.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token.Unit) == move.Unit)
+                .Select(p => (Statecraft.Game.Map.Units.PlacedToken?)p).FirstOrDefault();
+            if (!(token is { } t)) { log(FormattableString.Invariant($"SMOKE FAIL unit {move.Unit} has no token on the map")); yield break; }
+            log(FormattableString.Invariant($"SMOKE ORDERS move unit {move.Unit} to {move.Q},{move.R}"));
+            clickHex(t.Q, t.R);
+            if (units.Selected != t.Token.Unit.Id) { log(FormattableString.Invariant($"SMOKE FAIL the click on {t.Q},{t.R} did not select unit {move.Unit}")); yield break; }
+            if (!Press(root.Q<Button>("info-move"), log)) yield break;
+            clickHex(move.Q, move.R);
+            if (!bridge.Queued.OfType<Move>().Any(m => m.Unit == move.Unit && m.Q == move.Q && m.R == move.R))
+            { log(FormattableString.Invariant($"SMOKE FAIL the click on {move.Q},{move.R} queued no Move for unit {move.Unit}")); yield break; }
+            yield return null;
+            var turn = bridge.State.Turn;
+            if (!Press(root.Q<Button>("end-turn"), log)) yield break;
+            if (bridge.State.Turn != turn + 1) { log(FormattableString.Invariant($"SMOKE FAIL End Turn did not end turn {turn}")); yield break; }
+            if (hud.ClassListContains(TurnReportPresenter.OpenClass))
+            {
+                if (!Press(root.Q<Button>("turn-report-close"), log)) yield break;
+                if (hud.ClassListContains(TurnReportPresenter.OpenClass)) { log(FormattableString.Invariant($"SMOKE FAIL the turn report after turn {turn} did not close")); yield break; }
+            }
+            log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.State.Date:yyyy-MM-dd} {bridge.State.Hash()}"));
         }
 
         static bool Press(Button? b, Action<string> log)

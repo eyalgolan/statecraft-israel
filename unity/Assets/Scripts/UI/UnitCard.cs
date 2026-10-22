@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
@@ -34,6 +35,16 @@ namespace Statecraft.Game.UI
             bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
             // In Hebrew each prose text shows its Hebrew counterpart where the row has one, else its English (#558).
             string Local(string english, string? he) => hebrew && !string.IsNullOrEmpty(he) ? he! : english;
+            // In Hebrew a formed or since date that is a plain day or month ("24 May 1948", "March 1948") names its month
+            // through the date strings, as the event cards' dates do (#1292); a date in prose ("late 1947") keeps its English.
+            string When(string english)
+            {
+                if (!hebrew) return english;
+                if (DateTime.TryParseExact(english, "d MMMM yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
+                    return text.Format("date.day_month_year", d.Day, text["date.month_" + d.Month], d.Year);
+                return DateTime.TryParseExact(english, "MMMM yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var m)
+                    ? text.Format("date.month_year", text["date.month_" + m.Month], m.Year) : english;
+            }
             var lines = new List<string>();
             if (u.Service == UnitData.Air)
             {
@@ -45,9 +56,9 @@ namespace Statecraft.Game.UI
             if (sourced)
             {
                 var place = Local(a.Place, a.PlaceHe);
-                lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, a.Since!));
+                lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, When(a.Since!)));
             }
-            if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", u.Formed!));
+            if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", When(u.Formed!)));
             // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
             if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
             lines.Add(Local(u.Sector, u.SectorHe));

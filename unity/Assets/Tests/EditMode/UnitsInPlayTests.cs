@@ -929,6 +929,31 @@ public class UnitsInPlayTests
         Assert.AreEqual("מיקום: \u200ETest Place\u200E\nTest sector", ProseCard(u, He).Body);
     }
 
+    /// <summary>#1292: the Hebrew card names a formed or since date's month in Hebrew (date.month_*), as the event cards'
+    /// dates do; a date in prose keeps its English (no row has a Hebrew one), and the English card is unchanged.</summary>
+    [TestCase("March 1948", "24 May 1948", "הוקמה: מרץ 1948", "מאז ‎24‎ במאי ‎1948‎")]
+    [TestCase("Late 1947", "the first half of May 1948", "הוקמה: ‎Late 1947‎", "מאז ‎the first half of May 1948‎")]
+    public void TheHebrewCardNamesTheMonthsOfItsDatesInHebrew(string formed, string since, string formedLine, string sinceText)
+    {
+        var u = ProseUnit();
+        u.Formed = formed; u.Anchors[0].Since = since;
+        var body = ProseCard(u, He).Body;
+        StringAssert.Contains(formedLine, body);
+        StringAssert.Contains(sinceText, body);
+        StringAssert.Contains($"At Test Place since {since}\nFormed {formed}\n", ProseCard(u, Text).Body);
+    }
+
+    /// <summary>#1292, the issue's example: the Negev Brigade's Hebrew card has no English month name left.</summary>
+    [Test]
+    public void TheNegevBrigadesHebrewCardHasNoEnglishMonth()
+    {
+        var u = Units.Single(x => x.Id == "negev");
+        var body = ProseCard(u, He).Body;
+        StringAssert.Contains("הוקמה: מרץ 1948", body);
+        StringAssert.Contains("מאז מרץ 1948", body);
+        StringAssert.DoesNotContain("March", body);
+    }
+
     // hidden: the rows with "anchors: []" reach the source checks, which run after the anchors'.
     const string ProseRow = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, hidden: h, ";
     const string ProseAnchor = "anchors: [{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}], ";
