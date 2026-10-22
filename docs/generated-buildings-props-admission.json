@@ -1,0 +1,90 @@
+[
+  {
+    "id": "generated-1948-02-netanya-two-storey-balcony-house",
+    "number": 2,
+    "fbx_sha256": "b2358e067570c6f92d67c7cfbed859b22fb923ddf8b8b5dfdeb013475cdd1cf2",
+    "source_glb_sha256": "7d884a4e4d52b7c04f6f084477a8b2876d1281dff427d75ecbddd1e0c8965e11",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-03-netanya-flat-roof-porch-house",
+    "number": 3,
+    "fbx_sha256": "f9b30e5b633e4f2083e470f53773a990d1b2ee7bd0cd4bcd57cbb4e11dac2820",
+    "source_glb_sha256": "d59adcd4e17c8db3ab2dbb9235b6c934fdb703f849ac1ef7f183e3162841fd0e",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-04-dark-basalt-house",
+    "number": 4,
+    "fbx_sha256": "af211f012c66571ef65e0598c70379082a8efda3def214205260ea8a0ff24e1a",
+    "source_glb_sha256": "01ba4c818fc93ac1cd6e770963ae4459bf2a2d7bc6d7f5ca29ece24dc1d0d9f6",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-06-bedouin-b-enclosed-striped-tent",
+    "number": 6,
+    "fbx_sha256": "6c69692c25d0700a1efde4407c516730ba7615429d1942ffdd7f37e388717795",
+    "source_glb_sha256": "f163ea5eaeeda61f6351a92c4b04b75311c648b280d7965d9734eb3155f5b921",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-08-khaki-canvas-tent",
+    "number": 8,
+    "fbx_sha256": "659fad6c9b5e807079e4144442887956cb4c71e29497514a0e8e838bdd0e0307",
+    "source_glb_sha256": "ba0b61039a863ccb1929528a41d8e5d2f917edb11af9bb8759051757b098bc0c",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-09-stone-village-well",
+    "number": 9,
+    "fbx_sha256": "82741d8ba21de6d07328416786b4848f9811a3e3917c58fa265d2c2fdc7ba4bb",
+    "source_glb_sha256": "d303eba126409e6fcdc9fcd87b2d33870e88113cb22cb1c76fec636f9327d26f",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-10-low-sandbag-position",
+    "number": 10,
+    "fbx_sha256": "fdb0c5a035bb1336627cfd6f6bcbc4fc47ac7a2aa200f8e47df33bab9aaa8262",
+    "source_glb_sha256": "48b2bb1df695b535bccda23b5c00519da654be0288b42264a5e8d9c822f149d7",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-11-supply-crate-stack",
+    "number": 11,
+    "fbx_sha256": "2e3dbb090bab45c2dc73e95be8ae73fe797507e42c1c8cc950072ee55adad202",
+    "source_glb_sha256": "1fa6c1a4d1c521ad9f1d1f63f751016102c0f14e7f2fa2612f3fa53133a560af",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-12-low-stone-wall-module",
+    "number": 12,
+    "fbx_sha256": "dd31ff8c5744d27e6f769d28529092d3f3043f55b29eec1a24e87d571519c676",
+    "source_glb_sha256": "4c0ff30354dab1e30e8262be502548f4ad610a33a62466346977dd8184c859f9",
+    "copied_from_commit": "623ca73c",
+    "placement_status": "existing-role mapping or explicit playable-review scene; no new historical deployment"
+  },
+  {
+    "id": "generated-1948-01-textured-hip-roof-repair-v2",
+    "number": 1,
+    "fbx_sha256": "e839e6c2406ca54c5cc5fa2a598b4b1f9cdf77c3ddd5e149d296bbbdc54c30c5",
+    "colour_sha256": "e43a5d79978077ebf6f478aa8ef850afa1b44c587a7bbdd4316ce7b8b05304ef",
+    "placement_status": "Separate local roof derivative; unit/hash and actual Unity elevated front/rear pass; owner-approved existing Netanya01 / generic Village05 pool alongside originals",
+    "provenance": "measurement-provenance.json and QA-VERIFICATION.json in asset directory"
+  },
+  {
+    "id": "generated-1948-05-textured-courtyard-roof-repair-v2",
+    "number": 5,
+    "fbx_sha256": "40df9fba727902d47f854b3127ecdc0f0043dfc356c062406f666dc6727ef156",
+    "colour_sha256": "5d6f4c44abb887bc6174522b54556ddaea5db23ee18ec0bb5b57d8f530acc7a5",
+    "placement_status": "Separate local roof derivative; unit/hash and actual Unity elevated front/rear pass; owner-approved existing Netanya01 / generic Village05 pool alongside originals",
+    "provenance": "measurement-provenance.json and QA-VERIFICATION.json in asset directory"
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "number": 12,
+  "id": "generated-1948-12-low-stone-wall-module",
+  "name": "Low stone wall module",
+  "geometry_model_id": "98fb7740-c1a9-4f38-9fd3-dc9ec50a84da",
+  "source_glb_sha256": "4c0ff30354dab1e30e8262be502548f4ad610a33a62466346977dd8184c859f9",
+  "source_image_sha256": "1d8c5270d30e4371d5a64d28b94c74eb10573976e5261361482bc4e4155ada43",
+  "triangles_source": 2146,
+  "triangles_export_reimport": 2146,
+  "fbx_sha256": "dd31ff8c5744d27e6f769d28529092d3f3043f55b29eec1a24e87d571519c676",
+  "texture_sha256": "ea30b1b359b59f5effe378d88dbdb879b7905a7a1e3e90da5fdf1ceb0c8ddb21",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.07983401417732239,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.07983401417732239,
+      0.20361328125
+    ],
+    "size": [
+      0.9995118379592896,
+      0.15966802835464478,
+      0.20361328125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "59b9c7720d62f14b1f39bc0ed819668778a7c88ec9295ce974a581521c200d12",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

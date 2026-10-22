@@ -1,0 +1,46 @@
+{
+  "number": 9,
+  "id": "generated-1948-09-stone-village-well",
+  "name": "Stone village well",
+  "geometry_model_id": "0f9cb0d9-38dd-4e90-9aac-5ecc69ab5fda",
+  "source_glb_sha256": "d303eba126409e6fcdc9fcd87b2d33870e88113cb22cb1c76fec636f9327d26f",
+  "source_image_sha256": "9f1fb3d1fb08ba1638723bbff6e33b565c81ff96ab3b38c76cbf59e2243acfcf",
+  "triangles_source": 3992,
+  "triangles_export_reimport": 3992,
+  "fbx_sha256": "82741d8ba21de6d07328416786b4848f9811a3e3917c58fa265d2c2fdc7ba4bb",
+  "texture_sha256": "3d2d19220603f538155ec721e602d1ced3700cce06aae5a9433e5cd39620ffe2",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.4055176377296448,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.4055176377296448,
+      0.79833984375
+    ],
+    "size": [
+      0.9995118379592896,
+      0.8110352754592896,
+      0.79833984375
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "d5927176b8abc40a0fc31d42ebbfd8b7e2441425b72b760caf490e8346bd55b9",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

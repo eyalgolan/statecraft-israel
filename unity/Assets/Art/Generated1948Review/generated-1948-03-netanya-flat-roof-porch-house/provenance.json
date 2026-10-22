@@ -1,0 +1,48 @@
+{
+  "number": 3,
+  "id": "generated-1948-03-netanya-flat-roof-porch-house",
+  "name": "Netanya flat-roof porch house",
+  "geometry_model_id": "2ecd727a-53f3-4004-bc42-50dd95662148",
+  "source_glb_sha256": "d59adcd4e17c8db3ab2dbb9235b6c934fdb703f849ac1ef7f183e3162841fd0e",
+  "source_image_sha256": "ebb87517d1c9ffa6cb69436c07de8cbae1083aadb078731ef09a28529a533fb0",
+  "triangles_source": 4941,
+  "triangles_export_reimport": 4941,
+  "fbx_sha256": "f9b30e5b633e4f2083e470f53773a990d1b2ee7bd0cd4bcd57cbb4e11dac2820",
+  "texture_sha256": "97fbaad9681abe3cafdc1bc0db11a3dcf3ea38492e89618d8c7ae4da4e0f0179",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4631348252296448,
+      -0.4997559189796448,
+      0.0
+    ],
+    "max": [
+      0.4631348252296448,
+      0.4997559189796448,
+      0.67724609375
+    ],
+    "size": [
+      0.9262696504592896,
+      0.9995118379592896,
+      0.67724609375
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "33eff278e5c6e4776a63cda7af74e8f518ea60e59d9a53e57dc95d3d46094577",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": true
+  },
+  "source_caveats": [
+    "Separate local plaster backing closes broad rear cutout; plain patch and rear appearance need owner review."
+  ],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

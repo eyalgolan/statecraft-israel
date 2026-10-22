@@ -1,0 +1,46 @@
+{
+  "number": 2,
+  "id": "generated-1948-02-netanya-two-storey-balcony-house",
+  "name": "Netanya two-storey balcony house",
+  "geometry_model_id": "e6337e2e-8d55-4022-a880-ce47ac3bce2d",
+  "source_glb_sha256": "7d884a4e4d52b7c04f6f084477a8b2876d1281dff427d75ecbddd1e0c8965e11",
+  "source_image_sha256": "a8c5c4db7529b840f4d3e7cfe818670054f15c68b70dbb142d73ab6063bff9cc",
+  "triangles_source": 4798,
+  "triangles_export_reimport": 4798,
+  "fbx_sha256": "b2358e067570c6f92d67c7cfbed859b22fb923ddf8b8b5dfdeb013475cdd1cf2",
+  "texture_sha256": "09bbfd1c4d7b6dbff4f5d1a877c7e1e56bc9fc4c973bd09977c6762a0f9f2be8",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4694824814796448,
+      -0.49975594878196716,
+      0.0
+    ],
+    "max": [
+      0.4694824814796448,
+      0.49975594878196716,
+      0.95361328125
+    ],
+    "size": [
+      0.9389649629592896,
+      0.9995118975639343,
+      0.95361328125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "7b4f453f5219857b52b98e59d33f631f4ec1344b2da78d4e0f70e7e61726f704",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

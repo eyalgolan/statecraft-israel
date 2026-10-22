@@ -1,0 +1,46 @@
+{
+  "number": 8,
+  "id": "generated-1948-08-khaki-canvas-tent",
+  "name": "Khaki canvas tent",
+  "geometry_model_id": "82aa3615-0d0b-48ad-9411-57100958e5e1",
+  "source_glb_sha256": "ba0b61039a863ccb1929528a41d8e5d2f917edb11af9bb8759051757b098bc0c",
+  "source_image_sha256": "098af25e1de90da89caa655905b2a38e8c24c5f840feeeebe5d5ccc3f8dac771",
+  "triangles_source": 3988,
+  "triangles_export_reimport": 3988,
+  "fbx_sha256": "659fad6c9b5e807079e4144442887956cb4c71e29497514a0e8e838bdd0e0307",
+  "texture_sha256": "d1c4e095d07772ca05b8e959fec696ed86e9d3da69552b6e8670fd0179d72a71",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4714356064796448,
+      -0.4997559189796448,
+      0.0
+    ],
+    "max": [
+      0.4714356064796448,
+      0.4997559189796448,
+      0.60595703125
+    ],
+    "size": [
+      0.9428712129592896,
+      0.9995118379592896,
+      0.60595703125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "5531b5f4917e6b0c19fbcd9ca0319d0a6e6035e94a6a7a2a6439e679c5f90870",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

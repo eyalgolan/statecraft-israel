@@ -52,8 +52,9 @@ public class TownModelTests
         {
             case "tel_aviv": return new HashSet<M> { M.B01WhiteCity, M.B02aCornerBlock, M.B02bNarrowBlock, M.B32CargoShed };
             case "haifa": return new HashSet<M> { M.B04aStoneBalconies, M.B04bLoadingDoors, M.B32CargoShed, M.B05aMoshavaHouse };
-            case "jerusalem": return new HashSet<M> { M.B03aArches, M.B03bExternalStair, M.B03cPlain, M.B17CourtyardHouse };
-            case "netanya": return new HashSet<M> { M.B13aTwoStorey, M.B28WaterTower };
+            case "jerusalem": return new HashSet<M> { M.B03aArches, M.B03bExternalStair, M.B03cPlain, M.B17CourtyardHouse, M.CourtyardRepair2026 };
+            case "netanya": return new HashSet<M> { M.B13aTwoStorey, M.NetanyaBalcony2026, M.NetanyaPorch2026, M.NetanyaTileRepair2026, M.B28WaterTower };
+            case "tiberias": return new HashSet<M> { M.B17CourtyardHouse, M.TiberiasStone2026 };
         }
         switch (s.Type)
         {
@@ -63,7 +64,9 @@ public class TownModelTests
                 var h = new HashSet<M>(moshava) { M.B13aTwoStorey };
                 if (TownModels.WineMoshava(s.Id)) h.Add(M.B23Winery);
                 return h;
-            default: return new HashSet<M> { M.B17CourtyardHouse };   // the old towns and the Arab towns
+            default: return SettlementKits.ArchetypeOf(s) == Archetype.ArabTown
+                ? new HashSet<M> { M.B17CourtyardHouse, M.CourtyardRepair2026 }
+                : new HashSet<M> { M.B17CourtyardHouse };   // unrelated old-town pools remain unchanged
         }
     }
 
@@ -71,10 +74,17 @@ public class TownModelTests
     public void EveryTownDrawsItsBuildingsFromItsTypesModels()
     {
         var map = OpenMap();
+        var tiberias = map.Settlements.Single(s => s.Id == "tiberias");
+        Assert.AreEqual("town", tiberias.Type, "the real settlements_1948.yaml record");
+        Assert.AreEqual(Archetype.ArabTown, SettlementKits.ArchetypeOf(tiberias),
+            "Tiberias uses the village-style town lattice, not only the locality fallback selector");
         var built = Build(map, out var placed);
         var outposts = Outposts(placed);
         Assert.IsNotEmpty(outposts, "Revivim is drawn as its walled lookout (#825)");
         var bad = new List<string>();
+        var netanyaVariations = new[] { M.NetanyaBalcony2026, M.NetanyaPorch2026, M.NetanyaTileRepair2026 };
+        CollectionAssert.AreEqual(new[] { "netanya" }, built.Models.Where(m => netanyaVariations.Contains(m.Model)).Select(m => m.Id).Distinct().ToArray(),
+            "Netanya variations cannot leak through the shared TownBlock style to another town");
         foreach (var s in map.Settlements)
         {
             var used = built.Models.Where(m => m.Id == s.Id).Select(m => m.Model).ToList();
@@ -93,12 +103,16 @@ public class TownModelTests
         }
         // The cities' own models are there (not only a fallback).
         foreach (var (id, model) in new[] { ("tel_aviv", M.B01WhiteCity), ("tel_aviv", M.B02bNarrowBlock), ("haifa", M.B04aStoneBalconies),
-                     ("haifa", M.B32CargoShed), ("jerusalem", M.B03cPlain), ("jaffa", M.B17CourtyardHouse), ("netanya", M.B13aTwoStorey) })
+                     ("haifa", M.B32CargoShed), ("jerusalem", M.B03cPlain), ("jaffa", M.B17CourtyardHouse), ("netanya", M.B13aTwoStorey),
+                     ("netanya", M.NetanyaBalcony2026), ("netanya", M.NetanyaPorch2026),
+                     ("tiberias", M.B17CourtyardHouse), ("tiberias", M.TiberiasStone2026) })
             if (!built.Models.Any(m => m.Id == id && m.Model == model)) bad.Add($"{id} has no {model}");
+        CollectionAssert.AreEqual(new[] { "tiberias" }, built.Models.Where(m => m.Model == M.TiberiasStone2026)
+            .Select(m => m.Id).Distinct().ToArray(), "the new stone house never changes another town or village");
         // A 1948 Arab village is built of courtyard houses.
         var villages = map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village" && !Localities.IsMixed(s.Id)).Select(s => s.Id).ToHashSet();
         var villageModels = built.Models.Where(m => villages.Contains(m.Id) && m.Model != M.B28WaterTower).Select(m => m.Model).Distinct().ToList();
-        CollectionAssert.AreEqual(new[] { M.B17CourtyardHouse }, villageModels, "the villages' houses");
+        CollectionAssert.AreEquivalent(new[] { M.B17CourtyardHouse, M.CourtyardRepair2026 }, villageModels, "the approved generic village house variations");
         // Every farm shed of every kibbutz (#820: the game settlements' and the localities') is a b24 barn, and no kibbutz
         // house is.
         var kibbutzim = map.Settlements.Concat(map.Localities.Select(p => p.Settlement)).Where(s => s.Type == "kibbutz").Select(s => s.Id).ToHashSet();
@@ -281,8 +295,8 @@ public class TownModelTests
         for (int i = 0; i < TownModels.Ids.Length; i++)
         {
             string id = TownModels.Ids[i];
-            Assert.AreEqual($"{TownModels.Folder}/{id}/{id}.fbx", AssetDatabase.GetAssetPath(set.meshes[i]), ((M)i).ToString());
-            Assert.AreEqual($"{TownModels.Folder}/{id}/{id}.mat", AssetDatabase.GetAssetPath(set.materials[i]), ((M)i).ToString());
+            Assert.AreEqual(TownModels.ModelPath(id), AssetDatabase.GetAssetPath(set.meshes[i]), ((M)i).ToString());
+            Assert.AreEqual(TownModels.MaterialPath(id), AssetDatabase.GetAssetPath(set.materials[i]), ((M)i).ToString());
             // The fitting table matches the imported mesh: Z-up, centred on x and y, standing on z = 0.
             var b = set.meshes[i].bounds; var s = TownModels.Size[i];
             Assert.AreEqual(s.x, b.size.x, 0.006f, id + " width"); Assert.AreEqual(s.y, b.size.y, 0.006f, id + " depth");
@@ -291,7 +305,7 @@ public class TownModelTests
         }
         var deps = AssetDatabase.GetDependencies("Assets/Map.unity", true);
         Assert.Contains(TownModels.SetPath, deps, "the map scene loads the town models");
-        foreach (var id in TownModels.Ids) Assert.Contains($"{TownModels.Folder}/{id}/{id}.fbx", deps, id);
+        foreach (var id in TownModels.Ids) Assert.Contains(TownModels.ModelPath(id), deps, id);
         Assert.IsFalse(TownModels.SetPath.Split('/').Any(x => x.Equals("Resources", StringComparison.OrdinalIgnoreCase)));
         var inResources = AssetDatabase.GetAllAssetPaths()
             .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)
@@ -328,7 +342,7 @@ public class TownModelTests
             probe.meshes[(int)M.B17CourtyardHouse] = null!;
             StringAssert.Contains("B17CourtyardHouse has no mesh", probe.Missing());
             var empty = ScriptableObject.CreateInstance<TownModelSet>();
-            StringAssert.Contains("want 18", empty.Missing());
+            StringAssert.Contains("want " + TownModels.Ids.Length, empty.Missing());
             UnityEngine.Object.DestroyImmediate(empty);
         }
         finally { UnityEngine.Object.DestroyImmediate(probe); }

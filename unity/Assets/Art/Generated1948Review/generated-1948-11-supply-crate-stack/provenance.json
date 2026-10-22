@@ -1,0 +1,46 @@
+{
+  "number": 11,
+  "id": "generated-1948-11-supply-crate-stack",
+  "name": "Supply crate stack",
+  "geometry_model_id": "5e45f962-e4e5-4c1c-9335-2daab762430b",
+  "source_glb_sha256": "1fa6c1a4d1c521ad9f1d1f63f751016102c0f14e7f2fa2612f3fa53133a560af",
+  "source_image_sha256": "80da33fb7cde4c54ea5c6362b19b9884c1def9ced2dbe7abbf1a1809a4d7e171",
+  "triangles_source": 2126,
+  "triangles_export_reimport": 2126,
+  "fbx_sha256": "2e3dbb090bab45c2dc73e95be8ae73fe797507e42c1c8cc950072ee55adad202",
+  "texture_sha256": "71d438d282c51820442453f24d5aa68405625ae885497ec0e170607c096ccb66",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.24633795022964478,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.24633795022964478,
+      0.64892578125
+    ],
+    "size": [
+      0.9995118379592896,
+      0.49267590045928955,
+      0.64892578125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "93dd9c598217cc43a2a0589bcd1f6a9d426f4a366710c4684c1470daade397d5",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

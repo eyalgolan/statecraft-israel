@@ -15,6 +15,7 @@ namespace Statecraft.Game.Map.Kits
         B04aStoneBalconies, B04bLoadingDoors,
         B05aMoshavaHouse, B07DiningHall, B09aCommunal, B13aTwoStorey,
         B16Farmhouse, B17CourtyardHouse, B23Winery, B24Barn, B28WaterTower, B32CargoShed,
+        NetanyaBalcony2026, NetanyaPorch2026, TiberiasStone2026, BedouinTent2026, KhakiTent2026, NetanyaTileRepair2026, CourtyardRepair2026,
     }
 
     /// <summary>Which models a plot may take (issue #659's table), by the kit's plot style or archetype and the town.</summary>
@@ -29,6 +30,10 @@ namespace Statecraft.Game.Map.Kits
             "b05a-moshava-house-v2", "b07-kibbutz-dining-hall-v2", "b09a-kibbutz-communal-building-v2", "b13a-netanya-two-storey-v2",
             "b16-farmhouse-v2", "b17-stone-courtyard-house-v2", "b23-winery-v2", "b24-agricultural-barn-v2", "b28-water-tower-v2",
             "b32-port-cargo-shed-v2",
+            "generated-1948-02-netanya-two-storey-balcony-house", "generated-1948-03-netanya-flat-roof-porch-house",
+            "generated-1948-04-dark-basalt-house",
+            "generated-1948-06-bedouin-b-enclosed-striped-tent", "generated-1948-08-khaki-canvas-tent",
+            "generated-1948-01-textured-hip-roof-repair-v2", "generated-1948-05-textured-courtyard-roof-repair-v2",
         };
 
         /// <summary>Each model's size in its own mesh space (x wide, y deep, z up; Tripo's models are Z-up, about one unit
@@ -42,9 +47,18 @@ namespace Statecraft.Game.Map.Kits
             new Vector3(1.00f, 0.97f, 0.88f), new Vector3(1.00f, 0.63f, 0.34f), new Vector3(0.87f, 1.00f, 0.65f), new Vector3(0.89f, 1.00f, 0.96f),
             new Vector3(0.95f, 0.90f, 0.57f), new Vector3(0.86f, 1.00f, 0.55f), new Vector3(0.77f, 1.00f, 0.52f), new Vector3(0.70f, 1.00f, 0.41f),
             new Vector3(0.53f, 0.55f, 1.00f), new Vector3(1.00f, 0.50f, 0.38f),
+            new Vector3(0.938965f, 0.999512f, 0.953613f), new Vector3(0.926270f, 0.999512f, 0.677246f),
+            new Vector3(0.999512f, 0.731934f, 0.395020f),
+            new Vector3(0.999512f, 0.668457f, 0.313965f), new Vector3(0.942871f, 0.999512f, 0.605957f),
+            new Vector3(0.999512f, 0.983887f, 0.850098f), new Vector3(0.999512f, 0.710449f, 0.332520f),
         };
 
         public const string Folder = "Assets/Art/Settlements/Prototype/Models";
+        public static string AssetFolder(string id) => id.StartsWith("generated-1948-", System.StringComparison.Ordinal)
+            ? $"Assets/Art/Generated1948Review/{id}" : $"{Folder}/{id}";
+        public static string ModelPath(string id) => $"{AssetFolder(id)}/{id}" +
+            (id.StartsWith("generated-1948-", System.StringComparison.Ordinal) ? "-near.fbx" : ".fbx");
+        public static string MaterialPath(string id) => $"{AssetFolder(id)}/{id}.mat";
         /// <summary>The <see cref="TownModelSet"/> the map scene references.</summary>
         public const string SetPath = "Assets/Art/Settlements/TownModels.asset";
 
@@ -53,7 +67,10 @@ namespace Statecraft.Game.Map.Kits
         internal static readonly TownModel[] Haifa = { TownModel.B04aStoneBalconies, TownModel.B04bLoadingDoors };
         internal static readonly TownModel[] Jerusalem = { TownModel.B03aArches, TownModel.B03bExternalStair, TownModel.B03cPlain };
         internal static readonly TownModel[] Stone = { TownModel.B17CourtyardHouse };
-        internal static readonly TownModel[] Netanya = { TownModel.B13aTwoStorey };
+        internal static readonly TownModel[] ArabCourtyard = { TownModel.B17CourtyardHouse, TownModel.CourtyardRepair2026 };
+        internal static readonly TownModel[] TownBlockBase = { TownModel.B13aTwoStorey };
+        internal static readonly TownModel[] Netanya = { TownModel.B13aTwoStorey, TownModel.NetanyaBalcony2026, TownModel.NetanyaPorch2026, TownModel.NetanyaTileRepair2026 };
+        internal static readonly TownModel[] Tiberias = { TownModel.B17CourtyardHouse, TownModel.TiberiasStone2026 };
         /// <summary>A moshava's or moshav's houses: farmhouses and houses, a barn in about one plot in five.</summary>
         internal static readonly TownModel[] Moshava =
         {
@@ -78,7 +95,7 @@ namespace Statecraft.Game.Map.Kits
         {
             Archetype.WhiteCity => WhiteCity,
             Archetype.OldTown => s.Id == "jerusalem" ? Jerusalem : s.Id == "haifa" ? Haifa : Stone,
-            Archetype.ArabTown => Stone,
+            Archetype.ArabTown => s.Id == "tiberias" ? Tiberias : ArabCourtyard,
             _ => Houses(s),
         };
 

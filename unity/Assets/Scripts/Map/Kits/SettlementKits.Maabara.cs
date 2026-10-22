@@ -53,6 +53,31 @@ namespace Statecraft.Game.Map.Kits
             return result;
         }
 
+        /// <summary>The same camp plots and census, with close-view models for khaki ridge tents. Original kit meshes
+        /// remain the far view and fallback; no camp is added and the placement streams are unchanged.</summary>
+        public static List<(Mesh? mesh, Mesh? close, int tents, int huts, Vector2 at)> MaabarotWithModels(
+            IReadOnlyList<(string id, Vector2 at, System.DateTime from)> camps, KitGround ground,
+            out List<Placed> placed, out List<ModelInstance> modelInstances, float hutShare = MaabaraHutShare)
+        {
+            var previous = models;
+            models = modelInstances = new List<ModelInstance>();
+            census = placed = new List<Placed>();
+            var result = new List<(Mesh?, Mesh?, int, int, Vector2)>();
+            var lots = new Lots();
+            try
+            {
+                foreach (var (id, at, from) in camps)
+                {
+                    var km = new KitMesh();
+                    var (tents, huts, c) = Maabara(id, at, from, ground, km, lots, hutShare);
+                    result.Add((km.VertexCount > 0 ? km.ToMesh(id + "_kit") : null,
+                        km.ToCloseMesh(id + "_close"), tents, huts, c));
+                }
+                return result;
+            }
+            finally { models = previous; census = null; }
+        }
+
         /// <summary>As Maabarot, also listing everything placed (<see cref="Placed"/>: "tent", "hut", "communal_hut",
         /// "water_tower"), in placement order.</summary>
         public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at, System.DateTime from)> camps,
@@ -167,7 +192,14 @@ namespace Statecraft.Game.Map.Kits
                     else
                     {
                         float w = rnd.Range(5f, 6f) * m, d = rnd.Range(3.6f, 4.2f) * m;
+                        var tentStart = km.CutStart();
                         RidgeTent(km, p, pyaw, w, d, 1f, 1.6f, 0.3f, canvas, ground, m, ref wear, wear.Chance(0.45f));
+                        if (models != null && !white)
+                        {
+                            km.CutEnd(tentStart);
+                            var (_, top) = GroundSpan(p, pyaw, w, d, ground, m);
+                            AddTentModel(id, TownModel.KhakiTent2026, p, pyaw, w, d, 2.6f * m, top);
+                        }
                         float pa = pyaw * Mathf.Deg2Rad;
                         Vector2 Local(float u, float v) => p + new Vector2(u * Mathf.Cos(pa) - v * Mathf.Sin(pa), u * Mathf.Sin(pa) + v * Mathf.Cos(pa));
                         // Bundles, a crate or a jerrycan by the door (the +u end), and a washing line in front of some tents,

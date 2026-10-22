@@ -1,0 +1,46 @@
+{
+  "number": 10,
+  "id": "generated-1948-10-low-sandbag-position",
+  "name": "Low sandbag position",
+  "geometry_model_id": "2bb138f2-52ac-4cb4-a301-065444aa03fe",
+  "source_glb_sha256": "48b2bb1df695b535bccda23b5c00519da654be0288b42264a5e8d9c822f149d7",
+  "source_image_sha256": "8dc7e8940a82787c4f3ba7b3a5862ce14987a9b9a678689220ebe0319a044369",
+  "triangles_source": 4074,
+  "triangles_export_reimport": 4074,
+  "fbx_sha256": "fdb0c5a035bb1336627cfd6f6bcbc4fc47ac7a2aa200f8e47df33bab9aaa8262",
+  "texture_sha256": "615b8ddb96caa477033751dcc9bd9c5cbcd936afdd27c6b34371d65e687441c7",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.3210449814796448,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.3210449814796448,
+      0.27392578125
+    ],
+    "size": [
+      0.9995118379592896,
+      0.6420899629592896,
+      0.27392578125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "20613b414669e8904d74c0fb19051a1f2d2ac404446036790566c3f3adfe60de",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

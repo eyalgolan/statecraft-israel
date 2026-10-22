@@ -50,10 +50,11 @@ namespace Statecraft.Game.Map
             {
                 var old = transform.GetChild(i).gameObject;
                 // A camp's kit mesh is its own (the boxes share the built-in cube): it goes with its object.
-                var filter = old.GetComponent<MeshFilter>();
-                var own = filter != null && filter.sharedMesh != cube ? filter.sharedMesh : null;
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); if (own != null) Destroy(own); }
-                else { DestroyImmediate(old); if (own != null) DestroyImmediate(own); }
+                var owned = new HashSet<Mesh>();
+                foreach (var filter in old.GetComponentsInChildren<MeshFilter>(true))
+                    if (filter.sharedMesh != null && filter.sharedMesh != cube) owned.Add(filter.sharedMesh);
+                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); foreach (var mesh in owned) Destroy(mesh); }
+                else { DestroyImmediate(old); foreach (var mesh in owned) DestroyImmediate(mesh); }
             }
             var list = new List<Placement>(placements);
             lastPlacements = list; lastContent = content; lastMap = map; kitsShown = map.KitsShown;
@@ -95,7 +96,8 @@ namespace Statecraft.Game.Map
             }
             var drawn = new HashSet<string>();
             if (camps.Count == 0) return drawn;
-            var built = SettlementKits.Maabarot(camps, CampGround(map), out var placed);
+            var built = SettlementKits.MaabarotWithModels(camps, CampGround(map), out var placed, out var models);
+            var swaps = new List<(Renderer kit, Renderer? close)>();
             foreach (var p in placed) holes.Add((p.C, 0.5f * new Vector2(p.W, p.D).magnitude));
             for (int i = 0; i < camps.Count; i++)
             {
@@ -108,7 +110,25 @@ namespace Statecraft.Game.Map
                 var r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = map.KitMaterial;
                 r.shadowCastingMode = ShadowCastingMode.On;
+                Renderer? close = null;
+                if (built[i].close != null)
+                {
+                    var closeGo = new GameObject(camps[i].id + "_close");
+                    closeGo.transform.SetParent(go.transform, false);
+                    closeGo.AddComponent<MeshFilter>().sharedMesh = built[i].close;
+                    var cr = closeGo.AddComponent<MeshRenderer>();
+                    cr.sharedMaterial = map.KitMaterial;
+                    cr.shadowCastingMode = ShadowCastingMode.On;
+                    close = cr;
+                }
+                if (built[i].close != null) swaps.Add((r, close));
                 drawn.Add(camps[i].id);
+            }
+            if (models.Count > 0)
+            {
+                var layer = new GameObject("TransitCampTentModels");
+                layer.transform.SetParent(transform, false);
+                layer.AddComponent<TownModelLayer>().Init(models, map.TownModelAssets, swaps);
             }
             return drawn;
         }

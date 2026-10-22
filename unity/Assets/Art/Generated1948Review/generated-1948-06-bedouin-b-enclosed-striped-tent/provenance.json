@@ -1,0 +1,46 @@
+{
+  "number": 6,
+  "id": "generated-1948-06-bedouin-b-enclosed-striped-tent",
+  "name": "Bedouin B \u2014 enclosed striped tent",
+  "geometry_model_id": "bb7a03d2-7702-463b-8ecf-2dc9990045a6",
+  "source_glb_sha256": "f163ea5eaeeda61f6351a92c4b04b75311c648b280d7965d9734eb3155f5b921",
+  "source_image_sha256": "637f590edc9954eb64bdeb65eefbb1bf9474d96bdf4638bd0eb9bcdc429d70ca",
+  "triangles_source": 3184,
+  "triangles_export_reimport": 3184,
+  "fbx_sha256": "6c69692c25d0700a1efde4407c516730ba7615429d1942ffdd7f37e388717795",
+  "texture_sha256": "6b649da479f7994c8a61dbcc6a20530cc1c6ca8dbd4543f55aed7ff0b962f23c",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.3342285454273224,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.3342285454273224,
+      0.31396484375
+    ],
+    "size": [
+      0.9995118379592896,
+      0.6684570908546448,
+      0.31396484375
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "d5ae51b2a1caa3ec353dc06a92e2ab10202b8f75f0f19e3adb4f62ef2c443a7a",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

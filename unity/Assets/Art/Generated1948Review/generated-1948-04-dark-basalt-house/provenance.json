@@ -1,0 +1,48 @@
+{
+  "number": 4,
+  "id": "generated-1948-04-dark-basalt-house",
+  "name": "Dark basalt house",
+  "geometry_model_id": "4a24fbf2-f0e1-4169-beda-7606b1a270ac",
+  "source_glb_sha256": "01ba4c818fc93ac1cd6e770963ae4459bf2a2d7bc6d7f5ca29ece24dc1d0d9f6",
+  "source_image_sha256": "271c3183e2d3029c4bfef134f9d9e52d44873e8e19f90f9c6855b8e5d9f2803a",
+  "triangles_source": 5624,
+  "triangles_export_reimport": 5624,
+  "fbx_sha256": "af211f012c66571ef65e0598c70379082a8efda3def214205260ea8a0ff24e1a",
+  "texture_sha256": "4e75a275294d72c2d92bc5a87e237bc1f3631db8cabcb510e30a41aa83cd1f54",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.49975597858428955,
+      -0.3659668564796448,
+      0.0
+    ],
+    "max": [
+      0.49975597858428955,
+      0.3659668564796448,
+      0.39501953125
+    ],
+    "size": [
+      0.9995119571685791,
+      0.7319337129592896,
+      0.39501953125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "4eb18455b5d2ec3281a4cd6346964ec0f3109e9dcf33252a9934caf6443e4d42",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [
+    "Regenerated lighter brown-gray stone art variant; fine texture grain and historical material appearance need owner review."
+  ],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

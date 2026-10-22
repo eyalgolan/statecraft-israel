@@ -1,0 +1,96 @@
+{
+  "number": 5,
+  "id": "generated-1948-05-textured-courtyard-roof-repair-v2",
+  "status": "candidate_pending_backface_culled_visual_review_and_Unity_validation",
+  "source_relative_to_coordination_v2": "remaining-batch-v2/models/05/textured-original-singlemesh-v3.glb",
+  "source_sha256": "0373291ef4d7feb6577a7c6d9de97438de6fab1f7ebe23680f755ffcc210f212",
+  "source_unchanged": true,
+  "source_triangles": 5466,
+  "added_shell_triangles": 28,
+  "candidate_triangles": 5494,
+  "shell_all_edges_two_incident_faces": true,
+  "shell_signed_volume": 0.006321750000000015,
+  "shell": {
+    "surface": "closed L-shaped roof slab with source-material UV texture",
+    "xz_polygon": [
+      [
+        -0.478,
+        -0.33
+      ],
+      [
+        -0.212,
+        -0.33
+      ],
+      [
+        -0.212,
+        -0.29
+      ],
+      [
+        0.478,
+        -0.29
+      ],
+      [
+        0.478,
+        0.027
+      ],
+      [
+        -0.12,
+        0.027
+      ],
+      [
+        -0.12,
+        0.328
+      ],
+      [
+        -0.478,
+        0.328
+      ]
+    ],
+    "top_y": 0.274,
+    "bottom_y": 0.259,
+    "intentional_open_courtyard_test_xz": [
+      0.15,
+      0.2
+    ]
+  },
+  "roof_texture_bake": {
+    "roof_texture_method": "Contiguous own unadorned stucco UV patch reused as compatible roof coating; no repeated tile, constant colour cap or generated imagery.",
+    "source_texture_pixel_crop": [
+      1100,
+      1800,
+      1612,
+      2312
+    ],
+    "source_surface_triangle": 457,
+    "source_surface": "exterior side-wall stucco, deliberately reused as compatible local roof material",
+    "patch_sha256": "5b249f629932fdec754d25c9aadea6491578bbfae37a85f186596a23053cc1c2",
+    "bake_dimensions": [
+      512,
+      512
+    ]
+  },
+  "texture_atlas": "body768x768 + roof256x256 within1024 master; runtime512 derivative body384x384+roof128x128; body UVs affine remap, no body geometry reduction",
+  "fbx_unit_settings": {
+    "apply_unit_scale": true,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "UnitScaleFactor_expected": 100
+  },
+  "translation_removed_blender_xyz": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "runtime_fbx": "generated-1948-05-textured-courtyard-roof-repair-v2-near.fbx",
+  "runtime_basecolor": "generated-1948-05-textured-courtyard-roof-repair-v2_basecolor.jpg",
+  "candidate_glb": "generated-1948-05-textured-courtyard-roof-repair-v2.glb",
+  "fbx_sha256": "40df9fba727902d47f854b3127ecdc0f0043dfc356c062406f666dc6727ef156",
+  "texture_sha256": "5d6f4c44abb887bc6174522b54556ddaea5db23ee18ec0bb5b57d8f530acc7a5",
+  "candidate_glb_sha256": "cdc9541f33b8ded2a168f5a1f2216c623e7d7083173751bc09b86abf12dc07a4",
+  "fbx_bytes": 248124,
+  "texture_bytes": 51797,
+  "spend_credits": 0,
+  "decimation": false,
+  "roof_is_textured": true,
+  "material_culling": "GLB source+roof use backface culling; CPU diagnostics force cull every triangle; Unity material should remain front-sided for roof QA",
+  "remaining_qa": "Inspect all culled views and runtime512 texture; perform Unity import/render before admission. Body source imperfections remain; bounds and complete source manifold not repaired."
+}

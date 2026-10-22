@@ -1,0 +1,108 @@
+{
+  "scope_numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "campaign_house_roles": {
+    "01": "Netanya variation",
+    "02": "Netanya variation",
+    "03": "Netanya variation",
+    "04": "Tiberias variation",
+    "05": "generic ArabTown / Village-style courtyard variation, including existing Village-style neighborhoods"
+  },
+  "campaign_tent_roles": {
+    "06": "existing Bedouin encampment tent plots",
+    "08": "existing non-white transit-camp ridge-tent plots"
+  },
+  "review_only": [
+    9,
+    10,
+    11,
+    12
+  ],
+  "source_originals_preserved": true,
+  "original_main_lod_blocks": 54,
+  "original_main_lod_blocks_byte_identical": true,
+  "total_lod_mesh_blocks": 75,
+  "roof_qa": {
+    "01": "actual Unity elevated front/rear pass:continuous tiled roof; no ridge slit",
+    "05": "actual Unity elevated front/rear pass:continuous decks; courtyard notch retained"
+  },
+  "native_player_or_webgl_build_claimed": false,
+  "captures_provenance": "Unity6000.3.25f1 Editor PlayMode, real MapScene CameraRig fixed50deg,PC quality;3840x2160 raw PNG ->1920x1080 JPEG;roof sheet labeled crops;screen-space HUD excluded",
+  "matched_campaign_comparison": "same map inputs/camera/quality;before temporarily restores original B13/B17 pool contents in memory,after restores approved pools;sim/source assets unchanged",
+  "tests": {
+    "initial_scoped25": {
+      "total": "25",
+      "passed": "25",
+      "failed": "0",
+      "result": "Passed"
+    },
+    "activation26": {
+      "total": "26",
+      "passed": "24",
+      "failed": "2",
+      "result": "Failed(Child)"
+    },
+    "final_focused3": {
+      "total": "3",
+      "passed": "3",
+      "failed": "0",
+      "result": "Passed"
+    },
+    "resolved_failures": "Two old allowlists and shared TownBlock selection issue resolved; final exact tests enforce Netanya-only scope and approved generic courtyard role."
+  },
+  "sim_tests": {
+    "passed": 2423,
+    "failed": 0
+  },
+  "policy_tests": {
+    "passed": 320,
+    "failed": 0
+  },
+  "screenshots": [
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-courtyard-plot-after.jpg",
+      "sha256": "dc3993e508a19c8e17edb5f14f75e2810a0390d7696da7fa9e040cac8ca15347"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-courtyard-plot-before.jpg",
+      "sha256": "7ce1840f90bf535afe46e5da7ea5c894c9cf780ed77bb2b8c3335715226fe708"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-netanya-after.jpg",
+      "sha256": "a0f8b7de88d25cbccfc68386d8576c9826e826a2aa17dffb3e27d3b97bce4831"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-netanya-before.jpg",
+      "sha256": "8f92a8ed49a4234adff59392ea9704f4d2e51d2af13e1655e61311bcd4a39c75"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-overview.jpg",
+      "sha256": "4ca84e7bfb35ae84ce5f30a49934209facee320a0ab4210fb33a9d19d5ad6da6"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-roofs.jpg",
+      "sha256": "4fa781f84a966fad611d912b9b935c4e4aea451c7f1dff6f6dc00134ede24183"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-tiberias-after.jpg",
+      "sha256": "f48f4476a5da8f53c088a3556a202b2fb047f509ceeb01c256635a398d9a66a9"
+    },
+    {
+      "path": "captures/buildings-props-playmode/reviewer-jpegs/generated-1948-buildings-props-tiberias-before.jpg",
+      "sha256": "3772452fd1dd628b32e55658df7d0897007cdee63a6bd999d351709067dc7bee"
+    }
+  ],
+  "screenshots_committed": false,
+  "github_attachments": "Pending browser extension file-URL capability; no alternate upload attempted."
+}

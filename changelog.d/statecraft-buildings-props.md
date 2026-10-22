@@ -1,0 +1,1 @@
+- Add five generated house variations (including separately documented local roof repairs), scoped close-view Bedouin and khaki transit-camp tent models, and an opt-in playable eleven-asset buildings/props display. Preserve original models, town/camp plots, fallback geometry and simulation behavior; keep Netanya variations inside Netanya.
