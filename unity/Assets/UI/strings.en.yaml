@@ -428,6 +428,15 @@ unit.order.fortify: "Fortify"
 unit.order.hold: "Hold"
 unit.fortify_queued: "Fortify ordered: the unit is fortified from the end of the turn"
 unit.hold_queued: "Hold ordered: the unit holds its hex when you end the turn"
+# Attack (#754): the name is Q-UI-2's, approved by the owner (#375). The odds are Q-UI-1's: Combat.Preview's strength ratio
+# ({0} the defenders' names, or the hex's coordinates; {1} the percent), then each of Combat.Outcomes' bands ({0} of {1} faces; {2} and {3} people lost).
+unit.order.attack: "Attack"
+unit.attack_pick: "Choose a lit hex to attack"
+# {1}'s format carries the %, as in Hebrew (the two files' format items must match), where it keeps the sign inside UiText.Format's marks.
+unit.attack_odds: "{0}: strength ratio {1:0'%'}"
+unit.attack_band: "{0} in {1}: you lose {2:N0} people, they lose {3:N0}"
+unit.attack_band_retreat: "{0} in {1}: you lose {2:N0} people, they lose {3:N0} and retreat"
+unit.attack_queued: "Attack ordered: the unit attacks when you end the turn"
 newgame.confirm: "Press New game again to abandon this game and start over."
 newgame.delete_failed: "The old saved game could not be removed; it will be replaced after your next turn."
 save.unreadable: "Your saved game could not be loaded ({0}). A new game has started."

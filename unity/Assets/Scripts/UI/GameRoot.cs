@@ -345,7 +345,9 @@ namespace Statecraft.Game.UI
                 regions: regions, localitiesAt: localitiesAt,
                 townHex: InfoPanelPresenter.TownHex(map.SettlementsFor(inputs.Map.SettlementsYaml), map.Hexes),
                 townNamesHe: map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe),
-                showReachable: map.ShowReachable));
+                showReachable: map.ShowReachable,
+                unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token.Unit) == id)
+                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd).Title).FirstOrDefault()));
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -549,8 +551,8 @@ namespace Statecraft.Game.UI
 
         /// <summary>A map click: on a unit's hex it selects the unit (the ring and its card; the hex outline is cleared, so
         /// the unit has the promo's one highlight); a second click on it, or a click anywhere else, shows the hex (so a token
-        /// never hides the hex's map actions). While the card's Move pick is open (#754), a click on a lit hex queues the move
-        /// and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
+        /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a click on a lit hex queues
+        /// the order and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
         internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r)
         {
             if (info.Covered)
@@ -560,7 +562,7 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
-            if (info.PickMoveTarget(q, r)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
+            if (info.PickTarget(q, r)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             var id = units.UnitToSelectAt(q, r);
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }

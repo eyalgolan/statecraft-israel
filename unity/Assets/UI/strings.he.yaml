@@ -458,6 +458,19 @@ unit.order.hold: "החזקה"
 unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
 # Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
 unit.hold_queued: "ניתנה פקודת החזקה: היחידה תחזיק במשושה שלה בסיום התור"
+# Attack (#754): the name is Q-UI-2's, approved by the owner (#375).
+unit.order.attack: "התקפה"
+# Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
+unit.attack_pick: "בחרו משושה מואר להתקפה"
+# Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
+# The % is in {1}'s format, inside the left-to-right marks UiText.Format puts round the value: a bare % after them is drawn on the number's left (#754).
+unit.attack_odds: "{0}: יחס כוחות {1:0'%'}"
+# Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
+unit.attack_band: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מאבדים {3:N0}"
+# Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
+unit.attack_band_retreat: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מאבדים {3:N0} ונסוגים"
+# Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
+unit.attack_queued: "ניתנה פקודת התקפה: היחידה תתקוף בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
 newgame.delete_failed: "לא ניתן היה להסיר את השמירה הקודמת; היא תוחלף אחרי התור הבא."
 save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0}). משחק חדש התחיל."

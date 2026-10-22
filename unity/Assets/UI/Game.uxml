@@ -154,6 +154,8 @@
                     <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
                     <ui:Button name="info-fortify" />
                     <ui:Button name="info-hold" />
+                    <!-- Attack (#754): shown only when the sim's Combat.Check takes some hex; the pick shows each hex's odds. -->
+                    <ui:Button name="info-attack" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
                 <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
