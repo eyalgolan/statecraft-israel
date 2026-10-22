@@ -2,6 +2,11 @@
 id: operation_horev
 title: Operation Horev
 text: '{defense_minister} proposes an offensive against the Egyptian army in the south, under Yigal Allon, with five brigades.'
+# For the native reviewer (#564): מבצע חורב and יגאל אלון follow he.wiki "מבצע חורב"
+# (https://he.wikipedia.org/wiki/מבצע_חורב).
+title_he: מבצע חורב
+text_he: 'הצעת {defense_minister} היא לפתוח במתקפה נגד הצבא המצרי בדרום, בפיקוד יגאל אלון ובהשתתפות חמש חטיבות.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -18,6 +23,7 @@ to: 1948-12-23
 options:
   - id: launch
     text: Launch Operation Horev
+    text_he: לפתוח במבצע חורב
     historical: true
     recommended: true
     set_rung: 5
@@ -26,6 +32,8 @@ options:
   - id: hold
     # Game assumption: the notes give no alternative to launching; this one names no advocate.
     text: Hold the lines and wait for talks with Egypt
+    text_he: להחזיק בקווים ולהמתין לשיחות עם מצרים
+    alternative: { basis: design }
     effects:
       - { target: security, delta: -0.01 }
 sources:

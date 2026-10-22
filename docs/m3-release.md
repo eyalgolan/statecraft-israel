@@ -62,7 +62,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   ```
   uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-gzip')).serve_forever()"
   ```
-  The uncompressed build also works with `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`.
+  The uncompressed build also works with `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`.
 - **Console lines a browser check can rely on:**
   - `GAME OK <date> turn <n> hash <state hash>` at start (a new game, or the autosave continued).
   - `TURN <n> <date> hash <state hash>` after every End Turn.
@@ -115,6 +115,46 @@ Each step below passed:
 
 Firefox is not installed on the development Mac. A Firefox result from a contributor, and the WebKit check, are in the
 next section.
+
+## Firefox cached-build return (#437), 19 October 2026
+
+**Local pass, with limits:** installed Firefox 158.0 on macOS 27.0.1 arm64, headless through
+[WebDriver BiDi](https://developer.mozilla.org/en-US/docs/Web/WebDriver/How_to/Create_BiDi_connection),
+1280x720 at DPR 1. This is Firefox itself, rather than Playwright's patched Firefox in the older report below.
+Both consecutive builds used upstream main `9e57134201f74412bf3d7513e26b600a9c760f5c`, Unity 6000.3.25f1,
+`Build.Web -compression disabled`, separate output directories, and no source or template change.
+
+The server sent `Cache-Control: public, max-age=3600`; `web_check.py`'s no-store server was not used for this
+cache test. One Firefox process, temporary profile, origin and URL were kept for A, a normal return to A, and a
+normal return after replacing the served directory with B. Navigation went through `about:blank`, without a hard
+reload or cache clearing. After the switch the server exposed B only, not A's removed files.
+
+| Observation | Fresh A | Normal return to A | Normal return to B |
+|---|---|---|---|
+| Navigation `transferSize` (bytes) | 4701 | 0 | 0 |
+| BiDi responses marked `fromCache` | 0 | 14 | 7 |
+| Inline document's original build names | A | A | A |
+| Runtime configuration and StreamingAssets build id | A | A | B |
+| Golden manifest values / UI smoke | 8/8 and 5 turns | 8/8 and 5 turns | 8/8 and 5 turns |
+
+A's data file was `20648dff2e2641ced75ed42ef260fd23.data`; B's was
+`ab61a67d11f2a3077b1cb2b5f4eec503.data`. The loader, framework and wasm names were unchanged between the
+builds. StreamingAssets' `b` value changed from `bcbd32b8194e467bb1906085e78bb3f2` to
+`020ffe9f466f45e7ad95f62deb9359d0`. On the B return, the cached document still contained A's original inline
+file names, while `useCurrentPage` selected B's data URL; B's data request returned 200, and no A-only build
+resource was requested from the B server. This exercises stale HTML, not just a fresh page load.
+
+All three visits matched every value in [the golden manifest](https://github.com/eyalgolan/statecraft-israel/blob/9e57134201f74412bf3d7513e26b600a9c760f5c/sim/Statecraft.Sim.Tests/golden/manifest.txt)
+and logged `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
+The harness exited 0; across 33 server requests there were no HTTP errors, no BiDi console error entries and no
+`GOLDEN FAIL`, `SMOKE FAIL`, `BOOT FAIL`, exception or recursion failure. Network traces, build-file SHA256
+manifests, console lines and 1280x720 captures were retained locally; the exact standalone harness and commands
+are included in the contribution's PR description. The B-return capture SHA256 is
+`daf943e3b3286c109e745648f086b3d5a475329a4f182b32a34dce7076723331`.
+
+This checks the existing #501 fix on a local, uncompressed EN build. It does not check Firefox on Windows,
+wheel or touch input, compressed hosting, save migration or two itch.io uploads. The itch.io check remains the
+owner's step in #43; #437 stays open for that step. No gameplay, source-review status or release gate changed.
 
 ## Other browsers (#43), 2026-10-14
 Build: main `04bf7cb`, WebGL, `-compression disabled`, served with web_check's handler on `http://localhost`. Mac: Apple
@@ -250,12 +290,13 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
   (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
   sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the seven ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the eight ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 
 | Event | Tags | What to review |
 |---|---|---|
+| `burma_road_complete` | `war-casualties` | Objective 3 completion card and selected Road of Valour photograph (#791). The owner approved the photograph (#1226) and the card's text as written on 21 October 2026 ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6323448636)); it is `sensitivity-reviewed`. |
 | `altalena` | security, war-casualties | Jews killed by Jews: 16 Irgun and 3 IDF dead (in the YAML comment, not the card) |
 | `ten_days` | security, war-casualties | Lydda and Ramle are shown as a military operation only (Lydda airport, the Jerusalem road); leaving out the population's flight and expulsion is an editorial choice the notes flag for explicit approval |
 | `operation_yoav` | security, war-casualties | the Hebron-hills decision; military text only |

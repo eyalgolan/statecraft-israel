@@ -94,15 +94,16 @@ public class UiLayoutTests
         var root = doc.rootVisualElement;
         // August 1950, when the map actions are open (in 1948 one shared refusal hides both build buttons, #398), so the
         // build button below is really on the panel before a screen covers it.
-        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        while (g.State.Date < new System.DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
+        var g = GameSession.New(legacy, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new System.DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(legacy, g.State));
         var bridge = new SimBridge(g, Text);
-        var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id));
+        var info = new InfoPanelPresenter(root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id));
         var nav = new ScreenNav(root);
         try
         {
             root.Q("root").RemoveFromClassList("loading");
-            var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
             info.Show(tlv.Q, tlv.R);
             for (int i = 0; i < 4; i++) yield return null;
             var panel = root.Q("info-panel");
@@ -155,8 +156,9 @@ public class UiLayoutTests
         doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
         go.SetActive(true);
         var root = doc.rootVisualElement;
-        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        while (g.State.Date < new System.DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(C, g.State));
+        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
+        var g = GameSession.New(legacy, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new System.DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(legacy, g.State));
         var bridge = new SimBridge(g, Text);
         var owned = new List<System.IDisposable>();
         void Resize(int w, int h) { var old = rt; rt = new RenderTexture(w, h, 0); ps.targetTexture = rt; old.Release(); Object.DestroyImmediate(old); }
@@ -165,9 +167,9 @@ public class UiLayoutTests
             root.Q("root").RemoveFromClassList("loading");
             owned.Add(new HudPresenter(root, bridge, Text));
             var nav = new ScreenNav(root); owned.Add(nav);
-            var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
+            var info = new InfoPanelPresenter(root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
             var card = new EventCardPresenter(root, bridge, Text, null); owned.Add(card);
-            var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
             info.Show(tlv.Q, tlv.R);
             for (int i = 0; i < 4; i++) yield return null;
             Assert.IsNotNull(root.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
@@ -391,6 +393,7 @@ public class UiLayoutTests
                 new HudPresenter(root, bridge, text), new EventCardPresenter(root, bridge, text, null),
                 new CabinetPresenter(root, bridge, text, null), new BudgetPresenter(root, bridge, text),
                 new DefencePresenter(root, bridge, text), new WhyPresenter(root, bridge, text), new HowToPlayPresenter(root, text),
+                new ObjectivesPresenter(root, bridge, text),
             };
             var nav = new ScreenNav(root);
             try

@@ -36,7 +36,7 @@ public class MilitaryUnitTests
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         Assert.Equal(new[] { ("veteran_soldier", "unit", "israel", "infantry"), ("artillery", "unit", "israel", "artillery"), ("armoured_car", "unit", "israel", "armour") },
-                     c.UnitTypes.Where(t => t.Side != "").Select(t => (t.Id, t.Kind, t.Side, t.Class)));
+                     c.UnitTypes.Where(t => t.Side == "israel").Select(t => (t.Id, t.Kind, t.Side, t.Class)));
         Assert.Equal("", c.UnitTypes.Single(t => t.Id == "recruit").Side);   // a count per city until PR 3 (R-TRAIN-003)
     }
 
@@ -59,7 +59,7 @@ public class MilitaryUnitTests
     [Fact]
     public void AMilitaryTypeLoadsAndAPopulationTypeNeedsNeither()
     {
-        var c = Load(Fixture.GddUnitTypes + "  - { id: soldier, kind: unit, side: egypt, class: armour }\n");
+        var c = Load(Fixture.GddUnitTypes + "  - { id: soldier, kind: unit, side: egypt, class: armour, movement_points: 4 }\n");
         var t = c.UnitTypes.Single(x => x.Id == "soldier");
         Assert.Equal(("egypt", "armour"), (t.Side, t.Class));
         Assert.Equal(("", ""), (c.UnitTypes.Single(x => x.Id == "civilian").Side, c.UnitTypes.Single(x => x.Id == "civilian").Class));

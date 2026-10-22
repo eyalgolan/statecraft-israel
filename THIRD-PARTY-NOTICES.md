@@ -17,6 +17,7 @@ required attribution texts are in [`NOTICE`](NOTICE).
 | Wikipedia text and coordinates | cited throughout `content/` | CC BY-SA 4.0 | Attribution (source URL per entry); share-alike, which is why `content/` is CC BY-SA 4.0 |
 | Portraits (Wikimedia Commons) | `promo/ref/people/`, `unity/Assets/UI/Portraits/` | Public domain, CC0, CC BY 4.0 or CC BY-SA 4.0, per file | Public domain and CC0: none legally. CC BY 4.0 and CC BY-SA 4.0: keep the credit (artist, licence, source) in `NOTICE`; a portrait cropped from a CC BY-SA 4.0 photograph is itself CC BY-SA 4.0. The per-file record in `ASSETS.portraits.yaml` is kept as provenance |
 | Event-card photographs (Wikimedia Commons: Meitar Collection / National Library of Israel, Nationaal Archief, US National Archives) | `unity/Assets/UI/EventImages/` | CC BY 4.0, CC0 1.0 or public domain, per file | CC BY 4.0: keep the credit line (photographer, Meitar Collection, National Library of Israel, The Pritzker Family National Photography Collection; licence; "graded and cropped") in `NOTICE` and under the picture in the game; per-file records in `ASSETS.yaml` |
+| Octicons `star-fill-24` and `mark-github-24` (GitHub's Primer icons, https://github.com/primer/octicons at 6dbe38e4), written out as cubic segments in code | `unity/Assets/Scripts/UI/UiIcon.cs` (`StarPath`, `MarkGithubPath`), in every build | MIT, Copyright (c) 2026 GitHub Inc. | Keep `LICENSES/Octicons-MIT.txt` with the source and with builds (both packagers copy `LICENSES/` whole); the GitHub mark is also a trademark, see below |
 | EB Garamond | `unity/Assets/UI/Fonts/` | SIL Open Font License 1.1 | Keep `OFL.txt` with the fonts; do not sell the fonts on their own |
 | Frank Ruhl Libre | `unity/Assets/UI/Fonts/FrankRuhlLibre/` | SIL Open Font License 1.1 | Keep `OFL.txt` with the fonts; do not sell the fonts on their own |
 | Unity template-derived files | `unity/Assets/Settings/`, `spikes/m0/unity/Assets/Settings/`, `spikes/m0/unity/Assets/UI Toolkit/UnityThemes/`, and Shader Graphs generated from a Unity template (`unity/Assets/Shaders/StatecraftTerrain.shadergraph`) | Unity Companion License | Use with Unity; see `LICENSING.md` |
@@ -52,9 +53,11 @@ each font's licence: `unity/Assets/UI/Fonts/OFL.txt` as `OFL-EBGaramond.txt` and
 ## Third-party trademarks
 
 Names below belong to their owners and are used only to say truthfully what this project uses, runs on or is compared
-with. None of them endorses this project, and this repository ships none of their logos.
+with. None of them endorses this project, and this repository ships none of their logos except the GitHub mark below.
 
 - Unity is a trademark of Unity Technologies.
+- GitHub and the GitHub mark are trademarks of GitHub, Inc. The mark (Octicons `mark-github`, MIT) appears only on the
+  start screen's "Star on GitHub" button, which opens this project's repository on GitHub (#1168).
 - Civilization and Civilization VII are trademarks of Take-Two Interactive Software; they are named as a genre and style
   reference.
 - ElevenLabs is a trademark of Eleven Labs, Inc.

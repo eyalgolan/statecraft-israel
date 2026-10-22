@@ -37,13 +37,37 @@ public class SimBridgeSiteTests
         Assert.IsInstanceOf<StopWork>(b.Queued[0]);
     }
 
+    /// <summary>#1124: the three other pioneer actions Projects.Start runs pass the id check, each at a site of its kind.</summary>
+    [TestCase(Projects.BuildCamp, "camp_80")]
+    [TestCase(Projects.PlowFields, "mefalsim_field")]
+    [TestCase(Projects.DrySwamp, "hula")]
+    public void EachOtherPioneerActionIsQueued(string action, string site)
+    {
+        var (b, id) = WithAHalutz();
+        Assert.IsNull(b.Queue(new PioneerWork(id, action, site)));
+        var order = b.QueuedLike(new PioneerWork(id, action, site)) as PioneerWork;
+        Assert.AreEqual((id, action, site), (order!.Unit, order.Action, order.Site));
+    }
+
+    // Corridors (#786): a road or rail order names a segment of corridors.yaml, "corridor:N".
+    [Test]
+    public void ACorridorOrderQueuesInTheSlice()
+    {
+        var (b, id) = WithAHalutz();
+        Assert.IsNull(b.Queue(new PioneerWork(id, Corridors.BuildRoad, "burma_road:4")));
+        Assert.IsNull(b.Queue(new PioneerWork(id, Corridors.BuildRail, "tlv_haifa_rail:1")));   // the same unit: replaces it
+        Assert.AreEqual(1, b.Queued.Count);
+    }
+
     [Test]
     public void AnUnknownIdIsRefusedAndNothingIsQueued()
     {
         var t = Text;
         var (b, id) = WithAHalutz();
         Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(99, Projects.BuildYishuv, "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "pioneer work"), b.Queue(new PioneerWork(id, "build_road", "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "pioneer work"), b.Queue(new PioneerWork(id, "dig_well", "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "corridor segment"), b.Queue(new PioneerWork(id, Corridors.BuildRoad, "burma_road:5")));
+        Assert.AreEqual(t.Format("order.unknown", "corridor segment"), b.Queue(new PioneerWork(id, Corridors.BuildRoad, "mefalsim")));
         Assert.AreEqual(t.Format("order.unknown", "site"), b.Queue(new PioneerWork(id, Projects.BuildYishuv, "yeruham")));
         Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(99)));
         Assert.AreEqual(0, b.Queued.Count);
@@ -54,8 +78,9 @@ public class SimBridgeSiteTests
     {
         var t = Text;
         var b = Bridge(Legacy);
-        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(1, Projects.BuildYishuv, "mefalsim")));
-        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(1)));
+        var none = b.State.NextId;   // no unit has it: the starting forces take ids 0 to 11 (R-UNIT-006)
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new PioneerWork(none, Projects.BuildYishuv, "mefalsim")));
+        Assert.AreEqual(t.Format("order.unknown", "unit"), b.Queue(new StopWork(none)));
         Assert.AreEqual(0, b.Queued.Count);
     }
 }

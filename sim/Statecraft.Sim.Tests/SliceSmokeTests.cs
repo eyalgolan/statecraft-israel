@@ -237,6 +237,22 @@ public class SliceSmokeTests
         Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
     }
 
+    /// <summary>The smoke-orders golden (GDD Phase 5 PR 15, #754): one turn whose only order is one Move, the one the WebGL
+    /// ?smoke-orders run gives through the unit card's buttons (GameRoot.SmokeOrders); events go to their ministers.</summary>
+    [Fact]
+    public void TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden()
+    {
+        var start = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var move = GoldenRun.SmokeMove(Real, start);
+        Assert.Equal(Movement.Reachable(Real, start, move.Unit).Keys.First(), (move.Q, move.R));   // a hex the card lights
+        var end = GoldenRun.PlaySmokeOrders(Real);
+        var expected = GoldenManifest.Expected("smoke-orders");   // read before an update rewrites the manifest
+        if (GoldenManifest.UpdateRequested) GoldenManifest.Update("smoke-orders", end.Hash());
+        Assert.Equal((move.Q, move.R), (end.Units[move.Unit].Q, end.Units[move.Unit].R));   // the order took effect
+        Assert.NotEqual(Simulation.Step(Real, start, new List<Command>()).State.Hash(), end.Hash());   // and shows in the hash
+        Assert.Equal(expected, end.Hash());
+    }
+
     [Fact]
     public void TheHistoricalRunPlaysTheWholeSliceCleanlyAndEndsOnTheGolden()
     {
@@ -256,7 +272,8 @@ public class SliceSmokeTests
         AssertClean("player", run, Play(Real, Player, reload: false, guard: null));
         // Attention runs out some turns: the UI refuses those extra orders at queue time, which is not a sim refusal.
         Assert.True(run.Orders > run.Turns, $"{run.Orders} orders in {run.Turns} turns");
-        var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget", "set_mobilization", "map_action", "security_order" };
+        // No map_action: the GDD loop refuses it (R-PROJ-004) and the info panel offers no legacy Build button there.
+        var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget", "set_mobilization", "security_order" };
         Assert.Empty(uiKinds.Except(run.Carried));                     // every order a UI screen can queue was carried out
         Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
     }

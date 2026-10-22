@@ -137,8 +137,8 @@ namespace Statecraft.Game.UI
             pmCard.EnableInClassList("seat-selected", Selected == PrimeMinister);
             if (pmSeat != null)
             {
-                var offices = pm == null ? ContentNames.Of(text, pmSeat.Office, null)
-                    : string.Join(text["card.offices_separator"], lineup.Where(x => x.Office.Id == PrimeMinister || HeldByPm(x)).Select(x => ContentNames.Of(text, x.Office, pm)));
+                var offices = pm == null ? ContentNames.Of(text, pmSeat.Office, null, s.Date)
+                    : string.Join(text["card.offices_separator"], lineup.Where(x => x.Office.Id == PrimeMinister || HeldByPm(x)).Select(x => ContentNames.Of(text, x.Office, pm, s.Date)));
                 PersonCard.Fill(pmCard, "seat-" + PrimeMinister, c, s, pm, offices, pmSeat.Appointed, text, portraits, PmPortrait, partyLabel: true);
                 pmId = pm?.Id;
                 FramePm();
@@ -150,7 +150,7 @@ namespace Statecraft.Game.UI
                 foreach (var seat in pmHeld)
                 {
                     var office = seat.Office.Id;
-                    var b = new Button(() => Select(office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm)) };
+                    var b = new Button(() => Select(office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm, s.Date)) };
                     b.AddToClassList("pm-office");
                     pmOffices.Add(b);
                 }
@@ -179,14 +179,14 @@ namespace Statecraft.Game.UI
                 var card = cards[key];
                 card.EnableInClassList("seat-selected", seat.Office.Id == Selected);
                 card.EnableInClassList("seat-vacant", holder == null);
-                PersonCard.Fill(card, "seat-" + key, c, s, holder, ContentNames.Of(text, seat.Office, holder), seat.Appointed, text, portraits, CardPortrait);
+                PersonCard.Fill(card, "seat-" + key, c, s, holder, ContentNames.Of(text, seat.Office, holder, s.Date), seat.Appointed, text, portraits, CardPortrait);
             }
 
             RenderPick(c, s);
             var queued = bridge.Queued.OfType<Appoint>().Select(a =>
             {
                 var person = c.People.First(p => p.Id == a.Person);
-                return text.Format("cabinet.queued", ContentNames.Of(text, person), ContentNames.Of(text, c.Offices.First(o => o.Id == a.Office), person));
+                return text.Format("cabinet.queued", ContentNames.Of(text, person), ContentNames.Of(text, c.Offices.First(o => o.Id == a.Office), person, s.Date));
             });
             screen.Q<Label>("cabinet-status").text = string.Join("\n", queued);
         }
@@ -257,7 +257,7 @@ namespace Statecraft.Game.UI
                     }
             }
             if (Selected == null) return;
-            screen.Q<Label>("cabinet-pick-title").text = text.Format("cabinet.pick", ContentNames.Of(text, c.Offices.First(o => o.Id == Selected), null));
+            screen.Q<Label>("cabinet-pick-title").text = text.Format("cabinet.pick", ContentNames.Of(text, c.Offices.First(o => o.Id == Selected), null, s.Date));
             var list = Cabinet.Candidates(c, s, Selected);
             // A refusal about the office itself (the Prime Minister's or the President's, an abolished one) is the same for
             // everyone: it is said once under the heading, not under every name (#215).
@@ -279,7 +279,7 @@ namespace Statecraft.Game.UI
         {
             bool he = text["ui.lang"] == UiLanguage.Hebrew;
             string Person(string id) { var p = c.People.First(x => x.Id == id); return he && p.NameHe != "" ? p.NameHe : p.Name; }
-            string Office(string id) { var o = c.Offices.First(x => x.Id == id); return he && o.TitleHe != "" ? o.TitleHe : o.Title; }
+            string Office(string id) => ContentNames.Of(text, c.Offices.First(x => x.Id == id), null, bridge.State.Date);
             string Party(string id) { var p = c.Parties.First(x => x.Id == id); return he && p.NameHe != "" ? p.NameHe : p.Name; }
             string Date(string iso) => Statecraft.Game.Map.Control1948.DateText(System.DateTime.ParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture), k => text[k]);
             var key = "cabinet.reason." + reason.Kind;
@@ -289,7 +289,7 @@ namespace Statecraft.Game.UI
                 case "abolished": case "not_established": return text.Format(key, Office(reason.Values[0]), Date(reason.Values[1]));
                 case "died": return text.Format(key, Person(reason.Values[0]), Date(reason.Values[1]));
                 case "is_president": case "is_chief_of_staff": case "not_career_officer": return text.Format(key, Person(reason.Values[0]));
-                case "already_holds": return text.Format(key, Person(reason.Values[0]), ContentNames.Of(text, c.Offices.First(o => o.Id == reason.Values[1]), c.People.First(p => p.Id == reason.Values[0])));
+                case "already_holds": return text.Format(key, Person(reason.Values[0]), ContentNames.Of(text, c.Offices.First(o => o.Id == reason.Values[1]), c.People.First(p => p.Id == reason.Values[0]), bridge.State.Date));
                 case "party_not_coalition": return text.Format(key, Person(reason.Values[0]), Party(reason.Values[1]));
                 default: return text[key];
             }

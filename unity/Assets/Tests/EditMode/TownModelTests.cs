@@ -35,7 +35,7 @@ public class TownModelTests
     static SettlementKits.Result Build(MapScene map, out List<SettlementKits.Placed> placed)
     {
         var g = new KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
         var built = SettlementKits.Build(map.Settlements, map.Localities.Select(p => p.Settlement).ToList(), new List<Localities.Area>(), g, out placed);
         foreach (var k in built.Towns) UnityEngine.Object.DestroyImmediate(k.mesh);
@@ -118,7 +118,7 @@ public class TownModelTests
 
     /// <summary>Every building the census records (and every water tower and port warehouse) is built of models on its plot:
     /// at the world scale (SettlementKits.ModelScale) a kit plot holds a grid of them (a water tower, a warehouse, a dining
-    /// hall and a place's one-off building one), each turned with the plot and inside its footprint; no other model is
+    /// hall and a place's one-off building one), each turned with the plot (up to SettlementKits.MaxTurnDeg off it, #1032) and inside its footprint; no other model is
     /// placed.</summary>
     [Test]
     public void EveryPlacedBuildingIsOneModelOnItsPlot()
@@ -144,7 +144,7 @@ public class TownModelTests
             float a = p.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             foreach (var mi in at)
             {
-                if (Mathf.Abs(mi.Yaw - p.Yaw) > 0.01f) bad.Add($"{p.Id} {p.Kind} at {p.C}: turned off its plot");
+                if (Mathf.Abs(Mathf.DeltaAngle(mi.Yaw, p.Yaw)) > SettlementKits.MaxTurnDeg + 0.01f) bad.Add($"{p.Id} {p.Kind} at {p.C}: turned off its plot");   // #1032: up to MaxTurnDeg
                 corners.Clear(); mi.Corners(corners);
                 foreach (var c in corners)
                 {

@@ -17,6 +17,7 @@ options:
     historical: true
   - id: stay
     text: Stay
+    alternative: { basis: design }
 ";
 
     const string Follow = @"
@@ -160,6 +161,7 @@ options:
     historical: true
   - id: decline
     text: Decline
+    alternative: { basis: design }
 ";
 
     const string Plain = @"

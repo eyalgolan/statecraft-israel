@@ -23,9 +23,12 @@ public class CommandGuardTests
         [typeof(CancelTraining)] = new CancelTraining(1),
         [typeof(PioneerWork)] = new PioneerWork(1, "build_yishuv", "mefalsim"),
         [typeof(StopWork)] = new StopWork(1),
+        [typeof(UnitOrder)] = new UnitOrder(1, "fortify"),
         [typeof(StartProject)] = new StartProject("housing", "tel_aviv", 1, 0),
         [typeof(CancelProject)] = new CancelProject(1),
+        [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),   // refused (fewer than one unit), as GovernmentTests.ARefusedGddOrderRefundsItsAttention needs
+        [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),   // refused (nothing awaits a decision), like BuyArms(0)
     };
 
     static IEnumerable<Type> CommandTypes() =>
