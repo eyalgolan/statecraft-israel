@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Statecraft.Game.UI
 {
     /// <summary>Sharing a post with a screenshot of the game (#1170, SharePresenter): the capture, the PNG, the post text and
-    /// the four share links. Nothing is uploaded by the game and nothing is counted: the picture stays in the page until the
+    /// the sites' share links. Nothing is uploaded by the game and nothing is counted: the picture stays in the page until the
     /// player shares or downloads it. On the web ShareShot.jslib keeps the PNG as a File; the Share press arms a one-shot
     /// release listener (as ExternalLink does, #1168), and inside that real gesture the browser's share sheet gets the file,
     /// the text and the itch URL (navigator.share), or, where it cannot share files (Firefox on the desktop, some others),
@@ -21,8 +21,9 @@ namespace Statecraft.Game.UI
         public const string Itch = "https://eyalgolan.itch.io/statecraft-israel";
         /// <summary>The picture's long side at most: a DPR-3 phone frame encoded at full size can exhaust the WebGL heap.</summary>
         public const int MaxSide = 1920;
-        /// <summary>The share links offered where the browser cannot share files, in the panel's order.</summary>
-        public static readonly string[] Sites = { "x", "facebook", "whatsapp", "linkedin" };
+        /// <summary>The site buttons, in the panel's order: the owner's list (#1237; LinkedIn kept, at the end, owner 21 Oct
+        /// 2026). Instagram has no share link: its button shares or downloads the picture, as Share does (SharePresenter).</summary>
+        public static readonly string[] Sites = { "x", "facebook", "instagram", "whatsapp", "telegram", "linkedin" };
 
         public static Action<byte[], string> Keep = DefaultKeep;
         public static Func<bool> CanShareFiles = DefaultCanShareFiles;
@@ -38,13 +39,14 @@ namespace Statecraft.Game.UI
         /// <summary>The post, in the UI's language, with the in-game date and turn and the itch URL.</summary>
         public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch);
 
-        /// <summary>A site's share link. X and WhatsApp take the text, which ends with the URL; Facebook and LinkedIn take
-        /// only a URL.</summary>
+        /// <summary>A site's share link. X and WhatsApp take the text, which ends with the URL; Telegram takes the URL and the
+        /// text, both encoded (core.telegram.org/widgets/share); Facebook and LinkedIn take only the URL.</summary>
         public static string IntentUrl(string site, string text) => site switch
         {
             "x" => "https://x.com/intent/post?text=" + Uri.EscapeDataString(text),
             "facebook" => "https://www.facebook.com/sharer/sharer.php?u=" + Uri.EscapeDataString(Itch),
             "whatsapp" => "https://wa.me/?text=" + Uri.EscapeDataString(text),
+            "telegram" => "https://t.me/share/url?url=" + Uri.EscapeDataString(Itch) + "&text=" + Uri.EscapeDataString(text),
             "linkedin" => "https://www.linkedin.com/sharing/share-offsite/?url=" + Uri.EscapeDataString(Itch),
             _ => throw new ArgumentException("no share link for " + site, nameof(site)),
         };

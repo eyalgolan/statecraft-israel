@@ -36,6 +36,7 @@ public class SimBridgeGuardTests
         [typeof(CancelProject)] = new CancelProject(1),
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),
+        [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),
     };
 
     static IEnumerable<Type> CommandTypes() =>

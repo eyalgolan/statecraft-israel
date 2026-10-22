@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -29,6 +30,26 @@ public class FirstTurnGuideTests
     /// <summary>The settlements' names for the info panel's title (InfoPanelLayoutTests' list).</summary>
     static Dictionary<string, string> Names() => SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName)))
         .ToDictionary(t => t.Id, t => t.Name);
+    static List<UnitEntry> UnitRows => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+
+    /// <summary>The info panel and the guide as GameRoot wires them, without the map: the guide's city (CityHex) and its unit
+    /// (UnitToShow, among the tokens a new game draws) shown as a click would show them.</summary>
+    static (InfoPanelPresenter info, FirstTurnGuidePresenter guide) PanelAndGuide(VisualElement root, SimBridge bridge, UiText text,
+        SettingsStore? settings, EventCardPresenter card, Action closeScreens)
+    {
+        var tokens = UnitRoster.FromState(UnitRows, bridge.Content, bridge.State, _ => true, (row, a, q, r) => a);
+        PlacedToken? shown = null;
+        var info = new InfoPanelPresenter(root, bridge, text, Names(), selectedUnit: () => shown);
+        var guide = new FirstTurnGuidePresenter(root, text, settings, card,
+            () => { if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is (int q, int r)) info.Show(q, r); }, closeScreens,
+            showUnit: () =>
+            {
+                if (!(FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, tokens.Select(t => t.Unit)) is string id)) return;
+                shown = new PlacedToken(tokens.First(t => t.Unit.Id == id), new AnchorSpot(0, 0, 0, 0, false));
+                info.ShowUnit();
+            });
+        return (info, guide);
+    }
 
     readonly List<string> temp = new List<string>();
     string TempDir()
@@ -135,10 +156,10 @@ public class FirstTurnGuideTests
             owned.Add(new HudPresenter(Ui.Root, Bridge, text));
             Nav = Own(new ScreenNav(Ui.Root));
             Card = Own(new EventCardPresenter(Ui.Root, Bridge, text, null));
-            var info = Own(new InfoPanelPresenter(Ui.Root, Bridge, text, Names()));
             Own(new HowToPlayPresenter(Ui.Root, text));
-            Guide = Own(new FirstTurnGuidePresenter(Ui.Root, text, settings, Card,
-                () => { if (FirstTurnGuidePresenter.CityHex(Bridge.Content, Bridge.State) is (int q, int r)) info.Show(q, r); }, () => Nav.Close()));
+            var (info, guide) = PanelAndGuide(Ui.Root, Bridge, text, settings, Card, () => Nav.Close());
+            Own(info);
+            Guide = Own(guide);
         }
 
         T Own<T>(T d) where T : IDisposable { owned.Add(d); return d; }
@@ -150,7 +171,37 @@ public class FirstTurnGuideTests
         }
     }
 
-    /// <summary>Skip at any step closes it; Next walks the five steps and Done closes it; Escape skips; How to play's button
+    /// <summary>The six steps, in the order a player meets them: the move step (#1141, owner, 21 October 2026) after
+    /// training and before the event card, which keeps its own step's number.</summary>
+    [Test]
+    public void HasSixStepsInOrder()
+    {
+        CollectionAssert.AreEqual(new[] { "attention", "city", "training", "move", "event", "objectives" }, FirstTurnGuidePresenter.Steps);
+        Assert.AreEqual(Array.IndexOf(FirstTurnGuidePresenter.Steps, "event"), FirstTurnGuidePresenter.EventStep);
+        foreach (var text in new[] { En, He })
+            foreach (var key in FirstTurnGuidePresenter.Steps)
+                foreach (var part in new[] { ".title", ".text" })
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(text["guide." + key + part]), $"{text["ui.lang"]}: guide.{key}{part}");
+    }
+
+    /// <summary>The unit the move step shows: the first drawn unit (units.yaml order) that the sim lets move now (a hex in
+    /// Movement.Reachable), so its card has the Move button; none in the legacy loop, which has no starting forces.</summary>
+    [Test]
+    public void TheMoveStepsUnitCanMove()
+    {
+        var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var rows = UnitRoster.FromState(UnitRows, C, s, _ => true, (row, a, q, r) => a).Select(t => t.Unit).ToList();
+        var id = FirstTurnGuidePresenter.UnitToShow(C, s, rows);
+        Assert.IsNotNull(id, "a new game has a unit that can move");
+        var row = rows.Single(u => u.Id == id);
+        Assert.AreEqual(UnitData.Israel, row.Side);
+        Assert.IsNotEmpty(Movement.Reachable(C, s, UnitCard.SimUnit(C, s, row)!.Value), "the sim has a hex for it");
+        var first = rows.First(u => UnitCard.SimUnit(C, s, u) is int i && Movement.Reachable(C, s, i).Count > 0);
+        Assert.AreEqual(first.Id, id, "the first such row");
+        Assert.IsNull(FirstTurnGuidePresenter.UnitToShow(SimBridgeGddTests.Legacy, s, rows), "the legacy loop: no unit to show");
+    }
+
+    /// <summary>Skip at any step closes it; Next walks the six steps and Done closes it; Escape skips; How to play's button
     /// opens it again at its first step, closing that screen; each step shows its own strings.</summary>
     [Test]
     public void CanBeSkippedAtAnyStepAndReopened([Values(false, true)] bool hebrew)
@@ -164,10 +215,10 @@ public class FirstTurnGuideTests
         {
             var key = FirstTurnGuidePresenter.Steps[step];
             Assert.AreEqual(step, rig.Guide.Step);
-            Assert.AreEqual(text.Format("guide.step", step + 1, 5), rig.Ui.Q<Label>("guide-count").text);
+            Assert.AreEqual(text.Format("guide.step", step + 1, 6), rig.Ui.Q<Label>("guide-count").text);
             Assert.AreEqual(text["guide." + key + ".title"], rig.Ui.Q<Label>("guide-title").text);
             Assert.AreEqual(text["guide." + key + ".text"], rig.Ui.Q<Label>("guide-text").text);
-            Assert.AreEqual(text[step == 4 ? "guide.done" : "guide.next"], rig.Ui.Q<Button>("guide-next").text);
+            Assert.AreEqual(text[step == 5 ? "guide.done" : "guide.next"], rig.Ui.Q<Button>("guide-next").text);
             Assert.AreEqual(step != FirstTurnGuidePresenter.EventStep, rig.Card.Collapsed, $"step {step + 1}: the card shows on its own step only");
             if (key == "objectives")
             {
@@ -304,6 +355,30 @@ public class FirstTurnGuideTests
         Assert.AreEqual(other, info.Selected, "a selection the player made meanwhile stays");
     }
 
+    /// <summary>In the game as a player has it, the move step shows the guide's unit (UnitToShow) as a click on it would: its
+    /// ring and its card with the Move button. Skip puts back the selection the guide found (none), as on the city's steps.</summary>
+    [Test]
+    public void TheMoveStepShowsAUnitsCardWithMove()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var guide = game.Guide!; var info = game.Info!; var units = game.Units!; var bridge = game.Bridge!;
+        Assert.IsTrue(guide.IsOpen && info.Selected == null && !info.ShowsUnit, "precondition: a new game, nothing selected");
+        var move = Array.IndexOf(FirstTurnGuidePresenter.Steps, "move");
+        for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        Assert.AreEqual(move, guide.Step);
+        var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token.Unit));
+        Assert.IsNotNull(id, "precondition: a drawn unit can move");
+        Assert.AreEqual(id, units.Selected, "the guide's unit, with its ring");
+        Assert.IsTrue(info.ShowsUnit, "its card in the info panel");
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q<Button>("info-move").style.display.value, "with the Move button");
+        UiTestKit.Press(Ui.Q<Button>("guide-skip"));
+        Assert.IsNull(units.Selected, "Skip: no unit selected again");
+        Assert.IsFalse(info.ShowsUnit);
+        Assert.IsNull(info.Selected, "and no hex");
+    }
+
     // --- Presentation only ------------------------------------------------------------------------------------------
 
     /// <summary>The whole guide, by itself, through How to play, through every step, Skip and Escape: the state hash, the
@@ -359,6 +434,9 @@ public class FirstTurnGuideTests
                     if (FirstTurnGuidePresenter.Steps[step] == "objectives" &&
                         (targets.Count != 1 || targets[0].name != "nav-objectives"))
                         problems.Add($"{at}: the last step must point at the Objectives button");
+                    if (FirstTurnGuidePresenter.Steps[step] == "move" &&
+                        (targets.Count != 1 || targets[0].name != "info-move" || ((Button)targets[0]).text != (hebrew ? He : En)["unit.order.move"]))
+                        problems.Add($"{at}: the move step must point at the unit card's Move button");
                     if (targets.Count == 0) { problems.Add($"{at}: no target shows"); return; }
                     var area = guide.TargetArea()!.Value;
                     if (!Inside(area, window)) problems.Add($"{at}: the target {area} leaves the window {window}");
@@ -376,11 +454,83 @@ public class FirstTurnGuideTests
                     var panel = root.Q("guide-panel").worldBound;
                     if (!(panel.width > 0) || !Inside(panel, window)) problems.Add($"{at}: the panel {panel} leaves the window {window}");
                     if (panel.Overlaps(area)) problems.Add($"{at}: the panel {panel} covers the target {area}");
+                    // The ring too (its gap and border round the target), so the larger text (player feedback, 21 October
+                    // 2026) never pushes the panel onto the gold box it points at.
+                    if (ring.resolvedStyle.display == DisplayStyle.Flex && panel.Overlaps(ring.worldBound))
+                        problems.Add($"{at}: the panel {panel} covers the ring {ring.worldBound}");
                     foreach (var name in new[] { "guide-title", "guide-text", "guide-skip", "guide-next" })
                         if (!Inside(root.Q(name).worldBound, panel)) problems.Add($"{at}: {name} {root.Q(name).worldBound} leaves the panel {panel}");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    /// <summary>Player feedback relayed by the owner (21 October 2026: the guide's text was too small; "make it slightly
+    /// bigger"): at 1280x720 (the itch embed) and 1920x1080, in English and Hebrew, the guide's text is at least
+    /// <see cref="GuideTextOnScreenPx"/> on screen and its smallest line, the step count, at least the owner's text floor
+    /// (HudPresenter.TextFloorPx). Before the change they were 12.7 and 10.7 at 1280x720. On screen px are the resolved size
+    /// times the panel's scale (EditMode draws at one pixel per CSS px). Every size and step is logged, the phone (390x844)
+    /// too, which is held to the floor alone (about 0.49 scale; <see cref="TheGuideKeepsTheTextFloorOnEveryWindow"/>).</summary>
+    [UnityTest]
+    public IEnumerator TheGuideReadsAtTheItchEmbedSize()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
+                yield return EachStep(w, h, hebrew, (root, guide, step) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h} step {step + 1}";
+                    float scale = root.panel.scaledPixelsPerPoint;
+                    float OnScreen(string name) => root.Q(name).resolvedStyle.fontSize * scale;
+                    var panel = root.Q("guide-panel").worldBound;
+                    Debug.Log($"GUIDE SIZE {at}: scale {scale:0.###}, text {OnScreen("guide-text"):0.#} px, title {OnScreen("guide-title"):0.#} px, " +
+                              $"count {OnScreen("guide-count"):0.#} px, buttons {OnScreen("guide-next"):0.#} px on screen; panel {panel.width * scale:0}x{panel.height * scale:0} px");
+                    if (w == 390) return;
+                    if (OnScreen("guide-text") < GuideTextOnScreenPx - 0.01f)
+                        problems.Add($"{at}: the guide's text is {OnScreen("guide-text"):0.##} px on screen (under {GuideTextOnScreenPx})");
+                    if (OnScreen("guide-count") < HudPresenter.TextFloorPx - 0.01f)
+                        problems.Add($"{at}: the step count is {OnScreen("guide-count"):0.##} px on screen (under the {HudPresenter.TextFloorPx} px floor)");
+                    if (OnScreen("guide-title") <= OnScreen("guide-text"))
+                        problems.Add($"{at}: the title ({OnScreen("guide-title"):0.#} px) is not larger than the text ({OnScreen("guide-text"):0.#} px)");
+                });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>The owner's text floor on the guide too (21 October 2026, after #1283): at every window, the phone held upright
+    /// (390x844, about 0.49 scale) included, in English and Hebrew, the step count, the title, the text and both buttons
+    /// are at least HudPresenter.TextFloorPx on screen, the top bar's rule (HudPresenter.SmallTextSize); where the scale
+    /// keeps them over it (1920x1080, 1280x720) they are the stylesheet's sizes from #1283, unchanged. Before the change
+    /// the phone's text was about 10.8 px on screen.</summary>
+    [UnityTest]
+    public IEnumerator TheGuideKeepsTheTextFloorOnEveryWindow()
+    {
+        var problems = new List<string>();
+        // Statecraft.uss: .guide-count, .guide-title, .guide-text, Button (Skip and Next).
+        var stylesheet = new Dictionary<string, float> { ["guide-count"] = 18f, ["guide-title"] = 29f, ["guide-text"] = 22f, ["guide-skip"] = 19f, ["guide-next"] = 19f };
+        CollectionAssert.AreEqual(new[] { 18f, 29f, 22f, 19f },
+            new[] { FirstTurnGuidePresenter.CountPx, FirstTurnGuidePresenter.TitlePx, FirstTurnGuidePresenter.TextPx, FirstTurnGuidePresenter.ButtonPx },
+            "the presenter's sizes mirror the stylesheet's");
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1024, 768), (390, 844) })
+                yield return EachStep(w, h, hebrew, (root, guide, step) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h} step {step + 1}";
+                    float scale = root.panel.scaledPixelsPerPoint;
+                    foreach (var (name, px) in stylesheet)
+                    {
+                        float size = root.Q(name).resolvedStyle.fontSize;
+                        if (size * scale < HudPresenter.TextFloorPx - 0.01f)
+                            problems.Add($"{at}: {name} is {size * scale:0.##} px on screen ({size} px at {scale:0.###}; under the {HudPresenter.TextFloorPx} px floor)");
+                        if (w >= 1280 && Mathf.Abs(size - px) > 0.01f)
+                            problems.Add($"{at}: {name} is {size} px, not the stylesheet's {px} px (the desktop sizes stay)");
+                    }
+                    if (root.Q("guide-title").resolvedStyle.fontSize <= root.Q("guide-text").resolvedStyle.fontSize)
+                        problems.Add($"{at}: the title is not larger than the text");
+                });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>The guide's text on screen at 1280x720 and larger, in px (22 panel px at 0.67 scale is 14.7).</summary>
+    const float GuideTextOnScreenPx = 14f;
 
     /// <summary>The least clear space between the ring and End turn for them to read as two boxes, in panel px.</summary>
     const float RingClearPx = 4f;
@@ -413,9 +563,7 @@ public class FirstTurnGuideTests
         var hud = new HudPresenter(root, bridge, text);
         var nav = new ScreenNav(root);
         var card = new EventCardPresenter(root, bridge, text, null);
-        var info = new InfoPanelPresenter(root, bridge, text, Names());
-        var guide = new FirstTurnGuidePresenter(root, text, null, card,
-            () => { if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is (int q, int r)) info.Show(q, r); }, () => nav.Close());
+        var (info, guide) = PanelAndGuide(root, bridge, text, null, card, () => nav.Close());
         try
         {
             Assert.IsNotNull(card.Shown, "precondition: a new game opens on a card");

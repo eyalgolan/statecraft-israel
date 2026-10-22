@@ -125,6 +125,7 @@ public class ArtilleryTests
         var s = CombatTests.With(c, Of("gun", 1, 4, 0, 2));
         var refused = Step(c, s, new UnitOrder(1, Orders.Hold));
         Assert.Equal("Artillery does not hold ground", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal("Artillery does not hold ground", Orders.Check(c, s, 1, Orders.Hold));   // the unit card shows it (#754)
         Assert.Equal(Step(c, s).State.Hash(), refused.State.Hash());
         Assert.Empty(Step(c, s, new UnitOrder(1, Orders.Fortify)).Rejected);
     }

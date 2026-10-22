@@ -31,17 +31,32 @@ public class BuildGateTests
     public void AShareableBuildWaitsForTheStartingForcesRows()
     {
         var c = ContentLoader.Load(Paths.Content);
+        CollectionAssert.IsEmpty(ReleaseGate.StartingForcesUnchecked(c), "the owner person-checked the real rows (21 October 2026, #1240)");
+        foreach (var f in c.StartingForces) f.Status = "to_verify";   // in memory only: the rows as they were before that check
         var refusal = Refusal(c);
-        Assert.IsNotNull(refusal, "every real row is draft or to_verify");
+        Assert.IsNotNull(refusal, "a row that is not fact-checked blocks a shareable build");
         foreach (var f in c.StartingForces) StringAssert.Contains(f.Row, refusal);
         Assert.IsNull(Refusal(ReviewedContent()));
+    }
+
+    /// <summary>Q-TGT-3 (b) (#783, #1274): a settlement target row that is not sensitivity-reviewed blocks a shareable build,
+    /// by name; a reviewed row does not.</summary>
+    [Test]
+    public void AShareableBuildWaitsForTheSettlementTargetsReview()
+    {
+        var c = ReviewedContent();
+        var target = new SettlementTarget { Id = "fixture_target", Status = "draft" };
+        c.SettlementTargets.Add(target);
+        StringAssert.Contains("fixture_target", Refusal(c));
+        target.Status = ReleaseGate.ReviewedStatus;
+        Assert.IsNull(Refusal(c));
     }
 
     [Test]
     public void AShareableBuildWaitsForTheSensitivityReview()
     {
         var c = Checked();
-        StringAssert.Contains("burma_road_complete", Refusal(c), "the new draft card still waits for owner sensitivity review");
+        Assert.IsNull(Refusal(c), "every shipped sensitive event is reviewed (burma_road_complete: owner, 21 Oct 2026, #791)");
         foreach (var e in c.Events) if (ReleaseGate.SensitiveEvents(c).Contains(e.Id)) e.Status = "fact-checked";   // as before the sign-off
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "an unreviewed sensitive event blocks a shareable build");
@@ -59,8 +74,7 @@ public class BuildGateTests
         var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         var c = Checked();
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null, null }), "a dev build is not gated");
-        StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }), "the new draft card blocks sharing");
-        c.Events.Single(e => e.Id == "burma_road_complete").Status = ReleaseGate.ReviewedStatus; // in-memory sign-off simulation only
+        Assert.AreEqual(ReleaseGate.ReviewedStatus, c.Events.Single(e => e.Id == "burma_road_complete").Status, "the owner's review of 21 Oct 2026 (#791)");
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
         foreach (var e in c.Events) if (e.Id == "reparations_claim") e.Status = "fact-checked";
         StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
@@ -133,8 +147,8 @@ public class BuildGateTests
         var photos = ShippedPhotos();
         try
         {
-            CollectionAssert.AreEqual(new[] { "burma_road_complete" }, photos.SensitiveUnreviewed(), "the new photograph awaits owner review");
-            StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null }), "the shipped photograph must block sharing");
+            CollectionAssert.IsEmpty(photos.SensitiveUnreviewed(), "every shipped sensitive photograph is reviewed (burma_road_complete: owner, 21 Oct 2026)");
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null }), "the shipped catalog and mapping may be shared");
             Unreview(photos);
             CollectionAssert.AreEqual(SensitivePhotos, photos.SensitiveUnreviewed(), "exactly the owner's list");
             var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null });
@@ -190,7 +204,7 @@ public class BuildGateTests
         var photos = ShippedPhotos();
         try
         {
-            StringAssert.Contains("burma_road_complete", (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "matching unreviewed catalog and mapping still block sharing");
+            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "the shipped catalog matches the mapping, all reviewed");
             Unreview(photos);
             for (int i = 0; i < photos.entries.Count; i++)                       // a hand edit, not the owner's sign-off
             {
@@ -222,11 +236,8 @@ public class BuildGateTests
             var dev = (string)json.Invoke(null, new object?[] { photos, false })!;
             StringAssert.IsMatch("\"shareable\":\\s*false", dev);
             foreach (var id in SensitivePhotos)
-            {
-                var reviewed = id == "burma_road_complete" ? "false" : "true";
-                StringAssert.IsMatch($"\"event_id\":\\s*\"{id}\",\\s*\"sensitive\":\\s*true,\\s*\"sensitivity_reviewed\":\\s*{reviewed}", dev);
-            }
-            Assert.AreEqual(26, System.Text.RegularExpressions.Regex.Matches(dev, "\"event_id\"").Count);   // first_new_yishuv came with #380
+                StringAssert.IsMatch($"\"event_id\":\\s*\"{id}\",\\s*\"sensitive\":\\s*true,\\s*\"sensitivity_reviewed\":\\s*true", dev);   // burma_road_complete: owner, 21 Oct 2026
+            Assert.AreEqual(27, System.Text.RegularExpressions.Regex.Matches(dev, "\"event_id\"").Count);   // first_new_yishuv came with #380, absorb_immigrants with #739
             StringAssert.IsMatch("\"shareable\":\\s*true", (string)json.Invoke(null, new object?[] { photos, true })!);
             StringAssert.IsMatch("\"photos\":\\s*\\[\\s*\\]", (string)json.Invoke(null, new object?[] { null, true })!);
         }

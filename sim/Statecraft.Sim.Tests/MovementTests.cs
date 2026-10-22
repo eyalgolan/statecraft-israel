@@ -202,7 +202,8 @@ public class MovementTests
     {
         var c = Load(Board((2, 1, "hills"), (3, 1, "desert"), (4, 0, "sea"), (0, 2, "lake"), (3, 2, "hills")),
                      ("enemy_held_localities: []", "enemy_held_localities: [town_a]"));
-        var s = With(c, Soldier(1, 1, 1), Enemy(2, 3, 0), Soldier(3, 2, 2), Soldier(4, 2, 2));
+        // Strengths so the enemy's AI holds instead of attacking the soldier when it ends next to it (R-ENEMY-003).
+        var s = With(c, new Unit(1, "soldier", 1, 1, side: "israel", strength: 5), new Unit(2, "enemy", 3, 0, side: "egypt", strength: 1), Soldier(3, 2, 2), Soldier(4, 2, 2));
         var reach = Movement.Reachable(c, s, 1);
         Assert.NotEmpty(reach);
         foreach (var h in c.Hexes)

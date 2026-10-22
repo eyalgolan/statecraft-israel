@@ -98,11 +98,11 @@ def test_a_download_with_the_wrong_sha1_is_refused(tmp_path, capsys, as_isolated
 
 def test_every_row_has_a_shipped_file_and_a_crop():
     rows = ei.load_rows()
-    assert len(rows) == 26   # #791 adds the selected Road of Valour frame; its owner review is still pending
+    assert len(rows) == 27   # #791 adds the selected Road of Valour frame (owner-reviewed 21 Oct 2026); #739 adds absorb_immigrants
     selected = next(r for r in rows if r["event"] == "burma_road_complete")
     assert selected["sha1"] == "55b3ea19042035fbd45812ffc6576029b3d171dc"
     assert selected["original_size"] == [1370, 924]
-    assert selected["sensitive"] is True and selected["sensitivity_reviewed"] is False
+    assert selected["sensitive"] is True and selected["sensitivity_reviewed"] is True
     for r in rows:
         assert (ei.FOLDER / r["file"]).is_file()
         assert len(r["crop"]) == 3 and len(r["sha1"]) == 40

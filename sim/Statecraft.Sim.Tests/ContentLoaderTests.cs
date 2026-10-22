@@ -60,6 +60,15 @@ targets:
         Assert.Equal("targets[town_a].id", ex.Field);
     }
 
+    // Q-TGT-3 (b) (#783, #1274): a shareable build waits until every target row is sensitivity-reviewed.
+    [Fact]
+    public void TheReleaseGateWaitsForEverySettlementTargetToBeReviewed()
+    {
+        Assert.Empty(ReleaseGate.SettlementTargetsUnchecked(ContentLoader.Load(Fixture.Write(WithTargets(Target)))));
+        var draft = ContentLoader.Load(Fixture.Write(WithTargets(Target.Replace("status: sensitivity-reviewed", "status: draft"))));
+        Assert.Equal(new[] { "town_a" }, ReleaseGate.SettlementTargetsUnchecked(draft));
+    }
+
     [Fact]
     public void LoadsValidFixture()
     {

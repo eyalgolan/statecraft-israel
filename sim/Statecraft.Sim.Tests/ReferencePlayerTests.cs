@@ -22,20 +22,31 @@ public class ReferencePlayerTests
         return s;
     }
 
+    /// <summary>Unit 0 (Golani, at 10,9 next to the Syrian 3 at 10,10) at strength 5, its start before #1240. Ben-Gurion's
+    /// diary gives it 4 (owner, 21 October 2026, #1240), 133 percent against the Syrians, under the attack policy's 150, so
+    /// the real start sends no attack; the tests of the policy on the real map set the old 5 to keep one.</summary>
+    internal static GameState AtFive(GameState s)
+    {
+        var u = s.Units[0];
+        Assert.Equal(("veteran_soldier", 10, 9, 4), (u.Type, u.Q, u.R, u.Strength));
+        s.Units[0] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, 5, u.Order, u.OrderTarget);
+        return s;
+    }
+
     /// <summary>It sends no AssignWorkers: R-CITY-009's default fills the jobs on the housing step, and an order would turn
     /// that city's default off (GDD Phase 3 PR 5; before it, the player sent min(jobs, civilians) itself).</summary>
     [Fact]
     public void ItSendsHistoricalAIsOrdersThenTrainsOneHalutzGroupAndLeavesTheJobsToTheDefault()
     {
-        var s = Start();
+        var s = AtFive(Start());
         s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(248, 96, 0);   // the start fills every job (Q-START-1): free 10
         var orders = ReferencePlayer.Commands(Mvp, s);
         var history = HistoricalAI.Commands(Mvp, s);
         Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
         Assert.Equal(history.Count + 2, orders.Count);
         Assert.DoesNotContain(orders, x => x is AssignWorkers);
-        // The attack policy (#747): unit 0 (strength 5, on 10,9) meets the Syrian unit next to it (3, on the valley's 10,10)
-        // at 166 percent, past the policy's 150.
+        // The attack policy (#747): unit 0 (strength 5 here, on 10,9) meets the Syrian unit next to it (3, on the valley's
+        // 10,10) at 166 percent, past the policy's 150.
         var attack = Assert.IsType<UnitOrder>(orders[history.Count]);
         Assert.Equal((0, Combat.Attack, (int?)10, (int?)10), (attack.Unit, attack.Order, attack.Q, attack.R));
         var train = Assert.IsType<Train>(orders.Last());
@@ -199,12 +210,13 @@ public class ReferencePlayerTests
     [Fact]
     public void ItSendsNoOrderWhenTheJobsAreFilledOrAttentionIsShort()
     {
-        var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
+        var s = AtFive(Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical));
         var full = s.Clone();
         full.Cities["tel_aviv"] = full.Cities["tel_aviv"].WithCounts(120, 106, 0);   // all 106 jobs filled
         Assert.DoesNotContain(ReferencePlayer.Commands(Mvp, full), x => x is AssignWorkers);
         var tired = s.Clone();
         tired.Attention = 0;
+        Assert.NotEmpty(ReferencePlayer.Commands(Mvp, tired));
         Assert.All(ReferencePlayer.Commands(Mvp, tired), x => Assert.Equal(Combat.Attack, Assert.IsType<UnitOrder>(x).Order));   // unit orders are free (D-A6)
         tired.Arms = 0;
         Assert.Empty(ReferencePlayer.Commands(Mvp, tired));   // and the attack needs the Arms

@@ -7,7 +7,7 @@ using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The info panel's text for a selected unit (read only; no orders: the panel links to the Defence screen):
+    /// <summary>The info panel's text for a selected unit (its orders so far, Move, Fortify and Hold, are the panel's: InfoPanelPresenter; the panel also links to the Defence screen):
     /// its name, number and service; where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
     /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an
@@ -17,6 +17,16 @@ namespace Statecraft.Game.UI
     public sealed class UnitCard
     {
         public string Title = "", Subtitle = "", Body = "", Footer = "", Note = "";
+
+        /// <summary>The sim unit <paramref name="row"/>'s token stands for in the GDD loop: unit i of a new game is
+        /// <c>c.StartingForces[i]</c> (R-UNIT-006), as UnitRoster.FromState draws it. Null for a row with no starting force (and
+        /// in the legacy loop, which has none), or once that unit has left the state. The card's orders go to this id (#754).</summary>
+        public static int? SimUnit(Content c, GameState s, UnitEntry row)
+        {
+            for (int i = 0; i < c.StartingForces.Count; i++)
+                if (c.StartingForces[i].Row == row.Id) return s.Units.ContainsKey(i) ? i : (int?)null;
+            return null;
+        }
 
         public static UnitCard For(PlacedToken placed, GameState state, UiText text, bool gddLoop = false)
         {

@@ -21,6 +21,11 @@ namespace Statecraft.Sim
         public int R { get; set; }
         /// <summary>The row's review status (draft, to_verify, fact-checked); the release gate reads it (Q-START-3).</summary>
         public string Status { get; set; } = "";
+        /// <summary>The hex of the row's 11 June 1948 anchor that the enemy AI marches on (R-ENEMY-002; Q-ENEMY-1), or null
+        /// when the row has none on two sources.</summary>
+        public (int Q, int R)? Script { get; set; }
+        /// <summary>The end of that anchor's window (its `to`): from a turn starting on it the unit follows the goals.</summary>
+        public DateTime ScriptUntil { get; set; }
     }
 
     /// <summary>The sourced starting forces, both sides (GDD Phase 5 PR 4; docs/rules/mvp.md R-UNIT-006, R-UNIT-007).
@@ -72,13 +77,41 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(q, r);
                 if (hex == null) throw new ContentException(FileName, $"{at}.anchors[{k}]", FormattableString.Invariant($"hex q={q} r={r} is not on the map ({ContentLoader.HexesFile})"));
                 if (!hex.Land) throw new ContentException(FileName, $"{at}.anchors[{k}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {ContentLoader.HexesFile}"));
-                list.Add(new StartingForce
+                var force = new StartingForce
                 {
                     Row = id, Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
                     Strength = units, Q = q, R = r, Status = Text(row, "status"),
-                });
+                };
+                if (side != Movement.PlayerSide) Script(c, force, anchors, id, at, hexes);
+                list.Add(force);
             }
             return list;
+        }
+
+        /// <summary>R-ENEMY-002 (Q-ENEMY-1: the 15 May and 11 June 1948 positions two sources agree on, arab-forces-1948.md
+        /// section 10). The 15 May position is the start; the script's target is the row's first anchor from 11 June that cites
+        /// at least two sources other than Wikipedia and Wikidata (which the file uses for coordinates only), on that anchor's
+        /// hex. A row with none has no script and its unit follows the goals.</summary>
+        static void Script(Content c, StartingForce force, List<object> anchors, string id, string at,
+            Dictionary<(string id, int anchor), (int q, int r)> hexes)
+        {
+            for (int j = 0; j < anchors.Count; j++)
+            {
+                if (!(anchors[j] is Dictionary<object, object> a) || Text(a, "from") != EnemyAI.ScriptDate) continue;
+                var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources.Count(x =>
+                    x is Dictionary<object, object> m && Text(m, "url") is var url && url != ""
+                    && !url.Contains("wikipedia.org", StringComparison.Ordinal) && !url.Contains("wikidata.org", StringComparison.Ordinal)) : 0;
+                if (sourced < 2) continue;
+                if (!hexes.TryGetValue((id, j), out var qr))
+                    throw new ContentException(HexesFileName, "anchors", $"no hex for {at}.anchors[{j}] ({FileName}); rerun tools/unit_anchor_hexes.py");
+                if (!(c.HexAt(qr.q, qr.r) is MapHex hex) || !hex.Land)
+                    throw new ContentException(FileName, $"{at}.anchors[{j}]", FormattableString.Invariant($"hex q={qr.q} r={qr.r} is not a land hex in {ContentLoader.HexesFile}"));
+                if (!DateTime.TryParseExact(Text(a, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var until))
+                    throw new ContentException(FileName, $"{at}.anchors[{j}].to", "required, a date 'YYYY-MM-DD'");
+                force.Script = (qr.q, qr.r);
+                force.ScriptUntil = until;
+                return;
+            }
         }
 
         /// <summary>Adds the starting forces to a new game, in the content's order, taking the next ids: the unit with id i

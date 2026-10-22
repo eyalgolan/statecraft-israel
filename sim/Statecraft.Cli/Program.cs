@@ -63,13 +63,15 @@ catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message
 // --release-gate: the sensitivity gate before a build is shared (spec 5.5; tools/package_release.py, Build -shareable).
 // Exit 0 and "RELEASE GATE OK" when every sensitive event is sensitivity-reviewed and (R-ALT-011, Q-ALT-9) every
 // consequence card and every event with variants has a person's reviewed_by, and (R-UNIT-006, Q-START-3) every
-// units_1948.yaml row a new game starts a unit from is fact-checked; else exit 3 naming them.
+// units_1948.yaml row a new game starts a unit from is fact-checked, and (Q-TGT-3 (b)) every settlement_targets.yaml row is
+// sensitivity-reviewed; else exit 3 naming them.
 if (Array.IndexOf(args, "--release-gate") >= 0)
 {
     var open = ReleaseGate.SensitiveUnreviewed(content);
     var unsigned = ReleaseGate.AlternateUnsigned(content);
     var forces = ReleaseGate.StartingForcesUnchecked(content);
-    if (open.Count == 0 && unsigned.Count == 0 && forces.Count == 0) { Console.WriteLine("RELEASE GATE OK"); return 0; }
+    var targets = ReleaseGate.SettlementTargetsUnchecked(content);
+    if (open.Count == 0 && unsigned.Count == 0 && forces.Count == 0 && targets.Count == 0) { Console.WriteLine("RELEASE GATE OK"); return 0; }
     if (open.Count > 0)
         Console.WriteLine("RELEASE GATE REFUSED: the owner's sensitivity review is missing for: " + string.Join(", ", open)
             + " (set status: sensitivity-reviewed in each event's YAML; see docs/m3-release.md)");
@@ -81,6 +83,9 @@ if (Array.IndexOf(args, "--release-gate") >= 0)
     if (forces.Count > 0)
         Console.WriteLine("RELEASE GATE REFUSED: these starting forces' rows are not fact-checked: " + string.Join(", ", forces)
             + " (status: fact-checked in content/map/units_1948.yaml; Q-START-3, #743)");
+    if (targets.Count > 0)
+        Console.WriteLine("RELEASE GATE REFUSED: these settlement targets are not sensitivity-reviewed: " + string.Join(", ", targets)
+            + " (status: sensitivity-reviewed in content/settlement_targets.yaml; Q-TGT-3, #783)");
     return 3;
 }
 

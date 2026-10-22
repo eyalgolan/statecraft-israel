@@ -633,6 +633,9 @@ namespace Statecraft.Sim
         /// <summary>The combat table (R-COMBAT-002, R-COMBAT-003; D-G3, Q-COMBAT-1): its rows in ascending
         /// <see cref="CombatRow.MinRatioPercent"/>, the first at 0. Required in the GDD loop.</summary>
         public List<CombatRow> CombatTable { get; set; } = new List<CombatRow>();
+        /// <summary>The least Combat.Preview ratio, in percent, at which an enemy unit on its goals attacks an adjacent player
+        /// unit (R-ENEMY-003; D-G7, Q-ENEMY-2). Required in the GDD loop, at least 1.</summary>
+        public int? EnemyAttackRatioPercent { get; set; }
         /// <summary>The share of each numeric effect a delegated option applies when its minister is below the loyalty floor
         /// (R-EVT-003; #107). Required in the GDD loop, 0 to 1.</summary>
         public double? DisloyalEffectShare { get; set; }

@@ -15,8 +15,9 @@ macOS IL2CPP parity check is not an MVP release gate.
 3. **Merge** the pull request (squash).
 4. **Run the release gate** on the merged `main` (it refuses to run elsewhere): `bash scripts/oss/release_gate.sh`. It must print
    `RELEASE GATE OK`. It refuses while an owner decision is open (including D10, history acknowledgement, and D11, the
-   sensitivity review), while an asset row is `owner-verify`, while the sim's sensitivity gate refuses `content/`, or
-   while the history scan shows an open secret-shape row.
+   sensitivity review), while an asset row is `owner-verify`, while the sim's sensitivity gate refuses `content/`
+   (including a `content/settlement_targets.yaml` row that is not `sensitivity-reviewed`, Q-TGT-3 (b)), or while the
+   history scan shows an open secret-shape row.
 5. **Build and package** on the owner's machine, from the merged `main`:
 
    Build both web zips from the merged release commit, never from a pre-merge candidate. The .NET SDK includes the
@@ -27,10 +28,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 73eb50db39dbc9ee569c18a5e0a68e55a2b88980d06da76e5f5bfffe22997675"
-   # and "GOLDEN OK hash1952 b389b2786ac6b7c4c5bd3662cb7e96868d351a585e866a8660191c3db8ffff4a"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 1392f3eb726172c284555b2bcacc0be3f8d9e33d19306dfc3baf0e2c63fe249b"
+   # and "GOLDEN OK hash1952 cc96cd0a8d50a7693300ef887673c7ccfc18dac6d4dcaa9f52ed2ed09062eda5"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 e5a66f9c2c0c0718d7969289fcc8dd005dedddd37a7c25adfffdc45e2e8b29cd"
+     --expect "SMOKE OK 5 turns 1948-10-15 11c41014a5ed74f783bc2fa0af99ee86830d162d5e71c883318e36f68f47b9b4"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -60,7 +61,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 e5a66f9c2c0c0718d7969289fcc8dd005dedddd37a7c25adfffdc45e2e8b29cd"
+     --expect "SMOKE OK 5 turns 1948-10-15 11c41014a5ed74f783bc2fa0af99ee86830d162d5e71c883318e36f68f47b9b4"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90

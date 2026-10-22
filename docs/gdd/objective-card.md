@@ -21,7 +21,7 @@ As a player of the MVP, I want completing an objective to show me the real event
 ## Data touched
 
 - `content/objectives.yaml`: standalone conditions plus multipart `part_of`, `corridor_complete` and `sites_built` records. The infrastructure parts are `railway`, `burma_road` and `yishuvim`; `first_new_yishuv` is now the yishuvim part's card, not a separate scored objective.
-- `content/events/railway_complete.yaml`, `burma_road_complete.yaml` and `first_new_yishuv.yaml`: the three sourced completion cards, kept `draft` pending the required human source check [S10].
+- `content/events/railway_complete.yaml`, `burma_road_complete.yaml` and `first_new_yishuv.yaml`: the three sourced completion cards. `railway_complete` and `first_new_yishuv` are kept `draft` pending the required human source check [S10]; `burma_road_complete` is `sensitivity-reviewed` (the owner's review of its text, 21 October 2026, #791).
 - An event's `objective` key (`content/schema/event.schema.json`, `docs/WRITING_EVENTS.md`).
 - `rules.yaml` `mvp.objective_points`, `objective_bonus_per_month`, `objective_bonus_cap`, required in the GDD loop, as design values (R-LOOP-005). The score reads the rules of the date the turn starts from.
 - `GameState`: `Objectives` (hashed as `obj{...}`) and `Score` (hashed as `score=`), both only when set (R-LOOP-002).

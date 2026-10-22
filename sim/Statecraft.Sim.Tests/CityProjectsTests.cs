@@ -116,7 +116,7 @@ public class CityProjectsTests
         s.Attention = 10;
         var two = new Command[] { Housing(1, 1), new StartProject("industry", "town_a", 2, 0) };
         var r = Step(c, s, two.Append(new StartProject("industry", "town_a", 0, 1)).ToArray());
-        Assert.Equal("No more than 2 map actions and city projects in one turn", Assert.Single(r.Rejected).Reason);
+        Assert.Equal("No more than 2 city projects in one turn", Assert.Single(r.Rejected).Reason);
         Assert.Equal(Step(c, s, two).State.Hash(), r.State.Hash());
         Assert.Empty(Step(c, r.State, new StartProject("industry", "town_a", 0, 1)).Rejected);
     }

@@ -60,12 +60,14 @@ namespace Statecraft.Sim
         /// <summary>R-COMBAT-001: gives the player's military unit a standing attack on the adjacent hex (q, r), replacing its
         /// order (a fortify is lost). Refused, state untouched, for an unknown unit, a halutz, an enemy unit, no hex, the attack
         /// it already has, a hex not next to it or with no enemy unit, or fewer Arms than one attack takes on top of the
-        /// player's other attacks already ordered (Q-COMBAT-4). It costs no Attention (D-A6) and resolves in this turn's step 2.</summary>
-        internal static string? Give(Content c, GameState s, int unitId, int? q, int? r, List<Cause> why)
+        /// player's other attacks already ordered (Q-COMBAT-4). It costs no Attention (D-A6) and resolves in this turn's step 2.
+        /// With <paramref name="enemy"/> the enemy AI orders its own unit through the same checks, the sides swapped, and pays no
+        /// Arms (R-ENEMY-001; Q-ENEMY-4).</summary>
+        internal static string? Give(Content c, GameState s, int unitId, int? q, int? r, List<Cause> why, bool enemy = false)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (!Military(u)) return "Only a military unit takes that order";
-            if (!Player(u)) return "That unit is not yours";
+            if (Player(u) == enemy) return "That unit is not yours";
             if (q == null || r == null) return "An attack names a hex";
             var target = Hex(q.Value, r.Value);
             if (u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
@@ -76,7 +78,7 @@ namespace Statecraft.Sim
             // Arms are paid at resolution, so the stock must also cover the player's other standing attacks, this turn's
             // included; the unit's own attack, which this order replaces, is not counted.
             var committed = s.Units.Values.Where(x => x.Id != unitId && x.Order == Attack && Military(x) && Player(x)).Sum(x => Need(c, mvp, x));
-            if (s.Arms < need + committed) return Short(need, s.Arms, committed);
+            if (!enemy && s.Arms < need + committed) return Short(need, s.Arms, committed);
             s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target);
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, $"Unit {unitId} will attack hex {target}"));
             return null;
