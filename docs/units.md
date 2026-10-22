@@ -558,7 +558,7 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   and the pole behind it (`TheTrioReadsSideBySideAndThePoleStandsBehindItAtEveryYaw`).
   - **Use of the flag:** the Flag and Emblem Law, 5709-1949, s. 2(a), forbids using the State flag for commerce, business or
     profession without a permit from the Minister of the Interior (the 1949 text, read on the cited scan; the amended text
-    not checked). The game is free and non-commercial; a paid release needs this checked first. Only a side whose 1948
+    not checked). The game is free and non-commercial, and there is no paid release (owner ruling, 2026-10-22, #30). Only a side whose 1948
   flag is sourced here gets one, so no flag is invented:
   - Israel: the Provisional Council of State's "Proclamation on the Flag of the State of Israel" of 25 Tishrei 5709
     (28 October 1948), Iton Rishmi No. 32, 10 Heshvan 5709 (12 November 1948), p. 62
