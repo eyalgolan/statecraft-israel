@@ -202,7 +202,8 @@ public class MovementTests
     {
         var c = Load(Board((2, 1, "hills"), (3, 1, "desert"), (4, 0, "sea"), (0, 2, "lake"), (3, 2, "hills")),
                      ("enemy_held_localities: []", "enemy_held_localities: [town_a]"));
-        var s = With(c, Soldier(1, 1, 1), Enemy(2, 3, 0), Soldier(3, 2, 2), Soldier(4, 2, 2));
+        // Strengths so the enemy's AI holds instead of attacking the soldier when it ends next to it (R-ENEMY-003).
+        var s = With(c, new Unit(1, "soldier", 1, 1, side: "israel", strength: 5), new Unit(2, "enemy", 3, 0, side: "egypt", strength: 1), Soldier(3, 2, 2), Soldier(4, 2, 2));
         var reach = Movement.Reachable(c, s, 1);
         Assert.NotEmpty(reach);
         foreach (var h in c.Hexes)
@@ -368,7 +369,7 @@ public class MovementTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         foreach (var h in c.SettlementHexes) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "armoured_car", h.Q, h.R, side: "israel")); }
-        Assert.Equal(25 + c.StartingForces.Count, s.Units.Count);   // with the starting forces (R-UNIT-006): the enemy's hexes block
+        Assert.Equal(25 + c.StartingForces.Count(f => f.Arrives == null), s.Units.Count);   // with the starting forces (R-UNIT-006): the enemy's hexes block
         var best = double.MaxValue;
         var listed = 0;
         for (int run = 0; run < 5; run++)

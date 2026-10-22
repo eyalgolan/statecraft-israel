@@ -21,7 +21,7 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>R-UNIT-009: step 7 pays per Israeli military formation, including this turn's graduates. The national
+        /// <summary>R-UNIT-010: step 7 pays per Israeli military formation, including this turn's graduates. The national
         /// Treasury borrows a shortfall (R-MONEY-003); upkeep never consumes Arms (Q-UNIT-3).</summary>
         public static void PayUpkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {

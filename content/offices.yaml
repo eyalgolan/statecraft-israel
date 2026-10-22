@@ -11,8 +11,8 @@ offices:
   # מדינת ישראל"), the deputies' ("סגנית שר ...", "סגנית ראש הממשלה"), and the Chiefs of Staff's, left as they are
   # ("ראש המטה הכללי", "רמטכ״ל ההגנה"), as the Prime Minister's.
   # The English titles stay the player's default. Left empty where no
-  # source gives a Hebrew title: rationing_minister, a game construct (the office passes from Rationing and Supply to
-  # Agriculture and then Trade). Open owner questions: the Trade (order, and the Knesset's "התעשיה") and War Victims
+  # source gives a Hebrew title (none now; rationing_minister's title holds only for 1949-50,
+  # title_he_from/title_he_until, see its row). Open owner questions: the Trade (order, and the Knesset's "התעשיה") and War Victims
   # wordings, and whether the Chief of Staff adds "של צה״ל" (PR #558 body).
   # title_he_review / title_he_f_review: agent-checked marks a title an AI agent checked against its sources and no
   # person has read yet (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15). A native speaker reviews it (#564) and
@@ -73,7 +73,18 @@ offices:
   # 10 March 1949 (Knesset, gov1.pdf; he.wiki "דב יוסף", en.wiki "Dov Yosef", checked 2026-10-12). The 26 April 1949 date
   # in en.wiki "Rationing and Supply Minister of Israel" and he.wiki "משרד האספקה והקיצוב" is when rationing was decided
   # (the austerity event), not when the office began (issue #225).
-  - { id: rationing_minister, title: Minister responsible for rationing, from: 1949-03-10 }
+  # Hebrew title (#1219): the title of the first holder, Dov Yosef, "שר האספקה והקיצוב" (he.wiki "דב יוסף"; the ministry's
+  # own page is "משרד האספקה והקיצוב"). The office later passes to Agriculture and Trade, which have no title of their own for
+  # it, so the 1949-50 title is the only sourced one. The feminine form is built, not sourced: the same construction as the
+  # other ministries'; its source row is the ministry's page, which gives the name.
+  # For the native reviewer (#564): both forms are an AI agent's; the Knesset record (gov1.pdf) was unreachable on 2026-10-21.
+  # The title holds only while the ministry existed (owner ruling on PR #1224, 21 October 2026,
+  # https://github.com/eyalgolan/statecraft-israel/pull/1224): title_he_from is the day Dov Yosef took it, "עם הקמת ממשלת
+  # ישראל הראשונה ב־10 במרץ 1949 מונה לשר האספקה והקיצוב" (he.wiki "דב יוסף"); title_he_until is the day it ended, "ב-1
+  # בנובמבר 1950 הוקמה ממשלה חדשה ללא משרד האספקה והקיצוב" (he.wiki "משרד האספקה והקיצוב"; Yosef's infobox: "סיום כהונה
+  # 1 בנובמבר 1950", "התפקיד בוטל"). The ministry's page dates its founding to April 1949, which is the austerity decision
+  # (see above). From 1 November 1950 the UI shows the English title until a Hebrew one for the later office is sourced.
+  - { id: rationing_minister, title: Minister responsible for rationing, title_he: "שר האספקה והקיצוב", title_he_from: 1949-03-10, title_he_until: 1950-11-01, title_he_review: agent-checked, title_he_sources: [{ url: "https://he.wikipedia.org/wiki/דב_יוסף", checked: 2026-10-21 }, { url: "https://he.wikipedia.org/wiki/משרד_האספקה_והקיצוב", checked: 2026-10-21 }], title_he_f: "שרת האספקה והקיצוב", title_he_f_review: agent-checked, title_he_f_sources: [{ url: "https://he.wikipedia.org/wiki/משרד_האספקה_והקיצוב", checked: 2026-10-21 }], from: 1949-03-10 }
   # Before the state the chief of staff led the Haganah (Yaakov Dori, from 1 June 1947), so the same post is split at the
   # state's founding (issue #80; sources on Dori's two terms in people.yaml). 14 May 1948 is the design's date; the IDF Ordinance
   # followed on 26 May 1948. Do not "correct" it to 26 May in a fact-check: it would move the goldens.

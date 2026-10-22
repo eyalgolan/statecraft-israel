@@ -21,6 +21,14 @@ namespace Statecraft.Sim
         public int R { get; set; }
         /// <summary>The row's review status (draft, to_verify, fact-checked); the release gate reads it (Q-START-3).</summary>
         public string Status { get; set; } = "";
+        /// <summary>R-UNIT-009 (#1241): the day a row dated after the start arrives (its strength's as_of), or null for a row
+        /// that starts the game. Its unit's id is reserved at the start and the resolver adds it on that day's turn.</summary>
+        public DateTime? Arrives { get; set; }
+        /// <summary>The hex of the row's 11 June 1948 anchor that the enemy AI marches on (R-ENEMY-002; Q-ENEMY-1), or null
+        /// when the row has none on two sources.</summary>
+        public (int Q, int R)? Script { get; set; }
+        /// <summary>The end of that anchor's window (its `to`): from a turn starting on it the unit follows the goals.</summary>
+        public DateTime ScriptUntil { get; set; }
     }
 
     /// <summary>The sourced starting forces, both sides (GDD Phase 5 PR 4; docs/rules/mvp.md R-UNIT-006, R-UNIT-007).
@@ -48,6 +56,7 @@ namespace Statecraft.Sim
             var start = c.Rules.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var ppu = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;   // the start day's rules, as Cities.Init reads them
             var list = new List<StartingForce>();
+            var arrivals = new List<StartingForce>();   // R-UNIT-009: after every starting row, so unit i is still row i
             for (int i = 0; i < rows.Count; i++)
             {
                 var row = rows[i] ?? throw new ContentException(FileName, $"units[{i}]", "empty row");
@@ -55,10 +64,15 @@ namespace Statecraft.Sim
                 if (id == "") throw new ContentException(FileName, $"units[{i}].id", "required");
                 var at = $"units[{id}]";
                 if (row.ContainsKey("hidden") || Text(row, "service") != "army") continue;
-                if (!(row.TryGetValue("strength", out var so) && so is Dictionary<object, object> strength) || Text(strength, "as_of") != start) continue;
+                if (!(row.TryGetValue("strength", out var so) && so is Dictionary<object, object> strength)) continue;
+                // R-UNIT-009: a strength dated after the start is the row's arrival day; one dated before starts nothing.
+                var day = Text(strength, "as_of");
+                if (!DateTime.TryParseExact(day, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var asOf))
+                    throw new ContentException(FileName, $"{at}.strength.as_of", "required, a date 'YYYY-MM-DD'");
+                if (asOf < c.Rules.Start) continue;
                 if (!(row.TryGetValue("anchors", out var ao) && ao is List<object> anchors)) continue;
                 int k = anchors.FindIndex(a => a is Dictionary<object, object> m
-                    && string.CompareOrdinal(Text(m, "from"), start) <= 0 && string.CompareOrdinal(start, Text(m, "to")) < 0);
+                    && string.CompareOrdinal(Text(m, "from"), day) <= 0 && string.CompareOrdinal(day, Text(m, "to")) < 0);
                 if (k < 0) continue;
                 var anchor = (Dictionary<object, object>)anchors[k];
                 var side = Text(row, "side");
@@ -72,23 +86,67 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(q, r);
                 if (hex == null) throw new ContentException(FileName, $"{at}.anchors[{k}]", FormattableString.Invariant($"hex q={q} r={r} is not on the map ({ContentLoader.HexesFile})"));
                 if (!hex.Land) throw new ContentException(FileName, $"{at}.anchors[{k}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {ContentLoader.HexesFile}"));
-                list.Add(new StartingForce
+                var force = new StartingForce
                 {
                     Row = id, Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
-                    Strength = units, Q = q, R = r, Status = Text(row, "status"),
-                });
+                    Strength = units, Q = q, R = r, Status = Text(row, "status"), Arrives = day == start ? (DateTime?)null : asOf,
+                };
+                if (side != Movement.PlayerSide) Script(c, force, anchors, id, at, hexes);
+                (day == start ? list : arrivals).Add(force);
             }
+            list.AddRange(arrivals);
             return list;
         }
 
+        /// <summary>R-ENEMY-002 (Q-ENEMY-1: the 15 May and 11 June 1948 positions two sources agree on, arab-forces-1948.md
+        /// section 10). The 15 May position is the start; the script's target is the row's first anchor from 11 June that cites
+        /// at least two sources other than Wikipedia and Wikidata (which the file uses for coordinates only), on that anchor's
+        /// hex. A row with none has no script and its unit follows the goals.</summary>
+        static void Script(Content c, StartingForce force, List<object> anchors, string id, string at,
+            Dictionary<(string id, int anchor), (int q, int r)> hexes)
+        {
+            for (int j = 0; j < anchors.Count; j++)
+            {
+                if (!(anchors[j] is Dictionary<object, object> a) || Text(a, "from") != EnemyAI.ScriptDate) continue;
+                var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources.Count(x =>
+                    x is Dictionary<object, object> m && Text(m, "url") is var url && url != ""
+                    && !url.Contains("wikipedia.org", StringComparison.Ordinal) && !url.Contains("wikidata.org", StringComparison.Ordinal)) : 0;
+                if (sourced < 2) continue;
+                if (!hexes.TryGetValue((id, j), out var qr))
+                    throw new ContentException(HexesFileName, "anchors", $"no hex for {at}.anchors[{j}] ({FileName}); rerun tools/unit_anchor_hexes.py");
+                if (!(c.HexAt(qr.q, qr.r) is MapHex hex) || !hex.Land)
+                    throw new ContentException(FileName, $"{at}.anchors[{j}]", FormattableString.Invariant($"hex q={qr.q} r={qr.r} is not a land hex in {ContentLoader.HexesFile}"));
+                if (!DateTime.TryParseExact(Text(a, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var until))
+                    throw new ContentException(FileName, $"{at}.anchors[{j}].to", "required, a date 'YYYY-MM-DD'");
+                force.Script = (qr.q, qr.r);
+                force.ScriptUntil = until;
+                return;
+            }
+        }
+
         /// <summary>Adds the starting forces to a new game, in the content's order, taking the next ids: the unit with id i
-        /// of a new game is <c>c.StartingForces[i]</c>.</summary>
+        /// of a new game is <c>c.StartingForces[i]</c>. An arriving row's id is taken too, so it is free when it arrives
+        /// (R-UNIT-009).</summary>
         public static void Init(Content c, GameState s)
         {
             foreach (var f in c.StartingForces)
             {
                 var id = s.NextId++;
-                s.Units.Add(id, new Unit(id, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
+                if (f.Arrives == null) s.Units.Add(id, new Unit(id, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
+            }
+        }
+
+        /// <summary>R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): resolver step 9b. A row dated after the start
+        /// arrives in the resolution of the turn from s.Date to <paramref name="next"/> that reaches its day, once, as unit
+        /// <c>c.StartingForces[i]</c>'s id i, on its anchor's hex with its strength. Like a starting force it ignores the stack
+        /// limit and what else stands on the hex.</summary>
+        public static void Arrive(Content c, GameState s, DateTime next)
+        {
+            for (int i = 0; i < c.StartingForces.Count; i++)
+            {
+                var f = c.StartingForces[i];
+                if (f.Arrives is DateTime day && s.Date < day && day <= next)
+                    s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
             }
         }
 

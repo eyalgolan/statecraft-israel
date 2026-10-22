@@ -115,6 +115,15 @@ namespace Statecraft.Sim
         /// <see cref="Person.TitleHeForm"/> is feminine (the loader makes sure every office such a person holds has one),
         /// else <see cref="TitleHe"/>. Empty when the office has no Hebrew title (the UI then keeps the English).</summary>
         public string TitleHeFor(Person? holder) => holder?.TitleHeForm == TitleHeForms.Feminine ? TitleHeF : TitleHe;
+        /// <summary>The days the Hebrew titles hold (#1219, owner on #1224, 21 October 2026): from TitleHeFrom (inclusive) to
+        /// TitleHeUntil (exclusive), like the office's own from/until; null leaves that side open. A title that names one
+        /// ministry, while the office runs on under others, holds only while that ministry existed; outside the window the UI
+        /// keeps the English, as for an office with no title_he.</summary>
+        public DateTime? TitleHeFrom { get; set; }
+        public DateTime? TitleHeUntil { get; set; }
+        /// <summary><see cref="TitleHeFor"/> on <paramref name="date"/>: empty outside TitleHeFrom..TitleHeUntil.</summary>
+        public string TitleHeOn(Person? holder, DateTime date) =>
+            (TitleHeFrom.HasValue && date < TitleHeFrom.Value) || (TitleHeUntil.HasValue && date >= TitleHeUntil.Value) ? "" : TitleHeFor(holder);
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
@@ -575,7 +584,7 @@ namespace Statecraft.Sim
         /// <summary>The Arms one recruit group takes when its training starts (R-ARMS-003; D-G6, Q-UNIT-3, #781). Required in the
         /// GDD loop, &gt;= 0.</summary>
         public int? ArmsPerRecruitGroup { get; set; }
-        /// <summary>IL millions per Israeli military formation per turn, not per strength point (R-UNIT-009; Q-UNIT-3).</summary>
+        /// <summary>IL millions per Israeli military formation per turn, not per strength point (R-UNIT-010; Q-UNIT-3).</summary>
         public double? MilitaryUpkeepPerTurn { get; set; }
         /// <summary>Turns served as a recruit before promotion to veteran_soldier (R-UNIT-004; Q-UNIT-2).</summary>
         public int? VeteranSoldierService { get; set; }
@@ -628,9 +637,22 @@ namespace Statecraft.Sim
         /// <summary>The combat table (R-COMBAT-002, R-COMBAT-003; D-G3, Q-COMBAT-1): its rows in ascending
         /// <see cref="CombatRow.MinRatioPercent"/>, the first at 0. Required in the GDD loop.</summary>
         public List<CombatRow> CombatTable { get; set; } = new List<CombatRow>();
+        /// <summary>The least Combat.Preview ratio, in percent, at which an enemy unit on its goals attacks an adjacent player
+        /// unit (R-ENEMY-003; D-G7, Q-ENEMY-2). Required in the GDD loop, at least 1.</summary>
+        public int? EnemyAttackRatioPercent { get; set; }
         /// <summary>The share of each numeric effect a delegated option applies when its minister is below the loyalty floor
         /// (R-EVT-003; #107). Required in the GDD loop, 0 to 1.</summary>
         public double? DisloyalEffectShare { get; set; }
+        /// <summary>Food each population unit of prisoners eats a turn, in step 7 (R-POW-002; Q-POW-5). Required in the GDD loop, &gt;= 0.</summary>
+        public int? FoodPerPrisonerUnit { get; set; }
+        /// <summary>Social cohesion lost for each unit of the prisoners' Food the stock cannot give (R-POW-002; Q-POW-5).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public double? PrisonerShortfallCohesion { get; set; }
+        /// <summary>Points scored for each population unit of prisoners returned (R-POW-004; Q-POW-2). Required in the GDD loop, &gt;= 0.</summary>
+        public int? PointsPerPrisonerUnitReturned { get; set; }
+        /// <summary>IL millions the Treasury pays a turn for each population unit of the player's soldiers held (R-POW-005;
+        /// Q-POW-4). Required in the GDD loop, &gt;= 0.</summary>
+        public double? HeldSoldierCostPerTurn { get; set; }
     }
 
     /// <summary>One row of rules.yaml mvp.combat_table (R-COMBAT-002, R-COMBAT-003): it applies from an attack : defence
@@ -808,6 +830,15 @@ namespace Statecraft.Sim
         /// <summary>The movement points a unit of this type has each turn (R-MOVE-001; Q-MOVE-1), or 0 for a type that does not
         /// move. Required on a military type.</summary>
         public int MovementPoints { get; set; }
+        /// <summary>The percent a unit of this military type's strength counts for in combat, attacking and defending
+        /// (R-COMBAT-007, R-COMBAT-008; Q-ARTY-1, Q-ARTY-2), or null for 100.</summary>
+        public int? CombatPercent { get; set; }
+        /// <summary>An artillery type's range in hexes: it supports an attack on an enemy hex this far away (R-COMBAT-007;
+        /// Q-ARTY-1). Required on an artillery type, null on any other.</summary>
+        public int? Range { get; set; }
+        /// <summary>The Arms a unit of an artillery type spends each time it fires (R-COMBAT-007; Q-ARTY-1). Required on an
+        /// artillery type, null on any other.</summary>
+        public int? ArmsPerFire { get; set; }
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
@@ -1035,6 +1066,10 @@ namespace Statecraft.Sim
         /// only while that site is being worked (R-SWAMP-002; Q-SWAMP-2). The legacy loop reads no sites and ignores it.
         /// Empty for every other event.</summary>
         public string Site { get; set; } = "";
+        /// <summary>The front (one of Prisoners.Fronts) whose prisoners this card returns (R-POW-004; Q-POW-3): it fires only
+        /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
+        /// Empty for every other event.</summary>
+        public string Prisoners { get; set; } = "";
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
     }
@@ -1045,6 +1080,10 @@ namespace Statecraft.Sim
     public sealed class Objective
     {
         public string Id { get; set; } = "";
+        /// <summary>The objective this record is one part of. Empty for a standalone objective. Parts record and earn their
+        /// timing bonuses separately, while the parent objective's base points are paid only when its last part completes
+        /// (R-OBJ-005, R-OBJ-006).</summary>
+        public string PartOf { get; set; } = "";
         /// <summary>The name the player reads (in the Why list).</summary>
         public string Name { get; set; } = "";
         /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> while it waits for a native
@@ -1061,6 +1100,8 @@ namespace Statecraft.Sim
         public DateTime ReferenceDate { get; set; }
         /// <summary>The id of the card event (content/events/), which names this objective back in its `objective` key.</summary>
         public string Card { get; set; } = "";
+        /// <summary>Sources for a part's historical reference date. Required for objective parts (R-OBJ-005).</summary>
+        public List<Source> Sources { get; set; } = new List<Source>();
     }
 
     /// <summary>What completes an objective (objectives.yaml completes_when): exactly one kind.</summary>
@@ -1070,6 +1111,10 @@ namespace Statecraft.Sim
         public string SiteBuilt { get; set; } = "";
         /// <summary>The cities have absorbed the immigrants (R-OBJ-004, D-B4).</summary>
         public AbsorbCondition? Absorbed { get; set; }
+        /// <summary>A corridor (corridors.yaml): complete once every segment is built (R-OBJ-005, R-COR-003).</summary>
+        public string CorridorComplete { get; set; } = "";
+        /// <summary>Designated yishuv sites (sites.yaml): complete once every listed site is built (R-OBJ-005).</summary>
+        public List<string> SitesBuilt { get; set; } = new List<string>();
     }
 
     /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached

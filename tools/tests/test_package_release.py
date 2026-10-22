@@ -9,8 +9,8 @@ from pathlib import Path
 import package_release
 
 REPO = Path(package_release.REPO)
-SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
-SENSITIVE = ["altalena", "bernadotte_assassination", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
+SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
+SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
 
 
 def photo_manifest(build, reviewed=True, shareable=True):
@@ -22,8 +22,8 @@ def photo_manifest(build, reviewed=True, shareable=True):
 
 def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True):
     """A build folder with index.html, the real content copied into StreamingAssets/content and the photo manifest.
-    forces_checked: the starting forces' rows in units_1948.yaml are fact-checked, as a person's check would leave them
-    (R-UNIT-006, Q-START-3); the real rows are draft or to_verify."""
+    forces_checked: the starting forces' rows in units_1948.yaml are fact-checked, as the owner's person check of
+    21 October 2026 left them (R-UNIT-006, Q-START-3; #1240); False sets every row back to draft, as before it."""
     build = tmp_path / "Web-brotli"
     (build / "StreamingAssets").mkdir(parents=True)
     (build / "index.html").write_text("<html></html>")
@@ -33,9 +33,11 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True):
     for e in SENSITIVE:
         f = content / "events" / f"{e}.yaml"
         f.write_text(re.sub(r"(?m)^status: .*$", f"status: {status}", f.read_text()))
-    if forces_checked:
-        units = content / "map" / "units_1948.yaml"
-        units.write_text(re.sub(r"(?m)^  status: .*$", "  status: fact-checked", units.read_text(encoding="utf-8")), encoding="utf-8")
+    units = content / "map" / "units_1948.yaml"
+    forces = "fact-checked" if forces_checked else "draft"
+    units.write_text(re.sub(r"(?m)^  status: .*$", f"  status: {forces}", units.read_text(encoding="utf-8")), encoding="utf-8")
+    targets = content / "settlement_targets.yaml"   # #793's rows, as the owner's review would leave them (Q-TGT-3 (b))
+    targets.write_text(re.sub(r"(?m)^    status: .*$", f"    status: {status}", targets.read_text(encoding="utf-8")), encoding="utf-8")
     photo_manifest(build, reviewed=photos_reviewed)
     return build
 

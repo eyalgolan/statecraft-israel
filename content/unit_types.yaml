@@ -40,11 +40,21 @@ types:
     side: israel
     class: artillery
     movement_points: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: points a turn)
+    # Artillery's combat role (R-COMBAT-007; Q-ARTY-1, owner, 15 October 2026: "Take all recommendations"). Proposed on
+    # #748 (https://github.com/eyalgolan/statecraft-israel/issues/748#issuecomment-6315145696) and accepted by the owner
+    # as design values on 21 October 2026 (https://github.com/eyalgolan/statecraft-israel/issues/748#issuecomment-6317339304).
+    # Range 2 is the smallest that differs from an infantry attack: the guns stand one hex behind the unit that attacks.
+    # At about 8.7 km a hex it is a game value, not a gun's reach. A firing costs twice an infantry attack's Arms.
+    range: 2                             # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-1: hexes to the hex it supports an attack on)
+    arms_per_fire: 2                     # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-ARTY-1: Arms each firing spends)
+    combat_percent: 200                  # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-1: percent of its strength in combat)
   - id: armoured_car
     kind: unit
     side: israel
     class: armour
     movement_points: 5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, Q-ARTY-2: points a turn)
+    # R-COMBAT-008 (Q-ARTY-2): its own combat factor and no other rule. Accepted by the owner on #748, 21 October 2026.
+    combat_percent: 150                  # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-2: percent of its strength in combat)
 # The Arab forces' types (Phase 5 PR 4, R-UNIT-006; #743, owner, 20 October 2026: "one labelled design-value infantry type
 # per Arab side that has a row, 3 movement points"). One type per side whose units_1948.yaml rows start a unit; the
 # Lebanese row is hidden, and the local forces have no row yet. The ids are the sim's, not names shown to the player (those

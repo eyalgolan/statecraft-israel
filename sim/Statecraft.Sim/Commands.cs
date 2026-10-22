@@ -150,6 +150,16 @@ namespace Statecraft.Sim
         public BuyArms(int count) { Count = count; }
     }
 
+    /// <summary>Answers the capture of <see cref="Settlement"/> with <see cref="Outcome"/>: raid, occupy or deport
+    /// (SettlementControl.Resolve, R-CTRL-007 to R-CTRL-010). One kind for every outcome, so they cost the same Attention
+    /// (Q-TECH-3). GDD v0.1 loop only.</summary>
+    public sealed class ResolveCapture : Command
+    {
+        public override string Kind => SettlementControl.ResolveKind;
+        public string Settlement { get; } public string Outcome { get; }
+        public ResolveCapture(string settlement, string outcome) { Settlement = settlement; Outcome = outcome; }
+    }
+
     public sealed class Rejection
     {
         public Command Command { get; } public string Reason { get; }
@@ -188,6 +198,7 @@ namespace Statecraft.Sim
                     case CancelProject _: break;
                     case Move _: break;
                     case BuyArms _: break;
+                    case ResolveCapture r: Text(r.Settlement, "Settlement"); Text(r.Outcome, "Outcome"); break;
                     case SetMobilization _: case SecurityOrder _: break;
                     default: throw new ArgumentException("unknown command type " + cmd.GetType().Name, "commands");
                 }

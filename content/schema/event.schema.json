@@ -80,6 +80,7 @@
     "office": { "$ref": "#/definitions/id", "description": "The office the event goes to when the player does not answer." },
     "objective": { "$ref": "#/definitions/id", "description": "The objective (objectives.yaml) whose completion card this is. It fires only once that objective is completed, and has exactly one option." },
     "site": { "$ref": "#/definitions/id", "description": "A swamp site (sites.yaml) whose works this event is about. In the GDD loop it fires only while that site is being worked; the legacy loop ignores it." },
+    "prisoners": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front whose prisoners this exchange card returns (R-POW-004). It fires only while that front holds prisoners or the player's soldiers, and has exactly one option. Jordan's card also returns the Iraqi prisoners." },
     "from": { "$ref": "#/definitions/date", "description": "First day of the window." },
     "to": { "$ref": "#/definitions/date", "description": "End of the window (exclusive). Leave out for an open window." },
     "conditions": {

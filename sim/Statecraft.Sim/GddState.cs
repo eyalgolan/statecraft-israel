@@ -8,7 +8,7 @@ namespace Statecraft.Sim
     /// <summary>One settlement's control state. Residents are a state, inhabited (the default) or depopulated, never a count
     /// or a combatant field (Q-CAP-2 (b); R-CTRL-003). Immutable so <see cref="GameState.Clone"/> can copy the containing map
     /// shallowly.</summary>
-    public sealed class SettlementControl
+    public sealed partial class SettlementControl
     {
         public string Owner { get; }
         public string State { get; }

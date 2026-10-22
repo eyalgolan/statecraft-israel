@@ -15,8 +15,9 @@ macOS IL2CPP parity check is not an MVP release gate.
 3. **Merge** the pull request (squash).
 4. **Run the release gate** on the merged `main` (it refuses to run elsewhere): `bash scripts/oss/release_gate.sh`. It must print
    `RELEASE GATE OK`. It refuses while an owner decision is open (including D10, history acknowledgement, and D11, the
-   sensitivity review), while an asset row is `owner-verify`, while the sim's sensitivity gate refuses `content/`, or
-   while the history scan shows an open secret-shape row.
+   sensitivity review), while an asset row is `owner-verify`, while the sim's sensitivity gate refuses `content/`
+   (including a `content/settlement_targets.yaml` row that is not `sensitivity-reviewed`, Q-TGT-3 (b)), or while the
+   history scan shows an open secret-shape row.
 5. **Build and package** on the owner's machine, from the merged `main`:
 
    Build both web zips from the merged release commit, never from a pre-merge candidate. The .NET SDK includes the
@@ -27,14 +28,15 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 430350dbf702201d809ead3195b8f0954bd73390bbba35748bd15a9081ba03af"
-   # and "GOLDEN OK hash1952 7f8c9df0e6a9deb61a704f37976fdfe4abe67e10ac6652e636b57c0cc87f628e"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 6ea8b268bb3eb8bab868a686fa21ba84f7c49cddee19c887eb6f53e7d67c394a"
+   # and "GOLDEN OK hash1952 1b21b11f9ba824bf2d4fb3f667b7512e0e317dc211ebd3edfdd5040abf57024d"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 53b482fba2f6615973b2a59acd34ffbc0cd974e6ed956908481c5cef48f2b294"
+     --expect "SMOKE OK 5 turns 1948-10-15 af543e2ee2fee84946ca32e06fd721e9b4f561480eb0527e44430b7f6b7bc0f4"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --query lang=he --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-gzip --persistence --timeout 300 --stall 90
    bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-israel-vX.Y.Z-web.zip
    ```
 
@@ -48,6 +50,9 @@ macOS IL2CPP parity check is not an MVP release gate.
    first, which the golden and smoke run skips: New game, and Play the recording then New game, in English and in
    Hebrew. Each must print `PASS`. A console exception, `RECORDING failed` or `BOOT FAIL` fails it (#908).
 
+   The English-only `--persistence` pass waits for each save's matching IndexedDB commit and checks that both reloads
+   restore its date, turn and state hash.
+
    For the website's playable demo, build a second web variant with Unity's Decompression Fallback - GitHub Pages
    cannot set response headers, so the loader must decompress the files itself (the site's Play page explains) -
    check it and package it the same way:
@@ -56,11 +61,12 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 53b482fba2f6615973b2a59acd34ffbc0cd974e6ed956908481c5cef48f2b294"
+     --expect "SMOKE OK 5 turns 1948-10-15 af543e2ee2fee84946ca32e06fd721e9b4f561480eb0527e44430b7f6b7bc0f4"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --query lang=he --timeout 300 --stall 90
+   uv run tools/web_check.py unity/Builds/Web-pages --persistence --timeout 300 --stall 90
    bash scripts/oss/package_web.sh unity/Builds/Web-pages unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip
    ```
 
@@ -239,6 +245,8 @@ deletes any `frame-*.png` already in it first, so an older, longer run cannot le
 
 This is preparation, not a published store page or an answered content survey. The checklist does not clear the name,
 assets or content for commercial use. Finish the release gates above first; the owner reviews and submits the page.
+Exception (owner, 21 October 2026, in the coordinator session): the Coming Soon page may open before the MVP, since it
+ships no build; the gates still apply to the first build uploaded to Steam.
 
 - [ ] Resolve D8 in `docs/oss/DECISIONS.md` before using "Statecraft: Israel" as the commercial name. Do not treat the
   repository name as trademark clearance. Review the description against the actual release build: distinguish

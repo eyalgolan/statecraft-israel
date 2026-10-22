@@ -7,6 +7,10 @@ public class MilitaryTrainingTests
 {
     static readonly Content Mvp = ContentLoader.Load(RealContentTests.ContentRoot());
 
+    /// <summary>The units after the starting forces: their ids, arrivals' included, are reserved at the start (R-UNIT-009),
+    /// so this counts what training and the test added whether or not a dated brigade has arrived yet.</summary>
+    static int After(GameState s) => s.Units.Keys.Count(id => id >= Mvp.StartingForces.Count);
+
     // R-TRAIN-003, R-UNIT-003 (Q-UNIT-1): one cohort, one unit; strength is population units, not a figure count.
     [Theory]
     [InlineData(1)]
@@ -21,7 +25,7 @@ public class MilitaryTrainingTests
         var arms = s.Arms;
         Training.Progress(Mvp, s, new List<Cause>());
 
-        Assert.Equal(Mvp.StartingForces.Count + 1, s.Units.Count);
+        Assert.Equal(1, After(s));
         var unit = s.Units[next];
         var home = Mvp.SettlementHexes.Single(h => h.Id == "tel_aviv");
         Assert.Equal((next, "recruit", "israel", count, home.Q, home.R, 0),
@@ -47,7 +51,7 @@ public class MilitaryTrainingTests
         Training.Progress(Mvp, s, new List<Cause>());
 
         Assert.Empty(s.Cohorts);
-        Assert.Equal(Mvp.StartingForces.Count + 1, s.Units.Count);
+        Assert.Equal(1, After(s));
         Assert.Equal(3, Assert.Single(s.Units.Values, u => u.Type == "recruit").Strength);
         Assert.Equal(3, Cities.Housed(s, s.Cities[city.Id]));
     }
@@ -68,7 +72,7 @@ public class MilitaryTrainingTests
         Assert.Null(Movement.Move(Mvp, s, unit.Id, target.Q, target.R, new Dictionary<int, int>(), why));
         Assert.Equal(city.Id, s.Units[unit.Id].HomeCity);
         Assert.Equal(3, Cities.Housed(s, city));
-        Assert.Null(Orders.Give(s, unit.Id, Orders.Fortify, why));
+        Assert.Null(Orders.Give(Mvp, s, unit.Id, Orders.Fortify, why));
         Assert.Equal(city.Id, s.Units[unit.Id].HomeCity);
         Orders.Settle(s, why);
         Assert.Equal(Orders.Fortify, s.Units[unit.Id].Order);
@@ -98,7 +102,7 @@ public class MilitaryTrainingTests
         s.Units.Add(otherCityId, new Unit(otherCityId, "veteran_soldier", 0, 0, side: "israel", strength: 5, homeCity: "jerusalem"));
         s.Units.Add(enemyId, new Unit(enemyId, "enemy", 0, 0, side: "egypt", strength: 7, homeCity: city.Id));
         s.Units.Add(unknownHomeId, new Unit(unknownHomeId, "recruit", 0, 0, side: "israel", strength: 11));
-        Assert.Equal(Mvp.StartingForces.Count + 4, s.Units.Count);
+        Assert.Equal(4, After(s));
         Assert.Equal(3, Cities.Housed(s, city));
     }
 
@@ -114,7 +118,7 @@ public class MilitaryTrainingTests
         s.Cohorts.Add(id, new Cohort(id, "halutz", home, 3, 1));
         Assert.Equal(3, Cities.Housed(s, city));
         Training.Progress(Mvp, s, new List<Cause>());
-        Assert.Equal(Mvp.StartingForces.Count + 3, s.Units.Count);
+        Assert.Equal(3, After(s));
         Assert.All(s.Units.Values, u => Assert.Empty(u.HomeCity));
         Assert.Equal(0, Cities.Housed(s, city));
     }
@@ -140,7 +144,7 @@ public class MilitaryTrainingTests
             Assert.Equal(0, s.Cities["tel_aviv"].Recruits);
         }
         var recruits = s.Units.Values.Where(u => u.Id >= firstUnit).ToArray();
-        Assert.Equal(Mvp.StartingForces.Count + 3, s.Units.Count);
+        Assert.Equal(3, After(s));
         Assert.Equal(new[] { firstUnit, firstUnit + 1, firstUnit + 2 }, recruits.Select(u => u.Id));
         Assert.Equal(new[] { 2, 4, 1 }, recruits.Select(u => u.Strength));
         Assert.Equal(firstUnit + 3, s.NextId);
@@ -157,7 +161,7 @@ public class MilitaryTrainingTests
         Assert.Single(g.State.Cohorts);
         g.Step(new Command[0]);
 
-        Assert.Equal(Mvp.StartingForces.Count + 1, g.State.Units.Count);
+        Assert.Equal(1, After(g.State));
         var unit = Assert.Single(g.State.Units.Values, u => u.HomeCity == "tel_aviv");
         Assert.Equal(("recruit", "israel", 3, 0), (unit.Type, unit.Side, unit.Strength, unit.Service));
         Assert.Equal(0, g.State.Cities["tel_aviv"].Recruits);

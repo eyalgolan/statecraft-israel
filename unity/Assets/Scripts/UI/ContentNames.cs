@@ -21,8 +21,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>The office's title for <paramref name="holder"/> (null: the office itself, masculine): a woman is given
         /// the row's feminine title_he_f, which every office with a Hebrew title has (owner on #861: "Move to content"), so
-        /// the UI derives no form; an office with no Hebrew title for her keeps the English.</summary>
-        public static string Of(UiText text, Office o, Person? holder) => Pick(text, o.Title, o.TitleHeFor(holder));
+        /// the UI derives no form; an office with no Hebrew title for her keeps the English. So does a title outside its
+        /// title_he_from/title_he_until days on <paramref name="date"/> (#1219).</summary>
+        public static string Of(UiText text, Office o, Person? holder, DateTime date) => Pick(text, o.Title, o.TitleHeOn(holder, date));
 
         /// <summary>A content text in the UI's language, the one rule the event card and the outcome caption share (#1064,
         /// #1210): in Hebrew the row's Hebrew <paramref name="hebrew"/> with the ministers' Hebrew names in its placeholders;

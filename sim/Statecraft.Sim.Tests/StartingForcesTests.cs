@@ -19,9 +19,9 @@ public class StartingForcesTests
     /// <summary>One units_1948.yaml row in the fixture's map (an army row with one anchor from 15 May 1948) and its anchor's
     /// unit_anchor_hexes.yaml row on hex (q, r). The anchor's coordinates are those of hex (1, 0); the sim never reads them.</summary>
     static (string row, string hex) Row(string id, string side, int? people, int q = 1, int r = 0, string extra = "", string from = "1948-05-15",
-        string service = "army", string status = "draft") =>
+        string service = "army", string status = "draft", string asOf = "1948-05-15") =>
         (FormattableString.Invariant($"- id: {id}\n  service: {service}\n  side: {side}\n  status: {status}\n{extra}")
-            + (people is int p ? FormattableString.Invariant($"  strength: {{ value: {p}, as_of: '1948-05-15' }}\n") : "")
+            + (people is int p ? FormattableString.Invariant($"  strength: {{ value: {p}, as_of: '{asOf}' }}\n") : "")
             + FormattableString.Invariant($"  anchors:\n  - {{ place: Here, lon: 34.29, lat: 33.35, from: '{from}', to: '1949-01-01' }}\n"),
          FormattableString.Invariant($"  - {{ id: {id}, anchor: 0, q: {q}, r: {r} }}\n"));
 
@@ -41,22 +41,27 @@ public class StartingForcesTests
     {
         Assert.Equal(new[]
         {
-            ("golani", "Yavne'el", "veteran_soldier", "israel", 5, 10, 9),
+            ("golani", "Yavne'el", "veteran_soldier", "israel", 4, 10, 9),
             ("carmeli", "Haifa", "veteran_soldier", "israel", 2, 5, 8),
-            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 5, 0, 15),
-            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 1, -3, 19),
-            ("givati", "Gedera", "veteran_soldier", "israel", 5, -5, 23),
+            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 4, 0, 15),
+            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 3, -3, 19),
+            ("givati", "Gedera", "veteran_soldier", "israel", 3, -5, 23),
+            ("etzioni", "Jerusalem", "veteran_soldier", "israel", 3, 0, 23),
             ("harel", "Sha'ar HaGai", "veteran_soldier", "israel", 1, -2, 23),
-            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 2, -9, 27),
+            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 1, -9, 27),
             ("egyptian_expeditionary_force", "Gaza", "egyptian_army", "egypt", 10, -11, 27),
             ("arab_legion", "Ramallah", "arab_legion", "jordan", 5, 0, 22),
             ("syrian_army", "South of Lake Tiberias, before Samakh", "syrian_army", "syria", 3, 10, 10),
             ("iraqi_expeditionary_force", "The high ground over Gesher", "iraqi_army", "iraq", 3, 9, 11),
             ("arab_liberation_army", "al-Malikiyya", "arab_liberation_army", "ala", 4, 12, 4),
+            ("brigade_7", "Hulda (headquarters for the Latrun attacks)", "veteran_soldier", "israel", 2, -4, 23),   // arrives (R-UNIT-009)
         }, Real.StartingForces.Select(f => (f.Row, f.Anchor, f.Type, f.Side, f.Strength, f.Q, f.R)));
+        Assert.Equal(new DateTime?[] { new DateTime(1948, 5, 24) }, Real.StartingForces.Where(f => f.Arrives != null).Select(f => f.Arrives));
         var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
-        Assert.Equal(Real.StartingForces.Count, s.Units.Count);
-        for (int i = 0; i < Real.StartingForces.Count; i++)
+        var starting = Real.StartingForces.Count(f => f.Arrives == null);
+        Assert.Equal(starting, s.Units.Count);
+        Assert.Equal(Real.StartingForces.Count, s.NextId);   // the arrivals' ids are reserved (R-UNIT-009)
+        for (int i = 0; i < starting; i++)
         {
             var (f, u) = (Real.StartingForces[i], s.Units[i]);
             Assert.Equal((f.Type, f.Side, f.Strength, f.Q, f.R, 0, "", ""), (u.Type, u.Side, u.Strength, u.Q, u.R, u.Service, u.Order, u.OrderTarget));
@@ -70,8 +75,7 @@ public class StartingForcesTests
     {
         var rows = Real.StartingForces.Select(f => f.Row).ToList();
         foreach (var id in new[] { "oded", "brigade_8", "lebanese_army" }) Assert.DoesNotContain(id, rows);   // hidden
-        Assert.DoesNotContain("etzioni", rows);                                                              // no strength
-        foreach (var id in new[] { "yiftach", "brigade_7" }) Assert.DoesNotContain(id, rows);   // no 15 May window
+        Assert.DoesNotContain("yiftach", rows);   // no 15 May window
         // The real hidden rows have no anchor, so the fixture holds the case that would otherwise start a unit.
         var c = Load(Row("seen", "israel", 20), Row("unseen", "israel", 20, extra: "  hidden: \"no sourced place\"\n"),
                      Row("unsized", "israel", null), Row("nobody", "israel", 0), Row("later", "israel", 20, from: "1948-06-01"));
@@ -140,9 +144,9 @@ public class StartingForcesTests
     public void TheRealStartingHexesArePinned() =>
         Assert.Equal(new[]
         {
-            ("golani", 10, 9), ("carmeli", 5, 8), ("alexandroni", 0, 15), ("kiryati", -3, 19), ("givati", -5, 23), ("harel", -2, 23),
+            ("golani", 10, 9), ("carmeli", 5, 8), ("alexandroni", 0, 15), ("kiryati", -3, 19), ("givati", -5, 23), ("etzioni", 0, 23), ("harel", -2, 23),
             ("negev", -9, 27), ("egyptian_expeditionary_force", -11, 27), ("arab_legion", 0, 22), ("syrian_army", 10, 10),
-            ("iraqi_expeditionary_force", 9, 11), ("arab_liberation_army", 12, 4),
+            ("iraqi_expeditionary_force", 9, 11), ("arab_liberation_army", 12, 4), ("brigade_7", -4, 23),
         }, Real.StartingForces.Select(f => (f.Row, f.Q, f.R)));
 
     // A starting anchor with no hex row, a row for an anchor that does not exist, a repeated row and a q that is not a whole
@@ -162,17 +166,55 @@ public class StartingForcesTests
         Assert.Contains(message, ex.Message);
     }
 
+    // R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): a row whose strength is dated after the start, with an anchor
+    // window covering that day, arrives on that day's anchor hex with that strength. Its id is reserved at the start (after the
+    // starting rows, whatever the file order), so unit i is still row i, and it enters in the resolution of the turn whose
+    // end reaches its date, once. A later row with no window on its day, and a row dated before the start, arrive never.
+    [Fact]
+    public void ARowDatedAfterTheStartArrivesOnItsDate()
+    {
+        var c = Load(Row("late", "israel", 20, q: 2, from: "1948-06-20", asOf: "1948-06-20"), Row("first", "israel", 30),
+                     Row("never", "israel", 20, q: 3, from: "1948-07-20", asOf: "1948-06-20"),
+                     Row("before", "israel", 20, q: 3, from: "1948-05-01", asOf: "1948-05-01"));   // dated before the start: nothing
+        Assert.Equal(new[] { ("first", (DateTime?)null), ("late", new DateTime(1948, 6, 20)) }, c.StartingForces.Select(f => (f.Row, f.Arrives)));
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        Assert.Equal(new[] { 0 }, s.Units.Keys);
+        Assert.Equal(2, s.NextId);
+        while (s.Date < new DateTime(1948, 6, 20))
+        {
+            Assert.False(s.Units.ContainsKey(1), $"not before its date ({s.Date:yyyy-MM-dd})");
+            s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        }
+        var u = s.Units[1];
+        Assert.Equal(("veteran_soldier", "israel", 2, 2, 0), (u.Type, u.Side, u.Strength, u.Q, u.R));
+        Assert.Equal(2, s.Units.Count);
+        s.Units.Remove(1);   // lost in play: it does not arrive again
+        s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.False(s.Units.ContainsKey(1));
+    }
+
+    // R-UNIT-009: a strength's as_of that is not a 'YYYY-MM-DD' date is a load error naming the file and the row.
+    [Fact]
+    public void AStrengthDateMustBeADate()
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Row("x", "israel", 20, asOf: "June 1948")));
+        Assert.Equal("map/units_1948.yaml", ex.File);
+        Assert.Equal("units[x].strength.as_of", ex.Field);
+    }
+
     // R-UNIT-007, Q-START-2 (owner, 15 October 2026): Open mode starts no forces; it cannot start a game yet at all.
     [Fact]
     public void OpenModeStartsNoForces() =>
         Assert.Throws<NotSupportedException>(() => Simulation.NewGame(Real, GoldenRun.Seed, Mode.Open));
 
     // R-UNIT-006, Q-START-3 (#743, owner, 20 October 2026): a shareable build waits until every row the sim starts a unit
-    // from is fact-checked.
+    // from is fact-checked. The owner person-checked the twelve real ones on 21 October 2026 (#1240); Etzioni and the 7th
+    // (#1241) came later, so those two wait.
     [Fact]
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
-        Assert.Equal(Real.StartingForces.Select(f => f.Row).OrderBy(x => x, StringComparer.Ordinal), ReleaseGate.StartingForcesUnchecked(Real));
+        Assert.Equal(14, Real.StartingForces.Count);
+        Assert.Equal(new[] { "brigade_7", "etzioni" }, ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }

@@ -297,7 +297,7 @@ public class CombatTests
         var next = s.NextId;
         var why = Resolve(c, s);
         Assert.False(s.Units.ContainsKey(2));
-        Assert.Contains(why, x => x.Message == "Unit 2 surrendered with 20 people: it had no hex to retreat to");
+        Assert.Contains(why, x => x.Message == "Unit 2 surrendered with 20 people: it had no hex to retreat to. They are held as prisoners");
         Assert.Equal(next, s.NextId);
     }
 
@@ -359,10 +359,13 @@ public class CombatTests
         var r = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0));
         Assert.Equal((8, 4), (r.State.Units[1].Strength, r.State.Units[2].Strength));   // 9 against 5, below 2:1
         Assert.Equal(Combat.Attack, r.State.Units[1].Order);
-        r = Step(c, r.State);   // no order: the attack stands
+        r = Step(c, r.State);   // no order: the attack stands, against a unit its AI fortified on turn 1 (R-ENEMY-003)
+        Assert.Equal((7, 3, 2, 0), (r.State.Units[1].Strength, r.State.Units[2].Strength, r.State.Units[2].Q, r.State.Units[2].R));   // 8 against 4 x 150%, below 2:1
+        Assert.Equal(Combat.Attack, r.State.Units[1].Order);
+        r = Step(c, Step(c, r.State).State);   // 7 against 3 x 150%, below 2:1; then 6 against 2 x 150%, 2:1
         var e = r.State.Units[2];
-        Assert.Equal((3, 1, 0), (e.Strength, e.Q, e.R));   // 8 against 4, 2:1: lost 1 and retreated
-        Assert.Equal(s.Arms - 4, r.State.Arms);
+        Assert.Equal((1, 1, 0), (e.Strength, e.Q, e.R));   // lost 1 and retreated
+        Assert.Equal(s.Arms - 8, r.State.Arms);
         Assert.Equal("", r.State.Units[1].Order);
         Assert.Contains(r.Why, x => x.Message == "Unit 1's attack on hex 2,0 ends: no enemy unit is there");
     }
@@ -381,13 +384,16 @@ public class CombatTests
         AssertOnlyCombatantsChanged(before, s);
     }
 
-    /// <summary>R-COMBAT-005: <paramref name="after"/> differs from <paramref name="before"/> only in its units, its Arms and the
-    /// RNG: with those three copied back, the hashes match.</summary>
+    /// <summary>R-COMBAT-005: <paramref name="after"/> differs from <paramref name="before"/> only in its units, its Arms, the
+    /// RNG and, from a surrender, the counts of prisoners and of the player's soldiers held (R-POW-001, R-POW-005): with those
+    /// copied back, the hashes match.</summary>
     internal static void AssertOnlyCombatantsChanged(GameState before, GameState after)
     {
         var copy = before.Clone();
         copy.Units.Clear();
         foreach (var u in after.Units.Values) copy.Units.Add(u.Id, u);
+        copy.PrisonersHeld = new SortedDictionary<string, int>(after.PrisonersHeld, StringComparer.Ordinal);
+        copy.SoldiersHeld = new SortedDictionary<string, int>(after.SoldiersHeld, StringComparer.Ordinal);
         copy.Arms = after.Arms;
         copy.RngState = after.RngState;
         Assert.Equal(after.Describe(), copy.Describe());
@@ -405,18 +411,21 @@ public class CombatTests
         Assert.Equal(7, s.Score);
     }
 
-    // R-COMBAT-005: over the reference war run (the goldens' run to the game's end), step 2 run on each turn's end state, with
-    // its standing attacks, changes only the units, the Arms and the RNG. The run has engagements, so the test is not empty.
+    // R-COMBAT-005, R-ENEMY-001: over the reference war run (the goldens' run to the game's end), steps 1 and 2 run on each
+    // turn's end state, with its standing attacks and the enemy's orders, change only the units, the Arms and the RNG. The run
+    // has engagements, so the test is not empty: since #1240 the real start has none (Golani's 4 against the Syrian 3 is under
+    // the policy's 3:2), so unit 0 starts at its old 5 (ReferencePlayerTests.AtFive).
     [Fact]
     public void CombatTouchesOnlyCombatants()
     {
         var c = Real;
-        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var s = ReferencePlayerTests.AtFive(Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical));
         int engagements = 0;
         for (int turn = 0; turn < 1000 && s.Date < c.End && s.GameOver == null; turn++)
         {
             s = Simulation.Step(c, s, GoldenRun.Orders(c, s)).State;
             var after = s.Clone();
+            EnemyAI.Order(c, after, new List<Cause>());
             engagements += Resolve(c, after).Count(x => x.Message.StartsWith("The attack on hex", StringComparison.Ordinal));
             AssertOnlyCombatantsChanged(s, after);
         }

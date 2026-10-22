@@ -1,4 +1,4 @@
-1950-01-15;8709371129873692656;Historical;20;
+1950-01-15;11400714819323200433;Historical;20;
 ind{
   food_supply=0.8886718750000001 [3FEC700000000001]
   housing=0.106156810303452 [3FBB2D17BC8041AE]
@@ -44,7 +44,7 @@ pop{
 sit[
   housing_crisis
 treasury=0 [0000000000000000]
-debt=94.50032828298673 [4057A00560EB2C47]
+debt=95.70032828298672 [4057ECD22DB7F913]
 fx=94.52989672613671 [4057A1E9D3F540F0]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -114,25 +114,27 @@ city{
   tiberias=6,2,8,2,1,c0.18928571428571433 [3FC83A83A83A83AA]
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
-  0:veteran_soldier@10,9|side=israel|strength=3
+  0:veteran_soldier@10,9|side=israel|strength=4
   1:veteran_soldier@5,8|side=israel|strength=2
-  2:veteran_soldier@0,15|side=israel|strength=5
-  3:veteran_soldier@-3,19|side=israel|strength=1
-  4:veteran_soldier@-5,23|side=israel|strength=5
-  5:veteran_soldier@-2,23|side=israel|strength=1
-  6:veteran_soldier@-9,27|side=israel|strength=2
-  7:egyptian_army@-11,27|side=egypt|strength=10
-  8:arab_legion@0,22|side=jordan|strength=5
-  10:iraqi_army@9,11|side=iraq|strength=3
-  11:arab_liberation_army@12,4|side=ala|strength=4
-  13:veteran_halutz@-3,19/6
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@0,23|side=israel|strength=3
+  7:veteran_soldier@-9,27|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
+  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
+  13:veteran_soldier@-4,23|side=israel|strength=2
+  15:veteran_halutz@-3,19/6
 site{
   beit_kama=done,1949-06-15
   beit_shemesh=done,1949-11-15
-  gilat=b,13,4,3FE4DD2F1A9FBE78
+  gilat=b,15,4,3FE4DD2F1A9FBE78
 cproj[
-  14:housing@tel_aviv,-4,20/done,1949-10-15
-  15:housing@tel_aviv,-3,19/4,3FDB851EB851EB88
-next=16
+  16:housing@tel_aviv,-4,20/done,1949-10-15
+  17:housing@tel_aviv,-3,19/4,3FDB851EB851EB88
+next=18
 food=3003,1001,0
-arms=8
+arms=12

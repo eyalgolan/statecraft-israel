@@ -53,6 +53,9 @@ namespace Statecraft.Sim
         /// <summary>Null when the action may be placed, else a stable kind and invariant values for a UI, plus English text.</summary>
         public static MapActionReason? CheckReason(Content c, GameState s, string action, int q, int r)
         {
+            // R-PROJ-004: the GDD loop builds with city projects (R-PROJ-001), so it refuses every map action, before the id is
+            // read; Simulation refunds the Attention of a refused order. The legacy loop keeps the checks below (D-E1).
+            if (c.IsGdd) return new MapActionReason("gdd_loop", "Map actions are not part of this game: start a city project instead");
             // No id in either reason: a command from an old save or a stale UI may name an action this content lacks; the
             // replay refuses it here, before anything is formatted, so a placement always has its rule (fix round 3, m-6).
             if (!Actions.Contains(action)) return new MapActionReason("unknown", "There is no such map action");

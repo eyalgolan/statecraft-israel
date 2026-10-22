@@ -136,7 +136,7 @@ namespace Statecraft.Game.Map.Units
                 var force = content.StartingForces[unit.Id];
                 var row = units.FirstOrDefault(u => u.Id == force.Row);
                 if (row == null || !OnMap(row) || row.Service != UnitData.Army) continue;
-                var start = AnchorAt(row, content.Rules.Start);
+                var start = AnchorAt(row, force.Arrives ?? content.Rules.Start);   // an arriving row stands on its arrival day's anchor (R-UNIT-009)
                 if (start == null) continue;   // the map's copy of the file disagrees with the sim's; nothing to stand on
                 var anchor = unit.Q == force.Q && unit.R == force.R ? start : moved(row, start, unit.Q, unit.R);
                 int figures = FiguresForStrength(unit.Strength, force.Strength);

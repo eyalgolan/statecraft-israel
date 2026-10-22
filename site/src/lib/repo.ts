@@ -15,6 +15,14 @@ export const repoRoot = findRoot();
 const read = (rel: string) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
 const readYaml = (rel: string) => YAML.parse(read(rel));
 
+/** The game's version: Unity's bundleVersion, which the release bumps and the release tag must match (docs/RELEASING.md
+ * step 2, tools/release_build.py). */
+export function gameVersion(): string {
+  const m = read('unity/ProjectSettings/ProjectSettings.asset').match(/^\s*bundleVersion:\s*(\S+)/m);
+  if (!m) throw new Error('site: unity/ProjectSettings/ProjectSettings.asset has no bundleVersion');
+  return m[1];
+}
+
 export interface Source { url: string; checked?: string; note?: string }
 export interface Option { id: string; text: string; historical?: boolean }
 export interface GameEvent {

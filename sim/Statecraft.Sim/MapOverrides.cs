@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -49,6 +50,57 @@ namespace Statecraft.Sim
         static readonly IDeserializer Yaml = new DeserializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .WithDuplicateKeyChecking().Build();
+
+        /// <summary>The map editor's one canonical representation: schema header, fixed sections and stable ordinal
+        /// ordering. Parse is the only reader and this is the only writer, so the editor cannot drift from the format the
+        /// sim and map consume. The input is not mutated.</summary>
+        public static string Serialize(MapOverrides value)
+        {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            var copy = Parse(SerializeUnvalidated(value));
+            var text = new StringBuilder("# yaml-language-server: $schema=../schema/map-overrides.schema.json\n");
+            Section(text, "terrain", copy.Terrain.OrderBy(x => x.Hex.R).ThenBy(x => x.Hex.Q), x =>
+                FormattableString.Invariant($"{{ hex: {{ q: {x.Hex.Q}, r: {x.Hex.R} }}, value: {Quote(x.Value)} }}"));
+            Section(text, "control", copy.Control.OrderBy(x => x.Hex.R).ThenBy(x => x.Hex.Q).ThenBy(x => x.Period, StringComparer.Ordinal), x =>
+                FormattableString.Invariant($"{{ hex: {{ q: {x.Hex.Q}, r: {x.Hex.R} }}, period: {Quote(x.Period)}, value: {Quote(x.Value)} }}"));
+            Section(text, "locations", copy.Locations.OrderBy(x => x.Id, StringComparer.Ordinal), x =>
+                FormattableString.Invariant($"{{ id: {Quote(x.Id)}, hex: {{ q: {x.Hex.Q}, r: {x.Hex.R} }} }}"));
+            return text.ToString();
+        }
+
+        static string SerializeUnvalidated(MapOverrides value)
+        {
+            if (value.Terrain == null) throw new ContentException(FileName, "terrain", "must be a list");
+            if (value.Control == null) throw new ContentException(FileName, "control", "must be a list");
+            if (value.Locations == null) throw new ContentException(FileName, "locations", "must be a list");
+            for (int i = 0; i < value.Terrain.Count; i++) Serializable(value.Terrain[i], value.Terrain[i]?.Hex, $"terrain[{i}]");
+            for (int i = 0; i < value.Control.Count; i++) Serializable(value.Control[i], value.Control[i]?.Hex, $"control[{i}]");
+            for (int i = 0; i < value.Locations.Count; i++) Serializable(value.Locations[i], value.Locations[i]?.Hex, $"locations[{i}]");
+            var text = new StringBuilder();
+            Section(text, "terrain", value.Terrain, x =>
+                FormattableString.Invariant($"{{ hex: {{ q: {x.Hex.Q}, r: {x.Hex.R} }}, value: {Quote(x.Value ?? "")} }}"));
+            Section(text, "control", value.Control, x =>
+                FormattableString.Invariant($"{{ hex: {{ q: {x.Hex.Q}, r: {x.Hex.R} }}, period: {Quote(x.Period ?? "")}, value: {Quote(x.Value ?? "")} }}"));
+            Section(text, "locations", value.Locations, x =>
+                FormattableString.Invariant($"{{ id: {Quote(x.Id ?? "")}, hex: {{ q: {x.Hex.Q}, r: {x.Hex.R} }} }}"));
+            return text.ToString();
+        }
+
+        static void Serializable(object? row, MapHexRef? hex, string at)
+        {
+            if (row == null) throw new ContentException(FileName, at, "must be an object");
+            if (hex == null) throw new ContentException(FileName, at + ".hex", "required");
+        }
+
+        static void Section<T>(StringBuilder text, string name, IEnumerable<T> rows, Func<T, string> row)
+        {
+            var list = rows.ToList();
+            if (list.Count == 0) { text.Append(name).Append(": []\n"); return; }
+            text.Append(name).Append(":\n");
+            foreach (var item in list) text.Append("  - ").Append(row(item)).Append('\n');
+        }
+
+        static string Quote(string value) => "'" + value.Replace("'", "''") + "'";
 
         /// <summary>Parses the file and checks its shape: the three lists, a hex on every entry and no target twice. A
         /// missing or blank file (null, "") has no overrides. Throws ContentException naming the file and field.</summary>

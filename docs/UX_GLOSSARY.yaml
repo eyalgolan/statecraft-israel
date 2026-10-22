@@ -1,0 +1,1943 @@
+# Statecraft: Israel glossary, draft for discussion
+# Draft document. Adopted decisions are identified; other recommendations remain proposals.
+# Cited forms were checked where snapshot evidence was available; unresolved evidence remains identified. Snapshot date 2026-10-17.
+schema: '0.1'
+status: DRAFT, unapproved
+snapshot_date: '2026-10-17'
+version: '0.5'
+snapshot_commit: 46abd99c
+# Revision 21 October 2026: targeted budget and map-hint checks at upstream/main 001a59d0.
+conventions:
+- id: spelling
+  status: preferred
+  summary: 'The rule exists but only as a comment in content/offices.yaml: office titles keep Israel''s official English (''Ministry
+    of Defense'', ''Minister of Defense'') because they are proper nouns, and the UI is otherwise British English, so the
+    screen and its button say ''Defence''. The comment says not to ''fix'' it (playtest 1, item 8). No document in docs/ or
+    CONTRIBUTING.md states it, no reference dictionary is named, and docs/GDD.md mixes both spellings (''defence'' in the
+    soldier actions table, ''defense'' under settlement control).'
+  recommendation: Move the rule from the offices.yaml comment into docs/WRITING_GUIDE.md so it covers every surface, name
+    one reference dictionary for the British spelling, and say which spelling the GDD and docs follow. Pattern from the Google
+    developer documentation style guide and the GOV.UK style guide.
+  decision_owner: 'Eyal: where the rule is documented and the dictionary; the rule itself is already his'
+- id: transliteration
+  status: decision-needed
+  summary: 'Hebrew terms in English text are transliterated in several ways: ma''abarot (README), Halutz and Hakhshara (GDD),
+    yishuv and yishuvim (GDD), Knesset. No scheme is written down.'
+  recommendation: Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling
+    beside it in the glossary.
+  decision_owner: Eyal
+- id: button-names
+  status: preferred
+  summary: 'A named button is written in running text as the button shows it, in sentence case since #630 (''takes effect
+    at End turn'', ''Press New game again''), while the action described in general is lowercase (''end the turn to see its
+    causes''). This follows the Google rule that a UI label is written as it appears.'
+  recommendation: Keep it as the rule. New buttons follow it.
+  decision_owner: Eyal
+- id: counts
+  status: preferred
+  summary: 'Counts are written ''Label: N'' where the sentence would otherwise change with N. The Hebrew ''event.more'' already
+    does this; the English still says ''decision(s)''.'
+  recommendation: Adopt now for both languages; a real plural mechanism is a separate proposal.
+  decision_owner: Eyal
+- id: dates
+  status: preferred
+  summary: 'English dates are written ''15 May 1948'' (CONTRIBUTING rule 4). Since #550 the strings files hold the twelve
+    month names and two patterns (date.day_month_year, date.month_year), with Hebrew versions (''{0} ב{1} {2}'', so the prefix
+    ב joins the month name with no hyphen). The map''s control captions use them (''9 July 1948'' and ''9 ביולי 1948''). The
+    map, top bar, Budget, Why and info panel dates now use the language''s date keys (#687, #701). PlayerText.Date itself
+    remains English, so other callers still need checking. Since #543 the UI puts invisible left-to-right marks round every
+    value it inserts into a Hebrew line, so an English date or amount reads as one run and a minus sign stays on the correct
+    side; the text itself is still English.'
+  recommendation: Preserve the adopted localized date paths; check any remaining caller individually. Money localization remains
+    open.
+  decision_owner: Eyal
+- id: label-capitalisation
+  status: preferred
+  summary: 'Settled by the maintainer in #630 (merged 15 October 2026): every static label is sentence case, button names
+    included (''New game'', ''End turn'', ''Public support'', ''International support'', ''Foreign currency''). The top-bar
+    captions are the content display names as written (the test is HudTests.TopBarCaptionsAreTheContentNames). ''DRAFT'' on
+    a decision card stays in capitals. The Hebrew has no capitals, so the rule is for English only.'
+  recommendation: Keep it as the rule. A new label, caption or button follows it, and so does text that names one.
+  decision_owner: Eyal
+concepts:
+- id: security-level
+  status: contested
+  category: game-system
+  definition: The five-step scale of the country's security posture, from 1 (routine threat) to 5 (full war), that the player
+    orders up or down on the Defence screen. At level 5 a countdown to a UN-imposed ceasefire runs.
+  scope:
+  - ui
+  - docs
+  - marketing
+  - code
+  en:
+    preferred: security level
+    avoid:
+    - rung (in player text and prose; it stays in code and content/rules.yaml)
+    in_use:
+    - form: Level {0} of 5
+      where: strings.en.yaml hud.level
+    - form: Security level
+      where: strings.en.yaml defence.section_ladder
+    - form: Lower the level
+      where: strings.en.yaml defence.lower
+    - form: Raise the level
+      where: strings.en.yaml defence.raise
+    - form: security level {1} of 5
+      where: strings.en.yaml unit.national
+    - form: level {0} to {1}
+      where: strings.en.yaml defence.order
+    - form: five-level escalation ladder
+      where: README.md
+    - form: start_rung
+      where: content/rules.yaml
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: דרגה {0} מתוך 5
+      where: strings.he.yaml hud.level
+    - form: המצב הביטחוני
+      where: strings.he.yaml defence.section_ladder
+    - form: הורדת הדרגה
+      where: strings.he.yaml defence.lower
+    - form: העלאת הדרגה
+      where: strings.he.yaml defence.raise
+    - form: רמת ביטחון {1} מתוך 5
+      where: strings.he.yaml unit.national
+    - form: מדרגה {0} לדרגה {1}
+      where: strings.he.yaml defence.order
+    - form: סולם הסלמה
+      where: README.he.md
+    options:
+    - דרגה
+    - רמת ביטחון
+    - 'רמת כוננות (Eyal''s suggestion on #193, if the ladder is read as an alert level)'
+  recommendation:
+    en: Say 'security level' in full where the player first meets it (the Defence screen caption and the HUD), then 'level'
+      alone in the same view. Keep 'escalation ladder' for prose that describes the system, as the README does. Never 'rung'
+      in player text.
+    he: Choose one Hebrew word for 'level' and use it in every key. Which word is for the native reviewer; the options are
+      listed. Since 14 October the section caption reads 'המצב הביטחוני' (the security situation) while the English caption
+      still reads 'Security level', so the two languages no longer name the same thing there; confirm that this is intended.
+    reasons:
+    - Two of the three English UI forms already say 'security level'.
+    - '''Level 5 of 5'' on its own does not say what the level measures.'
+    - '''Rung'' appears only in code and rules.'
+    - The Hebrew uses 'דרגה' (hud.level, defence.lower and defence.raise), 'רמת ביטחון' (unit.national) and 'המצב הביטחוני'
+      (the caption) for one scale, and the README adds 'סולם הסלמה'.
+  decision_owner: Eyal and the native reviewer
+  pending_gdd: The GDD plan (section 5, D-C4) proposes that the level become derived from the war state. The wording may change
+    with it.
+- id: attention
+  status: decision-needed
+  category: game-system
+  definition: The per-turn allowance that limits how many orders the player can give. Each kind of order costs some Attention,
+    and an order is refused when there is not enough left.
+  scope:
+  - ui
+  - docs
+  - code
+  en:
+    preferred: Attention at the start of a label, attention inside a sentence (sentence case, as in the strings)
+    avoid: []
+    in_use:
+    - form: Attention {0:0.0} of {1:0.0}
+      where: strings.en.yaml hud.attention
+    - form: Not enough attention (need {0:0.0}, have {1:0.0})
+      where: strings.en.yaml order.no_attention
+    - form: 4 Attention per turn
+      where: 'issue #42 body'
+    - form: 'attention_per_turn: 4'
+      where: content/rules.yaml
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: תשומת לב {0:0.0} מתוך {1:0.0}
+      where: strings.he.yaml hud.attention
+    - form: אין מספיק תשומת לב
+      where: strings.he.yaml order.no_attention
+  recommendation:
+    en: Keep sentence case everywhere, in prose as well as in the UI, so one rule covers both, and define the term once at
+      first use in each document. The alternative, a capital for the named resource in prose only, would split the rule between
+      UI and docs.
+    he: No Hebrew change proposed. A native check of 'תשומת לב' as the name of a resource is advisable.
+    reasons:
+    - No document gives a player-facing definition.
+    - One rule for UI and docs is simpler to apply and to check, and the strings already follow sentence case.
+  decision_owner: Eyal
+  pending_gdd: Kept by the owner (decision D-C5, 12 October). Its role in the GDD core loop is listed as open in docs/GDD.md.
+- id: turn
+  status: preferred
+  category: game-system
+  definition: One step of the game. The current MVP uses monthly turns on every security rung, from 15 May 1948 to 15 January
+    1952 (docs/GDD.md and content/rules.yaml). Legacy turn-length strings remain in the files; their presence does not describe
+    the current MVP cadence.
+  scope:
+  - ui
+  - docs
+  - marketing
+  - code
+  en:
+    preferred: turn
+    avoid: []
+    in_use:
+    - form: Turn {0}
+      where: strings.en.yaml hud.turn
+    - form: turns of a quarter / month / week
+      where: strings.en.yaml defence.turn_quarter, defence.turn_month, defence.turn_week
+    - form: Each turn advances history by one month
+      where: docs/GDD.md
+    - form: 'turn_lengths: [month, month, month, month, month]'
+      where: content/rules.yaml
+  he:
+    preferred: תור
+    avoid: []
+    in_use:
+    - form: תור {0}
+      where: strings.he.yaml hud.turn
+    - form: תורים של רבעון / חודש / שבוע
+      where: strings.he.yaml defence.turn_*
+    - form: '{0} תורות'
+      where: strings.he.yaml city.turns (#869)
+  recommendation:
+    en: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy
+      strings.
+    he: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether
+      the variants need alignment.
+    reasons:
+    - The current rules set all five turn lengths to month.
+  decision_owner: Eyal
+- id: end-turn
+  status: preferred
+  category: game-system
+  definition: The button that submits the queued orders and runs the turn.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: End turn (the button), 'end the turn' (the action)
+    avoid: []
+    in_use:
+    - form: End turn
+      where: strings.en.yaml hud.end_turn
+    - form: takes effect at End turn
+      where: strings.en.yaml budget.queued
+    - form: end the turn to see its causes
+      where: strings.en.yaml why.empty
+  he:
+    preferred: סיום התור (the button); 'לסיים את התור' in sentences
+    avoid: []
+    in_use:
+    - form: סיום התור
+      where: strings.he.yaml hud.end_turn
+    - form: ייכנס לתוקף בסיום התור
+      where: strings.he.yaml budget.queued
+    - form: יש לסיים את התור כדי לראות את הסיבות
+      where: strings.he.yaml why.empty
+  recommendation:
+    en: 'Keep the pattern: capitalised for the button, lowercase for the action. Record it as the rule (conventions: button-names).'
+    he: 'The button label ''סיום התור'' (added in #550) and the sentences already use the same words. The reviewer confirms.'
+    reasons:
+    - Matches the Google rule that a UI label is written as it appears.
+  decision_owner: Eyal
+- id: decision
+  status: preferred
+  category: game-system
+  definition: A card that asks the player to choose between options at a historical moment.
+  scope:
+  - ui
+  - docs
+  - marketing
+  en:
+    preferred: decision
+    avoid: []
+    in_use:
+    - form: Decision waiting
+      where: strings.en.yaml event.reopen
+    - form: '{0} more decision(s) waiting'
+      where: strings.en.yaml event.more
+    - form: face real decisions at their real dates
+      where: README.md
+  he:
+    preferred: החלטה
+    avoid: []
+    in_use:
+    - form: החלטה ממתינה
+      where: strings.he.yaml event.reopen
+    - form: 'החלטות ממתינות נוספות: {0}'
+      where: strings.he.yaml event.more
+    - form: מכריעים בהחלטות אמיתיות
+      where: README.he.md
+  recommendation:
+    en: 'Say ''decision'' when the player must choose, and ''event'' for what happens in history (see ''event''). Replace
+      ''decision(s)'' with the Hebrew shape: ''More decisions waiting: {0}''.'
+    he: No change.
+    reasons:
+    - Google advises against '(s)'.
+    - 'The Hebrew string already uses the ''Label: N'' shape and needs no plural form.'
+  decision_owner: Eyal, for the plural form
+- id: event
+  status: preferred
+  category: game-system
+  definition: Something that happens in the game's history, written up as a content record with a date window, options and
+    sources.
+  scope:
+  - docs
+  - events
+  - code
+  en:
+    preferred: event (data and history), 'event card' (the card the player sees)
+    avoid: []
+    in_use:
+    - form: Events
+      where: strings.en.yaml why.events
+    - form: event card
+      where: docs/WRITING_GUIDE.md (event card usage)
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: אירועים
+      where: strings.he.yaml why.events
+  recommendation:
+    en: Use 'event' for the historical happening and the data, 'decision' for what the player answers.
+    he: No change proposed.
+    reasons:
+    - Keeps the two words from being used for each other.
+  decision_owner: Eyal
+- id: why-panel
+  status: preferred
+  category: game-system
+  definition: The screen that explains what caused the changes in the last turn.
+  scope:
+  - ui
+  - docs
+  - marketing
+  en:
+    preferred: Why? (the button), 'Why did this happen?' (the screen title), the 'Why?' panel (prose)
+    avoid:
+    - '''Why panel'' without the question mark'
+    in_use:
+    - form: Why?
+      where: strings.en.yaml hud.nav.why
+    - form: Why did this happen?
+      where: strings.en.yaml why.title
+    - form: '"Why?" panel'
+      where: README.md
+    - form: Why panel
+      where: README.md image alt text
+  he:
+    preferred: למה? (the button), 'למה זה קרה?' (the screen title)
+    avoid: []
+    in_use:
+    - form: למה?
+      where: strings.he.yaml hud.nav.why
+    - form: למה זה קרה?
+      where: strings.he.yaml why.title
+    - form: לוח 'למה זה קרה?'
+      where: README.he.md
+  recommendation:
+    en: Keep the names the strings now give. In prose, write the 'Why?' panel, with the question mark, as most of the README
+      does; the README's image alt text still says 'Why panel'.
+    he: 'No change proposed; the button and the title were added in #550.'
+    reasons:
+    - The English and Hebrew button and title are parallel (a short form on the button, the full question as the title).
+    - The question mark matches what the screen does, which is answer a question.
+  decision_owner: Eyal, for the alt text
+- id: coalition
+  status: preferred
+  category: politics
+  definition: The parties that support the government, counted in seats.
+  scope:
+  - ui
+  - docs
+  - marketing
+  en:
+    preferred: coalition
+    avoid: []
+    in_use:
+    - form: 'Coalition: {0} of {1} {3} · stability {2}'
+      where: strings.en.yaml cabinet.coalition
+    - form: inside a real coalition
+      where: README.md
+  he:
+    preferred: קואליציה
+    avoid: []
+    in_use:
+    - form: 'קואליציה: {0} מתוך {1} {3} · יציבות {2}'
+      where: strings.he.yaml cabinet.coalition
+    - form: בתוך קואליציה אמיתית
+      where: README.he.md
+  recommendation:
+    en: No change to the word.
+    he: No change proposed. The unit after the number is now chosen by the body (see 'seat-and-member').
+    reasons:
+    - Consistent in both languages.
+  decision_owner: Eyal
+  notes: 'The same string is shown while the Provisional State Council sits, which is an appointed body (Eyal on #209), so
+    ''coalition'' there needs its own look.'
+- id: seat-and-member
+  status: preferred
+  category: politics
+  definition: 'A seat is one place in a legislature, used when counting a party or coalition. A member is a person who holds
+    one. In Hebrew the unit of a count depends on the body: seats of an elected body, members of the appointed one.'
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: seats (for counts), members (for people in a body)
+    avoid: []
+    in_use:
+    - form: seats
+      where: strings.en.yaml cabinet.seats
+    - form: seats
+      where: strings.en.yaml cabinet.seats_appointed
+    - form: '{1} members'
+      where: strings.en.yaml cabinet.legislature
+    - form: members
+      where: strings.en.yaml cabinet.members_unit
+  he:
+    preferred: מנדטים (an elected body), חברים (the appointed Provisional State Council)
+    avoid: []
+    in_use:
+    - form: מנדטים
+      where: strings.he.yaml cabinet.seats
+    - form: חברים
+      where: strings.he.yaml cabinet.seats_appointed
+    - form: חברים
+      where: strings.he.yaml cabinet.legislature, cabinet.members_unit
+  recommendation:
+    en: No change; 'seats' and 'members' already work for both bodies.
+    he: 'Closed in #550: the unit is its own string (''cabinet.seats'' or ''cabinet.seats_appointed''), chosen by whether
+      the legislature has an election date in content/legislatures.yaml (CabinetPresenter.SeatUnit), and no template hard-codes
+      either word. The native reviewer can still confirm the two words, and a Knesset source for them is still missing.'
+    reasons:
+    - English needs no split, Hebrew does.
+    - A new body is handled by its election date, so no string changes.
+  decision_owner: Closed by Eyal (#550); native reviewer to confirm
+- id: provisional-state-council
+  status: decision-needed
+  category: politics
+  definition: 'The appointed body the Cabinet screen shows from 14 May 1948 to 14 February 1949 (the dates Eyal gives on #209).
+    The screen draws it as a half circle of seats.'
+  scope:
+  - ui
+  - docs
+  - events
+  en:
+    preferred: Provisional State Council
+    avoid: []
+    in_use:
+    - form: the Provisional State Council as a half circle of seats
+      where: README.md image alt text
+    - form: 'body: Provisional State Council'
+      where: content/legislatures.yaml
+    - form: 'body: Constituent Assembly (First Knesset)'
+      where: content/legislatures.yaml
+  he:
+    preferred: null
+    avoid: []
+    in_use: []
+  recommendation:
+    en: No change.
+    he: 'Use the sourced name carried in content (#558). The Cabinet now reads legislature BodyHe through ContentNames.Of,
+      showing the Hebrew name in the Hebrew UI where supplied and English otherwise. Keep any outstanding native review
+      on #564 separate from that implementation; displaying a name does not establish its approval.'
+    reasons:
+    - CabinetPresenter uses ContentNames.Of for the legislature name; it is no longer an unread content field.
+  decision_owner: 'Native reviewer; Eyal for #55'
+- id: competence
+  status: preferred
+  category: game-system
+  definition: A rating shown on every minister's card for how well they run their office, next to loyalty. Under the GDD plan
+    it would scale the matching system for that office (D-H3, open).
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: competence
+    avoid: []
+    in_use:
+    - form: Competence
+      where: strings.en.yaml card.competence
+    - form: competence {2}, loyalty {3}
+      where: strings.en.yaml cabinet.person
+  he:
+    preferred: כישורים
+    avoid:
+    - 'כשירות (replaced in #550; reads as fitness or qualification, Eyal on #193)'
+    in_use:
+    - form: כישורים
+      where: strings.he.yaml card.competence
+    - form: כישורים {2}, נאמנות {3}
+      where: strings.he.yaml cabinet.person
+    - form: נאמנות
+      where: strings.he.yaml card.loyalty
+    options:
+    - יכולת (the other candidate Eyal named)
+  recommendation:
+    en: No change.
+    he: 'Closed in #550: ''כישורים''. The native reviewer can still confirm it against ''יכולת''.'
+    reasons:
+    - 'Eyal''s own note on #193, applied in #550.'
+  decision_owner: Closed by Eyal (#550); native reviewer to confirm
+  pending_gdd: Minister roles are GDD Phase 7 (D-H3).
+- id: ceasefire
+  status: decision-needed
+  category: history-term
+  definition: 'In the game rules: the stop to full war that the UN imposes after a countdown at security level 5. In event
+    titles: the name of a specific cessation of fighting (for example in Jerusalem).'
+  scope:
+  - ui
+  - events
+  - docs
+  en:
+    preferred: ceasefire
+    avoid:
+    - cease-fire (hyphenated) in new text
+    in_use:
+    - form: the UN imposes a ceasefire in {0} weeks
+      where: strings.en.yaml defence.ceasefire
+    - form: Cease-fire in Jerusalem
+      where: content/events/jerusalem_ceasefire.yaml title
+  he:
+    preferred: הפסקת אש
+    avoid: []
+    in_use:
+    - form: הפסקת אש של האו״ם
+      where: strings.he.yaml defence.ceasefire_starts
+  recommendation:
+    en: Use 'ceasefire' as one word in UI and prose. An event title that follows a source's own spelling keeps it, so decide
+      whether 'Cease-fire in Jerusalem' follows a source or should be aligned.
+    he: No change proposed.
+    reasons:
+    - The strings and the event title disagree on the hyphen.
+  decision_owner: Eyal (sourcing)
+- id: truce
+  status: decision-needed
+  category: history-term
+  definition: The word the event titles use for two pauses in the 1948 fighting ('The First Truce', 'The Second Truce'). Not
+    the same word as ceasefire or armistice.
+  scope:
+  - events
+  - docs
+  - marketing
+  en:
+    preferred: truce (in the event names)
+    avoid:
+    - using it for ceasefire or armistice
+    in_use:
+    - form: The First Truce
+      where: content/events/first_truce.yaml title
+    - form: The Second Truce
+      where: content/events/second_truce.yaml title
+    - form: the First Truce
+      where: README.md
+  he:
+    preferred: null
+    avoid: []
+    in_use: []
+    options: []
+  recommendation:
+    en: Keep 'truce', 'ceasefire' and 'armistice' as three different words.
+    he: No Hebrew term for 'truce' appears in the strings. The reviewer supplies it.
+    reasons:
+    - The repo uses each word for a different thing.
+  decision_owner: Eyal (sourcing) and the native reviewer
+- id: armistice
+  status: preferred
+  category: history-term
+  definition: The 1949 agreements and the lines they set. Used in the event titles for four countries, and in map text.
+  scope:
+  - ui
+  - events
+  - docs
+  en:
+    preferred: armistice
+    avoid: []
+    in_use:
+    - form: Armistice with Egypt / Jordan / Lebanon / Syria
+      where: content/events/armistice_*.yaml title
+    - form: On the {0} · {1}, {2}
+      where: strings.en.yaml info.armistice_line
+  he:
+    preferred: שביתת נשק
+    avoid: []
+    in_use:
+    - form: קו שביתת נשק
+      where: strings.he.yaml map.layer_front_no_data
+  recommendation:
+    en: No change.
+    he: No change proposed.
+    reasons:
+    - Consistent in both languages.
+  decision_owner: Eyal
+- id: reserve-call-up
+  status: preferred
+  category: game-system
+  definition: The share of reserves the player calls up, which costs pay and lost work and has a minimum for each security
+    level.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: reserve call-up
+    avoid: []
+    in_use:
+    - form: Reserve call-up
+      where: strings.en.yaml defence.section_callup, unit.national
+    - form: '{0} of reserves called up'
+      where: strings.en.yaml defence.mob
+  he:
+    preferred: גיוס מילואים
+    avoid: []
+    in_use:
+    - form: גיוס מילואים
+      where: strings.he.yaml defence.section_callup, unit.national
+  recommendation:
+    en: No change.
+    he: No change proposed.
+    reasons:
+    - Consistent in both languages.
+  decision_owner: Eyal
+  pending_gdd: The GDD plan proposes replacing the call-up with recruits once Phase 5 lands (D-C4).
+- id: transit-camp
+  status: preferred
+  category: place
+  definition: A camp for new immigrants. The player can place one on the map.
+  scope:
+  - ui
+  - docs
+  - marketing
+  en:
+    preferred: transit camp; 'ma'abarot' in prose, with the English at first mention
+    avoid: []
+    in_use:
+    - form: Place a transit camp ({0})
+      where: strings.en.yaml info.build_camp
+    - form: the ma'abarot transit camps
+      where: README.md, site press page
+  he:
+    preferred: מעברה
+    avoid: []
+    in_use:
+    - form: הקמת מעברה ({0})
+      where: strings.he.yaml info.build_camp
+  recommendation:
+    en: 'UI says ''transit camp''. Prose says ''the ma''abarot (transit camps)'' the first time, then either word. Decide
+      the transliteration once (conventions: transliteration).'
+    he: No change proposed.
+    reasons:
+    - That is what the README already does.
+  decision_owner: Eyal
+- id: settlement
+  status: contested
+  category: place
+  definition: A place the player owns on the map and builds in.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: settlement
+    avoid: []
+    in_use:
+    - form: 'Settlements: {0}'
+      where: strings.en.yaml info.owned
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: 'יישובים: {0}'
+      where: strings.he.yaml info.owned
+  recommendation:
+    en: No change.
+    he: 'Check with the reviewer: the Hebrew uses the same word for ''settlement'' and for ''1948 locality'' (see ''locality'').'
+    reasons:
+    - English separates two concepts that Hebrew merges.
+  decision_owner: Native reviewer
+- id: locality
+  status: contested
+  category: place
+  definition: A town or village that existed in 1948 and appears on the map with its 1948 name.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: locality
+    avoid: []
+    in_use:
+    - form: '1948 localities: {0}'
+      where: strings.en.yaml info.localities
+    - form: Mixed locality
+      where: strings.en.yaml map.mixed
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: 'יישובים ב-1948: {0}'
+      where: strings.he.yaml info.localities
+    - form: יישוב מעורב
+      where: strings.he.yaml map.mixed
+  recommendation:
+    en: No change.
+    he: 'Same point as ''settlement'': one Hebrew word covers two English concepts. Also see the maqaf point on ''ב-1948''
+      (Academy of the Hebrew Language punctuation rules).'
+    reasons:
+    - The Hebrew strings use 'יישוב' for both.
+  decision_owner: Native reviewer
+- id: yishuv
+  status: decision-needed
+  category: gdd-term
+  definition: 'Two senses are in use. In the GDD, ''yishuv'' is a new settlement the player founds at a designated site. In
+    the repo''s era design (issues #81 to #98), ''the Yishuv'' is the pre-state community and the era 1882 to 1948.'
+  scope:
+  - docs
+  - ui
+  - marketing
+  en:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: Build yishuv
+      where: docs/GDD.md
+    - form: establish new yishuvim
+      where: docs/GDD.md
+    - form: Yishuv 1 ... Yishuv 19 (era work)
+      where: 'issue titles #81 to #98'
+    - form: A designated site for a new yishuv
+      where: strings.en.yaml site.available (#869)
+    - form: 'Build a yishuv with {0}: {1}, {2}'
+      where: strings.en.yaml site.build (#869)
+  he:
+    preferred: null
+    avoid: []
+    in_use: []
+  recommendation:
+    en: 'The GDD (v0.2) and the UI (#869: site.available, site.build) call a place the player founds a ''yishuv'' (plural
+      ''yishuvim''). ''The Yishuv'', with a capital Y, is the pre-state community (docs/CONTENT_POLICY.md, section 1). Keep
+      the capital to tell the two apart. Whether the UI should say ''settlement'' instead is the owner''s call.'
+    he: The reviewer decides how 'יישוב' is used for each sense.
+    reasons:
+    - The design of record and the implemented UI agree on the lowercase term.
+    - Capitalization distinguishes the place from the pre-state community.
+  decision_owner: Eyal
+- id: hex
+  status: use-with-caution
+  category: game-system
+  definition: One cell of the map grid. The player can click it to inspect it.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: hex, defined at first use
+    avoid: []
+    in_use:
+    - form: "Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map"
+      where: strings.en.yaml info.hint
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה"
+      where: strings.he.yaml info.hint
+  recommendation:
+    en: Keep, but write the first mention so a player who has never met a hex map understands it.
+    he: No change proposed.
+    reasons:
+    - The Google guide treats unexplained jargon as a risk; the word is only used on the map hint.
+  decision_owner: Eyal
+- id: unit
+  status: pending-gdd
+  category: gdd-term
+  definition: Currently a token on the map for a brigade, squadron or ship. In the GDD it also names population roles (refugee,
+    civilian, craftsman, pioneer, recruit and others).
+  scope:
+  - ui
+  - docs
+  - marketing
+  - code
+  en:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: unit.* (service, position, formed, commander)
+      where: strings.en.yaml
+    - form: brigade tokens
+      where: README.md
+    - form: Population and units
+      where: docs/GDD.md (section heading)
+  he:
+    preferred: null
+    avoid: []
+    in_use: []
+  recommendation:
+    en: Wait for the owner's formation-scale decision (D-A1) before fixing this entry.
+    he: Nothing proposed.
+    reasons:
+    - One word currently means two things (map token and person role).
+  decision_owner: Eyal
+  pending_gdd: D-A1 and the Arab forces as units (#227 and the units doc).
+- id: draft-marker
+  status: preferred
+  category: content-label
+  definition: The label shown on a unit card when its facts have not been checked by a historian.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: Draft
+    avoid: []
+    in_use:
+    - form: 'Draft: not yet checked by a historian'
+      where: strings.en.yaml unit.draft
+    - form: 'Draft: from Wikipedia only, not yet checked against a published history'
+      where: strings.en.yaml unit.draft_wikipedia
+    - form: DRAFT
+      where: strings.en.yaml event.draft
+  he:
+    preferred: טיוטה
+    avoid: []
+    in_use:
+    - form: 'טיוטה: טרם נבדק בידי היסטוריון'
+      where: strings.he.yaml unit.draft
+    - form: טיוטה
+      where: strings.he.yaml event.draft
+  recommendation:
+    en: 'No change to the word. Two writings are live: ''Draft:'' with a reason on a unit card, and ''DRAFT'' in capitals
+      as the mark on a decision card (the Hebrew uses one writing for both). Decide whether the capitals are a deliberate
+      style for a mark.'
+    he: No change proposed.
+    reasons:
+    - Honest, specific, and matches the project's sourcing rules.
+    - One term in two typographic forms is a small drift that a rule can settle.
+  decision_owner: Eyal
+- id: ai-generated
+  status: preferred
+  category: content-label
+  definition: The label for any image, video or sound made with AI tools.
+  scope:
+  - ui
+  - marketing
+  - docs
+  en:
+    preferred: AI-generated [illustration | concept art]
+    avoid:
+    - presenting concept art or the trailer as gameplay
+    in_use:
+    - form: AI-generated illustration
+      where: strings.en.yaml event.ai_label
+    - form: AI-generated concept art
+      where: README.md
+    - form: made with AI video tools ... it is not in-game footage
+      where: README.md, site press page
+    - form: a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both
+        labelled as such
+      where: README.md
+    - form: no caption is burned into the video itself
+      where: docs/steam/store-page-draft.md
+    - form: 'with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI)'
+      where: docs/ai-disclosure.md
+  he:
+    preferred: בינה מלאכותית
+    avoid: []
+    in_use:
+    - form: איור שנוצר בבינה מלאכותית
+      where: strings.he.yaml event.ai_label
+  recommendation:
+    en: 'Keep the label wording. The statements now agree: on 14 October the owner removed the caption burned into the clips,
+      and the store-page draft says so while saying the game''s UI labels each clip ''AI-generated illustration'' while it
+      plays, which is the string `event.ai_label`. The README says the loops and End turn clips are ''labelled as such'',
+      which the UI label satisfies. The ''not gameplay'' wording stays beside any concept art or trailer.'
+    he: No change proposed. The Hebrew README makes the same 'labelled' statement and the Hebrew label exists.
+    reasons:
+    - The burned-in caption and the in-game label are two different things, and the documents now separate them.
+    - The ruling is quoted in docs/ai-disclosure.md.
+  decision_owner: Eyal
+- id: defence-screen-and-office
+  status: preferred
+  category: politics
+  definition: The security screen, and the minister and ministry in charge of defence.
+  scope:
+  - ui
+  - docs
+  - events
+  - code
+  en:
+    preferred: '''Defence'' for the game''s own screen, button and prose; the official office and ministry titles as Israel
+      writes them (''Minister of Defense''), as content/offices.yaml records'
+    avoid: []
+    in_use:
+    - form: Defence
+      where: strings.en.yaml hud.nav.defence
+    - form: Open the Defence screen
+      where: strings.en.yaml unit.defence
+    - form: Minister of Defense {0} · Chief of Staff {1}
+      where: strings.en.yaml defence.command
+    - form: Spelling is deliberate, do not "fix" it (playtest 1, item 8)
+      where: content/offices.yaml comment
+    - form: 'id: defense_minister, title: Minister of Defense'
+      where: content/offices.yaml
+    - form: the screen and its button say "Defence".
+      where: content/offices.yaml comment
+    - form: '{defense_minister}'
+      where: content/events/altalena.yaml (placeholder)
+    - form: for defence
+      where: docs/GDD.md (soldier actions table)
+    - form: defense responsibilities
+      where: docs/GDD.md (settlement control)
+  he:
+    preferred: שר הביטחון (minister), ביטחון (the screen and button); the ministry's name for the reviewer to confirm
+    avoid: []
+    in_use:
+    - form: ביטחון
+      where: strings.he.yaml hud.nav.defence
+    - form: שר הביטחון {0} · הרמטכ״ל {1}
+      where: strings.he.yaml defence.command
+  recommendation:
+    en: 'The rule is already the owner''s and the strings follow it. Write it down outside a YAML comment (conventions: spelling),
+      and decide what the GDD, which mixes both spellings, follows. A placeholder such as {defense_minister} is an office
+      id and a code question, not player text.'
+    he: 'Gershayim ״ is adopted by the maintainer in #630 for strings and content. A native reviewer may overrule it through
+      #564; adoption does not wait for that review.'
+    reasons:
+    - The strings and offices.yaml agree; only the GDD and the placeholder differ.
+    - The comment says the title is a proper noun, so it keeps its official spelling.
+  decision_owner: 'Eyal for where the spelling rule is documented; gershayim adopted in #630, subject to native-reviewer overrule
+    in #564'
+- id: social-cohesion
+  status: preferred
+  category: gdd-term
+  definition: The national indicator morale, displayed as Social cohesion on its zero-to-one simulation scale and the UI percentage
+    scale. HudModel exposes its meter in the GDD loop. It is distinct from Public support, which is approval.
+  scope:
+  - docs
+  - ui
+  - events
+  en:
+    preferred: Social cohesion
+    avoid: []
+    in_use:
+    - form: Social cohesion
+      where: docs/GDD.md
+    - form: Social cohesion is the `morale` indicator
+      where: docs/gdd/cutover-resource-layer.md
+  he:
+    preferred: לכידות חברתית
+    avoid: []
+    in_use:
+    - form: לכידות חברתית
+      where: docs/GDD.md (given in the table)
+  recommendation:
+    en: 'Use ''Social cohesion'', as the owner''s decision text writes it. The capitalisation question is the label rule (conventions:
+      label-capitalisation): the GDD itself capitalises ''International Support'' but not ''Social cohesion''.'
+    he: As the owner wrote it.
+    reasons:
+    - The owner has named it and tied it to an indicator.
+    - It is a different measure from Public support, which the same decision names as approval.
+  decision_owner: Eyal
+  notes: 'The earlier question, whether the top bar''s Public support is the GDD''s social cohesion, is answered by the cutover
+    page: approval appears as Public support, and Social cohesion is the morale indicator. They are two measures.'
+- id: international-support
+  status: preferred
+  category: game-system
+  definition: 'The national indicator intl_standing, displayed as International support. The English and Hebrew captions were
+    aligned in #683; the name is decided.'
+  scope:
+  - docs
+  - ui
+  - events
+  - code
+  en:
+    preferred: International support
+    avoid: []
+    in_use:
+    - form: International support
+      where: strings.en.yaml hud.caption.standing
+    - form: 'id: intl_standing, base: 0.50, name: International support'
+      where: content/model.yaml
+    - form: International Support
+      where: docs/GDD.md
+    - form: International Support is the `intl_standing` indicator
+      where: docs/gdd/cutover-resource-layer.md
+  he:
+    preferred: תמיכה בינלאומית
+    avoid: []
+    in_use:
+    - form: תמיכה בינלאומית
+      where: strings.he.yaml hud.caption.standing
+    - form: The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית
+      where: docs/gdd/cutover-resource-layer.md
+  recommendation:
+    en: Use 'International support' in sentence case. The internal id intl_standing does not appear in player text.
+    he: 'Use תמיכה בינלאומית, the adopted caption. Native review is tracked in #564.'
+    reasons:
+    - The owner decision and current captions agree.
+    - Naming is settled independently of future balance changes.
+  decision_owner: Eyal and the native reviewer
+- id: pioneer
+  status: decision-needed
+  category: gdd-term
+  definition: A civilian who has done pioneer training and builds roads, railways, fields and new settlements at designated
+    sites.
+  scope:
+  - docs
+  - ui
+  - marketing
+  en:
+    preferred: halutz (plural halutzim), the current UI wording
+    avoid: []
+    in_use:
+    - form: Halutz or pioneer
+      where: docs/GDD.md population table
+    - form: Veteran pioneer
+      where: docs/GDD.md population table
+    - form: train in a Hakhshara (הכשרה) and become a Halutz
+      where: docs/GDD.md
+    - form: 'Train halutzim: 1 group, {0}, {1}'
+      where: strings.en.yaml city.train_halutz (#869)
+    - form: Halutzim
+      where: strings.en.yaml city.track_halutz (#869)
+    - form: halutz group {0}
+      where: strings.en.yaml site.group (#869)
+    - form: No halutz group is free. Train one in a city with a Hakhshara.
+      where: strings.en.yaml site.no_halutz (#869)
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: 'הכשרת חלוצים: קבוצה אחת, {0}, {1}'
+      where: strings.he.yaml city.train_halutz (#869)
+    - form: חלוצים
+      where: strings.he.yaml city.track_halutz (#869)
+    - form: קבוצת חלוצים {0}
+      where: strings.he.yaml site.group (#869)
+    - form: אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה.
+      where: strings.he.yaml site.no_halutz (#869)
+  recommendation:
+    en: 'The UI says ''halutz'' / ''halutzim'' and ''Hakhshara'' (#869), as the GDD does. Proposal for the owner: define each
+      once at first use (for example in a tooltip), or switch the UI to ''pioneer'' / ''pioneer training''. Either way it
+      is a string change the owner approves.'
+    he: The UI already uses חלוצים and קבוצת חלוצים. A native reader reviews the terminology; this draft does not approve
+      or replace it.
+    reasons:
+    - The GDD uses both words for the same unit.
+  decision_owner: Eyal
+- id: hakhshara
+  status: decision-needed
+  category: gdd-term
+  definition: The pioneer training a civilian does to become a halutz.
+  scope:
+  - docs
+  - ui
+  en:
+    preferred: Hakhshara, the current UI wording
+    avoid: []
+    in_use:
+    - form: train in a Hakhshara
+      where: docs/GDD.md
+    - form: No halutz group is free. Train one in a city with a Hakhshara.
+      where: strings.en.yaml site.no_halutz (#869)
+  he:
+    preferred: הכשרה
+    avoid: []
+    in_use:
+    - form: Hakhshara (הכשרה)
+      where: docs/GDD.md
+    - form: אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה.
+      where: strings.he.yaml site.no_halutz (#869)
+  recommendation:
+    en: 'The UI says ''halutz'' / ''halutzim'' and ''Hakhshara'' (#869), as the GDD does. Proposal for the owner: define each
+      once at first use (for example in a tooltip), or switch the UI to ''pioneer'' / ''pioneer training''. Either way it
+      is a string change the owner approves.'
+    he: The word is given in the GDD; the reviewer confirms it for the UI.
+    reasons:
+    - The GDD introduces the Hebrew word in brackets after the transliteration.
+  decision_owner: Eyal
+- id: resources-and-meters
+  status: pending-gdd
+  category: game-system
+  definition: The quantities the player watches and spends. GDD v0.2 names Money, Food, Arms, Social cohesion and International
+    Support. Current UI captions include Money (net), International support and Public support; HudModel also supplies Social
+    cohesion in the GDD loop. A design target is not proof that every resource screen is implemented.
+  scope:
+  - ui
+  - docs
+  - events
+  - code
+  en:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: Money (net)
+      where: strings.en.yaml hud.caption.treasury
+    - form: Immigration
+      where: strings.en.yaml hud.caption.immigration
+    - form: Security
+      where: strings.en.yaml hud.caption.security
+    - form: Public support
+      where: strings.en.yaml hud.caption.support
+    - form: International support
+      where: strings.en.yaml hud.caption.standing
+    - form: Foreign currency
+      where: strings.en.yaml hud.caption.fx
+    - form: '| Money | Funds development'
+      where: docs/GDD.md (resource table)
+    - form: '| Arms | Available military equipment'
+      where: docs/GDD.md (resource table)
+    - form: '| Food | Available food supply'
+      where: docs/GDD.md (resource table)
+    - form: Monthly turns for the real game, and the five resources
+      where: README.md (roadmap, Phase 2)
+    - form: the existing meters stay
+      where: docs/gdd/cutover-resource-layer.md
+    - form: approval appears as Public support
+      where: docs/gdd/cutover-resource-layer.md
+    - form: Food and Arms are national pools
+      where: docs/gdd/cutover-resource-layer.md
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: כסף (נטו)
+      where: strings.he.yaml hud.caption.treasury
+    - form: עלייה
+      where: strings.he.yaml hud.caption.immigration
+    - form: ביטחון
+      where: strings.he.yaml hud.caption.security
+    - form: תמיכה ציבורית
+      where: strings.he.yaml hud.caption.support
+    - form: תמיכה בינלאומית
+      where: strings.he.yaml hud.caption.standing
+    - form: מטבע חוץ
+      where: strings.he.yaml hud.caption.fx
+    - form: The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית
+      where: docs/gdd/cutover-resource-layer.md
+  recommendation:
+    en: Use the adopted resource names and sentence case. Money (net) labels the top-bar net position; the budget uses Money.
+      International support is already adopted in the UI and content. Check the recorded build before describing planned Food
+      or Arms interfaces.
+    he: The current captions are כסף (נטו) and תמיכה בינלאומית. The adopted resource terms remain כסף, מזון, נשק, לכידות חברתית
+      and תמיכה בינלאומית; native review remains separate.
+    reasons:
+    - The caption decisions are implemented.
+    - Different monetary quantities need precise labels.
+  decision_owner: Eyal
+  pending_gdd: Use GDD v0.2 for remaining implementation and balance decisions; do not infer feature completion from labels.
+- id: treasury-and-money
+  status: preferred
+  category: game-system
+  definition: Money is the player name for the treasury resource, in IL millions. The top-bar Money (net) meter subtracts
+    debt; the budget reports Money, debt and foreign currency separately (HudModel and budget.money).
+  scope:
+  - ui
+  - docs
+  - events
+  - code
+  en:
+    preferred: Money; Money (net) for the top-bar net position
+    avoid: []
+    in_use:
+    - form: Money {0} · debt {1} · foreign currency {2}
+      where: strings.en.yaml budget.money
+    - form: 'id: treasury, name: Money, prefix: ''IL '''
+      where: content/model.yaml
+    - form: 'id: debt, name: Debt, prefix: ''IL '''
+      where: content/model.yaml
+    - form: treasury and debt in IL millions
+      where: content/rules.yaml comment
+    - form: '| Money | Funds development'
+      where: docs/GDD.md (resource table)
+    - form: Money is the Treasury, in IL millions
+      where: docs/gdd/cutover-resource-layer.md
+  he:
+    preferred: כסף, for the GDD resource (the owner's word)
+    avoid: []
+    in_use:
+    - form: כסף {0} · חוב {1} · מטבע חוץ {2}
+      where: strings.he.yaml budget.money
+    - form: The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית
+      where: docs/gdd/cutover-resource-layer.md
+  recommendation:
+    en: Use Money for the resource and preserve Money (net) when naming the top-bar meter. Treasury remains an internal id;
+      it is not an alternative caption. Retain the currency format supplied by the build.
+    he: Use כסף for the budget and כסף (נטו) for the net meter, matching the strings. The localized currency format still
+      needs a decision.
+    reasons:
+    - The UI and model now use Money.
+    - The net meter and the cash amount are different quantities.
+  decision_owner: Eyal; native reviewer for the Hebrew
+- id: foreign-currency
+  status: preferred
+  category: game-system
+  definition: The state's stock of foreign currency, held in US dollar millions. When it is exhausted, food imports are cut
+    and the food supply falls.
+  scope:
+  - ui
+  - events
+  - code
+  en:
+    preferred: foreign currency
+    avoid:
+    - fx and forex in player text
+    - reserves for this meaning (see 'reserves')
+    in_use:
+    - form: Foreign currency
+      where: strings.en.yaml hud.caption.fx
+    - form: foreign currency {2}
+      where: strings.en.yaml budget.money
+    - form: 'id: fx_reserves, name: Foreign currency, prefix: ''$'''
+      where: content/model.yaml
+    - form: 'fx_start: 40'
+      where: content/rules.yaml
+    - form: While reserves are exhausted, food imports are cut
+      where: content/rules.yaml comment
+    - form: Debt and foreign currency stay internal, under Money
+      where: docs/gdd/cutover-resource-layer.md
+  he:
+    preferred: מטבע חוץ
+    avoid: []
+    in_use:
+    - form: מטבע חוץ
+      where: strings.he.yaml hud.caption.fx
+    - form: מטבע חוץ {2}
+      where: strings.he.yaml budget.money
+  recommendation:
+    en: 'Say ''foreign currency'' in player text. Capitalisation follows the label rule (conventions: label-capitalisation):
+      the caption and the content name are both ''Foreign currency''. The owner decided on 15 October that debt and foreign
+      currency stay internal under Money, at least through the cutover, and are hidden if they confuse, so the top-bar caption
+      may go.'
+    he: No change proposed. The reviewer confirms 'מטבע חוץ'.
+    reasons:
+    - The UI uses it in two places and the Hebrew matches.
+    - '''Reserves'' already means the military reserve in the UI.'
+  decision_owner: Eyal
+- id: reserves
+  status: use-with-caution
+  category: game-system
+  definition: 'A word with two meanings in the project: the military reserve the player calls up, and, in code and comments,
+    the foreign-currency stock.'
+  scope:
+  - ui
+  - code
+  - docs
+  en:
+    preferred: reserves, for the military reserve only
+    avoid:
+    - reserves for the currency in player text
+    in_use:
+    - form: '{0} of reserves called up'
+      where: strings.en.yaml defence.mob
+    - form: Reserve call-up
+      where: strings.en.yaml defence.section_callup
+    - form: 'id: fx_reserves'
+      where: content/model.yaml
+    - form: set so reserves run out in the last quarter of 1951
+      where: content/rules.yaml comment
+  he:
+    preferred: מילואים, for the military reserve
+    avoid: []
+    in_use:
+    - form: גיוס מילואים
+      where: strings.he.yaml defence.section_callup
+  recommendation:
+    en: In player text, use 'reserves' for the military reserve and 'foreign currency' for the money. The ids and comments
+      can keep 'reserves' for the currency.
+    he: The strings already use different words for the two (מילואים and מטבע חוץ), so no change is proposed.
+    reasons:
+    - A player who reads 'reserves' in the Budget flow line could take it for either.
+  decision_owner: Eyal
+- id: budget
+  status: preferred
+  category: game-system
+  definition: The player's split of spending across ministries, one line per office. The player changes the shares, submits
+    the budget at End turn, and where a legislature must approve it, the submission goes to a vote.
+  scope:
+  - ui
+  - docs
+  - events
+  en:
+    preferred: budget
+    avoid: []
+    in_use:
+    - form: Budget
+      where: strings.en.yaml budget.title
+    - form: Submit the budget
+      where: strings.en.yaml budget.submit
+    - form: 'Changed: submit to put it to the vote'
+      where: strings.en.yaml budget.unsaved
+    - form: 'Submitted: takes effect at End turn'
+      where: strings.en.yaml budget.queued
+    - form: Taxes {0}, spending {1} and reserve call-up {2} a year
+      where: strings.en.yaml budget.flow
+    - form: spending effect {0}
+      where: strings.en.yaml budget.factor
+    - form: No defence line in the budget
+      where: strings.en.yaml defence.budget_none
+    - form: The Immigration line. Its id stays `prime_minister`
+      where: content/rules.yaml comment
+  he:
+    preferred: תקציב
+    avoid: []
+    in_use:
+    - form: תקציב
+      where: strings.he.yaml budget.title
+    - form: הגשת התקציב
+      where: strings.he.yaml budget.submit
+    - form: מסים {0}, הוצאות {1} וגיוס מילואים {2} בשנה
+      where: strings.he.yaml budget.flow
+    - form: אין בתקציב סעיף ביטחון
+      where: strings.he.yaml defence.budget_none
+  recommendation:
+    en: 'No change. One note for later: the budget says ''Submitted'', and the other player orders say ''Ordered'' (see ''order'').
+      That may be deliberate, because a budget can go to a vote.'
+    he: The reviewer checks the spelling of 'מסים' (the Hebrew guide asks for full spelling).
+    reasons:
+    - The strings use the same word for the screen, the button and the line.
+    - The Immigration line's id differs from the office that owns it, so any text that shows ids would mislead. Rule 4 already
+      bans ids in player text.
+  decision_owner: Eyal; native reviewer for the spelling
+- id: legislature-vote
+  status: preferred
+  category: politics
+  definition: The step where a legislature takes part in the budget. It must approve it, or it votes and the vote does not
+    bind, or it does not vote at all. Each legislature in content has a flag for this.
+  scope:
+  - ui
+  - docs
+  - events
+  en:
+    preferred: '''must approve'', ''votes on it, but its vote does not bind'', ''does not vote'''
+    avoid: []
+    in_use:
+    - form: 'The {0} must approve it: the coalition holds {1} of {2} {3}'
+      where: strings.en.yaml budget.vote_needed
+    - form: 'The {0} votes on it, but its vote does not bind: the coalition holds {1} of {2} {3}'
+      where: strings.en.yaml budget.vote_advisory
+    - form: The {0} does not vote on the budget
+      where: strings.en.yaml budget.no_vote
+    - form: Answerable to the {0} · {1} members
+      where: strings.en.yaml cabinet.legislature
+    - form: Consults the {0} · {1} members · its votes do not bind
+      where: strings.en.yaml cabinet.legislature_advisory
+    - form: 'budget_approval: true'
+      where: content/legislatures.yaml
+    - form: 'body: Provisional State Council'
+      where: content/legislatures.yaml
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: 'נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3}'
+      where: strings.he.yaml budget.vote_needed
+    - form: '{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}'
+      where: strings.he.yaml budget.vote_advisory
+    - form: "{0} אינה מצביעה על התקציב"
+      where: strings.he.yaml budget.no_vote
+    - form: אחראית בפני {0} · {1} חברים
+      where: strings.he.yaml cabinet.legislature
+    - form: מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות
+      where: strings.he.yaml cabinet.legislature_advisory
+    - form: 'body_he: "מועצת המדינה הזמנית"'
+      where: content/legislatures.yaml
+    - form: 'body_he: "הכנסת השנייה"'
+      where: content/legislatures.yaml
+  recommendation:
+    en: No change. The wording states the rule and the coalition's seats without comment.
+    he: 'After the interim neutral wording in #1081, #1136 applied Beri''s native review from #564 to the budget strings.
+      The current feminine forms work because all three legislature names are feminine; a masculine-named body would
+      need new wording. Keep these native-reviewed strings for the current bodies. ContentNames.Of reads BodyHe (#861).
+      Any new agreement or gender-field proposal still needs native review and an owner decision.'
+    reasons:
+    - "Beri's native note on #564 supports the feminine forms for the three current bodies, not every future body name."
+    - '#1136 applied that review; record the current wording and its limit rather than reopening the earlier finding.'
+  decision_owner: Native reviewer; Eyal for any key change
+- id: stability
+  status: preferred
+  category: politics
+  definition: A coalition indicator shown beside its seat count. It falls when the player replaces a minister, by more when
+    the replacement is from another party, and, with the coalition's majority, it decides whether a vote passes.
+  scope:
+  - ui
+  - events
+  - code
+  en:
+    preferred: stability
+    avoid: []
+    in_use:
+    - form: 'appoint_stability_cost_other_party: 0.06'
+      where: content/rules.yaml
+    - form: Coalition stability lost by replacing a minister (Cabinet.Appoint)
+      where: content/rules.yaml comment
+    - form: 'No majority: fails. Majority with stability >= 0.5: passes. Otherwise passes with probability 2 * stability.'
+      where: (git grep)
+    - form: coalition stability {PlayerText.PercentChange
+      where: (git grep)
+  he:
+    preferred: יציבות
+    avoid: []
+    in_use: []
+  recommendation:
+    en: 'Use ''coalition stability'' in text the player reads. One finding: the Why panel''s cause line is composed in C#
+      (''coalition stability'', ''resents the reshuffle''), not in the strings files, so the Hebrew UI cannot cover it yet
+      (see conventions: dates).'
+    he: The reviewer supplies the term; 'יציבות' is the plain word, but whether it carries the coalition sense is not for
+      this file to say.
+    reasons:
+    - The strings that show it also show the seat count, so the player sees both.
+    - The in-code wording is player-facing and lives outside the localisation files.
+  decision_owner: Eyal; native reviewer for the Hebrew
+- id: majority-and-opposition
+  status: use-with-caution
+  category: politics
+  definition: 'Majority is the number of seats that carries a vote: the body''s size halved, rounded down, plus one. Opposition
+    is the seats of every bloc outside the coalition.'
+  scope:
+  - ui
+  - code
+  en:
+    preferred: majority; opposition
+    avoid: []
+    in_use:
+    - form: 'Majority: {0} {1}'
+      where: strings.en.yaml cabinet.majority
+    - form: 'Opposition: {0} {1}'
+      where: strings.en.yaml cabinet.opposition
+    - form: Majority => size / 2 + 1
+      where: (git grep)
+    - form: blocks.Where(b => !b.Coalition).Sum(b => b.Seats)
+      where: (git grep)
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: 'רוב: {0} {1}'
+      where: strings.he.yaml cabinet.majority
+    - form: 'אופוזיציה: {0} {1}'
+      where: strings.he.yaml cabinet.opposition
+  recommendation:
+    en: '''Majority: {0} {1}'' reads as a holding, but it is the threshold. A drop-in with the same two placeholders is ''Needed
+      for a majority: {0} {1}''. Optional, and the first thing to take to a cold-read test.'
+    he: The same ambiguity may apply to 'רוב'. The reviewer decides.
+    reasons:
+    - The HUD shows the coalition's seats on the line above, so a number after 'Majority' can be misread as the coalition's
+      own total.
+    - '''Opposition'' needs no change.'
+  decision_owner: Eyal; native reviewer
+- id: cabinet-and-government
+  status: contested
+  category: politics
+  definition: '''Cabinet'' is the screen and the group of ministers the player appoints. A ''government'' in content is a
+    numbered period with its own coalition (Provisional, First, and so on).'
+  scope:
+  - ui
+  - docs
+  - events
+  - code
+  en:
+    preferred: Cabinet for the screen and the group; the government's name for the period
+    avoid: []
+    in_use:
+    - form: Cabinet
+      where: strings.en.yaml hud.nav.cabinet, why.cabinet
+    - form: 'name: Provisional Government'
+      where: content/governments.yaml
+    - form: 'name: First Government'
+      where: content/governments.yaml
+    - form: The Cabinet with appointments
+      where: README.md (roadmap, Phase 1)
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: ממשלה
+      where: strings.he.yaml hud.nav.cabinet, why.cabinet
+    - form: 'name_he: "הממשלה הזמנית"'
+      where: content/governments.yaml
+    - form: 'name_he: "ממשלת ישראל הראשונה"'
+      where: content/governments.yaml
+  recommendation:
+    en: No change to the English; it separates the two words.
+    he: 'The Hebrew uses ''ממשלה'' for the Cabinet screen, and ''ממשלה'' is also the word for a government. Since #558 the
+      content carries sourced Hebrew names for the governments ("הממשלה הזמנית", "ממשלת ישראל הראשונה"), so a period name
+      and the screen label share the word. The Cabinet now displays the government name through ContentNames.Of, using
+      NameHe in the Hebrew UI where supplied and English otherwise. The native reviewer decides whether the two senses
+      need distinct labels; implementation does not settle that terminology choice.'
+    reasons:
+    - The English separates the two senses and the Hebrew uses one word for both.
+  decision_owner: Native reviewer
+- id: office-ministry-minister
+  status: preferred
+  category: politics
+  definition: 'An office is a post the player can fill: a minister''s portfolio, the Prime Minister, the Chief of Staff. A
+    ministry is the department a minister runs. Office titles are proper nouns.'
+  scope:
+  - ui
+  - events
+  - docs
+  - code
+  en:
+    preferred: office for the post, ministry for the department, 'Minister of ...' for the title as Israel writes it
+    avoid: []
+    in_use:
+    - form: Appoint to {0}
+      where: strings.en.yaml cabinet.pick
+    - form: no ministry until {0}
+      where: strings.en.yaml budget.not_established
+    - form: vacant
+      where: strings.en.yaml budget.vacant
+    - form: '{0} (your appointee)'
+      where: strings.en.yaml card.appointed_name
+    - form: 'id: prime_minister, title: Prime Minister'
+      where: content/offices.yaml
+    - form: 'id: interior_minister, title: Minister of Internal Affairs'
+      where: content/offices.yaml
+    - form: The English titles stay the player's default
+      where: content/offices.yaml comment
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: מינוי לתפקיד {0}
+      where: strings.he.yaml cabinet.pick
+    - form: אין משרד עד {0}
+      where: strings.he.yaml budget.not_established
+    - form: פנוי
+      where: strings.he.yaml budget.vacant
+    - form: '{0} (מינוי שלך)'
+      where: strings.he.yaml card.appointed_name
+    - form: 'title_he: "שר הפנים"'
+      where: content/offices.yaml
+    - form: 'title_he_f: "שרת החוץ"'
+      where: content/offices.yaml
+    - form: המשרה {0} בוטלה ב־{1}
+      where: strings.he.yaml cabinet.reason.abolished
+  recommendation:
+    en: Use 'office' for the post and 'ministry' for the department. Hebrew uses תפקיד and משרד in the earlier strings, and
+      the Cabinet refusal reasons also use משרה (#985); a native reader should assess the variants.
+    he: The native reviewer assesses תפקיד and משרה for office, alongside משרד for ministry.
+    reasons:
+    - New Cabinet refusal strings introduce another Hebrew word for office; consistency is a review question, not an established
+      fact.
+  decision_owner: Eyal
+- id: chief-of-staff
+  status: use-with-caution
+  category: politics
+  definition: The head of the armed forces' general staff. The office title in content is longer than the label the Defence
+    screen uses.
+  scope:
+  - ui
+  - events
+  - docs
+  en:
+    preferred: '''Chief of Staff'' in running UI text; the full title where the office itself is named'
+    avoid: []
+    in_use:
+    - form: Minister of Defense {0} · Chief of Staff {1}
+      where: strings.en.yaml defence.command
+    - form: 'id: chief_of_staff, title: IDF Chief of the General Staff'
+      where: content/offices.yaml
+    - form: 'id: haganah_chief_of_staff, title: Haganah Chief of the General Staff'
+      where: content/offices.yaml
+  he:
+    preferred: הרמטכ״ל
+    avoid: []
+    in_use:
+    - form: שר הביטחון {0} · הרמטכ״ל {1}
+      where: strings.he.yaml defence.command
+    - form: 'title_he: "ראש המטה הכללי"'
+      where: content/offices.yaml
+    - form: 'title_he: ''רמטכ״ל ההגנה'''
+      where: content/offices.yaml
+  recommendation:
+    en: Keep the short form on the Defence screen. Use the content title when an event names the office, so the Haganah and
+      the IDF titles stay distinct.
+    he: 'Three Hebrew forms exist. The Defence screen says ''הרמטכ״ל'', the content titles the IDF post ''ראש המטה הכללי'',
+      and the Haganah post ''רמטכ״ל ההגנה''. Since #630 the gershayim is the typographic ״ in the strings and in the content,
+      so the earlier mismatch is closed. The comment in offices.yaml lists two open owner questions, one of them whether the
+      IDF title adds ''של צה״ל''.'
+    reasons:
+    - The content already separates the Haganah and the IDF post, and the UI label does not.
+  decision_owner: Eyal
+- id: public-support
+  status: preferred
+  category: game-system
+  definition: A top-bar meter. The code computes it as approval across voter groups, each weighing morale, security, housing
+    and food by its own weights. The owner decided on 15 October that approval appears as Public support.
+  scope:
+  - ui
+  - code
+  en:
+    preferred: Public support
+    avoid: []
+    in_use:
+    - form: Public support
+      where: strings.en.yaml hud.caption.support
+    - form: Support = Points(EffectsSystem.Approval(c, s)
+      where: (git grep)
+    - form: 'id: veterans, weights: { morale: 0.6, security: 0.4 }'
+      where: content/model.yaml
+    - form: approval appears as Public support
+      where: docs/gdd/cutover-resource-layer.md
+    options:
+    - Public support
+    - Public support
+    - Approval
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: תמיכה ציבורית
+      where: strings.he.yaml hud.caption.support
+  recommendation:
+    en: 'Use ''Public support'' for the meter and approval for the code concept. The top-bar caption is already sentence case,
+      as adopted in #630.'
+    he: The reviewer checks 'תמיכה ציבורית' against the owner's 'תמיכה בינלאומית', since the two share a word.
+    reasons:
+    - The owner has named it and separated it from Social cohesion.
+    - With International Support, the game will have two meters with 'support' in the name; the Hebrew shares 'תמיכה' for
+      the same reason.
+  decision_owner: Eyal
+- id: order
+  status: contested
+  category: game-system
+  definition: An action the player submits, such as appointing a minister, changing policy, submitting a budget or assigning
+    pioneer work. Attention costs depend on the command; some unit orders cost zero (content/rules.yaml).
+  scope:
+  - ui
+  - docs
+  - code
+  en:
+    preferred: order
+    avoid: []
+    in_use:
+    - form: 'Ordered: {0} to {1}, at End turn'
+      where: strings.en.yaml cabinet.queued
+    - form: 'Ordered: {0}, at End turn'
+      where: strings.en.yaml info.queued
+    - form: 'Ordered: level {0} to {1}'
+      where: strings.en.yaml defence.order
+    - form: That order is not valid
+      where: strings.en.yaml order.invalid
+    - form: 'Your order: {0}'
+      where: strings.en.yaml outcome.order
+    - form: 'Submitted: takes effect at End turn'
+      where: strings.en.yaml budget.queued
+    - form: 'pioneer_work: 0'
+      where: content/rules.yaml
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: 'ניתנה פקודה: {0}, בסיום התור'
+      where: strings.he.yaml info.queued
+    - form: 'הפקודה שלך: {0}'
+      where: strings.he.yaml outcome.order
+    - form: הפקודה אינה תקפה
+      where: strings.he.yaml order.invalid
+    - form: 'הוגש: ייכנס לתוקף בסיום התור'
+      where: strings.he.yaml budget.queued
+    - form: הוזמנו {0}
+      where: strings.he.yaml city.train_ordered (#869)
+    - form: הוזמן
+      where: strings.he.yaml site.ordered (#869)
+  recommendation:
+    en: Use 'order' for the player's actions and say what was ordered. The budget says 'Submitted' for the same kind of step;
+      that can stay if the vote is the reason (see 'budget').
+    he: '''פקודה'' is a command word. The reviewer decides whether it suits civil actions such as appointing a minister, or
+      whether another word is better there. The city and site panels also use הוזמנו / הוזמן; the native reviewer should consider
+      these alongside פקודה.'
+    reasons:
+    - The same End turn mechanic reads as 'Ordered' in some strings and 'Submitted' in one.
+    - Order costs vary, including zero-cost unit orders; wording must not imply every order spends attention.
+  decision_owner: Eyal; native reviewer
+- id: era-and-chapter
+  status: contested
+  category: game-system
+  definition: A span of history that a content set covers. The Why panel calls it a Chapter; the rules and the roadmap say
+    era.
+  scope:
+  - ui
+  - docs
+  - code
+  en:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: Chapter
+      where: strings.en.yaml why.era
+    - form: The first owner starts on the era's first day
+      where: content/rules.yaml comment
+    - form: Later eras
+      where: README.md (roadmap)
+    options:
+    - Chapter
+    - Era
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: פרק
+      where: strings.he.yaml why.era
+    - form: תקופות מאוחרות
+      where: README.he.md (roadmap)
+  recommendation:
+    en: 'Pick one word for the span the player is playing. If both stay, define them: a chapter is the part the player plays
+      now, and an era is the longer period.'
+    he: 'The Hebrew separates them already: ''פרק'' in the UI and ''תקופות'' in the roadmap.'
+    reasons:
+    - The UI and the project documents use different words for what looks like one idea.
+  decision_owner: Eyal
+- id: policy
+  status: preferred
+  category: game-system
+  definition: A setting the player can change that has standing effects, such as rationing, housing construction or transit
+    camps. Changing one is an order and costs attention.
+  scope:
+  - ui
+  - events
+  - code
+  en:
+    preferred: policy
+    avoid: []
+    in_use:
+    - form: Policies
+      where: strings.en.yaml why.policy
+    - form: 'id: rationing, default: 0.0, office: rationing_minister, name: Rationing'
+      where: content/model.yaml
+    - form: 'name: Housing construction'
+      where: content/model.yaml
+    - form: 'name: Transit camps (ma''abarot)'
+      where: content/model.yaml
+  he:
+    preferred: מדיניות
+    avoid: []
+    in_use:
+    - form: מדיניות
+      where: strings.he.yaml why.policy
+  recommendation:
+    en: 'No change. One finding for the transliteration convention: the content name is ''Transit camps (ma''abarot)'', which
+      gives the Hebrew word in brackets, while the strings say ''transit camp''.'
+    he: No change proposed.
+    reasons:
+    - The word is used the same way in the UI and in content.
+  decision_owner: Eyal
+- id: effects-and-situations
+  status: use-with-caution
+  category: game-system
+  definition: In content/model.yaml, an effect is a standing link from a policy or indicator to a target indicator, and a
+    situation is a named crisis that switches on below one level and off above another. The Why panel has a section for each.
+  scope:
+  - ui
+  - code
+  en:
+    preferred: '''Ongoing effects'' and ''Situations'', as in the Why panel'
+    avoid: []
+    in_use:
+    - form: Ongoing effects
+      where: strings.en.yaml why.effects
+    - form: Situations
+      where: strings.en.yaml why.situations
+    - form: 'id: food_crisis, indicator: food_supply, on_below: 0.30, off_above: 0.45, name: Food crisis'
+      where: content/model.yaml
+    - form: 'id: rationing_feeds, source: rationing, target: food_supply, k: 0.40, inertia: 2, office: rationing_minister,
+        name: Rations share out food'
+      where: content/model.yaml
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: השפעות מתמשכות
+      where: strings.he.yaml why.effects
+    - form: מצבים
+      where: strings.he.yaml why.situations
+  recommendation:
+    en: The two labels are generic. 'Situations' in particular could mean any state of the game. Add one line under each heading,
+      or test a plainer word such as 'Crises' only if every situation is a crisis, which the files read here do not show.
+    he: '''מצבים'' is broad for the same reason. The reviewer decides.'
+    reasons:
+    - The model defines a situation by thresholds, but the heading does not tell the player that.
+  decision_owner: Eyal; native reviewer
+- id: aliyah-and-immigration
+  status: preferred
+  category: history-term
+  definition: Jewish immigration to Israel. English text says 'immigration'; Hebrew says 'עלייה'; 'aliyah' appears in a file
+    name, a party id and a code comment about a ministry's name.
+  scope:
+  - ui
+  - events
+  - docs
+  - code
+  en:
+    preferred: immigration
+    avoid: []
+    in_use:
+    - form: Immigration
+      where: strings.en.yaml hud.caption.immigration
+    - form: Immigration and population
+      where: strings.en.yaml why.population
+    - form: immigration during 1948-1951
+      where: docs/GDD.md (scope)
+    - form: 'id: immigration_minister, title: Minister of Immigration'
+      where: content/offices.yaml
+    - form: The Ministry of Aliyah (immigration_minister) ends on 8 October 1951
+      where: content/rules.yaml comment
+    - form: CBS 1948 immigration series (aliyah.yaml)
+      where: content/rules.yaml comment
+  he:
+    preferred: עלייה
+    avoid: []
+    in_use:
+    - form: עלייה
+      where: strings.he.yaml hud.caption.immigration
+    - form: עלייה ואוכלוסייה
+      where: strings.he.yaml why.population
+    - form: 'title_he: "שר העלייה"'
+      where: content/offices.yaml
+  recommendation:
+    en: 'Keep ''immigration'' for the HUD and prose, and use ''aliyah'' where a source names it. The sourcing question is
+      answered: a comment in rules.yaml calls the ministry ''the Ministry of Aliyah'', and since #558 offices.yaml gives its
+      Hebrew title as ''שר העלייה'' from the Knesset''s records, with a comment that the English titles stay the player''s
+      default. So ''Minister of Immigration'' is the English rendering of a sourced Hebrew title.'
+    he: No change proposed. The reviewer confirms 'עלייה' for the meter.
+    reasons:
+    - The Hebrew title and the source comment agree on Aliyah; the English title is the default rendering.
+  decision_owner: Eyal
+- id: mandate-sub-district
+  status: preferred
+  category: place
+  definition: The British Mandate's administrative areas, as drawn in 1947, which the map text uses to name regions.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: Mandate sub-districts
+    avoid: []
+    in_use:
+    - form: '{0}, {1} (Mandate sub-districts, 1947)'
+      where: strings.en.yaml info.region
+    - form: Mandate sub-districts
+      where: strings.en.yaml map.layer_front_no_data
+  he:
+    preferred: נפות המנדט
+    avoid: []
+    in_use:
+    - form: נפות המנדט
+      where: strings.he.yaml info.region, map.layer_front_no_data
+  recommendation:
+    en: No change. Spell 'sub-district' with a hyphen everywhere.
+    he: The reviewer confirms 'נפות' as the term.
+    reasons:
+    - Both languages use one term in both strings.
+  decision_owner: Eyal
+- id: terrain
+  status: use-with-caution
+  category: game-system
+  definition: 'The terrain type of a hex on the map: sea, lake, coastal plain, hills, mountains, valley, inland lowland, desert.
+    The keys call it a biome.'
+  scope:
+  - ui
+  en:
+    preferred: terrain
+    avoid: []
+    in_use:
+    - form: Coastal plain
+      where: strings.en.yaml info.biome.coastal_plain
+    - form: Valley
+      where: strings.en.yaml info.biome.valley
+    - form: Inland lowland
+      where: strings.en.yaml info.biome.lowland
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: בקע
+      where: strings.he.yaml info.biome.valley
+    - form: עמק
+      where: strings.he.yaml info.biome.lowland
+  recommendation:
+    en: No change. Keep 'biome' as the code word only.
+    he: 'Question for the reviewer: ''Valley'' is ''בקע'' and ''Inland lowland'' is ''עמק''. ''עמק'' appears to be the usual
+      word for a valley, and ''בקע'' (as in ''בקעת הירדן'') a rift or broad basin. If that is right, the two may be swapped
+      or need different English.'
+    reasons:
+    - The English pair and the Hebrew pair may not match one to one.
+  decision_owner: Native reviewer
+- id: front-line-and-control
+  status: preferred
+  category: history-term
+  definition: Who held an area on a date, as the map's control layer shows it. With the armistice lines, the map also names
+    the two sides and the demilitarized zone.
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: 'the labels the strings use: ''Held by Israel'', ''Held by Arab forces'', ''Contested'', "No-man''s land",
+      ''Israeli side'', ''Arab side'', ''Demilitarized zone'''
+    avoid: []
+    in_use:
+    - form: Held by Israel
+      where: strings.en.yaml info.control_israel
+    - form: Held by Arab forces
+      where: strings.en.yaml info.control_arab
+    - form: the Arab Liberation Army
+      where: strings.en.yaml control.holder_ala
+    - form: Demilitarized zone
+      where: strings.en.yaml info.control_dmz
+    - form: Front lines, {0}, approximate (Israel State Archives)
+      where: strings.en.yaml map.caption_held
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: בשליטת ישראל
+      where: strings.he.yaml info.control_israel
+    - form: בשליטת כוחות ערביים
+      where: strings.he.yaml info.control_arab
+    - form: צבא ההצלה
+      where: strings.he.yaml control.holder_ala
+    - form: אזור מפורז
+      where: strings.he.yaml info.control_dmz
+  recommendation:
+    en: No change. The captions follow the project's framing (docs/CONTENT_POLICY.md, section 1) and cite their source. Keep
+      it that way, and send any new label for a side or a holder through the content review, as the policy requires for sensitive
+      wording. The unit names in the GDD ('Arab Legionnaire', 'Palestinian militia') are more specific than the UI's 'Arab
+      forces'; the two should not contradict each other.
+    he: The English names 'the Arab Liberation Army' and the Hebrew gives 'צבא ההצלה'. The reviewer confirms that this is
+      the standard Hebrew name.
+    reasons:
+    - The labels name the holder and the date, not a judgement.
+    - The map caption states that the lines are approximate.
+  decision_owner: Eyal; historian review for new labels
+- id: city
+  status: pending-gdd
+  category: gdd-term
+  definition: 'A large settlement the game models in detail: housing, jobs and population. content/cities.yaml contains twelve
+    cities at 9e571342 (#821); Tel Aviv was the earlier Phase 1 slice, not the full current list.'
+  scope:
+  - ui
+  - docs
+  en:
+    preferred: city
+    avoid: []
+    in_use:
+    - form: Cities
+      where: strings.en.yaml why.city
+    - form: one city (Tel Aviv), training, one new settlement and one objective card
+      where: README.md (roadmap, Phase 1)
+  he:
+    preferred: null
+    avoid: []
+    in_use:
+    - form: ערים
+      where: strings.he.yaml why.city
+  recommendation:
+    en: Keep 'city' for the places modeled in detail. The GDD and site UI call a new place the player founds a 'yishuv'; see
+      that entry before proposing a different term.
+    he: The reviewer confirms 'עיר' against 'יישוב'.
+    reasons:
+    - The README separates a city from a new settlement.
+  decision_owner: Eyal
+  pending_gdd: Further city design and terminology proposals remain owner-gated; the twelve-city content and city panel already
+    exist.

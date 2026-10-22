@@ -176,7 +176,7 @@ namespace Statecraft.Sim
                     return Projects.Stop(c, s, w.Unit, why);
                 case UnitOrder o:
                     if (o.Order == Combat.Attack) return Combat.Give(c, s, o.Unit, o.Q, o.R, why);
-                    return o.Q != null || o.R != null ? "That order names no hex" : Orders.Give(s, o.Unit, o.Order, why);
+                    return o.Q != null || o.R != null ? "That order names no hex" : Orders.Give(c, s, o.Unit, o.Order, why);
                 case StartProject p:
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);
                 case CancelProject p:
@@ -185,6 +185,8 @@ namespace Statecraft.Sim
                     return Movement.Move(c, s, m.Unit, m.Q, m.R, spent, why);
                 case BuyArms a:
                     return Pools.BuyArms(c, s, a.Count, why);
+                case ResolveCapture x:
+                    return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

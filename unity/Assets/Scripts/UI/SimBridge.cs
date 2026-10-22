@@ -63,6 +63,7 @@ namespace Statecraft.Game.UI
             StartProject p => FormattableString.Invariant($"project:{p.Q},{p.R}"),
             CancelProject x => FormattableString.Invariant($"unproject:{x.Project}"),
             Move m => FormattableString.Invariant($"move:{m.Unit}"),
+            ResolveCapture r => "capture:" + r.Settlement,
             _ => c.Kind,
         };
 
@@ -145,6 +146,9 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 // Buying Arms (#781): no ids; the sim refuses a count below one itself.
                 case BuyArms _: return null;
+                // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
+                // its own reason and never throws on the id. The capture dialog is PR 10.
+                case ResolveCapture _: return null;
                 default: return text["order.invalid"];
             }
         }

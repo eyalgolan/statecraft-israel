@@ -41,7 +41,8 @@
         companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
         productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
         productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
-        // Persist writes under /idbfs to IndexedDB when a file is closed (tech notes section 3): saves need no manual sync.
+        // Queue IndexedDB persistence when a file under /idbfs closes; completion is asynchronous.
+        // GameStart's save receipt observes that commit, without starting a concurrent manual sync.
         autoSyncPersistentDataPath: true,
       };
       // Issue #437: the Build/ files are named by their content hash, and this page names its build's files. A browser may
