@@ -420,7 +420,14 @@ checks every anchor and logs each spot and its distance.
   the sim's `Orders.Check` takes the order, and where it does not, the card shows the sim's reason as the sim gives it
   (in English for now, as the End turn toast does). A press queues the sim's `UnitOrder` through `SimBridge` (one standing
   order per unit: Hold replaces a queued Fortify, and either replaces a queued attack) and the card says when it takes
-  effect. Tests: `UnitOrdersTests`,
+  effect. Slice 3 adds Attack (Q-UI-2's "Attack" / "התקפה"): the button shows only where the sim's `Combat.Check` takes
+  some unit's hex, and the sim's reasons for the enemy hexes in reach it refuses (no Arms, the attack it already has)
+  show as the others do. Pressing it lights those hexes; for each the card gives the units there by name, the sim's
+  strength ratio (`Combat.Preview`) and its `combat_table` row's outcome bands (`Combat.Outcomes`: how many faces of the
+  draw give each outcome, and the people each side loses), as Q-UI-1 decided. A click on a lit hex queues the sim's
+  `UnitOrder(unit, attack, q, r)` through `SimBridge`, and the card says the attack comes at End turn, with that hex's
+  odds. `Orders.Give` and `Combat.Give` run `Orders.Check` and `Combat.Check` first, so the card and End turn refuse the
+  same orders for the same reasons. Tests: `UnitOrdersTests`,
   `InfoPanelLayoutTests.TheUnitCardWithItsOrdersFitsEveryWindow`.
 
 **The Avia S-199** (`UnitModels.AviaS199`; type `avia-s199-101sqn-1948`):

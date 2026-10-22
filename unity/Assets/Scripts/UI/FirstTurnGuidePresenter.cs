@@ -20,9 +20,11 @@ namespace Statecraft.Game.UI
     /// the "seen" line in the settings file, SettingsStore), never the sim, the queued orders or the save. Steps 2 and 3
     /// show a city with a training facility (<see cref="CityHex"/>) in the info panel, step 4 a unit that can move
     /// (<see cref="UnitToShow"/>) with its card's Move button, and the selection the guide found is put back when it
-    /// closes; the decision card is hidden ("Decision waiting") except on step 5 and put back as it was
-    /// when the guide closes. The guide takes no pointer outside its panel, so the HUD stays usable under it (the browser
-    /// checks press End Turn with it open); End Turn closes it as the turn advances.</para></summary>
+    /// moves on to a step that does not explain it, or closes; the decision card is hidden ("Decision waiting") except on
+    /// step 5 and put back as it was when the guide closes. Step 5 is left out while there is no card to explain (the
+    /// guide then counts five steps), and answering the card on it moves the guide on (owner's report on v0.1.4, #1323).
+    /// The guide takes no pointer outside its panel, so the HUD stays usable under it (the browser checks press End Turn
+    /// with it open); End Turn closes it as the turn advances.</para></summary>
     public sealed class FirstTurnGuidePresenter : IDisposable
     {
         /// <summary>On the "root" element while the guide shows (Statecraft.uss shows its layer).</summary>
@@ -54,6 +56,7 @@ namespace Statecraft.Game.UI
         readonly SimBridge? bridge;
         readonly Action onNext, onSkip, onReopen;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
+        readonly Action onChanged;
         readonly IVisualElementScheduledItem follow;
         readonly (VisualElement element, float px)[] floored;
         /// <summary>The scale the text floor was last applied for (0: not yet).</summary>
@@ -66,6 +69,10 @@ namespace Statecraft.Game.UI
         int openTurn;
         /// <summary>Puts back the selection the guide found, once it has shown its city or unit (null: it has not).</summary>
         Action? putBack;
+        /// <summary>The event step has shown since the guide opened, so the count keeps it after its card is answered.</summary>
+        bool eventShown;
+        /// <summary>The frame a step was shown on: the panel is placed, and shown, only once that frame's layout has run.</summary>
+        int shownFrame = -1;
 
         /// <param name="store">The settings file, where the guide notes that it has shown (null: it never shows by itself).</param>
         /// <param name="card">The decision card, hidden except on the event step (null: none).</param>
@@ -94,7 +101,8 @@ namespace Statecraft.Game.UI
             onNext = Next; onSkip = Close; onReopen = Open;
             next.clicked += onNext; skip.clicked += onSkip; reopenButton.clicked += onReopen;
             onTurn = _ => TurnEnded();
-            if (bridge != null) bridge.TurnEnded += onTurn;
+            onChanged = GameChanged;
+            if (bridge != null) { bridge.TurnEnded += onTurn; bridge.Changed += onChanged; }
             // The targets move with the layout (a window resized, the info panel re-rendered after an order), so the ring
             // follows them while the guide shows.
             follow = layer.schedule.Execute(Place).Every(100);
@@ -134,6 +142,7 @@ namespace Statecraft.Game.UI
             }
             hudRoot.AddToClassList(OpenClass);
             follow.Resume();
+            eventShown = false;
             Show(0);
         }
 
@@ -141,7 +150,28 @@ namespace Statecraft.Game.UI
         public void Next()
         {
             if (!IsOpen) return;
-            if (Step + 1 >= Steps.Length) Close(); else Show(Step + 1);
+            var next = NextStep(Step);
+            if (next < 0) Close(); else Show(next);
+        }
+
+        /// <summary>Whether a step is in the tour now: every step but the event card's, which is left out while there is no
+        /// card to explain (answered before the guide reached it; owner's report on v0.1.4).</summary>
+        bool InTour(int step) => step != EventStep || card?.Shown != null;
+
+        /// <summary>The step after <paramref name="step"/> in the tour, or -1 after the last.</summary>
+        int NextStep(int step)
+        {
+            for (int s = step + 1; s < Steps.Length; s++) if (InTour(s)) return s;
+            return -1;
+        }
+
+        /// <summary>The game changed under the open guide (an order queued, the card answered): on the event step, once the
+        /// card it explains has closed with no other card to show, the guide goes on to the next step, as Next would, and Next
+        /// takes the focus back from the answer the player pressed.</summary>
+        void GameChanged()
+        {
+            if (disposed || !IsOpen || Step != EventStep || card?.Shown != null) return;
+            Next();
         }
 
         /// <summary>Escape: skips the guide. True when it was open.</summary>
@@ -190,10 +220,22 @@ namespace Statecraft.Game.UI
         {
             Step = step;
             var key = Steps[step];
-            count.text = text.Format("guide.step", step + 1, Steps.Length);
+            if (step == EventStep) eventShown = true;
+            // Counted as the player meets them: the event step counts while it has a card or once it has shown.
+            bool Counted(int s) => s == EventStep ? eventShown || InTour(s) : true;
+            int number = 0, total = 0;
+            for (int s = 0; s < Steps.Length; s++) if (Counted(s)) { total++; if (s <= step) number++; }
+            count.text = text.Format("guide.step", number, total);
             title.text = text["guide." + key + ".title"];
             words.text = text["guide." + key + ".text"];
-            next.text = text[step + 1 == Steps.Length ? "guide.done" : "guide.next"];
+            next.text = text[NextStep(step) < 0 ? "guide.done" : "guide.next"];
+            // A step that does not explain the city or the unit puts away the one an earlier step showed (as Close does), so
+            // no stale panel stays under the event card or Objectives.
+            if (key != "city" && key != "training" && key != "move")
+            {
+                var back = putBack; putBack = null;
+                back?.Invoke();
+            }
             // The card shows only on its own step: elsewhere its backdrop would dim the parts the other steps point at.
             if (card?.Shown != null)
             {
@@ -205,8 +247,28 @@ namespace Statecraft.Game.UI
                 putBack ??= keepSelection?.Invoke();   // what the guide found, before it first shows its city or unit
                 if (key == "move") showUnit?.Invoke(); else showCity?.Invoke();
             }
-            Place();
+            // The panel is placed once this frame's layout has run (the city or unit just shown has its size only then), and
+            // transparent until then, so it never shows for a frame in the half its target is about to take (steps 2 and 3).
+            shownFrame = Frame();
+            if (shownFrame < 0) Place();   // EditMode: laid out on demand
+            else
+            {
+                dock.style.opacity = 0f;   // transparent, not hidden: a hidden Next could not take the focus below
+                ring.style.display = DisplayStyle.None;   // nor the ring round the last step's target
+                layer.schedule.Execute(PlaceWhenLaidOut);
+            }
             FocusReturn.To(next);   // Enter goes on to the next step; again once styles resolve, as the layer may only now show
+        }
+
+        /// <summary>The frame count in play (the layout runs once a frame, after the scheduler), or -1 in EditMode, where the
+        /// tests lay panels out on demand and Place runs at once.</summary>
+        static int Frame() => Application.isPlaying ? Time.frameCount : -1;
+
+        void PlaceWhenLaidOut()
+        {
+            if (disposed || !IsOpen) return;
+            if (shownFrame >= 0 && Frame() == shownFrame) { layer.schedule.Execute(PlaceWhenLaidOut); return; }
+            Place();
         }
 
         /// <summary>The elements a step points at, as the HUD has them now (the ring goes round the shown ones): Attention in
@@ -255,6 +317,9 @@ namespace Statecraft.Game.UI
         internal void Place()
         {
             if (!IsOpen) return;
+            if (shownFrame >= 0 && Frame() == shownFrame) return;   // not before the step's layout (PlaceWhenLaidOut)
+            shownFrame = -1;
+            dock.style.opacity = StyleKeyword.Null;
             ApplyTextFloor();
             var area = TargetArea();
             ring.style.display = area == null ? DisplayStyle.None : DisplayStyle.Flex;
@@ -324,7 +389,7 @@ namespace Statecraft.Game.UI
             Step = -1;
             putBack = null;   // a game going away: nothing to put back
             hudRoot.RemoveFromClassList(OpenClass);
-            if (bridge != null) bridge.TurnEnded -= onTurn;
+            if (bridge != null) { bridge.TurnEnded -= onTurn; bridge.Changed -= onChanged; }
             next.clicked -= onNext; skip.clicked -= onSkip; reopenButton.clicked -= onReopen;
         }
     }
