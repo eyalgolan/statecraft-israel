@@ -134,7 +134,7 @@ public class SaveUiTests
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Folder + "/" + file).text, file);
         var content = C;
         var played = GameSession.New(C, 9, Mode.Historical);
-        played.Step(new Command[] { new SetMobilization(1.0) });
+        played.Step(new Command[] { new BuyArms(1) });   // a GDD order the sim carries out (the call-up is refused there, R-WAR-002)
         var save = played.Save.Write();
         string logged;
         var expected = Unreadable(text);
@@ -157,8 +157,8 @@ public class SaveUiTests
                 break;
             default:
                 content = ContentLoader.Load(Paths.Content);   // its own copy: removing a price must not touch C
-                content.Rules.AttentionCost.Remove("set_mobilization");
-                foreach (var r in content.EraRules.Values) r.AttentionCost.Remove("set_mobilization");
+                content.Rules.AttentionCost.Remove("buy_arms");
+                foreach (var r in content.EraRules.Values) r.AttentionCost.Remove("buy_arms");
                 logged = "turn 1: (.|\\n)*KeyNotFoundException";
                 break;
         }

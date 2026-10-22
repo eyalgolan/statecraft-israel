@@ -14,7 +14,10 @@ namespace Statecraft.Game.Map.Collection
     /// #663; owner, 17 October 2026: "The nine whole-town models ship"), standing on their towns far off (<see cref="TownLandmarks"/>);
     /// and ten models offered only in #336, by Tal Heuberger: eight figures (issue #708; owner, 18 October 2026: "the 8 figures
     /// in #708 can be merged without his license line"), the pioneer farmer and a second Jerusalem town (issue #886; owner,
-    /// 19 October 2026: "Yes, both"), imported but not yet placed.
+    /// 19 October 2026: "Yes, both"), placed by CivilianPeople, UnitFigures (the soldier) and TownLandmarks (the second
+    /// Jerusalem, the city's only far-zoom model) (#708). Every model is placed but two, each by an owner ruling: b21, which
+    /// waits for a sourced location (owner: wait), and #507's first Jerusalem, kept in the repository unused on the map
+    /// (owner, 21 October 2026, #708).
     /// They are slimmed by
     /// tools/slim_collection.py and live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
     /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
