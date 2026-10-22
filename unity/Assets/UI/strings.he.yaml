@@ -126,10 +126,11 @@ feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק �
 # to be attached to the post"). The post opens with a noun phrase ("running the State of Israel in 1948 in the game
 # Statecraft: Israel, ...") instead of the English "I'm running", which in Hebrew would agree with the player's gender;
 # it keeps the game's name and the URL in Latin letters, as README.he.md does. Approved by Beri, a native speaker,
-# on #1182 (20 Oct 2026). For the native reviewer (#564).
+# on #1182 (20 Oct 2026). share.post no longer says "בקוד פתוח" (open source) since the code licence changed (#1371,
+# 22 Oct 2026): agent-checked, for the native reviewer (#564).
 share.open: "שיתוף"
 share.title: "שיתוף תמונה מהמשחק"
-share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי בקוד פתוח. {0}, תור {1}. לשחק: {2}"
+share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי. {0}, תור {1}. לשחק: {2}"
 share.native: "שיתוף"
 share.download: "הורדת התמונה"
 share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
@@ -523,11 +524,16 @@ city.recruits: "מגויסים: {0}"
 city.workers: "בעבודה: {0}"
 city.train_recruit: "אימון מגויסים: קבוצה אחת, {0}, {1}"
 city.train_halutz: "הכשרת חלוצים: קבוצה אחת, {0}, {1}"
+# Approved by Beri, a native speaker, on #1346 (22 Oct 2026): city.train_artillery, city.track_artillery, city.train_armoured_car, city.track_armoured_car.
+city.train_artillery: "אימון ארטילריה: קבוצה אחת, {0}, {1}"
+city.train_armoured_car: "אימון שריוניות: קבוצה אחת, {0}, {1}"
 # Craft training (R-CRAFT-001, #1357), with city.craftsmen's approved בעל מלאכה in the plural. For the native reviewer (#564).
 city.train_craftsman: "הכשרת בעלי מלאכה: קבוצה אחת, {0}, {1}"
 city.train_ordered: "הוזמנו {0}"
 city.track_recruit: "מגויסים"
 city.track_halutz: "חלוצים"
+city.track_artillery: "ארטילריה"
+city.track_armoured_car: "שריוניות"
 # For the native reviewer (#564).
 city.track_craftsman: "בעלי מלאכה"
 city.cohort: "{0}: {1} באימון, עוד {2}"
@@ -599,3 +605,21 @@ nav.timeline: "ציר הזמן"
 timeline.alt_proposed: "לא אומץ. הוצע בידי {0}, {1}."
 timeline.alt_debated: "לא אומץ. נדון בידי {0}, {1}."
 timeline.alt_design: "הנחת תכנון."
+
+# #1125 independent option-effect formatter; no production card hookup yet.
+# Agent-checked draft wording only; native-speaker review remains pending (#564).
+event.effect.amount: "{0}: שינוי {1}"
+event.effect.stock: "{0} {1} יחידות"
+event.effect.grant: "{0}: {1}, מיקום: {2}"
+event.effect.city: "{0}: {1}, שינוי {2}"
+event.effect.policy: "{0}: ערך חדש {1}"
+event.effect.rung: "רמת הביטחון תיקבע ל־{0}"
+event.effect.rejoin: "חזרה למסלול ההיסטורי: {0}"
+event.effect.unlock: "אפשר לבנות עכשיו: {0}"
+event.effect.food: "מזון"
+event.effect.arms: "נשק"
+event.effect.units: "יחידות"
+event.effect.veteran_halutz: "חלוצים ותיקים"
+event.effect.housing_capacity: "קיבולת דיור"
+event.effect.job_slots: "מקומות עבודה"
+event.effect.condition: "מצב הדיור"

@@ -14,7 +14,7 @@ Help is very welcome:
 - Keep game rules in the simulation, not in Unity.
 - Working with an AI tool is fine if you say so in the pull request and every historical claim has been checked against a source.
 
-There's no CLA: contributions come in under the repository's licences.
+There's no CLA. Code comes in under MIT to the maintainer, Eyal Golan, and goes out under PolyForm Noncommercial 1.0.0; everything else comes in under the repository's licences.
 
 ## Find a first task
 
