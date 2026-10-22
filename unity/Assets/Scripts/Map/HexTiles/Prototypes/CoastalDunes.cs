@@ -14,7 +14,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// 740. 12 flats x 12 = 144. Total about 15,500 of 20,000 with the boat.
     ///
     /// The scrub has no model (tiles:coastal_dunes/scrub), so it draws the Tree stand-in tinted pale sage.</summary>
-    [HexPrototype("coastal_dunes")]
+    [HexPrototype("coastal_dunes", Kind = "nature")]
     public sealed class CoastalDunes : IHexPrototype
     {
         public string Title => "Coastal dunes (1948)";

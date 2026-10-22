@@ -39,7 +39,7 @@ public class InfoPanelLayoutTests
     /// card and the info panel (with the region lines) on the session given.</summary>
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
-                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null)
+                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -57,7 +57,7 @@ public class InfoPanelLayoutTests
         var bridge = new SimBridge(g, t);
         var hud = new HudPresenter(root, bridge, t);
         var card = new EventCardPresenter(root, bridge, t, null);
-        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName);
         try
         {
             act(root, info);
@@ -196,9 +196,10 @@ public class InfoPanelLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>GDD Phase 5 PR 15, slices 1 and 2 (#754): Golani's card at the start with its Move, Fortify and Hold buttons,
-    /// as it is, picking a Move's hex (the pick line under the card's lines), with Fortify queued (its line), and on the turn
-    /// after a Hold (Hold refused, with the sim's reason), at every window size in English and Hebrew: the panel lies in the
+    /// <summary>GDD Phase 5 PR 15, slices 1 to 3 (#754): Golani's card at the start with its Move, Fortify and Hold buttons,
+    /// as it is, picking a Move's hex (the pick line under the card's lines), with Fortify queued (its line), on the turn
+    /// after a Hold (Hold refused, with the sim's reason), and picking an Attack's hex (an enemy put in its reach if none is) (the
+    /// pick line, the enemy's name, strength ratio and outcome bands), at every window size in English and Hebrew: the panel lies in the
     /// window, and every shown label and button lies inside the panel with its text fitting its box.</summary>
     [UnityTest]
     public IEnumerator TheUnitCardWithItsOrdersFitsEveryWindow()
@@ -208,11 +209,16 @@ public class InfoPanelLayoutTests
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
             foreach (var (w, h) in Windows)
-                foreach (var state in new[] { "", "info-move", "info-fortify", "holding" })
+                foreach (var state in new[] { "", "info-move", "info-fortify", "holding", "info-attack" })
                 {
                     var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
                     var token = Statecraft.Game.Map.Units.UnitRoster.FromState(units, C, g.State, null, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
                     if (state == "holding") g.Step(new Command[] { new UnitOrder(UnitCard.SimUnit(C, g.State, token.Unit)!.Value, Orders.Hold) });
+                    if (state == "info-attack") UnitOrdersTests.EnemyInGolanisReach(g.State);
+                    var t = hebrew ? he : Text;
+                    var names = Statecraft.Game.Map.Units.UnitRoster.FromState(units, C, g.State, null, (row, a, q, r) => a)
+                        .Where(x => UnitCard.SimUnit(C, g.State, x.Unit) != null)
+                        .ToDictionary(x => UnitCard.SimUnit(C, g.State, x.Unit)!.Value, x => hebrew && x.Unit.NameHe != "" ? x.Unit.NameHe : x.Unit.Name);
                     Statecraft.Game.Map.Units.PlacedToken? golani = new Statecraft.Game.Map.Units.PlacedToken(token, new Statecraft.Game.Map.Units.AnchorSpot(0, 0, 0, 0, false));
                     var pressed = state.StartsWith("info-");
                     var at = $"{(hebrew ? "he" : "en")} {w}x{h} {state}";
@@ -222,7 +228,7 @@ public class InfoPanelLayoutTests
                         var move = root.Q<Button>("info-move");
                         if (!Shown(move)) { problems.Add($"{at}: precondition: the Move button shows"); return; }
                         var lines = root.Q<Label>("info-settlements").text;
-                        foreach (var (key, when) in new[] { ("unit.move_pick", "info-move"), ("unit.fortify_queued", "info-fortify") })
+                        foreach (var (key, when) in new[] { ("unit.move_pick", "info-move"), ("unit.fortify_queued", "info-fortify"), ("unit.attack_pick", "info-attack") })
                             if (lines.Contains((hebrew ? he : Text)[key]) != (state == when)) problems.Add($"{at}: {key} shows: {state != when}");
                         if (Shown(root.Q<Button>("info-hold")) == (state == "holding")) problems.Add($"{at}: precondition: Hold shows only while it is not held");
                         if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
@@ -231,13 +237,13 @@ public class InfoPanelLayoutTests
                             if (!Inside(l.worldBound, panel.worldBound)) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
                             if (!TextFits(l)) problems.Add($"{at}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
                         }
-                    }, hebrew ? he : Text, hebrew, root =>
+                    }, t, hebrew, root =>
                     {
                         if (!pressed) return;
                         var hide = root.Q<Button>("event-hide");
                         if (hide != null && Shown(hide)) UiTestKit.Press(hide);   // the turn's decision card disables the panel under it
                         UiTestKit.Press(root.Q<Button>(state));
-                    }, () => golani);
+                    }, () => golani, id => names.TryGetValue(id, out var n) ? n : null);
                 }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }

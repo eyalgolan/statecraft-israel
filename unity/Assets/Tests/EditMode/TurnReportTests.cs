@@ -1,9 +1,11 @@
 #nullable enable
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -60,7 +62,8 @@ public class TurnReportTests
         var changed = HudModel.MeterIds.Where(id => m.For(id).Delta.Length > 0).ToArray();
         Assert.GreaterOrEqual(changed.Length, 3, "the opening turn moves at least three numbers in the bar");
         var rows = k.Ui.Q<ScrollView>("turn-report-rows").Children().ToList();
-        CollectionAssert.AreEqual(changed.Select(id => "turn-report-" + id), rows.Select(r => r.name), "every changed number, in the bar's order, and no other");
+        CollectionAssert.AreEqual(changed.Select(id => "turn-report-" + id).Append("turn-report-" + TurnReportPresenter.EnemyRow), rows.Select(r => r.name),
+            "every changed number, in the bar's order, and no other; then the enemy's orders (#1293)");
         var messages = new HashSet<string>(turn.Why.Select(w => w.Message));
         foreach (var id in changed)
         {
@@ -81,6 +84,33 @@ public class TurnReportTests
         StringAssert.EndsWith("(Border villages)", security[1]);
         StringAssert.StartsWith("Money ", k.Ui.Q<Label>("turn-report-causes-treasury").text, "Money's main cause is the economy's line");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
+    }
+
+    /// <summary>#1293: the opening turn's enemy orders (R-ENEMY-001): the four scripted forces march (R-ENEMY-002) and the
+    /// others fortify (R-ENEMY-003). After the bar's numbers the report lists each order, in the sim's order, its unit named
+    /// by its units_1948.yaml row, in the player's language.</summary>
+    [Test]
+    public void TheEnemysOrdersAreReportedInBothLanguages()
+    {
+        var rows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text);
+            k.Report.Units = rows;
+            var turn = k.Bridge.EndTurn();
+            var orders = turn.Why.Where(w => w.EnemyOrder != "").ToList();
+            CollectionAssert.IsSupersetOf(orders.Select(w => w.EnemyOrder), new[] { Movement.Kind, Orders.Fortify }, "the opening turn has enemy moves and fortifies");
+            var expected = orders.Select(w =>
+            {
+                var row = rows.First(u => u.Id == C.StartingForces[int.Parse(w.Target, System.Globalization.CultureInfo.InvariantCulture)].Row);
+                return text.Format("report.enemy_" + w.EnemyOrder, hebrew ? row.NameHe : row.Name);
+            }).ToList();
+            Assert.AreEqual(text["report.enemy"], k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.EnemyRow).text);
+            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            CollectionAssert.AreEqual(expected, lines);
+            CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : "Arab Legion moved to a new position", "the Legion's march on Latrun");
+        }
     }
 
     [Test]

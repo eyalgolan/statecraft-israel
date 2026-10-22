@@ -19,13 +19,13 @@ namespace Statecraft.HexTiles.Prototypes
     /// quarters kit_kibbutz (b09a) x 700 = 4,200. Three barns kit_kibbutz_3 (b24) x 1,400 = 4,200. Water tower
     /// kit_kibbutz_4 (b28) 1,400. Buildings 15,344. 13 cypress x 1,596 = 20,748. 4 tabor oaks x 648 = 2,592. 3 pond flats
     /// x 12 = 36. Total about 38,700 (40,800 with quads) of 60,000.</summary>
-    [HexPrototype("kibbutz")]
+    [HexPrototype("kibbutz", Kind = "village")]
     public sealed class Kibbutz : IHexPrototype
     {
         public string Title => "Kibbutz compound and its fields (1940s)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 60000;
+        public int TriangleBudget => 85000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 75k on the israel board and the test hex
 
         // Explicit kit ids, not "kit_kibbutz*": the wildcard would mix the dining hall, barn and water tower into the rows.
         const string Core = "proto:kibbutz-compound-v2", Quarters = "sandbox:kit_kibbutz", DiningHall = "sandbox:kit_kibbutz_2",

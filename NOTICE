@@ -163,6 +163,16 @@ Public domain or CC0 (credited as a courtesy):
   and cropped.
   https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office,_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
 
+Opening cutscene photographs (unity/Assets/UI/Opening/; per-file records in ASSETS.yaml), draft candidates for #530.
+Each is adapted: graded and cropped, as the event-card photographs. CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/), via Wikimedia Commons:
+- opening_europe.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg
+- opening_arab_countries.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg
+- opening_yemen.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg
+
 Fonts: EB Garamond, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/OFL.txt). Frank Ruhl Libre, Copyright 2015 The
 Frank Ruhl Libre Project Authors, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt).
 
