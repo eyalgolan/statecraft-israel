@@ -392,4 +392,21 @@ public class EnemyAITests
         }
         Assert.Empty(s.Settlements);
     }
+
+    // R-ENEMY-001: each order the enemy AI gives is named on its cause (Cause.EnemyOrder), for the turn report (#1293): a
+    // scripted move, an attack and a fortify. The player's own orders, through the same checks, name none.
+    [Fact]
+    public void EachEnemyOrderIsNamedOnItsCause()
+    {
+        var c = Load();
+        var why = new List<Cause>();
+        EnemyAI.Order(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), why);
+        Assert.Equal(Combat.Attack, Assert.Single(why).EnemyOrder);
+        var r = Simulation.Step(c, CombatTests.With(c, Soldier(1, 0, 0, 5), Enemy(2, 5, 2, 1)),
+            new Command[] { new Move(1, 1, 0), new UnitOrder(1, Orders.Hold) });
+        Assert.Equal(new[] { "", "", Orders.Fortify }, r.Why.Where(x => x.System == "map").Select(x => x.EnemyOrder).ToArray());
+        var first = Simulation.Step(Real, Simulation.NewGame(Real, 1, Mode.Historical), Array.Empty<Command>());
+        var scripted = Real.StartingForces.Select((f, i) => (f, i)).Where(x => x.f.Script != null).Select(x => x.i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(scripted, first.Why.Where(x => x.EnemyOrder == Movement.Kind).Select(x => x.Target));
+    }
 }

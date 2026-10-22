@@ -50,7 +50,7 @@ why.title: "למה זה קרה?"
 how_to_play.title: "איך משחקים"
 how_to_play.turn: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור."
 how_to_play.attention: "רוב ההוראות עולות תשומת לב, המוצגת בסרגל העליון. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא."
-how_to_play.city: "בחרו עיר במפה כדי לראות את הדיור ואת המשרות בה, וקבעו כמה מאזרחיה עובדים."
+how_to_play.city: "בחרו עיר במפה כדי לראות את הדיור ואת המשרות בה. קבעו את מספר העובדים; השינוי יתבצע בסיום התור."
 how_to_play.training: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך."
 how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור."
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
@@ -261,6 +261,14 @@ report.intro: "מה השתנה בסרגל העליון, ומה הסיבות הע
 report.line: "{0}: שינוי של {1}"
 report.all: "הכול במסך למה?"
 report.close: "סגירה"
+# The enemy's orders this turn (#1293), {0} the unit's name: agent-drafted Hebrew, not yet read by a native speaker. The
+# verbs are masculine, as every Arab force's name_he is (חיל, הלגיון, הצבא, צבא) and so is report.unit's כוח. For the
+# native reviewer (#564).
+report.enemy: "מה עשו הכוחות הערביים"
+report.enemy_move: "{0} עבר לעמדה חדשה"
+report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכם"
+report.enemy_fortify: "{0} התבצר בעמדתו"
+report.unit: "כוח {0}"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
@@ -390,7 +398,8 @@ info.map_action_reason.not_land: "המשושה הזה אינו יבשה"
 info.map_action_reason.too_far_one: "המשושה הזה נמצא במרחק של יותר מ־{0} משושה מיישוב"
 info.map_action_reason.too_far_many: "המשושה הזה נמצא במרחק של יותר מ־{0} משושים מיישוב"
 info.map_action_reason.occupied: "במשושה הזה כבר יש {0}"
-info.map_action_reason.turn_cap: "אי אפשר לבצע יותר מ־{0} פעולות מפה בתור אחד"
+# Draft alignment with English for #1139; native review pending (#564).
+info.map_action_reason.turn_cap: "המגבלה היא {0} פעולות מפה בכל תור. אפשר לנסות שוב בתור הבא."
 # Cabinet candidate refusals (#901). The sim supplies content ids and ISO dates; the UI supplies the Hebrew names and
 # wording. No verb agrees with the person's gender ("כבר בתפקיד", not "מכהן"), since a woman can be any candidate.
 # Short, neutral drafts for the native reviewer (#564).
@@ -457,8 +466,9 @@ save.refused.older_rules: "המשחק השמור נוצר בגרסה קודמת 
 save.refused.newer_version: "המשחק השמור נוצר בגרסה חדשה יותר של המשחק ואי אפשר לפתוח אותו כאן. משחק חדש התחיל."
 # save.warning.*: a save made with other content is continued, and each warning kind the sim returns
 # (GameSession.ContentChanged, ReplayDiffers) is said here, not in the sim's English (#637). For the native reviewer (#564).
-save.warning.content_changed: "השמירה הזאת מגרסה קודמת של המשחק, לכן ייתכן שהאירועים יתפתחו קצת אחרת."
-save.warning.replay_differs: "המשחק שוחזר, אבל לא בדיוק כפי שנשמר."
+# Draft alignment with English for #1139; native review pending (#564).
+save.warning.content_changed: "המשחק השתנה מאז יצירת השמירה הזאת. ייתכן שהאירועים יתפתחו אחרת."
+save.warning.replay_differs: "חלקים מהמשחק ששוחזר שונים מהשמירה. בדקו את מצב המשחק לפני שתמשיכו."
 boot.failed: "לא ניתן היה להפעיל את Statecraft: {0}. יש לטעון את הדף מחדש."
 # boot.reason_other fills boot.failed's {0} instead of the exception's English text, which goes to the log (#637).
 # For the native reviewer (#564).

@@ -80,7 +80,7 @@ namespace Statecraft.Sim
             var committed = s.Units.Values.Where(x => x.Id != unitId && x.Order == Attack && Military(x) && Player(x)).Sum(x => Need(c, mvp, x));
             if (!enemy && s.Arms < need + committed) return Short(need, s.Arms, committed);
             s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target);
-            why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, $"Unit {unitId} will attack hex {target}"));
+            why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, $"Unit {unitId} will attack hex {target}", enemy ? Attack : ""));
             return null;
         }
 

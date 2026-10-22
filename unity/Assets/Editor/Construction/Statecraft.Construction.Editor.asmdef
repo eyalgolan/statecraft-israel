@@ -1,0 +1,7 @@
+{
+  "name": "Statecraft.Construction.Editor",
+  "rootNamespace": "Statecraft.Editor.Construction",
+  "references": ["Statecraft.Game"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}
