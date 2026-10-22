@@ -44,7 +44,7 @@ public class EventEffectTextTests
             new CityEffect { City = City, Field = EventSystem.JobsField, Delta = -100 },
             new CityEffect { City = City, Field = EventSystem.ConditionField, Delta = .051 },
         },
-        SetPolicy = new Dictionary<string, double> { ["rationing"] = .75 }, SetRung = 4, Rejoin = Rejoin,
+        SetPolicy = new Dictionary<string, double> { ["housing_construction"] = .75 }, SetRung = 4, Rejoin = Rejoin,
     };
 
     [TestCase(false, "en-US")]
@@ -75,14 +75,14 @@ public class EventEffectTextTests
                 "חלוצים: 2, מיקום: " + Place, "מגויסים: 1, מיקום: " + Place,
                 "חלוצים ותיקים: 3, מיקום: " + Place, "יחידות: 4, מיקום: " + Place,
                 Place + ": קיבולת דיור, שינוי +3", Place + ": מקומות עבודה, שינוי -100", Place + ": מצב הדיור, שינוי +5.1%",
-                "Rationing: ערך חדש 75%", "רמת הביטחון תיקבע ל־4", "חזרה למסלול ההיסטורי: " + title,
+                "Housing construction: ערך חדש 75%", "רמת הביטחון תיקבע ל־4", "חזרה למסלול ההיסטורי: " + title,
             } : new[]
             {
                 "Social cohesion +4.1%", "Money IL -1.3m", "Food +3 units", "Arms -100 units",
                 "Halutzim: 2 at " + Place, "Recruits: 1 at " + Place,
                 "Veteran Halutzim: 3 at " + Place, "Units: 4 at " + Place,
                 Place + ": housing capacity +3", Place + ": job slots -100", Place + ": housing condition +5.1%",
-                "Rationing set to 75%", "Security level set to 4", "Returns to the recorded course: " + title,
+                "Housing construction set to 75%", "Security level set to 4", "Returns to the recorded course: " + title,
             };
             CollectionAssert.AreEqual(expected, actual);
             Assert.AreEqual(hash, s.Hash(), "formatting must not choose, spend, queue or mutate state");
@@ -94,7 +94,7 @@ public class EventEffectTextTests
     [TestCase(0, "לכידות", "לכידות: שינוי +4.1%")]
     [TestCase(4, "עיר לדוגמה", "חלוצים: 2, מיקום: עיר לדוגמה")]
     [TestCase(8, "עיר לדוגמה", "עיר לדוגמה: קיבולת דיור, שינוי +3")]
-    [TestCase(11, "קיצוב", "קיצוב: ערך חדש 75%")]
+    [TestCase(11, "בניית דיור", "בניית דיור: ערך חדש 75%")]
     [TestCase(13, "כותרת מתורגמת", "חזרה למסלול ההיסטורי: כותרת מתורגמת")]
     public void TheCallerMaySupplyALocalizedNameWithoutChangingTheSim(int index, string name, string expected)
     {
