@@ -66,6 +66,20 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
   --expect "SMOKE OK 5 turns 1948-10-15 af543e2ee2fee84946ca32e06fd721e9b4f561480eb0527e44430b7f6b7bc0f4"
 ```
 
+`smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
+`-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
+hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
+10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order (7,11) and presses End
+Turn: `SMOKE ORDERS OK 1948-06-15 e01ec76716bfc6789b70cbe971482b4fb6ce4e26ef2c65a67a4674912f9a3d83`.
+`GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
+prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
+attack slices can add their orders to it. Check a WebGL build with:
+
+```
+uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
+  --expect "SMOKE ORDERS OK 1948-06-15 e01ec76716bfc6789b70cbe971482b4fb6ce4e26ef2c65a67a4674912f9a3d83"
+```
+
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
 `[sit]` and so on), against a committed snapshot of the run's final state: `sim/Statecraft.Sim.Tests/golden/hash1950.txt`
 and `hash1952.txt`, written by `GameState.Describe()`, which uses the same writer as `Hash()` (so the two cannot list
@@ -141,7 +155,7 @@ goldens (playtest 2 changed every line's casing with no hash change). They are s
 `FinalWaveTests.AReloadedSaveReproducesTheLastTurnsCauses` checks a reloaded save gives the same last-turn Causes, and
 `TheGoldenRunsCausesAreTheSameInEveryCulture` runs the 1952 golden under de-DE and ar-SA against the invariant culture.
 
-Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, and the scenario lines above). The .NET tests
+Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, `smoke-orders`, and the scenario lines above). The .NET tests
 compare against it. These places must agree with it, and `GoldenManifestTests` fails naming the one that does not:
 - `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against (the update command rewrites it);
 - this file, `docs/RELEASING.md` and `tools/web_check.py`'s usage example (by hand).
@@ -371,10 +385,12 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-cautious | `e45c5429` | same as reckless (was `230791a1`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-absorb-first | `64bdd93b` | same as reckless (was `de176931`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-defeat | `54ec7d6b` | same as reckless; the defeat is unchanged (was `7404295a`) |
+| GDD Phase 5 PR 15 slice 4 (#754) | smoke-orders | `98422be8` | new: one turn from the golden seed whose only order is unit 0 (Golani) moving from 10,9 to 7,11, given through the unit card in the browser run; no other golden moves |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | 1950 | `6ea8b268` | owner-accepted military upkeep (R-UNIT-010; IL 0.05m per Israeli formation per turn, owner 19 October 2026 on #1130) charges the starting forces and the 7th Brigade once it arrives; the reference player trains no recruits, so only debt moves, by IL 8.2m over 20 turns (164 formation-turns); every other snapshot field is unchanged (was `d14a4899`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | 1952 | `1b21b11f` | same; debt alone rises by IL 17.8m over 44 turns (356 formation-turns) (was `3bacd2b1`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | mvp-end | `1b21b11f` | same as 1952 (was `3bacd2b1`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | smoke5 | `af543e2e` | same upkeep over the five smoke turns; no snapshot is kept for this run (was `7559f30c`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | smoke-orders | `e01ec767` | the same upkeep over its one turn; no snapshot is kept for this run (was `98422be8`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-reckless | `e3c39677` | same; debt alone rises by IL 3.4m (was `030817e3`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-cautious | `027c067f` | same as reckless (was `e45c5429`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-mvp-absorb-first | `1c561b5c` | same; debt alone rises by IL 8.2m (was `64bdd93b`) |

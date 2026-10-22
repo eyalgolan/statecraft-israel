@@ -9,6 +9,8 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 
 Usage (from the repo root):
   uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 6ea8b268bb3eb8bab868a686fa21ba84f7c49cddee19c887eb6f53e7d67c394a" --expect "GOLDEN OK hash1952 1b21b11f9ba824bf2d4fb3f667b7512e0e317dc211ebd3edfdd5040abf57024d"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 e01ec76716bfc6789b70cbe971482b4fb6ce4e26ef2c65a67a4674912f9a3d83"
+  (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
@@ -341,6 +343,12 @@ class Server(http.server.ThreadingHTTPServer):
     time per host in Chrome; on a loaded machine the accept thread lags, a connection is reset and the boot fails
     (BOOT FAIL <file>: Unknown Error). 128 is macOS's kern.ipc.somaxconn."""
     request_queue_size = 128
+
+    def handle_error(self, request, client_address):
+        # Closing the browser cancels outstanding responses. Keep other server failures visible.
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
 
 
 def serve(root: Path, port: int = 0) -> Server:

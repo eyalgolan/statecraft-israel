@@ -13,6 +13,34 @@ import pytest
 import web_check as wc
 
 
+@pytest.mark.parametrize("error", [BrokenPipeError, ConnectionResetError])
+def test_server_client_disconnects_do_not_print_a_false_failure(error, capsys):
+    server = wc.Server(("127.0.0.1", 0), wc.Handler)
+    try:
+        try:
+            raise error("browser closed an outstanding response")
+        except error:
+            server.handle_error(None, server.server_address)
+    finally:
+        server.server_close()
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.parametrize("error", [ValueError, OSError])
+def test_server_unexpected_request_errors_are_still_reported(error, capsys):
+    server = wc.Server(("127.0.0.1", 0), wc.Handler)
+    try:
+        try:
+            raise error("unexpected request failure")
+        except error:
+            server.handle_error(None, server.server_address)
+    finally:
+        server.server_close()
+    report = capsys.readouterr().err
+    assert "Traceback" in report
+    assert f"{error.__name__}: unexpected request failure" in report
+
+
 def test_console_lines_are_read_from_their_first_line():
     one = '[1010/025003.375619:INFO:CONSOLE:2] "GOLDEN OK 1950 abc", source: http://localhost:1/index.html (2)'
     assert wc.CONSOLE.search(one).group(1) == "GOLDEN OK 1950 abc"
